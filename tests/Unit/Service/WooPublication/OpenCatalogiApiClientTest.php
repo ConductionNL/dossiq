@@ -225,7 +225,7 @@ class OpenCatalogiApiClientTest extends TestCase {
 		$response = $this->createMock(IResponse::class);
 		$response->method('getBody')->willReturn(json_encode([
 			'results' => [
-				['slug' => 'algemeen', 'hasWooSitemap' => false],
+				['slug' => 'general', 'hasWooSitemap' => false],
 				['slug' => 'woo-verzoeken', 'hasWooSitemap' => true],
 			],
 		]));

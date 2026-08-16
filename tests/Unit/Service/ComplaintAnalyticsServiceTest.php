@@ -241,8 +241,8 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturn('procest');
 
 		$complaints = [
-			['status' => 'afgehandeld', 'afhandelDeadline' => '2026-04-12', 'receiptDate' => '2026-03-01'],
-			['status' => 'in_behandeling', 'receiptDate' => '2026-03-15'],
+			['status' => 'handled', 'afhandelDeadline' => '2026-04-12', 'receiptDate' => '2026-03-01'],
+			['status' => 'in_handling', 'receiptDate' => '2026-03-15'],
 		];
 
 		$objectServiceMock->method('searchObjectsBySlug')->willReturn($complaints);

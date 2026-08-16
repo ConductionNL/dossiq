@@ -84,7 +84,7 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 	 * @param awb    The AWB reference (unique, RUN_PREFIX-tagged).
 	 * @param status The initial workflow status.
 	 */
-	async function seedBezwaar(awb: string, status = 'Ontvangen'): Promise<any> {
+	async function seedBezwaar(awb: string, status = 'Received'): Promise<any> {
 		return createObject(api, token, 'bezwaar', {
 			case: caseId,
 			receipt_date: '2026-06-01',
@@ -116,7 +116,7 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 		page,
 	}) => {
 		const awb = `${RUN_PREFIX}-AWB-LIST`
-		const bz = await seedBezwaar(awb, 'Ontvangen')
+		const bz = await seedBezwaar(awb, 'Received')
 		expect(objectId(bz)).not.toBe('')
 
 		await openBezwaren(page)
@@ -124,9 +124,9 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 		// The row renders the AWB reference …
 		const row = page.locator('tbody tr', { hasText: awb }).first()
 		await expect(row).toBeVisible({ timeout: 15000 })
-		// … and its workflow status ("Ontvangen") renders in that row.
+		// … and its workflow status ("Received") renders in that row.
 		await expect(
-			row.getByText('Ontvangen', { exact: false }).first(),
+			row.getByText('Received', { exact: false }).first(),
 		).toBeVisible()
 	})
 
@@ -135,11 +135,11 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 		page,
 	}) => {
 		const awb = `${RUN_PREFIX}-AWB-STATUS`
-		const bz = await seedBezwaar(awb, 'Ontvangen')
+		const bz = await seedBezwaar(awb, 'Received')
 		const bzId = objectId(bz)
 
 		// Advance the workflow status (a valid value from the bezwaar enum).
-		await updateObject(api, token, 'bezwaar', bzId, { status: 'In behandeling' })
+		await updateObject(api, token, 'bezwaar', bzId, { status: 'In handling' })
 
 		// PERSISTENCE: re-read confirms the new status was written.
 		await expect
@@ -151,14 +151,14 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 					message: 'bezwaar status persisted',
 				},
 			)
-			.toBe('In behandeling')
+			.toBe('In handling')
 
 		// The list now renders the new status on the row.
 		await openBezwaren(page)
 		const row = page.locator('tbody tr', { hasText: awb }).first()
 		await expect(row).toBeVisible({ timeout: 15000 })
 		await expect(
-			row.getByText('In behandeling', { exact: false }).first(),
+			row.getByText('In handling', { exact: false }).first(),
 		).toBeVisible()
 	})
 })

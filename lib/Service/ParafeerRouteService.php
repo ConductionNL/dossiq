@@ -470,7 +470,7 @@ class ParafeerRouteService {
 
 		$newStep = [
 			'order' => 0,
-			'type' => (string)($stepData['type'] ?? 'advies'),
+			'type' => (string)($stepData['type'] ?? 'advice'),
 			'actor' => (string)($stepData['actor'] ?? ''),
 			'actorType' => (string)($stepData['actorType'] ?? 'user'),
 			'mandatory' => (bool)($stepData['mandatory'] ?? false),

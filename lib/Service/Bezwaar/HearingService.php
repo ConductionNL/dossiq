@@ -192,7 +192,7 @@ class HearingService {
 				),
 				'inspectionAvailableFrom' => $available->format('Y-m-d'),
 				'inspectionDeadline' => $deadline->format('Y-m-d'),
-				'status' => 'gepland',
+				'status' => 'planned',
 				'hearingWaived' => false,
 				'recordingConsent' => $payload['recordingConsent'] ?? 'not_requested',
 			]
@@ -505,7 +505,7 @@ class HearingService {
 
 	/**
 	 * Listener entry-point: seed a default hearing session for a bezwaar
-	 * that has just transitioned to "Hoorzitting gepland" (REQ-BH-2
+	 * that has just transitioned to "Hearing planned" (REQ-BH-2
 	 * scheduling). The seed is intentionally minimal — invitees are
 	 * empty, scheduledDate is fourteen days out — and only fires when
 	 * no hearing session already exists for the case.

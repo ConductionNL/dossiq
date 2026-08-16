@@ -46,9 +46,9 @@
             "type": "string",
             "title": "Status",
             "facetable": true,
-            "default": "concept",
+            "default": "draft",
             "description": "ZGW DRC document status lifecycle (forward-only)",
-            "enum": ["concept", "definitief", "gearchiveerd"]
+            "enum": ["draft", "final", "archived"]
           },
           "informatieobjecttype": {"type": "string", "title": "Information Object Type Reference", "facetable": true, "maxLength": 255, "description": "Reference to an informatieobjecttype from the catalog"},
           "creatiedatum":         {"type": "string", "title": "Creation Date", "format": "date", "description": "Creation date (ISO 8601)"},
@@ -85,7 +85,7 @@
             "type": "string",
             "title": "Relation Nature",
             "description": "Nature of the relation",
-            "enum": ["Hoort bij, omgekeerd", "Legt vast, omgekeerd"]
+            "enum": ["Hoort at omgekeerd", "Legt vast, omgekeerd"]
           },
           "registrationDate":   {"type": "string", "title": "Registration Date", "format": "date-time", "description": "When the link was registered"}
         }

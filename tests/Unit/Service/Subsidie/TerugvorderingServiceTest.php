@@ -93,7 +93,7 @@ class TerugvorderingServiceTest extends TestCase {
 	 */
 	public function testPaymentStatusMachine(): void {
 		$this->assertSame('opgelegd', $this->service->statusAfterPayment(30000.0, 0.0));
-		$this->assertSame('gedeeltelijk_betaald', $this->service->statusAfterPayment(30000.0, 10000.0));
-		$this->assertSame('betaald', $this->service->statusAfterPayment(30000.0, 30000.0));
+		$this->assertSame('gedeeltelijk_paid', $this->service->statusAfterPayment(30000.0, 10000.0));
+		$this->assertSame('paid', $this->service->statusAfterPayment(30000.0, 30000.0));
 	}//end testPaymentStatusMachine()
 }//end class

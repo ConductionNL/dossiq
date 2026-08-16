@@ -266,7 +266,7 @@ class ZaakdossierServiceTest extends TestCase {
 		);
 
 		$this->assertSame('inf-1', $result['id']);
-		$this->assertSame('concept', $result['status']);
+		$this->assertSame('draft', $result['status']);
 		$this->assertSame('intern', $result['vertrouwelijkheidaanduiding']);
 		$this->assertSame(hash('sha256', $content), $result['integrity']['value']);
 		$this->assertSame('sha256', $result['integrity']['algorithm']);
@@ -361,12 +361,12 @@ class ZaakdossierServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testTransitionRules(): void {
-		$this->assertTrue($this->service->isTransitionAllowed('concept', 'definitief'));
-		$this->assertTrue($this->service->isTransitionAllowed('definitief', 'gearchiveerd'));
-		$this->assertFalse($this->service->isTransitionAllowed('definitief', 'concept'));
-		$this->assertFalse($this->service->isTransitionAllowed('gearchiveerd', 'definitief'));
-		$this->assertFalse($this->service->isTransitionAllowed('concept', 'gearchiveerd'));
-		$this->assertFalse($this->service->isTransitionAllowed('concept', 'concept'));
+		$this->assertTrue($this->service->isTransitionAllowed('draft', 'final'));
+		$this->assertTrue($this->service->isTransitionAllowed('final', 'archived'));
+		$this->assertFalse($this->service->isTransitionAllowed('final', 'draft'));
+		$this->assertFalse($this->service->isTransitionAllowed('archived', 'final'));
+		$this->assertFalse($this->service->isTransitionAllowed('draft', 'archived'));
+		$this->assertFalse($this->service->isTransitionAllowed('draft', 'draft'));
 
 	}//end testTransitionRules()
 
@@ -378,7 +378,7 @@ class ZaakdossierServiceTest extends TestCase {
 	public function testTransitionToDefinitiefLocks(): void {
 		$os = $this->createMock(DossierObjectServiceStub::class);
 		$this->settings->method('getObjectService')->willReturn($os);
-		$os->method('find')->willReturn(['id' => 'inf-1', 'status' => 'concept']);
+		$os->method('find')->willReturn(['id' => 'inf-1', 'status' => 'draft']);
 
 		$captured = null;
 		$os->method('saveObject')->willReturnCallback(
@@ -388,9 +388,9 @@ class ZaakdossierServiceTest extends TestCase {
 			}
 		);
 
-		$result = $this->service->transitionStatus('inf-1', 'definitief');
+		$result = $this->service->transitionStatus('inf-1', 'final');
 
-		$this->assertSame('definitief', $result['status']);
+		$this->assertSame('final', $result['status']);
 		$this->assertArrayHasKey('lockedOn', $result);
 		$this->assertArrayHasKey('lockedOn', (array)$captured);
 
@@ -404,10 +404,10 @@ class ZaakdossierServiceTest extends TestCase {
 	public function testReverseTransitionRejected(): void {
 		$os = $this->createMock(DossierObjectServiceStub::class);
 		$this->settings->method('getObjectService')->willReturn($os);
-		$os->method('find')->willReturn(['id' => 'inf-1', 'status' => 'definitief']);
+		$os->method('find')->willReturn(['id' => 'inf-1', 'status' => 'final']);
 
 		$this->expectException(\InvalidArgumentException::class);
-		$this->service->transitionStatus('inf-1', 'concept');
+		$this->service->transitionStatus('inf-1', 'draft');
 
 	}//end testReverseTransitionRejected()
 
@@ -435,14 +435,14 @@ class ZaakdossierServiceTest extends TestCase {
 			static function (string $id) {
 				// inf-bad is already definitief so concept->? path; we request definitief.
 				if ($id === 'inf-bad') {
-					return ['id' => $id, 'status' => 'definitief'];
+					return ['id' => $id, 'status' => 'final'];
 				}
-				return ['id' => $id, 'status' => 'concept'];
+				return ['id' => $id, 'status' => 'draft'];
 			}
 		);
 		$os->method('saveObject')->willReturn($this->savedObject('x'));
 
-		$results = $this->service->bulkTransitionStatus(['inf-ok', 'inf-bad'], 'definitief');
+		$results = $this->service->bulkTransitionStatus(['inf-ok', 'inf-bad'], 'final');
 
 		$this->assertTrue($results[0]['success']);
 		$this->assertFalse($results[1]['success']);
@@ -484,7 +484,7 @@ class ZaakdossierServiceTest extends TestCase {
 	public function testUpdateMetadataRejectsDefinitief(): void {
 		$os = $this->createMock(DossierObjectServiceStub::class);
 		$this->settings->method('getObjectService')->willReturn($os);
-		$os->method('find')->willReturn(['id' => 'inf-1', 'status' => 'definitief']);
+		$os->method('find')->willReturn(['id' => 'inf-1', 'status' => 'final']);
 
 		$this->expectException(\DomainException::class);
 		$this->service->updateMetadata('inf-1', ['title' => 'New']);

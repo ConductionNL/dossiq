@@ -77,10 +77,10 @@ class BeroepService {
 	 */
 	private const VALID_OUTCOMES = [
 		'vernietigd',
-		'in_stand_gelaten',
-		'niet_ontvankelijk',
-		'ongegrond',
-		'gegrond_rechtsgevolgen_in_stand',
+		'upheld',
+		'inadmissible',
+		'dismissed',
+		'upheld_legal_effects_maintained',
 		'withdrawn',
 		'schikking',
 	];
@@ -89,7 +89,7 @@ class BeroepService {
 	 * Allowed cascade actions per REQ-BE-6.
 	 */
 	private const VALID_CASCADES = [
-		'reopen_bezwaar',
+		'reopen_objection',
 		'new_primary_decision',
 		'none',
 	];
@@ -415,7 +415,7 @@ class BeroepService {
 
 		$patch = ['cascadeAction' => $action];
 
-		if ($action === 'reopen_bezwaar') {
+		if ($action === 'reopen_objection') {
 			// Defer to the status-transition-engine to re-open the source
 			// bezwaar. The engine owns the transition + guards; this
 			// service only triggers it and links the resulting case back

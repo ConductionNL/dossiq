@@ -185,10 +185,10 @@ export default {
 			transitionToelichting: '',
 			transitionBesluitdatum: '',
 			transitionOptions: [
-				{ label: t('procest', 'Submitted'), value: 'ingediend' },
-				{ label: t('procest', 'In behandeling'), value: 'in_behandeling' },
-				{ label: t('procest', 'Granted'), value: 'verleend' },
-				{ label: t('procest', 'Refused'), value: 'geweigerd' },
+				{ label: t('procest', 'Submitted'), value: 'submitted' },
+				{ label: t('procest', 'In handling'), value: 'in_handling' },
+				{ label: t('procest', 'Granted'), value: 'granted' },
+				{ label: t('procest', 'Refused'), value: 'refused' },
 				{ label: t('procest', 'Withdrawn'), value: 'withdrawn' },
 			],
 		}
@@ -215,7 +215,7 @@ export default {
 
 		requiresBesluitdatum() {
 			const val = this.transitionStatus?.value
-			return val === 'verleend' || val === 'geweigerd'
+			return val === 'granted' || val === 'refused'
 		},
 	},
 

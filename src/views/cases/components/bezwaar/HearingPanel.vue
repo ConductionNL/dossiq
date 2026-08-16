@@ -69,14 +69,14 @@
 			<!-- Hearing actions based on status -->
 			<div v-if="!isReadOnly" class="hearing-panel__actions">
 				<NcButton
-					v-if="activeHearing.status === 'gepland'"
+					v-if="activeHearing.status === 'planned'"
 					type="primary"
 					@click="sendInvitations">
 					{{ t('procest', 'Send Invitations') }}
 				</NcButton>
 				<NcButton
 					v-if="
-						activeHearing.status === 'gepland'
+						activeHearing.status === 'planned'
 						|| activeHearing.status === 'uitgenodigd'
 					"
 					type="primary"
@@ -84,7 +84,7 @@
 					{{ t('procest', 'Record Minutes') }}
 				</NcButton>
 				<NcButton
-					v-if="activeHearing.status !== 'uitgevoerd'"
+					v-if="activeHearing.status !== 'executed'"
 					type="error"
 					@click="cancelHearing">
 					{{ t('procest', 'Cancel Hearing') }}
@@ -306,10 +306,10 @@ export default {
 		 */
 		getHearingStatusLabel(status) {
 			const labels = {
-				gepland: t('procest', 'Scheduled'),
+				planned: t('procest', 'Scheduled'),
 				uitgenodigd: t('procest', 'Invitations sent'),
-				uitgevoerd: t('procest', 'Completed'),
-				geannuleerd: t('procest', 'Cancelled'),
+				executed: t('procest', 'Completed'),
+				cancelled: t('procest', 'Cancelled'),
 				afgezien: t('procest', 'Waived'),
 			}
 			return labels[status] || status
@@ -344,7 +344,7 @@ export default {
 				videoCallUrl: this.scheduleForm.videoCallUrl,
 				chairperson: '',
 				invitees: '[]',
-				status: 'gepland',
+				status: 'planned',
 				hearingWaived: false,
 			})
 
@@ -368,7 +368,7 @@ export default {
 			const bezwaarStore = useBezwaarStore()
 			await bezwaarStore.updateHearingSession({
 				...this.activeHearing,
-				status: 'uitgevoerd',
+				status: 'executed',
 				minutesSummary: this.minutesForm.summary,
 			})
 
@@ -399,7 +399,7 @@ export default {
 			const bezwaarStore = useBezwaarStore()
 			await bezwaarStore.updateHearingSession({
 				...this.activeHearing,
-				status: 'geannuleerd',
+				status: 'cancelled',
 			})
 		},
 	},

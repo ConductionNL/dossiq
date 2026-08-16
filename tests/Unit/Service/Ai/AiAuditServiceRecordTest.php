@@ -89,7 +89,7 @@ class AiAuditServiceRecordTest extends TestCase {
 			caseId: 'case-1',
 			type: 'classification',
 			userAction: 'modified',
-			suggestion: ['documentType' => 'aanvraag'],
+			suggestion: ['documentType' => 'request'],
 			actualValue: ['documentType' => 'bezwaar'],
 			reason: 'misread the header',
 			userId: 'alice',
@@ -101,7 +101,7 @@ class AiAuditServiceRecordTest extends TestCase {
 		$this->assertSame('modified', $captured['userAction']);
 		$this->assertSame('case-1', $captured['caseId']);
 		$this->assertSame('openai/gpt-4o', $captured['model']);
-		$this->assertSame(['documentType' => 'aanvraag'], $captured['suggestion']);
+		$this->assertSame(['documentType' => 'request'], $captured['suggestion']);
 		$this->assertSame(['documentType' => 'bezwaar'], $captured['actualValue']);
 		$this->assertSame('misread the header', $captured['reason']);
 		$this->assertSame('alice', $captured['userId']);

@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\AppInfo;
 
+use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCA\Procest\AppInfo\Registrar\BootRegistrar;
 use OCA\Procest\AppInfo\Registrar\ListenerRegistrar;
 use OCA\Procest\AppInfo\Registrar\ServiceRegistrar;
@@ -66,6 +67,30 @@ class Application extends App implements IBootstrap {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
+
+		// ADR-084: services type-hint OpenRegister's PUBLISHED interface, never its
+		// concrete class, so this app's unit tests can mock a type they are able to
+		// load. Nextcloud autowires concrete classes across apps but not interfaces,
+		// so the binding has to be stated — and the composition root is where this
+		// app says how it is wired.
+		//
+		// An ALIAS, not a factory: it resolves when something actually asks for the
+		// interface, so an instance without OpenRegister fails at the route that
+		// needed the data rather than at registration. Both names are strings and
+		// neither triggers an autoload, which is what keeps ADR-083 rule 3's promise
+		// that the start screen still boots.
+		$context->registerServiceAlias(
+			ObjectServiceInterface::class,
+			'OCA\OpenRegister\Service\ObjectService'
+		);
+
+		// Storage seam for the Dutch-to-English value migration. The repair step
+		// depends on the interface so its own logic can be exercised against a
+		// fake; only this binding knows the database.
+		$context->registerServiceAlias(
+			\OCA\Procest\Repair\ValueMigrationPort::class,
+			\OCA\Procest\Repair\DbValueMigrationPort::class
+		);
 		(new ServiceRegistrar())->register(context: $context);
 		(new ListenerRegistrar())->register(context: $context);
 	}//end register()

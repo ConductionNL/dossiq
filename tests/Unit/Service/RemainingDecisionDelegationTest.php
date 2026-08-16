@@ -107,7 +107,7 @@ class RemainingDecisionDelegationTest extends TestCase {
 			'bezwaar-1',
 			[
 				'subjectId' => 'dec-1',
-				'dispositionType' => 'ongegrond',
+				'dispositionType' => 'dismissed',
 				'reasoning' => 'r',
 				'legalBasis' => 'Awb 7:11',
 			]

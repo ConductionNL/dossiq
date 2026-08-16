@@ -38,7 +38,7 @@ describe('verwerkingenApi (thin consumer of OR)', () => {
 
 	it('lists the catalogue from OpenRegister, never a procest route', async () => {
 		axiosGet.mockResolvedValue({
-			data: { results: [{ code: 'zaakafhandeling', status: 'concept' }] },
+			data: { results: [{ code: 'zaakafhandeling', status: 'draft' }] },
 		})
 		const activities = await listVerwerkingsactiviteiten()
 		expect(axiosGet).toHaveBeenCalledWith(

@@ -8,7 +8,7 @@
     {"id": "step-inspectie", "label": "Inspectie", "status": "Inspectie", "isInitial": false, "isFinal": false, "assigneeRole": "Inspecteur", "description": "Inspectie wordt uitgevoerd", "checklist": ["Inspectiechecklist ingevuld", "Inspectierapport opgesteld"], "actions": []},
     {"id": "step-rapport", "label": "Rapport", "status": "Rapport", "isInitial": false, "isFinal": false, "assigneeRole": "Inspecteur", "description": "Rapportage", "checklist": [], "actions": []},
     {"id": "step-opvolging", "label": "Opvolging", "status": "Opvolging", "isInitial": false, "isFinal": false, "assigneeRole": "Inspecteur", "description": "Opvolging afwijkingen", "checklist": ["Hercontrole uitgevoerd"], "actions": []},
-    {"id": "step-afgehandeld", "label": "Afgehandeld", "status": "Afgehandeld", "isInitial": false, "isFinal": true, "assigneeRole": null, "description": "Afgehandeld", "checklist": [], "actions": []}
+    {"id": "step-afgehandeld", "label": "Afgehandeld", "status": "Handled", "isInitial": false, "isFinal": true, "assigneeRole": null, "description": "Afgehandeld", "checklist": [], "actions": []}
   ],
   "transitions": [
     {"id": "tr-1", "label": "Start inspectie", "fromStatus": "Gepland", "toStatus": "Inspectie", "allowedRoles": ["Inspecteur"], "guards": [], "actions": []},

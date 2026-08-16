@@ -68,12 +68,12 @@ class StateMachineServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testForwardTransitionsAllowed(): void {
-		$this->assertTrue($this->service->validateTransition('ontwerp', 'akkoord-mandaat'));
-		$this->assertTrue($this->service->validateTransition('akkoord-mandaat', 'ondertekend'));
-		$this->assertTrue($this->service->validateTransition('ondertekend', 'verzonden'));
-		$this->assertTrue($this->service->validateTransition('verzonden', 'ontvangen-bevestiging'));
-		$this->assertTrue($this->service->validateTransition('verzonden', 'gearchiveerd'));
-		$this->assertTrue($this->service->validateTransition('ontvangen-bevestiging', 'gearchiveerd'));
+		$this->assertTrue($this->service->validateTransition('draft', 'approved-mandate'));
+		$this->assertTrue($this->service->validateTransition('approved-mandate', 'signed'));
+		$this->assertTrue($this->service->validateTransition('signed', 'sent'));
+		$this->assertTrue($this->service->validateTransition('sent', 'received-confirmation'));
+		$this->assertTrue($this->service->validateTransition('sent', 'archived'));
+		$this->assertTrue($this->service->validateTransition('received-confirmation', 'archived'));
 	}//end testForwardTransitionsAllowed()
 
 	/**
@@ -82,7 +82,7 @@ class StateMachineServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testBackEdgeAllowed(): void {
-		$this->assertTrue($this->service->validateTransition('akkoord-mandaat', 'ontwerp'));
+		$this->assertTrue($this->service->validateTransition('approved-mandate', 'draft'));
 	}//end testBackEdgeAllowed()
 
 	/**
@@ -91,11 +91,11 @@ class StateMachineServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testInvalidTransitionsRejected(): void {
-		$this->assertFalse($this->service->validateTransition('ontwerp', 'ondertekend'));
-		$this->assertFalse($this->service->validateTransition('verzonden', 'ontwerp'));
-		$this->assertFalse($this->service->validateTransition('gearchiveerd', 'verzonden'));
-		$this->assertFalse($this->service->validateTransition('ondertekend', 'ontwerp'));
-		$this->assertFalse($this->service->validateTransition('onbekend', 'ontwerp'));
+		$this->assertFalse($this->service->validateTransition('draft', 'signed'));
+		$this->assertFalse($this->service->validateTransition('sent', 'draft'));
+		$this->assertFalse($this->service->validateTransition('archived', 'sent'));
+		$this->assertFalse($this->service->validateTransition('signed', 'draft'));
+		$this->assertFalse($this->service->validateTransition('unknown', 'draft'));
 	}//end testInvalidTransitionsRejected()
 
 	/**
@@ -104,11 +104,11 @@ class StateMachineServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testImmutabilityBoundary(): void {
-		$this->assertFalse($this->service->isImmutable('ontwerp'));
-		$this->assertFalse($this->service->isImmutable('akkoord-mandaat'));
-		$this->assertTrue($this->service->isImmutable('ondertekend'));
-		$this->assertTrue($this->service->isImmutable('verzonden'));
-		$this->assertTrue($this->service->isImmutable('gearchiveerd'));
+		$this->assertFalse($this->service->isImmutable('draft'));
+		$this->assertFalse($this->service->isImmutable('approved-mandate'));
+		$this->assertTrue($this->service->isImmutable('signed'));
+		$this->assertTrue($this->service->isImmutable('sent'));
+		$this->assertTrue($this->service->isImmutable('archived'));
 	}//end testImmutabilityBoundary()
 
 	/**
@@ -119,7 +119,7 @@ class StateMachineServiceTest extends TestCase {
 	public function testLogTransitionWithoutStorage(): void {
 		$this->settingsService->method('getObjectService')->willReturn(null);
 
-		$result = $this->service->logTransition('besch-1', 'ontwerp', 'akkoord-mandaat');
+		$result = $this->service->logTransition('besch-1', 'draft', 'approved-mandate');
 
 		$this->assertSame([], $result);
 	}//end testLogTransitionWithoutStorage()

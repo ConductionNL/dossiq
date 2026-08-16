@@ -203,7 +203,7 @@ class DsoDeadlineJobTest extends TestCase {
 		$cases = [
 			[
 				'id' => 'zaak-overdue-1',
-				'status' => 'ingediend',
+				'status' => 'submitted',
 				'caseType' => 'omgevingsvergunning',
 				'deadlineDate' => $pastDeadline,
 				'assigneeUserId' => '',

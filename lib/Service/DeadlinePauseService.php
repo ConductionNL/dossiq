@@ -80,7 +80,7 @@ class DeadlinePauseService {
 			throw new RuntimeException('TermijnInstance not found: ' . $termInstanceId);
 		}
 
-		if (($instance['status'] ?? '') === 'gepauzeerd') {
+		if (($instance['status'] ?? '') === 'paused') {
 			throw new RuntimeException('TermijnInstance already paused: ' . $termInstanceId);
 		}
 
@@ -93,7 +93,7 @@ class DeadlinePauseService {
 			$termInstanceId,
 			[
 				'endDateCurrent' => $newEnd,
-				'status' => 'gepauzeerd',
+				'status' => 'paused',
 				'pauseDeadline' => $pauseEnd,
 				'pauzeStartDatum' => $now->format('Y-m-d'),
 				'pauzeDuurDagen' => $durationDays,
@@ -102,7 +102,7 @@ class DeadlinePauseService {
 
 		$this->termService->recordEvent(
 			termInstanceId: $termInstanceId,
-			type: 'pauze',
+			type: 'pause',
 			basis: 'AWB 4:5',
 			rationale: $rationale,
 			daysImpact: $durationDays,
@@ -137,7 +137,7 @@ class DeadlinePauseService {
 			throw new RuntimeException('TermijnInstance not found: ' . $termInstanceId);
 		}
 
-		if (($instance['status'] ?? '') !== 'gepauzeerd') {
+		if (($instance['status'] ?? '') !== 'paused') {
 			throw new RuntimeException('TermijnInstance not in gepauzeerd state: ' . $termInstanceId);
 		}
 

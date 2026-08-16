@@ -45,10 +45,10 @@ class ConsultationService {
 	 */
 	private const VALID_STATUSES = [
 		'open',
-		'ontvangen',
-		'in_behandeling',
-		'advies_uitgebracht',
-		'afgesloten',
+		'received',
+		'in_handling',
+		'advice_uitgebracht',
+		'closed',
 		'withdrawn',
 	];
 
@@ -56,21 +56,21 @@ class ConsultationService {
 	 * Valid advice response types.
 	 */
 	private const VALID_RESPONSES = [
-		'positief',
-		'positief_met_voorwaarden',
-		'negatief',
-		'niet_van_toepassing',
+		'positive',
+		'positief_with_terms',
+		'negative',
+		'non_from_application',
 	];
 
 	/**
 	 * Allowed status transitions (from => [allowed-to, ...]).
 	 */
 	private const STATUS_TRANSITIONS = [
-		'open' => ['ontvangen', 'withdrawn'],
-		'ontvangen' => ['in_behandeling', 'withdrawn'],
-		'in_behandeling' => ['advies_uitgebracht', 'withdrawn'],
-		'advies_uitgebracht' => ['afgesloten'],
-		'afgesloten' => [],
+		'open' => ['received', 'withdrawn'],
+		'received' => ['in_handling', 'withdrawn'],
+		'in_handling' => ['advice_uitgebracht', 'withdrawn'],
+		'advice_uitgebracht' => ['closed'],
+		'closed' => [],
 		'withdrawn' => [],
 	];
 
@@ -231,7 +231,7 @@ class ConsultationService {
 		$schema = $this->settingsService->getConfigValue('consultation_schema');
 
 		$updateData = ['status' => $newStatus];
-		if ($newStatus === 'afgesloten') {
+		if ($newStatus === 'closed') {
 			$updateData['closedAt'] = date('Y-m-d\TH:i:s');
 		}
 
@@ -261,7 +261,7 @@ class ConsultationService {
 	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function submitResponse(string $consultationId, array $response): array {
-		$advies = $response['advies'] ?? '';
+		$advies = $response['advice'] ?? '';
 		if (in_array($advies, self::VALID_RESPONSES, true) === false) {
 			throw new RuntimeException('Invalid advice type: ' . $advies);
 		}
@@ -275,10 +275,10 @@ class ConsultationService {
 		$schema = $this->settingsService->getConfigValue('consultation_schema');
 
 		$updateData = [
-			'advies' => $advies,
+			'advice' => $advies,
 			'notes' => $response['notes'] ?? '',
 			'adviesDatum' => date('Y-m-d'),
-			'status' => 'advies_uitgebracht',
+			'status' => 'advice_uitgebracht',
 		];
 
 		if (isset($response['terms']) === true) {
@@ -294,8 +294,8 @@ class ConsultationService {
 
 		return [
 			'id' => $consultationId,
-			'advies' => $advies,
-			'status' => 'advies_uitgebracht',
+			'advice' => $advies,
+			'status' => 'advice_uitgebracht',
 		];
 	}//end submitResponse()
 
@@ -349,7 +349,7 @@ class ConsultationService {
 				continue;
 			}
 
-			if ($status === 'advies_uitgebracht' || $status === 'afgesloten') {
+			if ($status === 'advice_uitgebracht' || $status === 'closed') {
 				continue;
 			}
 

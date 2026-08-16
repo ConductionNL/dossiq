@@ -125,7 +125,7 @@ class BeschikkingGenerationServiceTest extends TestCase {
 
 		$result = $this->service->generateBeschikking(
 			caseId: 'zaak-123',
-			outcome: 'verleend',
+			outcome: 'granted',
 			motivation: 'Voldoet aan alle eisen.'
 		);
 
@@ -137,8 +137,8 @@ class BeschikkingGenerationServiceTest extends TestCase {
 	/**
 	 * Test that generateBeschikking selects the correct template key based on outcome.
 	 *
-	 * outcome 'verleend' must use dso_beschikking_template_verleend;
-	 * outcome 'geweigerd' must use dso_beschikking_template_geweigerd.
+	 * outcome 'granted' must use dso_beschikking_template_verleend;
+	 * outcome 'refused' must use dso_beschikking_template_geweigerd.
 	 *
 	 * @return void
 	 *
@@ -162,10 +162,10 @@ class BeschikkingGenerationServiceTest extends TestCase {
 
 		$this->logger->method('warning');
 
-		// For 'geweigerd' outcome.
+		// For 'refused' outcome.
 		$this->service->generateBeschikking(
 			caseId: 'zaak-456',
-			outcome: 'geweigerd',
+			outcome: 'refused',
 			motivation: 'Voldoet niet.'
 		);
 
@@ -174,10 +174,10 @@ class BeschikkingGenerationServiceTest extends TestCase {
 
 		$capturedKeys = [];
 
-		// For 'verleend' outcome.
+		// For 'granted' outcome.
 		$this->service->generateBeschikking(
 			caseId: 'zaak-789',
-			outcome: 'verleend',
+			outcome: 'granted',
 			motivation: 'Alles in orde.'
 		);
 

@@ -230,7 +230,7 @@ class OriDataQualityCheck extends TimedJob {
 			$raadsleden = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: 'ori',
-				schema: 'raadslid',
+				schema: 'councilMember',
 				filters: ['_limit' => 500]
 			);
 		} catch (\Throwable $e) {
@@ -255,7 +255,7 @@ class OriDataQualityCheck extends TimedJob {
 
 				if ($fractie === null) {
 					$issues[] = [
-						'schema' => 'raadslid',
+						'schema' => 'councilMember',
 						'slug' => $rlSlug,
 						'field' => 'fractie',
 						'severity' => 'warning',

@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\ChecklistService;
+use OCA\Procest\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -64,6 +65,10 @@ class ChecklistServiceTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
+		// OCA\Procest\Service\ChecklistService takes NO constructor arguments.
+		// The three that were here belong to OCA\Procest\Service\Inspection\
+		// ChecklistService — a different class with the same file name, which an
+		// earlier fixer keyed constructors by.
 		$this->service = new ChecklistService();
 	}//end setUp()
 
@@ -84,14 +89,14 @@ class ChecklistServiceTest extends TestCase {
 							[
 								'id' => 'fundering',
 								'label' => 'Fundering conform tekening',
-								'responseType' => 'ja_nee_nvt',
+								'responseType' => 'yes_no_na',
 								'required' => true,
 								'photoRequired' => ChecklistService::PHOTO_ON_FAIL,
 							],
 							[
 								'id' => 'wapening',
 								'label' => 'Wapening',
-								'responseType' => 'ja_nee_nvt',
+								'responseType' => 'yes_no_na',
 								'required' => true,
 								'photoRequired' => ChecklistService::PHOTO_NEVER,
 							],
@@ -348,8 +353,8 @@ class ChecklistServiceTest extends TestCase {
 	public function testTheFlatItemsShapeIsSupported(): void {
 		$flat = [
 			'items' => [
-				['id' => 'a', 'label' => 'A', 'responseType' => 'tekst', 'required' => true],
-				['id' => 'b', 'label' => 'B', 'responseType' => 'tekst', 'required' => false],
+				['id' => 'a', 'label' => 'A', 'responseType' => 'text', 'required' => true],
+				['id' => 'b', 'label' => 'B', 'responseType' => 'text', 'required' => false],
 			],
 			'responses' => [['itemId' => 'a', 'value' => 'done']],
 		];
@@ -369,7 +374,7 @@ class ChecklistServiceTest extends TestCase {
 	 */
 	public function testItemsWithoutAnIdAreKeyedByOrder(): void {
 		$payload = [
-			'items' => [['order' => 7, 'label' => 'Seventh', 'responseType' => 'tekst', 'required' => true]],
+			'items' => [['order' => 7, 'label' => 'Seventh', 'responseType' => 'text', 'required' => true]],
 			'responses' => [['itemId' => '7', 'value' => 'ok']],
 		];
 

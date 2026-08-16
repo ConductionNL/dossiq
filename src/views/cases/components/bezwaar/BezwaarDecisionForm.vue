@@ -126,8 +126,8 @@
 			<!-- Remedial action (for gegrond / deels_gegrond) -->
 			<div
 				v-if="
-					form.dispositionType === 'gegrond'
-					|| form.dispositionType === 'deels_gegrond'
+					form.dispositionType === 'upheld'
+					|| form.dispositionType === 'partly_upheld'
 				"
 				class="form-group">
 				<label for="bezwaar-decision-remedial-action">{{
@@ -251,7 +251,7 @@ export default {
 	data() {
 		return {
 			form: {
-				dispositionType: 'ongegrond',
+				dispositionType: 'dismissed',
 				dispositionDetails: '',
 				followsAdvice: true,
 				deviationReason: '',
@@ -264,14 +264,14 @@ export default {
 			errors: {},
 			saving: false,
 			dispositionOptions: [
-				{ id: 'gegrond', label: t('procest', 'Upheld (gegrond)') },
-				{ id: 'ongegrond', label: t('procest', 'Rejected (ongegrond)') },
+				{ id: 'upheld', label: t('procest', 'Upheld (gegrond)') },
+				{ id: 'dismissed', label: t('procest', 'Rejected (ongegrond)') },
 				{
-					id: 'deels_gegrond',
+					id: 'partly_upheld',
 					label: t('procest', 'Partially upheld (deels gegrond)'),
 				},
 				{
-					id: 'niet_ontvankelijk',
+					id: 'inadmissible',
 					label: t('procest', 'Inadmissible (niet-ontvankelijk)'),
 				},
 			],
@@ -310,10 +310,10 @@ export default {
 		 */
 		getDispositionLabel(type) {
 			const labels = {
-				gegrond: t('procest', 'Upheld'),
-				ongegrond: t('procest', 'Rejected'),
-				deels_gegrond: t('procest', 'Partially upheld'),
-				niet_ontvankelijk: t('procest', 'Inadmissible'),
+				upheld: t('procest', 'Upheld'),
+				dismissed: t('procest', 'Rejected'),
+				partly_upheld: t('procest', 'Partially upheld'),
+				inadmissible: t('procest', 'Inadmissible'),
 			}
 			return labels[type] || type
 		},

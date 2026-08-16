@@ -76,7 +76,7 @@
 
 				<!-- Actions -->
 				<div
-					v-if="!isReadOnly && cons.status !== 'afgesloten'"
+					v-if="!isReadOnly && cons.status !== 'closed'"
 					class="consultation-panel__actions">
 					<NcButton
 						v-if="cons.status === 'open'"
@@ -84,24 +84,24 @@
 						@click="
 							$emit('update-status', {
 								id: cons.id,
-								status: 'in_behandeling',
+								status: 'in_handling',
 							})
 						">
 						{{ t('procest', 'Acknowledge') }}
 					</NcButton>
 					<NcButton
-						v-if="cons.status === 'in_behandeling' && !cons.advies"
+						v-if="cons.status === 'in_handling' && !cons.advies"
 						type="secondary"
 						@click="openResponseDialog(cons)">
 						{{ t('procest', 'Submit response') }}
 					</NcButton>
 					<NcButton
-						v-if="cons.status === 'advies_uitgebracht'"
+						v-if="cons.status === 'advice_uitgebracht'"
 						type="secondary"
 						@click="
 							$emit('update-status', {
 								id: cons.id,
-								status: 'afgesloten',
+								status: 'closed',
 							})
 						">
 						{{ t('procest', 'Close') }}
@@ -185,7 +185,7 @@ export default {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		openCount() {
 			return this.consultations.filter(
-				(c) => c.status === 'open' || c.status === 'in_behandeling',
+				(c) => c.status === 'open' || c.status === 'in_handling',
 			).length
 		},
 	},
@@ -198,9 +198,9 @@ export default {
 		getStatusLabel(status) {
 			const labels = {
 				open: this.t('procest', 'Open'),
-				in_behandeling: this.t('procest', 'In progress'),
-				advies_uitgebracht: this.t('procest', 'Advice received'),
-				afgesloten: this.t('procest', 'Closed'),
+				in_handling: this.t('procest', 'In progress'),
+				advice_uitgebracht: this.t('procest', 'Advice received'),
+				closed: this.t('procest', 'Closed'),
 			}
 			return labels[status] || status
 		},
@@ -211,14 +211,11 @@ export default {
 		 */
 		getAdviceLabel(advies) {
 			const labels = {
-				positief: this.t('procest', 'Positive'),
-				positief_met_voorwaarden: this.t(
-					'procest',
-					'Positive with conditions',
-				),
+				positive: this.t('procest', 'Positive'),
+				positief_with_terms: this.t('procest', 'Positive with conditions'),
 
-				negatief: this.t('procest', 'Negative'),
-				niet_van_toepassing: this.t('procest', 'Not applicable'),
+				negative: this.t('procest', 'Negative'),
+				non_from_application: this.t('procest', 'Not applicable'),
 			}
 			return labels[advies] || advies
 		},
@@ -240,7 +237,7 @@ export default {
 		 */
 		isOverdue(cons) {
 			if (!cons.latestResponseDate) return false
-			if (cons.status === 'afgesloten' || cons.status === 'advies_uitgebracht')
+			if (cons.status === 'closed' || cons.status === 'advice_uitgebracht')
 				return false
 			return new Date(cons.latestResponseDate) < new Date()
 		},

@@ -128,7 +128,7 @@ export default {
 			},
 
 			errors: {},
-			typeOptions: ['dt_advies', 'collegeadvies', 'raadsvoorstel'],
+			typeOptions: ['dt_advice', 'collegeadvies', 'raadsvoorstel'],
 		}
 	},
 
@@ -210,7 +210,7 @@ export default {
 					author: getCurrentUser()?.uid || '',
 					department: this.form.department,
 					portfolioHolder: this.form.portfolioHolder,
-					status: 'concept',
+					status: 'draft',
 					currentStep: 0,
 					attachments: [],
 				}

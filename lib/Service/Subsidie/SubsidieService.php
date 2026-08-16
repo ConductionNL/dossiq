@@ -55,12 +55,12 @@ class SubsidieService {
 	 * @var array<int, string>
 	 */
 	public const STATUSES = [
-		'ontvangen',
-		'in_beoordeling',
-		'beoordeeld',
-		'beschikking_opgesteld',
-		'verleend',
-		'afgewezen',
+		'received',
+		'in_assessment',
+		'assessed',
+		'decision_prepared',
+		'granted',
+		'rejected',
 		'withdrawn',
 	];
 
@@ -70,12 +70,12 @@ class SubsidieService {
 	 * @var array<string, array<int, string>>
 	 */
 	public const TRANSITIONS = [
-		'ontvangen' => ['in_beoordeling', 'withdrawn'],
-		'in_beoordeling' => ['beoordeeld', 'afgewezen', 'withdrawn'],
-		'beoordeeld' => ['beschikking_opgesteld', 'afgewezen', 'withdrawn'],
-		'beschikking_opgesteld' => ['verleend', 'afgewezen', 'withdrawn'],
-		'verleend' => ['withdrawn'],
-		'afgewezen' => [],
+		'received' => ['in_assessment', 'withdrawn'],
+		'in_assessment' => ['assessed', 'rejected', 'withdrawn'],
+		'assessed' => ['decision_prepared', 'rejected', 'withdrawn'],
+		'decision_prepared' => ['granted', 'rejected', 'withdrawn'],
+		'granted' => ['withdrawn'],
+		'rejected' => [],
 		'withdrawn' => [],
 	];
 
@@ -207,7 +207,7 @@ class SubsidieService {
 	}//end unmetVerplichtingen()
 
 	/**
-	 * Create a subsidieaanvraag in status "ontvangen", binding the AWB
+	 * Create a subsidieaanvraag in status "received", binding the AWB
 	 * decision term (REQ-SUB-002).
 	 *
 	 * @param array<string, mixed> $payload The aanvraag properties.
@@ -228,7 +228,7 @@ class SubsidieService {
 		$record = array_merge(
 			$payload,
 			[
-				'status' => 'ontvangen',
+				'status' => 'received',
 				'beslistermijn' => $this->computeBeslistermijn(registration: $now, weken: $termWeken)->format('Y-m-d'),
 			]
 		);
@@ -267,7 +267,7 @@ class SubsidieService {
 			throw new OCSBadRequestException('Subsidieaanvraag niet gevonden');
 		}
 
-		$from = (string)($current['status'] ?? 'ontvangen');
+		$from = (string)($current['status'] ?? 'received');
 		if ($this->isTransitionAllowed(from: $from, to: $toStatus) === false) {
 			throw new OCSBadRequestException('Statusovergang ' . $from . ' -> ' . $toStatus . ' is niet toegestaan');
 		}

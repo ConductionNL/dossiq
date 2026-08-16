@@ -39,7 +39,7 @@
           "dsoStatus": {
             "type": "string",
             "title": "DSO Status",
-            "enum": ["ingediend", "in_behandeling", "verleend", "geweigerd", "withdrawn"],
+            "enum": ["submitted", "in_handling", "granted", "refused", "withdrawn"],
             "description": "DSO-LV status value mirrored from the vergunningaanvraag",
             "visible": false
           },
@@ -95,7 +95,7 @@
           "status": {
             "type": "string",
             "title": "Status",
-            "enum": ["aangevraagd", "geaccepteerd", "geweigerd", "afgerond"],
+            "enum": ["requested", "accepted", "refused", "completed"],
             "description": "Current status of the samenwerkverzoek",
             "facetable": true
           },
@@ -137,7 +137,7 @@
         "requestedCompetentAuthority": "Waterschap Amstel, Gooi en Vecht",
         "permitApplicationRef": "nl.dso.aanvraag.2026-AMS-001",
         "rationale": "Aanvraag betreft activiteiten nabij waterkering, afstemming waterschap vereist.",
-        "status": "geaccepteerd",
+        "status": "accepted",
         "advies": "Waterschap heeft geen bezwaar mits geluidsnormen worden nageleefd.",
         "requestedOn": "2026-03-20T09:00:00+01:00",
         "respondedOn": "2026-03-28T14:30:00+01:00"
@@ -152,7 +152,7 @@
         "requestedCompetentAuthority": "Provincie Zuid-Holland",
         "permitApplicationRef": "nl.dso.aanvraag.2026-RTD-007",
         "rationale": "Grootschalig bouwproject raakt provinciaal belang omgevingsvisie.",
-        "status": "aangevraagd",
+        "status": "requested",
         "requestedOn": "2026-04-10T10:15:00+02:00"
       },
       {
@@ -165,7 +165,7 @@
         "requestedCompetentAuthority": "Rijkswaterstaat",
         "permitApplicationRef": "nl.dso.aanvraag.2026-UTR-014",
         "rationale": "Activiteit vindt plaats binnen rijkszone langs snelweg A12.",
-        "status": "geweigerd",
+        "status": "refused",
         "advies": "Rijkswaterstaat kan niet meewerken wegens veiligheidszone.",
         "requestedOn": "2026-02-15T08:00:00+01:00",
         "respondedOn": "2026-02-22T16:45:00+01:00"

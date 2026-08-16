@@ -272,7 +272,7 @@ class DwangsomCalculationService {
 			return null;
 		}
 
-		$row['status'] = 'gestopt-wegens-beschikking';
+		$row['status'] = 'gestopt-wegens-decision';
 		$row['definitiveAmount'] = (int)($row['cumulativeAmount'] ?? 0);
 
 		try {

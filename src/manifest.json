@@ -2363,7 +2363,7 @@
 					{
 						"label": "Concept",
 						"filter": {
-							"status": "concept"
+							"status": "draft"
 						}
 					},
 					{

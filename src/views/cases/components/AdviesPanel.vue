@@ -61,19 +61,19 @@
 				</p>
 				<div class="advies-panel__actions">
 					<NcButton
-						v-if="item.status === 'aangevraagd'"
+						v-if="item.status === 'requested'"
 						type="secondary"
 						@click="onRemind(item)">
 						{{ t(appName, 'Herinnering sturen') }}
 					</NcButton>
 					<NcButton
-						v-if="item.status === 'aangevraagd' && item.adviceDocument"
+						v-if="item.status === 'requested' && item.adviceDocument"
 						type="secondary"
 						@click="onMarkReceived(item)">
 						{{ t(appName, 'Markeer als ontvangen') }}
 					</NcButton>
 					<NcButton
-						v-if="item.status === 'ontvangen' && item.adviceDocument"
+						v-if="item.status === 'received' && item.adviceDocument"
 						type="tertiary"
 						@click="onViewDocument(item)">
 						{{ t(appName, 'Bekijk advies') }}
@@ -187,7 +187,7 @@ export default {
 		async onMarkReceived(item) {
 			try {
 				await transitionStatus(item.id || item.uuid, {
-					to: 'ontvangen',
+					to: 'received',
 					adviceDocument: item.adviceDocument || '',
 				})
 				await this.fetchAdvies()
@@ -230,9 +230,9 @@ export default {
 		 */
 		statusLabel(status) {
 			const labels = {
-				aangevraagd: this.t(this.appName, 'Aangevraagd'),
-				ontvangen: this.t(this.appName, 'Ontvangen'),
-				verlopen: this.t(this.appName, 'Verlopen'),
+				requested: this.t(this.appName, 'Aangevraagd'),
+				received: this.t(this.appName, 'Received'),
+				expired: this.t(this.appName, 'Verlopen'),
 			}
 			return labels[status] || status
 		},
@@ -243,9 +243,9 @@ export default {
 		 */
 		statusBadgeType(status) {
 			const types = {
-				aangevraagd: 'info',
-				ontvangen: 'success',
-				verlopen: 'error',
+				requested: 'info',
+				received: 'success',
+				expired: 'error',
 			}
 			return types[status] || 'neutral'
 		},
@@ -255,7 +255,7 @@ export default {
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		isOverdue(item) {
-			if (item.status !== 'aangevraagd' || !item.deadline) {
+			if (item.status !== 'requested' || !item.deadline) {
 				return false
 			}
 			return new Date(item.deadline) < new Date()

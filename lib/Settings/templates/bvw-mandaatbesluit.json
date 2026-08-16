@@ -93,7 +93,7 @@
         },
         "parafeerroute": {
             "name": "Mandaatbesluit - verkorte route",
-            "proposalType": "dt_advies",
+            "proposalType": "dt_advice",
             "isDefault": true,
             "description": "Verkorte route voor mandaatbesluiten: directeur is eindparafeerder",
             "steps": [

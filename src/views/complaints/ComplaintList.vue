@@ -18,13 +18,13 @@
 				<option value="">
 					{{ t('procest', 'Any status') }}
 				</option>
-				<option value="ingediend">
+				<option value="submitted">
 					{{ t('procest', 'Submitted') }}
 				</option>
-				<option value="in-behandeling">
+				<option value="in-handling">
 					{{ t('procest', 'In progress') }}
 				</option>
-				<option value="afgehandeld">
+				<option value="handled">
 					{{ t('procest', 'Closed') }}
 				</option>
 			</select>

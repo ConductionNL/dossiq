@@ -42,12 +42,12 @@ test.describe('Semantic case intake — handoff provenance UI', () => {
 			identifier: 'HANDOFF-INTAKE-1',
 			description: 'Case that arrived via the ns#Case semantic handoff.',
 			// NOT 'handoff': the case schema's intakeChannel enum is
-			// ["manual","balie","phone","email","post","website","overig",
+			// ["manual","balie","phone","email","post","website","other",
 			// "zgw-api"], so 'handoff' is rejected by OpenRegister with a 400
 			// and the fixture never got created. The provenance UI keys off
 			// `handoffSource` alone (InitiatorSection#hasHandoff), so the
 			// channel value is incidental to what this test proves.
-			intakeChannel: 'overig',
+			intakeChannel: 'other',
 			handoffSource: 'urn:openregister:pipelinq:request:demo-123',
 		})
 		caseId = objectId(kase)

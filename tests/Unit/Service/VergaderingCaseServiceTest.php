@@ -187,7 +187,7 @@ class VergaderingCaseServiceTest extends TestCase {
 		$result = $this->service->createForVergadering(vergadering: $vergadering);
 
 		$this->assertSame(['id' => 'case-123'], $result);
-		$this->assertSame('gepland', $capturedObject['status']);
+		$this->assertSame('planned', $capturedObject['status']);
 		$this->assertSame('2026-06-08', $capturedObject['deadline']);
 
 	}//end testCreateForVergaderingCalculatesDeadlineMinusSevenDays()
@@ -273,8 +273,8 @@ class VergaderingCaseServiceTest extends TestCase {
 		$objectService
 			->method('searchObjectsBySlug')
 			->willReturn([
-				['id' => 'case-1', 'status' => 'gepland', 'deadline' => $today],
-				['id' => 'case-2', 'status' => 'gepland', 'deadline' => $today],
+				['id' => 'case-1', 'status' => 'planned', 'deadline' => $today],
+				['id' => 'case-2', 'status' => 'planned', 'deadline' => $today],
 			]);
 
 		$objectService

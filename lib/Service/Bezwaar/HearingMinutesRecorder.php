@@ -149,7 +149,7 @@ class HearingMinutesRecorder {
 		$update = [
 			'minutesSummary' => $minutesSummary,
 			'minutesDocument' => $minutesDocument,
-			'status' => 'uitgevoerd',
+			'status' => 'executed',
 		];
 
 		if (isset($payload['audioRecording']) === true

@@ -109,7 +109,7 @@ class ContactMomentController extends Controller {
 
 		// Auto-resolve a burger from the caller identifier when none supplied.
 		$burgerId = (string)$this->request->getParam('geidentificeerdeBurgerId', '');
-		$method = (string)$this->request->getParam('identificationMethod', 'niet_geidentificeerd');
+		$method = (string)$this->request->getParam('identificationMethod', 'non_geidentificeerd');
 		if ($burgerId === '' && $data['callerIdentification'] !== '') {
 			$resolved = $this->burgerService->lookupByIdentifier($data['callerIdentification']);
 			if ($resolved !== '') {

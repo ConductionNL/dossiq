@@ -201,7 +201,7 @@ class MandaatRepository {
 				continue;
 			}
 
-			if (($row['status'] ?? '') === 'vastgesteld') {
+			if (($row['status'] ?? '') === 'determined') {
 				return $row;
 			}
 		}

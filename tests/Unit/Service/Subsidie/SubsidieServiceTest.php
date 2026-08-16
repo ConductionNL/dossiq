@@ -55,12 +55,12 @@ class SubsidieServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testTransitionGuards(): void {
-		$this->assertTrue($this->service->isTransitionAllowed('ontvangen', 'in_beoordeling'));
-		$this->assertTrue($this->service->isTransitionAllowed('beschikking_opgesteld', 'verleend'));
-		$this->assertFalse($this->service->isTransitionAllowed('ontvangen', 'verleend'));
-		$this->assertFalse($this->service->isTransitionAllowed('verleend', 'in_beoordeling'));
-		$this->assertFalse($this->service->isTransitionAllowed('afgewezen', 'verleend'));
-		$this->assertFalse($this->service->isTransitionAllowed('onzin', 'verleend'));
+		$this->assertTrue($this->service->isTransitionAllowed('received', 'in_assessment'));
+		$this->assertTrue($this->service->isTransitionAllowed('decision_prepared', 'granted'));
+		$this->assertFalse($this->service->isTransitionAllowed('received', 'granted'));
+		$this->assertFalse($this->service->isTransitionAllowed('granted', 'in_assessment'));
+		$this->assertFalse($this->service->isTransitionAllowed('rejected', 'granted'));
+		$this->assertFalse($this->service->isTransitionAllowed('onzin', 'granted'));
 	}//end testTransitionGuards()
 
 	/**

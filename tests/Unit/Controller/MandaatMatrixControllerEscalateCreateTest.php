@@ -155,7 +155,7 @@ final class MandaatMatrixControllerEscalateCreateTest extends TestCase {
 			[
 				'caseId' => 'Z/2026/1',
 				'decisionType' => 'wmo-toekenning',
-				'escalationReason' => 'plafond_overschreden',
+				'escalationReason' => 'ceiling_exceeded',
 			]
 		);
 
@@ -167,7 +167,7 @@ final class MandaatMatrixControllerEscalateCreateTest extends TestCase {
 
 		$this->escalation->expects($this->once())
 			->method('createEscalatie')
-			->with('Z/2026/1', 'wmo-toekenning', 'alice', 'plafond_overschreden')
+			->with('Z/2026/1', 'wmo-toekenning', 'alice', 'ceiling_exceeded')
 			->willReturn($created);
 
 		$response = $this->controller->escalateCreate();
@@ -190,14 +190,14 @@ final class MandaatMatrixControllerEscalateCreateTest extends TestCase {
 			[
 				'caseId' => 'Z/2026/2',
 				'decisionType' => 'wmo-toekenning',
-				'escalationReason' => 'niet_bevoegd',
+				'escalationReason' => 'non_competent',
 				'initiatorId' => 'mallory',
 			]
 		);
 
 		$this->escalation->expects($this->once())
 			->method('createEscalatie')
-			->with('Z/2026/2', 'wmo-toekenning', 'alice', 'niet_bevoegd')
+			->with('Z/2026/2', 'wmo-toekenning', 'alice', 'non_competent')
 			->willReturn(['status' => 'open']);
 
 		$response = $this->controller->escalateCreate();
@@ -235,7 +235,7 @@ final class MandaatMatrixControllerEscalateCreateTest extends TestCase {
 			[
 				'caseId' => 'Z/2026/4',
 				'decisionType' => 'wmo-toekenning',
-				'escalationReason' => 'niet_bevoegd',
+				'escalationReason' => 'non_competent',
 			]
 		);
 

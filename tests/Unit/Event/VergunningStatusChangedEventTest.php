@@ -42,8 +42,8 @@ class VergunningStatusChangedEventTest extends TestCase {
 	public function testEventExtendsOcpEvent(): void {
 		$event = new VergunningStatusChangedEvent(
 			requestRef: 'ref-001',
-			oldStatus: 'ingediend',
-			newStatus: 'in_behandeling',
+			oldStatus: 'submitted',
+			newStatus: 'in_handling',
 			besluitdatum: null,
 			notes: null,
 			userId: 'user1',
@@ -62,16 +62,16 @@ class VergunningStatusChangedEventTest extends TestCase {
 	public function testGettersReturnConstructorValues(): void {
 		$event = new VergunningStatusChangedEvent(
 			requestRef: 'aanvraag-abc-123',
-			oldStatus: 'ingediend',
-			newStatus: 'verleend',
+			oldStatus: 'submitted',
+			newStatus: 'granted',
 			besluitdatum: '2026-06-01',
 			notes: 'Voldoet aan alle eisen.',
 			userId: 'behandelaar1',
 		);
 
 		$this->assertSame('aanvraag-abc-123', $event->getVergunningaanvraagRef());
-		$this->assertSame('ingediend', $event->getOldStatus());
-		$this->assertSame('verleend', $event->getNewStatus());
+		$this->assertSame('submitted', $event->getOldStatus());
+		$this->assertSame('granted', $event->getNewStatus());
 		$this->assertSame('2026-06-01', $event->getBesluitdatum());
 		$this->assertSame('Voldoet aan alle eisen.', $event->getToelichting());
 		$this->assertSame('behandelaar1', $event->getUserId());
@@ -89,8 +89,8 @@ class VergunningStatusChangedEventTest extends TestCase {
 	public function testNullableFieldsAcceptNull(): void {
 		$event = new VergunningStatusChangedEvent(
 			requestRef: 'ref-002',
-			oldStatus: 'in_behandeling',
-			newStatus: 'geweigerd',
+			oldStatus: 'in_handling',
+			newStatus: 'refused',
 			besluitdatum: null,
 			notes: null,
 			userId: 'user2',

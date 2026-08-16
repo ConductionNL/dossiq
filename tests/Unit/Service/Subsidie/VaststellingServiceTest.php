@@ -142,7 +142,7 @@ class VaststellingServiceTest extends TestCase {
 		$this->objects->store['subsidieVaststelling'][$determinationId] = [
 			'id' => $determinationId,
 			'subsidieuitvoering' => $uitvoeringId,
-			'status' => 'concept',
+			'status' => 'draft',
 		];
 		$this->objects->store['subsidieUitvoering'][$uitvoeringId] = [
 			'id' => $uitvoeringId,
@@ -213,7 +213,7 @@ class VaststellingServiceTest extends TestCase {
 
 		$result = $this->service->finalize(determinationId: 'vst-2', grantedAmount: 100000.0, actualCost: 80000.0, totalAdvances: 50000.0);
 
-		$this->assertSame('vastgesteld', $result['vaststelling']['status']);
+		$this->assertSame('determined', $result['determination']['status']);
 		$this->assertSame([], $this->objects->store['case'] ?? []);
 	}//end testFinalizeWithNoLinkedCaseDoesNotThrow()
 }//end class

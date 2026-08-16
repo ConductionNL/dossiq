@@ -79,7 +79,7 @@ class ComplaintAnalyticsService {
 		$frequency = [];
 
 		foreach ($complaints as $complaint) {
-			$value = (string)($complaint[$dimension] ?? 'onbekend');
+			$value = (string)($complaint[$dimension] ?? 'unknown');
 			if (isset($frequency[$value]) === false) {
 				$frequency[$value] = 0;
 			}
@@ -150,11 +150,11 @@ class ComplaintAnalyticsService {
 		$counts = [];
 
 		foreach ($complaints as $complaint) {
-			if (($complaint['status'] ?? '') !== 'afgehandeld') {
+			if (($complaint['status'] ?? '') !== 'handled') {
 				continue;
 			}
 
-			$category = (string)($complaint['category'] ?? 'onbekend');
+			$category = (string)($complaint['category'] ?? 'unknown');
 			$receipt = $complaint['receiptDate'] ?? null;
 			$afhandelDeadline = $complaint['afhandelDeadline'] ?? null;
 
@@ -259,7 +259,7 @@ class ComplaintAnalyticsService {
 
 			$employeeCounts[$employee] = ($employeeCounts[$employee] ?? 0) + 1;
 			$employeeDetails[$employee][] = [
-				'category' => $complaint['category'] ?? 'onbekend',
+				'category' => $complaint['category'] ?? 'unknown',
 				'receiptDate' => $complaint['receiptDate'] ?? '',
 			];
 		}
@@ -307,7 +307,7 @@ class ComplaintAnalyticsService {
 
 		foreach ($complaints as $complaint) {
 			$status = $complaint['status'] ?? '';
-			if ($status === 'afgehandeld') {
+			if ($status === 'handled') {
 				$resolved++;
 
 				// Check Awb compliance (resolved before afhandelDeadline).

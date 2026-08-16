@@ -163,7 +163,7 @@ final class EmailTemplateControllerSeedDefaultsTest extends TestCase {
 		$this->userSession->method('getUser')->willReturn(null);
 		$this->templateService->expects($this->never())->method('seedDefaultTemplates');
 
-		$response = $this->controller->seedDefaults(caseTypeId: 'melding');
+		$response = $this->controller->seedDefaults(caseTypeId: 'report');
 
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
 		$this->assertSame(['message' => 'unauthenticated'], $response->getData());
@@ -179,10 +179,10 @@ final class EmailTemplateControllerSeedDefaultsTest extends TestCase {
 
 		$this->templateService->expects($this->once())
 			->method('seedDefaultTemplates')
-			->with(caseTypeId: 'melding')
+			->with(caseTypeId: 'report')
 			->willReturn(3);
 
-		$response = $this->controller->seedDefaults(caseTypeId: 'melding');
+		$response = $this->controller->seedDefaults(caseTypeId: 'report');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame(['created' => 3], $response->getData());
@@ -200,7 +200,7 @@ final class EmailTemplateControllerSeedDefaultsTest extends TestCase {
 			->method('seedDefaultTemplates')
 			->willReturn(0);
 
-		$response = $this->controller->seedDefaults(caseTypeId: 'melding');
+		$response = $this->controller->seedDefaults(caseTypeId: 'report');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame(['created' => 0], $response->getData());

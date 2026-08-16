@@ -194,7 +194,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 		$besluitRef = (string)($case['besluitRef'] ?? '');
 		$decisionRef = (string)($case['decisionRef'] ?? '');
 		$status = (string)($case['status'] ?? '');
-		$isClosed = in_array($status, ['closed', 'afgehandeld', 'gearchiveerd', 'afgesloten'], true);
+		$isClosed = in_array($status, ['closed', 'handled', 'archived', 'closed'], true);
 
 		if ($caseUuid === '') {
 			return self::RESULT_NONE;

@@ -1138,7 +1138,7 @@
                             "email",
                             "post",
                             "website",
-                            "overig",
+                            "other",
                             "zgw-api"
                         ],
                         "default": "manual",
@@ -1232,8 +1232,8 @@
                         "type": "string",
                         "enum": [
                             "nog_te_archiveren",
-                            "gearchiveerd",
-                            "gearchiveerd_procestermijn_onbekend",
+                            "archived",
+                            "archived_retention_period_unknown",
                             "overgedragen"
                         ],
                         "description": "Current archive status of the case",
@@ -1244,7 +1244,7 @@
                         "type": "string",
                         "enum": [
                             "nvt",
-                            "nog_niet",
+                            "not_yet",
                             "gedeeltelijk",
                             "geheel"
                         ],
@@ -2042,9 +2042,9 @@
                         "type": "string",
                         "enum": [
                             "in_bewerking",
-                            "ter_vaststelling",
-                            "definitief",
-                            "gearchiveerd"
+                            "for_determination",
+                            "final",
+                            "archived"
                         ],
                         "description": "Document status",
                         "title": "Status"
@@ -2122,33 +2122,33 @@
                         "field": "status",
                         "initial": "in_bewerking",
                         "final": [
-                            "gearchiveerd"
+                            "archived"
                         ],
                         "transitions": {
                             "submit": {
                                 "from": [
                                     "in_bewerking"
                                 ],
-                                "to": "ter_vaststelling",
+                                "to": "for_determination",
                                 "description": "Submit the document for adoption."
                             },
                             "adopt": {
                                 "from": [
-                                    "ter_vaststelling"
+                                    "for_determination"
                                 ],
-                                "to": "definitief",
+                                "to": "final",
                                 "description": "Adopt the document as final."
                             },
                             "archive": {
                                 "from": [
-                                    "definitief"
+                                    "final"
                                 ],
-                                "to": "gearchiveerd",
+                                "to": "archived",
                                 "description": "Archive the final document."
                             },
                             "sendBack": {
                                 "from": [
-                                    "ter_vaststelling"
+                                    "for_determination"
                                 ],
                                 "to": "in_bewerking",
                                 "description": "Send back for revisions."
@@ -2187,7 +2187,7 @@
                     "objectType": {
                         "type": "string",
                         "enum": [
-                            "zaak",
+                            "case",
                             "decision"
                         ],
                         "description": "Type of the related object",
@@ -2695,7 +2695,7 @@
                     "type": {
                         "type": "string",
                         "enum": [
-                            "dt_advies",
+                            "dt_advice",
                             "collegeadvies",
                             "raadsvoorstel"
                         ],
@@ -2728,16 +2728,16 @@
                     "status": {
                         "type": "string",
                         "enum": [
-                            "concept",
+                            "draft",
                             "in_parafering",
                             "ter_accordering",
                             "geaccordeerd",
                             "aangeboden",
                             "besloten",
-                            "gearchiveerd",
+                            "archived",
                             "teruggestuurd"
                         ],
-                        "default": "concept",
+                        "default": "draft",
                         "description": "Current status of the voorstel in the parafering lifecycle",
                         "title": "Status",
                         "facetable": true
@@ -2808,15 +2808,15 @@
                 "configuration": {
                     "x-openregister-lifecycle": {
                         "field": "status",
-                        "initial": "concept",
+                        "initial": "draft",
                         "final": [
                             "besloten",
-                            "gearchiveerd"
+                            "archived"
                         ],
                         "transitions": {
                             "startParafering": {
                                 "from": [
-                                    "concept"
+                                    "draft"
                                 ],
                                 "to": "in_parafering",
                                 "requires": "OCA\\Procest\\Lifecycle\\VoorstelSubmitGuard",
@@ -2854,7 +2854,7 @@
                                 "from": [
                                     "besloten"
                                 ],
-                                "to": "gearchiveerd",
+                                "to": "archived",
                                 "description": "Archive the proposal."
                             },
                             "sendBack": {
@@ -2871,7 +2871,7 @@
                                 "from": [
                                     "teruggestuurd"
                                 ],
-                                "to": "concept",
+                                "to": "draft",
                                 "description": "Take a returned proposal back into draft."
                             }
                         }
@@ -2910,7 +2910,7 @@
                     "proposalType": {
                         "type": "string",
                         "enum": [
-                            "dt_advies",
+                            "dt_advice",
                             "collegeadvies",
                             "raadsvoorstel"
                         ],
@@ -2930,7 +2930,7 @@
                                 "type": {
                                     "type": "string",
                                     "enum": [
-                                        "advies",
+                                        "advice",
                                         "parafering",
                                         "accordering"
                                     ],
@@ -3341,18 +3341,18 @@
                     "status": {
                         "type": "string",
                         "enum": [
-                            "Ontvangen",
-                            "Ontvankelijkheidstoets",
-                            "In behandeling",
-                            "Hoorzitting gepland",
-                            "Hoorzitting afgerond",
-                            "Advies uitgebracht",
-                            "Beslissing op bezwaar",
-                            "Afgehandeld",
-                            "Niet-ontvankelijk",
-                            "Ingetrokken"
+                            "Received",
+                            "AdmissibilityCheck",
+                            "In handling",
+                            "Hearing planned",
+                            "Hearing completed",
+                            "Advice uitgebracht",
+                            "Decision on objection",
+                            "Handled",
+                            "Inadmissible",
+                            "Withdrawn"
                         ],
-                        "default": "Ontvangen",
+                        "default": "Received",
                         "description": "Bezwaar lifecycle status — drives the status-transition-engine state machine",
                         "facetable": true,
                         "title": "Status"
@@ -3609,88 +3609,88 @@
                 "configuration": {
                     "x-openregister-lifecycle": {
                         "field": "status",
-                        "initial": "Ontvangen",
+                        "initial": "Received",
                         "final": [
-                            "Afgehandeld",
-                            "Niet-ontvankelijk",
-                            "Ingetrokken"
+                            "Handled",
+                            "Inadmissible",
+                            "Withdrawn"
                         ],
                         "transitions": {
                             "ontvankelijkheidstoets_starten": {
                                 "from": [
-                                    "Ontvangen"
+                                    "Received"
                                 ],
-                                "to": "Ontvankelijkheidstoets",
+                                "to": "AdmissibilityCheck",
                                 "description": "Start de ontvankelijkheidstoets (AWB 6:4)."
                             },
                             "in_behandeling_nemen": {
                                 "from": [
-                                    "Ontvankelijkheidstoets"
+                                    "AdmissibilityCheck"
                                 ],
-                                "to": "In behandeling",
+                                "to": "In handling",
                                 "description": "Neem het bezwaar inhoudelijk in behandeling."
                             },
                             "hoorzitting_plannen": {
                                 "from": [
-                                    "In behandeling"
+                                    "In handling"
                                 ],
-                                "to": "Hoorzitting gepland",
+                                "to": "Hearing planned",
                                 "description": "Plan de hoorzitting (AWB 7:2)."
                             },
                             "hoorzitting_afronden": {
                                 "from": [
-                                    "Hoorzitting gepland"
+                                    "Hearing planned"
                                 ],
-                                "to": "Hoorzitting afgerond",
+                                "to": "Hearing completed",
                                 "description": "Rond de hoorzitting af."
                             },
                             "advies_uitbrengen": {
                                 "from": [
-                                    "Hoorzitting afgerond"
+                                    "Hearing completed"
                                 ],
-                                "to": "Advies uitgebracht",
+                                "to": "Advice uitgebracht",
                                 "description": "De bezwaarschriftencommissie brengt advies uit (AWB 7:13)."
                             },
                             "beslissen": {
                                 "from": [
-                                    "Hoorzitting afgerond",
-                                    "Advies uitgebracht",
-                                    "In behandeling"
+                                    "Hearing completed",
+                                    "Advice uitgebracht",
+                                    "In handling"
                                 ],
-                                "to": "Beslissing op bezwaar",
+                                "to": "Decision on objection",
                                 "requires": "OCA\\Procest\\Lifecycle\\BezwaarDeadlineGuard",
                                 "description": "Neem de beslissing op bezwaar (AWB 7:11). Geweigerd wanneer de beslistermijn is verstreken zonder verdaging/opschorting."
                             },
                             "afronden": {
                                 "from": [
-                                    "Beslissing op bezwaar"
+                                    "Decision on objection"
                                 ],
-                                "to": "Afgehandeld",
+                                "to": "Handled",
                                 "description": "Handel het bezwaar af."
                             },
                             "niet_ontvankelijk_verklaren": {
                                 "from": [
-                                    "Ontvankelijkheidstoets"
+                                    "AdmissibilityCheck"
                                 ],
-                                "to": "Niet-ontvankelijk",
+                                "to": "Inadmissible",
                                 "description": "Verklaar het bezwaar niet-ontvankelijk (AWB 6:6)."
                             },
                             "intrekken": {
                                 "from": [
-                                    "Ontvangen",
-                                    "Ontvankelijkheidstoets",
-                                    "In behandeling",
-                                    "Hoorzitting gepland"
+                                    "Received",
+                                    "AdmissibilityCheck",
+                                    "In handling",
+                                    "Hearing planned"
                                 ],
-                                "to": "Ingetrokken",
+                                "to": "Withdrawn",
                                 "description": "De bezwaarmaker trekt het bezwaar in (AWB 6:21)."
                             },
                             "hoorzitting_overslaan": {
                                 "from": [
-                                    "Ontvankelijkheidstoets",
-                                    "In behandeling"
+                                    "AdmissibilityCheck",
+                                    "In handling"
                                 ],
-                                "to": "Advies uitgebracht",
+                                "to": "Advice uitgebracht",
                                 "requires": "OCA\\Procest\\Lifecycle\\HoorzittingAfzienGuard",
                                 "description": "Sla de hoorzitting over wanneer het hoorrecht is afgezien (AWB 7:3). Geweigerd wanneer hearingWaived niet is gezet."
                             }
@@ -3751,7 +3751,7 @@
                         "enum": [
                             "brief",
                             "email",
-                            "formulier",
+                            "form",
                             "balie"
                         ],
                         "description": "How the bezwaarschrift was received",
@@ -3907,14 +3907,14 @@
                     "status": {
                         "type": "string",
                         "enum": [
-                            "gepland",
+                            "planned",
                             "uitgenodigd",
                             "dossier_beschikbaar",
-                            "uitgevoerd",
-                            "geannuleerd",
+                            "executed",
+                            "cancelled",
                             "afgezien"
                         ],
-                        "default": "gepland",
+                        "default": "planned",
                         "description": "Hearing session status",
                         "title": "Status"
                     },
@@ -3947,16 +3947,16 @@
                 "configuration": {
                     "x-openregister-lifecycle": {
                         "field": "status",
-                        "initial": "gepland",
+                        "initial": "planned",
                         "final": [
-                            "uitgevoerd",
-                            "geannuleerd",
+                            "executed",
+                            "cancelled",
                             "afgezien"
                         ],
                         "transitions": {
                             "invite": {
                                 "from": [
-                                    "gepland"
+                                    "planned"
                                 ],
                                 "to": "uitgenodigd",
                                 "description": "Send hearing invitations."
@@ -3966,21 +3966,21 @@
                                     "uitgenodigd",
                                     "dossier_beschikbaar"
                                 ],
-                                "to": "uitgevoerd",
+                                "to": "executed",
                                 "description": "Mark the hearing as carried out."
                             },
                             "cancel": {
                                 "from": [
-                                    "gepland",
+                                    "planned",
                                     "uitgenodigd",
                                     "dossier_beschikbaar"
                                 ],
-                                "to": "geannuleerd",
+                                "to": "cancelled",
                                 "description": "Cancel the hearing."
                             },
                             "waive": {
                                 "from": [
-                                    "gepland",
+                                    "planned",
                                     "uitgenodigd",
                                     "dossier_beschikbaar"
                                 ],
@@ -4047,10 +4047,10 @@
                     "adviceType": {
                         "type": "string",
                         "enum": [
-                            "gegrond",
-                            "ongegrond",
-                            "deels_gegrond",
-                            "niet_ontvankelijk"
+                            "upheld",
+                            "dismissed",
+                            "partly_upheld",
+                            "inadmissible"
                         ],
                         "description": "Type of advice: upheld, rejected, partially upheld, inadmissible",
                         "title": "Advice Type"
@@ -4129,10 +4129,10 @@
                     "dispositionType": {
                         "type": "string",
                         "enum": [
-                            "gegrond",
-                            "ongegrond",
-                            "deels_gegrond",
-                            "niet_ontvankelijk"
+                            "upheld",
+                            "dismissed",
+                            "partly_upheld",
+                            "inadmissible"
                         ],
                         "description": "Decision outcome type",
                         "title": "Disposition Type"
@@ -4224,11 +4224,11 @@
                     "dispositionType": {
                         "type": "string",
                         "enum": [
-                            "niet_ontvankelijk",
-                            "ongegrond",
-                            "gegrond_handhaven",
-                            "gegrond_herroepen",
-                            "gegrond_wijzigen"
+                            "inadmissible",
+                            "dismissed",
+                            "upheld_maintain",
+                            "upheld_revoke",
+                            "upheld_amend"
                         ],
                         "description": "Awb art. 7:11 canonical outcome — drives mandatory fields, replacement besluit, and proceskosten eligibility",
                         "title": "Disposition Type"
@@ -4293,7 +4293,7 @@
                                 "enum": [
                                     "digitaal",
                                     "schriftelijk",
-                                    "beide"
+                                    "both"
                                 ],
                                 "description": "How beroep may be filed; drives whether filingUrl and/or filingAddress are required",
                                 "title": "Filing Method"
@@ -4548,10 +4548,10 @@
                         "type": "string",
                         "enum": [
                             "vernietigd",
-                            "in_stand_gelaten",
-                            "niet_ontvankelijk",
-                            "ongegrond",
-                            "gegrond_rechtsgevolgen_in_stand",
+                            "upheld",
+                            "inadmissible",
+                            "dismissed",
+                            "upheld_legal_effects_maintained",
                             "withdrawn",
                             "schikking"
                         ],
@@ -4573,11 +4573,11 @@
                     "cascadeAction": {
                         "type": "string",
                         "enum": [
-                            "reopen_bezwaar",
+                            "reopen_objection",
                             "new_primary_decision",
                             "none"
                         ],
-                        "description": "Cascade action triggered by the judgment outcome. reopen_bezwaar forks a new bezwaar via status-transition-engine; new_primary_decision opens a fresh decision case; none clears the dwingende marker on the source bezwaar.",
+                        "description": "Cascade action triggered by the judgment outcome. reopen_objection forks a new bezwaar via status-transition-engine; new_primary_decision opens a fresh decision case; none clears the dwingende marker on the source bezwaar.",
                         "title": "Cascade Action"
                     },
                     "cascadeObjectionCase": {
@@ -4927,10 +4927,10 @@
                     "priority": {
                         "type": "string",
                         "enum": [
-                            "normaal",
+                            "normal",
                             "spoed"
                         ],
-                        "default": "normaal",
+                        "default": "normal",
                         "description": "Priority level",
                         "title": "Priority"
                     },
@@ -4938,10 +4938,10 @@
                         "type": "string",
                         "enum": [
                             "open",
-                            "ontvangen",
-                            "in_behandeling",
-                            "advies_uitgebracht",
-                            "afgesloten",
+                            "received",
+                            "in_handling",
+                            "advice_uitgebracht",
+                            "closed",
                             "withdrawn"
                         ],
                         "default": "open",
@@ -5020,7 +5020,7 @@
                         "field": "status",
                         "initial": "open",
                         "final": [
-                            "afgesloten",
+                            "closed",
                             "withdrawn"
                         ],
                         "transitions": {
@@ -5028,35 +5028,35 @@
                                 "from": [
                                     "open"
                                 ],
-                                "to": "ontvangen",
+                                "to": "received",
                                 "description": "Consulted department acknowledges receipt."
                             },
                             "startWork": {
                                 "from": [
-                                    "ontvangen"
+                                    "received"
                                 ],
-                                "to": "in_behandeling",
+                                "to": "in_handling",
                                 "description": "Department starts working on the advice."
                             },
                             "submitAdvice": {
                                 "from": [
-                                    "in_behandeling"
+                                    "in_handling"
                                 ],
-                                "to": "advies_uitgebracht",
+                                "to": "advice_uitgebracht",
                                 "description": "Department submits their formal advice."
                             },
                             "close": {
                                 "from": [
-                                    "advies_uitgebracht"
+                                    "advice_uitgebracht"
                                 ],
-                                "to": "afgesloten",
+                                "to": "closed",
                                 "description": "Case worker reviews and closes the consultation."
                             },
                             "withdraw": {
                                 "from": [
                                     "open",
-                                    "ontvangen",
-                                    "in_behandeling"
+                                    "received",
+                                    "in_handling"
                                 ],
                                 "to": "withdrawn",
                                 "description": "Case worker withdraws the consultation request."
@@ -5101,10 +5101,10 @@
                     "advies": {
                         "type": "string",
                         "enum": [
-                            "positief",
-                            "positief_met_voorwaarden",
-                            "negatief",
-                            "niet_van_toepassing"
+                            "positive",
+                            "positief_with_terms",
+                            "negative",
+                            "non_from_application"
                         ],
                         "description": "Formal advice conclusion",
                         "title": "Advice"
@@ -5127,12 +5127,12 @@
                                 "priority": {
                                     "type": "string",
                                     "enum": [
-                                        "hoog",
-                                        "normaal",
-                                        "laag"
+                                        "high",
+                                        "normal",
+                                        "low"
                                     ],
                                     "title": "Priority",
-                                    "description": "Priority level of this condition (hoog, normaal, or laag)"
+                                    "description": "Priority level of this condition (high, normal, or low)"
                                 },
                                 "addressed": {
                                     "type": "boolean",
@@ -5275,11 +5275,11 @@
                     "status": {
                         "type": "string",
                         "enum": [
-                            "aangevraagd",
-                            "ontvangen",
-                            "verlopen"
+                            "requested",
+                            "received",
+                            "expired"
                         ],
-                        "default": "aangevraagd",
+                        "default": "requested",
                         "description": "Current status of the advice request",
                         "title": "Status"
                     },
@@ -5309,24 +5309,24 @@
                 "configuration": {
                     "x-openregister-lifecycle": {
                         "field": "status",
-                        "initial": "aangevraagd",
+                        "initial": "requested",
                         "final": [
-                            "ontvangen",
-                            "verlopen"
+                            "received",
+                            "expired"
                         ],
                         "transitions": {
                             "receive": {
                                 "from": [
-                                    "aangevraagd"
+                                    "requested"
                                 ],
-                                "to": "ontvangen",
+                                "to": "received",
                                 "description": "Mark the advice as received."
                             },
                             "expire": {
                                 "from": [
-                                    "aangevraagd"
+                                    "requested"
                                 ],
-                                "to": "verlopen",
+                                "to": "expired",
                                 "description": "Mark the advice request as expired."
                             }
                         }
@@ -5358,11 +5358,11 @@
                     "type": {
                         "type": "string",
                         "enum": [
-                            "waarschuwing",
+                            "warning",
                             "vooraankondiging",
-                            "last_onder_dwangsom",
+                            "last_under_penaltypayment",
                             "bestuursdwang",
-                            "proces_verbaal"
+                            "process_verbaal"
                         ],
                         "description": "Type of enforcement action",
                         "title": "Type"
@@ -5557,9 +5557,9 @@
                                 "intervention": {
                                     "type": "string",
                                     "enum": [
-                                        "waarschuwing",
+                                        "warning",
                                         "herstelactie",
-                                        "last_onder_dwangsom",
+                                        "last_under_penaltypayment",
                                         "last_plus_pv",
                                         "bestuursdwang",
                                         "pv_plus_bestuursdwang"
@@ -5673,7 +5673,7 @@
                         "enum": [
                             "burger",
                             "bedrijf",
-                            "overheid",
+                            "government",
                             "recidivist"
                         ],
                         "description": "Actor type of the violator (LHS actorType axis)",
@@ -5688,9 +5688,9 @@
                     "recommendedIntervention": {
                         "type": "string",
                         "enum": [
-                            "waarschuwing",
+                            "warning",
                             "herstelactie",
-                            "last_onder_dwangsom",
+                            "last_under_penaltypayment",
                             "last_plus_pv",
                             "bestuursdwang",
                             "pv_plus_bestuursdwang"
@@ -5701,9 +5701,9 @@
                     "finalIntervention": {
                         "type": "string",
                         "enum": [
-                            "waarschuwing",
+                            "warning",
                             "herstelactie",
-                            "last_onder_dwangsom",
+                            "last_under_penaltypayment",
                             "last_plus_pv",
                             "bestuursdwang",
                             "pv_plus_bestuursdwang"
@@ -5806,10 +5806,10 @@
                                 "type": {
                                     "type": "string",
                                     "enum": [
-                                        "ja_nee_nvt",
-                                        "tekst",
+                                        "yes_no_na",
+                                        "text",
                                         "getal",
-                                        "foto",
+                                        "photo",
                                         "meerkeuze"
                                     ],
                                     "description": "Input type for this item",
@@ -5925,8 +5925,8 @@
                         "type": "string",
                         "enum": [
                             "conform",
-                            "niet_conform",
-                            "deels_conform"
+                            "non_conform",
+                            "partly_conform"
                         ],
                         "description": "Overall inspection result (auto-calculated from items)",
                         "title": "Result"
@@ -6105,11 +6105,11 @@
                                             "responseType": {
                                                 "type": "string",
                                                 "enum": [
-                                                    "ja_nee_nvt",
-                                                    "tekst",
+                                                    "yes_no_na",
+                                                    "text",
                                                     "getal",
                                                     "meerkeuze",
-                                                    "foto",
+                                                    "photo",
                                                     "meting"
                                                 ],
                                                 "description": "Input type — drives validation in REQ-IC-3",
@@ -6125,7 +6125,7 @@
                                                 "type": "string",
                                                 "enum": [
                                                     "nooit",
-                                                    "bij_nee",
+                                                    "if_no",
                                                     "altijd"
                                                 ],
                                                 "default": "nooit",
@@ -6171,10 +6171,10 @@
                                                         "enum": [
                                                             "herinspectie",
                                                             "handhavingstaak",
-                                                            "documentVerzoek",
-                                                            "geen"
+                                                            "documentRequest",
+                                                            "none"
                                                         ],
-                                                        "default": "geen",
+                                                        "default": "none",
                                                         "title": "Type",
                                                         "description": "Action type triggered when this item fails (createTask, createHandhavingsactie, notifyRole, escalate)"
                                                     },
@@ -6290,12 +6290,12 @@
                     "status": {
                         "type": "string",
                         "enum": [
-                            "concept",
-                            "in_uitvoering",
-                            "ingediend",
-                            "gearchiveerd"
+                            "draft",
+                            "in_execution",
+                            "submitted",
+                            "archived"
                         ],
-                        "default": "concept",
+                        "default": "draft",
                         "description": "Run lifecycle status",
                         "title": "Status"
                     },
@@ -6409,8 +6409,8 @@
                         "type": "string",
                         "enum": [
                             "conform",
-                            "niet_conform",
-                            "deels_conform"
+                            "non_conform",
+                            "partly_conform"
                         ],
                         "description": "Aggregate result — derived on submit by ChecklistService::aggregateResult (REQ-IC-6); user-supplied values are ignored",
                         "title": "Overall Result"
@@ -6431,10 +6431,10 @@
                         "enum": [
                             "herinspectie",
                             "handhavingstaak",
-                            "documentVerzoek",
-                            "geen"
+                            "documentRequest",
+                            "none"
                         ],
-                        "default": "geen",
+                        "default": "none",
                         "description": "Highest-priority follow-up type dispatched on submit (REQ-IC-7)",
                         "title": "Follow Up Type"
                     }
@@ -7199,8 +7199,8 @@
                     "domain": {
                         "type": "string",
                         "enum": [
-                            "algemeen",
-                            "sociaal_domein",
+                            "general",
+                            "social_domain",
                             "wabo",
                             "belasting",
                             "personeel"
@@ -7337,10 +7337,10 @@
                             "assigned",
                             "in-deliberation",
                             "advice-issued",
-                            "niet-ontvankelijk"
+                            "inadmissible"
                         ],
                         "default": "assigned",
-                        "description": "Lifecycle state. niet-ontvankelijk represents the terminal advice that the bezwaar is inadmissible (Awb Art. 7:13(7))",
+                        "description": "Lifecycle state. inadmissible represents the terminal advice that the bezwaar is inadmissible (Awb Art. 7:13(7))",
                         "title": "Status"
                     },
                     "assignedAt": {
@@ -7387,10 +7387,10 @@
                     "conclusion": {
                         "type": "string",
                         "enum": [
-                            "gegrond",
-                            "ongegrond",
-                            "gedeeltelijk_gegrond",
-                            "niet_ontvankelijk"
+                            "upheld",
+                            "dismissed",
+                            "partly_upheld",
+                            "inadmissible"
                         ],
                         "description": "Committee's conclusion per Awb Art. 7:13(7)",
                         "title": "Conclusion"
@@ -7560,15 +7560,15 @@
                     "status": {
                         "type": "string",
                         "enum": [
-                            "ontvangen",
-                            "ontvangst_bevestigd",
-                            "in_behandeling",
-                            "hoorgesprek_gepland",
-                            "hoorgesprek_afgerond",
-                            "afgehandeld",
+                            "received",
+                            "receipt_confirmed",
+                            "in_handling",
+                            "hoorgesprek_planned",
+                            "hoorgesprek_completed",
+                            "handled",
                             "withdrawn"
                         ],
-                        "default": "ontvangen",
+                        "default": "received",
                         "description": "Current status in the Awb chapter 9 complaint lifecycle",
                         "facetable": true,
                         "title": "Status"
@@ -7581,12 +7581,12 @@
                     "priority": {
                         "type": "string",
                         "enum": [
-                            "laag",
-                            "normaal",
-                            "hoog",
+                            "low",
+                            "normal",
+                            "high",
                             "urgent"
                         ],
-                        "default": "normaal",
+                        "default": "normal",
                         "description": "Priority level of the complaint",
                         "title": "Priority"
                     },
@@ -7799,11 +7799,11 @@
                     "opinion": {
                         "type": "string",
                         "enum": [
-                            "gegrond",
-                            "deels_gegrond",
-                            "ongegrond",
+                            "upheld",
+                            "partly_upheld",
+                            "dismissed",
                             "withdrawn",
-                            "niet_ontvankelijk"
+                            "inadmissible"
                         ],
                         "description": "Judgment on the complaint",
                         "title": "Verdict"
@@ -7852,9 +7852,9 @@
                     "approvalStatus": {
                         "type": "string",
                         "enum": [
-                            "wacht_op_goedkeuring",
-                            "goedgekeurd",
-                            "afgekeurd"
+                            "awaiting_approval",
+                            "approved",
+                            "rejected"
                         ],
                         "description": "Approval workflow status when coordinator approval is required",
                         "title": "Approval Status"
@@ -9442,7 +9442,7 @@
                 "steps": [
                     {
                         "order": 1,
-                        "type": "advies",
+                        "type": "advice",
                         "actor": "juridische-dienst",
                         "actorType": "group",
                         "mandatory": false
@@ -9483,14 +9483,14 @@
                 "steps": [
                     {
                         "order": 1,
-                        "type": "advies",
+                        "type": "advice",
                         "actor": "planologisch-adviseur",
                         "actorType": "role",
                         "mandatory": true
                     },
                     {
                         "order": 2,
-                        "type": "advies",
+                        "type": "advice",
                         "actor": "juridische-dienst",
                         "actorType": "group",
                         "mandatory": true
@@ -9525,7 +9525,7 @@
                     "slug": "route-dt-advies-standaard"
                 },
                 "name": "DT-advies - Standaard",
-                "proposalType": "dt_advies",
+                "proposalType": "dt_advice",
                 "isDefault": true,
                 "description": "Standaard directieteam-advies: behandelaar parafering gevolgd door afdelingshoofd accordering",
                 "steps": [
@@ -9558,14 +9558,14 @@
                 "steps": [
                     {
                         "order": 1,
-                        "type": "advies",
+                        "type": "advice",
                         "actor": "financieel-adviseur",
                         "actorType": "role",
                         "mandatory": true
                     },
                     {
                         "order": 2,
-                        "type": "advies",
+                        "type": "advice",
                         "actor": "juridische-dienst",
                         "actorType": "group",
                         "mandatory": true
@@ -9998,7 +9998,7 @@
                 "type": "intern",
                 "subject": "Welstandstoets gevelwijziging Keizersgracht 123",
                 "deadline": "2026-04-30",
-                "status": "aangevraagd",
+                "status": "requested",
                 "requestedAt": "2026-04-16T09:00:00+02:00",
                 "questions": "Voldoet de voorgestelde gevelwijziging aan het welstandsbeleid voor de historische binnenstad?"
             },
@@ -10013,7 +10013,7 @@
                 "type": "extern",
                 "subject": "Veiligheidsadvies evenement Museumplein 500+ bezoekers",
                 "deadline": "2026-04-25",
-                "status": "aangevraagd",
+                "status": "requested",
                 "requestedAt": "2026-04-10T14:30:00+02:00",
                 "questions": "Is de nooduitgang-capaciteit voldoende voor 500 bezoekers? Zijn er aanvullende EHBO-posten vereist?"
             },
@@ -10028,7 +10028,7 @@
                 "type": "extern",
                 "subject": "Milieukundig advies lozing grondwater bouwproject",
                 "deadline": "2026-03-28",
-                "status": "verlopen",
+                "status": "expired",
                 "requestedAt": "2026-03-07T10:00:00+01:00",
                 "questions": "Is lozing van het opgepompte grondwater toelaatbaar gezien de nabijgelegen watergang?"
             },
@@ -10043,7 +10043,7 @@
                 "type": "intern",
                 "subject": "Juridische toets ontvankelijkheid bezwaarschrift",
                 "deadline": "2026-05-02",
-                "status": "ontvangen",
+                "status": "received",
                 "requestedAt": "2026-04-11T08:45:00+02:00",
                 "receivedAt": "2026-04-15T16:20:00+02:00",
                 "questions": "Is het bezwaar tijdig ingediend en is de bezwaarmaker ontvankelijk?"
@@ -10059,7 +10059,7 @@
                 "type": "extern",
                 "subject": "Brandveiligheidsadvies transformatie kantoorpand naar woningen",
                 "deadline": "2026-05-14",
-                "status": "aangevraagd",
+                "status": "requested",
                 "requestedAt": "2026-04-14T11:00:00+02:00",
                 "questions": "Voldoet het vluchtrouteplan aan de eisen uit het Bouwbesluit 2012, art. 2.113 e.v.?"
             },

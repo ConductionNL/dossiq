@@ -121,7 +121,7 @@ class BesluitvormingParafeerServiceTest extends TestCase {
 	public function testActivateReturnsArrayWhenVoorstelFound(): void {
 		$proposalObj = new \stdClass();
 		$proposalObj->id = 'voorstel-uuid-1';
-		$proposalObj->status = 'concept';
+		$proposalObj->status = 'draft';
 
 		$updatedObj = new \stdClass();
 		$updatedObj->id = 'voorstel-uuid-1';
@@ -207,7 +207,7 @@ class BesluitvormingParafeerServiceTest extends TestCase {
 
 		$actionObj = new \stdClass();
 		$actionObj->id = 'actie-uuid-1';
-		$actionObj->action = 'goedgekeurd';
+		$actionObj->action = 'approved';
 
 		$updatedObj = new \stdClass();
 		$updatedObj->id = 'voorstel-uuid-1';

@@ -242,7 +242,7 @@ class CaseSharingServiceFederationTest extends TestCase {
 			'id' => 'case-1',
 			'title' => 'Illegal dumping near the border',
 			'description' => 'Joint enforcement case',
-			'status' => 'in_behandeling',
+			'status' => 'in_handling',
 			'internalRiskScore' => 87,
 			'documents' => ['doc-1', 'doc-2'],
 			'@self' => ['organisation' => 'org-a', 'relations' => ['doc-1' => 'document']],
@@ -264,7 +264,7 @@ class CaseSharingServiceFederationTest extends TestCase {
 
 		self::assertArrayNotHasKey('error', $result);
 		self::assertSame(
-			['title' => 'Illegal dumping near the border', 'status' => 'in_behandeling'],
+			['title' => 'Illegal dumping near the border', 'status' => 'in_handling'],
 			$result['fieldSnapshot']
 		);
 		self::assertArrayNotHasKey('internalRiskScore', $result['fieldSnapshot']);

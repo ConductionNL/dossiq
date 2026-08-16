@@ -78,18 +78,18 @@ import VoorstelCreateDialog from '../../../dialogs/VoorstelCreateDialog.vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 
 const STATUS_LABELS = {
-	concept: 'Draft',
+	draft: 'Draft',
 	in_parafering: 'Awaiting initials',
 	ter_accordering: 'Awaiting approval',
 	geaccordeerd: 'Approved',
 	aangeboden: 'Presented',
 	besloten: 'Decided',
-	gearchiveerd: 'Archived',
+	archived: 'Archived',
 	teruggestuurd: 'Returned',
 }
 
 const TYPE_LABELS = {
-	dt_advies: 'Management team advice',
+	dt_advice: 'Management team advice',
 	collegeadvies: 'Executive board advice',
 	raadsvoorstel: 'Council proposal',
 }
@@ -159,7 +159,7 @@ export default {
 		},
 
 		isActive(voorstel) {
-			return !['besloten', 'gearchiveerd'].includes(voorstel.status)
+			return !['besloten', 'archived'].includes(voorstel.status)
 		},
 
 		/**

@@ -3,21 +3,21 @@
 <template>
 	<div class="beschikking-actionbar">
 		<NcButton
-			v-if="status === 'ontwerp'"
+			v-if="status === 'draft'"
 			type="primary"
 			:disabled="busy"
 			@click="onAkkoord">
 			{{ t('procest', 'Akkoord aanvragen') }}
 		</NcButton>
 		<NcButton
-			v-if="status === 'akkoord-mandaat'"
+			v-if="status === 'approved-mandate'"
 			type="primary"
 			:disabled="busy"
 			@click="onOnderteken">
 			{{ t('procest', 'Ondertekenen') }}
 		</NcButton>
 		<NcButton
-			v-if="status === 'ondertekend'"
+			v-if="status === 'signed'"
 			type="primary"
 			:disabled="busy"
 			@click="onVerzend">
@@ -76,7 +76,7 @@ export default {
 
 	computed: {
 		canExport() {
-			return ['verzonden', 'ontvangen-bevestiging', 'gearchiveerd'].includes(
+			return ['sent', 'received-confirmation', 'archived'].includes(
 				this.status,
 			)
 		},

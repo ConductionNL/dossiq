@@ -109,7 +109,7 @@ export default {
 
 	data() {
 		return {
-			stepTypeOptions: ['advies', 'parafering', 'accordering'],
+			stepTypeOptions: ['advice', 'parafering', 'accordering'],
 			actorTypeOptions: ['user', 'group', 'role'],
 		}
 	},

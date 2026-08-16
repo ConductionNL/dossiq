@@ -124,16 +124,16 @@
 						<select
 							v-model="item.type"
 							class="checklist-admin__input checklist-admin__input--small">
-							<option value="ja_nee_nvt">
+							<option value="yes_no_na">
 								{{ t('procest', 'Yes/No/N.A.') }}
 							</option>
-							<option value="tekst">
+							<option value="text">
 								{{ t('procest', 'Text') }}
 							</option>
 							<option value="getal">
 								{{ t('procest', 'Number') }}
 							</option>
-							<option value="foto">
+							<option value="photo">
 								{{ t('procest', 'Photo') }}
 							</option>
 							<option value="meerkeuze">
@@ -327,7 +327,7 @@ export default {
 			this.editingChecklist.items.push({
 				order: this.editingChecklist.items.length + 1,
 				label: '',
-				type: 'ja_nee_nvt',
+				type: 'yes_no_na',
 				required: true,
 				photoRequired: false,
 				options: [],

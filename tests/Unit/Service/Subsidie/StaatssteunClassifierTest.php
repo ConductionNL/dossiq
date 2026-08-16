@@ -84,7 +84,7 @@ class StaatssteunClassifierTest extends TestCase {
 		// Within ceiling -> de_minimis.
 		$this->assertSame('de_minimis', $this->classifier->classify(40000.0, 250000.0));
 		// Zero amount within ceiling -> geen.
-		$this->assertSame('geen', $this->classifier->classify(0.0, 0.0));
+		$this->assertSame('none', $this->classifier->classify(0.0, 0.0));
 		// Above ceiling with a valid AGVV article -> agvv.
 		$this->assertSame('agvv', $this->classifier->classify(60000.0, 250000.0, 'art14'));
 		// Above ceiling without cover -> notificatieplicht.

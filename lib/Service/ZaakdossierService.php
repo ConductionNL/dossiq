@@ -141,7 +141,7 @@ class ZaakdossierService {
 			'format' => (string)($metadata['format'] ?? 'application/octet-stream'),
 			'vertrouwelijkheidaanduiding' => $classification,
 			'auteur' => (string)($metadata['auteur'] ?? ''),
-			'status' => 'concept',
+			'status' => 'draft',
 			'informatieobjecttype' => $type,
 			'creatiedatum' => (string)($metadata['creatiedatum'] ?? date('Y-m-d')),
 			'bronorganisatie' => (string)($metadata['bronorganisatie'] ?? ''),
@@ -172,7 +172,7 @@ class ZaakdossierService {
 			'id' => $infoId,
 			'title' => $informatieobject['title'],
 			'fileName' => $fileName,
-			'status' => 'concept',
+			'status' => 'draft',
 			'vertrouwelijkheidaanduiding' => $classification,
 			'informatieobjecttype' => $type,
 			'integrity' => $informatieobject['integrity'],
@@ -347,7 +347,7 @@ class ZaakdossierService {
 	public function groupByType(array $documents): array {
 		$groups = [];
 		foreach ($documents as $doc) {
-			$type = (string)($doc['informatieobjecttype'] ?? 'onbekend');
+			$type = (string)($doc['informatieobjecttype'] ?? 'unknown');
 			if (isset($groups[$type]) === false) {
 				$groups[$type] = [];
 			}
@@ -415,7 +415,7 @@ class ZaakdossierService {
 			throw new RuntimeException('Informatieobject not found: ' . $infoObjectId);
 		}
 
-		if ((string)($current['status'] ?? '') === 'definitief') {
+		if ((string)($current['status'] ?? '') === 'final') {
 			throw new DomainException('Definitieve documenten kunnen niet worden gewijzigd');
 		}
 
@@ -507,7 +507,7 @@ class ZaakdossierService {
 		$join = [
 			'case' => $caseId,
 			'informatieobject' => $infoObjectId,
-			'natureRelationshipDisplay' => 'Hoort bij, omgekeerd',
+			'natureRelationshipDisplay' => 'Hoort at omgekeerd',
 			'registrationDate' => date('Y-m-d\TH:i:s\Z'),
 		];
 

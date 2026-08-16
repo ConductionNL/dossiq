@@ -298,16 +298,16 @@ class ComplaintServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testTransitionStatusSucceedsForValidTransition(): void {
-		$complaint = ['status' => 'ontvangen'];
+		$complaint = ['status' => 'received'];
 
 		$objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
 		$this->settingsService->method('getConfigValue')->willReturn('procest');
 		$objectServiceMock->method('find')->willReturn($complaint);
-		$objectServiceMock->method('saveObject')->willReturn(['status' => 'ontvangst_bevestigd']);
+		$objectServiceMock->method('saveObject')->willReturn(['status' => 'receipt_confirmed']);
 
-		$result = $this->service->transitionStatus('uuid-123', 'ontvangst_bevestigd');
-		$this->assertSame('ontvangst_bevestigd', $result['status']);
+		$result = $this->service->transitionStatus('uuid-123', 'receipt_confirmed');
+		$this->assertSame('receipt_confirmed', $result['status']);
 	}//end testTransitionStatusSucceedsForValidTransition()
 
 	/**
@@ -316,7 +316,7 @@ class ComplaintServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testTransitionStatusThrowsForInvalidTransition(): void {
-		$complaint = ['status' => 'ontvangen'];
+		$complaint = ['status' => 'received'];
 
 		$objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
@@ -326,7 +326,7 @@ class ComplaintServiceTest extends TestCase {
 		$this->expectException(\RuntimeException::class);
 		$this->expectExceptionMessageMatches('/not allowed/i');
 
-		$this->service->transitionStatus('uuid-123', 'afgehandeld');
+		$this->service->transitionStatus('uuid-123', 'handled');
 	}//end testTransitionStatusThrowsForInvalidTransition()
 
 	/**

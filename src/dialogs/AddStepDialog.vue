@@ -116,13 +116,13 @@ export default {
 	data() {
 		return {
 			afterStep: null,
-			stepType: 'advies',
+			stepType: 'advice',
 			actorType: 'user',
 			actor: '',
 			mandatory: false,
 			submitting: false,
 			error: '',
-			stepTypeOptions: ['advies', 'parafering', 'accordering'],
+			stepTypeOptions: ['advice', 'parafering', 'accordering'],
 			actorTypeOptions: ['user', 'group', 'role'],
 		}
 	},
@@ -157,7 +157,7 @@ export default {
 		open(value) {
 			if (value) {
 				this.afterStep = null
-				this.stepType = 'advies'
+				this.stepType = 'advice'
 				this.actorType = 'user'
 				this.actor = ''
 				this.mandatory = false

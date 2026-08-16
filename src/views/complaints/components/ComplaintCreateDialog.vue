@@ -139,7 +139,7 @@ export default {
 				klagerNaam: '',
 				klagerEmail: '',
 				receipt_channel: null,
-				priority: 'normaal',
+				priority: 'normal',
 				category: null,
 			},
 
@@ -163,9 +163,9 @@ export default {
 		/** @spec openspec/specs/complaint-management/spec.md */
 		priorityOptions() {
 			return [
-				{ id: 'laag', label: this.t('procest', 'Low') },
-				{ id: 'normaal', label: this.t('procest', 'Normal') },
-				{ id: 'hoog', label: this.t('procest', 'High') },
+				{ id: 'low', label: this.t('procest', 'Low') },
+				{ id: 'normal', label: this.t('procest', 'Normal') },
+				{ id: 'high', label: this.t('procest', 'High') },
 				{ id: 'urgent', label: this.t('procest', 'Urgent') },
 			]
 		},
@@ -196,9 +196,9 @@ export default {
 				const data = {
 					...this.form,
 					receipt_date: new Date().toISOString().split('T')[0],
-					status: 'ontvangen',
+					status: 'received',
 					priority:
-						this.form.priority?.id || this.form.priority || 'normaal',
+						this.form.priority?.id || this.form.priority || 'normal',
 
 					receipt_channel:
 						this.form.receipt_channel?.id

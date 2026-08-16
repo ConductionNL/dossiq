@@ -134,7 +134,7 @@ class ComplaintDispositionController extends Controller {
 			}
 
 			$disposition = $this->dispositionService->submitDisposition($id, $data);
-			$this->complaintService->transitionStatus($id, 'afgehandeld');
+			$this->complaintService->transitionStatus($id, 'handled');
 
 			return new JSONResponse($disposition, Http::STATUS_CREATED);
 		} catch (\RuntimeException $e) {
@@ -170,7 +170,7 @@ class ComplaintDispositionController extends Controller {
 
 			$dispositionId = $disposition['id'] ?? $disposition['uuid'] ?? '';
 			$result = $this->dispositionService->approveDisposition($dispositionId, $userId);
-			$this->complaintService->transitionStatus($id, 'afgehandeld');
+			$this->complaintService->transitionStatus($id, 'handled');
 			return new JSONResponse($result);
 		} catch (\RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);

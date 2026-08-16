@@ -176,7 +176,7 @@ class TermijnServiceTest extends TestCase {
 
 		$voltooid = $this->service->markTermijnCompleted($id, new DateTimeImmutable('2026-07-01'));
 		self::assertNotNull($voltooid);
-		self::assertSame('voltooid', $voltooid['status']);
+		self::assertSame('completed', $voltooid['status']);
 		self::assertSame('2026-07-01', $voltooid['voltooiDatum']);
 
 		$events = array_values($this->objects->store['termijnGebeurtenis'] ?? []);

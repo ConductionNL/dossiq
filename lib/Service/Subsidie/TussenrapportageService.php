@@ -52,12 +52,12 @@ class TussenrapportageService {
 	 * @var array<int, string>
 	 */
 	public const STATUSES = [
-		'verwacht',
-		'ingediend',
-		'in_beoordeling',
-		'goedgekeurd',
-		'afgekeurd',
-		'gedeeltelijk_goedgekeurd',
+		'expected',
+		'submitted',
+		'in_assessment',
+		'approved',
+		'rejected',
+		'gedeeltelijk_approved',
 	];
 
 	/**
@@ -95,8 +95,8 @@ class TussenrapportageService {
 
 	/**
 	 * Compute the reporting-period boundaries for a frequentie within a year
-	 * (REQ-SUB-004). Returns one period per cadence step; "op_mijlpaal" and
-	 * "geen" yield no automatic periods.
+	 * (REQ-SUB-004). Returns one period per cadence step; "on_milestone" and
+	 * "none" yield no automatic periods.
 	 *
 	 * @param string $frequency The cadence (jaarlijks/halfjaarlijks/...).
 	 * @param int $year The calendar year.
@@ -104,7 +104,7 @@ class TussenrapportageService {
 	 * @return array<int, array{start: string, eind: string}> The reporting periods.
 	 */
 	public function periodsForFrequentie(string $frequency, int $year): array {
-		if ($frequency === 'jaarlijks') {
+		if ($frequency === 'annually') {
 			return [['start' => sprintf('%d-01-01', $year), 'eind' => sprintf('%d-12-31', $year)]];
 		}
 
@@ -119,7 +119,7 @@ class TussenrapportageService {
 	}//end periodsForFrequentie()
 
 	/**
-	 * Create an interim report in status "verwacht" (REQ-SUB-004).
+	 * Create an interim report in status "expected" (REQ-SUB-004).
 	 *
 	 * @param string $uitvoeringId The execution id.
 	 * @param array<string, mixed> $payload The report properties.
@@ -135,7 +135,7 @@ class TussenrapportageService {
 			$payload,
 			[
 				'subsidieuitvoering' => $uitvoeringId,
-				'status' => 'verwacht',
+				'status' => 'expected',
 				'amendmentNumerator' => 0,
 			]
 		);
@@ -171,7 +171,7 @@ class TussenrapportageService {
 		[$objectService, $register, $schema] = $this->resolve();
 
 		$patch = [
-			'status' => 'goedgekeurd',
+			'status' => 'approved',
 			'assessor' => $user->getUID(),
 			'beoordelingsdatum' => (new DateTimeImmutable())->format(DateTimeImmutable::ATOM),
 		];
@@ -217,7 +217,7 @@ class TussenrapportageService {
 		[$objectService, $register, $schema] = $this->resolve();
 
 		$patch = [
-			'status' => 'gedeeltelijk_goedgekeurd',
+			'status' => 'gedeeltelijk_approved',
 			'correctionRequest' => $correctionRequest,
 			'amendmentNumerator' => ($currentTeller + 1),
 			'assessor' => $user->getUID(),

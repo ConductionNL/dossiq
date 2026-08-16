@@ -89,6 +89,11 @@ class ZgwZrcRulesServiceTest extends TestCase {
 
 		// FieldValidator is a pure, stateless utility — use the real
 		// implementation so the service exercises genuine format validation.
+		// ZgwZrcRulesService has no constructor of its own — it INHERITS
+		// ZgwRulesBase(logger, settingsService, fieldValidator). An earlier sweep
+		// read "no __construct in this file" as "takes no arguments" and dropped
+		// the two inherited ones, which is why 21 tests died with
+		// ArgumentCountError on ZgwRulesBase::__construct().
 		$this->service = new ZgwZrcRulesService(
 			logger: $this->logger,
 			settingsService: $this->settingsService,

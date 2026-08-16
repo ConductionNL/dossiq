@@ -141,7 +141,7 @@ class ZipManifestBuilderTest extends TestCase {
 				'fileName' => 'a.pdf',
 				'title' => 'Doc A',
 				'informatieobjecttype' => 'Advies',
-				'status' => 'definitief',
+				'status' => 'final',
 				'vertrouwelijkheidaanduiding' => 'intern',
 				'creatiedatum' => '2026-01-01',
 				'auteur' => 'Jan',

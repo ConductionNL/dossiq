@@ -333,7 +333,7 @@ class LibresignSigningAdapterTest extends TestCase {
 		$report = $adapter->fetchValidationReport('req-1');
 
 		$this->assertSame('req-1', $report['validationRapportId']);
-		$this->assertFalse($report['geldig']);
+		$this->assertFalse($report['valid']);
 	}//end testFetchValidationReportDegradesOnFailure()
 
 	/**
@@ -349,7 +349,7 @@ class LibresignSigningAdapterTest extends TestCase {
 
 		$report = $adapter->fetchValidationReport('req-1');
 
-		$this->assertTrue($report['geldig']);
+		$this->assertTrue($report['valid']);
 		$this->assertSame('req-1', $report['validationRapportId']);
 	}//end testFetchValidationReportReportsValidForSignedRequest()
 }//end class

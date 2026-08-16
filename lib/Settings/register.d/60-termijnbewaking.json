@@ -158,10 +158,10 @@
             "type": "string",
             "enum": [
               "lopend",
-              "gepauzeerd",
+              "paused",
               "verlengd",
-              "voltooid",
-              "overschreden",
+              "completed",
+              "exceeded",
               "withdrawn"
             ],
             "default": "lopend",
@@ -218,16 +218,16 @@
             "type": "string",
             "enum": [
               "start",
-              "pauze",
+              "pause",
               "hervat",
               "verleng",
               "voltooi",
-              "overschreden",
-              "ingebrekestelling-ontvangen",
-              "dwangsom-gestart",
-              "pauze-verlopen",
-              "bezwaar-ingediend",
-              "bezwaar-opgelost"
+              "exceeded",
+              "ingebrekestelling-received",
+              "penaltypayment-gestart",
+              "pause-expired",
+              "objection-submitted",
+              "objection-resolved"
             ],
             "title": "Event Type",
             "description": "Event kind",
@@ -294,7 +294,7 @@
           },
           "notificationChannel": {
             "type": "string",
-            "enum": ["post", "email", "portaal", "balie", "phone"],
+            "enum": ["post", "email", "portal", "balie", "phone"],
             "title": "Channel",
             "description": "Receipt channel"
           },
@@ -306,8 +306,8 @@
           },
           "validityStatus": {
             "type": "string",
-            "enum": ["onbekend", "geldig", "premaat", "ongeldig"],
-            "default": "onbekend",
+            "enum": ["unknown", "valid", "premaat", "ongeldig"],
+            "default": "unknown",
             "title": "Validity Status",
             "description": "Validity classification"
           },
@@ -387,9 +387,9 @@
             "type": "string",
             "enum": [
               "lopend",
-              "gestopt-wegens-beschikking",
-              "voltooid",
-              "bezwaar-bevroren"
+              "gestopt-wegens-decision",
+              "completed",
+              "objection-bevroren"
             ],
             "default": "lopend",
             "title": "Status",
@@ -470,10 +470,10 @@
             "type": "string",
             "enum": [
               "voorbereid",
-              "in-behandeling",
-              "betaald",
-              "afgewezen",
-              "on-hold-bezwaar"
+              "in-handling",
+              "paid",
+              "rejected",
+              "on-hold-objection"
             ],
             "default": "voorbereid",
             "title": "Status",

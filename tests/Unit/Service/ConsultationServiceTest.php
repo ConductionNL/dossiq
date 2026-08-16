@@ -251,11 +251,11 @@ class ConsultationServiceTest extends TestCase {
 		$this->settings->method('getConfigValue')->willReturn('some-id');
 
 		$this->expectException(\RuntimeException::class);
-		$this->expectExceptionMessage('Invalid advice type: onbekend');
+		$this->expectExceptionMessage('Invalid advice type: unknown');
 
 		$this->service->submitResponse(
 			consultationId: 'con-uuid',
-			response: ['advies' => 'onbekend'],
+			response: ['advice' => 'unknown'],
 		);
 
 	}//end testSubmitResponseRejectsInvalidAdvice()
@@ -270,9 +270,9 @@ class ConsultationServiceTest extends TestCase {
 
 		$consultations = [
 			['id' => 'c1', 'mandatory' => true,  'status' => 'open'],
-			['id' => 'c2', 'mandatory' => true,  'status' => 'advies_uitgebracht'],
+			['id' => 'c2', 'mandatory' => true,  'status' => 'advice_uitgebracht'],
 			['id' => 'c3', 'mandatory' => false, 'status' => 'open'],
-			['id' => 'c4', 'mandatory' => true,  'status' => 'afgesloten'],
+			['id' => 'c4', 'mandatory' => true,  'status' => 'closed'],
 		];
 
 		$objectService->method('searchObjectsBySlug')->willReturn($consultations);

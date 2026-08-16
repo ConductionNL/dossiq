@@ -58,9 +58,9 @@ class BeroepEscalationListener implements IEventListener {
 	 * @var array<int, string>
 	 */
 	private const TERMINAL_BEZWAAR_STATUSES = [
-		'Afgehandeld',
-		'Niet-ontvankelijk',
-		'Ingetrokken',
+		'Handled',
+		'Inadmissible',
+		'Withdrawn',
 	];
 
 	/**
@@ -69,9 +69,9 @@ class BeroepEscalationListener implements IEventListener {
 	 * @var array<int, string>
 	 */
 	private const TERMINAL_BEROEP_OUTCOMES = [
-		'in_stand_gelaten',
-		'ongegrond',
-		'niet_ontvankelijk',
+		'upheld',
+		'dismissed',
+		'inadmissible',
 		'withdrawn',
 		'schikking',
 	];

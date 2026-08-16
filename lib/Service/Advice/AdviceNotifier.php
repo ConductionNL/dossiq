@@ -84,7 +84,7 @@ class AdviceNotifier {
 				->setApp(Application::APP_ID)
 				->setUser($userId)
 				->setDateTime(new DateTime())
-				->setObject('advies', $objectId)
+				->setObject('advice', $objectId)
 				->setSubject($subject, ['object' => $objectId]);
 
 			if ($message !== '') {
@@ -118,7 +118,7 @@ class AdviceNotifier {
 		string $adviceId,
 		string $callerId,
 	): void {
-		if ($to === 'aangevraagd') {
+		if ($to === 'requested') {
 			$advisor = (string)($current['advisor'] ?? '');
 			if ($advisor !== '') {
 				$this->sendUserNotification(
@@ -132,7 +132,7 @@ class AdviceNotifier {
 			return;
 		}
 
-		if ($to === 'ontvangen' && $callerId !== '') {
+		if ($to === 'received' && $callerId !== '') {
 			$this->sendUserNotification(
 				userId: $callerId,
 				subject: 'advies_ontvangen',

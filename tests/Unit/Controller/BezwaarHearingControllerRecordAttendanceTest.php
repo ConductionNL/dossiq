@@ -205,7 +205,7 @@ final class BezwaarHearingControllerRecordAttendanceTest extends TestCase {
 
 		$entries = [
 			['invitee' => 'bezwaarmaker', 'present' => true],
-			['invitee' => 'gemachtigde', 'present' => false],
+			['invitee' => 'authorisedRepresentative', 'present' => false],
 		];
 		$this->request->method('getParam')->with('entries')->willReturn($entries);
 

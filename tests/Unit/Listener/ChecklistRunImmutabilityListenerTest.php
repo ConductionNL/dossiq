@@ -93,8 +93,8 @@ class ChecklistRunImmutabilityListenerTest extends TestCase {
 	 */
 	public function testRunInProgressMayBeEdited(): void {
 		$event = new ObjectUpdatingEvent(
-			$this->entity(['status' => 'in_uitvoering', 'responses' => ['b']]),
-			$this->entity(['status' => 'in_uitvoering', 'responses' => ['a']])
+			$this->entity(['status' => 'in_execution', 'responses' => ['b']]),
+			$this->entity(['status' => 'in_execution', 'responses' => ['a']])
 		);
 
 		$this->listener->handle($event);
@@ -109,8 +109,8 @@ class ChecklistRunImmutabilityListenerTest extends TestCase {
 	 */
 	public function testFirstSubmitIsAllowed(): void {
 		$event = new ObjectUpdatingEvent(
-			$this->entity(['status' => 'ingediend', 'responses' => ['a']]),
-			$this->entity(['status' => 'in_uitvoering', 'responses' => ['a']])
+			$this->entity(['status' => 'submitted', 'responses' => ['a']]),
+			$this->entity(['status' => 'in_execution', 'responses' => ['a']])
 		);
 
 		$this->listener->handle($event);
@@ -126,8 +126,8 @@ class ChecklistRunImmutabilityListenerTest extends TestCase {
 	 */
 	public function testEditingASubmittedRunIsRejectedPrePersist(): void {
 		$event = new ObjectUpdatingEvent(
-			$this->entity(['status' => 'ingediend', 'responses' => ['tampered']]),
-			$this->entity(['status' => 'ingediend', 'responses' => ['original']])
+			$this->entity(['status' => 'submitted', 'responses' => ['tampered']]),
+			$this->entity(['status' => 'submitted', 'responses' => ['original']])
 		);
 
 		$this->listener->handle($event);
@@ -147,8 +147,8 @@ class ChecklistRunImmutabilityListenerTest extends TestCase {
 	 */
 	public function testMetadataOnlyRefreshOfASubmittedRunIsAllowed(): void {
 		$event = new ObjectUpdatingEvent(
-			$this->entity(['status' => 'ingediend', 'responses' => ['a'], 'updatedAt' => '2026-08-05']),
-			$this->entity(['status' => 'ingediend', 'responses' => ['a'], 'updatedAt' => '2026-08-04'])
+			$this->entity(['status' => 'submitted', 'responses' => ['a'], 'updatedAt' => '2026-08-05']),
+			$this->entity(['status' => 'submitted', 'responses' => ['a'], 'updatedAt' => '2026-08-04'])
 		);
 
 		$this->listener->handle($event);
@@ -163,8 +163,8 @@ class ChecklistRunImmutabilityListenerTest extends TestCase {
 	 */
 	public function testForeignSchemaIsIgnored(): void {
 		$event = new ObjectUpdatingEvent(
-			$this->entity(['status' => 'ingediend', 'responses' => ['x']], 'other-schema'),
-			$this->entity(['status' => 'ingediend', 'responses' => ['y']], 'other-schema')
+			$this->entity(['status' => 'submitted', 'responses' => ['x']], 'other-schema'),
+			$this->entity(['status' => 'submitted', 'responses' => ['y']], 'other-schema')
 		);
 
 		$this->listener->handle($event);

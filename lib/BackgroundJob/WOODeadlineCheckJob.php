@@ -104,7 +104,7 @@ class WOODeadlineCheckJob extends TimedJob {
 			schema: $caseSchema,
 			filters: [
 				'caseType.title' => $caseTypeTitle,
-				'status' => ['open', 'in_behandeling'],
+				'status' => ['open', 'in_handling'],
 				'_limit' => 500,
 			],
 		);

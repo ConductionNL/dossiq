@@ -54,15 +54,15 @@ describe('canShare', () => {
 
 describe('isTransitionAllowed', () => {
 	it('permits forward transitions only', () => {
-		expect(isTransitionAllowed('concept', 'definitief')).toBe(true)
-		expect(isTransitionAllowed('definitief', 'gearchiveerd')).toBe(true)
+		expect(isTransitionAllowed('draft', 'final')).toBe(true)
+		expect(isTransitionAllowed('final', 'archived')).toBe(true)
 	})
 
 	it('rejects reverse, skipping and self transitions', () => {
-		expect(isTransitionAllowed('definitief', 'concept')).toBe(false)
-		expect(isTransitionAllowed('gearchiveerd', 'definitief')).toBe(false)
-		expect(isTransitionAllowed('concept', 'gearchiveerd')).toBe(false)
-		expect(isTransitionAllowed('concept', 'concept')).toBe(false)
+		expect(isTransitionAllowed('final', 'draft')).toBe(false)
+		expect(isTransitionAllowed('archived', 'final')).toBe(false)
+		expect(isTransitionAllowed('draft', 'archived')).toBe(false)
+		expect(isTransitionAllowed('draft', 'draft')).toBe(false)
 	})
 })
 
@@ -95,7 +95,7 @@ describe('groupByType', () => {
 
 	it('falls back to onbekend for untyped documents', () => {
 		const groups = groupByType([{ id: '1' }])
-		expect(groups[0].informatieobjecttype).toBe('onbekend')
+		expect(groups[0].informatieobjecttype).toBe('unknown')
 	})
 })
 

@@ -24,7 +24,7 @@
  *                          when herroepen/wijzigen). Sets publishedAt,
  *                          stamps notifiedRecipients, calls
  *                          applyToBezwaar() so the case transitions to
- *                          "Beslissing op bezwaar" via the
+ *                          "Decision on objection" via the
  *                          status-transition-engine.
  *  - applyToBezwaar()    — write the decision back onto the linked
  *                          bezwaar by invoking the
@@ -84,11 +84,11 @@ class DecisionService {
 	 * Bezwaar status target on publication (handed off to the
 	 * status-transition-engine).
 	 */
-	private const TARGET_BEZWAAR_STATUS = 'Beslissing op bezwaar';
+	private const TARGET_BEZWAAR_STATUS = 'Decision on objection';
 
 	/**
 	 * Transition id wired on the bezwaar workflowTemplate to move into
-	 * "Beslissing op bezwaar".
+	 * "Decision on objection".
 	 */
 	private const TRANSITION_ID = 'beslissing-op-bezwaar';
 
@@ -381,7 +381,7 @@ class DecisionService {
 			$recipients[] = 'bezwaarmaker:' . $bezwaarmaker;
 		}
 
-		$representative = (string)($decision['gemachtigde'] ?? '');
+		$representative = (string)($decision['authorisedRepresentative'] ?? '');
 		if ($representative !== '') {
 			$recipients[] = 'gemachtigde:' . $representative;
 		}

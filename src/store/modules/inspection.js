@@ -62,7 +62,7 @@ export const useInspectionStore = defineStore('inspection', {
 		 */
 		nonConformReports(state) {
 			return state.reports.filter(
-				(r) => r.result === 'niet_conform' || r.result === 'deels_conform',
+				(r) => r.result === 'non_conform' || r.result === 'partly_conform',
 			)
 		},
 	},
@@ -243,9 +243,9 @@ export const useInspectionStore = defineStore('inspection', {
 				// Auto-calculate overall result
 				let result = 'conform'
 				if (failedItems > 0 && failedItems < totalItems - nvtItems) {
-					result = 'deels_conform'
+					result = 'partly_conform'
 				} else if (failedItems > 0) {
-					result = 'niet_conform'
+					result = 'non_conform'
 				}
 
 				const report = {

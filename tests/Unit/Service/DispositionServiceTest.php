@@ -102,7 +102,7 @@ class DispositionServiceTest extends TestCase {
 		$this->expectException(\RuntimeException::class);
 		$this->expectExceptionMessageMatches('/Invalid oordeel/i');
 
-		$this->service->submitDisposition('complaint-uuid', ['opinion' => 'onbekend']);
+		$this->service->submitDisposition('complaint-uuid', ['opinion' => 'unknown']);
 	}//end testSubmitDispositionThrowsForInvalidOordeel()
 
 	/**
@@ -114,7 +114,7 @@ class DispositionServiceTest extends TestCase {
 		$this->expectException(\RuntimeException::class);
 		$this->expectExceptionMessageMatches('/Toelichting/i');
 
-		$this->service->submitDisposition('complaint-uuid', ['opinion' => 'gegrond']);
+		$this->service->submitDisposition('complaint-uuid', ['opinion' => 'upheld']);
 	}//end testSubmitDispositionThrowsWhenGegrondenMissingToelichting()
 
 	/**
@@ -126,7 +126,7 @@ class DispositionServiceTest extends TestCase {
 		$this->expectException(\RuntimeException::class);
 		$this->expectExceptionMessageMatches('/Toelichting/i');
 
-		$this->service->submitDisposition('complaint-uuid', ['opinion' => 'deels_gegrond']);
+		$this->service->submitDisposition('complaint-uuid', ['opinion' => 'partly_upheld']);
 	}//end testSubmitDispositionThrowsForDeelsGegrondenWithoutToelichting()
 
 	/**
@@ -144,11 +144,11 @@ class DispositionServiceTest extends TestCase {
 				['complaint_disposition_schema', '', 'complaintDisposition'],
 			]);
 
-		$savedDisposition = ['opinion' => 'ongegrond', 'complaint' => 'complaint-uuid'];
+		$savedDisposition = ['opinion' => 'dismissed', 'complaint' => 'complaint-uuid'];
 		$objectServiceMock->method('saveObject')->willReturn($savedDisposition);
 
-		$result = $this->service->submitDisposition('complaint-uuid', ['opinion' => 'ongegrond']);
-		$this->assertSame('ongegrond', $result['opinion']);
+		$result = $this->service->submitDisposition('complaint-uuid', ['opinion' => 'dismissed']);
+		$this->assertSame('dismissed', $result['opinion']);
 	}//end testSubmitDispositionSucceedsForOngegrondenWithoutToelichting()
 
 	/**
@@ -165,17 +165,17 @@ class DispositionServiceTest extends TestCase {
 			->method('saveObject')
 			->willReturnCallback(
 				function (array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null) {
-					$this->assertSame('wacht_op_goedkeuring', $object['approvalStatus']);
+					$this->assertSame('awaiting_approval', $object['approvalStatus']);
 					return $object;
 				}
 			);
 
 		$result = $this->service->submitDispositionForApproval(
 			'complaint-uuid',
-			['opinion' => 'ongegrond', 'closureDate' => '2026-04-01']
+			['opinion' => 'dismissed', 'closureDate' => '2026-04-01']
 		);
 
-		$this->assertSame('wacht_op_goedkeuring', $result['approvalStatus']);
+		$this->assertSame('awaiting_approval', $result['approvalStatus']);
 	}//end testSubmitDispositionSetsApprovalStatusWhenRequired()
 
 	/**
@@ -192,14 +192,14 @@ class DispositionServiceTest extends TestCase {
 			->method('saveObject')
 			->willReturnCallback(
 				function (array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null) {
-					$this->assertSame('goedgekeurd', $object['approvalStatus']);
+					$this->assertSame('approved', $object['approvalStatus']);
 					$this->assertSame('coordinator-uid', $object['goedkeurder']);
 					return $object;
 				}
 			);
 
 		$result = $this->service->approveDisposition('disposition-uuid', 'coordinator-uid');
-		$this->assertSame('goedgekeurd', $result['approvalStatus']);
+		$this->assertSame('approved', $result['approvalStatus']);
 	}//end testApproveDispositionSetsStatusToGoedgekeurd()
 
 	/**

@@ -1166,7 +1166,7 @@ class ZtcController extends ZgwController {
 			$objectData = $this->objectToArray(row: $object);
 
 			// Must be published (isDraft=false / concept=false).
-			$isDraft = $objectData['isDraft'] ?? ($objectData['concept'] ?? true);
+			$isDraft = $objectData['isDraft'] ?? ($objectData['draft'] ?? true);
 			if ($isDraft === true || $isDraft === 'true' || $isDraft === '1' || $isDraft === 1) {
 				return false;
 			}

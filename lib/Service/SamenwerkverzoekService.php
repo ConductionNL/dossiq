@@ -34,6 +34,7 @@ use OCP\IUser;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Contract\ObjectServiceInterface;
 
 /**
  * Service for samenwerkverzoek lifecycle management.
@@ -61,13 +62,14 @@ class SamenwerkverzoekService {
 		private readonly ContainerInterface $container,
 		private readonly IEventDispatcher $eventDispatcher,
 		private readonly LoggerInterface $logger,
+		private readonly ObjectServiceInterface $objectService,
 	) {
 	}//end __construct()
 
 	/**
 	 * Initiate a samenwerking request for a zaak.
 	 *
-	 * Creates a samenwerkverzoek object with status 'aangevraagd' and
+	 * Creates a samenwerkverzoek object with status 'requested' and
 	 * dispatches a SamenwerkverzoekInitiated event for downstream listeners.
 	 *
 	 * @param string $caseId The UUID of the zaak
@@ -122,15 +124,18 @@ class SamenwerkverzoekService {
 			'permitApplicationRef' => $requestRef,
 			'requestedCompetentAuthority' => $aangezochtGezag,
 			'rationale' => $rationale,
-			'status' => 'aangevraagd',
+			'status' => 'requested',
 			'requestedOn' => date('c'),
 		];
 
+		// saveObject() returns an ObjectEntityInterface (which extends
+		// JsonSerializable), never an array — returning it straight out of a
+		// method declared `: array` is a TypeError.
 		$created = $objectService->saveObject(
 			register: $register,
 			schema: $requestSchema,
 			object: $samenwerkverzoek
-		);
+		)->jsonSerialize();
 
 		$event = new GenericEvent(
 			subject: $created,
@@ -160,8 +165,8 @@ class SamenwerkverzoekService {
 	/**
 	 * Respond to a pending samenwerkverzoek.
 	 *
-	 * Validates that the verzoek is in 'aangevraagd' status, then updates
-	 * it to 'geaccepteerd' or 'geweigerd' with the provided advies text.
+	 * Validates that the verzoek is in 'requested' status, then updates
+	 * it to 'accepted' or 'refused' with the provided advies text.
 	 *
 	 * @param string $samenwerkId The UUID of the samenwerkverzoek
 	 * @param bool $accept True to accept, false to reject
@@ -169,7 +174,7 @@ class SamenwerkverzoekService {
 	 *
 	 * @return array<string,mixed> The updated samenwerkverzoek object
 	 *
-	 * @throws \RuntimeException When the verzoek cannot be found or is not in 'aangevraagd' status
+	 * @throws \RuntimeException When the verzoek cannot be found or is not in 'requested' status
 	 *
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T05
 	 */
@@ -199,25 +204,27 @@ class SamenwerkverzoekService {
 		}
 
 		$currentStatus = (string)($request['status'] ?? '');
-		if ($currentStatus !== 'aangevraagd') {
+		if ($currentStatus !== 'requested') {
 			throw new RuntimeException(
 				'Samenwerkverzoek is not in aangevraagd status; current status: ' . $currentStatus
 			);
 		}
 
-		$request['status'] = 'geweigerd';
+		$request['status'] = 'refused';
 		if ($accept === true) {
-			$request['status'] = 'geaccepteerd';
+			$request['status'] = 'accepted';
 		}
 
-		$request['advies'] = $advies;
+		$request['advice'] = $advies;
 		$request['respondedOn'] = date('c');
 
+		// See initiateSamenwerking() — saveObject() returns an entity, not an
+		// array.
 		$updated = $objectService->saveObject(
 			register: $register,
 			schema: $requestSchema,
 			object: $request
-		);
+		)->jsonSerialize();
 
 		$this->logger->info(
 			'Procest SamenwerkverzoekService: samenwerking responded',
@@ -272,14 +279,10 @@ class SamenwerkverzoekService {
 	 * @throws \RuntimeException When the service is not available
 	 */
 	private function getObjectService(): object {
-		try {
-			return $this->container->get('OCA\OpenRegister\Service\ObjectService');
-		} catch (\Throwable $e) {
-			throw new RuntimeException(
-				'OpenRegister ObjectService not available: ' . $e->getMessage(),
-				0,
-				$e
-			);
-		}
+		// Injected (ADR-083), so this cannot fail — a property read throws
+		// nothing, and phpstan reports the old try/catch as a dead catch.
+		// Absence is now a CONSTRUCTION failure on the route that needed the
+		// data, which is what ADR-083 rule 1 asks for.
+		return $this->objectService;
 	}//end getObjectService()
 }//end class

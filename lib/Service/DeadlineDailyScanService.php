@@ -71,7 +71,7 @@ class DeadlineDailyScanService {
 	 *
 	 * @param DateTimeImmutable|null $now Optional "now" override for testing.
 	 *
-	 * @return array<string, int> Counts: ['scanned', 'overschreden', 'escalated', 'pauseExpired', 'errors']
+	 * @return array<string, int> Counts: ['scanned', 'exceeded', 'escalated', 'pauseExpired', 'errors']
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
 	 */
@@ -79,7 +79,7 @@ class DeadlineDailyScanService {
 		$now = ($now ?? new DateTimeImmutable());
 		$counts = [
 			'scanned' => 0,
-			'overschreden' => 0,
+			'exceeded' => 0,
 			'escalated' => 0,
 			'pauseExpired' => 0,
 			'errors' => 0,
@@ -180,14 +180,14 @@ class DeadlineDailyScanService {
 	 */
 	private function processInstance(array $row, DateTimeImmutable $now, array &$counts): void {
 		$status = (string)($row['status'] ?? '');
-		if (in_array($status, ['voltooid', 'overschreden', 'withdrawn'], true) === true) {
+		if (in_array($status, ['completed', 'exceeded', 'withdrawn'], true) === true) {
 			return;
 		}
 
 		$rowId = (string)($row['id'] ?? '');
 
 		// Pause-expiry detection.
-		if ($status === 'gepauzeerd') {
+		if ($status === 'paused') {
 			$this->handlePauseExpiry(row: $row, rowId: $rowId, now: $now, counts: $counts);
 			return;
 		}
@@ -200,9 +200,9 @@ class DeadlineDailyScanService {
 		$daysLeft = $this->calculateDaysLeft(deadline: $deadline, now: $now);
 
 		// Overschrijding.
-		if ($daysLeft <= 0 && $status !== 'overschreden') {
+		if ($daysLeft <= 0 && $status !== 'exceeded') {
 			$this->recordOverschrijding(rowId: $rowId, now: $now, counts: $counts);
-			$row['status'] = 'overschreden';
+			$row['status'] = 'exceeded';
 		}
 
 		// Threshold escalation.
@@ -225,7 +225,7 @@ class DeadlineDailyScanService {
 			$counts['pauseExpired']++;
 			$this->termService->recordEvent(
 				termInstanceId: $rowId,
-				type: 'pauze-verlopen',
+				type: 'pause-expired',
 				basis: 'AWB 4:5',
 				rationale: 'Pauzetermijn verlopen zonder aanvulling',
 				daysImpact: 0,
@@ -263,11 +263,11 @@ class DeadlineDailyScanService {
 	 * @return void
 	 */
 	private function recordOverschrijding(string $rowId, DateTimeImmutable $now, array &$counts): void {
-		$counts['overschreden']++;
-		$this->termService->updateTermijnInstance($rowId, ['status' => 'overschreden']);
+		$counts['exceeded']++;
+		$this->termService->updateTermijnInstance($rowId, ['status' => 'exceeded']);
 		$this->termService->recordEvent(
 			termInstanceId: $rowId,
-			type: 'overschreden',
+			type: 'exceeded',
 			basis: 'AWB 4:13',
 			rationale: 'Termijn overschreden zonder beschikking',
 			daysImpact: 0,

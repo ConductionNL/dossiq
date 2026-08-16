@@ -67,7 +67,7 @@ class BerichtenboxRoutingService {
 		// The berichtId is assigned by the downstream Berichtenbox provider; in
 		// the absence of a live channel we derive a stable, non-identifying id
 		// from the beschikking kenmerk so the delivery record is reproducible.
-		$reference = (string)($decision['reference'] ?? ($decision['id'] ?? 'onbekend'));
+		$reference = (string)($decision['reference'] ?? ($decision['id'] ?? 'unknown'));
 		$messageId = strtoupper(substr($channel, 0, 2)) . '-' . substr(hash('sha256', $reference . $channel), 0, 12);
 
 		$this->logger->info(

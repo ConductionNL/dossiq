@@ -174,7 +174,7 @@ export default {
 
 	computed: {
 		isAdviesStep() {
-			return this.step?.type === 'advies'
+			return this.step?.type === 'advice'
 		},
 
 		/** @spec openspec/specs/parafering-actions/spec.md */
@@ -189,7 +189,7 @@ export default {
 
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		primaryActionLabel() {
-			if (this.step?.type === 'advies') return this.t('procest', 'Advise')
+			if (this.step?.type === 'advice') return this.t('procest', 'Advise')
 			if (this.step?.type === 'parafering')
 				return this.t('procest', 'Approve (paraferen)')
 			if (this.step?.type === 'accordering') return this.t('procest', 'Accord')
@@ -212,7 +212,7 @@ export default {
 		 */
 		formatStepType(type) {
 			const labels = {
-				advies: this.t('procest', 'Advise'),
+				advice: this.t('procest', 'Advise'),
 				parafering: this.t('procest', 'Approve (paraferen)'),
 				accordering: this.t('procest', 'Accord'),
 			}
@@ -259,7 +259,7 @@ export default {
 			if (!this.canSubmit) return
 			const stepType = this.step?.type
 			let action = null
-			if (stepType === 'advies') action = 'advised'
+			if (stepType === 'advice') action = 'advised'
 			if (stepType === 'parafering') action = 'parafered'
 			if (stepType === 'accordering') action = 'accorded'
 			if (!action) {

@@ -232,7 +232,7 @@ class CaseTypeCopyServiceTest extends TestCase {
 			],
 			'st-1' => [
 				'__schema' => 'statusType',
-				'data' => ['id' => 'st-1', 'caseType' => 'ct-1', 'name' => 'Ontvangen', 'order' => 1],
+				'data' => ['id' => 'st-1', 'caseType' => 'ct-1', 'name' => 'Received', 'order' => 1],
 			],
 			'st-2' => [
 				'__schema' => 'statusType',
@@ -261,7 +261,7 @@ class CaseTypeCopyServiceTest extends TestCase {
 			// Decoy: same schema, different (unrelated) case type.
 			'st-99' => [
 				'__schema' => 'statusType',
-				'data' => ['id' => 'st-99', 'caseType' => 'other-ct', 'name' => 'Ontvangen'],
+				'data' => ['id' => 'st-99', 'caseType' => 'other-ct', 'name' => 'Received'],
 			],
 		];
 	}//end seedStore()

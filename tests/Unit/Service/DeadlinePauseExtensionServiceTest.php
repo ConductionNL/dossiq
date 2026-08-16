@@ -102,7 +102,7 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 		$id = (string)$instance['id'];
 
 		$paused = $this->pauseService->registerPauze($id, 14, 'Aanvrager moet aanvulling indienen', 'doc:1');
-		self::assertSame('gepauzeerd', $paused['status']);
+		self::assertSame('paused', $paused['status']);
 		self::assertSame('2026-08-10', $paused['endDateCurrent']);
 	}
 

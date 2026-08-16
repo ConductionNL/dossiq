@@ -104,11 +104,11 @@ export default {
 		 */
 		badgeClass(status) {
 			const s = (status || '').toLowerCase()
-			if (s === 'actief' || s === 'active')
+			if (s === 'active' || s === 'active')
 				return 'mandaat-matrix-table__badge--ok'
-			if (s === 'vervallen' || s === 'expired')
+			if (s === 'lapsed' || s === 'expired')
 				return 'mandaat-matrix-table__badge--alert'
-			if (s === 'concept' || s === 'draft')
+			if (s === 'draft' || s === 'draft')
 				return 'mandaat-matrix-table__badge--neutral'
 			return 'mandaat-matrix-table__badge--neutral'
 		},

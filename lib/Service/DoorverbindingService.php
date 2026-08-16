@@ -104,7 +104,7 @@ class DoorverbindingService {
 			'transferReason' => (string)($data['transferReason'] ?? ''),
 			'contextTransfer' => (string)($data['contextTransfer'] ?? ''),
 			'contextSnapshot' => (string)($data['contextSnapshot'] ?? '{}'),
-			'geaccepteerd' => null,
+			'accepted' => null,
 			'warmTransferStarted' => date('c'),
 		];
 
@@ -135,7 +135,7 @@ class DoorverbindingService {
 	 */
 	public function acceptTransfer(string $doorverbindingId, string $callerUid = ''): array {
 		$current = $this->load(doorverbindingId: $doorverbindingId);
-		if (($current['geaccepteerd'] ?? null) !== null) {
+		if (($current['accepted'] ?? null) !== null) {
 			throw new RuntimeException('Doorverbinding already answered');
 		}
 
@@ -147,7 +147,7 @@ class DoorverbindingService {
 		return $this->update(
 			doorverbindingId: $doorverbindingId,
 			patch: [
-				'geaccepteerd' => true,
+				'accepted' => true,
 				'acceptanceTime' => date('c'),
 			],
 		);
@@ -173,7 +173,7 @@ class DoorverbindingService {
 		}
 
 		$current = $this->load(doorverbindingId: $doorverbindingId);
-		if (($current['geaccepteerd'] ?? null) !== null) {
+		if (($current['accepted'] ?? null) !== null) {
 			throw new RuntimeException('Doorverbinding already answered');
 		}
 
@@ -185,7 +185,7 @@ class DoorverbindingService {
 		return $this->update(
 			doorverbindingId: $doorverbindingId,
 			patch: [
-				'geaccepteerd' => false,
+				'accepted' => false,
 				'rejectedReason' => $reason,
 			],
 		);

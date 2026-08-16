@@ -121,7 +121,7 @@
 
 					<!-- Conditions block for positief_met_voorwaarden -->
 					<div
-						v-if="responseForm.advies === 'positief_met_voorwaarden'"
+						v-if="responseForm.advies === 'positief_with_terms'"
 						class="external-consultation-response__field">
 						<label class="external-consultation-response__label">
 							{{ t('procest', 'Conditions') }}
@@ -235,22 +235,22 @@ export default {
 			},
 
 			adviesOptions: [
-				{ label: this.t('procest', 'Positive'), value: 'positief' },
+				{ label: this.t('procest', 'Positive'), value: 'positive' },
 				{
 					label: this.t('procest', 'Positive with conditions'),
-					value: 'positief_met_voorwaarden',
+					value: 'positief_with_terms',
 				},
-				{ label: this.t('procest', 'Negative'), value: 'negatief' },
+				{ label: this.t('procest', 'Negative'), value: 'negative' },
 				{
 					label: this.t('procest', 'Not applicable'),
-					value: 'niet_van_toepassing',
+					value: 'non_from_application',
 				},
 			],
 
 			priorityOptions: [
-				{ label: this.t('procest', 'High'), value: 'hoog' },
-				{ label: this.t('procest', 'Normal'), value: 'normaal' },
-				{ label: this.t('procest', 'Low'), value: 'laag' },
+				{ label: this.t('procest', 'High'), value: 'high' },
+				{ label: this.t('procest', 'Normal'), value: 'normal' },
+				{ label: this.t('procest', 'Low'), value: 'low' },
 			],
 		}
 	},
@@ -258,7 +258,7 @@ export default {
 	computed: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06 */
 		toelichtingRequired() {
-			return this.responseForm.advies !== 'niet_van_toepassing'
+			return this.responseForm.advies !== 'non_from_application'
 		},
 
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06 */
@@ -305,7 +305,7 @@ export default {
 		addVoorwaarde() {
 			this.responseForm.terms.push({
 				description: '',
-				priority: 'normaal',
+				priority: 'normal',
 			})
 		},
 
@@ -329,7 +329,7 @@ export default {
 						advies: this.responseForm.advies,
 						notes: this.responseForm.notes.trim(),
 						terms:
-							this.responseForm.advies === 'positief_met_voorwaarden'
+							this.responseForm.advies === 'positief_with_terms'
 								? [...this.responseForm.terms]
 								: [],
 						date: this.responseForm.date,

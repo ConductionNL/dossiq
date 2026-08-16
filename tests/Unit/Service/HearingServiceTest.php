@@ -21,8 +21,12 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
+use OCA\Procest\Service\Bezwaar\BezwaarAuditTrail;
+use OCA\Procest\Service\Bezwaar\HearingMinutesRecorder;
+use OCA\Procest\Service\Bezwaar\HearingSchedulePlanner;
 use OCA\Procest\Service\HearingService;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Support\OwningCaseResolver;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
