@@ -81,7 +81,7 @@ final class BezwaarCalculationRegistryTest extends TestCase {
 		$path = __DIR__ . '/../../../lib/Settings/procest_register.json';
 		$json = json_decode((string)file_get_contents($path), true);
 		$this->assertIsArray($json, 'register JSON must parse');
-		$objection = $json['components']['schemas']['bezwaar'] ?? null;
+		$objection = $json['components']['schemas']['objectionProceeding'] ?? null;
 		$this->assertIsArray($objection, 'bezwaar schema must exist');
 		$this->calcs = $objection['x-openregister-calculations'] ?? [];
 	}//end setUp()

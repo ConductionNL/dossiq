@@ -52,7 +52,7 @@ class SubsidieFragmentTest extends TestCase {
 		'subsidieBeoordeling',
 		'subsidieBeschikking',
 		'subsidieUitvoering',
-		'tussenrapportage',
+		'interimReport',
 		'subsidieVaststelling',
 		'terugvordering',
 		'bewijsstuk',

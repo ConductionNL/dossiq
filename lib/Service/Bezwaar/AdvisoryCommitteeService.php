@@ -175,7 +175,7 @@ class AdvisoryCommitteeService {
 			],
 			$payload,
 			[
-				'bezwaar' => $objectionId,
+				'objectionProceeding' => $objectionId,
 				'committee' => $commissieId,
 				'status' => 'assigned',
 				'assignedAt' => $now,
@@ -189,7 +189,7 @@ class AdvisoryCommitteeService {
 			payload: [
 				'panel' => $record['panel'],
 				'commissieId' => $commissieId,
-				'bezwaar' => $objectionId,
+				'objectionProceeding' => $objectionId,
 			],
 		);
 
@@ -448,7 +448,7 @@ class AdvisoryCommitteeService {
 		}
 
 		$independence = $this->independence->check(
-			objectionId: (string)($current['bezwaar'] ?? ''),
+			objectionId: (string)($current['objectionProceeding'] ?? ''),
 			panel: $panel,
 		);
 
@@ -528,7 +528,7 @@ class AdvisoryCommitteeService {
 				subjectId: (string)$requestId,
 				payload: [
 					'subjectRegister' => $register,
-					'externalReference' => (string)($current['bezwaar'] ?? $requestId),
+					'externalReference' => (string)($current['objectionProceeding'] ?? $requestId),
 					'subjectLabel' => (string)($merged['conclusion'] ?? 'BAC-advies'),
 					'adviceType' => (string)($merged['recommendation'] ?? ''),
 					'question' => (string)($merged['conclusion'] ?? ''),

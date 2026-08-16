@@ -59,7 +59,7 @@ class AwbProceedingScanner {
 	 *
 	 * @var array<int, string>
 	 */
-	private const OPENING_SCHEMAS = ['bezwaar', 'objection', 'beroep'];
+	private const OPENING_SCHEMAS = ['objectionProceeding', 'objection', 'beroep'];
 
 	/**
 	 * Scan failures collected while listing objects, reported by the caller.
@@ -196,7 +196,7 @@ class AwbProceedingScanner {
 		$ids = [];
 
 		foreach ($this->listObjects(objectService: $objectService, schema: $schema, includeDeleted: true) as $decision) {
-			foreach (['bezwaar', 'beroep', 'appeal', 'objection'] as $key) {
+			foreach (['objectionProceeding', 'beroep', 'appeal', 'objection'] as $key) {
 				$ref = ($decision['data'][$key] ?? null);
 				if (is_string($ref) === true && $ref !== '') {
 					$ids[] = $ref;

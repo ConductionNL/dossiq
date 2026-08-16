@@ -18,12 +18,16 @@
  * ORDERING: this MUST run before `InitializeSettings`, which triggers the
  * procest register import. Registered first in info.xml's post-migration block.
  *
- * `bezwaar` is deliberately absent. procest declares BOTH `bezwaar` and
- * `objection`, and they are two entities rather than a duplicate — the
- * independence check resolves `bacAdviceRequest.bezwaar -> bezwaar (lifecycle
- * record) -> bezwaar.case -> objection (filed on that case)`, and SettingsService
- * carries separate `bezwaar_schema` and `objection_schema` keys. Naming the
- * lifecycle record in English is a design decision, not a translation.
+ * `bezwaar` is now IN, as `objectionProceeding`. It was held back because
+ * procest declares BOTH `bezwaar` and `objection` and an earlier attempt renamed
+ * the first onto the second — a DUPLICATE JSON KEY, which is legal, parses, and
+ * silently kept only the last block, dropping one schema's lifecycle and
+ * calculations. They are two entities, not a duplicate: `objection` is the
+ * SUBMISSION (contestedDecision, grounds, requestedRelief, receivedDate,
+ * isTimely) and `bezwaar` is the Awb PROCEEDING around it (case, a ref to that
+ * objection, status, awbReference, receiptDate, adjournedOn, suspensionStart).
+ * Zero shared properties. `objectionProceeding` names the second without
+ * colliding with the first.
  *
  * @category  Repair
  * @package   OCA\Procest\Repair
@@ -74,12 +78,14 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	 */
 	public const SLUG_MAP = [
 		'avgClassificatie' => 'gdprClassification',
+		'bezwaar' => 'objectionProceeding',
 		'catalogus' => 'catalog',
 		'dwangsomBerekening' => 'penaltyPaymentCalculation',
 		'ingebrekestelling' => 'noticeOfDefault',
 		'kanaal' => 'notificationChannel',
 		'termijnDefinitie' => 'deadlineDefinition',
 		'termijnInstance' => 'deadlineInstance',
+		'tussenrapportage' => 'interimReport',
 		'voorstel' => 'proposal',
 	];
 
