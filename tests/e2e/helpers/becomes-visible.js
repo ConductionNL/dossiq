@@ -29,34 +29,52 @@
  *
  * `waitFor` polls. **The skip that survives it is a real one.**
  *
- * ⚠️ AND HERE THEY ALL SURVIVED IT — READ THIS BEFORE REPEATING MY MISTAKE.
- * ------------------------------------------------------------------------
- * An earlier version of this comment asserted that procest's skip reasons were
- * FALSE, reasoning that `/workflow-board` is a declared route in
- * `src/manifest.json`, that `WorkflowBoardView` resolves in `src/registry.js`,
- * and that `WorkflowBoard.vue` renders an **unconditional** `<h2>Workflow
- * Board</h2>`. All three facts are true. **The conclusion drawn from them was
- * not.**
+ * ⚠️ THE COUNT DID NOT MOVE — AND THAT IS NOT THE SAME AS "THE REASONS WERE TRUE".
+ * ---------------------------------------------------------------------------
+ * Measured with these polling gates in place: 128 collected, 90 passed,
+ * 38 skipped — byte-identical to the baseline. It is worth being precise about
+ * what that does and does not show, because I got it wrong twice.
  *
- * Measured: with these polling gates in place, the tally is **unchanged** —
- * 128 collected, 90 passed, 38 skipped, byte-identical to the baseline, with
- * the app's 3.1 MB bundle confirmed served (HTTP 200), so this is not the
- * "e2e suite measuring an unbuilt app" trap either. The elements genuinely do
- * not appear, and the skips are therefore **honest**.
+ * I first asserted the reasons were FALSE (reasoning from source: the route is
+ * declared, the component resolves, the `<h2>` is unconditional). I then
+ * over-corrected and wrote that they were all TRUE, because the count had not
+ * moved. **Both were wrong, because the question is PER GATE and the count
+ * cannot answer it.** The kanban test has two gates in series:
  *
- * 🔑 SOURCE CODE PROVES A SURFACE IS DECLARED. IT DOES NOT PROVE IT RENDERS.
- * A route can be declared, registered, and unreachable — the remaining suspect
- * here is the server-side URL the specs navigate to
- * (`/index.php/apps/procest/workflow-board`) versus where the SPA actually
- * mounts that page. That is an app/routing question, not a Playwright one.
+ *   1. heading "Workflow Board"  → "Workflow Board surface not deployed in
+ *                                   target instance"        ← REASON IS FALSE
+ *   2. `.case-card`              → "No cases on the Workflow Board to
+ *                                   exercise the move control" ← REASON IS TRUE
  *
- * So this file's value is NOT that it unskipped anything. It is that the 38
- * skips are now **believable**: each survived a 10–15 s poll, so it reports a
- * real absence rather than a race, and the next person to investigate can
- * trust the number instead of re-deriving it.
+ * Gate 1's reason is false, and the proof is a SIBLING TEST THAT PASSES IN THE
+ * SAME RUN: `spec-coverage/workflow-operations.spec.ts:18` reaches
+ * `/index.php/apps/procest/workflow-board` by the identical navigation
+ * (`navToRoute` is literally `page.goto('/index.php/apps/procest'+route)` plus
+ * the same dialog dismissal) and asserts `.workflow-board__header h2` visible.
+ * The board renders.
  *
- * The `test.skip()` calls are deliberately KEPT: the fix is not to unskip, it
- * is to make the gate tell the truth.
+ * Gate 2's reason is true, and the proof is also a passing test:
+ * `workflows/case-lifecycle.spec.ts:185` is the only spec that sees case cards
+ * — and it **seeds two cases itself** before looking. This file's specs seed
+ * nothing, so there are no cards, and "no cases on the board" is exactly right.
+ *
+ * 🔑 SO THE SKIP MOVED FROM A FALSE REASON TO A TRUE ONE, AND THE COUNT — the
+ * only thing CI reports — COULD NOT SHOW IT. De-racing gate 1 simply hands
+ * control to gate 2. A stable skip count is compatible with every reason
+ * underneath it changing.
+ *
+ * 🔑 AND SOURCE CODE PROVES A SURFACE IS DECLARED, NOT THAT IT RENDERS. What
+ * settled both gates was not reading the app — it was finding a PASSING TEST
+ * that already exercised the same thing. Prefer that evidence.
+ *
+ * ➡️ FOLLOW-UP, EVIDENCED AND NOT DONE HERE: to actually recover these tests,
+ * seed cases the way `case-lifecycle.spec.ts` does rather than hoping the
+ * shared fixture has some. That is a fixture change, not a timing change, and
+ * it belongs in its own reviewed commit.
+ *
+ * So this file's value is NOT that it unskipped anything. It is that each
+ * surviving skip now reports a real absence rather than a race, so the next
+ * person can trust it instead of re-deriving it — as I had to, twice.
  */
 
 /**
