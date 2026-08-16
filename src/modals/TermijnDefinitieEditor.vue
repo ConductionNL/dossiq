@@ -195,7 +195,10 @@ export default {
 			return [
 				{ id: 'beslis', label: t('procest', 'Decision deadline') },
 				{ id: 'herstel', label: t('procest', 'Remediation period') },
-				{ id: 'objectionProceeding', label: t('procest', 'Objection period') },
+				{
+					id: 'objectionProceeding',
+					label: t('procest', 'Objection period'),
+				},
 				{ id: 'beroep', label: t('procest', 'Appeal period') },
 			]
 		},

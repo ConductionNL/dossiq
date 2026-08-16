@@ -139,13 +139,18 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 		const bzId = objectId(bz)
 
 		// Advance the workflow status (a valid value from the bezwaar enum).
-		await updateObject(api, token, 'objectionProceeding', bzId, { status: 'In handling' })
+		await updateObject(api, token, 'objectionProceeding', bzId, {
+			status: 'In handling',
+		})
 
 		// PERSISTENCE: re-read confirms the new status was written.
 		await expect
 			.poll(
 				async () =>
-					String((await showObject(api, 'objectionProceeding', bzId)).status ?? ''),
+					String(
+						(await showObject(api, 'objectionProceeding', bzId)).status
+							?? '',
+					),
 				{
 					timeout: 15000,
 					message: 'bezwaar status persisted',
