@@ -85,7 +85,11 @@ class EmailPdfRetryJob extends TimedJob {
 				// Real PDF conversion is delegated to Docudesk via an adapter;
 				// here we simply re-mark as failed so the attempt count climbs.
 				// When Docudesk wiring lands, replace this block with the
-				// adapter invocation + markComplete()/markFailed() branching.
+				// adapter invocation, branching on its outcome: markFailed()
+				// below on failure, and on success a markComplete() that must
+				// be added back to EmailArchivalService at the same time — it
+				// was removed as dead code because this branch is the only
+				// caller it will ever have.
 				$this->archivalService->markFailed(
 					archivalId: $archivalId,
 					errorMessage: 'retry pending Docudesk adapter wiring'

@@ -118,25 +118,18 @@ class EmailArchivalService {
 		];
 	}//end archiveLinkedEmail()
 
-	/**
-	 * Mark a previous archival attempt as completed.
+	/*
+	 * NO markComplete() HERE — YET.
 	 *
-	 * @param string $archivalId Archival identifier.
-	 * @param string $pdfFileRef File reference inside Nextcloud Files.
-	 *
-	 * @return bool
-	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T05
+	 * It set `pdfStatus: completed` + `pdfFileRef` through `updateArchival()`.
+	 * Nothing called it: `EmailPdfRetryJob` only ever calls `markFailed()`,
+	 * because the Docudesk PDF adapter it would branch on is not wired. A
+	 * success writer for a success that cannot happen is dead code, so it is
+	 * removed rather than left waiting — the retry job's own comment carries
+	 * the instruction to add it back alongside the adapter, which is the
+	 * moment it becomes reachable. `updateArchival()` is unchanged and
+	 * `markFailed()` still uses it.
 	 */
-	public function markComplete(string $archivalId, string $pdfFileRef): bool {
-		return $this->updateArchival(
-			archivalId: $archivalId,
-			fields: [
-				'pdfStatus' => 'completed',
-				'pdfFileRef' => $pdfFileRef,
-			]
-		);
-	}//end markComplete()
 
 	/**
 	 * Mark an archival attempt as failed and increment retry counter.

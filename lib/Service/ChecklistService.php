@@ -17,8 +17,10 @@
  * Consolidation is explicitly deferred there, so merging them would contradict
  * the spec rather than tidy it.
  *
- * Answer conventions match `Inspection\ChecklistService` exactly, so the two
- * never disagree about which answer is a failure:
+ * Answer conventions are those of the shipped `inspectionChecklistTemplate` /
+ * `inspectionChecklistRun` schemas, read the same way by
+ * `Support\ChecklistPayloadReader`, so the two never disagree about which
+ * answer is a failure:
  *   - `responseType: ja_nee_nvt` → `nvt` is not-applicable, `nee` is
  *     non-conforming, anything else conforms;
  *   - `fotoRequired` is the tri-state `nooit` / `bij_nee` / `altijd`, not a
@@ -282,9 +284,9 @@ class ChecklistService {
 	 *
 	 * Only `ja_nee_nvt` carries an intrinsic verdict; every other response type
 	 * records a measurement or a note and conforms by virtue of being answered.
-	 * Range checking for `getal` / `meting` belongs to
-	 * `Inspection\ChecklistService::validateResponse()`, which rejects an
-	 * out-of-range value outright, so such a value never reaches this method.
+	 * Range checking for `getal` / `meting` belongs to the submit path in
+	 * `InspectionChecklistService`, which rejects an out-of-range value
+	 * outright, so such a value never reaches this method.
 	 *
 	 * @param array<string, mixed> $item The frozen item definition.
 	 * @param array<string, mixed> $response The submitted answer.

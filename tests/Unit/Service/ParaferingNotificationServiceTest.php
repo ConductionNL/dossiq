@@ -227,59 +227,11 @@ class ParaferingNotificationServiceTest extends TestCase {
 
 	}//end testNotifyVoorstelReturnedIncludesComment()
 
-	/**
-	 * Test that notifyParaferingReminder sends a reminder to the actor.
-	 *
-	 * @return void
-	 */
-	public function testNotifyParaferingReminderSendsToActor(): void {
-		$this->notification
-			->expects($this->once())
-			->method('setUser')
-			->with('actor-user-1')
-			->willReturn($this->notification);
-
-		$this->notificationManager
-			->expects($this->once())
-			->method('notify');
-
-		$this->service->notifyParaferingReminder(
-			actorUserId: 'actor-user-1',
-			subject: 'Testvoorstel',
-			proposalId: 'voorstel-uuid-123',
-			daysWaiting: 3,
-		);
-
-	}//end testNotifyParaferingReminderSendsToActor()
-
-	/**
-	 * Test that notifyParaferingReminder includes daysWaiting in subject params.
-	 *
-	 * @return void
-	 */
-	public function testNotifyParaferingReminderIncludesDaysWaiting(): void {
-		$this->notification
-			->expects($this->once())
-			->method('setSubject')
-			->with(
-				'parafering_reminder',
-				$this->callback(
-					function (array $params): bool {
-						return isset($params['daysWaiting']) === true
-							&& $params['daysWaiting'] === 5;
-					}
-				)
-			)
-			->willReturn($this->notification);
-
-		$this->service->notifyParaferingReminder(
-			actorUserId: 'actor-user-1',
-			subject: 'Testvoorstel',
-			proposalId: 'voorstel-uuid-123',
-			daysWaiting: 5,
-		);
-
-	}//end testNotifyParaferingReminderIncludesDaysWaiting()
+	// The two testNotifyParaferingReminder* cases were removed with
+	// ParaferingNotificationService::notifyParaferingReminder(). No job or
+	// listener in this app detects an overdue parafering step, so the reminder
+	// had no producer; the live notifications on this service are still
+	// covered by the notifyVoorstelReturned* cases above.
 
 	/**
 	 * Test that notification exceptions are caught and logged as warnings.

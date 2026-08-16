@@ -139,48 +139,16 @@ class ParaferingNotificationService {
 		}//end try
 	}//end notifyVoorstelReturned()
 
-	/**
-	 * Send a reminder notification for an overdue parafering step.
+	/*
+	 * NO notifyParaferingReminder() HERE.
 	 *
-	 * @param string $actorUserId The user who should act
-	 * @param string $subject The voorstel subject
-	 * @param string $proposalId The voorstel UUID
-	 * @param int $daysWaiting Number of days the step has been waiting
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * It emitted a `parafering_reminder` Nextcloud notification for an overdue
+	 * step. Nothing called it: there is no scheduled job or listener in this
+	 * app that detects an overdue parafering step, so the reminder had no
+	 * trigger. The live notifications on this service
+	 * (`notifyVoorstelReturned` and its siblings) are driven by
+	 * `ApprovalStepNotificationListener` and `ParafeerActieService`; the
+	 * reminder is the one with no producer. Adding a job to fire it is a
+	 * feature, not dead-code removal.
 	 */
-	public function notifyParaferingReminder(
-		string $actorUserId,
-		string $subject,
-		string $proposalId,
-		int $daysWaiting,
-	): void {
-		try {
-			$notification = $this->notificationManager->createNotification();
-			$notification->setApp(Application::APP_ID)
-				->setUser($actorUserId)
-				->setDateTime(new DateTime())
-				->setObject('proposal', $proposalId)
-				->setSubject(
-					'parafering_reminder',
-					[
-						'subject' => $subject,
-						'daysWaiting' => $daysWaiting,
-					]
-				);
-
-			$this->notificationManager->notify($notification);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Failed to send parafering reminder notification',
-				[
-					'actor' => $actorUserId,
-					'proposal' => $proposalId,
-					'exception' => $e->getMessage(),
-				]
-			);
-		}//end try
-	}//end notifyParaferingReminder()
 }//end class

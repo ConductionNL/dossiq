@@ -113,84 +113,11 @@ class VergaderingCaseServiceTest extends TestCase {
 
 	}//end setUp()
 
-	/**
-	 * Test createForVergadering() returns empty array when ObjectService is unavailable.
-	 *
-	 * @return void
-	 */
-	public function testCreateForVergaderingReturnsEmptyWhenNoObjectService(): void {
-		$this->settingsService
-			->method('getObjectService')
-			->willReturn(null);
-
-		$result = $this->service->createForVergadering(
-			vergadering: ['name' => 'Test', 'startDate' => '2026-06-15T19:00:00+02:00']
-		);
-
-		$this->assertSame([], $result);
-
-	}//end testCreateForVergaderingReturnsEmptyWhenNoObjectService()
-
-	/**
-	 * Test createForVergadering() returns empty array when register config is missing.
-	 *
-	 * @return void
-	 */
-	public function testCreateForVergaderingReturnsEmptyWhenConfigMissing(): void {
-		$objectService = $this->createMock(VergaderingObjectServiceStub::class);
-		$objectService->expects($this->never())->method('saveObject');
-
-		$this->settingsService->method('getObjectService')->willReturn($objectService);
-		$this->settingsService->method('getConfigValue')->willReturn('');
-
-		$result = $this->service->createForVergadering(
-			vergadering: ['name' => 'Test', 'startDate' => '2026-06-15T19:00:00+02:00']
-		);
-
-		$this->assertSame([], $result);
-
-	}//end testCreateForVergaderingReturnsEmptyWhenConfigMissing()
-
-	/**
-	 * Test createForVergadering() sets deadline to startDatum − 7 days.
-	 *
-	 * @return void
-	 */
-	public function testCreateForVergaderingCalculatesDeadlineMinusSevenDays(): void {
-		$capturedObject = null;
-
-		$objectService = $this->createMock(VergaderingObjectServiceStub::class);
-		$objectService
-			->method('saveObject')
-			->willReturnCallback(
-				static function (string $register, string $schema, array $object) use (&$capturedObject): array {
-					$capturedObject = $object;
-					return ['id' => 'case-123'];
-				}
-			);
-
-		$this->settingsService->method('getObjectService')->willReturn($objectService);
-		$this->settingsService->method('getConfigValue')
-			->willReturnMap([
-				['register', '', 'procest-register'],
-				['case_schema', '', 'case-schema-id'],
-			]);
-
-		$vergadering = [
-			'@self' => ['slug' => 'raadsvergadering-2026-06-15'],
-			'name' => 'Raadsvergadering 15 juni 2026',
-			'startDate' => '2026-06-15T19:00:00+02:00',
-			'type' => 'raadsvergadering',
-			'organisation' => 'Gemeente Voorbeeldstad',
-		];
-
-		$result = $this->service->createForVergadering(vergadering: $vergadering);
-
-		$this->assertSame(['id' => 'case-123'], $result);
-		$this->assertSame('planned', $capturedObject['status']);
-		$this->assertSame('2026-06-08', $capturedObject['deadline']);
-
-	}//end testCreateForVergaderingCalculatesDeadlineMinusSevenDays()
+	// The three testCreateForVergadering* cases were removed with
+	// VergaderingCaseService::createForVergadering(). Nothing listened for a
+	// vergadering appearing in the open-raadsinformatie register, so the
+	// writer had no event to write on. advanceStatus() and checkDeadlines(),
+	// which act on cases that already exist, are still covered below.
 
 	/**
 	 * Test advanceStatus() throws on invalid status.

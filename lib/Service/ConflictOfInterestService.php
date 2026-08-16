@@ -347,16 +347,13 @@ class ConflictOfInterestService {
 		$this->registered[$caseId] = $reason;
 	}//end registerConflict()
 
-	/**
-	 * Clear a manually-registered conflict.
+	/*
+	 * NO clearConflict() HERE.
 	 *
-	 * @param string $caseId Case id.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/mandaat-matrix-06-temporal-and-conflict/tasks.md
+	 * It removed an entry from the in-memory `$registered` map above and had
+	 * no caller. Neither has `registerConflict()`, which fills that map — the
+	 * manual-override pair is unreached from either end, and the map is
+	 * request-scoped, so an entry cannot survive long enough to need clearing.
+	 * `checkConflict()`, the live method, is unaffected.
 	 */
-	public function clearConflict(string $caseId): void {
-		unset($this->registered[$caseId]);
-	}//end clearConflict()
 }//end class

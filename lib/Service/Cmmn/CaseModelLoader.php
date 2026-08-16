@@ -158,16 +158,14 @@ class CaseModelLoader {
 		return null;
 	}//end getPlanItemById()
 
-	/**
-	 * Clear the per-request cache (call when a model is updated mid-request).
+	/*
+	 * NO clearCache() HERE.
 	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-001
+	 * It emptied the per-request memo below and had no caller anywhere in the
+	 * app — `CasePlanRepository`, its only consumer, reads through `load()`.
+	 * The memo does not outlive the request, so there is no moment at which
+	 * something would need clearing.
 	 */
-	public function clearCache(): void {
-		$this->cache = [];
-	}//end clearCache()
 
 	/**
 	 * Decode a JSON-encoded-string field on the model into a native array,

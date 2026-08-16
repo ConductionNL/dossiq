@@ -167,16 +167,13 @@ class WorkflowTemplateLoader {
 		return null;
 	}//end getTransitionById()
 
-	/**
-	 * Clear the per-request cache (call when a template is updated mid-request).
+	/*
+	 * NO clearCache() HERE.
 	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * Same as `Cmmn\CaseModelLoader`: it emptied the per-request memo below,
+	 * had no caller in either consumer (`Cmmn\CaseModelLoader`,
+	 * `StatusTransitionService`), and the memo does not outlive the request.
 	 */
-	public function clearCache(): void {
-		$this->cache = [];
-	}//end clearCache()
 
 	/**
 	 * Normalise the result of ObjectService::searchObjects() to a list of arrays.

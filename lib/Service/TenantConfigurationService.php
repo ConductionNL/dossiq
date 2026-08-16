@@ -136,46 +136,22 @@ class TenantConfigurationService {
 		}//end try
 	}//end getConfig()
 
-	/**
-	 * Update branding for a tenant.
+	/*
+	 * NO updateBranding() / updateLocale() HERE.
 	 *
-	 * @param string $tenantId Tenant UUID.
-	 * @param array<string,mixed> $branding Branding payload.
+	 * Both merged a delta into a tenant's stored configuration, and neither
+	 * had a caller — nothing in `lib/` constructs
+	 * `TenantConfigurationService` at all, and `appinfo/routes.php` has no
+	 * tenant-configuration route. They were per-tenant configuration writers
+	 * with no authenticated surface in front of them and no per-tenant guard
+	 * of their own; wiring either one meant designing that surface first.
 	 *
-	 * @return array<string,mixed>
-	 *
-	 * @throws InvalidArgumentException When inputs are invalid.
+	 * The read and validation halves stay: `getConfig()`, `getThemingTokens()`,
+	 * `sanitiseBranding()`, `sanitiseCustomCss()`, `validateLogoUpload()` and
+	 * `isHexColor()` are the pieces `Tenant\TenantBrandingSanitiser` was split
+	 * out around, and the locale/timezone/currency allow-lists remain
+	 * available to whatever writer eventually arrives.
 	 */
-	public function updateBranding(string $tenantId, array $branding): array {
-		$sanitised = $this->sanitiseBranding(branding: $branding);
-		return $this->mergeConfig(tenantId: $tenantId, delta: ['branding' => $sanitised]);
-	}//end updateBranding()
-
-	/**
-	 * Update locale-related fields.
-	 *
-	 * @param string $tenantId Tenant UUID.
-	 * @param array{locale?:string, timezone?:string, dateFormat?:string, currency?:string} $payload Payload.
-	 *
-	 * @return array<string,mixed>
-	 *
-	 * @throws InvalidArgumentException
-	 */
-	public function updateLocale(string $tenantId, array $payload): array {
-		if (isset($payload['locale']) === true && in_array($payload['locale'], self::ALLOWED_LOCALES, true) === false) {
-			throw new InvalidArgumentException('Invalid locale: ' . $payload['locale']);
-		}
-
-		if (isset($payload['timezone']) === true && in_array($payload['timezone'], self::ALLOWED_TIMEZONES, true) === false) {
-			throw new InvalidArgumentException('Invalid timezone: ' . $payload['timezone']);
-		}
-
-		if (isset($payload['currency']) === true && preg_match('/^[A-Z]{3}$/', $payload['currency']) !== 1) {
-			throw new InvalidArgumentException('Invalid currency code: ' . $payload['currency']);
-		}
-
-		return $this->mergeConfig(tenantId: $tenantId, delta: $payload);
-	}//end updateLocale()
 
 	/**
 	 * Set or unset a feature flag.

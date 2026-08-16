@@ -258,20 +258,12 @@ class ConflictOfInterestServiceTest extends TestCase {
 		self::assertSame('persoonlijk', $r['reason']);
 	}//end testManualRegistrationOverridesAuto()
 
-	/**
-	 * Clearing a manual conflict unblocks (no applicant => no conflict).
-	 *
-	 * @return void
-	 */
-	public function testClearConflictUnblocks(): void {
-		$svc = new ConflictOfInterestService($this->createMock(LoggerInterface::class));
-		$svc->registerConflict('Z/2026/5', 'persoonlijk');
-		$svc->clearConflict('Z/2026/5');
-
-		$r = $svc->checkConflict('alice', 'Z/2026/5');
-
-		self::assertFalse($r['conflict']);
-	}//end testClearConflictUnblocks()
+	// testClearConflictUnblocks was removed with
+	// ConflictOfInterestService::clearConflict(), which had no caller. The
+	// manual-override map it cleared is request-scoped and filled only by
+	// registerConflict(), which has no caller either; the override behaviour
+	// that is still reachable is asserted by testManualRegistrationOverridesAuto
+	// above.
 
 	/**
 	 * A dormant BRP adapter yields no relation — with identity resolved, that is

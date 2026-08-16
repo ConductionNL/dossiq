@@ -19,7 +19,6 @@ namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\TenantBillingService;
 use OCA\Procest\Service\TenantLifecycleControlService;
-use OCA\Procest\Service\TenantProvisioningService;
 use OCA\Procest\Service\TenantSaasService;
 use OCA\Procest\Service\TenantSchemaProvisioner;
 use PHPUnit\Framework\TestCase;
@@ -31,22 +30,16 @@ use Psr\Log\LoggerInterface;
 class TenantLifecycleControlServiceTest extends TestCase {
 	private TenantSaasService $tenantSaas;
 	private TenantBillingService $billing;
-	private TenantSchemaProvisioner $schemaProv;
-	private TenantProvisioningService $provisioning;
 	private TenantLifecycleControlService $svc;
 
 	protected function setUp(): void {
 		parent::setUp();
 		$this->tenantSaas = $this->createMock(TenantSaasService::class);
 		$this->billing = $this->createMock(TenantBillingService::class);
-		$this->schemaProv = $this->createMock(TenantSchemaProvisioner::class);
-		$this->provisioning = $this->createMock(TenantProvisioningService::class);
 
 		$this->svc = new TenantLifecycleControlService(
 			tenantSaasService: $this->tenantSaas,
 			billingService: $this->billing,
-			schemaProvisioner: $this->schemaProv,
-			provisioning: $this->provisioning,
 			logger: $this->createMock(LoggerInterface::class),
 		);
 	}
@@ -89,15 +82,40 @@ class TenantLifecycleControlServiceTest extends TestCase {
 		$this->assertSame('terminated', $r['tenant']['status']);
 	}
 
-	public function testArchiveAndDeleteDropsSchemaAndLogs(): void {
-		$this->provisioning->method('buildSchemaName')->willReturn('tenant_abc_amsterdam');
-		$this->schemaProv->expects($this->once())
-			->method('dropSchema')
-			->with('tenant_abc_amsterdam');
+	/**
+	 * The service exposes no schema-dropping entry point. Nothing in the app
+	 * references TenantLifecycleControlService, and there is no retention
+	 * timer to decide the window has passed, so an irreversible whole-tenant
+	 * delete must not sit here waiting for its first caller.
+	 *
+	 * @return void
+	 */
+	public function testServiceExposesNoSchemaDrop(): void {
+		$this->assertFalse(
+			condition: method_exists(TenantLifecycleControlService::class, 'archiveAndDelete'),
+			message: 'TenantLifecycleControlService must not expose an irreversible tenant delete.'
+		);
 
-		$r = $this->svc->archiveAndDelete('t-1', 'amsterdam', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890');
-		$this->assertSame('tenant_abc_amsterdam', $r['schemaName']);
-		$this->assertNotSame('', $r['deletionAt']);
+		// And it must not hold the collaborator that could perform one: with
+		// TenantSchemaProvisioner injected, re-adding a schema drop is a
+		// one-line change that no test would notice.
+		$parameters = (new \ReflectionClass(TenantLifecycleControlService::class))
+			->getConstructor()
+			->getParameters();
+		$types = [];
+		foreach ($parameters as $parameter) {
+			$type = $parameter->getType();
+			if ($type instanceof \ReflectionNamedType) {
+				$types[] = $type->getName();
+			}
+		}
+
+		$this->assertNotEmpty($types, 'Constructor parameter types could not be read — this assertion would otherwise pass vacuously.');
+		$this->assertNotContains(
+			TenantSchemaProvisioner::class,
+			$types,
+			'TenantLifecycleControlService must not be injected with the schema provisioner.'
+		);
 	}
 
 	public function testCountUnsettledEventsHonoursInvoiceRef(): void {

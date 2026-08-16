@@ -32,9 +32,10 @@ use RuntimeException;
 /**
  * Wraps ORI vergaderingen as Procest cases with lifecycle and deadline tracking.
  *
- * A vergadering is created in the ORI register with status "planned".  This
- * service creates a linked Procest case so that the full Procest lifecycle
- * engine (status, deadlines, tasks, audit trail) applies to council meetings.
+ * A vergadering is created in the ORI register with status "planned".  Where a
+ * linked Procest case already exists, this service applies the full Procest
+ * lifecycle engine (status, deadlines, tasks, audit trail) to it.  It does not
+ * create that link itself — see the note on `createForVergadering()` below.
  *
  * @spec openspec/changes/open-raadsinformatie/tasks.md#task-5
  */
@@ -54,12 +55,13 @@ class VergaderingCaseService {
 		'cancelled',
 	];
 
-	/**
-	 * Number of days before the vergadering that the agenda-publication deadline falls.
-	 *
-	 * @var int
+	/*
+	 * NO AGENDA_DEADLINE_DAYS HERE — its only reader was
+	 * `createForVergadering()`, which computed `startDatum − 7 days` when it
+	 * created the case. That method is gone (see the note below), and the
+	 * deadline rule is recorded in
+	 * `openspec/changes/open-raadsinformatie/tasks.md#task-5`.
 	 */
-	private const AGENDA_DEADLINE_DAYS = 7;
 
 	/**
 	 * Constructor for VergaderingCaseService.
@@ -75,91 +77,18 @@ class VergaderingCaseService {
 	) {
 	}//end __construct()
 
-	/**
-	 * Create a Procest case for a newly registered vergadering.
+	/*
+	 * NO createForVergadering() HERE.
 	 *
-	 * GIVEN a vergadering created with startDatum
-	 * THEN a linked Procest case is created with status "planned"
-	 * AND deadline = startDatum − 7 days (agenda publication deadline).
-	 *
-	 * @param array $vergadering The vergadering object from the ORI register
-	 *
-	 * @return array The created case object, or empty array when skipped
-	 *
-	 * @spec openspec/changes/open-raadsinformatie/tasks.md#task-5
+	 * It created a linked Procest case whenever a vergadering appeared in the
+	 * open-raadsinformatie register. Nothing called it: the only consumer of
+	 * this service, `BackgroundJob\\VergaderingDeadlineJob`, calls
+	 * `checkDeadlines()`, and there is no listener on vergadering creation.
+	 * The ORI ingest side of that bridge does not exist here, so this was a
+	 * writer with no event to write on; `advanceStatus()` and
+	 * `checkDeadlines()`, which operate on cases that already exist, are
+	 * untouched.
 	 */
-	public function createForVergadering(array $vergadering): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			$this->logger->warning(
-				'Procest: ObjectService unavailable; skipping vergadering case creation',
-				['app' => Application::APP_ID]
-			);
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
-
-		if (empty($register) === true || empty($caseSchema) === true) {
-			$this->logger->warning(
-				'Procest: case register/schema not configured; skipping vergadering case creation',
-				['app' => Application::APP_ID]
-			);
-			return [];
-		}
-
-		$startDate = ($vergadering['startDate'] ?? '');
-		$deadline = '';
-
-		if (empty($startDate) === false) {
-			try {
-				$start = new DateTimeImmutable(datetime: $startDate);
-				$deadline = $start->modify('-' . self::AGENDA_DEADLINE_DAYS . ' days')->format('Y-m-d');
-			} catch (\Exception $e) {
-				$this->logger->warning(
-					'Procest: could not parse vergadering startDatum for deadline calculation',
-					['startDate' => $startDate, 'error' => $e->getMessage()]
-				);
-			}
-		}
-
-		$caseData = [
-			'title' => ($vergadering['name'] ?? 'Vergadering'),
-			'status' => 'planned',
-			'deadline' => $deadline,
-			'oriVergaderingId' => ($vergadering['@self']['slug'] ?? ''),
-			'oriRegister' => 'ori',
-			'type' => ($vergadering['type'] ?? ''),
-			'organisation' => ($vergadering['organisation'] ?? ''),
-		];
-
-		try {
-			$case = $objectService->saveObject(
-				register: $register,
-				schema: $caseSchema,
-				object: $caseData,
-			);
-
-			$this->logger->info(
-				'Procest: created case for vergadering',
-				[
-					'vergaderingSlug' => ($vergadering['@self']['slug'] ?? ''),
-					'caseId' => ($case['id'] ?? ''),
-					'deadline' => $deadline,
-				]
-			);
-
-			return $case;
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Procest: failed to create case for vergadering',
-				['exception' => $e->getMessage(), 'app' => Application::APP_ID]
-			);
-			return [];
-		}//end try
-
-	}//end createForVergadering()
 
 	/**
 	 * Advance the status of a vergadering-backed case.

@@ -9,8 +9,8 @@
  * place rather than being restated by every consumer.
  *
  * The rules encoded here are read from the shipped `inspectionChecklistTemplate`
- * and `inspectionChecklistRun` schemas and mirror
- * `Inspection\ChecklistService::indexItemsBySnapshot()` exactly:
+ * and `inspectionChecklistRun` schemas, and this class is now their single
+ * in-code statement:
  *   - items may be flat (`items`) or sectioned (`sections[].items`);
  *   - a run carries its frozen template under `templateSnapshot`;
  *   - an item's id is `id`, else `order`, else its position in the list.
