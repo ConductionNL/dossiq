@@ -335,9 +335,6 @@
   "src/main.js": {
     "no-console": {
       "count": 1
-    },
-    "no-undef": {
-      "count": 1
     }
   },
   "src/modals/AddCaseRelationModal.vue": {
