@@ -143,6 +143,15 @@ class EmailController extends Controller {
 	 * `// Would load from case.` marker below); the parameter cannot be dropped
 	 * without changing the route.
 	 *
+	 * @no-admin-idor-exempt Reads NO case. The method renders the caller's OWN
+	 * posted body against an EMPTY variable map — `$caseData = []` two lines
+	 * down, and `$caseId` is never passed to anything — so the response is a
+	 * pure function of the request payload and cannot disclose another user's
+	 * data for any value of the id. The docblock above already records that the
+	 * case-data lookup is still a stub. THIS EXEMPTION EXPIRES THE MOMENT THAT
+	 * STUB IS FILLED IN: loading the case here makes it a per-object read and
+	 * it must then take the same CaseAccessGuard check as its siblings.
+	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function preview(string $caseId): JSONResponse {

@@ -372,6 +372,15 @@ class EmailTemplateController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
+	 * @no-admin-idor-exempt Returns a CONSTANT. EmailTemplateService::
+	 * getAvailableVariables() ignores its $caseTypeId argument entirely and
+	 * returns a hardcoded three-group list of placeholder NAMES (case/contact/
+	 * caseType) — it reads no object, no store and no file, so the response is
+	 * byte-identical for every caller and every id. There is nothing here that
+	 * a per-object guard could scope. If per-type variable expansion is ever
+	 * implemented (the SettingsService call below is the placeholder for it),
+	 * this exemption must be removed and the caseType read guarded.
+	 *
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/case-email-integration/tasks.md#T06

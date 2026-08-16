@@ -196,6 +196,16 @@ class AppointmentController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
+	 * @no-admin-idor-exempt Availability probe, not an object read. The three
+	 * parameters (productId, locationId, date) name an entry in the appointment
+	 * BACKEND's public service catalogue and a calendar day; none of them is an
+	 * identifier of anything a user owns. AppointmentService::getTimeslots()
+	 * forwards straight to the external scheduling backend and touches no
+	 * OpenRegister object, so there is no per-object read to authorise and no
+	 * value of the parameters that reveals another caller's data. The sibling
+	 * mutating routes (cancel/noShow) DO carry an appointment id and are guarded
+	 * by mayMutateAppointment() — this one has nothing of that shape.
+	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function timeslots(): JSONResponse {
