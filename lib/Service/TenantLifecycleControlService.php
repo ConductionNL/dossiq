@@ -38,17 +38,20 @@ class TenantLifecycleControlService {
 	 *
 	 * @param TenantSaasService $tenantSaasService Tenant SaaS service.
 	 * @param TenantBillingService $billingService Billing service.
-	 * @param TenantSchemaProvisioner $schemaProvisioner Schema provisioner.
-	 * @param TenantProvisioningService $provisioning Provisioning service.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		private readonly TenantSaasService $tenantSaasService,
 		private readonly TenantBillingService $billingService,
-		private readonly TenantSchemaProvisioner $schemaProvisioner,
-		private readonly TenantProvisioningService $provisioning,
 		private readonly LoggerInterface $logger,
 	) {
+		/*
+		 * NO $schemaProvisioner / $provisioning HERE — both were injected solely
+		 * for `archiveAndDelete()` (see the note below), and nothing else in this
+		 * class ever read them. Keeping the schema provisioner injected into the
+		 * lifecycle service would leave a dropSchema() capability one line away
+		 * from a class that deliberately no longer exposes one.
+		 */
 	}//end __construct()
 
 	/**

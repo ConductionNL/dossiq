@@ -20,10 +20,6 @@
  *  - addFileInspectionRequest()    — append a sub-record for an Awb 8:42
  *                                    file-inspection request with the
  *                                    computed deadline (requestedAt + P4W).
- *  - recordJudgment(outcome)       — persist the categorical uitspraak
- *                                    outcome plus judgmentDate and
- *                                    judgmentDocument; never paraphrases
- *                                    the ruling.
  *  - executeCascade(action)        — fan out the post-uitspraak follow-up:
  *                                    reopen_bezwaar forks a new bezwaar
  *                                    via the status-transition-engine;
@@ -72,18 +68,13 @@ use Throwable;
  * @spec openspec/specs/beroep-escalation/spec.md
  */
 class BeroepService {
-	/**
-	 * Allowed judgment outcomes per REQ-BE-5.
+	/*
+	 * NO VALID_OUTCOMES HERE — it was the whitelist `recordJudgment()` validated
+	 * against, and that method is gone (see the note further down). The list of
+	 * legal uitspraak outcomes belongs with the surface that records one; it is
+	 * kept in `openspec/specs/beroep-escalation/spec.md` (REQ-BE-5) until such a
+	 * surface exists.
 	 */
-	private const VALID_OUTCOMES = [
-		'vernietigd',
-		'upheld',
-		'inadmissible',
-		'dismissed',
-		'upheld_legal_effects_maintained',
-		'withdrawn',
-		'schikking',
-	];
 
 	/**
 	 * Allowed cascade actions per REQ-BE-6.

@@ -32,9 +32,10 @@ use RuntimeException;
 /**
  * Wraps ORI vergaderingen as Procest cases with lifecycle and deadline tracking.
  *
- * A vergadering is created in the ORI register with status "planned".  This
- * service creates a linked Procest case so that the full Procest lifecycle
- * engine (status, deadlines, tasks, audit trail) applies to council meetings.
+ * A vergadering is created in the ORI register with status "planned".  Where a
+ * linked Procest case already exists, this service applies the full Procest
+ * lifecycle engine (status, deadlines, tasks, audit trail) to it.  It does not
+ * create that link itself — see the note on `createForVergadering()` below.
  *
  * @spec openspec/changes/open-raadsinformatie/tasks.md#task-5
  */
@@ -54,12 +55,13 @@ class VergaderingCaseService {
 		'cancelled',
 	];
 
-	/**
-	 * Number of days before the vergadering that the agenda-publication deadline falls.
-	 *
-	 * @var int
+	/*
+	 * NO AGENDA_DEADLINE_DAYS HERE — its only reader was
+	 * `createForVergadering()`, which computed `startDatum − 7 days` when it
+	 * created the case. That method is gone (see the note below), and the
+	 * deadline rule is recorded in
+	 * `openspec/changes/open-raadsinformatie/tasks.md#task-5`.
 	 */
-	private const AGENDA_DEADLINE_DAYS = 7;
 
 	/**
 	 * Constructor for VergaderingCaseService.
