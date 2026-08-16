@@ -51,7 +51,6 @@ import { dismissSupportDialog } from '../helpers/nav'
 import {
 	RUN_PREFIX,
 	cleanupRunObjects,
-	deleteObject,
 	getRequestToken,
 	seedCase,
 	seedStateMachine,
@@ -66,8 +65,15 @@ let token: string
 let sm: StateMachine
 
 test.describe('Workflow Board keyboard status transition', () => {
-	test.describe.configure({ mode: 'serial' })
-
+	// ⚠️ DELIBERATELY NOT `test.describe.configure({ mode: 'serial' })`.
+	// These two tests share only the beforeAll fixture; neither depends on the
+	// other's side effects, so serial mode buys nothing — and it costs the one
+	// thing this file exists to fix. MEASURED, not assumed: with serial mode
+	// on, a failure in the first test marks the second `did not run`, which the
+	// report records as **outcome "skipped" with NO annotation at all** — a
+	// skip carrying no reason whatsoever, which is strictly worse than the
+	// false-reason skips this change removes. Off serial, a real failure
+	// reports as a failure in both.
 	test.beforeAll(async ({ baseURL }) => {
 		api = await request.newContext({ baseURL, storageState: STORAGE_STATE })
 		token = await getRequestToken(api)
@@ -84,12 +90,38 @@ test.describe('Workflow Board keyboard status transition', () => {
 	})
 
 	test.afterAll(async () => {
-		// Child-first: the cases (and any statusRecord a transition produced)
-		// before the machine they hang off.
-		await cleanupRunObjects(api, token, ['statusRecord', 'case'])
-		for (const [schema, id] of [...sm.created].reverse()) {
-			await deleteObject(api, token, schema, id)
-		}
+		// Any statusRecord this run produced is deletable and is swept.
+		await cleanupRunObjects(api, token, ['statusRecord'])
+
+		// ⚠️ THE SEEDED MACHINE IS DELIBERATELY LEFT IN PLACE. Deleting it
+		// breaks a LATER test, and this was MEASURED, not guessed.
+		//
+		// The `case` schema is archival (`x-openregister-archival`): a
+		// user-driven DELETE is refused with a 403 ArchivalImmutableException
+		// and the record persists — `workflows/cases-crud.spec.ts:225` asserts
+		// exactly that, and it passes. `helpers/fixtures.ts#deleteObject` never
+		// inspects the response, so `cleanupRunObjects(…, ['case'])` reports
+		// success and removes NOTHING. The seeded case therefore OUTLIVES this
+		// file whatever we do.
+		//
+		// Its caseType and statusTypes are NOT archival, so the obvious
+		// child-first cleanup deletes them out from under a case that is still
+		// live — leaving a DANGLING reference. Observed in CI run
+		// 31964165472: the dashboard's grouped aggregations
+		// (`aggregations/procest/case/grouped?groupBy=status|caseType`) still
+		// return the orphaned case's group keys, the chart widget resolves each
+		// key by id, and two of those lookups 404. That reddened
+		// `spec-coverage/ui-pages.spec.ts:55` ("dashboard mounts without
+		// procest console errors"), which is a test that was doing its job.
+		//
+		// So the referential integrity of the surviving case is what has to be
+		// preserved. The residue is small, RUN_PREFIX-tagged and consistent,
+		// and CI builds a throwaway instance per run.
+		//
+		// 📌 workflows/case-lifecycle.spec.ts carries the SAME latent defect —
+		// it deletes `sm.created` while its own cases survive. It is invisible
+		// today only because `workflows/` sorts after every spec that would
+		// notice. Recorded on the fleet board rather than changed here.
 		await api.dispose()
 	})
 
