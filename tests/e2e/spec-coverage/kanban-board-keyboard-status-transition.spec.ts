@@ -4,50 +4,148 @@
  *
  * Gate-19 spec-coverage tests for kanban-board-keyboard-status-transition
  * (WCAG 2.1.1 Keyboard fix on the Workflow Board's status-move control).
- * Drives the real UI; skips gracefully when the board/data is not
- * available in the target instance rather than hard-failing the suite.
  *
- * Note: Use /apps/procest/<route> (not /index.php/...) so the Vue
- * history-mode router resolves the route.
+ * ⚠️ WHY THIS FILE SEEDS ITS OWN DATA
+ * -----------------------------------
+ * Both tests here used to open the board, look for a `.case-card`, find none,
+ * and `test.skip(true, 'No cases on the Workflow Board …')`. That reason was
+ * TRUE — and that is exactly the problem. The board is a data-dependent
+ * surface: `WorkflowBoard.fetchData()` builds one column per NON-FINAL
+ * statusType and then groups cases into a column by resolving `case.status`
+ * to that statusType's NAME. With no statusTypes and no cases in the target
+ * register there is nothing to render, so the assertions below never ran —
+ * on CI they had never run at all.
+ *
+ * A skip that is permanently true is an invisible pass under L8: the tests report
+ * "not applicable" rather than "untested", and the skip count hides them.
+ * The fix is therefore a FIXTURE change, not a timing change: seed the same
+ * shape `workflows/case-lifecycle.spec.ts` seeds — `seedStateMachine()` for a
+ * caseType + three ordered statusTypes + an active workflowTemplate, then
+ * `seedCase()` for the cards — and then ASSERT, with no escape hatch. If the
+ * board does not render the seeded card, that is a failure, and it should be.
+ *
+ * `case-lifecycle.spec.ts:185` ("the workflow board renders a column per
+ * status type with real case rows") passes in CI using precisely this fixture,
+ * so the shape is known-good; it is the one this file adopts rather than a
+ * new one.
+ *
+ * Every seeded object carries `RUN_PREFIX` in a human-visible field, so the
+ * assertions target THIS run's card (never another run's or an instance's
+ * demo data) and `afterAll` deletes exactly what this run created.
+ *
+ * Note: navigation is `page.goto('/index.php/apps/procest/workflow-board')` —
+ * the identical path `spec-coverage/workflow-operations.spec.ts:18` uses to
+ * reach the same board, and that test passes.
  */
 
-import { test, expect } from '@playwright/test'
+import {
+	test,
+	expect,
+	request,
+	type APIRequestContext,
+	type Locator,
+	type Page,
+} from '@playwright/test'
+import { STORAGE_STATE } from '../helpers/auth'
 import { dismissSupportDialog } from '../helpers/nav'
+import {
+	RUN_PREFIX,
+	cleanupRunObjects,
+	deleteObject,
+	getRequestToken,
+	seedCase,
+	seedStateMachine,
+	type StateMachine,
+} from '../helpers/fixtures'
+
+/** Title of the card both tests drive. Carries RUN_PREFIX for isolation. */
+const CARD_TITLE = `${RUN_PREFIX} Kanban card`
+
+let api: APIRequestContext
+let token: string
+let sm: StateMachine
 
 test.describe('Workflow Board keyboard status transition', () => {
+	test.describe.configure({ mode: 'serial' })
+
+	test.beforeAll(async ({ baseURL }) => {
+		api = await request.newContext({ baseURL, storageState: STORAGE_STATE })
+		token = await getRequestToken(api)
+		// caseType + Ontvangen/In behandeling (non-final) + Afgehandeld (final)
+		// + an active workflowTemplate. Two non-final statusTypes is the
+		// minimum the move control needs: CaseCard renders its NcActions only
+		// when `otherColumns.length > 0`, i.e. when a card has somewhere to go.
+		sm = await seedStateMachine(api, token)
+		await seedCase(api, token, {
+			title: CARD_TITLE,
+			caseType: sm.caseTypeId,
+			status: sm.statusReceived,
+		})
+	})
+
+	test.afterAll(async () => {
+		// Child-first: the cases (and any statusRecord a transition produced)
+		// before the machine they hang off.
+		await cleanupRunObjects(api, token, ['statusRecord', 'case'])
+		for (const [schema, id] of [...sm.created].reverse()) {
+			await deleteObject(api, token, schema, id)
+		}
+		await api.dispose()
+	})
+
+	/**
+	 * Open the Workflow Board and return the seeded case's card.
+	 *
+	 * Scoped by `hasText: CARD_TITLE` rather than `.case-card` first(): on an
+	 * instance that already holds cases, `.first()` would drive somebody
+	 * else's card and the test would be asserting about data it did not
+	 * create.
+	 * @param page The page.
+	 * @return The `.case-card` element rendering the seeded case.
+	 */
+	async function openBoardAndFindSeededCard(page: Page): Promise<Locator> {
+		await page.goto('/index.php/apps/procest/workflow-board')
+		await dismissSupportDialog(page)
+
+		// The board renders its heading unconditionally; the columns and cards
+		// arrive after fetchData() resolves three collections.
+		await expect(
+			page.getByRole('heading', { name: /Workflow Board/ }).first(),
+		).toBeVisible({ timeout: 15000 })
+		// The seeded non-final column must exist, or there is nowhere for a
+		// card to be grouped — assert it separately so a missing column does
+		// not present as "the card is missing".
+		await expect(
+			page.getByText(`${RUN_PREFIX} Ontvangen`, { exact: false }).first(),
+		).toBeVisible({ timeout: 15000 })
+
+		const card = page.locator('.case-card', { hasText: CARD_TITLE }).first()
+		await expect(card).toBeVisible({ timeout: 15000 })
+		return card
+	}
+
 	// @e2e openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#scenario-dash-v1-006d-keyboard-only-status-transition-new
 	test('a case card exposes a keyboard-operable "Move to…" menu', async ({
 		page,
 	}) => {
-		await page.goto('/index.php/apps/procest/workflow-board')
-		await dismissSupportDialog(page)
-
-		const heading = page.getByRole('heading', { name: /Workflow Board/ }).first()
-		if (!(await heading.isVisible({ timeout: 10000 }).catch(() => false))) {
-			test.skip(true, 'Workflow Board surface not deployed in target instance')
-			return
-		}
-
-		const firstCard = page.locator('.case-card').first()
-		if (!(await firstCard.isVisible({ timeout: 8000 }).catch(() => false))) {
-			test.skip(
-				true,
-				'No cases on the Workflow Board to exercise the move control',
-			)
-			return
-		}
+		const card = await openBoardAndFindSeededCard(page)
 
 		// The move-target menu trigger is reachable independent of the card's
 		// own click-to-open handler (a separate focusable NcActions control).
-		const moveTrigger = firstCard
-			.locator('.case-card__move-actions button')
-			.first()
+		const moveTrigger = card.locator('.case-card__move-actions button').first()
 		await expect(moveTrigger).toBeVisible()
 
 		await moveTrigger.focus()
 		await page.keyboard.press('Enter')
 		const firstOption = page.getByRole('menuitem').first()
 		await expect(firstOption).toBeVisible({ timeout: 5000 })
+		// The offer is the OTHER seeded non-final column — proving the menu is
+		// populated from the board's real column model, not an empty shell.
+		await expect(
+			page.getByRole('menuitem', {
+				name: new RegExp(`${RUN_PREFIX} In behandeling`),
+			}),
+		).toBeVisible({ timeout: 5000 })
 
 		// Do not actually commit a status change against a live board's data —
 		// close the menu without selecting, proving the control opens via
@@ -57,18 +155,7 @@ test.describe('Workflow Board keyboard status transition', () => {
 
 	// @e2e openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#scenario-dash-v1-006e-drag-path-unchanged-new
 	test('case cards remain draggable for mouse/touch users', async ({ page }) => {
-		await page.goto('/index.php/apps/procest/workflow-board')
-		await dismissSupportDialog(page)
-
-		const firstCard = page.locator('.case-card').first()
-		if (!(await firstCard.isVisible({ timeout: 8000 }).catch(() => false))) {
-			test.skip(
-				true,
-				'No cases on the Workflow Board to exercise the drag path',
-			)
-			return
-		}
-
-		await expect(firstCard).toHaveAttribute('draggable', 'true')
+		const card = await openBoardAndFindSeededCard(page)
+		await expect(card).toHaveAttribute('draggable', 'true')
 	})
 })
