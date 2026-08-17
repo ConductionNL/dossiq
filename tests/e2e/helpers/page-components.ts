@@ -24,10 +24,15 @@
  * Adding a constant here for a screen no spec visits would be a declaration
  * nobody reads — the exact failure mode the masking above exists to prevent.
  * Add the entry when you add the test, not before. Screens this suite does not
- * yet drive are deliberately ABSENT here rather than listed and unused —
- * `/substitution` and `/substitution-admin` are the current example: they are
- * driven by handler-vervanging-waarneming.spec.ts and will get their constants
- * when that file is next touched (it is mid-flight in PR #863).
+ * yet drive are deliberately ABSENT here rather than listed and unused.
+ *
+ * Every route below was MEASURED against a running instance before its constant
+ * was added — navigate, read the rendered headings, confirm the screen is the
+ * one the constant names. The probe discriminates: an unrouted path falls back
+ * to the Dashboard, and a routed page whose component is not registered renders
+ * the manifest renderer's "This page is empty" placeholder instead. Both are
+ * distinguishable from a real render, so "it rendered" is a finding rather than
+ * an assumption.
  *
  * Routes are app-relative; the app is HISTORY-mode, so `navToRoute()` /
  * `page.goto()` prefix them with `/index.php/apps/procest`.
@@ -44,3 +49,48 @@ export const VerwerkingenOverview = '/verwerkingen'
 
 /** `src/views/workflow-board/WorkflowBoard.vue` — the kanban status board. */
 export const WorkflowBoard = '/workflow-board'
+
+/** `src/views/settings/SubstitutionSettings.vue` — self-service vervanging (manifest page `SubstitutionSettings`). */
+export const SubstitutionSettings = '/substitution'
+
+/** `src/views/admin/SubstitutionAdmin.vue` — the coordinator substitution console (manifest page `SubstitutionAdmin`). */
+export const SubstitutionAdmin = '/substitution-admin'
+
+/** `src/views/dashboard/ProcessMiningDashboard.vue` — bottleneck analysis; renders `<h2>Process Mining</h2>`. */
+export const ProcessMiningDashboard = '/process-mining'
+
+/** `src/views/dashboard/TenantOnboardingDashboard.vue` — SaaS tenant onboarding; renders `<h2>Tenant onboarding</h2>`. */
+export const TenantOnboardingDashboard = '/tenant-onboarding'
+
+/** `src/views/dashboard/TermijnDashboard.vue` — AWB termijnbewaking KPIs; renders `<h2>Deadline monitoring</h2>`. */
+export const TermijnDashboard = '/termijn-dashboard'
+
+/**
+ * `src/views/public/PublicStatusPage.vue` — the citizen "track your case" page.
+ *
+ * Token-addressed. The token below is deliberately one that cannot resolve:
+ * OpenRegister answers an unknown / revoked / expired / RBAC-denied token with
+ * a uniform 404 (see the component's `loadStatus()` docblock), so the page
+ * lands in its `error` branch deterministically, with no fixture to seed.
+ */
+export const PublicStatusPage = '/public/status/e2e-unresolvable-token'
+
+/**
+ * `src/views/public/PublicAppointmentPage.vue` — the citizen appointment page.
+ *
+ * Same shape as PublicStatusPage: an unresolvable token makes
+ * `publicAppointment#view` 404, which is the page's `error` branch.
+ */
+export const PublicAppointmentPage = '/public/appointments/e2e-unresolvable-token'
+
+/**
+ * `src/views/public/PublicFederatedTransferPage.vue` — the remote-organisation
+ * accept/reject surface for a federated case transfer.
+ *
+ * This one takes no fetch on mount at all — the component's own header records
+ * that no GET endpoint exists to pre-load transfer details, so it presents the
+ * action rather than a data view. Its heading is therefore independent of every
+ * backend, and the token/id in the path are never dereferenced by the render.
+ */
+export const PublicFederatedTransferPage =
+	'/public/federation/transfer/e2e-unresolvable-token/e2e-transfer'
