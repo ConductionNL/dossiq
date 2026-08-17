@@ -81,6 +81,15 @@ class TemplateController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
+	 * @no-admin-idor-exempt Ships with the app; not user data. loadTemplate()
+	 * globs the fixed, app-owned directory lib/Settings/templates/*.json and
+	 * returns the file whose `id` FIELD equals $id — the id is never used to
+	 * build a path, so there is no traversal, and the content is the same
+	 * read-only zaaktype library for every tenant and every user. index() on
+	 * this same controller already returns that whole library to any
+	 * authenticated caller, so a per-object guard here would protect nothing
+	 * that is not already listable. No OpenRegister object is touched.
+	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function show(string $id): JSONResponse {
