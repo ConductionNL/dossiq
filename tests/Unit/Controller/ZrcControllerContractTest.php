@@ -49,6 +49,16 @@ use PHPUnit\Framework\TestCase;
  * Wire-contract tests for ZrcController.
  *
  * @covers \OCA\Procest\Controller\ZrcController
+ *
+ * The ZGW controllers inherit from ZgwController, which in turn composes the
+ * NormalisesObjectRows trait, so exercising this controller necessarily runs
+ * code declared on both. CI runs phpunit.xml with
+ * beStrictAboutCoverageMetadata="true" and failOnRisky="true", which marks
+ * executed-but-unlisted code risky and fails the run — so both are declared as
+ * used rather than covered.
+ *
+ * @uses \OCA\Procest\Controller\ZgwController
+ * @uses \OCA\Procest\Support\NormalisesObjectRows
  */
 class ZrcControllerContractTest extends TestCase {
 

@@ -57,6 +57,14 @@ use PHPUnit\Framework\TestCase;
  * Wire-contract tests for NrcController.
  *
  * @covers \OCA\Procest\Controller\NrcController
+ *
+ * NrcController extends ZgwController, which composes NormalisesObjectRows, so
+ * exercising it necessarily runs code declared on both. CI runs phpunit.xml
+ * with beStrictAboutCoverageMetadata="true" and failOnRisky="true", which marks
+ * executed-but-unlisted code risky and fails the run.
+ *
+ * @uses \OCA\Procest\Controller\ZgwController
+ * @uses \OCA\Procest\Support\NormalisesObjectRows
  */
 class NrcControllerContractTest extends TestCase {
 

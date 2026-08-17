@@ -104,6 +104,14 @@ interface DrcDownloadLockObjectServiceStub {
  * Wire-contract tests for DrcController::download() and ::lock().
  *
  * @covers \OCA\Procest\Controller\DrcController
+ *
+ * DrcController extends ZgwController, which composes NormalisesObjectRows, so
+ * exercising it necessarily runs code declared on both. CI runs phpunit.xml
+ * with beStrictAboutCoverageMetadata="true" and failOnRisky="true", which marks
+ * executed-but-unlisted code risky and fails the run.
+ *
+ * @uses \OCA\Procest\Controller\ZgwController
+ * @uses \OCA\Procest\Support\NormalisesObjectRows
  */
 class DrcDownloadLockContractTest extends TestCase {
 

@@ -85,6 +85,14 @@ interface ZtcContractObjectServiceStub {
  * Wire-contract tests for the ZtcController publish endpoints.
  *
  * @covers \OCA\Procest\Controller\ZtcController
+ *
+ * ZtcController extends ZgwController, which composes NormalisesObjectRows, so
+ * exercising it necessarily runs code declared on both. CI runs phpunit.xml
+ * with beStrictAboutCoverageMetadata="true" and failOnRisky="true", which marks
+ * executed-but-unlisted code risky and fails the run.
+ *
+ * @uses \OCA\Procest\Controller\ZgwController
+ * @uses \OCA\Procest\Support\NormalisesObjectRows
  */
 class ZtcControllerContractTest extends TestCase {
 
