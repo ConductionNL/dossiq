@@ -223,7 +223,7 @@ class DrcControllerContractTest extends TestCase {
 
 		$this->zgwService->expects($this->once())
 			->method('consumerHasScope')
-			->with($this->request, 'drc', 'documenten.verwijderen')
+			->with($this->request, 'drc', 'documenten.bijwerken')
 			->willReturn(false);
 		$this->zgwService->expects($this->never())->method('handleUpdate');
 
