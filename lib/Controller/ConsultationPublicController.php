@@ -116,6 +116,10 @@ class ConsultationPublicController extends Controller {
 	 *
 	 * Access is logged for BIO compliance.
 	 *
+	 * Rate-limit rationale: tight — this is an unauthenticated public
+	 * consultation response, so an unbounded caller can stuff the consultation
+	 * with fabricated submissions.
+	 *
 	 * @param string $token The secure access token
 	 *
 	 * @return JSONResponse Updated consultation or error
@@ -125,8 +129,6 @@ class ConsultationPublicController extends Controller {
 	 *
 	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
 	 */
-	// Tight: this is an unauthenticated public consultation response, so an
-	// unbounded caller can stuff the consultation with fabricated submissions.
 	#[AnonRateLimit(limit: 20, period: 60)]
 	public function publicResponsePost(string $token): JSONResponse {
 		if (empty($token) === true) {

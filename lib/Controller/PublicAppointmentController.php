@@ -84,6 +84,9 @@ class PublicAppointmentController extends Controller {
 	/**
 	 * Cancel an appointment via its public token.
 	 *
+	 * Rate-limit rationale: tight — cancelling is destructive and reachable
+	 * without authentication, so the token in the link is the only barrier.
+	 *
 	 * @param string $token The appointment public token.
 	 *
 	 * @return JSONResponse
@@ -93,8 +96,6 @@ class PublicAppointmentController extends Controller {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	// Tight: cancelling is destructive and reachable without authentication,
-	// so the token in the link is the only barrier.
 	#[AnonRateLimit(limit: 20, period: 60)]
 	public function cancel(string $token): JSONResponse {
 		$appointment = $this->appointmentService->getAppointmentByToken($token);

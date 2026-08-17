@@ -108,6 +108,10 @@ class ZgwOpenApiController extends Controller {
 	 * The `$api` segment is checked against a strict allow-list (self::APIS)
 	 * before touching the filesystem — no path traversal is possible.
 	 *
+	 * Rate-limit rationale: generous — the OpenAPI document is fetched by
+	 * tooling and client generators, which a tight ceiling would break rather
+	 * than protect.
+	 *
 	 * @param string $api The ZGW API id (zaken, documenten, catalogi, besluiten, autorisaties, notificaties)
 	 *
 	 * @return DataDisplayResponse|JSONResponse
@@ -118,8 +122,6 @@ class ZgwOpenApiController extends Controller {
 	 *
 	 * @spec openspec/specs/zgw-openapi-publication/spec.md
 	 */
-	// Generous: the OpenAPI document is fetched by tooling and client
-	// generators, which a tight ceiling would break rather than protect.
 	#[AnonRateLimit(limit: 240, period: 60)]
 	public function spec(string $api): DataDisplayResponse|JSONResponse {
 		if (isset(self::APIS[$api]) === false) {

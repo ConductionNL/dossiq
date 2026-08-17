@@ -137,15 +137,16 @@ class DashboardController extends Controller {
 	 * fell through to `Response.error()`. Any request the worker claimed with
 	 * `respondWith()` was therefore guaranteed to fail in the page.
 	 *
+	 * Rate-limit rationale: PWA assets — the browser fetches these on install
+	 * and on every update check, so the ceiling only exists to stop them being
+	 * used as a load generator. No credential, so no brute-force counter.
+	 *
 	 * @return DataDownloadResponse The service-worker JavaScript.
 	 *
 	 * @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-daily-planning-synchronization
 	 */
 	#[NoCSRFRequired]
 	#[PublicPage]
-	// PWA assets — the browser fetches these on install and on every update
-	// check, so the ceiling only exists to stop them being used as a load
-	// generator. No credential, so no brute-force counter.
 	#[AnonRateLimit(limit: 240, period: 60)]
 	public function serviceWorker(): DataDownloadResponse {
 		$body = $this->readPublicAsset(name: 'service-worker.js');

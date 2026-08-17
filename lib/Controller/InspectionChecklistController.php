@@ -59,6 +59,7 @@ class InspectionChecklistController extends Controller {
 	 * @param IUserSession $userSession User session
 	 * @param IGroupManager $groupManager Group manager
 	 * @param LoggerInterface $logger Logger
+	 * @param CaseAccessGuard $caseAccessGuard Per-case read-access guard
 	 *
 	 * @spec openspec/changes/vth-module/tasks.md#task-4
 	 */

@@ -106,6 +106,8 @@ class CaseFederationController extends Controller {
 	 * @param CaseTransferService $caseTransferService The transfer service
 	 * @param CaseCollaborationService $collabService The federated activity service
 	 * @param IUserSession $userSession The user session
+	 * @param IThrottler $throttler The brute-force throttler counting rejected share tokens
+	 * @param LoggerInterface $logger The logger
 	 *
 	 * @return void
 	 */

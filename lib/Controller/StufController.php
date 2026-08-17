@@ -93,6 +93,10 @@ class StufController extends Controller {
 	/**
 	 * Handle inbound StUF-ZKN SOAP messages for case operations.
 	 *
+	 * Rate-limit rationale: StUF-ZKN SOAP receivers. The caller is a municipal
+	 * middleware component on its own retry schedule, so the ceiling is
+	 * generous — dropping a StUF delivery is worse than absorbing a burst.
+	 *
 	 * @return DataDisplayResponse SOAP XML response.
 	 *
 	 * @psalm-suppress PossiblyUnusedMethod
@@ -101,9 +105,6 @@ class StufController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
-	// StUF-ZKN SOAP receivers. The caller is a municipal middleware component
-	// on its own retry schedule, so the ceiling is generous — dropping a StUF
-	// delivery is worse than absorbing a burst.
 	#[AnonRateLimit(limit: 300, period: 60)]
 	public function cases(): DataDisplayResponse {
 		return $this->dispatcher->dispatch(

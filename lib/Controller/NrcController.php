@@ -252,6 +252,10 @@ class NrcController extends ZgwController {
 	 *
 	 * This endpoint receives incoming ZGW notifications and acknowledges them.
 	 *
+	 * Rate-limit rationale: tight — a notification fans out to every
+	 * subscribed channel, so one cheap call can generate a lot of downstream
+	 * delivery work.
+	 *
 	 * @return JSONResponse
 	 *
 	 * @NoCSRFRequired
@@ -260,8 +264,6 @@ class NrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	// Tight: a notification fans out to every subscribed channel, so one cheap
-	// call can generate a lot of downstream delivery work.
 	#[AnonRateLimit(limit: 30, period: 60)]
 	public function notificatieCreate(): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);

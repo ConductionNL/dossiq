@@ -73,15 +73,16 @@ class DwangsomPaymentCallbackController extends Controller {
 	/**
 	 * Handle a payment callback.
 	 *
+	 * Rate-limit rationale: payment provider callback. Same reasoning as the
+	 * DSO receiver — the caller is a provider retrying on its own schedule,
+	 * and dropping a payment notification is worse than absorbing a burst.
+	 *
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
-	// Payment provider callback. Same reasoning as the DSO receiver: the
-	// caller is a provider retrying on its own schedule, and dropping a
-	// payment notification is worse than absorbing a burst.
 	#[AnonRateLimit(limit: 300, period: 60)]
 	public function callback(): JSONResponse {
 		// The OCP IRequest::getContent() method is marked protected in

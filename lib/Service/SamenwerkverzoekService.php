@@ -56,6 +56,7 @@ class SamenwerkverzoekService {
 	 * @param ContainerInterface $container The DI container
 	 * @param IEventDispatcher $eventDispatcher The event dispatcher
 	 * @param LoggerInterface $logger The logger
+	 * @param ObjectServiceInterface $objectService The OpenRegister object service (ADR-084)
 	 */
 	public function __construct(
 		private readonly IAppConfig $appConfig,
@@ -128,7 +129,7 @@ class SamenwerkverzoekService {
 			'requestedOn' => date('c'),
 		];
 
-		// saveObject() returns an ObjectEntityInterface (which extends
+		// The saveObject() call returns an ObjectEntityInterface (which extends
 		// JsonSerializable), never an array — returning it straight out of a
 		// method declared `: array` is a TypeError.
 		$created = $objectService->saveObject(
