@@ -85,6 +85,10 @@ class RaadsinformatieFeedController extends Controller {
 	/**
 	 * Serve the Atom feed for vergaderingen.
 	 *
+	 * Rate-limit rationale: raadsinformatie is a published open-data feed —
+	 * public access is the statutory point of it, so these are runaway
+	 * ceilings, not gates, and carry no brute-force counter.
+	 *
 	 * @param string $organisation Optional organisatie filter
 	 *
 	 * @return DataDisplayResponse Atom XML feed
@@ -93,9 +97,6 @@ class RaadsinformatieFeedController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
-	// Raadsinformatie is a published open-data feed — public access is the
-	// statutory point of it, so these are runaway ceilings, not gates, and
-	// carry no brute-force counter.
 	#[AnonRateLimit(limit: 120, period: 60)]
 	public function vergaderingen(string $organisation = ''): DataDisplayResponse {
 		return $this->buildFeed(

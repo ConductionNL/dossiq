@@ -774,6 +774,9 @@ class ZrcController extends ZgwController {
 	 *
 	 * Delegates to index and returns HTTP 201 per the ZGW specification.
 	 *
+	 * Rate-limit rationale: lower than a plain read — zoek is the most
+	 * expensive query in this controller, and it is reachable anonymously.
+	 *
 	 * @return JSONResponse
 	 *
 	 * @NoCSRFRequired
@@ -782,8 +785,6 @@ class ZrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	// Lower than a plain read: zoek is the most expensive query in this
-	// controller, and it is reachable anonymously.
 	#[AnonRateLimit(limit: 60, period: 60)]
 	public function zoek(): JSONResponse {
 		$indexResponse = $this->index(resource: 'zaken');

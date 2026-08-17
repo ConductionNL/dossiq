@@ -63,6 +63,9 @@ class SubsidieRegisterController extends Controller {
 	/**
 	 * Export the public subsidieregister feed (anonymised, published only).
 	 *
+	 * Rate-limit rationale: tight — an export is a cheap request that buys a
+	 * lot of server work.
+	 *
 	 * @return JSONResponse
 	 *
 	 * @PublicPage
@@ -72,7 +75,6 @@ class SubsidieRegisterController extends Controller {
 	 *
 	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-39
 	 */
-	// Tight: an export is a cheap request that buys a lot of server work.
 	#[AnonRateLimit(limit: 20, period: 60)]
 	public function export(): JSONResponse {
 		$limit = (int)$this->request->getParam('limit', 100);

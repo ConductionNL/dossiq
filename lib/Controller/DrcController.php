@@ -582,6 +582,9 @@ class DrcController extends ZgwController {
 	/**
 	 * Download the binary file content for an EIO document.
 	 *
+	 * Rate-limit rationale: lower than the sibling reads — a download moves
+	 * file bytes.
+	 *
 	 * @param string $uuid The document UUID.
 	 *
 	 * @return DataDownloadResponse|JSONResponse
@@ -592,7 +595,6 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	// Lower than the sibling reads: a download moves file bytes.
 	#[AnonRateLimit(limit: 60, period: 60)]
 	public function download(string $uuid): DataDownloadResponse|JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
@@ -1354,6 +1356,9 @@ class DrcController extends ZgwController {
 	 * Receives raw binary data for a single chunk and stores it.
 	 * When all chunks have been uploaded, merges them into the final file.
 	 *
+	 * Rate-limit rationale: tight — each call accepts a chunk of file bytes,
+	 * so this is the cheapest way for an anonymous caller to consume storage.
+	 *
 	 * @param string $uuid The document UUID.
 	 *
 	 * @return JSONResponse
@@ -1367,8 +1372,6 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	// Tight: each call accepts a chunk of file bytes, so this is the cheapest
-	// way for an anonymous caller to consume storage.
 	#[AnonRateLimit(limit: 30, period: 60)]
 	public function uploadChunk(string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);

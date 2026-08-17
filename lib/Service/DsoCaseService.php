@@ -92,6 +92,7 @@ class DsoCaseService {
 	 * @param ContainerInterface $container The DI container (ObjectService resolved lazily)
 	 * @param DsoStatusChangeNotifier $notifier Emits the VergunningStatusChanged domain event
 	 * @param LoggerInterface $logger The logger
+	 * @param ObjectServiceInterface $objectService The OpenRegister object service (ADR-084)
 	 */
 	public function __construct(
 		private readonly IAppConfig $appConfig,
@@ -175,9 +176,9 @@ class DsoCaseService {
 			],
 		];
 
-		// saveObject() returns an ObjectEntityInterface (ADR-084); this method
-		// declares `: array`. Normalise, exactly as findObjectAsArray() does on
-		// the read side.
+		// The saveObject() call returns an ObjectEntityInterface (ADR-084); this
+		// method declares `: array`. Normalise, exactly as findObjectAsArray()
+		// does on the read side.
 		$created = $this->saveObjectAsArray(
 			objectService: $objectService,
 			register: $register,

@@ -51,6 +51,7 @@ class StufRegisterAccess {
 	 * @param IAppContainer $container The DI container.
 	 * @param IAppConfig $appConfig The app config (register id lookup).
 	 * @param LoggerInterface $logger The logger.
+	 * @param IAppManager $appManager The app manager (checks openregister is installed).
 	 */
 	public function __construct(
 		private IAppContainer $container,

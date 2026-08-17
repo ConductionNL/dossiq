@@ -88,6 +88,12 @@ class DSOIntakeController extends Controller {
 	 * OpenConnector. Payload signature is validated via HMAC-SHA256.
 	 * Invalid signatures result in 401; any other errors result in 500.
 	 *
+	 * Rate-limit rationale: DSO intake receiver — the caller is the Digitaal
+	 * Stelsel Omgevingswet, not a browser, and it authenticates by its own
+	 * credential. A generous ceiling against a delivery storm; too tight here
+	 * would DROP statutory submissions, which is a worse failure than
+	 * absorbing a burst.
+	 *
 	 * @return JSONResponse Created case data or error
 	 *
 	 * @PublicPage
@@ -97,10 +103,6 @@ class DSOIntakeController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
-	// DSO intake receiver — the caller is the Digitaal Stelsel Omgevingswet,
-	// not a browser, and it authenticates by its own credential. A generous
-	// ceiling against a delivery storm; too tight here would DROP statutory
-	// submissions, which is a worse failure than absorbing a burst.
 	#[AnonRateLimit(limit: 300, period: 60)]
 	public function intake(): JSONResponse {
 		// OCP\AppFramework\Http\Request::getContent() is marked protected, so
