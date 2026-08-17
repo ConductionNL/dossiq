@@ -17,13 +17,14 @@
 import { test, expect } from '@playwright/test'
 import { becomesVisible } from '../helpers/becomes-visible.js'
 import { dismissSupportDialog } from '../helpers/nav'
+import { SubstitutionAdmin, SubstitutionSettings } from '../helpers/page-components'
 
 test.describe('Handler vervanging/waarneming spec coverage', () => {
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#handler-registers-their-own-substitution
 	test('user substitution settings page renders with a register action', async ({
 		page,
 	}) => {
-		await page.goto('/index.php/apps/procest/substitution')
+		await page.goto(`/index.php/apps/procest${SubstitutionSettings}`)
 		await dismissSupportDialog(page)
 		const heading = page.getByRole('heading', { name: /Substitution/ }).first()
 		if (await becomesVisible(heading)) {
@@ -42,7 +43,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	test('opening the substitution form shows the substitute field', async ({
 		page,
 	}) => {
-		await page.goto('/index.php/apps/procest/substitution')
+		await page.goto(`/index.php/apps/procest${SubstitutionSettings}`)
 		await dismissSupportDialog(page)
 		const btn = page
 			.getByRole('button', { name: /Register substitution/ })
@@ -92,7 +93,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	test('coordinator admin exposes a bulk-reassign action with a mandatory preview', async ({
 		page,
 	}) => {
-		await page.goto('/index.php/apps/procest/substitution-admin')
+		await page.goto(`/index.php/apps/procest${SubstitutionAdmin}`)
 		await dismissSupportDialog(page)
 		const heading = page
 			.getByRole('heading', { name: /Substitutions & reassignment/ })
@@ -120,7 +121,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	test('coordinator admin lists substitutions with an actions affordance', async ({
 		page,
 	}) => {
-		await page.goto('/index.php/apps/procest/substitution-admin')
+		await page.goto(`/index.php/apps/procest${SubstitutionAdmin}`)
 		await dismissSupportDialog(page)
 		const heading = page
 			.getByRole('heading', { name: /Substitutions & reassignment/ })
