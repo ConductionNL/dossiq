@@ -50,6 +50,12 @@ import TermijnDashboard from './views/dashboard/TermijnDashboard.vue'
 import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
 // --- Surviving custom pages — see design.md "Custom-fallback inventory". ---
 import MyWorkView from './views/MyWorkCards.vue'
+// Token-addressed advice-response surface for external advisory bodies
+// (consultation-management TASK-CN-06). Declared as page
+// `ExternalConsultationResponse` in src/manifest.d/consultation-public.json;
+// its absence here rendered the manifest renderer's "This page is empty"
+// placeholder on /public/consultations/:token instead of this component.
+import ExternalConsultationResponsePage from './views/public/ExternalConsultationResponsePage.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 // Remote-org accept/reject for a federated zaakoverdracht (federated-case-collaboration).
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
@@ -138,6 +144,7 @@ export default {
 	PublicAppointmentPage,
 	PublicStatusPage,
 	PublicFederatedTransferPage,
+	ExternalConsultationResponsePage,
 
 	// --- Leverancier-zaakportaal external supplier portal MOVED to Portaliq
 	//     (ADR-046, procest#162) — see import-section comment. ---

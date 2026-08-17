@@ -127,6 +127,68 @@ class SettingsServiceTest extends TestCase {
 	}//end testIsOpenRegisterAvailableReturnsFalse()
 
 	/**
+	 * getFileService() resolves OpenRegister's FileService by class name.
+	 *
+	 * ADR-084 publishes no file operation, so this container lookup is the
+	 * only in-process route an app has for attaching bytes to an OpenRegister
+	 * object — see
+	 * openspec/changes/woo-publication-in-process-object-writes/proposal.md.
+	 * The class name is asserted because it IS the contract here: there is no
+	 * interface to type-hint against, so a typo would surface only at runtime.
+	 *
+	 * @return void
+	 */
+	public function testGetFileServiceResolvesOpenRegistersFileService(): void {
+		$this->appManager->method('isEnabledForUser')->willReturn(true);
+
+		$fileService = new \stdClass();
+		$this->container
+			->expects($this->once())
+			->method('get')
+			->with('OCA\OpenRegister\Service\FileService')
+			->willReturn($fileService);
+
+		$this->assertSame($fileService, $this->service->getFileService());
+
+	}//end testGetFileServiceResolvesOpenRegistersFileService()
+
+	/**
+	 * getFileService() returns null — never throws — when OpenRegister is
+	 * absent, so callers can degrade rather than break the case flow.
+	 *
+	 * @return void
+	 */
+	public function testGetFileServiceReturnsNullWithoutOpenRegister(): void {
+		$this->appManager->method('isEnabledForUser')->willReturn(false);
+		$this->appManager->method('isInstalled')->willReturn(false);
+
+		$this->container->expects($this->never())->method('get');
+
+		$this->assertNull($this->service->getFileService());
+
+	}//end testGetFileServiceReturnsNullWithoutOpenRegister()
+
+	/**
+	 * A container that cannot resolve the class is logged and reported as
+	 * null, not propagated. `\Throwable` is caught deliberately: a container
+	 * miss on a class the app does not own can surface as an `Error`, which a
+	 * `\Exception` catch would let through.
+	 *
+	 * @return void
+	 */
+	public function testGetFileServiceReturnsNullWhenTheContainerCannotResolveIt(): void {
+		$this->appManager->method('isEnabledForUser')->willReturn(true);
+		$this->container
+			->method('get')
+			->willThrowException(new \RuntimeException('not registered'));
+
+		$this->logger->expects($this->once())->method('error');
+
+		$this->assertNull($this->service->getFileService());
+
+	}//end testGetFileServiceReturnsNullWhenTheContainerCannotResolveIt()
+
+	/**
 	 * Test that getSettings returns all config keys with their values.
 	 *
 	 * @return void

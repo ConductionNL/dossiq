@@ -94,3 +94,24 @@ export const PublicAppointmentPage = '/public/appointments/e2e-unresolvable-toke
  */
 export const PublicFederatedTransferPage =
 	'/public/federation/transfer/e2e-unresolvable-token/e2e-transfer'
+
+/**
+ * `src/views/public/ExternalConsultationResponsePage.vue` — the token-addressed
+ * advice-response surface for an external advisory body (manifest page
+ * `ExternalConsultationResponse`, declared in
+ * `src/manifest.d/consultation-public.json`).
+ *
+ * The token below is 44 characters, so it passes the controller's minimum-length
+ * check and reaches the real `secureToken` lookup rather than short-circuiting
+ * on length — and no consultation carries it, so
+ * `consultationPublic#publicResponseGet` answers a uniform 404 and the page
+ * lands in its `loadError` branch deterministically, with no fixture to seed.
+ * Measured against a running instance (procest 0.3.9, 2026-08-17): a 44-char
+ * unknown token and a 5-char token both answer
+ * `404 {"error":"Invalid or expired token"}`, while a token that a seeded
+ * consultation really carries answers 200 with that consultation — see
+ * `workflows/external-consultation-response.spec.ts`, which asserts both
+ * directions.
+ */
+export const ExternalConsultationResponsePage =
+	'/public/consultations/e2eunresolvableconsultationtoken000000000000'
