@@ -75,6 +75,8 @@ class ProcestToolProvider implements IMcpToolProvider {
 	private const TOOL_DESCRIPTORS = [
 		[
 			'id' => 'procest.listProcesses',
+			'subject' => 'process',
+			'action' => 'list',
 			'name' => 'List processes',
 			'description' => 'List running process instances (cases). Optionally filter by status'
 				. ' type id (status) and cap the result with limit (1-50, default 20).',
@@ -97,6 +99,8 @@ class ProcestToolProvider implements IMcpToolProvider {
 		],
 		[
 			'id' => 'procest.getProcessDetails',
+			'subject' => 'process',
+			'action' => 'get',
 			'name' => 'Get process details',
 			'description' => 'Get one process instance (case) by id or uuid, including its'
 				. ' current step (status) and chronological transition history.',
