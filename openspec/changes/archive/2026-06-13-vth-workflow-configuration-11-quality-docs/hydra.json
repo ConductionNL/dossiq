@@ -1,7 +1,0 @@
-{
-  "schema_version": 2,
-  "spec_slug": "vth-workflow-configuration-11-quality-docs",
-  "app": "procest",
-  "kind": "code",
-  "depends_on": ["vth-workflow-configuration-10-testing"]
-}
