@@ -1,0 +1,51 @@
+# Isolated LOCAL variant of docker-compose.ci.yml — runs the matched CI e2e
+# stack ALONGSIDE the shared dev instance without collision.
+#   * container names prefixed procest-cilocal-* (shared uses bare `nextcloud`)
+#   * host port 8090 (shared uses 8080)
+#   * own volume + own network
+# SPDX-License-Identifier: EUPL-1.2
+
+volumes:
+  procest-cilocal-data:
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: procest-cilocal-db
+    environment:
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextcloud
+      POSTGRES_PASSWORD: nextcloud
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nextcloud -d nextcloud"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  nextcloud:
+    image: nextcloud:32-apache
+    container_name: procest-cilocal-nc
+    user: root
+    restart: unless-stopped
+    ports:
+      - "8090:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - procest-cilocal-data:/var/www/html:rw
+    environment:
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextcloud
+      POSTGRES_PASSWORD: nextcloud
+      POSTGRES_HOST: db
+      NEXTCLOUD_ADMIN_USER: admin
+      NEXTCLOUD_ADMIN_PASSWORD: admin
+      NEXTCLOUD_TRUSTED_DOMAINS: localhost nextcloud
+      PHP_MEMORY_LIMIT: 2G
+      PHP_UPLOAD_LIMIT: 1G
+      PHP_POST_MAX_SIZE: 1G
+
+networks:
+  default:
+    name: procest-cilocal-network
