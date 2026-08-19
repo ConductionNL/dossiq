@@ -154,15 +154,11 @@ class SchemaSlugMap
         // already stored on every existing install — renaming it would orphan
         // that id and the schema would silently resolve to nothing.
         'mandateDecision'              => 'mandaterings_besluit_schema',
-        // KEYS follow the renamed slugs; VALUES are deliberately unchanged.
-        // Each value is the app-config key under which that schema's numeric id
-        // is already stored on every existing install — renaming it orphans the
-        // id and the schema silently resolves to nothing.
-        'mandate'                      => 'mandaat_schema',
+        'mandaat'                      => 'mandaat_schema',
         'organisatieRol'               => 'organisatie_rol_schema',
         'medewerkerRolToewijzing'      => 'medewerker_rol_toewijzing_schema',
-        'mandateUsage'                 => 'mandaat_gebruik_schema',
-        'mandateEscalation'            => 'mandaat_escalatie_schema',
+        'mandaatGebruik'               => 'mandaat_gebruik_schema',
+        'mandaatEscalatie'             => 'mandaat_escalatie_schema',
         'substitution'                 => 'substitution_schema',
         // Archief / e-Depot SIP handover engine.
         'bewaarTermijnRegel'           => 'bewaar_termijn_regel_schema',

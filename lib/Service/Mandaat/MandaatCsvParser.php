@@ -49,12 +49,6 @@ class MandaatCsvParser
     /**
      * Columns an import CSV must carry.
      *
-     * These are CSV HEADERS, not schema property names — an external input
-     * contract that operators' existing files already use. They deliberately do
-     * NOT move with the mandaat -> mandate rename; MandaatImportService maps
-     * them onto the renamed properties and accepts either spelling. Renaming
-     * them here would reject every import file in the field.
-     *
      * @var string[]
      */
     public const REQUIRED_COLUMNS = ['mandaatNummer', 'omschrijving', 'rolNaam', 'plafondCents'];

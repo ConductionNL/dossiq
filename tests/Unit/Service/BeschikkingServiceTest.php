@@ -52,7 +52,6 @@ use RuntimeException;
  */
 class FakeObjectService
 {
-
     /**
      * Stored objects keyed by schema then id.
      *
@@ -63,7 +62,7 @@ class FakeObjectService
     /**
      * Auto-increment id counter.
      *
-     * @var integer
+     * @var int
      */
     private int $seq = 0;
 
@@ -76,7 +75,7 @@ class FakeObjectService
      *
      * @return array<string, mixed>|null
      */
-    public function find(string $id, string $register='', string $schema=''): ?array
+    public function find(string $id, string $register = '', string $schema = ''): ?array
     {
         return ($this->store[$schema][$id] ?? null);
     }//end find()
@@ -90,12 +89,11 @@ class FakeObjectService
      *
      * @return array<int, array<string, mixed>>
      */
-    public function searchObjectsBySlug(string $register, string $schema, array $filters=[]): array
+    public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array
     {
         $rows = array_values($this->store[$schema] ?? []);
 
-        return array_values(
-                array_filter(
+        return array_values(array_filter(
             $rows,
             static function (array $row) use ($filters): bool {
                 foreach ($filters as $key => $value) {
@@ -106,8 +104,7 @@ class FakeObjectService
 
                 return true;
             },
-        )
-                );
+        ));
     }//end searchObjectsBySlug()
 
     /**
@@ -150,7 +147,6 @@ class FakeObjectService
  */
 class BeschikkingServiceTest extends TestCase
 {
-
     /**
      * The in-memory object store.
      *
@@ -208,18 +204,14 @@ class BeschikkingServiceTest extends TestCase
         );
 
         // Seed a WMO mandaatregeling covering the afdelingsmanager level.
-        $this->objects->saveObject(
-                'procest',
-                'mandaatRegeling',
-                [
-                    'id'            => 'mr-2024-007-wmo',
-                    'naam'          => 'Mandaatregeling WMO',
-                    'mandateGroups' => [
-                        ['niveau' => 'consulent', 'tot_bedrag' => 5000, 'zaaktypes' => ['wmo-melding'], 'beschikkingTypes' => ['toekenning']],
-                        ['niveau' => 'afdelingsmanager', 'tot_bedrag' => 25000, 'zaaktypes' => ['wmo-melding'], 'beschikkingTypes' => ['toekenning', 'afwijzing']],
-                    ],
-                ]
-                );
+        $this->objects->saveObject('procest', 'mandaatRegeling', [
+            'id'             => 'mr-2024-007-wmo',
+            'naam'           => 'Mandaatregeling WMO',
+            'mandaatGroepen' => [
+                ['niveau' => 'consulent', 'tot_bedrag' => 5000, 'zaaktypes' => ['wmo-melding'], 'beschikkingTypes' => ['toekenning']],
+                ['niveau' => 'afdelingsmanager', 'tot_bedrag' => 25000, 'zaaktypes' => ['wmo-melding'], 'beschikkingTypes' => ['toekenning', 'afwijzing']],
+            ],
+        ]);
     }//end setUp()
 
     /**
@@ -270,9 +262,7 @@ class BeschikkingServiceTest extends TestCase
 
         $afterAkkoord = $this->service->akkoord($id, 'afdelingsmanager-wmo-15');
         $this->assertSame('akkoord-mandaat', $afterAkkoord['huidigeStatus']);
-        // Outer key renamed; the inner `mandaatNiveau` is nested JSON and is
-        // deliberately left Dutch until the JSON-rewrite migration.
-        $this->assertSame('afdelingsmanager', $afterAkkoord['mandateGranted']['mandaatNiveau']);
+        $this->assertSame('afdelingsmanager', $afterAkkoord['mandaatGegeven']['mandaatNiveau']);
 
         $afterSign = $this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
         $this->assertSame('ondertekend', $afterSign['huidigeStatus']);

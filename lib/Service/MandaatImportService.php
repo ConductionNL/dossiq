@@ -215,9 +215,7 @@ class MandaatImportService
     private function buildMandaatPayload(array $row, string $besluitId): array
     {
         return [
-            // Key = schema property (renamed). Value = CSV column header, an
-            // external input contract that stays as operators' files write it.
-            'mandateNumber'    => (string) $row['mandaatNummer'],
+            'mandaatNummer'    => (string) $row['mandaatNummer'],
             'mandateDecision'  => $besluitId,
             'omschrijving'     => (string) ($row['omschrijving'] ?? ''),
             'gemandateerdeRol' => (string) $row['gemandateerdeRol'],
@@ -245,7 +243,7 @@ class MandaatImportService
     private function findPriorMandaat(array $priorMandaten, string $mandaatNummer): ?array
     {
         foreach ($priorMandaten as $pm) {
-            if ((string) ($pm['mandateNumber'] ?? '') === $mandaatNummer) {
+            if ((string) ($pm['mandaatNummer'] ?? '') === $mandaatNummer) {
                 return $pm;
             }
         }
@@ -294,7 +292,7 @@ class MandaatImportService
         $newNumbers = array_map(static fn (array $r): string => (string) ($r['mandaatNummer'] ?? ''), $resolved);
         $removed    = [];
         foreach ($priorMandaten as $pm) {
-            $num = (string) ($pm['mandateNumber'] ?? '');
+            $num = (string) ($pm['mandaatNummer'] ?? '');
             if ($num !== '' && in_array($num, $newNumbers, true) === false) {
                 $removed[] = ['mandaatNummer' => $num, 'change' => 'REMOVED'];
             }
