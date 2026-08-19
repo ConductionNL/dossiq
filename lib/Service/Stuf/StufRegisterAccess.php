@@ -28,8 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service\Stuf;
 
+use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCA\Procest\AppInfo\Application;
-use OCP\AppFramework\IAppContainer;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 
@@ -46,12 +46,20 @@ class StufRegisterAccess {
 	/**
 	 * Constructor.
 	 *
-	 * @param IAppContainer $container The DI container.
+	 * ADR-083 rule 1: OpenRegister's object service is an UNCONDITIONAL
+	 * dependency of this class — every method it has reads or writes a StUF
+	 * object through it — so it is declared here as a typed constructor
+	 * property rather than looked up mid-method as a string. ADR-084 supplies
+	 * the type: the PUBLISHED interface, never the concrete class, so this
+	 * app's tests can mock something they are able to load. The alias is bound
+	 * in `Application::register()`.
+	 *
+	 * @param ObjectServiceInterface $objectService OpenRegister's object service.
 	 * @param IAppConfig $appConfig The app config (register id lookup).
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
-		private IAppContainer $container,
+		private readonly ObjectServiceInterface $objectService,
 		private IAppConfig $appConfig,
 		private LoggerInterface $logger,
 	) {
@@ -68,9 +76,8 @@ class StufRegisterAccess {
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
 	 */
 	public function saveObject(string $schema, array $data): array {
-		$service = $this->getObjectService();
 		$registerId = $this->getRegisterId();
-		$saved = $service->saveObject($data, [], $registerId, $schema, null);
+		$saved = $this->objectService->saveObject($data, [], $registerId, $schema, null);
 		return $this->normalise(value: $saved);
 	}//end saveObject()
 
@@ -102,8 +109,7 @@ class StufRegisterAccess {
 	 */
 	public function findAll(string $schema, array $filters = [], int $limit = 100): array {
 		try {
-			$service = $this->getObjectService();
-			$objects = $service->findAll(
+			$objects = $this->objectService->findAll(
 				[
 					'filters' => array_merge(['register' => $this->getRegisterId(), 'schema' => $schema], $filters),
 					'limit' => $limit,
@@ -137,15 +143,6 @@ class StufRegisterAccess {
 	private function getRegisterId(): string {
 		return $this->appConfig->getValueString(app: Application::APP_ID, key: 'register', default: '');
 	}//end getRegisterId()
-
-	/**
-	 * Resolve the ObjectService from the DI container.
-	 *
-	 * @return object The ObjectService instance.
-	 */
-	private function getObjectService(): object {
-		return $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
-	}//end getObjectService()
 
 	/**
 	 * Normalise an OR result (entity, array, or JsonSerializable) to plain array.
