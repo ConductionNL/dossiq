@@ -3266,7 +3266,6 @@
                         "title": "Type"
                     },
                     "tenantId": {
-                        "readOnly": true,
                         "type": "string",
                         "format": "uuid",
                         "$ref": "tenant",
