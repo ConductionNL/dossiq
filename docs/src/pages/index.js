@@ -283,7 +283,7 @@ export default function Home() {
             href: 'https://apps.nextcloud.com/apps/procest',
             tone: 'orange',
           }}
-          secondaryCta={{ label: 'Read the docs', href: '/docs/intro' }}
+          secondaryCta={{ label: 'Read the docs', href: '/docs/' }}
           tertiaryCta={{
             label: 'View on GitHub',
             href: 'https://github.com/ConductionNL/procest',

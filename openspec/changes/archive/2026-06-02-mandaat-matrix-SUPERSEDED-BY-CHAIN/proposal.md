@@ -39,7 +39,7 @@ The mandate-matrix capability automates this by:
 - **New schemas** — 6 new OpenRegister entities
 - **Procest integration** — Bevoegdheidscheck service, escalation handler, mandate import
 - **OpenRegister policy engine** — New ABAC policy engine integration for authorization
-- **Cross-app** — decidesk (mandateringsbesluit source), openconnector (HR sync), mydash (analytics)
+- **Cross-app** — decidesk (mandateringsbesluit source), openconnector (HR sync), launchpad (analytics)
 - **Affected workflows** — All zaaktype decision points enforce authorization
 - **Data dependencies** — Requires procest base (zaak, decision), HR role registry, organizational hierarchy
 
@@ -57,7 +57,7 @@ The mandate-matrix capability automates this by:
 - **openregister abac-policy-engine** (REQUIRED) — Fine-grained authorization policy evaluation
 - **decidesk** (REQUIRED) — Source of mandateringsbesluit (legislative authority)
 - **openconnector** (optional) — HR system sync (AFAS, ADP) for role assignments
-- **mydash** (optional) — Mandate analytics and KPI dashboards
+- **launchpad** (optional) — Mandate analytics and KPI dashboards
 
 ## Acceptance Criteria
 

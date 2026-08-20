@@ -42,98 +42,93 @@ use OCA\Procest\Service\Routing\Strategy\SingleRoleStrategy;
  *
  * @spec openspec/changes/role-based-step-routing/tasks.md#T03
  */
-class StrategyRegistry
-{
+class StrategyRegistry {
 
-    /**
-     * The registered strategies keyed by name.
-     *
-     * @var array<string, RoutingStrategyInterface>
-     */
-    private array $strategies = [];
+	/**
+	 * The registered strategies keyed by name.
+	 *
+	 * @var array<string, RoutingStrategyInterface>
+	 */
+	private array $strategies = [];
 
-    /**
-     * Constructor.
-     *
-     * @param SingleRoleStrategy   $singleRole   Single-role strategy
-     * @param OrSetStrategy        $orSet        OR-set strategy
-     * @param HierarchicalStrategy $hierarchical Hierarchical strategy
-     * @param RoundRobinStrategy   $roundRobin   Round-robin strategy
-     * @param LeastLoadedStrategy  $leastLoaded  Least-loaded strategy
-     */
-    public function __construct(
-        SingleRoleStrategy $singleRole,
-        OrSetStrategy $orSet,
-        HierarchicalStrategy $hierarchical,
-        RoundRobinStrategy $roundRobin,
-        LeastLoadedStrategy $leastLoaded,
-    ) {
-        $this->register(strategy: $singleRole);
-        $this->register(strategy: $orSet);
-        $this->register(strategy: $hierarchical);
-        $this->register(strategy: $roundRobin);
-        $this->register(strategy: $leastLoaded);
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param SingleRoleStrategy $singleRole Single-role strategy
+	 * @param OrSetStrategy $orSet OR-set strategy
+	 * @param HierarchicalStrategy $hierarchical Hierarchical strategy
+	 * @param RoundRobinStrategy $roundRobin Round-robin strategy
+	 * @param LeastLoadedStrategy $leastLoaded Least-loaded strategy
+	 */
+	public function __construct(
+		SingleRoleStrategy $singleRole,
+		OrSetStrategy $orSet,
+		HierarchicalStrategy $hierarchical,
+		RoundRobinStrategy $roundRobin,
+		LeastLoadedStrategy $leastLoaded,
+	) {
+		$this->register(strategy: $singleRole);
+		$this->register(strategy: $orSet);
+		$this->register(strategy: $hierarchical);
+		$this->register(strategy: $roundRobin);
+		$this->register(strategy: $leastLoaded);
+	}//end __construct()
 
-    /**
-     * Register a strategy under its name().
-     *
-     * @param RoutingStrategyInterface $strategy The strategy to register
-     *
-     * @return void
+	/**
+	 * Register a strategy under its name().
+	 *
+	 * @param RoutingStrategyInterface $strategy The strategy to register
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/role-based-step-routing/spec.md
+	 */
+	public function register(RoutingStrategyInterface $strategy): void {
+		$this->strategies[$strategy->name()] = $strategy;
+	}//end register()
 
-     * @spec openspec/specs/role-based-step-routing/spec.md
-     */
-    public function register(RoutingStrategyInterface $strategy): void
-    {
-        $this->strategies[$strategy->name()] = $strategy;
-    }//end register()
+	/**
+	 * List the names of all registered strategies.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/specs/role-based-step-routing/spec.md
+	 */
+	public function list(): array {
+		return array_keys($this->strategies);
+	}//end list()
 
-    /**
-     * List the names of all registered strategies.
-     *
-     * @return array<int, string>
+	/**
+	 * Whether a strategy with the given name is registered.
+	 *
+	 * @param string $name The strategy name
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/role-based-step-routing/spec.md
+	 */
+	public function has(string $name): bool {
+		return isset($this->strategies[$name]);
+	}//end has()
 
-     * @spec openspec/specs/role-based-step-routing/spec.md
-     */
-    public function list(): array
-    {
-        return array_keys($this->strategies);
-    }//end list()
+	/**
+	 * Fetch a strategy by name.
+	 *
+	 * @param string $name The strategy name
+	 *
+	 * @return RoutingStrategyInterface
+	 *
+	 * @throws RoutingStrategyMissingException When the strategy is not registered
+	 *
+	 * @spec openspec/specs/role-based-step-routing/spec.md
+	 */
+	public function get(string $name): RoutingStrategyInterface {
+		if (isset($this->strategies[$name]) === false) {
+			throw new RoutingStrategyMissingException(
+				sprintf('Routing strategy "%s" is not registered', $name)
+			);
+		}
 
-    /**
-     * Whether a strategy with the given name is registered.
-     *
-     * @param string $name The strategy name
-     *
-     * @return bool
-
-     * @spec openspec/specs/role-based-step-routing/spec.md
-     */
-    public function has(string $name): bool
-    {
-        return isset($this->strategies[$name]);
-    }//end has()
-
-    /**
-     * Fetch a strategy by name.
-     *
-     * @param string $name The strategy name
-     *
-     * @return RoutingStrategyInterface
-     *
-     * @throws RoutingStrategyMissingException When the strategy is not registered
-
-     * @spec openspec/specs/role-based-step-routing/spec.md
-     */
-    public function get(string $name): RoutingStrategyInterface
-    {
-        if (isset($this->strategies[$name]) === false) {
-            throw new RoutingStrategyMissingException(
-                sprintf('Routing strategy "%s" is not registered', $name)
-            );
-        }
-
-        return $this->strategies[$name];
-    }//end get()
+		return $this->strategies[$name];
+	}//end get()
 }//end class

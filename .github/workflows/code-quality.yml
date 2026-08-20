@@ -2,19 +2,121 @@ name: Code Quality
 
 on:
   push:
-    branches: [main, development, feature/**, bugfix/**, hotfix/**]
+    # An ALLOW-LIST of branch prefixes is a gate with a hole in it, and the
+    # hole is SILENT: a branch matching nothing gets no CI at all, and its last
+    # visible status is whatever it inherited — indistinguishable, on every
+    # dashboard, from a branch that passed.
+    #
+    # Two live examples, both found 2026-08-14: `perf/**` was uncovered in
+    # openconnector, where a merge carrying unresolved conflict markers and 84
+    # failing tests was pushed and nothing ran; and `feat/**` was uncovered in
+    # openregister — note the list said `feature/**`, so every branch anyone
+    # named `feat/...` had been running unchecked.
+    #
+    # Prefixes are added rather than replaced with `**` because this workflow is
+    # expensive (PHPUnit matrix, Newman, Playwright). The fast structural checks
+    # DO run on `**` — see merge-hygiene.yml, added in the same change.
+    #
+    # ⚠️ Adding prefixes is not the durable fix; the next invented one is
+    # uncovered again. The durable fix is branch protection requiring a PR into
+    # development, which the pull_request trigger below already gates correctly.
+    branches:
+      - main
+      - development
+      - feature/**
+      - feat/**
+      - bugfix/**
+      - hotfix/**
+      - perf/**
+      - refactor/**
+      - chore/**
+      - fix/**
   pull_request:
     branches: [main, master, development]
   workflow_dispatch:
 
+# Deduplicating a `push` run against the `pull_request` run for the SAME head
+# ref is the point of this block, and for a feature branch it is exactly right:
+# two runs of identical jobs, one of them wasted.
+#
+# It is wrong for `main` and `development`, because the push run there is NOT a
+# duplicate — it is the only carrier of the push-only jobs: "Coverage Baseline
+# Check" (`github.event_name == 'push'`), "SBOM" and "Features Extract". A push
+# to `development` and any open PR whose `head_ref` IS `development` both
+# render the group `quality-development`, and `cancel-in-progress` then kills
+# whichever started first — always the push run, by a few seconds.
+#
+# Note this repo's own wrinkle: the standing "Release: merge development into
+# beta" (#18) targets `beta`, and `beta` is NOT in this workflow's
+# `pull_request.branches` list, so that PR alone does not collide here. But
+# #669 ("fix(security): wave-3 critical fixes") is head `development` -> base
+# `main`, and `main` IS in the list — so the collision is live regardless, and
+# will recur for any future development->main PR.
+#
+# Measured on this repo: push run 30896826480 cancelled 45s in. That duration
+# is the discriminator: the shared workflow's `timeout-minutes: 45`
+# cancellation lands at 45m16s–45m28s, so this is a concurrency kill.
+#
+# On the surviving PR run "Coverage Baseline Check" reports `skipped`, which is
+# CORRECT for a pull_request event and renders exactly like a pass. So the gate
+# appears on both runs and executes on neither — a dead gate of the
+# permanently-pending shape.
+#
+# Suffixing only the default-branch push keeps feature-branch dedup untouched
+# (`quality-feature/x` for both events, exactly as before) and gives the two
+# default branches' push runs a lane of their own.
+#
+# Proven in openconnector#1158: its first-ever completed `development` push run
+# (31048998594) executed Coverage Baseline Check, SBOM and Features Extract.
+concurrency:
+  group: quality-${{ github.head_ref || github.ref_name }}${{ (github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'development')) && '-push' || '' }}
+  cancel-in-progress: true
+
+# Permission CEILING for the called quality pipeline. GitHub statically
+# validates the called workflow's declared job permissions against this
+# grant — even for jobs that are disabled — so it must cover the maximum
+# any nested job declares: journeydoc-capture (contents+actions write),
+# update-baseline / features-extract (contents write), and the Quality
+# Report PR comment (issues / pull-requests write).
+permissions:
+  contents: write
+  actions: write
+  issues: write
+  pull-requests: write
+
 jobs:
   quality:
-    uses: Conduction/.github/.github/workflows/quality.yml@main
+    uses: ConductionNL/.github/.github/workflows/quality.yml@main
     with:
       app-name: procest
       php-version: "8.3"
       php-test-versions: '["8.3", "8.4"]'
-      nextcloud-test-refs: '["stable31", "stable32"]'
+      # stable31 is REMOVED, not "dropped for coverage".
+      #
+      # The original reason recorded here — "openregister declares
+      # min-version=32" — is STALE: measured 2026-08-08, openregister@development
+      # declares min-version="28" (openregister#2380 reverted it). Do not rely on
+      # it. What made the stable31 leg worthless still happened, though:
+      # `occ app:enable openregister` failed with only a ::warning::, so the run
+      # continued WITHOUT its data layer and every /apps/openregister/... call
+      # returned Nextcloud's HTML 404 page — a red that said nothing.
+      #
+      # The standing reason is procest's own floor: appinfo/info.xml declares
+      # <nextcloud min-version="32"/>, so a leg below 32 would test a
+      # configuration this app does not claim to support.
+      # tests/Unit/AppInfo/NextcloudFloorMatrixTest.php holds the two in sync.
+      # newman, playwright and journeydoc-capture all pin
+      # `fromJSON(inputs.nextcloud-test-refs)[0]`, so the FIRST entry has to be a
+      # version openregister can load.
+      #
+      # THE LIST IS THE WHOLE DECLARED RANGE. An earlier revision of this comment
+      # said "stable33 is deliberately NOT added: this removes an impossible leg,
+      # it does not widen the matrix" — but the same change also dropped stable32,
+      # which was NOT impossible, it was the declared floor. appinfo/info.xml
+      # declares <nextcloud min-version="32" max-version="34"/>, so 32, 33 and 34
+      # each get a leg. tests/Unit/AppInfo/NextcloudFloorMatrixTest.php is what
+      # holds this list and that floor in sync.
+      nextcloud-test-refs: '["stable34", "stable32", "stable33"]'
       enable-psalm: true
       enable-phpstan: true
       enable-phpmetrics: false
@@ -29,23 +131,172 @@ jobs:
       newman-collection-path: "data"
       newman-environment-path: "tests/zgw/zgw-environment.json"
       newman-seed-command: "bash apps/procest/tests/zgw/seed-consumers.sh"
-      additional-apps: '[{"repo":"Conduction/openregister","app":"openregister","ref":"feature/php-linting"}]'
-      # SBOM disabled until @conduction/nextcloud-vue's dependency declarations
-      # are cleaned up — its `npm ls` tree fails ELSPROBLEMS (bootstrap-vue is a
-      # non-optional peer, apexcharts/pinia/vue version ranges don't match what
-      # apps install, @types/react comes from a transitive rehype-react), which
-      # @cyclonedx/cyclonedx-npm propagates as a hard failure (it always runs
-      # `npm ls` under the hood; `--package-lock-only` doesn't sidestep it).
-      # No other Conduction app enables SBOM today. Tracked in #434.
-      enable-sbom: false
-      # Playwright disabled until upstream @conduction/nextcloud-vue
-      # CnObjectDataWidget bundling bug is fixed: the published bundle has a
-      # hard-coded `require('../../store/index.js')` inside a soft try/catch
-      # that webpack can't resolve in consumer apps, so the procest bundle
-      # fails to build and every E2E spec then 404s. Tracked in
-      # Conduction/nextcloud-vue#242 — re-enable once a beta past that fix
-      # is pinned in package.json.
-      enable-playwright: false
+      # `ref` moved off `feature/php-linting`. That is a short-lived quality
+      # branch, not a line anyone develops against: pinning the FOUNDATION app
+      # to it made every CI instance behave unlike any environment procest is
+      # actually built or run in, and it silently rots the moment the branch is
+      # merged or deleted (the checkout step does `git clone --depth 1 --branch
+      # "$ref"`, which fails outright). procest's own appinfo/routes.php depends
+      # on `\OCA\OpenRegister\AppHost\Routes::standard()` and the E2E job's seed
+      # needs the `settings#load` route it ships — `development` is where that
+      # plumbing lands first.
+      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"}]'
+      # SBOM was disabled here until @conduction/nextcloud-vue's dependency
+      # declarations were cleaned up — its `npm ls` tree fails ELSPROBLEMS
+      # (bootstrap-vue is a non-optional peer, apexcharts/pinia/vue version
+      # ranges don't match what apps install, @types/react comes from a
+      # transitive rehype-react), and @cyclonedx/cyclonedx-npm propagated that
+      # as a hard failure because it always runs `npm ls` under the hood.
+      # Tracked in #434.
+      #
+      # That blocker is STALE, and the old comment's last line ("No other
+      # Conduction app enables SBOM today") is now false — which is exactly why
+      # it was worth re-measuring rather than trusting. The shared workflow's
+      # npm SBOM step now runs:
+      #
+      #   npx @cyclonedx/cyclonedx-npm --package-lock-only --ignore-npm-errors …
+      #
+      # `--ignore-npm-errors` is the flag that neutralises ELSPROBLEMS, and it
+      # was not there when this was switched off.
+      #
+      # Measured positive control rather than assumed: ConductionNL/docudesk
+      # depends on the SAME `@conduction/nextcloud-vue` version this repo pins
+      # (2.2.0-vue3.3), and its SBOM job on `development` ran the npm leg to
+      # completion and merged the PHP + npm SBOMs — run 31016019235, job
+      # 92340789907. openregister, opencatalogi and doriath are green on SBOM
+      # too. The dependency this comment blamed does not stop the job in four
+      # sibling repos, so it does not stop it here.
+      #
+      # procest already ships the other prerequisite: `composer.json` requires
+      # cyclonedx/cyclonedx-php-composer ^6.2 and allows its plugin, so the
+      # `composer CycloneDX:make-sbom` step has what it needs.
+      #
+      # NOTE: SBOM only runs on a branch push (its `if:` tests github.ref
+      # against refs/heads/{main,beta,development}); on a pull_request the ref
+      # is refs/pull/N/merge, so this job is invisible on the PR that enables
+      # it and first reports on the merge to `development`.
+      enable-sbom: true
+      # ── E2E browser tests ────────────────────────────────────────────────
+      # Previously LEFT OFF. The comment that lived here recorded the blocker,
+      # so it is kept (not deleted) next to what changed:
+      #
+      #   "Playwright disabled until the upstream @conduction/nextcloud-vue
+      #    CnObjectDataWidget bundling bug is fixed: the published bundle has a
+      #    hard-coded `require('../../store/index.js')` inside a soft try/catch
+      #    that webpack can't resolve in consumer apps, so the procest bundle
+      #    fails to build and every E2E spec then 404s. Tracked in
+      #    ConductionNL/nextcloud-vue#242 — re-enable once a beta past that fix
+      #    is pinned in package.json."
+      #
+      # That precondition is met: package.json now pins
+      # @conduction/nextcloud-vue 2.1.0-vue3.16 (the Vue 3 line, past #242) and
+      # `npm run build` emits js/procest-main.js. It is no longer taken on
+      # trust either — `ci-seed.sh` ends by FETCHING the bundle over HTTP and
+      # failing the step unless the response is real JavaScript of non-trivial
+      # size. A missing bundle returns HTTP 200 `text/html` (the Nextcloud error
+      # page through index.php), never a 404, so a status-code check alone would
+      # read the exact failure this input was disabled for as a success.
+      enable-playwright: true
+      # Double duty in the shared workflow: it is both the directory the
+      # "Validate Playwright tests exist" step counts *.spec.ts in, AND the
+      # FIRST place the run step looks for a config
+      # (`${playwright-test-path}/playwright.config.ts`), falling back to the
+      # repo root only if that file is absent. We ship
+      # tests/e2e/playwright.config.ts precisely so that lookup hits it: the run
+      # step passes no `--project`, so the ROOT config would also run
+      # `docs-capture` (re-shooting every documentation screenshot on every PR)
+      # and `visual` (whose own README records that a CI Linux runner cannot
+      # byte-match a dev-container PNG baseline).
+      playwright-test-path: tests/e2e
+      # Left OFF deliberately. Turning it on adds a hard threshold gate to a job
+      # that has never run here; enable it in a follow-up once this job has a
+      # measured baseline. The threshold below is inert while this is false.
       enable-playwright-coverage: false
       playwright-coverage-threshold: 75
-      playwright-seed-command: 'php occ maintenance:repair'
+      # WAS `php occ maintenance:repair`. That is the IRepairStep path, and it
+      # CANNOT provision procest's register: a repair step runs with no user
+      # session, so OpenRegister RBAC denies the import ("User 'Anonymous' does
+      # not have permission to 'create' objects in schema '…'"),
+      # Repair\InitializeSettings::run() catches the Throwable and downgrades it
+      # to a warning, and occ still exits 0. The register is absent, the app
+      # looks fine, and every fixture call then 404s.
+      #
+      # ci-seed.sh instead imports EXPLICITLY over the admin HTTP API
+      # (POST /apps/procest/api/settings/load → loadConfiguration(force: true),
+      # which also deep-merges the 20 lib/Settings/register.d/*.json fragments)
+      # and then VERIFIES the register + schema slugs, so a bad provision is one
+      # loud step failure instead of a hundred misleading spec failures.
+      #
+      # cwd for this step is the Nextcloud server root.
+      playwright-seed-command: 'bash apps/procest/tests/e2e/ci-seed.sh'
+
+      # Integration Tests (Newman) stays OFF here, deliberately. The
+      # `enable-newman: false` further up is not a default nobody chose: it
+      # records that the ZGW compliance collections fail at 95%+ because the ZGW
+      # API implementation is still in progress. Four collections are committed
+      # under `data/` and would all meet that same known cause — a guaranteed
+      # red that teaches nothing the comment does not already say. Flipped back
+      # on in the commit that gets the core CRUD assertions passing.
+
+      # ── Frontend Check legs ──────────────────────────────────────────────
+      # `frontend-checks` defaults to `[]`, and an empty list means the shared
+      # workflow emits NO "Frontend Check" job at all — so these three
+      # validators ran nowhere while the run still looked complete.
+      # Measured on this tree before enabling: `test:l10n` PASSES;
+      # `check:manifest` FAILS on three counts — `pages[4]` and `pages[5]`
+      # (`type=custom requires component field`) and `pages[52].type: "roadmap"
+      # not in v1.2 enum`. `check:vue3-compile` could not be measured locally
+      # (it needs `@vue/compiler-sfc`, which only exists after the leg's own
+      # `npm ci`), so CI is the first place it gets a real verdict.
+      # `test` / `test:unit` are NOT listed: "Frontend Tests (unit)" runs them.
+      #
+      # `format` (prettier --check) is listed because the shared workflow has NO
+      # prettier job of its own — `quality.yml` runs eslint and stylelint and
+      # mentions prettier ZERO times. This repo already carries
+      # `@nextcloud/prettier-config` and a `format` script, so without this leg
+      # `npm run format` never runs outside a developer's editor and the tree
+      # drifts straight back out of format between merges — the same inert-
+      # formatter failure mode that made the old `.prettierrc` worth deleting.
+      # Centralising the config never stopped drift; the gate does.
+      # Measured on this tree before enabling: PASSES, 410 of 456 tracked
+      # frontend files in scope (l10n/ and docs/ excluded via .prettierignore /
+      # .gitignore, which prettier 3 also reads).
+      frontend-checks: '["check:manifest", "check:vue3-compile", "test:l10n", "format"]'
+
+      # ── Hydra mechanical gates ───────────────────────────────────────────
+      # `enable-hydra-gates` defaults to FALSE, so this tier had never executed
+      # here — the job reported `skipped`, which the Quality Report renders
+      # identically to a pass.
+      enable-hydra-gates: true
+      # No `hydra-gates-ref` here on purpose. The shared workflow defaults it
+      # to @main, and this workflow is itself consumed at @main, so the two
+      # sides move together and a gate fix reaches this repo without a commit
+      # in this repo. A pin is a silent expiry date: 22 repos sat on v1.0.1 and
+      # 16 gates were dead fleet-wide while every one reported PASS (.github#159),
+      # and a default flipped at @main later reached those old runners and made
+      # them red on gates they had no subject matter for (.github#173).
+      # To hold this repo still for a specific reason, set the input explicitly
+      # and say why — it is still honoured. To roll back for everyone, revert on
+      # ConductionNL/.github main.
+      #
+      # THIRD CAUSE, and the one that is failing this repo RIGHT NOW
+      # (.github#177): quality.yml@main began executing three gate helpers BY
+      # NAME — check_spec_anchors.py, check_form_labels.py and
+      # check_license_triangle.py — which exist in NO tag before v1.5.0.
+      # Verified by DIRECTORY LISTING of each tag, not by per-file lookups:
+      # those answered "present" uniformly across v1.0.0..v1.5.0, and the
+      # uniformity across independent inputs was the tell that the instrument
+      # was wrong. So the Hydra Gates job here fails at "Verify the pinned gates
+      # package satisfies this workflow", before a single gate runs, with the
+      # workflow's own words: "This is NOT a code-quality finding about your
+      # repository." Removing the pin is the repair.
+      #
+      # Unpinning also picks up v1.5.1's push scoping (.github#179): on a push to
+      # `development`, `origin/development` IS `HEAD`, so the diff was empty by
+      # construction — <= v1.4.0 passed over it (permanently green) and v1.5.0
+      # refused with exit 99 (permanently red). The scope is now
+      # `github.event.before...HEAD`, what the push actually changed.
+      #
+      # `enable-axe` is deliberately still NOT set — a vanilla Nextcloud 34
+      # reports serious/critical violations on core's OWN routes that DOM
+      # scoping does not remove. Enabling axe is a separate decision.

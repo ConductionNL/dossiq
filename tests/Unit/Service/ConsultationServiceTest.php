@@ -26,6 +26,8 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\AdviceDelegationService;
+use OCA\Procest\Service\Consultation\ConsultationDependencyGraph;
+use OCA\Procest\Service\Consultation\ConsultationRepository;
 use OCA\Procest\Service\ConsultationService;
 use OCA\Procest\Service\SettingsService;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -35,316 +37,303 @@ use Psr\Log\LoggerInterface;
 /**
  * ObjectService stub matching the named-arg signatures used in ConsultationService.
  */
-interface ConsultationObjectServiceStub
-{
+interface ConsultationObjectServiceStub {
 
-    /**
-     * Search objects by register/schema slug.
-     *
-     * @param string $register The register slug.
-     * @param string $schema   The schema slug.
-     * @param array  $filters  The query filters.
-     *
-     * @return array
-     */
-    public function searchObjectsBySlug(string $register, string $schema, array $filters): array;
+	/**
+	 * Search objects by register/schema slug.
+	 *
+	 * @param string $register The register slug.
+	 * @param string $schema The schema slug.
+	 * @param array $filters The query filters.
+	 *
+	 * @return array
+	 */
+	public function searchObjectsBySlug(string $register, string $schema, array $filters): array;
 
-    /**
-     * Search objects by numeric @self query.
-     *
-     * @param array $query The query payload.
-     *
-     * @return array
-     */
-    public function searchObjects(array $query): array;
+	/**
+	 * Search objects by numeric @self query.
+	 *
+	 * @param array $query The query payload.
+	 *
+	 * @return array
+	 */
+	public function searchObjects(array $query): array;
 
-    /**
-     * Find a single object by id.
-     *
-     * @param string $id       The object id.
-     * @param string $register The register slug.
-     * @param string $schema   The schema slug.
-     *
-     * @return array
-     */
-    public function find(string $id, string $register, string $schema): array;
+	/**
+	 * Find a single object by id.
+	 *
+	 * @param string $id The object id.
+	 * @param string $register The register slug.
+	 * @param string $schema The schema slug.
+	 *
+	 * @return array
+	 */
+	public function find(string $id, string $register, string $schema): array;
 
-    /**
-     * Save or update an object.
-     *
-     * @param string $register The register slug.
-     * @param string $schema   The schema slug.
-     * @param array  $data     The object payload.
-     * @param string $id       Optional id for update.
-     *
-     * @return object
-     */
-    public function saveObject(string $register, string $schema, array $data, string $id=''): object;
+	/**
+	 * Save or update an object.
+	 *
+	 * @param string $register The register slug.
+	 * @param string $schema The schema slug.
+	 * @param array $data The object payload.
+	 * @param string $id Optional id for update.
+	 *
+	 * @return object
+	 */
+	public function saveObject(string $register, string $schema, array $data, string $id = ''): object;
 
-    /**
-     * Delete an object by id.
-     *
-     * @param string $register The register slug.
-     * @param string $schema   The schema slug.
-     * @param string $id       The object id.
-     *
-     * @return void
-     */
-    public function deleteObject(string $register, string $schema, string $id): void;
+	/**
+	 * Delete an object by id.
+	 *
+	 * @param string $register The register slug.
+	 * @param string $schema The schema slug.
+	 * @param string $id The object id.
+	 *
+	 * @return void
+	 */
+	public function deleteObject(string $register, string $schema, string $id): void;
 }//end interface
 
 /**
  * Unit tests for ConsultationService.
  *
  * @covers \OCA\Procest\Service\ConsultationService
+ *
+ * @uses \OCA\Procest\Service\Consultation\ConsultationDependencyGraph
+ * @uses \OCA\Procest\Service\Consultation\ConsultationRepository
  */
-class ConsultationServiceTest extends TestCase
-{
+class ConsultationServiceTest extends TestCase {
 
-    /**
-     * Mocked SettingsService.
-     *
-     * @var SettingsService|MockObject
-     */
-    private SettingsService $settings;
+	/**
+	 * Mocked SettingsService.
+	 *
+	 * @var SettingsService|MockObject
+	 */
+	private SettingsService $settings;
 
-    /**
-     * Mocked LoggerInterface.
-     *
-     * @var LoggerInterface|MockObject
-     */
-    private LoggerInterface $logger;
+	/**
+	 * Mocked LoggerInterface.
+	 *
+	 * @var LoggerInterface|MockObject
+	 */
+	private LoggerInterface $logger;
 
-    /**
-     * Mocked AdviceDelegationService.
-     *
-     * @var AdviceDelegationService|MockObject
-     */
-    private AdviceDelegationService $adviceDelegation;
+	/**
+	 * Mocked AdviceDelegationService.
+	 *
+	 * @var AdviceDelegationService|MockObject
+	 */
+	private AdviceDelegationService $adviceDelegation;
 
-    /**
-     * Service under test.
-     *
-     * @var ConsultationService
-     */
-    private ConsultationService $service;
+	/**
+	 * Service under test.
+	 *
+	 * @var ConsultationService
+	 */
+	private ConsultationService $service;
 
+	/**
+	 * Set up test fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->settings = $this->createMock(SettingsService::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->adviceDelegation = $this->createMock(AdviceDelegationService::class);
+		// The repository and dependency graph are real collaborators, not
+		// mocks: every assertion below is about behaviour they inherited
+		// verbatim from ConsultationService, and the repository is still
+		// driven entirely by the mocked SettingsService.
+		$repository = new ConsultationRepository($this->settings, $this->logger);
+		$this->service = new ConsultationService(
+			settingsService: $this->settings,
+			logger: $this->logger,
+			adviceDelegation: $this->adviceDelegation,
+			repository: $repository,
+			dependencyGraph: new ConsultationDependencyGraph($repository),
+		);
 
-    /**
-     * Set up test fixtures.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->settings         = $this->createMock(SettingsService::class);
-        $this->logger           = $this->createMock(LoggerInterface::class);
-        $this->adviceDelegation = $this->createMock(AdviceDelegationService::class);
-        $this->service          = new ConsultationService(
-            settingsService: $this->settings,
-            logger: $this->logger,
-            adviceDelegation: $this->adviceDelegation,
-        );
+	}//end setUp()
 
-    }//end setUp()
+	/**
+	 * createConsultation throws RuntimeException when ObjectService is unavailable.
+	 *
+	 * @return void
+	 */
+	public function testCreateConsultationFailsWithoutObjectService(): void {
+		$this->settings->method('getObjectService')->willReturn(null);
 
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('OpenRegister is not available');
 
-    /**
-     * createConsultation throws RuntimeException when ObjectService is unavailable.
-     *
-     * @return void
-     */
-    public function testCreateConsultationFailsWithoutObjectService(): void
-    {
-        $this->settings->method('getObjectService')->willReturn(null);
+		$this->service->createConsultation(data: [
+			'parentCase' => 'zaak-uuid',
+			'adviceAuthority' => 'Brandweer',
+			'questionFormulation' => 'Is het brandveilig?',
+			'latestResponseDate' => '2026-07-01',
+		]);
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('OpenRegister is not available');
+	}//end testCreateConsultationFailsWithoutObjectService()
 
-        $this->service->createConsultation(data: [
-            'parentZaak'             => 'zaak-uuid',
-            'adviesInstantie'        => 'Brandweer',
-            'vraagstelling'          => 'Is het brandveilig?',
-            'uiterlijkeReactiedatum' => '2026-07-01',
-        ]);
+	/**
+	 * createConsultation throws RuntimeException when schema config is missing.
+	 *
+	 * @return void
+	 */
+	public function testCreateConsultationFailsWhenSchemaNotConfigured(): void {
+		$objectService = $this->createMock(ConsultationObjectServiceStub::class);
+		$this->settings->method('getObjectService')->willReturn($objectService);
+		$this->settings->method('getConfigValue')
+			->willReturnMap([
+				['register', ''],
+				['consultation_schema', ''],
+			]);
 
-    }//end testCreateConsultationFailsWithoutObjectService()
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('Consultation schema not configured');
 
+		$this->service->createConsultation(data: [
+			'parentCase' => 'zaak-uuid',
+			'adviceAuthority' => 'Brandweer',
+			'questionFormulation' => 'Is het brandveilig?',
+			'latestResponseDate' => '2026-07-01',
+		]);
 
-    /**
-     * createConsultation throws RuntimeException when schema config is missing.
-     *
-     * @return void
-     */
-    public function testCreateConsultationFailsWhenSchemaNotConfigured(): void
-    {
-        $objectService = $this->createMock(ConsultationObjectServiceStub::class);
-        $this->settings->method('getObjectService')->willReturn($objectService);
-        $this->settings->method('getConfigValue')
-            ->willReturnMap([
-                ['register', ''],
-                ['consultation_schema', ''],
-            ]);
+	}//end testCreateConsultationFailsWhenSchemaNotConfigured()
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Consultation schema not configured');
+	/**
+	 * createConsultation throws RuntimeException when parentZaak is missing.
+	 *
+	 * @return void
+	 */
+	public function testCreateConsultationFailsWhenParentZaakMissing(): void {
+		$objectService = $this->createMock(ConsultationObjectServiceStub::class);
+		$this->settings->method('getObjectService')->willReturn($objectService);
+		$this->settings->method('getConfigValue')->willReturn('some-id');
 
-        $this->service->createConsultation(data: [
-            'parentZaak'             => 'zaak-uuid',
-            'adviesInstantie'        => 'Brandweer',
-            'vraagstelling'          => 'Is het brandveilig?',
-            'uiterlijkeReactiedatum' => '2026-07-01',
-        ]);
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('parentZaak is required');
 
-    }//end testCreateConsultationFailsWhenSchemaNotConfigured()
+		$this->service->createConsultation(data: [
+			'adviceAuthority' => 'Brandweer',
+			'questionFormulation' => 'Is het brandveilig?',
+			'latestResponseDate' => '2026-07-01',
+		]);
 
+	}//end testCreateConsultationFailsWhenParentZaakMissing()
 
-    /**
-     * createConsultation throws RuntimeException when parentZaak is missing.
-     *
-     * @return void
-     */
-    public function testCreateConsultationFailsWhenParentZaakMissing(): void
-    {
-        $objectService = $this->createMock(ConsultationObjectServiceStub::class);
-        $this->settings->method('getObjectService')->willReturn($objectService);
-        $this->settings->method('getConfigValue')->willReturn('some-id');
+	/**
+	 * updateStatus throws RuntimeException for an unrecognized status.
+	 *
+	 * @return void
+	 */
+	public function testUpdateStatusRejectsInvalidStatus(): void {
+		$objectService = $this->createMock(ConsultationObjectServiceStub::class);
+		$this->settings->method('getObjectService')->willReturn($objectService);
+		$this->settings->method('getConfigValue')->willReturn('some-id');
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('parentZaak is required');
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('Invalid status: ongeldig');
 
-        $this->service->createConsultation(data: [
-            'adviesInstantie'        => 'Brandweer',
-            'vraagstelling'          => 'Is het brandveilig?',
-            'uiterlijkeReactiedatum' => '2026-07-01',
-        ]);
+		$this->service->updateStatus(consultationId: 'con-uuid', newStatus: 'ongeldig');
 
-    }//end testCreateConsultationFailsWhenParentZaakMissing()
+	}//end testUpdateStatusRejectsInvalidStatus()
 
+	/**
+	 * submitResponse throws RuntimeException for an unrecognized advice type.
+	 *
+	 * @return void
+	 */
+	public function testSubmitResponseRejectsInvalidAdvice(): void {
+		$objectService = $this->createMock(ConsultationObjectServiceStub::class);
+		$this->settings->method('getObjectService')->willReturn($objectService);
+		$this->settings->method('getConfigValue')->willReturn('some-id');
 
-    /**
-     * updateStatus throws RuntimeException for an unrecognized status.
-     *
-     * @return void
-     */
-    public function testUpdateStatusRejectsInvalidStatus(): void
-    {
-        $objectService = $this->createMock(ConsultationObjectServiceStub::class);
-        $this->settings->method('getObjectService')->willReturn($objectService);
-        $this->settings->method('getConfigValue')->willReturn('some-id');
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('Invalid advice type: unknown');
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Invalid status: ongeldig');
+		$this->service->submitResponse(
+			consultationId: 'con-uuid',
+			response: ['advice' => 'unknown'],
+		);
 
-        $this->service->updateStatus(consultationId: 'con-uuid', newStatus: 'ongeldig');
+	}//end testSubmitResponseRejectsInvalidAdvice()
 
-    }//end testUpdateStatusRejectsInvalidStatus()
+	/**
+	 * getBlockingConsultations returns only mandatory non-terminal consultations.
+	 *
+	 * @return void
+	 */
+	public function testGetBlockingConsultationsReturnsOnlyMandatoryOpen(): void {
+		$objectService = $this->createMock(ConsultationObjectServiceStub::class);
 
+		$consultations = [
+			['id' => 'c1', 'mandatory' => true,  'status' => 'open'],
+			['id' => 'c2', 'mandatory' => true,  'status' => 'advice_uitgebracht'],
+			['id' => 'c3', 'mandatory' => false, 'status' => 'open'],
+			['id' => 'c4', 'mandatory' => true,  'status' => 'closed'],
+		];
 
-    /**
-     * submitResponse throws RuntimeException for an unrecognized advice type.
-     *
-     * @return void
-     */
-    public function testSubmitResponseRejectsInvalidAdvice(): void
-    {
-        $objectService = $this->createMock(ConsultationObjectServiceStub::class);
-        $this->settings->method('getObjectService')->willReturn($objectService);
-        $this->settings->method('getConfigValue')->willReturn('some-id');
+		$objectService->method('searchObjectsBySlug')->willReturn($consultations);
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Invalid advice type: onbekend');
+		$this->settings->method('getObjectService')->willReturn($objectService);
+		$this->settings->method('getConfigValue')->willReturn('some-id');
 
-        $this->service->submitResponse(
-            consultationId: 'con-uuid',
-            response: ['advies' => 'onbekend'],
-        );
+		$blocking = $this->service->getBlockingConsultations(caseId: 'zaak-uuid');
 
-    }//end testSubmitResponseRejectsInvalidAdvice()
+		$this->assertCount(1, $blocking);
+		$this->assertSame('c1', $blocking[0]['id']);
 
+	}//end testGetBlockingConsultationsReturnsOnlyMandatoryOpen()
 
-    /**
-     * getBlockingConsultations returns only mandatory non-terminal consultations.
-     *
-     * @return void
-     */
-    public function testGetBlockingConsultationsReturnsOnlyMandatoryOpen(): void
-    {
-        $objectService = $this->createMock(ConsultationObjectServiceStub::class);
+	/**
+	 * validateDependencyCycle returns true when the ID is a direct self-reference.
+	 *
+	 * @return void
+	 */
+	public function testValidateDependencyCycleDetectsSelfReference(): void {
+		$result = $this->service->validateDependencyCycle(
+			consultationId: 'con-uuid',
+			dependsOn: ['con-uuid'],
+		);
 
-        $consultations = [
-            ['id' => 'c1', 'mandatory' => true,  'status' => 'open'],
-            ['id' => 'c2', 'mandatory' => true,  'status' => 'advies_uitgebracht'],
-            ['id' => 'c3', 'mandatory' => false, 'status' => 'open'],
-            ['id' => 'c4', 'mandatory' => true,  'status' => 'afgesloten'],
-        ];
+		$this->assertTrue($result);
 
-        $objectService->method('searchObjectsBySlug')->willReturn($consultations);
+	}//end testValidateDependencyCycleDetectsSelfReference()
 
-        $this->settings->method('getObjectService')->willReturn($objectService);
-        $this->settings->method('getConfigValue')->willReturn('some-id');
+	/**
+	 * validateDependencyCycle returns false for an empty dependsOn list.
+	 *
+	 * @return void
+	 */
+	public function testValidateDependencyCycleReturnsFalseForEmptyList(): void {
+		$result = $this->service->validateDependencyCycle(
+			consultationId: 'con-uuid',
+			dependsOn: [],
+		);
 
-        $blocking = $this->service->getBlockingConsultations(zaakId: 'zaak-uuid');
+		$this->assertFalse($result);
 
-        $this->assertCount(1, $blocking);
-        $this->assertSame('c1', $blocking[0]['id']);
+	}//end testValidateDependencyCycleReturnsFalseForEmptyList()
 
-    }//end testGetBlockingConsultationsReturnsOnlyMandatoryOpen()
+	/**
+	 * approveExtension throws RuntimeException for an invalid date format.
+	 *
+	 * @return void
+	 */
+	public function testApproveExtensionRejectsInvalidDateFormat(): void {
+		$objectService = $this->createMock(ConsultationObjectServiceStub::class);
+		$this->settings->method('getObjectService')->willReturn($objectService);
 
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('Invalid date format');
 
-    /**
-     * validateDependencyCycle returns true when the ID is a direct self-reference.
-     *
-     * @return void
-     */
-    public function testValidateDependencyCycleDetectsSelfReference(): void
-    {
-        $result = $this->service->validateDependencyCycle(
-            consultationId: 'con-uuid',
-            dependsOn: ['con-uuid'],
-        );
+		$this->service->approveExtension(
+			consultationId: 'con-uuid',
+			newDeadline: '01-07-2026',
+		);
 
-        $this->assertTrue($result);
-
-    }//end testValidateDependencyCycleDetectsSelfReference()
-
-
-    /**
-     * validateDependencyCycle returns false for an empty dependsOn list.
-     *
-     * @return void
-     */
-    public function testValidateDependencyCycleReturnsFalseForEmptyList(): void
-    {
-        $result = $this->service->validateDependencyCycle(
-            consultationId: 'con-uuid',
-            dependsOn: [],
-        );
-
-        $this->assertFalse($result);
-
-    }//end testValidateDependencyCycleReturnsFalseForEmptyList()
-
-
-    /**
-     * approveExtension throws RuntimeException for an invalid date format.
-     *
-     * @return void
-     */
-    public function testApproveExtensionRejectsInvalidDateFormat(): void
-    {
-        $objectService = $this->createMock(ConsultationObjectServiceStub::class);
-        $this->settings->method('getObjectService')->willReturn($objectService);
-
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Invalid date format');
-
-        $this->service->approveExtension(
-            consultationId: 'con-uuid',
-            newDeadline: '01-07-2026',
-        );
-
-    }//end testApproveExtensionRejectsInvalidDateFormat()
-
+	}//end testApproveExtensionRejectsInvalidDateFormat()
 
 }//end class

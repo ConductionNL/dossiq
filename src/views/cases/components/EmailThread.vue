@@ -19,9 +19,11 @@
 				:class="'email-thread__message--' + msg.direction">
 				<div class="email-thread__message-header">
 					<span class="email-thread__direction">
-						{{ msg.direction === 'outbound'
-							? t('procest', 'Sent')
-							: t('procest', 'Received') }}
+						{{
+							msg.direction === 'outbound'
+								? t('procest', 'Sent')
+								: t('procest', 'Received')
+						}}
 					</span>
 					<span class="email-thread__date">
 						{{ formatDateTime(msg.sentAt || msg.receivedAt) }}
@@ -49,9 +51,11 @@
 					v-if="msg.body && msg.body.length > 200"
 					type="tertiary"
 					@click="toggleExpand(msg.messageId || msg.id)">
-					{{ isExpanded(msg.messageId || msg.id)
-						? t('procest', 'Show less')
-						: t('procest', 'Show more') }}
+					{{
+						isExpanded(msg.messageId || msg.id)
+							? t('procest', 'Show less')
+							: t('procest', 'Show more')
+					}}
 				</NcButton>
 			</div>
 		</div>
@@ -71,21 +75,25 @@ export default {
 	components: {
 		NcButton,
 	},
+
 	props: {
 		messages: {
 			type: Array,
 			default: () => [],
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	data() {
 		return {
 			expandedMessages: {},
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		sortedMessages() {
@@ -96,6 +104,7 @@ export default {
 			})
 		},
 	},
+
 	methods: {
 		/**
 		 * @param dateStr
@@ -113,6 +122,7 @@ export default {
 				minute: '2-digit',
 			})
 		},
+
 		/**
 		 * @param body
 		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
@@ -125,15 +135,17 @@ export default {
 			}
 			return body.substring(0, 200) + '...'
 		},
+
 		isExpanded(id) {
 			return this.expandedMessages[id] === true
 		},
+
 		/**
 		 * @param id
 		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 		 */
 		toggleExpand(id) {
-			this.$set(this.expandedMessages, id, !this.expandedMessages[id])
+			this.expandedMessages[id] = !this.expandedMessages[id]
 		},
 	},
 }

@@ -9,20 +9,29 @@
 	<div class="mandaat-import">
 		<h3>{{ t('procest', 'Import mandate export') }}</h3>
 		<p class="mandaat-import__description">
-			{{ t('procest', 'Paste or upload a Decidesk mandate export (CSV/JSON). The preview shows which mandaten will be created, updated, or skipped before you approve the import.') }}
+			{{
+				t(
+					'procest',
+					'Paste or upload a Decidesk mandate export (CSV/JSON). The preview shows which mandaten will be created, updated, or skipped before you approve the import.',
+				)
+			}}
 		</p>
 
 		<div class="mandaat-import__upload">
-			<label for="mandaat-import-file">{{ t('procest', 'Upload file') }}</label>
+			<label for="mandaat-import-file">{{
+				t('procest', 'Upload file')
+			}}</label>
 			<input
 				id="mandaat-import-file"
 				type="file"
 				accept=".csv,.json,application/json,text/csv"
-				@change="onFileChange">
+				@change="onFileChange" />
 		</div>
 
 		<div class="mandaat-import__paste">
-			<label for="mandaat-import-paste">{{ t('procest', 'Or paste content') }}</label>
+			<label for="mandaat-import-paste">{{
+				t('procest', 'Or paste content')
+			}}</label>
 			<textarea
 				id="mandaat-import-paste"
 				v-model="raw"
@@ -59,16 +68,33 @@
 			<h4>{{ t('procest', 'Preview') }}</h4>
 			<div class="mandaat-import__counters">
 				<span class="mandaat-import__counter mandaat-import__counter--good">
-					{{ t('procest', '{n} new', { n: previewResult.summary?.create || 0 }) }}
+					{{
+						t('procest', '{n} new', {
+							n: previewResult.summary?.create || 0,
+						})
+					}}
 				</span>
 				<span class="mandaat-import__counter mandaat-import__counter--warn">
-					{{ t('procest', '{n} update', { n: previewResult.summary?.update || 0 }) }}
+					{{
+						t('procest', '{n} update', {
+							n: previewResult.summary?.update || 0,
+						})
+					}}
 				</span>
-				<span class="mandaat-import__counter mandaat-import__counter--neutral">
-					{{ t('procest', '{n} skip', { n: previewResult.summary?.skip || 0 }) }}
+				<span
+					class="mandaat-import__counter mandaat-import__counter--neutral">
+					{{
+						t('procest', '{n} skip', {
+							n: previewResult.summary?.skip || 0,
+						})
+					}}
 				</span>
 				<span class="mandaat-import__counter mandaat-import__counter--alert">
-					{{ t('procest', '{n} conflicts', { n: previewResult.summary?.conflicts || 0 }) }}
+					{{
+						t('procest', '{n} conflicts', {
+							n: previewResult.summary?.conflicts || 0,
+						})
+					}}
 				</span>
 			</div>
 		</div>
@@ -76,12 +102,12 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
+import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import axios from '@nextcloud/axios'
-import EyeOutline from 'vue-material-design-icons/EyeOutline.vue'
+import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import CheckBold from 'vue-material-design-icons/CheckBold.vue'
+import EyeOutline from 'vue-material-design-icons/EyeOutline.vue'
 
 export default {
 	name: 'MandaatImportPanel',
@@ -97,6 +123,7 @@ export default {
 			importId: null,
 		}
 	},
+
 	methods: {
 		t,
 		/**
@@ -107,9 +134,12 @@ export default {
 			const f = e.target.files?.[0]
 			if (!f) return
 			const reader = new FileReader()
-			reader.onload = (ev) => { this.raw = String(ev.target.result || '') }
+			reader.onload = (ev) => {
+				this.raw = String(ev.target.result || '')
+			}
 			reader.readAsText(f)
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		async preview() {
 			this.running = true
@@ -124,11 +154,15 @@ export default {
 				this.previewResult = res.data
 				this.importId = res.data?.importId || res.data?.id || null
 			} catch (e) {
-				this.error = e?.response?.data?.message || e.message || t('procest', 'Preview failed')
+				this.error =
+					e?.response?.data?.message
+					|| e.message
+					|| t('procest', 'Preview failed')
 			} finally {
 				this.running = false
 			}
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		async approve() {
 			if (!this.importId) return
@@ -136,14 +170,21 @@ export default {
 			this.error = null
 			try {
 				await axios.post(
-					generateUrl('/apps/procest/api/mandate/import/' + encodeURIComponent(this.importId) + '/approve'),
+					generateUrl(
+						'/apps/procest/api/mandate/import/'
+							+ encodeURIComponent(this.importId)
+							+ '/approve',
+					),
 				)
 				this.$emit('imported')
 				this.raw = ''
 				this.previewResult = null
 				this.importId = null
 			} catch (e) {
-				this.error = e?.response?.data?.message || e.message || t('procest', 'Approve failed')
+				this.error =
+					e?.response?.data?.message
+					|| e.message
+					|| t('procest', 'Approve failed')
 			} finally {
 				this.approving = false
 			}

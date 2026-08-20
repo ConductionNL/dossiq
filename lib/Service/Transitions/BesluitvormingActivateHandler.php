@@ -25,7 +25,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-002
+ * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
 
 declare(strict_types=1);
@@ -39,115 +39,130 @@ use Psr\Log\LoggerInterface;
 /**
  * Auto-action handler that activates the besluitvorming parafering chain.
  *
- * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-002
+ * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
-class BesluitvormingActivateHandler implements ActionHandlerInterface
-{
-    /**
-     * Constructor.
-     *
-     * @param BesluitvormingParafeerService $parafeerService The parafering chain orchestrator.
-     * @param SettingsService               $settingsService Bridge to OpenRegister + config.
-     * @param LoggerInterface               $logger          Logger.
-     *
-     * @return void
-     */
-    public function __construct(
-        private readonly BesluitvormingParafeerService $parafeerService,
-        private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class BesluitvormingActivateHandler implements ActionHandlerInterface {
+	/**
+	 * Constructor.
+	 *
+	 * @param BesluitvormingParafeerService $parafeerService The parafering chain orchestrator.
+	 * @param SettingsService $settingsService Bridge to OpenRegister + config.
+	 * @param LoggerInterface $logger Logger.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly BesluitvormingParafeerService $parafeerService,
+		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Handle the besluitvormingActivate action.
-     *
-     * @param array<string, mixed> $actionConfig      Action configuration.
-     * @param array<string, mixed> $case              Case object.
-     * @param array<string, mixed> $transitionContext Transition context.
-     *
-     * @return ActionResult
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     *
-     * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-002
-     */
-    public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
-    {
-        try {
-            $voorstelId = $this->resolveVoorstelId(case: $case);
-            if ($voorstelId === '') {
-                return ActionResult::failure(error: 'no_active_voorstel');
-            }
+	/**
+	 * Handle the besluitvormingActivate action.
+	 *
+	 * @param array<string, mixed> $actionConfig Action configuration.
+	 * @param array<string, mixed> $case Case object.
+	 * @param array<string, mixed> $transitionContext Transition context.
+	 *
+	 * @return ActionResult
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 *
+	 * @spec openspec/specs/besluitvorming-workflow/spec.md
+	 */
+	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
+		try {
+			$proposalId = $this->resolveProposalId(case: $case);
+			if ($proposalId === '') {
+				return new ActionResult(succeeded: false, error: 'no_active_voorstel');
+			}
 
-            $this->parafeerService->activate($voorstelId);
+			$this->parafeerService->activate($proposalId);
 
-            return ActionResult::success(data: ['voorstel' => $voorstelId]);
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'BesluitvormingActivateHandler failed',
-                ['exception' => $e->getMessage(), 'context' => $transitionContext],
-            );
-            return ActionResult::failure(error: 'besluitvorming_activate_failed');
-        }//end try
-    }//end handle()
+			return new ActionResult(succeeded: true, data: ['proposal' => $proposalId]);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'BesluitvormingActivateHandler failed',
+				['exception' => $e->getMessage(), 'context' => $transitionContext],
+			);
+			return new ActionResult(succeeded: false, error: 'besluitvorming_activate_failed');
+		}//end try
+	}//end handle()
 
-    /**
-     * Resolve the active voorstel id for a case.
-     *
-     * @param array<string, mixed> $case The case payload.
-     *
-     * @return string The voorstel id, or empty string.
-     */
-    private function resolveVoorstelId(array $case): string
-    {
-        // A voorstel may be linked directly on the case.
-        $direct = (string) ($case['voorstel'] ?? '');
-        if ($direct !== '') {
-            return $direct;
-        }
+	/**
+	 * Resolve the active voorstel id for a case.
+	 *
+	 * @param array<string, mixed> $case The case payload.
+	 *
+	 * @return string The voorstel id, or empty string.
+	 */
+	private function resolveProposalId(array $case): string {
+		// A voorstel may be linked directly on the case.
+		$direct = (string)($case['proposal'] ?? '');
+		if ($direct !== '') {
+			return $direct;
+		}
 
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return '';
-        }
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return '';
+		}
 
-        $register       = $this->settingsService->getConfigValue(key: 'register');
-        $voorstelSchema = $this->settingsService->getConfigValue(key: 'voorstel_schema');
-        $caseId         = (string) ($case['id'] ?? $case['uuid'] ?? '');
-        if ($register === '' || $voorstelSchema === '' || $caseId === '') {
-            return '';
-        }
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$proposalSchema = $this->settingsService->getConfigValue(key: 'voorstel_schema');
+		$caseId = (string)($case['id'] ?? $case['uuid'] ?? '');
+		if ($register === '' || $proposalSchema === '' || $caseId === '') {
+			return '';
+		}
 
-        try {
-            $results = $objectService->findAll(
-                [
-                    'filters' => ['register' => $register, 'schema' => $voorstelSchema, 'case' => $caseId],
-                    'limit'   => 1,
-                ],
-            );
+		try {
+			$results = $objectService->findAll(
+				[
+					'filters' => ['register' => $register, 'schema' => $proposalSchema, 'case' => $caseId],
+					'limit' => 1,
+				],
+			);
 
-            if (is_array($results) === true && isset($results['results']) === true) {
-                $results = $results['results'];
-            }
+			return $this->firstResultId(results: $results);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'BesluitvormingActivateHandler could not resolve voorstel',
+				['exception' => $e->getMessage()],
+			);
+		}//end try
 
-            if (is_array($results) === true && count($results) > 0) {
-                $first = $results[0];
-                if (is_object($first) === true && method_exists($first, 'jsonSerialize') === true) {
-                    $first = $first->jsonSerialize();
-                }
+		return '';
+	}//end resolveVoorstelId()
 
-                if (is_array($first) === true) {
-                    return (string) ($first['id'] ?? $first['uuid'] ?? '');
-                }
-            }
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'BesluitvormingActivateHandler could not resolve voorstel',
-                ['exception' => $e->getMessage()],
-            );
-        }//end try
+	/**
+	 * Read the identifier off the first entry of an ObjectService result set.
+	 *
+	 * Tolerates both the bare list and the `{results: []}` envelope, and both
+	 * array and JsonSerializable entries.
+	 *
+	 * @param mixed $results Raw ObjectService::findAll() return value.
+	 *
+	 * @return string The identifier, or empty string when none can be read.
+	 */
+	private function firstResultId(mixed $results): string {
+		if (is_array($results) === true && isset($results['results']) === true) {
+			$results = $results['results'];
+		}
 
-        return '';
-    }//end resolveVoorstelId()
+		if (is_array($results) === false || count($results) === 0) {
+			return '';
+		}
+
+		$first = $results[0];
+		if (is_object($first) === true && method_exists($first, 'jsonSerialize') === true) {
+			$first = $first->jsonSerialize();
+		}
+
+		if (is_array($first) === false) {
+			return '';
+		}
+
+		return (string)($first['id'] ?? $first['uuid'] ?? '');
+	}//end firstResultId()
 }//end class

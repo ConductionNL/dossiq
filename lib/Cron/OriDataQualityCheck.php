@@ -43,337 +43,326 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/open-raadsinformatie/tasks.md#task-8
  */
-class OriDataQualityCheck extends TimedJob
-{
+class OriDataQualityCheck extends TimedJob {
 
-    use SearchesObjects;
+	use SearchesObjects;
 
-    /**
-     * Constructor for OriDataQualityCheck.
-     *
-     * @param ITimeFactory    $time            The time factory
-     * @param SettingsService $settingsService The settings service
-     * @param IAppManager     $appManager      The app manager
-     * @param LoggerInterface $logger          The logger
-     *
-     * @return void
-     */
-    public function __construct(
-        ITimeFactory $time,
-        private readonly SettingsService $settingsService,
-        private readonly IAppManager $appManager,
-        private readonly LoggerInterface $logger,
-    ) {
-        parent::__construct(time: $time);
-        // Run nightly.
-        $this->setInterval(seconds: 86400);
+	/**
+	 * Constructor for OriDataQualityCheck.
+	 *
+	 * @param ITimeFactory $time The time factory
+	 * @param SettingsService $settingsService The settings service
+	 * @param IAppManager $appManager The app manager
+	 * @param LoggerInterface $logger The logger
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		ITimeFactory $time,
+		private readonly SettingsService $settingsService,
+		private readonly IAppManager $appManager,
+		private readonly LoggerInterface $logger,
+	) {
+		parent::__construct(time: $time);
+		// Run nightly.
+		$this->setInterval(seconds: 86400);
 
-    }//end __construct()
+	}//end __construct()
 
-    /**
-     * Execute the data quality check.
-     *
-     * @param mixed $argument The job argument (unused)
-     *
-     * @return void
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     *
-     * @spec openspec/changes/open-raadsinformatie/tasks.md#task-8
-     */
-    protected function run($argument): void
-    {
-        if (in_array(needle: 'openregister', haystack: $this->appManager->getInstalledApps(), strict: true) === false) {
-            return;
-        }
+	/**
+	 * Execute the data quality check.
+	 *
+	 * @param mixed $argument The job argument (unused)
+	 *
+	 * @return void
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 *
+	 * @spec openspec/changes/open-raadsinformatie/tasks.md#task-8
+	 */
+	protected function run($argument): void {
+		if (in_array(needle: 'openregister', haystack: $this->appManager->getInstalledApps(), strict: true) === false) {
+			return;
+		}
 
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return;
-        }
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return;
+		}
 
-        $issues = [];
+		$issues = [];
 
-        $issues = array_merge($issues, $this->checkVergaderingenQuality(objectService: $objectService));
-        $issues = array_merge($issues, $this->checkAgendapuntenReferenceIntegrity(objectService: $objectService));
-        $issues = array_merge($issues, $this->checkRaadsledenReferenceIntegrity(objectService: $objectService));
-        $issues = array_merge($issues, $this->checkOrphanedDocumenten(objectService: $objectService));
+		$issues = array_merge($issues, $this->checkVergaderingenQuality(objectService: $objectService));
+		$issues = array_merge($issues, $this->checkAgendapuntenReferenceIntegrity(objectService: $objectService));
+		$issues = array_merge($issues, $this->checkRaadsledenReferenceIntegrity(objectService: $objectService));
+		$issues = array_merge($issues, $this->checkOrphanedDocumenten(objectService: $objectService));
 
-        $this->writeQualityLog(objectService: $objectService, issues: $issues);
+		$this->writeQualityLog(objectService: $objectService, issues: $issues);
 
-        $this->logger->info(
-            'Procest: ORI data quality check completed',
-            [
-                'issueCount' => count(value: $issues),
-                'app'        => Application::APP_ID,
-            ]
-        );
+		$this->logger->info(
+			'Procest: ORI data quality check completed',
+			[
+				'issueCount' => count(value: $issues),
+				'app' => Application::APP_ID,
+			]
+		);
 
-    }//end run()
+	}//end run()
 
-    /**
-     * Check vergaderingen for missing recommended fields (locatie).
-     *
-     * @param object $objectService The OpenRegister ObjectService
-     *
-     * @return array<int,array> Issues found
-     */
-    private function checkVergaderingenQuality(object $objectService): array
-    {
-        $issues = [];
+	/**
+	 * Check vergaderingen for missing recommended fields (locatie).
+	 *
+	 * @param object $objectService The OpenRegister ObjectService
+	 *
+	 * @return array<int,array> Issues found
+	 */
+	private function checkVergaderingenQuality(object $objectService): array {
+		$issues = [];
 
-        try {
-            $vergaderingen = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: 'ori',
-                schema: 'vergadering',
-                filters: ['_limit' => 500]
-            );
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'Procest: could not fetch vergaderingen for quality check',
-                ['exception' => $e->getMessage()]
-            );
-            return $issues;
-        }
+		try {
+			$vergaderingen = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: 'ori',
+				schema: 'vergadering',
+				filters: ['_limit' => 500]
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Procest: could not fetch vergaderingen for quality check',
+				['exception' => $e->getMessage()]
+			);
+			return $issues;
+		}
 
-        foreach ($vergaderingen as $v) {
-            $slug = (string) ($v['@self']['slug'] ?? ($v['id'] ?? '?'));
+		foreach ($vergaderingen as $v) {
+			$slug = (string)($v['@self']['slug'] ?? ($v['id'] ?? '?'));
 
-            if (empty($v['locatie']) === true) {
-                $issues[] = [
-                    'schema'   => 'vergadering',
-                    'slug'     => $slug,
-                    'field'    => 'locatie',
-                    'severity' => 'warning',
-                    'message'  => 'Vergadering "'.$slug.'" is missing recommended field: locatie',
-                ];
-            }
-        }
+			if (empty($v['location']) === true) {
+				$issues[] = [
+					'schema' => 'vergadering',
+					'slug' => $slug,
+					'field' => 'location',
+					'severity' => 'warning',
+					'message' => 'Vergadering "' . $slug . '" is missing recommended field: locatie',
+				];
+			}
+		}
 
-        return $issues;
+		return $issues;
+	}//end checkVergaderingenQuality()
 
-    }//end checkVergaderingenQuality()
+	/**
+	 * Check agendapunten for broken vergadering slug references.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService
+	 *
+	 * @return array<int,array> Issues found
+	 */
+	private function checkAgendapuntenReferenceIntegrity(object $objectService): array {
+		$issues = [];
 
-    /**
-     * Check agendapunten for broken vergadering slug references.
-     *
-     * @param object $objectService The OpenRegister ObjectService
-     *
-     * @return array<int,array> Issues found
-     */
-    private function checkAgendapuntenReferenceIntegrity(object $objectService): array
-    {
-        $issues = [];
+		try {
+			$agendapunten = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: 'ori',
+				schema: 'agendapunt',
+				filters: ['_limit' => 1000]
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Procest: could not fetch agendapunten for integrity check',
+				['exception' => $e->getMessage()]
+			);
+			return $issues;
+		}
 
-        try {
-            $agendapunten = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: 'ori',
-                schema: 'agendapunt',
-                filters: ['_limit' => 1000]
-            );
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'Procest: could not fetch agendapunten for integrity check',
-                ['exception' => $e->getMessage()]
-            );
-            return $issues;
-        }
+		foreach ($agendapunten as $ap) {
+			$apSlug = (string)($ap['@self']['slug'] ?? ($ap['id'] ?? '?'));
+			$vergaderingRef = (string)($ap['vergadering'] ?? '');
 
-        foreach ($agendapunten as $ap) {
-            $apSlug         = (string) ($ap['@self']['slug'] ?? ($ap['id'] ?? '?'));
-            $vergaderingRef = (string) ($ap['vergadering'] ?? '');
+			if (empty($vergaderingRef) === true) {
+				continue;
+			}
 
-            if (empty($vergaderingRef) === true) {
-                continue;
-            }
+			try {
+				$vergadering = $this->findObjectAsArray(
+					objectService: $objectService,
+					register: 'ori',
+					schema: 'vergadering',
+					id: $vergaderingRef
+				);
 
-            try {
-                $vergadering = $this->findObjectAsArray(
-                    objectService: $objectService,
-                    register: 'ori',
-                    schema: 'vergadering',
-                    id: $vergaderingRef
-                );
+				if ($vergadering === null) {
+					$issues[] = [
+						'schema' => 'agendapunt',
+						'slug' => $apSlug,
+						'field' => 'vergadering',
+						'severity' => 'warning',
+						'message' => 'Agendapunt references non-existent vergadering: ' . $vergaderingRef,
+					];
+				}
+			} catch (\Throwable $e) {
+				// Reference resolution failure; log as issue.
+				$issues[] = [
+					'schema' => 'agendapunt',
+					'slug' => $apSlug,
+					'field' => 'vergadering',
+					'severity' => 'warning',
+					'message' => 'Agendapunt vergadering reference could not be resolved: ' . $vergaderingRef,
+				];
+			}//end try
+		}//end foreach
 
-                if ($vergadering === null) {
-                    $issues[] = [
-                        'schema'   => 'agendapunt',
-                        'slug'     => $apSlug,
-                        'field'    => 'vergadering',
-                        'severity' => 'warning',
-                        'message'  => 'Agendapunt references non-existent vergadering: '.$vergaderingRef,
-                    ];
-                }
-            } catch (\Throwable $e) {
-                // Reference resolution failure; log as issue.
-                $issues[] = [
-                    'schema'   => 'agendapunt',
-                    'slug'     => $apSlug,
-                    'field'    => 'vergadering',
-                    'severity' => 'warning',
-                    'message'  => 'Agendapunt vergadering reference could not be resolved: '.$vergaderingRef,
-                ];
-            }//end try
-        }//end foreach
+		return $issues;
+	}//end checkAgendapuntenReferenceIntegrity()
 
-        return $issues;
+	/**
+	 * Check raadsleden for broken fractie slug references.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService
+	 *
+	 * @return array<int,array> Issues found
+	 */
+	private function checkRaadsledenReferenceIntegrity(object $objectService): array {
+		$issues = [];
 
-    }//end checkAgendapuntenReferenceIntegrity()
+		try {
+			$raadsleden = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: 'ori',
+				schema: 'councilMember',
+				filters: ['_limit' => 500]
+			);
+		} catch (\Throwable $e) {
+			return $issues;
+		}
 
-    /**
-     * Check raadsleden for broken fractie slug references.
-     *
-     * @param object $objectService The OpenRegister ObjectService
-     *
-     * @return array<int,array> Issues found
-     */
-    private function checkRaadsledenReferenceIntegrity(object $objectService): array
-    {
-        $issues = [];
+		foreach ($raadsleden as $rl) {
+			$rlSlug = (string)($rl['@self']['slug'] ?? ($rl['id'] ?? '?'));
+			$politicalGroupRef = (string)($rl['fractie'] ?? '');
 
-        try {
-            $raadsleden = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: 'ori',
-                schema: 'raadslid',
-                filters: ['_limit' => 500]
-            );
-        } catch (\Throwable $e) {
-            return $issues;
-        }
+			if (empty($politicalGroupRef) === true) {
+				continue;
+			}
 
-        foreach ($raadsleden as $rl) {
-            $rlSlug     = (string) ($rl['@self']['slug'] ?? ($rl['id'] ?? '?'));
-            $fractieRef = (string) ($rl['fractie'] ?? '');
+			try {
+				$fractie = $this->findObjectAsArray(
+					objectService: $objectService,
+					register: 'ori',
+					schema: 'fractie',
+					id: $politicalGroupRef
+				);
 
-            if (empty($fractieRef) === true) {
-                continue;
-            }
+				if ($fractie === null) {
+					$issues[] = [
+						'schema' => 'councilMember',
+						'slug' => $rlSlug,
+						'field' => 'fractie',
+						'severity' => 'warning',
+						'message' => 'Raadslid references non-existent fractie: ' . $politicalGroupRef,
+					];
+				}
+			} catch (\Throwable $e) {
+				// Silently skip resolution errors for raadsleden.
+			}
+		}//end foreach
 
-            try {
-                $fractie = $this->findObjectAsArray(
-                    objectService: $objectService,
-                    register: 'ori',
-                    schema: 'fractie',
-                    id: $fractieRef
-                );
+		return $issues;
+	}//end checkRaadsledenReferenceIntegrity()
 
-                if ($fractie === null) {
-                    $issues[] = [
-                        'schema'   => 'raadslid',
-                        'slug'     => $rlSlug,
-                        'field'    => 'fractie',
-                        'severity' => 'warning',
-                        'message'  => 'Raadslid references non-existent fractie: '.$fractieRef,
-                    ];
-                }
-            } catch (\Throwable $e) {
-                // Silently skip resolution errors for raadsleden.
-            }
-        }//end foreach
+	/**
+	 * Detect orphaned raadsdocumenten not referenced by any agendapunt's bijlagen array.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService
+	 *
+	 * @return array<int,array> Issues found
+	 */
+	private function checkOrphanedDocumenten(object $objectService): array {
+		$issues = [];
 
-        return $issues;
+		try {
+			$documenten = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: 'ori',
+				schema: 'raadsdocument',
+				filters: ['_limit' => 500]
+			);
+			$agendapunten = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: 'ori',
+				schema: 'agendapunt',
+				filters: ['_limit' => 1000]
+			);
+		} catch (\Throwable $e) {
+			return $issues;
+		}
 
-    }//end checkRaadsledenReferenceIntegrity()
+		// Build a set of all document slugs that are referenced by agendapunten.
+		$referenced = [];
+		foreach ($agendapunten as $ap) {
+			$attachments = ($ap['attachments'] ?? []);
+			if (is_array(value: $attachments) === true) {
+				foreach ($attachments as $docSlug) {
+					$referenced[$docSlug] = true;
+				}
+			}
+		}
 
-    /**
-     * Detect orphaned raadsdocumenten not referenced by any agendapunt's bijlagen array.
-     *
-     * @param object $objectService The OpenRegister ObjectService
-     *
-     * @return array<int,array> Issues found
-     */
-    private function checkOrphanedDocumenten(object $objectService): array
-    {
-        $issues = [];
+		foreach ($documenten as $doc) {
+			$slug = (string)($doc['@self']['slug'] ?? ($doc['id'] ?? '?'));
+			if (isset($referenced[$slug]) === false) {
+				$issues[] = [
+					'schema' => 'raadsdocument',
+					'slug' => $slug,
+					'field' => 'attachments',
+					'severity' => 'info',
+					'message' => 'Raadsdocument "' . $slug . '" is not referenced by any agendapunt',
+				];
+			}
+		}
 
-        try {
-            $documenten   = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: 'ori',
-                schema: 'raadsdocument',
-                filters: ['_limit' => 500]
-            );
-            $agendapunten = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: 'ori',
-                schema: 'agendapunt',
-                filters: ['_limit' => 1000]
-            );
-        } catch (\Throwable $e) {
-            return $issues;
-        }
+		return $issues;
+	}//end checkOrphanedDocumenten()
 
-        // Build a set of all document slugs that are referenced by agendapunten.
-        $referenced = [];
-        foreach ($agendapunten as $ap) {
-            $bijlagen = ($ap['bijlagen'] ?? []);
-            if (is_array(value: $bijlagen) === true) {
-                foreach ($bijlagen as $docSlug) {
-                    $referenced[$docSlug] = true;
-                }
-            }
-        }
+	/**
+	 * Write the quality issues to the Procest register as a data_quality_issues entry.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService
+	 * @param array<int,array> $issues Collected quality issues
+	 *
+	 * @return void
+	 */
+	private function writeQualityLog(object $objectService, array $issues): void {
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		if (empty($register) === true) {
+			return;
+		}
 
-        foreach ($documenten as $doc) {
-            $slug = (string) ($doc['@self']['slug'] ?? ($doc['id'] ?? '?'));
-            if (isset($referenced[$slug]) === false) {
-                $issues[] = [
-                    'schema'   => 'raadsdocument',
-                    'slug'     => $slug,
-                    'field'    => 'bijlagen',
-                    'severity' => 'info',
-                    'message'  => 'Raadsdocument "'.$slug.'" is not referenced by any agendapunt',
-                ];
-            }
-        }
+		$warningCount = count(
+			array_filter(array: $issues, callback: static fn ($issue) => ($issue['severity'] ?? '') === 'warning')
+		);
 
-        return $issues;
+		$log = [
+			'checkedAt' => gmdate('Y-m-d\TH:i:s\Z'),
+			'totalIssues' => count(value: $issues),
+			'warnings' => $warningCount,
+			'infos' => (count(value: $issues) - $warningCount),
+			'issues' => $issues,
+		];
 
-    }//end checkOrphanedDocumenten()
+		try {
+			$objectService->saveObject(
+				register: $register,
+				schema: 'data_quality_issues',
+				object: $log,
+			);
+		} catch (\Throwable $e) {
+			// Schema may not exist yet; log the result instead.
+			$this->logger->info(
+				'Procest: ORI quality check result',
+				['log' => $log, 'app' => Application::APP_ID]
+			);
+		}//end try
 
-    /**
-     * Write the quality issues to the Procest register as a data_quality_issues entry.
-     *
-     * @param object           $objectService The OpenRegister ObjectService
-     * @param array<int,array> $issues        Collected quality issues
-     *
-     * @return void
-     */
-    private function writeQualityLog(object $objectService, array $issues): void
-    {
-        $register = $this->settingsService->getConfigValue(key: 'register');
-        if (empty($register) === true) {
-            return;
-        }
-
-        $warningCount = count(
-            array_filter(array: $issues, callback: static fn($i) => ($i['severity'] ?? '') === 'warning')
-        );
-
-        $log = [
-            'checkedAt'   => gmdate('Y-m-d\TH:i:s\Z'),
-            'totalIssues' => count(value: $issues),
-            'warnings'    => $warningCount,
-            'infos'       => (count(value: $issues) - $warningCount),
-            'issues'      => $issues,
-        ];
-
-        try {
-            $objectService->saveObject(
-                register: $register,
-                schema: 'data_quality_issues',
-                object: $log,
-            );
-        } catch (\Throwable $e) {
-            // Schema may not exist yet; log the result instead.
-            $this->logger->info(
-                'Procest: ORI quality check result',
-                ['log' => $log, 'app' => Application::APP_ID]
-            );
-        }//end try
-
-    }//end writeQualityLog()
+	}//end writeQualityLog()
 }//end class

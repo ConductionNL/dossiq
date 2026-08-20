@@ -39,7 +39,7 @@ export function getRouteSteps(voorstel) {
 export function getCurrentStep(voorstel) {
 	const steps = getRouteSteps(voorstel)
 	if (!steps.length || !voorstel.currentStep) return null
-	return steps.find(s => s.order === voorstel.currentStep) || null
+	return steps.find((s) => s.order === voorstel.currentStep) || null
 }
 
 /**
@@ -73,7 +73,7 @@ export function isActiveActor(voorstel, userId) {
 export function getNextStep(voorstel) {
 	const steps = getRouteSteps(voorstel)
 	const current = voorstel.currentStep || 0
-	const next = steps.find(s => s.order > current)
+	const next = steps.find((s) => s.order > current)
 	return next ? next.order : null
 }
 
@@ -95,7 +95,7 @@ export function getStatusAfterAdvance(voorstel) {
 		return 'geaccordeerd'
 	}
 
-	const nextStep = steps.find(s => s.order === nextStepNum)
+	const nextStep = steps.find((s) => s.order === nextStepNum)
 	if (nextStep?.type === 'accordering') {
 		return 'ter_accordering'
 	}
@@ -116,8 +116,9 @@ export function getStatusAfterAdvance(voorstel) {
  */
 export function createRouteSnapshot(route) {
 	if (!route?.steps) return []
-	const steps = typeof route.steps === 'string' ? JSON.parse(route.steps) : route.steps
-	return steps.map(step => ({
+	const steps =
+		typeof route.steps === 'string' ? JSON.parse(route.steps) : route.steps
+	return steps.map((step) => ({
 		order: step.order,
 		type: step.type,
 		actor: step.actor,
@@ -174,7 +175,7 @@ export function insertAdHocStep(steps, afterOrder, newStep) {
  * @spec openspec/specs/parafering-actions/spec.md
  */
 export function markStepSkipped(steps, stepOrder) {
-	return steps.map(step => {
+	return steps.map((step) => {
 		if (step.order === stepOrder) {
 			return { ...step, skipped: true }
 		}
@@ -197,12 +198,16 @@ export function markStepSkipped(steps, stepOrder) {
  * @spec openspec/specs/parafering-actions/spec.md
  */
 export function findDefaultRoute(routes, caseTypeId, voorstelType) {
-	return routes.find(r =>
-		r.isDefault === true
-		&& r.caseType === caseTypeId
-		&& r.voorstelType === voorstelType,
-	) || routes.find(r =>
-		r.isDefault === true
-		&& r.voorstelType === voorstelType,
-	) || null
+	return (
+		routes.find(
+			(r) =>
+				r.isDefault === true
+				&& r.caseType === caseTypeId
+				&& r.proposalType === voorstelType,
+		)
+		|| routes.find(
+			(r) => r.isDefault === true && r.proposalType === voorstelType,
+		)
+		|| null
+	)
 }

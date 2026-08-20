@@ -26,7 +26,9 @@ const base = (path) => generateUrl(`/apps/procest/api/deelzaken${path}`)
  * @return {Promise<Array>} Sub-case rows.
  */
 export async function fetchSubCases(parentCaseUuid) {
-	const { data } = await axios.get(base(`/${encodeURIComponent(parentCaseUuid)}/children`))
+	const { data } = await axios.get(
+		base(`/${encodeURIComponent(parentCaseUuid)}/children`),
+	)
 	return data.results || []
 }
 
@@ -38,7 +40,9 @@ export async function fetchSubCases(parentCaseUuid) {
  */
 export async function fetchParentCase(parentCaseUuid) {
 	try {
-		const { data } = await axios.get(base(`/${encodeURIComponent(parentCaseUuid)}/parent`))
+		const { data } = await axios.get(
+			base(`/${encodeURIComponent(parentCaseUuid)}/parent`),
+		)
 		return data
 	} catch (err) {
 		if (err?.response?.status === 404) {
@@ -74,7 +78,10 @@ export async function fetchSubCaseCounts(caseUuidArray) {
  */
 export async function validateSubCase({ parentCaseUuid, childCaseTypeId }) {
 	try {
-		const { data } = await axios.post(base('/validate'), { parentCaseUuid, childCaseTypeId })
+		const { data } = await axios.post(base('/validate'), {
+			parentCaseUuid,
+			childCaseTypeId,
+		})
 		return data
 	} catch (err) {
 		if (err?.response?.data) {
@@ -87,10 +94,33 @@ export async function validateSubCase({ parentCaseUuid, childCaseTypeId }) {
 /**
  * Unlink every sub-case of the given parent.
  *
+ * ⚠️ Returns the whole result, not a bare count. The endpoint used to answer
+ * `200 OK` with a count that silently under-reported when some sub-cases could
+ * not be detached, and the caller went on to delete the parent — orphaning the
+ * rest under a dead reference (procest#793). `complete` is the field that
+ * decides whether deleting the parent is safe; a `207` carries `complete: false`.
+ *
+ * `complete` defaults to false when the field is absent, so an older server
+ * that still answers with a bare count blocks the delete rather than silently
+ * permitting the failure mode this change exists to close.
+ *
+ * The requirement is explicit that it is ALL child cases — "The system MUST
+ * clear the `parentCase` field on all child cases before proceeding with
+ * deletion (orphan cleanup)" — which a 200-record page and a swallowed failure
+ * did not satisfy.
+ *
  * @param {string} parentCaseUuid Parent UUID.
- * @return {Promise<number>} Number of records unlinked.
+ * @return {Promise<{unlinked: number, failed: number, total: number, complete: boolean}>} The unlink outcome.
+ * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-deletion-protection
  */
 export async function unlinkSubCases(parentCaseUuid) {
-	const { data } = await axios.post(base(`/${encodeURIComponent(parentCaseUuid)}/unlink`))
-	return data.unlinked || 0
+	const { data } = await axios.post(
+		base(`/${encodeURIComponent(parentCaseUuid)}/unlink`),
+	)
+	return {
+		unlinked: data?.unlinked || 0,
+		failed: data?.failed || 0,
+		total: data?.total || 0,
+		complete: data?.complete === true,
+	}
 }

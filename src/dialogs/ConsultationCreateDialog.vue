@@ -1,69 +1,80 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 <!-- SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl> -->
 <template>
-	<NcDialog v-if="open"
-		:name="t('procest', 'Nieuwe consultatie')"
+	<NcDialog
+		v-if="open"
+		:name="t('procest', 'New consultation')"
 		size="normal"
-		:can-close="!submitting"
+		:canClose="!submitting"
 		@closing="onClose">
 		<div class="consultation-create-dialog">
 			<!-- Read-only parent case display -->
 			<div class="consultation-create-dialog__field">
 				<label class="consultation-create-dialog__label">
-					{{ t('procest', 'Zaak') }}
+					{{ t('procest', 'Case') }}
 				</label>
-				<span class="consultation-create-dialog__readonly">{{ caseId }}</span>
+				<span class="consultation-create-dialog__readonly">{{
+					caseId
+				}}</span>
 			</div>
 
 			<div class="consultation-create-dialog__field">
 				<NcTextField
-					:value="form.adviesInstantie"
-					:label="t('procest', 'Adviesinstantie')"
-					:placeholder="t('procest', 'bijv. Brandweer, Welstandscommissie')"
+					:modelValue="form.adviceAuthority"
+					:label="t('procest', 'Advisory body')"
+					:placeholder="
+						t('procest', 'e.g. Fire brigade, Aesthetics committee')
+					"
 					required
-					@update:value="v => form.adviesInstantie = v" />
+					@update:modelValue="(v) => (form.adviceAuthority = v)" />
 			</div>
 
 			<div class="consultation-create-dialog__field">
 				<NcTextField
-					:value="form.onderwerp"
+					:modelValue="form.subject"
 					:label="t('procest', 'Onderwerp')"
 					required
-					@update:value="v => form.onderwerp = v" />
+					@update:modelValue="(v) => (form.subject = v)" />
 			</div>
 
 			<div class="consultation-create-dialog__field">
-				<label class="consultation-create-dialog__label">
-					{{ t('procest', 'Vraagstelling') }} *
+				<label
+					class="consultation-create-dialog__label"
+					for="consultation-create-question">
+					{{ t('procest', 'Question') }} *
 				</label>
 				<textarea
-					v-model="form.vraagstelling"
+					id="consultation-create-question"
+					v-model="form.question_formulation"
 					class="consultation-create-dialog__textarea"
 					rows="4" />
 			</div>
 
 			<div class="consultation-create-dialog__field">
-				<label class="consultation-create-dialog__label">
-					{{ t('procest', 'Uiterlijke reactiedatum') }} *
+				<label
+					class="consultation-create-dialog__label"
+					for="consultation-create-response-date">
+					{{ t('procest', 'Latest response date') }} *
 				</label>
 				<input
-					v-model="form.uiterlijkeReactiedatum"
+					id="consultation-create-response-date"
+					v-model="form.latestResponseDate"
 					type="date"
 					class="consultation-create-dialog__date-input"
-					:min="today">
+					:min="today" />
 			</div>
 
 			<div class="consultation-create-dialog__field">
 				<label class="consultation-create-dialog__label">
-					{{ t('procest', 'Prioriteit') }}
+					{{ t('procest', 'Priority') }}
 				</label>
 				<NcSelect
-					v-model="form.prioriteit"
+					v-model="form.priority"
 					:options="prioriteitOptions"
-					:aria-label-combobox="t('procest', 'Prioriteit')"
+					:aria-label-combobox="t('procest', 'Priority')"
 					label="label"
-					:reduce="opt => opt.value"
-					:placeholder="t('procest', 'Selecteer prioriteit')" />
+					:reduce="(opt) => opt.value"
+					:placeholder="t('procest', 'Select priority')" />
 			</div>
 
 			<NcNoteCard v-if="validationError" type="error">
@@ -75,18 +86,25 @@
 			<NcButton :disabled="submitting" @click="onClose">
 				{{ t('procest', 'Annuleren') }}
 			</NcButton>
-			<NcButton
-				type="primary"
-				:disabled="!canSubmit"
-				@click="onSubmit">
-				{{ submitting ? t('procest', 'Bezig...') : t('procest', 'Consultatie aanmaken') }}
+			<NcButton type="primary" :disabled="!canSubmit" @click="onSubmit">
+				{{
+					submitting
+						? t('procest', 'Bezig...')
+						: t('procest', 'Create consultation')
+				}}
 			</NcButton>
 		</template>
 	</NcDialog>
 </template>
 
 <script>
-import { NcButton, NcDialog, NcNoteCard, NcSelect, NcTextField } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcDialog,
+	NcNoteCard,
+	NcSelect,
+	NcTextField,
+} from '@nextcloud/vue'
 
 export default {
 	name: 'ConsultationCreateDialog',
@@ -97,58 +115,69 @@ export default {
 		NcSelect,
 		NcTextField,
 	},
+
 	props: {
 		open: {
 			type: Boolean,
 			default: false,
 		},
+
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		parentZaakTitle: {
 			type: String,
 			default: '',
 		},
 	},
+
 	emits: ['close', 'created'],
 	data() {
 		return {
 			submitting: false,
 			validationError: '',
 			form: {
-				adviesInstantie: '',
-				onderwerp: '',
-				vraagstelling: '',
-				uiterlijkeReactiedatum: '',
-				prioriteit: 'normaal',
+				adviceAuthority: '',
+				subject: '',
+				question_formulation: '',
+				latestResponseDate: '',
+				priority: 'normal',
 			},
+
 			prioriteitOptions: [
-				{ label: this.t('procest', 'Normaal'), value: 'normaal' },
-				{ label: this.t('procest', 'Spoed'), value: 'spoed' },
+				{ label: this.t('procest', 'Normal'), value: 'normal' },
+				{ label: this.t('procest', 'Urgent'), value: 'spoed' },
 			],
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		today() {
 			return new Date().toISOString().slice(0, 10)
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		defaultDeadline() {
 			const d = new Date()
 			d.setDate(d.getDate() + 28)
 			return d.toISOString().slice(0, 10)
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		canSubmit() {
-			return !this.submitting
-				&& this.form.adviesInstantie.trim() !== ''
-				&& this.form.onderwerp.trim() !== ''
-				&& this.form.vraagstelling.trim() !== ''
-				&& this.form.uiterlijkeReactiedatum !== ''
+			return (
+				!this.submitting
+				&& this.form.adviceAuthority.trim() !== ''
+				&& this.form.subject.trim() !== ''
+				&& this.form.question_formulation.trim() !== ''
+				&& this.form.latestResponseDate !== ''
+			)
 		},
 	},
+
 	watch: {
 		/**
 		 * @param value
@@ -159,51 +188,60 @@ export default {
 				this.validationError = ''
 				this.submitting = false
 				this.form = {
-					adviesInstantie: '',
-					onderwerp: this.parentZaakTitle,
-					vraagstelling: '',
-					uiterlijkeReactiedatum: this.defaultDeadline,
-					prioriteit: 'normaal',
+					adviceAuthority: '',
+					subject: this.parentZaakTitle,
+					question_formulation: '',
+					latestResponseDate: this.defaultDeadline,
+					priority: 'normal',
 				}
 			}
 		},
 	},
+
 	methods: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		validate() {
-			if (this.form.adviesInstantie.trim() === '') {
-				this.validationError = this.t('procest', 'Adviesinstantie is verplicht.')
+			if (this.form.adviceAuthority.trim() === '') {
+				this.validationError = this.t(
+					'procest',
+					'Advisory body is required.',
+				)
 				return false
 			}
-			if (this.form.onderwerp.trim() === '') {
-				this.validationError = this.t('procest', 'Onderwerp is verplicht.')
+			if (this.form.subject.trim() === '') {
+				this.validationError = this.t('procest', 'Subject is required.')
 				return false
 			}
-			if (this.form.vraagstelling.trim() === '') {
-				this.validationError = this.t('procest', 'Vraagstelling is verplicht.')
+			if (this.form.question_formulation.trim() === '') {
+				this.validationError = this.t('procest', 'Question is required.')
 				return false
 			}
-			if (this.form.uiterlijkeReactiedatum === '') {
-				this.validationError = this.t('procest', 'Uiterlijke reactiedatum is verplicht.')
+			if (this.form.latestResponseDate === '') {
+				this.validationError = this.t(
+					'procest',
+					'Latest response date is required.',
+				)
 				return false
 			}
 			return true
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		onSubmit() {
 			this.validationError = ''
 			if (!this.validate()) return
 			this.submitting = true
 			this.$emit('created', {
-				parentZaak: this.caseId,
-				adviesInstantie: this.form.adviesInstantie.trim(),
-				onderwerp: this.form.onderwerp.trim(),
-				vraagstelling: this.form.vraagstelling.trim(),
-				uiterlijkeReactiedatum: this.form.uiterlijkeReactiedatum,
-				prioriteit: this.form.prioriteit,
+				parentCase: this.caseId,
+				adviceAuthority: this.form.adviceAuthority.trim(),
+				subject: this.form.subject.trim(),
+				question_formulation: this.form.question_formulation.trim(),
+				latestResponseDate: this.form.latestResponseDate,
+				priority: this.form.priority,
 			})
 			this.submitting = false
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		onClose() {
 			if (this.submitting) return

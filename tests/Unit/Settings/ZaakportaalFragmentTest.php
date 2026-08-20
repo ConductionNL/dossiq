@@ -27,115 +27,106 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Settings;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Settings\RegisterFragmentMerger;
 use PHPUnit\Framework\TestCase;
-use ReflectionMethod;
 
 /**
  * Integration-style unit tests for the zaakportaal register fragment.
  *
  * @covers \OCA\Procest\Service\SettingsService
+ *
+ * @uses \OCA\Procest\Service\Settings\RegisterFragmentMerger
  */
-class ZaakportaalFragmentTest extends TestCase
-{
+class ZaakportaalFragmentTest extends TestCase {
 
-    /**
-     * @var array<string, mixed>
-     */
-    private array $merged;
+	/**
+	 * @var array<string, mixed>
+	 */
+	private array $merged;
 
-    /**
-     * Load the monolith and merge the real register.d fragments.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $base = json_decode(
-            (string) file_get_contents(__DIR__.'/../../../lib/Settings/procest_register.json'),
-            true
-        );
+	/**
+	 * Load the monolith and merge the real register.d fragments.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$base = json_decode(
+			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/procest_register.json'),
+			true
+		);
 
-        $reflection = new ReflectionMethod(SettingsService::class, 'mergeRegisterFragments');
-        $reflection->setAccessible(true);
+		[$merged] = (new RegisterFragmentMerger())->merge(
+			base: $base,
+			fragmentDir: __DIR__ . '/../../../lib/Settings/register.d'
+		);
 
-        [$merged] = $reflection->invokeArgs(
-            null,
-            [$base, __DIR__.'/../../../lib/Settings/register.d']
-        );
+		$this->merged = $merged;
+	}//end setUp()
 
-        $this->merged = $merged;
-    }//end setUp()
+	/**
+	 * The portal schemas are present after the merge.
+	 *
+	 * @return void
+	 */
+	public function testPortalSchemasPresent(): void {
+		$schemas = $this->merged['components']['schemas'];
+		$this->assertArrayHasKey('portaalBericht', $schemas);
+		$this->assertArrayHasKey('portaalVerzoek', $schemas);
+		$this->assertArrayHasKey('portaalNotificatieVoorkeur', $schemas);
+	}//end testPortalSchemasPresent()
 
-    /**
-     * The portal schemas are present after the merge.
-     *
-     * @return void
-     */
-    public function testPortalSchemasPresent(): void
-    {
-        $schemas = $this->merged['components']['schemas'];
-        $this->assertArrayHasKey('portaalBericht', $schemas);
-        $this->assertArrayHasKey('portaalVerzoek', $schemas);
-        $this->assertArrayHasKey('portaalNotificatieVoorkeur', $schemas);
-    }//end testPortalSchemasPresent()
+	/**
+	 * The portal does not introduce a citizen/contact schema; it reads cases
+	 * and documents from the existing schemas.
+	 *
+	 * @return void
+	 */
+	public function testExistingReadSchemasUntouched(): void {
+		$schemas = $this->merged['components']['schemas'];
+		$this->assertArrayHasKey('case', $schemas);
+		$this->assertArrayHasKey('document', $schemas);
+		$this->assertArrayNotHasKey('portaalContact', $schemas, 'Portal must reuse identity, not invent a contact schema');
+	}//end testExistingReadSchemasUntouched()
 
-    /**
-     * The portal does not introduce a citizen/contact schema; it reads cases
-     * and documents from the existing schemas.
-     *
-     * @return void
-     */
-    public function testExistingReadSchemasUntouched(): void
-    {
-        $schemas = $this->merged['components']['schemas'];
-        $this->assertArrayHasKey('case', $schemas);
-        $this->assertArrayHasKey('document', $schemas);
-        $this->assertArrayNotHasKey('portaalContact', $schemas, 'Portal must reuse identity, not invent a contact schema');
-    }//end testExistingReadSchemasUntouched()
+	/**
+	 * The portal schemas are unioned into the procest register membership,
+	 * keeping the pre-existing membership intact.
+	 *
+	 * @return void
+	 */
+	public function testPortalSchemasJoinProcestRegister(): void {
+		$schemas = $this->merged['components']['registers']['procest']['schemas'];
+		$this->assertContains('portaalBericht', $schemas);
+		$this->assertContains('portaalVerzoek', $schemas);
+		$this->assertContains('portaalNotificatieVoorkeur', $schemas);
+		// KCC fragment membership still present (additive union, not overwrite).
+		$this->assertContains('callbackRequest', $schemas);
+	}//end testPortalSchemasJoinProcestRegister()
 
-    /**
-     * The portal schemas are unioned into the procest register membership,
-     * keeping the pre-existing membership intact.
-     *
-     * @return void
-     */
-    public function testPortalSchemasJoinProcestRegister(): void
-    {
-        $schemas = $this->merged['components']['registers']['procest']['schemas'];
-        $this->assertContains('portaalBericht', $schemas);
-        $this->assertContains('portaalVerzoek', $schemas);
-        $this->assertContains('portaalNotificatieVoorkeur', $schemas);
-        // KCC fragment membership still present (additive union, not overwrite).
-        $this->assertContains('callbackRequest', $schemas);
-    }//end testPortalSchemasJoinProcestRegister()
+	/**
+	 * The portal seed objects are concatenated onto the objects list.
+	 *
+	 * @return void
+	 */
+	public function testPortalSeedObjectsUnioned(): void {
+		$objects = $this->merged['components']['objects'];
+		$slugs = array_map(
+			static fn (array $object): string => (string)($object['@self']['slug'] ?? ''),
+			array_filter($objects, 'is_array')
+		);
 
-    /**
-     * The portal seed objects are concatenated onto the objects list.
-     *
-     * @return void
-     */
-    public function testPortalSeedObjectsUnioned(): void
-    {
-        $objects = $this->merged['components']['objects'];
-        $slugs   = array_map(
-            static fn(array $object): string => (string) ($object['@self']['slug'] ?? ''),
-            array_filter($objects, 'is_array')
-        );
+		$this->assertContains('portaal-pref-demo-burger', $slugs);
+		$this->assertContains('portaal-bericht-demo-1', $slugs);
+	}//end testPortalSeedObjectsUnioned()
 
-        $this->assertContains('portaal-pref-demo-burger', $slugs);
-        $this->assertContains('portaal-bericht-demo-1', $slugs);
-    }//end testPortalSeedObjectsUnioned()
-
-    /**
-     * The portaalNotificatieVoorkeur schema marks Berichtenbox support.
-     *
-     * @return void
-     */
-    public function testPreferenceSchemaHasBerichtenbox(): void
-    {
-        $properties = $this->merged['components']['schemas']['portaalNotificatieVoorkeur']['properties'];
-        $this->assertArrayHasKey('berichtenboxActief', $properties);
-        $this->assertArrayHasKey('subjectRef', $properties);
-    }//end testPreferenceSchemaHasBerichtenbox()
+	/**
+	 * The portaalNotificatieVoorkeur schema marks Berichtenbox support.
+	 *
+	 * @return void
+	 */
+	public function testPreferenceSchemaHasBerichtenbox(): void {
+		$properties = $this->merged['components']['schemas']['portaalNotificatieVoorkeur']['properties'];
+		$this->assertArrayHasKey('messageBoxActive', $properties);
+		$this->assertArrayHasKey('subjectRef', $properties);
+	}//end testPreferenceSchemaHasBerichtenbox()
 }//end class

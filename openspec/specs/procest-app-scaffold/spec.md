@@ -252,7 +252,7 @@ The app MUST include repair steps that run on install and upgrade to configure t
 - GIVEN the file `lib/Settings/procest_register.json`
 - WHEN the register is imported
 - THEN the JSON MUST follow OpenAPI 3.0.0 format with `info.title: "Procest"`, `info.version`, and schema definitions
-- AND each schema MUST include `x-schema-org-type` annotations (e.g., case -> `schema:Project`, task -> `schema:Action`)
+- AND each schema MUST include `x-schema-org` annotations (e.g., case -> `schema:Project`, task -> `schema:Action`)
 
 #### Scenario 8.4: Version-based import skipping
 - GIVEN the register was previously imported at version 1.0.0

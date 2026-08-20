@@ -21,13 +21,13 @@
 			<div class="form-row">
 				<div class="form-group">
 					<NcTextField
-						:value.sync="fromUser"
+						v-model="fromUser"
 						:label="t('procest', 'From handler (user id)')"
 						:placeholder="t('procest', 'Departing handler…')" />
 				</div>
 				<div class="form-group">
 					<NcTextField
-						:value.sync="toUser"
+						v-model="toUser"
 						:label="t('procest', 'To handler (user id)')"
 						:placeholder="t('procest', 'Receiving handler…')" />
 				</div>
@@ -37,13 +37,16 @@
 				<NcSelect
 					v-model="selectedCaseType"
 					:options="caseTypes"
-					:input-label="t('procest', 'Limit to case type (optional)')"
+					:inputLabel="t('procest', 'Limit to case type (optional)')"
 					:aria-label-combobox="t('procest', 'Limit to case type')"
 					label="title"
-					track-by="id" />
+					trackBy="id" />
 			</div>
 
-			<NcButton type="secondary" :disabled="!fromUser || loadingPreview" @click="loadPreview">
+			<NcButton
+				type="secondary"
+				:disabled="!fromUser || loadingPreview"
+				@click="loadPreview">
 				<template v-if="loadingPreview" #icon>
 					<NcLoadingIcon :size="20" />
 				</template>
@@ -51,24 +54,37 @@
 			</NcButton>
 
 			<!-- Mandatory preview table -->
-			<div v-if="preview" class="bulk-reassign__preview" data-testid="reassign-preview">
-				<h4>{{ t('procest', 'Affected open work') }} ({{ previewCount }})</h4>
+			<div
+				v-if="preview"
+				class="bulk-reassign__preview"
+				data-testid="reassign-preview">
+				<h4>
+					{{ t('procest', 'Affected open work') }} ({{ previewCount }})
+				</h4>
 				<NcEmptyContent
 					v-if="previewCount === 0"
 					:name="t('procest', 'No open work to reassign')" />
 				<table v-else class="bulk-reassign__table">
 					<thead>
 						<tr>
-							<th>{{ t('procest', 'Type') }}</th>
-							<th>{{ t('procest', 'Title') }}</th>
-							<th>{{ t('procest', 'Case type') }}</th>
-							<th>{{ t('procest', 'Status') }}</th>
-							<th>{{ t('procest', 'Next deadline') }}</th>
+							<th scope="col">{{ t('procest', 'Type') }}</th>
+							<th scope="col">{{ t('procest', 'Title') }}</th>
+							<th scope="col">{{ t('procest', 'Case type') }}</th>
+							<th scope="col">{{ t('procest', 'Status') }}</th>
+							<th scope="col">{{ t('procest', 'Next deadline') }}</th>
 						</tr>
 					</thead>
 					<tbody>
-						<tr v-for="row in previewRows" :key="`${row.type}-${row.id}`">
-							<td>{{ row.type === 'case' ? t('procest', 'Case') : t('procest', 'Task') }}</td>
+						<tr
+							v-for="row in previewRows"
+							:key="`${row.type}-${row.id}`">
+							<td>
+								{{
+									row.type === 'case'
+										? t('procest', 'Case')
+										: t('procest', 'Task')
+								}}
+							</td>
 							<td>{{ row.title }}</td>
 							<td>{{ row.caseTypeName }}</td>
 							<td>{{ row.status }}</td>
@@ -79,12 +95,35 @@
 			</div>
 
 			<!-- Per-item execution results -->
-			<div v-if="results" class="bulk-reassign__results" data-testid="reassign-results">
+			<div
+				v-if="results"
+				class="bulk-reassign__results"
+				data-testid="reassign-results">
 				<h4>{{ t('procest', 'Reassignment result') }}</h4>
-				<p>{{ t('procest', '{ok} succeeded, {fail} failed (batch {batch})', { ok: results.succeeded, fail: results.failed, batch: results.batchId }) }}</p>
+				<p>
+					{{
+						t(
+							'procest',
+							'{ok} succeeded, {fail} failed (batch {batch})',
+							{
+								ok: results.succeeded,
+								fail: results.failed,
+								batch: results.batchId,
+							},
+						)
+					}}
+				</p>
 				<ul>
-					<li v-for="r in results.results" :key="`${r.type}-${r.id}`" :class="r.success ? 'ok' : 'fail'">
-						{{ r.title || r.id }} — {{ r.success ? t('procest', 'reassigned') : t('procest', 'failed') }}
+					<li
+						v-for="r in results.results"
+						:key="`${r.type}-${r.id}`"
+						:class="r.success ? 'ok' : 'fail'">
+						{{ r.title || r.id }} —
+						{{
+							r.success
+								? t('procest', 'reassigned')
+								: t('procest', 'failed')
+						}}
 					</li>
 				</ul>
 			</div>
@@ -98,10 +137,7 @@
 			<NcButton type="tertiary" @click="$emit('close')">
 				{{ t('procest', 'Close') }}
 			</NcButton>
-			<NcButton
-				type="primary"
-				:disabled="!canExecute"
-				@click="execute">
+			<NcButton type="primary" :disabled="!canExecute" @click="execute">
 				<template v-if="executing" #icon>
 					<NcLoadingIcon :size="20" />
 				</template>
@@ -120,7 +156,10 @@ import {
 	NcSelect,
 	NcTextField,
 } from '@nextcloud/vue'
-import { previewReassignment, executeReassignment } from '../services/substitutionApi.js'
+import {
+	executeReassignment,
+	previewReassignment,
+} from '../services/substitutionApi.js'
 import { useObjectStore } from '../store/modules/object.js'
 
 export default {
@@ -133,6 +172,7 @@ export default {
 		NcSelect,
 		NcTextField,
 	},
+
 	emits: ['reassigned', 'close'],
 	data() {
 		return {
@@ -148,24 +188,27 @@ export default {
 			serverError: '',
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		previewCount() {
 			if (!this.preview) {
 				return 0
 			}
-			return (this.preview.cases.length + this.preview.tasks.length)
+			return this.preview.cases.length + this.preview.tasks.length
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		previewRows() {
 			if (!this.preview) {
 				return []
 			}
-			const caseRows = this.preview.cases.map(c => ({
+			const caseRows = this.preview.cases.map((c) => ({
 				type: 'case',
 				id: c.id,
 				title: c.title || '—',
@@ -173,7 +216,7 @@ export default {
 				status: c.status || '',
 				deadline: (c.deadline || '').slice(0, 10),
 			}))
-			const taskRows = this.preview.tasks.map(tk => ({
+			const taskRows = this.preview.tasks.map((tk) => ({
 				type: 'task',
 				id: tk.id,
 				title: tk.title || '—',
@@ -183,19 +226,30 @@ export default {
 			}))
 			return [...caseRows, ...taskRows]
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		canExecute() {
-			return !!this.fromUser && !!this.toUser && !!this.preview && this.previewCount > 0 && !this.executing
+			return (
+				!!this.fromUser
+				&& !!this.toUser
+				&& !!this.preview
+				&& this.previewCount > 0
+				&& !this.executing
+			)
 		},
 	},
+
 	async mounted() {
 		await this.loadCaseTypes()
 	},
+
 	methods: {
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		async loadCaseTypes() {
 			try {
-				const results = await this.objectStore.fetchCollection('caseType', { _limit: 200 })
+				const results = await this.objectStore.fetchCollection('caseType', {
+					_limit: 200,
+				})
 				this.caseTypes = Array.isArray(results) ? results : []
 				const map = {}
 				for (const ct of this.caseTypes) {
@@ -206,6 +260,7 @@ export default {
 				this.caseTypes = []
 			}
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		async loadPreview() {
 			this.serverError = ''
@@ -217,11 +272,15 @@ export default {
 					this.selectedCaseType ? this.selectedCaseType.id : undefined,
 				)
 			} catch (err) {
-				this.serverError = err?.response?.data?.error || err?.message || t('procest', 'Preview failed.')
+				this.serverError =
+					err?.response?.data?.error
+					|| err?.message
+					|| t('procest', 'Preview failed.')
 			} finally {
 				this.loadingPreview = false
 			}
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		async execute() {
 			this.serverError = ''
@@ -235,12 +294,19 @@ export default {
 				this.preview = null
 				this.$emit('reassigned', this.results)
 			} catch (err) {
-				this.serverError = err?.response?.data?.error || err?.message || t('procest', 'Reassignment failed.')
+				this.serverError =
+					err?.response?.data?.error
+					|| err?.message
+					|| t('procest', 'Reassignment failed.')
 			} finally {
 				this.executing = false
 			}
 		},
-		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
+
+		/**
+		 * @param open
+		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+		 */
 		onDialogClose(open) {
 			if (!open) {
 				this.$emit('close')

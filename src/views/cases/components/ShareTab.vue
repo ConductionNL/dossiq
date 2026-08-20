@@ -15,16 +15,23 @@
 		</div>
 
 		<div v-else-if="shares.length === 0" class="share-tab__empty">
-			<p>{{ t('procest', 'This case has not been shared with a partner yet.') }}</p>
+			<p>
+				{{
+					t('procest', 'This case has not been shared with a partner yet.')
+				}}
+			</p>
 		</div>
 
 		<ul v-else class="share-tab__list">
 			<li v-for="share in shares" :key="share.id" class="share-tab__item">
 				<div class="share-tab__item-header">
-					<span class="share-tab__type-badge share-tab__type-badge--partner">
+					<span
+						class="share-tab__type-badge share-tab__type-badge--partner">
 						{{ t('procest', 'Partner') }}
 					</span>
-					<span class="share-tab__label">{{ share.label || t('procest', 'Unnamed share') }}</span>
+					<span class="share-tab__label">{{
+						share.label || t('procest', 'Unnamed share')
+					}}</span>
 				</div>
 				<div class="share-tab__item-details">
 					<span>{{ permissionLabel(share.permissionLevel) }}</span>
@@ -37,10 +44,81 @@
 			</li>
 		</ul>
 
-		<!-- Create partner share -->
+		<!-- Create partner share / transfer -->
 		<div class="share-tab__actions">
 			<NcButton type="primary" @click="$emit('create-partner-share')">
 				{{ t('procest', 'Share with partner') }}
+			</NcButton>
+			<NcButton @click="$emit('transfer-case')">
+				{{ t('procest', 'Transfer case') }}
+			</NcButton>
+		</div>
+
+		<!--
+			Federated (cross-instance) case shares — federated-case-collaboration.
+			A federated share is always a redacted field/document snapshot,
+			never the live case (see design.md §2); the remote org's write
+			surface is the async activity stream, not the case itself.
+		-->
+		<h3 class="share-tab__federated-heading">
+			{{ t('procest', 'Federated shares') }}
+		</h3>
+
+		<div v-if="federatedLoading" class="share-tab__loading">
+			<NcLoadingIcon :size="20" />
+			{{ t('procest', 'Loading federated shares...') }}
+		</div>
+
+		<div v-else-if="federatedShares.length === 0" class="share-tab__empty">
+			<p>
+				{{
+					t(
+						'procest',
+						'This case has not been shared with a remote organisation yet.',
+					)
+				}}
+			</p>
+		</div>
+
+		<ul v-else class="share-tab__list">
+			<li
+				v-for="share in federatedShares"
+				:key="share.id"
+				class="share-tab__item">
+				<div class="share-tab__item-header">
+					<span
+						class="share-tab__type-badge share-tab__type-badge--federated">
+						{{ t('procest', 'Federated') }}
+					</span>
+					<span class="share-tab__label">{{ share.remoteCloudId }}</span>
+				</div>
+				<div class="share-tab__item-details">
+					<span>{{
+						t('procest', 'Shared fields: {fields}', {
+							fields: (share.sharedFields || []).join(', '),
+						})
+					}}</span>
+					<span>{{
+						t('procest', 'Status: {status}', { status: share.status })
+					}}</span>
+				</div>
+				<div class="share-tab__item-actions">
+					<NcButton @click="$emit('open-activity', share.id)">
+						{{ t('procest', 'Activity') }}
+					</NcButton>
+					<NcButton
+						v-if="share.status !== 'revoked'"
+						type="error"
+						@click="$emit('revoke-federated', share.id)">
+						{{ t('procest', 'Revoke') }}
+					</NcButton>
+				</div>
+			</li>
+		</ul>
+
+		<div class="share-tab__actions">
+			<NcButton type="primary" @click="$emit('create-federated-share')">
+				{{ t('procest', 'Share with remote organisation') }}
 			</NcButton>
 		</div>
 	</div>
@@ -55,20 +133,42 @@ export default {
 		NcButton,
 		NcLoadingIcon,
 	},
+
 	props: {
 		shares: {
 			type: Array,
 			default: () => [],
 		},
+
 		loading: {
 			type: Boolean,
 			default: false,
 		},
+
+		/** Federated (cross-instance) case shares — federated-case-collaboration. */
+		federatedShares: {
+			type: Array,
+			default: () => [],
+		},
+
+		federatedLoading: {
+			type: Boolean,
+			default: false,
+		},
 	},
-	emits: ['revoke', 'create-partner-share'],
+
+	emits: [
+		'revoke',
+		'create-partner-share',
+		'transfer-case',
+		'create-federated-share',
+		'revoke-federated',
+		'open-activity',
+	],
+
 	methods: {
 		/**
-		 * @param level
+		 * @param {string} level the permission level slug.
 		 * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P2.2
 		 */
 		permissionLabel(level) {
@@ -118,6 +218,15 @@ export default {
 .share-tab__type-badge--partner {
 	background: var(--color-success-hover);
 	color: var(--color-success-text);
+}
+
+.share-tab__type-badge--federated {
+	background: var(--color-primary-element-light);
+	color: var(--color-primary-element-text);
+}
+
+.share-tab__federated-heading {
+	margin-top: 24px;
 }
 
 .share-tab__item-details {

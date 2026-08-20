@@ -4,10 +4,10 @@
   "description": "Eenvoudige workflow voor sloopmelding — beoordelingstermijn 4 weken.",
   "version": 1,
   "steps": [
-    {"id": "step-ontvangen", "label": "Ontvangen", "status": "Ontvangen", "isInitial": true, "isFinal": false, "assigneeRole": null, "description": "Melding ontvangen", "checklist": [], "actions": []},
+    {"id": "step-ontvangen", "label": "Ontvangen", "status": "Received", "isInitial": true, "isFinal": false, "assigneeRole": null, "description": "Melding ontvangen", "checklist": [], "actions": []},
     {"id": "step-beoordeling", "label": "Beoordeling", "status": "Beoordeling", "isInitial": false, "isFinal": false, "assigneeRole": "Behandelaar", "description": "Beoordeling van de sloopmelding", "checklist": ["Asbestinventarisatie gecontroleerd", "Sloopplan beoordeeld"], "actions": []},
     {"id": "step-akkoord", "label": "Akkoord", "status": "Akkoord", "isInitial": false, "isFinal": false, "assigneeRole": "Behandelaar", "description": "Melding akkoord bevonden", "checklist": [], "actions": [{"type": "notification", "config": {"message": "Sloopmelding akkoord", "targetRole": "Melder"}}]},
-    {"id": "step-afgehandeld", "label": "Afgehandeld", "status": "Afgehandeld", "isInitial": false, "isFinal": true, "assigneeRole": null, "description": "Zaak afgehandeld", "checklist": [], "actions": []}
+    {"id": "step-afgehandeld", "label": "Afgehandeld", "status": "Handled", "isInitial": false, "isFinal": true, "assigneeRole": null, "description": "Zaak afgehandeld", "checklist": [], "actions": []}
   ],
   "transitions": [
     {"id": "tr-1", "label": "Start beoordeling", "fromStatus": "Ontvangen", "toStatus": "Beoordeling", "allowedRoles": ["Behandelaar"], "guards": [], "actions": []},

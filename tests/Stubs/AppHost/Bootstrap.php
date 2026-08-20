@@ -26,23 +26,21 @@ namespace OCA\OpenRegister\AppHost;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 if (class_exists(Bootstrap::class) === false) {
-    /**
-     * Stub for the AppHost bootstrap — used only in standalone analysis/tests.
-     */
-    class Bootstrap
-    {
+	/**
+	 * Stub for the AppHost bootstrap — used only in standalone analysis/tests.
+	 */
+	class Bootstrap {
 
-        /**
-         * Register the AppHost generics for a leaf app. No-op in the stub.
-         *
-         * @param IRegistrationContext $context The leaf registration context.
-         * @param string               $appId   The leaf app id.
-         * @param array<string, mixed> $options Bootstrap options.
-         *
-         * @return void
-         */
-        public static function register(IRegistrationContext $context, string $appId, array $options=[]): void
-        {
-        }//end register()
-    }//end class
+		/**
+		 * Register the AppHost generics for a leaf app. No-op in the stub.
+		 *
+		 * @param IRegistrationContext $context The leaf registration context.
+		 * @param string $appId The leaf app id.
+		 * @param array<string, mixed> $options Bootstrap options.
+		 *
+		 * @return void
+		 */
+		public static function register(IRegistrationContext $context, string $appId, array $options = []): void {
+		}//end register()
+	}//end class
 }//end if

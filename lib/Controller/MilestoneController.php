@@ -19,13 +19,14 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md#task-1
+ * @spec openspec/specs/milestone-tracking/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use OCA\Procest\Service\CaseAccessGuard;
 use OCA\Procest\Service\MilestoneService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -36,124 +37,127 @@ use OCP\IUserSession;
 /**
  * Controller for milestone progress tracking.
  */
-class MilestoneController extends Controller
-{
-    /**
-     * Constructor.
-     *
-     * @param string           $appName          The app name
-     * @param IRequest         $request          The request
-     * @param MilestoneService $milestoneService The milestone service
-     * @param IUserSession     $userSession      The user session
-     */
-    public function __construct(
-        string $appName,
-        IRequest $request,
-        private readonly MilestoneService $milestoneService,
-        private readonly IUserSession $userSession,
-    ) {
-        parent::__construct(appName: $appName, request: $request);
-    }//end __construct()
+class MilestoneController extends Controller {
+	/**
+	 * Constructor.
+	 *
+	 * @param string $appName The app name
+	 * @param IRequest $request The request
+	 * @param MilestoneService $milestoneService The milestone service
+	 * @param IUserSession $userSession The user session
+	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
+	 */
+	public function __construct(
+		string $appName,
+		IRequest $request,
+		private readonly MilestoneService $milestoneService,
+		private readonly IUserSession $userSession,
+		private readonly CaseAccessGuard $caseAccessGuard,
+	) {
+		parent::__construct(appName: $appName, request: $request);
+	}//end __construct()
 
-    /**
-     * Get milestone progress for a case.
-     *
-     * @param string $caseId     The case UUID
-     * @param string $caseTypeId The case type UUID
-     *
-     * @return JSONResponse Milestone progress data
-     *
-     * @NoAdminRequired
+	/**
+	 * Get milestone progress for a case.
+	 *
+	 * @param string $caseId The case UUID
+	 * @param string $caseTypeId The case type UUID
+	 *
+	 * @return JSONResponse Milestone progress data
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function progress(string $caseId, string $caseTypeId): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function progress(string $caseId, string $caseTypeId): JSONResponse
-    {
-        if ($this->userSession->getUser() === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
 
-        try {
-            $progress = $this->milestoneService->getCaseProgress($caseId, $caseTypeId);
-            return new JSONResponse($progress);
-        } catch (\RuntimeException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], 500);
-        }
-    }//end progress()
+		try {
+			$progress = $this->milestoneService->getCaseProgress($caseId, $caseTypeId);
+			return new JSONResponse($progress);
+		} catch (\RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], 500);
+		}
+	}//end progress()
 
-    /**
-     * Mark a milestone as reached.
-     *
-     * @param string $caseId      The case UUID
-     * @param string $milestoneId The milestone definition UUID
-     *
-     * @return JSONResponse The created milestone record
-     *
-     * @NoAdminRequired
+	/**
+	 * Mark a milestone as reached.
+	 *
+	 * @param string $caseId The case UUID
+	 * @param string $milestoneId The milestone definition UUID
+	 *
+	 * @return JSONResponse The created milestone record
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function mark(string $caseId, string $milestoneId): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function mark(string $caseId, string $milestoneId): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+		$userId = $user->getUID();
 
-        $userId = $user->getUID();
+		try {
+			$result = $this->milestoneService->markMilestone(
+				$caseId,
+				$milestoneId,
+				$userId,
+				'manual',
+			);
+			return new JSONResponse($result);
+		} catch (\RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], 400);
+		}
+	}//end mark()
 
-        try {
-            $result = $this->milestoneService->markMilestone(
-                $caseId,
-                $milestoneId,
-                $userId,
-                'manual',
-            );
-            return new JSONResponse($result);
-        } catch (\RuntimeException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], 400);
-        }
-    }//end mark()
+	/**
+	 * Reverse a milestone.
+	 *
+	 * @param string $caseId The case UUID
+	 * @param string $milestoneId The milestone definition UUID
+	 *
+	 * @return JSONResponse Success status
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function reverse(string $caseId, string $milestoneId): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-    /**
-     * Reverse a milestone.
-     *
-     * @param string $caseId      The case UUID
-     * @param string $milestoneId The milestone definition UUID
-     *
-     * @return JSONResponse Success status
-     *
-     * @NoAdminRequired
+		$reason = $this->request->getParam('reason', '');
+		if (trim($reason) === '') {
+			return new JSONResponse(
+				['error' => 'Reason is required for milestone reversal'],
+				Http::STATUS_BAD_REQUEST,
+			);
+		}
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function reverse(string $caseId, string $milestoneId): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+		$userId = $user->getUID();
 
-        $reason = $this->request->getParam('reason', '');
-        if (trim($reason) === '') {
-            return new JSONResponse(
-                ['error' => 'Reason is required for milestone reversal'],
-                Http::STATUS_BAD_REQUEST,
-            );
-        }
-
-        $userId = $user->getUID();
-
-        try {
-            $success = $this->milestoneService->reverseMilestone(
-                $caseId,
-                $milestoneId,
-                $userId,
-                $reason,
-            );
-            return new JSONResponse(['success' => $success]);
-        } catch (\RuntimeException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], 400);
-        }
-    }//end reverse()
+		try {
+			$success = $this->milestoneService->reverseMilestone(
+				$caseId,
+				$milestoneId,
+				$userId,
+				$reason,
+			);
+			return new JSONResponse(['success' => $success]);
+		} catch (\RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], 400);
+		}
+	}//end reverse()
 }//end class

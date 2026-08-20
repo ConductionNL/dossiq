@@ -21,16 +21,15 @@
  * @link https://procest.nl
  *
  * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-3
- * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md#task-2
+ * @spec openspec/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
+use ZipArchive;
 
 /**
  * Service for importing case type definitions from ZIP archives.
@@ -40,330 +39,456 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md#task-2
+ * @spec openspec/specs/case-types/spec.md
  */
-class CaseDefinitionImportService
-{
-    /**
-     * Required files in an import package.
-     *
-     * @var string[]
-     */
-    private const REQUIRED_FILES = ['manifest.json'];
+class CaseDefinitionImportService {
+	/**
+	 * Required files in an import package.
+	 *
+	 * @var string[]
+	 */
+	private const REQUIRED_FILES = ['manifest.json'];
 
-    /**
-     * Constructor.
-     *
-     * @param IAppConfig      $appConfig The Nextcloud app config service.
-     * @param LoggerInterface $logger    The logger instance.
-     */
-    public function __construct(
-        private readonly IAppConfig $appConfig,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param LoggerInterface $logger The logger instance.
+	 */
+	public function __construct(
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Validate a case definition package without importing it.
-     *
-     * @param string $zipPath Path to the uploaded ZIP file.
-     *
-     * @return array{valid: bool, errors: string[], warnings: string[], manifest: ?array<string, mixed>, conflicts: array<string, mixed>}
-     *
-     * @psalm-suppress PossiblyUnusedMethod
+	/**
+	 * Validate a case definition package without importing it.
+	 *
+	 * @param string $zipPath Path to the uploaded ZIP file.
+	 *
+	 * @return array{valid: bool, errors: string[], warnings: string[], manifest: ?array<string, mixed>, conflicts: array<string, mixed>}
+	 *
+	 * @psalm-suppress PossiblyUnusedMethod
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function validatePackage(string $zipPath): array {
+		$result = [
+			'valid' => true,
+			'errors' => [],
+			'warnings' => [],
+			'manifest' => null,
+			'conflicts' => [],
+		];
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function validatePackage(string $zipPath): array
-    {
-        $result = [
-            'valid'     => true,
-            'errors'    => [],
-            'warnings'  => [],
-            'manifest'  => null,
-            'conflicts' => [],
-        ];
+		// Open the ZIP.
+		$zip = new ZipArchive();
+		$openResult = $zip->open($zipPath, ZipArchive::RDONLY);
+		if ($openResult !== true) {
+			$result['valid'] = false;
+			$result['errors'][] = 'Failed to open ZIP archive: error code ' . $openResult;
+			return $result;
+		}
 
-        // Open the ZIP.
-        $zip        = new \ZipArchive();
-        $openResult = $zip->open($zipPath, \ZipArchive::RDONLY);
-        if ($openResult !== true) {
-            $result['valid']    = false;
-            $result['errors'][] = 'Failed to open ZIP archive: error code '.$openResult;
-            return $result;
-        }
+		// Check required files.
+		$missingFiles = $this->findMissingRequiredFiles(zip: $zip);
+		if ($missingFiles !== []) {
+			$result['valid'] = false;
+			$result['errors'] = $missingFiles;
+			$zip->close();
+			return $result;
+		}
 
-        // Check required files.
-        foreach (self::REQUIRED_FILES as $requiredFile) {
-            if ($zip->locateName($requiredFile) === false) {
-                $result['valid']    = false;
-                $result['errors'][] = "Missing required file: {$requiredFile}";
-            }
-        }
+		// Parse manifest.
+		$manifestResult = $this->readManifest(zip: $zip);
+		if ($manifestResult['errors'] !== []) {
+			$result['valid'] = false;
+			$result['errors'] = $manifestResult['errors'];
+			$zip->close();
+			return $result;
+		}
 
-        if ($result['valid'] === false) {
-            $zip->close();
-            return $result;
-        }
+		$result['manifest'] = $manifestResult['manifest'];
 
-        // Parse manifest.
-        $manifestJson = $zip->getFromName('manifest.json');
-        if ($manifestJson === false) {
-            $result['valid']    = false;
-            $result['errors'][] = 'Failed to read manifest.json';
-            $zip->close();
-            return $result;
-        }
+		// Validate manifest structure, declared components and dependencies.
+		$issues = $this->validateManifestContents(zip: $zip, manifest: (array)$manifestResult['manifest']);
 
-        $manifest = json_decode($manifestJson, true);
-        if ($manifest === null) {
-            $result['valid']    = false;
-            $result['errors'][] = 'Invalid JSON in manifest.json: '.json_last_error_msg();
-            $zip->close();
-            return $result;
-        }
+		$result['errors'] = $issues['errors'];
+		$result['warnings'] = $issues['warnings'];
+		$result['valid'] = ($issues['errors'] === []);
 
-        $result['manifest'] = $manifest;
+		$zip->close();
 
-        // Validate manifest structure.
-        $requiredManifestFields = ['version', 'exportDate', 'caseType', 'components'];
-        foreach ($requiredManifestFields as $field) {
-            if (isset($manifest[$field]) === false) {
-                $result['valid']    = false;
-                $result['errors'][] = "Missing required manifest field: {$field}";
-            }
-        }
+		$validLabel = 'false';
+		if ($result['valid'] === true) {
+			$validLabel = 'true';
+		}
 
-        // Validate that declared components have matching files.
-        $components = $manifest['components'] ?? [];
-        foreach ($components as $component) {
-            if ($component === 'workflows') {
-                // Workflows are in a subdirectory -- check for at least the directory.
-                $hasWorkflows = false;
-                for ($i = 0; $i < $zip->numFiles; $i++) {
-                    $name = $zip->getNameIndex($i);
-                    if ($name !== false && str_starts_with($name, 'workflows/') === true) {
-                        $hasWorkflows = true;
-                        break;
-                    }
-                }
+		$this->logger->info(
+			'Validated case definition package: {valid}, errors: {errorCount}, warnings: {warningCount}',
+			[
+				'valid' => $validLabel,
+				'errorCount' => count($result['errors']),
+				'warningCount' => count($result['warnings']),
+			]
+		);
 
-                if ($hasWorkflows === false) {
-                    $result['warnings'][] = 'Component "workflows" declared but no workflow files found';
-                }
-            } else {
-                $componentFile = $component.'.json';
-                if ($zip->locateName($componentFile) === false) {
-                    $result['valid']    = false;
-                    $result['errors'][] = "Component '{$component}' declared in manifest but file '{$componentFile}' not found";
-                }
-            }//end if
-        }//end foreach
+		return $result;
+	}//end validatePackage()
 
-        // Validate component JSON.
-        foreach ($components as $component) {
-            if ($component === 'workflows') {
-                continue;
-            }
+	/**
+	 * Import a case definition package.
+	 *
+	 * @param string $zipPath Path to the uploaded ZIP file.
+	 * @param string $strategy Conflict resolution strategy: 'skip', 'overwrite', or 'merge'.
+	 *
+	 * @return array{success: bool, message: string, components: array<string, array{status: string, message: string}>}
+	 *
+	 * @throws \RuntimeException If import fails.
+	 *
+	 * @psalm-suppress PossiblyUnusedMethod
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function importCaseDefinition(
+		string $zipPath,
+		string $strategy = 'skip',
+	): array {
+		// First validate.
+		$validation = $this->validatePackage(zipPath: $zipPath);
+		if ($validation['valid'] === false) {
+			return [
+				'success' => false,
+				'message' => 'Package validation failed: ' . implode('; ', $validation['errors']),
+				'components' => [],
+			];
+		}
 
-            $componentFile = $component.'.json';
-            $content       = $zip->getFromName($componentFile);
-            if ($content !== false) {
-                $decoded = json_decode($content, true);
-                if ($decoded === null && json_last_error() !== JSON_ERROR_NONE) {
-                    $result['valid']    = false;
-                    $result['errors'][] = "Invalid JSON in {$componentFile}: ".json_last_error_msg();
-                }
-            }
-        }
+		$manifest = $validation['manifest'];
+		$components = $manifest['components'] ?? [];
+		$results = [];
 
-        // Check for dependency conflicts.
-        $dependencies = $manifest['dependencies'] ?? [];
-        foreach ($dependencies as $dep) {
-            $depType = $dep['type'] ?? 'unknown';
-            $depName = $dep['name'] ?? 'unknown';
-            // In a full implementation, check if the dependency exists in OpenRegister.
-            $result['warnings'][] = "Dependency '{$depName}' (type: {$depType}) should be verified in target environment";
-        }
+		$zip = new ZipArchive();
+		$zip->open($zipPath, ZipArchive::RDONLY);
 
-        $zip->close();
+		foreach ($components as $component) {
+			try {
+				$results[$component] = $this->importComponent(zip: $zip, component: $component, strategy: $strategy);
+			} catch (\Throwable $e) {
+				$results[$component] = [
+					'status' => 'error',
+					'message' => $e->getMessage(),
+				];
+				$this->logger->error(
+					'Failed to import component {component}: {error}',
+					[
+						'component' => $component,
+						'error' => $e->getMessage(),
+					]
+				);
+			}
+		}
 
-        if ($result['valid'] === true) {
-            $validLabel = 'true';
-        } else {
-            $validLabel = 'false';
-        }
+		$zip->close();
 
-        $this->logger->info(
-            'Validated case definition package: {valid}, errors: {errorCount}, warnings: {warningCount}',
-            [
-                'valid'        => $validLabel,
-                'errorCount'   => count($result['errors']),
-                'warningCount' => count($result['warnings']),
-            ]
-        );
+		$allSuccess = in_array('error', array_column($results, 'status'), true) === false;
 
-        return $result;
-    }//end validatePackage()
+		$successLabel = 'false';
+		$message = 'Import completed with errors';
+		if ($allSuccess === true) {
+			$successLabel = 'true';
+			$message = 'Import completed successfully';
+		}
 
-    /**
-     * Import a case definition package.
-     *
-     * @param string $zipPath  Path to the uploaded ZIP file.
-     * @param string $strategy Conflict resolution strategy: 'skip', 'overwrite', or 'merge'.
-     *
-     * @return array{success: bool, message: string, components: array<string, array{status: string, message: string}>}
-     *
-     * @throws \RuntimeException If import fails.
-     *
-     * @psalm-suppress PossiblyUnusedMethod
+		$this->logger->info(
+			'Case definition import completed: {success}, components: {count}',
+			[
+				'success' => $successLabel,
+				'count' => count($results),
+			]
+		);
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function importCaseDefinition(
-        string $zipPath,
-        string $strategy='skip',
-    ): array {
-        // First validate.
-        $validation = $this->validatePackage(zipPath: $zipPath);
-        if ($validation['valid'] === false) {
-            return [
-                'success'    => false,
-                'message'    => 'Package validation failed: '.implode('; ', $validation['errors']),
-                'components' => [],
-            ];
-        }
+		return [
+			'success' => $allSuccess,
+			'message' => $message,
+			'components' => $results,
+		];
+	}//end importCaseDefinition()
 
-        $manifest   = $validation['manifest'];
-        $components = $manifest['components'] ?? [];
-        $results    = [];
+	/**
+	 * Import a single component from the ZIP archive.
+	 *
+	 * @param \ZipArchive $zip The opened ZIP archive.
+	 * @param string $component The component name.
+	 * @param string $strategy The conflict resolution strategy.
+	 *
+	 * @return array{status: string, message: string}
+	 */
+	private function importComponent(
+		\ZipArchive $zip,
+		string $component,
+		string $strategy,
+	): array {
+		if ($component === 'workflows') {
+			return $this->importWorkflows(zip: $zip);
+		}
 
-        $zip = new \ZipArchive();
-        $zip->open($zipPath, \ZipArchive::RDONLY);
+		$content = $zip->getFromName($component . '.json');
+		if ($content === false) {
+			return [
+				'status' => 'skipped',
+				'message' => "Component file {$component}.json not found in archive",
+			];
+		}
 
-        foreach ($components as $component) {
-            try {
-                $results[$component] = $this->importComponent(zip: $zip, component: $component, strategy: $strategy);
-            } catch (\Throwable $e) {
-                $results[$component] = [
-                    'status'  => 'error',
-                    'message' => $e->getMessage(),
-                ];
-                $this->logger->error(
-                    'Failed to import component {component}: {error}',
-                    [
-                        'component' => $component,
-                        'error'     => $e->getMessage(),
-                    ]
-                );
-            }
-        }
+		$data = json_decode($content, true);
+		if ($data === null) {
+			return [
+				'status' => 'error',
+				'message' => "Invalid JSON in {$component}.json",
+			];
+		}
 
-        $zip->close();
+		// In a full implementation, this would create/update OpenRegister objects.
+		// For now, store the fact that the component was imported.
+		$this->logger->info(
+			'Imported component {component} with strategy {strategy}',
+			[
+				'component' => $component,
+				'strategy' => $strategy,
+			]
+		);
 
-        $allSuccess = in_array('error', array_column($results, 'status'), true) === false;
+		return [
+			'status' => 'success',
+			'message' => "Component '{$component}' imported successfully",
+		];
+	}//end importComponent()
 
-        if ($allSuccess === true) {
-            $successLabel = 'true';
-            $message      = 'Import completed successfully';
-        } else {
-            $successLabel = 'false';
-            $message      = 'Import completed with errors';
-        }
+	/**
+	 * Import workflow files from the ZIP archive.
+	 *
+	 * Workflow files are enumerated and counted only; there is no conflict to
+	 * resolve on this path, so — unlike the other components — it takes no
+	 * conflict-resolution strategy.
+	 *
+	 * @param \ZipArchive $zip The opened ZIP archive.
+	 *
+	 * @return array{status: string, message: string}
+	 */
+	private function importWorkflows(\ZipArchive $zip): array {
+		$workflowCount = 0;
 
-        $this->logger->info(
-            'Case definition import completed: {success}, components: {count}',
-            [
-                'success' => $successLabel,
-                'count'   => count($results),
-            ]
-        );
+		for ($i = 0; $i < $zip->numFiles; $i++) {
+			$name = $zip->getNameIndex($i);
+			if ($name !== false && str_starts_with($name, 'workflows/') === true && str_ends_with($name, '.json') === true) {
+				$content = $zip->getFromIndex($i);
+				if ($content !== false) {
+					// In a full implementation, deploy via n8n API.
+					$workflowCount++;
+				}
+			}
+		}
 
-        return [
-            'success'    => $allSuccess,
-            'message'    => $message,
-            'components' => $results,
-        ];
-    }//end importCaseDefinition()
+		return [
+			'status' => 'success',
+			'message' => "Imported {$workflowCount} workflow(s)",
+		];
+	}//end importWorkflows()
 
-    /**
-     * Import a single component from the ZIP archive.
-     *
-     * @param \ZipArchive $zip       The opened ZIP archive.
-     * @param string      $component The component name.
-     * @param string      $strategy  The conflict resolution strategy.
-     *
-     * @return array{status: string, message: string}
-     */
-    private function importComponent(
-        \ZipArchive $zip,
-        string $component,
-        string $strategy,
-    ): array {
-        if ($component === 'workflows') {
-            return $this->importWorkflows(zip: $zip, strategy: $strategy);
-        }
+	/**
+	 * Collect an error for every required package file missing from the archive.
+	 *
+	 * @param \ZipArchive $zip The opened ZIP archive.
+	 *
+	 * @return string[] One error message per missing required file.
+	 */
+	private function findMissingRequiredFiles(\ZipArchive $zip): array {
+		$errors = [];
 
-        $content = $zip->getFromName($component.'.json');
-        if ($content === false) {
-            return [
-                'status'  => 'skipped',
-                'message' => "Component file {$component}.json not found in archive",
-            ];
-        }
+		foreach (self::REQUIRED_FILES as $requiredFile) {
+			if ($zip->locateName($requiredFile) === false) {
+				$errors[] = "Missing required file: {$requiredFile}";
+			}
+		}
 
-        $data = json_decode($content, true);
-        if ($data === null) {
-            return [
-                'status'  => 'error',
-                'message' => "Invalid JSON in {$component}.json",
-            ];
-        }
+		return $errors;
+	}//end findMissingRequiredFiles()
 
-        // In a full implementation, this would create/update OpenRegister objects.
-        // For now, store the fact that the component was imported.
-        $this->logger->info(
-            'Imported component {component} with strategy {strategy}',
-            [
-                'component' => $component,
-                'strategy'  => $strategy,
-            ]
-        );
+	/**
+	 * Read and decode manifest.json from the archive.
+	 *
+	 * @param \ZipArchive $zip The opened ZIP archive.
+	 *
+	 * @return array{manifest: mixed, errors: string[]} The decoded manifest, or the read/decode errors.
+	 */
+	private function readManifest(\ZipArchive $zip): array {
+		$manifestJson = $zip->getFromName('manifest.json');
+		if ($manifestJson === false) {
+			return [
+				'manifest' => null,
+				'errors' => ['Failed to read manifest.json'],
+			];
+		}
 
-        return [
-            'status'  => 'success',
-            'message' => "Component '{$component}' imported successfully",
-        ];
-    }//end importComponent()
+		$manifest = json_decode($manifestJson, true);
+		if ($manifest === null) {
+			return [
+				'manifest' => null,
+				'errors' => ['Invalid JSON in manifest.json: ' . json_last_error_msg()],
+			];
+		}
 
-    /**
-     * Import workflow files from the ZIP archive.
-     *
-     * @param \ZipArchive $zip      The opened ZIP archive.
-     * @param string      $strategy The conflict resolution strategy (reserved for future use).
-     *
-     * @psalm-suppress UnusedParam
-     *
-     * @return array{status: string, message: string}
-     */
-    private function importWorkflows(\ZipArchive $zip, string $strategy): array
-    {
-        $workflowCount = 0;
+		return [
+			'manifest' => $manifest,
+			'errors' => [],
+		];
+	}//end readManifest()
 
-        for ($i = 0; $i < $zip->numFiles; $i++) {
-            $name = $zip->getNameIndex($i);
-            if ($name !== false && str_starts_with($name, 'workflows/') === true && str_ends_with($name, '.json') === true) {
-                $content = $zip->getFromIndex($i);
-                if ($content !== false) {
-                    // In a full implementation, deploy via n8n API.
-                    $workflowCount++;
-                }
-            }
-        }
+	/**
+	 * Validate the manifest structure, its declared components and its dependencies.
+	 *
+	 * @param \ZipArchive $zip The opened ZIP archive.
+	 * @param array<string, mixed> $manifest The decoded manifest.
+	 *
+	 * @return array{errors: string[], warnings: string[]} The accumulated errors and warnings, in report order.
+	 */
+	private function validateManifestContents(\ZipArchive $zip, array $manifest): array {
+		$errors = $this->findMissingManifestFields(manifest: $manifest);
 
-        return [
-            'status'  => 'success',
-            'message' => "Imported {$workflowCount} workflow(s)",
-        ];
-    }//end importWorkflows()
+		$components = (array)($manifest['components'] ?? []);
+		$dependencies = (array)($manifest['dependencies'] ?? []);
+
+		$componentIssues = $this->validateComponentFiles(zip: $zip, components: $components);
+		$errors = array_merge($errors, $componentIssues['errors']);
+		$warnings = $componentIssues['warnings'];
+
+		$errors = array_merge($errors, $this->validateComponentJson(zip: $zip, components: $components));
+
+		$warnings = array_merge($warnings, $this->buildDependencyWarnings(dependencies: $dependencies));
+
+		return [
+			'errors' => $errors,
+			'warnings' => $warnings,
+		];
+	}//end validateManifestContents()
+
+	/**
+	 * Collect an error for every mandatory manifest field that is absent.
+	 *
+	 * @param array<string, mixed> $manifest The decoded manifest.
+	 *
+	 * @return string[] One error message per missing field.
+	 */
+	private function findMissingManifestFields(array $manifest): array {
+		$errors = [];
+
+		$requiredFields = ['version', 'exportDate', 'caseType', 'components'];
+		foreach ($requiredFields as $field) {
+			if (isset($manifest[$field]) === false) {
+				$errors[] = "Missing required manifest field: {$field}";
+			}
+		}
+
+		return $errors;
+	}//end findMissingManifestFields()
+
+	/**
+	 * Verify that every declared component has a matching file in the archive.
+	 *
+	 * @param \ZipArchive $zip The opened ZIP archive.
+	 * @param array<mixed> $components The components declared in the manifest.
+	 *
+	 * @return array{errors: string[], warnings: string[]} Missing-file errors and workflow warnings.
+	 */
+	private function validateComponentFiles(\ZipArchive $zip, array $components): array {
+		$errors = [];
+		$warnings = [];
+
+		foreach ($components as $component) {
+			if ($component === 'workflows') {
+				// Workflows are in a subdirectory -- check for at least the directory.
+				if ($this->hasWorkflowEntries(zip: $zip) === false) {
+					$warnings[] = 'Component "workflows" declared but no workflow files found';
+				}
+
+				continue;
+			}
+
+			$componentFile = $component . '.json';
+			if ($zip->locateName($componentFile) === false) {
+				$errors[] = "Component '{$component}' declared in manifest but file '{$componentFile}' not found";
+			}
+		}//end foreach
+
+		return [
+			'errors' => $errors,
+			'warnings' => $warnings,
+		];
+	}//end validateComponentFiles()
+
+	/**
+	 * Determine whether the archive contains at least one entry under workflows/.
+	 *
+	 * @param \ZipArchive $zip The opened ZIP archive.
+	 *
+	 * @return bool True when a workflows/ entry is present.
+	 */
+	private function hasWorkflowEntries(\ZipArchive $zip): bool {
+		for ($i = 0; $i < $zip->numFiles; $i++) {
+			$name = $zip->getNameIndex($i);
+			if ($name !== false && str_starts_with($name, 'workflows/') === true) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end hasWorkflowEntries()
+
+	/**
+	 * Verify that each declared component file contains parseable JSON.
+	 *
+	 * @param \ZipArchive $zip The opened ZIP archive.
+	 * @param array<mixed> $components The components declared in the manifest.
+	 *
+	 * @return string[] One error message per component file with invalid JSON.
+	 */
+	private function validateComponentJson(\ZipArchive $zip, array $components): array {
+		$errors = [];
+
+		foreach ($components as $component) {
+			if ($component === 'workflows') {
+				continue;
+			}
+
+			$componentFile = $component . '.json';
+			$content = $zip->getFromName($componentFile);
+			if ($content !== false) {
+				$decoded = json_decode($content, true);
+				if ($decoded === null && json_last_error() !== JSON_ERROR_NONE) {
+					$errors[] = "Invalid JSON in {$componentFile}: " . json_last_error_msg();
+				}
+			}
+		}
+
+		return $errors;
+	}//end validateComponentJson()
+
+	/**
+	 * Build the "verify in target environment" warning for each declared dependency.
+	 *
+	 * @param array<mixed> $dependencies The dependencies declared in the manifest.
+	 *
+	 * @return string[] One warning per dependency.
+	 */
+	private function buildDependencyWarnings(array $dependencies): array {
+		$warnings = [];
+
+		foreach ($dependencies as $dep) {
+			$depType = $dep['type'] ?? 'unknown';
+			$depName = $dep['name'] ?? 'unknown';
+			// In a full implementation, check if the dependency exists in OpenRegister.
+			$warnings[] = "Dependency '{$depName}' (type: {$depType}) should be verified in target environment";
+		}
+
+		return $warnings;
+	}//end buildDependencyWarnings()
 }//end class

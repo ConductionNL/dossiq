@@ -37,526 +37,337 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
-use OCA\Procest\Service\Support\SearchesObjects;
-use Psr\Log\LoggerInterface;
+use OCA\Procest\Service\Relation\CaseHierarchyOverlapGuard;
+use OCA\Procest\Service\Relation\CaseRelationCodec;
+use OCA\Procest\Service\Relation\CaseRelationStore;
 
 /**
  * Service for typed peer relations between cases.
  *
  * @spec openspec/specs/related-case-linking/spec.md
  */
-class CaseRelationService
-{
+class CaseRelationService {
 
-    use SearchesObjects;
+	/**
+	 * Allowed ZRC relation types (`aardRelatie`).
+	 *
+	 * @var array<int, string>
+	 */
+	public const RELATION_TYPES = ['vervolg', 'subject', 'bijdrage'];
 
-    /**
-     * Allowed ZRC relation types (`aardRelatie`).
-     *
-     * @var array<int, string>
-     */
-    public const RELATION_TYPES = ['vervolg', 'onderwerp', 'bijdrage'];
+	/**
+	 * Constructor.
+	 *
+	 * @param CaseRelationStore $store OpenRegister reads/writes for case objects.
+	 * @param CaseRelationCodec $codec Relation-list encoding and pair operations.
+	 * @param CaseHierarchyOverlapGuard $hierarchyGuard Hoofdzaak/deelzaak overlap detection.
+	 */
+	public function __construct(
+		private readonly CaseRelationStore $store,
+		private readonly CaseRelationCodec $codec,
+		private readonly CaseHierarchyOverlapGuard $hierarchyGuard,
+	) {
+	}//end __construct()
 
-    /**
-     * Constructor.
-     *
-     * @param SettingsService $settingsService Shared OR/settings resolver.
-     * @param DeelzaakService $deelzaakService Hierarchy service (overlap guard).
-     * @param LoggerInterface $logger          Logger.
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly DeelzaakService $deelzaakService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * List the typed peer relations stored on a case.
+	 *
+	 * Returns the decoded `relatedCases` array; each entry is
+	 * `{caseId, aardRelatie, toelichting?}`. Returns `[]` when the case is
+	 * missing/unreadable or carries no relations.
+	 *
+	 * @param string $caseId Case UUID.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function listRelations(string $caseId): array {
+		$case = $this->store->fetchCase(caseUuid: $caseId);
+		if ($case === null) {
+			return [];
+		}
 
-    /**
-     * List the typed peer relations stored on a case.
-     *
-     * Returns the decoded `relatedCases` array; each entry is
-     * `{caseId, aardRelatie, toelichting?}`. Returns `[]` when the case is
-     * missing/unreadable or carries no relations.
-     *
-     * @param string $caseId Case UUID.
-     *
-     * @return array<int, array<string, mixed>>
-     *
-     * @spec openspec/specs/related-case-linking/spec.md
-     */
-    public function listRelations(string $caseId): array
-    {
-        $case = $this->fetchCase(caseUuid: $caseId);
-        if ($case === null) {
-            return [];
-        }
+		return $this->codec->decode(case: $case);
+	}//end listRelations()
 
-        return $this->decodeRelations(case: $case);
-    }//end listRelations()
+	/**
+	 * Add a typed peer relation symmetrically to both cases.
+	 *
+	 * Guards (all fail closed):
+	 *   - `aardRelatie` must be one of {@see self::RELATION_TYPES};
+	 *   - no self-relation (`caseId == targetId`);
+	 *   - no duplicate `{caseId, aardRelatie}` pair;
+	 *   - no overlap with an existing direct hoofdzaak/deelzaak hierarchy link;
+	 *   - both cases must resolve (a missing case is refused as `access_denied`
+	 *     so the endpoint is not an existence oracle).
+	 *
+	 * ⚠️ This list used to claim the null-check below also enforced per-object
+	 * authorisation, *"because the store resolves through the session's
+	 * ObjectService, which applies OpenRegister RBAC — an unreadable case
+	 * resolves to null"*. That claim was false and the check was INERT:
+	 * `PermissionHandler::hasGroupPermission()` returns `true` for a schema
+	 * with no `authorization` block and `enforce_default_closed` defaults
+	 * false, and none of procest's 85 schemas declares one — so an existing
+	 * case never resolved to null for anybody (ConductionNL/.github#372).
+	 * Authorisation is now enforced by `CaseAccessGuard` in
+	 * `CaseRelationController`, ahead of every call into this service. Do not
+	 * re-state the RBAC claim here unless the schemas declare `authorization`
+	 * AND a test fails when that declaration is removed.
+	 *
+	 * @param string $caseId Origin case UUID.
+	 * @param string $targetId Target case UUID.
+	 * @param string $natureRelationship Relation type.
+	 * @param string|null $notes Optional free-text clarification (procest-local).
+	 *
+	 * @return array{ok: bool, reason?: string, detail?: string}
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function addRelation(
+		string $caseId,
+		string $targetId,
+		string $natureRelationship,
+		?string $notes = null,
+	): array {
+		$rejection = $this->rejectInvalidRelationInput(
+			caseId: $caseId,
+			targetId: $targetId,
+			natureRelationship: $natureRelationship
+		);
+		if ($rejection !== null) {
+			return $rejection;
+		}
 
-    /**
-     * Add a typed peer relation symmetrically to both cases.
-     *
-     * Guards (all fail closed):
-     *   - `aardRelatie` must be one of {@see self::RELATION_TYPES};
-     *   - no self-relation (`caseId == targetId`);
-     *   - no duplicate `{caseId, aardRelatie}` pair;
-     *   - no overlap with an existing direct hoofdzaak/deelzaak hierarchy link;
-     *   - the actor must have OR read access to BOTH cases (enforced because
-     *     {@see self::fetchCase()} resolves through the session's ObjectService,
-     *     which applies OpenRegister RBAC — an unreadable case resolves to null).
-     *
-     * @param string      $caseId      Origin case UUID.
-     * @param string      $targetId    Target case UUID.
-     * @param string      $aardRelatie Relation type.
-     * @param string|null $toelichting Optional free-text clarification (procest-local).
-     *
-     * @return array{ok: bool, reason?: string, detail?: string}
-     *
-     * @spec openspec/specs/related-case-linking/spec.md
-     */
-    public function addRelation(
-        string $caseId,
-        string $targetId,
-        string $aardRelatie,
-        ?string $toelichting=null
-    ): array {
-        if (in_array($aardRelatie, self::RELATION_TYPES, true) === false) {
-            return ['ok' => false, 'reason' => 'invalid_aard_relatie'];
-        }
+		// OR-RBAC read access to BOTH cases (fail closed on either miss).
+		$origin = $this->store->fetchCase(caseUuid: $caseId);
+		$target = $this->store->fetchCase(caseUuid: $targetId);
+		if ($origin === null || $target === null) {
+			return ['ok' => false, 'reason' => 'access_denied'];
+		}
 
-        if ($caseId === '' || $targetId === '') {
-            return ['ok' => false, 'reason' => 'missing_case_id'];
-        }
+		// Hierarchy-overlap guard — the parent/sub-case link already expresses
+		// the relation, so refuse to also peer-link the same pair.
+		if ($this->hierarchyGuard->areLinked(caseA: $origin, caseB: $target) === true) {
+			return [
+				'ok' => false,
+				'reason' => 'hierarchy_overlap',
+				'detail' => 'These cases are already linked through the hoofdzaak/deelzaak hierarchy.',
+			];
+		}
 
-        if ($caseId === $targetId) {
-            return ['ok' => false, 'reason' => 'self_relation'];
-        }
+		$originRelations = $this->codec->decode(case: $origin);
+		if ($this->codec->hasPair(relations: $originRelations, caseId: $targetId, natureRelationship: $natureRelationship) === true) {
+			return ['ok' => false, 'reason' => 'duplicate'];
+		}
 
-        // OR-RBAC read access to BOTH cases (fail closed on either miss).
-        $origin = $this->fetchCase(caseUuid: $caseId);
-        $target = $this->fetchCase(caseUuid: $targetId);
-        if ($origin === null || $target === null) {
-            return ['ok' => false, 'reason' => 'access_denied'];
-        }
+		$originRelations[] = $this->codec->buildEntry(
+			caseId: $targetId,
+			natureRelationship: $natureRelationship,
+			notes: $notes
+		);
+		$this->store->persistRelations(case: $origin, relations: $originRelations);
 
-        // Hierarchy-overlap guard — the parent/sub-case link already expresses
-        // the relation, so refuse to also peer-link the same pair.
-        if ($this->isHierarchyLinked(caseA: $origin, caseB: $target) === true) {
-            return [
-                'ok'     => false,
-                'reason' => 'hierarchy_overlap',
-                'detail' => 'These cases are already linked through the hoofdzaak/deelzaak hierarchy.',
-            ];
-        }
+		// Symmetric counterpart — same type names the link, the UI renders
+		// direction-aware labels.
+		$this->addInverseRelation(
+			target: $target,
+			caseId: $caseId,
+			natureRelationship: $natureRelationship,
+			notes: $notes
+		);
 
-        $originRelations = $this->decodeRelations(case: $origin);
-        if ($this->hasPair(relations: $originRelations, caseId: $targetId, aardRelatie: $aardRelatie) === true) {
-            return ['ok' => false, 'reason' => 'duplicate'];
-        }
+		return ['ok' => true];
+	}//end addRelation()
 
-        $entry = ['caseId' => $targetId, 'aardRelatie' => $aardRelatie];
-        if ($toelichting !== null && $toelichting !== '') {
-            $entry['toelichting'] = $toelichting;
-        }
+	/**
+	 * Reject a relation request whose inputs cannot form a valid peer relation.
+	 *
+	 * Returns the failure array to hand straight back to the caller, or null
+	 * when the inputs pass every input-only guard.
+	 *
+	 * @param string $caseId Origin case UUID.
+	 * @param string $targetId Target case UUID.
+	 * @param string $natureRelationship Relation type.
+	 *
+	 * @return array{ok: bool, reason?: string}|null
+	 */
+	private function rejectInvalidRelationInput(string $caseId, string $targetId, string $natureRelationship): ?array {
+		if (in_array($natureRelationship, self::RELATION_TYPES, true) === false) {
+			return ['ok' => false, 'reason' => 'invalid_aard_relatie'];
+		}
 
-        $originRelations[] = $entry;
-        $this->persistRelations(case: $origin, relations: $originRelations);
+		if ($caseId === '' || $targetId === '') {
+			return ['ok' => false, 'reason' => 'missing_case_id'];
+		}
 
-        // Symmetric counterpart — same type names the link, the UI renders
-        // direction-aware labels.
-        $targetRelations = $this->decodeRelations(case: $target);
-        if ($this->hasPair(relations: $targetRelations, caseId: $caseId, aardRelatie: $aardRelatie) === false) {
-            $inverse = ['caseId' => $caseId, 'aardRelatie' => $aardRelatie];
-            if ($toelichting !== null && $toelichting !== '') {
-                $inverse['toelichting'] = $toelichting;
-            }
+		if ($caseId === $targetId) {
+			return ['ok' => false, 'reason' => 'self_relation'];
+		}
 
-            $targetRelations[] = $inverse;
-            $this->persistRelations(case: $target, relations: $targetRelations);
-        }
+		return null;
+	}//end rejectInvalidRelationInput()
 
-        return ['ok' => true];
-    }//end addRelation()
+	/**
+	 * Persist the symmetric counterpart entry on the target case, unless it is
+	 * already present.
+	 *
+	 * @param array<string, mixed> $target Target case object.
+	 * @param string $caseId Origin case UUID (the entry's reference).
+	 * @param string $natureRelationship Relation type.
+	 * @param string|null $notes Optional free-text clarification.
+	 *
+	 * @return void
+	 */
+	private function addInverseRelation(
+		array $target,
+		string $caseId,
+		string $natureRelationship,
+		?string $notes,
+	): void {
+		$targetRelations = $this->codec->decode(case: $target);
+		if ($this->codec->hasPair(relations: $targetRelations, caseId: $caseId, natureRelationship: $natureRelationship) === false) {
+			$targetRelations[] = $this->codec->buildEntry(
+				caseId: $caseId,
+				natureRelationship: $natureRelationship,
+				notes: $notes
+			);
+			$this->store->persistRelations(case: $target, relations: $targetRelations);
+		}
+	}//end addInverseRelation()
 
-    /**
-     * Remove a typed peer relation from BOTH cases.
-     *
-     * @param string $caseId      Origin case UUID.
-     * @param string $targetId    Target case UUID.
-     * @param string $aardRelatie Relation type to remove.
-     *
-     * @return array{ok: bool, reason?: string}
-     *
-     * @spec openspec/specs/related-case-linking/spec.md
-     */
-    public function removeRelation(string $caseId, string $targetId, string $aardRelatie): array
-    {
-        if ($caseId === '' || $targetId === '') {
-            return ['ok' => false, 'reason' => 'missing_case_id'];
-        }
+	/**
+	 * Remove a typed peer relation from BOTH cases.
+	 *
+	 * @param string $caseId Origin case UUID.
+	 * @param string $targetId Target case UUID.
+	 * @param string $natureRelationship Relation type to remove.
+	 *
+	 * @return array{ok: bool, reason?: string}
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function removeRelation(string $caseId, string $targetId, string $natureRelationship): array {
+		if ($caseId === '' || $targetId === '') {
+			return ['ok' => false, 'reason' => 'missing_case_id'];
+		}
 
-        $origin = $this->fetchCase(caseUuid: $caseId);
-        $target = $this->fetchCase(caseUuid: $targetId);
-        if ($origin === null || $target === null) {
-            return ['ok' => false, 'reason' => 'access_denied'];
-        }
+		$origin = $this->store->fetchCase(caseUuid: $caseId);
+		$target = $this->store->fetchCase(caseUuid: $targetId);
+		if ($origin === null || $target === null) {
+			return ['ok' => false, 'reason' => 'access_denied'];
+		}
 
-        $originRelations = $this->removePair(
-            relations: $this->decodeRelations(case: $origin),
-            caseId: $targetId,
-            aardRelatie: $aardRelatie
-        );
-        $this->persistRelations(case: $origin, relations: $originRelations);
+		$originRelations = $this->codec->removePair(
+			relations: $this->codec->decode(case: $origin),
+			caseId: $targetId,
+			natureRelationship: $natureRelationship
+		);
+		$this->store->persistRelations(case: $origin, relations: $originRelations);
 
-        $targetRelations = $this->removePair(
-            relations: $this->decodeRelations(case: $target),
-            caseId: $caseId,
-            aardRelatie: $aardRelatie
-        );
-        $this->persistRelations(case: $target, relations: $targetRelations);
+		$targetRelations = $this->codec->removePair(
+			relations: $this->codec->decode(case: $target),
+			caseId: $caseId,
+			natureRelationship: $natureRelationship
+		);
+		$this->store->persistRelations(case: $target, relations: $targetRelations);
 
-        return ['ok' => true];
-    }//end removeRelation()
+		return ['ok' => true];
+	}//end removeRelation()
 
-    /**
-     * Remove every counterpart entry pointing at a case that is being deleted.
-     *
-     * Invoked from the case-deletion path (next to the deelzaak orphan cleanup)
-     * so no dangling references survive. Scans every case whose `relatedCases`
-     * references the deleted UUID and strips those entries.
-     *
-     * @param string $caseId UUID of the case being deleted.
-     *
-     * @return int Number of counterpart cases updated.
-     *
-     * @spec openspec/specs/related-case-linking/spec.md
-     */
-    public function cleanupForDeletedCase(string $caseId): int
-    {
-        if ($caseId === '') {
-            return 0;
-        }
+	/**
+	 * Remove every counterpart entry pointing at a case that is being deleted.
+	 *
+	 * Invoked from the case-deletion path (next to the deelzaak orphan cleanup)
+	 * so no dangling references survive. Scans every case whose `relatedCases`
+	 * references the deleted UUID and strips those entries.
+	 *
+	 * @param string $caseId UUID of the case being deleted.
+	 *
+	 * @return int Number of counterpart cases updated.
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function cleanupForDeletedCase(string $caseId): int {
+		if ($caseId === '') {
+			return 0;
+		}
 
-        $deleted = $this->fetchCase(caseUuid: $caseId);
-        // Even when the case is already gone we still scan counterparts: the
-        // relation entries on OTHER cases are what must be cleaned up.
-        $counterpartIds = [];
-        if ($deleted !== null) {
-            foreach ($this->decodeRelations(case: $deleted) as $relation) {
-                $ref = (string) ($relation['caseId'] ?? '');
-                if ($ref !== '' && in_array($ref, $counterpartIds, true) === false) {
-                    $counterpartIds[] = $ref;
-                }
-            }
-        }
+		$deleted = $this->store->fetchCase(caseUuid: $caseId);
+		// Even when the case is already gone we still scan counterparts: the
+		// relation entries on OTHER cases are what must be cleaned up.
+		$counterpartIds = [];
+		if ($deleted !== null) {
+			foreach ($this->codec->decode(case: $deleted) as $relation) {
+				$ref = (string)($relation['caseId'] ?? '');
+				if ($ref !== '' && in_array($ref, $counterpartIds, true) === false) {
+					$counterpartIds[] = $ref;
+				}
+			}
+		}
 
-        $updated = 0;
-        foreach ($counterpartIds as $counterpartId) {
-            $counterpart = $this->fetchCase(caseUuid: $counterpartId);
-            if ($counterpart === null) {
-                continue;
-            }
+		$updated = 0;
+		foreach ($counterpartIds as $counterpartId) {
+			$counterpart = $this->store->fetchCase(caseUuid: $counterpartId);
+			if ($counterpart === null) {
+				continue;
+			}
 
-            $relations = $this->decodeRelations(case: $counterpart);
-            $stripped  = array_values(
-                array_filter(
-                    $relations,
-                    static fn (array $relation): bool => (string) ($relation['caseId'] ?? '') !== $caseId
-                )
-            );
+			$relations = $this->codec->decode(case: $counterpart);
+			$stripped = $this->codec->removeAllForCase(relations: $relations, caseId: $caseId);
 
-            if (count($stripped) !== count($relations)) {
-                $this->persistRelations(case: $counterpart, relations: $stripped);
-                $updated++;
-            }
-        }//end foreach
+			if (count($stripped) !== count($relations)) {
+				$this->store->persistRelations(case: $counterpart, relations: $stripped);
+				$updated++;
+			}
+		}//end foreach
 
-        return $updated;
-    }//end cleanupForDeletedCase()
+		return $updated;
+	}//end cleanupForDeletedCase()
 
-    /**
-     * Restore symmetry after a direct write to `relatedCases` (e.g. ZGW inbound).
-     *
-     * For each relation on the given case, ensures the counterpart case carries
-     * the matching inverse entry. Used by the ZGW inbound path so guards and
-     * symmetry hold even when the field was written directly by the mapping
-     * layer rather than through {@see self::addRelation()}.
-     *
-     * @param string $caseId Case UUID whose relations were written directly.
-     *
-     * @return void
-     *
-     * @spec openspec/specs/related-case-linking/spec.md
-     */
-    public function normalise(string $caseId): void
-    {
-        if ($caseId === '') {
-            return;
-        }
+	/**
+	 * Restore symmetry after a direct write to `relatedCases` (e.g. ZGW inbound).
+	 *
+	 * For each relation on the given case, ensures the counterpart case carries
+	 * the matching inverse entry. Used by the ZGW inbound path so guards and
+	 * symmetry hold even when the field was written directly by the mapping
+	 * layer rather than through {@see self::addRelation()}.
+	 *
+	 * @param string $caseId Case UUID whose relations were written directly.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function normalise(string $caseId): void {
+		if ($caseId === '') {
+			return;
+		}
 
-        $case = $this->fetchCase(caseUuid: $caseId);
-        if ($case === null) {
-            return;
-        }
+		$case = $this->store->fetchCase(caseUuid: $caseId);
+		if ($case === null) {
+			return;
+		}
 
-        foreach ($this->decodeRelations(case: $case) as $relation) {
-            $targetId    = (string) ($relation['caseId'] ?? '');
-            $aardRelatie = (string) ($relation['aardRelatie'] ?? '');
-            if ($targetId === '' || $targetId === $caseId
-                || in_array($aardRelatie, self::RELATION_TYPES, true) === false
-            ) {
-                continue;
-            }
+		foreach ($this->codec->decode(case: $case) as $relation) {
+			$targetId = (string)($relation['caseId'] ?? '');
+			$natureRelationship = (string)($relation['aardRelatie'] ?? '');
+			if ($targetId === '' || $targetId === $caseId
+				|| in_array($natureRelationship, self::RELATION_TYPES, true) === false
+			) {
+				continue;
+			}
 
-            $target = $this->fetchCase(caseUuid: $targetId);
-            if ($target === null) {
-                continue;
-            }
+			$target = $this->store->fetchCase(caseUuid: $targetId);
+			if ($target === null) {
+				continue;
+			}
 
-            $targetRelations = $this->decodeRelations(case: $target);
-            if ($this->hasPair(relations: $targetRelations, caseId: $caseId, aardRelatie: $aardRelatie) === false) {
-                $targetRelations[] = ['caseId' => $caseId, 'aardRelatie' => $aardRelatie];
-                $this->persistRelations(case: $target, relations: $targetRelations);
-            }
-        }//end foreach
-    }//end normalise()
-
-    /**
-     * Determine whether two cases are already linked through the deelzaak
-     * (parent/child) hierarchy in either direction.
-     *
-     * @param array<string, mixed> $caseA First case object.
-     * @param array<string, mixed> $caseB Second case object.
-     *
-     * @return bool
-     */
-    private function isHierarchyLinked(array $caseA, array $caseB): bool
-    {
-        $idA = (string) ($caseA['id'] ?? ($caseA['@self']['id'] ?? ''));
-        $idB = (string) ($caseB['id'] ?? ($caseB['@self']['id'] ?? ''));
-
-        $parentA = $this->parentRef(case: $caseA);
-        $parentB = $this->parentRef(case: $caseB);
-
-        if ($idB !== '' && $parentA === $idB) {
-            return true;
-        }
-
-        if ($idA !== '' && $parentB === $idA) {
-            return true;
-        }
-
-        return false;
-    }//end isHierarchyLinked()
-
-    /**
-     * Read the `parentCase` reference UUID out of a case array (scalar or
-     * expanded-object shape).
-     *
-     * @param array<string, mixed> $case Case object.
-     *
-     * @return string Parent UUID or '' when absent.
-     */
-    private function parentRef(array $case): string
-    {
-        $parent = ($case['parentCase'] ?? null);
-        if (is_string($parent) === true) {
-            return $parent;
-        }
-
-        if (is_array($parent) === true) {
-            $ref = ($parent['id'] ?? ($parent['uuid'] ?? ''));
-            if (is_string($ref) === true) {
-                return $ref;
-            }
-
-            return '';
-        }
-
-        return '';
-    }//end parentRef()
-
-    /**
-     * Decode the JSON-encoded `relatedCases` field into a list of relation
-     * entries, tolerating an already-array shape.
-     *
-     * @param array<string, mixed> $case Case object.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function decodeRelations(array $case): array
-    {
-        $raw = ($case['relatedCases'] ?? null);
-        if (is_array($raw) === true) {
-            $list = $raw;
-        } else if (is_string($raw) === true && $raw !== '') {
-            $decoded = json_decode($raw, true);
-            $list    = [];
-            if (is_array($decoded) === true) {
-                $list = $decoded;
-            }
-        } else {
-            return [];
-        }
-
-        $entries = [];
-        foreach ($list as $item) {
-            if (is_array($item) === false) {
-                continue;
-            }
-
-            $targetId = (string) ($item['caseId'] ?? '');
-            if ($targetId === '') {
-                continue;
-            }
-
-            $entry = [
-                'caseId'      => $targetId,
-                'aardRelatie' => (string) ($item['aardRelatie'] ?? ''),
-            ];
-            if (isset($item['toelichting']) === true && (string) $item['toelichting'] !== '') {
-                $entry['toelichting'] = (string) $item['toelichting'];
-            }
-
-            $entries[] = $entry;
-        }//end foreach
-
-        return $entries;
-    }//end decodeRelations()
-
-    /**
-     * Whether a `{caseId, aardRelatie}` pair already exists in a relation list.
-     *
-     * @param array<int, array<string, mixed>> $relations   Relation entries.
-     * @param string                           $caseId      Target case UUID.
-     * @param string                           $aardRelatie Relation type.
-     *
-     * @return bool
-     */
-    private function hasPair(array $relations, string $caseId, string $aardRelatie): bool
-    {
-        foreach ($relations as $relation) {
-            if ((string) ($relation['caseId'] ?? '') === $caseId
-                && (string) ($relation['aardRelatie'] ?? '') === $aardRelatie
-            ) {
-                return true;
-            }
-        }
-
-        return false;
-    }//end hasPair()
-
-    /**
-     * Return a copy of the relation list with the given pair removed.
-     *
-     * @param array<int, array<string, mixed>> $relations   Relation entries.
-     * @param string                           $caseId      Target case UUID.
-     * @param string                           $aardRelatie Relation type.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function removePair(array $relations, string $caseId, string $aardRelatie): array
-    {
-        return array_values(
-            array_filter(
-                $relations,
-                static fn (array $relation): bool => (
-                    (string) ($relation['caseId'] ?? '') !== $caseId
-                    || (string) ($relation['aardRelatie'] ?? '') !== $aardRelatie
-                )
-            )
-        );
-    }//end removePair()
-
-    /**
-     * Fetch a single case object by UUID through the session's ObjectService.
-     *
-     * Resolving via OpenRegister applies its per-object RBAC for the current
-     * user, so an unreadable case resolves to null — this is the access guard.
-     *
-     * @param string $caseUuid Case UUID.
-     *
-     * @return array<string, mixed>|null
-     */
-    private function fetchCase(string $caseUuid): ?array
-    {
-        if ($caseUuid === '') {
-            return null;
-        }
-
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('case_schema');
-        if ($register === '' || $schema === '') {
-            return null;
-        }
-
-        try {
-            $obj = $objectService->find($caseUuid, register: $register, schema: $schema);
-        } catch (\Throwable $e) {
-            $this->logger->debug(
-                'CaseRelationService: case lookup failed',
-                ['uuid' => $caseUuid, 'error' => $e->getMessage()]
-            );
-            return null;
-        }
-
-        if ($obj === null) {
-            return null;
-        }
-
-        if (is_object($obj) === true && method_exists($obj, 'jsonSerialize') === true) {
-            $obj = $obj->jsonSerialize();
-        }
-
-        if (is_array($obj) === true) {
-            return $obj;
-        }
-
-        return null;
-    }//end fetchCase()
-
-    /**
-     * Persist a relation list back onto a case, JSON-encoding the field
-     * (the `relatedCases` field is a JSON-encoded string).
-     *
-     * @param array<string, mixed>             $case      Case object to update.
-     * @param array<int, array<string, mixed>> $relations Relation entries.
-     *
-     * @return void
-     */
-    private function persistRelations(array $case, array $relations): void
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return;
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('case_schema');
-        if ($register === '' || $schema === '') {
-            return;
-        }
-
-        $payload = $case;
-        $payload['relatedCases'] = json_encode(array_values($relations));
-
-        try {
-            $objectService->saveObject(
-                object: $payload,
-                register: $register,
-                schema: $schema,
-            );
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'CaseRelationService: failed to persist relatedCases',
-                ['error' => $e->getMessage()]
-            );
-        }
-    }//end persistRelations()
+			$targetRelations = $this->codec->decode(case: $target);
+			if ($this->codec->hasPair(relations: $targetRelations, caseId: $caseId, natureRelationship: $natureRelationship) === false) {
+				$targetRelations[] = ['caseId' => $caseId, 'aardRelatie' => $natureRelationship];
+				$this->store->persistRelations(case: $target, relations: $targetRelations);
+			}
+		}//end foreach
+	}//end normalise()
 }//end class

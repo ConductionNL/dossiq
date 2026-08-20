@@ -7,7 +7,14 @@
 <template>
 	<div class="sub-case-types-tab">
 		<div v-if="isCreate" class="sub-case-types-tab__notice">
-			<p>{{ t('procest', 'Save the case type first before configuring sub-case types.') }}</p>
+			<p>
+				{{
+					t(
+						'procest',
+						'Save the case type first before configuring sub-case types.',
+					)
+				}}
+			</p>
 		</div>
 
 		<template v-else>
@@ -15,11 +22,27 @@
 
 			<template v-else>
 				<div class="sub-case-types-tab__intro">
-					<p>{{ t('procest', 'Select which case types can be created as sub-cases (deelzaken) under this case type. Existing sub-cases are unaffected by changes here.') }}</p>
+					<p>
+						{{
+							t(
+								'procest',
+								'Select which case types can be created as sub-cases (deelzaken) under this case type. Existing sub-cases are unaffected by changes here.',
+							)
+						}}
+					</p>
 				</div>
 
-				<div v-if="availableCaseTypes.length === 0" class="sub-case-types-tab__empty">
-					<p>{{ t('procest', 'No other case types available to use as sub-case types.') }}</p>
+				<div
+					v-if="availableCaseTypes.length === 0"
+					class="sub-case-types-tab__empty">
+					<p>
+						{{
+							t(
+								'procest',
+								'No other case types available to use as sub-case types.',
+							)
+						}}
+					</p>
 				</div>
 
 				<div v-else class="sub-case-types-tab__list">
@@ -28,11 +51,17 @@
 						:key="ct.id"
 						class="sub-case-type-row">
 						<NcCheckboxRadioSwitch
-							:checked="selected.includes(ct.id)"
-							@update:checked="toggleSelection(ct.id, $event)">
-							<span class="sub-case-type-row__title">{{ ct.title || ct.identifier || ct.id }}</span>
+							:modelValue="selected.includes(ct.id)"
+							@update:modelValue="toggleSelection(ct.id, $event)">
+							<span class="sub-case-type-row__title">{{
+								ct.title || ct.identifier || ct.id
+							}}</span>
 						</NcCheckboxRadioSwitch>
-						<span v-if="ct.identifier" class="sub-case-type-row__identifier">{{ ct.identifier }}</span>
+						<span
+							v-if="ct.identifier"
+							class="sub-case-type-row__identifier"
+							>{{ ct.identifier }}</span
+						>
 					</label>
 				</div>
 
@@ -41,12 +70,22 @@
 						type="primary"
 						:disabled="saving || !dirty"
 						@click="save">
-						{{ saving ? t('procest', 'Saving...') : t('procest', 'Save sub-case types') }}
+						{{
+							saving
+								? t('procest', 'Saving...')
+								: t('procest', 'Save sub-case types')
+						}}
 					</NcButton>
-					<span v-if="saveSuccess" class="sub-case-types-tab__success" role="status">
+					<span
+						v-if="saveSuccess"
+						class="sub-case-types-tab__success"
+						role="status">
 						{{ t('procest', 'Saved.') }}
 					</span>
-					<span v-if="saveError" class="sub-case-types-tab__error" role="alert">
+					<span
+						v-if="saveError"
+						class="sub-case-types-tab__error"
+						role="alert">
 						{{ saveError }}
 					</span>
 				</div>
@@ -56,8 +95,8 @@
 </template>
 
 <script>
-import { NcButton, NcCheckboxRadioSwitch, NcLoadingIcon } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton, NcCheckboxRadioSwitch, NcLoadingIcon } from '@nextcloud/vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 
 export default {
@@ -67,12 +106,14 @@ export default {
 		NcCheckboxRadioSwitch,
 		NcLoadingIcon,
 	},
+
 	props: {
 		caseTypeId: {
 			type: String,
 			default: null,
 		},
 	},
+
 	data() {
 		return {
 			loading: true,
@@ -84,18 +125,22 @@ export default {
 			caseTypes: [],
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/deelzaak-support/tasks.md#T12 */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		isCreate() {
 			return !this.caseTypeId
 		},
+
 		/** @spec openspec/changes/deelzaak-support/tasks.md#T12 */
 		availableCaseTypes() {
-			return (this.caseTypes || []).filter(ct => ct.id !== this.caseTypeId)
+			return (this.caseTypes || []).filter((ct) => ct.id !== this.caseTypeId)
 		},
+
 		/** @spec openspec/changes/deelzaak-support/tasks.md#T12 */
 		dirty() {
 			const current = [...this.selected].sort().join(',')
@@ -103,6 +148,7 @@ export default {
 			return current !== initial
 		},
 	},
+
 	/** @spec openspec/changes/deelzaak-support/tasks.md#T12 */
 	async mounted() {
 		if (!this.isCreate) {
@@ -111,6 +157,7 @@ export default {
 			this.loading = false
 		}
 	},
+
 	methods: {
 		/** @spec openspec/changes/deelzaak-support/tasks.md#T12 */
 		async loadData() {
@@ -127,10 +174,12 @@ export default {
 				this.selected = [...existing]
 				this.initialSelected = [...existing]
 			} catch (err) {
-				this.saveError = err?.message || t('procest', 'Failed to load case types.')
+				this.saveError =
+					err?.message || t('procest', 'Failed to load case types.')
 			}
 			this.loading = false
 		},
+
 		/**
 		 * @param ctId The case type id being toggled
 		 * @param checked The new checked state
@@ -143,29 +192,29 @@ export default {
 					this.selected = [...this.selected, ctId]
 				}
 			} else {
-				this.selected = this.selected.filter(id => id !== ctId)
+				this.selected = this.selected.filter((id) => id !== ctId)
 			}
 		},
+
 		/** @spec openspec/changes/deelzaak-support/tasks.md#T12 */
 		async save() {
 			this.saving = true
 			this.saveError = ''
 			this.saveSuccess = false
 			try {
-				await this.objectStore.saveObject(
-					'caseType',
-					{
-						id: this.caseTypeId,
-						subCaseTypes: this.selected,
-					},
-				)
+				await this.objectStore.saveObject('caseType', {
+					id: this.caseTypeId,
+					subCaseTypes: this.selected,
+				})
 				this.initialSelected = [...this.selected]
 				this.saveSuccess = true
 			} catch (err) {
-				this.saveError = err?.message || t('procest', 'Failed to save sub-case types.')
+				this.saveError =
+					err?.message || t('procest', 'Failed to save sub-case types.')
 			}
 			this.saving = false
 		},
+
 		t,
 	},
 }

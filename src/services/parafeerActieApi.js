@@ -17,7 +17,7 @@ const ENDPOINT = generateUrl('/apps/procest/api/parafeer-actie')
  * Record a parafering action for a voorstel's current step.
  *
  * @param {object}  data            The action payload.
- * @param {string}  data.voorstel   The voorstel UUID (required).
+ * @param {string}  data.proposal   The voorstel UUID (required).
  * @param {string}  data.action     One of: 'advised', 'parafered', 'accorded', 'returned'.
  * @param {string} [data.comment]   Optional comment (mandatory when action='returned').
  * @param {string} [data.advice]    Advice text (mandatory when action='advised').
@@ -45,7 +45,7 @@ export async function recordAction(data) {
  * @spec openspec/specs/parafering-actions/spec.md
  */
 export async function listActions(voorstelId) {
-	const response = await axios.get(ENDPOINT, { params: { voorstel: voorstelId } })
+	const response = await axios.get(ENDPOINT, { params: { proposal: voorstelId } })
 	return Array.isArray(response.data) ? response.data : []
 }
 

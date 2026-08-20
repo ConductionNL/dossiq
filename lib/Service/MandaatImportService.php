@@ -35,450 +35,321 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\Support\SearchesObjects;
-use Psr\Log\LoggerInterface;
+use OCA\Procest\Service\Mandaat\MandaatCsvParser;
+use OCA\Procest\Service\Mandaat\MandaatRepository;
 use RuntimeException;
 
 /**
  * CSV import of a MandateringsBesluit from a Decidesk export.
+ *
+ * The wire format is parsed by {@see MandaatCsvParser} and every register read
+ * or write goes through {@see MandaatRepository}; what stays here is the import
+ * decision — new vs changed vs removed — and the approval state machine.
  */
-class MandaatImportService
-{
-    use SearchesObjects;
+class MandaatImportService {
+	/**
+	 * Columns an import CSV must carry.
+	 *
+	 * Canonically owned by {@see MandaatCsvParser}; aliased here so existing
+	 * callers of `MandaatImportService::REQUIRED_COLUMNS` keep working.
+	 *
+	 * @var string[]
+	 */
+	public const REQUIRED_COLUMNS = MandaatCsvParser::REQUIRED_COLUMNS;
 
-    public const REQUIRED_COLUMNS = ['mandaatNummer', 'omschrijving', 'rolNaam', 'plafondCents'];
+	/**
+	 * Constructor.
+	 *
+	 * @param MandaatRepository $repository OpenRegister access for the mandaat matrix.
+	 * @param MandaatCsvParser $csvParser Decidesk CSV export parser.
+	 */
+	public function __construct(
+		private readonly MandaatRepository $repository,
+		private readonly MandaatCsvParser $csvParser,
+	) {
+	}//end __construct()
 
-    /**
-     * Constructor.
-     *
-     * @param SettingsService $settingsService Settings.
-     * @param LoggerInterface $logger          Logger.
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Import a mandate decision from CSV text.
+	 *
+	 * @param string $decisionNumber Decision identifier.
+	 * @param string $decisionName Decision name.
+	 * @param string $decideskUuid Source Decidesk decision id.
+	 * @param string $csvContents The CSV payload (RFC 4180; first row is header).
+	 *
+	 * @return array<string, mixed> {mandateDecisionId, totalMandaten, newCount, changedCount, removedCount, diff}
+	 *
+	 * @throws RuntimeException When the CSV is malformed or a rol cannot be resolved.
+	 *
+	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 */
+	public function importFromCsv(
+		string $decisionNumber,
+		string $decisionName,
+		string $decideskUuid,
+		string $csvContents,
+	): array {
+		$rows = $this->csvParser->parse(csv: $csvContents);
+		if (count($rows) === 0) {
+			throw new RuntimeException('CSV is empty or missing data rows');
+		}
 
-    /**
-     * Import a MandateringsBesluit from CSV text.
-     *
-     * @param string $besluitNummer Besluit identifier.
-     * @param string $besluitNaam   Besluit name.
-     * @param string $decideskUuid  Source Decidesk besluit id.
-     * @param string $csvContents   The CSV payload (RFC 4180; first row is header).
-     *
-     * @return array<string, mixed> {mandateringsBesluitId, totalMandaten, newCount, changedCount, removedCount, diff}
-     *
-     * @throws RuntimeException When the CSV is malformed or a rol cannot be resolved.
-     *
-     * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
-     */
-    public function importFromCsv(
-        string $besluitNummer,
-        string $besluitNaam,
-        string $decideskUuid,
-        string $csvContents
-    ): array {
-        $rows = $this->parseCsv(csv: $csvContents);
-        if (count($rows) === 0) {
-            throw new RuntimeException('CSV is empty or missing data rows');
-        }
+		// Resolve rol-name → rolId.
+		$resolved = $this->resolveRoleReferences(rows: $rows);
 
-        // Resolve rol-name → rolId.
-        $roleIndex = $this->loadRoleIndex();
-        $resolved  = [];
-        foreach ($rows as $idx => $row) {
-            $rolNaam = (string) ($row['rolNaam'] ?? '');
-            if ($rolNaam === '') {
-                throw new RuntimeException('Row '.($idx + 1).' missing rolNaam');
-            }
+		// Create the decision (concept). The schemaConfigKey stays
+		// 'mandaterings_besluit_schema': it is the app-config key the schema id
+		// is already stored under on existing installs, not a display name.
+		$decision = $this->repository->save(
+			schemaConfigKey: 'mandaterings_besluit_schema',
+			object: [
+				'decisionNumber' => $decisionNumber,
+				'decisionName' => $decisionName,
+				'status' => 'draft',
+				'decideskUuid' => $decideskUuid,
+			]
+		);
 
-            if (isset($roleIndex[$rolNaam]) === false) {
-                throw new RuntimeException('Unknown OrganisatieRol "'.$rolNaam.'" at row '.($idx + 1));
-            }
+		// Find the prior decision version (by decisionNumber) for diff.
+		$prior = $this->repository->findPriorDecision(decisionNumber: $decisionNumber);
+		$priorMandaten = [];
+		if ($prior !== null) {
+			$priorMandaten = $this->repository->findMandatenForBesluit(
+				decisionId: (string)($prior['id'] ?? '')
+			);
+		}
 
-            $resolved[] = $row + ['gemandateerdeRol' => $roleIndex[$rolNaam]];
-        }
+		// Create one mandaat per CSV row.
+		$newCount = 0;
+		$changedCount = 0;
+		$unchangedCount = 0;
+		$diff = [];
+		foreach ($resolved as $row) {
+			$payload = $this->buildMandatePayload(row: $row, decisionId: (string)$decision['id']);
 
-        // Create the besluit (concept).
-        $besluit = $this->save(
-            schemaConfigKey: 'mandaterings_besluit_schema',
-            object: [
-                'besluitNummer' => $besluitNummer,
-                'besluitNaam'   => $besluitNaam,
-                'status'        => 'concept',
-                'decideskUuid'  => $decideskUuid,
-            ]
-        );
+			$this->repository->save(schemaConfigKey: 'mandaat_schema', object: $payload);
 
-        // Find the prior besluit version (by besluitNummer) for diff.
-        $prior = $this->findPriorBesluit(besluitNummer: $besluitNummer);
-        if ($prior !== null) {
-            $priorMandaten = $this->findMandatenForBesluit(besluitId: (string) ($prior['id'] ?? ''));
-        } else {
-            $priorMandaten = [];
-        }
+			$existing = $this->findPriorMandate(
+				priorMandaten: $priorMandaten,
+				mandateNumber: (string)$row['mandaatNummer']
+			);
 
-        // Create one mandaat per CSV row.
-        $newCount       = 0;
-        $changedCount   = 0;
-        $unchangedCount = 0;
-        $diff           = [];
-        foreach ($resolved as $row) {
-            $payload = [
-                'mandaatNummer'       => (string) $row['mandaatNummer'],
-                'mandateringsBesluit' => (string) $besluit['id'],
-                'omschrijving'        => (string) ($row['omschrijving'] ?? ''),
-                'gemandateerdeRol'    => (string) $row['gemandateerdeRol'],
-                'wettelijkeGrondslag' => (string) ($row['wettelijkeGrondslag'] ?? ''),
-                'voorwaarden'         => [
-                    'plafondCents'  => (int) ($row['plafondCents'] ?? 0),
-                    'subdelegatie'  => $this->parseBool(value: (string) ($row['subdelegatie'] ?? 'false')),
-                    'decisionTypes' => $this->parseList(value: (string) ($row['decisionTypes'] ?? '')),
-                ],
-                'status'              => 'concept',
-            ];
+			if ($existing === null) {
+				$newCount++;
+				$diff[] = ['mandaatNummer' => (string)$row['mandaatNummer'], 'change' => 'NEW'];
+				continue;
+			}
 
-            $this->save(schemaConfigKey: 'mandaat_schema', object: $payload);
+			$changedFields = $this->collectChangedFields(existing: $existing, payload: $payload);
 
-            $existing = null;
-            foreach ($priorMandaten as $pm) {
-                if ((string) ($pm['mandaatNummer'] ?? '') === (string) $row['mandaatNummer']) {
-                    $existing = $pm;
-                    break;
-                }
-            }
+			if (count($changedFields) > 0) {
+				$changedCount++;
+				$diff[] = [
+					'mandaatNummer' => (string)$row['mandaatNummer'],
+					'change' => 'CHANGED',
+					'fields' => $changedFields,
+				];
+				continue;
+			}
 
-            if ($existing === null) {
-                $newCount++;
-                $diff[] = ['mandaatNummer' => (string) $row['mandaatNummer'], 'change' => 'NEW'];
-                continue;
-            }
+			$unchangedCount++;
+			$diff[] = ['mandaatNummer' => (string)$row['mandaatNummer'], 'change' => 'UNCHANGED'];
+		}//end foreach
 
-            $changed       = false;
-            $changedFields = [];
-            foreach (['omschrijving', 'gemandateerdeRol', 'wettelijkeGrondslag'] as $f) {
-                if ((string) ($existing[$f] ?? '') !== (string) ($payload[$f] ?? '')) {
-                    $changed         = true;
-                    $changedFields[] = $f;
-                }
-            }
+		// REMOVED = in prior, not in new.
+		$removed = $this->collectRemovedMandaten(priorMandaten: $priorMandaten, resolved: $resolved);
+		$removedCount = count($removed);
+		$diff = array_merge($diff, $removed);
 
-            $exPlafond = (int) (($existing['voorwaarden'] ?? [])['plafondCents'] ?? 0);
-            if ($exPlafond !== (int) $payload['voorwaarden']['plafondCents']) {
-                $changed         = true;
-                $changedFields[] = 'plafondCents';
-            }
+		return [
+			'mandateDecisionId' => (string)$decision['id'],
+			'totalMandaten' => count($resolved),
+			'newCount' => $newCount,
+			'changedCount' => $changedCount,
+			'removedCount' => $removedCount,
+			'unchangedCount' => $unchangedCount,
+			'diff' => $diff,
+		];
+	}//end importFromCsv()
 
-            if ($changed === true) {
-                $changedCount++;
-                $diff[] = ['mandaatNummer' => (string) $row['mandaatNummer'], 'change' => 'CHANGED', 'fields' => $changedFields];
-            } else {
-                $unchangedCount++;
-                $diff[] = ['mandaatNummer' => (string) $row['mandaatNummer'], 'change' => 'UNCHANGED'];
-            }
-        }//end foreach
+	/**
+	 * Resolve every CSV row's rolNaam to a gemandateerdeRol id.
+	 *
+	 * @param array<int, array<string, string>> $rows Parsed CSV data rows.
+	 *
+	 * @return array<int, array<string, mixed>> Rows enriched with gemandateerdeRol.
+	 *
+	 * @throws RuntimeException When a row has no rolNaam or names an unknown OrganisatieRol.
+	 */
+	private function resolveRoleReferences(array $rows): array {
+		$roleIndex = $this->repository->loadRoleIndex();
+		$resolved = [];
+		foreach ($rows as $idx => $row) {
+			$roleName = (string)($row['rolNaam'] ?? '');
+			if ($roleName === '') {
+				throw new RuntimeException('Row ' . ($idx + 1) . ' missing rolNaam');
+			}
 
-        // REMOVED = in prior, not in new.
-        $newNumbers   = array_map(static fn (array $r): string => (string) ($r['mandaatNummer'] ?? ''), $resolved);
-        $removedCount = 0;
-        foreach ($priorMandaten as $pm) {
-            $num = (string) ($pm['mandaatNummer'] ?? '');
-            if ($num !== '' && in_array($num, $newNumbers, true) === false) {
-                $removedCount++;
-                $diff[] = ['mandaatNummer' => $num, 'change' => 'REMOVED'];
-            }
-        }
+			if (isset($roleIndex[$roleName]) === false) {
+				throw new RuntimeException('Unknown OrganisatieRol "' . $roleName . '" at row ' . ($idx + 1));
+			}
 
-        return [
-            'mandateringsBesluitId' => (string) $besluit['id'],
-            'totalMandaten'         => count($resolved),
-            'newCount'              => $newCount,
-            'changedCount'          => $changedCount,
-            'removedCount'          => $removedCount,
-            'unchangedCount'        => $unchangedCount,
-            'diff'                  => $diff,
-        ];
-    }//end importFromCsv()
+			$resolved[] = $row + ['mandateeRole' => $roleIndex[$roleName]];
+		}
 
-    /**
-     * Approve a concept besluit: flip besluit → vastgesteld + every mandaat → active,
-     * and mark the prior besluit (if any) → vervallen.
-     *
-     * @param string $besluitId Besluit id.
-     *
-     * @return array<string, mixed>
-     *
-     * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
-     */
-    public function approveImport(string $besluitId): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        $register      = (string) $this->settingsService->getConfigValue('register');
-        $bSchema       = (string) $this->settingsService->getConfigValue('mandaterings_besluit_schema');
-        $mSchema       = (string) $this->settingsService->getConfigValue('mandaat_schema');
-        if ($objectService === null || $register === '' || $bSchema === '' || $mSchema === '') {
-            throw new RuntimeException('Mandaat services not configured');
-        }
+		return $resolved;
+	}//end resolveRolReferences()
 
-        $besluit = $objectService->find($besluitId, register: $register, schema: $bSchema);
-        if (is_array($besluit) === false) {
-            throw new RuntimeException('Besluit not found: '.$besluitId);
-        }
+	/**
+	 * Build the concept mandaat payload for a single resolved CSV row.
+	 *
+	 * @param array<string, mixed> $row A resolved CSV row.
+	 * @param string $decisionId The owning mandate decision id.
+	 *
+	 * @return array<string, mixed> The mandaat object payload.
+	 *
+	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 */
+	private function buildMandatePayload(array $row, string $decisionId): array {
+		return [
+			// Key = schema property (renamed). Value = CSV column header, an
+			// external input contract that stays as operators' files write it.
+			'mandateNumber' => (string)$row['mandaatNummer'],
+			'mandateDecision' => $decisionId,
+			// Key = schema property (renamed). Value = CSV column header, an
+			// external input contract that stays as operators' files write it.
+			'description' => (string)($row['description'] ?? $row['omschrijving'] ?? ''),
+			'mandateeRole' => (string)$row['mandateeRole'],
+			// Key = the schema property (renamed). Value = a CSV COLUMN HEADER,
+			// which is an external input format the operator's file already
+			// uses, so both spellings are read.
+			'legalBasis' => (string)($row['legalBasis'] ?? $row['wettelijkeGrondslag'] ?? ''),
+			'terms' => [
+				'plafondCents' => (int)($row['plafondCents'] ?? 0),
+				'subdelegatie' => $this->csvParser->parseBool(value: (string)($row['subdelegatie'] ?? 'false')),
+				'decisionTypes' => $this->csvParser->parseList(value: (string)($row['decisionTypes'] ?? '')),
+			],
+			'status' => 'draft',
+		];
+	}//end buildMandaatPayload()
 
-        if (($besluit['status'] ?? '') !== 'concept') {
-            throw new RuntimeException('Besluit is not in concept status');
-        }
+	/**
+	 * Find the prior-version mandaat carrying a given mandaatNummer.
+	 *
+	 * @param array<int, array<string, mixed>> $priorMandaten Mandaten of the prior besluit version.
+	 * @param string $mandateNumber The mandaat number to look for.
+	 *
+	 * @return array<string, mixed>|null The matching prior mandaat, or null when it is new.
+	 */
+	private function findPriorMandate(array $priorMandaten, string $mandateNumber): ?array {
+		foreach ($priorMandaten as $pm) {
+			if ((string)($pm['mandateNumber'] ?? '') === $mandateNumber) {
+				return $pm;
+			}
+		}
 
-        $now = (new DateTimeImmutable())->format('Y-m-d');
-        $besluit['status']           = 'vastgesteld';
-        $besluit['inWerkingtreding'] = ($besluit['inWerkingtreding'] ?? $now);
-        $besluit = $objectService->saveObject($register, $bSchema, $besluit);
+		return null;
+	}//end findPriorMandaat()
 
-        // Flip mandaten to active.
-        try {
-            $mandaten = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $mSchema,
-                filters: ['mandateringsBesluit' => $besluitId]
-            );
-        } catch (\Throwable $e) {
-            $mandaten = [];
-        }
+	/**
+	 * Collect the field names that differ between a prior mandaat and its new payload.
+	 *
+	 * @param array<string, mixed> $existing The prior-version mandaat.
+	 * @param array<string, mixed> $payload The freshly built mandaat payload.
+	 *
+	 * @return array<int, string> Changed field names; empty when unchanged.
+	 *
+	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 */
+	private function collectChangedFields(array $existing, array $payload): array {
+		$changedFields = [];
+		foreach (['description', 'mandateeRole', 'legalBasis'] as $f) {
+			if ((string)($existing[$f] ?? '') !== (string)$payload[$f]) {
+				$changedFields[] = $f;
+			}
+		}
 
-        foreach ((array) $mandaten as $m) {
-            if (is_array($m) === false) {
-                continue;
-            }
+		$exPlafond = (int)(($existing['terms'] ?? [])['plafondCents'] ?? 0);
+		if ($exPlafond !== (int)$payload['terms']['plafondCents']) {
+			$changedFields[] = 'plafondCents';
+		}
 
-            $m['status'] = 'active';
-            if (isset($m['validFrom']) === false || $m['validFrom'] === '') {
-                $m['validFrom'] = $now;
-            }
+		return $changedFields;
+	}//end collectChangedFields()
 
-            $objectService->saveObject($register, $mSchema, $m);
-        }
+	/**
+	 * Build the REMOVED diff entries — mandaten present in the prior besluit but
+	 * absent from the new import.
+	 *
+	 * @param array<int, array<string, mixed>> $priorMandaten Mandaten of the prior besluit version.
+	 * @param array<int, array<string, mixed>> $resolved The resolved CSV rows of the new import.
+	 *
+	 * @return array<int, array<string, string>> REMOVED diff entries.
+	 */
+	private function collectRemovedMandaten(array $priorMandaten, array $resolved): array {
+		$newNumbers = array_map(static fn (array $r): string => (string)($r['mandaatNummer'] ?? ''), $resolved);
+		$removed = [];
+		foreach ($priorMandaten as $pm) {
+			$num = (string)($pm['mandateNumber'] ?? '');
+			if ($num !== '' && in_array($num, $newNumbers, true) === false) {
+				$removed[] = ['mandaatNummer' => $num, 'change' => 'REMOVED'];
+			}
+		}
 
-        // Expire prior besluit.
-        $prior = $this->findPriorBesluit(besluitNummer: (string) $besluit['besluitNummer'], excludeId: $besluitId);
-        if ($prior !== null) {
-            $prior['status']      = 'vervallen';
-            $prior['vervalDatum'] = $now;
-            $objectService->saveObject($register, $bSchema, $prior);
-        }
+		return $removed;
+	}//end collectRemovedMandaten()
 
-        return $besluit;
-    }//end approveImport()
+	/**
+	 * Approve a concept besluit: flip besluit → vastgesteld + every mandaat → active,
+	 * and mark the prior besluit (if any) → vervallen.
+	 *
+	 * @param string $decisionId Besluit id.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 */
+	public function approveImport(string $decisionId): array {
+		$context = $this->repository->resolveApprovalContext();
+		$objectService = $context['objectService'];
+		$register = $context['register'];
+		$bSchema = $context['bSchema'];
+		$mSchema = $context['mSchema'];
 
-    /**
-     * Parse RFC-4180-ish CSV with first row = header.
-     *
-     * @param string $csv CSV.
-     *
-     * @return array<int, array<string, string>>
-     */
-    private function parseCsv(string $csv): array
-    {
-        $lines = preg_split('/\r\n|\n|\r/', trim($csv));
-        if ($lines === false || count($lines) < 2) {
-            return [];
-        }
+		$decision = $objectService->find($decisionId, register: $register, schema: $bSchema);
+		if (is_array($decision) === false) {
+			throw new RuntimeException('Besluit not found: ' . $decisionId);
+		}
 
-        $header = str_getcsv($lines[0]);
-        if (is_array($header) === false) {
-            return [];
-        }
+		if (($decision['status'] ?? '') !== 'draft') {
+			throw new RuntimeException('Besluit is not in concept status');
+		}
 
-        $missing = array_diff(self::REQUIRED_COLUMNS, $header);
-        if (count($missing) > 0) {
-            throw new RuntimeException('Missing required CSV columns: '.implode(', ', $missing));
-        }
+		$now = (new DateTimeImmutable())->format('Y-m-d');
+		$decision['status'] = 'determined';
+		$decision['effectiveFrom'] = ($decision['effectiveFrom'] ?? $now);
+		$decision = $objectService->saveObject($register, $bSchema, $decision);
 
-        $rows = [];
-        for ($i = 1; $i < count($lines); $i++) {
-            $line = trim((string) $lines[$i]);
-            if ($line === '') {
-                continue;
-            }
+		// Flip mandaten to active.
+		$this->repository->activateMandatenForBesluit(
+			objectService: $objectService,
+			register: $register,
+			mSchema: $mSchema,
+			decisionId: $decisionId,
+			now: $now
+		);
 
-            $values = str_getcsv($line);
-            if (is_array($values) === false) {
-                continue;
-            }
+		// Expire prior besluit.
+		$prior = $this->repository->findPriorDecision(
+			decisionNumber: (string)$decision['decisionNumber'],
+			excludeId: $decisionId
+		);
+		if ($prior !== null) {
+			$prior['status'] = 'lapsed';
+			$prior['expiryDate'] = $now;
+			$objectService->saveObject($register, $bSchema, $prior);
+		}
 
-            $rows[] = array_combine($header, array_pad($values, count($header), ''));
-        }
-
-        return $rows;
-    }//end parseCsv()
-
-    /**
-     * Build a rolNaam to rolId index from OrganisatieRol objects.
-     *
-     * @return array<string, string> rolNaam → rolId
-     */
-    private function loadRoleIndex(): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        $register      = (string) $this->settingsService->getConfigValue('register');
-        $schema        = (string) $this->settingsService->getConfigValue('organisatie_rol_schema');
-        if ($objectService === null || $register === '' || $schema === '') {
-            return [];
-        }
-
-        try {
-            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: []);
-        } catch (\Throwable $e) {
-            return [];
-        }
-
-        $out = [];
-        foreach ((array) $rows as $row) {
-            if (is_array($row) === false) {
-                continue;
-            }
-
-            $rolNaam = (string) ($row['rolNaam'] ?? '');
-            if ($rolNaam !== '') {
-                $out[$rolNaam] = (string) ($row['id'] ?? '');
-            }
-        }
-
-        return $out;
-    }//end loadRoleIndex()
-
-    /**
-     * Find the prior vastgesteld besluit for a besluit number.
-     *
-     * @param string      $besluitNummer Number.
-     * @param string|null $excludeId     Optional id to exclude.
-     *
-     * @return array<string, mixed>|null
-     */
-    private function findPriorBesluit(string $besluitNummer, ?string $excludeId=null): ?array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        $register      = (string) $this->settingsService->getConfigValue('register');
-        $schema        = (string) $this->settingsService->getConfigValue('mandaterings_besluit_schema');
-        if ($objectService === null || $register === '' || $schema === '') {
-            return null;
-        }
-
-        try {
-            $rows = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $schema,
-                filters: ['besluitNummer' => $besluitNummer]
-            );
-        } catch (\Throwable $e) {
-            return null;
-        }
-
-        foreach ((array) $rows as $row) {
-            if (is_array($row) === false) {
-                continue;
-            }
-
-            if ($excludeId !== null && (string) ($row['id'] ?? '') === $excludeId) {
-                continue;
-            }
-
-            if (($row['status'] ?? '') === 'vastgesteld') {
-                return $row;
-            }
-        }
-
-        return null;
-    }//end findPriorBesluit()
-
-    /**
-     * Find the mandaten linked to a besluit.
-     *
-     * @param string $besluitId Besluit id.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function findMandatenForBesluit(string $besluitId): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        $register      = (string) $this->settingsService->getConfigValue('register');
-        $schema        = (string) $this->settingsService->getConfigValue('mandaat_schema');
-        if ($objectService === null || $register === '' || $schema === '') {
-            return [];
-        }
-
-        try {
-            return (array) $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $schema,
-                filters: ['mandateringsBesluit' => $besluitId]
-            );
-        } catch (\Throwable $e) {
-            return [];
-        }
-    }//end findMandatenForBesluit()
-
-    /**
-     * Persist a single object for the configured schema.
-     *
-     * @param string               $schemaConfigKey Config key.
-     * @param array<string, mixed> $object          Payload.
-     *
-     * @return array<string, mixed>
-     */
-    private function save(string $schemaConfigKey, array $object): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        $register      = (string) $this->settingsService->getConfigValue('register');
-        $schema        = (string) $this->settingsService->getConfigValue($schemaConfigKey);
-        if ($objectService === null || $register === '' || $schema === '') {
-            return $object;
-        }
-
-        try {
-            $saved = $objectService->saveObject($register, $schema, $object);
-            if (is_array($saved) === true) {
-                return $saved;
-            }
-
-            return $object;
-        } catch (\Throwable $e) {
-            $this->logger->error('Mandaat import persist failed', ['key' => $schemaConfigKey, 'error' => $e->getMessage()]);
-            return $object;
-        }
-    }//end save()
-
-    /**
-     * Parse a boolean from CSV text.
-     *
-     * @param string $value Boolean text.
-     *
-     * @return bool
-     */
-    private function parseBool(string $value): bool
-    {
-        $value = strtolower(trim($value));
-        return in_array($value, ['1', 'true', 'ja', 'yes', 'y'], true);
-    }//end parseBool()
-
-    /**
-     * Parse a semicolon-separated list from CSV text.
-     *
-     * @param string $value Comma-separated list.
-     *
-     * @return array<int, string>
-     */
-    private function parseList(string $value): array
-    {
-        $value = trim($value);
-        if ($value === '') {
-            return [];
-        }
-
-        return array_values(array_filter(array_map('trim', explode(';', $value))));
-    }//end parseList()
+		return $decision;
+	}//end approveImport()
 }//end class

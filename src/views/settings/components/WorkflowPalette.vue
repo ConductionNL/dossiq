@@ -8,32 +8,72 @@
 			class="workflow-palette__item"
 			draggable="true"
 			@dragstart="onDragStart('status', $event)">
-			<span class="workflow-palette__icon">
-				&#x25A1;
-			</span>
+			<span class="workflow-palette__icon"> &#x25A1; </span>
 			<span>{{ t('procest', 'Status node') }}</span>
 		</div>
 
+		<!-- Keyboard alternative to dragging the item above onto the canvas
+			(drag-and-drop has no keyboard equivalent). -->
+		<NcButton
+			type="secondary"
+			class="workflow-palette__add-button"
+			@click="$emit('add-status')">
+			{{ t('procest', 'Add status node') }}
+		</NcButton>
+
 		<div class="workflow-palette__help">
-			<p>{{ t('procest', 'Drag a status node onto the canvas to add it.') }}</p>
-			<p>{{ t('procest', 'Connect nodes by dragging from one port to another.') }}</p>
-			<p>{{ t('procest', 'Click a node to select it, double-click a transition to edit.') }}</p>
+			<p>
+				{{
+					t(
+						'procest',
+						'Drag a status node onto the canvas to add it, or use the "Add status node" button.',
+					)
+				}}
+			</p>
+			<p>
+				{{
+					t(
+						'procest',
+						"Connect nodes by dragging from one port to another, or use a node's keyboard actions menu.",
+					)
+				}}
+			</p>
+			<p>
+				{{
+					t(
+						'procest',
+						'Click a node to select it, double-click a transition to edit.',
+					)
+				}}
+			</p>
 		</div>
 
 		<h4 class="workflow-palette__title">
 			{{ t('procest', 'Controls') }}
 		</h4>
 		<div class="workflow-palette__help">
-			<p><strong>{{ t('procest', 'Pan') }}:</strong> {{ t('procest', 'Click and drag on empty canvas') }}</p>
-			<p><strong>{{ t('procest', 'Zoom') }}:</strong> {{ t('procest', 'Scroll wheel') }}</p>
+			<p>
+				<strong>{{ t('procest', 'Pan') }}:</strong>
+				{{ t('procest', 'Click and drag on empty canvas') }}
+			</p>
+			<p>
+				<strong>{{ t('procest', 'Zoom') }}:</strong>
+				{{ t('procest', 'Scroll wheel') }}
+			</p>
 		</div>
 	</div>
 </template>
 
 <script>
+import { NcButton } from '@nextcloud/vue'
+
 export default {
 	name: 'WorkflowPalette',
-	emits: ['drag-start'],
+	components: {
+		NcButton,
+	},
+
+	emits: ['drag-start', 'add-status'],
 	methods: {
 		/**
 		 * @param type
@@ -82,6 +122,11 @@ export default {
 
 .workflow-palette__item:active {
 	cursor: grabbing;
+}
+
+.workflow-palette__add-button {
+	width: 100%;
+	margin-bottom: 12px;
 }
 
 .workflow-palette__icon {

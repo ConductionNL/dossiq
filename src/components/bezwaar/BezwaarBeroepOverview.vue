@@ -21,10 +21,15 @@
 	<div class="bezwaar-overview" data-testid="bezwaar-overview">
 		<header class="bezwaar-overview__header">
 			<h2 class="bezwaar-overview__title" data-testid="bezwaar-overview-title">
-				{{ t('procest', 'Bezwaar & Beroep') }}
+				{{ t('procest', 'Objection & Appeal') }}
 			</h2>
 			<p class="bezwaar-overview__hint">
-				{{ t('procest', 'Beheer bezwaren, beroepen, beslissingen en BAC-adviezen vanuit één overzicht.') }}
+				{{
+					t(
+						'procest',
+						'Manage objections, appeals, decisions and BAC advice from a single overview.',
+					)
+				}}
 			</p>
 		</header>
 
@@ -45,10 +50,10 @@
 <script>
 import { CnCard } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
-import Gavel from 'vue-material-design-icons/Gavel.vue'
-import ScaleBalance from 'vue-material-design-icons/ScaleBalance.vue'
 import CheckCircle from 'vue-material-design-icons/CheckCircle.vue'
 import Comment from 'vue-material-design-icons/Comment.vue'
+import Gavel from 'vue-material-design-icons/Gavel.vue'
+import ScaleBalance from 'vue-material-design-icons/ScaleBalance.vue'
 
 export default {
 	name: 'BezwaarBeroepOverview',
@@ -68,28 +73,36 @@ export default {
 				{
 					id: 'Bezwaren',
 					label: 'Bezwaren',
-					description: 'Overzicht van alle bezwaarschriften die bij de gemeente zijn ingediend.',
+					description:
+						'Overzicht van alle bezwaarschriften die bij de gemeente zijn ingediend.',
+
 					icon: Gavel,
 					route: 'Bezwaren',
 				},
 				{
 					id: 'Beroepen',
 					label: 'Beroepen',
-					description: 'Overzicht van beroepsprocedures bij de bestuursrechter.',
+					description:
+						'Overzicht van beroepsprocedures bij de bestuursrechter.',
+
 					icon: ScaleBalance,
 					route: 'Beroepen',
 				},
 				{
 					id: 'BezwaarDecisions',
 					label: 'Beslissingen op bezwaar',
-					description: 'Overzicht van beslissingen op ingediende bezwaarschriften.',
+					description:
+						'Overzicht van beslissingen op ingediende bezwaarschriften.',
+
 					icon: CheckCircle,
 					route: 'BezwaarDecisions',
 				},
 				{
 					id: 'BezwaarAdviceRequests',
 					label: 'BAC-adviezen',
-					description: 'Adviezen van de Bezwaaradviescommissie (BAC) over ingediende bezwaren.',
+					description:
+						'Adviezen van de Bezwaaradviescommissie (BAC) over ingediende bezwaren.',
+
 					icon: Comment,
 					route: 'BezwaarAdviceRequests',
 				},

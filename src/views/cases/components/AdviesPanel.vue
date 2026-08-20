@@ -16,7 +16,12 @@
 		<NcEmptyContent
 			v-else-if="advies.length === 0"
 			:title="t(appName, 'Geen adviezen aangevraagd')"
-			:description="t(appName, 'Vraag advies aan bij interne of externe partijen om hier te tonen.')" />
+			:description="
+				t(
+					appName,
+					'Vraag advies aan bij interne of externe partijen om hier te tonen.',
+				)
+			" />
 
 		<ul v-else class="advies-panel__list">
 			<li
@@ -26,37 +31,49 @@
 				:class="{ 'advies-panel__item--overdue': isOverdue(item) }">
 				<div class="advies-panel__row">
 					<div class="advies-panel__meta">
-						<strong>{{ item.adviseur }}</strong>
-						<CnStatusBadge :status="typeLabel(item.type)" :type="typeBadgeType(item.type)" />
-						<CnStatusBadge :status="statusLabel(item.status)" :type="statusBadgeType(item.status)" />
+						<strong>{{ item.advisor }}</strong>
+						<CnStatusBadge
+							:status="typeLabel(item.type)"
+							:type="typeBadgeType(item.type)" />
+						<CnStatusBadge
+							:status="statusLabel(item.status)"
+							:type="statusBadgeType(item.status)" />
 					</div>
 					<div class="advies-panel__deadline">
 						<template v-if="isOverdue(item)">
-							{{ t(appName, '{days} dagen te laat', { days: daysOverdue(item) }) }}
+							{{
+								t(appName, '{days} dagen te laat', {
+									days: daysOverdue(item),
+								})
+							}}
 						</template>
 						<template v-else-if="item.deadline">
-							{{ t(appName, 'Deadline: {date}', { date: formatDate(item.deadline) }) }}
+							{{
+								t(appName, 'Deadline: {date}', {
+									date: formatDate(item.deadline),
+								})
+							}}
 						</template>
 					</div>
 				</div>
-				<p v-if="item.onderwerp" class="advies-panel__subject">
-					{{ item.onderwerp }}
+				<p v-if="item.subject" class="advies-panel__subject">
+					{{ item.subject }}
 				</p>
 				<div class="advies-panel__actions">
 					<NcButton
-						v-if="item.status === 'aangevraagd'"
+						v-if="item.status === 'requested'"
 						type="secondary"
 						@click="onRemind(item)">
 						{{ t(appName, 'Herinnering sturen') }}
 					</NcButton>
 					<NcButton
-						v-if="item.status === 'aangevraagd' && item.adviesDocument"
+						v-if="item.status === 'requested' && item.adviceDocument"
 						type="secondary"
 						@click="onMarkReceived(item)">
 						{{ t(appName, 'Markeer als ontvangen') }}
 					</NcButton>
 					<NcButton
-						v-if="item.status === 'ontvangen' && item.adviesDocument"
+						v-if="item.status === 'received' && item.adviceDocument"
 						type="tertiary"
 						@click="onViewDocument(item)">
 						{{ t(appName, 'Bekijk advies') }}
@@ -67,21 +84,21 @@
 
 		<AdviesAanvraagDialog
 			v-if="showDialog"
-			:case-id="caseId"
+			:caseId="caseId"
 			@close="showDialog = false"
 			@created="onCreated" />
 	</div>
 </template>
 
 <script>
-import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import { CnStatusBadge } from '@conduction/nextcloud-vue'
+import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
+import AdviesAanvraagDialog from '../../../dialogs/AdviesAanvraagDialog.vue'
 import {
 	dispatchReminder,
 	getAdviceForCase,
 	transitionStatus,
 } from '../../../services/adviceApi.js'
-import AdviesAanvraagDialog from './AdviesAanvraagDialog.vue'
 
 const APP_NAME = 'procest'
 
@@ -94,12 +111,14 @@ export default {
 		CnStatusBadge,
 		AdviesAanvraagDialog,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
 	},
+
 	data() {
 		return {
 			appName: APP_NAME,
@@ -108,6 +127,7 @@ export default {
 			showDialog: false,
 		}
 	},
+
 	watch: {
 		caseId: {
 			immediate: true,
@@ -122,6 +142,7 @@ export default {
 			},
 		},
 	},
+
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		async fetchAdvies() {
@@ -135,15 +156,18 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		openCreateDialog() {
 			this.showDialog = true
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		onCreated() {
 			this.showDialog = false
 			this.fetchAdvies()
 		},
+
 		/**
 		 * @param item
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
@@ -155,6 +179,7 @@ export default {
 				console.error('Procest: failed to send reminder', error)
 			}
 		},
+
 		/**
 		 * @param item
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
@@ -162,23 +187,25 @@ export default {
 		async onMarkReceived(item) {
 			try {
 				await transitionStatus(item.id || item.uuid, {
-					to: 'ontvangen',
-					adviesDocument: item.adviesDocument || '',
+					to: 'received',
+					adviceDocument: item.adviceDocument || '',
 				})
 				await this.fetchAdvies()
 			} catch (error) {
 				console.error('Procest: failed to mark received', error)
 			}
 		},
+
 		/**
 		 * @param item
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		onViewDocument(item) {
-			if (item.adviesDocument) {
-				window.open(`/index.php/f/${item.adviesDocument}`, '_blank')
+			if (item.adviceDocument) {
+				window.open(`/index.php/f/${item.adviceDocument}`, '_blank')
 			}
 		},
+
 		/**
 		 * @param type
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
@@ -188,6 +215,7 @@ export default {
 				? this.t(this.appName, 'Intern')
 				: this.t(this.appName, 'Extern')
 		},
+
 		/**
 		 * @param type
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
@@ -195,40 +223,44 @@ export default {
 		typeBadgeType(type) {
 			return type === 'intern' ? 'neutral' : 'info'
 		},
+
 		/**
 		 * @param status
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		statusLabel(status) {
 			const labels = {
-				aangevraagd: this.t(this.appName, 'Aangevraagd'),
-				ontvangen: this.t(this.appName, 'Ontvangen'),
-				verlopen: this.t(this.appName, 'Verlopen'),
+				requested: this.t(this.appName, 'Aangevraagd'),
+				received: this.t(this.appName, 'Received'),
+				expired: this.t(this.appName, 'Verlopen'),
 			}
 			return labels[status] || status
 		},
+
 		/**
 		 * @param status
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		statusBadgeType(status) {
 			const types = {
-				aangevraagd: 'info',
-				ontvangen: 'success',
-				verlopen: 'error',
+				requested: 'info',
+				received: 'success',
+				expired: 'error',
 			}
 			return types[status] || 'neutral'
 		},
+
 		/**
 		 * @param item
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		isOverdue(item) {
-			if (item.status !== 'aangevraagd' || !item.deadline) {
+			if (item.status !== 'requested' || !item.deadline) {
 				return false
 			}
 			return new Date(item.deadline) < new Date()
 		},
+
 		/**
 		 * @param item
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
@@ -240,6 +272,7 @@ export default {
 			const diff = Date.now() - new Date(item.deadline).getTime()
 			return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)))
 		},
+
 		/**
 		 * @param value
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md

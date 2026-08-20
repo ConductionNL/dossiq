@@ -18,7 +18,12 @@
 		<NcEmptyContent
 			v-if="!loading && roles.length === 0"
 			:name="t('procest', 'No organisational roles')"
-			:description="t('procest', 'Define roles to build a mandate hierarchy. Roles can have parents (afdeling/team) and a mandaat level.')">
+			:description="
+				t(
+					'procest',
+					'Define roles to build a mandate hierarchy. Roles can have parents (afdeling/team) and a mandaat level.',
+				)
+			">
 			<template #icon>
 				<AccountGroup :size="48" />
 			</template>
@@ -30,56 +35,56 @@
 				v-for="r in roots"
 				:key="r.id"
 				:role="r"
-				:children-by-parent="childrenByParent"
-				:on-edit="openEditor"
-				:on-delete="confirmDelete" />
+				:childrenByParent="childrenByParent"
+				:onEdit="openEditor"
+				:onDelete="confirmDelete" />
 		</div>
 
 		<RolEditorDialog
 			v-if="editorOpen"
 			:role="editingRole"
-			:parent-options="parentOptions"
+			:parentOptions="parentOptions"
 			@save="onSave"
 			@close="closeEditor" />
 
-		<NcDialog
+		<DeleteRolDialog
 			v-if="deleting"
-			:name="t('procest', 'Delete role')"
-			:open="!!deleting"
-			@update:open="v => { if (!v) deleting = null }">
-			<p>{{ t('procest', 'Delete role {n}?', { n: deleting.naam || deleting.id }) }}</p>
-			<p v-if="deleteBlockedReason" class="rol-manager__warning">
-				{{ deleteBlockedReason }}
-			</p>
-			<template #actions>
-				<NcButton @click="deleting = null">
-					{{ t('procest', 'Cancel') }}
-				</NcButton>
-				<NcButton type="error" :disabled="!!deleteBlockedReason" @click="doDelete">
-					{{ t('procest', 'Delete') }}
-				</NcButton>
-			</template>
-		</NcDialog>
+			:role="deleting"
+			:blockedReason="deleteBlockedReason"
+			@close="deleting = null"
+			@confirm="doDelete" />
 	</div>
 </template>
 
 <script>
-import { NcButton, NcDialog, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
+import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import axios from '@nextcloud/axios'
-import Plus from 'vue-material-design-icons/Plus.vue'
+import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import AccountGroup from 'vue-material-design-icons/AccountGroup.vue'
-import RolNode from './RolNode.vue'
+import Plus from 'vue-material-design-icons/Plus.vue'
+import DeleteRolDialog from '../../../dialogs/DeleteRolDialog.vue'
 import RolEditorDialog from '../../../dialogs/RolEditorDialog.vue'
+import RolNode from './RolNode.vue'
 
 export default {
 	name: 'OrganisatieRolManager',
-	components: { NcButton, NcDialog, NcEmptyContent, NcLoadingIcon, Plus, AccountGroup, RolNode, RolEditorDialog },
+	components: {
+		NcButton,
+		NcEmptyContent,
+		NcLoadingIcon,
+		Plus,
+		AccountGroup,
+		RolNode,
+		RolEditorDialog,
+		DeleteRolDialog,
+	},
+
 	props: {
 		roles: { type: Array, default: () => [] },
 		loading: { type: Boolean, default: false },
 	},
+
 	emits: ['reload'],
 	data() {
 		return {
@@ -88,6 +93,7 @@ export default {
 			deleting: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		childrenByParent() {
@@ -99,25 +105,35 @@ export default {
 			}
 			return map
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		roots() {
-			return (this.roles || []).filter(r => !r.parentRole)
+			return (this.roles || []).filter((r) => !r.parentRole)
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		parentOptions() {
 			return [
 				{ id: '', label: t('procest', '(top level)') },
-				...this.roles.map(r => ({ id: r.id, label: r.naam || r.id })),
+				...this.roles.map((r) => ({ id: r.id, label: r.name || r.id })),
 			]
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		deleteBlockedReason() {
 			if (!this.deleting) return ''
-			const refsAsParent = this.roles.some(r => r.parentRole === this.deleting.id)
-			if (refsAsParent) return t('procest', 'Cannot delete: this role is the parent of other roles. Re-parent them first.')
+			const refsAsParent = this.roles.some(
+				(r) => r.parentRole === this.deleting.id,
+			)
+			if (refsAsParent)
+				return t(
+					'procest',
+					'Cannot delete: this role is the parent of other roles. Re-parent them first.',
+				)
 			return ''
 		},
 	},
+
 	methods: {
 		t,
 		/**
@@ -128,11 +144,13 @@ export default {
 			this.editingRole = role
 			this.editorOpen = true
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		closeEditor() {
 			this.editorOpen = false
 			this.editingRole = null
 		},
+
 		/**
 		 * @param role
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
@@ -140,6 +158,7 @@ export default {
 		confirmDelete(role) {
 			this.deleting = role
 		},
+
 		/**
 		 * @param payload
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
@@ -148,11 +167,17 @@ export default {
 			try {
 				if (this.editingRole && this.editingRole.id) {
 					await axios.patch(
-						generateUrl('/apps/procest/api/mandate/rollen/' + encodeURIComponent(this.editingRole.id)),
+						generateUrl(
+							'/apps/procest/api/mandate/rollen/'
+								+ encodeURIComponent(this.editingRole.id),
+						),
 						payload,
 					)
 				} else {
-					await axios.post(generateUrl('/apps/procest/api/mandate/rollen'), payload)
+					await axios.post(
+						generateUrl('/apps/procest/api/mandate/rollen'),
+						payload,
+					)
 				}
 				this.closeEditor()
 				this.$emit('reload')
@@ -160,12 +185,20 @@ export default {
 				// Surface in dialog; leave open.
 			}
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		async doDelete() {
 			if (!this.deleting) return
 			try {
-				await axios.delete(generateUrl('/apps/procest/api/mandate/rollen/' + encodeURIComponent(this.deleting.id)))
-			} catch (e) { /* silent — user can retry */ }
+				await axios.delete(
+					generateUrl(
+						'/apps/procest/api/mandate/rollen/'
+							+ encodeURIComponent(this.deleting.id),
+					),
+				)
+			} catch (e) {
+				/* silent — user can retry */
+			}
 			this.deleting = null
 			this.$emit('reload')
 		},
@@ -174,19 +207,14 @@ export default {
 </script>
 
 <style scoped>
-.rol-manager__toolbar {
+.role-manager__toolbar {
 	margin-bottom: 12px;
 }
 
-.rol-manager__tree {
+.role-manager__tree {
 	border: 1px solid var(--color-border);
 	border-radius: var(--border-radius);
 	padding: 8px;
 	background: var(--color-main-background);
-}
-
-.rol-manager__warning {
-	color: var(--color-error);
-	font-size: 12px;
 }
 </style>

@@ -26,6 +26,8 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Controller;
 
 use OCA\Procest\Controller\StatusTransitionController;
+use OCA\Procest\Service\BulkStatusTransitionService;
+use OCA\Procest\Service\CaseAccessGuard;
 use OCA\Procest\Service\StatusTransitionService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -41,110 +43,116 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Procest\Controller\StatusTransitionController
  */
-class StatusTransitionControllerBodyRegressionTest extends TestCase
-{
+class StatusTransitionControllerBodyRegressionTest extends TestCase {
 
-    /**
-     * @var IRequest&MockObject
-     */
-    private IRequest $request;
+	/**
+	 * @var IRequest&MockObject
+	 */
+	private IRequest $request;
 
-    /**
-     * @var StatusTransitionService&MockObject
-     */
-    private StatusTransitionService $transitionEngine;
+	/**
+	 * @var StatusTransitionService&MockObject
+	 */
+	private StatusTransitionService $transitionEngine;
 
-    /**
-     * @var IUserSession&MockObject
-     */
-    private IUserSession $userSession;
+	/**
+	 * @var BulkStatusTransitionService&MockObject
+	 */
+	private BulkStatusTransitionService $bulkEngine;
 
-    /**
-     * @var LoggerInterface&MockObject
-     */
-    private LoggerInterface $logger;
+	/**
+	 * @var IUserSession&MockObject
+	 */
+	private IUserSession $userSession;
 
-    /**
-     * The controller under test.
-     *
-     * @var StatusTransitionController
-     */
-    private StatusTransitionController $controller;
+	/**
+	 * @var LoggerInterface&MockObject
+	 */
+	private LoggerInterface $logger;
 
-    /**
-     * Set up the test environment.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->request          = $this->createMock(IRequest::class);
-        $this->transitionEngine = $this->createMock(StatusTransitionService::class);
-        $this->userSession      = $this->createMock(IUserSession::class);
-        $this->logger           = $this->createMock(LoggerInterface::class);
+	/**
+	 * The controller under test.
+	 *
+	 * @var StatusTransitionController
+	 */
+	private StatusTransitionController $controller;
 
-        $this->controller = new StatusTransitionController(
-            'procest',
-            $this->request,
-            $this->transitionEngine,
-            $this->userSession,
-            $this->logger,
-        );
+	/**
+	 * Set up the test environment.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->request = $this->createMock(IRequest::class);
+		$this->transitionEngine = $this->createMock(StatusTransitionService::class);
+		$this->bulkEngine = $this->createMock(BulkStatusTransitionService::class);
+		$this->userSession = $this->createMock(IUserSession::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
+		$caseAccessGuard = $this->createMock(CaseAccessGuard::class);
+		$caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
 
-        $user = $this->createMock(IUser::class);
-        $user->method('getUID')->willReturn('alice');
-        $this->userSession->method('getUser')->willReturn($user);
+		$this->controller = new StatusTransitionController(
+			'procest',
+			$this->request,
+			$this->transitionEngine,
+			$this->bulkEngine,
+			$this->userSession,
+			$this->logger,
+			$caseAccessGuard,
+		);
 
-    }//end setUp()
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('alice');
+		$this->userSession->method('getUser')->willReturn($user);
 
-    /**
-     * execute() reads the transitionId/comment from IRequest::getParams() — the
-     * public accessor — never from the protected getContent(). Proven by feeding
-     * the body solely through getParams() and asserting the engine sees it.
-     *
-     * @return void
-     */
-    public function testExecuteReadsBodyFromGetParams(): void
-    {
-        $this->request->expects($this->atLeastOnce())
-            ->method('getParams')
-            ->willReturn(
-                [
-                    'transitionId' => 'submit',
-                    'comment'      => 'looks good',
-                ]
-            );
+	}//end setUp()
 
-        $this->transitionEngine->expects($this->once())
-            ->method('execute')
-            ->with(
-                $this->equalTo('case-1'),
-                $this->equalTo('submit'),
-                $this->equalTo('looks good'),
-            )
-            ->willReturn(['status' => 'ok']);
+	/**
+	 * execute() reads the transitionId/comment from IRequest::getParams() — the
+	 * public accessor — never from the protected getContent(). Proven by feeding
+	 * the body solely through getParams() and asserting the engine sees it.
+	 *
+	 * @return void
+	 */
+	public function testExecuteReadsBodyFromGetParams(): void {
+		$this->request->expects($this->atLeastOnce())
+			->method('getParams')
+			->willReturn(
+				[
+					'transitionId' => 'submit',
+					'comment' => 'looks good',
+				]
+			);
 
-        $response = $this->controller->execute('case-1');
+		$this->transitionEngine->expects($this->once())
+			->method('execute')
+			->with(
+				$this->equalTo('case-1'),
+				$this->equalTo('submit'),
+				$this->equalTo('looks good'),
+			)
+			->willReturn(['status' => 'ok']);
 
-        $this->assertInstanceOf(JSONResponse::class, $response);
-        $this->assertSame(['status' => 'ok'], $response->getData());
+		$response = $this->controller->execute('case-1');
 
-    }//end testExecuteReadsBodyFromGetParams()
+		$this->assertInstanceOf(JSONResponse::class, $response);
+		$this->assertSame(['status' => 'ok'], $response->getData());
 
-    /**
-     * A missing transitionId in the params yields a 400 without touching the
-     * engine — confirms the body source is getParams() (empty here).
-     *
-     * @return void
-     */
-    public function testExecuteReturnsBadRequestWhenTransitionIdMissing(): void
-    {
-        $this->request->method('getParams')->willReturn([]);
-        $this->transitionEngine->expects($this->never())->method('execute');
+	}//end testExecuteReadsBodyFromGetParams()
 
-        $response = $this->controller->execute('case-1');
+	/**
+	 * A missing transitionId in the params yields a 400 without touching the
+	 * engine — confirms the body source is getParams() (empty here).
+	 *
+	 * @return void
+	 */
+	public function testExecuteReturnsBadRequestWhenTransitionIdMissing(): void {
+		$this->request->method('getParams')->willReturn([]);
+		$this->transitionEngine->expects($this->never())->method('execute');
 
-        $this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$response = $this->controller->execute('case-1');
 
-    }//end testExecuteReturnsBadRequestWhenTransitionIdMissing()
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+
+	}//end testExecuteReturnsBadRequestWhenTransitionIdMissing()
 }//end class

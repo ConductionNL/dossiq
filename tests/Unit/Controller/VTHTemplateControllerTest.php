@@ -37,107 +37,102 @@ use RuntimeException;
  *
  * @covers \OCA\Procest\Controller\VTHTemplateController
  */
-class VTHTemplateControllerTest extends TestCase
-{
+class VTHTemplateControllerTest extends TestCase {
 
-    /**
-     * @var VTHTemplateService|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private VTHTemplateService $vthTemplateService;
+	/**
+	 * @var VTHTemplateService|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private VTHTemplateService $vthTemplateService;
 
-    /**
-     * @var IRequest|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private IRequest $request;
+	/**
+	 * @var IRequest|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private IRequest $request;
 
-    /**
-     * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private LoggerInterface $logger;
+	/**
+	 * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private LoggerInterface $logger;
 
-    /**
-     * @var VTHTemplateController
-     */
-    private VTHTemplateController $controller;
+	/**
+	 * @var VTHTemplateController
+	 */
+	private VTHTemplateController $controller;
 
-    /**
-     * Set up test fixtures.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->vthTemplateService = $this->createMock(VTHTemplateService::class);
-        $this->request            = $this->createMock(IRequest::class);
-        $this->logger = $this->createMock(LoggerInterface::class);
+	/**
+	 * Set up test fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->vthTemplateService = $this->createMock(VTHTemplateService::class);
+		$this->request = $this->createMock(IRequest::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
 
-        $this->controller = new VTHTemplateController(
-            appName: 'procest',
-            request: $this->request,
-            vthTemplateService: $this->vthTemplateService,
-            logger: $this->logger,
-        );
-    }//end setUp()
+		$this->controller = new VTHTemplateController(
+			appName: 'procest',
+			request: $this->request,
+			vthTemplateService: $this->vthTemplateService,
+			logger: $this->logger,
+		);
+	}//end setUp()
 
-    /**
-     * Test that index returns 200 with template list.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-2
-     */
-    public function testIndexReturns200WithTemplates(): void
-    {
-        $templates = [
-            ['id' => 'vth-omgevingsvergunning', 'title' => 'Omgevingsvergunning', 'category' => 'vth', 'version' => '1.0.0'],
-            ['id' => 'vth-toezichtzaak', 'title' => 'Toezichtzaak', 'category' => 'vth', 'version' => '1.0.0'],
-            ['id' => 'vth-handhavingszaak', 'title' => 'Handhavingszaak', 'category' => 'vth', 'version' => '1.0.0'],
-        ];
+	/**
+	 * Test that index returns 200 with template list.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/vth-module/tasks.md#task-2
+	 */
+	public function testIndexReturns200WithTemplates(): void {
+		$templates = [
+			['id' => 'vth-omgevingsvergunning', 'title' => 'Omgevingsvergunning', 'category' => 'vth', 'version' => '1.0.0'],
+			['id' => 'vth-toezichtzaak', 'title' => 'Toezichtzaak', 'category' => 'vth', 'version' => '1.0.0'],
+			['id' => 'vth-handhavingszaak', 'title' => 'Handhavingszaak', 'category' => 'vth', 'version' => '1.0.0'],
+		];
 
-        $this->vthTemplateService
-            ->method('listTemplates')
-            ->willReturn($templates);
+		$this->vthTemplateService
+			->method('listTemplates')
+			->willReturn($templates);
 
-        $response = $this->controller->index();
+		$response = $this->controller->index();
 
-        $this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
-        $data = $response->getData();
-        $this->assertCount(expectedCount: 3, haystack: $data);
-    }//end testIndexReturns200WithTemplates()
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$data = $response->getData();
+		$this->assertCount(expectedCount: 3, haystack: $data);
+	}//end testIndexReturns200WithTemplates()
 
-    /**
-     * Test that activate returns 200 on successful activation.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-2
-     */
-    public function testActivateReturns200OnSuccess(): void
-    {
-        $this->vthTemplateService
-            ->method('activateTemplate')
-            ->willReturn(['caseTypeId' => 'uuid-1', 'template' => 'vth-omgevingsvergunning', 'counts' => []]);
+	/**
+	 * Test that activate returns 200 on successful activation.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/vth-module/tasks.md#task-2
+	 */
+	public function testActivateReturns200OnSuccess(): void {
+		$this->vthTemplateService
+			->method('activateTemplate')
+			->willReturn(['caseTypeId' => 'uuid-1', 'template' => 'vth-omgevingsvergunning', 'counts' => []]);
 
-        $response = $this->controller->activate(slug: 'vth-omgevingsvergunning');
+		$response = $this->controller->activate(slug: 'vth-omgevingsvergunning');
 
-        $this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
-    }//end testActivateReturns200OnSuccess()
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+	}//end testActivateReturns200OnSuccess()
 
-    /**
-     * Test that activate returns 500 when service throws.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-2
-     */
-    public function testActivateReturns500OnServiceException(): void
-    {
-        $this->vthTemplateService
-            ->method('activateTemplate')
-            ->willThrowException(new RuntimeException('VTH template not found: vth-bad'));
+	/**
+	 * Test that activate returns 500 when service throws.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/vth-module/tasks.md#task-2
+	 */
+	public function testActivateReturns500OnServiceException(): void {
+		$this->vthTemplateService
+			->method('activateTemplate')
+			->willThrowException(new RuntimeException('VTH template not found: vth-bad'));
 
-        $response = $this->controller->activate(slug: 'vth-bad');
+		$response = $this->controller->activate(slug: 'vth-bad');
 
-        $this->assertSame(expected: Http::STATUS_INTERNAL_SERVER_ERROR, actual: $response->getStatus());
-    }//end testActivateReturns500OnServiceException()
+		$this->assertSame(expected: Http::STATUS_INTERNAL_SERVER_ERROR, actual: $response->getStatus());
+	}//end testActivateReturns500OnServiceException()
 }//end class

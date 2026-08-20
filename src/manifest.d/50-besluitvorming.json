@@ -5,6 +5,7 @@
 			"route": "/besluitvorming/agenda",
 			"type": "custom",
 			"title": "Agenda",
+			"_note": "Bespoke agenda compiler — assembles a meeting agenda from selected proposals with drag-ordering and section grouping; the compile-and-reorder workflow is not expressible as a standard index/detail page.",
 			"component": "AgendaCompilerView"
 		},
 		{
@@ -12,6 +13,7 @@
 			"route": "/besluitvorming/vergaderingen/:id",
 			"type": "custom",
 			"title": "Vergadering",
+			"_note": "Bespoke meeting (vergadering) detail — combines agenda, attendees, voting and minutes into one working surface the standard detail type cannot express.",
 			"component": "VergaderingDetailView"
 		}
 	],
@@ -19,7 +21,7 @@
 		{
 			"id": "BesluitvormingAgenda",
 			"label": "Agenda",
-			"icon": "icon-calendar-dark",
+			"icon": "CalendarTextOutline",
 			"route": "AgendaCompiler",
 			"order": 72,
 			"requiresRole": ["Behandelaar", "Agendabeheerder", "Griffier"]

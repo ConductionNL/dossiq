@@ -33,66 +33,64 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/status-transition-engine/tasks.md#T08
  */
-class CreateTaskHandler implements ActionHandlerInterface
-{
-    /**
-     * Constructor.
-     *
-     * @param SettingsService $settingsService Bridge to OpenRegister + config
-     * @param LoggerInterface $logger          Logger
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class CreateTaskHandler implements ActionHandlerInterface {
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService Bridge to OpenRegister + config
+	 * @param LoggerInterface $logger Logger
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Handle the createTask action.
-     *
-     * @param array<string, mixed> $actionConfig      Action configuration
-     * @param array<string, mixed> $case              Case object
-     * @param array<string, mixed> $transitionContext Transition context
-     *
-     * @return ActionResult
+	/**
+	 * Handle the createTask action.
+	 *
+	 * @param array<string, mixed> $actionConfig Action configuration
+	 * @param array<string, mixed> $case Case object
+	 * @param array<string, mixed> $transitionContext Transition context
+	 *
+	 * @return ActionResult
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
+		try {
+			$objectService = $this->settingsService->getObjectService();
+			if ($objectService === null) {
+				return new ActionResult(succeeded: false, error: 'storage_unavailable');
+			}
 
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
-    {
-        try {
-            $objectService = $this->settingsService->getObjectService();
-            if ($objectService === null) {
-                return ActionResult::failure(error: 'storage_unavailable');
-            }
+			$register = $this->settingsService->getConfigValue(key: 'register');
+			$taskSchema = $this->settingsService->getConfigValue(key: 'task_schema');
+			if ($register === '' || $taskSchema === '') {
+				return new ActionResult(succeeded: false, error: 'task_schema_not_configured');
+			}
 
-            $register   = $this->settingsService->getConfigValue(key: 'register');
-            $taskSchema = $this->settingsService->getConfigValue(key: 'task_schema');
-            if ($register === '' || $taskSchema === '') {
-                return ActionResult::failure(error: 'task_schema_not_configured');
-            }
+			$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
+			$task = [
+				'title' => (string)($actionConfig['title'] ?? sprintf('Taak na transitie %s', $transitionContext['transitionLabel'] ?? '')),
+				'case' => $caseId,
+				'status' => 'open',
+				'assignee' => (string)($actionConfig['assignee'] ?? ''),
+			];
 
-            $caseId = (string) ($case['id'] ?? ($case['uuid'] ?? ''));
-            $task   = [
-                'title'    => (string) ($actionConfig['title'] ?? sprintf('Taak na transitie %s', $transitionContext['transitionLabel'] ?? '')),
-                'case'     => $caseId,
-                'status'   => 'open',
-                'assignee' => (string) ($actionConfig['assignee'] ?? ''),
-            ];
+			$created = $objectService->saveObject(object: $task, register: $register, schema: $taskSchema);
+			$taskId = '';
+			if (is_array($created) === true) {
+				$taskId = (string)($created['id'] ?? '');
+			}
 
-            $created = $objectService->saveObject(object: $task, register: $register, schema: $taskSchema);
-            $taskId  = '';
-            if (is_array($created) === true) {
-                $taskId = (string) ($created['id'] ?? '');
-            }
-
-            return ActionResult::success(data: ['taskId' => $taskId]);
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'CreateTaskHandler failed',
-                ['exception' => $e->getMessage(), 'context' => $transitionContext],
-            );
-            return ActionResult::failure(error: 'create_task_failed');
-        }//end try
-    }//end handle()
+			return new ActionResult(succeeded: true, data: ['taskId' => $taskId]);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'CreateTaskHandler failed',
+				['exception' => $e->getMessage(), 'context' => $transitionContext],
+			);
+			return new ActionResult(succeeded: false, error: 'create_task_failed');
+		}//end try
+	}//end handle()
 }//end class

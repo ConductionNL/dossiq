@@ -35,189 +35,182 @@ use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
-require_once __DIR__.'/../Service/BeschikkingServiceTest.php';
+require_once __DIR__ . '/../Service/BeschikkingServiceTest.php';
 
 /**
  * Unit tests for BezwaarTermijnJob.
  *
  * @covers \OCA\Procest\BackgroundJob\BezwaarTermijnJob
  */
-class BezwaarTermijnJobTest extends TestCase
-{
-    /**
-     * The in-memory object store.
-     *
-     * @var FakeObjectService
-     */
-    private FakeObjectService $objects;
+class BezwaarTermijnJobTest extends TestCase {
+	/**
+	 * The in-memory object store.
+	 *
+	 * @var FakeObjectService
+	 */
+	private FakeObjectService $objects;
 
-    /**
-     * The beschikking service mock.
-     *
-     * @var BeschikkingService|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private BeschikkingService $beschikkingService;
+	/**
+	 * The beschikking service mock.
+	 *
+	 * @var BeschikkingService|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private BeschikkingService $decisionService;
 
-    /**
-     * The settings service mock.
-     *
-     * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private SettingsService $settings;
+	/**
+	 * The settings service mock.
+	 *
+	 * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private SettingsService $settings;
 
-    /**
-     * The app manager mock.
-     *
-     * @var IAppManager|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private IAppManager $appManager;
+	/**
+	 * The app manager mock.
+	 *
+	 * @var IAppManager|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private IAppManager $appManager;
 
-    /**
-     * The job under test.
-     *
-     * @var BezwaarTermijnJob
-     */
-    private BezwaarTermijnJob $job;
+	/**
+	 * The job under test.
+	 *
+	 * @var BezwaarTermijnJob
+	 */
+	private BezwaarTermijnJob $job;
 
-    /**
-     * Set up fixtures.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->objects            = new FakeObjectService();
-        $this->beschikkingService = $this->createMock(BeschikkingService::class);
-        $this->settings           = $this->createMock(SettingsService::class);
-        $this->appManager         = $this->createMock(IAppManager::class);
-        $timeFactory              = $this->createMock(ITimeFactory::class);
-        $logger                   = $this->createMock(LoggerInterface::class);
+	/**
+	 * Set up fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->objects = new FakeObjectService();
+		$this->decisionService = $this->createMock(BeschikkingService::class);
+		$this->settings = $this->createMock(SettingsService::class);
+		$this->appManager = $this->createMock(IAppManager::class);
+		$timeFactory = $this->createMock(ITimeFactory::class);
+		$logger = $this->createMock(LoggerInterface::class);
 
-        $this->settings->method('getObjectService')->willReturn($this->objects);
-        $this->settings->method('getConfigValue')->willReturnCallback(
-            static function (string $key): string {
-                return match ($key) {
-                    'register'               => 'procest',
-                    'bezwaar_trigger_schema' => 'bezwaarTrigger',
-                    default                  => '',
-                };
-            },
-        );
+		$this->settings->method('getObjectService')->willReturn($this->objects);
+		$this->settings->method('getConfigValue')->willReturnCallback(
+			static function (string $key): string {
+				return match ($key) {
+					'register' => 'procest',
+					'bezwaar_trigger_schema' => 'bezwaarTrigger',
+					default => '',
+				};
+			},
+		);
 
-        $this->job = new BezwaarTermijnJob(
-            $timeFactory,
-            $this->beschikkingService,
-            $this->settings,
-            $this->appManager,
-            $logger,
-        );
-    }//end setUp()
+		$this->job = new BezwaarTermijnJob(
+			$timeFactory,
+			$this->decisionService,
+			$this->settings,
+			$this->appManager,
+			$logger,
+		);
+	}//end setUp()
 
-    /**
-     * Invoke the protected run() method.
-     *
-     * @return void
-     */
-    private function runJob(): void
-    {
-        $method = new \ReflectionMethod(BezwaarTermijnJob::class, 'run');
-        $method->setAccessible(true);
-        $method->invoke($this->job, null);
-    }//end runJob()
+	/**
+	 * Invoke the protected run() method.
+	 *
+	 * @return void
+	 */
+	private function runJob(): void {
+		$method = new \ReflectionMethod(BezwaarTermijnJob::class, 'run');
+		$method->setAccessible(true);
+		$method->invoke($this->job, null);
+	}//end runJob()
 
-    /**
-     * A lapsed trigger without bezwaar archives the beschikking and is deactivated.
-     *
-     * @return void
-     */
-    public function testLapsedTriggerArchives(): void
-    {
-        $this->appManager->method('getInstalledApps')->willReturn(['openregister']);
+	/**
+	 * A lapsed trigger without bezwaar archives the beschikking and is deactivated.
+	 *
+	 * @return void
+	 */
+	public function testLapsedTriggerArchives(): void {
+		$this->appManager->method('getInstalledApps')->willReturn(['openregister']);
 
-        $yesterday = (new \DateTimeImmutable('-1 day'))->format('Y-m-d');
-        $this->objects->saveObject('procest', 'bezwaarTrigger', [
-            'id'                   => 'trig-1',
-            'beschikkingId'        => 'besch-1',
-            'bezwaarOntvangen'     => false,
-            'archiefTriggerActief' => true,
-            'archiefDatum'         => $yesterday,
-        ]);
+		$yesterday = (new \DateTimeImmutable('-1 day'))->format('Y-m-d');
+		$this->objects->saveObject('procest', 'bezwaarTrigger', [
+			'id' => 'trig-1',
+			'decisionId' => 'besch-1',
+			'objectionReceived' => false,
+			'archiveTriggerActive' => true,
+			'archiveDate' => $yesterday,
+		]);
 
-        $this->beschikkingService->expects($this->once())
-            ->method('archive')
-            ->with('besch-1')
-            ->willReturn(['id' => 'besch-1', 'huidigeStatus' => 'gearchiveerd']);
+		$this->decisionService->expects($this->once())
+			->method('archive')
+			->with('besch-1')
+			->willReturn(['id' => 'besch-1', 'currentStatus' => 'archived']);
 
-        $this->runJob();
+		$this->runJob();
 
-        $trigger = $this->objects->find('trig-1', 'procest', 'bezwaarTrigger');
-        $this->assertFalse($trigger['archiefTriggerActief']);
-    }//end testLapsedTriggerArchives()
+		$trigger = $this->objects->find('trig-1', 'procest', 'bezwaarTrigger');
+		$this->assertFalse($trigger['archiveTriggerActive']);
+	}//end testLapsedTriggerArchives()
 
-    /**
-     * A trigger with a received bezwaar is not archived.
-     *
-     * @return void
-     */
-    public function testBezwaarReceivedSkipsArchival(): void
-    {
-        $this->appManager->method('getInstalledApps')->willReturn(['openregister']);
+	/**
+	 * A trigger with a received bezwaar is not archived.
+	 *
+	 * @return void
+	 */
+	public function testBezwaarReceivedSkipsArchival(): void {
+		$this->appManager->method('getInstalledApps')->willReturn(['openregister']);
 
-        $yesterday = (new \DateTimeImmutable('-1 day'))->format('Y-m-d');
-        $this->objects->saveObject('procest', 'bezwaarTrigger', [
-            'id'                   => 'trig-2',
-            'beschikkingId'        => 'besch-2',
-            'bezwaarOntvangen'     => true,
-            'archiefTriggerActief' => true,
-            'archiefDatum'         => $yesterday,
-        ]);
+		$yesterday = (new \DateTimeImmutable('-1 day'))->format('Y-m-d');
+		$this->objects->saveObject('procest', 'bezwaarTrigger', [
+			'id' => 'trig-2',
+			'decisionId' => 'besch-2',
+			'objectionReceived' => true,
+			'archiveTriggerActive' => true,
+			'archiveDate' => $yesterday,
+		]);
 
-        $this->beschikkingService->expects($this->never())->method('archive');
+		$this->decisionService->expects($this->never())->method('archive');
 
-        $this->runJob();
+		$this->runJob();
 
-        $trigger = $this->objects->find('trig-2', 'procest', 'bezwaarTrigger');
-        $this->assertFalse($trigger['archiefTriggerActief']);
-    }//end testBezwaarReceivedSkipsArchival()
+		$trigger = $this->objects->find('trig-2', 'procest', 'bezwaarTrigger');
+		$this->assertFalse($trigger['archiveTriggerActive']);
+	}//end testBezwaarReceivedSkipsArchival()
 
-    /**
-     * A future archiefDatum is left untouched.
-     *
-     * @return void
-     */
-    public function testFutureTriggerUntouched(): void
-    {
-        $this->appManager->method('getInstalledApps')->willReturn(['openregister']);
+	/**
+	 * A future archiefDatum is left untouched.
+	 *
+	 * @return void
+	 */
+	public function testFutureTriggerUntouched(): void {
+		$this->appManager->method('getInstalledApps')->willReturn(['openregister']);
 
-        $tomorrow = (new \DateTimeImmutable('+10 days'))->format('Y-m-d');
-        $this->objects->saveObject('procest', 'bezwaarTrigger', [
-            'id'                   => 'trig-3',
-            'beschikkingId'        => 'besch-3',
-            'bezwaarOntvangen'     => false,
-            'archiefTriggerActief' => true,
-            'archiefDatum'         => $tomorrow,
-        ]);
+		$tomorrow = (new \DateTimeImmutable('+10 days'))->format('Y-m-d');
+		$this->objects->saveObject('procest', 'bezwaarTrigger', [
+			'id' => 'trig-3',
+			'decisionId' => 'besch-3',
+			'objectionReceived' => false,
+			'archiveTriggerActive' => true,
+			'archiveDate' => $tomorrow,
+		]);
 
-        $this->beschikkingService->expects($this->never())->method('archive');
+		$this->decisionService->expects($this->never())->method('archive');
 
-        $this->runJob();
+		$this->runJob();
 
-        $trigger = $this->objects->find('trig-3', 'procest', 'bezwaarTrigger');
-        $this->assertTrue($trigger['archiefTriggerActief']);
-    }//end testFutureTriggerUntouched()
+		$trigger = $this->objects->find('trig-3', 'procest', 'bezwaarTrigger');
+		$this->assertTrue($trigger['archiveTriggerActive']);
+	}//end testFutureTriggerUntouched()
 
-    /**
-     * Without OpenRegister installed the job is a no-op.
-     *
-     * @return void
-     */
-    public function testNoOpWithoutOpenRegister(): void
-    {
-        $this->appManager->method('getInstalledApps')->willReturn(['procest']);
-        $this->beschikkingService->expects($this->never())->method('archive');
+	/**
+	 * Without OpenRegister installed the job is a no-op.
+	 *
+	 * @return void
+	 */
+	public function testNoOpWithoutOpenRegister(): void {
+		$this->appManager->method('getInstalledApps')->willReturn(['procest']);
+		$this->decisionService->expects($this->never())->method('archive');
 
-        $this->runJob();
+		$this->runJob();
 
-        $this->assertTrue(true);
-    }//end testNoOpWithoutOpenRegister()
+		$this->assertTrue(true);
+	}//end testNoOpWithoutOpenRegister()
 }//end class

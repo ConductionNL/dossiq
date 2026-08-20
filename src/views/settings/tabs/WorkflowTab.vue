@@ -8,10 +8,7 @@
 					v-model="selectedVersionId"
 					class="workflow-tab__select"
 					@change="onVersionChange">
-					<option
-						v-for="v in versions"
-						:key="v.id"
-						:value="v.id">
+					<option v-for="v in versions" :key="v.id" :value="v.id">
 						v{{ v.version }}
 						{{ v.isActive ? '(active)' : '' }}
 						{{ v.isDraft ? '(draft)' : '' }}
@@ -61,28 +58,26 @@
 				</NcButton>
 
 				<!-- Import / Export -->
-				<NcButton
-					type="tertiary"
-					@click="exportWorkflow">
+				<NcButton type="tertiary" @click="exportWorkflow">
 					{{ t('procest', 'Export') }}
 				</NcButton>
-				<NcButton
-					type="tertiary"
-					@click="triggerImport">
+				<NcButton type="tertiary" @click="triggerImport">
 					{{ t('procest', 'Import') }}
 				</NcButton>
 				<input
 					ref="importInput"
 					type="file"
 					accept=".json"
-					style="display: none;"
-					@change="handleImport">
+					style="display: none"
+					@change="handleImport" />
 			</div>
 		</div>
 
 		<!-- Publish errors -->
 		<div v-if="publishErrors.length > 0" class="workflow-tab__errors">
-			<p><strong>{{ t('procest', 'Cannot publish:') }}</strong></p>
+			<p>
+				<strong>{{ t('procest', 'Cannot publish:') }}</strong>
+			</p>
 			<ul>
 				<li v-for="(err, i) in publishErrors" :key="i">
 					{{ err.message }}
@@ -92,7 +87,9 @@
 
 		<!-- Import report -->
 		<div v-if="importReport" class="workflow-tab__import-report">
-			<p><strong>{{ t('procest', 'Import validation:') }}</strong></p>
+			<p>
+				<strong>{{ t('procest', 'Import validation:') }}</strong>
+			</p>
 			<ul>
 				<li v-for="(type, i) in importReport.statusTypes" :key="'s' + i">
 					{{ t('procest', 'Missing status type: {name}', { name: type }) }}
@@ -115,14 +112,21 @@
 		<WorkflowEditor
 			v-if="selectedVersionId"
 			ref="editor"
-			:case-type-id="caseTypeId"
-			:template-id="selectedVersionId"
+			:caseTypeId="caseTypeId"
+			:templateId="selectedVersionId"
 			@dirty="dirty = true" />
 
 		<!-- Empty state -->
 		<div v-if="versions.length === 0 && !loading" class="workflow-tab__empty">
 			<p>{{ t('procest', 'No workflow defined for this case type yet.') }}</p>
-			<p>{{ t('procest', 'Create a workflow to define process steps and status transitions.') }}</p>
+			<p>
+				{{
+					t(
+						'procest',
+						'Create a workflow to define process steps and status transitions.',
+					)
+				}}
+			</p>
 		</div>
 
 		<NcLoadingIcon v-if="loading" />
@@ -132,8 +136,8 @@
 <script>
 import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import WorkflowEditor from '../WorkflowEditor.vue'
-import { useWorkflowStore } from '../../../store/modules/workflow.js'
 import { useObjectStore } from '../../../store/modules/object.js'
+import { useWorkflowStore } from '../../../store/modules/workflow.js'
 
 export default {
 	name: 'WorkflowTab',
@@ -142,12 +146,14 @@ export default {
 		NcLoadingIcon,
 		WorkflowEditor,
 	},
+
 	props: {
 		caseTypeId: {
 			type: String,
 			required: true,
 		},
 	},
+
 	data() {
 		return {
 			selectedVersionId: null,
@@ -159,50 +165,68 @@ export default {
 			importReport: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		workflowStore() {
 			return useWorkflowStore()
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		versions() {
 			return this.workflowStore.versions
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		currentTemplate() {
 			return this.workflowStore.currentTemplate
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		currentIsDraft() {
 			return this.currentTemplate?.isDraft === true
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		currentIsPublished() {
 			return this.currentTemplate && !this.currentTemplate.isDraft
 		},
+
 		hasDraft() {
 			return this.versions.some((v) => v.isDraft)
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		versionNotice() {
 			if (!this.currentTemplate) return null
 			const active = this.workflowStore.activeVersion
-			if (active && this.currentTemplate.id !== active.id && !this.currentTemplate.isDraft) {
-				return t('procest', 'Viewing version {version}. Active version is {active}.', {
-					version: this.currentTemplate.version,
-					active: active.version,
-				})
+			if (
+				active
+				&& this.currentTemplate.id !== active.id
+				&& !this.currentTemplate.isDraft
+			) {
+				return t(
+					'procest',
+					'Viewing version {version}. Active version is {active}.',
+					{
+						version: this.currentTemplate.version,
+						active: active.version,
+					},
+				)
 			}
 			return null
 		},
 	},
+
 	async mounted() {
 		await this.loadVersions()
 	},
+
 	methods: {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async loadVersions() {
@@ -268,7 +292,10 @@ export default {
 				await this.save()
 			}
 
-			const result = await this.workflowStore.publishVersion(this.selectedVersionId)
+			const result = await this.workflowStore.publishVersion(
+				this.selectedVersionId,
+				this.$refs.editor?.statusNodes || [],
+			)
 			if (!result) {
 				this.publishErrors = this.workflowStore.validationErrors
 			} else {
@@ -280,7 +307,9 @@ export default {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async editPublished() {
 			this.loading = true
-			const draft = await this.workflowStore.createDraftFromVersion(this.selectedVersionId)
+			const draft = await this.workflowStore.createDraftFromVersion(
+				this.selectedVersionId,
+			)
 			if (draft) {
 				this.selectedVersionId = draft.id
 				await this.workflowStore.listVersions(this.caseTypeId)
@@ -293,18 +322,21 @@ export default {
 			if (!this.currentTemplate) return
 
 			// Fetch type data for name mapping
-			const statusTypes = await this.objectStore.fetchCollection('statusType', {
-				'_filters[caseType]': this.caseTypeId,
-				_limit: 100,
-			}) || []
-			const roleTypes = await this.objectStore.fetchCollection('roleType', {
-				'_filters[caseType]': this.caseTypeId,
-				_limit: 100,
-			}) || []
-			const docTypes = await this.objectStore.fetchCollection('documentType', {
-				'_filters[caseType]': this.caseTypeId,
-				_limit: 100,
-			}) || []
+			const statusTypes =
+				(await this.objectStore.fetchCollection('statusType', {
+					'_filters[caseType]': this.caseTypeId,
+					_limit: 100,
+				})) || []
+			const roleTypes =
+				(await this.objectStore.fetchCollection('roleType', {
+					'_filters[caseType]': this.caseTypeId,
+					_limit: 100,
+				})) || []
+			const docTypes =
+				(await this.objectStore.fetchCollection('documentType', {
+					'_filters[caseType]': this.caseTypeId,
+					_limit: 100,
+				})) || []
 
 			const exportData = this.workflowStore.exportWorkflow(
 				this.currentTemplate,
@@ -313,7 +345,9 @@ export default {
 				docTypes,
 			)
 
-			const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+			const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+				type: 'application/json',
+			})
 			const url = URL.createObjectURL(blob)
 			const a = document.createElement('a')
 			a.href = url
@@ -340,18 +374,21 @@ export default {
 				const importData = JSON.parse(text)
 
 				// Fetch type data for UUID mapping
-				const statusTypes = await this.objectStore.fetchCollection('statusType', {
-					'_filters[caseType]': this.caseTypeId,
-					_limit: 100,
-				}) || []
-				const roleTypes = await this.objectStore.fetchCollection('roleType', {
-					'_filters[caseType]': this.caseTypeId,
-					_limit: 100,
-				}) || []
-				const docTypes = await this.objectStore.fetchCollection('documentType', {
-					'_filters[caseType]': this.caseTypeId,
-					_limit: 100,
-				}) || []
+				const statusTypes =
+					(await this.objectStore.fetchCollection('statusType', {
+						'_filters[caseType]': this.caseTypeId,
+						_limit: 100,
+					})) || []
+				const roleTypes =
+					(await this.objectStore.fetchCollection('roleType', {
+						'_filters[caseType]': this.caseTypeId,
+						_limit: 100,
+					})) || []
+				const docTypes =
+					(await this.objectStore.fetchCollection('documentType', {
+						'_filters[caseType]': this.caseTypeId,
+						_limit: 100,
+					})) || []
 
 				const result = await this.workflowStore.importWorkflow(
 					importData,

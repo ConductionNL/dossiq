@@ -1,7 +1,14 @@
 <template>
 	<div class="statuses-tab">
 		<div v-if="isCreate" class="statuses-tab__notice">
-			<p>{{ t('procest', 'Save the case type first before adding status types.') }}</p>
+			<p>
+				{{
+					t(
+						'procest',
+						'Save the case type first before adding status types.',
+					)
+				}}
+			</p>
 		</div>
 
 		<template v-else>
@@ -27,25 +34,49 @@
 						@dragend="onDragEnd">
 						<!-- View mode -->
 						<template v-if="editingId !== st.id">
-							<span class="status-type-row__handle" :title="t('procest', 'Drag to reorder')">⠿</span>
-							<span class="status-type-row__order">{{ st.order }}</span>
+							<span
+								class="status-type-row__handle"
+								:title="t('procest', 'Drag to reorder')"
+								>⠿</span
+							>
+							<span class="status-type-row__order">{{
+								st.order
+							}}</span>
 							<span class="status-type-row__name">{{ st.name }}</span>
 							<span v-if="st.isFinal" class="status-type-row__final">
 								{{ t('procest', 'Final') }}
 							</span>
-							<span v-if="st.notifyInitiator" class="status-type-row__notify">
+							<span
+								v-if="st.notifyInitiator"
+								class="status-type-row__notify">
 								{{ t('procest', 'Notify') }}
 							</span>
-							<span v-if="st.notifyInitiator && st.notificationText" class="status-type-row__notify-text">
+							<span
+								v-if="st.notifyInitiator && st.notificationText"
+								class="status-type-row__notify-text">
 								{{ st.notificationText }}
 							</span>
 							<div class="status-type-row__actions">
-								<NcButton type="tertiary" @click="startEdit(st)">
+								<NcButton
+									type="tertiary"
+									:aria-label="
+										t('procest', 'Edit {name}', {
+											name: st.name,
+										})
+									"
+									@click="startEdit(st)">
 									<template #icon>
 										<PencilIcon :size="20" />
 									</template>
 								</NcButton>
-								<NcButton type="tertiary" @click="deleteStatusType(st)">
+								<NcButton
+									type="tertiary"
+									:aria-label="
+										t('procest', 'Delete {name}', {
+											name: st.name,
+										})
+									"
+									@click="deleteStatusType(st)">
 									<template #icon>
 										<DeleteIcon :size="20" />
 									</template>
@@ -58,40 +89,59 @@
 							<div class="status-type-row__edit-form">
 								<div class="edit-row">
 									<NcTextField
-										:value="editForm.name"
+										:modelValue="editForm.name"
 										:label="t('procest', 'Name')"
 										:error="!!editError"
 										class="edit-field"
-										@update:value="v => editForm.name = v" />
+										@update:modelValue="
+											(v) => (editForm.name = v)
+										" />
 									<NcTextField
-										:value="String(editForm.order)"
+										:modelValue="String(editForm.order)"
 										:label="t('procest', 'Order')"
 										type="number"
 										class="edit-field edit-field--small"
-										@update:value="v => editForm.order = parseInt(v, 10) || 0" />
+										@update:modelValue="
+											(v) =>
+												(editForm.order =
+													parseInt(v, 10) || 0)
+										" />
 								</div>
 								<div class="edit-row">
 									<NcCheckboxRadioSwitch
-										:checked="editForm.isFinal"
-										@update:checked="v => editForm.isFinal = v">
+										:modelValue="editForm.isFinal"
+										@update:modelValue="
+											(v) => (editForm.isFinal = v)
+										">
 										{{ t('procest', 'Final status') }}
 									</NcCheckboxRadioSwitch>
 									<NcCheckboxRadioSwitch
-										:checked="editForm.notifyInitiator"
-										@update:checked="v => editForm.notifyInitiator = v">
+										:modelValue="editForm.notifyInitiator"
+										@update:modelValue="
+											(v) => (editForm.notifyInitiator = v)
+										">
 										{{ t('procest', 'Notify initiator') }}
 									</NcCheckboxRadioSwitch>
 								</div>
-								<div v-if="editForm.notifyInitiator" class="edit-row">
+								<div
+									v-if="editForm.notifyInitiator"
+									class="edit-row">
 									<NcTextField
-										:value="editForm.notificationText"
+										:modelValue="editForm.notificationText"
 										:label="t('procest', 'Notification text')"
 										class="edit-field"
-										@update:value="v => editForm.notificationText = v" />
+										@update:modelValue="
+											(v) => (editForm.notificationText = v)
+										" />
 								</div>
-								<span v-if="editError" class="field-error">{{ editError }}</span>
+								<span v-if="editError" class="field-error">{{
+									editError
+								}}</span>
 								<div class="edit-row edit-row--actions">
-									<NcButton type="primary" :disabled="editSaving" @click="saveEdit">
+									<NcButton
+										type="primary"
+										:disabled="editSaving"
+										@click="saveEdit">
 										{{ t('procest', 'Save') }}
 									</NcButton>
 									<NcButton type="tertiary" @click="cancelEdit">
@@ -104,7 +154,12 @@
 				</div>
 
 				<p v-else class="statuses-tab__empty">
-					{{ t('procest', 'No status types defined. Add at least one to publish this case type.') }}
+					{{
+						t(
+							'procest',
+							'No status types defined. Add at least one to publish this case type.',
+						)
+					}}
 				</p>
 
 				<!-- Add new status type form -->
@@ -113,38 +168,49 @@
 					<div class="add-form">
 						<div class="add-form__row">
 							<NcTextField
-								:value="newForm.name"
+								:modelValue="newForm.name"
 								:label="t('procest', 'Name *')"
 								class="add-form__field"
-								@update:value="v => newForm.name = v" />
+								@update:modelValue="(v) => (newForm.name = v)" />
 							<NcTextField
-								:value="String(newForm.order)"
+								:modelValue="String(newForm.order)"
 								:label="t('procest', 'Order *')"
 								type="number"
 								class="add-form__field add-form__field--small"
-								@update:value="v => newForm.order = parseInt(v, 10) || 0" />
+								@update:modelValue="
+									(v) => (newForm.order = parseInt(v, 10) || 0)
+								" />
 						</div>
 						<div class="add-form__row">
 							<NcCheckboxRadioSwitch
-								:checked="newForm.isFinal"
-								@update:checked="v => newForm.isFinal = v">
+								:modelValue="newForm.isFinal"
+								@update:modelValue="(v) => (newForm.isFinal = v)">
 								{{ t('procest', 'Final status') }}
 							</NcCheckboxRadioSwitch>
 							<NcCheckboxRadioSwitch
-								:checked="newForm.notifyInitiator"
-								@update:checked="v => newForm.notifyInitiator = v">
+								:modelValue="newForm.notifyInitiator"
+								@update:modelValue="
+									(v) => (newForm.notifyInitiator = v)
+								">
 								{{ t('procest', 'Notify initiator') }}
 							</NcCheckboxRadioSwitch>
 						</div>
 						<div v-if="newForm.notifyInitiator" class="add-form__row">
 							<NcTextField
-								:value="newForm.notificationText"
+								:modelValue="newForm.notificationText"
 								:label="t('procest', 'Notification text')"
 								class="add-form__field"
-								@update:value="v => newForm.notificationText = v" />
+								@update:modelValue="
+									(v) => (newForm.notificationText = v)
+								" />
 						</div>
-						<span v-if="addError" class="field-error">{{ addError }}</span>
-						<NcButton type="primary" :disabled="addSaving" @click="addStatusType">
+						<span v-if="addError" class="field-error">{{
+							addError
+						}}</span>
+						<NcButton
+							type="primary"
+							:disabled="addSaving"
+							@click="addStatusType">
 							{{ t('procest', 'Add') }}
 						</NcButton>
 					</div>
@@ -159,9 +225,14 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcTextField, NcCheckboxRadioSwitch } from '@nextcloud/vue'
-import PencilIcon from 'vue-material-design-icons/Pencil.vue'
+import {
+	NcButton,
+	NcCheckboxRadioSwitch,
+	NcLoadingIcon,
+	NcTextField,
+} from '@nextcloud/vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
+import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 
 export default {
@@ -174,16 +245,19 @@ export default {
 		PencilIcon,
 		DeleteIcon,
 	},
+
 	props: {
 		caseTypeId: {
 			type: String,
 			default: null,
 		},
+
 		isCreate: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	data() {
 		return {
 			statusTypes: [],
@@ -203,22 +277,28 @@ export default {
 			dragOverIndex: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/status-transition-engine/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/specs/status-transition-engine/spec.md */
 		sortedStatusTypes() {
-			return [...this.statusTypes].sort((a, b) => (a.order || 0) - (b.order || 0))
+			return [...this.statusTypes].sort(
+				(a, b) => (a.order || 0) - (b.order || 0),
+			)
 		},
 	},
+
 	/** @spec openspec/specs/status-transition-engine/spec.md */
 	async mounted() {
 		if (!this.isCreate && this.caseTypeId) {
 			await this.fetchStatusTypes()
 		}
 	},
+
 	methods: {
 		/** @spec openspec/specs/status-transition-engine/spec.md */
 		getEmptyForm() {
@@ -260,9 +340,14 @@ export default {
 				return
 			}
 
-			const duplicate = this.statusTypes.find(st => st.order === this.newForm.order)
+			const duplicate = this.statusTypes.find(
+				(st) => st.order === this.newForm.order,
+			)
 			if (duplicate) {
-				this.addError = t('procest', 'A status type with this order already exists')
+				this.addError = t(
+					'procest',
+					'A status type with this order already exists',
+				)
 				return
 			}
 
@@ -285,7 +370,9 @@ export default {
 					notificationText: '',
 				}
 			} else {
-				this.addError = this.objectStore.getError('statusType') || t('procest', 'Failed to add status type')
+				this.addError =
+					this.objectStore.getError('statusType')
+					|| t('procest', 'Failed to add status type')
 			}
 		},
 
@@ -318,37 +405,52 @@ export default {
 			// Final status enforcement
 			if (!this.editForm.isFinal) {
 				const otherFinals = this.statusTypes.filter(
-					st => st.id !== this.editingId && st.isFinal,
+					(st) => st.id !== this.editingId && st.isFinal,
 				)
-				const wasFinal = this.statusTypes.find(st => st.id === this.editingId)?.isFinal
+				const wasFinal = this.statusTypes.find(
+					(st) => st.id === this.editingId,
+				)?.isFinal
 				if (wasFinal && otherFinals.length === 0) {
-					this.editError = t('procest', 'At least one status type must be marked as final')
+					this.editError = t(
+						'procest',
+						'At least one status type must be marked as final',
+					)
 					return
 				}
 			}
 
 			// Duplicate order check
 			const duplicate = this.statusTypes.find(
-				st => st.id !== this.editingId && st.order === this.editForm.order,
+				(st) => st.id !== this.editingId && st.order === this.editForm.order,
 			)
 			if (duplicate) {
-				this.editError = t('procest', 'A status type with this order already exists')
+				this.editError = t(
+					'procest',
+					'A status type with this order already exists',
+				)
 				return
 			}
 
 			this.editSaving = true
-			const result = await this.objectStore.saveObject('statusType', this.editForm)
+			const result = await this.objectStore.saveObject(
+				'statusType',
+				this.editForm,
+			)
 			this.editSaving = false
 
 			if (result) {
-				const idx = this.statusTypes.findIndex(st => st.id === this.editingId)
+				const idx = this.statusTypes.findIndex(
+					(st) => st.id === this.editingId,
+				)
 				if (idx !== -1) {
-					this.$set(this.statusTypes, idx, result)
+					this.statusTypes[idx] = result
 				}
 				this.editingId = null
 				this.editForm = {}
 			} else {
-				this.editError = this.objectStore.getError('statusType') || t('procest', 'Failed to save')
+				this.editError =
+					this.objectStore.getError('statusType')
+					|| t('procest', 'Failed to save')
 			}
 		},
 
@@ -361,22 +463,33 @@ export default {
 
 			// Final status enforcement
 			if (st.isFinal) {
-				const otherFinals = this.statusTypes.filter(s => s.id !== st.id && s.isFinal)
+				const otherFinals = this.statusTypes.filter(
+					(s) => s.id !== st.id && s.isFinal,
+				)
 				if (otherFinals.length === 0) {
-					this.error = t('procest', 'At least one status type must be marked as final')
+					this.error = t(
+						'procest',
+						'At least one status type must be marked as final',
+					)
 					return
 				}
 			}
 
-			if (!confirm(t('procest', 'Delete status type "{name}"?', { name: st.name }))) {
+			if (
+				!confirm(
+					t('procest', 'Delete status type "{name}"?', { name: st.name }),
+				)
+			) {
 				return
 			}
 
 			const ok = await this.objectStore.deleteObject('statusType', st.id)
 			if (ok) {
-				this.statusTypes = this.statusTypes.filter(s => s.id !== st.id)
+				this.statusTypes = this.statusTypes.filter((s) => s.id !== st.id)
 			} else {
-				this.error = this.objectStore.getError('statusType') || t('procest', 'Failed to delete status type')
+				this.error =
+					this.objectStore.getError('statusType')
+					|| t('procest', 'Failed to delete status type')
 			}
 		},
 
@@ -608,5 +721,11 @@ export default {
 	color: var(--color-error);
 	font-size: 12px;
 	margin-bottom: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.status-type-row {
+		transition: none;
+	}
 }
 </style>

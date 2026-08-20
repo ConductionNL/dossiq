@@ -1,12 +1,13 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 <template>
 	<CnAppRoot
+		:aiCompanion="true"
 		:manifest="manifest"
-		:custom-components="customComponents"
+		:customComponents="customComponents"
 		:registry="registry"
-		:page-types="pageTypes"
+		:pageTypes="pageTypes"
 		:formatters="formatters"
-		app-id="procest"
+		appId="procest"
 		:translate="translateForApp"
 		:permissions="permissions">
 		<!--
@@ -25,15 +26,15 @@
 		<template #sidebar>
 			<CnObjectSidebar
 				v-if="objectSidebarState.active"
-				:use-registry="false"
+				:useRegistry="false"
 				:title="objectSidebarState.title"
 				:subtitle="objectSidebarState.subtitle"
-				:object-type="objectSidebarState.objectType"
-				:object-id="objectSidebarState.objectId"
+				:objectType="objectSidebarState.objectType"
+				:objectId="objectSidebarState.objectId"
 				:register="objectSidebarState.register"
 				:schema="objectSidebarState.schema"
 				:tabs="objectSidebarState.tabs"
-				:hidden-tabs="objectSidebarState.hiddenTabs"
+				:hiddenTabs="objectSidebarState.hiddenTabs"
 				:open="objectSidebarState.open"
 				@update:open="objectSidebarState.open = $event" />
 		</template>
@@ -41,9 +42,9 @@
 </template>
 
 <script>
-import Vue from 'vue'
-import { translate as ncT } from '@nextcloud/l10n'
 import { CnAppRoot, CnObjectSidebar } from '@conduction/nextcloud-vue'
+import { translate as ncT } from '@nextcloud/l10n'
+import { reactive } from 'vue'
 import { initializeStores } from './store/store.js'
 
 export default {
@@ -72,10 +73,12 @@ export default {
 			type: Object,
 			required: true,
 		},
+
 		customComponents: {
 			type: Object,
 			default: () => ({}),
 		},
+
 		/**
 		 * V2 component registry — map of registry-key → `{ kind, component }`.
 		 * Forwarded verbatim to CnAppRoot, which validates kinds at mount time.
@@ -86,10 +89,12 @@ export default {
 			type: Object,
 			default: () => ({}),
 		},
+
 		pageTypes: {
 			type: Object,
 			default: () => ({}),
 		},
+
 		/**
 		 * Cell-formatter registry — forwarded to CnAppRoot as `cnFormatters`.
 		 * Resolves `pages[].config.columns[].formatter` ids on index/logs
@@ -103,7 +108,7 @@ export default {
 
 	data() {
 		return {
-			objectSidebarState: Vue.observable({
+			objectSidebarState: reactive({
 				active: false,
 				open: true,
 				// --- Detail-page object-sidebar fields (written by
@@ -142,9 +147,10 @@ export default {
 			// (the platform-admin tenant management pages). isUserAdmin() returns
 			// true for users in the Nextcloud admin group, matching the backend
 			// TenantService::isPlatformAdmin() check.
-			const isAdmin = typeof window.OC?.isUserAdmin === 'function'
-				? window.OC.isUserAdmin()
-				: false
+			const isAdmin =
+				typeof window.OC?.isUserAdmin === 'function'
+					? window.OC.isUserAdmin()
+					: false
 			return isAdmin ? [...base, 'admin'] : base
 		},
 	},

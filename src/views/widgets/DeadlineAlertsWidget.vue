@@ -1,75 +1,94 @@
 <template>
-	<NcDashboardWidget :items="items"
+	<CnDataTable
+		:rows="items"
+		:columns="columns"
 		:loading="loading"
-		:item-menu="itemMenu"
-		@show="onShow">
-		<template #empty-content>
-			<NcEmptyContent :title="t('procest', 'No deadline alerts')">
-				<template #icon>
-					<AlertCircle />
-				</template>
-			</NcEmptyContent>
+		hideHeader
+		borderless
+		:emptyText="t('procest', 'No deadline alerts')"
+		@rowClick="onRowClick">
+		<template #footer>
+			<a
+				class="cn-data-table__view-all"
+				:href="viewAllUrl"
+				@click.prevent="onViewAll">
+				{{ t('procest', 'View all') }} →
+			</a>
 		</template>
-	</NcDashboardWidget>
+	</CnDataTable>
 </template>
 
 <script>
-import { NcDashboardWidget, NcEmptyContent } from '@nextcloud/vue'
-import { imagePath } from '@nextcloud/router'
+import { CnDataTable } from '@conduction/nextcloud-vue'
+import { generateUrl } from '@nextcloud/router'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 import { getDeadlineAlerts } from '../../utils/dashboardHelpers.js'
-import AlertCircle from 'vue-material-design-icons/AlertCircle.vue'
+import { navigateTo, SIGNAL_COLUMNS } from './signalTable.js'
 
 export default {
 	name: 'DeadlineAlertsWidget',
 	components: {
-		NcDashboardWidget,
-		NcEmptyContent,
-		AlertCircle,
+		CnDataTable,
 	},
+
 	props: {
 		title: {
 			type: String,
 			default: '',
 		},
 	},
+
 	data() {
 		return {
 			loading: false,
 			alerts: { overdue: [], atRisk: [] },
-			itemMenu: {
-				show: {
-					text: t('procest', 'View case'),
-					icon: 'icon-confirm',
-				},
-			},
+			columns: SIGNAL_COLUMNS,
 		}
 	},
+
 	computed: {
-		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
+		/** @spec openspec/specs/signalering-widgets/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
+
+		/**
+		 * Real destination URL for the "View all" link (gate-32: an `<a>`
+		 * with a real `href` is a genuine link, not a mouse-only click
+		 * target).
+		 *
+		 * @spec openspec/specs/signalering-widgets/spec.md
+		 */
+		viewAllUrl() {
+			return generateUrl('/apps/procest/cases')
+		},
+
+		/** @spec openspec/specs/signalering-widgets/spec.md */
 		items() {
 			const overdueItems = this.alerts.overdue.map((item) => ({
 				id: item.id,
 				mainText: item.title,
-				subText: t('procest', '{days} days overdue', { days: item.daysOverdue }),
-				avatarUrl: imagePath('procest', 'app-dark.svg'),
+				subText: t('procest', '{days} days overdue', {
+					days: item.daysOverdue,
+				}),
+				targetUrl: generateUrl(`/apps/procest/cases/${item.id}`),
 			}))
 			const atRiskItems = this.alerts.atRisk.map((item) => ({
 				id: item.id,
 				mainText: item.title,
-				subText: item.daysRemaining === 0
-					? t('procest', 'Due today')
-					: t('procest', '{days} days remaining', { days: item.daysRemaining }),
-				avatarUrl: imagePath('procest', 'app-dark.svg'),
+				subText:
+					item.daysRemaining === 0
+						? t('procest', 'Due today')
+						: t('procest', '{days} days remaining', {
+								days: item.daysRemaining,
+							}),
+				targetUrl: generateUrl(`/apps/procest/cases/${item.id}`),
 			}))
 			return [...overdueItems, ...atRiskItems].slice(0, 5)
 		},
 	},
+
 	async mounted() {
 		// Ensure object types are registered before fetching. App.vue's
 		// async created() does not block child mounting, so this widget can
@@ -78,26 +97,33 @@ export default {
 		await initializeStores()
 		this.fetchData()
 	},
+
 	methods: {
 		/**
-		 * Handle showing a case.
+		 * Navigate to a clicked case in the same tab.
 		 *
-		 * @param {object} item The case item to show
+		 * @param {object} row The clicked row (a shaped case item).
 		 * @return {void}
 		 */
-		/**
-		 * @param item
-		 * @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md
-		 */
-		onShow(item) {
-			window.location.href = `/index.php/apps/procest/#/cases/${item.id}`
+		onRowClick(row) {
+			navigateTo(row.targetUrl)
 		},
+
+		/**
+		 * Navigate to the full cases list.
+		 *
+		 * @return {void}
+		 */
+		onViewAll() {
+			navigateTo(generateUrl('/apps/procest/cases'))
+		},
+
 		/**
 		 * Fetch case data and compute deadline alerts.
 		 *
 		 * @return {Promise<void>}
 		 */
-		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
+		/** @spec openspec/specs/signalering-widgets/spec.md */
 		async fetchData() {
 			this.loading = true
 			try {
@@ -107,15 +133,18 @@ export default {
 					this.objectStore.fetchCollection('statusType', { _limit: 500 }),
 				])
 
-				const allCases = results[0].status === 'fulfilled' ? (results[0].value || []) : []
-				const caseTypes = results[1].status === 'fulfilled' ? (results[1].value || []) : []
-				const statusTypes = results[2].status === 'fulfilled' ? (results[2].value || []) : []
+				const allCases =
+					results[0].status === 'fulfilled' ? results[0].value || [] : []
+				const caseTypes =
+					results[1].status === 'fulfilled' ? results[1].value || [] : []
+				const statusTypes =
+					results[2].status === 'fulfilled' ? results[2].value || [] : []
 
 				const statusTypeMap = new Map()
 				for (const st of statusTypes) {
 					statusTypeMap.set(st.id, st)
 				}
-				const openCases = allCases.filter(c => {
+				const openCases = allCases.filter((c) => {
 					const st = statusTypeMap.get(c.status)
 					return !st?.isFinal
 				})

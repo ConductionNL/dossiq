@@ -42,253 +42,244 @@ use Throwable;
  * `tenant`, `tenantConfiguration`, `tenantQuota`, `tenantUser`,
  * `tenantMandate`, `tenantBillingEvent`, `tenantOnboardingTask`.
  */
-class TenantSchemaProvisioner
-{
-    /**
-     * Maximum PostgreSQL identifier length.
-     */
-    public const PG_IDENTIFIER_MAX_LENGTH = 63;
+class TenantSchemaProvisioner {
+	/**
+	 * Maximum PostgreSQL identifier length.
+	 */
+	public const PG_IDENTIFIER_MAX_LENGTH = 63;
 
-    /**
-     * Application table prefixes whose structure is cloned per tenant.
-     *
-     * @var array<int, string>
-     */
-    private const APPLICATION_TABLE_PREFIXES = [
-        'oc_openregister_table_procest_',
-    ];
+	/**
+	 * Application table prefixes whose structure is cloned per tenant.
+	 *
+	 * @var array<int, string>
+	 */
+	private const APPLICATION_TABLE_PREFIXES = [
+		'oc_openregister_table_procest_',
+	];
 
-    /**
-     * Shared tables that MUST stay in the public schema.
-     *
-     * @var array<int, string>
-     */
-    private const SHARED_SCHEMA_SLUGS = [
-        'tenant',
-        'tenantConfiguration',
-        'tenantQuota',
-        'tenantUser',
-        'tenantMandate',
-        'tenantBillingEvent',
-        'tenantOnboardingTask',
-    ];
+	/**
+	 * Shared tables that MUST stay in the public schema.
+	 *
+	 * @var array<int, string>
+	 */
+	private const SHARED_SCHEMA_SLUGS = [
+		'tenant',
+		'tenantConfiguration',
+		'tenantQuota',
+		'tenantUser',
+		'tenantMandate',
+		'tenantBillingEvent',
+		'tenantOnboardingTask',
+	];
 
-    /**
-     * Constructor.
-     *
-     * @param IDBConnection   $db     DB connection.
-     * @param LoggerInterface $logger Logger.
-     */
-    public function __construct(
-        private readonly IDBConnection $db,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param IDBConnection $db DB connection.
+	 * @param LoggerInterface $logger Logger.
+	 */
+	public function __construct(
+		private readonly IDBConnection $db,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Create a new schema.
-     *
-     * @param string $name Schema name (already validated).
-     *
-     * @return void
-     *
-     * @throws InvalidArgumentException When the name is invalid.
-     * @throws RuntimeException         When the DDL fails.
-     */
-    public function createSchema(string $name): void
-    {
-        $this->assertSafeIdentifier(name: $name);
+	/**
+	 * Create a new schema.
+	 *
+	 * @param string $name Schema name (already validated).
+	 *
+	 * @return void
+	 *
+	 * @throws InvalidArgumentException When the name is invalid.
+	 * @throws RuntimeException When the DDL fails.
+	 */
+	public function createSchema(string $name): void {
+		$this->assertSafeIdentifier(name: $name);
 
-        try {
-            // The identifier is whitelisted (assertSafeIdentifier); double-quoting
-            // it makes Postgres reject any remaining injection attempt.
-            $sql = 'CREATE SCHEMA "'.$name.'"';
-            $this->db->executeStatement($sql);
-        } catch (Throwable $e) {
-            throw new RuntimeException('CREATE SCHEMA failed: '.$e->getMessage(), 0, $e);
-        }
-    }//end createSchema()
+		try {
+			// The identifier is whitelisted (assertSafeIdentifier); double-quoting
+			// it makes Postgres reject any remaining injection attempt.
+			$sql = 'CREATE SCHEMA "' . $name . '"';
+			$this->db->executeStatement($sql);
+		} catch (Throwable $e) {
+			throw new RuntimeException('CREATE SCHEMA failed: ' . $e->getMessage(), 0, $e);
+		}
+	}//end createSchema()
 
-    /**
-     * Clone application table structures from `public` into the tenant schema.
-     *
-     * Uses `CREATE TABLE ... (LIKE source INCLUDING ALL)` so constraints,
-     * defaults, and indexes are preserved. Shared tables are skipped.
-     *
-     * @param string $schemaName Target tenant schema.
-     *
-     * @return array<int, string> Cloned table names.
-     *
-     * @throws RuntimeException On DDL failure.
-     */
-    public function cloneApplicationTables(string $schemaName): array
-    {
-        $this->assertSafeIdentifier(name: $schemaName);
+	/**
+	 * Clone application table structures from `public` into the tenant schema.
+	 *
+	 * Uses `CREATE TABLE ... (LIKE source INCLUDING ALL)` so constraints,
+	 * defaults, and indexes are preserved. Shared tables are skipped.
+	 *
+	 * @param string $schemaName Target tenant schema.
+	 *
+	 * @return array<int, string> Cloned table names.
+	 *
+	 * @throws RuntimeException On DDL failure.
+	 */
+	public function cloneApplicationTables(string $schemaName): array {
+		$this->assertSafeIdentifier(name: $schemaName);
 
-        $sourceTables = $this->listApplicationTables();
-        $cloned       = [];
+		$sourceTables = $this->listApplicationTables();
+		$cloned = [];
 
-        foreach ($sourceTables as $sourceTable) {
-            if ($this->isSharedTable(tableName: $sourceTable) === true) {
-                continue;
-            }
+		foreach ($sourceTables as $sourceTable) {
+			if ($this->isSharedTable(tableName: $sourceTable) === true) {
+				continue;
+			}
 
-            $tableName = $this->extractTableName(fullName: $sourceTable);
-            try {
-                $sql = sprintf(
-                    'CREATE TABLE "%s"."%s" (LIKE "%s" INCLUDING ALL)',
-                    $schemaName,
-                    $tableName,
-                    $sourceTable
-                );
-                $this->db->executeStatement($sql);
-                $cloned[] = $tableName;
-            } catch (Throwable $e) {
-                throw new RuntimeException(
-                    'Failed to clone table '.$sourceTable.': '.$e->getMessage(),
-                    0,
-                    $e
-                );
-            }
-        }//end foreach
+			$tableName = $this->extractTableName(fullName: $sourceTable);
+			try {
+				$sql = sprintf(
+					'CREATE TABLE "%s"."%s" (LIKE "%s" INCLUDING ALL)',
+					$schemaName,
+					$tableName,
+					$sourceTable
+				);
+				$this->db->executeStatement($sql);
+				$cloned[] = $tableName;
+			} catch (Throwable $e) {
+				throw new RuntimeException(
+					'Failed to clone table ' . $sourceTable . ': ' . $e->getMessage(),
+					0,
+					$e
+				);
+			}
+		}//end foreach
 
-        $this->logger->info(
-            'Procest: cloned application tables into tenant schema',
-            ['schemaName' => $schemaName, 'count' => count($cloned)]
-        );
+		$this->logger->info(
+			'Procest: cloned application tables into tenant schema',
+			['schemaName' => $schemaName, 'count' => count($cloned)]
+		);
 
-        return $cloned;
-    }//end cloneApplicationTables()
+		return $cloned;
+	}//end cloneApplicationTables()
 
-    /**
-     * Drop a tenant schema and all its contents. Used by rollback + termination.
-     *
-     * @param string $name Schema name.
-     *
-     * @return void
-     *
-     * @throws RuntimeException On DDL failure.
-     */
-    public function dropSchema(string $name): void
-    {
-        $this->assertSafeIdentifier(name: $name);
+	/**
+	 * Drop a tenant schema and all its contents. Used by rollback + termination.
+	 *
+	 * @param string $name Schema name.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException On DDL failure.
+	 */
+	public function dropSchema(string $name): void {
+		$this->assertSafeIdentifier(name: $name);
 
-        try {
-            $sql = 'DROP SCHEMA IF EXISTS "'.$name.'" CASCADE';
-            $this->db->executeStatement($sql);
-        } catch (Throwable $e) {
-            throw new RuntimeException('DROP SCHEMA failed: '.$e->getMessage(), 0, $e);
-        }
-    }//end dropSchema()
+		try {
+			$sql = 'DROP SCHEMA IF EXISTS "' . $name . '" CASCADE';
+			$this->db->executeStatement($sql);
+		} catch (Throwable $e) {
+			throw new RuntimeException('DROP SCHEMA failed: ' . $e->getMessage(), 0, $e);
+		}
+	}//end dropSchema()
 
-    /**
-     * Return whether a schema currently exists. Used by tests + idempotency.
-     *
-     * @param string $name Schema name.
-     *
-     * @return bool True when present.
-     */
-    public function schemaExists(string $name): bool
-    {
-        $this->assertSafeIdentifier(name: $name);
-        try {
-            $qb = $this->db->getQueryBuilder();
-            $qb->select('schema_name')
-                ->from('information_schema.schemata')
-                ->where($qb->expr()->eq('schema_name', $qb->createNamedParameter($name)));
-            $result = $qb->executeQuery();
-            $row    = $result->fetchOne();
-            $result->closeCursor();
-            return $row !== false;
-        } catch (Throwable $e) {
-            $this->logger->info('Procest: schemaExists lookup failed', ['name' => $name, 'exception' => $e->getMessage()]);
-            return false;
-        }
-    }//end schemaExists()
+	/**
+	 * Return whether a schema currently exists. Used by tests + idempotency.
+	 *
+	 * @param string $name Schema name.
+	 *
+	 * @return bool True when present.
+	 */
+	public function schemaExists(string $name): bool {
+		$this->assertSafeIdentifier(name: $name);
+		try {
+			$qb = $this->db->getQueryBuilder();
+			$qb->select('schema_name')
+				->from('information_schema.schemata')
+				->where($qb->expr()->eq('schema_name', $qb->createNamedParameter($name)));
+			$result = $qb->executeQuery();
+			$row = $result->fetchOne();
+			$result->closeCursor();
+			return $row !== false;
+		} catch (Throwable $e) {
+			$this->logger->info('Procest: schemaExists lookup failed', ['name' => $name, 'exception' => $e->getMessage()]);
+			return false;
+		}
+	}//end schemaExists()
 
-    /**
-     * Validate that the identifier is safe to embed in DDL.
-     *
-     * @param string $name Identifier.
-     *
-     * @return void
-     *
-     * @throws InvalidArgumentException When invalid.
-     */
-    public function assertSafeIdentifier(string $name): void
-    {
-        if ($name === '' || strlen($name) > self::PG_IDENTIFIER_MAX_LENGTH) {
-            throw new InvalidArgumentException('Invalid PostgreSQL identifier length: '.$name);
-        }
+	/**
+	 * Validate that the identifier is safe to embed in DDL.
+	 *
+	 * @param string $name Identifier.
+	 *
+	 * @return void
+	 *
+	 * @throws InvalidArgumentException When invalid.
+	 */
+	public function assertSafeIdentifier(string $name): void {
+		if ($name === '' || strlen($name) > self::PG_IDENTIFIER_MAX_LENGTH) {
+			throw new InvalidArgumentException('Invalid PostgreSQL identifier length: ' . $name);
+		}
 
-        if (preg_match('/^[a-z][a-z0-9_]*$/', $name) !== 1) {
-            throw new InvalidArgumentException('Invalid PostgreSQL identifier shape: '.$name);
-        }
-    }//end assertSafeIdentifier()
+		if (preg_match('/^[a-z][a-z0-9_]*$/', $name) !== 1) {
+			throw new InvalidArgumentException('Invalid PostgreSQL identifier shape: ' . $name);
+		}
+	}//end assertSafeIdentifier()
 
-    /**
-     * List application tables in the public schema that match one of the prefixes.
-     *
-     * @return array<int, string>
-     */
-    private function listApplicationTables(): array
-    {
-        try {
-            $qb = $this->db->getQueryBuilder();
-            $qb->select('table_name')
-                ->from('information_schema.tables')
-                ->where($qb->expr()->eq('table_schema', $qb->createNamedParameter('public')));
-            $result = $qb->executeQuery();
-            $rows   = $result->fetchAll(\PDO::FETCH_ASSOC);
-            $result->closeCursor();
+	/**
+	 * List application tables in the public schema that match one of the prefixes.
+	 *
+	 * @return array<int, string>
+	 */
+	private function listApplicationTables(): array {
+		try {
+			$qb = $this->db->getQueryBuilder();
+			$qb->select('table_name')
+				->from('information_schema.tables')
+				->where($qb->expr()->eq('table_schema', $qb->createNamedParameter('public')));
+			$result = $qb->executeQuery();
+			$rows = $result->fetchAll(\PDO::FETCH_ASSOC);
+			$result->closeCursor();
 
-            $tables = [];
-            foreach ($rows as $row) {
-                $name = (string) ($row['table_name'] ?? '');
-                foreach (self::APPLICATION_TABLE_PREFIXES as $prefix) {
-                    if (str_starts_with($name, $prefix) === true) {
-                        $tables[] = $name;
-                        break;
-                    }
-                }
-            }
+			$tables = [];
+			foreach ($rows as $row) {
+				$name = (string)($row['table_name'] ?? '');
+				foreach (self::APPLICATION_TABLE_PREFIXES as $prefix) {
+					if (str_starts_with($name, $prefix) === true) {
+						$tables[] = $name;
+						break;
+					}
+				}
+			}
 
-            return $tables;
-        } catch (Throwable $e) {
-            $this->logger->info('Procest: listApplicationTables failed', ['exception' => $e->getMessage()]);
-            return [];
-        }//end try
-    }//end listApplicationTables()
+			return $tables;
+		} catch (Throwable $e) {
+			$this->logger->info('Procest: listApplicationTables failed', ['exception' => $e->getMessage()]);
+			return [];
+		}//end try
+	}//end listApplicationTables()
 
-    /**
-     * Detect shared tables — they remain in the public schema.
-     *
-     * @param string $tableName Table name.
-     *
-     * @return bool True when shared.
-     */
-    private function isSharedTable(string $tableName): bool
-    {
-        $lower = strtolower($tableName);
-        foreach (self::SHARED_SCHEMA_SLUGS as $slug) {
-            if (str_contains($lower, '_'.strtolower($slug).'_') === true || str_ends_with($lower, '_'.strtolower($slug)) === true) {
-                return true;
-            }
-        }
+	/**
+	 * Detect shared tables — they remain in the public schema.
+	 *
+	 * @param string $tableName Table name.
+	 *
+	 * @return bool True when shared.
+	 */
+	private function isSharedTable(string $tableName): bool {
+		$lower = strtolower($tableName);
+		foreach (self::SHARED_SCHEMA_SLUGS as $slug) {
+			if (str_contains($lower, '_' . strtolower($slug) . '_') === true || str_ends_with($lower, '_' . strtolower($slug)) === true) {
+				return true;
+			}
+		}
 
-        return false;
-    }//end isSharedTable()
+		return false;
+	}//end isSharedTable()
 
-    /**
-     * Extract the bare table name (no schema qualifier).
-     *
-     * @param string $fullName Source table name.
-     *
-     * @return string Bare name.
-     */
-    private function extractTableName(string $fullName): string
-    {
-        $parts = explode('.', $fullName);
-        return end($parts);
-    }//end extractTableName()
+	/**
+	 * Extract the bare table name (no schema qualifier).
+	 *
+	 * @param string $fullName Source table name.
+	 *
+	 * @return string Bare name.
+	 */
+	private function extractTableName(string $fullName): string {
+		$parts = explode('.', $fullName);
+		return end($parts);
+	}//end extractTableName()
 }//end class

@@ -9,194 +9,257 @@
 		"version": 1,
 		"completionConfigKey": "setup_completed_version",
 		"steps": [
-			{ "id": "welcome", "type": "info", "title": "Welkom bij Procest", "body": "Laten we Procest klaarzetten. Initialiseer eerst het register; laad daarna optioneel de Bezwaar & Beroep voorbeelddata." },
-			{ "id": "register-check", "type": "run-action", "title": "Register en schema's initialiseren", "action": "init-register", "required": true },
-			{ "id": "seed", "type": "run-action", "title": "Bezwaar & Beroep voorbeelddata laden", "action": "seed", "required": false },
-			{ "id": "done", "type": "summary", "title": "Klaar", "healthCheck": true }
+			{
+				"id": "welcome",
+				"type": "info",
+				"title": "Welkom bij Procest",
+				"body": "Laten we Procest klaarzetten. Initialiseer eerst het register; laad daarna optioneel de Bezwaar & Beroep voorbeelddata."
+			},
+			{
+				"id": "register-check",
+				"type": "run-action",
+				"title": "Register en schema's initialiseren",
+				"action": "init-register",
+				"required": true
+			},
+			{
+				"id": "seed",
+				"type": "run-action",
+				"title": "Bezwaar & Beroep voorbeelddata laden",
+				"action": "seed",
+				"required": false
+			},
+			{
+				"id": "done",
+				"type": "summary",
+				"title": "Klaar",
+				"healthCheck": true
+			}
+		]
+	},
+	"walkthrough": {
+		"enabled": true,
+		"version": 1,
+		"completionConfigKey": "walkthrough_completed_version",
+		"tours": [
+			{
+				"id": "procest:getting-started",
+				"title": "Getting started",
+				"trigger": "first-visit",
+				"minAppVersion": "0.2.17",
+				"steps": [
+					{
+						"id": "welcome",
+						"sinceVersion": "0.2.17",
+						"placement": "center",
+						"title": "Welcome to Procest",
+						"body": "Let's take a quick spin through case handling — we'll register a case together so you can see how the pieces fit. You'll add the record yourself.",
+						"target": {
+							"kind": "page",
+							"ref": "Dashboard"
+						},
+						"advanceOn": {
+							"type": "manual"
+						}
+					},
+					{
+						"id": "go-cases",
+						"sinceVersion": "0.2.17",
+						"placement": "right",
+						"body": "Cases are the heart of your work. Open Cases from the menu to see everything in progress.",
+						"task": "Click Cases in the menu",
+						"target": {
+							"kind": "nav-item",
+							"ref": "Cases"
+						},
+						"advanceOn": {
+							"type": "route-match",
+							"route": "Cases"
+						}
+					},
+					{
+						"id": "create-case",
+						"sinceVersion": "0.2.17",
+						"placement": "bottom",
+						"allowManualNext": true,
+						"body": "Register your first case — give it a title and pick a case type, then save. You can add tasks, decisions and documents later.",
+						"task": "Click New and save a case",
+						"target": {
+							"kind": "element",
+							"ref": "index-add"
+						},
+						"advanceOn": {
+							"type": "object-created",
+							"register": "procest",
+							"schema": "case",
+							"capture": {
+								"caseId": ":id"
+							}
+						}
+					},
+					{
+						"id": "go-tasks",
+						"sinceVersion": "0.2.17",
+						"placement": "right",
+						"body": "Your work lives here. Open My Work to see the tasks and cases assigned to you.",
+						"task": "Click My Work in the menu",
+						"target": {
+							"kind": "nav-item",
+							"ref": "MyWork"
+						},
+						"advanceOn": {
+							"type": "route-match",
+							"route": "MyWork"
+						}
+					},
+					{
+						"id": "done",
+						"sinceVersion": "0.2.17",
+						"placement": "center",
+						"title": "You're all set",
+						"body": "Nicely done — your first case is on the board. Head back to the Dashboard to track progress, and reopen this tour anytime from the … menu.",
+						"target": {
+							"kind": "page",
+							"ref": "Dashboard"
+						},
+						"advanceOn": {
+							"type": "manual"
+						}
+					}
+				]
+			}
 		]
 	},
 	"menu": [
 		{
 			"id": "Dashboard",
 			"label": "Dashboard",
-			"icon": "icon-category-dashboard",
+			"icon": "ViewDashboardOutline",
 			"route": "Dashboard",
 			"order": 10
 		},
 		{
 			"id": "MyWork",
-			"label": "Mijn werk",
-			"icon": "icon-checkmark",
+			"label": "My work",
+			"icon": "ClipboardAccountOutline",
 			"route": "MyWork",
 			"order": 20
 		},
 		{
 			"id": "WorkGroup",
-			"label": "Werk",
-			"icon": "icon-toggle",
+			"label": "Work queue",
+			"icon": "ClipboardAccountOutline",
 			"order": 20
 		},
 		{
-			"id": "CasesGroup",
-			"label": "Zaken",
-			"icon": "icon-folder",
-			"order": 30
-		},
-		{
 			"id": "Cases",
-			"label": "Alle zaken",
-			"icon": "icon-folder",
+			"label": "Cases",
+			"icon": "FolderAccountOutline",
 			"route": "Cases",
-			"order": 40
-		},
-		{
-			"id": "Werkvoorraad",
-			"label": "Werkvoorraad",
-			"icon": "icon-group",
-			"route": "Werkvoorraad",
 			"order": 30
 		},
 		{
 			"id": "WorkflowBoard",
-			"label": "Werkstroombord",
-			"icon": "icon-category-workflow",
+			"label": "Workflow board",
+			"icon": "ViewColumnOutline",
 			"route": "WorkflowBoard",
 			"order": 35
 		},
 		{
-			"id": "Transfers",
-			"label": "Overdrachten",
-			"icon": "icon-shared",
-			"route": "Transfers",
-			"order": 80
-		},
-		{
-			"id": "BezwaarBeroepGroup",
-			"label": "Bezwaar & Beroep",
-			"icon": "icon-toggle-filelist",
-			"order": 45
-		},
-		{
 			"id": "Bezwaren",
-			"label": "Bezwaren",
-			"icon": "icon-toggle-filelist",
+			"label": "Objections",
+			"icon": "FileAlertOutline",
 			"route": "Bezwaren",
 			"order": 45
 		},
 		{
 			"id": "Beroepen",
-			"label": "Beroepen",
-			"icon": "icon-toggle-filelist",
+			"label": "Appeals",
+			"icon": "ScaleBalance",
 			"route": "Beroepen",
 			"order": 46
 		},
 		{
-			"id": "BezwaarDecisions",
-			"label": "Beslissingen op bezwaar",
-			"icon": "icon-toggle",
-			"route": "BezwaarDecisions",
-			"order": 47
-		},
-		{
-			"id": "BezwaarAdviceRequests",
-			"label": "BAC-adviezen",
-			"icon": "icon-comment",
-			"route": "BezwaarAdviceRequests",
-			"order": 48
-		},
-		{
 			"id": "AnalyticsGroup",
-			"label": "Rapportages",
-			"icon": "icon-category-monitoring",
+			"label": "Reports",
+			"icon": "ChartBoxOutline",
 			"order": 55
 		},
 		{
 			"id": "Analytics",
-			"label": "Doorlooptijd",
-			"icon": "icon-category-monitoring",
+			"label": "Processing time",
+			"icon": "ChartLine",
 			"route": "Doorlooptijd",
 			"order": 55
 		},
 		{
+			"id": "ProcessMiningDashboardMenu",
+			"label": "Process mining",
+			"icon": "ChartSankey",
+			"route": "ProcessMiningDashboard",
+			"order": 56
+		},
+		{
 			"id": "CaseMap",
-			"label": "Kaart",
-			"icon": "icon-address",
+			"label": "Map",
+			"icon": "MapOutline",
 			"route": "CaseMap",
 			"order": 60
 		},
 		{
 			"id": "BesluitvormingGroup",
-			"label": "Besluitvorming",
-			"icon": "icon-comment",
+			"label": "Decision-making",
+			"icon": "Gavel",
 			"order": 70
 		},
 		{
 			"id": "Voorstellen",
-			"label": "Voorstellen",
-			"icon": "icon-comment",
+			"label": "Proposals",
+			"icon": "CommentOutline",
 			"route": "Voorstellen",
 			"order": 70
 		},
 		{
 			"id": "Advice",
-			"label": "Advies",
-			"icon": "icon-comment",
+			"label": "Advice",
+			"icon": "CommentOutline",
 			"route": "Advice",
 			"order": 75
 		},
 		{
-			"id": "SubsidiesGroup",
-			"label": "Subsidies",
-			"icon": "icon-category-office",
-			"order": 83
-		},
-		{
-			"id": "PortaalGroup",
-			"label": "Portaal",
-			"icon": "icon-user",
-			"order": 87
-		},
-		{
 			"id": "SettingsGroup",
-			"label": "Instellingen",
-			"icon": "icon-settings",
+			"label": "Settings",
+			"icon": "CogOutline",
 			"order": 200
 		},
 		{
 			"id": "Documentation",
-			"label": "Documentatie",
-			"icon": "icon-info",
+			"label": "Documentation",
+			"icon": "BookOpenVariantOutline",
 			"href": "https://procest.conduction.nl",
 			"section": "footer",
 			"order": 90
 		},
 		{
 			"id": "CaseTypesMenu",
-			"label": "Zaaktypen",
-			"icon": "icon-category-customization",
-			"route": "Settings",
+			"label": "Case types",
+			"icon": "FolderCogOutline",
+			"route": "ProcestConfiguration",
 			"section": "settings",
 			"order": 95
 		},
 		{
-			"id": "LegesberekeningenMenu",
-			"label": "Legesberekeningen",
-			"icon": "icon-category-monitoring",
-			"route": "Legesberekeningen",
-			"order": 50
-		},
-		{
 			"id": "PartnersMenu",
-			"label": "Partnerorganisaties",
-			"icon": "icon-group",
+			"label": "Partner organisations",
+			"icon": "OfficeBuildingOutline",
 			"route": "Partners",
 			"section": "settings",
 			"order": 97
 		},
 		{
 			"id": "TenantsMenu",
-			"label": "Organisaties",
-			"icon": "icon-group",
+			"label": "Organisations",
+			"icon": "OfficeBuildingOutline",
 			"route": "Tenants",
 			"section": "settings",
 			"order": 98,
@@ -204,16 +267,24 @@
 		},
 		{
 			"id": "ParafeerroutesMenu",
-			"label": "Parafeerroutes",
-			"icon": "icon-category-workflow",
+			"label": "Approval routes",
+			"icon": "SitemapOutline",
 			"route": "Parafeerroutes",
 			"section": "settings",
 			"order": 96
 		},
 		{
+			"id": "AiOversightMenu",
+			"label": "AI oversight",
+			"icon": "ChartLine",
+			"route": "AiOversight",
+			"section": "settings",
+			"order": 96
+		},
+		{
 			"id": "WmsLayersMenu",
-			"label": "Kaartlagen",
-			"icon": "icon-category-files",
+			"label": "Map layers",
+			"icon": "LayersOutline",
 			"route": "WmsLayers",
 			"section": "settings",
 			"order": 97,
@@ -221,33 +292,24 @@
 		},
 		{
 			"id": "WorkflowDefinitionsMenu",
-			"label": "Werkstroomdefinities",
-			"icon": "icon-category-workflow",
+			"label": "Workflow definitions",
+			"icon": "SitemapOutline",
 			"route": "WorkflowDefinitions",
 			"section": "settings",
 			"order": 97
 		},
 		{
 			"id": "AutomaticActionsMenu",
-			"label": "Automatische acties",
-			"icon": "icon-category-workflow",
+			"label": "Automatic actions",
+			"icon": "Sitemap",
 			"route": "AutomaticActions",
 			"section": "settings",
 			"order": 96
 		},
 		{
-			"id": "StatusRecordsMenu",
-			"label": "Statusgeschiedenis",
-			"icon": "icon-history",
-			"route": "StatusRecords",
-			"section": "settings",
-			"order": 98,
-			"permission": "admin"
-		},
-		{
 			"id": "LhsMatricesMenu",
-			"label": "Handhavingsstrategie",
-			"icon": "icon-category-customization",
+			"label": "Enforcement strategy",
+			"icon": "Tune",
 			"route": "LhsMatrices",
 			"section": "settings",
 			"order": 96,
@@ -255,16 +317,16 @@
 		},
 		{
 			"id": "LhsRecommendationsMenu",
-			"label": "LHS-aanbevelingen",
-			"icon": "icon-comment",
+			"label": "LHS recommendations",
+			"icon": "CommentOutline",
 			"route": "LhsRecommendations",
 			"section": "settings",
 			"order": 97
 		},
 		{
 			"id": "LocationsMenu",
-			"label": "Zaaklocaties",
-			"icon": "icon-address",
+			"label": "Case locations",
+			"icon": "MapMarkerOutline",
 			"route": "Locations",
 			"section": "settings",
 			"order": 98,
@@ -272,63 +334,64 @@
 		},
 		{
 			"id": "BezwaarCommitteesMenu",
-			"label": "Bezwaaradviescommissies",
-			"icon": "icon-group",
+			"label": "Objection advisory committees",
+			"icon": "FileAlertOutline",
 			"route": "BezwaarCommittees",
 			"order": 49
 		},
 		{
 			"id": "TermijnDashboardMenu",
-			"label": "Termijnbewaking",
-			"icon": "icon-history",
+			"label": "Deadline monitoring",
+			"icon": "ClockAlertOutline",
 			"route": "TermijnDashboard",
 			"order": 71
 		},
 		{
-			"id": "ArchiefDashboardMenu",
-			"label": "Archief",
-			"icon": "icon-folder",
-			"route": "ArchiefDashboard",
-			"section": "settings",
-			"order": 91
-		},
-		{
 			"id": "TenantOnboardingMenu",
-			"label": "Organisatie-onboarding",
-			"icon": "icon-user",
+			"label": "Organisation onboarding",
+			"icon": "AccountPlusOutline",
 			"route": "TenantOnboardingDashboard",
 			"section": "settings",
 			"order": 92
 		},
 		{
 			"id": "SubstitutionMenu",
-			"label": "Vervanging",
-			"icon": "icon-user",
+			"label": "Substitution",
+			"icon": "AccountSwitchOutline",
 			"route": "SubstitutionSettings",
 			"section": "settings",
 			"order": 93
 		},
 		{
 			"id": "SubstitutionAdminMenu",
-			"label": "Vervangingen & hertoewijzing",
-			"icon": "icon-group",
+			"label": "Substitutions & reassignment",
+			"icon": "AccountSwitchOutline",
 			"route": "SubstitutionAdmin",
 			"section": "settings",
 			"order": 94,
 			"permission": "admin"
 		},
 		{
+			"id": "VerwerkingenOverviewMenu",
+			"label": "Processing activities (AVG)",
+			"icon": "ShieldLockOutline",
+			"route": "VerwerkingenOverview",
+			"section": "settings",
+			"order": 95,
+			"permission": "admin"
+		},
+		{
 			"id": "SettingsMenu",
-			"label": "Instellingen",
-			"icon": "icon-settings",
-			"route": "Settings",
+			"label": "Configuration",
+			"icon": "CogOutline",
+			"route": "ProcestConfiguration",
 			"section": "settings",
 			"order": 99
 		},
 		{
 			"id": "FeaturesRoadmapMenu",
-			"label": "Functies & roadmap",
-			"icon": "icon-toggle",
+			"label": "Features & roadmap",
+			"icon": "MapMarkerPath",
 			"route": "FeaturesRoadmap",
 			"section": "footer",
 			"order": 100
@@ -340,85 +403,510 @@
 			"route": "/",
 			"type": "dashboard",
 			"title": "Dashboard",
-			"actionsComponent": "DashboardHeaderActions",
 			"config": {
+				"description": "Cases, deadlines and your workload at a glance",
+				"headerActions": [
+					{
+						"id": "new-case",
+						"type": "open-form",
+						"label": "New Case",
+						"icon": "Plus",
+						"register": "procest",
+						"schema": "case",
+						"onSuccessRoute": "CaseDetail"
+					},
+					{
+						"id": "dashboard-refresh",
+						"type": "refresh",
+						"label": "Refresh"
+					}
+				],
 				"dateRange": {
 					"enabled": true,
 					"showHeaderPicker": false,
 					"persistKey": "procest-dashboard-range",
-					"default": { "preset": "month" },
+					"default": {
+						"preset": "month"
+					},
 					"presets": [
-						{ "id": "week", "label": "Week", "days": 7 },
-						{ "id": "month", "label": "Maand", "days": 30 },
-						{ "id": "quarter", "label": "Kwartaal", "days": 90 },
-						{ "id": "year", "label": "Jaar", "days": 365 },
-						{ "id": "all", "label": "Alles", "days": null }
+						{
+							"id": "week",
+							"label": "Current week",
+							"period": "week"
+						},
+						{
+							"id": "month",
+							"label": "Current month",
+							"period": "month"
+						},
+						{
+							"id": "quarter",
+							"label": "Current quarter",
+							"period": "quarter"
+						},
+						{
+							"id": "year",
+							"label": "Current year",
+							"period": "year"
+						},
+						{
+							"id": "all",
+							"label": "All",
+							"days": null
+						}
 					]
 				},
 				"widgets": [
 					{
 						"id": "kpi-open-cases",
 						"type": "stat",
-						"title": "Nieuwe zaken",
-						"content": { "label": "Nieuwe zaken", "route": { "name": "Cases" }, "icon": "FolderOutline", "valueColor": "#0082c9", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "startDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
+						"title": "New cases",
+						"content": {
+							"label": "New cases",
+							"caption": "newly opened",
+							"route": {
+								"name": "Cases",
+								"query": {
+									"startDate[gte]": "@monthStart"
+								}
+							},
+							"icon": "FolderOutline",
+							"valueColor": "#0082c9",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"source": {
+								"register": "procest",
+								"schema": "case",
+								"metric": "count",
+								"filter": {
+									"startDate": {
+										"gte": "@workspace.dateFrom?",
+										"lte": "@workspace.dateTo?"
+									}
+								}
+							}
+						}
 					},
 					{
 						"id": "kpi-overdue",
 						"type": "stat",
-						"title": "Te laat",
-						"content": { "label": "Te laat", "route": { "name": "Cases" }, "icon": "AlertCircleOutline", "valueColor": "#e9322d", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "deadline": { "lt": "@today" }, "startDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
+						"title": "Overdue",
+						"content": {
+							"label": "Overdue",
+							"caption": "past deadline",
+							"route": {
+								"name": "Cases",
+								"query": {
+									"deadline[lt]": "@today"
+								}
+							},
+							"icon": "AlertCircleOutline",
+							"valueColor": "#e9322d",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"source": {
+								"register": "procest",
+								"schema": "case",
+								"metric": "count",
+								"filter": {
+									"deadline": {
+										"lt": "@today"
+									},
+									"startDate": {
+										"gte": "@workspace.dateFrom?",
+										"lte": "@workspace.dateTo?"
+									}
+								}
+							}
+						}
 					},
 					{
 						"id": "kpi-completed",
 						"type": "stat",
-						"title": "Afgerond",
-						"content": { "label": "Afgerond", "route": { "name": "Cases" }, "icon": "CheckCircleOutline", "valueColor": "#46ba61", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "endDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
+						"title": "Completed",
+						"content": {
+							"label": "Completed",
+							"caption": "closed this year",
+							"route": {
+								"name": "Cases",
+								"query": {
+									"endDate[gte]": "@yearStart"
+								}
+							},
+							"icon": "CheckCircleOutline",
+							"valueColor": "#46ba61",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"source": {
+								"register": "procest",
+								"schema": "case",
+								"metric": "count",
+								"filter": {
+									"endDate": {
+										"gte": "@workspace.dateFrom?",
+										"lte": "@workspace.dateTo?"
+									}
+								}
+							}
+						}
 					},
 					{
 						"id": "kpi-my-tasks",
 						"type": "stat",
-						"title": "Mijn taken",
-						"content": { "label": "Mijn taken", "route": { "name": "MyWork" }, "icon": "ClipboardCheckOutline", "valueColor": "#0082c9", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "task", "metric": "count", "filter": { "assignee": "@me", "dueDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
+						"title": "My Tasks",
+						"content": {
+							"label": "My Tasks",
+							"caption": "assigned to me",
+							"route": {
+								"name": "Tasks",
+								"query": {
+									"assignee": "@me"
+								}
+							},
+							"icon": "ClipboardCheckOutline",
+							"valueColor": "#0082c9",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"source": {
+								"register": "procest",
+								"schema": "task",
+								"metric": "count",
+								"filter": {
+									"assignee": "@me",
+									"dueDate": {
+										"gte": "@workspace.dateFrom?",
+										"lte": "@workspace.dateTo?"
+									}
+								}
+							}
+						}
 					},
 					{
 						"id": "cases-by-status",
-						"type": "custom",
-						"title": "Cases by Status"
+						"type": "chart",
+						"title": "Cases by Status",
+						"content": {
+							"chartKind": "bar",
+							"dataSource": {
+								"register": "procest",
+								"schema": "case",
+								"filter": {
+									"isFinalStatus": false
+								},
+								"aggregate": {
+									"groupBy": "status",
+									"metric": "count",
+									"labelResolve": {
+										"schema": "statusType",
+										"labelField": "name"
+									}
+								},
+								"drilldown": {
+									"route": "Cases",
+									"filterParam": "status"
+								}
+							}
+						}
 					},
 					{
 						"id": "cases-by-type",
-						"type": "custom",
-						"title": "Cases by Type"
+						"type": "chart",
+						"title": "Cases by Type",
+						"content": {
+							"chartKind": "bar",
+							"dataSource": {
+								"register": "procest",
+								"schema": "case",
+								"filter": {
+									"isFinalStatus": false
+								},
+								"aggregate": {
+									"groupBy": "caseType",
+									"metric": "count",
+									"labelResolve": {
+										"schema": "caseType",
+										"labelField": "title"
+									}
+								},
+								"drilldown": {
+									"route": "Cases",
+									"filterParam": "caseType"
+								}
+							}
+						}
 					},
 					{
 						"id": "open-cases",
-						"type": "custom",
-						"title": "Open Cases"
+						"type": "object-table",
+						"title": "Open Cases",
+						"content": {
+							"source": {
+								"register": "procest",
+								"schema": "case",
+								"order": {
+									"startDate": "desc"
+								},
+								"limit": 7
+							},
+							"columns": [
+								{
+									"key": "title",
+									"cellClass": "cn-cell--strong"
+								},
+								{
+									"key": "identifier",
+									"cellClass": "cn-cell--muted cn-cell--end"
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"viewAllRoute": {
+								"name": "Cases"
+							},
+							"viewAllLabel": "View all",
+							"hideHeader": true,
+							"borderless": true,
+							"emptyText": "No cases found"
+						}
 					},
 					{
 						"id": "overdue-cases",
-						"type": "custom",
-						"title": "Overdue"
+						"type": "object-table",
+						"title": "Overdue",
+						"content": {
+							"source": {
+								"register": "procest",
+								"schema": "case",
+								"filter": {
+									"isFinalStatus": false,
+									"deadline": {
+										"lt": "@today"
+									}
+								},
+								"extend": [
+									"calculations"
+								],
+								"order": {
+									"deadline": "asc"
+								},
+								"limit": 7
+							},
+							"columns": [
+								{
+									"key": "title",
+									"cellClass": "cn-cell--strong"
+								},
+								{
+									"key": "daysOverdue",
+									"formatter": "conditionalPhrase",
+									"formatterOptions": {
+										"positive": "{n} days overdue"
+									},
+									"cellClass": "cn-cell--muted cn-cell--end"
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"viewAllRoute": {
+								"name": "Cases"
+							},
+							"viewAllLabel": "View all",
+							"hideHeader": true,
+							"borderless": true,
+							"emptyText": "No open cases"
+						}
 					},
 					{
 						"id": "my-tasks",
-						"type": "custom",
-						"title": "My Tasks"
+						"type": "object-table",
+						"title": "My Tasks",
+						"content": {
+							"source": {
+								"register": "procest",
+								"schema": "task",
+								"filter": {
+									"assignee": "@me",
+									"isTerminalStatus": false
+								},
+								"extend": [
+									"calculations"
+								],
+								"order": {
+									"dueDate": "asc"
+								},
+								"limit": 7
+							},
+							"columns": [
+								{
+									"key": "title",
+									"cellClass": "cn-cell--strong"
+								},
+								{
+									"key": "daysUntilDue",
+									"formatter": "conditionalPhrase",
+									"formatterOptions": {
+										"negative": "{n} days overdue",
+										"zero": "Due today",
+										"positive": "{n} days remaining"
+									},
+									"cellClass": "cn-cell--muted cn-cell--end"
+								}
+							],
+							"rowRoute": "TaskDetail",
+							"viewAllRoute": {
+								"name": "Tasks"
+							},
+							"viewAllLabel": "View all",
+							"hideHeader": true,
+							"borderless": true,
+							"emptyText": "No tasks found"
+						}
 					},
 					{
 						"id": "deadline-alerts",
-						"type": "custom",
-						"title": "Deadline Alerts"
+						"type": "object-table",
+						"title": "Deadline Alerts",
+						"content": {
+							"source": {
+								"register": "procest",
+								"schema": "case",
+								"filter": {
+									"isFinalStatus": false,
+									"deadline": {
+										"lte": "@today+3d"
+									}
+								},
+								"extend": [
+									"calculations"
+								],
+								"order": {
+									"deadline": "asc"
+								},
+								"limit": 5
+							},
+							"columns": [
+								{
+									"key": "title",
+									"cellClass": "cn-cell--strong"
+								},
+								{
+									"key": "daysUntilDeadline",
+									"formatter": "conditionalPhrase",
+									"formatterOptions": {
+										"negative": "{n} days overdue",
+										"zero": "Due today",
+										"positive": "{n} days remaining"
+									},
+									"cellClass": "cn-cell--muted cn-cell--end"
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"viewAllRoute": {
+								"name": "Cases"
+							},
+							"viewAllLabel": "View all",
+							"hideHeader": true,
+							"borderless": true,
+							"emptyText": "No deadline alerts"
+						}
 					},
 					{
 						"id": "task-reminders",
-						"type": "custom",
-						"title": "Task Due Reminders"
+						"type": "object-table",
+						"title": "Task Due Reminders",
+						"content": {
+							"source": {
+								"register": "procest",
+								"schema": "task",
+								"filter": {
+									"assignee": "@me",
+									"isTerminalStatus": false,
+									"dueDate": {
+										"lte": "@today+3d"
+									}
+								},
+								"extend": [
+									"calculations"
+								],
+								"order": {
+									"dueDate": "asc"
+								},
+								"limit": 5
+							},
+							"columns": [
+								{
+									"key": "title",
+									"cellClass": "cn-cell--strong"
+								},
+								{
+									"key": "daysUntilDue",
+									"formatter": "conditionalPhrase",
+									"formatterOptions": {
+										"negative": "{n} days overdue",
+										"zero": "Due today",
+										"positive": "{n} days remaining"
+									},
+									"cellClass": "cn-cell--muted cn-cell--end"
+								}
+							],
+							"rowRoute": "TaskDetail",
+							"viewAllRoute": {
+								"name": "Tasks"
+							},
+							"viewAllLabel": "View all",
+							"hideHeader": true,
+							"borderless": true,
+							"emptyText": "No task reminders"
+						}
 					},
 					{
 						"id": "stalled-cases",
-						"type": "custom",
-						"title": "Stalled Cases"
+						"type": "object-table",
+						"title": "Stalled Cases",
+						"content": {
+							"source": {
+								"register": "procest",
+								"schema": "case",
+								"filter": {
+									"isFinalStatus": false
+								},
+								"extend": [
+									"calculations"
+								],
+								"order": {
+									"@self.updated": "asc"
+								},
+								"limit": 5
+							},
+							"columns": [
+								{
+									"key": "title",
+									"cellClass": "cn-cell--strong"
+								},
+								{
+									"key": "daysSinceActivity",
+									"formatter": "conditionalPhrase",
+									"formatterOptions": {
+										"positive": "{n} days inactive"
+									},
+									"cellClass": "cn-cell--muted cn-cell--end"
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"viewAllRoute": {
+								"name": "Cases"
+							},
+							"viewAllLabel": "View all",
+							"hideHeader": true,
+							"borderless": true,
+							"emptyText": "All cases active"
+						}
 					}
 				],
 				"layout": [
@@ -536,74 +1024,17 @@
 					}
 				],
 				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"slots": {
-				"widget-cases-by-status": "statusChart",
-				"widget-cases-by-type": "casesByType",
-				"widget-open-cases": "casesOverview",
-				"widget-overdue-cases": "overdueCases",
-				"widget-my-tasks": "myTasks",
-				"widget-deadline-alerts": "deadlineAlerts",
-				"widget-task-reminders": "taskReminders",
-				"widget-stalled-cases": "stalledCases"
 			}
 		},
 		{
 			"id": "MyWork",
 			"route": "/my-work",
-			"type": "dashboard",
+			"type": "custom",
 			"title": "My Work",
+			"component": "MyWorkView",
+			"_note": "Case index scoped to the current user (assignee = current uid) in card view. A thin CnIndexPage wrapper because the stock index base-filter does not resolve the @me current-user token; the wrapper injects the resolved uid.",
 			"config": {
-				"widgets": [
-					{
-						"id": "myWorkBoard",
-						"title": "My Work",
-						"type": "custom"
-					}
-				],
-				"layout": [
-					{
-						"id": 1,
-						"widgetId": "myWorkBoard",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 12
-					}
-				],
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"slots": {
-				"widget-myWorkBoard": "MyWorkView"
-			}
-		},
-		{
-			"id": "Werkvoorraad",
-			"route": "/werkvoorraad",
-			"type": "dashboard",
-			"title": "Work Queue",
-			"config": {
-				"widgets": [
-					{
-						"id": "werkvoorraad",
-						"title": "Work Queue",
-						"type": "custom"
-					}
-				],
-				"layout": [
-					{
-						"id": 1,
-						"widgetId": "werkvoorraad",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 12
-					}
-				],
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"slots": {
-				"widget-werkvoorraad": "WerkvoorraadView"
+				"register": "procest"
 			}
 		},
 		{
@@ -611,15 +1042,47 @@
 			"route": "/cases",
 			"type": "index",
 			"title": "Cases",
+			"actionsComponent": "CaseListExportAction",
 			"config": {
 				"register": "procest",
 				"schema": "case",
+				"allowSavedViews": true,
+				"viewModes": [
+					"table",
+					"cards",
+					"map"
+				],
+				"mapConfig": {
+					"geoField": "geometry",
+					"popupField": "title",
+					"center": [
+						52.1326,
+						5.2913
+					],
+					"basemaps": [
+						{
+							"name": "Standard",
+							"url": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+							"attribution": "© OpenStreetMap contributors"
+						},
+						{
+							"name": "Humanitarian",
+							"url": "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+							"attribution": "© OpenStreetMap contributors, tiles by HOT"
+						},
+						{
+							"name": "Terrain",
+							"url": "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+							"attribution": "© OpenStreetMap contributors, SRTM | © OpenTopoMap"
+						}
+					]
+				},
 				"showViewAction": false,
 				"actions": [
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "CaseDetail",
 						"type": "handler"
@@ -651,6 +1114,15 @@
 					"enabled": true,
 					"showMetadata": true
 				},
+				"folderSidebar": {
+					"source": "register",
+					"register": "procest",
+					"schema": "caseType",
+					"idField": "@self.id",
+					"nameField": "title",
+					"filterField": "caseType",
+					"allLabel": "All cases"
+				},
 				"documentationUrl": "https://procest.conduction.nl"
 			}
 		},
@@ -662,146 +1134,653 @@
 			"config": {
 				"register": "procest",
 				"schema": "case",
-				"sidebarTabs": [
+				"_note": "CASE archetype (unified zaak) — the flagship record and the ADR-062 reference page (the cell is the budget: every widget fills its gridHeight exactly, no inner scrollbars, no reserved voids). The lead row pairs the field-scoped 'Core case data' widget (include: identity/ownership fields) with a right column of KPI stats-block (open tasks / documents / decisions / sub-cases, replacing the deprecated header summaryAggregates) over the Related panel. Row two pairs the 'Process' data widget (include: status/procedure/workflow fields) with Initiator, Contacts and Notes sized to their small content. FK-scoped child collections (task.case, caseDocument.case, decision.case, voorstel.case, location.case) fit their rows to their cells with View-all/+N-more footers. Files and Calendar leaves close the page. lifecycleActions drive status transitions; audit history stays the single sidebar tab.",
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
 					{
-						"id": "tasks",
-						"label": "Tasks",
-						"icon": "icon-checkmark",
-						"component": "CaseTasksTab",
-						"order": 20
+						"id": "case-core",
+						"type": "data",
+						"title": "Core case data",
+						"icon": "FileDocument",
+						"content": {
+							"columns": 2,
+							"include": [
+								"title",
+								"identifier",
+								"description",
+								"caseType",
+								"assignee",
+								"requester",
+								"priority",
+								"confidentiality",
+								"deadline",
+								"startDate"
+							]
+						}
 					},
 					{
-						"id": "decisions",
-						"label": "Decisions",
-						"icon": "icon-toggle",
-						"component": "CaseDecisionsTab",
-						"order": 30
+						"id": "case-process",
+						"type": "data",
+						"title": "Process",
+						"icon": "Cog",
+						"content": {
+							"columns": 2,
+							"include": [
+								"status",
+								"procedureType",
+								"workflowTemplate",
+								"workflowVersion",
+								"result",
+								"plannedEndDate",
+								"endDate",
+								"extensionCount",
+								"handoffSource",
+								"intakeChannel"
+							]
+						}
 					},
 					{
-						"id": "dossier",
-						"label": "Dossier",
-						"icon": "icon-files",
-						"component": "DossierTab",
-						"order": 40
+						"id": "case-kpis-open-tasks",
+						"type": "stats-block",
+						"title": "Open tasks",
+						"icon": "Gauge",
+						"content": {
+							"entries": [
+								{
+									"title": "Open tasks",
+									"register": "procest",
+									"schema": "task",
+									"metric": "count",
+									"filter": {
+										"case": "@objectId",
+										"status": "active"
+									},
+									"route": {
+										"name": "Tasks"
+									}
+								}
+							]
+						}
 					},
 					{
-						"id": "advies",
-						"label": "Advies",
-						"icon": "icon-comment",
-						"component": "AdviesPanel",
-						"order": 50
+						"id": "case-kpis-documents",
+						"type": "stats-block",
+						"title": "Documents",
+						"icon": "Gauge",
+						"content": {
+							"entries": [
+								{
+									"title": "Documents",
+									"register": "procest",
+									"schema": "caseDocument",
+									"metric": "count",
+									"filter": {
+										"case": "@objectId"
+									}
+								}
+							]
+						}
 					},
 					{
-						"id": "subCases",
-						"label": "Sub-cases",
-						"icon": "icon-folder",
-						"component": "DeelzaakList",
-						"order": 55
+						"id": "case-kpis-decisions",
+						"type": "stats-block",
+						"title": "Decisions",
+						"icon": "Gauge",
+						"content": {
+							"entries": [
+								{
+									"title": "Decisions",
+									"register": "procest",
+									"schema": "decision",
+									"metric": "count",
+									"filter": {
+										"case": "@objectId"
+									}
+								}
+							]
+						}
 					},
 					{
-						"id": "relatedCases",
-						"label": "Related cases",
-						"icon": "icon-link",
-						"component": "RelatedCasesSection",
-						"order": 58
+						"id": "case-kpis-sub-cases",
+						"type": "stats-block",
+						"title": "Sub-cases",
+						"icon": "Gauge",
+						"content": {
+							"entries": [
+								{
+									"title": "Sub-cases",
+									"register": "procest",
+									"schema": "case",
+									"metric": "count",
+									"filter": {
+										"parentCase": "@objectId"
+									},
+									"route": {
+										"name": "Cases"
+									}
+								}
+							]
+						}
 					},
 					{
-						"id": "email",
-						"label": "Email",
-						"icon": "icon-mail",
-						"component": "CaseEmailTab",
-						"order": 60
+						"id": "case-kpis-hours",
+						"type": "stats-block",
+						"title": "Hours booked",
+						"icon": "History",
+						"content": {
+							"entries": [
+								{
+									"title": "Hours booked",
+									"register": "shillinq",
+									"schema": "UrenRegistratie",
+									"metric": "sum",
+									"field": "hours",
+									"filter": {
+										"subjectApp": "procest",
+										"subjectId": "@objectId"
+									}
+								}
+							]
+						}
 					},
 					{
-						"id": "appointments",
-						"label": "Appointments",
-						"icon": "icon-calendar-dark",
-						"component": "CalendarLeafTab",
-						"order": 65
+						"id": "case-related",
+						"type": "related",
+						"title": "Case type, parent & related cases",
+						"icon": "LinkVariant"
 					},
 					{
-						"id": "forms",
-						"label": "Forms",
-						"icon": "icon-edit",
-						"component": "FormsLeafTab",
-						"order": 70
+						"id": "initiator",
+						"type": "custom",
+						"title": "Initiator",
+						"icon": "Account",
+						"_note": "Initiator (indiener) display — brp-kvk register sets. Resolved via page slots (widget-initiator -> InitiatorSection); self-fetches the case from the route id and renders nothing when no initiator is set."
 					},
 					{
-						"id": "photos",
-						"label": "Photos",
-						"icon": "icon-picture",
-						"component": "PhotosLeafTab",
-						"order": 75
+						"id": "case-tasks",
+						"type": "object-list",
+						"title": "Tasks",
+						"icon": "ClipboardCheckOutline",
+						"content": {
+							"register": "procest",
+							"schema": "task",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "dueDate",
+								"dir": "asc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "title",
+									"label": "Title"
+								},
+								{
+									"key": "status",
+									"label": "Status"
+								},
+								{
+									"key": "assignee",
+									"label": "Assignee"
+								},
+								{
+									"key": "dueDate",
+									"label": "Due"
+								},
+								{
+									"key": "priority",
+									"label": "Priority"
+								}
+							],
+							"rowRoute": "TaskDetail",
+							"viewAllRoute": "Tasks",
+							"viewAllQuery": {
+								"case": "@objectId"
+							},
+							"emptyText": "No tasks for this case yet"
+						}
 					},
 					{
-						"id": "location",
-						"label": "Location",
-						"icon": "icon-address",
-						"component": "MapsLeafTab",
-						"order": 80
-					}
-				],
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "related-index",
-					"slot": "sidebar",
-					"tabGroup": "locaties",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1,
-					"props": {
-						"config": {
+						"id": "case-documents",
+						"type": "object-list",
+						"title": "Documents",
+						"icon": "FolderOutline",
+						"content": {
+							"register": "procest",
+							"schema": "caseDocument",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "registrationDate",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "title",
+									"label": "Title"
+								},
+								{
+									"key": "description",
+									"label": "Description"
+								},
+								{
+									"key": "registrationDate",
+									"label": "Registered"
+								}
+							],
+							"emptyText": "No documents registered on this case yet"
+						}
+					},
+					{
+						"id": "case-decisions",
+						"type": "object-list",
+						"title": "Decisions",
+						"icon": "ScaleBalance",
+						"content": {
+							"register": "procest",
+							"schema": "decision",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "decisionDate",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "title",
+									"label": "Title"
+								},
+								{
+									"key": "decisionType",
+									"label": "Type"
+								},
+								{
+									"key": "decisionDate",
+									"label": "Decision date"
+								},
+								{
+									"key": "effectiveDate",
+									"label": "Effective"
+								}
+							],
+							"emptyText": "No decisions taken on this case yet"
+						}
+					},
+					{
+						"id": "case-voorstellen",
+						"type": "object-list",
+						"title": "Proposals",
+						"icon": "ClipboardList",
+						"content": {
+							"register": "procest",
+							"schema": "proposal",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "order",
+								"dir": "asc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "onderwerp",
+									"label": "Subject"
+								},
+								{
+									"key": "type",
+									"label": "Type"
+								},
+								{
+									"key": "status",
+									"label": "Status"
+								},
+								{
+									"key": "currentStep",
+									"label": "Current step"
+								}
+							],
+							"rowRoute": "VoorstelDetail",
+							"viewAllRoute": "Voorstellen",
+							"viewAllQuery": {
+								"case": "@objectId"
+							},
+							"emptyText": "No proposals for this case"
+						}
+					},
+					{
+						"id": "case-locaties",
+						"type": "object-list",
+						"title": "Locations",
+						"icon": "Earth",
+						"content": {
 							"register": "procest",
 							"schema": "location",
 							"filter": {
-								"case": ":id"
+								"case": "@objectId"
 							},
+							"sort": {
+								"field": "order",
+								"dir": "asc"
+							},
+							"limit": 25,
 							"columns": [
-								"label",
-								"formattedAddress",
-								"nummeraanduidingId",
-								"parcelId",
-								"source"
+								{
+									"key": "label",
+									"label": "Label"
+								},
+								{
+									"key": "formattedAddress",
+									"label": "Address"
+								},
+								{
+									"key": "addressDesignationId",
+									"label": "Nummeraanduiding id"
+								},
+								{
+									"key": "parcelId",
+									"label": "Parcel id"
+								},
+								{
+									"key": "source",
+									"label": "Source"
+								}
 							],
-							"actions": [
-								"create",
-								"edit",
-								"delete"
-							]
+							"rowRoute": "LocationDetail",
+							"viewAllRoute": "Locations",
+							"viewAllQuery": {
+								"case": "@objectId"
+							},
+							"emptyText": "No locations linked to this case yet"
 						}
+					},
+					{
+						"id": "case-files",
+						"type": "integration",
+						"integrationId": "files",
+						"title": "Files & attachments",
+						"icon": "FolderOutline"
+					},
+					{
+						"id": "case-notes",
+						"type": "integration",
+						"integrationId": "notes",
+						"title": "Notes",
+						"icon": "NoteTextOutline"
+					},
+					{
+						"id": "case-contacts",
+						"type": "integration",
+						"integrationId": "contacts",
+						"title": "Connected contacts",
+						"icon": "AccountGroup"
+					},
+					{
+						"id": "case-calendar",
+						"type": "integration",
+						"integrationId": "calendar",
+						"title": "Appointments & hearings",
+						"icon": "Calendar"
+					},
+					{
+						"id": "case-decidesk-decisions",
+						"type": "integration",
+						"integrationId": "decidesk-decisions",
+						"title": "Besluitvorming",
+						"icon": "Gavel"
+					},
+					{
+						"id": "case-assistant",
+						"type": "custom",
+						"title": "Case assistant",
+						"icon": "Lightbulb",
+						"_note": "Case-assistant chat panel (case-assistant-via-hermiq). Resolved via page slots (widget-case-assistant -> CaseAssistantPanel); conversational assistance is delegated to Hermiq (fleet rule: AI lives in Hermiq), procest only enriches with case context the current user may read. Availability-gated: renders nothing when the hermiq app is not installed/enabled."
+					},
+					{
+						"id": "cmmn-case-plan",
+						"type": "custom",
+						"title": "Adaptive case plan",
+						"icon": "Sitemap",
+						"_note": "CMMN adaptive case-plan panel (cmmn-adaptive-case). Resolved via page slots (widget-cmmn-case-plan -> CmmnCasePlanPanel); the CMMN counterpart to the BPMN status-transition engine, for caseTypes with handlingModel = 'cmmn'. Renders nothing when this case's caseType is BPMN-managed."
 					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "case-core",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 8,
+						"gridHeight": 5,
+						"showTitle": false
+					},
+					{
+						"id": "15",
+						"widgetId": "case-kpis-open-tasks",
+						"gridX": 8,
+						"gridY": 0,
+						"gridWidth": 4,
+						"gridHeight": 2
+					},
+					{
+						"id": "16",
+						"widgetId": "case-kpis-documents",
+						"gridX": 8,
+						"gridY": 2,
+						"gridWidth": 4,
+						"gridHeight": 2
+					},
+					{
+						"id": "17",
+						"widgetId": "case-kpis-decisions",
+						"gridX": 8,
+						"gridY": 4,
+						"gridWidth": 4,
+						"gridHeight": 2
+					},
+					{
+						"id": "18",
+						"widgetId": "case-kpis-sub-cases",
+						"gridX": 8,
+						"gridY": 6,
+						"gridWidth": 4,
+						"gridHeight": 2
+					},
+					{
+						"id": "3",
+						"widgetId": "case-related",
+						"gridX": 8,
+						"gridY": 8,
+						"gridWidth": 4,
+						"gridHeight": 7
+					},
+					{
+						"id": "4",
+						"widgetId": "case-process",
+						"gridX": 0,
+						"gridY": 5,
+						"gridWidth": 8,
+						"gridHeight": 5,
+						"showTitle": false
+					},
+					{
+						"id": "5",
+						"widgetId": "initiator",
+						"gridX": 0,
+						"gridY": 12,
+						"gridWidth": 8,
+						"gridHeight": 3,
+						"showTitle": true
+					},
+					{
+						"id": "8",
+						"widgetId": "case-tasks",
+						"gridX": 0,
+						"gridY": 15,
+						"gridWidth": 6,
+						"gridHeight": 4
+					},
+					{
+						"id": "9",
+						"widgetId": "case-documents",
+						"gridX": 6,
+						"gridY": 15,
+						"gridWidth": 6,
+						"gridHeight": 4
+					},
+					{
+						"id": "10",
+						"widgetId": "case-decisions",
+						"gridX": 0,
+						"gridY": 19,
+						"gridWidth": 6,
+						"gridHeight": 3
+					},
+					{
+						"id": "11",
+						"widgetId": "case-voorstellen",
+						"gridX": 6,
+						"gridY": 19,
+						"gridWidth": 6,
+						"gridHeight": 3
+					},
+					{
+						"id": "12",
+						"widgetId": "case-locaties",
+						"gridX": 0,
+						"gridY": 22,
+						"gridWidth": 12,
+						"gridHeight": 3
+					},
+					{
+						"id": "13",
+						"widgetId": "case-files",
+						"gridX": 0,
+						"gridY": 25,
+						"gridWidth": 6,
+						"gridHeight": 3
+					},
+					{
+						"id": "14",
+						"widgetId": "case-calendar",
+						"gridX": 6,
+						"gridY": 25,
+						"gridWidth": 6,
+						"gridHeight": 3
+					},
+					{
+						"id": "6",
+						"widgetId": "case-contacts",
+						"gridX": 0,
+						"gridY": 28,
+						"gridWidth": 6,
+						"gridHeight": 3
+					},
+					{
+						"id": "7",
+						"widgetId": "case-notes",
+						"gridX": 6,
+						"gridY": 28,
+						"gridWidth": 6,
+						"gridHeight": 4
+					},
+					{
+						"id": "19",
+						"widgetId": "case-decidesk-decisions",
+						"gridX": 0,
+						"gridY": 32,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					{
+						"id": "20",
+						"widgetId": "case-assistant",
+						"gridX": 0,
+						"gridY": 36,
+						"gridWidth": 12,
+						"gridHeight": 5,
+						"showTitle": true
+					},
+					{
+						"id": "21",
+						"widgetId": "cmmn-case-plan",
+						"gridX": 0,
+						"gridY": 41,
+						"gridWidth": 12,
+						"gridHeight": 6,
+						"showTitle": true
+					},
+					{
+						"id": "22",
+						"widgetId": "case-kpis-hours",
+						"gridX": 0,
+						"gridY": 10,
+						"gridWidth": 4,
+						"gridHeight": 2,
+						"showTitle": false
+					}
+				],
+				"lifecycleActions": {
+					"field": "status"
 				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 3,
-					"gridWidth": 1,
-					"gridHeight": 1
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						},
+						{
+							"id": "version-history",
+							"label": "Version history",
+							"icon": "FileCompare",
+							"component": "VersionHistoryLeafTab"
+						},
+						{
+							"id": "notes",
+							"label": "Notes",
+							"icon": "NoteTextOutline",
+							"component": "CaseNotesTab"
+						},
+						{
+							"id": "sharing",
+							"label": "Sharing",
+							"icon": "ShareVariant",
+							"component": "CaseSharingTab"
+						},
+						{
+							"id": "email",
+							"label": "Email",
+							"icon": "EmailOutline",
+							"component": "CaseEmailTab"
+						},
+						{
+							"id": "besluitvorming",
+							"label": "Besluitvorming",
+							"icon": "Gavel",
+							"component": "BesluitvormingLeafTab"
+						}
+					]
 				}
-			]
+			},
+			"slots": {
+				"widget-initiator": "InitiatorSection",
+				"widget-case-assistant": "CaseAssistantPanel",
+				"widget-cmmn-case-plan": "CmmnCasePlanPanel"
+			}
 		},
 		{
 			"id": "DeelzaakList",
@@ -831,6 +1810,7 @@
 			"config": {
 				"register": "procest",
 				"schema": "case",
+				"allowSavedViews": true,
 				"filter": {
 					"caseType": "b3c1a000-0000-4000-a000-00000000be2a"
 				},
@@ -839,7 +1819,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "CaseDetail",
 						"type": "handler"
@@ -870,94 +1850,246 @@
 			"title": "Bezwaar",
 			"config": {
 				"register": "procest",
-				"schema": "bezwaar",
-				"sidebarTabs": [
+				"schema": "objectionProceeding",
+				"_note": "OBJECTION-CASE archetype (AWB bezwaar), ADR-062 round 2. `bezwaar` is a supporting schema on a unified case (bezwaar.case) and declares NO comms linkedTypes — so NO files/notes/contacts/calendar leaves here; those live on the parent CaseDetail. The lead row pairs the field-scoped 'Objection' core widget (case/objection/status/awbReference/ontvangstdatum/decisionDeadline) with an in-grid KPI stats-block (advice-request and decision counts, replacing the deprecated header summaryAggregates). The AWB statutory-clock fields (verdaging/opschorting/hearing waiver/ingebrekestelling/dwangsom) are a genuinely distinct group and get their own 'Statutory clock & suspension' data widget. The two real child collections follow as FK-scoped object-lists side by side: committee advice requests (bacAdviceRequest.bezwaar) and decisions on the objection (bezwaarDecision.bezwaar), each deep-linking to its own detail page. lifecycleActions drive the bezwaar status (Ontvangen → … → Afgehandeld). Audit history stays a sidebar tab.",
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
 					{
-						"id": "advice",
-						"label": "Advice",
-						"icon": "icon-comment",
-						"component": "AdviesPanel",
-						"order": 20
+						"id": "bezwaar-core",
+						"type": "data",
+						"title": "Objection",
+						"icon": "Gavel",
+						"content": {
+							"columns": 2,
+							"include": [
+								"case",
+								"objection",
+								"status",
+								"awbReference",
+								"receiptDate",
+								"decisionDeadline"
+							]
+						}
 					},
 					{
-						"id": "hearing",
-						"label": "Hearing",
-						"icon": "icon-group",
-						"component": "CaseTasksTab",
-						"order": 30
+						"id": "bezwaar-kpis-advice-requests",
+						"type": "stats-block",
+						"title": "Advice requests",
+						"icon": "Gauge",
+						"content": {
+							"entries": [
+								{
+									"title": "Advice requests",
+									"register": "procest",
+									"schema": "bacAdviceRequest",
+									"metric": "count",
+									"filter": {
+										"bezwaar": "@objectId"
+									}
+								}
+							]
+						}
 					},
 					{
-						"id": "decision",
-						"label": "Decision",
-						"icon": "icon-toggle",
-						"component": "CaseDecisionsTab",
-						"order": 40
-					}
-				],
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1
-				}
-			]
-		},
-		{
-			"id": "BezwaarDecisions",
-			"route": "/bezwaar-decisions",
-			"type": "index",
-			"title": "Beslissingen op bezwaar",
-			"config": {
-				"register": "procest",
-				"schema": "bezwaarDecision",
-				"columns": [
-					"bezwaar",
-					"dispositionType",
-					"decisionDate",
-					"effectiveDate",
-					"status",
-					"publishedAt"
-				],
-				"showViewAction": false,
-				"actions": [
+						"id": "bezwaar-kpis-decisions",
+						"type": "stats-block",
+						"title": "Decisions",
+						"icon": "Gauge",
+						"content": {
+							"entries": [
+								{
+									"title": "Decisions",
+									"register": "procest",
+									"schema": "bezwaarDecision",
+									"metric": "count",
+									"filter": {
+										"bezwaar": "@objectId"
+									}
+								}
+							]
+						}
+					},
 					{
-						"id": "view",
-						"label": "View",
-						"icon": "icon-info",
-						"handler": "navigate",
-						"route": "BezwaarDecisionDetail",
-						"type": "handler"
+						"id": "bezwaar-terms",
+						"type": "data",
+						"title": "Statutory clock & suspension",
+						"icon": "Timeline",
+						"content": {
+							"columns": 2,
+							"include": [
+								"adjournedOn",
+								"verdagingsperiode",
+								"suspension",
+								"suspensionStart",
+								"suspensionEnd",
+								"hearingWaived",
+								"waiverReason",
+								"ingebrekestelling",
+								"penaltyPayment"
+							]
+						}
+					},
+					{
+						"id": "bezwaar-advies",
+						"type": "object-list",
+						"title": "Advies",
+						"icon": "MessageTextOutline",
+						"content": {
+							"register": "procest",
+							"schema": "bacAdviceRequest",
+							"filter": {
+								"bezwaar": "@objectId"
+							},
+							"sort": {
+								"field": "order",
+								"dir": "asc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "commissie",
+									"label": "Commissie"
+								},
+								{
+									"key": "status",
+									"label": "Status"
+								},
+								{
+									"key": "assignedAt",
+									"label": "Assigned at"
+								},
+								{
+									"key": "deadline",
+									"label": "Deadline"
+								},
+								{
+									"key": "conclusion",
+									"label": "Conclusion"
+								}
+							],
+							"rowRoute": "BezwaarAdviceRequestDetail",
+							"emptyText": "No advice requests raised for this objection yet"
+						}
+					},
+					{
+						"id": "bezwaar-beslissingen",
+						"type": "object-list",
+						"title": "Beslissingen",
+						"icon": "ScaleBalance",
+						"content": {
+							"register": "procest",
+							"schema": "bezwaarDecision",
+							"filter": {
+								"bezwaar": "@objectId"
+							},
+							"sort": {
+								"field": "order",
+								"dir": "asc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "dispositionType",
+									"label": "Disposition type"
+								},
+								{
+									"key": "decisionDate",
+									"label": "Decision date"
+								},
+								{
+									"key": "effectiveDate",
+									"label": "Effective date"
+								},
+								{
+									"key": "status",
+									"label": "Status"
+								},
+								{
+									"key": "publishedAt",
+									"label": "Published at"
+								}
+							],
+							"rowRoute": "BezwaarDecisionDetail",
+							"emptyText": "No decisions recorded for this objection yet"
+						}
 					}
 				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "bezwaar-core",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 8,
+						"gridHeight": 4,
+						"showTitle": false
+					},
+					{
+						"id": "6",
+						"widgetId": "bezwaar-kpis-advice-requests",
+						"gridX": 8,
+						"gridY": 0,
+						"gridWidth": 4,
+						"gridHeight": 2
+					},
+					{
+						"id": "7",
+						"widgetId": "bezwaar-kpis-decisions",
+						"gridX": 8,
+						"gridY": 2,
+						"gridWidth": 4,
+						"gridHeight": 2
+					},
+					{
+						"id": "3",
+						"widgetId": "bezwaar-terms",
+						"gridX": 0,
+						"gridY": 4,
+						"gridWidth": 12,
+						"gridHeight": 6
+					},
+					{
+						"id": "4",
+						"widgetId": "bezwaar-advies",
+						"gridX": 0,
+						"gridY": 10,
+						"gridWidth": 6,
+						"gridHeight": 4
+					},
+					{
+						"id": "5",
+						"widgetId": "bezwaar-beslissingen",
+						"gridX": 6,
+						"gridY": 10,
+						"gridWidth": 6,
+						"gridHeight": 4
+					}
+				],
+				"lifecycleActions": {
+					"field": "status"
+				},
 				"sidebar": {
 					"enabled": true,
-					"showMetadata": true
-				},
-				"documentationUrl": "https://procest.conduction.nl"
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						},
+						{
+							"id": "version-history",
+							"label": "Version history",
+							"icon": "FileCompare",
+							"component": "VersionHistoryLeafTab"
+						}
+					]
+				}
 			}
 		},
 		{
@@ -968,87 +2100,107 @@
 			"config": {
 				"register": "procest",
 				"schema": "bezwaarDecision",
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "appeal-notice",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1,
-					"props": {
-						"config": {
-							"fields": [
-								"appealNotice"
+				"_note": "DECISION-RECORD archetype (beslissing op bezwaar, AWB art. 7:11), ADR-062 round 2. No comms linkedTypes and no child schemas point at it. The 17-field schema splits into two genuinely distinct groups: 'Disposition & reasoning' (the legal substance — dispositionType, reasoning, legalBasis, advisoryOpinion, followsAdvice, deviationRationale, proceskostenvergoeding, status) paired with the Related panel (parent bezwaar and case), and 'Publication & documents' (the formal paper trail — replacementDecision, appealNotice, dates, decisionMaker, decisionDocument, publishedAt, notifiedRecipients) full-width below. lifecycleActions drive the status (draft → published). No files/notes leaves: document references are plain fields, not a files-leaf. Audit history is a sidebar tab.",
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
+					{
+						"id": "bezwaardecision-data",
+						"type": "data",
+						"title": "Disposition & reasoning",
+						"icon": "ScaleBalance",
+						"content": {
+							"columns": 2,
+							"include": [
+								"dispositionType",
+								"reasoning",
+								"legalBasis",
+								"advisoryOpinion",
+								"followsAdvice",
+								"deviationRationale",
+								"legalCostsCompensation",
+								"status"
 							]
 						}
-					}
-				},
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "documents",
-					"gridX": 0,
-					"gridY": 3,
-					"gridWidth": 1,
-					"gridHeight": 1,
-					"props": {
-						"config": {
-							"fields": [
+					},
+					{
+						"id": "bezwaardecision-publication",
+						"type": "data",
+						"title": "Publication & documents",
+						"icon": "FileSign",
+						"content": {
+							"columns": 2,
+							"include": [
+								"replacementDecision",
+								"appealNotice",
+								"decisionDate",
+								"effectiveDate",
+								"decisionMaker",
 								"decisionDocument",
-								"replacementDecision"
-							]
-						}
-					}
-				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 4,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 5,
-					"gridWidth": 1,
-					"gridHeight": 1,
-					"props": {
-						"config": {
-							"fields": [
 								"publishedAt",
 								"notifiedRecipients"
 							]
 						}
+					},
+					{
+						"id": "bezwaardecision-related",
+						"type": "related",
+						"title": "Bezwaar & case",
+						"icon": "LinkVariant"
 					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "bezwaardecision-data",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 8,
+						"gridHeight": 5,
+						"showTitle": false
+					},
+					{
+						"id": "2",
+						"widgetId": "bezwaardecision-related",
+						"gridX": 8,
+						"gridY": 0,
+						"gridWidth": 4,
+						"gridHeight": 5
+					},
+					{
+						"id": "3",
+						"widgetId": "bezwaardecision-publication",
+						"gridX": 0,
+						"gridY": 5,
+						"gridWidth": 12,
+						"gridHeight": 5
+					}
+				],
+				"lifecycleActions": {
+					"field": "status"
+				},
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						},
+						{
+							"id": "version-history",
+							"label": "Version history",
+							"icon": "FileCompare",
+							"component": "VersionHistoryLeafTab"
+						}
+					]
 				}
-			]
+			}
 		},
 		{
 			"id": "Tasks",
@@ -1058,12 +2210,13 @@
 			"config": {
 				"register": "procest",
 				"schema": "task",
+				"allowSavedViews": true,
 				"showViewAction": false,
 				"actions": [
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "TaskDetail",
 						"type": "handler"
@@ -1091,37 +2244,35 @@
 			"config": {
 				"register": "procest",
 				"schema": "task",
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1
+				"_note": "CREATE-FORM archetype — the task creation form (route /tasks/new, usually pre-seeded with ?caseId=). A not-yet-persisted task has no id, so no children, history, aggregates or content leaves apply: it is just the Data form. No audit sidebar tab either — there is no object to have a history. All richness lives on TaskDetail once the task exists.",
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
+					{
+						"id": "tasknew-data",
+						"type": "data",
+						"title": "Nieuwe taak",
+						"icon": "ClipboardCheckOutline",
+						"content": {
+							"columns": 2
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "tasknew-data",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 6,
+						"showTitle": false
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": false
 				}
-			]
+			}
 		},
 		{
 			"id": "TaskDetail",
@@ -1131,37 +2282,56 @@
 			"config": {
 				"register": "procest",
 				"schema": "task",
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
+				"_note": "ACTION-ITEM archetype — a work item on a case (task.case) with assignee/dueDate/priority/status and an inline checklist[]. The schema declares NO comms linkedTypes and has NO child schemas pointing at it, so it stays deliberately lean: the Data widget carries the who/when/status and the checklist, and lifecycleActions drive the status machine (available → active → completed / terminated). No files/notes/contacts/calendar leaves — a task carries none of that content; those live on the parent case. Audit history (status transitions) is a sidebar tab.",
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
+					{
+						"id": "task-data",
+						"type": "data",
+						"title": "Taak",
+						"icon": "ClipboardCheckOutline",
+						"content": {
+							"columns": 2
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "task-data",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 6,
+						"showTitle": false
+					}
+				],
+				"lifecycleActions": {
+					"field": "status"
 				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						},
+						{
+							"id": "version-history",
+							"label": "Version history",
+							"icon": "FileCompare",
+							"component": "VersionHistoryLeafTab"
+						}
+					]
 				}
-			]
+			}
 		},
 		{
 			"id": "CaseMap",
@@ -1182,7 +2352,8 @@
 			"title": "Voorstellen",
 			"config": {
 				"register": "procest",
-				"schema": "voorstel",
+				"schema": "proposal",
+				"allowSavedViews": true,
 				"quickFilters": [
 					{
 						"label": "Alle",
@@ -1192,7 +2363,7 @@
 					{
 						"label": "Concept",
 						"filter": {
-							"status": "concept"
+							"status": "draft"
 						}
 					},
 					{
@@ -1225,7 +2396,7 @@
 					{
 						"key": "type",
 						"label": "Type",
-						"formatter": "voorstelType"
+						"formatter": "proposalType"
 					},
 					{
 						"key": "status",
@@ -1261,7 +2432,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "VoorstelDetail",
 						"type": "handler"
@@ -1288,10 +2459,32 @@
 			"title": "Voorstel",
 			"config": {
 				"register": "procest",
-				"schema": "voorstel",
+				"schema": "proposal",
+				"_note": "WORKFLOW-RECORD archetype (parafering/besluitvorming proposal). Intentionally kept as a bespoke full-page slot (VoorstelDetailView) rather than a widget grid: a voorstel is driven by its parafeerroute — currentStep, routeSnapshot (per-step actor/status) and the accord/return lifecycle need a live step-progress rail and inline accord/terugsturen actions that the generic data/object-list grid cannot express. The view renders the proposal document + bijlagen, the linked case and decision, and the routing timeline. The status lifecycle (concept → in_parafering → … → besloten) is driven inside the view. Audit history stays a sidebar tab; metadata remains available for provenance.",
+				"lifecycleActions": {
+					"field": "status"
+				},
 				"sidebar": {
 					"enabled": true,
-					"showMetadata": true
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						},
+						{
+							"id": "version-history",
+							"label": "Version history",
+							"icon": "FileCompare",
+							"component": "VersionHistoryLeafTab"
+						}
+					]
 				},
 				"documentationUrl": "https://procest.conduction.nl"
 			},
@@ -1307,12 +2500,13 @@
 			"config": {
 				"register": "procest",
 				"schema": "adviesAanvraag",
+				"allowSavedViews": true,
 				"showViewAction": false,
 				"actions": [
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "AdviceDetail",
 						"type": "handler"
@@ -1341,37 +2535,70 @@
 			"config": {
 				"register": "procest",
 				"schema": "adviesAanvraag",
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
+				"_note": "ADVICE-REQUEST archetype (adviesAanvraag on a case). No comms linkedTypes and no child schemas point at it, so it stays lean: the Data widget carries the request and its clock (case, adviseur, type, onderwerp, deadline, requestedAt, receivedAt, the questions[] and the returned adviesDocument), a Related panel exposes the parent case and adviser links, and lifecycleActions drive the status (aangevraagd → ontvangen / verlopen) — deadline-vs-received being the primary at-a-glance signal. No files/notes/contacts/calendar leaves: the advice document is a plain field and comms live on the parent case. Audit history is a sidebar tab.",
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
+					{
+						"id": "advice-data",
+						"type": "data",
+						"title": "Advice request",
+						"icon": "MessageTextOutline",
+						"content": {
+							"columns": 2
+						}
+					},
+					{
+						"id": "advice-related",
+						"type": "related",
+						"title": "Case & adviser",
+						"icon": "LinkVariant"
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "advice-data",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 8,
+						"gridHeight": 5,
+						"showTitle": false
+					},
+					{
+						"id": "2",
+						"widgetId": "advice-related",
+						"gridX": 8,
+						"gridY": 0,
+						"gridWidth": 4,
+						"gridHeight": 5
+					}
+				],
+				"lifecycleActions": {
+					"field": "status"
 				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						},
+						{
+							"id": "version-history",
+							"label": "Version history",
+							"icon": "FileCompare",
+							"component": "VersionHistoryLeafTab"
+						}
+					]
 				}
-			]
+			}
 		},
 		{
 			"id": "Doorlooptijd",
@@ -1403,85 +2630,39 @@
 			}
 		},
 		{
+			"id": "ProcessMiningDashboard",
+			"route": "/process-mining",
+			"type": "custom",
+			"title": "Process mining",
+			"component": "ProcessMiningDashboard",
+			"_note": "Bottleneck analysis over the case statusRecord history: a period + case-type picker drives a server-computed ProcessMiningService aggregation (per-status dwell time, bottleneck ranking, transition matrix + rework-loop detection, weekly throughput trend). The figures come from a dedicated aggregation endpoint, not a register query, so the standard dashboard/object-stats type can't supply or shape this data."
+		},
+		{
 			"id": "WorkflowBoard",
 			"route": "/workflow-board",
-			"type": "dashboard",
+			"type": "custom",
 			"title": "Workflow Board",
+			"component": "WorkflowBoardView",
+			"_note": "Bespoke Kanban board (one column per non-final status type, drag-to-transition) rendered by a host-app SFC; no standard page type offers the drag-between-status-columns workflow surface. Mounted directly (not wrapped in a dashboard widget) so its own header is the single page title.",
 			"config": {
-				"widgets": [
-					{
-						"id": "workflowBoard",
-						"title": "Workflow Board",
-						"type": "custom"
-					}
-				],
-				"layout": [
-					{
-						"id": 1,
-						"widgetId": "workflowBoard",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 12
-					}
-				],
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"slots": {
-				"widget-workflowBoard": "WorkflowBoardView"
+				"register": "procest"
 			}
 		},
 		{
-			"id": "Settings",
+			"id": "ProcestConfiguration",
 			"route": "/settings",
 			"type": "settings",
-			"title": "Settings",
+			"title": "Configuration",
 			"config": {
 				"sections": [
 					{
 						"id": "admin",
-						"title": "Settings"
+						"title": "Configuration"
 					}
 				]
 			},
 			"slots": {
 				"section-admin": "AdminRootView"
-			}
-		},
-		{
-			"id": "Legesverordeningen",
-			"route": "/legesverordeningen",
-			"type": "index",
-			"title": "Legesverordeningen",
-			"config": {
-				"register": "procest",
-				"schema": "legesverordening",
-				"columns": [
-					"name",
-					"year",
-					"effectiveDate",
-					"status",
-					"isActive"
-				],
-				"showViewAction": false,
-				"actions": [
-					"create",
-					"edit",
-					"delete",
-					{
-						"id": "view",
-						"label": "View",
-						"icon": "icon-info",
-						"handler": "navigate",
-						"route": "LegesverordeningDetail",
-						"type": "handler"
-					}
-				],
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true
-				},
-				"documentationUrl": "https://procest.conduction.nl"
 			}
 		},
 		{
@@ -1505,7 +2686,7 @@
 					{
 						"id": "provision",
 						"label": "Provision",
-						"icon": "icon-add",
+						"icon": "Plus",
 						"permission": "admin",
 						"handler": "emit",
 						"type": "handler"
@@ -1513,7 +2694,7 @@
 					{
 						"id": "view",
 						"label": "View usage",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"permission": "admin",
 						"handler": "navigate",
 						"route": "TenantDetail",
@@ -1540,7 +2721,7 @@
 						"key": "name"
 					},
 					{
-						"key": "voorstelType"
+						"key": "proposalType"
 					},
 					{
 						"key": "caseType"
@@ -1554,7 +2735,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "ParafeerrouteDetail",
 						"type": "handler"
@@ -1565,6 +2746,49 @@
 					},
 					{
 						"key": "delete",
+						"type": "handler"
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://procest.conduction.nl"
+			}
+		},
+		{
+			"id": "AiOversight",
+			"route": "/settings/ai-oversight",
+			"type": "index",
+			"title": "AI oversight",
+			"config": {
+				"register": "procest",
+				"schema": "aiAuditEntry",
+				"columns": [
+					{
+						"key": "type"
+					},
+					{
+						"key": "action"
+					},
+					{
+						"key": "model"
+					},
+					{
+						"key": "userAction"
+					},
+					{
+						"key": "userId"
+					}
+				],
+				"showViewAction": false,
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "EyeOutline",
+						"handler": "navigate",
+						"route": "AiOversightDetail",
 						"type": "handler"
 					}
 				],
@@ -1609,7 +2833,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "WmsLayerDetail",
 						"type": "handler"
@@ -1643,193 +2867,53 @@
 			"config": {
 				"register": "procest",
 				"schema": "wmsLayer",
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "action",
-					"slot": "sidebar",
-					"tabGroup": "test",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1,
-					"props": {
-						"config": {
-							"endpoint": "/api/wms-wfs/proxy",
-							"params": {
-								"layerId": ":id",
-								"request": "GetCapabilities"
-							},
-							"label": "Verbinding testen"
-						}
-					}
-				}
-			]
-		},
-		{
-			"id": "LegesverordeningDetail",
-			"route": "/legesverordeningen/:id",
-			"type": "detail",
-			"title": "Legesverordening",
-			"config": {
-				"register": "procest",
-				"schema": "legesverordening",
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "related-index",
-					"slot": "sidebar",
-					"tabGroup": "artikelen",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1,
-					"props": {
-						"config": {
-							"register": "procest",
-							"schema": "legesartikel",
-							"filter": {
-								"verordening": ":id"
-							},
-							"columns": [
-								"nummer",
-								"omschrijving",
-								"type",
-								"category",
-								"order"
-							],
-							"actions": [
-								"create",
-								"edit",
-								"delete"
-							]
-						}
-					}
-				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 3,
-					"gridWidth": 1,
-					"gridHeight": 1
-				}
-			]
-		},
-		{
-			"id": "Legesberekeningen",
-			"route": "/legesberekeningen",
-			"type": "index",
-			"title": "Legesberekeningen",
-			"config": {
-				"register": "procest",
-				"schema": "legesberekening",
-				"columns": [
-					"case",
-					"verordening",
-					"total",
-					"version",
-					"status",
-					"calculatedBy",
-					"calculatedAt"
-				],
-				"showViewAction": false,
-				"actions": [
+				"_note": "CONFIG/TECHNICAL archetype (WMS/WFS map-layer definition). Admin-only, no comms, no child schemas and no status lifecycle — so deliberately lean. The single Data widget holds the full endpoint config (url, layerName, srs, opacity, queryable, format, version, isDefault, active). No object-lists (nothing is a child of a layer), no content leaves (a layer carries no files/notes/calendar), no lifecycleActions (active is a plain boolean). Audit history (config edits) is a sidebar tab.",
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
 					{
-						"id": "view",
-						"label": "View",
-						"icon": "icon-info",
-						"handler": "navigate",
-						"route": "LegesberekeningDetail",
-						"type": "handler"
-					},
-					"delete"
+						"id": "wmslayer-data",
+						"type": "data",
+						"title": "Kaartlaag",
+						"icon": "MapMarker",
+						"content": {
+							"columns": 2
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "wmslayer-data",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 7,
+						"showTitle": false
+					}
 				],
 				"sidebar": {
 					"enabled": true,
-					"showMetadata": true
-				},
-				"documentationUrl": "https://procest.conduction.nl"
-			}
-		},
-		{
-			"id": "LegesberekeningDetail",
-			"route": "/legesberekeningen/:id",
-			"type": "detail",
-			"title": "Legesberekening",
-			"config": {
-				"register": "procest",
-				"schema": "legesberekening",
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						},
+						{
+							"id": "version-history",
+							"label": "Version history",
+							"icon": "FileCompare",
+							"component": "VersionHistoryLeafTab"
+						}
+					]
 				}
-			]
+			}
 		},
 		{
 			"id": "TenantDetail",
@@ -1839,11 +2923,12 @@
 			"config": {
 				"register": "procest",
 				"schema": "tenant",
+				"_note": "CONFIG/TECHNICAL archetype (multi-tenant provisioning record — legacy, superseded by OR Organisation). Admin-only, no comms. The Data widget carries identity + contract + provisioning clock (slug, displayName, legalName, kvkNumber, contractRef, tier, isolationMode, dataResidency, createdAt, activatedAt, terminatedAt). The Provision + Refresh-usage admin actions are preserved as page actions, and lifecycleActions drive the status (onboarding → active → suspended → terminated). No object-lists or content leaves — a legacy provisioning record carries none. Audit history (provisioning events) is a sidebar tab.",
 				"actions": [
 					{
 						"id": "provision",
 						"label": "Provision",
-						"icon": "icon-add",
+						"icon": "Plus",
 						"permission": "admin",
 						"primary": true,
 						"handler": "emit",
@@ -1852,52 +2937,61 @@
 					{
 						"id": "refresh-usage",
 						"label": "Refresh usage",
-						"icon": "icon-history",
+						"icon": "Refresh",
 						"permission": "admin",
 						"handler": "emit",
 						"type": "handler"
 					}
 				],
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
+					{
+						"id": "tenant-data",
+						"type": "data",
+						"title": "Tenant",
+						"icon": "OfficeBuilding",
+						"content": {
+							"columns": 2
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "tenant-data",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 6,
+						"showTitle": false
+					}
+				],
+				"lifecycleActions": {
+					"field": "status"
 				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "usage",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "provisioning",
-					"gridX": 0,
-					"gridY": 3,
-					"gridWidth": 1,
-					"gridHeight": 1
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						},
+						{
+							"id": "version-history",
+							"label": "Version history",
+							"icon": "FileCompare",
+							"component": "VersionHistoryLeafTab"
+						}
+					]
 				}
-			]
+			}
 		},
 		{
 			"id": "ParafeerrouteDetail",
@@ -1907,37 +3001,109 @@
 			"config": {
 				"register": "procest",
 				"schema": "parafeerroute",
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1
+				"_note": "CONFIG/TECHNICAL archetype (initialling/approval route template consumed by voorstel records). No comms, no status lifecycle, no child schemas. The single Data widget carries the binding + defaults (name, caseType, voorstelType, isDefault, description) and the ordered steps[] (actor/actorType/mandatory/label per stage) — the routing definition. No object-lists, no content leaves, no lifecycleActions. Audit history (template edits) is a sidebar tab.",
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
+					{
+						"id": "parafeerroute-data",
+						"type": "data",
+						"title": "Parafeerroute",
+						"icon": "FileSign",
+						"content": {
+							"columns": 2
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "parafeerroute-data",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 4,
+						"showTitle": false
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						},
+						{
+							"id": "version-history",
+							"label": "Version history",
+							"icon": "FileCompare",
+							"component": "VersionHistoryLeafTab"
+						}
+					]
 				}
-			]
+			}
+		},
+		{
+			"id": "AiOversightDetail",
+			"route": "/settings/ai-oversight/:id",
+			"type": "detail",
+			"title": "AI audit entry",
+			"config": {
+				"register": "procest",
+				"schema": "aiAuditEntry",
+				"_note": "IMMUTABLE AUDIT-LOG archetype (one frozen AI suggestion + human decision, EU AI Act Art. 14 human-oversight evidence). No comms/documents, no lifecycleActions, no edit/delete — a log entry is a frozen fact, not a mutable object. The single Data widget carries the full record (type, action, caseId, documentId, model, prompt, suggestion, confidence, userAction, actualValue, reason, userId, timestamp, responseTimeMs). No content leaves, no object-lists. Register-level audit history is a sidebar tab.",
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
+					{
+						"id": "ai-audit-data",
+						"type": "data",
+						"title": "AI audit entry",
+						"icon": "ShieldCheckOutline",
+						"content": {
+							"columns": 2
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "ai-audit-data",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 8,
+						"showTitle": false
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						},
+						{
+							"id": "version-history",
+							"label": "Version history",
+							"icon": "FileCompare",
+							"component": "VersionHistoryLeafTab"
+						}
+					]
+				}
+			}
 		},
 		{
 			"id": "CaseShares",
@@ -1987,7 +3153,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "PartnerDetail",
 						"type": "handler"
@@ -2008,69 +3174,136 @@
 			"config": {
 				"register": "procest",
 				"schema": "partnerOrganization",
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1
-				}
-			]
-		},
-		{
-			"id": "Transfers",
-			"route": "/transfers",
-			"type": "index",
-			"title": "Transfers",
-			"config": {
-				"register": "procest",
-				"schema": "casetransfer",
-				"showViewAction": false,
-				"actions": [
+				"_note": "ORG-CONFIG archetype (partner organisation for cross-org case sharing), ADR-062 round 2. The schema is intentionally thin (name, slug, oin, contactEmail, defaultPermissionLevel, groupId, isActive, qualityScore/qualityStatus) — one coherent config group, no include-split. The lead row pairs the Data widget with an in-grid single-stat KPI card (share count, replacing the deprecated header summaryAggregates; deep-links to the CaseShares index). The one relationship that matters operationally — which cases are shared with this partner — is a full-width caseShare object-list (caseShare.partnerId=@objectId) showing label/type/permission/expiry; allowCreate:false because shares are minted by the share flow (token/password/audit), never hand-created from a list. No comms leaves (contactEmail is a plain field, not a mail-leaf) and no status lifecycle (isActive is a boolean). Audit history (activation/permission changes) is a sidebar tab.",
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
 					{
-						"id": "view",
-						"label": "View",
-						"icon": "icon-info",
-						"handler": "navigate",
-						"route": "TransferDetail",
-						"type": "handler"
+						"id": "partner-data",
+						"type": "data",
+						"title": "Partner organisation",
+						"icon": "HandshakeOutline",
+						"content": {
+							"columns": 2
+						}
+					},
+					{
+						"id": "partner-kpis",
+						"type": "stats-block",
+						"title": "Key figures",
+						"icon": "Gauge",
+						"content": {
+							"entries": [
+								{
+									"title": "Shared cases",
+									"register": "procest",
+									"schema": "caseShare",
+									"metric": "count",
+									"filter": {
+										"partnerId": "@objectId"
+									},
+									"route": {
+										"name": "CaseShares"
+									}
+								}
+							]
+						}
+					},
+					{
+						"id": "partner-gedeelde-zaken",
+						"type": "object-list",
+						"title": "Gedeelde zaken",
+						"icon": "LinkVariant",
+						"content": {
+							"register": "procest",
+							"schema": "caseShare",
+							"filter": {
+								"partnerId": "@objectId"
+							},
+							"sort": {
+								"field": "order",
+								"dir": "asc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "label",
+									"label": "Label"
+								},
+								{
+									"key": "shareType",
+									"label": "Share type"
+								},
+								{
+									"key": "permissionLevel",
+									"label": "Permission level"
+								},
+								{
+									"key": "expiresAt",
+									"label": "Expires at"
+								},
+								{
+									"key": "revokedAt",
+									"label": "Revoked at"
+								}
+							],
+							"viewAllRoute": "CaseShares",
+							"viewAllQuery": {
+								"partnerId": "@objectId"
+							},
+							"emptyText": "No cases shared with this partner yet",
+							"allowCreate": false
+						}
 					}
 				],
-				"columns": [
-					"case",
-					"fromOrg",
-					"toOrg",
-					"status",
-					"initiatedAt"
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "partner-data",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 8,
+						"gridHeight": 5,
+						"showTitle": false
+					},
+					{
+						"id": "2",
+						"widgetId": "partner-kpis",
+						"gridX": 8,
+						"gridY": 0,
+						"gridWidth": 4,
+						"gridHeight": 5
+					},
+					{
+						"id": "3",
+						"widgetId": "partner-gedeelde-zaken",
+						"gridX": 0,
+						"gridY": 5,
+						"gridWidth": 12,
+						"gridHeight": 5
+					}
 				],
 				"sidebar": {
 					"enabled": true,
-					"showMetadata": true
-				},
-				"documentationUrl": "https://procest.conduction.nl"
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						},
+						{
+							"id": "version-history",
+							"label": "Version history",
+							"icon": "FileCompare",
+							"component": "VersionHistoryLeafTab"
+						}
+					]
+				}
 			}
 		},
 		{
@@ -2081,37 +3314,56 @@
 			"config": {
 				"register": "procest",
 				"schema": "casetransfer",
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
+				"_note": "WORKFLOW-RECORD archetype (inter-organisation case handover). No comms/documents and no child schemas — a transfer is a small state machine, not a dossier. The single Data widget carries the request and its resolution (caseId, sourceOrganization, targetOrganization, reason, requestedDate, rejectionReason, completedAt), and lifecycleActions drive the status (pending → accepted / rejected). No object-lists (nothing is a child of a transfer), no content leaves. Audit history (the pending→accepted/rejected transition) is a sidebar tab.",
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
+					{
+						"id": "transfer-data",
+						"type": "data",
+						"title": "Transfer",
+						"icon": "SourceBranch",
+						"content": {
+							"columns": 2
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "transfer-data",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 5,
+						"showTitle": false
+					}
+				],
+				"lifecycleActions": {
+					"field": "status"
 				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						},
+						{
+							"id": "version-history",
+							"label": "Version history",
+							"icon": "FileCompare",
+							"component": "VersionHistoryLeafTab"
+						}
+					]
 				}
-			]
+			}
 		},
 		{
 			"id": "AutomaticActions",
@@ -2136,7 +3388,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "AutomaticActionDetail",
 						"type": "handler"
@@ -2157,37 +3409,53 @@
 			"config": {
 				"register": "procest",
 				"schema": "automaticAction",
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1
+				"_note": "CONFIG/TECHNICAL archetype (workflow automation handler definition — a rule consumed by the workflow engine). No comms, no child schemas, no status enum (isPublished/active are booleans). The single Data widget carries identity + the handler-specific config[] payload (slug, type, title, description, tenantId, version, isPublished, active, config). No object-lists, no content leaves, no lifecycleActions. Audit history (publish/activation changes) is a sidebar tab.",
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
+					{
+						"id": "automaticaction-data",
+						"type": "data",
+						"title": "Automatische actie",
+						"icon": "Cog",
+						"content": {
+							"columns": 2
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "automaticaction-data",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 5,
+						"showTitle": false
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						},
+						{
+							"id": "version-history",
+							"label": "Version history",
+							"icon": "FileCompare",
+							"component": "VersionHistoryLeafTab"
+						}
+					]
 				}
-			]
+			}
 		},
 		{
 			"id": "PublicAppointment",
@@ -2204,6 +3472,14 @@
 			"title": "Public status",
 			"component": "PublicStatusPage",
 			"_note": "Citizen 'track your case' page. Resolves anonymously through OpenRegister's shares-leaf #[PublicPage] endpoint GET /apps/openregister/api/public/case-tokens/{token} (ADR-022) — RBAC-respecting, public-safe fields only. Lib gap: anonymous public pages still have no v2 typed primitive; collapse when nc-vue adds public-page support."
+		},
+		{
+			"id": "PublicFederatedTransfer",
+			"route": "/public/federation/transfer/:shareToken/:transferId",
+			"type": "custom",
+			"title": "Federated case transfer",
+			"component": "PublicFederatedTransferPage",
+			"_note": "Remote-org accept/reject for a federated zaakoverdracht (federated-case-collaboration). Authenticated via the transfer-scoped OpenRegister federated-share bearer token in the URL, not a local session. Lib gap: same anonymous-public-page gap as PublicStatus/PublicAppointment."
 		},
 		{
 			"id": "WorkflowDefinitions",
@@ -2229,7 +3505,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "WorkflowDefinitionDetail",
 						"type": "handler"
@@ -2250,11 +3526,12 @@
 			"config": {
 				"register": "procest",
 				"schema": "workflowTemplate",
+				"_note": "CASE-TYPE / WORKFLOW-DEFINITION archetype (the state machine that drives cases of a caseType), ADR-062 round 2. No comms. The schema splits into two genuinely distinct groups: 'Definition' (identity + versioning — title, description, caseType, version, lifecycleStatus, isActive, isDraft, parentWorkflow) and 'State machine' (the two defining graph payloads — steps[] with stages/roles/SLAs/checklists, transitions[] with from/to/guards/actions, plus editor nodePositions). Cases driven by this workflow are reached through their caseType index rather than a direct FK (case.workflowTemplate stores a version reference, not this object's id), so no object-list is scoped here. Publish/Deprecate/Clone admin actions are preserved as page actions and lifecycleActions drive the lifecycleStatus. Audit history (version changes) is a sidebar tab.",
 				"actions": [
 					{
 						"id": "publish",
 						"label": "Publish",
-						"icon": "icon-checkmark",
+						"icon": "CloudUploadOutline",
 						"permission": "admin",
 						"primary": true,
 						"handler": "emit",
@@ -2263,7 +3540,7 @@
 					{
 						"id": "deprecate",
 						"label": "Deprecate",
-						"icon": "icon-close",
+						"icon": "Close",
 						"permission": "admin",
 						"handler": "emit",
 						"type": "handler"
@@ -2271,107 +3548,92 @@
 					{
 						"id": "clone",
 						"label": "Clone",
-						"icon": "icon-add",
+						"icon": "Plus",
 						"permission": "admin",
 						"handler": "emit",
 						"type": "handler"
 					}
 				],
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "steps",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "transitions",
-					"gridX": 0,
-					"gridY": 3,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 4,
-					"gridWidth": 1,
-					"gridHeight": 1
-				}
-			]
-		},
-		{
-			"id": "StatusRecords",
-			"route": "/settings/status-records",
-			"type": "index",
-			"title": "Status history",
-			"config": {
-				"register": "procest",
-				"schema": "statusRecord",
-				"columns": [
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
 					{
-						"key": "case"
+						"id": "workflowdef-data",
+						"type": "data",
+						"title": "Definition",
+						"icon": "Sitemap",
+						"content": {
+							"columns": 2,
+							"include": [
+								"title",
+								"description",
+								"caseType",
+								"version",
+								"lifecycleStatus",
+								"isActive",
+								"isDraft",
+								"parentWorkflow"
+							]
+						}
 					},
 					{
-						"key": "fromStatus"
-					},
-					{
-						"key": "statusType",
-						"label": "toStatus"
-					},
-					{
-						"key": "transitionLabel"
-					},
-					{
-						"key": "noWorkflowTemplate"
-					},
-					{
-						"key": "createdAt"
+						"id": "workflowdef-machine",
+						"type": "data",
+						"title": "State machine",
+						"icon": "SourceBranch",
+						"content": {
+							"columns": 2,
+							"include": [
+								"steps",
+								"transitions",
+								"nodePositions"
+							]
+						}
 					}
 				],
-				"showViewAction": false,
-				"actions": [
+				"layout": [
 					{
-						"id": "view",
-						"label": "View",
-						"icon": "icon-info",
-						"handler": "navigate",
-						"route": "StatusRecordDetail",
-						"type": "handler"
+						"id": "1",
+						"widgetId": "workflowdef-data",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 5,
+						"showTitle": false
+					},
+					{
+						"id": "2",
+						"widgetId": "workflowdef-machine",
+						"gridX": 0,
+						"gridY": 5,
+						"gridWidth": 12,
+						"gridHeight": 5
 					}
 				],
+				"lifecycleActions": {
+					"field": "lifecycleStatus"
+				},
 				"sidebar": {
 					"enabled": true,
-					"showMetadata": true
-				},
-				"documentationUrl": "https://procest.conduction.nl"
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						},
+						{
+							"id": "version-history",
+							"label": "Version history",
+							"icon": "FileCompare",
+							"component": "VersionHistoryLeafTab"
+						}
+					]
+				}
 			}
 		},
 		{
@@ -2382,69 +3644,67 @@
 			"config": {
 				"register": "procest",
 				"schema": "statusRecord",
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "guards",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1,
-					"props": {
-						"config": {
-							"fields": [
-								"evaluatedGuards"
-							]
+				"_note": "TRANSITION-RECORD archetype (an immutable entry for one case status transition). No comms/documents and it is itself a history entry, so it stays lean. The Data widget shows the transition and its side-effects (case, fromStatus→statusType, transitionLabel, noWorkflowTemplate, the evaluatedGuards[] that were checked and the dispatchedActions[] that fired); a Related panel links the parent case. No lifecycleActions — a status record is a frozen fact, not a mutable object. No content leaves. Audit history is a sidebar tab.",
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
+					{
+						"id": "statusrecord-data",
+						"type": "data",
+						"title": "Status record",
+						"icon": "Timeline",
+						"content": {
+							"columns": 2
 						}
+					},
+					{
+						"id": "statusrecord-related",
+						"type": "related",
+						"title": "Case",
+						"icon": "LinkVariant"
 					}
-				},
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "actions",
-					"gridX": 0,
-					"gridY": 3,
-					"gridWidth": 1,
-					"gridHeight": 1,
-					"props": {
-						"config": {
-							"fields": [
-								"dispatchedActions"
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "statusrecord-data",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 8,
+						"gridHeight": 5,
+						"showTitle": false
+					},
+					{
+						"id": "2",
+						"widgetId": "statusrecord-related",
+						"gridX": 8,
+						"gridY": 0,
+						"gridWidth": 4,
+						"gridHeight": 5
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
 							]
+						},
+						{
+							"id": "version-history",
+							"label": "Version history",
+							"icon": "FileCompare",
+							"component": "VersionHistoryLeafTab"
 						}
-					}
-				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 4,
-					"gridWidth": 1,
-					"gridHeight": 1
+					]
 				}
-			]
+			}
 		},
 		{
 			"id": "LhsMatrices",
@@ -2467,7 +3727,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "LhsMatrixDetail",
 						"type": "handler"
@@ -2499,7 +3759,7 @@
 						"key": "formattedAddress"
 					},
 					{
-						"key": "nummeraanduidingId"
+						"key": "addressDesignationId"
 					},
 					{
 						"key": "parcelId"
@@ -2516,7 +3776,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "LocationDetail",
 						"type": "handler"
@@ -2540,69 +3800,53 @@
 			"config": {
 				"register": "procest",
 				"schema": "lhsMatrix",
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "cells",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1,
-					"props": {
-						"config": {
-							"fields": [
-								"cells"
-							]
+				"_note": "CONFIG/TECHNICAL archetype (Landelijke Handhavingsstrategie intervention matrix — versioned, immutable enforcement policy). Admin-only, no comms/documents. The Data widget carries header + axes + substance in one form (name, version, active, ernstAxis, gedragAxis, actorTypeAxis, createdAt, the cells[] grid ernst×gedrag×actorType→interventie, and the domain auditTrail[] of per-version actor/notes). lhsRecommendation records reference this matrix by version, not a FK, so no object-list is scoped here. No content leaves, no status lifecycle (active is a boolean). Register-level audit history is a sidebar tab.",
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
+					{
+						"id": "lhsmatrix-data",
+						"type": "data",
+						"title": "LHS Matrix",
+						"icon": "TableColumn",
+						"content": {
+							"columns": 2
 						}
 					}
-				},
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "auditTrail",
-					"gridX": 0,
-					"gridY": 3,
-					"gridWidth": 1,
-					"gridHeight": 1,
-					"props": {
-						"config": {
-							"fields": [
-								"auditTrail"
-							]
-						}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "lhsmatrix-data",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 5,
+						"showTitle": false
 					}
-				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 4,
-					"gridWidth": 1,
-					"gridHeight": 1
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						},
+						{
+							"id": "version-history",
+							"label": "Version history",
+							"icon": "FileCompare",
+							"component": "VersionHistoryLeafTab"
+						}
+					]
 				}
-			]
+			}
 		},
 		{
 			"id": "LhsRecommendations",
@@ -2617,7 +3861,7 @@
 					"ernst",
 					"gedrag",
 					"actorType",
-					"recommendedInterventie",
+					"recommendedIntervention",
 					"finalIntervention",
 					"override",
 					"matrixVersion"
@@ -2627,7 +3871,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "LhsRecommendationDetail",
 						"type": "handler"
@@ -2648,37 +3892,101 @@
 			"config": {
 				"register": "procest",
 				"schema": "lhsRecommendation",
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1
+				"_note": "ASSESSMENT-RECORD archetype (a per-case LHS intervention recommendation derived from an lhsMatrix), ADR-062 round 2. No comms/documents, no child schemas. The 13-field schema splits into two genuinely distinct groups: 'Recommendation' (the matrix inputs and outcome — case, inspection, ernst, gedrag, actorType, matrixVersion, recommendedInterventie, recommendedBy) paired with the Related panel (parent case and inspection), and 'Override & final' (the accountability-bearing deviation fields — finalIntervention, override, overrideJustification, overrideBy, overrideAuthority) full-width below. No status lifecycle field and no content leaves. Audit history is a sidebar tab.",
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
+					{
+						"id": "lhsrecommendation-data",
+						"type": "data",
+						"title": "Recommendation",
+						"icon": "Lightbulb",
+						"content": {
+							"columns": 2,
+							"include": [
+								"case",
+								"inspection",
+								"ernst",
+								"gedrag",
+								"actorType",
+								"matrixVersion",
+								"recommendedIntervention",
+								"recommendedBy"
+							]
+						}
+					},
+					{
+						"id": "lhsrecommendation-override",
+						"type": "data",
+						"title": "Override & final",
+						"icon": "ShieldCheckOutline",
+						"content": {
+							"columns": 2,
+							"include": [
+								"finalIntervention",
+								"override",
+								"overrideJustification",
+								"overrideBy",
+								"overrideAuthority"
+							]
+						}
+					},
+					{
+						"id": "lhsrecommendation-related",
+						"type": "related",
+						"title": "Case & inspection",
+						"icon": "LinkVariant"
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "lhsrecommendation-data",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 8,
+						"gridHeight": 5,
+						"showTitle": false
+					},
+					{
+						"id": "2",
+						"widgetId": "lhsrecommendation-related",
+						"gridX": 8,
+						"gridY": 0,
+						"gridWidth": 4,
+						"gridHeight": 5
+					},
+					{
+						"id": "3",
+						"widgetId": "lhsrecommendation-override",
+						"gridX": 0,
+						"gridY": 5,
+						"gridWidth": 12,
+						"gridHeight": 4
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						},
+						{
+							"id": "version-history",
+							"label": "Version history",
+							"icon": "FileCompare",
+							"component": "VersionHistoryLeafTab"
+						}
+					]
 				}
-			]
+			}
 		},
 		{
 			"id": "LocationDetail",
@@ -2688,37 +3996,67 @@
 			"config": {
 				"register": "procest",
 				"schema": "location",
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1
+				"_note": "GEO-RECORD archetype (a case location / BAG anchor). Deliberately lean: the Data widget shows address + coordinates + BAG identifiers (label, formattedAddress, latitude, longitude, nummeraanduidingId, parcelId, accuracyRadius, source) and a Related panel links the parent case. NO maps leaf here — the location schema does NOT declare a maps linkedType (only the case schema does; the interactive per-case map lives on CaseDetail and the /map overview). No comms/documents, no status lifecycle. Audit history (geocoding corrections) is a sidebar tab.",
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
+					{
+						"id": "location-data",
+						"type": "data",
+						"title": "Location",
+						"icon": "MapMarker",
+						"content": {
+							"columns": 2
+						}
+					},
+					{
+						"id": "location-related",
+						"type": "related",
+						"title": "Case",
+						"icon": "LinkVariant"
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "location-data",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 8,
+						"gridHeight": 5,
+						"showTitle": false
+					},
+					{
+						"id": "2",
+						"widgetId": "location-related",
+						"gridX": 8,
+						"gridY": 0,
+						"gridWidth": 4,
+						"gridHeight": 5
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						},
+						{
+							"id": "version-history",
+							"label": "Version history",
+							"icon": "FileCompare",
+							"component": "VersionHistoryLeafTab"
+						}
+					]
 				}
-			]
+			}
 		},
 		{
 			"id": "BezwaarCommittees",
@@ -2741,7 +4079,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "BezwaarCommitteeDetail",
 						"type": "handler"
@@ -2762,70 +4100,190 @@
 			"config": {
 				"register": "procest",
 				"schema": "bezwaaradviescommissie",
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1
-				}
-			]
-		},
-		{
-			"id": "BezwaarAdviceRequests",
-			"route": "/bezwaar-advice-requests",
-			"type": "index",
-			"title": "BAC-adviezen",
-			"config": {
-				"register": "procest",
-				"schema": "bacAdviceRequest",
-				"columns": [
-					"bezwaar",
-					"commissie",
-					"status",
-					"assignedAt",
-					"deadline",
-					"conclusion"
-				],
-				"showViewAction": false,
-				"actions": [
+				"_note": "COMMITTEE archetype (bezwaaradviescommissie / BAC), ADR-062 round 2. No comms leaves on the schema. A committee is defined by its constitution and its caseload; the schema splits into two genuinely distinct groups: 'Committee' (name, type, domain, jurisdiction, quorum, active — the constitution) and 'Roster & term' (chair, secretary, members[], termStartsOn, termEndsOn, created — who sits and until when). The lead row pairs the constitution widget with an in-grid KPI stats-block (total assignments + in-deliberation workload via bacAdviceRequest.status, replacing the deprecated header summaryAggregates). Below: the roster widget full-width, then the advice-assignment object-list (bacAdviceRequest.commissie=@objectId). No status lifecycle (active is a boolean). Audit history (composition/term changes) is a sidebar tab.",
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
 					{
-						"id": "view",
-						"label": "View",
-						"icon": "icon-info",
-						"handler": "navigate",
-						"route": "BezwaarAdviceRequestDetail",
-						"type": "handler"
+						"id": "bezwaarcommittee-data",
+						"type": "data",
+						"title": "Committee",
+						"icon": "AccountGroup",
+						"content": {
+							"columns": 2,
+							"include": [
+								"name",
+								"type",
+								"domain",
+								"jurisdiction",
+								"quorum",
+								"active"
+							]
+						}
+					},
+					{
+						"id": "bezwaarcommittee-kpis-advice-assignments",
+						"type": "stats-block",
+						"title": "Advice assignments",
+						"icon": "Gauge",
+						"content": {
+							"entries": [
+								{
+									"title": "Advice assignments",
+									"register": "procest",
+									"schema": "bacAdviceRequest",
+									"metric": "count",
+									"filter": {
+										"committee": "@objectId"
+									}
+								}
+							]
+						}
+					},
+					{
+						"id": "bezwaarcommittee-kpis-in-deliberation",
+						"type": "stats-block",
+						"title": "In deliberation",
+						"icon": "Gauge",
+						"content": {
+							"entries": [
+								{
+									"title": "In deliberation",
+									"register": "procest",
+									"schema": "bacAdviceRequest",
+									"metric": "count",
+									"filter": {
+										"committee": "@objectId",
+										"status": "in-deliberation"
+									}
+								}
+							]
+						}
+					},
+					{
+						"id": "bezwaarcommittee-roster",
+						"type": "data",
+						"title": "Roster & term",
+						"icon": "Account",
+						"content": {
+							"columns": 2,
+							"include": [
+								"chair",
+								"secretary",
+								"members",
+								"termStartsOn",
+								"termEndsOn",
+								"created"
+							]
+						}
+					},
+					{
+						"id": "bezwaarcommittee-adviesaanvragen",
+						"type": "object-list",
+						"title": "Adviesaanvragen",
+						"icon": "MessageTextOutline",
+						"content": {
+							"register": "procest",
+							"schema": "bacAdviceRequest",
+							"filter": {
+								"committee": "@objectId"
+							},
+							"sort": {
+								"field": "order",
+								"dir": "asc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "bezwaar",
+									"label": "Bezwaar"
+								},
+								{
+									"key": "status",
+									"label": "Status"
+								},
+								{
+									"key": "assignedAt",
+									"label": "Assigned at"
+								},
+								{
+									"key": "deadline",
+									"label": "Deadline"
+								},
+								{
+									"key": "conclusion",
+									"label": "Conclusion"
+								}
+							],
+							"rowRoute": "BezwaarAdviceRequestDetail",
+							"emptyText": "No advice requests assigned to this committee yet"
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "bezwaarcommittee-data",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 8,
+						"gridHeight": 4,
+						"showTitle": false
+					},
+					{
+						"id": "5",
+						"widgetId": "bezwaarcommittee-kpis-advice-assignments",
+						"gridX": 8,
+						"gridY": 0,
+						"gridWidth": 4,
+						"gridHeight": 2
+					},
+					{
+						"id": "6",
+						"widgetId": "bezwaarcommittee-kpis-in-deliberation",
+						"gridX": 8,
+						"gridY": 2,
+						"gridWidth": 4,
+						"gridHeight": 2
+					},
+					{
+						"id": "3",
+						"widgetId": "bezwaarcommittee-roster",
+						"gridX": 0,
+						"gridY": 4,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					{
+						"id": "4",
+						"widgetId": "bezwaarcommittee-adviesaanvragen",
+						"gridX": 0,
+						"gridY": 8,
+						"gridWidth": 12,
+						"gridHeight": 5
 					}
 				],
 				"sidebar": {
 					"enabled": true,
-					"showMetadata": true
-				},
-				"documentationUrl": "https://procest.conduction.nl"
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						},
+						{
+							"id": "version-history",
+							"label": "Version history",
+							"icon": "FileCompare",
+							"component": "VersionHistoryLeafTab"
+						}
+					]
+				}
 			}
 		},
 		{
@@ -2836,53 +4294,105 @@
 			"config": {
 				"register": "procest",
 				"schema": "bacAdviceRequest",
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "documents",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1,
-					"props": {
-						"config": {
-							"fields": [
-								"adviceDocuments"
+				"_note": "ADVICE-ASSIGNMENT archetype (a committee advice request on a bezwaar), ADR-062 round 2. No comms leaves and no child schemas. The 15-field schema splits into two genuinely distinct groups: 'Assignment' (who/when — bezwaar, commissie, panel, status, assignedAt, deadline) paired with the Related panel (parent bezwaar and committee), and 'Advice & outcome' (the substantive opinion, dissent and evidence — advice, recommendation, conclusion, adviceIssuedAt, dissentingOpinions[], adviceDocuments, signatureEvidence, hearingReportRef) full-width below. lifecycleActions drive the status (assigned → in-deliberation → advice-issued / niet-ontvankelijk). Document references are plain fields, not a files-leaf. Audit history is a sidebar tab.",
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
+					{
+						"id": "bacadvicerequest-data",
+						"type": "data",
+						"title": "Assignment",
+						"icon": "ClipboardList",
+						"content": {
+							"columns": 2,
+							"include": [
+								"bezwaar",
+								"commissie",
+								"panel",
+								"status",
+								"assignedAt",
+								"deadline"
 							]
 						}
+					},
+					{
+						"id": "bacadvicerequest-advice",
+						"type": "data",
+						"title": "Advice & outcome",
+						"icon": "MessageTextOutline",
+						"content": {
+							"columns": 2,
+							"include": [
+								"advice",
+								"recommendation",
+								"conclusion",
+								"adviceIssuedAt",
+								"dissentingOpinions",
+								"adviceDocuments",
+								"signatureEvidence",
+								"hearingReportRef"
+							]
+						}
+					},
+					{
+						"id": "bacadvicerequest-related",
+						"type": "related",
+						"title": "Bezwaar & committee",
+						"icon": "LinkVariant"
 					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "bacadvicerequest-data",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 8,
+						"gridHeight": 4,
+						"showTitle": false
+					},
+					{
+						"id": "2",
+						"widgetId": "bacadvicerequest-related",
+						"gridX": 8,
+						"gridY": 0,
+						"gridWidth": 4,
+						"gridHeight": 4
+					},
+					{
+						"id": "3",
+						"widgetId": "bacadvicerequest-advice",
+						"gridX": 0,
+						"gridY": 4,
+						"gridWidth": 12,
+						"gridHeight": 5
+					}
+				],
+				"lifecycleActions": {
+					"field": "status"
 				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 3,
-					"gridWidth": 1,
-					"gridHeight": 1
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						},
+						{
+							"id": "version-history",
+							"label": "Version history",
+							"icon": "FileCompare",
+							"component": "VersionHistoryLeafTab"
+						}
+					]
 				}
-			]
+			}
 		},
 		{
 			"id": "Beroepen",
@@ -2892,6 +4402,7 @@
 			"config": {
 				"register": "procest",
 				"schema": "case",
+				"allowSavedViews": true,
 				"filter": {
 					"caseType": "b3c1a000-0000-4000-a000-00000000be30"
 				},
@@ -2911,7 +4422,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "CaseDetail",
 						"type": "handler"
@@ -2932,88 +4443,105 @@
 			"config": {
 				"register": "procest",
 				"schema": "beroep",
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "file-inspection",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1,
-					"props": {
-						"config": {
-							"fields": [
-								"fileInspectionRequests"
+				"_note": "APPEAL-CASE archetype (AWB beroep at the rechtbank), ADR-062 round 2. `beroep` is a supporting schema on a unified case (beroep.case) and declares NO comms linkedTypes, so no files/notes/contacts/calendar here — those live on the parent CaseDetail. The 17-field schema splits into two genuinely distinct groups: 'Appeal' (the court header — case, sourceBezwaar, contestedDecision, courtReference, responsibleChamber, competentCourt) paired with the Related panel (parent case and source bezwaar), and 'Filing & judgment' (the clock, sub-process and outcome — appellantFilingDate/NotifiedDate, filingDeadline, voorzieningRequested, latefilingNotice, fileInspectionRequests[], judgmentOutcome/Date/Document, cascadeAction/cascadeBezwaarCase) full-width below. No status enum on this schema, so no lifecycleActions. Audit history is a sidebar tab.",
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
+					{
+						"id": "beroep-data",
+						"type": "data",
+						"title": "Appeal",
+						"icon": "Gavel",
+						"content": {
+							"columns": 2,
+							"include": [
+								"case",
+								"sourceObjection",
+								"contestedDecision",
+								"courtReference",
+								"responsibleChamber",
+								"competentCourt"
 							]
 						}
-					}
-				},
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "judgment",
-					"gridX": 0,
-					"gridY": 3,
-					"gridWidth": 1,
-					"gridHeight": 1,
-					"props": {
-						"config": {
-							"fields": [
+					},
+					{
+						"id": "beroep-judgment",
+						"type": "data",
+						"title": "Filing & judgment",
+						"icon": "ScaleBalance",
+						"content": {
+							"columns": 2,
+							"include": [
+								"appellantFilingDate",
+								"appellantNotifiedDate",
+								"filingDeadline",
+								"provisionRequested",
+								"latefilingNotice",
+								"fileInspectionRequests",
 								"judgmentOutcome",
 								"judgmentDate",
-								"judgmentDocument"
-							]
-						}
-					}
-				},
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "cascade",
-					"gridX": 0,
-					"gridY": 4,
-					"gridWidth": 1,
-					"gridHeight": 1,
-					"props": {
-						"config": {
-							"fields": [
+								"judgmentDocument",
 								"cascadeAction",
-								"cascadeBezwaarCase"
+								"cascadeObjectionCase"
 							]
 						}
+					},
+					{
+						"id": "beroep-related",
+						"type": "related",
+						"title": "Case & source bezwaar",
+						"icon": "LinkVariant"
 					}
-				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 5,
-					"gridWidth": 1,
-					"gridHeight": 1
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "beroep-data",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 8,
+						"gridHeight": 4,
+						"showTitle": false
+					},
+					{
+						"id": "2",
+						"widgetId": "beroep-related",
+						"gridX": 8,
+						"gridY": 0,
+						"gridWidth": 4,
+						"gridHeight": 4
+					},
+					{
+						"id": "3",
+						"widgetId": "beroep-judgment",
+						"gridX": 0,
+						"gridY": 4,
+						"gridWidth": 12,
+						"gridHeight": 6
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						},
+						{
+							"id": "version-history",
+							"label": "Version history",
+							"icon": "FileCompare",
+							"component": "VersionHistoryLeafTab"
+						}
+					]
 				}
-			]
+			}
 		},
 		{
 			"id": "FeaturesRoadmap",
@@ -3031,14 +4559,6 @@
 			"title": "Termijn dashboard",
 			"component": "TermijnDashboard",
 			"_note": "AWB termijnbewaking (statutory-deadline) monitor: a zaaktype filter drives a server-computed KPI bundle (total cases in period, within-term %, breached, at-risk) rendered as colour-coded compliance cards. The figures come from a dedicated deadline-aggregation endpoint, not a register query, so the standard dashboard/object-stats type can't supply or shape this data."
-		},
-		{
-			"id": "ArchiefDashboard",
-			"route": "/archief-dashboard",
-			"type": "custom",
-			"title": "Archief dashboard",
-			"component": "ArchiefDashboard",
-			"_note": "Archief e-Depot handover console: KPI cards (ready/in-progress/failed) plus trigger and batch tables and quick actions, backed by the bespoke `archief#dashboardStats` and `archief#auditLog` endpoints. The standard dashboard type renders register-derived stats only and cannot drive the e-Depot batch/trigger operational tables or handover actions."
 		},
 		{
 			"id": "TenantOnboardingDashboard",
@@ -3063,6 +4583,14 @@
 			"title": "Substitutions & reassignment",
 			"component": "SubstitutionAdminView",
 			"_note": "Coordinator substitution console: a filterable list of all substitutions plus register-on-behalf, revoke, inspect-capacity-stamped-actions, and bulk-reassignment actions (the latter two open dedicated modals). Coordinator role is enforced server-side. The standard list type cannot host the on-behalf-of register flow, the action-list inspection, or the bulk-reassign operation over the listed objects."
+		},
+		{
+			"id": "VerwerkingenOverview",
+			"route": "/verwerkingen",
+			"type": "custom",
+			"title": "Processing activities (AVG)",
+			"component": "VerwerkingenOverviewView",
+			"_note": "FG/admin window on OpenRegister's processing-activity register scoped to procest (avg-verwerkingenlogging thin consumer): catalogue review status, unclassified-processing counter (OR-PA-4 fallback), and the per-betrokkene inzageverzoek export entry point (OR-PA-7 via InzageExportModal). All data comes from OR's /api/avg endpoints; OR denies non-FG/non-admin callers fail-closed (OR-PA-8). No standard list type applies — the data source is OR's AVG API, not a procest register schema."
 		}
 	],
 	"observability": {
@@ -3070,9 +4598,22 @@
 		"health": {
 			"statusCodePolicy": "adr006",
 			"checks": [
-				{ "id": "database", "type": "database", "severity": "critical" },
-				{ "id": "openregister", "type": "appEnabled", "app": "openregister", "severity": "critical" },
-				{ "id": "filesystem", "type": "filesystem", "severity": "degraded" }
+				{
+					"id": "database",
+					"type": "database",
+					"severity": "critical"
+				},
+				{
+					"id": "openregister",
+					"type": "appEnabled",
+					"app": "openregister",
+					"severity": "critical"
+				},
+				{
+					"id": "filesystem",
+					"type": "filesystem",
+					"severity": "degraded"
+				}
 			]
 		},
 		"metrics": [
@@ -3085,7 +4626,10 @@
 					"kind": "objectCount",
 					"register": "procest",
 					"schema": "case",
-					"groupBy": ["status", "caseType"]
+					"groupBy": [
+						"status",
+						"caseType"
+					]
 				}
 			},
 			{
@@ -3097,7 +4641,11 @@
 					"kind": "objectCount",
 					"register": "procest",
 					"schema": "case",
-					"filter": { "uiterlijkeEinddatumAfdoening": { "lt": "now" } }
+					"filter": {
+						"uiterlijkeEinddatumAfdoening": {
+							"lt": "now"
+						}
+					}
 				}
 			},
 			{
@@ -3109,7 +4657,11 @@
 					"kind": "objectCount",
 					"register": "procest",
 					"schema": "case",
-					"filter": { "startDate": { "gte": "today" } }
+					"filter": {
+						"startDate": {
+							"gte": "today"
+						}
+					}
 				}
 			},
 			{
@@ -3121,7 +4673,9 @@
 					"kind": "objectCount",
 					"register": "procest",
 					"schema": "task",
-					"groupBy": ["status"]
+					"groupBy": [
+						"status"
+					]
 				}
 			},
 			{
@@ -3133,7 +4687,11 @@
 					"kind": "objectCount",
 					"register": "procest",
 					"schema": "task",
-					"filter": { "deadline": { "lt": "now" } }
+					"filter": {
+						"deadline": {
+							"lt": "now"
+						}
+					}
 				}
 			}
 		]
@@ -3150,6 +4708,24 @@
 			"schemaSlug": "task",
 			"urlTemplate": "/apps/procest/tasks/{uuid}",
 			"displayName": "Task"
+		},
+		{
+			"registerSlug": "procest",
+			"schemaSlug": "objectionProceeding",
+			"urlTemplate": "/apps/procest/bezwaren/{uuid}",
+			"displayName": "Bezwaar"
+		},
+		{
+			"registerSlug": "procest",
+			"schemaSlug": "proposal",
+			"urlTemplate": "/apps/procest/voorstellen/{uuid}",
+			"displayName": "Voorstel"
+		},
+		{
+			"registerSlug": "procest",
+			"schemaSlug": "beroep",
+			"urlTemplate": "/apps/procest/beroepen/{uuid}",
+			"displayName": "Beroep"
 		}
 	]
 }

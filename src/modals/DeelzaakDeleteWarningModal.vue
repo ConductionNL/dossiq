@@ -31,7 +31,12 @@
 			</NcNoteCard>
 
 			<p class="deelzaak-delete-warning__detail">
-				{{ t('procest', 'The sub-cases will remain accessible as standalone cases after deletion.') }}
+				{{
+					t(
+						'procest',
+						'The sub-cases will remain accessible as standalone cases after deletion.',
+					)
+				}}
 			</p>
 
 			<NcNoteCard v-if="error" type="error" role="alert">
@@ -54,15 +59,9 @@
 </template>
 
 <script>
-import {
-	NcButton,
-	NcDialog,
-	NcLoadingIcon,
-	NcNoteCard,
-} from '@nextcloud/vue'
-
-import { useObjectStore } from '../store/modules/object.js'
+import { NcButton, NcDialog, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
+import { useObjectStore } from '../store/modules/object.js'
 import { orphanWarningMessage } from '../utils/deelzaakHelpers.js'
 
 export default {
@@ -73,18 +72,21 @@ export default {
 		NcLoadingIcon,
 		NcNoteCard,
 	},
+
 	props: {
 		/** UUID of the parent case being deleted. */
 		parentCaseId: {
 			type: String,
 			required: true,
 		},
+
 		/** Number of sub-cases attached to the parent (drives the copy). */
 		subCaseCount: {
 			type: Number,
 			default: 0,
 		},
 	},
+
 	emits: ['deleted', 'close'],
 	data() {
 		return {
@@ -92,20 +94,24 @@ export default {
 			error: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/deelzaak-support/tasks.md#T11 */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/changes/deelzaak-support/tasks.md#T11 */
 		deelzaakStore() {
 			return useDeelzaakStore()
 		},
+
 		/** @spec openspec/changes/deelzaak-support/tasks.md#T11 */
 		warningMessage() {
 			return orphanWarningMessage(this.subCaseCount)
 		},
 	},
+
 	methods: {
 		/**
 		 * @param open
@@ -116,22 +122,45 @@ export default {
 				this.$emit('close')
 			}
 		},
+
 		/**
 		 * Unlink every sub-case, then delete the parent. Orphan cleanup runs
 		 * before deletion so the children survive (REQ-DZS-006-B).
 		 *
-		 * @spec openspec/changes/deelzaak-support/tasks.md#T11
+		 * ⚠️ The parent is deleted ONLY when the unlink reports `complete`.
+		 * Previously this awaited a bare count and deleted the parent
+		 * unconditionally, so any sub-case that failed to detach — or that fell
+		 * outside the server's 200-record page — was left pointing at a case
+		 * that no longer exists, with the UI reporting success (procest#793).
+		 * Aborting here is the behaviour REQ-DZS-006-B actually asks for: the
+		 * children survive, which they do not if the parent goes while they are
+		 * still attached.
+		 *
+		 * @spec openspec/specs/deelzaak-support/spec.md
 		 */
 		async confirmDelete() {
 			this.busy = true
 			this.error = null
 			try {
-				await this.deelzaakStore.unlinkSubCases(this.parentCaseId)
+				const result = await this.deelzaakStore.unlinkSubCases(
+					this.parentCaseId,
+				)
+				if (!result.complete) {
+					this.error = t(
+						'procest',
+						'{failed} of {total} sub-cases could not be detached, so the case was not deleted. Detach them first, then try again.',
+						{ failed: result.failed, total: result.total },
+					)
+					return
+				}
 				await this.objectStore.deleteObject('case', this.parentCaseId)
 				this.$emit('deleted', this.parentCaseId)
 			} catch (err) {
 				console.error('[DeelzaakDeleteWarningModal] delete failed', err)
-				this.error = t('procest', 'The case could not be deleted. Please try again.')
+				this.error = t(
+					'procest',
+					'The case could not be deleted. Please try again.',
+				)
 			} finally {
 				this.busy = false
 			}

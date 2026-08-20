@@ -20,7 +20,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md
  */
 
 declare(strict_types=1);
@@ -30,6 +30,5 @@ namespace OCA\Procest\Service\Stuf;
 /**
  * Synchronous vraag/antwoord exceeded the configured timeout.
  */
-class TimeoutException extends StufException
-{
+class TimeoutException extends StufException {
 }//end class

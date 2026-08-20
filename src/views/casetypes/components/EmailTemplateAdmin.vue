@@ -9,7 +9,10 @@
 			<div class="email-template-admin__list">
 				<div class="email-template-admin__list-header">
 					<h4>{{ t('procest', 'Templates') }}</h4>
-					<NcButton type="primary" :disabled="!caseTypeId" @click="startCreate">
+					<NcButton
+						type="primary"
+						:disabled="!caseTypeId"
+						@click="startCreate">
 						<template #icon>
 							<Plus :size="20" />
 						</template>
@@ -23,10 +26,21 @@
 						v-for="tpl in templates"
 						:key="tpl.id || tpl.name"
 						class="email-template-admin__list-item"
-						:class="{ 'email-template-admin__list-item--active': isSelected(tpl) }"
-						@click="selectTemplate(tpl)">
-						<span class="email-template-admin__list-name">{{ tpl.name }}</span>
-						<span class="email-template-admin__list-version">v{{ tpl.version || 1 }}</span>
+						:class="{
+							'email-template-admin__list-item--active':
+								isSelected(tpl),
+						}"
+						role="button"
+						tabindex="0"
+						@click="selectTemplate(tpl)"
+						@keydown.enter="selectTemplate(tpl)"
+						@keydown.space.prevent="selectTemplate(tpl)">
+						<span class="email-template-admin__list-name">{{
+							tpl.name
+						}}</span>
+						<span class="email-template-admin__list-version"
+							>v{{ tpl.version || 1 }}</span
+						>
 					</li>
 				</ul>
 				<p v-else class="email-template-admin__empty">
@@ -38,7 +52,7 @@
 			<div v-if="editing" class="email-template-admin__editor">
 				<div class="setting-row">
 					<label for="etpl-name">{{ t('procest', 'Name') }}</label>
-					<NcInputField id="etpl-name" :value.sync="draft.name" />
+					<NcInputField id="etpl-name" v-model="draft.name" />
 				</div>
 
 				<div class="setting-row">
@@ -46,7 +60,7 @@
 					<NcInputField
 						id="etpl-subject"
 						ref="subjectField"
-						:value.sync="draft.subject"
+						v-model="draft.subject"
 						@focus="activeField = 'subject'" />
 				</div>
 
@@ -55,7 +69,7 @@
 					<NcTextArea
 						id="etpl-body"
 						ref="bodyField"
-						:value.sync="draft.body"
+						v-model="draft.body"
 						rows="8"
 						@focus="activeField = 'body'" />
 				</div>
@@ -63,9 +77,17 @@
 				<!-- Live preview -->
 				<div class="setting-row">
 					<label>{{ t('procest', 'Preview') }}</label>
-					<div class="email-template-admin__preview" v-html="previewHtml" />
-					<p v-if="unresolved.length > 0" class="email-template-admin__warning">
-						{{ t('procest', 'Unresolved variables: {names}', { names: unresolved.join(', ') }) }}
+					<div
+						class="email-template-admin__preview"
+						v-html="previewHtml" />
+					<p
+						v-if="unresolved.length > 0"
+						class="email-template-admin__warning">
+						{{
+							t('procest', 'Unresolved variables: {names}', {
+								names: unresolved.join(', '),
+							})
+						}}
 					</p>
 				</div>
 
@@ -88,7 +110,10 @@
 				<p class="email-template-admin__hint">
 					{{ t('procest', 'Click to insert into the focused field') }}
 				</p>
-				<div v-for="(names, group) in variables" :key="group" class="email-template-admin__var-group">
+				<div
+					v-for="(names, group) in variables"
+					:key="group"
+					class="email-template-admin__var-group">
 					<h5>{{ groupLabel(group) }}</h5>
 					<button
 						v-for="name in names"
@@ -105,10 +130,19 @@
 </template>
 
 <script>
-import { NcButton, NcInputField, NcLoadingIcon, NcNoteCard, NcTextArea } from '@nextcloud/vue'
-import Plus from 'vue-material-design-icons/Plus.vue'
 import { generateUrl } from '@nextcloud/router'
-import { collectUnresolved, renderPreview } from '../../../utils/emailTemplatePreview.js'
+import {
+	NcButton,
+	NcInputField,
+	NcLoadingIcon,
+	NcNoteCard,
+	NcTextArea,
+} from '@nextcloud/vue'
+import Plus from 'vue-material-design-icons/Plus.vue'
+import {
+	collectUnresolved,
+	renderPreview,
+} from '../../../utils/emailTemplatePreview.js'
 
 /**
  * Per-case-type email template CRUD with click-to-insert variables and a
@@ -116,17 +150,26 @@ import { collectUnresolved, renderPreview } from '../../../utils/emailTemplatePr
  * compose/thread/queue components — display, compose and link come from the
  * email leaf + Nextcloud Mail.
  *
- * @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md
+ * @spec openspec/specs/case-email-integration/spec.md
  */
 export default {
 	name: 'EmailTemplateAdmin',
-	components: { NcButton, NcInputField, NcLoadingIcon, NcNoteCard, NcTextArea, Plus },
+	components: {
+		NcButton,
+		NcInputField,
+		NcLoadingIcon,
+		NcNoteCard,
+		NcTextArea,
+		Plus,
+	},
+
 	props: {
 		caseTypeId: {
 			type: String,
 			default: null,
 		},
 	},
+
 	data() {
 		return {
 			loading: false,
@@ -138,29 +181,43 @@ export default {
 			draft: { id: null, name: '', subject: '', body: '' },
 		}
 	},
+
 	computed: {
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		introText() {
-			return t('procest', 'Per-case-type email templates with placeholder variables. Editing a template creates a new version — old versions are retained. Templates prefill a Nextcloud Mail draft; Procest never sends mail itself.')
+			return t(
+				'procest',
+				'Per-case-type email templates with placeholder variables. Editing a template creates a new version — old versions are retained. Templates prefill a Nextcloud Mail draft; Procest never sends mail itself.',
+			)
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		flatVariableNames() {
 			return Object.values(this.variables).flat()
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		unresolved() {
-			return collectUnresolved(`${this.draft.subject} ${this.draft.body}`, this.flatVariableNames)
+			return collectUnresolved(
+				`${this.draft.subject} ${this.draft.body}`,
+				this.flatVariableNames,
+			)
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		previewHtml() {
 			return renderPreview(this.draft.body, this.flatVariableNames)
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		saveLabel() {
 			if (this.saving) return t('procest', 'Saving...')
-			return this.draft.id ? t('procest', 'Save as new version') : t('procest', 'Create template')
+			return this.draft.id
+				? t('procest', 'Save as new version')
+				: t('procest', 'Create template')
 		},
 	},
+
 	watch: {
 		caseTypeId: {
 			immediate: true,
@@ -171,12 +228,20 @@ export default {
 			},
 		},
 	},
+
 	methods: {
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+		/**
+		 * @param name
+		 * @spec openspec/specs/case-email-integration/spec.md
+		 */
 		varToken(name) {
 			return '{{' + name + '}}'
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+
+		/**
+		 * @param group
+		 * @spec openspec/specs/case-email-integration/spec.md
+		 */
 		groupLabel(group) {
 			const labels = {
 				case: t('procest', 'Case'),
@@ -185,24 +250,38 @@ export default {
 			}
 			return labels[group] || group
 		},
+
 		isSelected(tpl) {
-			return this.draft.id && (tpl.id === this.draft.id)
+			return this.draft.id && tpl.id === this.draft.id
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		async load() {
 			this.loading = true
 			try {
 				const [tplRes, varRes] = await Promise.all([
-					fetch(generateUrl(`/apps/procest/api/casetypes/${encodeURIComponent(this.caseTypeId)}/email-templates`), {
-						headers: { requesttoken: OC.requestToken },
-					}),
-					fetch(generateUrl(`/apps/procest/api/casetypes/${encodeURIComponent(this.caseTypeId)}/email-templates/variables`), {
-						headers: { requesttoken: OC.requestToken },
-					}),
+					fetch(
+						generateUrl(
+							`/apps/procest/api/casetypes/${encodeURIComponent(this.caseTypeId)}/email-templates`,
+						),
+						{
+							headers: { requesttoken: OC.requestToken },
+						},
+					),
+					fetch(
+						generateUrl(
+							`/apps/procest/api/casetypes/${encodeURIComponent(this.caseTypeId)}/email-templates/variables`,
+						),
+						{
+							headers: { requesttoken: OC.requestToken },
+						},
+					),
 				])
 				if (tplRes.ok) {
 					const data = await tplRes.json()
-					this.templates = Array.isArray(data) ? data : (data.results || data.templates || [])
+					this.templates = Array.isArray(data)
+						? data
+						: data.results || data.templates || []
 				}
 				if (varRes.ok) {
 					this.variables = await varRes.json()
@@ -213,13 +292,18 @@ export default {
 				this.loading = false
 			}
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		startCreate() {
 			this.draft = { id: null, name: '', subject: '', body: '' }
 			this.editing = true
 			this.activeField = 'body'
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+
+		/**
+		 * @param tpl
+		 * @spec openspec/specs/case-email-integration/spec.md
+		 */
 		selectTemplate(tpl) {
 			this.draft = {
 				id: tpl.id || null,
@@ -230,10 +314,15 @@ export default {
 			this.editing = true
 			this.activeField = 'body'
 		},
+
 		cancelEdit() {
 			this.editing = false
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+
+		/**
+		 * @param name
+		 * @spec openspec/specs/case-email-integration/spec.md
+		 */
 		insertVariable(name) {
 			const token = `{{${name}}}`
 			if (this.activeField === 'subject') {
@@ -242,14 +331,19 @@ export default {
 				this.draft.body = `${this.draft.body || ''}${token}`
 			}
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		async save() {
 			this.saving = true
 			try {
 				const isUpdate = !!this.draft.id
 				const url = isUpdate
-					? generateUrl(`/apps/procest/api/email-templates/${encodeURIComponent(this.draft.id)}`)
-					: generateUrl(`/apps/procest/api/casetypes/${encodeURIComponent(this.caseTypeId)}/email-templates`)
+					? generateUrl(
+							`/apps/procest/api/email-templates/${encodeURIComponent(this.draft.id)}`,
+						)
+					: generateUrl(
+							`/apps/procest/api/casetypes/${encodeURIComponent(this.caseTypeId)}/email-templates`,
+						)
 				await fetch(url, {
 					method: isUpdate ? 'PUT' : 'POST',
 					headers: {

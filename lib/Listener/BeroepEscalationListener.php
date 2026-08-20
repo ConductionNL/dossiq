@@ -49,282 +49,287 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/beroep-escalation/specs/beroep-escalation/spec.md
+ * @spec openspec/specs/beroep-escalation/spec.md
  */
-class BeroepEscalationListener implements IEventListener
-{
-    /**
-     * Status values that close a bezwaar (terminal per bezwaar-lifecycle).
-     *
-     * @var array<int, string>
-     */
-    private const TERMINAL_BEZWAAR_STATUSES = [
-        'Afgehandeld',
-        'Niet-ontvankelijk',
-        'Ingetrokken',
-    ];
+class BeroepEscalationListener implements IEventListener {
+	/**
+	 * Status values that close a bezwaar (terminal per bezwaar-lifecycle).
+	 *
+	 * @var array<int, string>
+	 */
+	private const TERMINAL_BEZWAAR_STATUSES = [
+		'Handled',
+		'Inadmissible',
+		'Withdrawn',
+	];
 
-    /**
-     * Judgment outcomes that put a beroep in a terminal state.
-     *
-     * @var array<int, string>
-     */
-    private const TERMINAL_BEROEP_OUTCOMES = [
-        'in_stand_gelaten',
-        'ongegrond',
-        'niet_ontvankelijk',
-        'ingetrokken',
-        'schikking',
-    ];
+	/**
+	 * Judgment outcomes that put a beroep in a terminal state.
+	 *
+	 * @var array<int, string>
+	 */
+	private const TERMINAL_BEROEP_OUTCOMES = [
+		'upheld',
+		'dismissed',
+		'inadmissible',
+		'withdrawn',
+		'schikking',
+	];
 
-    /**
-     * Filing-window length: 6 weeks (Awb 6:7).
-     */
-    private const FILING_WINDOW_DAYS = 42;
+	/**
+	 * Filing-window length: 6 weeks (Awb 6:7).
+	 */
+	private const FILING_WINDOW_DAYS = 42;
 
-    /**
-     * Constructor.
-     *
-     * @param SettingsService $settingsService Schema slug bridge
-     * @param LoggerInterface $logger          Logger
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService Schema slug bridge
+	 * @param LoggerInterface $logger Logger
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Handle a beroep create/update event.
-     *
-     * @param Event $event The dispatched event
-     *
-     * @return void
+	/**
+	 * Handle a beroep create/update event.
+	 *
+	 * @param Event $event The dispatched event
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function handle(Event $event): void {
+		if ($event instanceof ObjectCreatedEvent === false
+			&& $event instanceof ObjectUpdatedEvent === false
+		) {
+			return;
+		}
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function handle(Event $event): void
-    {
-        if ($event instanceof ObjectCreatedEvent === false
-            && $event instanceof ObjectUpdatedEvent === false
-        ) {
-            return;
-        }
+		try {
+			$this->deriveDwingendStatus(event: $event);
+		} catch (Throwable $e) {
+			$this->logger->debug(
+				'Procest beroep: dwingendStatus derivation swallowed '
+				. 'exception: ' . $e->getMessage(),
+			);
+		}//end try
+	}//end handle()
 
-        try {
-            $object = $this->extractObject(event: $event);
-            if ($object === null) {
-                return;
-            }
+	/**
+	 * Re-derive `dwingendStatus` on the source bezwaar of the beroep the event carries, writing it
+	 * back only when the derived marker differs from the stored one.
+	 *
+	 * @param Event $event The dispatched event
+	 *
+	 * @return void
+	 */
+	private function deriveDwingendStatus(Event $event): void {
+		$object = $this->extractObject(event: $event);
+		if ($object === null) {
+			return;
+		}
 
-            if ($this->isBeroepSchema(object: $object) === false) {
-                return;
-            }
+		if ($this->isAppealSchema(object: $object) === false) {
+			return;
+		}
 
-            $sourceBezwaarId = (string) ($object['sourceBezwaar'] ?? '');
-            if ($sourceBezwaarId === '') {
-                return;
-            }
+		$sourceObjectionId = (string)($object['sourceObjection'] ?? '');
+		if ($sourceObjectionId === '') {
+			return;
+		}
 
-            $objectService = $this->settingsService->getObjectService();
-            if ($objectService === null) {
-                return;
-            }
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return;
+		}
 
-            $register      = $this->settingsService->getConfigValue(
-                key: 'register'
-            );
-            $bezwaarSchema = $this->settingsService->getConfigValue(
-                key: 'bezwaar_schema'
-            );
-            if ($register === '' || $bezwaarSchema === '') {
-                return;
-            }
+		$register = $this->settingsService->getConfigValue(
+			key: 'register'
+		);
+		$objectionSchema = $this->settingsService->getConfigValue(
+			key: 'bezwaar_schema'
+		);
+		if ($register === '' || $objectionSchema === '') {
+			return;
+		}
 
-            $bezwaar = $objectService->find($sourceBezwaarId, register: $register, schema: $bezwaarSchema);
-            if (is_array($bezwaar) === false) {
-                return;
-            }
+		$objection = $objectService->find($sourceObjectionId, register: $register, schema: $objectionSchema);
+		if (is_array($objection) === false) {
+			return;
+		}
 
-            $dwingend = $this->shouldFlagDwingend(
-                beroep: $object,
-                bezwaar: $bezwaar,
-            );
+		$dwingend = $this->shouldFlagDwingend(
+			appeal: $object,
+			objection: $objection,
+		);
 
-            // No-op when the derived marker already matches.
-            $current = (bool) ($bezwaar['dwingendStatus'] ?? false);
-            if ($current === $dwingend) {
-                return;
-            }
+		// No-op when the derived marker already matches.
+		$current = (bool)($objection['dwingendStatus'] ?? false);
+		if ($current === $dwingend) {
+			return;
+		}
 
-            $objectService->saveObject(
-                object: ['dwingendStatus' => $dwingend],
-                register: $register,
-                schema: $bezwaarSchema,
-                uuid: (string) $sourceBezwaarId
-            );
-        } catch (Throwable $e) {
-            $this->logger->debug(
-                'Procest beroep: dwingendStatus derivation swallowed '
-                .'exception: '.$e->getMessage(),
-            );
-        }//end try
-    }//end handle()
+		$objectService->saveObject(
+			object: ['dwingendStatus' => $dwingend],
+			register: $register,
+			schema: $objectionSchema,
+			uuid: (string)$sourceObjectionId
+		);
+	}//end deriveDwingendStatus()
 
-    /**
-     * Decide whether the source bezwaar should carry dwingendStatus = true.
-     *
-     * The marker is set when:
-     *  - the source bezwaar is in a terminal status (otherwise no flip is
-     *    needed; the bezwaar is still live), AND
-     *  - a beslissing op bezwaar exists (i.e. the bezwaar produced an
-     *    appealable decision), AND
-     *  - the beroep is non-terminal (judgmentOutcome is unset or not in
-     *    TERMINAL_BEROEP_OUTCOMES), AND
-     *  - the beroep was filed within the 6-week window from
-     *    appellantFilingDate (the system never decides timeliness itself
-     *    but the dwingende marker only applies during the active window).
-     *
-     * @param array<string, mixed> $beroep  The beroep payload
-     * @param array<string, mixed> $bezwaar The source bezwaar payload
-     *
-     * @return bool
-     */
-    private function shouldFlagDwingend(array $beroep, array $bezwaar): bool
-    {
-        $bezwaarStatus = (string) ($bezwaar['status'] ?? '');
-        if (in_array($bezwaarStatus, self::TERMINAL_BEZWAAR_STATUSES, true) === false
-        ) {
-            return false;
-        }
+	/**
+	 * Decide whether the source bezwaar should carry dwingendStatus = true.
+	 *
+	 * The marker is set when:
+	 *  - the source bezwaar is in a terminal status (otherwise no flip is
+	 *    needed; the bezwaar is still live), AND
+	 *  - a beslissing op bezwaar exists (i.e. the bezwaar produced an
+	 *    appealable decision), AND
+	 *  - the beroep is non-terminal (judgmentOutcome is unset or not in
+	 *    TERMINAL_BEROEP_OUTCOMES), AND
+	 *  - the beroep was filed within the 6-week window from
+	 *    appellantFilingDate (the system never decides timeliness itself
+	 *    but the dwingende marker only applies during the active window).
+	 *
+	 * @param array<string, mixed> $appeal The beroep payload
+	 * @param array<string, mixed> $objection The source bezwaar payload
+	 *
+	 * @return bool
+	 */
+	private function shouldFlagDwingend(array $appeal, array $objection): bool {
+		$objectionStatus = (string)($objection['status'] ?? '');
+		if (in_array($objectionStatus, self::TERMINAL_BEZWAAR_STATUSES, true) === false
+		) {
+			return false;
+		}
 
-        $contested = (string) ($beroep['contestedDecision'] ?? '');
-        if ($contested === '') {
-            return false;
-        }
+		$contested = (string)($appeal['contestedDecision'] ?? '');
+		if ($contested === '') {
+			return false;
+		}
 
-        $outcome = (string) ($beroep['judgmentOutcome'] ?? '');
-        if ($outcome !== ''
-            && in_array($outcome, self::TERMINAL_BEROEP_OUTCOMES, true) === true
-        ) {
-            return false;
-        }
+		$outcome = (string)($appeal['judgmentOutcome'] ?? '');
+		if ($outcome !== ''
+			&& in_array($outcome, self::TERMINAL_BEROEP_OUTCOMES, true) === true
+		) {
+			return false;
+		}
 
-        return $this->withinFilingWindow(beroep: $beroep);
-    }//end shouldFlagDwingend()
+		return $this->withinFilingWindow(appeal: $appeal);
+	}//end shouldFlagDwingend()
 
-    /**
-     * Whether the beroep was filed within 6 weeks of the contested
-     * decision's effectiveDate. Falls back to true when filingDeadline
-     * is set and the appellantFilingDate is on/before that date.
-     *
-     * @param array<string, mixed> $beroep The beroep payload
-     *
-     * @return bool
-     */
-    private function withinFilingWindow(array $beroep): bool
-    {
-        $filing = (string) ($beroep['appellantFilingDate'] ?? '');
-        if ($filing === '') {
-            return false;
-        }
+	/**
+	 * Whether the beroep was filed within 6 weeks of the contested
+	 * decision's effectiveDate. Falls back to true when filingDeadline
+	 * is set and the appellantFilingDate is on/before that date.
+	 *
+	 * @param array<string, mixed> $appeal The beroep payload
+	 *
+	 * @return bool
+	 */
+	private function withinFilingWindow(array $appeal): bool {
+		$filing = (string)($appeal['appellantFilingDate'] ?? '');
+		if ($filing === '') {
+			return false;
+		}
 
-        $deadline = (string) ($beroep['filingDeadline'] ?? '');
-        if ($deadline !== '') {
-            try {
-                return (new DateTimeImmutable($filing)) <= (new DateTimeImmutable($deadline));
-            } catch (Throwable $e) {
-                return true;
-            }
-        }
+		$deadline = (string)($appeal['filingDeadline'] ?? '');
+		if ($deadline !== '') {
+			try {
+				return (new DateTimeImmutable($filing)) <= (new DateTimeImmutable($deadline));
+			} catch (Throwable $e) {
+				return true;
+			}
+		}
 
-        // No deadline yet — assume within window.
-        unset($deadline);
-        // Reference window length so the constant is used (informational).
-        $window = self::FILING_WINDOW_DAYS;
-        unset($window);
-        return true;
-    }//end withinFilingWindow()
+		// No deadline yet — assume within window.
+		unset($deadline);
+		// Reference window length so the constant is used (informational).
+		$window = self::FILING_WINDOW_DAYS;
+		unset($window);
+		return true;
+	}//end withinFilingWindow()
 
-    /**
-     * Whether the object belongs to the `beroep` schema.
-     *
-     * @param array<string, mixed> $object The object payload
-     *
-     * @return bool
-     */
-    private function isBeroepSchema(array $object): bool
-    {
-        $schemaSlug = $this->settingsService->getConfigValue(
-            key: 'beroep_schema'
-        );
-        if ($schemaSlug === '') {
-            return false;
-        }
+	/**
+	 * Whether the object belongs to the `beroep` schema.
+	 *
+	 * @param array<string, mixed> $object The object payload
+	 *
+	 * @return bool
+	 */
+	private function isAppealSchema(array $object): bool {
+		$schemaSlug = $this->settingsService->getConfigValue(
+			key: 'beroep_schema'
+		);
+		if ($schemaSlug === '') {
+			return false;
+		}
 
-        $candidate = (string) (
-            $object['@self']['schema'] ?? ($object['@self']['schemaSlug'] ?? ($object['schema'] ?? ($object['_schemaSlug'] ?? '')))
-        );
+		$candidate = (string)(
+			$object['@self']['schema'] ?? ($object['@self']['schemaSlug'] ?? ($object['schema'] ?? ($object['_schemaSlug'] ?? '')))
+		);
 
-        return $candidate !== '' && (
-            $candidate === $schemaSlug
-            || str_ends_with($candidate, '/'.$schemaSlug)
-        );
-    }//end isBeroepSchema()
+		return $candidate !== '' && (
+			$candidate === $schemaSlug
+			|| str_ends_with($candidate, '/' . $schemaSlug)
+		);
+	}//end isBeroepSchema()
 
-    /**
-     * Extract the new object payload from an event.
-     *
-     * @param Event $event Event instance
-     *
-     * @return array<string, mixed>|null
-     */
-    private function extractObject(Event $event): ?array
-    {
-        foreach (['getNewObject', 'getObject'] as $method) {
-            if (method_exists($event, $method) === false) {
-                continue;
-            }
+	/**
+	 * Extract the new object payload from an event.
+	 *
+	 * @param Event $event Event instance
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function extractObject(Event $event): ?array {
+		foreach (['getNewObject', 'getObject'] as $method) {
+			if (method_exists($event, $method) === false) {
+				continue;
+			}
 
-            $value = $event->{$method}();
-            $array = $this->normalise(value: $value);
-            if ($array !== null) {
-                return $array;
-            }
-        }
+			$value = $event->{$method}();
+			$array = $this->normalise(value: $value);
+			if ($array !== null) {
+				return $array;
+			}
+		}
 
-        return null;
-    }//end extractObject()
+		return null;
+	}//end extractObject()
 
-    /**
-     * Normalise a getter return value to an associative array.
-     *
-     * @param mixed $value The raw value
-     *
-     * @return array<string, mixed>|null
-     */
-    private function normalise(mixed $value): ?array
-    {
-        if (is_array($value) === true) {
-            return $value;
-        }
+	/**
+	 * Normalise a getter return value to an associative array.
+	 *
+	 * @param mixed $value The raw value
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function normalise(mixed $value): ?array {
+		if (is_array($value) === true) {
+			return $value;
+		}
 
-        if (is_object($value) === true) {
-            if (method_exists($value, 'jsonSerialize') === true) {
-                $serialised = $value->jsonSerialize();
-                if (is_array($serialised) === true) {
-                    return $serialised;
-                }
-            }
+		if (is_object($value) === true) {
+			if (method_exists($value, 'jsonSerialize') === true) {
+				$serialised = $value->jsonSerialize();
+				if (is_array($serialised) === true) {
+					return $serialised;
+				}
+			}
 
-            if (method_exists($value, 'toArray') === true) {
-                $arr = $value->toArray();
-                if (is_array($arr) === true) {
-                    return $arr;
-                }
-            }
-        }
+			if (method_exists($value, 'toArray') === true) {
+				$arr = $value->toArray();
+				if (is_array($arr) === true) {
+					return $arr;
+				}
+			}
+		}
 
-        return null;
-    }//end normalise()
+		return null;
+	}//end normalise()
 }//end class

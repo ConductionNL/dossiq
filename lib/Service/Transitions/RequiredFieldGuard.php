@@ -3,7 +3,7 @@
 /**
  * Procest Required Field Guard evaluator.
  *
- * Guard config shape: `{type: 'requiredField', field: 'resultaat'}`.
+ * Guard config shape: `{type: 'requiredField', field: 'result'}`.
  * Passes when `case[field]` is non-null, non-empty-string, non-empty-array.
  *
  * @category Service
@@ -30,36 +30,35 @@ namespace OCA\Procest\Service\Transitions;
  *
  * @spec openspec/changes/status-transition-engine/tasks.md#T05
  */
-class RequiredFieldGuard implements GuardEvaluatorInterface
-{
-    /**
-     * Evaluate the required-field guard.
-     *
-     * @param array<string, mixed> $guardConfig Guard configuration
-     * @param array<string, mixed> $case        Case object
-     * @param string               $userId      Current user UID (unused)
-     *
-     * @return GuardResult
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+class RequiredFieldGuard implements GuardEvaluatorInterface {
+	/**
+	 * Evaluate the required-field guard.
+	 *
+	 * @param array<string, mixed> $guardConfig Guard configuration
+	 * @param array<string, mixed> $case Case object
+	 * @param string $userId Current user UID (unused)
+	 *
+	 * @return GuardResult
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function evaluate(array $guardConfig, array $case, string $userId): GuardResult {
+		$field = (string)($guardConfig['field'] ?? '');
+		if ($field === '') {
+			return new GuardResult(passed: false, failureMessage: 'Required-field guard missing field');
+		}
 
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function evaluate(array $guardConfig, array $case, string $userId): GuardResult
-    {
-        $field = (string) ($guardConfig['field'] ?? '');
-        if ($field === '') {
-            return GuardResult::fail(message: 'Required-field guard missing field');
-        }
+		$value = $case[$field] ?? null;
+		if ($value === null || $value === '' || (is_array($value) === true && count($value) === 0)) {
+			return new GuardResult(
+				passed: false,
+				failureMessage: sprintf('Vereist veld ontbreekt: %s', $field),
+				details: ['field' => $field],
+			);
+		}
 
-        $value = $case[$field] ?? null;
-        if ($value === null || $value === '' || (is_array($value) === true && count($value) === 0)) {
-            return GuardResult::fail(
-                message: sprintf('Vereist veld ontbreekt: %s', $field),
-                details: ['field' => $field],
-            );
-        }
-
-        return GuardResult::pass(details: ['field' => $field]);
-    }//end evaluate()
+		return new GuardResult(passed: true, details: ['field' => $field]);
+	}//end evaluate()
 }//end class

@@ -1,67 +1,82 @@
 <template>
-	<NcDashboardWidget :items="items"
+	<CnDataTable
+		:rows="items"
+		:columns="columns"
 		:loading="loading"
-		:item-menu="itemMenu"
-		@show="onShow">
-		<template #empty-content>
-			<NcEmptyContent :title="t('procest', 'No cases found')">
-				<template #icon>
-					<FolderOpen />
-				</template>
-			</NcEmptyContent>
+		hideHeader
+		borderless
+		:emptyText="t('procest', 'No cases found')"
+		@rowClick="onRowClick">
+		<template #footer>
+			<a
+				class="cn-data-table__view-all"
+				:href="viewAllUrl"
+				@click.prevent="onViewAll">
+				{{ t('procest', 'View all') }} →
+			</a>
 		</template>
-	</NcDashboardWidget>
+	</CnDataTable>
 </template>
 
 <script>
-import { NcDashboardWidget, NcEmptyContent } from '@nextcloud/vue'
-import { imagePath } from '@nextcloud/router'
+import { CnDataTable } from '@conduction/nextcloud-vue'
+import { generateUrl } from '@nextcloud/router'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
-import FolderOpen from 'vue-material-design-icons/FolderOpen.vue'
+import { navigateTo, SIGNAL_COLUMNS } from './signalTable.js'
 
 export default {
 	name: 'CasesOverviewWidget',
 	components: {
-		NcDashboardWidget,
-		NcEmptyContent,
-		FolderOpen,
+		CnDataTable,
 	},
+
 	props: {
 		title: {
 			type: String,
 			default: '',
 		},
 	},
+
 	data() {
 		return {
 			loading: false,
 			cases: [],
-			itemMenu: {
-				show: {
-					text: t('procest', 'View case'),
-					icon: 'icon-confirm',
-				},
-			},
+			columns: SIGNAL_COLUMNS,
 		}
 	},
+
 	computed: {
-		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
+		/** @spec openspec/specs/signalering-widgets/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
+
+		/**
+		 * Real destination URL for the "View all" link (gate-32: an `<a>`
+		 * with a real `href` is a genuine link, not a mouse-only click
+		 * target).
+		 *
+		 * @spec openspec/specs/signalering-widgets/spec.md
+		 */
+		viewAllUrl() {
+			return generateUrl('/apps/procest/cases')
+		},
+
+		/** @spec openspec/specs/signalering-widgets/spec.md */
 		items() {
 			return this.cases.map((caseObj) => ({
 				id: caseObj.id,
-				mainText: caseObj.title || caseObj.identifier || t('procest', 'Unnamed case'),
-				subText: caseObj.identifier
-					? `#${caseObj.identifier}`
-					: '',
-				avatarUrl: imagePath('procest', 'app-dark.svg'),
+				mainText:
+					caseObj.title
+					|| caseObj.identifier
+					|| t('procest', 'Unnamed case'),
+				subText: caseObj.identifier ? `#${caseObj.identifier}` : '',
+				targetUrl: generateUrl(`/apps/procest/cases/${caseObj.id}`),
 			}))
 		},
 	},
+
 	async mounted() {
 		// Ensure object types are registered before fetching. App.vue's
 		// async created() does not block child mounting, so this widget can
@@ -70,26 +85,33 @@ export default {
 		await initializeStores()
 		this.fetchData()
 	},
+
 	methods: {
 		/**
-		 * Handle showing a case.
+		 * Navigate to a clicked case in the same tab.
 		 *
-		 * @param {object} item The case item to show
+		 * @param {object} row The clicked row (a shaped case item).
 		 * @return {void}
 		 */
-		/**
-		 * @param item
-		 * @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md
-		 */
-		onShow(item) {
-			window.location.href = `/index.php/apps/procest/#/cases/${item.id}`
+		onRowClick(row) {
+			navigateTo(row.targetUrl)
 		},
+
+		/**
+		 * Navigate to the full cases list.
+		 *
+		 * @return {void}
+		 */
+		onViewAll() {
+			navigateTo(generateUrl('/apps/procest/cases'))
+		},
+
 		/**
 		 * Fetch case data.
 		 *
 		 * @return {Promise<void>}
 		 */
-		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
+		/** @spec openspec/specs/signalering-widgets/spec.md */
 		async fetchData() {
 			this.loading = true
 			try {

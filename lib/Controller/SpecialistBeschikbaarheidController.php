@@ -40,43 +40,41 @@ use OCP\IUserSession;
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T13
  */
-class SpecialistBeschikbaarheidController extends Controller
-{
-    /**
-     * Constructor.
-     *
-     * @param string                $appName        The app name.
-     * @param IRequest              $request        The request.
-     * @param BelplanRoutingService $routingService The routing service.
-     * @param IUserSession          $userSession    The user session.
-     */
-    public function __construct(
-        string $appName,
-        IRequest $request,
-        private readonly BelplanRoutingService $routingService,
-        private readonly IUserSession $userSession,
-    ) {
-        parent::__construct(appName: $appName, request: $request);
-    }//end __construct()
+class SpecialistBeschikbaarheidController extends Controller {
+	/**
+	 * Constructor.
+	 *
+	 * @param string $appName The app name.
+	 * @param IRequest $request The request.
+	 * @param BelplanRoutingService $routingService The routing service.
+	 * @param IUserSession $userSession The user session.
+	 */
+	public function __construct(
+		string $appName,
+		IRequest $request,
+		private readonly BelplanRoutingService $routingService,
+		private readonly IUserSession $userSession,
+	) {
+		parent::__construct(appName: $appName, request: $request);
+	}//end __construct()
 
-    /**
-     * Get specialist availability, optionally filtered by vaardigheid.
-     *
-     * @param string $vaardigheid The vaardigheid filter, empty for all.
-     *
-     * @return JSONResponse The availability records.
-     *
-     * @NoAdminRequired
+	/**
+	 * Get specialist availability, optionally filtered by vaardigheid.
+	 *
+	 * @param string $vaardigheid The vaardigheid filter, empty for all.
+	 *
+	 * @return JSONResponse The availability records.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T13
+	 */
+	public function index(string $vaardigheid = ''): JSONResponse {
+		if ($this->userSession->getUser() === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T13
-     */
-    public function index(string $vaardigheid=''): JSONResponse
-    {
-        if ($this->userSession->getUser() === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
-
-        $records = $this->routingService->getSpecialistBeschikbaarheid($vaardigheid);
-        return new JSONResponse(['specialisten' => $records]);
-    }//end index()
+		$records = $this->routingService->getSpecialistBeschikbaarheid($vaardigheid);
+		return new JSONResponse(['specialisten' => $records]);
+	}//end index()
 }//end class

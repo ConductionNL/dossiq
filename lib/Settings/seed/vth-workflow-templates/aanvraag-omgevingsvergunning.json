@@ -38,7 +38,7 @@
       "description": "Inhoudelijke beoordeling van de aanvraag, eventueel met externe adviezen."
     },
     {
-      "slug": "besluit",
+      "slug": "decision",
       "title": "Besluit",
       "statusName": "Besluitvorming",
       "order": 4,

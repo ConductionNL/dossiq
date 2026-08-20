@@ -3,7 +3,7 @@
 /**
  * Procest setField action handler.
  *
- * Action config shape: `{type: 'setField', field: 'einddatum', value: '<value-or-now>'}`.
+ * Action config shape: `{type: 'setField', field: 'endDate', value: '<value-or-now>'}`.
  * Writes the named field on the case via OpenRegister ObjectService. Special
  * `value` macros: `__now__` becomes the current ISO-8601 timestamp.
  *
@@ -35,67 +35,65 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/status-transition-engine/tasks.md#T08
  */
-class SetFieldHandler implements ActionHandlerInterface
-{
-    /**
-     * Constructor.
-     *
-     * @param SettingsService $settingsService Bridge to OpenRegister + config
-     * @param LoggerInterface $logger          Logger
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class SetFieldHandler implements ActionHandlerInterface {
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService Bridge to OpenRegister + config
+	 * @param LoggerInterface $logger Logger
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Handle the setField action.
-     *
-     * @param array<string, mixed> $actionConfig      Action configuration
-     * @param array<string, mixed> $case              Case object
-     * @param array<string, mixed> $transitionContext Transition context
-     *
-     * @return ActionResult
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	/**
+	 * Handle the setField action.
+	 *
+	 * @param array<string, mixed> $actionConfig Action configuration
+	 * @param array<string, mixed> $case Case object
+	 * @param array<string, mixed> $transitionContext Transition context
+	 *
+	 * @return ActionResult
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
+		try {
+			$field = (string)($actionConfig['field'] ?? '');
+			if ($field === '') {
+				return new ActionResult(succeeded: false, error: 'set_field_missing_field');
+			}
 
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
-    {
-        try {
-            $field = (string) ($actionConfig['field'] ?? '');
-            if ($field === '') {
-                return ActionResult::failure(error: 'set_field_missing_field');
-            }
+			$value = $actionConfig['value'] ?? null;
+			if ($value === '__now__') {
+				$value = (new DateTimeImmutable('now'))->format(\DateTimeInterface::ATOM);
+			}
 
-            $value = $actionConfig['value'] ?? null;
-            if ($value === '__now__') {
-                $value = (new DateTimeImmutable('now'))->format(\DateTimeInterface::ATOM);
-            }
+			$objectService = $this->settingsService->getObjectService();
+			if ($objectService === null) {
+				return new ActionResult(succeeded: false, error: 'storage_unavailable');
+			}
 
-            $objectService = $this->settingsService->getObjectService();
-            if ($objectService === null) {
-                return ActionResult::failure(error: 'storage_unavailable');
-            }
+			$register = $this->settingsService->getConfigValue(key: 'register');
+			$caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
+			if ($register === '' || $caseSchema === '') {
+				return new ActionResult(succeeded: false, error: 'case_schema_not_configured');
+			}
 
-            $register   = $this->settingsService->getConfigValue(key: 'register');
-            $caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
-            if ($register === '' || $caseSchema === '') {
-                return ActionResult::failure(error: 'case_schema_not_configured');
-            }
+			$case[$field] = $value;
+			$objectService->saveObject(object: $case, register: $register, schema: $caseSchema);
 
-            $case[$field] = $value;
-            $objectService->saveObject(object: $case, register: $register, schema: $caseSchema);
-
-            return ActionResult::success(data: ['field' => $field]);
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'SetFieldHandler failed',
-                ['exception' => $e->getMessage(), 'context' => $transitionContext],
-            );
-            return ActionResult::failure(error: 'set_field_failed');
-        }//end try
-    }//end handle()
+			return new ActionResult(succeeded: true, data: ['field' => $field]);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'SetFieldHandler failed',
+				['exception' => $e->getMessage(), 'context' => $transitionContext],
+			);
+			return new ActionResult(succeeded: false, error: 'set_field_failed');
+		}//end try
+	}//end handle()
 }//end class

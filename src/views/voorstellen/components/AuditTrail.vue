@@ -3,7 +3,7 @@
 		<NcLoadingIcon v-if="loading" :size="20" />
 
 		<div v-else-if="acties.length === 0" class="audit-trail__empty">
-			{{ t('procest', 'Geen acties geregistreerd') }}
+			{{ t('procest', 'No actions recorded') }}
 		</div>
 
 		<div v-else>
@@ -13,32 +13,42 @@
 				class="audit-trail__entry"
 				:class="`audit-trail__entry--${actie.action}`">
 				<div class="audit-trail__entry-header">
-					<span class="audit-trail__action-badge" :class="`audit-trail__action-badge--${actie.action}`">
+					<span
+						class="audit-trail__action-badge"
+						:class="`audit-trail__action-badge--${actie.action}`">
 						{{ formatAction(actie.action) }}
 					</span>
 					<span class="audit-trail__step">
-						{{ t('procest', 'Stap {n}', { n: actie.step }) }}
+						{{ t('procest', 'Step {n}', { n: actie.step }) }}
 					</span>
 					<span class="audit-trail__timestamp">
 						{{ formatTimestamp(actie) }}
 					</span>
 				</div>
 				<div class="audit-trail__actor">
-					<template v-if="actie.actorType === 'delegate' && actie.onBehalfOf">
-						{{ t('procest', 'Geparafeerd door {delegate} namens {principal}', {
-							delegate: actie.actor,
-							principal: actie.onBehalfOf
-						}) }}
+					<template
+						v-if="actie.actorType === 'delegate' && actie.onBehalfOf">
+						{{
+							t(
+								'procest',
+								'Endorsed by {delegate} on behalf of {principal}',
+								{
+									delegate: actie.actor,
+									principal: actie.onBehalfOf,
+								},
+							)
+						}}
 					</template>
 					<template v-else>
 						{{ actie.actor }}
 					</template>
 				</div>
 				<div v-if="actie.comment" class="audit-trail__comment">
-					<strong>{{ t('procest', 'Opmerking') }}:</strong> {{ actie.comment }}
+					<strong>{{ t('procest', 'Comment') }}:</strong>
+					{{ actie.comment }}
 				</div>
 				<div v-if="actie.advice" class="audit-trail__advice">
-					<strong>{{ t('procest', 'Advies') }}:</strong> {{ actie.advice }}
+					<strong>{{ t('procest', 'Advice') }}:</strong> {{ actie.advice }}
 				</div>
 				<div v-if="actie.mandate" class="audit-trail__mandate">
 					<em>{{ t('procest', 'Mandaat') }}: {{ actie.mandate }}</em>
@@ -46,10 +56,8 @@
 			</div>
 
 			<!-- Export button -->
-			<NcButton
-				class="audit-trail__export"
-				@click="exportAuditTrail">
-				{{ t('procest', 'Exporteren') }}
+			<NcButton class="audit-trail__export" @click="exportAuditTrail">
+				{{ t('procest', 'Export') }}
 			</NcButton>
 		</div>
 	</div>
@@ -59,10 +67,10 @@
 import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 
 const ACTION_LABELS = {
-	parafered: 'Geparafeerd',
-	returned: 'Teruggestuurd',
-	advised: 'Geadviseerd',
-	skipped: 'Overgeslagen',
+	parafered: 'Endorsed',
+	returned: 'Returned',
+	advised: 'Advised',
+	skipped: 'Skipped',
 }
 
 export default {
@@ -71,24 +79,28 @@ export default {
 		NcButton,
 		NcLoadingIcon,
 	},
+
 	props: {
 		acties: {
 			type: Array,
 			default: () => [],
 		},
+
 		loading: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	methods: {
 		/**
 		 * @param action
 		 * @spec openspec/specs/parafering-actions/spec.md
 		 */
 		formatAction(action) {
-			return ACTION_LABELS[action] || action
+			return t('procest', ACTION_LABELS[action] || action)
 		},
+
 		/**
 		 * @param actie
 		 * @spec openspec/specs/parafering-actions/spec.md
@@ -104,9 +116,10 @@ export default {
 				minute: '2-digit',
 			})
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		exportAuditTrail() {
-			const data = this.acties.map(a => ({
+			const data = this.acties.map((a) => ({
 				step: a.step,
 				action: this.formatAction(a.action),
 				actor: a.actor,
@@ -176,10 +189,24 @@ export default {
 	font-weight: 600;
 }
 
-.audit-trail__action-badge--parafered { background: var(--color-success-light, #e8f5e9); color: var(--color-success, #2e7d32); }
-.audit-trail__action-badge--returned { background: var(--color-warning-light, #fff3e0); color: var(--color-warning, #e65100); }
-.audit-trail__action-badge--advised { background: var(--color-primary-element-light); color: var(--color-primary-element); }
-.audit-trail__action-badge--skipped { background: var(--color-background-dark); }
+.audit-trail__action-badge--parafered {
+	background: var(--color-success-light, #e8f5e9);
+	color: var(--color-success, #2e7d32);
+}
+
+.audit-trail__action-badge--returned {
+	background: var(--color-warning-light, #fff3e0);
+	color: var(--color-warning, #e65100);
+}
+
+.audit-trail__action-badge--advised {
+	background: var(--color-primary-element-light);
+	color: var(--color-primary-element);
+}
+
+.audit-trail__action-badge--skipped {
+	background: var(--color-background-dark);
+}
 
 .audit-trail__step {
 	font-size: 0.85em;

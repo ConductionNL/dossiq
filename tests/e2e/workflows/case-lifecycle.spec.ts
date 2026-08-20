@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2026 Procest Contributors
- * SPDX-License-Identifier: AGPL-3.0-or-later
+ * SPDX-License-Identifier: EUPL-1.2
  *
  * DEEP, data-dependent coverage — case-lifecycle STATE MACHINE.
  *
@@ -36,13 +36,29 @@
  * the engine REST calls are fixture-level correctness checks (per the prompt).
  */
 
-import { test, expect, request, type APIRequestContext, type Page } from '@playwright/test'
+import {
+	test,
+	expect,
+	request,
+	type APIRequestContext,
+	type Page,
+} from '@playwright/test'
 import { STORAGE_STATE } from '../helpers/auth'
 import { dismissSupportDialog, navTo } from '../helpers/nav'
 import {
-	RUN_PREFIX, getRequestToken, seedStateMachine, seedCase, showObject,
-	updateObject, deleteObject, listObjects, objectId, cleanupRunObjects,
-	getAvailableTransitions, executeTransition, getTransitionHistory,
+	RUN_PREFIX,
+	getRequestToken,
+	seedStateMachine,
+	seedCase,
+	showObject,
+	updateObject,
+	deleteObject,
+	listObjects,
+	objectId,
+	cleanupRunObjects,
+	getAvailableTransitions,
+	executeTransition,
+	getTransitionHistory,
 	type StateMachine,
 } from '../helpers/fixtures'
 
@@ -74,69 +90,136 @@ test.describe('Case lifecycle — state machine', () => {
 	 * @param page The page.
 	 */
 	async function openBoard(page: Page): Promise<void> {
-		await navTo(page, 'Workflow Board')
+		// The "Workflow board" leaf was relocated UNDER the "Work queue" group in
+		// the nav-dedup pass (menu-layout.json relocations), so it is no longer a
+		// top-level sidebar link — navTo('Workflow Board') matches nothing and
+		// strands on the Dashboard. Reach it by a bare deep-link (bare paths
+		// resolve; /index.php-prefixed ones reset to the Dashboard).
+		await page.goto('/index.php/apps/procest/workflow-board')
 		await dismissSupportDialog(page)
-		await expect(page.getByRole('heading', { name: 'Workflow Board' }).first()).toBeVisible({ timeout: 15000 })
+		await expect(
+			page.getByRole('heading', { name: 'Workflow Board' }).first(),
+		).toBeVisible({ timeout: 15000 })
 		// The board fetches statusType + case objects on mount.
-		await expect(page.getByText(`${RUN_PREFIX} Ontvangen`, { exact: false }).first()).toBeVisible({ timeout: 15000 })
+		await expect(
+			page.getByText(`${RUN_PREFIX} Ontvangen`, { exact: false }).first(),
+		).toBeVisible({ timeout: 15000 })
 	}
 
 	// @e2e openspec/specs/status-transition-engine/spec.md#current-status-renders
-	test('a case renders its current status (statusType name resolves)', async ({ page }) => {
-		const kase = await seedCase(api, token, { title: `${RUN_PREFIX} Status render case`, caseType: sm.caseTypeId, status: sm.statusReceived })
+	test('a case renders its current status (statusType name resolves)', async ({
+		page,
+	}) => {
+		const kase = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Status render case`,
+			caseType: sm.caseTypeId,
+			status: sm.statusReceived,
+		})
 		const caseId = objectId(kase)
 		// Sanity: the engine's status-name lookup resolves the seeded status.
 		const av = await getAvailableTransitions(api, token, caseId)
 		expect(av.status).toBe(200)
-		expect(String(av.body?.current?.statusName ?? '')).toContain(`${RUN_PREFIX} Ontvangen`)
+		expect(String(av.body?.current?.statusName ?? '')).toContain(
+			`${RUN_PREFIX} Ontvangen`,
+		)
 
 		// On the board, the case card sits under its current-status column and
 		// the column header shows the status type name.
 		await openBoard(page)
-		await expect(page.getByText(`${RUN_PREFIX} Status render case`, { exact: false }).first()).toBeVisible({ timeout: 15000 })
+		await expect(
+			page
+				.getByText(`${RUN_PREFIX} Status render case`, { exact: false })
+				.first(),
+		).toBeVisible({ timeout: 15000 })
 	})
 
 	// @e2e openspec/specs/status-transition-engine/spec.md#status-persists
-	test('advancing a case status persists and renders the new status', async ({ page }) => {
-		const kase = await seedCase(api, token, { title: `${RUN_PREFIX} Advance case`, caseType: sm.caseTypeId, status: sm.statusReceived })
+	test('advancing a case status persists and renders the new status', async ({
+		page,
+	}) => {
+		const kase = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Advance case`,
+			caseType: sm.caseTypeId,
+			status: sm.statusReceived,
+		})
 		const caseId = objectId(kase)
 
-		// Persist a status advance the same way the board's drag-to-advance does
-		// (a direct case.status write — the board bypasses the guarded engine).
-		await updateObject(api, token, 'case', caseId, { status: sm.statusInProgress })
+		// Advance through the GUARDED transition engine. The case schema declares
+		// x-openregister-lifecycle, so a direct case.status write is rejected with
+		// `lifecycle-invalid-transition` (422) — the board's drag-to-advance goes
+		// through POST /api/case/{id}/transition, exactly like executeTransition.
+		// t1 = "Start behandeling" (Ontvangen → In behandeling), from the seeded
+		// workflowTemplate.
+		const adv = await executeTransition(api, token, caseId, 't1')
+		expect(
+			adv.status,
+			'guarded transition t1 (Ontvangen→In behandeling) accepted',
+		).toBe(200)
 
 		// PERSISTENCE: re-read shows the new statusType id.
-		await expect.poll(async () => String((await showObject(api, 'case', caseId)).status ?? ''), {
-			timeout: 15000, message: 'advanced status persisted on the case object',
-		}).toBe(sm.statusInProgress)
+		await expect
+			.poll(
+				async () =>
+					String((await showObject(api, 'case', caseId)).status ?? ''),
+				{
+					timeout: 15000,
+					message: 'advanced status persisted on the case object',
+				},
+			)
+			.toBe(sm.statusInProgress)
 
 		// The engine's status-name lookup now reports the new status …
 		const av = await getAvailableTransitions(api, token, caseId)
-		expect(String(av.body?.current?.statusName ?? '')).toContain(`${RUN_PREFIX} In behandeling`)
+		expect(String(av.body?.current?.statusName ?? '')).toContain(
+			`${RUN_PREFIX} In behandeling`,
+		)
 
-		// … and the board renders the card in the "In behandeling" column.
+		// … and the board renders the card in the "In handling" column.
 		await openBoard(page)
-		await expect(page.getByText(`${RUN_PREFIX} Advance case`, { exact: false }).first()).toBeVisible({ timeout: 15000 })
+		await expect(
+			page.getByText(`${RUN_PREFIX} Advance case`, { exact: false }).first(),
+		).toBeVisible({ timeout: 15000 })
 	})
 
 	// @e2e openspec/specs/status-transition-engine/spec.md#board-reflects-status
-	test('the workflow board renders a column per status type with real case rows', async ({ page }) => {
+	test('the workflow board renders a column per status type with real case rows', async ({
+		page,
+	}) => {
 		// Seed two cases in different statuses so two columns are populated.
-		const a = await seedCase(api, token, { title: `${RUN_PREFIX} Board A`, caseType: sm.caseTypeId, status: sm.statusReceived })
-		const b = await seedCase(api, token, { title: `${RUN_PREFIX} Board B`, caseType: sm.caseTypeId, status: sm.statusInProgress })
-		objectId(a); objectId(b)
+		const a = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Board A`,
+			caseType: sm.caseTypeId,
+			status: sm.statusReceived,
+		})
+		const b = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Board B`,
+			caseType: sm.caseTypeId,
+			status: sm.statusInProgress,
+		})
+		objectId(a)
+		objectId(b)
 
 		await openBoard(page)
 		// Columns: the non-final statusTypes render as headers (Ontvangen,
-		// In behandeling). The final "Afgehandeld" is not a board column.
-		await expect(page.getByText(`${RUN_PREFIX} Ontvangen`, { exact: false }).first()).toBeVisible()
-		await expect(page.getByText(`${RUN_PREFIX} In behandeling`, { exact: false }).first()).toBeVisible()
+		// In behandeling). The final "Handled" is not a board column.
+		await expect(
+			page.getByText(`${RUN_PREFIX} Ontvangen`, { exact: false }).first(),
+		).toBeVisible()
+		await expect(
+			page.getByText(`${RUN_PREFIX} In behandeling`, { exact: false }).first(),
+		).toBeVisible()
 		// And both seeded cases appear as real rows (the statusType/caseType
 		// registry config is what makes these rows materialise — empty config
 		// would render the "No workflow statuses configured" empty state).
-		await expect(page.getByText('No workflow statuses configured', { exact: false })).toHaveCount(0)
-		await expect(page.getByText(`${RUN_PREFIX} Board A`, { exact: false }).first()).toBeVisible({ timeout: 15000 })
-		await expect(page.getByText(`${RUN_PREFIX} Board B`, { exact: false }).first()).toBeVisible()
+		await expect(
+			page.getByText('No workflow statuses configured', { exact: false }),
+		).toHaveCount(0)
+		await expect(
+			page.getByText(`${RUN_PREFIX} Board A`, { exact: false }).first(),
+		).toBeVisible({ timeout: 15000 })
+		await expect(
+			page.getByText(`${RUN_PREFIX} Board B`, { exact: false }).first(),
+		).toBeVisible()
 	})
 
 	// The guarded transition engine + history + guard-blocking. The engine is
@@ -149,7 +232,11 @@ test.describe('Case lifecycle — state machine', () => {
 	//
 	// @e2e openspec/specs/status-transition-engine/spec.md#guarded-transitions
 	test('engine offers transitions, records history, and BLOCKS an invalid transition', async () => {
-		const kase = await seedCase(api, token, { title: `${RUN_PREFIX} Engine case`, caseType: sm.caseTypeId, status: sm.statusReceived })
+		const kase = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Engine case`,
+			caseType: sm.caseTypeId,
+			status: sm.statusReceived,
+		})
 		const caseId = objectId(kase)
 
 		// At "received": exactly t1 (Start behandeling) is available and passes.
@@ -161,27 +248,40 @@ test.describe('Case lifecycle — state machine', () => {
 		// Execute t1 → status advances to "in behandeling" + a history entry.
 		let ex = await executeTransition(api, token, caseId, 't1')
 		expect(ex.status).toBe(200)
-		expect(String((await showObject(api, 'case', caseId)).status)).toBe(sm.statusInProgress)
+		expect(String((await showObject(api, 'case', caseId)).status)).toBe(
+			sm.statusInProgress,
+		)
 
 		const hist = await getTransitionHistory(api, token, caseId)
 		expect(hist.status).toBe(200)
 		expect(hist.body.history.length).toBeGreaterThanOrEqual(1)
 		// A statusRecord audit object was written for the transition.
-		expect((await listObjects(api, 'statusRecord', { case: caseId })).length).toBeGreaterThanOrEqual(1)
+		expect(
+			(await listObjects(api, 'statusRecord', { case: caseId })).length,
+		).toBeGreaterThanOrEqual(1)
 
 		// GUARD: t2 (Afhandelen) requires `description` to be set. With it empty,
 		// the engine must BLOCK the transition with a 409 + the failed guard.
 		ex = await executeTransition(api, token, caseId, 't2')
-		expect(ex.status, 'guard blocks the close transition while description is empty').toBe(409)
+		expect(
+			ex.status,
+			'guard blocks the close transition while description is empty',
+		).toBe(409)
 		expect(JSON.stringify(ex.body.failedGuards ?? [])).toContain('description')
 		// Status did NOT change — still "in behandeling".
-		expect(String((await showObject(api, 'case', caseId)).status)).toBe(sm.statusInProgress)
+		expect(String((await showObject(api, 'case', caseId)).status)).toBe(
+			sm.statusInProgress,
+		)
 
 		// Satisfy the guard, then t2 succeeds and reaches the final status.
-		await updateObject(api, token, 'case', caseId, { description: 'Klaar voor afhandeling' })
+		await updateObject(api, token, 'case', caseId, {
+			description: 'Klaar voor afhandeling',
+		})
 		ex = await executeTransition(api, token, caseId, 't2')
 		expect(ex.status).toBe(200)
-		expect(String((await showObject(api, 'case', caseId)).status)).toBe(sm.statusDone)
+		expect(String((await showObject(api, 'case', caseId)).status)).toBe(
+			sm.statusDone,
+		)
 
 		// No further transitions from the final status.
 		av = await getAvailableTransitions(api, token, caseId)

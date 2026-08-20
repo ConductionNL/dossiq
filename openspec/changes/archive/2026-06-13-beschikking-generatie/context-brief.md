@@ -318,7 +318,7 @@ Beschikkingstemplates in docudesk MOETEN versiebeheerd zijn met een ingangsdatum
 - **openconnector** — adapter naar eIDAS-TSP's (KPN, EvidosSign, ConnectiSafe), Berichtenbox MijnOverheid (Logius), eHerkenning OIN-Berichtenbox, fysieke post-printservice (Print Mail).
 - **openregister** — archiefopslag met TMLO/MDTO-metadata, vernietigingstermijn-engine, audit-logging van alle archiefacties.
 - **opencatalogi** — publicatie van beschikkingstype-catalogus (welke beschikkingen verstrekt deze gemeente).
-- **mydash** — dashboard voor doorlooptijden van beschikkingen, ondertekenings-doorlooptijd, Berichtenbox-bezorgingsstatistieken.
+- **launchpad** — dashboard voor doorlooptijden van beschikkingen, ondertekenings-doorlooptijd, Berichtenbox-bezorgingsstatistieken.
 
 ## Target users
 
@@ -338,7 +338,7 @@ Beschikkingstemplates in docudesk MOETEN versiebeheerd zijn met een ingangsdatum
 - **eIDAS Trust Service Provider** — verzorgt de gekwalificeerde handtekening en valideert certificaten.
 - **Logius (MijnOverheid)** — Berichtenbox-leverancier voor burgers.
 - **B&W / college van burgemeester en wethouders** — bron van mandaatverlening die de hele pipeline juridisch grondvest; ontvangt periodiek rapportage over uitgeoefend mandaat.
-- **Gemeenteraad / rekenkamer** — incidentele audit van beschikkingsdoorlooptijden en mandaatnaleving via mydash.
+- **Gemeenteraad / rekenkamer** — incidentele audit van beschikkingsdoorlooptijden en mandaatnaleving via launchpad.
 - **Nationale Ombudsman** — gebruikt het audit-pakket bij klachten over besluiten.
 - **Rechter (bestuursrechter)** — bij beroep volgt het hele audit-pakket inclusief eIDAS-validatie als bewijsmiddel.
 - **Nationaal Archief / regionaal historisch centrum** — uiteindelijke ontvanger van zaakdossiers die na hun bewaartermijn niet vernietigd worden maar permanent bewaard blijven (B-categorie).

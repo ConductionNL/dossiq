@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md
+ * @spec openspec/specs/remaining-decision-delegation/spec.md
  */
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
@@ -22,10 +22,13 @@ import { generateUrl } from '@nextcloud/router'
  * @param {string} voorstelId Voorstel UUID
  * @param {object} payload    { title, governingBody, explanation }
  * @return {Promise<object>} { voorstelId, decisionRef, status }
- * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-001-remaining-decisionadvice-flows-are-raised-as-decidesk-decisions
+ * @spec openspec/specs/remaining-decision-delegation/spec.md
  */
 export async function registerBesluit(voorstelId, payload) {
-	const url = generateUrl('/apps/procest/api/voorstellen/{voorstelId}/register-besluit', { voorstelId })
+	const url = generateUrl(
+		'/apps/procest/api/voorstellen/{voorstelId}/register-besluit',
+		{ voorstelId },
+	)
 	const response = await axios.post(url, payload)
 	return response.data
 }

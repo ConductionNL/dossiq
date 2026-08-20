@@ -1,13 +1,13 @@
 <template>
 	<div class="address-search">
 		<NcTextField
-			:value="query"
+			:modelValue="query"
 			:label="t('procest', 'Search address...')"
 			:placeholder="t('procest', 'Street, postcode, or city')"
-			trailing-button-icon="close"
-			:show-trailing-button="query.length > 0"
+			trailingButtonIcon="close"
+			:showTrailingButton="query.length > 0"
 			@update:value="onInput"
-			@trailing-button-click="clear"
+			@trailingButtonClick="clear"
 			@keydown.enter="onEnter" />
 
 		<ul v-if="results.length > 0" class="address-search__results">
@@ -15,13 +15,21 @@
 				v-for="result in results"
 				:key="result.id"
 				class="address-search__item"
-				@click="selectResult(result)">
+				role="button"
+				tabindex="0"
+				@click="selectResult(result)"
+				@keydown.enter="selectResult(result)"
+				@keydown.space.prevent="selectResult(result)">
 				<span class="address-search__icon">
 					{{ getTypeIcon(result.type) }}
 				</span>
 				<span class="address-search__text">
-					<span class="address-search__name">{{ result.weergavenaam }}</span>
-					<span v-if="result.gemeentenaam" class="address-search__municipality">
+					<span class="address-search__name">{{
+						result.weergavenaam
+					}}</span>
+					<span
+						v-if="result.gemeentenaam"
+						class="address-search__municipality">
 						{{ result.gemeentenaam }}
 					</span>
 				</span>
@@ -36,7 +44,13 @@
 
 <script>
 import { NcTextField } from '@nextcloud/vue'
-import { suggest, lookup, free, extractCoordinates, formatAddress } from '../../services/pdokService.js'
+import {
+	extractCoordinates,
+	formatAddress,
+	free,
+	lookup,
+	suggest,
+} from '../../services/pdokService.js'
 
 export default {
 	name: 'AddressSearch',
@@ -49,6 +63,7 @@ export default {
 			loading: false,
 		}
 	},
+
 	methods: {
 		/**
 		 * @param value
@@ -126,11 +141,16 @@ export default {
 		 */
 		getTypeIcon(type) {
 			switch (type) {
-			case 'adres': return '\uD83C\uDFE0'
-			case 'weg': return '\uD83D\uDEB6'
-			case 'woonplaats': return '\uD83C\uDFD9'
-			case 'postcode': return '\uD83D\uDCEE'
-			default: return '\uD83D\uDCCD'
+				case 'address':
+					return '\uD83C\uDFE0'
+				case 'weg':
+					return '\uD83D\uDEB6'
+				case 'city':
+					return '\uD83C\uDFD9'
+				case 'postcode':
+					return '\uD83D\uDCEE'
+				default:
+					return '\uD83D\uDCCD'
 			}
 		},
 	},
@@ -152,7 +172,7 @@ export default {
 	background: var(--color-main-background);
 	border: 1px solid var(--color-border);
 	border-radius: 0 0 8px 8px;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 	list-style: none;
 	margin: 0;
 	padding: 0;

@@ -19,9 +19,21 @@ import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
 // Re-export the pure presentation helpers (kept NC-network-free for testing).
-export { AARD_RELATIE_TYPES, relationTypeLabel, relationErrorMessage } from '../utils/caseRelationHelpers.js'
+export {
+	AARD_RELATIE_TYPES,
+	relationErrorMessage,
+	relationTypeLabel,
+} from '../utils/caseRelationHelpers.js'
 
-const base = (caseId) => generateUrl(`/apps/procest/api/cases/${encodeURIComponent(caseId)}/relations`)
+/**
+ *
+ * @param caseId
+ */
+function base(caseId) {
+	return generateUrl(
+		`/apps/procest/api/cases/${encodeURIComponent(caseId)}/relations`,
+	)
+}
 
 /**
  * Fetch the typed peer relations of a case.
@@ -43,14 +55,19 @@ export async function fetchRelations(caseId) {
  * @param {object} params Relation params.
  * @param {string} params.targetId Target case UUID.
  * @param {string} params.aardRelatie Relation type.
- * @param {string} [params.toelichting] Optional clarification.
+ * @param {string} [params.notes] Optional clarification.
+ * @param params.toelichting
  * @return {Promise<{ok: boolean, reason?: string, detail?: string}>}
  *
  * @spec openspec/specs/related-case-linking/spec.md
  */
 export async function addRelation(caseId, { targetId, aardRelatie, toelichting }) {
 	try {
-		const { data } = await axios.post(base(caseId), { targetId, aardRelatie, toelichting })
+		const { data } = await axios.post(base(caseId), {
+			targetId,
+			aardRelatie,
+			toelichting,
+		})
 		return data
 	} catch (err) {
 		if (err?.response?.data) {

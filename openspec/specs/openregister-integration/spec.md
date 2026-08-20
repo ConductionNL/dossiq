@@ -147,7 +147,7 @@ The system MUST define its register and all schemas in a JSON configuration file
 #### Scenario: All schemas include type annotations
 
 - GIVEN each schema definition
-- THEN each MUST include `x-schema-org-type` and `x-zgw-equivalent` annotations
+- THEN each MUST include `x-schema-org` and `x-zgw-equivalent` annotations
 - AND the annotations MUST reference appropriate standards (e.g., case: `schema:Project` / `Zaak`, task: `schema:Action` / `(Taak)`)
 
 #### Scenario: Schema count matches slug-to-config mapping
@@ -682,7 +682,7 @@ Base URL: `/index.php/apps/openregister/api/objects`
 **Core architecture implemented; individual patterns differ from spec in store approach.**
 
 **Implemented (with file paths):**
-- **Configuration file**: `lib/Settings/procest_register.json` exists, is valid JSON, conforms to OpenAPI 3.0.0, defines a register with app `procest`. Defines all schemas with `x-schema-org-type` and `x-zgw-equivalent` annotations (REQ-OREG-001).
+- **Configuration file**: `lib/Settings/procest_register.json` exists, is valid JSON, conforms to OpenAPI 3.0.0, defines a register with app `procest`. Defines all schemas with `x-schema-org` and `x-zgw-equivalent` annotations (REQ-OREG-001).
 - **Repair step**: `lib/Repair/InitializeSettings.php` calls `SettingsService::loadConfiguration()` which uses `ConfigurationService::importFromApp('procest')` from OpenRegister. Handles missing OpenRegister gracefully with warning. Is idempotent (REQ-OREG-002).
 - **Settings service**: `lib/Service/SettingsService.php` with `loadConfiguration()`, `getSettings()`, `updateSettings()`, `autoConfigureAfterImport()`. Maps schema slugs to config keys via `SLUG_TO_CONFIG_KEY` constant (REQ-OREG-002).
 - **Settings controller**: `lib/Controller/SettingsController.php` with routes `GET /api/settings` and `POST /api/settings` (REQ-OREG-003).

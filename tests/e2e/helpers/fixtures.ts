@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2026 Procest Contributors
- * SPDX-License-Identifier: AGPL-3.0-or-later
+ * SPDX-License-Identifier: EUPL-1.2
  *
  * Seeded-fixture helper for the DEEP, data-dependent procest e2e layer.
  *
@@ -22,7 +22,7 @@
  * assertions all happen against the rendered DOM in the spec files.
  *
  * Every object created here carries a unique run prefix in a human-visible
- * field (case.title, complaint.onderwerp, caseType.name) so list assertions
+ * field (case.title, complaint.subject, caseType.name) so list assertions
  * can find exactly the seeded row, and afterAll cleanup can find + delete
  * every object this run produced.
  */
@@ -85,7 +85,8 @@ function unwrapList(body: any): any[] {
  * @param body The parsed response body.
  */
 function unwrapObject(body: any): any {
-	if (body && typeof body === 'object' && (body.id || body['@self'] || body.uuid)) return body
+	if (body && typeof body === 'object' && (body.id || body['@self'] || body.uuid))
+		return body
 	if (body?.results && !Array.isArray(body.results)) return body.results
 	if (body?.object) return body.object
 	return body
@@ -116,7 +117,10 @@ export async function createObject(
 		headers: writeHeaders(token),
 		data,
 	})
-	expect(res.ok(), `create ${schema} -> ${res.status()} ${await res.text()}`).toBeTruthy()
+	expect(
+		res.ok(),
+		`create ${schema} -> ${res.status()} ${await res.text()}`,
+	).toBeTruthy()
 	return unwrapObject(await res.json())
 }
 
@@ -144,7 +148,11 @@ export async function listObjects(
  * @param schema Schema slug.
  * @param id     Object id/uuid.
  */
-export async function showObject(api: APIRequestContext, schema: string, id: string): Promise<any> {
+export async function showObject(
+	api: APIRequestContext,
+	schema: string,
+	id: string,
+): Promise<any> {
 	const res = await api.get(`${API_BASE}/${REGISTER}/${schema}/${id}`)
 	expect(res.ok(), `show ${schema}/${id} -> ${res.status()}`).toBeTruthy()
 	return unwrapObject(await res.json())
@@ -171,6 +179,29 @@ export async function deleteObject(
 }
 
 /**
+ * Attempt a delete and RETURN the outcome (status + parsed body) instead of
+ * swallowing it. Used to assert a rejection — e.g. an archival schema
+ * (x-openregister-archival) returns 403 ArchivalImmutableException on a
+ * user-driven delete.
+ * @param api    Authenticated request context.
+ * @param token  CSRF request-token.
+ * @param schema Schema slug.
+ * @param id     Object id/uuid.
+ * @return `{ status, body }` of the DELETE response.
+ */
+export async function tryDeleteObject(
+	api: APIRequestContext,
+	token: string,
+	schema: string,
+	id: string,
+): Promise<{ status: number; body: unknown }> {
+	const res = await api.delete(`${API_BASE}/${REGISTER}/${schema}/${id}`, {
+		headers: writeHeaders(token),
+	})
+	return { status: res.status(), body: await res.json().catch(() => ({})) }
+}
+
+/**
  * Discover an existing caseType to attach seeded cases to. The `case` schema
  * requires `caseType`; a real caseType (with its statusTypes) is needed for
  * the transition engine. If none exists we seed a throwaway one tagged with
@@ -185,7 +216,11 @@ export async function ensureCaseType(
 	const existing = await listObjects(api, 'caseType')
 	if (existing.length > 0) {
 		const ct = existing[0]
-		return { id: objectId(ct), name: String(ct.title ?? ct.name ?? 'caseType'), seeded: false }
+		return {
+			id: objectId(ct),
+			name: String(ct.title ?? ct.name ?? 'caseType'),
+			seeded: false,
+		}
 	}
 	// Live caseType schema requires `title` (+ identifier), not `name`.
 	const name = `${RUN_PREFIX} CaseType`
@@ -248,9 +283,16 @@ export interface StateMachine {
  * @param api   Authenticated request context.
  * @param token CSRF request-token.
  */
-export async function seedStateMachine(api: APIRequestContext, token: string): Promise<StateMachine> {
+export async function seedStateMachine(
+	api: APIRequestContext,
+	token: string,
+): Promise<StateMachine> {
 	const created: Array<[string, string]> = []
-	const add = (schema: string, obj: any): string => { const id = objectId(obj); created.push([schema, id]); return id }
+	const add = (schema: string, obj: any): string => {
+		const id = objectId(obj)
+		created.push([schema, id])
+		return id
+	}
 
 	const caseType = await createObject(api, token, 'caseType', {
 		title: `${RUN_PREFIX} Vergunning`,
@@ -259,16 +301,43 @@ export async function seedStateMachine(api: APIRequestContext, token: string): P
 	})
 	const caseTypeId = add('caseType', caseType)
 
-	const r = await createObject(api, token, 'statusType', { name: `${RUN_PREFIX} Ontvangen`, caseType: caseTypeId, order: 1, isFinal: false })
-	const p = await createObject(api, token, 'statusType', { name: `${RUN_PREFIX} In behandeling`, caseType: caseTypeId, order: 2, isFinal: false })
-	const d = await createObject(api, token, 'statusType', { name: `${RUN_PREFIX} Afgehandeld`, caseType: caseTypeId, order: 3, isFinal: true })
+	const r = await createObject(api, token, 'statusType', {
+		name: `${RUN_PREFIX} Ontvangen`,
+		caseType: caseTypeId,
+		order: 1,
+		isFinal: false,
+	})
+	const p = await createObject(api, token, 'statusType', {
+		name: `${RUN_PREFIX} In behandeling`,
+		caseType: caseTypeId,
+		order: 2,
+		isFinal: false,
+	})
+	const d = await createObject(api, token, 'statusType', {
+		name: `${RUN_PREFIX} Afgehandeld`,
+		caseType: caseTypeId,
+		order: 3,
+		isFinal: true,
+	})
 	const statusReceived = add('statusType', r)
 	const statusInProgress = add('statusType', p)
 	const statusDone = add('statusType', d)
 
 	const transitions = [
-		{ id: 't1', label: 'Start behandeling', fromStatus: statusReceived, toStatus: statusInProgress, guards: [] },
-		{ id: 't2', label: 'Afhandelen', fromStatus: statusInProgress, toStatus: statusDone, guards: [{ type: 'requiredField', field: 'description' }] },
+		{
+			id: 't1',
+			label: 'Start behandeling',
+			fromStatus: statusReceived,
+			toStatus: statusInProgress,
+			guards: [],
+		},
+		{
+			id: 't2',
+			label: 'Afhandelen',
+			fromStatus: statusInProgress,
+			toStatus: statusDone,
+			guards: [{ type: 'requiredField', field: 'description' }],
+		},
 	]
 	const wf = await createObject(api, token, 'workflowTemplate', {
 		title: `${RUN_PREFIX} Workflow`,
@@ -291,8 +360,15 @@ const PROCEST_API = '/index.php/apps/procest/api'
  * @param token  CSRF request-token.
  * @param caseId The case id/uuid.
  */
-export async function getAvailableTransitions(api: APIRequestContext, token: string, caseId: string): Promise<any> {
-	const res = await api.get(`${PROCEST_API}/case/${caseId}/available-transitions`, { headers: writeHeaders(token) })
+export async function getAvailableTransitions(
+	api: APIRequestContext,
+	token: string,
+	caseId: string,
+): Promise<any> {
+	const res = await api.get(
+		`${PROCEST_API}/case/${caseId}/available-transitions`,
+		{ headers: writeHeaders(token) },
+	)
 	return { status: res.status(), body: await res.json().catch(() => ({})) }
 }
 
@@ -304,7 +380,13 @@ export async function getAvailableTransitions(api: APIRequestContext, token: str
  * @param transitionId The transition id from the active template.
  * @param comment      Optional transition comment.
  */
-export async function executeTransition(api: APIRequestContext, token: string, caseId: string, transitionId: string, comment?: string): Promise<any> {
+export async function executeTransition(
+	api: APIRequestContext,
+	token: string,
+	caseId: string,
+	transitionId: string,
+	comment?: string,
+): Promise<any> {
 	const res = await api.post(`${PROCEST_API}/case/${caseId}/transition`, {
 		headers: writeHeaders(token),
 		data: comment !== undefined ? { transitionId, comment } : { transitionId },
@@ -318,8 +400,14 @@ export async function executeTransition(api: APIRequestContext, token: string, c
  * @param token  CSRF request-token.
  * @param caseId The case id/uuid.
  */
-export async function getTransitionHistory(api: APIRequestContext, token: string, caseId: string): Promise<any> {
-	const res = await api.get(`${PROCEST_API}/case/${caseId}/transition-history`, { headers: writeHeaders(token) })
+export async function getTransitionHistory(
+	api: APIRequestContext,
+	token: string,
+	caseId: string,
+): Promise<any> {
+	const res = await api.get(`${PROCEST_API}/case/${caseId}/transition-history`, {
+		headers: writeHeaders(token),
+	})
 	return { status: res.status(), body: await res.json().catch(() => ({})) }
 }
 
@@ -343,7 +431,10 @@ export async function updateObject(
 		headers: writeHeaders(token),
 		data: { ...current, ...patch },
 	})
-	expect(res.ok(), `update ${schema}/${id} -> ${res.status()} ${await res.text()}`).toBeTruthy()
+	expect(
+		res.ok(),
+		`update ${schema}/${id} -> ${res.status()} ${await res.text()}`,
+	).toBeTruthy()
 	return unwrapObject(await res.json())
 }
 

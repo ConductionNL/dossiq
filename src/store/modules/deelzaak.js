@@ -13,11 +13,11 @@
  */
 import { defineStore } from 'pinia'
 import {
-	fetchSubCases as apiFetchSubCases,
 	fetchParentCase as apiFetchParentCase,
 	fetchSubCaseCounts as apiFetchSubCaseCounts,
-	validateSubCase as apiValidateSubCase,
+	fetchSubCases as apiFetchSubCases,
 	unlinkSubCases as apiUnlinkSubCases,
+	validateSubCase as apiValidateSubCase,
 } from '../../services/deelzaakApi.js'
 
 export const useDeelzaakStore = defineStore('deelzaak', {
@@ -89,18 +89,25 @@ export const useDeelzaakStore = defineStore('deelzaak', {
 		},
 
 		/**
-		 * @param parentCaseUuid
-		 * @spec openspec/changes/deelzaak-support/tasks.md#T11
+		 * Unlink every sub-case of a parent.
+		 *
+		 * Returns the full `{unlinked, failed, total, complete}` result rather
+		 * than a bare count — callers must check `complete` before deleting the
+		 * parent (procest#793).
+		 *
+		 * @param {string} parentCaseUuid Parent UUID.
+		 * @return {Promise<{unlinked: number, failed: number, total: number, complete: boolean}>} The unlink outcome.
+		 * @spec openspec/specs/deelzaak-support/spec.md
 		 */
 		async unlinkSubCases(parentCaseUuid) {
-			const unlinked = await apiUnlinkSubCases(parentCaseUuid)
+			const result = await apiUnlinkSubCases(parentCaseUuid)
 			// Drop the local cache count so the UI re-renders fresh on next read.
 			if (this.subCaseCounts[parentCaseUuid]) {
 				const next = { ...this.subCaseCounts }
 				delete next[parentCaseUuid]
 				this.subCaseCounts = next
 			}
-			return unlinked
+			return result
 		},
 	},
 })

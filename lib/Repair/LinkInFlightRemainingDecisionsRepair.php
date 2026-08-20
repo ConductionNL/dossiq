@@ -27,7 +27,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-006-in-flight-remaining-decision-cases-are-migrated-without-data-loss
+ * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-006-in-flight-remaining-decision-cases-are-migrated-without-data-loss
  */
 
 declare(strict_types=1);
@@ -37,6 +37,7 @@ namespace OCA\Procest\Repair;
 use OCA\Procest\Service\AdviceDelegationService;
 use OCA\Procest\Service\BezwaarDecisionDelegationService;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCA\Procest\Service\TenantSaasService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -48,210 +49,288 @@ use Throwable;
  * Links in-flight bezwaar-decision / advies / consultatie / voorstel objects
  * forward to decidesk Decisions without dropping any recorded data.
  *
- * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-006-in-flight-remaining-decision-cases-are-migrated-without-data-loss
+ * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-006-in-flight-remaining-decision-cases-are-migrated-without-data-loss
  */
-class LinkInFlightRemainingDecisionsRepair implements IRepairStep
-{
-    /**
-     * Statuses considered terminal / already-decided — skipped (historical).
-     *
-     * @var string[]
-     */
-    private const TERMINAL_STATUSES = [
-        'published',
-        'advice-issued',
-        'niet-ontvankelijk',
-        'ontvangen',
-        'verlopen',
-        'received',
-        'cancelled',
-        'advies_uitgebracht',
-        'afgesloten',
-        'ingetrokken',
-        'besloten',
-        'closed',
-        'afgehandeld',
-        'gearchiveerd',
-    ];
+class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 
-    /**
-     * Constructor.
-     *
-     * @param BezwaarDecisionDelegationService $bezwaarDelegation Bezwaar decision delegation service.
-     * @param AdviceDelegationService          $adviceDelegation  Advice/voorstel delegation service.
-     * @param SettingsService                  $settingsService   Settings / ObjectService resolver.
-     * @param LoggerInterface                  $logger            Logger.
-     */
-    public function __construct(
-        private readonly BezwaarDecisionDelegationService $bezwaarDelegation,
-        private readonly AdviceDelegationService $adviceDelegation,
-        private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	use SearchesObjects;
 
-    /**
-     * Get the name of this repair step.
-     *
-     * @return string
-     */
-    public function getName(): string
-    {
-        return 'Link in-flight Procest bezwaar/advies/consultatie/voorstel objects to decidesk Decisions';
-    }//end getName()
+	/**
+	 * Statuses considered terminal / already-decided — skipped (historical).
+	 *
+	 * @var string[]
+	 */
+	private const TERMINAL_STATUSES = [
+		'published',
+		'advice-issued',
+		'inadmissible',
+		'received',
+		'expired',
+		'received',
+		'cancelled',
+		'advice_uitgebracht',
+		'closed',
+		'withdrawn',
+		'besloten',
+		'closed',
+		'handled',
+		'archived',
+	];
 
-    /**
-     * Run the migration: link open objects forward without dropping data.
-     *
-     * @param IOutput $output The migration output interface.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-006-in-flight-remaining-decision-cases-are-migrated-without-data-loss
-     */
-    public function run(IOutput $output): void
-    {
-        $output->info('Linking in-flight bezwaar/advies/consultatie/voorstel objects to decidesk Decisions...');
+	/**
+	 * Constructor.
+	 *
+	 * @param BezwaarDecisionDelegationService $objectionDelegation Bezwaar decision delegation service.
+	 * @param AdviceDelegationService $adviceDelegation Advice/voorstel delegation service.
+	 * @param SettingsService $settingsService Settings / ObjectService resolver.
+	 * @param LoggerInterface $logger Logger.
+	 */
+	public function __construct(
+		private readonly BezwaarDecisionDelegationService $objectionDelegation,
+		private readonly AdviceDelegationService $adviceDelegation,
+		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            $output->warning('OpenRegister unavailable — skipping in-flight remaining-decision link.');
-            return;
-        }
+	/**
+	 * Get the name of this repair step.
+	 *
+	 * @return string
+	 */
+	public function getName(): string {
+		return 'Link in-flight Procest bezwaar/advies/consultatie/voorstel objects to decidesk Decisions';
+	}//end getName()
 
-        $linked  = 0;
-        $skipped = 0;
-        $errors  = 0;
+	/**
+	 * Run the migration: link open objects forward without dropping data.
+	 *
+	 * @param IOutput $output The migration output interface.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-006-in-flight-remaining-decision-cases-are-migrated-without-data-loss
+	 */
+	public function run(IOutput $output): void {
+		$output->info('Linking in-flight bezwaar/advies/consultatie/voorstel objects to decidesk Decisions...');
 
-        // Each surface: [config-key for schema slug, raise-callback].
-        $surfaces = [
-            'bezwaar_decision_schema' => function (array $obj): string {
-                return $this->bezwaarDelegation->raiseBezwaarDecision(
-                    bezwaarId: (string) ($obj['bezwaar'] ?? ($obj['uuid'] ?? ($obj['id'] ?? ''))),
-                    payload: [
-                        'subjectSchema'   => 'bezwaarDecision',
-                        'subjectId'       => (string) ($obj['uuid'] ?? ($obj['id'] ?? '')),
-                        'subjectLabel'    => (string) ($obj['title'] ?? ''),
-                        'dispositionType' => (string) ($obj['dispositionType'] ?? ''),
-                        'reasoning'       => (string) ($obj['reasoning'] ?? ''),
-                        'legalBasis'      => (string) ($obj['legalBasis'] ?? ''),
-                    ],
-                );
-            },
-            'advies_aanvraag_schema'  => function (array $obj): string {
-                return $this->adviceDelegation->raiseAdviceDecision(
-                    subjectSchema: 'adviesAanvraag',
-                    subjectId: (string) ($obj['uuid'] ?? ($obj['id'] ?? '')),
-                    payload: [
-                        'externalReference' => (string) ($obj['caseRef'] ?? ($obj['case'] ?? '')),
-                        'subjectLabel'      => (string) ($obj['vraag'] ?? 'Adviesaanvraag'),
-                        'question'          => (string) ($obj['vraag'] ?? ''),
-                    ],
-                );
-            },
-            'consultation_schema'     => function (array $obj): string {
-                return $this->adviceDelegation->raiseAdviceDecision(
-                    subjectSchema: 'consultation',
-                    subjectId: (string) ($obj['uuid'] ?? ($obj['id'] ?? '')),
-                    payload: [
-                        'externalReference' => (string) ($obj['parentZaak'] ?? ''),
-                        'subjectLabel'      => (string) ($obj['consultationNumber'] ?? 'Consultatie'),
-                        'question'          => (string) ($obj['vraagstelling'] ?? ''),
-                    ],
-                );
-            },
-            'voorstel_schema'         => function (array $obj): string {
-                return $this->adviceDelegation->raiseVoorstelBesluit(
-                    voorstelId: (string) ($obj['uuid'] ?? ($obj['id'] ?? '')),
-                    payload: [
-                        'externalReference' => (string) ($obj['case'] ?? ''),
-                        'subjectLabel'      => (string) ($obj['onderwerp'] ?? ''),
-                        'title'             => (string) ($obj['onderwerp'] ?? ''),
-                    ],
-                );
-            },
-        ];
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			$output->warning('OpenRegister unavailable — skipping in-flight remaining-decision link.');
+			return;
+		}
 
-        foreach ($surfaces as $configKey => $raise) {
-            $schema = $this->settingsService->getConfigValue(key: $configKey);
-            if ($schema === '') {
-                continue;
-            }
+		$linked = 0;
+		$skipped = 0;
+		$errors = 0;
 
-            try {
-                $objects = $objectService->findAll(
-                    register: TenantSaasService::REGISTER,
-                    schema: $schema,
-                    limit: 500,
-                    offset: 0,
-                    filters: [],
-                );
-            } catch (Throwable $e) {
-                $output->warning('Could not list objects for schema '.$schema.': '.$e->getMessage());
-                $this->logger->warning(
-                    'LinkInFlightRemainingDecisionsRepair: list failed',
-                    ['schema' => $schema, 'error' => $e->getMessage()]
-                );
-                continue;
-            }
+		// Each surface: [config-key for schema slug, raise-callback].
+		$surfaces = $this->buildSurfaceRaisers();
 
-            if (is_array($objects) === false) {
-                continue;
-            }
+		// This repair step runs without a Nextcloud user session — anonymous
+		// callers are fail-closed by OpenRegister RBAC (#1955) on every
+		// boot, so the list/save calls below run inside runAsSystem().
+		$this->runAsSystemIfAvailable(
+			objectService: $objectService,
+			operation: function () use ($objectService, $output, $surfaces, &$linked, &$skipped, &$errors): void {
+				foreach ($surfaces as $configKey => $raise) {
+					$counts = $this->linkSurface(
+						objectService: $objectService,
+						output: $output,
+						configKey: $configKey,
+						raise: $raise,
+					);
+					$linked += $counts['linked'];
+					$skipped += $counts['skipped'];
+					$errors += $counts['errors'];
+				}
+			}
+		);
 
-            foreach ($objects as $obj) {
-                if (is_array($obj) === false) {
-                    continue;
-                }
+		$output->info(
+			sprintf(
+				'Remaining-decision link complete: %d linked, %d skipped (already decided/historical), %d errors (leaf unavailable).',
+				$linked,
+				$skipped,
+				$errors
+			)
+		);
+	}//end run()
 
-                $objUuid     = (string) ($obj['uuid'] ?? ($obj['id'] ?? ''));
-                $decisionRef = (string) ($obj['decisionRef'] ?? '');
-                $besluitRef  = (string) ($obj['besluitRef'] ?? '');
-                $status      = (string) ($obj['status'] ?? '');
+	/**
+	 * Build the surface map: schema config-key => decidesk raise-callback.
+	 *
+	 * @return array<string, callable(array<string, mixed>): string>
+	 */
+	private function buildSurfaceRaisers(): array {
+		return [
+			'bezwaar_decision_schema' => function (array $obj): string {
+				return $this->objectionDelegation->raiseBezwaarDecision(
+					objectionId: (string)($obj['objectionProceeding'] ?? ($obj['uuid'] ?? ($obj['id'] ?? ''))),
+					payload: [
+						'subjectSchema' => 'bezwaarDecision',
+						'subjectId' => (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
+						'subjectLabel' => (string)($obj['title'] ?? ''),
+						'dispositionType' => (string)($obj['dispositionType'] ?? ''),
+						'reasoning' => (string)($obj['reasoning'] ?? ''),
+						'legalBasis' => (string)($obj['legalBasis'] ?? ''),
+					],
+				);
+			},
+			'advies_aanvraag_schema' => function (array $obj): string {
+				return $this->adviceDelegation->raiseAdviceDecision(
+					subjectSchema: 'adviesAanvraag',
+					subjectId: (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
+					payload: [
+						'externalReference' => (string)($obj['caseRef'] ?? ($obj['case'] ?? '')),
+						'subjectLabel' => (string)($obj['question'] ?? 'Adviesaanvraag'),
+						'question' => (string)($obj['question'] ?? ''),
+					],
+				);
+			},
+			'consultation_schema' => function (array $obj): string {
+				return $this->adviceDelegation->raiseAdviceDecision(
+					subjectSchema: 'consultation',
+					subjectId: (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
+					payload: [
+						'externalReference' => (string)($obj['parentCase'] ?? ''),
+						'subjectLabel' => (string)($obj['consultationNumber'] ?? 'Consultatie'),
+						'question' => (string)($obj['questionFormulation'] ?? ''),
+					],
+				);
+			},
+			'voorstel_schema' => function (array $obj): string {
+				return $this->adviceDelegation->raiseVoorstelBesluit(
+					proposalId: (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
+					payload: [
+						'externalReference' => (string)($obj['case'] ?? ''),
+						'subjectLabel' => (string)($obj['subject'] ?? ''),
+						'title' => (string)($obj['subject'] ?? ''),
+					],
+				);
+			},
+		];
+	}//end buildSurfaceRaisers()
 
-                if ($objUuid === '') {
-                    continue;
-                }
+	/**
+	 * Link every in-flight object of one surface to a decidesk Decision.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param IOutput $output The migration output interface.
+	 * @param string $configKey Config key holding the surface schema slug.
+	 * @param callable $raise Callback raising the decidesk Decision.
+	 *
+	 * @return array{linked: int, skipped: int, errors: int} Per-surface counters.
+	 */
+	private function linkSurface(
+		object $objectService,
+		IOutput $output,
+		string $configKey,
+		callable $raise,
+	): array {
+		$counts = [
+			'linked' => 0,
+			'skipped' => 0,
+			'errors' => 0,
+		];
 
-                // REQ-PDRD-006: keep already-linked / already-decided /
-                // historical records as the authoritative record — no relink.
-                if ($decisionRef !== '' || $besluitRef !== '' || in_array($status, self::TERMINAL_STATUSES, true) === true) {
-                    $skipped++;
-                    continue;
-                }
+		$schema = $this->settingsService->getConfigValue(key: $configKey);
+		if ($schema === '') {
+			return $counts;
+		}
 
-                try {
-                    $newRef = $raise($obj);
+		try {
+			// ObjectService::findAll() takes a single $config array — the
+			// previous named-argument call (register:/schema:/limit:) threw
+			// "Unknown named parameter" on every run. Use the shared
+			// slug-aware search bridge, which also normalises the rows to
+			// the associative arrays this loop expects.
+			$objects = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: TenantSaasService::REGISTER,
+				schema: $schema,
+				filters: ['_limit' => 500],
+			);
+		} catch (Throwable $e) {
+			$output->warning('Could not list objects for schema ' . $schema . ': ' . $e->getMessage());
+			$this->logger->warning(
+				'LinkInFlightRemainingDecisionsRepair: list failed',
+				['schema' => $schema, 'error' => $e->getMessage()]
+			);
+			return $counts;
+		}//end try
 
-                    // Persist the decisionRef so the outcome can complete in
-                    // decidesk. Merge the existing object — no field is dropped.
-                    $objectService->saveObject(
-                        object: array_merge($obj, ['decisionRef' => $newRef]),
-                        register: TenantSaasService::REGISTER,
-                        schema: $schema,
-                        uuid: $objUuid,
-                    );
-                    $linked++;
-                    $output->info('Linked '.$schema.' '.$objUuid.' → decidesk Decision '.$newRef);
-                } catch (RuntimeException $e) {
-                    // Decidesk leaf unavailable — warn + skip; never fail the migration.
-                    $output->warning('Could not link '.$schema.' '.$objUuid.': '.$e->getMessage().' — skipping.');
-                    $this->logger->warning(
-                        'LinkInFlightRemainingDecisionsRepair: could not link object',
-                        ['schema' => $schema, 'uuid' => $objUuid, 'error' => $e->getMessage()]
-                    );
-                    $errors++;
-                }//end try
-            }//end foreach
-        }//end foreach
+		foreach ($objects as $obj) {
+			$outcome = $this->linkObject(
+				objectService: $objectService,
+				output: $output,
+				schema: $schema,
+				raise: $raise,
+				obj: $obj,
+			);
+			if ($outcome !== '') {
+				$counts[$outcome]++;
+			}
+		}//end foreach
 
-        $output->info(
-            sprintf(
-                'Remaining-decision link complete: %d linked, %d skipped (already decided/historical), %d errors (leaf unavailable).',
-                $linked,
-                $skipped,
-                $errors
-            )
-        );
-    }//end run()
+		return $counts;
+	}//end linkSurface()
+
+	/**
+	 * Link a single in-flight object forward to a decidesk Decision.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param IOutput $output The migration output interface.
+	 * @param string $schema The surface schema slug.
+	 * @param callable $raise Callback raising the decidesk Decision.
+	 * @param array<string, mixed> $obj The object row to link.
+	 *
+	 * @return string The counter to increment: 'linked', 'skipped', 'errors',
+	 *                or '' when the row is not countable.
+	 */
+	private function linkObject(
+		object $objectService,
+		IOutput $output,
+		string $schema,
+		callable $raise,
+		array $obj,
+	): string {
+		$objUuid = (string)($obj['uuid'] ?? ($obj['id'] ?? ''));
+		$decisionRef = (string)($obj['decisionRef'] ?? '');
+		$besluitRef = (string)($obj['besluitRef'] ?? '');
+		$status = (string)($obj['status'] ?? '');
+
+		if ($objUuid === '') {
+			return '';
+		}
+
+		// REQ-PDRD-006: keep already-linked / already-decided /
+		// historical records as the authoritative record — no relink.
+		if ($decisionRef !== '' || $besluitRef !== '' || in_array($status, self::TERMINAL_STATUSES, true) === true) {
+			return 'skipped';
+		}
+
+		try {
+			$newRef = $raise($obj);
+
+			// Persist the decisionRef so the outcome can complete in
+			// decidesk. Merge the existing object — no field is dropped.
+			$objectService->saveObject(
+				object: array_merge($obj, ['decisionRef' => $newRef]),
+				register: TenantSaasService::REGISTER,
+				schema: $schema,
+				uuid: $objUuid,
+			);
+			$output->info('Linked ' . $schema . ' ' . $objUuid . ' → decidesk Decision ' . $newRef);
+			return 'linked';
+		} catch (RuntimeException $e) {
+			// Decidesk leaf unavailable — warn + skip; never fail the migration.
+			$output->warning('Could not link ' . $schema . ' ' . $objUuid . ': ' . $e->getMessage() . ' — skipping.');
+			$this->logger->warning(
+				'LinkInFlightRemainingDecisionsRepair: could not link object',
+				['schema' => $schema, 'uuid' => $objUuid, 'error' => $e->getMessage()]
+			);
+			return 'errors';
+		}//end try
+	}//end linkObject()
 }//end class

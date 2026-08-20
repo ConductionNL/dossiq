@@ -35,15 +35,19 @@ function sortedSubCases(subCases) {
 		if (aOpen !== bOpen) {
 			return aOpen ? -1 : 1
 		}
-		const aDeadline = a.deadline ? new Date(a.deadline).getTime() : Number.POSITIVE_INFINITY
-		const bDeadline = b.deadline ? new Date(b.deadline).getTime() : Number.POSITIVE_INFINITY
+		const aDeadline = a.deadline
+			? new Date(a.deadline).getTime()
+			: Number.POSITIVE_INFINITY
+		const bDeadline = b.deadline
+			? new Date(b.deadline).getTime()
+			: Number.POSITIVE_INFINITY
 		return aDeadline - bDeadline
 	})
 }
 
 // --- DeelzaakList.rollUpText -------------------------------------------------
 function rollUp(subCases) {
-	const completed = subCases.filter(sc => sc.endDate).length
+	const completed = subCases.filter((sc) => sc.endDate).length
 	const total = subCases.length
 	return { completed, total, text: `(${completed}/${total} completed)` }
 }
@@ -64,10 +68,11 @@ function availableCaseTypes(caseTypes, parentCaseType) {
 		return []
 	}
 	const allowedSet = new Set(allowed.map(String))
-	return caseTypes.filter(ct =>
-		allowedSet.has(String(ct.id))
-		|| allowedSet.has(String(ct.slug))
-		|| allowedSet.has(String(ct.uuid)),
+	return caseTypes.filter(
+		(ct) =>
+			allowedSet.has(String(ct.id))
+			|| allowedSet.has(String(ct.slug))
+			|| allowedSet.has(String(ct.uuid)),
 	)
 }
 
@@ -88,11 +93,8 @@ const draftButtonLabel = (selectedTemplate) =>
 
 describe('DeelzaakList.sortedSubCases', () => {
 	it('orders open cases before closed ones', () => {
-		const rows = [
-			{ id: 'closed', endDate: '2026-01-01' },
-			{ id: 'open' },
-		]
-		expect(sortedSubCases(rows).map(r => r.id)).toEqual(['open', 'closed'])
+		const rows = [{ id: 'closed', endDate: '2026-01-01' }, { id: 'open' }]
+		expect(sortedSubCases(rows).map((r) => r.id)).toEqual(['open', 'closed'])
 	})
 
 	it('within the open group, sorts by deadline ascending; no-deadline sinks last', () => {
@@ -101,14 +103,18 @@ describe('DeelzaakList.sortedSubCases', () => {
 			{ id: 'none' },
 			{ id: 'sooner', deadline: '2026-06-01' },
 		]
-		expect(sortedSubCases(rows).map(r => r.id)).toEqual(['sooner', 'later', 'none'])
+		expect(sortedSubCases(rows).map((r) => r.id)).toEqual([
+			'sooner',
+			'later',
+			'none',
+		])
 	})
 
 	it('does not mutate the input array', () => {
 		const rows = [{ id: 'b', endDate: '2026-01-01' }, { id: 'a' }]
-		const snapshot = rows.map(r => r.id)
+		const snapshot = rows.map((r) => r.id)
 		sortedSubCases(rows)
-		expect(rows.map(r => r.id)).toEqual(snapshot)
+		expect(rows.map((r) => r.id)).toEqual(snapshot)
 	})
 })
 
@@ -119,7 +125,11 @@ describe('DeelzaakList.rollUpText', () => {
 			{ id: 'b' },
 			{ id: 'c', endDate: '2026-02-01' },
 		]
-		expect(rollUp(rows)).toEqual({ completed: 2, total: 3, text: '(2/3 completed)' })
+		expect(rollUp(rows)).toEqual({
+			completed: 2,
+			total: 3,
+			text: '(2/3 completed)',
+		})
 	})
 
 	it('handles an all-open and an empty list', () => {
@@ -136,11 +146,15 @@ describe('DeelzaakList.canCreate', () => {
 	})
 
 	it('blocks when the parent is closed', () => {
-		expect(canCreate({ id: 'p1', endDate: '2026-01-01' }, parentType)).toBe(false)
+		expect(canCreate({ id: 'p1', endDate: '2026-01-01' }, parentType)).toBe(
+			false,
+		)
 	})
 
 	it('blocks grandchildren (parent is itself a sub-case)', () => {
-		expect(canCreate({ id: 'p1', parentCase: 'grandparent' }, parentType)).toBe(false)
+		expect(canCreate({ id: 'p1', parentCase: 'grandparent' }, parentType)).toBe(
+			false,
+		)
 	})
 
 	it('blocks when the case type allows no sub-case types', () => {
@@ -162,7 +176,7 @@ describe('DeelzaakCreateModal.availableCaseTypes', () => {
 
 	it('keeps only the case types listed on parent.subCaseTypes', () => {
 		const out = availableCaseTypes(caseTypes, { subCaseTypes: ['ct-1', 'ct-3'] })
-		expect(out.map(c => c.id)).toEqual(['ct-1', 'ct-3'])
+		expect(out.map((c) => c.id)).toEqual(['ct-1', 'ct-3'])
 	})
 
 	it('matches against id, slug, or uuid', () => {
@@ -170,8 +184,12 @@ describe('DeelzaakCreateModal.availableCaseTypes', () => {
 			{ id: '1', slug: 'permit' },
 			{ id: '2', uuid: 'uuid-abc' },
 		]
-		expect(availableCaseTypes(cts, { subCaseTypes: ['permit'] }).map(c => c.id)).toEqual(['1'])
-		expect(availableCaseTypes(cts, { subCaseTypes: ['uuid-abc'] }).map(c => c.id)).toEqual(['2'])
+		expect(
+			availableCaseTypes(cts, { subCaseTypes: ['permit'] }).map((c) => c.id),
+		).toEqual(['1'])
+		expect(
+			availableCaseTypes(cts, { subCaseTypes: ['uuid-abc'] }).map((c) => c.id),
+		).toEqual(['2'])
 	})
 
 	it('returns empty when the parent allows nothing', () => {
@@ -182,18 +200,24 @@ describe('DeelzaakCreateModal.availableCaseTypes', () => {
 
 describe('CaseEmailTab.applyCaseObject', () => {
 	it('reads caseType + closed flag from a flat case object', () => {
-		expect(applyCaseObject({ caseType: 'ct-9', endDate: '2026-01-01' }))
-			.toEqual({ caseTypeId: 'ct-9', isFinal: true })
+		expect(applyCaseObject({ caseType: 'ct-9', endDate: '2026-01-01' })).toEqual(
+			{ caseTypeId: 'ct-9', isFinal: true },
+		)
 	})
 
 	it('treats an open case (no endDate) as not final', () => {
-		expect(applyCaseObject({ caseType: 'ct-9' }))
-			.toEqual({ caseTypeId: 'ct-9', isFinal: false })
+		expect(applyCaseObject({ caseType: 'ct-9' })).toEqual({
+			caseTypeId: 'ct-9',
+			isFinal: false,
+		})
 	})
 
 	it('falls back to @self for caseType + endDate', () => {
-		expect(applyCaseObject({ '@self': { caseType: 'ct-7', endDate: '2026-02-02' } }))
-			.toEqual({ caseTypeId: 'ct-7', isFinal: true })
+		expect(
+			applyCaseObject({
+				'@self': { caseType: 'ct-7', endDate: '2026-02-02' },
+			}),
+		).toEqual({ caseTypeId: 'ct-7', isFinal: true })
 	})
 
 	it('returns safe defaults for a null object', () => {
@@ -208,6 +232,8 @@ describe('CaseEmailTab label + variable helpers', () => {
 
 	it('labels the compose button by template selection', () => {
 		expect(draftButtonLabel(null)).toBe('Open empty draft')
-		expect(draftButtonLabel({ id: 't1', name: 'Acknowledgement' })).toBe('Open draft from template')
+		expect(draftButtonLabel({ id: 't1', name: 'Acknowledgement' })).toBe(
+			'Open draft from template',
+		)
 	})
 })

@@ -4,9 +4,14 @@
 	Workflow-board column — one Kanban column per non-final status type. Renders
 	a header (status name + case count), a scrollable list of CaseCard children,
 	and accepts drag-and-drop of cards. On drop it emits `drop(caseId, statusId)`
-	to the parent board, which performs the actual status transition.
+	to the parent board, which performs the actual status transition. Also
+	re-emits `move(caseId, newStatusId)` from each CaseCard's keyboard-operable
+	"Move to…" menu — the same status-transition path as drag-and-drop — and
+	`toggle-select(caseId, columnId)` from each CaseCard's selection checkbox,
+	used by the column-scoped bulk-selection UI (case-bulk-status-transition).
 
-	Spec: openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-V1-006
+	Spec: openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+	Spec: openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
 -->
 <template>
 	<div
@@ -33,10 +38,19 @@
 				<CaseCard
 					v-for="c in cases"
 					:key="c.id"
-					:case-item="c"
-					:case-type-name="caseTypeName(c.caseType)"
+					:caseItem="c"
+					:caseTypeName="caseTypeName(c.caseType)"
+					:columns="allColumns"
+					:selected="selectedCaseIds.includes(String(c.id))"
+					:selectionMode="selectionColumnId === statusType.id"
 					@click="$emit('click-case', $event)"
-					@dragstart="$emit('dragstart', $event)" />
+					@dragstart="$emit('dragstart', $event)"
+					@move="
+						(caseId, newStatusId) => $emit('move', caseId, newStatusId)
+					"
+					@toggleSelect="
+						(caseId) => $emit('toggle-select', caseId, statusType.id)
+					" />
 			</template>
 		</div>
 	</div>
@@ -52,6 +66,7 @@ export default {
 		NcLoadingIcon,
 		CaseCard,
 	},
+
 	props: {
 		/** The status type for this column: { id, name, order, isFinal }. */
 		statusType: { type: Object, required: true },
@@ -61,13 +76,26 @@ export default {
 		loading: { type: Boolean, default: false },
 		/** Map of caseType id → display name, supplied by the parent board. */
 		caseTypeMap: { type: Object, default: () => ({}) },
+		/**
+		 * Every board column (status type), forwarded to each CaseCard so its
+		 * keyboard "Move to…" menu can list every status other than its own.
+		 *
+		 * @type {Array<{id: string, name: string}>}
+		 */
+		allColumns: { type: Array, default: () => [] },
+		/** Case ids currently selected (bulk selection), as strings. */
+		selectedCaseIds: { type: Array, default: () => [] },
+		/** The column id that owns the active selection scope, or null. */
+		selectionColumnId: { type: String, default: null },
 	},
-	emits: ['drop', 'click-case', 'dragstart'],
+
+	emits: ['drop', 'click-case', 'dragstart', 'move', 'toggle-select'],
 	data() {
 		return {
 			dragOver: false,
 		}
 	},
+
 	methods: {
 		/**
 		 * Resolve a caseType id to its display name.
@@ -78,6 +106,7 @@ export default {
 		caseTypeName(caseTypeId) {
 			return this.caseTypeMap[caseTypeId] || ''
 		},
+
 		/**
 		 * Handle a card drop: read the dragged case id and notify the parent to
 		 * transition it into this column's status.
@@ -87,7 +116,9 @@ export default {
 		 */
 		onDrop(event) {
 			this.dragOver = false
-			const caseId = event.dataTransfer ? event.dataTransfer.getData('text/plain') : null
+			const caseId = event.dataTransfer
+				? event.dataTransfer.getData('text/plain')
+				: null
 			if (caseId) {
 				this.$emit('drop', caseId, this.statusType.id)
 			}

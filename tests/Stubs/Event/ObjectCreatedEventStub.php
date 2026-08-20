@@ -22,21 +22,19 @@ namespace OCA\OpenRegister\Event;
 use OCP\EventDispatcher\Event;
 
 if (class_exists(ObjectCreatedEvent::class) === false) {
-    /**
-     * Stub class for ObjectCreatedEvent — used only in standalone unit tests.
-     *
-     * Mirrors the getObject() signature used by VergunningaanvraagCreatedListener.
-     */
-    class ObjectCreatedEvent extends Event
-    {
-        /**
-         * Returns the created object payload.
-         *
-         * @return array<string, mixed>
-         */
-        public function getObject(): array
-        {
-            return [];
-        }//end getObject()
-    }//end class
+	/**
+	 * Stub class for ObjectCreatedEvent — used only in standalone unit tests.
+	 *
+	 * Mirrors the getObject() signature used by VergunningaanvraagCreatedListener.
+	 */
+	class ObjectCreatedEvent extends Event {
+		/**
+		 * Returns the created object payload.
+		 *
+		 * @return array<string, mixed>
+		 */
+		public function getObject(): array {
+			return [];
+		}//end getObject()
+	}//end class
 }//end if

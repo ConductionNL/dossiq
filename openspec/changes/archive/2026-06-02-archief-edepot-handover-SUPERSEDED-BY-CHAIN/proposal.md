@@ -33,7 +33,7 @@ This capability automates the entire pipeline, making archival as reliable and a
 
 - **Affected projects**: procest (primary, case/document/audit engine), openregister (archive schema registration), openconnector (e-Depot adapter layer), docudesk (PDF/A conversion service), possibly legesberekening (if refunds apply post-archival)
 - **Code surface**: new `procest-archief` register with 6 schemas (BewaarTermijnRegel, OverdrachtTrigger, SipBundel, OverdrachtTransactie, ArchiefBewijs, OverdrachtAuditLog); backend archival-trigger daemon and e-Depot integration service; admin UI for config and batch processing; REST API for proof-of-transfer queries
-- **Dependencies**: REQUIRED: docudesk for PDF/A conversion; openconnector for e-Depot endpoints; openregister for schema management. OPTIONAL: virus scanning (antivirus app or openconnector adapter), digital signatures (Collabora/PKIoverheid), reporting dashboard (mydash, opencatalogi)
+- **Dependencies**: REQUIRED: docudesk for PDF/A conversion; openconnector for e-Depot endpoints; openregister for schema management. OPTIONAL: virus scanning (antivirus app or openconnector adapter), digital signatures (Collabora/PKIoverheid), reporting dashboard (launchpad, opencatalogi)
 - **Standards**: Archiefwet 1995 (operative), Archiefwet 2024 (incoming 2026), Selectielijst gemeenten 2020, TMLO 1.2.1 (legacy), MDTO 1.1 (current), BagIt RFC 8493, ISO 14721 OAIS, ISO 19005 PDF/A, ToPX standard, Common Ground principles
 
 ## Scope
@@ -69,7 +69,7 @@ This capability automates the entire pipeline, making archival as reliable and a
 - **procest base** (REQUIRED) — Case, document, auditTrail entities; user/org context
 - **Antivirus app / openconnector adapter** (OPTIONAL) — Virus scanning before submission
 - **Collabora / PKIoverheid** (OPTIONAL) — Digital signature for ArchiefBewijs receipt
-- **mydash / opencatalogi** (OPTIONAL) — Reporting dashboard for archival batches
+- **launchpad / opencatalogi** (OPTIONAL) — Reporting dashboard for archival batches
 - **External e-Depots** — RHC, gemeentearchief, De Ree, Picturae, Digital Taties, Devoteam, etc. (via openconnector)
 
 ## Acceptance Criteria

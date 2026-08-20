@@ -1,78 +1,111 @@
 /*
  * SPDX-FileCopyrightText: 2026 Procest Contributors
- * SPDX-License-Identifier: AGPL-3.0-or-later
+ * SPDX-License-Identifier: EUPL-1.2
  *
  * Behavioural UI coverage for the procest administrative settings pages.
- * These routes live under the collapsible "Settings" nav group (they are
- * only reachable after expanding it) and each renders an OpenRegister-backed
- * index with a view-specific primary create control. Every test expands the
- * settings group, nav-clicks the entry, and asserts that the page renders
- * its OWN distinct create control + the shared list shell — proving the
- * route resolves to the right view, not a stale one — while guarding against
- * a 5xx render and procest-origin console errors.
+ * Each renders an OpenRegister-backed index with a view-specific primary
+ * create control. Every test navigates to the page's route and asserts that
+ * it renders its OWN distinct create control — proving the route resolves to
+ * the right view, not a stale one — while guarding against a 5xx render and
+ * procest-origin console errors.
+ *
+ * See the note above SETTINGS_PAGES for why these navigate by route rather
+ * than by clicking a nav label.
  */
 
 import { test, expect } from '@playwright/test'
-import { dismissSupportDialog, sidebarNav, trackProcestErrors } from '../helpers/nav'
+import { navToRoute, trackProcestErrors } from '../helpers/nav'
 
-/**
- * Land on a resolving route, dismiss the support dialog, expand the
- * collapsible Settings nav group, then click a settings link by its live
- * (i18n-rendered) label. Navigating to a settings page collapses the group
- * again, so it must be re-expanded for each test.
- * @param page
- * @param label
- * @param testId
- */
-async function navToSetting(page, label: string, testId?: string): Promise<void> {
-	await page.goto('/index.php/apps/procest/cases')
-	await dismissSupportDialog(page)
-	const settingsBtn = sidebarNav(page).getByRole('button', { name: 'Settings' })
-	if (await settingsBtn.count()) {
-		await settingsBtn.click().catch(() => {})
-		await page.waitForTimeout(500)
-	}
-	// A couple of labels (e.g. "Fee ordinances") appear in both the main and
-	// settings sections, so allow a testid to disambiguate the settings entry.
-	const link = testId
-		? sidebarNav(page).getByTestId(testId).getByRole('link', { name: label, exact: true })
-		: sidebarNav(page).getByRole('link', { name: label, exact: true })
-	await link.click()
-	await dismissSupportDialog(page)
-}
-
-// label (live nav text), the view-specific create button text, optional
-// nav testid when the label is ambiguous across sections.
-const SETTINGS_PAGES: Array<{ label: string, addBtn: string, testId?: string }> = [
-	{ label: 'Case Types', addBtn: 'Save' }, // CaseType settings form (Save control)
-	// The single canonical "Legesverordeningen" Settings entry is the custom
-	// import/approval admin view (/leges/verordeningen), covered by
-	// leges-heffingen.spec. The former duplicate generic-list nav leaf
-	// (LegesverordeningenMenu → /legesverordeningen) was removed in
-	// procest-config-to-settings; its page stays routable by deep link.
-	// Legesberekeningen (live per-case fee output) moved to the working nav and
-	// is no longer a Settings entry.
-	{ label: 'Parafeerroutes', addBtn: 'Add Parafeerroute' },
-	{ label: 'Automatische acties', addBtn: 'Add Automatic Action' },
-	{ label: 'Handhavingsstrategie', addBtn: 'Add LHS Matrix' },
-	{ label: 'LHS Recommendations', addBtn: 'Add LHS Recommendation' },
-	{ label: 'Partner organisations', addBtn: 'Add Partner organization' },
-	{ label: 'Kaartlagen', addBtn: 'Add WMS/WFS Layer' },
-	{ label: 'Workflow definitions', addBtn: 'Add Workflow Template' },
-	{ label: 'Tenants', addBtn: 'Add Tenant' },
-	{ label: 'Status history', addBtn: 'Add Status Record' },
-	{ label: 'Case locations', addBtn: 'Add Case Location' },
+// name (for the test title), the ROUTE the settings page lives at, and the
+// view-specific create control it must render.
+//
+// WHY THESE NAVIGATE BY ROUTE, NOT BY NAV LABEL
+// ---------------------------------------------
+// These tests used to expand the collapsible "Settings" nav group and click
+// the entry by its rendered label. Every one of them failed on CI because the
+// labels they clicked are Dutch/legacy strings the app no longer renders — the
+// settings menu was translated to English ("Parafeerroutes" is now "Approval
+// routes", "Kaartlagen" is "Map layers", "Tenants" is "Organisations",
+// "Automatische acties" is "Automatic actions", "Handhavingsstrategie" is
+// "Enforcement strategy"). Because those leaves also sit inside a COLLAPSED
+// group they are `display:none`, so the click blocked on actionability rather
+// than failing on a missing label, and the whole 60s test budget was consumed
+// before a bare timeout named an element instead of the cause.
+//
+// Routes are the stable contract here — they are declared in src/manifest.json
+// and are what the nav entries themselves link to — so navigating to them
+// directly tests the same view without coupling every assertion to the current
+// translation of a menu string. Each page's OWN create control still proves
+// the route resolved to the right view rather than a stale one.
+//
+// Control labels below were measured against a CI runner (2026-08-04).
+const SETTINGS_PAGES: Array<{ name: string; route: string; addBtn: string }> = [
+	// CaseType settings form (Save control) — the /settings root.
+	{ name: 'Case Types', route: '/settings', addBtn: 'Save' },
+	// Leges (the municipal-fee engine — verordeningen, articles, calculations)
+	// was retired from Procest in Wave 1 of the case-model consolidation
+	// (ADR-003). Fees are now Pipelinq products referenced from a case type's
+	// productsOrServices; Procest owns no fee settings entries.
+	{
+		name: 'Approval routes',
+		route: '/settings/parafeerroutes',
+		addBtn: 'Add Endorsement Route',
+	},
+	{
+		name: 'Automatic actions',
+		route: '/settings/automatic-actions',
+		addBtn: 'Add Automatic Action',
+	},
+	{
+		name: 'Enforcement strategy',
+		route: '/settings/lhs-matrices',
+		addBtn: 'Add LHS Matrix',
+	},
+	{
+		name: 'LHS recommendations',
+		route: '/settings/lhs-recommendations',
+		addBtn: 'Add LHS Recommendation',
+	},
+	{
+		name: 'Partner organisations',
+		route: '/settings/partners',
+		addBtn: 'Add Partner organization',
+	},
+	{
+		name: 'Map layers',
+		route: '/settings/wms-layers',
+		addBtn: 'Add WMS/WFS Layer',
+	},
+	{
+		name: 'Workflow definitions',
+		route: '/settings/workflow-definitions',
+		addBtn: 'Add Workflow Template',
+	},
+	{ name: 'Organisations', route: '/settings/tenants', addBtn: 'Add Tenant' },
+	// The standalone "Status history" (StatusRecords) settings page was retired
+	// by retire-status-history-page — change history is now the CaseDetail
+	// audit-trail surface, not a page/menu item. Entry removed accordingly.
+	{
+		name: 'Case locations',
+		route: '/settings/locations',
+		addBtn: 'Add Case Location',
+	},
 ]
 
-for (const { label, addBtn, testId } of SETTINGS_PAGES) {
-	test.describe(`Settings · ${label}`, () => {
+for (const { name, route, addBtn } of SETTINGS_PAGES) {
+	test.describe(`Settings · ${name}`, () => {
 		// @e2e openspec/specs/admin-settings/spec.md#settings-page-renders-distinct-control
-		test(`${label} settings page renders its own "${addBtn}" control`, async ({ page }) => {
+		test(`${name} settings page renders its own "${addBtn}" control`, async ({
+			page,
+		}) => {
 			const errors = trackProcestErrors(page)
-			await navToSetting(page, label, testId)
-			await expect(page.getByRole('button', { name: addBtn, exact: true }).first())
-				.toBeVisible({ timeout: 15000 })
-			await expect(page.locator('body')).not.toContainText('Internal Server Error')
+			await navToRoute(page, route)
+			await expect(
+				page.getByRole('button', { name: addBtn, exact: true }).first(),
+			).toBeVisible({ timeout: 15000 })
+			await expect(page.locator('body')).not.toContainText(
+				'Internal Server Error',
+			)
 			expect(errors, errors.join('\n')).toEqual([])
 		})
 	})

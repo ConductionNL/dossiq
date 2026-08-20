@@ -40,7 +40,7 @@ function addWorkingDays(startDate, days) {
  */
 function addWeeks(startDate, weeks) {
 	const result = new Date(startDate)
-	result.setDate(result.getDate() + (weeks * 7))
+	result.setDate(result.getDate() + weeks * 7)
 	return result
 }
 
@@ -56,7 +56,7 @@ function daysDifference(dateA, dateB) {
 	return Math.ceil((dateB.getTime() - dateA.getTime()) / msPerDay)
 }
 
-export const useBezwaarStore = defineStore('bezwaar', {
+export const useBezwaarStore = defineStore('objectionProceeding', {
 	state: () => ({
 		/** @type {object|null} Current objection object */
 		currentObjection: null,
@@ -88,9 +88,11 @@ export const useBezwaarStore = defineStore('bezwaar', {
 		 * @return {object|null} The active hearing or null
 		 */
 		activeHearing: (state) => {
-			return state.hearingSessions.find(
-				(h) => h.status !== 'geannuleerd' && h.status !== 'afgezien',
-			) || null
+			return (
+				state.hearingSessions.find(
+					(h) => h.status !== 'cancelled' && h.status !== 'afgezien',
+				) || null
+			)
 		},
 
 		/**
@@ -146,9 +148,12 @@ export const useBezwaarStore = defineStore('bezwaar', {
 				this.currentObjection = objections?.[0] || null
 
 				// Load hearing sessions.
-				const hearings = await objectStore.fetchCollection('hearingSession', {
-					'_filters[case]': caseId,
-				})
+				const hearings = await objectStore.fetchCollection(
+					'hearingSession',
+					{
+						'_filters[case]': caseId,
+					},
+				)
 				this.hearingSessions = hearings || []
 
 				// Load advisory report.
@@ -159,10 +164,13 @@ export const useBezwaarStore = defineStore('bezwaar', {
 				this.currentAdvisoryReport = reports?.[0] || null
 
 				// Load appeal decision.
-				const decisions = await objectStore.fetchCollection('appealDecision', {
-					'_filters[case]': caseId,
-					_limit: 1,
-				})
+				const decisions = await objectStore.fetchCollection(
+					'appealDecision',
+					{
+						'_filters[case]': caseId,
+						_limit: 1,
+					},
+				)
 				this.currentAppealDecision = decisions?.[0] || null
 			} catch (error) {
 				this.error = error.message
@@ -305,7 +313,9 @@ export const useBezwaarStore = defineStore('bezwaar', {
 			try {
 				const objectStore = useObjectStore()
 				const result = await objectStore.saveObject('hearingSession', data)
-				const index = this.hearingSessions.findIndex((h) => h.id === result.id)
+				const index = this.hearingSessions.findIndex(
+					(h) => h.id === result.id,
+				)
 				if (index >= 0) {
 					this.hearingSessions[index] = result
 				}
@@ -460,10 +470,14 @@ export const useBezwaarStore = defineStore('bezwaar', {
 			const maxDeadlineWithExtension = addWeeks(received, 12)
 
 			return {
-				ontvangstbevestigingDeadline: acknowledgmentDeadline.toISOString().split('T')[0],
+				acknowledgementOfReceiptDeadline: acknowledgmentDeadline
+					.toISOString()
+					.split('T')[0],
 				afhandelDeadline: processingDeadline.toISOString().split('T')[0],
-				maxDeadlineWithExtension: maxDeadlineWithExtension.toISOString().split('T')[0],
-				verdagingMogelijk: true,
+				maxDeadlineWithExtension: maxDeadlineWithExtension
+					.toISOString()
+					.split('T')[0],
+				postponementPossible: true,
 			}
 		},
 
@@ -562,7 +576,9 @@ export const useBezwaarStore = defineStore('bezwaar', {
 				const beroepCaseType = caseTypes?.[0]
 
 				if (!beroepCaseType) {
-					throw new Error('Beroep case type not found. Ensure seed data has been imported.')
+					throw new Error(
+						'Beroep case type not found. Ensure seed data has been imported.',
+					)
 				}
 
 				// Pre-fill beroep case data from bezwaar.
@@ -573,7 +589,7 @@ export const useBezwaarStore = defineStore('bezwaar', {
 					parentCase: bezwaarCase.id,
 					startDate: new Date().toISOString().split('T')[0],
 					priority: bezwaarCase.priority || 'normal',
-					voorzieningRequested: options.voorzieningRequested || false,
+					provisionRequested: options.provisionRequested || false,
 				}
 
 				const beroepCase = await objectStore.saveObject('case', beroepData)

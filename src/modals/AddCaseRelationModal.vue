@@ -34,9 +34,9 @@
 					:options="caseOptions"
 					:loading="searching"
 					:aria-label-combobox="t('procest', 'Related case')"
-					:input-label="t('procest', 'Related case')"
+					:inputLabel="t('procest', 'Related case')"
 					label="label"
-					track-by="id"
+					trackBy="id"
 					:placeholder="t('procest', 'Search for a case…')"
 					@search="onSearch" />
 				<p v-if="errors.target" class="form-error" role="alert">
@@ -52,9 +52,9 @@
 					v-model="selectedType"
 					:options="typeOptions"
 					:aria-label-combobox="t('procest', 'Relation type')"
-					:input-label="t('procest', 'Relation type')"
+					:inputLabel="t('procest', 'Relation type')"
 					label="label"
-					track-by="value"
+					trackBy="value"
 					:placeholder="t('procest', 'Select a relation type…')" />
 				<p v-if="errors.type" class="form-error" role="alert">
 					{{ errors.type }}
@@ -63,12 +63,18 @@
 
 			<!-- Toelichting (optional) -->
 			<div class="form-group">
-				<label for="acr-toelichting">{{ t('procest', 'Explanation') }}</label>
+				<label for="acr-toelichting">{{
+					t('procest', 'Explanation')
+				}}</label>
 				<NcTextField
 					id="acr-toelichting"
-					:value="toelichting"
+					:modelValue="notes"
 					:placeholder="t('procest', 'Optional clarification…')"
-					@update:value="v => { toelichting = v }" />
+					@update:modelValue="
+						(v) => {
+							toelichting = v
+						}
+					" />
 			</div>
 
 			<p v-if="submitError" class="form-error" role="alert">
@@ -91,9 +97,20 @@
 </template>
 
 <script>
-import { NcButton, NcDialog, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcDialog,
+	NcLoadingIcon,
+	NcSelect,
+	NcTextField,
+} from '@nextcloud/vue'
+import {
+	AARD_RELATIE_TYPES,
+	addRelation,
+	relationErrorMessage,
+	relationTypeLabel,
+} from '../services/caseRelationApi.js'
 import { useObjectStore } from '../store/modules/object.js'
-import { addRelation, relationErrorMessage, relationTypeLabel, AARD_RELATIE_TYPES } from '../services/caseRelationApi.js'
 
 export default {
 	name: 'AddCaseRelationModal',
@@ -104,6 +121,7 @@ export default {
 		NcSelect,
 		NcTextField,
 	},
+
 	props: {
 		/** The origin case UUID. */
 		caseId: {
@@ -111,12 +129,13 @@ export default {
 			required: true,
 		},
 	},
+
 	emits: ['created', 'close'],
 	data() {
 		return {
 			selectedCase: null,
 			selectedType: null,
-			toelichting: '',
+			notes: '',
 			caseOptions: [],
 			searching: false,
 			saving: false,
@@ -125,16 +144,22 @@ export default {
 			searchDebounce: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/related-case-linking/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/specs/related-case-linking/spec.md */
 		typeOptions() {
-			return AARD_RELATIE_TYPES.map(value => ({ value, label: relationTypeLabel(value) }))
+			return AARD_RELATIE_TYPES.map((value) => ({
+				value,
+				label: relationTypeLabel(value),
+			}))
 		},
 	},
+
 	methods: {
 		/**
 		 * Debounced case search via the object store, excluding the origin case.
@@ -150,6 +175,7 @@ export default {
 			}
 			this.searchDebounce = setTimeout(() => this.runSearch(term), 300)
 		},
+
 		/**
 		 * Execute the case search and map results to picker options.
 		 *
@@ -165,12 +191,15 @@ export default {
 			}
 			this.searching = true
 			try {
-				const results = await this.objectStore.fetchCollection('case', { _search: term, _limit: 25 })
+				const results = await this.objectStore.fetchCollection('case', {
+					_search: term,
+					_limit: 25,
+				})
 				this.caseOptions = (results || [])
-					.filter(c => (c.id || c['@self']?.id) !== this.caseId)
-					.map(c => ({
+					.filter((c) => (c.id || c['@self']?.id) !== this.caseId)
+					.map((c) => ({
 						id: c.id || c['@self']?.id,
-						label: c.title || c.identifier || (c.id || c['@self']?.id),
+						label: c.title || c.identifier || c.id || c['@self']?.id,
 					}))
 			} catch (e) {
 				this.caseOptions = []
@@ -178,6 +207,7 @@ export default {
 				this.searching = false
 			}
 		},
+
 		/**
 		 * Validate and create the relation; surface guard responses inline.
 		 *
@@ -203,7 +233,7 @@ export default {
 				const result = await addRelation(this.caseId, {
 					targetId: this.selectedCase.id,
 					aardRelatie: this.selectedType.value,
-					toelichting: this.toelichting || undefined,
+					notes: this.notes || undefined,
 				})
 				if (result.ok) {
 					this.$emit('created')
@@ -217,6 +247,7 @@ export default {
 				this.saving = false
 			}
 		},
+
 		/**
 		 * Handle NcDialog open-state changes (close on false).
 		 *

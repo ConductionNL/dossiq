@@ -8,7 +8,7 @@
 </template>
 
 <script>
-import { t } from '@nextcloud/l10n'
+import { translate as t } from '@nextcloud/l10n'
 
 export default {
 	name: 'AiConfidenceBadge',
@@ -18,30 +18,35 @@ export default {
 			required: true,
 			validator: (v) => v >= 0 && v <= 1,
 		},
+
 		size: {
 			type: String,
 			default: 'small',
 			validator: (v) => ['small', 'medium'].includes(v),
 		},
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		level() {
 			if (this.confidence > 0.85) return 'high'
-			if (this.confidence >= 0.60) return 'medium'
+			if (this.confidence >= 0.6) return 'medium'
 			return 'low'
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		label() {
 			return `${Math.round(this.confidence * 100)}%`
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		ariaLabel() {
-			const levelLabel = this.level === 'high'
-				? t('procest', 'high')
-				: this.level === 'medium'
-					? t('procest', 'medium')
-					: t('procest', 'low')
+			const levelLabel =
+				this.level === 'high'
+					? t('procest', 'high')
+					: this.level === 'medium'
+						? t('procest', 'medium')
+						: t('procest', 'low')
 			return t('procest', 'Confidence: {percentage} ({level})', {
 				percentage: this.label,
 				level: levelLabel,

@@ -16,42 +16,55 @@
 		<table class="performance-table">
 			<thead>
 				<tr>
-					<th class="sortable"
-						@click="sortTable('name')">
+					<th class="sortable" scope="col" @click="sortTable('name')">
 						{{ t('procest', 'Case Type') }}
 						<span v-if="sortColumn === 'name'" class="sort-indicator">
 							{{ sortDirection === 'asc' ? '▲' : '▼' }}
 						</span>
 					</th>
-					<th class="sortable numeric"
+					<th
+						class="sortable numeric"
+						scope="col"
 						@click="sortTable('targetDays')">
 						{{ t('procest', 'Target (days)') }}
-						<span v-if="sortColumn === 'targetDays'" class="sort-indicator">
+						<span
+							v-if="sortColumn === 'targetDays'"
+							class="sort-indicator">
 							{{ sortDirection === 'asc' ? '▲' : '▼' }}
 						</span>
 					</th>
-					<th class="sortable numeric"
+					<th
+						class="sortable numeric"
+						scope="col"
 						@click="sortTable('avgActualDays')">
 						{{ t('procest', 'Avg Actual (days)') }}
-						<span v-if="sortColumn === 'avgActualDays'" class="sort-indicator">
+						<span
+							v-if="sortColumn === 'avgActualDays'"
+							class="sort-indicator">
 							{{ sortDirection === 'asc' ? '▲' : '▼' }}
 						</span>
 					</th>
-					<th class="sortable numeric"
+					<th
+						class="sortable numeric"
+						scope="col"
 						@click="sortTable('complianceRate')">
 						{{ t('procest', 'Compliance %') }}
-						<span v-if="sortColumn === 'complianceRate'" class="sort-indicator">
+						<span
+							v-if="sortColumn === 'complianceRate'"
+							class="sort-indicator">
 							{{ sortDirection === 'asc' ? '▲' : '▼' }}
 						</span>
 					</th>
-					<th class="sortable numeric"
+					<th
+						class="sortable numeric"
+						scope="col"
 						@click="sortTable('total')">
 						{{ t('procest', 'Cases') }}
 						<span v-if="sortColumn === 'total'" class="sort-indicator">
 							{{ sortDirection === 'asc' ? '▲' : '▼' }}
 						</span>
 					</th>
-					<th>{{ t('procest', 'Status') }}</th>
+					<th scope="col">{{ t('procest', 'Status') }}</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -64,13 +77,19 @@
 						{{ row.avgActualDays !== null ? row.avgActualDays : '—' }}
 					</td>
 					<td class="numeric">
-						{{ row.complianceRate !== null ? row.complianceRate + '%' : '—' }}
+						{{
+							row.complianceRate !== null
+								? row.complianceRate + '%'
+								: '—'
+						}}
 					</td>
 					<td class="numeric">
 						{{ row.total }}
 					</td>
 					<td>
-						<span class="status-dot" :class="'status-dot--' + row.status" />
+						<span
+							class="status-dot"
+							:class="'status-dot--' + row.status" />
 					</td>
 				</tr>
 			</tbody>
@@ -93,12 +112,14 @@ export default {
 			default: () => [],
 		},
 	},
+
 	data() {
 		return {
 			sortColumn: 'complianceRate',
 			sortDirection: 'asc',
 		}
 	},
+
 	computed: {
 		/**
 		 * Performance rows sorted by the active column/direction. Null values
@@ -107,9 +128,14 @@ export default {
 		 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 		 */
 		sortedPerformanceData() {
-			return sortPerformanceRows(this.performanceData, this.sortColumn, this.sortDirection)
+			return sortPerformanceRows(
+				this.performanceData,
+				this.sortColumn,
+				this.sortDirection,
+			)
 		},
 	},
+
 	methods: {
 		/**
 		 * Toggle sort direction when the active column is re-clicked; otherwise

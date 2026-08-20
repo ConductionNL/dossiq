@@ -119,7 +119,7 @@ De `mandaat-matrix` capability brengt een datagedreven mandaatregister naar proc
 - **decidesk** — mandateringsbesluiten worden als raadsbesluit/collegebesluit vastgesteld in decidesk en geïmporteerd; juridisch sluitende koppeling tussen mandaat en wettelijke grondslag
 - **procest base** — zaak + beslissing zijn de natuurlijke aanhakingspunten; bij elke beslissings-actie wordt een mandaat-check uitgevoerd
 - **openconnector** — koppeling naar HR-systemen (AFAS, ADP) om medewerker-rol-toewijzingen automatisch te synchroniseren
-- **mydash** — dashboards met mandaat-gebruik (welke mandaten worden vaak ingezet, welke escalaties komen veel voor, doorlooptijd-impact)
+- **launchpad** — dashboards met mandaat-gebruik (welke mandaten worden vaak ingezet, welke escalaties komen veel voor, doorlooptijd-impact)
 - **docudesk** — automatisch genereren van mandaat-overzichten als bijlage bij jaarverslagen en bestuurlijke verantwoording
 - **leges-heffingen** — restitutie-besluiten gebruiken de mandaat-matrix om te bepalen wie een restitutie mag toekennen
 

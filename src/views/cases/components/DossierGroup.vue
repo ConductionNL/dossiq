@@ -19,10 +19,10 @@
 				:key="doc.id"
 				:document="doc"
 				:selected="selectedIds.includes(doc.id)"
-				@toggle-select="$emit('toggle-select', $event)"
+				@toggleSelect="$emit('toggle-select', $event)"
 				@open="$emit('open', $event)"
 				@share="$emit('share', $event)"
-				@version-history="$emit('version-history', $event)"
+				@versionHistory="$emit('version-history', $event)"
 				@delete="$emit('delete', $event)" />
 		</div>
 	</div>
@@ -46,34 +46,41 @@ export default {
 		ChevronRight,
 		DocumentRow,
 	},
+
 	props: {
 		groupLabel: {
 			type: String,
 			required: true,
 		},
+
 		documents: {
 			type: Array,
 			default: () => [],
 		},
+
 		selectedIds: {
 			type: Array,
 			default: () => [],
 		},
+
 		sortKey: {
 			type: String,
 			default: 'creatiedatum',
 		},
+
 		sortDirection: {
 			type: String,
 			default: 'desc',
 		},
 	},
+
 	emits: ['toggle-select', 'open', 'share', 'version-history', 'delete'],
 	data() {
 		return {
 			expanded: true,
 		}
 	},
+
 	computed: {
 		/**
 		 * The documents sorted by the active key and direction.
@@ -85,8 +92,8 @@ export default {
 			const key = this.sortKey
 			const dir = this.sortDirection === 'asc' ? 1 : -1
 			return [...this.documents].sort((a, b) => {
-				const av = (a[key] || '')
-				const bv = (b[key] || '')
+				const av = a[key] || ''
+				const bv = b[key] || ''
 				if (av < bv) {
 					return -1 * dir
 				}

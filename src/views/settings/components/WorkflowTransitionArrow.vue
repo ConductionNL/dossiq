@@ -8,14 +8,18 @@
 		<path
 			:d="arrowPath"
 			fill="none"
-			:stroke="selected ? 'var(--color-primary)' : 'var(--color-text-maxcontrast)'"
+			:stroke="
+				selected ? 'var(--color-primary)' : 'var(--color-text-maxcontrast)'
+			"
 			stroke-width="2"
 			class="workflow-transition__path" />
 
 		<!-- Arrowhead -->
 		<polygon
 			:points="arrowheadPoints"
-			:fill="selected ? 'var(--color-primary)' : 'var(--color-text-maxcontrast)'" />
+			:fill="
+				selected ? 'var(--color-primary)' : 'var(--color-text-maxcontrast)'
+			" />
 
 		<!-- Label -->
 		<text
@@ -24,7 +28,9 @@
 			:y="midY - 8"
 			text-anchor="middle"
 			class="workflow-transition__label"
-			:fill="selected ? 'var(--color-primary)' : 'var(--color-text-maxcontrast)'">
+			:fill="
+				selected ? 'var(--color-primary)' : 'var(--color-text-maxcontrast)'
+			">
 			{{ transition.label }}
 		</text>
 
@@ -35,7 +41,7 @@
 			stroke="transparent"
 			stroke-width="16"
 			class="workflow-transition__click-target"
-			style="cursor: pointer;" />
+			style="cursor: pointer" />
 	</g>
 </template>
 
@@ -47,29 +53,35 @@ export default {
 			type: Object,
 			required: true,
 		},
+
 		fromPos: {
 			type: Object,
 			required: true,
 		},
+
 		toPos: {
 			type: Object,
 			required: true,
 		},
+
 		selected: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: ['click', 'dblclick'],
 	computed: {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		midX() {
 			return (this.fromPos.x + this.toPos.x) / 2
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		midY() {
 			return (this.fromPos.y + this.toPos.y) / 2
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		arrowPath() {
 			const dx = this.toPos.x - this.fromPos.x
@@ -83,6 +95,7 @@ export default {
 
 			return `M ${this.fromPos.x} ${this.fromPos.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${this.toPos.x} ${this.toPos.y}`
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		arrowheadPoints() {
 			// Calculate arrowhead at the end point
@@ -119,5 +132,11 @@ export default {
 .workflow-transition:hover .workflow-transition__path {
 	stroke: var(--color-primary);
 	stroke-width: 3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.workflow-transition__path {
+		transition: none;
+	}
 }
 </style>

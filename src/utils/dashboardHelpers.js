@@ -4,7 +4,11 @@
  */
 
 import { translate as t } from '@nextcloud/l10n'
-import { isCaseOverdue, getDaysRemaining, formatDeadlineCountdown } from './caseHelpers.js'
+import {
+	formatDeadlineCountdown,
+	getDaysRemaining,
+	isCaseOverdue,
+} from './caseHelpers.js'
 import { prioritySortWeight } from './taskHelpers.js'
 import { isTerminalStatus } from './taskLifecycle.js'
 
@@ -35,9 +39,11 @@ export function computeKpis(openCases, completedCases, myTasks) {
 	const today = todayString()
 
 	const openCount = openCases.length
-	const newToday = openCases.filter(c => c.startDate && c.startDate.slice(0, 10) === today).length
+	const newToday = openCases.filter(
+		(c) => c.startDate && c.startDate.slice(0, 10) === today,
+	).length
 
-	const overdueCount = openCases.filter(c => isCaseOverdue(c, false)).length
+	const overdueCount = openCases.filter((c) => isCaseOverdue(c, false)).length
 
 	const completedCount = completedCases.length
 	let avgDays = null
@@ -48,7 +54,10 @@ export function computeKpis(openCases, completedCases, myTasks) {
 				const end = new Date(c.endDate)
 				start.setHours(0, 0, 0, 0)
 				end.setHours(0, 0, 0, 0)
-				return sum + Math.max(0, Math.floor((end - start) / (1000 * 60 * 60 * 24)))
+				return (
+					sum
+					+ Math.max(0, Math.floor((end - start) / (1000 * 60 * 60 * 24)))
+				)
 			}
 			return sum
 		}, 0)
@@ -56,18 +65,31 @@ export function computeKpis(openCases, completedCases, myTasks) {
 	}
 
 	const taskCount = myTasks.length
-	const tasksDueToday = myTasks.filter(t => t.dueDate && t.dueDate.slice(0, 10) === today).length
+	const tasksDueToday = myTasks.filter(
+		(t) => t.dueDate && t.dueDate.slice(0, 10) === today,
+	).length
 
-	return { openCount, newToday, overdueCount, completedCount, avgDays, taskCount, tasksDueToday }
+	return {
+		openCount,
+		newToday,
+		overdueCount,
+		completedCount,
+		avgDays,
+		taskCount,
+		tasksDueToday,
+	}
 }
 
 /**
  * Aggregate open cases by status name for the status chart.
- * Same-named statuses across case types are merged.
+ * Same-named statuses across case types are merged into one bar; every
+ * underlying statusType id that contributes to a bar is collected in
+ * `statusIds` so a bar click can deep-link to `/cases?status[]=<id>&…` (an IN
+ * match across all case types that share the status name).
  *
  * @param {object[]} openCases Cases with non-final status
  * @param {object[]} statusTypes All status types
- * @return {Array<{ name: string, count: number }>} Sorted by status type order
+ * @return {Array<{ name: string, count: number, statusIds: string[] }>} Sorted by status type order
  */
 /**
  * @param openCases
@@ -76,6 +98,7 @@ export function computeKpis(openCases, completedCases, myTasks) {
  */
 export function aggregateByStatus(openCases, statusTypes) {
 	const statusMap = new Map()
+	const idsMap = new Map()
 	const orderMap = new Map()
 
 	for (const st of statusTypes) {
@@ -90,13 +113,30 @@ export function aggregateByStatus(openCases, statusTypes) {
 	}
 
 	for (const c of openCases) {
-		const name = statusIdToName.get(c.status) || c.status || t('procest', 'Unknown')
+		// A case's `status` is a statusType id. Only ids that resolve to a known
+		// statusType get their real name; anything else (null, or a stale/junk
+		// value that no longer references a statusType) is bucketed under
+		// "Unknown" rather than leaking the raw value into the chart — this
+		// mirrors aggregateByType's resolution. Only resolved ids feed statusIds,
+		// so an "Unknown" bar click never deep-links on a junk/absent id.
+		const resolvedName = statusIdToName.get(c.status)
+		const name = resolvedName || t('procest', 'Unknown')
 		statusMap.set(name, (statusMap.get(name) || 0) + 1)
+		if (resolvedName) {
+			if (!idsMap.has(name)) idsMap.set(name, new Set())
+			idsMap.get(name).add(c.status)
+		}
 	}
 
 	return Array.from(statusMap.entries())
-		.map(([name, count]) => ({ name, count }))
-		.sort((a, b) => (orderMap.get(a.name) ?? 999) - (orderMap.get(b.name) ?? 999))
+		.map(([name, count]) => ({
+			name,
+			count,
+			statusIds: Array.from(idsMap.get(name) || []),
+		}))
+		.sort(
+			(a, b) => (orderMap.get(a.name) ?? 999) - (orderMap.get(b.name) ?? 999),
+		)
 }
 
 /**
@@ -118,8 +158,8 @@ export function getOverdueCases(openCases, caseTypes) {
 	}
 
 	return openCases
-		.filter(c => isCaseOverdue(c, false))
-		.map(c => ({
+		.filter((c) => isCaseOverdue(c, false))
+		.map((c) => ({
 			id: c.id,
 			identifier: c.identifier || '—',
 			title: c.title || '—',
@@ -194,14 +234,20 @@ export function getMyWorkItems(cases, tasks, limit = 5) {
 	}
 
 	for (const task of tasks) {
-		const overdue = !isTerminalStatus(task.status) && task.dueDate && new Date(task.dueDate) < new Date(todayString())
+		const overdue =
+			!isTerminalStatus(task.status)
+			&& task.dueDate
+			&& new Date(task.dueDate) < new Date(todayString())
 		const daysLeft = task.dueDate ? getDaysRemaining(task.dueDate) : null
 		let daysText = '—'
 		if (daysLeft !== null) {
 			if (daysLeft < 0) {
-				daysText = Math.abs(daysLeft) === 1
-					? t('procest', '1 day overdue')
-					: t('procest', '{days} days overdue', { days: Math.abs(daysLeft) })
+				daysText =
+					Math.abs(daysLeft) === 1
+						? t('procest', '1 day overdue')
+						: t('procest', '{days} days overdue', {
+								days: Math.abs(daysLeft),
+							})
 			} else if (daysLeft === 0) {
 				daysText = t('procest', 'Due today')
 			} else {
@@ -225,7 +271,8 @@ export function getMyWorkItems(cases, tasks, limit = 5) {
 		const pDiff = prioritySortWeight(a.priority) - prioritySortWeight(b.priority)
 		if (pDiff !== 0) return pDiff
 
-		if (a.deadline && b.deadline) return new Date(a.deadline) - new Date(b.deadline)
+		if (a.deadline && b.deadline)
+			return new Date(a.deadline) - new Date(b.deadline)
 		if (a.deadline) return -1
 		if (b.deadline) return 1
 		return 0
@@ -242,7 +289,7 @@ export function getMyWorkItems(cases, tasks, limit = 5) {
 function endOfWeek() {
 	const now = new Date()
 	const day = now.getDay() // 0 = Sunday
-	const daysUntilSunday = day === 0 ? 0 : (7 - day)
+	const daysUntilSunday = day === 0 ? 0 : 7 - day
 	const sunday = new Date(now)
 	sunday.setDate(now.getDate() + daysUntilSunday)
 	sunday.setHours(23, 59, 59, 999)
@@ -321,7 +368,8 @@ export function getGroupedMyWorkItems(cases, normalizedTasks) {
 	const sortFn = (a, b) => {
 		const pDiff = prioritySortWeight(a.priority) - prioritySortWeight(b.priority)
 		if (pDiff !== 0) return pDiff
-		if (a.deadline && b.deadline) return new Date(a.deadline) - new Date(b.deadline)
+		if (a.deadline && b.deadline)
+			return new Date(a.deadline) - new Date(b.deadline)
 		if (a.deadline) return -1
 		if (b.deadline) return 1
 		return 0
@@ -370,7 +418,11 @@ export const STALLED_THRESHOLD_DAYS = 7
  * @param warningDays
  * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
  */
-export function getDeadlineAlerts(openCases, caseTypes, warningDays = DEADLINE_WARNING_DAYS) {
+export function getDeadlineAlerts(
+	openCases,
+	caseTypes,
+	warningDays = DEADLINE_WARNING_DAYS,
+) {
 	const typeMap = new Map()
 	for (const ct of caseTypes) {
 		typeMap.set(ct.id, ct.title || ct.name || t('procest', 'Unknown'))
@@ -475,7 +527,11 @@ export function getTaskDueReminders(tasks, warningDays = DEADLINE_WARNING_DAYS) 
  * @param stalledDays
  * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
  */
-export function getStalledCases(openCases, caseTypes, stalledDays = STALLED_THRESHOLD_DAYS) {
+export function getStalledCases(
+	openCases,
+	caseTypes,
+	stalledDays = STALLED_THRESHOLD_DAYS,
+) {
 	const typeMap = new Map()
 	for (const ct of caseTypes) {
 		typeMap.set(ct.id, ct.title || ct.name || t('procest', 'Unknown'))
@@ -533,36 +589,45 @@ export function formatRelativeTime(dateString) {
 
 	if (diffMin < 1) return t('procest', 'just now')
 	if (diffMin < 60) return t('procest', '{min} min ago', { min: diffMin })
-	if (diffHours < 24) return t('procest', '{hours} hours ago', { hours: diffHours })
+	if (diffHours < 24)
+		return t('procest', '{hours} hours ago', { hours: diffHours })
 	if (diffDays === 1) return t('procest', 'yesterday')
 	if (diffDays < 7) return t('procest', '{days} days ago', { days: diffDays })
 	return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
 /**
- * Aggregate open cases by case-type title for the "Cases by Type" bar chart.
- * Cases whose caseType cannot be resolved are grouped under "Unknown".
+ * Aggregate open cases by case type for the "Cases by Type" bar chart.
+ * Grouped by the caseType id (the value a case object stores) so a bar click
+ * can deep-link to `/cases?caseType=<id>` and have the index pre-filter match.
+ * The human-readable title is carried alongside as `label` for display. Cases
+ * whose caseType cannot be resolved are grouped under an empty id / "Unknown".
  *
  * @param {object[]} openCases Cases with non-final status
- * @param {object[]} caseTypes All case types (for name resolution)
- * @return {Array<{ type: string, count: number }>} Sorted by count descending
+ * @param {object[]} caseTypes All case types (for label resolution)
+ * @return {Array<{ type: string, label: string, count: number }>} `type` = caseType id
+ *   (the case's stored value), `label` = title. Sorted by count descending.
  *
- * @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-003
+ * @spec openspec/specs/dashboard/spec.md
  */
 export function aggregateByType(openCases, caseTypes) {
-	const typeMap = new Map()
+	const labelMap = new Map()
 	for (const ct of caseTypes) {
-		typeMap.set(ct.id, ct.title || ct.name || t('procest', 'Unknown'))
+		labelMap.set(ct.id, ct.title || ct.name || t('procest', 'Unknown'))
 	}
 
 	const counts = new Map()
 	for (const c of openCases) {
-		const name = typeMap.get(c.caseType) || t('procest', 'Unknown')
-		counts.set(name, (counts.get(name) || 0) + 1)
+		const id = c.caseType || ''
+		counts.set(id, (counts.get(id) || 0) + 1)
 	}
 
 	return Array.from(counts.entries())
-		.map(([type, count]) => ({ type, count }))
+		.map(([type, count]) => ({
+			type,
+			label: labelMap.get(type) || t('procest', 'Unknown'),
+			count,
+		}))
 		.sort((a, b) => b.count - a.count)
 }
 
@@ -597,7 +662,7 @@ export const WOO_WARNING_DAYS = 14
  * @return {Array<{ id, identifier, title, initiator, deadline, daysRemaining, isOverdue, severity }>}
  *   Sorted overdue first (most overdue), then by ascending daysRemaining.
  *
- * @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-V1-004
+ * @spec openspec/specs/dashboard/spec.md
  */
 export function getWooCases(openCases, caseTypes) {
 	const typeTitleMap = new Map()
@@ -659,7 +724,7 @@ export function getWooCases(openCases, caseTypes) {
  * @param {number} weeks Number of trailing weeks to include
  * @return {Array<{ weekLabel: string, count: number }>} Oldest week first
  *
- * @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-V1-005
+ * @spec openspec/specs/dashboard/spec.md
  */
 export function computeWeeklyThroughput(completedCases, weeks = 12) {
 	// Build a Monday-anchored week key for an ISO-week approximation.
@@ -667,7 +732,7 @@ export function computeWeeklyThroughput(completedCases, weeks = 12) {
 		const date = new Date(d)
 		date.setHours(0, 0, 0, 0)
 		const day = date.getDay() // 0 = Sunday
-		const diff = (day === 0 ? 6 : day - 1) // days since Monday
+		const diff = day === 0 ? 6 : day - 1 // days since Monday
 		date.setDate(date.getDate() - diff)
 		return date
 	}
@@ -680,11 +745,12 @@ export function computeWeeklyThroughput(completedCases, weeks = 12) {
 		target.setDate(target.getDate() + 3) // shift to this week's Thursday
 		const isoYear = target.getFullYear()
 		const firstThursday = new Date(isoYear, 0, 4)
-		const weekNo = 1 + Math.round((target - weekStart(firstThursday)) / (7 * 86400000))
+		const weekNo =
+			1 + Math.round((target - weekStart(firstThursday)) / (7 * 86400000))
 		return `W${weekNo} ${isoYear}`
 	}
 
-	const completed = completedCases.filter(c => c.endDate)
+	const completed = completedCases.filter((c) => c.endDate)
 	if (completed.length === 0) return []
 
 	// Determine the anchor (most recent completion) and build the trailing window.
@@ -698,7 +764,7 @@ export function computeWeeklyThroughput(completedCases, weeks = 12) {
 	const keyToIndex = new Map()
 	for (let i = weeks - 1; i >= 0; i--) {
 		const monday = new Date(anchorMonday)
-		monday.setDate(monday.getDate() - (i * 7))
+		monday.setDate(monday.getDate() - i * 7)
 		const key = monday.toISOString().slice(0, 10)
 		keyToIndex.set(key, buckets.length)
 		buckets.push({ weekLabel: isoWeekLabel(monday), count: 0 })

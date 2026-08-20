@@ -24,7 +24,7 @@ const importApi = async () => await import('../../src/utils/caseRelationHelpers.
 describe('AARD_RELATIE_TYPES', () => {
 	it('lists the three RGBZ/ZRC relation types', async () => {
 		const { AARD_RELATIE_TYPES } = await importApi()
-		expect(AARD_RELATIE_TYPES).toEqual(['vervolg', 'onderwerp', 'bijdrage'])
+		expect(AARD_RELATIE_TYPES).toEqual(['vervolg', 'subject', 'bijdrage'])
 	})
 })
 
@@ -32,7 +32,7 @@ describe('relationTypeLabel', () => {
 	it('maps each known type to a label', async () => {
 		const { relationTypeLabel } = await importApi()
 		expect(relationTypeLabel('vervolg')).toBe('Follow-up')
-		expect(relationTypeLabel('onderwerp')).toBe('Subject')
+		expect(relationTypeLabel('subject')).toBe('Subject')
 		expect(relationTypeLabel('bijdrage')).toBe('Contribution')
 	})
 
@@ -49,7 +49,9 @@ describe('relationErrorMessage', () => {
 		expect(relationErrorMessage('duplicate')).toMatch(/already exists/i)
 		expect(relationErrorMessage('hierarchy_overlap')).toMatch(/hierarchy/i)
 		expect(relationErrorMessage('access_denied')).toMatch(/access/i)
-		expect(relationErrorMessage('invalid_aard_relatie')).toMatch(/valid relation type/i)
+		expect(relationErrorMessage('invalid_aard_relatie')).toMatch(
+			/valid relation type/i,
+		)
 	})
 
 	it('falls back to a generic message for an unknown reason', async () => {

@@ -12,11 +12,11 @@
 			<h2>{{ t('procest', 'Tenant onboarding') }}</h2>
 			<div class="tenant-onboarding__controls">
 				<NcSelect
-					:value="selectedTenant"
+					:modelValue="selectedTenant"
 					:options="tenantOptions"
-					:input-label="t('procest', 'Tenant')"
+					:inputLabel="t('procest', 'Tenant')"
 					:placeholder="t('procest', 'Pick a tenant')"
-					@input="onTenantChange" />
+					@update:modelValue="onTenantChange" />
 				<NcButton type="secondary" @click="loadProgress">
 					<template #icon>
 						<Refresh :size="18" />
@@ -43,10 +43,13 @@
 		<div v-if="!loading && tenantId && progress" class="tenant-onboarding__body">
 			<div class="tenant-onboarding__progress">
 				<div class="tenant-onboarding__progress-bar">
-					<div class="tenant-onboarding__progress-bar-fill" :style="{ width: progressPercent + '%' }" />
+					<div
+						class="tenant-onboarding__progress-bar-fill"
+						:style="{ width: progressPercent + '%' }" />
 				</div>
 				<span class="tenant-onboarding__progress-label">
-					{{ completedSteps }} / {{ totalSteps }} {{ t('procest', 'steps complete') }} ({{ progressPercent }}%)
+					{{ completedSteps }} / {{ totalSteps }}
+					{{ t('procest', 'steps complete') }} ({{ progressPercent }}%)
 				</span>
 			</div>
 
@@ -55,7 +58,9 @@
 					v-for="step in steps"
 					:key="step.step"
 					class="tenant-onboarding__step"
-					:class="{ 'tenant-onboarding__step--done': step.status === 'complete' }">
+					:class="{
+						'tenant-onboarding__step--done': step.status === 'complete',
+					}">
 					<div class="tenant-onboarding__step-icon">
 						<CheckCircle v-if="step.status === 'complete'" :size="22" />
 						<CircleOutline v-else :size="22" />
@@ -64,8 +69,15 @@
 						<div class="tenant-onboarding__step-title">
 							{{ stepLabel(step.step) }}
 						</div>
-						<div v-if="step.completedAt" class="tenant-onboarding__step-meta">
-							{{ t('procest', 'Completed {at} by {who}', { at: step.completedAt, who: step.completedBy || '—' }) }}
+						<div
+							v-if="step.completedAt"
+							class="tenant-onboarding__step-meta">
+							{{
+								t('procest', 'Completed {at} by {who}', {
+									at: step.completedAt,
+									who: step.completedBy || '—',
+								})
+							}}
 						</div>
 					</div>
 					<NcButton
@@ -75,7 +87,9 @@
 						:disabled="markingStep === step.step"
 						@click="markComplete(step.step)">
 						<template #icon>
-							<NcLoadingIcon v-if="markingStep === step.step" :size="16" />
+							<NcLoadingIcon
+								v-if="markingStep === step.step"
+								:size="16" />
 							<Check v-else :size="16" />
 						</template>
 						{{ t('procest', 'Mark complete') }}
@@ -85,7 +99,10 @@
 
 			<div class="tenant-onboarding__go-live">
 				<h3>{{ t('procest', 'Go-live readiness') }}</h3>
-				<NcButton :disabled="checkingGoLive" type="secondary" @click="checkGoLive">
+				<NcButton
+					:disabled="checkingGoLive"
+					type="secondary"
+					@click="checkGoLive">
 					<template #icon>
 						<NcLoadingIcon v-if="checkingGoLive" :size="18" />
 						<RocketLaunch v-else :size="18" />
@@ -93,10 +110,17 @@
 					{{ t('procest', 'Check readiness') }}
 				</NcButton>
 				<div v-if="goLiveResult" class="tenant-onboarding__go-live-result">
-					<div v-if="goLiveResult.ready" class="tenant-onboarding__go-live-ready">
+					<div
+						v-if="goLiveResult.ready"
+						class="tenant-onboarding__go-live-ready">
 						<CheckCircle :size="24" />
-						<span>{{ t('procest', 'Tenant is ready to go live.') }}</span>
-						<NcButton type="primary" :disabled="activating" @click="activate">
+						<span>{{
+							t('procest', 'Tenant is ready to go live.')
+						}}</span>
+						<NcButton
+							type="primary"
+							:disabled="activating"
+							@click="activate">
 							<template #icon>
 								<NcLoadingIcon v-if="activating" :size="18" />
 								<Power v-else :size="18" />
@@ -107,9 +131,11 @@
 					<div v-else class="tenant-onboarding__go-live-blocked">
 						<AlertCircle :size="24" />
 						<div>
-							<strong>{{ t('procest', 'Not ready. Missing:') }}</strong>
+							<strong>{{
+								t('procest', 'Not ready. Missing:')
+							}}</strong>
 							<ul class="tenant-onboarding__missing">
-								<li v-for="m in (goLiveResult.missing || [])" :key="m">
+								<li v-for="m in goLiveResult.missing || []" :key="m">
 									{{ m }}
 								</li>
 							</ul>
@@ -122,6 +148,9 @@
 </template>
 
 <script>
+import axios from '@nextcloud/axios'
+import { translate as t } from '@nextcloud/l10n'
+import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
 	NcEmptyContent,
@@ -129,17 +158,14 @@ import {
 	NcNoteCard,
 	NcSelect,
 } from '@nextcloud/vue'
-import { translate as t } from '@nextcloud/l10n'
-import { generateUrl } from '@nextcloud/router'
-import axios from '@nextcloud/axios'
-import Refresh from 'vue-material-design-icons/Refresh.vue'
-import RocketLaunch from 'vue-material-design-icons/RocketLaunch.vue'
+import AccountTie from 'vue-material-design-icons/AccountTie.vue'
+import AlertCircle from 'vue-material-design-icons/AlertCircle.vue'
+import Check from 'vue-material-design-icons/Check.vue'
 import CheckCircle from 'vue-material-design-icons/CheckCircle.vue'
 import CircleOutline from 'vue-material-design-icons/CircleOutline.vue'
-import AlertCircle from 'vue-material-design-icons/AlertCircle.vue'
 import Power from 'vue-material-design-icons/Power.vue'
-import Check from 'vue-material-design-icons/Check.vue'
-import AccountTie from 'vue-material-design-icons/AccountTie.vue'
+import Refresh from 'vue-material-design-icons/Refresh.vue'
+import RocketLaunch from 'vue-material-design-icons/RocketLaunch.vue'
 
 const STEP_LABELS = {
 	tenant_provisioning: 'Tenant provisioning',
@@ -168,6 +194,7 @@ export default {
 		Check,
 		AccountTie,
 	},
+
 	data() {
 		return {
 			loading: false,
@@ -181,33 +208,40 @@ export default {
 			activating: false,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		selectedTenant() {
-			return this.tenantOptions.find(o => o.id === this.tenantId) || null
+			return this.tenantOptions.find((o) => o.id === this.tenantId) || null
 		},
+
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		steps() {
 			if (!this.progress) return []
 			return this.progress.steps || this.progress.tasks || []
 		},
+
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		totalSteps() {
 			return this.steps.length || 7
 		},
+
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		completedSteps() {
-			return this.steps.filter(s => s.status === 'complete').length
+			return this.steps.filter((s) => s.status === 'complete').length
 		},
+
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		progressPercent() {
 			if (!this.totalSteps) return 0
 			return Math.round((this.completedSteps / this.totalSteps) * 100)
 		},
 	},
+
 	mounted() {
 		this.loadTenants()
 	},
+
 	methods: {
 		t,
 		/**
@@ -217,6 +251,7 @@ export default {
 		stepLabel(step) {
 			return t('procest', STEP_LABELS[step] || step)
 		},
+
 		/**
 		 * @param opt
 		 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
@@ -227,22 +262,31 @@ export default {
 			this.goLiveResult = null
 			if (this.tenantId) this.loadProgress()
 		},
+
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		async loadTenants() {
 			this.loading = true
 			try {
-				const res = await axios.get(generateUrl('/apps/procest/api/saas/tenants'))
-				const list = Array.isArray(res.data) ? res.data : (res.data?.results || [])
-				this.tenantOptions = list.map(tn => ({
+				const res = await axios.get(
+					generateUrl('/apps/procest/api/saas/tenants'),
+				)
+				const list = Array.isArray(res.data)
+					? res.data
+					: res.data?.results || []
+				this.tenantOptions = list.map((tn) => ({
 					id: tn.id || tn.tenantId,
-					label: tn.naam || tn.label || tn.id,
+					label: tn.name || tn.label || tn.id,
 				}))
 			} catch (e) {
-				this.error = e?.response?.data?.message || e.message || t('procest', 'Failed to load tenants')
+				this.error =
+					e?.response?.data?.message
+					|| e.message
+					|| t('procest', 'Failed to load tenants')
 			} finally {
 				this.loading = false
 			}
 		},
+
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		async loadProgress() {
 			if (!this.tenantId) return
@@ -250,7 +294,11 @@ export default {
 			this.error = null
 			try {
 				const res = await axios.get(
-					generateUrl('/apps/procest/api/saas/tenants/' + encodeURIComponent(this.tenantId) + '/onboarding/progress'),
+					generateUrl(
+						'/apps/procest/api/saas/tenants/'
+							+ encodeURIComponent(this.tenantId)
+							+ '/onboarding/progress',
+					),
 				)
 				this.progress = res.data || null
 			} catch (e) {
@@ -258,26 +306,42 @@ export default {
 					// Not initialised yet — offer to init.
 					await this.initialise()
 				} else {
-					this.error = e?.response?.data?.message || e.message || t('procest', 'Failed to load progress')
+					this.error =
+						e?.response?.data?.message
+						|| e.message
+						|| t('procest', 'Failed to load progress')
 				}
 			} finally {
 				this.loading = false
 			}
 		},
+
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		async initialise() {
 			try {
 				await axios.post(
-					generateUrl('/apps/procest/api/saas/tenants/' + encodeURIComponent(this.tenantId) + '/onboarding/initialise'),
+					generateUrl(
+						'/apps/procest/api/saas/tenants/'
+							+ encodeURIComponent(this.tenantId)
+							+ '/onboarding/initialise',
+					),
 				)
 				const res = await axios.get(
-					generateUrl('/apps/procest/api/saas/tenants/' + encodeURIComponent(this.tenantId) + '/onboarding/progress'),
+					generateUrl(
+						'/apps/procest/api/saas/tenants/'
+							+ encodeURIComponent(this.tenantId)
+							+ '/onboarding/progress',
+					),
 				)
 				this.progress = res.data
 			} catch (e) {
-				this.error = e?.response?.data?.message || e.message || t('procest', 'Failed to initialise')
+				this.error =
+					e?.response?.data?.message
+					|| e.message
+					|| t('procest', 'Failed to initialise')
 			}
 		},
+
 		/**
 		 * @param step
 		 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
@@ -286,21 +350,35 @@ export default {
 			this.markingStep = step
 			try {
 				await axios.post(
-					generateUrl('/apps/procest/api/saas/tenants/' + encodeURIComponent(this.tenantId) + '/onboarding/' + encodeURIComponent(step) + '/complete'),
+					generateUrl(
+						'/apps/procest/api/saas/tenants/'
+							+ encodeURIComponent(this.tenantId)
+							+ '/onboarding/'
+							+ encodeURIComponent(step)
+							+ '/complete',
+					),
 				)
 				await this.loadProgress()
 			} catch (e) {
-				this.error = e?.response?.data?.message || e.message || t('procest', 'Failed to mark step complete')
+				this.error =
+					e?.response?.data?.message
+					|| e.message
+					|| t('procest', 'Failed to mark step complete')
 			} finally {
 				this.markingStep = ''
 			}
 		},
+
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		async checkGoLive() {
 			this.checkingGoLive = true
 			try {
 				const res = await axios.get(
-					generateUrl('/apps/procest/api/saas/tenants/' + encodeURIComponent(this.tenantId) + '/onboarding/progress'),
+					generateUrl(
+						'/apps/procest/api/saas/tenants/'
+							+ encodeURIComponent(this.tenantId)
+							+ '/onboarding/progress',
+					),
 					{ params: { check: 'go-live' } },
 				)
 				this.goLiveResult = res.data?.goLive || res.data?.readiness || null
@@ -308,26 +386,40 @@ export default {
 				if (!this.goLiveResult) {
 					this.goLiveResult = {
 						ready: this.completedSteps === this.totalSteps,
-						missing: this.completedSteps === this.totalSteps ? [] : [t('procest', 'Open onboarding steps')],
+						missing:
+							this.completedSteps === this.totalSteps
+								? []
+								: [t('procest', 'Open onboarding steps')],
 					}
 				}
 			} catch (e) {
-				this.error = e?.response?.data?.message || e.message || t('procest', 'Go-live check failed')
+				this.error =
+					e?.response?.data?.message
+					|| e.message
+					|| t('procest', 'Go-live check failed')
 			} finally {
 				this.checkingGoLive = false
 			}
 		},
+
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		async activate() {
 			this.activating = true
 			try {
 				await axios.post(
-					generateUrl('/apps/procest/api/saas/tenants/' + encodeURIComponent(this.tenantId) + '/onboarding/activate'),
+					generateUrl(
+						'/apps/procest/api/saas/tenants/'
+							+ encodeURIComponent(this.tenantId)
+							+ '/onboarding/activate',
+					),
 				)
 				await this.loadProgress()
 				await this.checkGoLive()
 			} catch (e) {
-				this.error = e?.response?.data?.message || e.message || t('procest', 'Activate failed')
+				this.error =
+					e?.response?.data?.message
+					|| e.message
+					|| t('procest', 'Activate failed')
 			} finally {
 				this.activating = false
 			}
@@ -454,5 +546,11 @@ export default {
 .tenant-onboarding__missing {
 	margin: 4px 0 0 16px;
 	padding: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.tenant-onboarding__progress-bar-fill {
+		transition: none;
+	}
 }
 </style>

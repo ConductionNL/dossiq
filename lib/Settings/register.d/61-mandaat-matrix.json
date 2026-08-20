@@ -3,64 +3,65 @@
     "registers": {
       "procest": {
         "schemas": [
-          "mandateringsBesluit",
-          "mandaat",
+          "mandateDecision",
+          "mandate",
           "organisatieRol",
           "medewerkerRolToewijzing",
-          "mandaatGebruik",
-          "mandaatEscalatie"
+          "mandateUsage",
+          "mandateEscalation"
         ]
       }
     },
     "schemas": {
-      "mandateringsBesluit": {
-        "slug": "mandateringsBesluit",
+      "mandateDecision": {
+        "slug": "mandateDecision",
         "icon": "Gavel",
         "version": "1.0.0",
-        "x-schema-org-type": "schema:DigitalDocument",
-        "title": "Mandaterings Besluit",
-        "description": "Mandateringsbesluit (decision of the bestuursorgaan) — collection of Mandaat rows valid from inWerkingtreding until vervalDatum.",
+        "x-schema-org": "schema:DigitalDocument",
+        "title": "Mandate Decision",
+        "description": "A mandate decision taken by the governing body — a collection of Mandate rows valid from effectiveFrom until expiryDate.",
         "type": "object",
-        "required": ["besluitNummer", "besluitNaam", "status"],
+        "required": ["decisionNumber", "decisionName", "status"],
         "properties": {
-          "besluitNummer":     {"type": "string", "facetable": true, "maxLength": 64},
-          "besluitNaam":       {"type": "string", "maxLength": 255},
-          "status":            {"type": "string", "enum": ["concept", "vastgesteld", "vervallen"], "default": "concept", "facetable": true},
-          "inWerkingtreding":  {"type": "string", "format": "date"},
-          "vervalDatum":       {"type": "string", "format": "date"},
-          "wettelijkeGrondslag": {"type": "string", "maxLength": 255},
-          "decideskUuid":      {"type": "string", "description": "Source besluit id in Decidesk"},
-          "vorigBesluit":      {"type": "string", "description": "Prior MandateringsBesluit (for vervangt-by chain)"}
+          "decisionNumber":    {"type": "string", "title": "Decision Number", "description": "Unique number identifying this mandate decision.", "facetable": true, "maxLength": 64},
+          "decisionName":      {"type": "string", "title": "Decision Name", "description": "Human-readable name of this mandate decision.", "maxLength": 255},
+          "status":            {"type": "string", "title": "Status", "description": "Current lifecycle status of the mandate decision. The enum VALUES are stored data, not identifiers: renaming them rewrites every existing row and is a separate migration from this property rename.", "enum": ["draft", "determined", "lapsed"], "default": "draft", "facetable": true},
+          "effectiveFrom":     {"type": "string", "title": "Entry Into Force", "description": "Date on which this mandate decision enters into force.", "format": "date"},
+          "expiryDate":        {"type": "string", "title": "Expiry Date", "description": "Date on which this mandate decision expires.", "format": "date"},
+          "legalBasis":        {"type": "string", "title": "Legal Basis", "description": "Statutory or regulatory basis for this mandate decision.", "maxLength": 255},
+          "decideskUuid":      {"type": "string", "title": "Decidesk UUID", "description": "Source decision id in Decidesk"},
+          "previousDecision":  {"type": "string", "title": "Previous Decision", "description": "Prior mandate decision, forming the supersession chain."}
         }
       },
-      "mandaat": {
-        "slug": "mandaat",
+      "mandate": {
+        "slug": "mandate",
         "icon": "ScriptText",
         "version": "1.0.0",
         "title": "Mandaat",
         "description": "Individual mandate granting authority to a role.",
         "type": "object",
-        "required": ["mandaatNummer", "mandateringsBesluit", "gemandateerdeRol", "bevoegdheidType"],
+        "required": ["mandateNumber", "mandateDecision", "mandateeRole", "competenceType"],
         "properties": {
-          "mandaatNummer":         {"type": "string", "facetable": true, "maxLength": 64},
-          "mandateringsBesluit":   {"type": "string"},
-          "omschrijving":          {"type": "string"},
-          "bevoegdheidType":       {"type": "string", "enum": ["mandaat", "volmacht", "machtiging"], "default": "mandaat", "facetable": true},
-          "gemandateerdeRol":      {"type": "string", "description": "OrganisatieRol id"},
-          "wettelijkeGrondslag":   {"type": "string", "maxLength": 255},
-          "voorwaarden": {
+          "mandateNumber":         {"type": "string", "title": "Mandate Number", "description": "Unique number identifying this mandate.", "facetable": true, "maxLength": 64},
+          "mandateDecision":       {"type": "string", "title": "Mandate Decision", "description": "Reference to the mandate decision that issued this mandate."},
+          "description":           {"type": "string", "title": "Description", "description": "Description of this mandate."},
+          "competenceType":       {"type": "string", "title": "Authority Type", "description": "Type classification of the authority granted by this mandate.", "enum": ["mandate", "volmacht", "machtiging"], "default": "mandate", "facetable": true},
+          "mandateeRole":      {"type": "string", "title": "Delegated Role", "description": "OrganisatieRol id"},
+          "legalBasis":            {"type": "string", "title": "Legal Basis", "description": "Statutory or regulatory basis for this mandate.", "maxLength": 255},
+          "terms": {
             "type": "object",
+            "title": "Conditions",
             "description": "Conditions including plafond (cents), subdelegatie flag, decisionTypes scope",
             "properties": {
-              "plafondCents":       {"type": "integer", "description": "Plafond in EUR cents"},
-              "subdelegatie":       {"type": "boolean", "default": false},
-              "decisionTypes":      {"type": "array", "items": {"type": "string"}},
-              "caseTypes":          {"type": "array", "items": {"type": "string"}}
+              "plafondCents":       {"type": "integer", "title": "Ceiling Amount", "description": "Plafond in EUR cents"},
+              "subdelegatie":       {"type": "boolean", "title": "Sub-mandate Permitted", "description": "Whether delegation to a lower level is permitted.", "default": false},
+              "decisionTypes":      {"type": "array", "title": "Decision Types", "description": "Decision types for which this mandate applies.", "items": {"type": "string"}},
+              "caseTypes":          {"type": "array", "title": "Case Types", "description": "Case types for which this mandate applies.", "items": {"type": "string"}}
             }
           },
-          "validFrom":             {"type": "string", "format": "date"},
-          "validUntil":            {"type": "string", "format": "date"},
-          "status":                {"type": "string", "enum": ["concept", "active", "vervallen"], "default": "concept", "facetable": true}
+          "validFrom":             {"type": "string", "title": "Valid From", "description": "Start date of mandate validity.", "format": "date"},
+          "validUntil":            {"type": "string", "title": "Valid Until", "description": "End date of mandate validity (null = open-ended).", "format": "date"},
+          "status":                {"type": "string", "title": "Status", "description": "Current lifecycle status of this mandate.", "enum": ["draft", "active", "lapsed"], "default": "draft", "facetable": true}
         }
       },
       "organisatieRol": {
@@ -70,14 +71,14 @@
         "title": "Organisatie Rol",
         "description": "Hierarchical role within the organisation.",
         "type": "object",
-        "required": ["rolNaam"],
+        "required": ["roleName"],
         "properties": {
-          "rolNaam":         {"type": "string", "facetable": true, "maxLength": 255},
-          "rolType":         {"type": "string", "enum": ["bestuurlijk", "ambtelijk", "extern"], "default": "ambtelijk"},
-          "parentRolId":     {"type": "string", "description": "Hierarchical parent OrganisatieRol id"},
-          "afdeling":        {"type": "string", "facetable": true, "maxLength": 255},
-          "team":            {"type": "string", "maxLength": 255},
-          "mandaatNiveau":   {"type": "integer", "description": "Numeric tier — used for next-higher resolution"}
+          "roleName":         {"type": "string", "title": "Role Name", "description": "Human-readable name of this organisational role.", "facetable": true, "maxLength": 255},
+          "roleType":         {"type": "string", "title": "Role Type", "description": "Type classification of this organisational role.", "enum": ["bestuurlijk", "ambtelijk", "extern"], "default": "ambtelijk"},
+          "parentRoleId":     {"type": "string", "title": "Parent Role ID", "description": "Hierarchical parent OrganisatieRol id"},
+          "department":        {"type": "string", "title": "Department", "description": "Department to which this role belongs.", "facetable": true, "maxLength": 255},
+          "team":            {"type": "string", "title": "Team", "description": "Team to which this role belongs.", "maxLength": 255},
+          "mandateLevel":    {"type": "integer", "title": "Mandate Level", "description": "Numeric tier — used for next-higher resolution"}
         }
       },
       "medewerkerRolToewijzing": {
@@ -87,54 +88,54 @@
         "title": "Medewerker Rol Toewijzing",
         "description": "Assignment of a user (Nextcloud user id) to an OrganisatieRol over a validity window.",
         "type": "object",
-        "required": ["userId", "rolId", "toewijzingType", "validFrom"],
+        "required": ["userId", "roleId", "allocationType", "validFrom"],
         "properties": {
-          "userId":         {"type": "string", "facetable": true},
-          "rolId":          {"type": "string", "facetable": true},
-          "toewijzingType":{"type": "string", "enum": ["primair", "waarnemer", "tijdelijk"], "default": "primair"},
-          "validFrom":     {"type": "string", "format": "date"},
-          "validUntil":    {"type": "string", "format": "date"},
-          "waarnemerVoor": {"type": "string", "description": "When toewijzingType=waarnemer, the userId being substituted for"}
+          "userId":         {"type": "string", "title": "User ID", "description": "Nextcloud user id of the employee being assigned.", "facetable": true},
+          "roleId":          {"type": "string", "title": "Role ID", "description": "Reference to the OrganisatieRol being assigned.", "facetable": true},
+          "allocationType":{"type": "string", "title": "Assignment Type", "description": "Type classification of this role assignment.", "enum": ["primair", "observer", "tijdelijk"], "default": "primair"},
+          "validFrom":     {"type": "string", "title": "Valid From", "description": "Start date of the role assignment validity.", "format": "date"},
+          "validUntil":    {"type": "string", "title": "Valid Until", "description": "End date of the role assignment validity (null = open-ended).", "format": "date"},
+          "observerFor": {"type": "string", "title": "Substitute For", "description": "When toewijzingType=waarnemer, the userId being substituted for"}
         }
       },
-      "mandaatGebruik": {
-        "slug": "mandaatGebruik",
+      "mandateUsage": {
+        "slug": "mandateUsage",
         "icon": "ListBoxOutline",
         "version": "1.0.0",
         "title": "Mandaat Gebruik",
         "description": "Immutable audit log of a mandate use (when a user executed a decision under a mandate).",
         "type": "object",
-        "required": ["zaakId", "mandaatId", "userId", "tijdstip"],
+        "required": ["caseId", "mandateId", "userId", "moment"],
         "properties": {
-          "zaakId":               {"type": "string", "facetable": true},
-          "decisionId":           {"type": "string"},
-          "mandaatId":            {"type": "string"},
-          "userId":               {"type": "string"},
-          "tijdstip":             {"type": "string", "format": "date-time"},
-          "rolOpMomentVanBesluit":{"type": "object", "description": "Snapshot of the user's role at decision time"},
-          "gebruikteVoorwaarden": {"type": "object", "description": "Snapshot of the mandaat voorwaarden used"},
-          "mandaatVersieId":      {"type": "string", "description": "Version of the mandaat actually applied"}
+          "caseId":               {"type": "string", "title": "Case ID", "description": "Reference to the case for which the mandate was exercised.", "facetable": true},
+          "decisionId":           {"type": "string", "title": "Decision ID", "description": "Reference to the decision taken under this mandate."},
+          "mandateId":            {"type": "string", "title": "Mandate ID", "description": "Identifier of the mandate that was used."},
+          "userId":               {"type": "string", "title": "User ID", "description": "Nextcloud user id of the employee who exercised the mandate."},
+          "moment":             {"type": "string", "title": "Timestamp", "description": "Date and time at which the mandate was exercised.", "format": "date-time"},
+          "roleOnMomentFromDecision":{"type": "object", "title": "Role At Decision Time", "description": "Snapshot of the user's role at decision time"},
+          "usedTerms": {"type": "object", "title": "Applied Conditions", "description": "Snapshot of the mandaat voorwaarden used"},
+          "mandateVersionId":     {"type": "string", "title": "Mandate Version ID", "description": "Version of the mandate actually applied"}
         }
       },
-      "mandaatEscalatie": {
-        "slug": "mandaatEscalatie",
+      "mandateEscalation": {
+        "slug": "mandateEscalation",
         "icon": "ArrowUpBoldCircle",
         "version": "1.0.0",
         "title": "Mandaat Escalatie",
         "description": "Open escalation to a higher mandate holder.",
         "type": "object",
-        "required": ["zaakId", "initiatorId", "escalatieReden", "status"],
+        "required": ["caseId", "initiatorId", "escalationReason", "status"],
         "properties": {
-          "zaakId":          {"type": "string", "facetable": true},
-          "decisionType":    {"type": "string", "facetable": true},
-          "initiatorId":     {"type": "string"},
-          "escalatieReden":  {"type": "string", "enum": ["niet_bevoegd", "plafond_overschreden", "subdelegatie_niet_toegestaan", "belangenconflict", "manueel"], "facetable": true},
-          "targetMandaatId": {"type": "string"},
-          "targetUserId":    {"type": "string"},
-          "status":          {"type": "string", "enum": ["open", "goedgekeurd", "afgewezen"], "default": "open", "facetable": true},
-          "afgewezenReden":  {"type": "string"},
-          "createdAt":       {"type": "string", "format": "date-time"},
-          "resolvedAt":      {"type": "string", "format": "date-time"}
+          "caseId":          {"type": "string", "title": "Case ID", "description": "Reference to the case that triggered this escalation.", "facetable": true},
+          "decisionType":    {"type": "string", "title": "Decision Type", "description": "Type of decision that requires escalation.", "facetable": true},
+          "initiatorId":     {"type": "string", "title": "Initiator ID", "description": "User id of the employee who initiated the escalation."},
+          "escalationReason":  {"type": "string", "title": "Escalation Reason", "description": "Reason for the escalation.", "enum": ["non_competent", "ceiling_exceeded", "subdelegatie_non_permitted", "belangenconflict", "manueel"], "facetable": true},
+          "targetMandateId": {"type": "string", "title": "Target Mandate ID", "description": "Reference to the higher mandate to which this escalation is directed."},
+          "targetUserId":    {"type": "string", "title": "Target User ID", "description": "User id of the higher mandate holder to whom this escalation is directed."},
+          "status":          {"type": "string", "title": "Status", "description": "Current lifecycle status of this escalation.", "enum": ["open", "approved", "rejected"], "default": "open", "facetable": true},
+          "rejectedReason":  {"type": "string", "title": "Rejection Reason", "description": "Reason provided when the escalation was rejected."},
+          "createdAt":       {"type": "string", "title": "Created At", "description": "Date and time at which this escalation was created.", "format": "date-time"},
+          "resolvedAt":      {"type": "string", "title": "Resolved At", "description": "Date and time at which this escalation was resolved.", "format": "date-time"}
         }
       }
     }

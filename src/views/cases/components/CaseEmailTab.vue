@@ -24,7 +24,12 @@
 		<NcEmptyContent
 			v-else-if="mailNotInstalled"
 			:name="t('procest', 'Email integration unavailable')"
-			:description="t('procest', 'Install Nextcloud Mail to enable case email linking. Procest does not maintain its own email engine.')">
+			:description="
+				t(
+					'procest',
+					'Install Nextcloud Mail to enable case email linking. Procest does not maintain its own email engine.',
+				)
+			">
 			<template #icon>
 				<EmailOffOutline :size="48" />
 			</template>
@@ -38,16 +43,20 @@
 					v-model="selectedTemplate"
 					:options="templates"
 					:aria-label-combobox="t('procest', 'Email template')"
-					:input-label="t('procest', 'Email template')"
+					:inputLabel="t('procest', 'Email template')"
 					label="name"
-					track-by="id"
+					trackBy="id"
 					:placeholder="t('procest', 'Select a template (optional)…')"
 					:clearable="true" />
 
 				<NcButton
 					type="primary"
 					:disabled="isFinal || drafting"
-					:title="isFinal ? t('procest', 'Case is closed; email cannot be sent.') : ''"
+					:title="
+						isFinal
+							? t('procest', 'Case is closed; email cannot be sent.')
+							: ''
+					"
 					@click="composeDraft">
 					<template #icon>
 						<EmailEditOutline :size="20" />
@@ -69,7 +78,14 @@
 				v-if="unresolvedVariables.length > 0"
 				type="warning"
 				role="status">
-				<p>{{ t('procest', 'Unresolved template variables — the draft contains raw placeholders that you must fill manually:') }}</p>
+				<p>
+					{{
+						t(
+							'procest',
+							'Unresolved template variables — the draft contains raw placeholders that you must fill manually:',
+						)
+					}}
+				</p>
 				<ul class="case-email-tab__unresolved">
 					<li v-for="v in unresolvedVariables" :key="v">
 						<code>{{ formatVariable(v) }}</code>
@@ -79,14 +95,16 @@
 
 			<!-- Email thread (display from the leaf link-table) -->
 			<EmailThread
-				:case-id="caseId"
-				:is-read-only="isFinal"
+				:caseId="caseId"
+				:isReadOnly="isFinal"
 				@compose="composeDraft" />
 		</template>
 	</div>
 </template>
 
 <script>
+import axios from '@nextcloud/axios'
+import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
 	NcEmptyContent,
@@ -96,9 +114,6 @@ import {
 } from '@nextcloud/vue'
 import EmailEditOutline from 'vue-material-design-icons/EmailEditOutline.vue'
 import EmailOffOutline from 'vue-material-design-icons/EmailOffOutline.vue'
-import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
-
 import EmailThread from './EmailThread.vue'
 
 export default {
@@ -113,6 +128,7 @@ export default {
 		EmailOffOutline,
 		EmailThread,
 	},
+
 	props: {
 		/**
 		 * Case UUID. Manifest passes this as :id; CaseDetail also injects it
@@ -122,12 +138,14 @@ export default {
 			type: String,
 			default: null,
 		},
+
 		/** Inline case object — short-circuit for caseType + endDate lookups. */
 		caseObject: {
 			type: Object,
 			default: null,
 		},
 	},
+
 	data() {
 		return {
 			loading: true,
@@ -141,16 +159,19 @@ export default {
 			isFinal: false,
 		}
 	},
+
 	computed: {
 		resolvedCaseId() {
 			return this.caseId || this.$route?.params?.id || null
 		},
+
 		draftButtonLabel() {
 			return this.selectedTemplate
 				? t('procest', 'Open draft from template')
 				: t('procest', 'Open empty draft')
 		},
 	},
+
 	watch: {
 		resolvedCaseId: {
 			immediate: false,
@@ -158,6 +179,7 @@ export default {
 				this.reload()
 			},
 		},
+
 		caseObject: {
 			immediate: false,
 			deep: false,
@@ -166,9 +188,11 @@ export default {
 			},
 		},
 	},
+
 	async mounted() {
 		await this.reload()
 	},
+
 	methods: {
 		async reload() {
 			if (!this.resolvedCaseId) {
@@ -189,8 +213,12 @@ export default {
 				} else {
 					// OR per-object endpoint needs both register and schema
 					// slugs: /objects/{register}/{schema}/{id}.
-					const url = generateUrl(`/apps/openregister/api/objects/procest/case/${encodeURIComponent(this.resolvedCaseId)}`)
-					const { data } = await axios.get(url).catch(() => ({ data: null }))
+					const url = generateUrl(
+						`/apps/openregister/api/objects/procest/case/${encodeURIComponent(this.resolvedCaseId)}`,
+					)
+					const { data } = await axios
+						.get(url)
+						.catch(() => ({ data: null }))
 					this.applyCaseObject(data)
 				}
 
@@ -203,6 +231,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		applyCaseObject(caseObj) {
 			if (!caseObj) {
 				return
@@ -211,19 +240,25 @@ export default {
 			this.caseTypeId = inner.caseType || inner['@self']?.caseType || null
 			this.isFinal = !!(inner.endDate || inner['@self']?.endDate)
 		},
+
 		async loadTemplates() {
 			try {
 				const url = generateUrl(
 					`/apps/procest/api/casetypes/${encodeURIComponent(this.caseTypeId)}/email-templates`,
 				)
 				const { data } = await axios.get(url)
-				this.templates = Array.isArray(data?.results) ? data.results : (Array.isArray(data) ? data : [])
+				this.templates = Array.isArray(data?.results)
+					? data.results
+					: Array.isArray(data)
+						? data
+						: []
 			} catch (err) {
 				// Template fetch is non-fatal: still allow empty-draft compose.
 				console.warn('[CaseEmailTab] template fetch failed', err)
 				this.templates = []
 			}
 		},
+
 		/**
 		 * Compose action.
 		 *
@@ -234,7 +269,10 @@ export default {
 		 */
 		async composeDraft() {
 			if (this.isFinal) {
-				this.error = t('procest', 'Case is closed; new emails cannot be drafted.')
+				this.error = t(
+					'procest',
+					'Case is closed; new emails cannot be drafted.',
+				)
 				return
 			}
 			this.drafting = true
@@ -246,7 +284,9 @@ export default {
 					`/apps/procest/api/cases/${encodeURIComponent(this.resolvedCaseId)}/email-templates/${encodeURIComponent(templateId)}/draft`,
 				)
 				const { data } = await axios.post(url, {})
-				this.unresolvedVariables = Array.isArray(data?.unresolved) ? data.unresolved : []
+				this.unresolvedVariables = Array.isArray(data?.unresolved)
+					? data.unresolved
+					: []
 				// Navigate the user to the newly created NC Mail draft if a URL was returned.
 				if (data?.draftUrl) {
 					window.open(data.draftUrl, '_blank', 'noopener')
@@ -257,13 +297,15 @@ export default {
 				if (status === 404) {
 					this.mailNotInstalled = true
 				}
-				this.error = err?.response?.data?.message
+				this.error =
+					err?.response?.data?.message
 					|| err?.message
 					|| t('procest', 'Failed to open the draft.')
 			} finally {
 				this.drafting = false
 			}
 		},
+
 		formatVariable(name) {
 			return `{{${name}}}`
 		},

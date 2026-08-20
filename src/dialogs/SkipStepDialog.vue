@@ -1,30 +1,43 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 <!-- SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl> -->
 <template>
-	<NcDialog v-if="open"
+	<NcDialog
+		v-if="open"
 		:name="t('procest', 'Stap overslaan')"
 		size="normal"
-		:can-close="!submitting"
+		:canClose="!submitting"
 		@closing="onClose">
 		<div class="skip-step-dialog">
 			<div v-if="step" class="skip-step-dialog__step">
-				<h4>{{ t('procest', 'Stap {n}: {actor}', { n: step.order, actor: step.actor }) }}</h4>
+				<h4>
+					{{
+						t('procest', 'Stap {n}: {actor}', {
+							n: step.order,
+							actor: step.actor,
+						})
+					}}
+				</h4>
 				<p>
-					<strong>{{ t('procest', 'Type') }}:</strong> {{ step.type }}<br>
-					<strong>{{ t('procest', 'Actor type') }}:</strong> {{ step.actorType }}
+					<strong>{{ t('procest', 'Type') }}:</strong> {{ step.type
+					}}<br />
+					<strong>{{ t('procest', 'Actor type') }}:</strong>
+					{{ step.actorType }}
 				</p>
 			</div>
 
 			<NcNoteCard v-if="step && step.mandatory" type="warning">
-				{{ t('procest', 'Deze stap is verplicht en kan niet worden overgeslagen.') }}
+				{{ t('procest', 'This step is mandatory and cannot be skipped.') }}
 			</NcNoteCard>
 
-			<NcTextArea v-else
-				:value="reason"
-				:label="t('procest', 'Reden voor overslaan')"
-				:placeholder="t('procest', 'Geef een reden waarom deze stap wordt overgeslagen...')"
+			<NcTextArea
+				v-else
+				:modelValue="reason"
+				:label="t('procest', 'Reason for skipping')"
+				:placeholder="
+					t('procest', 'Give a reason why this step is being skipped...')
+				"
 				required
-				@update:value="v => reason = v" />
+				@update:modelValue="(v) => (reason = v)" />
 
 			<NcNoteCard v-if="error" type="error">
 				{{ error }}
@@ -34,10 +47,10 @@
 			<NcButton :disabled="submitting" @click="onClose">
 				{{ t('procest', 'Annuleren') }}
 			</NcButton>
-			<NcButton type="primary"
-				:disabled="!canSubmit"
-				@click="onSubmit">
-				{{ submitting ? t('procest', 'Bezig...') : t('procest', 'Overslaan') }}
+			<NcButton type="primary" :disabled="!canSubmit" @click="onSubmit">
+				{{
+					submitting ? t('procest', 'Bezig...') : t('procest', 'Overslaan')
+				}}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -55,20 +68,24 @@ export default {
 		NcNoteCard,
 		NcTextArea,
 	},
+
 	props: {
 		open: {
 			type: Boolean,
 			default: false,
 		},
+
 		voorstelId: {
 			type: String,
 			required: true,
 		},
+
 		step: {
 			type: Object,
 			default: null,
 		},
 	},
+
 	data() {
 		return {
 			reason: '',
@@ -76,15 +93,19 @@ export default {
 			error: '',
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		canSubmit() {
-			return !this.submitting
+			return (
+				!this.submitting
 				&& this.step
 				&& this.step.mandatory !== true
 				&& this.reason.trim().length > 0
+			)
 		},
 	},
+
 	watch: {
 		/**
 		 * @param value
@@ -97,6 +118,7 @@ export default {
 			}
 		},
 	},
+
 	methods: {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async onSubmit() {
@@ -111,12 +133,13 @@ export default {
 				this.$emit('skipped')
 			} catch (err) {
 				const apiMessage = err?.response?.data?.error
-				this.error = apiMessage || this.t('procest', 'Overslaan mislukt')
+				this.error = apiMessage || this.t('procest', 'Failed to skip')
 				console.error('skipStep failed', err)
 			} finally {
 				this.submitting = false
 			}
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		onClose() {
 			if (this.submitting) return

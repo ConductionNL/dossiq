@@ -1,39 +1,56 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 
-import Vue from 'vue'
-import VueRouter from 'vue-router'
-import { PiniaVuePlugin } from 'pinia'
-import { translate as t, translatePlural as n, loadTranslations } from '@nextcloud/l10n'
-import { generateUrl } from '@nextcloud/router'
 import {
 	buildManifest,
 	CnPageRenderer,
 	defaultPageTypes,
+	fieldInspectionIntegration,
 	registerIcons,
+	registerIntegration,
 	registerTranslations,
+	useAppManifest,
 } from '@conduction/nextcloud-vue'
-import pinia from './pinia.js'
+// @vue/compat REMOVED (ADR-066 task 6.1): lib + procest source are compat-
+// construct-free (v-model, no .sync/$set/filters/Vue.extend) — pure Vue 3.
+import {
+	loadTranslations,
+	translatePlural as n,
+	translate as t,
+} from '@nextcloud/l10n'
+import { generateUrl } from '@nextcloud/router'
+import { createApp, h, markRaw } from 'vue'
+import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
+import customComponents from './customComponents.js'
+import appIcons from './icons.js'
 import bundledManifest from './manifest.json'
 import menuLayout from './menu-layout.json'
-import customComponents from './customComponents.js'
+import pinia from './pinia.js'
 import registry from './registry.js'
-import mapFormatters from './services/mapFormatters.js'
 import formatters from './services/formatters.js'
+import mapFormatters from './services/mapFormatters.js'
 
+// Must stay first: sets __webpack_public_path__ before any dynamic import()
+// (map/Leaflet, manifest validator) triggers lazy-chunk loading.
+import './publicPath.js'
 // Library CSS — must be explicit import (webpack tree-shakes side-effect imports from aliased packages)
 import '@conduction/nextcloud-vue/css/index.css'
-
 // Global (unscoped) app styles
 import './assets/app.css'
 
-Vue.mixin({ methods: { t, n } })
-Vue.use(PiniaVuePlugin)
-Vue.use(VueRouter)
+// ADR-049: the app-specific `audit-trail` catalog override (AuditTrailWidget)
+// was removed — the manifest `audit-trail` widget key now resolves to the
+// library built-in CnAuditTrailWidget (self-registered into the shared
+// dashboard-widget catalog with surfaces:['detail-page'], and present in
+// BUILT_IN_WIDGETS for the slot CnWidgetGrid path). The built-in reads the
+// detail object context the same way, so detail-page audit trails are unchanged.
+
+// Vue 3 (ADR-066): global t/n now install via app.config.globalProperties
+// after createApp (below), not Vue.mixin. pinia + router install via app.use.
 
 // Register library-side icon set + lib translations once at bootstrap.
-registerIcons()
+registerIcons(appIcons)
 try {
 	registerTranslations()
 } catch (e) {
@@ -50,21 +67,84 @@ try {
 // its callback meant boot silently failed when translations couldn't
 // load. Strings just fall back to their English source on miss; boot
 // MUST not depend on this resolving.
+/**
+ *
+ */
 function tryLoadTranslations() {
 	try {
 		const result = loadTranslations('procest', () => {})
 		if (result && typeof result.then === 'function') {
-			result.then(() => {}, () => {})
+			result.then(
+				() => {},
+				() => {},
+			)
 		}
 	} catch {
 		// no-op
 	}
 }
 
+// Surface the generic `field-inspection` OpenRegister integration leaf with
+// procest's own offline schema mapping. The leaf (a nc-vue builtin, registered
+// live by OpenRegister's `integration-global` bundle) owns the offline planning
+// list, checklist completion, mutation queue and reconnect-replay; procest only
+// supplies its `offlineConfig` so the generic core points at procest's schemas.
+//
+// Bootstrap-order safety: procest's bundle may load before OpenRegister's, so
+// install a minimal `_queue` stub that buffers the registration and replays it
+// once OR's registry attaches. Registering procest's mapping FIRST means the
+// AD-13 first-wins collision policy keeps procest's `offlineConfig` even when
+// OR later registers the leaf with its canonical defaults. The mapping mirrors
+// `DailySyncService` exactly (fieldInspection / inspectionChecklist /
+// checklistResult, filtered by inspectorRef + scheduledAt).
+//
+// @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-daily-planning-synchronization
+registerIntegration({
+	...fieldInspectionIntegration,
+	offlineConfig: {
+		// Schema holding today's planned inspections.
+		plannedSchema: 'fieldInspection',
+		// Schema holding the checklist templates referenced by planned items.
+		referenceSchema: 'inspectionChecklist',
+		// Property on a planned item that references its checklist template.
+		templateRefField: 'checklistTemplateRef',
+		// Schema the completed checklist result is written back to.
+		resultSchema: 'checklistResult',
+		// Planning filter: assignee uid property + the scheduled-date field.
+		assigneeField: 'inspectorRef',
+		dateField: 'scheduledAt',
+		// Property on a planned item used as its display title.
+		titleField: 'caseRef',
+	},
+})
+
 // Apply ADR-037 manifest fragments before routes/app consume the manifest.
+// `require.context` is a WEBPACK build-time API, not CommonJS `require`: the
+// bundler rewrites this call at compile time and no `require` exists at
+// runtime. eslint's browser globals therefore report `no-undef` correctly —
+// the code is right and the linter is right. Scoped to this one identifier so
+// a genuinely undefined name elsewhere in the file still fails.
+/* global require */
 const fragmentCtx = require.context('./manifest.d/', false, /\.json$/)
-const fragments = fragmentCtx.keys().sort().map((key) => fragmentCtx(key))
-const manifest = buildManifest(bundledManifest, fragments, menuLayout)
+const fragments = fragmentCtx
+	.keys()
+	.sort()
+	.map((key) => fragmentCtx(key))
+// markRaw: the manifest's ~130KB pages/menu/widget tree never needs
+// per-property reactivity — only the top-level ref reassignment (below)
+// needs to be tracked to re-render the nav after the backend delta lands.
+// Without this, Vue 2 walks the entire nested structure with
+// Object.defineProperty getters/setters on every app boot.
+const builtManifest = markRaw(buildManifest(bundledManifest, fragments, menuLayout))
+
+// Case-type navigation now lives on the Cases index page itself: a folder
+// sidebar (config.folderSidebar) lists the live `caseType` objects and filters
+// cases by `caseType` on select — replacing the former per-case-type menu
+// children injected by the backend ManifestController (`/api/manifest` delta,
+// now removed). `useAppManifest` still returns a REACTIVE ref (the render
+// function reads `resolvedManifest.value`); with no backend delta it resolves
+// to the built manifest.
+const { manifest: resolvedManifest } = useAppManifest('procest', builtManifest)
 
 // Shallow-clone CnPageRenderer because the lib's barrel exports are
 // non-extensible (webpack ESM module records). Vue 2's `Vue.extend()`
@@ -91,14 +171,17 @@ function routesFromManifest(manifest) {
 		props: page.route.includes(':'),
 	}))
 	// Catch-all redirect to dashboard, preserving prior router behaviour.
-	routes.push({ path: '*', redirect: '/' })
+	// vue-router 4 syntax: the bare '*' catch-all became a named param matcher.
+	routes.push({ path: '/:pathMatch(.*)*', redirect: '/' })
 	return routes
 }
 
-const router = new VueRouter({
-	mode: 'history',
-	base: generateUrl('/apps/procest'),
-	routes: routesFromManifest(manifest),
+// Routes are built from the built manifest only. The backend delta merely adds
+// menu CHILDREN that point at the existing `Cases` route (via `query.caseType`);
+// it introduces no new pages, so the route table needs no reactive rebuild.
+const router = createRouter({
+	history: createWebHistory(generateUrl('/apps/procest')),
+	routes: routesFromManifest(builtManifest),
 })
 
 tryLoadTranslations()
@@ -116,26 +199,52 @@ const registryProp = { ...registry }
 const mapFormattersProp = { ...mapFormatters }
 const formattersProp = { ...formatters }
 
-// Expose the map formatter registry as a Vue global so `CnMapPage`
-// (and any future map-type pages) can resolve named formatters from
-// `config.marker.formatter`. Mirrors the existing customComponents
-// resolution pattern — see customComponents.js for context.
-Vue.prototype.$mapFormatters = mapFormattersProp
-
-new Vue({
-	pinia,
-	router,
-	render: (h) => h(App, {
-		props: {
-			manifest,
+const app = createApp({
+	// This root uses a native Vue-3 render() (h from 'vue'). @vue/compat would
+	// otherwise treat ANY `render` option as the deprecated Vue-2 RENDER_FUNCTION
+	// API and wrap it, which nulls `currentRenderingInstance` for the whole
+	// subtree — breaking renderSlot/resolveComponent in CnAppRoot (ADR-066).
+	compatConfig: { RENDER_FUNCTION: false },
+	// Expose the reactive manifest ref through setup() so the root render tracks
+	// it as a reactive dependency: when useAppManifest resolves the backend
+	// `/api/manifest` delta and reassigns `manifest.value`, the root re-renders
+	// and re-passes the merged manifest to App (→ CnAppRoot → CnAppNav), so the
+	// dynamic per-case-type children appear without a reload. A plain arrow
+	// render reading `resolvedManifest.value` does NOT establish this tracking
+	// reliably; a setup-returned ref does.
+	setup() {
+		return { resolvedManifest }
+	},
+	render() {
+		return h(App, {
+			// markRaw defensively: the initial value is already raw (see
+			// builtManifest above); if a future backend `/api/manifest`
+			// delta ever reassigns `resolvedManifest.value` to a fresh
+			// (non-raw) merged object, this keeps the render tree from
+			// paying the deep-reactivity walk on the merged result too.
+			// The ref reassignment itself (not deep property tracking)
+			// is what drives the case-type-nav re-render.
+			// Vue 3: props pass FLAT (no `props:` wrapper in the data object).
+			manifest: markRaw(this.resolvedManifest),
 			customComponents: customComponentsProp,
 			registry: registryProp,
 			pageTypes: pageTypesProp,
 			mapFormatters: mapFormattersProp,
 			formatters: formattersProp,
-		},
-	}),
-}).$mount('#content')
+		})
+	},
+})
+
+// Vue 3 global install contract (ADR-066 task 4.5): t/n and $mapFormatters move
+// from Vue.mixin / Vue.prototype to app.config.globalProperties. CnMapPage (and
+// future map-type pages) resolve named formatters from `config.marker.formatter`.
+app.config.globalProperties.t = t
+app.config.globalProperties.n = n
+app.config.globalProperties.$mapFormatters = mapFormattersProp
+
+app.use(pinia)
+app.use(router)
+app.mount('#content')
 
 // Register the mobiel-inspectie-offline Service Worker (PWA offline shell).
 // Fire-and-forget: registration failure must never block app boot, and the
@@ -144,8 +253,12 @@ new Vue({
 if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
 	window.addEventListener('load', () => {
 		navigator.serviceWorker
-			.register(generateUrl('/apps/procest/service-worker.js'), { scope: generateUrl('/apps/procest/') })
-			// eslint-disable-next-line no-console
-			.catch((e) => console.warn('[procest] service worker registration failed', e))
+			.register(generateUrl('/apps/procest/service-worker.js'), {
+				scope: generateUrl('/apps/procest/'),
+			})
+
+			.catch((e) =>
+				console.warn('[procest] service worker registration failed', e),
+			)
 	})
 }

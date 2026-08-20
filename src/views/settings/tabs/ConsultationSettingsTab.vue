@@ -1,7 +1,12 @@
 <template>
 	<div class="consultation-settings">
 		<NcNoteCard type="info">
-			{{ t('procest', 'Structured consultation (adviesaanvraag) is being delivered in consultation-management. This panel will host advisory body registry, mandatory-gate config and n8n webhook endpoints.') }}
+			{{
+				t(
+					'procest',
+					'Structured consultation (adviesaanvraag) is being delivered in consultation-management. This panel will host advisory body registry, mandatory-gate config and n8n webhook endpoints.',
+				)
+			}}
 		</NcNoteCard>
 
 		<div class="setting-row">
@@ -10,12 +15,17 @@
 			</label>
 			<NcInputField
 				id="consultation_default_deadline_days"
-				:value.sync="defaultDeadlineDays"
+				v-model="defaultDeadlineDays"
 				type="number"
 				:disabled="!writable"
-				:placeholder="'28'" />
+				placeholder="28" />
 			<p class="setting-help">
-				{{ t('procest', 'Used when an advisory body has no explicit defaultDeadlineDays configured.') }}
+				{{
+					t(
+						'procest',
+						'Used when an advisory body has no explicit defaultDeadlineDays configured.',
+					)
+				}}
 			</p>
 		</div>
 
@@ -25,12 +35,17 @@
 			</label>
 			<NcInputField
 				id="consultation_warning_offset_days"
-				:value.sync="warningOffsetDays"
+				v-model="warningOffsetDays"
 				type="number"
 				:disabled="!writable"
-				:placeholder="'5'" />
+				placeholder="5" />
 			<p class="setting-help">
-				{{ t('procest', 'The deadline-monitor n8n workflow uses this offset to send T-X warnings.') }}
+				{{
+					t(
+						'procest',
+						'The deadline-monitor n8n workflow uses this offset to send T-X warnings.',
+					)
+				}}
 			</p>
 		</div>
 
@@ -40,11 +55,16 @@
 			</label>
 			<NcInputField
 				id="consultation_external_response_url"
-				:value.sync="externalResponseUrl"
+				v-model="externalResponseUrl"
 				:disabled="!writable"
-				:placeholder="'https://procest.example.org/consultation/respond/'" />
+				placeholder="https://procest.example.org/consultation/respond/" />
 			<p class="setting-help">
-				{{ t('procest', 'Base URL used in secure response links sent to external advisory bodies. Must be HTTPS.') }}
+				{{
+					t(
+						'procest',
+						'Base URL used in secure response links sent to external advisory bodies. Must be HTTPS.',
+					)
+				}}
 			</p>
 		</div>
 
@@ -54,42 +74,55 @@
 			</label>
 			<NcInputField
 				id="consultation_bottleneck_threshold"
-				:value.sync="bottleneckThreshold"
+				v-model="bottleneckThreshold"
 				type="number"
 				:disabled="!writable"
-				:placeholder="'0.2'" />
+				placeholder="0.2" />
 			<p class="setting-help">
-				{{ t('procest', 'When an advisory body exceeds this overdue-rate over the trailing 30 days, the bottleneck workflow notifies coordinators.') }}
+				{{
+					t(
+						'procest',
+						'When an advisory body exceeds this overdue-rate over the trailing 30 days, the bottleneck workflow notifies coordinators.',
+					)
+				}}
 			</p>
 		</div>
 
-		<NcButton
-			type="primary"
-			:disabled="!writable || saving"
-			@click="save">
+		<NcNoteCard v-if="error" type="error">
+			{{ error }}
+		</NcNoteCard>
+
+		<NcButton type="primary" :disabled="!writable || saving" @click="save">
 			<template #icon>
 				<NcLoadingIcon v-if="saving" :size="20" />
 			</template>
-			{{ saving ? t('procest', 'Saving...') : t('procest', 'Save consultation settings') }}
+			{{
+				saving
+					? t('procest', 'Saving...')
+					: t('procest', 'Save consultation settings')
+			}}
 		</NcButton>
 
 		<p class="docs-link">
 			<a :href="workflowDocsUrl" target="_blank" rel="noopener">
-				{{ t('procest', 'Read the n8n consultation workflows documentation') }}
+				{{
+					t('procest', 'Read the n8n consultation workflows documentation')
+				}}
 			</a>
 		</p>
 	</div>
 </template>
 
 <script>
-import { NcButton, NcInputField, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
-import { generateUrl } from '@nextcloud/router'
 import { loadState } from '@nextcloud/initial-state'
+import { translate as t } from '@nextcloud/l10n'
+import { generateUrl } from '@nextcloud/router'
+import { NcButton, NcInputField, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 
 /**
  * Consultation management admin settings tab.
  *
- * @spec openspec/changes/consultation-management/specs/consultation-management/spec.md
+ * @spec openspec/specs/consultation-management/spec.md
  */
 export default {
 	name: 'ConsultationSettingsTab',
@@ -103,32 +136,65 @@ export default {
 			bottleneckThreshold: initial.bottleneckThreshold ?? 0.2,
 			writable: initial.writable ?? true,
 			saving: false,
+			error: null,
 		}
 	},
+
 	computed: {
-		/** @spec openspec/changes/consultation-management/specs/consultation-management/spec.md */
+		/** @spec openspec/specs/consultation-management/spec.md */
 		workflowDocsUrl() {
 			return 'https://docs.procest.nl/n8n-consultation-workflows'
 		},
 	},
+
 	methods: {
-		/** @spec openspec/changes/consultation-management/specs/consultation-management/spec.md */
+		t,
+		/**
+		 * Persist the consultation settings.
+		 *
+		 * ⚠️ This used to POST `/apps/procest/api/settings/consultation`, a route
+		 * procest never declared. Nextcloud answers an unmatched app URL with its
+		 * own HTML page under HTTP 200, so `fetch` resolved, nothing threw, and
+		 * every save silently vanished (procest#794). It now uses the app's own
+		 * canonical settings write, which carries
+		 * `#[AuthorizedAdminSetting]` — deliberately not OpenRegister's generic
+		 * object route, which also works and would bypass that guard.
+		 *
+		 * `fetch` does NOT reject on a non-2xx response, so `res.ok` has to be
+		 * checked explicitly or a 403 reads exactly like a successful save.
+		 *
+		 * @spec openspec/specs/consultation-management/spec.md
+		 */
 		async save() {
 			this.saving = true
+			this.error = null
 			try {
-				await fetch(generateUrl('/apps/procest/api/settings/consultation'), {
+				const res = await fetch(generateUrl('/apps/procest/api/settings'), {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
 						requesttoken: OC.requestToken,
 					},
 					body: JSON.stringify({
-						defaultDeadlineDays: Number(this.defaultDeadlineDays),
-						warningOffsetDays: Number(this.warningOffsetDays),
-						externalResponseUrl: this.externalResponseUrl,
-						bottleneckThreshold: Number(this.bottleneckThreshold),
+						consultation_default_deadline_days: String(
+							Number(this.defaultDeadlineDays),
+						),
+						consultation_warning_offset_days: String(
+							Number(this.warningOffsetDays),
+						),
+						consultation_external_response_url: this.externalResponseUrl,
+						consultation_bottleneck_threshold: String(
+							Number(this.bottleneckThreshold),
+						),
 					}),
 				})
+				if (!res.ok) {
+					this.error = t('procest', 'Saving failed ({status})', {
+						status: res.status,
+					})
+				}
+			} catch (e) {
+				this.error = e.message || t('procest', 'Saving failed')
 			} finally {
 				this.saving = false
 			}

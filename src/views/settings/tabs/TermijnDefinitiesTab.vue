@@ -7,7 +7,12 @@
 		<div class="termijn-definities-tab__header">
 			<h3>{{ t('procest', 'AWB Term definitions') }}</h3>
 			<p class="termijn-definities-tab__description">
-				{{ t('procest', 'Configure statutory term definitions per zaaktype (legal basis, duration, validity). Saving a new version automatically sets validFrom=tomorrow on the new version and validUntil=today on the prior version. New cases use the latest version; running cases keep the version they were bound to.') }}
+				{{
+					t(
+						'procest',
+						'Configure statutory term definitions per zaaktype (legal basis, duration, validity). Saving a new version automatically sets validFrom=tomorrow on the new version and validUntil=today on the prior version. New cases use the latest version; running cases keep the version they were bound to.',
+					)
+				}}
 			</p>
 			<NcButton type="primary" @click="openNew">
 				<template #icon>
@@ -23,17 +28,26 @@
 			{{ error }}
 		</NcNoteCard>
 
-		<div v-if="!loading && definitions.length === 0" class="termijn-definities-tab__empty">
+		<div
+			v-if="!loading && definitions.length === 0"
+			class="termijn-definities-tab__empty">
 			<NcEmptyContent
 				:name="t('procest', 'No term definitions')"
-				:description="t('procest', 'No AWB term definitions configured yet. Create one to enable termijnbewaking for a zaaktype.')">
+				:description="
+					t(
+						'procest',
+						'No AWB term definitions configured yet. Create one to enable termijnbewaking for a zaaktype.',
+					)
+				">
 				<template #icon>
 					<TimerSand :size="48" />
 				</template>
 			</NcEmptyContent>
 		</div>
 
-		<div v-if="!loading && definitions.length > 0" class="termijn-definities-tab__list">
+		<div
+			v-if="!loading && definitions.length > 0"
+			class="termijn-definities-tab__list">
 			<div
 				v-for="def in definitions"
 				:key="def.id"
@@ -41,15 +55,17 @@
 				:class="{ 'termijn-definities-tab__row--inactive': !isActive(def) }">
 				<div class="termijn-definities-tab__row-info">
 					<strong class="termijn-definities-tab__row-name">
-						{{ def.zaaktype }}
+						{{ def.case_type }}
 					</strong>
 					<span class="termijn-definities-tab__pill">
-						{{ def.grondslag || t('procest', '(no grondslag)') }}
+						{{ def.basis || t('procest', '(no grondslag)') }}
 					</span>
-					<span class="termijn-definities-tab__pill termijn-definities-tab__pill--alt">
+					<span
+						class="termijn-definities-tab__pill termijn-definities-tab__pill--alt">
 						{{ formatDuur(def) }}
 					</span>
-					<span class="termijn-definities-tab__pill termijn-definities-tab__pill--alt">
+					<span
+						class="termijn-definities-tab__pill termijn-definities-tab__pill--alt">
 						v{{ def.version || 1 }}
 					</span>
 					<span class="termijn-definities-tab__validity">
@@ -57,8 +73,16 @@
 					</span>
 					<span
 						class="termijn-definities-tab__badge"
-						:class="isActive(def) ? 'termijn-definities-tab__badge--active' : 'termijn-definities-tab__badge--inactive'">
-						{{ isActive(def) ? t('procest', 'Active') : t('procest', 'Inactive') }}
+						:class="
+							isActive(def)
+								? 'termijn-definities-tab__badge--active'
+								: 'termijn-definities-tab__badge--inactive'
+						">
+						{{
+							isActive(def)
+								? t('procest', 'Active')
+								: t('procest', 'Inactive')
+						}}
 					</span>
 				</div>
 				<div class="termijn-definities-tab__row-actions">
@@ -73,17 +97,17 @@
 		<TermijnDefinitieEditor
 			v-if="editorOpen"
 			:definition="editingDefinition"
-			:zaaktype-options="zaaktypeOptions"
+			:zaaktypeOptions="zaaktypeOptions"
 			@save="onSave"
 			@close="closeEditor" />
 	</div>
 </template>
 
 <script>
-import { NcButton, NcEmptyContent, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
+import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import axios from '@nextcloud/axios'
+import { NcButton, NcEmptyContent, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import TimerSand from 'vue-material-design-icons/TimerSand.vue'
 import TermijnDefinitieEditor from '../../../modals/TermijnDefinitieEditor.vue'
@@ -99,6 +123,7 @@ export default {
 		TimerSand,
 		TermijnDefinitieEditor,
 	},
+
 	data() {
 		return {
 			loading: false,
@@ -108,13 +133,14 @@ export default {
 			editingDefinition: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		zaaktypeOptions() {
 			const seen = new Set()
 			const opts = []
 			for (const d of this.definitions) {
-				const z = d.zaaktype || ''
+				const z = d.case_type || ''
 				if (z && !seen.has(z)) {
 					seen.add(z)
 					opts.push({ id: z, label: z })
@@ -123,9 +149,11 @@ export default {
 			return opts
 		},
 	},
+
 	mounted() {
 		this.load()
 	},
+
 	methods: {
 		t,
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
@@ -133,14 +161,22 @@ export default {
 			this.loading = true
 			this.error = null
 			try {
-				const res = await axios.get(generateUrl('/apps/procest/api/termijn/definities'))
-				this.definitions = Array.isArray(res.data) ? res.data : (res.data?.results || [])
+				const res = await axios.get(
+					generateUrl('/apps/procest/api/termijn/definities'),
+				)
+				this.definitions = Array.isArray(res.data)
+					? res.data
+					: res.data?.results || []
 			} catch (e) {
-				this.error = e?.response?.data?.message || e.message || t('procest', 'Failed to load term definitions')
+				this.error =
+					e?.response?.data?.message
+					|| e.message
+					|| t('procest', 'Failed to load term definitions')
 			} finally {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * @param def
 		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
@@ -151,6 +187,7 @@ export default {
 			const until = def.validUntil || '9999-12-31'
 			return from <= today && today <= until
 		},
+
 		/**
 		 * @param def
 		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
@@ -159,11 +196,13 @@ export default {
 			const v = def.duurDagen || def.duur || 0
 			return v ? t('procest', '{n} days', { n: v }) : '—'
 		},
+
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		openNew() {
 			this.editingDefinition = null
 			this.editorOpen = true
 		},
+
 		/**
 		 * @param def
 		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
@@ -172,11 +211,13 @@ export default {
 			this.editingDefinition = def
 			this.editorOpen = true
 		},
+
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		closeEditor() {
 			this.editorOpen = false
 			this.editingDefinition = null
 		},
+
 		/**
 		 * @param payload
 		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
@@ -192,22 +233,33 @@ export default {
 				...payload,
 				validFrom: isoTomorrow,
 				validUntil: null,
-				version: this.editingDefinition ? (Number(this.editingDefinition.version || 1) + 1) : 1,
+				version: this.editingDefinition
+					? Number(this.editingDefinition.version || 1) + 1
+					: 1,
 			}
 
 			try {
 				// Close the prior version if editing
 				if (this.editingDefinition) {
 					await axios.patch(
-						generateUrl('/apps/procest/api/termijn/definities/' + encodeURIComponent(this.editingDefinition.id)),
+						generateUrl(
+							'/apps/procest/api/termijn/definities/'
+								+ encodeURIComponent(this.editingDefinition.id),
+						),
 						{ validUntil: isoToday },
 					)
 				}
-				await axios.post(generateUrl('/apps/procest/api/termijn/definities'), next)
+				await axios.post(
+					generateUrl('/apps/procest/api/termijn/definities'),
+					next,
+				)
 				this.closeEditor()
 				await this.load()
 			} catch (e) {
-				this.error = e?.response?.data?.message || e.message || t('procest', 'Failed to save')
+				this.error =
+					e?.response?.data?.message
+					|| e.message
+					|| t('procest', 'Failed to save')
 			}
 		},
 	},

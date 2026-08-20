@@ -3,32 +3,52 @@
 		<div v-if="loading" class="start-case-widget__loading">
 			<NcLoadingIcon :size="44" />
 		</div>
-		<NcEmptyContent v-else-if="caseTypes.length === 0"
+		<NcEmptyContent
+			v-else-if="caseTypes.length === 0"
 			:title="t('procest', 'No case types configured')"
-			:description="t('procest', 'Configure case types in Procest admin settings')">
+			:description="
+				t('procest', 'Configure case types in Procest admin settings')
+			">
 			<template #icon>
 				<BriefcaseVariantOutline />
 			</template>
 		</NcEmptyContent>
 		<div v-else class="start-case-widget__grid">
-			<button v-for="caseType in caseTypes"
+			<button
+				v-for="caseType in caseTypes"
 				:key="caseType.id"
 				class="start-case-widget__card"
 				:disabled="creating"
 				:title="caseType.description || caseType.title"
 				@click="startCase(caseType)">
-				<BriefcaseVariantOutline :size="24" class="start-case-widget__card-icon" />
-				<span class="start-case-widget__card-title">{{ caseType.title }}</span>
+				<BriefcaseVariantOutline
+					:size="24"
+					class="start-case-widget__card-icon" />
+				<span class="start-case-widget__card-title">{{
+					caseType.title
+				}}</span>
 				<NcLoadingIcon v-if="creatingId === caseType.id" :size="20" />
 			</button>
 		</div>
+
+		<!-- Optional initiator selection (brp-kvk-register-sets): picking a
+		     case type first asks who submitted it; Skip creates the case
+		     without an initiator (existing flow unchanged). -->
+		<InitiatorPickerModal
+			v-if="pendingCaseType"
+			@confirm="onInitiatorConfirmed"
+			@skip="onInitiatorSkipped"
+			@close="pendingCaseType = null" />
 	</div>
 </template>
 
 <script>
+import { generateUrl } from '@nextcloud/router'
 import { NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
-import { useObjectStore } from '../../store/modules/object.js'
 import BriefcaseVariantOutline from 'vue-material-design-icons/BriefcaseVariantOutline.vue'
+import InitiatorPickerModal from '../../modals/InitiatorPickerModal.vue'
+import { initiatorProjection } from '../../services/initiatorSearch.js'
+import { useObjectStore } from '../../store/modules/object.js'
 
 export default {
 	name: 'StartCaseWidget',
@@ -36,37 +56,44 @@ export default {
 		NcEmptyContent,
 		NcLoadingIcon,
 		BriefcaseVariantOutline,
+		InitiatorPickerModal,
 	},
+
 	props: {
 		title: {
 			type: String,
 			required: true,
 		},
 	},
+
 	data() {
 		return {
 			loading: false,
 			creating: false,
 			creatingId: null,
 			caseTypes: [],
+			pendingCaseType: null,
 		}
 	},
+
 	computed: {
-		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
+		/** @spec openspec/specs/signalering-widgets/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
 	},
+
 	mounted() {
 		this.fetchCaseTypes()
 	},
+
 	methods: {
 		/**
 		 * Fetch available case types from OpenRegister.
 		 *
 		 * @return {Promise<void>}
 		 */
-		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
+		/** @spec openspec/specs/signalering-widgets/spec.md */
 		async fetchCaseTypes() {
 			this.loading = true
 			try {
@@ -82,18 +109,57 @@ export default {
 				this.loading = false
 			}
 		},
+
+		/**
+		 * Open the optional initiator step for the chosen case type.
+		 * The case is created by onInitiatorConfirmed / onInitiatorSkipped.
+		 *
+		 * @param {object} caseType The case type to start
+		 * @return {void}
+		 * @spec openspec/specs/initiator-selection/spec.md
+		 */
+		startCase(caseType) {
+			if (this.creating) {
+				return
+			}
+			this.pendingCaseType = caseType
+		},
+
+		/**
+		 * Create the case carrying the picked initiator projection.
+		 *
+		 * @param {object} initiator The unified initiator result
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/initiator-selection/spec.md
+		 */
+		async onInitiatorConfirmed(initiator) {
+			const caseType = this.pendingCaseType
+			this.pendingCaseType = null
+			await this.createCase(caseType, initiatorProjection(initiator))
+		},
+
+		/**
+		 * Create the case without an initiator (existing flow unchanged).
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/initiator-selection/spec.md
+		 */
+		async onInitiatorSkipped() {
+			const caseType = this.pendingCaseType
+			this.pendingCaseType = null
+			await this.createCase(caseType, {})
+		},
+
 		/**
 		 * Create a new case of the given type and navigate to it.
 		 *
 		 * @param {object} caseType The case type to start
+		 * @param {object} extraFields Additional case fields (initiator projection)
 		 * @return {Promise<void>}
+		 * @spec openspec/specs/signalering-widgets/spec.md
 		 */
-		/**
-		 * @param caseType
-		 * @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md
-		 */
-		async startCase(caseType) {
-			if (this.creating) {
+		async createCase(caseType, extraFields = {}) {
+			if (!caseType || this.creating) {
 				return
 			}
 			this.creating = true
@@ -104,9 +170,12 @@ export default {
 					title: caseType.title,
 					caseType: caseType.id,
 					startDate: today,
+					...extraFields,
 				})
 				if (newCase?.id) {
-					window.location.href = `/index.php/apps/procest/#/cases/${newCase.id}`
+					window.location.href = generateUrl(
+						`/apps/procest/cases/${newCase.id}`,
+					)
 				}
 			} catch (err) {
 				console.error('[StartCaseWidget] Failed to create case:', err)
@@ -148,7 +217,9 @@ export default {
 	border-radius: var(--border-radius-large);
 	background: var(--color-main-background);
 	cursor: pointer;
-	transition: background-color 0.15s ease, border-color 0.15s ease;
+	transition:
+		background-color 0.15s ease,
+		border-color 0.15s ease;
 }
 
 .start-case-widget__card:hover:not(:disabled) {
@@ -175,5 +246,11 @@ export default {
 	display: -webkit-box;
 	-webkit-line-clamp: 2;
 	-webkit-box-orient: vertical;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.start-case-widget__card {
+		transition: none;
+	}
 }
 </style>

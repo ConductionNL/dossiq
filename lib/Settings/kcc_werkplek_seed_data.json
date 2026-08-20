@@ -2,66 +2,66 @@
     "kccQuickActions": [
         {
             "id": "kcc-qa-status-geven",
-            "naam": "Status terugkoppelen",
-            "actieType": "status_geven",
-            "vereisteContext": ["has_open_case", "is_geidentificeerd"],
-            "targetZaaktype": "",
+            "name": "Status terugkoppelen",
+            "actionType": "status_geven",
+            "requirementContext": ["has_open_case", "is_geidentificeerd"],
+            "targetCaseType": "",
             "template": "",
             "permissies": ["kcc_medewerker"],
-            "volgorde": 1,
+            "sortOrder": 1,
             "isActive": true
         },
         {
             "id": "kcc-qa-nieuwe-zaak",
-            "naam": "Nieuwe zaak",
-            "actieType": "nieuwe_zaak",
-            "vereisteContext": ["is_geidentificeerd"],
-            "targetZaaktype": "",
+            "name": "Nieuwe zaak",
+            "actionType": "new_case",
+            "requirementContext": ["is_geidentificeerd"],
+            "targetCaseType": "",
             "template": "",
             "permissies": ["kcc_medewerker"],
-            "volgorde": 2,
+            "sortOrder": 2,
             "isActive": true
         },
         {
             "id": "kcc-qa-klacht-registreren",
-            "naam": "Klacht registreren",
-            "actieType": "klacht_registreren",
-            "vereisteContext": [],
-            "targetZaaktype": "klacht_ex_artikel_9_1_awb",
+            "name": "Klacht registreren",
+            "actionType": "complaint_registreren",
+            "requirementContext": [],
+            "targetCaseType": "klacht_ex_artikel_9_1_awb",
             "template": "",
             "permissies": ["kcc_medewerker", "klachtenfunctionaris"],
-            "volgorde": 3,
+            "sortOrder": 3,
             "isActive": true
         },
         {
             "id": "kcc-qa-doorverbinden",
-            "naam": "Doorverbinden",
-            "actieType": "doorverbinden",
-            "vereisteContext": [],
-            "targetZaaktype": "",
+            "name": "Doorverbinden",
+            "actionType": "doorverbinden",
+            "requirementContext": [],
+            "targetCaseType": "",
             "template": "",
             "permissies": ["kcc_medewerker"],
-            "volgorde": 4,
+            "sortOrder": 4,
             "isActive": true
         },
         {
             "id": "kcc-qa-bel-terug-inplannen",
-            "naam": "Bel terug inplannen",
-            "actieType": "bel_terug_inplannen",
-            "vereisteContext": ["is_geidentificeerd"],
-            "targetZaaktype": "",
+            "name": "Bel terug inplannen",
+            "actionType": "bel_terug_inplannen",
+            "requirementContext": ["is_geidentificeerd"],
+            "targetCaseType": "",
             "template": "",
             "permissies": ["kcc_medewerker"],
-            "volgorde": 5,
+            "sortOrder": 5,
             "isActive": true
         }
     ],
     "belplannen": [
         {
             "id": "kcc-belplan-algemeen",
-            "naam": "Algemeen gemeentenummer",
-            "triggerNummer": ["+31123456789"],
-            "routeringStappen": [
+            "name": "Algemeen gemeentenummer",
+            "triggerNumber": ["+31123456789"],
+            "routingSteps": [
                 {
                     "type": "keuzemenu",
                     "options": ["Omgevingsvergunningen", "Bouwtoezicht", "Infocentrum", "Overig"]
@@ -81,16 +81,16 @@
                     "fallback_rol": "generalist"
                 }
             ],
-            "openingstijden": "Mo-Fr 08:00-17:00",
-            "terugvalActie": "voicemail",
-            "prioriteit": 10,
+            "openingHours": "Mo-Fr 08:00-17:00",
+            "fallbackAction": "voicemail",
+            "priority": 10,
             "isActive": true
         },
         {
             "id": "kcc-belplan-meldingen",
-            "naam": "Meldingen openbare ruimte",
-            "triggerNummer": ["+31123456790"],
-            "routeringStappen": [
+            "name": "Meldingen openbare ruimte",
+            "triggerNumber": ["+31123456790"],
+            "routingSteps": [
                 {
                     "type": "vaardigheid_match",
                     "zaaktype_to_vaardigheid": {
@@ -103,9 +103,9 @@
                     "fallback_rol": "generalist"
                 }
             ],
-            "openingstijden": "Mo-Fr 08:00-17:00",
-            "terugvalActie": "sms_callback",
-            "prioriteit": 5,
+            "openingHours": "Mo-Fr 08:00-17:00",
+            "fallbackAction": "sms_callback",
+            "priority": 5,
             "isActive": true
         }
     ]

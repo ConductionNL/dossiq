@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2026 Procest Contributors
- * SPDX-License-Identifier: AGPL-3.0-or-later
+ * SPDX-License-Identifier: EUPL-1.2
  *
  * Address-fixture seeding helper for the PDOK-via-openconnector e2e layer
  * (migrate-pdok-to-openconnector, task PR-4).
@@ -87,15 +87,31 @@ function writeHeaders(token: string): Record<string, string> {
 
 /**
  * Probe whether the OR `addresses` register/schema exists in this environment.
- * Returns false when the listing endpoint 404s (sibling add-addresses-register
- * change not yet shipped), so callers can skip live address assertions.
+ *
+ * ONLY a successful read counts as "available". This used to return
+ * `res.status() !== 404`, which reads every failure — 401 from an
+ * unauthenticated context, 403, 500, a 302 to /login — as "the register is
+ * installed", and the caller then went on to seed fixtures against a register
+ * that may not exist. Measured 2026-08-10: an anonymous `request.newContext()`
+ * got 401 here, the probe answered `true`, and the seeding step failed with an
+ * error that named the fixtures instead of the missing session.
+ *
+ * A failed read is not a value. Anything that is not a 2xx means "cannot tell",
+ * and the honest response to "cannot tell" is to skip the live assertions.
+ *
  * @param api Authenticated request context.
+ * @return true only when the listing endpoint answered 2xx.
  */
-export async function addressesRegisterAvailable(api: APIRequestContext): Promise<boolean> {
-	const res = await api.get(`${API_BASE}/${ADDRESSES_REGISTER}/${ADDRESS_SCHEMA}?_limit=1`, {
-		headers: { 'OCS-APIRequest': 'true' },
-	})
-	return res.status() !== 404
+export async function addressesRegisterAvailable(
+	api: APIRequestContext,
+): Promise<boolean> {
+	const res = await api.get(
+		`${API_BASE}/${ADDRESSES_REGISTER}/${ADDRESS_SCHEMA}?_limit=1`,
+		{
+			headers: { 'OCS-APIRequest': 'true' },
+		},
+	)
+	return res.ok()
 }
 
 /**
@@ -105,14 +121,23 @@ export async function addressesRegisterAvailable(api: APIRequestContext): Promis
  * @param api   Authenticated request context.
  * @param token CSRF request-token.
  */
-export async function seedAddressFixtures(api: APIRequestContext, token: string): Promise<string[]> {
+export async function seedAddressFixtures(
+	api: APIRequestContext,
+	token: string,
+): Promise<string[]> {
 	const ids: string[] = []
 	for (const fixture of ADDRESS_FIXTURES) {
-		const res = await api.post(`${API_BASE}/${ADDRESSES_REGISTER}/${ADDRESS_SCHEMA}`, {
-			headers: writeHeaders(token),
-			data: fixture,
-		})
-		expect(res.ok(), `seed address -> ${res.status()} ${await res.text()}`).toBeTruthy()
+		const res = await api.post(
+			`${API_BASE}/${ADDRESSES_REGISTER}/${ADDRESS_SCHEMA}`,
+			{
+				headers: writeHeaders(token),
+				data: fixture,
+			},
+		)
+		expect(
+			res.ok(),
+			`seed address -> ${res.status()} ${await res.text()}`,
+		).toBeTruthy()
 		const body = await res.json()
 		ids.push(String(body?.['@self']?.id ?? body?.uuid ?? body?.id ?? ''))
 	}
@@ -124,20 +149,31 @@ export async function seedAddressFixtures(api: APIRequestContext, token: string)
  * @param api   Authenticated request context.
  * @param token CSRF request-token.
  */
-export async function cleanupAddressFixtures(api: APIRequestContext, token: string): Promise<void> {
-	const res = await api.get(`${API_BASE}/${ADDRESSES_REGISTER}/${ADDRESS_SCHEMA}?_limit=200`, {
-		headers: { 'OCS-APIRequest': 'true' },
-	})
+export async function cleanupAddressFixtures(
+	api: APIRequestContext,
+	token: string,
+): Promise<void> {
+	const res = await api.get(
+		`${API_BASE}/${ADDRESSES_REGISTER}/${ADDRESS_SCHEMA}?_limit=200`,
+		{
+			headers: { 'OCS-APIRequest': 'true' },
+		},
+	)
 	if (!res.ok()) return
 	const body = await res.json()
-	const rows: any[] = Array.isArray(body) ? body : (body?.results ?? body?.data ?? [])
+	const rows: any[] = Array.isArray(body)
+		? body
+		: (body?.results ?? body?.data ?? [])
 	for (const row of rows) {
 		if (JSON.stringify(row).includes(ADDRESS_RUN_PREFIX)) {
 			const id = String(row?.['@self']?.id ?? row?.uuid ?? row?.id ?? '')
 			if (id) {
-				await api.delete(`${API_BASE}/${ADDRESSES_REGISTER}/${ADDRESS_SCHEMA}/${id}`, {
-					headers: writeHeaders(token),
-				})
+				await api.delete(
+					`${API_BASE}/${ADDRESSES_REGISTER}/${ADDRESS_SCHEMA}/${id}`,
+					{
+						headers: writeHeaders(token),
+					},
+				)
 			}
 		}
 	}

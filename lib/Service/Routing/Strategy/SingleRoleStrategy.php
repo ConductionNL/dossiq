@@ -33,73 +33,70 @@ use OCA\Procest\Service\Routing\RoutingStrategyInterface;
  *
  * @spec openspec/changes/role-based-step-routing/tasks.md#T03
  */
-class SingleRoleStrategy implements RoutingStrategyInterface
-{
-    /**
-     * {@inheritDoc}
-     *
-     * @return string The strategy name.
+class SingleRoleStrategy implements RoutingStrategyInterface {
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return string The strategy name.
+	 *
+	 * @spec openspec/specs/role-based-step-routing/spec.md
+	 */
+	public function name(): string {
+		return 'single-role';
+	}//end name()
 
-     * @spec openspec/specs/role-based-step-routing/spec.md
-     */
-    public function name(): string
-    {
-        return 'single-role';
-    }//end name()
+	/**
+	 * Return all participants whose role binding matches `rule.roleType`.
+	 *
+	 * Sorts case-role objects by their creation timestamp (`created` /
+	 * `@self.created`) so callers see a stable, predictable order. Missing
+	 * timestamps degrade gracefully to the input order.
+	 *
+	 * @param array<string, mixed> $rule The routing rule
+	 * @param array<string, mixed> $case The case object
+	 * @param array<int, array<string, mixed>> $roles Roles bound to the case
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/specs/role-based-step-routing/spec.md
+	 */
+	public function resolve(array $rule, array $case, array $roles): array {
+		$target = (string)($rule['roleType'] ?? '');
+		if ($target === '') {
+			return [];
+		}
 
-    /**
-     * Return all participants whose role binding matches `rule.roleType`.
-     *
-     * Sorts case-role objects by their creation timestamp (`created` /
-     * `@self.created`) so callers see a stable, predictable order. Missing
-     * timestamps degrade gracefully to the input order.
-     *
-     * @param array<string, mixed>             $rule  The routing rule
-     * @param array<string, mixed>             $case  The case object
-     * @param array<int, array<string, mixed>> $roles Roles bound to the case
-     *
-     * @return array<int, string>
+		$matches = [];
+		foreach ($roles as $role) {
+			if ((string)($role['roleType'] ?? '') !== $target) {
+				continue;
+			}
 
-     * @spec openspec/specs/role-based-step-routing/spec.md
-     */
-    public function resolve(array $rule, array $case, array $roles): array
-    {
-        $target = (string) ($rule['roleType'] ?? '');
-        if ($target === '') {
-            return [];
-        }
+			$participant = (string)($role['participant'] ?? '');
+			if ($participant === '') {
+				continue;
+			}
 
-        $matches = [];
-        foreach ($roles as $role) {
-            if ((string) ($role['roleType'] ?? '') !== $target) {
-                continue;
-            }
+			$matches[] = [
+				'participant' => $participant,
+				'sortKey' => (string)(
+					$role['created'] ?? ($role['@self']['created'] ?? '')
+				),
+			];
+		}
 
-            $participant = (string) ($role['participant'] ?? '');
-            if ($participant === '') {
-                continue;
-            }
+		usort(
+			$matches,
+			static function (array $left, array $right): int {
+				return strcmp((string)$left['sortKey'], (string)$right['sortKey']);
+			},
+		);
 
-            $matches[] = [
-                'participant' => $participant,
-                'sortKey'     => (string) (
-                    $role['created'] ?? ($role['@self']['created'] ?? '')
-                ),
-            ];
-        }
-
-        usort(
-            $matches,
-            static function (array $left, array $right): int {
-                return strcmp((string) $left['sortKey'], (string) $right['sortKey']);
-            },
-        );
-
-        return array_values(
-                array_map(
-            static fn (array $match): string => (string) $match['participant'],
-            $matches,
-        )
-                );
-    }//end resolve()
+		return array_values(
+			array_map(
+				static fn (array $match): string => (string)$match['participant'],
+				$matches,
+			)
+		);
+	}//end resolve()
 }//end class

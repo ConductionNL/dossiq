@@ -46,7 +46,7 @@ function mapCalDavPriority(icalPriority) {
  */
 /**
  * @param task
- * @spec openspec/changes/task-management/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function normalizeCalDavTask(task) {
 	const due = task.due || null
@@ -67,9 +67,10 @@ export function normalizeCalDavTask(task) {
 		if (diffDays < 0) {
 			isOverdue = true
 			const absDays = Math.abs(diffDays)
-			daysText = absDays === 1
-				? t('procest', '1 day overdue')
-				: t('procest', '{days} days overdue', { days: absDays })
+			daysText =
+				absDays === 1
+					? t('procest', '1 day overdue')
+					: t('procest', '{days} days overdue', { days: absDays })
 		} else if (diffDays === 0) {
 			daysText = t('procest', 'Due today')
 		} else {
@@ -106,7 +107,7 @@ export function normalizeCalDavTask(task) {
  * @param registerId
  * @param schemaId
  * @param objectId
- * @spec openspec/changes/task-management/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export async function fetchTasksForObject(registerId, schemaId, objectId) {
 	const url = `/apps/openregister/api/objects/${registerId}/${schemaId}/${objectId}/tasks`
@@ -115,7 +116,9 @@ export async function fetchTasksForObject(registerId, schemaId, objectId) {
 		const response = await fetch(url, { headers: getHeaders() })
 		if (!response.ok) {
 			if (response.status === 404) return []
-			console.warn(`Failed to fetch tasks for object ${objectId}: ${response.status}`)
+			console.warn(
+				`Failed to fetch tasks for object ${objectId}: ${response.status}`,
+			)
 			return []
 		}
 
@@ -140,7 +143,7 @@ export async function fetchTasksForObject(registerId, schemaId, objectId) {
  */
 /**
  * @param cases
- * @spec openspec/changes/task-management/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export async function fetchTasksForCases(cases) {
 	const objectStore = useObjectStore()
@@ -152,7 +155,7 @@ export async function fetchTasksForCases(cases) {
 
 	const casesToFetch = cases.slice(0, 20)
 
-	const taskPromises = casesToFetch.map(c =>
+	const taskPromises = casesToFetch.map((c) =>
 		fetchTasksForObject(caseConfig.register, caseConfig.schema, c.id),
 	)
 

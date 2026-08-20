@@ -45,7 +45,9 @@
 				<div class="woo-panel__info">
 					<span class="woo-panel__identifier">{{ item.identifier }}</span>
 					<span class="woo-panel__name">{{ item.title }}</span>
-					<span v-if="item.initiator && item.initiator !== '—'" class="woo-panel__initiator">
+					<span
+						v-if="item.initiator && item.initiator !== '—'"
+						class="woo-panel__initiator">
 						{{ item.initiator }}
 					</span>
 				</div>
@@ -53,7 +55,9 @@
 					<span class="woo-panel__days" :class="daysClass(item.severity)">
 						{{ countdownLabel(item) }}
 					</span>
-					<span class="woo-panel__severity">{{ severityLabel(item.severity) }}</span>
+					<span class="woo-panel__severity">{{
+						severityLabel(item.severity)
+					}}</span>
 				</div>
 			</button>
 
@@ -74,6 +78,7 @@ export default {
 	components: {
 		NcButton,
 	},
+
 	props: {
 		/** Pre-computed Woo rows from getWooCases() — already sorted. */
 		cases: { type: Array, default: () => [] },
@@ -82,6 +87,7 @@ export default {
 		/** Error message — renders retry CTA when set. */
 		error: { type: String, default: null },
 	},
+
 	emits: ['click-case', 'view-all', 'retry'],
 	methods: {
 		/**
@@ -92,12 +98,17 @@ export default {
 		 */
 		severityLabel(severity) {
 			switch (severity) {
-			case 'overdue': return this.t('procest', 'Overdue')
-			case 'critical': return this.t('procest', 'Critical')
-			case 'warning': return this.t('procest', 'At risk')
-			default: return this.t('procest', 'On track')
+				case 'overdue':
+					return this.t('procest', 'Overdue')
+				case 'critical':
+					return this.t('procest', 'Critical')
+				case 'warning':
+					return this.t('procest', 'At risk')
+				default:
+					return this.t('procest', 'On track')
 			}
 		},
+
 		/**
 		 * Build the countdown text for a row.
 		 *
@@ -112,8 +123,11 @@ export default {
 			if (item.daysRemaining === 0) {
 				return this.t('procest', 'Due today')
 			}
-			return this.t('procest', '{days} days remaining', { days: item.daysRemaining })
+			return this.t('procest', '{days} days remaining', {
+				days: item.daysRemaining,
+			})
 		},
+
 		/**
 		 * @param {string} severity Severity key
 		 * @return {string} Row CSS modifier class
@@ -121,6 +135,7 @@ export default {
 		rowClass(severity) {
 			return `woo-panel__row--${severity}`
 		},
+
 		/**
 		 * @param {string} severity Severity key
 		 * @return {string} Days-text CSS modifier class
@@ -282,8 +297,24 @@ export default {
 }
 
 @keyframes shimmer {
-	0% { opacity: 0.6; }
-	50% { opacity: 1; }
-	100% { opacity: 0.6; }
+	0% {
+		opacity: 0.6;
+	}
+	50% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0.6;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.woo-panel__row {
+		transition: none;
+	}
+
+	.skeleton-bar {
+		animation: none;
+	}
 }
 </style>

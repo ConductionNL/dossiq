@@ -42,152 +42,147 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T16
  */
-class StateMachineService
-{
-    /**
-     * Allowed forward transitions and the single permitted back-edge.
-     *
-     * @var array<string, array<int, string>>
-     */
-    private const TRANSITIONS = [
-        'ontwerp'               => ['akkoord-mandaat'],
-        'akkoord-mandaat'       => ['ondertekend', 'ontwerp'],
-        'ondertekend'           => ['verzonden'],
-        'verzonden'             => ['ontvangen-bevestiging', 'gearchiveerd'],
-        'ontvangen-bevestiging' => ['gearchiveerd'],
-        'gearchiveerd'          => [],
-    ];
+class StateMachineService {
+	/**
+	 * Allowed forward transitions and the single permitted back-edge.
+	 *
+	 * @var array<string, array<int, string>>
+	 */
+	private const TRANSITIONS = [
+		'draft' => ['approved-mandate'],
+		'approved-mandate' => ['signed', 'draft'],
+		'signed' => ['sent'],
+		'sent' => ['received-confirmation', 'archived'],
+		'received-confirmation' => ['archived'],
+		'archived' => [],
+	];
 
-    /**
-     * Statuses from which the beschikking content is immutable.
-     *
-     * @var array<int, string>
-     */
-    public const IMMUTABLE_STATUSES = [
-        'ondertekend',
-        'verzonden',
-        'ontvangen-bevestiging',
-        'gearchiveerd',
-    ];
+	/**
+	 * Statuses from which the beschikking content is immutable.
+	 *
+	 * @var array<int, string>
+	 */
+	public const IMMUTABLE_STATUSES = [
+		'signed',
+		'sent',
+		'received-confirmation',
+		'archived',
+	];
 
-    /**
-     * Constructor.
-     *
-     * @param SettingsService $settingsService The settings/config service.
-     * @param LoggerInterface $logger          The logger.
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService The settings/config service.
+	 * @param LoggerInterface $logger The logger.
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Whether the given status locks the beschikking content.
-     *
-     * @param string $status The current status.
-     *
-     * @return bool
-     *
-     * @spec openspec/changes/beschikking-generatie/tasks.md#T16
-     */
-    public function isImmutable(string $status): bool
-    {
-        return in_array($status, self::IMMUTABLE_STATUSES, true);
-    }//end isImmutable()
+	/**
+	 * Whether the given status locks the beschikking content.
+	 *
+	 * @param string $status The current status.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/beschikking-generatie/tasks.md#T16
+	 */
+	public function isImmutable(string $status): bool {
+		return in_array($status, self::IMMUTABLE_STATUSES, true);
+	}//end isImmutable()
 
-    /**
-     * Validate a transition between two statuses.
-     *
-     * @param string $currentStatus The source status.
-     * @param string $nextStatus    The target status.
-     *
-     * @return bool True when the transition is permitted.
-     *
-     * @spec openspec/changes/beschikking-generatie/tasks.md#T16
-     */
-    public function validateTransition(string $currentStatus, string $nextStatus): bool
-    {
-        $allowed = (self::TRANSITIONS[$currentStatus] ?? null);
-        if ($allowed === null) {
-            return false;
-        }
+	/**
+	 * Validate a transition between two statuses.
+	 *
+	 * @param string $currentStatus The source status.
+	 * @param string $nextStatus The target status.
+	 *
+	 * @return bool True when the transition is permitted.
+	 *
+	 * @spec openspec/changes/beschikking-generatie/tasks.md#T16
+	 */
+	public function validateTransition(string $currentStatus, string $nextStatus): bool {
+		$allowed = (self::TRANSITIONS[$currentStatus] ?? null);
+		if ($allowed === null) {
+			return false;
+		}
 
-        return in_array($nextStatus, $allowed, true);
-    }//end validateTransition()
+		return in_array($nextStatus, $allowed, true);
+	}//end validateTransition()
 
-    /**
-     * Persist an immutable stateMachineLog record for a transition.
-     *
-     * @param string               $beschikkingId The beschikking UUID.
-     * @param string               $van           The source status.
-     * @param string               $naar          The target status.
-     * @param array<string, mixed> $metadata      Actor/trigger/evidence metadata.
-     *
-     * @return array<string, mixed> The persisted log record (or an empty array when storage is unavailable).
-     *
-     * @spec openspec/changes/beschikking-generatie/tasks.md#T16
-     */
-    public function logTransition(string $beschikkingId, string $van, string $naar, array $metadata=[]): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            $this->logger->warning('StateMachineService: storage unavailable, transition not logged');
-            return [];
-        }
+	/**
+	 * Persist an immutable stateMachineLog record for a transition.
+	 *
+	 * @param string $decisionId The beschikking UUID.
+	 * @param string $from The source status.
+	 * @param string $to The target status.
+	 * @param array<string, mixed> $metadata Actor/trigger/evidence metadata.
+	 *
+	 * @return array<string, mixed> The persisted log record (or an empty array when storage is unavailable).
+	 *
+	 * @spec openspec/changes/beschikking-generatie/tasks.md#T16
+	 */
+	public function logTransition(string $decisionId, string $from, string $to, array $metadata = []): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			$this->logger->warning('StateMachineService: storage unavailable, transition not logged');
+			return [];
+		}
 
-        $register  = $this->settingsService->getConfigValue(key: 'register');
-        $logSchema = $this->settingsService->getConfigValue(key: 'state_machine_log_schema');
-        if ($register === '' || $logSchema === '') {
-            $this->logger->warning('StateMachineService: log schema not configured');
-            return [];
-        }
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$logSchema = $this->settingsService->getConfigValue(key: 'state_machine_log_schema');
+		if ($register === '' || $logSchema === '') {
+			$this->logger->warning('StateMachineService: log schema not configured');
+			return [];
+		}
 
-        $record = [
-            'beschikkingId' => $beschikkingId,
-            'overgang'      => [
-                'van'             => $van,
-                'naar'            => $naar,
-                'tijdstip'        => (new DateTimeImmutable())->format('c'),
-                'actor'           => (string) ($metadata['actor'] ?? 'systeem'),
-                'actorType'       => (string) ($metadata['actorType'] ?? 'systeem'),
-                'trigger'         => (string) ($metadata['trigger'] ?? 'automatisch'),
-                'bewijsMateriaal' => ($metadata['bewijsMateriaal'] ?? null),
-            ],
-        ];
+		$record = [
+			'decisionId' => $decisionId,
+			'overgang' => [
+				'van' => $from,
+				'to' => $to,
+				'moment' => (new DateTimeImmutable())->format('c'),
+				'actor' => (string)($metadata['actor'] ?? 'systeem'),
+				'actorType' => (string)($metadata['actorType'] ?? 'systeem'),
+				'trigger' => (string)($metadata['trigger'] ?? 'automatic'),
+				'evidenceMaterial' => ($metadata['evidenceMaterial'] ?? null),
+			],
+		];
 
-        try {
-            $saved = $objectService->saveObject(object: $record, register: $register, schema: $logSchema);
-            return $this->toArray(value: $saved);
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'StateMachineService: failed to persist transition log',
-                ['exception' => $e->getMessage(), 'beschikkingId' => $beschikkingId],
-            );
-            return [];
-        }
-    }//end logTransition()
+		try {
+			$saved = $objectService->saveObject(object: $record, register: $register, schema: $logSchema);
+			return $this->toArray(value: $saved);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'StateMachineService: failed to persist transition log',
+				['exception' => $e->getMessage(), 'decisionId' => $decisionId],
+			);
+			return [];
+		}
+	}//end logTransition()
 
-    /**
-     * Normalise an ObjectService return value to an array.
-     *
-     * @param mixed $value The entity, array, or JsonSerializable returned by OpenRegister.
-     *
-     * @return array<string, mixed>
-     */
-    private function toArray(mixed $value): array
-    {
-        if (is_array($value) === true) {
-            return $value;
-        }
+	/**
+	 * Normalise an ObjectService return value to an array.
+	 *
+	 * @param mixed $value The entity, array, or JsonSerializable returned by OpenRegister.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function toArray(mixed $value): array {
+		if (is_array($value) === true) {
+			return $value;
+		}
 
-        if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-            $serialised = $value->jsonSerialize();
-            if (is_array($serialised) === true) {
-                return $serialised;
-            }
-        }
+		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
+			$serialised = $value->jsonSerialize();
+			if (is_array($serialised) === true) {
+				return $serialised;
+			}
+		}
 
-        return [];
-    }//end toArray()
+		return [];
+	}//end toArray()
 }//end class

@@ -8,7 +8,7 @@
   - fout payload appear in the dialog when present. Rendered as a tab inside
   - AdminRoot's CnSettingsSection, so it carries no NcSettingsSection wrapper.
   -
-  - @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
+  - @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
   -
   - @visual exclude Admin-only read-only audit inspector rendered inside AdminRoot's settings section; it lists StUF SOAP envelope rows fetched from /api/stuf/messages, which only exist after real outbound/inbound traffic against a seeded zaaksysteem. Without that traffic the view is its empty state, so a screenshot baseline would capture nothing meaningful. Covered by the env-gated live-e2e job; the cell formatting (statusClass/pretty/berichtSoortOptions) is unit-testable JS, not a stable pixel surface.
 -->
@@ -20,14 +20,14 @@
 				:label="t('procest', 'Endpoint ID')"
 				:placeholder="t('procest', 'e.g. stuf-ep-amersfoort-key2zaken')" />
 			<NcSelect
-				v-model="filters.berichtSoort"
+				v-model="filters.messageKind"
 				:options="berichtSoortOptions"
-				:input-label="t('procest', 'Bericht soort')"
+				:inputLabel="t('procest', 'Message type')"
 				clearable />
 			<NcSelect
 				v-model="filters.status"
 				:options="statusOptions"
-				:input-label="t('procest', 'Status')"
+				:inputLabel="t('procest', 'Status')"
 				clearable />
 			<NcButton type="primary" :disabled="loading" @click="reload">
 				<template v-if="loading" #icon>
@@ -42,27 +42,31 @@
 		<table class="stuf-audit-log__table" data-testid="stuf-audit-log-table">
 			<thead>
 				<tr>
-					<th>{{ t('procest', 'Sent at') }}</th>
-					<th>{{ t('procest', 'Direction') }}</th>
-					<th>{{ t('procest', 'Bericht') }}</th>
-					<th>{{ t('procest', 'Functie') }}</th>
-					<th>{{ t('procest', 'Status') }}</th>
-					<th>{{ t('procest', 'HTTP') }}</th>
-					<th>{{ t('procest', 'Duration (ms)') }}</th>
+					<th scope="col">{{ t('procest', 'Sent at') }}</th>
+					<th scope="col">{{ t('procest', 'Direction') }}</th>
+					<th scope="col">{{ t('procest', 'Message') }}</th>
+					<th scope="col">{{ t('procest', 'Function') }}</th>
+					<th scope="col">{{ t('procest', 'Status') }}</th>
+					<th scope="col">{{ t('procest', 'HTTP') }}</th>
+					<th scope="col">{{ t('procest', 'Duration (ms)') }}</th>
 					<th class="stuf-audit-log__actions" />
 				</tr>
 			</thead>
 			<tbody>
-				<tr v-for="row in messages" :key="row.id || row.referentienummer">
-					<td>{{ row.verzondenOp }}</td>
-					<td>{{ row.richting }}</td>
-					<td>{{ row.berichtSoort }}</td>
-					<td>{{ row.functie }}</td>
+				<tr v-for="row in messages" :key="row.id || row.referenceNumber">
+					<td>{{ row.sentOn }}</td>
+					<td>{{ row.direction }}</td>
+					<td>{{ row.messageKind }}</td>
+					<td>{{ row.role }}</td>
 					<td>
-						<span class="stuf-audit-log__status" :class="statusClass(row.status)">{{ row.status }}</span>
+						<span
+							class="stuf-audit-log__status"
+							:class="statusClass(row.status)"
+							>{{ row.status }}</span
+						>
 					</td>
 					<td>{{ row.httpStatus || '—' }}</td>
-					<td>{{ row.duurMs || '—' }}</td>
+					<td>{{ row.durationMs || '—' }}</td>
 					<td class="stuf-audit-log__actions">
 						<NcButton type="tertiary" @click="inspect(row)">
 							{{ t('procest', 'Inspect') }}
@@ -76,46 +80,10 @@
 				</tr>
 			</tbody>
 		</table>
-		<NcDialog
+		<StufEnvelopeDialog
 			v-if="inspectRow"
-			:name="t('procest', 'StUF envelope')"
-			:open="!!inspectRow"
-			size="large"
-			@closing="inspectRow = null">
-			<div class="stuf-audit-log__details">
-				<h4>{{ t('procest', 'Request envelope') }}</h4>
-				<pre class="stuf-audit-log__pre">{{ inspectRow.envelopeXml || t('procest', '(no envelope)') }}</pre>
-				<h4 v-if="inspectRow.responseEnvelopeXml">
-					{{ t('procest', 'Response envelope') }}
-				</h4>
-				<pre v-if="inspectRow.responseEnvelopeXml" class="stuf-audit-log__pre">{{ inspectRow.responseEnvelopeXml }}</pre>
-				<h4 v-if="hasRetries(inspectRow)">
-					{{ t('procest', 'Retries') }}
-				</h4>
-				<table v-if="hasRetries(inspectRow)" class="stuf-audit-log__retries">
-					<thead>
-						<tr>
-							<th>{{ t('procest', 'Attempt') }}</th>
-							<th>{{ t('procest', 'Timestamp') }}</th>
-							<th>{{ t('procest', 'HTTP') }}</th>
-							<th>{{ t('procest', 'Duration (ms)') }}</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr v-for="(retry, index) in inspectRow.retries" :key="index">
-							<td>{{ retry.poging }}</td>
-							<td>{{ retry.timestamp }}</td>
-							<td>{{ retry.httpStatus || '—' }}</td>
-							<td>{{ retry.duurMs || '—' }}</td>
-						</tr>
-					</tbody>
-				</table>
-				<h4 v-if="inspectRow.fout">
-					{{ t('procest', 'Error') }}
-				</h4>
-				<pre v-if="inspectRow.fout" class="stuf-audit-log__pre">{{ pretty(inspectRow.fout) }}</pre>
-			</div>
-		</NcDialog>
+			:row="inspectRow"
+			@close="inspectRow = null" />
 		<p v-if="loadError" class="stuf-audit-log__error">
 			{{ loadError }}
 		</p>
@@ -123,13 +91,21 @@
 </template>
 
 <script>
-import { NcButton, NcDialog, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
 import { showError } from '@nextcloud/dialogs'
+import { NcButton, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
+import StufEnvelopeDialog from '../../dialogs/StufEnvelopeDialog.vue'
 import { listMessages } from '../../services/stufApi.js'
 
 export default {
 	name: 'StufAuditLog',
-	components: { NcButton, NcDialog, NcLoadingIcon, NcSelect, NcTextField },
+	components: {
+		NcButton,
+		NcLoadingIcon,
+		NcSelect,
+		NcTextField,
+		StufEnvelopeDialog,
+	},
+
 	data() {
 		return {
 			messages: [],
@@ -138,11 +114,12 @@ export default {
 			inspectRow: null,
 			filters: {
 				endpointId: '',
-				berichtSoort: '',
+				messageKind: '',
 				status: '',
 			},
 		}
 	},
+
 	computed: {
 		/**
 		 * The StUF berichtsoort filter options.
@@ -152,6 +129,7 @@ export default {
 		berichtSoortOptions() {
 			return ['Lk01', 'Lk02', 'Lk03', 'Bv01', 'Lv01', 'La01', 'Du01', 'Fo02']
 		},
+
 		/**
 		 * The StUF message-status filter options.
 		 *
@@ -161,17 +139,21 @@ export default {
 			return ['verzonden', 'bevestigd', 'fout', 'wacht_op_retry']
 		},
 	},
+
 	watch: {
-		'filters.berichtSoort': 'reload',
+		'filters.messageKind': 'reload',
 		'filters.status': 'reload',
 		'filters.endpointId': 'debouncedReload',
 	},
+
 	mounted() {
 		this.reload()
 	},
-	beforeDestroy() {
+
+	beforeUnmount() {
 		clearTimeout(this.endpointIdTimer)
 	},
+
 	methods: {
 		/**
 		 * Debounced wrapper around reload() for the free-text endpoint filter.
@@ -182,6 +164,7 @@ export default {
 			clearTimeout(this.endpointIdTimer)
 			this.endpointIdTimer = setTimeout(() => this.reload(), 400)
 		},
+
 		/**
 		 * Reload the StUF audit log from the backing store.
 		 *
@@ -192,7 +175,7 @@ export default {
 			try {
 				const data = await listMessages({
 					endpointId: this.filters.endpointId,
-					berichtSoort: this.filters.berichtSoort,
+					messageKind: this.filters.messageKind,
 					status: this.filters.status,
 					limit: 100,
 				})
@@ -205,6 +188,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * Open the envelope-inspector dialog for a row.
 		 *
@@ -214,9 +198,7 @@ export default {
 		inspect(row) {
 			this.inspectRow = row
 		},
-		hasRetries(row) {
-			return Array.isArray(row.retries) && row.retries.length > 0
-		},
+
 		/**
 		 * Map a message status to its CSS modifier class.
 		 *
@@ -226,29 +208,31 @@ export default {
 		statusClass(status) {
 			return 'stuf-audit-log__status--' + (status || 'unknown')
 		},
-		/**
-		 * Pretty-print a value as indented JSON for display.
-		 *
-		 * @param {*} value The value to render.
-		 * @spec exclude presentational JSON formatter — no business logic
-		 */
-		pretty(value) {
-			try {
-				return JSON.stringify(value, null, 2)
-			} catch (e) {
-				return String(value)
-			}
-		},
+
 		/**
 		 * Export the current audit-log rows as a CSV download.
 		 *
 		 * @spec exclude presentational client-side CSV export — no business logic
 		 */
 		exportCsv() {
-			const headers = ['verzondenOp', 'richting', 'berichtSoort', 'functie', 'status', 'httpStatus', 'duurMs', 'referentienummer', 'zaakIdentificatie']
+			const headers = [
+				'sentOn',
+				'direction',
+				'messageKind',
+				'role',
+				'status',
+				'httpStatus',
+				'durationMs',
+				'referenceNumber',
+				'caseIdentification',
+			]
 			const lines = [headers.join(',')]
 			for (const row of this.messages) {
-				lines.push(headers.map((h) => JSON.stringify(row[h] == null ? '' : row[h])).join(','))
+				lines.push(
+					headers
+						.map((h) => JSON.stringify(row[h] == null ? '' : row[h]))
+						.join(','),
+				)
 			}
 			const blob = new Blob([lines.join('\n')], { type: 'text/csv' })
 			const url = URL.createObjectURL(blob)
@@ -270,23 +254,28 @@ export default {
 	align-items: end;
 	flex-wrap: wrap;
 }
+
 .stuf-audit-log__table {
 	width: 100%;
 	border-collapse: collapse;
 }
+
 .stuf-audit-log__table th,
 .stuf-audit-log__table td {
 	padding: 6px 8px;
 	border-bottom: 1px solid var(--color-border);
 	text-align: left;
 }
+
 .stuf-audit-log__empty {
 	color: var(--color-text-maxcontrast);
 	font-style: italic;
 }
+
 .stuf-audit-log__actions {
 	text-align: right;
 }
+
 .stuf-audit-log__status {
 	display: inline-block;
 	padding: 2px 8px;
@@ -294,44 +283,27 @@ export default {
 	font-size: 11px;
 	font-weight: bold;
 }
+
 .stuf-audit-log__status--verzonden {
 	background: var(--color-primary);
 	color: white;
 }
+
 .stuf-audit-log__status--bevestigd {
 	background: var(--color-success);
 	color: white;
 }
+
 .stuf-audit-log__status--fout {
 	background: var(--color-error);
 	color: white;
 }
+
 .stuf-audit-log__status--wacht_op_retry {
 	background: var(--color-warning);
 	color: white;
 }
-.stuf-audit-log__details h4 {
-	margin: 16px 0 4px;
-}
-.stuf-audit-log__pre {
-	background: var(--color-background-dark);
-	padding: 8px;
-	border-radius: var(--border-radius);
-	overflow: auto;
-	font-size: 11px;
-	max-height: 320px;
-	white-space: pre-wrap;
-	word-break: break-all;
-}
-.stuf-audit-log__retries {
-	width: 100%;
-	border-collapse: collapse;
-}
-.stuf-audit-log__retries th,
-.stuf-audit-log__retries td {
-	padding: 4px 8px;
-	border-bottom: 1px solid var(--color-border);
-}
+
 .stuf-audit-log__error {
 	color: var(--color-error);
 	margin-top: 12px;

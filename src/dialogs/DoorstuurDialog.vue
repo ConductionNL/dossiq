@@ -3,23 +3,33 @@
  SPDX-License-Identifier: EUPL-1.2
 -->
 <template>
-	<NcDialog :name="t('procest', 'Forward verzoek — Doorsturen')"
-		:can-close="true"
+	<NcDialog
+		:name="t('procest', 'Forward verzoek — Doorsturen')"
+		:canClose="true"
 		@close="$emit('close')">
 		<template #default>
 			<div class="doorstuur-dialog">
 				<p class="doorstuur-dialog__intro">
-					{{ t('procest', 'Forward this vergunningaanvraag to another bevoegd gezag via DSO-LV.') }}
+					{{
+						t(
+							'procest',
+							'Forward this vergunningaanvraag to another bevoegd gezag via DSO-LV.',
+						)
+					}}
 				</p>
 
-				<NcTextField v-model="doelBevoegdGezag"
+				<NcTextField
+					v-model="doelBevoegdGezag"
 					:label="t('procest', 'Doel bevoegd gezag (OIN or name)')"
 					:required="true"
 					:placeholder="t('procest', 'e.g. Gemeente Utrecht')" />
 
-				<NcTextArea v-model="reden"
-					:label="t('procest', 'Reden voor doorsturen')"
-					:placeholder="t('procest', 'Explain why the verzoek is being forwarded...')"
+				<NcTextArea
+					v-model="reason"
+					:label="t('procest', 'Reason for forwarding')"
+					:placeholder="
+						t('procest', 'Explain why the verzoek is being forwarded...')
+					"
 					rows="4" />
 
 				<div v-if="error" class="doorstuur-dialog__error">
@@ -27,7 +37,12 @@
 				</div>
 
 				<div v-if="success" class="doorstuur-dialog__success">
-					{{ t('procest', 'Verzoek successfully forwarded to OpenConnector for DSO-LV transmission.') }}
+					{{
+						t(
+							'procest',
+							'Verzoek successfully forwarded to OpenConnector for DSO-LV transmission.',
+						)
+					}}
 				</div>
 			</div>
 		</template>
@@ -36,7 +51,8 @@
 			<NcButton type="tertiary" @click="$emit('close')">
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
-			<NcButton type="primary"
+			<NcButton
+				type="primary"
 				:disabled="!doelBevoegdGezag || submitting || success"
 				@click="submit">
 				{{ t('procest', 'Forward') }}
@@ -47,32 +63,34 @@
 
 <script>
 import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
 import { translate as t } from '@nextcloud/l10n'
-import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
-import NcDialog from '@nextcloud/vue/dist/Components/NcDialog.js'
-import NcTextArea from '@nextcloud/vue/dist/Components/NcTextArea.js'
-import NcTextField from '@nextcloud/vue/dist/Components/NcTextField.js'
+import { generateUrl } from '@nextcloud/router'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
+import NcTextArea from '@nextcloud/vue/components/NcTextArea'
+import NcTextField from '@nextcloud/vue/components/NcTextField'
 
 export default {
 	name: 'DoorstuurDialog',
 	components: { NcButton, NcDialog, NcTextArea, NcTextField },
 	props: {
-		zaakId: {
+		caseId: {
 			type: String,
 			required: true,
 		},
 	},
+
 	emits: ['close'],
 	data() {
 		return {
 			doelBevoegdGezag: '',
-			reden: '',
+			reason: '',
 			submitting: false,
 			error: null,
 			success: false,
 		}
 	},
+
 	methods: {
 		t,
 		async submit() {
@@ -84,15 +102,22 @@ export default {
 			this.error = null
 			try {
 				await axios.post(
-					generateUrl('/apps/procest/api/dso/cases/' + encodeURIComponent(this.zaakId) + '/doorstuur'),
+					generateUrl(
+						'/apps/procest/api/dso/cases/'
+							+ encodeURIComponent(this.caseId)
+							+ '/doorstuur',
+					),
 					{
 						doelBevoegdGezag: this.doelBevoegdGezag,
-						reden: this.reden,
+						reason: this.reason,
 					},
 				)
 				this.success = true
 			} catch {
-				this.error = t('procest', 'Could not forward verzoek. Please try again.')
+				this.error = t(
+					'procest',
+					'Could not forward verzoek. Please try again.',
+				)
 			} finally {
 				this.submitting = false
 			}

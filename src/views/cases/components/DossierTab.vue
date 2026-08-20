@@ -14,9 +14,9 @@
 				<NcSelect
 					v-model="sortKey"
 					class="dossier-tab__sort"
-					:input-label="t('procest', 'Sort by')"
+					:inputLabel="t('procest', 'Sort by')"
 					:options="sortOptions"
-					:reduce="option => option.id"
+					:reduce="(option) => option.id"
 					label="label"
 					:clearable="false" />
 				<NcButton type="primary" @click="triggerFilePicker">
@@ -32,24 +32,30 @@
 			ref="fileInput"
 			type="file"
 			multiple
+			:aria-label="t('procest', 'Upload document')"
 			class="dossier-tab__file-input"
-			@change="onFilesSelected">
+			@change="onFilesSelected" />
 
 		<BulkActionsBar
-			:selected-count="selectedIds.length"
+			:selectedCount="selectedIds.length"
 			:busy="bulkBusy"
 			:results="bulkResults"
-			@mark-final="bulkMarkFinal"
-			@change-confidentiality="bulkChangeConfidentiality"
-			@download-zip="downloadSelectionZip"
-			@clear-selection="clearSelection" />
+			@markFinal="bulkMarkFinal"
+			@changeConfidentiality="bulkChangeConfidentiality"
+			@downloadZip="downloadSelectionZip"
+			@clearSelection="clearSelection" />
 
 		<NcLoadingIcon v-if="loading" :size="32" />
 
 		<NcEmptyContent
 			v-else-if="groups.length === 0"
 			:name="t('procest', 'No documents yet')"
-			:description="t('procest', 'Drag files here or use the upload button to add documents to this case.')">
+			:description="
+				t(
+					'procest',
+					'Drag files here or use the upload button to add documents to this case.',
+				)
+			">
 			<template #icon>
 				<FolderOpenOutline :size="20" />
 			</template>
@@ -64,15 +70,15 @@
 			<DossierGroup
 				v-for="group in groups"
 				:key="group.informatieobjecttype"
-				:group-label="typeLabel(group.informatieobjecttype)"
+				:groupLabel="typeLabel(group.informatieobjecttype)"
 				:documents="group.documents"
-				:selected-ids="selectedIds"
-				:sort-key="sortKey"
-				:sort-direction="sortDirection"
-				@toggle-select="toggleSelect"
+				:selectedIds="selectedIds"
+				:sortKey="sortKey"
+				:sortDirection="sortDirection"
+				@toggleSelect="toggleSelect"
 				@open="openInFiles"
 				@share="shareDocument"
-				@version-history="showVersions"
+				@versionHistory="showVersions"
 				@delete="deleteDocument" />
 		</div>
 
@@ -93,27 +99,22 @@
 		<VersionHistoryPanel
 			v-if="versionDocument"
 			:document="versionDocument"
-			:user-id="userId" />
+			:userId="userId" />
 	</div>
 </template>
 
 <script>
-import {
-	NcButton,
-	NcEmptyContent,
-	NcLoadingIcon,
-	NcSelect,
-} from '@nextcloud/vue'
-import { generateUrl } from '@nextcloud/router'
 import { getCurrentUser } from '@nextcloud/auth'
-import { showError, showSuccess } from '@nextcloud/dialogs'
 import axios from '@nextcloud/axios'
+import { showError, showSuccess } from '@nextcloud/dialogs'
+import { generateUrl } from '@nextcloud/router'
+import { NcButton, NcEmptyContent, NcLoadingIcon, NcSelect } from '@nextcloud/vue'
 import FolderOpenOutline from 'vue-material-design-icons/FolderOpenOutline.vue'
 import Upload from 'vue-material-design-icons/Upload.vue'
+import DocumentMetadataDialog from '../../../modals/DocumentMetadataDialog.vue'
 import BulkActionsBar from './BulkActionsBar.vue'
 import DossierGroup from './DossierGroup.vue'
 import VersionHistoryPanel from './VersionHistoryPanel.vue'
-import DocumentMetadataDialog from '../../../modals/DocumentMetadataDialog.vue'
 
 /**
  * Case dossier tab: lists informatieobjecten grouped by type with a count
@@ -138,6 +139,7 @@ export default {
 		VersionHistoryPanel,
 		DocumentMetadataDialog,
 	},
+
 	props: {
 		// Received from CnObjectSidebar's sharedTabProps; falls back to the
 		// route id for standalone use, matching the other case-detail tabs.
@@ -146,6 +148,7 @@ export default {
 			default: '',
 		},
 	},
+
 	emits: ['count-changed'],
 	data() {
 		return {
@@ -167,6 +170,7 @@ export default {
 			bulkResults: [],
 		}
 	},
+
 	computed: {
 		/**
 		 * The resolved case id (sharedTabProps objectId or route fallback).
@@ -175,8 +179,13 @@ export default {
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T10
 		 */
 		caseId() {
-			return this.objectId || (this.$route && this.$route.params ? this.$route.params.id : '') || ''
+			return (
+				this.objectId
+				|| (this.$route && this.$route.params ? this.$route.params.id : '')
+				|| ''
+			)
 		},
+
 		/**
 		 * The current user id (for version-history requests).
 		 *
@@ -187,6 +196,7 @@ export default {
 			const user = getCurrentUser()
 			return user ? user.uid : ''
 		},
+
 		/**
 		 * Sort dropdown options.
 		 *
@@ -196,11 +206,12 @@ export default {
 		sortOptions() {
 			return [
 				{ id: 'creatiedatum', label: this.t('procest', 'Creation date') },
-				{ id: 'titel', label: this.t('procest', 'Title') },
+				{ id: 'title', label: this.t('procest', 'Title') },
 				{ id: 'status', label: this.t('procest', 'Status') },
 			]
 		},
 	},
+
 	watch: {
 		caseId: {
 			immediate: true,
@@ -215,6 +226,7 @@ export default {
 			},
 		},
 	},
+
 	methods: {
 		/**
 		 * Fetch the dossier for the current case.
@@ -228,7 +240,9 @@ export default {
 			}
 			this.loading = true
 			try {
-				const url = generateUrl(`/apps/procest/api/cases/${encodeURIComponent(this.caseId)}/dossier`)
+				const url = generateUrl(
+					`/apps/procest/api/cases/${encodeURIComponent(this.caseId)}/dossier`,
+				)
 				const { data } = await axios.get(url)
 				this.groups = data.groups || []
 				this.total = data.total || 0
@@ -240,6 +254,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * Fetch the informatieobjecttype catalog for the upload dialog.
 		 *
@@ -248,24 +263,32 @@ export default {
 		 */
 		async fetchTypes() {
 			try {
-				const url = generateUrl('/apps/openregister/api/objects/procest/informatieobjecttype?_limit=200')
+				const url = generateUrl(
+					'/apps/openregister/api/objects/procest/informatieobjecttype?_limit=200',
+				)
 				const { data } = await axios.get(url)
-				this.types = (data.results || data.objects || data || [])
+				this.types = data.results || data.objects || data || []
 			} catch (error) {
 				this.types = []
 			}
 		},
+
 		/**
-		 * Resolve a type id to its omschrijving label.
+		 * Resolve a type id to its description label.
 		 *
 		 * @param {string} typeId The type id.
 		 * @return {string} The label.
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T06
 		 */
 		typeLabel(typeId) {
-			const match = this.types.find(type => (type.id || type.uuid) === typeId)
-			return match ? (match.omschrijving || typeId) : (typeId || this.t('procest', 'Unknown type'))
+			const match = this.types.find(
+				(type) => (type.id || type.uuid) === typeId,
+			)
+			return match
+				? match.description || typeId
+				: typeId || this.t('procest', 'Unknown type')
 		},
+
 		/**
 		 * Open the native file picker.
 		 *
@@ -276,6 +299,7 @@ export default {
 				this.$refs.fileInput.click()
 			}
 		},
+
 		/**
 		 * Handle files chosen via the picker.
 		 *
@@ -288,6 +312,7 @@ export default {
 				this.openMetadataDialog(files)
 			}
 		},
+
 		/**
 		 * Handle a drag-and-drop file drop.
 		 *
@@ -296,11 +321,14 @@ export default {
 		 */
 		onDrop(event) {
 			this.dragActive = false
-			const files = Array.from((event.dataTransfer && event.dataTransfer.files) || [])
+			const files = Array.from(
+				(event.dataTransfer && event.dataTransfer.files) || [],
+			)
 			if (files.length > 0) {
 				this.openMetadataDialog(files)
 			}
 		},
+
 		/**
 		 * Open the metadata dialog for the pending files.
 		 *
@@ -313,6 +341,7 @@ export default {
 			this.uploadErrors = {}
 			this.showMetadataDialog = true
 		},
+
 		/**
 		 * Close the metadata dialog and reset pending state.
 		 *
@@ -325,6 +354,7 @@ export default {
 				this.$refs.fileInput.value = ''
 			}
 		},
+
 		/**
 		 * Upload the pending files with the shared metadata, per-file progress.
 		 *
@@ -341,20 +371,24 @@ export default {
 				form.append('files', file)
 				form.append('metadata', JSON.stringify(metadata))
 				try {
-					this.$set(this.uploadProgress, index, 0)
-					const url = generateUrl(`/apps/procest/api/cases/${encodeURIComponent(this.caseId)}/dossier`)
+					this.uploadProgress[index] = 0
+					const url = generateUrl(
+						`/apps/procest/api/cases/${encodeURIComponent(this.caseId)}/dossier`,
+					)
 					await axios.post(url, form, {
 						headers: { 'Content-Type': 'multipart/form-data' },
 						onUploadProgress: (event) => {
 							if (event.total) {
-								this.$set(this.uploadProgress, index, Math.round((event.loaded / event.total) * 100))
+								this.uploadProgress[index] = Math.round(
+									(event.loaded / event.total) * 100,
+								)
 							}
 						},
 					})
-					this.$set(this.uploadProgress, index, 100)
+					this.uploadProgress[index] = 100
 					anySuccess = true
 				} catch (error) {
-					this.$set(this.uploadErrors, index, true)
+					this.uploadErrors[index] = true
 				}
 			}
 			this.uploading = false
@@ -366,6 +400,7 @@ export default {
 				showError(this.t('procest', 'Upload failed'))
 			}
 		},
+
 		/**
 		 * Toggle the selection of a document.
 		 *
@@ -380,6 +415,7 @@ export default {
 				this.selectedIds.splice(index, 1)
 			}
 		},
+
 		/**
 		 * Clear the current selection and bulk results.
 		 *
@@ -389,6 +425,7 @@ export default {
 			this.selectedIds = []
 			this.bulkResults = []
 		},
+
 		/**
 		 * Bulk-transition the selection to definitief.
 		 *
@@ -396,8 +433,12 @@ export default {
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T08
 		 */
 		async bulkMarkFinal() {
-			await this.runBulk('/apps/procest/api/informatieobjecten/bulk/status', { ids: this.selectedIds, status: 'definitief' })
+			await this.runBulk('/apps/procest/api/informatieobjecten/bulk/status', {
+				ids: this.selectedIds,
+				status: 'final',
+			})
 		},
+
 		/**
 		 * Bulk-update the confidentiality of the selection.
 		 *
@@ -406,11 +447,15 @@ export default {
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T08
 		 */
 		async bulkChangeConfidentiality(level) {
-			await this.runBulk('/apps/procest/api/informatieobjecten/bulk/metadata', {
-				ids: this.selectedIds,
-				metadata: { vertrouwelijkheidaanduiding: level },
-			})
+			await this.runBulk(
+				'/apps/procest/api/informatieobjecten/bulk/metadata',
+				{
+					ids: this.selectedIds,
+					metadata: { vertrouwelijkheidaanduiding: level },
+				},
+			)
 		},
+
 		/**
 		 * Run a bulk endpoint and record the per-item results.
 		 *
@@ -431,6 +476,7 @@ export default {
 				this.bulkBusy = false
 			}
 		},
+
 		/**
 		 * Download the current selection (or full dossier) as a ZIP.
 		 *
@@ -440,8 +486,14 @@ export default {
 		async downloadSelectionZip() {
 			this.bulkBusy = true
 			try {
-				const url = generateUrl(`/apps/procest/api/cases/${encodeURIComponent(this.caseId)}/dossier/zip`)
-				const { data } = await axios.post(url, { ids: this.selectedIds }, { responseType: 'blob' })
+				const url = generateUrl(
+					`/apps/procest/api/cases/${encodeURIComponent(this.caseId)}/dossier/zip`,
+				)
+				const { data } = await axios.post(
+					url,
+					{ ids: this.selectedIds },
+					{ responseType: 'blob' },
+				)
 				const objectUrl = window.URL.createObjectURL(data)
 				const link = document.createElement('a')
 				link.href = objectUrl
@@ -454,6 +506,7 @@ export default {
 				this.bulkBusy = false
 			}
 		},
+
 		/**
 		 * Open the document in Nextcloud Files.
 		 *
@@ -465,6 +518,7 @@ export default {
 				window.open(generateUrl(`/f/${document.fileId}`), '_blank')
 			}
 		},
+
 		/**
 		 * Trigger a public share for the document.
 		 *
@@ -473,8 +527,13 @@ export default {
 		 */
 		shareDocument(document) {
 			this.$emit('count-changed', this.total)
-			showSuccess(this.t('procest', 'Share requested for {name}', { name: document.titel }))
+			showSuccess(
+				this.t('procest', 'Share requested for {name}', {
+					name: document.title,
+				}),
+			)
 		},
+
 		/**
 		 * Show the version-history panel for a document.
 		 *
@@ -484,6 +543,7 @@ export default {
 		showVersions(document) {
 			this.versionDocument = document
 		},
+
 		/**
 		 * Delete a concept document and refresh.
 		 *
@@ -493,7 +553,9 @@ export default {
 		 */
 		async deleteDocument(document) {
 			try {
-				const url = generateUrl(`/apps/procest/api/cases/${encodeURIComponent(this.caseId)}/dossier/${encodeURIComponent(document.id)}/link`)
+				const url = generateUrl(
+					`/apps/procest/api/cases/${encodeURIComponent(this.caseId)}/dossier/${encodeURIComponent(document.id)}/link`,
+				)
 				await axios.delete(url)
 				this.fetchDossier()
 			} catch (error) {

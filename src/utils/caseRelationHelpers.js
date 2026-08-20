@@ -14,7 +14,7 @@
  *
  * @type {Array<string>}
  */
-export const AARD_RELATIE_TYPES = ['vervolg', 'onderwerp', 'bijdrage']
+export const AARD_RELATIE_TYPES = ['vervolg', 'subject', 'bijdrage']
 
 /**
  * Direction-aware label for a relation type. The same type names both sides of
@@ -27,14 +27,14 @@ export const AARD_RELATIE_TYPES = ['vervolg', 'onderwerp', 'bijdrage']
  */
 export function relationTypeLabel(aardRelatie) {
 	switch (aardRelatie) {
-	case 'vervolg':
-		return t('procest', 'Follow-up')
-	case 'onderwerp':
-		return t('procest', 'Subject')
-	case 'bijdrage':
-		return t('procest', 'Contribution')
-	default:
-		return aardRelatie
+		case 'vervolg':
+			return t('procest', 'Follow-up')
+		case 'subject':
+			return t('procest', 'Subject')
+		case 'bijdrage':
+			return t('procest', 'Contribution')
+		default:
+			return aardRelatie
 	}
 }
 
@@ -48,19 +48,22 @@ export function relationTypeLabel(aardRelatie) {
  */
 export function relationErrorMessage(reason) {
 	switch (reason) {
-	case 'self_relation':
-		return t('procest', 'A case cannot be related to itself.')
-	case 'duplicate':
-		return t('procest', 'This relation already exists.')
-	case 'hierarchy_overlap':
-		return t('procest', 'These cases are already linked through the main/sub-case hierarchy.')
-	case 'access_denied':
-		return t('procest', 'You do not have access to one of the cases.')
-	case 'invalid_aard_relatie':
-		return t('procest', 'Select a valid relation type.')
-	case 'missing_case_id':
-		return t('procest', 'A target case and relation type are required.')
-	default:
-		return t('procest', 'Could not save the relation.')
+		case 'self_relation':
+			return t('procest', 'A case cannot be related to itself.')
+		case 'duplicate':
+			return t('procest', 'This relation already exists.')
+		case 'hierarchy_overlap':
+			return t(
+				'procest',
+				'These cases are already linked through the main/sub-case hierarchy.',
+			)
+		case 'access_denied':
+			return t('procest', 'You do not have access to one of the cases.')
+		case 'invalid_aard_relatie':
+			return t('procest', 'Select a valid relation type.')
+		case 'missing_case_id':
+			return t('procest', 'A target case and relation type are required.')
+		default:
+			return t('procest', 'Could not save the relation.')
 	}
 }

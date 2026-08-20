@@ -3,30 +3,41 @@
  SPDX-License-Identifier: EUPL-1.2
 -->
 <template>
-	<NcDialog :name="t('procest', 'Generate Beschikking')"
-		:can-close="true"
+	<NcDialog
+		:name="t('procest', 'Generate Beschikking')"
+		:canClose="true"
 		@close="$emit('close')">
 		<template #default>
 			<div class="beschikking-dialog">
 				<p class="beschikking-dialog__intro">
-					{{ t('procest', 'Generate a beslissing document (beschikking) using the configured Docudesk template.') }}
+					{{
+						t(
+							'procest',
+							'Generate a beslissing document (beschikking) using the configured Docudesk template.',
+						)
+					}}
 				</p>
 
 				<div class="beschikking-dialog__outcome-selector">
-					<label class="beschikking-dialog__label">{{ t('procest', 'Outcome') }}</label>
+					<label class="beschikking-dialog__label">{{
+						t('procest', 'Outcome')
+					}}</label>
 					<div class="beschikking-dialog__outcome-buttons">
-						<NcButton :type="outcome === 'verleend' ? 'primary' : 'secondary'"
-							@click="outcome = 'verleend'">
-							✓ {{ t('procest', 'Verleend') }}
+						<NcButton
+							:type="outcome === 'granted' ? 'primary' : 'secondary'"
+							@click="outcome = 'granted'">
+							✓ {{ t('procest', 'Granted') }}
 						</NcButton>
-						<NcButton :type="outcome === 'geweigerd' ? 'error' : 'secondary'"
-							@click="outcome = 'geweigerd'">
-							✗ {{ t('procest', 'Geweigerd') }}
+						<NcButton
+							:type="outcome === 'refused' ? 'error' : 'secondary'"
+							@click="outcome = 'refused'">
+							✗ {{ t('procest', 'Refused') }}
 						</NcButton>
 					</div>
 				</div>
 
-				<NcTextArea v-model="motivation"
+				<NcTextArea
+					v-model="motivation"
 					:label="t('procest', 'Motivation')"
 					:placeholder="motivationPlaceholder"
 					rows="6" />
@@ -36,7 +47,12 @@
 				</div>
 
 				<div v-if="success" class="beschikking-dialog__success">
-					{{ t('procest', 'Beschikking generated and attached as bijlage.') }}
+					{{
+						t(
+							'procest',
+							'Beschikking generated and attached as bijlage.',
+						)
+					}}
 				</div>
 			</div>
 		</template>
@@ -45,7 +61,8 @@
 			<NcButton type="tertiary" @click="$emit('close')">
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
-			<NcButton type="primary"
+			<NcButton
+				type="primary"
 				:disabled="!outcome || submitting || success"
 				@click="submit">
 				{{ t('procest', 'Generate') }}
@@ -56,21 +73,22 @@
 
 <script>
 import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
 import { translate as t } from '@nextcloud/l10n'
-import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
-import NcDialog from '@nextcloud/vue/dist/Components/NcDialog.js'
-import NcTextArea from '@nextcloud/vue/dist/Components/NcTextArea.js'
+import { generateUrl } from '@nextcloud/router'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
+import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 
 export default {
 	name: 'BeschikkingDialog',
 	components: { NcButton, NcDialog, NcTextArea },
 	props: {
-		zaakId: {
+		caseId: {
 			type: String,
 			required: true,
 		},
 	},
+
 	emits: ['close', 'generated'],
 	data() {
 		return {
@@ -81,19 +99,27 @@ export default {
 			success: false,
 		}
 	},
+
 	computed: {
 		motivationPlaceholder() {
-			if (this.outcome === 'verleend') {
-				return t('procest', 'The application meets all criteria of the omgevingsplan...')
+			if (this.outcome === 'granted') {
+				return t(
+					'procest',
+					'The application meets all criteria of the omgevingsplan...',
+				)
 			}
 
-			if (this.outcome === 'geweigerd') {
-				return t('procest', 'The application is refused due to conflict with the omgevingsplan...')
+			if (this.outcome === 'refused') {
+				return t(
+					'procest',
+					'The application is refused due to conflict with the omgevingsplan...',
+				)
 			}
 
 			return t('procest', 'Describe the decision motivation...')
 		},
 	},
+
 	methods: {
 		t,
 		async submit() {
@@ -105,7 +131,11 @@ export default {
 			this.error = null
 			try {
 				const { data } = await axios.post(
-					generateUrl('/apps/procest/api/dso/cases/' + encodeURIComponent(this.zaakId) + '/beschikking'),
+					generateUrl(
+						'/apps/procest/api/dso/cases/'
+							+ encodeURIComponent(this.caseId)
+							+ '/beschikking',
+					),
 					{
 						outcome: this.outcome,
 						motivation: this.motivation,
@@ -114,7 +144,10 @@ export default {
 				this.success = true
 				this.$emit('generated', data)
 			} catch {
-				this.error = t('procest', 'Could not generate beschikking. Please try again.')
+				this.error = t(
+					'procest',
+					'Could not generate beschikking. Please try again.',
+				)
 			} finally {
 				this.submitting = false
 			}

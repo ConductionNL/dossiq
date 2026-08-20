@@ -26,7 +26,9 @@
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-const REGISTER_URL = generateUrl('/apps/openregister/api/integrations/analytics/series')
+const REGISTER_URL = generateUrl(
+	'/apps/openregister/api/integrations/analytics/series',
+)
 
 /**
  * Register (or refresh) a pre-computed page-level series with OpenRegister's
@@ -43,7 +45,14 @@ const REGISTER_URL = generateUrl('/apps/openregister/api/integrations/analytics/
  *   (the dashboard degrades to its empty state — never throws into the view).
  * @spec openspec/specs/sla-charts-via-analytics-leaf/spec.md
  */
-export async function registerSeries({ seriesKey, labels = [], datasets = [], title = null, chartType = 'line', visibility = 'private' }) {
+export async function registerSeries({
+	seriesKey,
+	labels = [],
+	datasets = [],
+	title = null,
+	chartType = 'line',
+	visibility = 'private',
+}) {
 	try {
 		const response = await axios.post(REGISTER_URL, {
 			seriesKey,
@@ -55,7 +64,11 @@ export async function registerSeries({ seriesKey, labels = [], datasets = [], ti
 		})
 		return response.data
 	} catch (err) {
-		console.warn('[procest] analytics-series register failed for', seriesKey, err)
+		console.warn(
+			'[procest] analytics-series register failed for',
+			seriesKey,
+			err,
+		)
 		return null
 	}
 }
@@ -71,7 +84,9 @@ export async function registerSeries({ seriesKey, labels = [], datasets = [], ti
  */
 export async function fetchSeries(seriesKey) {
 	try {
-		const response = await axios.get(`${REGISTER_URL}/${encodeURIComponent(seriesKey)}`)
+		const response = await axios.get(
+			`${REGISTER_URL}/${encodeURIComponent(seriesKey)}`,
+		)
 		return response.data
 	} catch (err) {
 		return null

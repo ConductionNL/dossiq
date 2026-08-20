@@ -2,7 +2,7 @@
 	<CnSettingsSection
 		:name="t('procest', 'Configuration')"
 		:description="t('procest', 'Register and schema settings')"
-		doc-url="https://procest.conduction.nl/docs/intro"
+		docUrl="https://procest.conduction.nl/docs/intro"
 		:loading="loading">
 		<template #actions>
 			<NcButton type="primary" @click="save">
@@ -14,65 +14,65 @@
 			<div class="form-group">
 				<label>{{ t('procest', 'Register') }}</label>
 				<NcTextField
-					:value="form.register"
+					:modelValue="form.register"
 					:label="t('procest', 'Register')"
-					@update:value="v => form.register = v" />
+					@update:modelValue="(v) => (form.register = v)" />
 			</div>
 			<div class="form-group">
 				<label>{{ t('procest', 'Case schema') }}</label>
 				<NcTextField
-					:value="form.case_schema"
+					:modelValue="form.case_schema"
 					:label="t('procest', 'Case schema')"
-					@update:value="v => form.case_schema = v" />
+					@update:modelValue="(v) => (form.case_schema = v)" />
 			</div>
 			<div class="form-group">
 				<label>{{ t('procest', 'Task schema') }}</label>
 				<NcTextField
-					:value="form.task_schema"
+					:modelValue="form.task_schema"
 					:label="t('procest', 'Task schema')"
-					@update:value="v => form.task_schema = v" />
+					@update:modelValue="(v) => (form.task_schema = v)" />
 			</div>
 			<div class="form-group">
 				<label>{{ t('procest', 'Status schema') }}</label>
 				<NcTextField
-					:value="form.status_schema"
+					:modelValue="form.status_schema"
 					:label="t('procest', 'Status schema')"
-					@update:value="v => form.status_schema = v" />
+					@update:modelValue="(v) => (form.status_schema = v)" />
 			</div>
 			<div class="form-group">
 				<label>{{ t('procest', 'Role schema') }}</label>
 				<NcTextField
-					:value="form.role_schema"
+					:modelValue="form.role_schema"
 					:label="t('procest', 'Role schema')"
-					@update:value="v => form.role_schema = v" />
+					@update:modelValue="(v) => (form.role_schema = v)" />
 			</div>
 			<div class="form-group">
 				<label>{{ t('procest', 'Result schema') }}</label>
 				<NcTextField
-					:value="form.result_schema"
+					:modelValue="form.result_schema"
 					:label="t('procest', 'Result schema')"
-					@update:value="v => form.result_schema = v" />
+					@update:modelValue="(v) => (form.result_schema = v)" />
 			</div>
 			<div class="form-group">
 				<label>{{ t('procest', 'Decision schema') }}</label>
 				<NcTextField
-					:value="form.decision_schema"
+					:modelValue="form.decision_schema"
 					:label="t('procest', 'Decision schema')"
-					@update:value="v => form.decision_schema = v" />
+					@update:modelValue="(v) => (form.decision_schema = v)" />
 			</div>
 			<div class="form-group">
 				<label>{{ t('procest', 'Case type schema') }}</label>
 				<NcTextField
-					:value="form.case_type_schema"
+					:modelValue="form.case_type_schema"
 					:label="t('procest', 'Case type schema')"
-					@update:value="v => form.case_type_schema = v" />
+					@update:modelValue="(v) => (form.case_type_schema = v)" />
 			</div>
 			<div class="form-group">
 				<label>{{ t('procest', 'Status type schema') }}</label>
 				<NcTextField
-					:value="form.status_type_schema"
+					:modelValue="form.status_type_schema"
 					:label="t('procest', 'Status type schema')"
-					@update:value="v => form.status_type_schema = v" />
+					@update:modelValue="(v) => (form.status_type_schema = v)" />
 			</div>
 		</div>
 
@@ -94,6 +94,7 @@ export default {
 		NcButton,
 		NcTextField,
 	},
+
 	data() {
 		return {
 			form: {
@@ -107,19 +108,23 @@ export default {
 				case_type_schema: '',
 				status_type_schema: '',
 			},
+
 			saved: false,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		settingsStore() {
 			return useSettingsStore()
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		loading() {
 			return this.settingsStore.isLoading
 		},
 	},
+
 	/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 	async mounted() {
 		const config = await this.settingsStore.fetchSettings()
@@ -127,6 +132,7 @@ export default {
 			this.form = { ...this.form, ...config }
 		}
 	},
+
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async save() {
@@ -134,7 +140,9 @@ export default {
 			const result = await this.settingsStore.saveSettings(this.form)
 			if (result) {
 				this.saved = true
-				setTimeout(() => { this.saved = false }, 3000)
+				setTimeout(() => {
+					this.saved = false
+				}, 3000)
 			}
 		},
 	},

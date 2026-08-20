@@ -3,21 +3,26 @@
 <template>
 	<div class="dossier-document-row">
 		<NcCheckboxRadioSwitch
-			:checked="selected"
+			:modelValue="selected"
+			:aria-label="
+				t('procest', 'Select document {title}', { title: document.title })
+			"
 			class="dossier-document-row__select"
-			@update:checked="$emit('toggle-select', document)" />
+			@update:modelValue="$emit('toggle-select', document)" />
 
 		<img
 			class="dossier-document-row__thumb"
 			:src="thumbnailUrl"
-			:alt="document.titel"
+			:alt="document.title"
 			loading="lazy"
-			@error="onThumbError">
+			@error="onThumbError" />
 
 		<div class="dossier-document-row__main">
-			<span class="dossier-document-row__title">{{ document.titel }}</span>
+			<span class="dossier-document-row__title">{{ document.title }}</span>
 			<span class="dossier-document-row__meta">
-				{{ formatDate(document.creatiedatum) }} · {{ document.auteur || t('procest', 'Unknown') }} · {{ formatSize(document.bestandsomvang) }}
+				{{ formatDate(document.creatiedatum) }} ·
+				{{ document.auteur || t('procest', 'Unknown') }} ·
+				{{ formatSize(document.bestandsomvang) }}
 			</span>
 		</div>
 
@@ -27,7 +32,8 @@
 			{{ statusLabel }}
 		</span>
 
-		<span class="dossier-document-row__badge dossier-document-row__confidentiality">
+		<span
+			class="dossier-document-row__badge dossier-document-row__confidentiality">
 			{{ confidentialityLabel }}
 		</span>
 
@@ -51,7 +57,7 @@
 				{{ t('procest', 'Share') }}
 			</NcActionButton>
 			<NcActionButton
-				v-if="document.status === 'concept'"
+				v-if="document.status === 'draft'"
 				@click="$emit('delete', document)">
 				<template #icon>
 					<Delete :size="20" />
@@ -63,17 +69,16 @@
 </template>
 
 <script>
-import {
-	NcActionButton,
-	NcActions,
-	NcCheckboxRadioSwitch,
-} from '@nextcloud/vue'
 import { generateUrl } from '@nextcloud/router'
-import { canShare as canShareLevel, formatSize as formatBytes } from '../../../utils/dossierHelpers.js'
+import { NcActionButton, NcActions, NcCheckboxRadioSwitch } from '@nextcloud/vue'
 import Delete from 'vue-material-design-icons/Delete.vue'
 import History from 'vue-material-design-icons/History.vue'
 import OpenInNew from 'vue-material-design-icons/OpenInNew.vue'
 import ShareVariant from 'vue-material-design-icons/ShareVariant.vue'
+import {
+	canShare as canShareLevel,
+	formatSize as formatBytes,
+} from '../../../utils/dossierHelpers.js'
 
 /**
  * A single dossier document row: selection checkbox, preview thumbnail, title
@@ -94,22 +99,26 @@ export default {
 		OpenInNew,
 		ShareVariant,
 	},
+
 	props: {
 		document: {
 			type: Object,
 			required: true,
 		},
+
 		selected: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: ['toggle-select', 'open', 'share', 'version-history', 'delete'],
 	data() {
 		return {
 			thumbFailed: false,
 		}
 	},
+
 	computed: {
 		/**
 		 * Nextcloud preview API URL for the file thumbnail.
@@ -121,8 +130,11 @@ export default {
 			if (this.thumbFailed || !this.document.fileId) {
 				return generateUrl('/apps/theming/img/core/filetypes/file.svg')
 			}
-			return generateUrl(`/core/preview?fileId=${this.document.fileId}&x=64&y=64`)
+			return generateUrl(
+				`/core/preview?fileId=${this.document.fileId}&x=64&y=64`,
+			)
 		},
+
 		/**
 		 * Human-readable status label.
 		 *
@@ -131,12 +143,13 @@ export default {
 		 */
 		statusLabel() {
 			const labels = {
-				concept: this.t('procest', 'Draft'),
-				definitief: this.t('procest', 'Final'),
-				gearchiveerd: this.t('procest', 'Archived'),
+				draft: this.t('procest', 'Draft'),
+				final: this.t('procest', 'Final'),
+				archived: this.t('procest', 'Archived'),
 			}
 			return labels[this.document.status] || this.document.status
 		},
+
 		/**
 		 * Human-readable confidentiality label.
 		 *
@@ -154,8 +167,12 @@ export default {
 				geheim: this.t('procest', 'Secret'),
 				zeer_geheim: this.t('procest', 'Top secret'),
 			}
-			return labels[this.document.vertrouwelijkheidaanduiding] || this.document.vertrouwelijkheidaanduiding
+			return (
+				labels[this.document.vertrouwelijkheidaanduiding]
+				|| this.document.vertrouwelijkheidaanduiding
+			)
 		},
+
 		/**
 		 * Whether the document may be publicly shared (mirrors server guard).
 		 *
@@ -166,6 +183,7 @@ export default {
 			return canShareLevel(this.document.vertrouwelijkheidaanduiding)
 		},
 	},
+
 	methods: {
 		/**
 		 * Format an ISO date for display.
@@ -184,6 +202,7 @@ export default {
 			}
 			return d.toLocaleDateString('nl-NL')
 		},
+
 		/**
 		 * Format a byte count for display.
 		 *
@@ -194,6 +213,7 @@ export default {
 		formatSize(bytes) {
 			return formatBytes(bytes)
 		},
+
 		/**
 		 * Fall back to a generic icon when the preview fails to load.
 		 *

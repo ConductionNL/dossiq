@@ -18,13 +18,21 @@ const PRIORITY_WEIGHTS = {
  *
  * @return {object} Priority levels keyed by priority name
  */
-/** @spec openspec/changes/task-management/tasks.md */
+/** @spec openspec/specs/task-management/spec.md */
 export function getPriorityLevels() {
 	return {
-		urgent: { label: t('procest', 'Urgent'), weight: 1, cssVar: '--color-error' },
+		urgent: {
+			label: t('procest', 'Urgent'),
+			weight: 1,
+			cssVar: '--color-error',
+		},
 		high: { label: t('procest', 'High'), weight: 2, cssVar: '--color-warning' },
 		normal: { label: t('procest', 'Normal'), weight: 3, cssVar: null },
-		low: { label: t('procest', 'Low'), weight: 4, cssVar: '--color-text-maxcontrast' },
+		low: {
+			label: t('procest', 'Low'),
+			weight: 4,
+			cssVar: '--color-text-maxcontrast',
+		},
 	}
 }
 
@@ -37,7 +45,7 @@ export function getPriorityLevels() {
  */
 /**
  * @param task
- * @spec openspec/changes/task-management/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function isOverdue(task) {
 	if (!task.dueDate) return false
@@ -57,16 +65,18 @@ export function isOverdue(task) {
  */
 /**
  * @param task
- * @spec openspec/changes/task-management/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function isDueToday(task) {
 	if (!task.dueDate) return false
 	if (isTerminalStatus(task.status)) return false
 	const due = new Date(task.dueDate)
 	const now = new Date()
-	return due.getFullYear() === now.getFullYear()
+	return (
+		due.getFullYear() === now.getFullYear()
 		&& due.getMonth() === now.getMonth()
 		&& due.getDate() === now.getDate()
+	)
 }
 
 /**
@@ -77,7 +87,7 @@ export function isDueToday(task) {
  */
 /**
  * @param task
- * @spec openspec/changes/task-management/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function getOverdueText(task) {
 	if (!isOverdue(task)) return null
@@ -101,7 +111,7 @@ export function getOverdueText(task) {
  */
 /**
  * @param dateString
- * @spec openspec/changes/task-management/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function formatDueDate(dateString) {
 	if (!dateString) return '—'
@@ -117,7 +127,7 @@ export function formatDueDate(dateString) {
  */
 /**
  * @param priority
- * @spec openspec/changes/task-management/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function prioritySortWeight(priority) {
 	return PRIORITY_WEIGHTS[priority] ?? 3
@@ -131,12 +141,18 @@ export function prioritySortWeight(priority) {
  */
 function statusGroupWeight(status) {
 	switch (status) {
-	case 'active': return 0
-	case 'available': return 1
-	case 'completed': return 2
-	case 'terminated': return 3
-	case 'disabled': return 4
-	default: return 5
+		case 'active':
+			return 0
+		case 'available':
+			return 1
+		case 'completed':
+			return 2
+		case 'terminated':
+			return 3
+		case 'disabled':
+			return 4
+		default:
+			return 5
 	}
 }
 
@@ -149,14 +165,15 @@ function statusGroupWeight(status) {
  */
 /**
  * @param tasks
- * @spec openspec/changes/task-management/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function sortTasks(tasks) {
 	return [...tasks].sort((a, b) => {
 		const statusDiff = statusGroupWeight(a.status) - statusGroupWeight(b.status)
 		if (statusDiff !== 0) return statusDiff
 
-		const priorityDiff = prioritySortWeight(a.priority) - prioritySortWeight(b.priority)
+		const priorityDiff =
+			prioritySortWeight(a.priority) - prioritySortWeight(b.priority)
 		if (priorityDiff !== 0) return priorityDiff
 
 		if (a.dueDate && b.dueDate) {

@@ -17,21 +17,33 @@
 		<NcLoadingIcon v-if="loading" :size="24" />
 
 		<ul v-if="versions.length > 0" class="dossier-version-panel__list">
-			<li v-for="version in versions" :key="version.id" class="dossier-version-panel__item">
+			<li
+				v-for="version in versions"
+				:key="version.id"
+				class="dossier-version-panel__item">
 				<div class="dossier-version-panel__info">
-					<span class="dossier-version-panel__number">{{ t('procest', 'Version') }} {{ version.number }}</span>
+					<span class="dossier-version-panel__number"
+						>{{ t('procest', 'Version') }} {{ version.number }}</span
+					>
 					<span class="dossier-version-panel__meta">
-						{{ formatDate(version.timestamp) }} · {{ version.author || t('procest', 'Unknown') }}
+						{{ formatDate(version.timestamp) }} ·
+						{{ version.author || t('procest', 'Unknown') }}
 					</span>
 				</div>
 				<div class="dossier-version-panel__actions">
-					<NcButton type="tertiary" @click="$emit('download-version', version)">
+					<NcButton
+						type="tertiary"
+						@click="$emit('download-version', version)">
 						{{ t('procest', 'Download') }}
 					</NcButton>
 					<NcButton
 						type="tertiary"
 						:disabled="restoreDisabled"
-						:title="restoreDisabled ? t('procest', 'Final documents cannot be modified') : ''"
+						:title="
+							restoreDisabled
+								? t('procest', 'Final documents cannot be modified')
+								: ''
+						"
 						@click="$emit('restore-version', version)">
 						{{ t('procest', 'Restore') }}
 					</NcButton>
@@ -42,13 +54,9 @@
 </template>
 
 <script>
-import {
-	NcButton,
-	NcEmptyContent,
-	NcLoadingIcon,
-} from '@nextcloud/vue'
-import { generateUrl } from '@nextcloud/router'
 import axios from '@nextcloud/axios'
+import { generateUrl } from '@nextcloud/router'
+import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import History from 'vue-material-design-icons/History.vue'
 
 /**
@@ -67,16 +75,19 @@ export default {
 		NcLoadingIcon,
 		History,
 	},
+
 	props: {
 		document: {
 			type: Object,
 			required: true,
 		},
+
 		userId: {
 			type: String,
 			default: '',
 		},
 	},
+
 	emits: ['download-version', 'restore-version'],
 	data() {
 		return {
@@ -84,6 +95,7 @@ export default {
 			loading: false,
 		}
 	},
+
 	computed: {
 		/**
 		 * Whether the restore action is disabled (definitief documents).
@@ -92,9 +104,10 @@ export default {
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
 		 */
 		restoreDisabled() {
-			return this.document.status === 'definitief'
+			return this.document.status === 'final'
 		},
 	},
+
 	watch: {
 		document: {
 			immediate: true,
@@ -108,6 +121,7 @@ export default {
 			},
 		},
 	},
+
 	methods: {
 		/**
 		 * Fetch the document's versions from the Nextcloud versions API.
@@ -122,7 +136,9 @@ export default {
 			}
 			this.loading = true
 			try {
-				const url = generateUrl(`/remote.php/dav/versions/${this.userId}/versions/${this.document.fileId}`)
+				const url = generateUrl(
+					`/remote.php/dav/versions/${this.userId}/versions/${this.document.fileId}`,
+				)
 				const { data } = await axios.request({
 					method: 'PROPFIND',
 					url,
@@ -135,6 +151,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * Parse the WebDAV multistatus response into a version list.
 		 *
@@ -148,12 +165,22 @@ export default {
 			}
 			const parser = new DOMParser()
 			const doc = parser.parseFromString(xml, 'application/xml')
-			const responses = Array.from(doc.getElementsByTagNameNS('DAV:', 'response'))
+			const responses = Array.from(
+				doc.getElementsByTagNameNS('DAV:', 'response'),
+			)
 			const versions = []
 			responses.forEach((node, index) => {
 				const href = node.getElementsByTagNameNS('DAV:', 'href')[0]
-				const lastModified = node.getElementsByTagNameNS('DAV:', 'getlastmodified')[0]
-				if (!href || href.textContent.endsWith('/versions/' + this.document.fileId + '/')) {
+				const lastModified = node.getElementsByTagNameNS(
+					'DAV:',
+					'getlastmodified',
+				)[0]
+				if (
+					!href
+					|| href.textContent.endsWith(
+						'/versions/' + this.document.fileId + '/',
+					)
+				) {
 					return
 				}
 				versions.push({
@@ -165,6 +192,7 @@ export default {
 			})
 			return versions
 		},
+
 		/**
 		 * Format an ISO/HTTP date for display.
 		 *

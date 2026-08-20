@@ -17,68 +17,60 @@
 //   - openspec/changes/procest-manifest-v1/design.md
 //   - @conduction/nextcloud-vue → docs/migrating-to-manifest.md
 
-// --- Surviving custom pages — see design.md "Custom-fallback inventory". ---
-import MyWorkView from './views/MyWork.vue'
-import WerkvoorraadView from './views/Werkvoorraad.vue'
-// CaseMapView removed — superseded by manifest `type: 'map'` CnMapPage
-// (see openspec/changes/case-map-overview/design.md).
-import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
-// --- Termijnbewaking + Archief + Tenant dashboards (chain-builds 06/2026). ---
-import TermijnDashboard from './views/dashboard/TermijnDashboard.vue'
-import ArchiefDashboard from './views/dashboard/ArchiefDashboard.vue'
-import TenantOnboardingDashboard from './views/dashboard/TenantOnboardingDashboard.vue'
-// VoorstellenView removed — the Voorstellen list page is now a declarative
-// `type:"index"` on the `voorstel` schema (formatter columns + status badge,
-// see src/manifest.json + src/services/formatters.js).
-import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
-import AdminRootView from './views/settings/AdminRoot.vue'
-import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
-import PublicStatusPage from './views/public/PublicStatusPage.vue'
-
-// --- Leverancier-zaakportaal (operator-side) — chain members 06/08/10/11/14/15. ---
-import LeverancierDashboard from './views/leverancier/LeverancierDashboard.vue'
-import TenderList from './views/leverancier/TenderList.vue'
-import TenderDetail from './views/leverancier/TenderDetail.vue'
-import InvoiceList from './views/leverancier/InvoiceList.vue'
-import ContractList from './views/leverancier/ContractList.vue'
-import KpiView from './views/leverancier/KpiView.vue'
-import ProfileForm from './views/leverancier/ProfileForm.vue'
-import MessageThread from './views/leverancier/MessageThread.vue'
-
+import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
+import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // --- Detail-tab custom components (one per cross-schema relation). ---
 // Stubs for v1 — full implementations follow in `procest-case-relation-tabs`.
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
-import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
-import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
-
+// --- Case-email sidebar tab (leaf-first per ADR-022). ---
+// @spec openspec/changes/case-email-integration/tasks.md#T12
+import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
+// --- ZGW DRC case dossier sidebar tab. ---
+// @spec openspec/changes/document-zaakdossier/tasks.md#T10
+import DossierTab from './views/cases/components/DossierTab.vue'
+import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 // --- Deelzaak (sub-case) full-page views — manifest custom routes. ---
 // @spec openspec/changes/deelzaak-support/tasks.md#T05
 // @spec openspec/changes/deelzaak-support/tasks.md#T06
 import DeelzaakList from './views/cases/DeelzaakList.vue'
-import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
-
-// --- Mobiel-inspectie offline PWA views (mobiel-inspectie-offline). ---
-// @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-daily-planning-synchronization
-import InspectieList from './views/inspectie/InspectieList.vue'
-import InspectieDetail from './views/inspectie/InspectieDetail.vue'
-
-// --- Case-email sidebar tab (leaf-first per ADR-022). ---
-// @spec openspec/changes/case-email-integration/tasks.md#T12
-import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
-
-// --- ZGW DRC case dossier sidebar tab. ---
-// @spec openspec/changes/document-zaakdossier/tasks.md#T10
-import DossierTab from './views/cases/components/DossierTab.vue'
-
-// --- Visual workflow editor — TEMPORARILY UNWIRED. ---
-// `@vue-flow/{core,controls,background}` v1.x are Vue-3-only (they import
-// Fragment / Teleport / createElementVNode / toValue from 'vue'), which breaks
-// the webpack build under procest's Vue 2.7 base (272 errors). The component
-// files remain in src/components/workflow/ but are no longer pulled into the
-// bundle. Re-wire once @vue-flow is replaced with a Vue-2-compatible flow
-// library (or procest migrates to Vue 3). See
-// openspec/changes/visual-workflow-editor/design.md.
-// import VisualWorkflowEditor from './components/workflow/VisualWorkflowEditor.vue'
+import ProcessMiningDashboard from './views/dashboard/ProcessMiningDashboard.vue'
+import TenantOnboardingDashboard from './views/dashboard/TenantOnboardingDashboard.vue'
+// --- Termijnbewaking + Tenant dashboards (chain-builds 06/2026). ---
+// Archief dashboard retired (migrate-archival-to-or, ADR-022): the archivist
+// views are owned by OpenRegister.
+import TermijnDashboard from './views/dashboard/TermijnDashboard.vue'
+// --- Leverancier-zaakportaal (external supplier portal) MOVED to Portaliq
+//     (ADR-046, procest#162): the /leverancier Vue surface is retired here and
+//     re-expressed as the `supplier` audience in
+//     lib/Portal/PortalContributionProvider.php. The backend supplier services
+//     + /api/leverancier-portaal/* endpoints stay; only the in-app portal views
+//     and their nav/routes are removed. ---
+// CaseMapView removed — superseded by manifest `type: 'map'` CnMapPage
+// (see openspec/changes/case-map-overview/design.md).
+import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
+// --- Surviving custom pages — see design.md "Custom-fallback inventory". ---
+import MyWorkView from './views/MyWorkCards.vue'
+// Token-addressed advice-response surface for external advisory bodies
+// (consultation-management TASK-CN-06). Declared as page
+// `ExternalConsultationResponse` in src/manifest.d/consultation-public.json;
+// its absence here rendered the manifest renderer's "This page is empty"
+// placeholder on /public/consultations/:token instead of this component.
+import ExternalConsultationResponsePage from './views/public/ExternalConsultationResponsePage.vue'
+import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
+// Remote-org accept/reject for a federated zaakoverdracht (federated-case-collaboration).
+import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
+import PublicStatusPage from './views/public/PublicStatusPage.vue'
+// Mobiel-inspectie offline views retired — "Veldinspecties" now surfaces the
+// generic `field-inspection` OpenRegister integration leaf (a nc-vue builtin),
+// registered with procest's offline schema mapping in src/main.js. The custom
+// InspectieList/InspectieDetail views + their offline glue (offlineDb.js,
+// syncReplayService.js) are deleted; the leaf owns the planning list, checklist
+// completion, mutation queue and reconnect-replay.
+import AdminRootView from './views/settings/AdminRoot.vue'
+// VoorstellenView removed — the Voorstellen list page is now a declarative
+// `type:"index"` on the `voorstel` schema (formatter columns + status badge,
+// see src/manifest.json + src/services/formatters.js).
+import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
 
 // --- Features & Roadmap page — thin wrapper around the lib's
 //     CnFeaturesAndRoadmapView (the in-product roadmap surface powered by
@@ -102,10 +94,14 @@ async function voorstelReminder({ actionId, item }) {
 	const steps = (() => {
 		const snap = item && item.routeSnapshot
 		if (!snap) return []
-		try { return typeof snap === 'string' ? JSON.parse(snap) : snap } catch { return [] }
+		try {
+			return typeof snap === 'string' ? JSON.parse(snap) : snap
+		} catch {
+			return []
+		}
 	})()
 	const current = steps.find((s) => s.order === item.currentStep)
-	const actor = current ? (current.label || current.actor || '-') : '-'
+	const actor = current ? current.label || current.actor || '-' : '-'
 	try {
 		await fetch('/apps/procest/api/notifications/parafering-reminder', {
 			method: 'POST',
@@ -114,7 +110,11 @@ async function voorstelReminder({ actionId, item }) {
 				requesttoken: window.OC?.requestToken,
 				'OCS-APIREQUEST': 'true',
 			},
-			body: JSON.stringify({ voorstelId: item.id, actor, onderwerp: item.onderwerp }),
+			body: JSON.stringify({
+				voorstelId: item.id,
+				actor,
+				subject: item.subject,
+			}),
 		})
 	} catch (error) {
 		// eslint-disable-next-line no-console
@@ -124,15 +124,14 @@ async function voorstelReminder({ actionId, item }) {
 
 export default {
 	// --- Genuine exceptions: no abstract analogue. ---
-	MyWorkView, // bespoke 4-tab filter UI mixing case + task entities
-	WerkvoorraadView, // KPI-strip-driven work queue
+	MyWorkView, // current-user case index (assignee=uid) in card view — CnIndexPage wrapper
 	// CaseMapView removed — see import comment above.
 
 	// --- Lib gaps: would migrate once lib gains the missing primitive. ---
 	DoorlooptijdView, // SLA dashboard — charts via OR analytics-series leaf + lib CnChartWidget (ADR-022)
 	AdminRootView, // multi-tab admin root (lib settings-custom-slot gap)
 	TermijnDashboard, // AWB termijnbewaking + dwangsom KPI dashboard
-	ArchiefDashboard, // e-Depot handover dashboard (stats + triggers + audit)
+	ProcessMiningDashboard, // bottleneck analysis — dwell time, transition matrix, rework, throughput (CnKpiGrid + CnChartWidget leaves)
 	TenantOnboardingDashboard, // SaaS tenant onboarding (7-step + go-live)
 
 	// --- Migration cost: deferred to a follow-up. ---
@@ -144,16 +143,11 @@ export default {
 	// --- Anonymous-public routes (no auth, no main menu). ---
 	PublicAppointmentPage,
 	PublicStatusPage,
+	PublicFederatedTransferPage,
+	ExternalConsultationResponsePage,
 
-	// --- Leverancier-zaakportaal (operator-side) — chain members 06/08/10/11/14/15. ---
-	LeverancierDashboard,
-	TenderList,
-	TenderDetail,
-	InvoiceList,
-	ContractList,
-	KpiView,
-	ProfileForm,
-	MessageThread,
+	// --- Leverancier-zaakportaal external supplier portal MOVED to Portaliq
+	//     (ADR-046, procest#162) — see import-section comment. ---
 
 	// --- Detail-tab components (one per case-detail cross-schema relation). ---
 	CaseTasksTab, // tasks where task.case === parent.id
@@ -164,18 +158,14 @@ export default {
 	DeelzaakList, // sub-case list for a parent case
 	DeelzaakDetail, // sub-case detail with parent breadcrumb
 
-	// --- Mobiel-inspectie offline PWA (daily planning + offline checklists). ---
-	InspectieList, // offline daily planning + sync indicator
-	InspectieDetail, // offline checklist completion (atomic local store + queue)
+	// --- Mobiel-inspectie retired — see import-section comment; "Veldinspecties"
+	//     is now a dashboard page surfacing the `field-inspection` leaf. ---
 
 	// --- Case-email sidebar tab (display via leaf, compose via NC Mail draft). ---
 	CaseEmailTab,
 
 	// --- ZGW DRC case dossier tab (document-zaakdossier). ---
 	DossierTab,
-
-	// --- Visual workflow editor — temporarily unwired (see import comment above). ---
-	// VisualWorkflowEditor,
 
 	// --- Features & Roadmap page (lib's CnFeaturesAndRoadmapView). ---
 }

@@ -1,5 +1,5 @@
-import { defineStore } from 'pinia'
 import { generateUrl } from '@nextcloud/router'
+import { defineStore } from 'pinia'
 
 export const useZgwMappingStore = defineStore('zgwMapping', {
 	state: () => ({
@@ -19,17 +19,22 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 			this.error = null
 
 			try {
-				const response = await fetch(generateUrl('/apps/procest/api/zgw-mappings'), {
-					method: 'GET',
-					headers: {
-						'Content-Type': 'application/json',
-						requesttoken: OC.requestToken,
-						'OCS-APIREQUEST': 'true',
+				const response = await fetch(
+					generateUrl('/apps/procest/api/zgw-mappings'),
+					{
+						method: 'GET',
+						headers: {
+							'Content-Type': 'application/json',
+							requesttoken: OC.requestToken,
+							'OCS-APIREQUEST': 'true',
+						},
 					},
-				})
+				)
 
 				if (!response.ok) {
-					throw new Error(`Failed to fetch ZGW mappings: ${response.statusText}`)
+					throw new Error(
+						`Failed to fetch ZGW mappings: ${response.statusText}`,
+					)
 				}
 
 				const data = await response.json()
@@ -54,18 +59,23 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 			this.error = null
 
 			try {
-				const response = await fetch(generateUrl(`/apps/procest/api/zgw-mappings/${resourceKey}`), {
-					method: 'PUT',
-					headers: {
-						'Content-Type': 'application/json',
-						requesttoken: OC.requestToken,
-						'OCS-APIREQUEST': 'true',
+				const response = await fetch(
+					generateUrl(`/apps/procest/api/zgw-mappings/${resourceKey}`),
+					{
+						method: 'PUT',
+						headers: {
+							'Content-Type': 'application/json',
+							requesttoken: OC.requestToken,
+							'OCS-APIREQUEST': 'true',
+						},
+						body: JSON.stringify(config),
 					},
-					body: JSON.stringify(config),
-				})
+				)
 
 				if (!response.ok) {
-					throw new Error(`Failed to save ZGW mapping: ${response.statusText}`)
+					throw new Error(
+						`Failed to save ZGW mapping: ${response.statusText}`,
+					)
 				}
 
 				const data = await response.json()
@@ -89,17 +99,24 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 			this.error = null
 
 			try {
-				const response = await fetch(generateUrl(`/apps/procest/api/zgw-mappings/${resourceKey}/reset`), {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						requesttoken: OC.requestToken,
-						'OCS-APIREQUEST': 'true',
+				const response = await fetch(
+					generateUrl(
+						`/apps/procest/api/zgw-mappings/${resourceKey}/reset`,
+					),
+					{
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							requesttoken: OC.requestToken,
+							'OCS-APIREQUEST': 'true',
+						},
 					},
-				})
+				)
 
 				if (!response.ok) {
-					throw new Error(`Failed to reset ZGW mapping: ${response.statusText}`)
+					throw new Error(
+						`Failed to reset ZGW mapping: ${response.statusText}`,
+					)
 				}
 
 				const data = await response.json()

@@ -36,162 +36,161 @@ use Psr\Log\LoggerInterface;
 /**
  * Immutable audit log for mandate uses.
  */
-class MandaatGebruikService
-{
-    use SearchesObjects;
+class MandaatGebruikService {
+	use SearchesObjects;
 
-    /**
-     * Constructor.
-     *
-     * @param SettingsService $settingsService Settings.
-     * @param LoggerInterface $logger          Logger.
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService Settings.
+	 * @param LoggerInterface $logger Logger.
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Log a mandate use.
-     *
-     * @param string               $zaakId            Case id.
-     * @param string               $decisionId        Decision id.
-     * @param string               $mandaatId         Mandate id.
-     * @param string               $userId            User id.
-     * @param array<string, mixed> $roleSnapshot      Role snapshot at decision time.
-     * @param array<string, mixed> $conditionsApplied Voorwaarden snapshot.
-     *
-     * @return array<string, mixed>
-     *
-     * @spec openspec/changes/mandaat-matrix-05-case-decision-integration/tasks.md
-     */
-    public function logMandaatGebruik(
-        string $zaakId,
-        string $decisionId,
-        string $mandaatId,
-        string $userId,
-        array $roleSnapshot=[],
-        array $conditionsApplied=[]
-    ): array {
-        $objectService = $this->settingsService->getObjectService();
-        $register      = (string) $this->settingsService->getConfigValue('register');
-        $schema        = (string) $this->settingsService->getConfigValue('mandaat_gebruik_schema');
-        if ($objectService === null || $register === '' || $schema === '') {
-            return [];
-        }
+	/**
+	 * Log a mandate use.
+	 *
+	 * @param string $caseId Case id.
+	 * @param string $decisionId Decision id.
+	 * @param string $mandateId Mandate id.
+	 * @param string $userId User id.
+	 * @param array<string, mixed> $roleSnapshot Role snapshot at decision time.
+	 * @param array<string, mixed> $conditionsApplied Voorwaarden snapshot.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/mandaat-matrix-05-case-decision-integration/tasks.md
+	 */
+	public function logMandaatGebruik(
+		string $caseId,
+		string $decisionId,
+		string $mandateId,
+		string $userId,
+		array $roleSnapshot = [],
+		array $conditionsApplied = [],
+	): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('mandaat_gebruik_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return [];
+		}
 
-        $row = [
-            'zaakId'                => $zaakId,
-            'decisionId'            => $decisionId,
-            'mandaatId'             => $mandaatId,
-            'userId'                => $userId,
-            'tijdstip'              => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
-            'rolOpMomentVanBesluit' => $roleSnapshot,
-            'gebruikteVoorwaarden'  => $conditionsApplied,
-            'mandaatVersieId'       => $mandaatId,
-        ];
+		$row = [
+			'caseId' => $caseId,
+			'decisionId' => $decisionId,
+			'mandateId' => $mandateId,
+			'userId' => $userId,
+			'moment' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+			'roleOnMomentFromDecision' => $roleSnapshot,
+			'usedTerms' => $conditionsApplied,
+			'mandateVersionId' => $mandateId,
+		];
 
-        try {
-            $saved = $objectService->saveObject($register, $schema, $row);
-            if (is_array($saved) === true) {
-                return $saved;
-            }
+		try {
+			$saved = $objectService->saveObject($register, $schema, $row);
+			if (is_array($saved) === true) {
+				return $saved;
+			}
 
-            return $row;
-        } catch (\Throwable $e) {
-            $this->logger->error('MandaatGebruik log failed', ['zaakId' => $zaakId, 'error' => $e->getMessage()]);
-            return $row;
-        }
-    }//end logMandaatGebruik()
+			return $row;
+		} catch (\Throwable $e) {
+			$this->logger->error('MandaatGebruik log failed', ['caseId' => $caseId, 'error' => $e->getMessage()]);
+			return $row;
+		}
+	}//end logMandaatGebruik()
 
-    /**
-     * Retrieve the decision audit trail for a case.
-     *
-     * @param string $zaakId Case id.
-     *
-     * @return array<int, array<string, mixed>>
-     *
-     * @spec openspec/changes/mandaat-matrix-05-case-decision-integration/tasks.md
-     */
-    public function getDecisionAuditTrail(string $zaakId): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        $register      = (string) $this->settingsService->getConfigValue('register');
-        $schema        = (string) $this->settingsService->getConfigValue('mandaat_gebruik_schema');
-        if ($objectService === null || $register === '' || $schema === '') {
-            return [];
-        }
+	/**
+	 * Retrieve the decision audit trail for a case.
+	 *
+	 * @param string $caseId Case id.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/mandaat-matrix-05-case-decision-integration/tasks.md
+	 */
+	public function getDecisionAuditTrail(string $caseId): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('mandaat_gebruik_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return [];
+		}
 
-        try {
-            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['zaakId' => $zaakId]);
-            if (is_array($rows) === true) {
-                return $rows;
-            }
+		try {
+			return $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['caseId' => $caseId]);
+		} catch (\Throwable $e) {
+			return [];
+		}
+	}//end getDecisionAuditTrail()
 
-            return [];
-        } catch (\Throwable $e) {
-            return [];
-        }
-    }//end getDecisionAuditTrail()
+	/**
+	 * Retrieve the decisions taken under a mandate in a date range.
+	 *
+	 * @param string $mandateId Mandate id.
+	 * @param DateTimeImmutable|null $from From (inclusive).
+	 * @param DateTimeImmutable|null $until Until (inclusive).
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/mandaat-matrix-05-case-decision-integration/tasks.md
+	 */
+	public function getDecisionByMandaat(string $mandateId, ?DateTimeImmutable $from = null, ?DateTimeImmutable $until = null): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('mandaat_gebruik_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return [];
+		}
 
-    /**
-     * Retrieve the decisions taken under a mandate in a date range.
-     *
-     * @param string                 $mandaatId Mandate id.
-     * @param DateTimeImmutable|null $from      From (inclusive).
-     * @param DateTimeImmutable|null $until     Until (inclusive).
-     *
-     * @return array<int, array<string, mixed>>
-     *
-     * @spec openspec/changes/mandaat-matrix-05-case-decision-integration/tasks.md
-     */
-    public function getDecisionByMandaat(string $mandaatId, ?DateTimeImmutable $from=null, ?DateTimeImmutable $until=null): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        $register      = (string) $this->settingsService->getConfigValue('register');
-        $schema        = (string) $this->settingsService->getConfigValue('mandaat_gebruik_schema');
-        if ($objectService === null || $register === '' || $schema === '') {
-            return [];
-        }
+		try {
+			$rows = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: ['mandateId' => $mandateId]
+			);
+		} catch (\Throwable $e) {
+			return [];
+		}
 
-        try {
-            $rows = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $schema,
-                filters: ['mandaatId' => $mandaatId]
-            );
-        } catch (\Throwable $e) {
-            return [];
-        }
+		if ($from === null && $until === null) {
+			return $rows;
+		}
 
-        if ($from === null && $until === null) {
-            if (is_array($rows) === true) {
-                return $rows;
-            }
+		return $this->filterByDateRange(rows: $rows, from: $from, until: $until);
+	}//end getDecisionByMandaat()
 
-            return [];
-        }
+	/**
+	 * Keep only the rows whose `tijdstip` day falls inside the supplied (inclusive) bounds.
+	 *
+	 * A null bound is not applied, so a row is dropped only by a bound that is actually set.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The mandate-usage rows.
+	 * @param DateTimeImmutable|null $from From (inclusive).
+	 * @param DateTimeImmutable|null $until Until (inclusive).
+	 *
+	 * @return array<int, array<string, mixed>> The rows within the range.
+	 */
+	private function filterByDateRange(array $rows, ?DateTimeImmutable $from, ?DateTimeImmutable $until): array {
+		$out = [];
+		foreach ($rows as $row) {
+			$when = substr((string)($row['moment'] ?? ''), 0, 10);
+			if ($from !== null && $when < $from->format('Y-m-d')) {
+				continue;
+			}
 
-        $out = [];
-        foreach ((array) $rows as $row) {
-            if (is_array($row) === false) {
-                continue;
-            }
+			if ($until !== null && $when > $until->format('Y-m-d')) {
+				continue;
+			}
 
-            $when = substr((string) ($row['tijdstip'] ?? ''), 0, 10);
-            if ($from !== null && $when < $from->format('Y-m-d')) {
-                continue;
-            }
+			$out[] = $row;
+		}
 
-            if ($until !== null && $when > $until->format('Y-m-d')) {
-                continue;
-            }
-
-            $out[] = $row;
-        }
-
-        return $out;
-    }//end getDecisionByMandaat()
+		return $out;
+	}//end filterByDateRange()
 }//end class

@@ -12,8 +12,12 @@
 				class="advice-request__item"
 				:class="{ 'advice-request__item--overdue': isOverdue(req) }">
 				<div class="advice-request__item-header">
-					<span class="advice-request__department">{{ req.department }}</span>
-					<span class="advice-request__status" :class="'advice-request__status--' + req.status">
+					<span class="advice-request__department">{{
+						req.department
+					}}</span>
+					<span
+						class="advice-request__status"
+						:class="'advice-request__status--' + req.status">
 						{{ getStatusLabel(req.status) }}
 					</span>
 				</div>
@@ -21,9 +25,17 @@
 					{{ req.subject }}
 				</p>
 				<div class="advice-request__meta">
-					<span>{{ t('procest', 'Deadline: {date}', { date: formatDate(req.deadline) }) }}</span>
+					<span>{{
+						t('procest', 'Deadline: {date}', {
+							date: formatDate(req.deadline),
+						})
+					}}</span>
 					<span v-if="req.response">
-						{{ t('procest', 'Response: {type}', { type: getResponseLabel(req.response) }) }}
+						{{
+							t('procest', 'Response: {type}', {
+								type: getResponseLabel(req.response),
+							})
+						}}
 					</span>
 				</div>
 			</div>
@@ -36,28 +48,44 @@
 		<!-- New request form -->
 		<div v-if="showForm" class="advice-request__form">
 			<div class="form-group">
-				<label>{{ t('procest', 'Department / Organization') }} *</label>
+				<label for="advice-request-department"
+					>{{ t('procest', 'Department / Organization') }} *</label
+				>
 				<NcTextField
-					:value="form.department"
-					:placeholder="t('procest', 'e.g., Brandweer, Welstandscommissie')"
-					@update:value="v => form.department = v" />
+					id="advice-request-department"
+					:modelValue="form.department"
+					:placeholder="
+						t('procest', 'e.g., Brandweer, Welstandscommissie')
+					"
+					@update:modelValue="(v) => (form.department = v)" />
 			</div>
 			<div class="form-group">
-				<label>{{ t('procest', 'Subject') }} *</label>
+				<label for="advice-request-subject"
+					>{{ t('procest', 'Subject') }} *</label
+				>
 				<NcTextField
-					:value="form.subject"
-					@update:value="v => form.subject = v" />
+					id="advice-request-subject"
+					:modelValue="form.subject"
+					@update:modelValue="(v) => (form.subject = v)" />
 			</div>
 			<div class="form-group">
-				<label>{{ t('procest', 'Question') }}</label>
-				<textarea v-model="form.question" rows="3" />
+				<label for="advice-request-question">{{
+					t('procest', 'Question')
+				}}</label>
+				<textarea
+					id="advice-request-question"
+					v-model="form.question"
+					rows="3" />
 			</div>
 			<div class="form-group">
-				<label>{{ t('procest', 'Deadline') }} *</label>
+				<label for="advice-request-deadline"
+					>{{ t('procest', 'Deadline') }} *</label
+				>
 				<NcTextField
-					:value="form.deadline"
+					id="advice-request-deadline"
+					:modelValue="form.deadline"
 					type="date"
-					@update:value="v => form.deadline = v" />
+					@update:modelValue="(v) => (form.deadline = v)" />
 			</div>
 			<div class="advice-request__form-actions">
 				<NcButton @click="showForm = false">
@@ -87,20 +115,24 @@ export default {
 		NcButton,
 		NcTextField,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		requests: {
 			type: Array,
 			default: () => [],
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	data() {
 		return {
 			showForm: false,
@@ -112,14 +144,18 @@ export default {
 			},
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		isFormValid() {
-			return this.form.department.trim() !== ''
+			return (
+				this.form.department.trim() !== ''
 				&& this.form.subject.trim() !== ''
 				&& this.form.deadline !== ''
+			)
 		},
 	},
+
 	methods: {
 		/**
 		 * @param status
@@ -128,25 +164,28 @@ export default {
 		getStatusLabel(status) {
 			const labels = {
 				open: this.t('procest', 'Open'),
-				in_behandeling: this.t('procest', 'In progress'),
-				advies_uitgebracht: this.t('procest', 'Advice received'),
-				afgesloten: this.t('procest', 'Closed'),
+				in_handling: this.t('procest', 'In progress'),
+				advice_uitgebracht: this.t('procest', 'Advice received'),
+				closed: this.t('procest', 'Closed'),
 			}
 			return labels[status] || status
 		},
+
 		/**
 		 * @param response
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		getResponseLabel(response) {
 			const labels = {
-				positief: this.t('procest', 'Positive'),
-				positief_met_voorwaarden: this.t('procest', 'Positive with conditions'),
-				negatief: this.t('procest', 'Negative'),
-				niet_van_toepassing: this.t('procest', 'Not applicable'),
+				positive: this.t('procest', 'Positive'),
+				positief_with_terms: this.t('procest', 'Positive with conditions'),
+
+				negative: this.t('procest', 'Negative'),
+				non_from_application: this.t('procest', 'Not applicable'),
 			}
 			return labels[response] || response
 		},
+
 		/**
 		 * @param dateStr
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
@@ -157,16 +196,22 @@ export default {
 			if (isNaN(date.getTime())) return dateStr
 			return date.toLocaleDateString('nl-NL')
 		},
+
 		/**
 		 * @param req
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		isOverdue(req) {
-			if (!req.deadline || req.status === 'afgesloten' || req.status === 'advies_uitgebracht') {
+			if (
+				!req.deadline
+				|| req.status === 'closed'
+				|| req.status === 'advice_uitgebracht'
+			) {
 				return false
 			}
 			return new Date(req.deadline) < new Date()
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		submitRequest() {
 			this.$emit('create', {

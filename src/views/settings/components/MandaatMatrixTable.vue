@@ -24,29 +24,40 @@
 		<NcEmptyContent
 			v-if="!loading && matrices.length === 0"
 			:name="t('procest', 'No mandate decisions')"
-			:description="t('procest', 'No MandateringsBesluit entries yet. Create one or import an export.')">
+			:description="
+				t(
+					'procest',
+					'No MandateringsBesluit entries yet. Create one or import an export.',
+				)
+			">
 			<template #icon>
 				<FileDocumentMultiple :size="48" />
 			</template>
 		</NcEmptyContent>
 
-		<table v-if="!loading && matrices.length > 0" class="mandaat-matrix-table__table">
+		<table
+			v-if="!loading && matrices.length > 0"
+			class="mandaat-matrix-table__table">
 			<thead>
 				<tr>
-					<th>{{ t('procest', '#') }}</th>
-					<th>{{ t('procest', 'Naam') }}</th>
-					<th>{{ t('procest', 'Status') }}</th>
-					<th>{{ t('procest', 'In werkingtreding') }}</th>
-					<th>{{ t('procest', 'Vervaldatum') }}</th>
-					<th>{{ t('procest', 'Acties') }}</th>
+					<th scope="col">{{ t('procest', '#') }}</th>
+					<th scope="col">{{ t('procest', 'Naam') }}</th>
+					<th scope="col">{{ t('procest', 'Status') }}</th>
+					<th scope="col">{{ t('procest', 'In werkingtreding') }}</th>
+					<th scope="col">{{ t('procest', 'Expiry date') }}</th>
+					<th scope="col">{{ t('procest', 'Acties') }}</th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr v-for="(b, idx) in matrices" :key="b.id">
 					<td>{{ idx + 1 }}</td>
-					<td>{{ b.naam || b.mandaatNummer || b.id }}</td>
+					<td>{{ b.name || b.mandateNumber || b.id }}</td>
 					<td>
-						<span class="mandaat-matrix-table__badge" :class="badgeClass(b.status)">{{ b.status || '—' }}</span>
+						<span
+							class="mandaat-matrix-table__badge"
+							:class="badgeClass(b.status)"
+							>{{ b.status || '—' }}</span
+						>
 					</td>
 					<td>{{ b.inWerkingtreding || '—' }}</td>
 					<td>{{ b.vervaldatum || '—' }}</td>
@@ -62,19 +73,28 @@
 </template>
 
 <script>
-import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
-import Plus from 'vue-material-design-icons/Plus.vue'
-import Import from 'vue-material-design-icons/Import.vue'
+import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import FileDocumentMultiple from 'vue-material-design-icons/FileDocumentMultiple.vue'
+import Import from 'vue-material-design-icons/Import.vue'
+import Plus from 'vue-material-design-icons/Plus.vue'
 
 export default {
 	name: 'MandaatMatrixTable',
-	components: { NcButton, NcEmptyContent, NcLoadingIcon, Plus, Import, FileDocumentMultiple },
+	components: {
+		NcButton,
+		NcEmptyContent,
+		NcLoadingIcon,
+		Plus,
+		Import,
+		FileDocumentMultiple,
+	},
+
 	props: {
 		matrices: { type: Array, default: () => [] },
 		loading: { type: Boolean, default: false },
 	},
+
 	emits: ['edit', 'import'],
 	methods: {
 		t,
@@ -84,9 +104,12 @@ export default {
 		 */
 		badgeClass(status) {
 			const s = (status || '').toLowerCase()
-			if (s === 'actief' || s === 'active') return 'mandaat-matrix-table__badge--ok'
-			if (s === 'vervallen' || s === 'expired') return 'mandaat-matrix-table__badge--alert'
-			if (s === 'concept' || s === 'draft') return 'mandaat-matrix-table__badge--neutral'
+			if (s === 'active' || s === 'active')
+				return 'mandaat-matrix-table__badge--ok'
+			if (s === 'lapsed' || s === 'expired')
+				return 'mandaat-matrix-table__badge--alert'
+			if (s === 'draft' || s === 'draft')
+				return 'mandaat-matrix-table__badge--neutral'
 			return 'mandaat-matrix-table__badge--neutral'
 		},
 	},

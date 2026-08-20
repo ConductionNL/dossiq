@@ -15,6 +15,9 @@ export const TASK_STATUSES = {
 	disabled: 'disabled',
 }
 
+/**
+ *
+ */
 function getStatusLabels() {
 	return {
 		available: t('procest', 'Available'),
@@ -33,6 +36,9 @@ const TRANSITION_MAP = {
 	disabled: [],
 }
 
+/**
+ *
+ */
 function getTransitionLabels() {
 	return {
 		active: t('procest', 'Start'),
@@ -52,7 +58,7 @@ const TERMINAL_STATUSES = new Set(['completed', 'terminated', 'disabled'])
  */
 /**
  * @param currentStatus
- * @spec openspec/changes/task-management/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function getAllowedTransitions(currentStatus) {
 	return TRANSITION_MAP[currentStatus] || []
@@ -68,7 +74,7 @@ export function getAllowedTransitions(currentStatus) {
 /**
  * @param from
  * @param to
- * @spec openspec/changes/task-management/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function validateTransition(from, to) {
 	const allowed = TRANSITION_MAP[from]
@@ -83,7 +89,7 @@ export function validateTransition(from, to) {
  */
 /**
  * @param status
- * @spec openspec/changes/task-management/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function getStatusLabel(status) {
 	return getStatusLabels()[status] || status
@@ -97,7 +103,7 @@ export function getStatusLabel(status) {
  */
 /**
  * @param targetStatus
- * @spec openspec/changes/task-management/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function getTransitionLabel(targetStatus) {
 	return getTransitionLabels()[targetStatus] || targetStatus
@@ -111,7 +117,7 @@ export function getTransitionLabel(targetStatus) {
  */
 /**
  * @param status
- * @spec openspec/changes/task-management/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function isTerminalStatus(status) {
 	return TERMINAL_STATUSES.has(status)

@@ -14,7 +14,9 @@
 		<div class="case-tab__header">
 			<h3 class="case-tab__title">
 				{{ t('procest', 'Documents') }}
-				<span v-if="documents.length > 0" class="case-tab__count">({{ documents.length }})</span>
+				<span v-if="documents.length > 0" class="case-tab__count"
+					>({{ documents.length }})</span
+				>
 			</h3>
 			<NcButton type="primary" @click="openCreate">
 				{{ t('procest', 'Add document') }}
@@ -26,17 +28,25 @@
 		<NcEmptyContent
 			v-else-if="documents.length === 0"
 			:title="t('procest', 'No documents yet')"
-			:description="t('procest', 'Register a document to link it to this case.')" />
+			:description="
+				t('procest', 'Register a document to link it to this case.')
+			" />
 
 		<ul v-else class="case-tab__list">
 			<li
 				v-for="doc in documents"
 				:key="doc.id"
 				class="case-tab__item"
-				@click="openEdit(doc)">
+				role="button"
+				tabindex="0"
+				@click="openEdit(doc)"
+				@keydown.enter="openEdit(doc)"
+				@keydown.space.prevent="openEdit(doc)">
 				<div class="case-tab__row">
-					<strong class="case-tab__item-title">{{ doc.title || '—' }}</strong>
-					<NcActions :inline="0" @click.native.stop>
+					<strong class="case-tab__item-title">{{
+						doc.title || '—'
+					}}</strong>
+					<NcActions :inline="0" @click.stop>
 						<NcActionButton @click="openEdit(doc)">
 							{{ t('procest', 'Edit') }}
 						</NcActionButton>
@@ -47,9 +57,15 @@
 				</div>
 				<div class="case-tab__meta">
 					<span v-if="doc.registrationDate">
-						{{ t('procest', 'Registered: {date}', { date: formatDate(doc.registrationDate) }) }}
+						{{
+							t('procest', 'Registered: {date}', {
+								date: formatDate(doc.registrationDate),
+							})
+						}}
 					</span>
-					<span v-if="doc.description" class="case-tab__description">{{ doc.description }}</span>
+					<span v-if="doc.description" class="case-tab__description">{{
+						doc.description
+					}}</span>
 				</div>
 			</li>
 		</ul>
@@ -59,7 +75,11 @@
 			ref="formDialog"
 			:fields="formFields"
 			:item="editItem"
-			:dialog-title="editItem ? t('procest', 'Edit document') : t('procest', 'Add document')"
+			:dialogTitle="
+				editItem
+					? t('procest', 'Edit document')
+					: t('procest', 'Add document')
+			"
 			@confirm="onFormConfirm"
 			@close="showFormDialog = false" />
 
@@ -73,8 +93,14 @@
 </template>
 
 <script>
-import { NcActionButton, NcActions, NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import { CnDeleteDialog, CnFormDialog } from '@conduction/nextcloud-vue'
+import {
+	NcActionButton,
+	NcActions,
+	NcButton,
+	NcEmptyContent,
+	NcLoadingIcon,
+} from '@nextcloud/vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 import { formatDate } from '../../utils/caseHelpers.js'
@@ -90,6 +116,7 @@ export default {
 		CnDeleteDialog,
 		CnFormDialog,
 	},
+
 	props: {
 		/** Case UUID — passed by CnObjectSidebar as a shared tab prop. */
 		objectId: {
@@ -97,6 +124,7 @@ export default {
 			default: null,
 		},
 	},
+
 	data() {
 		return {
 			documents: [],
@@ -106,30 +134,44 @@ export default {
 			deleteItem: null,
 		}
 	},
+
 	computed: {
 		objectStore() {
 			return useObjectStore()
 		},
+
 		resolvedCaseId() {
 			return this.objectId || this.$route?.params?.id || null
 		},
+
 		formFields() {
 			return [
 				{ key: 'title', label: t('procest', 'Title'), required: true },
-				{ key: 'description', label: t('procest', 'Description'), widget: 'textarea' },
-				{ key: 'registrationDate', label: t('procest', 'Registration date'), widget: 'datetime' },
+				{
+					key: 'description',
+					label: t('procest', 'Description'),
+					widget: 'textarea',
+				},
+				{
+					key: 'registrationDate',
+					label: t('procest', 'Registration date'),
+					widget: 'datetime',
+				},
 			]
 		},
 	},
+
 	watch: {
 		resolvedCaseId() {
 			this.reload()
 		},
 	},
+
 	async mounted() {
 		await initializeStores()
 		await this.reload()
 	},
+
 	methods: {
 		formatDate,
 		async reload() {
@@ -139,10 +181,13 @@ export default {
 			}
 			this.loading = true
 			try {
-				const results = await this.objectStore.fetchCollection('caseDocument', {
-					'_filters[case]': this.resolvedCaseId,
-					_limit: 100,
-				})
+				const results = await this.objectStore.fetchCollection(
+					'caseDocument',
+					{
+						'_filters[case]': this.resolvedCaseId,
+						_limit: 100,
+					},
+				)
 				this.documents = results || []
 			} catch (err) {
 				console.error('[CaseDocumentsTab] failed to fetch documents', err)
@@ -151,17 +196,21 @@ export default {
 				this.loading = false
 			}
 		},
+
 		openCreate() {
 			this.editItem = null
 			this.showFormDialog = true
 		},
+
 		openEdit(doc) {
 			this.editItem = doc
 			this.showFormDialog = true
 		},
+
 		openDelete(doc) {
 			this.deleteItem = doc
 		},
+
 		async onFormConfirm(formData) {
 			try {
 				const result = await this.objectStore.saveObject('caseDocument', {
@@ -172,19 +221,26 @@ export default {
 					this.$refs.formDialog.setResult({ success: true })
 					await this.reload()
 				} else {
-					this.$refs.formDialog.setResult({ error: t('procest', 'Could not save document') })
+					this.$refs.formDialog.setResult({
+						error: t('procest', 'Could not save document'),
+					})
 				}
 			} catch (err) {
-				this.$refs.formDialog.setResult({ error: err.message || t('procest', 'Could not save document') })
+				this.$refs.formDialog.setResult({
+					error: err.message || t('procest', 'Could not save document'),
+				})
 			}
 		},
+
 		async onDeleteConfirm(id) {
 			try {
 				await this.objectStore.deleteObject('caseDocument', id)
 				this.$refs.deleteDialog.setResult({ success: true })
 				await this.reload()
 			} catch (err) {
-				this.$refs.deleteDialog.setResult({ error: err.message || t('procest', 'Could not delete document') })
+				this.$refs.deleteDialog.setResult({
+					error: err.message || t('procest', 'Could not delete document'),
+				})
 			}
 		},
 	},

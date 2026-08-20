@@ -3,51 +3,64 @@
 		<div class="cases-on-map__sidebar">
 			<h2>{{ t('procest', 'Cases on map') }}</h2>
 			<p class="cases-on-map__summary">
-				{{ t('procest', 'Showing {filtered} of {total} located cases', { filtered: features.length, total: total }) }}
+				{{
+					t('procest', 'Showing {filtered} of {total} located cases', {
+						filtered: features.length,
+						total: total,
+					})
+				}}
 			</p>
 
 			<NcSelect
 				v-model="filterCaseType"
-				:input-label="t('procest', 'Case type')"
+				:inputLabel="t('procest', 'Case type')"
 				:options="caseTypeOptions"
 				:placeholder="t('procest', 'All case types')"
 				:clearable="true"
 				class="cases-on-map__filter"
-				@input="reload" />
+				@update:modelValue="reload" />
 
 			<NcSelect
 				v-model="filterStatus"
-				:input-label="t('procest', 'Status')"
+				:inputLabel="t('procest', 'Status')"
 				:options="statusOptions"
 				:placeholder="t('procest', 'All statuses')"
 				:clearable="true"
 				class="cases-on-map__filter"
-				@input="reload" />
+				@update:modelValue="reload" />
 
 			<div v-if="degraded" class="cases-on-map__notice">
 				<AlertIcon :size="20" />
-				<span>{{ t('procest', 'Map data could not be loaded. Showing what is available.') }}</span>
+				<span>{{
+					t(
+						'procest',
+						'Map data could not be loaded. Showing what is available.',
+					)
+				}}</span>
 			</div>
 		</div>
 
 		<div class="cases-on-map__map">
 			<CnMapWidget
+				:center="mapCenter"
+				:layers="mapLayers"
 				:markers="markers"
 				:clustering="true"
-				:auto-fit="features.length > 0"
+				:autoFit="features.length > 0"
 				height="100%"
-				@marker-click="onMarkerClick" />
+				@markerClick="onMarkerClick" />
 			<NcLoadingIcon v-if="loading" :size="40" class="cases-on-map__loading" />
 		</div>
 	</div>
 </template>
 
 <script>
-import NcSelect from '@nextcloud/vue/dist/Components/NcSelect.js'
-import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
-import AlertIcon from 'vue-material-design-icons/Alert.vue'
 import { CnMapWidget } from '@conduction/nextcloud-vue'
-import { registerCasesOnMapOverview, fetchCasePoints } from '../services/casesOnMapApi.js'
+import { generateUrl } from '@nextcloud/router'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
+import AlertIcon from 'vue-material-design-icons/Alert.vue'
+import { registerCasesOnMapOverview } from '../services/casesOnMapApi.js'
 import { shapeMarkerFeatures } from '../services/mapFormatters.js'
 
 /**
@@ -79,12 +92,14 @@ export default {
 			type: String,
 			default: 'procest',
 		},
+
 		/** OpenRegister schema slug for the case objects. @type {string} */
 		schema: {
 			type: String,
 			default: 'case',
 		},
 	},
+
 	data() {
 		return {
 			points: [],
@@ -97,6 +112,7 @@ export default {
 			caseTypeOptions: [],
 		}
 	},
+
 	computed: {
 		/**
 		 * GeoJSON Point features for CnMapWidget, shaped from the OR point set.
@@ -107,6 +123,7 @@ export default {
 		features() {
 			return shapeMarkerFeatures(this.points)
 		},
+
 		/**
 		 * CnMapWidget marker config — inline features + popup field. The
 		 * features already carry the status colour from `shapeMarkerFeatures`.
@@ -121,7 +138,51 @@ export default {
 				clustering: true,
 			}
 		},
+
+		/**
+		 * Default OpenStreetMap basemap for the map widget.
+		 *
+		 * @return {Array<object>} CnMapWidget layer definitions.
+		 */
+		mapLayers() {
+			return [
+				{
+					type: 'tile',
+					url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+					attribution: '© OpenStreetMap contributors',
+				},
+			]
+		},
+
+		/**
+		 * Initial map centre — centroid of the plotted markers, else Berlin.
+		 *
+		 * @return {[number, number]} `[lat, lng]`.
+		 */
+		mapCenter() {
+			const f = this.features
+			let sumLat = 0
+			let sumLng = 0
+			let n = 0
+			for (const feat of f) {
+				const c = feat.geometry && feat.geometry.coordinates
+				if (
+					Array.isArray(c)
+					&& Number.isFinite(c[0])
+					&& Number.isFinite(c[1])
+				) {
+					sumLng += c[0]
+					sumLat += c[1]
+					n++
+				}
+			}
+			if (n > 0) {
+				return [sumLat / n, sumLng / n]
+			}
+			return [52.517, 13.404]
+		},
 	},
+
 	/**
 	 * Declare the overview once (idempotent on the OR side), then load points.
 	 *
@@ -132,6 +193,7 @@ export default {
 		registerCasesOnMapOverview({ register: this.register, schema: this.schema })
 		this.reload()
 	},
+
 	methods: {
 		/**
 		 * Fetch the RBAC-scoped case points from OR for the active filters.
@@ -142,15 +204,56 @@ export default {
 		async reload() {
 			this.loading = true
 			this.degraded = false
-			const filters = {}
+			// Read the cases straight from OpenRegister's objects API (RBAC-scoped
+			// by OR) and build the marker point set client-side from each case's
+			// `geometry` field. The case `geometry` property is typed `string`
+			// (JSON-encoded GeoJSON), which OR's server-side maps-overview builder
+			// does not surface here, so we parse it ourselves — a Point yields its
+			// coordinate, a Polygon its centroid — to `{ lat, lng }` for the map.
+			const params = new URLSearchParams({ _limit: '500' })
 			if (this.filterCaseType) {
-				filters.caseType = this.filterCaseType
+				params.set('caseType', this.filterCaseType)
 			}
 			if (this.filterStatus) {
-				filters.status = this.filterStatus
+				params.set('status', this.filterStatus)
 			}
 			try {
-				const points = await fetchCasePoints({ register: this.register, schema: this.schema, filters })
+				const url = generateUrl(
+					'/apps/openregister/api/objects/{register}/{schema}',
+					{ register: this.register, schema: this.schema },
+				)
+				const res = await fetch(url + '?' + params.toString(), {
+					headers: { 'OCS-APIRequest': 'true' },
+				})
+				const json = await res.json()
+				const rows = Array.isArray(json)
+					? json
+					: json.results || json.data || []
+				const points = []
+				for (const c of rows) {
+					let geo = c.geometry
+					if (typeof geo === 'string') {
+						try {
+							geo = JSON.parse(geo)
+						} catch {
+							geo = null
+						}
+					}
+					const ll = this.firstLatLng(geo)
+					if (!ll) {
+						continue
+					}
+					points.push({
+						id: c.id,
+						caseId: c.id,
+						title: c.title,
+						label: c.title,
+						status: c.status,
+						lat: ll.lat,
+						lng: ll.lng,
+						geometry: geo,
+					})
+				}
 				this.points = points
 				if (!this.filterCaseType && !this.filterStatus) {
 					this.total = points.length
@@ -162,6 +265,28 @@ export default {
 				this.loading = false
 			}
 		},
+
+		/**
+		 * Dig the first `[lng, lat]` pair out of a GeoJSON geometry (Point or the
+		 * first ring of a Polygon) and return it as `{ lat, lng }`, or null.
+		 *
+		 * @param {object} geometry A GeoJSON geometry (already parsed).
+		 * @return {{lat: number, lng: number}|null} The representative point.
+		 */
+		firstLatLng(geometry) {
+			if (!geometry || typeof geometry !== 'object') {
+				return null
+			}
+			let c = geometry.coordinates
+			while (Array.isArray(c) && Array.isArray(c[0])) {
+				c = c[0]
+			}
+			if (Array.isArray(c) && Number.isFinite(c[0]) && Number.isFinite(c[1])) {
+				return { lat: Number(c[1]), lng: Number(c[0]) }
+			}
+			return null
+		},
+
 		/**
 		 * Navigate to the case detail when a marker is clicked.
 		 *

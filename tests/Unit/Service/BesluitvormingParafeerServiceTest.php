@@ -28,29 +28,28 @@ use Psr\Log\LoggerInterface;
 /**
  * Minimal ObjectService shape for BesluitvormingParafeerService tests.
  */
-interface BvwParafeerObjectServiceStub
-{
-    public function saveObject(array $object, array $extend=[], ?string $register=null, ?string $schema=null, ?string $uuid=null): ?object;
+interface BvwParafeerObjectServiceStub {
+	public function saveObject(array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null): ?object;
 
-    /**
-     * Slug-aware search bridge (real ObjectService::searchObjectsBySlug()).
-     *
-     * @param string              $registerSlug Register slug.
-     * @param string              $schemaSlug   Schema slug.
-     * @param array<string,mixed> $filters      Field filters.
-     *
-     * @return array<int,mixed>|int
-     */
-    public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters=[]): array | int;
+	/**
+	 * Slug-aware search bridge (real ObjectService::searchObjectsBySlug()).
+	 *
+	 * @param string $registerSlug Register slug.
+	 * @param string $schemaSlug Schema slug.
+	 * @param array<string,mixed> $filters Field filters.
+	 *
+	 * @return array<int,mixed>|int
+	 */
+	public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array|int;
 
-    /**
-     * Search objects (real ObjectService::searchObjects()).
-     *
-     * @param array<string,mixed> $query Query with @self block and field filters.
-     *
-     * @return array<int,mixed>|int
-     */
-    public function searchObjects(array $query=[]): array | int;
+	/**
+	 * Search objects (real ObjectService::searchObjects()).
+	 *
+	 * @param array<string,mixed> $query Query with @self block and field filters.
+	 *
+	 * @return array<int,mixed>|int
+	 */
+	public function searchObjects(array $query = []): array|int;
 
 }//end interface
 
@@ -59,207 +58,193 @@ interface BvwParafeerObjectServiceStub
  *
  * @covers \OCA\Procest\Service\BesluitvormingParafeerService
  */
-class BesluitvormingParafeerServiceTest extends TestCase
-{
+class BesluitvormingParafeerServiceTest extends TestCase {
 
-    /**
-     * The mocked settings service.
-     *
-     * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private SettingsService $settingsService;
+	/**
+	 * The mocked settings service.
+	 *
+	 * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private SettingsService $settingsService;
 
-    /**
-     * The mocked logger.
-     *
-     * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private LoggerInterface $logger;
+	/**
+	 * The mocked logger.
+	 *
+	 * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private LoggerInterface $logger;
 
-    /**
-     * The service under test.
-     *
-     * @var BesluitvormingParafeerService
-     */
-    private BesluitvormingParafeerService $service;
+	/**
+	 * The service under test.
+	 *
+	 * @var BesluitvormingParafeerService
+	 */
+	private BesluitvormingParafeerService $service;
 
+	/**
+	 * Set up test fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->settingsService = $this->createMock(SettingsService::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
 
-    /**
-     * Set up test fixtures.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->settingsService = $this->createMock(SettingsService::class);
-        $this->logger          = $this->createMock(LoggerInterface::class);
+		$this->service = new BesluitvormingParafeerService(
+			$this->settingsService,
+			$this->logger,
+		);
 
-        $this->service = new BesluitvormingParafeerService(
-            $this->settingsService,
-            $this->logger,
-        );
+	}//end setUp()
 
-    }//end setUp()
+	/**
+	 * Test that activate() throws when OpenRegister is unavailable.
+	 *
+	 * @return void
+	 */
+	public function testActivateThrowsWhenOpenRegisterUnavailable(): void {
+		$this->settingsService
+			->method('getObjectService')
+			->willReturn(null);
 
+		$this->expectException(\RuntimeException::class);
 
-    /**
-     * Test that activate() throws when OpenRegister is unavailable.
-     *
-     * @return void
-     */
-    public function testActivateThrowsWhenOpenRegisterUnavailable(): void
-    {
-        $this->settingsService
-            ->method('getObjectService')
-            ->willReturn(null);
+		$this->service->activate(proposalId: 'test-voorstel-id');
 
-        $this->expectException(\RuntimeException::class);
+	}//end testActivateThrowsWhenOpenRegisterUnavailable()
 
-        $this->service->activate(voorstelId: 'test-voorstel-id');
+	/**
+	 * Test that activate() returns array when voorstel is found.
+	 *
+	 * @return void
+	 */
+	public function testActivateReturnsArrayWhenVoorstelFound(): void {
+		$proposalObj = new \stdClass();
+		$proposalObj->id = 'voorstel-uuid-1';
+		$proposalObj->status = 'draft';
 
-    }//end testActivateThrowsWhenOpenRegisterUnavailable()
+		$updatedObj = new \stdClass();
+		$updatedObj->id = 'voorstel-uuid-1';
+		$updatedObj->status = 'in_parafering';
 
+		$objectServiceMock = $this->createMock(BvwParafeerObjectServiceStub::class);
+		$objectServiceMock
+			->method('searchObjectsBySlug')
+			->willReturnCallback(
+				static function (string $register, string $schema, array $params) use ($proposalObj): array {
+					return [$proposalObj];
+				}
+			);
 
-    /**
-     * Test that activate() returns array when voorstel is found.
-     *
-     * @return void
-     */
-    public function testActivateReturnsArrayWhenVoorstelFound(): void
-    {
-        $voorstelObj = new \stdClass();
-        $voorstelObj->id     = 'voorstel-uuid-1';
-        $voorstelObj->status = 'concept';
+		$objectServiceMock
+			->method('saveObject')
+			->willReturn($updatedObj);
 
-        $updatedObj         = new \stdClass();
-        $updatedObj->id     = 'voorstel-uuid-1';
-        $updatedObj->status = 'in_parafering';
+		$this->settingsService
+			->method('getObjectService')
+			->willReturn($objectServiceMock);
 
-        $objectServiceMock = $this->createMock(BvwParafeerObjectServiceStub::class);
-        $objectServiceMock
-            ->method('searchObjectsBySlug')
-            ->willReturnCallback(
-                static function (string $register, string $schema, array $params) use ($voorstelObj): array {
-                    return [$voorstelObj];
-                }
-            );
+		$this->settingsService
+			->method('getConfigValue')
+			->willReturn('test-value');
 
-        $objectServiceMock
-            ->method('saveObject')
-            ->willReturn($updatedObj);
+		$result = $this->service->activate(proposalId: 'voorstel-uuid-1');
 
-        $this->settingsService
-            ->method('getObjectService')
-            ->willReturn($objectServiceMock);
+		$this->assertIsArray($result);
 
-        $this->settingsService
-            ->method('getConfigValue')
-            ->willReturn('test-value');
+	}//end testActivateReturnsArrayWhenVoorstelFound()
 
-        $result = $this->service->activate(voorstelId: 'voorstel-uuid-1');
+	/**
+	 * Test that allParafenCollected() returns false when no parafen exist.
+	 *
+	 * @return void
+	 */
+	public function testCheckAllParafenCollectedReturnsFalseWhenEmpty(): void {
+		$objectServiceMock = $this->createMock(BvwParafeerObjectServiceStub::class);
+		$objectServiceMock
+			->method('searchObjectsBySlug')
+			->willReturn([]);
 
-        $this->assertIsArray($result);
+		$this->settingsService
+			->method('getObjectService')
+			->willReturn($objectServiceMock);
 
-    }//end testActivateReturnsArrayWhenVoorstelFound()
+		$this->settingsService
+			->method('getConfigValue')
+			->willReturn('test-schema');
 
+		$result = $this->service->allParafenCollected(proposalId: 'voorstel-uuid-1');
 
-    /**
-     * Test that allParafenCollected() returns false when no parafen exist.
-     *
-     * @return void
-     */
-    public function testCheckAllParafenCollectedReturnsFalseWhenEmpty(): void
-    {
-        $objectServiceMock = $this->createMock(BvwParafeerObjectServiceStub::class);
-        $objectServiceMock
-            ->method('searchObjectsBySlug')
-            ->willReturn([]);
+		$this->assertFalse($result);
 
-        $this->settingsService
-            ->method('getObjectService')
-            ->willReturn($objectServiceMock);
+	}//end testCheckAllParafenCollectedReturnsFalseWhenEmpty()
 
-        $this->settingsService
-            ->method('getConfigValue')
-            ->willReturn('test-schema');
+	/**
+	 * Test that allParafenCollected() returns false when OpenRegister unavailable.
+	 *
+	 * @return void
+	 */
+	public function testCheckAllParafenCollectedReturnsFalseWhenNoObjectService(): void {
+		$this->settingsService
+			->method('getObjectService')
+			->willReturn(null);
 
-        $result = $this->service->allParafenCollected(voorstelId: 'voorstel-uuid-1');
+		$result = $this->service->allParafenCollected(proposalId: 'voorstel-uuid-1');
 
-        $this->assertFalse($result);
+		$this->assertFalse($result);
 
-    }//end testCheckAllParafenCollectedReturnsFalseWhenEmpty()
+	}//end testCheckAllParafenCollectedReturnsFalseWhenNoObjectService()
 
+	/**
+	 * Test that handleParaafAction() returns array with status key.
+	 *
+	 * @return void
+	 */
+	public function testHandleParaafActionReturnsArrayWithStatus(): void {
+		$proposalObj = new \stdClass();
+		$proposalObj->id = 'voorstel-uuid-1';
+		$proposalObj->status = 'in_parafering';
 
-    /**
-     * Test that allParafenCollected() returns false when OpenRegister unavailable.
-     *
-     * @return void
-     */
-    public function testCheckAllParafenCollectedReturnsFalseWhenNoObjectService(): void
-    {
-        $this->settingsService
-            ->method('getObjectService')
-            ->willReturn(null);
+		$actionObj = new \stdClass();
+		$actionObj->id = 'actie-uuid-1';
+		$actionObj->action = 'approved';
 
-        $result = $this->service->allParafenCollected(voorstelId: 'voorstel-uuid-1');
+		$updatedObj = new \stdClass();
+		$updatedObj->id = 'voorstel-uuid-1';
+		$updatedObj->status = 'gereed_voor_agendering';
 
-        $this->assertFalse($result);
+		$objectServiceMock = $this->createMock(BvwParafeerObjectServiceStub::class);
+		$objectServiceMock
+			->method('searchObjectsBySlug')
+			->willReturnCallback(
+				static function (string $register, string $schema, array $params) use ($proposalObj, $actionObj): array {
+					if (isset($params['id']) === true && $params['id'] === 'actie-uuid-1') {
+						return [$actionObj];
+					}
 
-    }//end testCheckAllParafenCollectedReturnsFalseWhenNoObjectService()
+					return [$proposalObj];
+				}
+			);
 
+		$objectServiceMock
+			->method('saveObject')
+			->willReturn($updatedObj);
 
-    /**
-     * Test that handleParaafAction() returns array with status key.
-     *
-     * @return void
-     */
-    public function testHandleParaafActionReturnsArrayWithStatus(): void
-    {
-        $voorstelObj         = new \stdClass();
-        $voorstelObj->id     = 'voorstel-uuid-1';
-        $voorstelObj->status = 'in_parafering';
+		$this->settingsService
+			->method('getObjectService')
+			->willReturn($objectServiceMock);
 
-        $actieObj         = new \stdClass();
-        $actieObj->id     = 'actie-uuid-1';
-        $actieObj->action = 'goedgekeurd';
+		$this->settingsService
+			->method('getConfigValue')
+			->willReturn('test-value');
 
-        $updatedObj         = new \stdClass();
-        $updatedObj->id     = 'voorstel-uuid-1';
-        $updatedObj->status = 'gereed_voor_agendering';
+		$result = $this->service->handleParaafAction(
+			proposalId: 'voorstel-uuid-1',
+			parafeeractieId: 'actie-uuid-1',
+		);
 
-        $objectServiceMock = $this->createMock(BvwParafeerObjectServiceStub::class);
-        $objectServiceMock
-            ->method('searchObjectsBySlug')
-            ->willReturnCallback(
-                static function (string $register, string $schema, array $params) use ($voorstelObj, $actieObj): array {
-                    if (isset($params['id']) === true && $params['id'] === 'actie-uuid-1') {
-                        return [$actieObj];
-                    }
+		$this->assertIsArray($result);
 
-                    return [$voorstelObj];
-                }
-            );
-
-        $objectServiceMock
-            ->method('saveObject')
-            ->willReturn($updatedObj);
-
-        $this->settingsService
-            ->method('getObjectService')
-            ->willReturn($objectServiceMock);
-
-        $this->settingsService
-            ->method('getConfigValue')
-            ->willReturn('test-value');
-
-        $result = $this->service->handleParaafAction(
-            voorstelId: 'voorstel-uuid-1',
-            parafeeractieId: 'actie-uuid-1',
-        );
-
-        $this->assertIsArray($result);
-
-    }//end testHandleParaafActionReturnsArrayWithStatus()
-
+	}//end testHandleParaafActionReturnsArrayWithStatus()
 
 }//end class

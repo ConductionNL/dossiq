@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
- * SPDX-License-Identifier: AGPL-3.0-or-later
+ * SPDX-License-Identifier: EUPL-1.2
  *
  * Visual-regression baselines for Procest's key surfaces (GAP-5).
  *
@@ -16,8 +16,17 @@
 import { test, request, type APIRequestContext } from '@playwright/test'
 import { shootSurface, shootByNav } from './_visual-helpers'
 import { STORAGE_STATE } from '../helpers/auth'
+// Routes named after the component that renders them — see
+// tests/e2e/helpers/page-components.ts for why the identifier, not a comment,
+// is what states which screen a baseline belongs to.
+import { VerwerkingenOverview } from '../helpers/page-components'
 import {
-	getRequestToken, ensureCaseType, seedCase, objectId, cleanupRunObjects, deleteObject,
+	getRequestToken,
+	ensureCaseType,
+	seedCase,
+	objectId,
+	cleanupRunObjects,
+	deleteObject,
 } from '../helpers/fixtures'
 
 const APP = '/index.php/apps/procest/index'
@@ -29,6 +38,19 @@ test.describe('Procest — visual baselines', () => {
 
 	test('cases list', async ({ page }) => {
 		await shootByNav(page, `${APP}#/`, 'Cases', 'cases.png')
+	})
+
+	// The FG window on OR's processing-activity register
+	// (avg-verwerkingenlogging). The surface is data-light (catalogue table or
+	// seed empty-state), so the shot is deterministic once the repair step has
+	// seeded the drafts. The screen is named by the imported constant rather
+	// than by this paragraph — a comment is not a reference.
+	test('verwerkingen overview (AVG)', async ({ page }) => {
+		await shootSurface(
+			page,
+			`${APP}#${VerwerkingenOverview}`,
+			'verwerkingen-overview.png',
+		)
 	})
 })
 
@@ -76,6 +98,10 @@ test.describe('Procest — case detail (deelzaak/email host) visual', () => {
 
 	test.fixme('case detail', async ({ page }) => {
 		// History-mode detail route (verified live): /apps/procest/cases/:id.
-		await shootSurface(page, `/index.php/apps/procest/cases/${caseId}`, 'case-detail.png')
+		await shootSurface(
+			page,
+			`/index.php/apps/procest/cases/${caseId}`,
+			'case-detail.png',
+		)
 	})
 })

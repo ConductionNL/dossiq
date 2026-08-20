@@ -5,22 +5,30 @@
 <template>
 	<div class="besluit-publicatie-panel">
 		<div v-if="state === 'success'" class="besluit-publicatie-panel__success">
-			<span class="besluit-publicatie-panel__badge besluit-publicatie-panel__badge--success">
+			<span
+				class="besluit-publicatie-panel__badge besluit-publicatie-panel__badge--success">
 				{{ t('procest', 'Gepubliceerd') }}
 			</span>
-			<a v-if="reference"
+			<a
+				v-if="reference"
 				:href="reference"
 				target="_blank"
 				rel="noopener noreferrer">
-				{{ t('procest', 'Bekijk publicatie in DROP/LVBB') }}
+				{{ t('procest', 'View publication in DROP/LVBB') }}
 			</a>
 		</div>
 
 		<div v-else-if="state === 'failed'" class="besluit-publicatie-panel__failed">
-			<span class="besluit-publicatie-panel__badge besluit-publicatie-panel__badge--failed">
+			<span
+				class="besluit-publicatie-panel__badge besluit-publicatie-panel__badge--failed">
 				{{ t('procest', 'Publicatie mislukt') }}
 			</span>
-			<p>{{ errorMessage || t('procest', 'De publicatie kon niet worden verstuurd.') }}</p>
+			<p>
+				{{
+					errorMessage
+					|| t('procest', 'The publication could not be sent.')
+				}}
+			</p>
 			<NcButton type="primary" :disabled="busy" @click="retry">
 				{{ t('procest', 'Opnieuw proberen') }}
 			</NcButton>
@@ -49,15 +57,18 @@ export default {
 			type: String,
 			required: true,
 		},
+
 		initialState: {
 			type: String,
 			default: 'pending',
 		},
+
 		publicationReference: {
 			type: String,
 			default: '',
 		},
 	},
+
 	data() {
 		return {
 			state: this.initialState,
@@ -66,11 +77,12 @@ export default {
 			busy: false,
 		}
 	},
+
 	methods: {
 		/**
 		 * Trigger (retry) the DROP/LVBB publication.
 		 *
-		 * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-006
+		 * @spec openspec/specs/besluitvorming-workflow/spec.md
 		 */
 		async retry() {
 			this.busy = true
@@ -87,11 +99,15 @@ export default {
 				}
 			} catch (error) {
 				this.state = 'failed'
-				this.errorMessage = this.t('procest', 'De publicatie kon niet worden verstuurd.')
+				this.errorMessage = this.t(
+					'procest',
+					'The publication could not be sent.',
+				)
 			} finally {
 				this.busy = false
 			}
 		},
+
 		/**
 		 * Map a backend error code to a human message.
 		 *
@@ -100,30 +116,38 @@ export default {
 		 */
 		mapError(code) {
 			if (code === 'not_configured') {
-				return this.t('procest', 'Er is geen DROP/LVBB-endpoint geconfigureerd.')
+				return this.t(
+					'procest',
+					'No DROP/LVBB endpoint has been configured.',
+				)
 			}
 			if (code === 'no_decision') {
-				return this.t('procest', 'Er is nog geen besluit vastgelegd om te publiceren.')
+				return this.t(
+					'procest',
+					'No decision has been recorded to publish yet.',
+				)
 			}
-			return this.t('procest', 'De publicatie kon niet worden verstuurd.')
+			return this.t('procest', 'The publication could not be sent.')
 		},
 	},
 }
 </script>
 
 <style scoped>
-.besluit-publicatie-panel__badge {
+.decision-publicatie-panel__badge {
 	display: inline-block;
 	padding: 2px 10px;
 	border-radius: var(--border-radius-pill);
 	background: var(--color-background-dark);
 	margin-bottom: 8px;
 }
-.besluit-publicatie-panel__badge--success {
+
+.decision-publicatie-panel__badge--success {
 	background: var(--color-success);
 	color: var(--color-primary-element-text);
 }
-.besluit-publicatie-panel__badge--failed {
+
+.decision-publicatie-panel__badge--failed {
 	background: var(--color-error);
 	color: var(--color-primary-element-text);
 }

@@ -36,49 +36,46 @@ use DateTimeImmutable;
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T23
  */
-class MockSigningAdapter implements SigningAdapterInterface
-{
-    /**
-     * {@inheritDoc}
-     *
-     * @param string $bestandId     The PDF file id.
-     * @param string $ondertekenaar The signer UID.
-     * @param string $tspProvider   The TSP provider slug.
-     *
-     * @return array<string, string> Keys: signedBestandId, validatieRapportId, certificaatSerienummer, tspProviderEidasId, ondertekeningTijdstip.
-     *
-     * @spec openspec/changes/beschikking-generatie/tasks.md#T23
-     */
-    public function sign(string $bestandId, string $ondertekenaar, string $tspProvider): array
-    {
-        $seed = $bestandId.'|'.$ondertekenaar.'|'.$tspProvider;
+class MockSigningAdapter implements SigningAdapterInterface {
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @param string $fileId The PDF file id.
+	 * @param string $signatory The signer UID.
+	 * @param string $tspProvider The TSP provider slug.
+	 *
+	 * @return array<string, string> Keys: signedBestandId, validatieRapportId, certificaatSerienummer, tspProviderEidasId, ondertekeningTijdstip.
+	 *
+	 * @spec openspec/changes/beschikking-generatie/tasks.md#T23
+	 */
+	public function sign(string $fileId, string $signatory, string $tspProvider): array {
+		$seed = $fileId . '|' . $signatory . '|' . $tspProvider;
 
-        return [
-            'signedBestandId'        => 'signed-'.substr(hash('sha256', $seed), 0, 12),
-            'validatieRapportId'     => 'val-'.substr(hash('sha256', 'rapport'.$seed), 0, 12),
-            'certificaatSerienummer' => '0x'.substr(hash('sha256', 'cert'.$seed), 0, 16),
-            'tspProviderEidasId'     => 'NL-TSP-0001',
-            'ondertekeningTijdstip'  => (new DateTimeImmutable())->format('c'),
-        ];
-    }//end sign()
+		return [
+			'signedBestandId' => 'signed-' . substr(hash('sha256', $seed), 0, 12),
+			'validationRapportId' => 'val-' . substr(hash('sha256', 'report' . $seed), 0, 12),
+			'certificateSerialNumber' => '0x' . substr(hash('sha256', 'cert' . $seed), 0, 16),
+			'tspProviderEidasId' => 'NL-TSP-0001',
+			'signingMoment' => (new DateTimeImmutable())->format('c'),
+		];
+	}//end sign()
 
-    /**
-     * {@inheritDoc}
-     *
-     * @param string $validatieRapportId The validatierapport id.
-     *
-     * @return array<string, mixed>
-     *
-     * @spec openspec/changes/beschikking-generatie/tasks.md#T23
-     */
-    public function fetchValidationReport(string $validatieRapportId): array
-    {
-        return [
-            'validatieRapportId' => $validatieRapportId,
-            'soort'              => 'tsp-handtekening-rapport',
-            'norm'               => 'ETSI EN 319 102-1',
-            'geldig'             => true,
-            'gegenereerdOp'      => (new DateTimeImmutable())->format('c'),
-        ];
-    }//end fetchValidationReport()
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @param string $validationRapportId The validatierapport id.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/beschikking-generatie/tasks.md#T23
+	 */
+	public function fetchValidationReport(string $validationRapportId): array {
+		return [
+			'validationRapportId' => $validationRapportId,
+			'kind' => 'tsp-handtekening-rapport',
+			'norm' => 'ETSI EN 319 102-1',
+			'valid' => true,
+			'gegenereerdOp' => (new DateTimeImmutable())->format('c'),
+		];
+	}//end fetchValidationReport()
 }//end class

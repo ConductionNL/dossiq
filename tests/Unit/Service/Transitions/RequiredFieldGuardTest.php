@@ -30,96 +30,91 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Procest\Service\Transitions\RequiredFieldGuard
+ *
+ * @uses \OCA\Procest\Service\Transitions\GuardResult
  */
-class RequiredFieldGuardTest extends TestCase
-{
-    /**
-     * @return void
-     */
-    public function testFailsWhenFieldConfigMissing(): void
-    {
-        $guard  = new RequiredFieldGuard();
-        $result = $guard->evaluate(guardConfig: [], case: ['id' => 'c'], userId: 'u');
+class RequiredFieldGuardTest extends TestCase {
+	/**
+	 * @return void
+	 */
+	public function testFailsWhenFieldConfigMissing(): void {
+		$guard = new RequiredFieldGuard();
+		$result = $guard->evaluate(guardConfig: [], case: ['id' => 'c'], userId: 'u');
 
-        self::assertFalse($result->passed);
-        self::assertSame('Required-field guard missing field', $result->failureMessage);
-    }//end testFailsWhenFieldConfigMissing()
+		self::assertFalse($result->passed);
+		self::assertSame('Required-field guard missing field', $result->failureMessage);
+	}//end testFailsWhenFieldConfigMissing()
 
-    /**
-     * @return void
-     */
-    public function testFailsWhenFieldIsNull(): void
-    {
-        $guard  = new RequiredFieldGuard();
-        $result = $guard->evaluate(
-            guardConfig: ['field' => 'resultaat'],
-            case: ['id' => 'c'],
-            userId: 'u',
-        );
+	/**
+	 * @return void
+	 */
+	public function testFailsWhenFieldIsNull(): void {
+		$guard = new RequiredFieldGuard();
+		$result = $guard->evaluate(
+			guardConfig: ['field' => 'result'],
+			case: ['id' => 'c'],
+			userId: 'u',
+		);
 
-        self::assertFalse($result->passed);
-        self::assertSame('resultaat', $result->details['field']);
-    }//end testFailsWhenFieldIsNull()
+		self::assertFalse($result->passed);
+		self::assertSame('result', $result->details['field']);
+	}//end testFailsWhenFieldIsNull()
 
-    /**
-     * @return void
-     */
-    public function testFailsWhenFieldIsEmptyString(): void
-    {
-        $guard  = new RequiredFieldGuard();
-        $result = $guard->evaluate(
-            guardConfig: ['field' => 'resultaat'],
-            case: ['resultaat' => ''],
-            userId: 'u',
-        );
+	/**
+	 * @return void
+	 */
+	public function testFailsWhenFieldIsEmptyString(): void {
+		$guard = new RequiredFieldGuard();
+		$result = $guard->evaluate(
+			guardConfig: ['field' => 'result'],
+			case: ['result' => ''],
+			userId: 'u',
+		);
 
-        self::assertFalse($result->passed);
-    }//end testFailsWhenFieldIsEmptyString()
+		self::assertFalse($result->passed);
+	}//end testFailsWhenFieldIsEmptyString()
 
-    /**
-     * @return void
-     */
-    public function testFailsWhenFieldIsEmptyArray(): void
-    {
-        $guard  = new RequiredFieldGuard();
-        $result = $guard->evaluate(
-            guardConfig: ['field' => 'tags'],
-            case: ['tags' => []],
-            userId: 'u',
-        );
+	/**
+	 * @return void
+	 */
+	public function testFailsWhenFieldIsEmptyArray(): void {
+		$guard = new RequiredFieldGuard();
+		$result = $guard->evaluate(
+			guardConfig: ['field' => 'tags'],
+			case: ['tags' => []],
+			userId: 'u',
+		);
 
-        self::assertFalse($result->passed);
-    }//end testFailsWhenFieldIsEmptyArray()
+		self::assertFalse($result->passed);
+	}//end testFailsWhenFieldIsEmptyArray()
 
-    /**
-     * @return void
-     */
-    public function testPassesWhenFieldHasValue(): void
-    {
-        $guard  = new RequiredFieldGuard();
-        $result = $guard->evaluate(
-            guardConfig: ['field' => 'resultaat'],
-            case: ['resultaat' => 'toegewezen'],
-            userId: 'u',
-        );
+	/**
+	 * @return void
+	 */
+	public function testPassesWhenFieldHasValue(): void {
+		$guard = new RequiredFieldGuard();
+		$result = $guard->evaluate(
+			guardConfig: ['field' => 'result'],
+			case: ['result' => 'toegewezen'],
+			userId: 'u',
+		);
 
-        self::assertTrue($result->passed);
-        self::assertSame('resultaat', $result->details['field']);
-    }//end testPassesWhenFieldHasValue()
+		self::assertTrue($result->passed);
+		self::assertSame('result', $result->details['field']);
+	}//end testPassesWhenFieldHasValue()
 
-    /**
-     * @return void
-     */
-    public function testPassesForZeroNumericValue(): void
-    {
-        // 0 is a legitimate value, not "empty".
-        $guard  = new RequiredFieldGuard();
-        $result = $guard->evaluate(
-            guardConfig: ['field' => 'bedrag'],
-            case: ['bedrag' => 0],
-            userId: 'u',
-        );
+	/**
+	 * @return void
+	 */
+	public function testPassesForZeroNumericValue(): void {
+		// 0 is a legitimate value, not "empty".
+		$guard = new RequiredFieldGuard();
+		$result = $guard->evaluate(
+			guardConfig: ['field' => 'amount'],
+			case: ['amount' => 0],
+			userId: 'u',
+		);
 
-        self::assertTrue($result->passed);
-    }//end testPassesForZeroNumericValue()
+		self::assertTrue($result->passed);
+	}//end testPassesForZeroNumericValue()
 }//end class

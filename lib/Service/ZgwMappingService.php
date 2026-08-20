@@ -18,7 +18,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-3
+ * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 
 declare(strict_types=1);
@@ -37,199 +37,191 @@ use Psr\Log\LoggerInterface;
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassLength)
  */
-class ZgwMappingService
-{
-    /**
-     * Prefix for ZGW mapping config keys in IAppConfig.
-     */
-    private const CONFIG_PREFIX = 'zgw_mapping_';
+class ZgwMappingService {
+	/**
+	 * Prefix for ZGW mapping config keys in IAppConfig.
+	 */
+	private const CONFIG_PREFIX = 'zgw_mapping_';
 
-    /**
-     * All known ZGW resource keys.
-     *
-     * @var string[]
-     */
-    private const RESOURCE_KEYS = [
-        'catalogus',
-        'zaak',
-        'zaaktype',
-        'status',
-        'statustype',
-        'resultaat',
-        'resultaattype',
-        'rol',
-        'roltype',
-        'eigenschap',
-        'besluit',
-        'besluittype',
-        'informatieobjecttype',
-        'zaaktypeinformatieobjecttype',
-        'zaakeigenschap',
-        'zaakinformatieobject',
-        'zaakobject',
-        'klantcontact',
-        'besluitinformatieobject',
-        'verzending',
-        'applicatie',
-        'enkelvoudiginformatieobject',
-        'objectinformatieobject',
-        'gebruiksrechten',
-        'kanaal',
-        'abonnement',
-    ];
+	/**
+	 * All known ZGW resource keys.
+	 *
+	 * @var string[]
+	 */
+	private const RESOURCE_KEYS = [
+		'catalogus',
+		'zaak',
+		'zaaktype',
+		'status',
+		'statustype',
+		'resultaat',
+		'resultaattype',
+		'rol',
+		'roltype',
+		'eigenschap',
+		'besluit',
+		'besluittype',
+		'informatieobjecttype',
+		'zaaktypeinformatieobjecttype',
+		'zaakeigenschap',
+		'zaakinformatieobject',
+		'zaakobject',
+		'klantcontact',
+		'besluitinformatieobject',
+		'verzending',
+		'applicatie',
+		'enkelvoudiginformatieobject',
+		'objectinformatieobject',
+		'gebruiksrechten',
+		'kanaal',
+		'abonnement',
+	];
 
-    /**
-     * Constructor for the ZgwMappingService.
-     *
-     * @param IAppConfig      $appConfig The app configuration service
-     * @param LoggerInterface $logger    The logger interface
-     *
-     * @return void
-     */
-    public function __construct(
-        private readonly IAppConfig $appConfig,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor for the ZgwMappingService.
+	 *
+	 * @param IAppConfig $appConfig The app configuration service
+	 * @param LoggerInterface $logger The logger interface
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly IAppConfig $appConfig,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Get the mapping configuration for a specific ZGW resource.
-     *
-     * @param string $resourceKey The ZGW resource key (e.g., 'zaak', 'zaaktype')
-     *
-     * @return array|null The mapping configuration or null if not found
+	/**
+	 * Get the mapping configuration for a specific ZGW resource.
+	 *
+	 * @param string $resourceKey The ZGW resource key (e.g., 'zaak', 'caseType')
+	 *
+	 * @return array|null The mapping configuration or null if not found
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function getMapping(string $resourceKey): ?array {
+		$json = $this->appConfig->getValueString(
+			Application::APP_ID,
+			self::CONFIG_PREFIX . $resourceKey,
+			''
+		);
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function getMapping(string $resourceKey): ?array
-    {
-        $json = $this->appConfig->getValueString(
-            Application::APP_ID,
-            self::CONFIG_PREFIX.$resourceKey,
-            ''
-        );
+		if ($json === '') {
+			return null;
+		}
 
-        if ($json === '') {
-            return null;
-        }
+		$config = json_decode($json, true);
+		if ($config === null || is_array($config) === false) {
+			return null;
+		}
 
-        $config = json_decode($json, true);
-        if ($config === null || is_array($config) === false) {
-            return null;
-        }
+		return $config;
+	}//end getMapping()
 
-        return $config;
-    }//end getMapping()
+	/**
+	 * Save the mapping configuration for a specific ZGW resource.
+	 *
+	 * @param string $resourceKey The ZGW resource key (e.g., 'zaak', 'caseType')
+	 * @param array $config The mapping configuration
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function saveMapping(string $resourceKey, array $config): void {
+		$json = json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
-    /**
-     * Save the mapping configuration for a specific ZGW resource.
-     *
-     * @param string $resourceKey The ZGW resource key (e.g., 'zaak', 'zaaktype')
-     * @param array  $config      The mapping configuration
-     *
-     * @return void
+		$this->appConfig->setValueString(
+			Application::APP_ID,
+			self::CONFIG_PREFIX . $resourceKey,
+			$json
+		);
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function saveMapping(string $resourceKey, array $config): void
-    {
-        $json = json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+		$this->logger->info(
+			'ZGW mapping saved',
+			['resourceKey' => $resourceKey]
+		);
+	}//end saveMapping()
 
-        $this->appConfig->setValueString(
-            Application::APP_ID,
-            self::CONFIG_PREFIX.$resourceKey,
-            $json
-        );
+	/**
+	 * List all ZGW mapping configurations.
+	 *
+	 * Returns an associative array keyed by resource key. Resources without
+	 * a saved configuration will have null values.
+	 *
+	 * @return array<string, array|null>
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function listMappings(): array {
+		$mappings = [];
 
-        $this->logger->info(
-            'ZGW mapping saved',
-            ['resourceKey' => $resourceKey]
-        );
-    }//end saveMapping()
+		foreach (self::RESOURCE_KEYS as $key) {
+			$mappings[$key] = $this->getMapping(resourceKey: $key);
+		}
 
-    /**
-     * List all ZGW mapping configurations.
-     *
-     * Returns an associative array keyed by resource key. Resources without
-     * a saved configuration will have null values.
-     *
-     * @return array<string, array|null>
+		return $mappings;
+	}//end listMappings()
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function listMappings(): array
-    {
-        $mappings = [];
+	/**
+	 * Delete the mapping configuration for a specific ZGW resource.
+	 *
+	 * @param string $resourceKey The ZGW resource key (e.g., 'zaak', 'caseType')
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function deleteMapping(string $resourceKey): void {
+		$configKey = self::CONFIG_PREFIX . $resourceKey;
+		$this->appConfig->deleteKey(app: Application::APP_ID, key: $configKey);
 
-        foreach (self::RESOURCE_KEYS as $key) {
-            $mappings[$key] = $this->getMapping(resourceKey: $key);
-        }
+		$this->logger->info(
+			'ZGW mapping deleted',
+			['resourceKey' => $resourceKey]
+		);
+	}//end deleteMapping()
 
-        return $mappings;
-    }//end listMappings()
+	/**
+	 * Get all known ZGW resource keys.
+	 *
+	 * @return string[]
+	 */
+	public function getResourceKeys(): array {
+		return self::RESOURCE_KEYS;
+	}//end getResourceKeys()
 
-    /**
-     * Delete the mapping configuration for a specific ZGW resource.
-     *
-     * @param string $resourceKey The ZGW resource key (e.g., 'zaak', 'zaaktype')
-     *
-     * @return void
+	/**
+	 * Check whether a mapping exists for a given resource.
+	 *
+	 * @param string $resourceKey The ZGW resource key
+	 *
+	 * @return bool
+	 */
+	public function hasMapping(string $resourceKey): bool {
+		return $this->getMapping(resourceKey: $resourceKey) !== null;
+	}//end hasMapping()
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function deleteMapping(string $resourceKey): void
-    {
-        $configKey = self::CONFIG_PREFIX.$resourceKey;
-        $this->appConfig->deleteKey(app: Application::APP_ID, key: $configKey);
-
-        $this->logger->info(
-            'ZGW mapping deleted',
-            ['resourceKey' => $resourceKey]
-        );
-    }//end deleteMapping()
-
-    /**
-     * Get all known ZGW resource keys.
-     *
-     * @return string[]
-     */
-    public function getResourceKeys(): array
-    {
-        return self::RESOURCE_KEYS;
-    }//end getResourceKeys()
-
-    /**
-     * Check whether a mapping exists for a given resource.
-     *
-     * @param string $resourceKey The ZGW resource key
-     *
-     * @return bool
-     */
-    public function hasMapping(string $resourceKey): bool
-    {
-        return $this->getMapping(resourceKey: $resourceKey) !== null;
-    }//end hasMapping()
-
-    /**
-     * Reset a mapping to its default configuration.
-     *
-     * Loads the default from the defaults array and saves it.
-     *
-     * @param string $resourceKey The ZGW resource key
-     * @param array  $defaults    The default mapping configurations
-     *
-     * @return void
-
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function resetToDefault(string $resourceKey, array $defaults): void
-    {
-        if (isset($defaults[$resourceKey]) === true) {
-            $this->saveMapping(resourceKey: $resourceKey, config: $defaults[$resourceKey]);
-            $this->logger->info(
-                'ZGW mapping reset to default',
-                ['resourceKey' => $resourceKey]
-            );
-        }
-    }//end resetToDefault()
+	/**
+	 * Reset a mapping to its default configuration.
+	 *
+	 * Loads the default from the defaults array and saves it.
+	 *
+	 * @param string $resourceKey The ZGW resource key
+	 * @param array $defaults The default mapping configurations
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function resetToDefault(string $resourceKey, array $defaults): void {
+		if (isset($defaults[$resourceKey]) === true) {
+			$this->saveMapping(resourceKey: $resourceKey, config: $defaults[$resourceKey]);
+			$this->logger->info(
+				'ZGW mapping reset to default',
+				['resourceKey' => $resourceKey]
+			);
+		}
+	}//end resetToDefault()
 }//end class

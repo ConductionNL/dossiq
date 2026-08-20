@@ -1,842 +1,221 @@
 [
   {
-    "slug": "admin-settings",
-    "title": "Admin Settings",
-    "summary": "The admin settings page provides a Nextcloud admin panel for configuring Procest. Administrators manage case types and all their related type definitions: statuses, results, roles, properties, documents, and decisions. The case type system is the behavioral engine of Procest -- every aspect of how a case behaves (allowed statuses, deadlines, required fields, archival rules) is defined here. The admin settings UI follows a list-detail pattern: a case type list on the main page, and a tabbed detail/edit view per case type.",
-    "docsUrl": "openspec/specs/admin-settings/spec.md"
-  },
-  {
-    "slug": "advice-management",
-    "title": "advice-management",
-    "summary": "Advice management lets behandelaars request, track, and process internal and external advice (adviezen) on a case, with deadline tracking, reminders, and a workflow guard that blocks case completion while advice is still pending.",
-    "docsUrl": "openspec/specs/advice-management/spec.md"
-  },
-  {
-    "slug": "ai-assistance",
-    "title": "AI Assistance",
-    "summary": "@e2e exclude AI assistance is a V1 backend feature; no dedicated Playwright-testable UI surface in the current build.",
-    "docsUrl": "openspec/specs/ai-assistance/spec.md"
-  },
-  {
-    "slug": "appointment-booking",
-    "title": "Appointment Booking",
-    "summary": "@e2e exclude Appointment booking is V1; public token pages + backend integrations are not Playwright-testable in the current build.",
-    "docsUrl": "openspec/specs/appointment-booking/spec.md"
-  },
-  {
-    "slug": "archief-edepot-handover",
-    "title": "archief-edepot-handover",
-    "summary": "Automates the lawful transfer of closed cases to an e-Depot, from retention-rule detection through MDTO/TMLO metadata bundling, PDF/A document export, BagIt packaging, submission, and proof-of-transfer capture. Runs a nightly job that assigns each closed case its statutory retention period, blocks or suspends transfer when rules are missing or a legal procedure is active, and lets DIV staff manage retention rules, run concurrent batch transfers, monitor a dashboard, and retry failed handovers. Records every archival milestone to an append-only audit log and produces audit-grade annual inspection exports.",
-    "docsUrl": "openspec/specs/archief-edepot-handover/spec.md"
-  },
-  {
-    "slug": "automatic-actions",
-    "title": "automatic-actions",
-    "summary": "@e2e exclude Automatic actions is V1; action execution is backend logic (n8n webhooks, email triggers) not testable via Playwright.",
-    "docsUrl": "openspec/specs/automatic-actions/spec.md"
-  },
-  {
-    "slug": "berichtenbox-integration",
-    "title": "Berichtenbox Integration",
-    "summary": "@e2e exclude Pure backend REST API integration; no Playwright UI surface.",
-    "docsUrl": "openspec/specs/berichtenbox-integration/spec.md"
-  },
-  {
-    "slug": "beroep-escalation",
-    "title": "beroep-escalation",
-    "summary": "Provides a pre-seeded \"Beroep\" (appeal) case type and the workflow to escalate a completed bezwaar case to the administrative court (bestuursrechter, Awb hoofdstuk 8), including court-proceedings status types, document tracking, and hoger-beroep awareness.",
-    "docsUrl": "openspec/specs/beroep-escalation/spec.md"
-  },
-  {
-    "slug": "beschikking-generatie",
-    "title": "beschikking-generatie",
-    "summary": "Composes a conceptbeschikking from a template + current zaakdata, drives the verleend/geweigerd outcome with prefilled motivation, renders a PDF, attaches it as a `bijlage`, and routes it to the addressee. Procest owns composition + workflow; PDF rendering, archival, and Berichtenbox delivery are integrated via adapter interfaces backed by docudesk/openregister/openconnector.",
-    "docsUrl": "openspec/specs/beschikking-generatie/spec.md"
-  },
-  {
-    "slug": "besluitvorming-workflow",
-    "title": "besluitvorming-workflow",
-    "summary": "Provides end-to-end decision-making workflows for municipal College-besluit, Raadsbesluit, and Mandaatbesluit cases, shipping pre-configured case-type and workflow templates that run from drafting through parafering, agenda compilation, decision recording, publication, and archival. Drives a sequential signing (parafering) chain, auto-transitions cases to agenda-ready status once all signatures are collected, records formal decisions with voting results and attending members, validates mandate authority, and dispatches publication payloads to DROP/LVBB before archiving the complete dossier.",
-    "docsUrl": "openspec/specs/besluitvorming-workflow/spec.md"
-  },
-  {
-    "slug": "bezwaar-advisory-committee",
-    "title": "bezwaar-advisory-committee",
-    "summary": "Records advisory reports from the bezwaarschriftencommissie (objection advisory committee, AWB art. 7:13) on bezwaar cases, and tracks committee composition to safeguard independence and surface conflicts of interest.",
-    "docsUrl": "openspec/specs/bezwaar-advisory-committee/spec.md"
-  },
-  {
-    "slug": "bezwaar-beroep-workflow",
-    "title": "bezwaar-beroep-workflow",
-    "summary": "Manages the full objection (bezwaar) and appeal (beroep) lifecycle for municipal decisions in line with the Dutch General Administrative Law Act (AWB), driven entirely by configurable workflow templates rather than bespoke services. Seeds AWB-compliant case types, enforces the mandated status order with admissibility, hearing, and committee-advice gates, tracks the statutory 6-week deadline with extension (verdaging) and suspension (opschorting) support, schedules hearings via Nextcloud Calendar, links each case to the contested primary decision, and compiles a court-ready dossier across the primary-decision, objection, and appeal cases.",
-    "docsUrl": "openspec/specs/bezwaar-beroep-workflow/spec.md"
-  },
-  {
-    "slug": "bezwaar-decision",
-    "title": "bezwaar-decision",
-    "summary": "Records the beslissing op bezwaar (decision on objection) as a formal decision object linked to the bezwaar case, enforcing the AWB heroverweging, motivering, and rechtsmiddelenclausule obligations (art. 7:11, 7:12) and notifying the bezwaarmaker.",
-    "docsUrl": "openspec/specs/bezwaar-decision/spec.md"
-  },
-  {
-    "slug": "bezwaar-hearing",
-    "title": "bezwaar-hearing",
-    "summary": "Schedules and manages hoorzittingen (hearings) within the bezwaar process per the AWB hoorrecht (art. 7:2 e.v.), including invitations, minutes, hearing waiver (afzien van hoorrecht), and participant access rights.",
-    "docsUrl": "openspec/specs/bezwaar-hearing/spec.md"
-  },
-  {
-    "slug": "bezwaar-lifecycle",
-    "title": "bezwaar-lifecycle",
-    "summary": "Defines the end-to-end bezwaar (objection) lifecycle: the pre-seeded Bezwaar case type, status/role types, AWB-compliant deadline calculation, the objection object schema, the Bezwaren index UI surface, and the lifecycle listener and seed repair steps that drive bezwaar and beroep workflows.",
-    "docsUrl": "openspec/specs/bezwaar-lifecycle/spec.md"
-  },
-  {
-    "slug": "bezwaar-rest-api",
-    "title": "bezwaar-rest-api",
-    "summary": "Handles objections (bezwaar) against a dwangsom decision and exposes the authorization-checked REST API for the termijn, ingebrekestelling, dwangsom, and reporting operations. Filing a bezwaar freezes dwangsom accrual and suspends payment, and resolving it adjusts the amount and resumes payment, notifying the burger at each step. Every endpoint declares an explicit auth posture, enforces per-object/role checks, and validates input with appropriate HTTP error codes.",
-    "docsUrl": "openspec/specs/bezwaar-rest-api/spec.md"
-  },
-  {
-    "slug": "burger-notifications",
-    "title": "burger-notifications",
-    "summary": "Sends proactive, Dutch-language notifications to the burger at key lifecycle moments of a case: receipt confirmation with the statutory deadline, ingebrekestelling receipt explaining the dwangsom tariff, and payment confirmation. Each notification is rendered from a template and delivered via the procest notification-router (Nextcloud, email, and portal), queued asynchronously so an SMTP failure never blocks the underlying lifecycle operation.",
-    "docsUrl": "openspec/specs/burger-notifications/spec.md"
-  },
-  {
-    "slug": "case-dashboard-view",
-    "title": "Case Dashboard View",
-    "summary": "The Case Dashboard View is the primary working screen for behandelaars. It combines all relevant information for a single case into one integrated view: timeline, documents, status, tasks, contactmomenten, besluiten, and linked objects. While the Case Management spec (`../case-management/spec.md`) defines the data model and individual panels (REQ-CM-06 through REQ-CM-13), this spec defines how those panels are composed into a cohesive working screen with interactions between them.",
-    "docsUrl": "openspec/specs/case-dashboard-view/spec.md"
-  },
-  {
-    "slug": "case-email-integration",
-    "title": "case-email-integration",
-    "summary": "Link every relevant email to its case and surface it on the case detail page (consuming the OpenRegister `email` integration leaf for display/compose/link per ADR-022), archive linked mail as a PDF `caseDocument` for Archiefwet/ZGW compliance, and add the only genuinely case-specific extensions the leaf cannot provide: per-zaaktype email templating, a documented shared-mailbox ingest poller, and shared-mailbox admin settings.",
-    "docsUrl": "openspec/specs/case-email-integration/spec.md"
-  },
-  {
-    "slug": "case-location",
-    "title": "Case Location",
-    "summary": "@e2e exclude Case location map is V1; Leaflet map picker and PDOK geocoder require external tile services not available in CI.",
-    "docsUrl": "openspec/specs/case-location/spec.md"
-  },
-  {
-    "slug": "case-management",
-    "title": "Case Management",
-    "summary": "Case management is the core capability of Procest. A case represents a coherent body of work with a defined lifecycle, initiation, and result. Cases are governed by configurable **case types** that control behavior: allowed statuses, required fields, processing deadlines, retention rules, and more. Cases follow CMMN 1.1 concepts (CasePlanModel) and are semantically typed as `schema:Project`.",
-    "docsUrl": "openspec/specs/case-management/spec.md"
-  },
-  {
-    "slug": "case-map-overview",
-    "title": "Case Map Overview",
-    "summary": "Provide an overview map showing all cases (or filtered subsets) plotted on a map with marker clustering, status-based coloring, and filtering. This enables case handlers and managers to get a geographic overview of their workload and identify spatial patterns (e.g., clusters of meldingen in a neighborhood, VTH cases near a construction site).",
-    "docsUrl": "openspec/specs/case-map-overview/spec.md"
-  },
-  {
-    "slug": "case-type-publish-validation",
-    "title": "case-type-publish-validation",
-    "summary": "Enforces case-type publish and deletion prerequisites on the backend so the API cannot bypass frontend-only checks. Publishing a case type is blocked (HTTP 422) unless it has at least one status type, a final status type, and a validFrom date, with all validation errors returned together; deleting a case type with active cases is blocked (HTTP 409), and deletion of a type with only closed cases requires confirmation. The publish and deletion guards are pinned by unit tests covering both happy and error paths.",
-    "docsUrl": "openspec/specs/case-type-publish-validation/spec.md"
-  },
-  {
-    "slug": "case-type-seed-data",
-    "title": "case-type-seed-data",
-    "summary": "Registers Pinia object stores for the five case-type sub-entities (resultType, roleType, propertyDefinition, documentType, decisionType) and ships seed data in `procest_register.json`, so the case-type admin tabs can query each entity by `caseType`.",
-    "docsUrl": "openspec/specs/case-type-seed-data/spec.md"
+    "slug": "visual-workflow-editor",
+    "title": "Visual workflow editor",
+    "summary": "Functional admins change a process on a canvas, no developer needed.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/visual-workflow-editor/spec.md",
+    "title_nl": "Visuele workflow-editor",
+    "summary_nl": "Functioneel beheerders passen een proces aan op een canvas, zonder ontwikkelaar."
   },
   {
     "slug": "case-types",
-    "title": "Case Type System",
-    "summary": "Case types are configurable definitions that control the behavior of cases. A case type determines which statuses are allowed, what roles can be assigned, which custom fields are required, processing deadlines, confidentiality defaults, and archival rules. This is the international equivalent of ZGW's `ZaakType`, modeled after CMMN 1.1 `CaseDefinition` concepts.",
-    "docsUrl": "openspec/specs/case-types/spec.md"
-  },
-  {
-    "slug": "complaint-management",
-    "title": "complaint-management",
-    "summary": "Manages citizen complaints as first-class entities with their own schema, sequential numbering, and the Awb chapter 9 lifecycle with enforced deadlines and extension (verdaging). Supports multi-channel intake, hearings (hoorgesprek) including calendar and video integration, escalation to formal cases, disposition tracking, complainant communication, and configurable per-tenant categories. Provides list, detail, and dashboard views plus frequency analysis that flags recurring patterns and systemic issues for management attention.",
-    "docsUrl": "openspec/specs/complaint-management/spec.md"
-  },
-  {
-    "slug": "consultation-management",
-    "title": "Consultation Management",
-    "summary": "@e2e exclude Consultation management is V1; consultation lifecycle endpoints are backend-only in the current build.",
-    "docsUrl": "openspec/specs/consultation-management/spec.md"
-  },
-  {
-    "slug": "dashboard",
-    "title": "Dashboard",
-    "summary": "The dashboard is the landing page of the Procest app. It provides an at-a-glance overview of case management activity: KPI cards with headline metrics, status and type distribution charts, an overdue cases panel, a personal workload preview, a recent activity feed, and quick actions. The dashboard aggregates data across all cases visible to the current user (respecting RBAC via OpenRegister).",
-    "docsUrl": "openspec/specs/dashboard/spec.md"
-  },
-  {
-    "slug": "deelzaak-support",
-    "title": "deelzaak-support",
-    "summary": "Provide deelzaak (sub-case) support in Procest: creating sub-cases from a parent case, listing them on the parent detail, parent breadcrumb navigation, progress roll-up, case-list count badges, and deletion protection. Maps to the ZGW `hoofdzaak` / `deelzaken` relations on the Zaak resource.",
-    "docsUrl": "openspec/specs/deelzaak-support/spec.md"
-  },
-  {
-    "slug": "docs-product-pages",
-    "title": "docs-product-pages",
-    "summary": "@e2e exclude Documentation site folder structure; not a Nextcloud app feature, no Playwright UI surface.",
-    "docsUrl": "openspec/specs/docs-product-pages/spec.md"
-  },
-  {
-    "slug": "document-zaakdossier",
-    "title": "document-zaakdossier",
-    "summary": "Manages the document dossier of a zaak using ZGW-compliant informatieobject and zaakinformatieobject records, so a document can be linked to multiple cases without duplication and follows a forward-only concept → definitief → gearchiveerd lifecycle. Access to every document is gated by its vertrouwelijkheidaanduiding at the service layer, and the dossier view groups documents by type with upload (metadata dialog), version history, full-text search, bulk ZIP export with manifest, and a range-capable ZGW DRC download endpoint. A repair step back-fills ZGW metadata for pre-existing linked files.",
-    "docsUrl": "openspec/specs/document-zaakdossier/spec.md"
-  },
-  {
-    "slug": "doorlooptijd-dashboard",
-    "title": "Doorlooptijd Dashboard",
-    "summary": "The doorlooptijd (processing time) dashboard provides SLA adherence analytics for case management. It enables team leads and case managers to monitor processing time compliance by case type, identify at-risk cases, and track compliance trends over time. All data is derived from existing case and case type fields in OpenRegister.",
-    "docsUrl": "openspec/specs/doorlooptijd-dashboard/spec.md"
-  },
-  {
-    "slug": "dso-omgevingsloket",
-    "title": "dso-omgevingsloket",
-    "summary": "Integrates Procest with the DSO/Omgevingsloket: ingests vergunningaanvragen from OpenConnector into Procest zaken with statutory working-day deadlines, drives the omgevingsvergunning status lifecycle (dual-write + event dispatch), supports samenwerkverzoek and doorstuur flows, generates beschikkingen, and surfaces a VTH dashboard.",
-    "docsUrl": "openspec/specs/dso-omgevingsloket/spec.md"
-  },
-  {
-    "slug": "dso-omgevingsloket-client",
-    "title": "DSO Omgevingsloket Client",
-    "summary": "@e2e exclude Backend intake adapter invoked by openconnector; no Playwright UI surface.",
-    "docsUrl": "openspec/specs/dso-omgevingsloket-client/spec.md"
-  },
-  {
-    "slug": "dwangsom-calculation",
-    "title": "dwangsom-calculation",
-    "summary": "Calculates the statutory dwangsom (AWB 4:17) due when a decision is not taken in time, applying the daily staffel (€23/€35/€45 per tier) after a 14-day grace period and capping the cumulative amount at the €1.442 plafond without retroactive recalculation. When a beschikking is registered, accrual stops, the final amount is locked, the termijn is marked voltooid, and a payment preparation is triggered.",
-    "docsUrl": "openspec/specs/dwangsom-calculation/spec.md"
-  },
-  {
-    "slug": "enforcement-lhs",
-    "title": "enforcement-lhs",
-    "summary": "Provide VTH enforcement (handhaving) support in Procest based on the Landelijke Handhavingsstrategie (LHS): a configurable ernst x gedrag interventie matrix, an enforcement-action schema with dwangsom tracking and status lifecycle, a guided enforcement wizard, and a case-dashboard enforcement panel.",
-    "docsUrl": "openspec/specs/enforcement-lhs/spec.md"
-  },
-  {
-    "slug": "financial-integration",
-    "title": "financial-integration",
-    "summary": "Prepares an ERP-ready dwangsom payment signal once an amount is locked and processes the financial system's payment-confirmation callback via openconnector. The payment signal carries the full metadata (bedrag, rekeninghouder, IBAN, referentie, legal basis, payment deadline) and is blocked when the IBAN is missing or malformed; the signed callback is validated, looked up by referentie, updates the payment status to betaald, and triggers a burger notification, rejecting unknown references with HTTP 404.",
-    "docsUrl": "openspec/specs/financial-integration/spec.md"
-  },
-  {
-    "slug": "gis-integration",
-    "title": "gis-integration",
-    "summary": "GIS / geo capability for cases: a backend `GeoService` (RFC 7946 GeoJSON validation + JSON-encoded (de)serialisation + clustered case-geo assembly), an OGC WFS 2.0.0 endpoint (`/wfs/cases`, reusing `WfsExportService`), a clustered cases-on-map data endpoint (`/api/cases/geo`, with a per-object access guard), and a Leaflet-based frontend (read-only `GeoViewer` single-case map + full-screen `CasesOnMapView` dashboard with filters + GeoJSON export). PDOK base layers / geocoding are reached via OpenConnector and degrade gracefully when OpenConnector or PDOK is unavailable — the map never hard-fails.",
-    "docsUrl": "openspec/specs/gis-integration/spec.md"
-  },
-  {
-    "slug": "handler-vervanging-waarneming",
-    "title": "handler-vervanging-waarneming",
-    "summary": "Workload continuity when a case handler is absent (vervanging/waarneming) and when a handler permanently leaves (bulk reassignment). A waarnemer sees and works the absent handler's cases, tasks, and deadline signals for a bounded period; every action taken in that capacity is audit-trailed as \"namens\"; and a coordinator can transfer all open work of a departing handler in one previewed, audited batch. Substitution is domain logic on top of OpenRegister RBAC and grants no permissions of its own. Decision/besluit authority during absence stays with the mandaat-matrix (waarnemer on the decision date) and is out of scope here.",
-    "docsUrl": "openspec/specs/handler-vervanging-waarneming/spec.md"
-  },
-  {
-    "slug": "ingebrekestelling",
-    "title": "ingebrekestelling",
-    "summary": "Registers and validates a formal ingebrekestelling (AWB 4:17), accepting it only when the termijn is genuinely overschreden and rejecting premature notices. A valid registration auto-creates the grace-period DwangsomBerekening starting 14 days after receipt; only the first valid notice forms the dwangsom basis, so later notices are recorded for the audit trail without spawning a second berekening.",
-    "docsUrl": "openspec/specs/ingebrekestelling/spec.md"
-  },
-  {
-    "slug": "inspection-checklists",
-    "title": "inspection-checklists",
-    "summary": "Provide VTH inspection (toezicht) checklist support in Procest: a versioned inspection-checklist schema linked to case types, an admin UI for managing checklists, completion of checklists into inspection rapporten stored as case documents, and a case-dashboard inspection panel showing progress and rapport history.",
-    "docsUrl": "openspec/specs/inspection-checklists/spec.md"
-  },
-  {
-    "slug": "kcc-klantcontact-integratie",
-    "title": "kcc-klantcontact-integratie",
-    "summary": "Provides a customer-contact-centre (KCC) integration that surfaces caller context within one second of an inbound call (CTI popup with BRP identity, open cases, and contact history) and records every interaction as a structured ContactMoment. Omnichannel intake (phone, email, web form, chat, social media) feeds a routing engine that assigns each contact to the right team and suggests the best agent by workload, skill, and history, with callback scheduling and SLA tracking, status feedback to the originating agent, a volume/SLA reporting dashboard, an admin UI for routing rules, and NEN 7510/AVG-compliant data protection.",
-    "docsUrl": "openspec/specs/kcc-klantcontact-integratie/spec.md"
-  },
-  {
-    "slug": "kcc-werkplek-zaaksysteem-bridge",
-    "title": "kcc-werkplek-zaaksysteem-bridge",
-    "summary": "Bridge the KCC-werkplek (contact-center workplek) to the Procest zaaksysteem so KCC-medewerkers get real-time case context on every inbound contact: automatic case-voorblad, contactmoment capture with audit trail, one-click quick-actions (status terugkoppelen, nieuwe zaak, klacht registreren, warm doorverbinden), datagedreven belplan-routering, and real-time sentiment detection. Burger is a Nextcloud contact entity (opaque pseudonymous reference, no PII schema, per ADR-022). Procest exposes the read/write API; the KCC-werkplek agent UI is rendered by pipelinq.",
-    "docsUrl": "openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md"
-  },
-  {
-    "slug": "leges-fees",
-    "title": "Leges Fees",
-    "summary": "@e2e exclude Leges fee calculation is V1; calculation engine and export are backend services not testable via Playwright.",
-    "docsUrl": "openspec/specs/leges-fees/spec.md"
-  },
-  {
-    "slug": "leges-heffingen",
-    "title": "leges-heffingen",
-    "summary": "Automates municipal leges (administrative fees) from verordening to invoice: it imports an annual legesverordening from a decidesk raadsbesluit, calculates the correct tariff automatically on case creation (fixed, staffel, and variant tariffs fixed at the case start date), and applies adopted discounts and exemptions. Calculated leges create an invoice in shillinq accounts-receivable with payment synchronisation, support phase-based refunds on withdrawn applications and income-verified minima exemptions, and keep a full audit trail per calculation plus a concept-to-vastgesteld verordening review workflow.",
-    "docsUrl": "openspec/specs/leges-heffingen/spec.md"
-  },
-  {
-    "slug": "mandaat-matrix",
-    "title": "mandaat-matrix",
-    "summary": "Provides a mandate matrix that decides, in real time, whether a user is authorized to take a given case decision, resolving their current role, evaluating the applicable mandate's conditions (including spending plafonds, waarnemer substitution, subdelegation rules, and conflict of interest) via an ABAC policy engine. Insufficient authority is blocked and escalated to the next-higher mandaathouder for approval or rejection, every authorized decision is captured in an immutable write-once MandaatGebruik audit log against the effective-dated mandate version, and the capability includes decidesk import of mandate besluiten, an admin panel, and a user-facing bevoegdheden view.",
-    "docsUrl": "openspec/specs/mandaat-matrix/spec.md"
-  },
-  {
-    "slug": "map-component",
-    "title": "Map Component",
-    "summary": "@e2e exclude Map component is V1; Leaflet rendering and GIS proxy scenarios require geospatial test data not available in CI.",
-    "docsUrl": "openspec/specs/map-component/spec.md"
-  },
-  {
-    "slug": "mcp-integration",
-    "title": "MCP Integration",
-    "summary": "@e2e exclude Backend MCP tool provider; invoked by AI orchestrator, not via browser UI.",
-    "docsUrl": "openspec/specs/mcp-integration/spec.md"
-  },
-  {
-    "slug": "milestone-tracking",
-    "title": "Milestone Tracking",
-    "summary": "@e2e exclude Milestone tracking is V1; milestone API endpoints are covered by PHPUnit, not Playwright.",
-    "docsUrl": "openspec/specs/milestone-tracking/spec.md"
-  },
-  {
-    "slug": "mobiel-inspectie-offline",
-    "title": "mobiel-inspectie-offline",
-    "summary": "Lets field inspectors work fully offline: they synchronize the day's cases, checklists, historical documents, and map tiles to local storage, then complete checklists, capture GPS-tagged photos (client-side compressed with EXIF), record voice memos for later transcription, and draw map annotations without network connectivity. Changes are queued locally and automatically replayed in order with exponential backoff on reconnection, concurrent edits and lost permissions are surfaced as conflicts the inspector resolves, and all resolution decisions are recorded in an immutable, AVG-compliant audit trail.",
-    "docsUrl": "openspec/specs/mobiel-inspectie-offline/spec.md"
-  },
-  {
-    "slug": "multi-tenancy",
-    "title": "Multi-Tenancy",
-    "summary": "@e2e exclude Tenant provisioning is a backend REST API; UI renders via manifest, not custom Playwright-testable views.",
-    "docsUrl": "openspec/specs/multi-tenancy/spec.md"
-  },
-  {
-    "slug": "my-work",
-    "title": "My Work (Werkvoorraad)",
-    "summary": "My Work is the personal productivity hub for case handlers. It aggregates all work items assigned to the current user -- cases where they are the handler and tasks assigned to them -- into a single prioritized view. Items are grouped by urgency (Overdue, Due This Week, Upcoming, No Deadline) and sorted by priority then deadline within each group. This view answers the daily question: \"What do I need to work on next?\"",
-    "docsUrl": "openspec/specs/my-work/spec.md"
-  },
-  {
-    "slug": "nav-dedup-and-grouping",
-    "title": "nav-dedup-and-grouping",
-    "summary": "Cleans up the procest left navigation so no group and its child share the same label, relabelling the duplicate \"Cases\" and \"Analytics\" leaves and retiring the duplicate substitution entry while keeping every page routable. It introduces a \"Work\" group for the operational work-queue surfaces and completes the Cases and Analytics groups with their dossier and reporting surfaces, implemented purely through src/manifest.json and src/menu-layout.json with no backend, schema, or engine changes.",
-    "docsUrl": "openspec/specs/nav-dedup-and-grouping/spec.md"
-  },
-  {
-    "slug": "objections-appeals-nav-group",
-    "title": "objections-appeals-nav-group",
-    "summary": "Presents the objections-and-appeals (bezwaar & beroep) domain as a single top-level navigation group instead of six scattered flat entries, with its five transactional surfaces rendered as children in a coherent workflow order. Every grouped page stays routable at its existing route, and the change is a pure information-architecture edit limited to src/menu-layout.json and src/manifest.json ordering, touching no schema, controller, route, or decision flow.",
-    "docsUrl": "openspec/specs/objections-appeals-nav-group/spec.md"
-  },
-  {
-    "slug": "open-raadsinformatie",
-    "title": "open-raadsinformatie",
-    "summary": "Provides a pre-configured \"Open Raadsinformatie\" (ORI) register that publishes Dutch municipal council information — meetings, agenda items, documents, votes, council members, and factions — as publicly accessible, searchable open data. It models the full ORI entity set with validation and relationships, ships realistic demo data, and supports importing council data from source systems such as iBabs and NotuBiz via OpenConnector to meet Wet open overheid transparency requirements.",
-    "docsUrl": "openspec/specs/open-raadsinformatie/spec.md"
-  },
-  {
-    "slug": "openregister-integration",
-    "title": "OpenRegister Integration",
-    "summary": "@e2e exclude Pure data-layer plumbing spec; store/register/schema setup is covered by PHPUnit repair-step tests.",
-    "docsUrl": "openspec/specs/openregister-integration/spec.md"
-  },
-  {
-    "slug": "ops-observability",
-    "title": "Ops Observability",
-    "summary": "@e2e exclude Pure health-check endpoint covered by integration tests; no Playwright UI surface.",
-    "docsUrl": "openspec/specs/ops-observability/spec.md"
-  },
-  {
-    "slug": "parafering-audit-via-or",
-    "title": "parafering-audit-via-or",
-    "summary": "Routes every parafering (sign-off route) transition through OpenRegister's immutable audit trail instead of a dedicated procest audit schema. Each transition emits an OR audit entry tagged `procest.parafering.{transition}` carrying full route, actor, state-change, and delegation context, so the complete approval history is discoverable and hash-chain-verifiable via the OR audit API. Existing legacy records remain readable, and OR's native immutability removes the need for an app-specific append-only validator.",
-    "docsUrl": "openspec/specs/parafering-audit-via-or/spec.md"
-  },
-  {
-    "slug": "parafering-dashboard",
-    "title": "parafering-dashboard",
-    "summary": "The parafering dashboard provides the secretariaat and case handlers with an overview of active voorstellen and their parafering status, a personal parafering inbox, reminder actions for overdue steps, and sidebar navigation to the dashboard at `/voorstellen`.",
-    "docsUrl": "openspec/specs/parafering-dashboard/spec.md"
-  },
-  {
-    "slug": "parafering-via-or-approval",
-    "title": "parafering-via-or-approval",
-    "summary": "Define the procest-side contract for routing parafering (signing-route) chains through OpenRegister's `approval-workflow` capability (ADR-022). Procest's consumer-facing API surface is preserved; chain-state, role enforcement, advance-on-approval and decision history are delegated to OpenRegister's `ApprovalChain` / `ApprovalStep` entities via the `ParaferingApprovalBridge` seam. The deprecated `Parafeerroute` schema remains read-only until sunset.",
-    "docsUrl": "openspec/specs/parafering-via-or-approval/spec.md"
-  },
-  {
-    "slug": "pdok-consumer",
-    "title": "pdok-consumer",
-    "summary": "Defines the procest-side contract for routing all PDOK Locatieserver access through the openconnector PDOK adapter (`/index.php/apps/openconnector/api/pdok/*`) instead of calling `api.pdok.nl` directly from the browser. procest's `src/services/pdokService.js` is a thin shim that preserves the six existing exports (`suggest`, `lookup`, `free`, `reverse`, `extractCoordinates`, `formatAddress`) so no caller changes, delegates the four network functions to openconnector, and degrades gracefully on HTTP 503 (PDOK unavailable) and HTTP 404 (openconnector absent). Per ADR-022 (apps consume OR/openconnector abstractions).",
-    "docsUrl": "openspec/specs/pdok-consumer/spec.md"
-  },
-  {
-    "slug": "pdok-integration",
-    "title": "PDOK Integration",
-    "summary": "@e2e exclude Backend geodata service integration; tile/geocoder calls are covered by service-level tests, not browser E2E.",
-    "docsUrl": "openspec/specs/pdok-integration/spec.md"
-  },
-  {
-    "slug": "process-step-configuration",
-    "title": "process-step-configuration",
-    "summary": "@e2e exclude Process step configuration is V1; drag-and-drop step reorder in the workflow editor is not testable in the current build.",
-    "docsUrl": "openspec/specs/process-step-configuration/spec.md"
-  },
-  {
-    "slug": "procest-app-scaffold",
-    "title": "procest-app-scaffold",
-    "summary": "@e2e exclude App scaffold plumbing (PHP classes, build system, repair step); covered by PHPUnit and smoke tests.",
-    "docsUrl": "openspec/specs/procest-app-scaffold/spec.md"
-  },
-  {
-    "slug": "procest-canonical-store-api",
-    "title": "procest-canonical-store-api",
-    "summary": "Defines the canonical OpenRegister object-store API contract for all procest Pinia stores: collections via `fetchCollection(type, {_filters[field]: value})`, single loads via `fetchObject`, create/update via `saveObject`, deletes via `deleteObject`, and file attachments via `uploadFiles`. Replaces the phantom `create/update/delete` methods and the wrong `filters:{}` shape.",
-    "docsUrl": "openspec/specs/procest-canonical-store-api/spec.md"
-  },
-  {
-    "slug": "procest-case-management",
-    "title": "procest-case-management",
-    "summary": "@e2e exclude Superseded by canonical case-management and task-management specs; data model tests covered by PHPUnit.",
-    "docsUrl": "openspec/specs/procest-case-management/spec.md"
-  },
-  {
-    "slug": "procest-config-to-settings",
-    "title": "procest-config-to-settings",
-    "summary": "Groups all of procest's configuration and admin navigation leaves under a single Settings menu node so they no longer clutter the top level of the primary navigation. Operational surfaces such as live fee calculations and the Termijnbewaking KPI dashboard stay in the working navigation, and the relocation touches only the menu structure — every relocated page remains reachable by its existing route, with no new pages, schemas, or business logic introduced.",
-    "docsUrl": "openspec/specs/procest-config-to-settings/spec.md"
-  },
-  {
-    "slug": "procest-object-store",
-    "title": "procest-object-store",
-    "summary": "@e2e exclude Pinia store factory plumbing; store API compliance is covered by unit tests, not browser E2E.",
-    "docsUrl": "openspec/specs/procest-object-store/spec.md"
-  },
-  {
-    "slug": "procest-procurement-compliance",
-    "title": "procest-procurement-compliance",
-    "summary": "Define procurement compliance for procest: drempelbedragen as a `ProcurementThreshold` register, declarative procedure-type recommendation, UEA/EML as registers (not PDF blobs), declarative compliance KPI widgets + notifications — anchored in Aw 2012 / EU threshold regulations, all data-driven per ADR-031.",
-    "docsUrl": "openspec/specs/procest-procurement-compliance/spec.md"
-  },
-  {
-    "slug": "procest-procurement-contract-lifecycle",
-    "title": "procest-procurement-contract-lifecycle",
-    "summary": "Define contract lifecycle management for procest: contracts as an OpenRegister `Contract` register governed by a `contract-lifecycle` caseType, with declarative lifecycle, e-signature via OpenConnector, docudesk-owned documents, declarative notifications + analytics — reusing procest's workflow-engine + parafering abstractions (ADR-022/031).",
-    "docsUrl": "openspec/specs/procest-procurement-contract-lifecycle/spec.md"
-  },
-  {
-    "slug": "procest-procurement-evaluation-award",
-    "title": "procest-procurement-evaluation-award",
-    "summary": "Define bid evaluation + award for procest: scoring as an `Evaluation` register (one per bid per evaluator), awards as additive fields on procest's existing `decision` register, data-driven scoring formulas, calibration as child cases, declarative standstill enforcement, and docudesk-generated award documents — anchored in Aw 2012 motiveringsplicht.",
-    "docsUrl": "openspec/specs/procest-procurement-evaluation-award/spec.md"
-  },
-  {
-    "slug": "procest-procurement-publication-platform",
-    "title": "procest-procurement-publication-platform",
-    "summary": "Define TED/OJEU + national notice publication for procest: notices as a `PublicationNotice` register, eForms standard-form codes as a `PublicationTemplate` register, declarative notice lifecycle, declarative material-change (wezenlijke-wijziging) detection with re-publication recommendation, publication via PSI slots — anchored in EU 2014/24 + Verordening 2019/1780 (eForms) + Aw 2012.",
-    "docsUrl": "openspec/specs/procest-procurement-publication-platform/spec.md"
-  },
-  {
-    "slug": "procest-procurement-spend-analytics-integration",
-    "title": "procest-procurement-spend-analytics-integration",
-    "summary": "Define the cross-app spend-analytics contract: procest emits procurement CloudEvents and exposes its registers via OR GraphQL; mydash consumes them at runtime to render spend analytics. Commitment side from procest, posting side from [future] financeq. RBAC stays OR-canonical; procest ships no analytics manifest entry (mydash owns the surface).",
-    "docsUrl": "openspec/specs/procest-procurement-spend-analytics-integration/spec.md"
-  },
-  {
-    "slug": "procest-procurement-supplier-management",
-    "title": "procest-procurement-supplier-management",
-    "summary": "Define the supplier (vendor) management surface for procest as case management: suppliers as an OpenRegister `Supplier` register, onboarding as a `supplier-onboarding` caseType, with declarative qualification, lifecycle, performance, portal-RBAC, and notifications reusing procest's existing case-management machinery and OR abstractions (ADR-022/031).",
-    "docsUrl": "openspec/specs/procest-procurement-supplier-management/spec.md"
-  },
-  {
-    "slug": "procest-procurement-system-integration",
-    "title": "procest-procurement-system-integration",
-    "summary": "Define procest's external-procurement integration posture: procest declares logical connector slots (TenderNed, Mercell, Negometrix, Peppol, KvK, e-signature, ...) while OpenConnector owns transport (ADR-019). Inbound via OR's integration registry, slot mappings as schema metadata, failures surfaced as procest tasks — zero transport code in procest lib/.",
-    "docsUrl": "openspec/specs/procest-procurement-system-integration/spec.md"
-  },
-  {
-    "slug": "procest-procurement-tender-management",
-    "title": "procest-procurement-tender-management",
-    "summary": "Define tender (aanbesteding) management for procest: tenders as procest cases (`schema:Project`) with a complementary `Tender` register, multi-lot support via deelzaak, declarative lifecycle + termijnen/standstill calculations, Bids and TenderQuestions as registers, publication via PSI slots — anchored in Aw 2012 / ARW 2016 (ADR-022/031).",
-    "docsUrl": "openspec/specs/procest-procurement-tender-management/spec.md"
-  },
-  {
-    "slug": "procest-sociaal-domein-avg-consent",
-    "title": "procest-sociaal-domein-avg-consent",
-    "summary": "Enforces AVG/GDPR-compliant handling of special-category personal data in sociaal-domein cases (WMO, Jeugdwet, Participatiewet). Every case must declare its data-category classification at creation, access is restricted to the case's wijkteam with data-driven guards, exports without recorded consent are automatically anonymized, and all reads are immutably audit-logged. It also tracks revocable citizen consent, statutory retention with archivaris-reviewed destruction, subject-access-requests, and data-breach incident reporting.",
-    "docsUrl": "openspec/specs/procest-sociaal-domein-avg-consent/spec.md"
-  },
-  {
-    "slug": "procest-sociaal-domein-jeugdwet",
-    "title": "procest-sociaal-domein-jeugdwet",
-    "summary": "Provides the Jeugdwet (`jeugdwet-melding`) zaaktype for municipal youth-care casework, with a family-centered status lifecycle, gezinsplan drafting and consent workflow, and Multi-Disciplinary Overleg coordination. Because every case concerns minors, it enforces mandatory AVG classification, jeugdteam-scoped access with logged child-safety overrides, automatic anonymization of unconsented minutes, 20-year statutory retention, comprehensive audit logging, and subject-access-request support for both the child and parents.",
-    "docsUrl": "openspec/specs/procest-sociaal-domein-jeugdwet/spec.md"
-  },
-  {
-    "slug": "procest-sociaal-domein-participatiewet",
-    "title": "procest-sociaal-domein-participatiewet",
-    "summary": "Provides the Participatiewet (`bijstandsaanvraag`) zaaktype for municipal social-assistance casework, enforcing a mandatory vermogens- and inkomenstoets before any benefit decision and auto-creating a re-integration trajectory when an applicant qualifies. It manages an income-focused status lifecycle, work-and-income-team access control, mandatory AVG financial classification, anonymized financial exports, audit logging, counter-services (tegenprestatie) decisions with periodic exemption review, and 10-year statutory retention with destruction proposals.",
-    "docsUrl": "openspec/specs/procest-sociaal-domein-participatiewet/spec.md"
-  },
-  {
-    "slug": "procest-sociaal-domein-wmo",
-    "title": "procest-sociaal-domein-wmo",
-    "summary": "Provides the WMO (`wmo-melding`) zaaktype for municipal social-support casework, driving the onderzoek → indicatiestelling → beschikking assessment flow with statutory deadline tracking and auto-generated beschikking letters. It enforces mandatory AVG classification, wijkteam-only access control, wettelijke termijn monitoring, re-evaluation scheduling, anonymized exports to external providers, 15-year statutory retention, and comprehensive audit logging of access to medical data.",
-    "docsUrl": "openspec/specs/procest-sociaal-domein-wmo/spec.md"
-  },
-  {
-    "slug": "procest-store-migration",
-    "title": "procest-store-migration",
-    "summary": "@e2e exclude Pinia store migration spec; store API compliance is covered by unit tests, not browser E2E.",
-    "docsUrl": "openspec/specs/procest-store-migration/spec.md"
-  },
-  {
-    "slug": "procest-tenant-migration",
-    "title": "procest-tenant-migration",
-    "summary": "Migrate procest's parallel `TenantService`, `TenantMiddleware`, and `TenantController` to consume OpenRegister's Organisation entity + tenant-lifecycle API, preserving all existing API endpoints and response shapes, plus a one-time idempotent data migration (`occ procest:migrate-tenants`) from procest's deprecated private `tenant` schema to OR Organisations. References `consume-or-tenant-fleet-wide` as the authoritative fleet policy.",
-    "docsUrl": "openspec/specs/procest-tenant-migration/spec.md"
-  },
-  {
-    "slug": "prometheus-metrics",
-    "title": "Prometheus Metrics Endpoint",
-    "summary": "@e2e exclude Pure metrics endpoint covered by health/integration tests; no Playwright UI surface.",
-    "docsUrl": "openspec/specs/prometheus-metrics/spec.md"
-  },
-  {
-    "slug": "property-definition-management",
-    "title": "property-definition-management",
-    "summary": "Provides admin tabs for managing the property definitions, document types, and decision types attached to a case type, completing the seven-tab case-type detail view. Property definitions declare domain-specific required fields with format validation, document types define a required-document checklist with direction and confidentiality classification, and decision types define the formal decision categories that can be recorded on cases.",
-    "docsUrl": "openspec/specs/property-definition-management/spec.md"
-  },
-  {
-    "slug": "quality-gates",
-    "title": "quality-gates",
-    "summary": "Defines the unified strict quality gate for procest: a single `composer check:strict` command that runs lint, PHPCS, PHPMD, Psalm, and PHPStan in sequence and fails on any violation, run on every pull request to `development`, `main`, or `beta`. It requires PHPMD to run with no baseline, keeps any PHPStan baseline minimal and documented, and pins the CI workflow to a served Codeberg runner so the gate is actually scheduled.",
-    "docsUrl": "openspec/specs/quality-gates/spec.md"
-  },
-  {
-    "slug": "related-case-linking",
-    "title": "related-case-linking",
-    "summary": "Typed peer relations between cases (RGBZ/ZRC `relevanteAndereZaken`): link a bezwaar to the originating besluit-zaak (`onderwerp`), a WOO request to its bronzaken, a toezicht case to the vergunning it follows (`vervolg`), an advies-deelproces contributing to a hoofdbehandeling (`bijdrage`). Relations are stored on the existing `case.relatedCases` field as `{caseId, aardRelatie, toelichting?}`, written symmetrically by `CaseRelationService`, guarded against self/duplicate/hierarchy-overlap with OR-RBAC read access to both cases, rendered on the case detail with RBAC-safe masking, and mapped bidirectionally to the ZRC Zaak `relevanteAndereZaken` field. Hierarchy (hoofdzaak/deelzaak) stays `deelzaak-support`'s concern and is explicitly not duplicated as a peer relation.",
-    "docsUrl": "openspec/specs/related-case-linking/spec.md"
-  },
-  {
-    "slug": "remaining-decision-delegation",
-    "title": "remaining-decision-delegation",
-    "summary": "Delegates procest's remaining decision and advice flows — beslissing-op-bezwaar, BAC/advies/consultatie, and voorstel-besluit registration — to decidesk Decisions via the OpenRegister integration registry, so decidesk makes the decision while procest stops running local decision state machines. Delegation fails closed when decidesk is unavailable, the resulting ZGW Besluit is materialized as a projection of the decidesk outcome, and procest retains its Awb and IDOR domain validation, ZGW case management, and an idempotent repair step that links in-flight cases forward without data loss.",
-    "docsUrl": "openspec/specs/remaining-decision-delegation/spec.md"
-  },
-  {
-    "slug": "result-type-management",
-    "title": "result-type-management",
-    "summary": "Provides admin tabs for managing the result types and role types attached to a case type. Result types define the allowed case outcomes with Archiefwet/Selectielijst-compliant archival rules, while role types restrict which participant roles are available when assigning case participants; both render in the case type detail view scoped to the current case type.",
-    "docsUrl": "openspec/specs/result-type-management/spec.md"
-  },
-  {
-    "slug": "role-based-step-routing",
-    "title": "role-based-step-routing",
-    "summary": "@e2e exclude Role-based step routing is V1; role-filtered task generation is backend logic covered by PHPUnit.",
-    "docsUrl": "openspec/specs/role-based-step-routing/spec.md"
-  },
-  {
-    "slug": "roles-decisions",
-    "title": "Roles & Decisions",
-    "summary": "Roles define the relationship between participants (Nextcloud users or external contacts) and cases -- who is involved and in what capacity. Results record the formal outcome of a completed case, linking to a predefined result type that controls archival rules. Decisions are formal administrative choices made on cases, with legal validity periods and publication requirements.",
-    "docsUrl": "openspec/specs/roles-decisions/spec.md"
-  },
-  {
-    "slug": "signalering-widgets",
-    "title": "Signalering Widgets",
-    "summary": "The signalering (alerting) widgets provide proactive deadline awareness on the Procest dashboard. They surface time-sensitive alerts so case handlers can act before deadlines pass: cases approaching their processing deadline, tasks approaching their due date, and cases that have gone stagnant with no recent activity.",
-    "docsUrl": "openspec/specs/signalering-widgets/spec.md"
-  },
-  {
-    "slug": "status-transition-engine",
-    "title": "status-transition-engine",
-    "summary": "@e2e exclude Status transition guard engine is V1; guard evaluation logic is covered by unit tests, not browser E2E.",
-    "docsUrl": "openspec/specs/status-transition-engine/spec.md"
-  },
-  {
-    "slug": "stuf-integration",
-    "title": "StUF Integration",
-    "summary": "@e2e exclude Pure SOAP/backend integration spec covered by PHPUnit; no Playwright UI surface.",
-    "docsUrl": "openspec/specs/stuf-integration/spec.md"
-  },
-  {
-    "slug": "subsidieverlening-keten",
-    "title": "subsidieverlening-keten",
-    "summary": "Provides the end-to-end subsidy grant chain: multi-year beschikkingen with conditional voorschot schedules, AWB deadline (termijn) binding per lifecycle phase, verplichtingen tracking with evidence linking, interim reports (tussenrapportage) as typed sub-cases, and final settlement (vaststelling) with automatic terugvordering on overpayment. It also covers the open-data subsidieregister feed, bewijsstukken management with retention and archival handover, cofinanciering and EU state-aid checks, amendment (wijzigingsbeschikking) workflows, and management reporting.",
-    "docsUrl": "openspec/specs/subsidieverlening-keten/spec.md"
-  },
-  {
-    "slug": "supplier-portal",
-    "title": "supplier-portal",
-    "summary": "Provides a self-service portal where suppliers authenticate via eHerkenning and view their own tenders, contracts, invoices, KPIs, and case messages, scoped strictly to their organisation. It registers the supplier OpenRegister schemas and case types, enforces supplier-scoped access with audit logging and PII masking, and supports sensitive mutations such as IBAN changes through re-authentication and 4-eyes Procest workflows. It also surfaces expected payment dates, invoice age analysis, contract expiry warnings, renewal requests, and nightly-aggregated supplier KPIs with municipal benchmarks.",
-    "docsUrl": "openspec/specs/supplier-portal/spec.md"
-  },
-  {
-    "slug": "task-management",
-    "title": "Task Management",
-    "summary": "Tasks represent work items within a case. They follow CMMN 1.1 HumanTask concepts and are semantically typed as `schema:Action`. Tasks can be assigned to Nextcloud users, have due dates and priorities, and follow an independent lifecycle within the parent case. Tasks are the primary mechanism for distributing and tracking work across case handlers, advisors, and other participants.",
-    "docsUrl": "openspec/specs/task-management/spec.md"
-  },
-  {
-    "slug": "template-library",
-    "title": "Template Library",
-    "summary": "@e2e exclude Template library scenarios cover backend REST endpoints and file loading; activation is a backend service test, not Playwright.",
-    "docsUrl": "openspec/specs/template-library/spec.md"
-  },
-  {
-    "slug": "tenant-auth",
-    "title": "tenant-auth",
-    "summary": "Injects the tenant context into a signed JWT at login, including via eHerkenning SAML, and validates the token signature and tenant claim before any claim is trusted. It rejects forged or cross-tenant tokens with HTTP 401/403, logs the attempts, and alerts the security team after repeated cross-tenant failures, ensuring each request is bound to its own tenant for downstream isolation.",
-    "docsUrl": "openspec/specs/tenant-auth/spec.md"
-  },
-  {
-    "slug": "tenant-billing",
-    "title": "tenant-billing",
-    "summary": "Emits immutable billing events across the case lifecycle, including refunds that net prior charges, and exports pending events to Shillinq daily grouped by tenant and month with retry and deferral on failure. It keeps exports idempotent by only touching events without an invoiceRef and presents a tenant billing dashboard with current-month, year-to-date, forecast, invoice history, and quota status.",
-    "docsUrl": "openspec/specs/tenant-billing/spec.md"
-  },
-  {
-    "slug": "tenant-compliance",
-    "title": "tenant-compliance",
-    "summary": "Verifies and documents multi-tenant correctness through a mandatory CI suite that proves no cross-tenant data leakage across overlapping IDs, cross-tenant queries, injected tenant filters, and JWT token swaps. It includes an end-to-end onboarding test and a consolidated OpenAPI 3.0 specification for all tenant endpoints, and maintains tenant-stamped audit trails, BIO 2.0 enterprise context, and AVG deletion confirmation for regulatory compliance.",
-    "docsUrl": "openspec/specs/tenant-compliance/spec.md"
-  },
-  {
-    "slug": "tenant-configuration",
-    "title": "tenant-configuration",
-    "summary": "Per-tenant configuration and branding for the multi-tenant SaaS: persists branding/locale/timezone/feature-flags, validates logo uploads (MIME + size), emits NL Design System CSS theming tokens, and sanitises enterprise custom CSS against an XSS-safe property whitelist.",
-    "docsUrl": "openspec/specs/tenant-configuration/spec.md"
-  },
-  {
-    "slug": "tenant-crud-lifecycle",
-    "title": "tenant-crud-lifecycle",
-    "summary": "Manages tenant records with an auto-generated unique slug, an initial onboarding status, and an isolation mode derived from the tier, rejecting duplicate slugs. It exposes admin-only CRUD and status-filterable list endpoints and enforces a lifecycle state machine on tenant status so only legal transitions are persisted.",
-    "docsUrl": "openspec/specs/tenant-crud-lifecycle/spec.md"
-  },
-  {
-    "slug": "tenant-isolation",
-    "title": "tenant-isolation",
-    "summary": "Provides request-scoped tenant isolation for the multi-tenant SaaS deployment: a `TenantContext` singleton resolved from the `X-Tenant-Id` header, and middleware that sets the PostgreSQL `search_path` to the tenant's schema so every query is scoped to a single tenant regardless of injected filters.",
-    "docsUrl": "openspec/specs/tenant-isolation/spec.md"
-  },
-  {
-    "slug": "tenant-lifecycle",
-    "title": "tenant-lifecycle",
-    "summary": "Suspends, reactivates, and terminates tenants while gating access and synchronising billing with Shillinq. Suspension blocks new cases and pauses billing events while keeping existing cases visible; reactivation restores service and resumes billing; termination finalises billing, revokes API access, and archives tenant data for a retention period before deletion with an immutable deletion-confirmation log entry.",
-    "docsUrl": "openspec/specs/tenant-lifecycle/spec.md"
-  },
-  {
-    "slug": "tenant-mandate",
-    "title": "tenant-mandate",
-    "summary": "Checks a user's tenant role against the tenant's mandaat-matrix for each mandate-requiring action, allowing authorised actions and blocking unauthorised ones with HTTP 403 and a reason. Every decision is recorded in the audit trail, and the check fails closed by denying the action when the matrix cannot be resolved or the mandate service errors.",
-    "docsUrl": "openspec/specs/tenant-mandate/spec.md"
-  },
-  {
-    "slug": "tenant-onboarding",
-    "title": "tenant-onboarding",
-    "summary": "Initialises a 7-step onboarding checklist for each new tenant and renders a progress dashboard showing per-step status and the next recommended step. It integrates Decidesk for contract e-signature via a signature-verified webhook and validates mandatory prerequisites before activating a tenant, transitioning it from onboarding to active and triggering quota initialisation on go-live.",
-    "docsUrl": "openspec/specs/tenant-onboarding/spec.md"
-  },
-  {
-    "slug": "tenant-provisioning",
-    "title": "tenant-provisioning",
-    "summary": "Provisions a dedicated PostgreSQL schema per tenant, cloning the application tables into it while leaving shared tables in the public schema, then seeds default zaaktype and mandaat-matrix templates and roles and emails the tenant admin a welcome link. Provisioning rolls back cleanly on failure, dropping any partial schema, and supports a database-per-tenant isolation mode for enterprise tenants with vault-stored credentials and per-tenant data-residency rules.",
-    "docsUrl": "openspec/specs/tenant-provisioning/spec.md"
-  },
-  {
-    "slug": "tenant-quotas",
-    "title": "tenant-quotas",
-    "summary": "Initialises per-tenant quotas from tier templates and applies tier changes within one minute. It enforces quotas atomically per request with warn, throttle, and block modes, emitting soft-limit warnings at 80% and returning HTTP 429 with a quota-exceeded billing event and upgrade prompt at the limit, and resets monthly usage on a daily background job for quotas whose reset time has passed.",
-    "docsUrl": "openspec/specs/tenant-quotas/spec.md"
-  },
-  {
-    "slug": "tenant-schemas",
-    "title": "tenant-schemas",
-    "summary": "Declares the seven OpenRegister schemas that model multi-tenant zaaksysteem data — Tenant, TenantConfiguration, TenantQuota, TenantUser, TenantMandate, TenantBillingEvent, and TenantOnboardingTask — with their documented properties, enums, and relations registered through the procest register template. It seeds tier quota-limit templates and a default-tenant onboarding template via the register repair step and ensures OpenRegister queries are tenant-scoped at materialisation so a query carrying a tenant context returns only that tenant's rows.",
-    "docsUrl": "openspec/specs/tenant-schemas/spec.md"
-  },
-  {
-    "slug": "termijn-binding",
-    "title": "termijn-binding",
-    "summary": "Binds every zaak to a matching TermijnDefinitie and auto-creates its TermijnInstance on case creation, calculating the legal deadline from the configured duration and recording a start event. Case creation is blocked when no definition exists for the zaaktype, and definition versioning never retroactively changes deadlines on existing instances.",
-    "docsUrl": "openspec/specs/termijn-binding/spec.md"
-  },
-  {
-    "slug": "termijn-escalation",
-    "title": "termijn-escalation",
-    "summary": "Runs a daily termijn-scan that sends escalating notifications as deadlines approach at the 14-, 7-, and 2-day thresholds, widening the audience from handler to teamleader to afdelingsmanager. It marks passed deadlines as overschreden and detects expired hersteltermijnen, advising the handler on the AWB 4:5 next step without auto-continuing the termijn.",
-    "docsUrl": "openspec/specs/termijn-escalation/spec.md"
-  },
-  {
-    "slug": "termijn-pause-extension",
-    "title": "termijn-pause-extension",
-    "summary": "Manages hersteltermijn pauses and statutory extensions on a running TermijnInstance, pausing the deadline when an aanvraag is incomplete (AWB 4:5/4:15) and adding back only the unconsumed pause days on resume. It allows exactly one motivated extension (AWB 4:14), blocking a second unless an exceptional grond is supplied with supervisor approval, and records each change as a termijn event.",
-    "docsUrl": "openspec/specs/termijn-pause-extension/spec.md"
-  },
-  {
-    "slug": "termijn-reporting",
-    "title": "termijn-reporting",
-    "summary": "Produces termijn and dwangsom reporting for management and audit, including a quarterly KPI report per zaaktype and an annual dwangsom audit report for the jaarrekening, both exportable as CSV/JSON. It also exposes an aggregated dashboard KPI endpoint returning within-termijn percentage, average duration, overrun count, and dwangsom totals, cached and refreshed at least hourly.",
-    "docsUrl": "openspec/specs/termijn-reporting/spec.md"
-  },
-  {
-    "slug": "termijn-verification-admin",
-    "title": "termijn-verification-admin",
-    "summary": "Verifies the full termijn/dwangsom lifecycle end-to-end across the five canonical case paths and provides an admin UI to view, create, edit, and version TermijnDefinities so that changes affect only new cases. It also ships Dutch administrator and user documentation covering configuration, the daily-scan cronjob, AWB deadlines, pause and extension handling, and reporting.",
-    "docsUrl": "openspec/specs/termijn-verification-admin/spec.md"
-  },
-  {
-    "slug": "termijnbewaking-schemas",
-    "title": "termijnbewaking-schemas",
-    "summary": "Declares the six OpenRegister schemas for the termijn/dwangsom engine — TermijnDefinitie, TermijnInstance, TermijnGebeurtenis, Ingebrekestelling, DwangsomBerekening, and DwangsomUitbetaling — with their documented properties, enums, and relations so every consumer reads the same canonical shape. It also seeds three demo TermijnDefinities (Omgevingsvergunning-regulier, Wmo-aanvraag, and Woo-verzoek) via the register repair step so the engine has working configuration out of the box.",
-    "docsUrl": "openspec/specs/termijnbewaking-schemas/spec.md"
-  },
-  {
-    "slug": "unit-test-coverage",
-    "title": "unit-test-coverage",
-    "summary": "Ensures the Procest backend is covered by automated tests: every PHP service and controller class has a matching PHPUnit test exercising construction, main methods, and error handling, and a Newman/Postman collection validates the end-to-end ZGW API workflow. A coverage threshold of at least 75% of source files having a corresponding test guards against untested code reaching production.",
-    "docsUrl": "openspec/specs/unit-test-coverage/spec.md"
-  },
-  {
-    "slug": "visual-workflow-editor",
-    "title": "visual-workflow-editor",
-    "summary": "@e2e exclude Visual workflow editor is V1; drag-and-drop canvas interactions require a built workflow editor component not yet integrated into the admin settings.",
-    "docsUrl": "openspec/specs/visual-workflow-editor/spec.md"
-  },
-  {
-    "slug": "vth-admin-settings",
-    "title": "vth-admin-settings",
-    "summary": "Provides administrators a single VTH configuration page with tabs for Workflows, Leges Rules, Beschikking Templates, Inspection Checklists, and DSO Settings. Administrators can manage the three VTH workflows, build versioned inspection checklists with reorderable typed items and a mobile preview, and configure validated DSO integration settings persisted via the SettingsService.",
-    "docsUrl": "openspec/specs/vth-admin-settings/spec.md"
-  },
-  {
-    "slug": "vth-beschikking-generation",
-    "title": "vth-beschikking-generation",
-    "summary": "Generates a beschikking (permit decision) document from a versioned template by substituting case merge fields such as applicant, location, activities, and conditions, rendering a PDF, and attaching it to the case. Generation is blocked when required fields are missing and always uses the current template version, and an admin UI lets staff create, edit, and test-generate templates with a merge-field picker and validity dates.",
-    "docsUrl": "openspec/specs/vth-beschikking-generation/spec.md"
-  },
-  {
-    "slug": "vth-case-type-seed",
-    "title": "vth-case-type-seed",
-    "summary": "@e2e exclude Seed data imported via repair step; data presence is covered by PHPUnit repair-step tests.",
-    "docsUrl": "openspec/specs/vth-case-type-seed/spec.md"
-  },
-  {
-    "slug": "vth-config-foundation",
-    "title": "vth-config-foundation",
-    "summary": "Establishes the foundational VTH configuration data through idempotent repair steps: declarative workflow templates for the three VTH case kinds (Omgevingsvergunning, Toezichtzaak, Handhavingszaak), the complete 16-cell LHSO intervention matrix, and nine realistic Dutch seed cases. A master repair step loads workflow templates, leges rule sets, beschikking templates, inspection checklists, the LHSO matrix, and seed cases in dependency order without creating duplicates on repeated runs.",
-    "docsUrl": "openspec/specs/vth-config-foundation/spec.md"
-  },
-  {
-    "slug": "vth-dso-integration",
-    "title": "vth-dso-integration",
-    "summary": "Integrates DSO (Digitaal Stelsel Omgevingswet) permit requests with VTH case handling by auto-creating cases from a DSO verzoek, mapping STAM 2.0 fields, and flagging cases for manual initiator linking when a BRP lookup fails. Dispatches status-change events on case transitions so OpenConnector can push status back to DSO-LV, and tracks DSO case deadlines daily with warnings before flagging overdue cases.",
-    "docsUrl": "openspec/specs/vth-dso-integration/spec.md"
-  },
-  {
-    "slug": "vth-leges-config-ui",
-    "title": "vth-leges-config-ui",
-    "summary": "Provides an administrator UI to view and edit leges rule sets — base fee, modifiers, exemptions, verrekening, and teruggaaf — with input validation that rejects negative amounts and duplicate modifiers. Versions rule sets on save so existing cases keep their original rule version, with new rules taking effect for new cases from the next day.",
-    "docsUrl": "openspec/specs/vth-leges-config-ui/spec.md"
-  },
-  {
-    "slug": "vth-leges-engine",
-    "title": "vth-leges-engine",
-    "summary": "Calculates leges fees for a case from the active seeded rule set, returning the base fee, applied modifiers, and total. Supports offsetting prior fees (verrekening), refunds (teruggaaf), and additional billing (navordering), and exposes authenticated leges endpoints that log every transaction in an audit trail.",
-    "docsUrl": "openspec/specs/vth-leges-engine/spec.md"
-  },
-  {
-    "slug": "vth-lhso-classification",
-    "title": "vth-lhso-classification",
-    "summary": "Provides an LHSO lookup service and endpoints that return the full 16-cell matrix and a single intervention suggestion for a validated gedrag×gevolgen pair, rejecting out-of-range inputs. Surfaces a classification panel in the Handhavingszaak detail that shows the suggested intervention and requires an override reason when the handler chooses a different intervention.",
-    "docsUrl": "openspec/specs/vth-lhso-classification/spec.md"
-  },
-  {
-    "slug": "vth-mobile-inspection",
-    "title": "vth-mobile-inspection",
-    "summary": "Enables field inspectors to carry out inspections on mobile devices through a service that returns a mobile-formatted checklist, uploads photos to Nextcloud, captures GPS with a manual fallback, and submits a validated inspection result. Provides a responsive single-column UI with type-specific inputs, a progress indicator, navigation, and offline draft support that syncs when connectivity returns.",
-    "docsUrl": "openspec/specs/vth-mobile-inspection/spec.md"
-  },
-  {
-    "slug": "vth-module",
-    "title": "vth-module",
-    "summary": "Provides the VTH (Vergunningen, Toezicht en Handhaving) capability for permit, supervision, and enforcement processes, including DSO/Omgevingsloket intake, completeness checks (ontvankelijkheidstoets), inspection checklists, enforcement strategies (LHS), supervision planning, advice management, and Omgevingswet procedure deadlines. Ships pre-configured VTH case type templates and supports decision publication (bekendmaking), mobile inspection workflows, and configurable DSO intake field mapping.",
-    "docsUrl": "openspec/specs/vth-module/spec.md"
-  },
-  {
-    "slug": "vth-quality-docs",
-    "title": "vth-quality-docs",
-    "summary": "Verifies that the VTH services do not duplicate existing functionality and documents all reused components in a \"Reuse Analysis\". Requires VTH classes and public methods to carry `@spec` traceability tags and follow the 3-layer architecture with no custom mappers for domain data, and documents the VTH configuration architecture — workflow template structure, leges calculation, DSO integration, and mobile inspection — for future developers.",
-    "docsUrl": "openspec/specs/vth-quality-docs/spec.md"
-  },
-  {
-    "slug": "vth-testing",
-    "title": "vth-testing",
-    "summary": "Provides test coverage for the VTH capability, including unit tests for leges calculation, beschikking handling, LHSO lookups, DSO mapping, and mobile photo/GPS/validation logic. Adds integration tests for the three VTH workflow transition paths with guard validation and notifications, plus an end-to-end test of the DSO verzoek → case creation → status-pushback flow.",
-    "docsUrl": "openspec/specs/vth-testing/spec.md"
-  },
-  {
-    "slug": "vth-workflow-templates",
-    "title": "vth-workflow-templates",
-    "summary": "@e2e exclude Workflow template is a JSON data file imported via backend; no dedicated Playwright UI test surface.",
-    "docsUrl": "openspec/specs/vth-workflow-templates/spec.md"
-  },
-  {
-    "slug": "wms-wfs-layers",
-    "title": "WMS/WFS Layer Support",
-    "summary": "@e2e exclude WMS/WFS layer configuration is V1; GIS proxy and map layer scenarios require external OGC services not available in CI.",
-    "docsUrl": "openspec/specs/wms-wfs-layers/spec.md"
-  },
-  {
-    "slug": "woo-case-type",
-    "title": "woo-case-type",
-    "summary": "Provides a pre-configured WOO-verzoek zaaktype template that municipalities activate from a template library and customize, defining the eight statutory processing stages, a WOO-specific intake form, and 28-day deadline tracking with statutory extension. It supports document collection and inventory, per-document disclosure assessment with mandatory weigeringsgronden, Docudesk redaction, formal besluit recording, publication to a reading room and PLOOI, bezwaar-period tracking, and WOO reporting.",
-    "docsUrl": "openspec/specs/woo-case-type/spec.md"
+    "title": "Configurable case types",
+    "summary": "You model any zaaktype with statuses, deadlines and documents, without code.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/case-types/spec.md",
+    "title_nl": "Configureerbare zaaktypen",
+    "summary_nl": "Je modelleert elk zaaktype met statussen, termijnen en documenten, zonder code."
   },
   {
     "slug": "workflow-definition-engine",
-    "title": "workflow-definition-engine",
-    "summary": "Provides a configurable workflow engine where functional administrators define case lifecycles as OpenRegister objects, with process steps, guarded status transitions (checklist, required field, required document, role), and automatic actions (email, task, sub-case, webhook, set-field, notify). It supports workflow versioning that pins running cases to their bound version, workflow inheritance, JSON export/import, REST endpoints for CRUD and transition execution, and visual editing without developer involvement.",
-    "docsUrl": "openspec/specs/workflow-definition-engine/spec.md"
+    "title": "Workflow engine with guards and actions",
+    "summary": "You automate transitions with checks, e-mails, tasks and webhooks.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/workflow-definition-engine/spec.md",
+    "title_nl": "Workflow-engine met voorwaarden en acties",
+    "summary_nl": "Je automatiseert overgangen met controles, e-mails, taken en webhooks."
   },
   {
-    "slug": "workflow-definition-model",
-    "title": "workflow-definition-model",
-    "summary": "@e2e exclude Workflow definition model is V1; data model and step validation are backend concerns covered by PHPUnit.",
-    "docsUrl": "openspec/specs/workflow-definition-model/spec.md"
+    "slug": "termijn-binding",
+    "title": "Termijnbewaking",
+    "summary": "You track statutory deadlines daily, and pause, extend or escalate on time.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/termijn-binding/spec.md",
+    "title_nl": "Termijnbewaking",
+    "summary_nl": "Je bewaakt wettelijke termijnen dagelijks, en pauzeert, verlengt of escaleert op tijd."
   },
   {
-    "slug": "workflow-import-export",
-    "title": "workflow-import-export",
-    "summary": "@e2e exclude Workflow import/export is V1; file download/upload flows require OS-level file dialogs, not testable in headless Playwright.",
-    "docsUrl": "openspec/specs/workflow-import-export/spec.md"
+    "slug": "dwangsom-calculation",
+    "title": "Dwangsom and ingebrekestelling",
+    "summary": "You calculate the dwangsom automatically when a decision runs late.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/dwangsom-calculation/spec.md",
+    "title_nl": "Dwangsom en ingebrekestelling",
+    "summary_nl": "Je berekent de dwangsom automatisch zodra een besluit te laat is."
   },
   {
-    "slug": "zaakportaal-mijngemeente",
-    "title": "zaakportaal-mijngemeente",
-    "summary": "Zaakportaal (\"Mijn gemeente\") is a citizen-facing portal, delivered inside the host procest app, that grants authenticated burgers and bedrijven real-time access to their cases, ACL-filtered documents, status timelines, handler messaging, and objection (bezwaar) / complaint (klacht) filing — all IDOR-safe and audit-logged. Authentication (DigiD/eHerkenning, minimum trust level \"substantieel\", Machtigen/Ketenmachtiging) is established at the OpenConnector edge and surfaced as a pseudonymous subject reference; the host app never accepts or returns a raw BSN/KvK.",
-    "docsUrl": "openspec/specs/zaakportaal-mijngemeente/spec.md"
+    "slug": "bezwaar-beroep-workflow",
+    "title": "Bezwaar en beroep",
+    "summary": "You handle objections with committee, hearings, decisions and dossier export.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/bezwaar-beroep-workflow/spec.md",
+    "title_nl": "Bezwaar en beroep",
+    "summary_nl": "Je behandelt bezwaren met commissie, hoorzittingen, besluiten en dossier-export."
   },
   {
-    "slug": "zaaktype-versioning",
-    "title": "zaaktype-versioning",
-    "summary": "@e2e exclude Workflow template versioning is V1; immutable version management is backend logic covered by PHPUnit.",
-    "docsUrl": "openspec/specs/zaaktype-versioning/spec.md"
+    "slug": "vth-module",
+    "title": "VTH met LHS",
+    "summary": "You run permits, supervision and enforcement with LHS classification and beschikkingen.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/vth-module/spec.md",
+    "title_nl": "VTH met LHS",
+    "summary_nl": "Je voert vergunningen, toezicht en handhaving met LHS-classificatie en beschikkingen."
+  },
+  {
+    "slug": "leges-heffingen",
+    "title": "Leges en heffingen",
+    "summary": "You calculate fees from your verordening and bill them through Shillinq.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/leges-heffingen/spec.md",
+    "title_nl": "Leges en heffingen",
+    "summary_nl": "Je berekent leges uit je verordening en factureert ze via Shillinq."
+  },
+  {
+    "slug": "parafeerroute-engine",
+    "title": "Parafering en mandaat",
+    "summary": "You route sign-offs along the mandate matrix with a hash-chained audit trail.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/parafeerroute-engine/spec.md",
+    "providedBy": "openregister",
+    "title_nl": "Parafering en mandaat",
+    "summary_nl": "Je routeert paraferingen langs de mandaatmatrix met een hash-geketende audittrail."
+  },
+  {
+    "slug": "archief-edepot-handover",
+    "title": "Archivering naar e-Depot",
+    "summary": "You hand over cases to the e-Depot with MDTO metadata and proof of transfer.",
+    "status": "beta",
+    "docsUrl": "openspec/specs/archief-edepot-handover/spec.md",
+    "providedBy": "openregister",
+    "title_nl": "Archivering naar e-Depot",
+    "summary_nl": "Je draagt zaken over aan het e-Depot met MDTO-metadata en bewijs van overdracht."
   },
   {
     "slug": "zgw-api-mapping",
-    "title": "ZGW API Mapping",
-    "summary": "@e2e exclude Pure REST API spec covered by Newman/PHPUnit; no Playwright UI surface.",
-    "docsUrl": "openspec/specs/zgw-api-mapping/spec.md"
+    "title": "ZGW API-koppeling",
+    "summary": "You connect to Zaken, Catalogi, Besluiten and Documenten APIs out of the box.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/zgw-api-mapping/spec.md",
+    "title_nl": "ZGW API-koppeling",
+    "summary_nl": "Je koppelt direct aan de Zaken-, Catalogi-, Besluiten- en Documenten-API's."
   },
   {
-    "slug": "zgw-autorisaties-api",
-    "title": "ZGW Autorisaties (AC) API",
-    "summary": "@e2e exclude Pure REST API spec covered by Newman/PHPUnit; no Playwright UI surface.",
-    "docsUrl": "openspec/specs/zgw-autorisaties-api/spec.md"
+    "slug": "doorlooptijd-dashboard",
+    "title": "Doorlooptijd-dashboards",
+    "summary": "You see throughput times and bottlenecks, and export KPI reports.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/doorlooptijd-dashboard/spec.md",
+    "title_nl": "Doorlooptijd-dashboards",
+    "summary_nl": "Je ziet doorlooptijden en knelpunten, en exporteert KPI-rapporten."
   },
   {
-    "slug": "zgw-business-rules-compliance",
-    "title": "ZGW Business Rules Compliance -- Delta Spec",
-    "summary": "@e2e exclude Pure API delta spec covered by Newman test suite; no Playwright UI surface.",
-    "docsUrl": "openspec/specs/zgw-business-rules-compliance/spec.md"
+    "slug": "multi-tenancy",
+    "title": "Multi-tenant SaaS",
+    "summary": "You host many gemeenten apart, with quota, billing and onboarding per tenant.",
+    "status": "beta",
+    "docsUrl": "openspec/specs/multi-tenancy/spec.md",
+    "title_nl": "Multi-tenant SaaS",
+    "summary_nl": "Je host veel gemeenten apart, met quota, facturatie en onboarding per tenant."
+  },
+  {
+    "slug": "kcc-werkplek-zaaksysteem-bridge",
+    "title": "KCC-werkplek",
+    "summary": "Medewerkers log contactmomenten, route calls and read cases from het klantcontactcentrum.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md",
+    "title_nl": "KCC-werkplek",
+    "summary_nl": "Medewerkers leggen contactmomenten vast, routeren gesprekken en lezen zaken vanuit het klantcontactcentrum."
+  },
+  {
+    "slug": "zaakportaal-mijngemeente",
+    "title": "Burgerportaal Mijn Zaken",
+    "summary": "Citizens follow their case status and get Berichtenbox notifications.",
+    "status": "beta",
+    "docsUrl": "openspec/specs/zaakportaal-mijngemeente/spec.md",
+    "title_nl": "Burgerportaal Mijn Zaken",
+    "summary_nl": "Inwoners volgen hun zaakstatus en krijgen Berichtenbox-meldingen."
+  },
+  {
+    "slug": "stuf-zkn-outbound",
+    "title": "StUF-ZKN-koppeling",
+    "summary": "You exchange zaak-messages with systems that still speak StUF.",
+    "status": "beta",
+    "docsUrl": "openspec/specs/stuf-zkn-outbound/spec.md",
+    "title_nl": "StUF-ZKN-koppeling",
+    "summary_nl": "Je wisselt zaakberichten uit met systemen die nog StUF spreken."
+  },
+  {
+    "slug": "dso-omgevingsloket",
+    "title": "DSO / Omgevingsloket",
+    "summary": "You receive Omgevingswet intakes and track their deadlines.",
+    "status": "beta",
+    "docsUrl": "openspec/specs/dso-omgevingsloket/spec.md",
+    "title_nl": "DSO / Omgevingsloket",
+    "summary_nl": "Je ontvangt Omgevingswet-aanvragen en bewaakt hun termijnen."
+  },
+  {
+    "slug": "case-map-overview",
+    "title": "Kaartweergave met PDOK",
+    "summary": "You plot location-bound cases on a map with PDOK and WMS/WFS layers.",
+    "status": "beta",
+    "docsUrl": "openspec/specs/case-map-overview/spec.md",
+    "title_nl": "Kaartweergave met PDOK",
+    "summary_nl": "Je plot locatiegebonden zaken op een kaart met PDOK en WMS/WFS-lagen."
+  },
+  {
+    "slug": "appointment-booking",
+    "title": "Afspraken maken",
+    "summary": "Citizens book an appointment through a public link.",
+    "status": "beta",
+    "docsUrl": "openspec/specs/appointment-booking/spec.md",
+    "title_nl": "Afspraken maken",
+    "summary_nl": "Inwoners maken een afspraak via een openbare link."
+  },
+  {
+    "slug": "ai-assistance",
+    "title": "AI-assistentie",
+    "summary": "You classify, summarize and route documents with your own AI model.",
+    "status": "beta",
+    "docsUrl": "openspec/specs/ai-assistance/spec.md",
+    "providedBy": "openregister",
+    "title_nl": "AI-assistentie",
+    "summary_nl": "Je classificeert, vat samen en routeert documenten met je eigen AI-model."
+  },
+  {
+    "slug": "procest-sociaal-domein-wmo",
+    "title": "Sociaal domein (Wmo, Jeugdwet, Participatiewet)",
+    "summary": "You handle social-domain cases on a shared data model.",
+    "status": "soon",
+    "docsUrl": "openspec/specs/procest-sociaal-domein-wmo/spec.md",
+    "title_nl": "Sociaal domein (Wmo, Jeugdwet, Participatiewet)",
+    "summary_nl": "Je behandelt sociaal-domeinzaken op een gedeeld datamodel."
+  },
+  {
+    "slug": "digid-eherkenning",
+    "title": "DigiD en eHerkenning",
+    "summary": "Citizens and companies sign in with DigiD and eHerkenning.",
+    "status": "beta",
+    "docsUrl": "openspec/specs/digid-eherkenning/spec.md",
+    "title_nl": "DigiD en eHerkenning",
+    "summary_nl": "Inwoners en bedrijven loggen in met DigiD en eHerkenning."
+  },
+  {
+    "slug": "brp-integration",
+    "title": "BRP-koppeling (Haal Centraal)",
+    "summary": "You resolve a BSN to a person via the BRP Personen-API.",
+    "status": "beta",
+    "docsUrl": "docs/admin/integrations.md",
+    "title_nl": "BRP-koppeling (Haal Centraal)",
+    "summary_nl": "Je zoekt een BSN op tot een persoon via de BRP Personen-API."
+  },
+  {
+    "slug": "kvk-integration",
+    "title": "KvK-koppeling (Handelsregister)",
+    "summary": "You resolve a KvK number to a company via the Handelsregister Zoeken API.",
+    "status": "beta",
+    "docsUrl": "docs/admin/integrations.md",
+    "title_nl": "KvK-koppeling (Handelsregister)",
+    "summary_nl": "Je zoekt een KvK-nummer op tot een bedrijf via de Handelsregister Zoeken-API."
   }
 ]

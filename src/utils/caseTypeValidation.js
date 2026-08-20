@@ -48,25 +48,45 @@ export function validateCaseType(data) {
 	const errors = {}
 
 	for (const field of REQUIRED_FIELDS) {
-		if (!data[field] || (typeof data[field] === 'string' && !data[field].trim())) {
-			errors[field] = t('procest', '{field} is required', { field: getFieldLabel(field) })
+		if (
+			!data[field]
+			|| (typeof data[field] === 'string' && !data[field].trim())
+		) {
+			errors[field] = t('procest', '{field} is required', {
+				field: getFieldLabel(field),
+			})
 		}
 	}
 
 	if (data.processingDeadline && !isValidDuration(data.processingDeadline)) {
-		errors.processingDeadline = t('procest', 'Must be a valid ISO 8601 duration (e.g., P56D)')
+		errors.processingDeadline = t(
+			'procest',
+			'Must be a valid ISO 8601 duration (e.g., P56D)',
+		)
 	}
 
 	if (data.serviceTarget && !isValidDuration(data.serviceTarget)) {
-		errors.serviceTarget = t('procest', 'Must be a valid ISO 8601 duration (e.g., P42D)')
+		errors.serviceTarget = t(
+			'procest',
+			'Must be a valid ISO 8601 duration (e.g., P42D)',
+		)
 	}
 
-	if (data.extensionAllowed && (!data.extensionPeriod || !data.extensionPeriod.trim())) {
-		errors.extensionPeriod = t('procest', 'Extension period is required when extension is allowed')
+	if (
+		data.extensionAllowed
+		&& (!data.extensionPeriod || !data.extensionPeriod.trim())
+	) {
+		errors.extensionPeriod = t(
+			'procest',
+			'Extension period is required when extension is allowed',
+		)
 	}
 
 	if (data.extensionPeriod && !isValidDuration(data.extensionPeriod)) {
-		errors.extensionPeriod = t('procest', 'Must be a valid ISO 8601 duration (e.g., P28D)')
+		errors.extensionPeriod = t(
+			'procest',
+			'Must be a valid ISO 8601 duration (e.g., P28D)',
+		)
 	}
 
 	if (data.validFrom && data.validUntil && data.validUntil <= data.validFrom) {
@@ -97,9 +117,11 @@ export function validateForPublish(caseType, statusTypes) {
 	const fieldValidation = validateCaseType(caseType)
 	if (!fieldValidation.valid) {
 		const missing = Object.keys(fieldValidation.errors)
-			.map(f => getFieldLabel(f))
+			.map((f) => getFieldLabel(f))
 			.join(', ')
-		errors.push(t('procest', 'Missing required fields: {fields}', { fields: missing }))
+		errors.push(
+			t('procest', 'Missing required fields: {fields}', { fields: missing }),
+		)
 	}
 
 	if (!caseType.validFrom) {
@@ -109,9 +131,11 @@ export function validateForPublish(caseType, statusTypes) {
 	if (!statusTypes || statusTypes.length === 0) {
 		errors.push(t('procest', 'At least one status type must be defined'))
 	} else {
-		const hasFinal = statusTypes.some(st => st.isFinal)
+		const hasFinal = statusTypes.some((st) => st.isFinal)
 		if (!hasFinal) {
-			errors.push(t('procest', 'At least one status type must be marked as final'))
+			errors.push(
+				t('procest', 'At least one status type must be marked as final'),
+			)
 		}
 	}
 
@@ -121,6 +145,10 @@ export function validateForPublish(caseType, statusTypes) {
 	}
 }
 
+/**
+ *
+ * @param field
+ */
 function getFieldLabel(field) {
 	const labels = {
 		title: t('procest', 'Title'),

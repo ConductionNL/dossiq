@@ -61,7 +61,9 @@ export const useInspectionStore = defineStore('inspection', {
 		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
 		 */
 		nonConformReports(state) {
-			return state.reports.filter((r) => r.result === 'niet_conform' || r.result === 'deels_conform')
+			return state.reports.filter(
+				(r) => r.result === 'non_conform' || r.result === 'partly_conform',
+			)
 		},
 	},
 
@@ -81,10 +83,13 @@ export const useInspectionStore = defineStore('inspection', {
 			this.error = null
 			try {
 				const objectStore = useObjectStore()
-				const response = await objectStore.fetchCollection('inspectieChecklist', {
-					'_filters[caseType]': caseTypeId,
-					limit: 100,
-				})
+				const response = await objectStore.fetchCollection(
+					'inspectieChecklist',
+					{
+						'_filters[caseType]': caseTypeId,
+						limit: 100,
+					},
+				)
 				this.checklists = response?.results || response || []
 				return this.checklists
 			} catch (error) {
@@ -111,7 +116,10 @@ export const useInspectionStore = defineStore('inspection', {
 			this.error = null
 			try {
 				const objectStore = useObjectStore()
-				const saved = await objectStore.saveObject('inspectieChecklist', checklistData)
+				const saved = await objectStore.saveObject(
+					'inspectieChecklist',
+					checklistData,
+				)
 				// Update local list
 				const index = this.checklists.findIndex((c) => c.id === saved.id)
 				if (index >= 0) {
@@ -193,10 +201,13 @@ export const useInspectionStore = defineStore('inspection', {
 			this.error = null
 			try {
 				const objectStore = useObjectStore()
-				const response = await objectStore.fetchCollection('inspectieRapport', {
-					'_filters[case]': caseId,
-					limit: 100,
-				})
+				const response = await objectStore.fetchCollection(
+					'inspectieRapport',
+					{
+						'_filters[case]': caseId,
+						limit: 100,
+					},
+				)
 				this.reports = response?.results || response || []
 				return this.reports
 			} catch (error) {
@@ -223,16 +234,18 @@ export const useInspectionStore = defineStore('inspection', {
 			this.error = null
 			try {
 				const items = reportData.items || []
-				const failedItems = items.filter((item) => item.result === 'fail').length
+				const failedItems = items.filter(
+					(item) => item.result === 'fail',
+				).length
 				const nvtItems = items.filter((item) => item.result === 'nvt').length
 				const totalItems = items.length
 
 				// Auto-calculate overall result
 				let result = 'conform'
-				if (failedItems > 0 && failedItems < (totalItems - nvtItems)) {
-					result = 'deels_conform'
+				if (failedItems > 0 && failedItems < totalItems - nvtItems) {
+					result = 'partly_conform'
 				} else if (failedItems > 0) {
-					result = 'niet_conform'
+					result = 'non_conform'
 				}
 
 				const report = {
@@ -240,16 +253,24 @@ export const useInspectionStore = defineStore('inspection', {
 					result,
 					failedItems,
 					followUpRequired: failedItems > 0,
-					inspectionDate: reportData.inspectionDate || new Date().toISOString(),
+					inspectionDate:
+						reportData.inspectionDate || new Date().toISOString(),
 				}
 
 				const objectStore = useObjectStore()
-				const saved = await objectStore.saveObject('inspectieRapport', report)
+				const saved = await objectStore.saveObject(
+					'inspectieRapport',
+					report,
+				)
 				this.reports.push(saved)
 
 				// Create follow-up task if non-conformities found
 				if (failedItems > 0) {
-					await this.createFollowUpTask(reportData.case, failedItems, saved.id)
+					await this.createFollowUpTask(
+						reportData.case,
+						failedItems,
+						saved.id,
+					)
 				}
 
 				return saved
@@ -283,7 +304,11 @@ export const useInspectionStore = defineStore('inspection', {
 				const objectStore = useObjectStore()
 				const formData = new FormData()
 				formData.append('file', file)
-				const result = await objectStore.uploadFiles('case', caseId, formData)
+				const result = await objectStore.uploadFiles(
+					'case',
+					caseId,
+					formData,
+				)
 				const uploaded = result?.results?.[0] || result?.[0] || result
 				return uploaded?.id || null
 			} catch (error) {

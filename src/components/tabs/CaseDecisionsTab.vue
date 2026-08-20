@@ -14,7 +14,9 @@
 		<div class="case-tab__header">
 			<h3 class="case-tab__title">
 				{{ t('procest', 'Decisions') }}
-				<span v-if="decisions.length > 0" class="case-tab__count">({{ decisions.length }})</span>
+				<span v-if="decisions.length > 0" class="case-tab__count"
+					>({{ decisions.length }})</span
+				>
 			</h3>
 			<NcButton type="primary" @click="openCreate">
 				{{ t('procest', 'Add decision') }}
@@ -26,17 +28,25 @@
 		<NcEmptyContent
 			v-else-if="decisions.length === 0"
 			:title="t('procest', 'No decisions yet')"
-			:description="t('procest', 'Record a decision (besluit) taken on this case.')" />
+			:description="
+				t('procest', 'Record a decision (besluit) taken on this case.')
+			" />
 
 		<ul v-else class="case-tab__list">
 			<li
 				v-for="decision in decisions"
 				:key="decision.id"
 				class="case-tab__item"
-				@click="openEdit(decision)">
+				role="button"
+				tabindex="0"
+				@click="openEdit(decision)"
+				@keydown.enter="openEdit(decision)"
+				@keydown.space.prevent="openEdit(decision)">
 				<div class="case-tab__row">
-					<strong class="case-tab__item-title">{{ decision.title || '—' }}</strong>
-					<NcActions :inline="0" @click.native.stop>
+					<strong class="case-tab__item-title">{{
+						decision.title || '—'
+					}}</strong>
+					<NcActions :inline="0" @click.stop>
 						<NcActionButton @click="openEdit(decision)">
 							{{ t('procest', 'Edit') }}
 						</NcActionButton>
@@ -50,10 +60,18 @@
 						{{ decisionTypeName(decision.decisionType) }}
 					</span>
 					<span v-if="decision.decisionDate">
-						{{ t('procest', 'Decided: {date}', { date: formatDate(decision.decisionDate) }) }}
+						{{
+							t('procest', 'Decided: {date}', {
+								date: formatDate(decision.decisionDate),
+							})
+						}}
 					</span>
 					<span v-if="decision.effectiveDate">
-						{{ t('procest', 'Effective: {date}', { date: formatDate(decision.effectiveDate) }) }}
+						{{
+							t('procest', 'Effective: {date}', {
+								date: formatDate(decision.effectiveDate),
+							})
+						}}
 					</span>
 				</div>
 			</li>
@@ -64,7 +82,11 @@
 			ref="formDialog"
 			:fields="formFields"
 			:item="editItem"
-			:dialog-title="editItem ? t('procest', 'Edit decision') : t('procest', 'Add decision')"
+			:dialogTitle="
+				editItem
+					? t('procest', 'Edit decision')
+					: t('procest', 'Add decision')
+			"
 			@confirm="onFormConfirm"
 			@close="showFormDialog = false" />
 
@@ -78,8 +100,14 @@
 </template>
 
 <script>
-import { NcActionButton, NcActions, NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import { CnDeleteDialog, CnFormDialog } from '@conduction/nextcloud-vue'
+import {
+	NcActionButton,
+	NcActions,
+	NcButton,
+	NcEmptyContent,
+	NcLoadingIcon,
+} from '@nextcloud/vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 import { formatDate } from '../../utils/caseHelpers.js'
@@ -95,6 +123,7 @@ export default {
 		CnDeleteDialog,
 		CnFormDialog,
 	},
+
 	props: {
 		/** Case UUID — passed by CnObjectSidebar as a shared tab prop. */
 		objectId: {
@@ -102,6 +131,7 @@ export default {
 			default: null,
 		},
 	},
+
 	data() {
 		return {
 			decisions: [],
@@ -112,13 +142,16 @@ export default {
 			deleteItem: null,
 		}
 	},
+
 	computed: {
 		objectStore() {
 			return useObjectStore()
 		},
+
 		resolvedCaseId() {
 			return this.objectId || this.$route?.params?.id || null
 		},
+
 		formFields() {
 			const enumLabels = {}
 			for (const dt of this.decisionTypes) {
@@ -130,24 +163,39 @@ export default {
 					key: 'decisionType',
 					label: t('procest', 'Decision type'),
 					widget: 'select',
-					enum: this.decisionTypes.map(dt => dt.id),
+					enum: this.decisionTypes.map((dt) => dt.id),
 					enumLabels,
 				},
-				{ key: 'decisionDate', label: t('procest', 'Decision date'), widget: 'datetime' },
-				{ key: 'effectiveDate', label: t('procest', 'Effective date'), widget: 'datetime' },
-				{ key: 'description', label: t('procest', 'Description'), widget: 'textarea' },
+				{
+					key: 'decisionDate',
+					label: t('procest', 'Decision date'),
+					widget: 'datetime',
+				},
+				{
+					key: 'effectiveDate',
+					label: t('procest', 'Effective date'),
+					widget: 'datetime',
+				},
+				{
+					key: 'description',
+					label: t('procest', 'Description'),
+					widget: 'textarea',
+				},
 			]
 		},
 	},
+
 	watch: {
 		resolvedCaseId() {
 			this.reload()
 		},
 	},
+
 	async mounted() {
 		await initializeStores()
 		await this.reload()
 	},
+
 	methods: {
 		formatDate,
 		async reload() {
@@ -162,7 +210,9 @@ export default {
 						'_filters[case]': this.resolvedCaseId,
 						_limit: 100,
 					}),
-					this.objectStore.fetchCollection('decisionType', { _limit: 100 }).catch(() => []),
+					this.objectStore
+						.fetchCollection('decisionType', { _limit: 100 })
+						.catch(() => []),
 				])
 				this.decisions = decisions || []
 				this.decisionTypes = decisionTypes || []
@@ -173,22 +223,27 @@ export default {
 				this.loading = false
 			}
 		},
+
 		decisionTypeName(id) {
 			if (!id) return null
-			const dt = this.decisionTypes.find(d => d.id === id)
-			return dt ? (dt.title || dt.name || id) : id
+			const dt = this.decisionTypes.find((d) => d.id === id)
+			return dt ? dt.title || dt.name || id : id
 		},
+
 		openCreate() {
 			this.editItem = null
 			this.showFormDialog = true
 		},
+
 		openEdit(decision) {
 			this.editItem = decision
 			this.showFormDialog = true
 		},
+
 		openDelete(decision) {
 			this.deleteItem = decision
 		},
+
 		async onFormConfirm(formData) {
 			try {
 				const result = await this.objectStore.saveObject('decision', {
@@ -199,19 +254,26 @@ export default {
 					this.$refs.formDialog.setResult({ success: true })
 					await this.reload()
 				} else {
-					this.$refs.formDialog.setResult({ error: t('procest', 'Could not save decision') })
+					this.$refs.formDialog.setResult({
+						error: t('procest', 'Could not save decision'),
+					})
 				}
 			} catch (err) {
-				this.$refs.formDialog.setResult({ error: err.message || t('procest', 'Could not save decision') })
+				this.$refs.formDialog.setResult({
+					error: err.message || t('procest', 'Could not save decision'),
+				})
 			}
 		},
+
 		async onDeleteConfirm(id) {
 			try {
 				await this.objectStore.deleteObject('decision', id)
 				this.$refs.deleteDialog.setResult({ success: true })
 				await this.reload()
 			} catch (err) {
-				this.$refs.deleteDialog.setResult({ error: err.message || t('procest', 'Could not delete decision') })
+				this.$refs.deleteDialog.setResult({
+					error: err.message || t('procest', 'Could not delete decision'),
+				})
 			}
 		},
 	},

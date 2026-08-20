@@ -31,265 +31,239 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Procest\Service\ZgwMappingService
  */
-class ZgwMappingServiceTest extends TestCase
-{
+class ZgwMappingServiceTest extends TestCase {
 
-    /**
-     * The mocked app configuration service.
-     *
-     * @var IAppConfig|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private IAppConfig $appConfig;
+	/**
+	 * The mocked app configuration service.
+	 *
+	 * @var IAppConfig|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private IAppConfig $appConfig;
 
-    /**
-     * The mocked logger interface.
-     *
-     * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private LoggerInterface $logger;
+	/**
+	 * The mocked logger interface.
+	 *
+	 * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private LoggerInterface $logger;
 
-    /**
-     * The service under test.
-     *
-     * @var ZgwMappingService
-     */
-    private ZgwMappingService $service;
+	/**
+	 * The service under test.
+	 *
+	 * @var ZgwMappingService
+	 */
+	private ZgwMappingService $service;
 
+	/**
+	 * Set up test fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->appConfig = $this->createMock(IAppConfig::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
 
-    /**
-     * Set up test fixtures.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->appConfig = $this->createMock(IAppConfig::class);
-        $this->logger    = $this->createMock(LoggerInterface::class);
+		$this->service = new ZgwMappingService(
+			$this->appConfig,
+			$this->logger,
+		);
 
-        $this->service = new ZgwMappingService(
-            $this->appConfig,
-            $this->logger,
-        );
+	}//end setUp()
 
-    }//end setUp()
+	/**
+	 * Test that getMapping returns null when no mapping is stored.
+	 *
+	 * @return void
+	 */
+	public function testGetMappingReturnsNullWhenEmpty(): void {
+		$this->appConfig
+			->expects($this->once())
+			->method('getValueString')
+			->with('procest', 'zgw_mapping_zaak', '')
+			->willReturn('');
 
+		$this->assertNull($this->service->getMapping('zaak'));
 
-    /**
-     * Test that getMapping returns null when no mapping is stored.
-     *
-     * @return void
-     */
-    public function testGetMappingReturnsNullWhenEmpty(): void
-    {
-        $this->appConfig
-            ->expects($this->once())
-            ->method('getValueString')
-            ->with('procest', 'zgw_mapping_zaak', '')
-            ->willReturn('');
+	}//end testGetMappingReturnsNullWhenEmpty()
 
-        $this->assertNull($this->service->getMapping('zaak'));
+	/**
+	 * Test that getMapping returns decoded config when stored.
+	 *
+	 * @return void
+	 */
+	public function testGetMappingReturnsDecodedConfig(): void {
+		$config = ['field_mappings' => ['title' => 'omschrijving']];
 
-    }//end testGetMappingReturnsNullWhenEmpty()
+		$this->appConfig
+			->expects($this->once())
+			->method('getValueString')
+			->with('procest', 'zgw_mapping_zaak', '')
+			->willReturn(json_encode($config));
 
+		$result = $this->service->getMapping('zaak');
 
-    /**
-     * Test that getMapping returns decoded config when stored.
-     *
-     * @return void
-     */
-    public function testGetMappingReturnsDecodedConfig(): void
-    {
-        $config = ['field_mappings' => ['title' => 'omschrijving']];
+		$this->assertSame($config, $result);
 
-        $this->appConfig
-            ->expects($this->once())
-            ->method('getValueString')
-            ->with('procest', 'zgw_mapping_zaak', '')
-            ->willReturn(json_encode($config));
+	}//end testGetMappingReturnsDecodedConfig()
 
-        $result = $this->service->getMapping('zaak');
+	/**
+	 * Test that getMapping returns null for invalid JSON.
+	 *
+	 * @return void
+	 */
+	public function testGetMappingReturnsNullForInvalidJson(): void {
+		$this->appConfig
+			->expects($this->once())
+			->method('getValueString')
+			->with('procest', 'zgw_mapping_zaak', '')
+			->willReturn('not-valid-json');
 
-        $this->assertSame($config, $result);
+		$this->assertNull($this->service->getMapping('zaak'));
 
-    }//end testGetMappingReturnsDecodedConfig()
+	}//end testGetMappingReturnsNullForInvalidJson()
 
+	/**
+	 * Test that saveMapping persists JSON to IAppConfig.
+	 *
+	 * @return void
+	 */
+	public function testSaveMappingPersistsJson(): void {
+		$config = ['field_mappings' => ['title' => 'omschrijving']];
 
-    /**
-     * Test that getMapping returns null for invalid JSON.
-     *
-     * @return void
-     */
-    public function testGetMappingReturnsNullForInvalidJson(): void
-    {
-        $this->appConfig
-            ->expects($this->once())
-            ->method('getValueString')
-            ->with('procest', 'zgw_mapping_zaak', '')
-            ->willReturn('not-valid-json');
+		$this->appConfig
+			->expects($this->once())
+			->method('setValueString')
+			->with(
+				'procest',
+				'zgw_mapping_zaaktype',
+				json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+			);
 
-        $this->assertNull($this->service->getMapping('zaak'));
+		$this->logger
+			->expects($this->once())
+			->method('info');
 
-    }//end testGetMappingReturnsNullForInvalidJson()
+		$this->service->saveMapping('zaaktype', $config);
 
+	}//end testSaveMappingPersistsJson()
 
-    /**
-     * Test that saveMapping persists JSON to IAppConfig.
-     *
-     * @return void
-     */
-    public function testSaveMappingPersistsJson(): void
-    {
-        $config = ['field_mappings' => ['title' => 'omschrijving']];
+	/**
+	 * Test that deleteMapping removes the config key.
+	 *
+	 * @return void
+	 */
+	public function testDeleteMappingRemovesKey(): void {
+		$this->appConfig
+			->expects($this->once())
+			->method('deleteKey')
+			->with('procest', 'zgw_mapping_status');
 
-        $this->appConfig
-            ->expects($this->once())
-            ->method('setValueString')
-            ->with(
-                'procest',
-                'zgw_mapping_zaaktype',
-                json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
-            );
+		$this->service->deleteMapping('status');
 
-        $this->logger
-            ->expects($this->once())
-            ->method('info');
+	}//end testDeleteMappingRemovesKey()
 
-        $this->service->saveMapping('zaaktype', $config);
+	/**
+	 * Test that hasMapping returns true when mapping exists.
+	 *
+	 * @return void
+	 */
+	public function testHasMappingReturnsTrueWhenExists(): void {
+		$this->appConfig
+			->method('getValueString')
+			->willReturn('{"foo":"bar"}');
 
-    }//end testSaveMappingPersistsJson()
+		$this->assertTrue($this->service->hasMapping('zaak'));
 
+	}//end testHasMappingReturnsTrueWhenExists()
 
-    /**
-     * Test that deleteMapping removes the config key.
-     *
-     * @return void
-     */
-    public function testDeleteMappingRemovesKey(): void
-    {
-        $this->appConfig
-            ->expects($this->once())
-            ->method('deleteKey')
-            ->with('procest', 'zgw_mapping_status');
+	/**
+	 * Test that hasMapping returns false when mapping does not exist.
+	 *
+	 * @return void
+	 */
+	public function testHasMappingReturnsFalseWhenMissing(): void {
+		$this->appConfig
+			->method('getValueString')
+			->willReturn('');
 
-        $this->service->deleteMapping('status');
+		$this->assertFalse($this->service->hasMapping('zaak'));
 
-    }//end testDeleteMappingRemovesKey()
+	}//end testHasMappingReturnsFalseWhenMissing()
 
+	/**
+	 * Test that getResourceKeys returns known keys.
+	 *
+	 * @return void
+	 */
+	public function testGetResourceKeysReturnsKnownKeys(): void {
+		$keys = $this->service->getResourceKeys();
 
-    /**
-     * Test that hasMapping returns true when mapping exists.
-     *
-     * @return void
-     */
-    public function testHasMappingReturnsTrueWhenExists(): void
-    {
-        $this->appConfig
-            ->method('getValueString')
-            ->willReturn('{"foo":"bar"}');
+		$this->assertContains('zaak', $keys);
+		$this->assertContains('zaaktype', $keys);
+		$this->assertContains('status', $keys);
+		$this->assertContains('besluit', $keys);
+		$this->assertContains('enkelvoudiginformatieobject', $keys);
+		$this->assertCount(26, $keys);
 
-        $this->assertTrue($this->service->hasMapping('zaak'));
+	}//end testGetResourceKeysReturnsKnownKeys()
 
-    }//end testHasMappingReturnsTrueWhenExists()
+	/**
+	 * Test that listMappings returns all keys with values.
+	 *
+	 * @return void
+	 */
+	public function testListMappingsReturnsAllKeys(): void {
+		$this->appConfig
+			->method('getValueString')
+			->willReturnCallback(
+				function (string $app, string $key, string $default): string {
+					if ($key === 'zgw_mapping_zaak') {
+						return '{"title":"omschrijving"}';
+					}
 
+					return '';
+				}
+			);
 
-    /**
-     * Test that hasMapping returns false when mapping does not exist.
-     *
-     * @return void
-     */
-    public function testHasMappingReturnsFalseWhenMissing(): void
-    {
-        $this->appConfig
-            ->method('getValueString')
-            ->willReturn('');
+		$mappings = $this->service->listMappings();
 
-        $this->assertFalse($this->service->hasMapping('zaak'));
+		$this->assertArrayHasKey('zaak', $mappings);
+		$this->assertArrayHasKey('zaaktype', $mappings);
+		$this->assertSame(['title' => 'omschrijving'], $mappings['zaak']);
+		$this->assertNull($mappings['caseType']);
 
-    }//end testHasMappingReturnsFalseWhenMissing()
+	}//end testListMappingsReturnsAllKeys()
 
+	/**
+	 * Test that resetToDefault saves default configuration.
+	 *
+	 * @return void
+	 */
+	public function testResetToDefaultSavesDefault(): void {
+		$defaults = [
+			'zaak' => ['field_mappings' => ['title' => 'omschrijving']],
+		];
 
-    /**
-     * Test that getResourceKeys returns known keys.
-     *
-     * @return void
-     */
-    public function testGetResourceKeysReturnsKnownKeys(): void
-    {
-        $keys = $this->service->getResourceKeys();
+		$this->appConfig
+			->expects($this->once())
+			->method('setValueString');
 
-        $this->assertContains('zaak', $keys);
-        $this->assertContains('zaaktype', $keys);
-        $this->assertContains('status', $keys);
-        $this->assertContains('besluit', $keys);
-        $this->assertContains('enkelvoudiginformatieobject', $keys);
-        $this->assertCount(26, $keys);
+		$this->service->resetToDefault('zaak', $defaults);
 
-    }//end testGetResourceKeysReturnsKnownKeys()
+	}//end testResetToDefaultSavesDefault()
 
+	/**
+	 * Test that resetToDefault does nothing for unknown key.
+	 *
+	 * @return void
+	 */
+	public function testResetToDefaultIgnoresUnknownKey(): void {
+		$this->appConfig
+			->expects($this->never())
+			->method('setValueString');
 
-    /**
-     * Test that listMappings returns all keys with values.
-     *
-     * @return void
-     */
-    public function testListMappingsReturnsAllKeys(): void
-    {
-        $this->appConfig
-            ->method('getValueString')
-            ->willReturnCallback(
-                function (string $app, string $key, string $default): string {
-                    if ($key === 'zgw_mapping_zaak') {
-                        return '{"title":"omschrijving"}';
-                    }
+		$this->service->resetToDefault('unknown_key', []);
 
-                    return '';
-                }
-            );
-
-        $mappings = $this->service->listMappings();
-
-        $this->assertArrayHasKey('zaak', $mappings);
-        $this->assertArrayHasKey('zaaktype', $mappings);
-        $this->assertSame(['title' => 'omschrijving'], $mappings['zaak']);
-        $this->assertNull($mappings['zaaktype']);
-
-    }//end testListMappingsReturnsAllKeys()
-
-
-    /**
-     * Test that resetToDefault saves default configuration.
-     *
-     * @return void
-     */
-    public function testResetToDefaultSavesDefault(): void
-    {
-        $defaults = [
-            'zaak' => ['field_mappings' => ['title' => 'omschrijving']],
-        ];
-
-        $this->appConfig
-            ->expects($this->once())
-            ->method('setValueString');
-
-        $this->service->resetToDefault('zaak', $defaults);
-
-    }//end testResetToDefaultSavesDefault()
-
-
-    /**
-     * Test that resetToDefault does nothing for unknown key.
-     *
-     * @return void
-     */
-    public function testResetToDefaultIgnoresUnknownKey(): void
-    {
-        $this->appConfig
-            ->expects($this->never())
-            ->method('setValueString');
-
-        $this->service->resetToDefault('unknown_key', []);
-
-    }//end testResetToDefaultIgnoresUnknownKey()
-
+	}//end testResetToDefaultIgnoresUnknownKey()
 
 }//end class

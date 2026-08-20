@@ -10,7 +10,7 @@ A consultation is a mini-case linked to a parent case, with its own lifecycle, a
 
 | Schema | Purpose |
 |---|---|
-| `consultation` | The consultation request entity (ADV-{year}-{seq}) |
+| `consultation` | The consultation request entity (`ADV-{year}-{seq}`) |
 | `adviceResponse` | Structured advice response with formal conclusion |
 | `advisoryBody` | Registry of departments and external advisory bodies |
 
@@ -80,7 +80,7 @@ Webhook contract for the email fanout (called by Procest on consultation create 
 
 `ConsultationService::getBlockingConsultations(zaakId)` returns mandatory consultations not yet in `advies_uitgebracht` or `afgesloten`. The MilestoneController uses this to block case progression:
 
-> "Verplicht advies '{subject}' is nog niet ontvangen"
+> "Verplicht advies '`{subject}`' is nog niet ontvangen"
 
 ## Existing Features
 

@@ -34,118 +34,114 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/status-transition-engine/tasks.md#T06
  */
-class GuardRegistry
-{
+class GuardRegistry {
 
-    /**
-     * Registered evaluators keyed by guard type.
-     *
-     * @var array<string, GuardEvaluatorInterface>
-     */
-    private array $evaluators = [];
+	/**
+	 * Registered evaluators keyed by guard type.
+	 *
+	 * @var array<string, GuardEvaluatorInterface>
+	 */
+	private array $evaluators = [];
 
-    /**
-     * Constructor.
-     *
-     * @param ChecklistGuard        $checklist        Built-in checklist evaluator
-     * @param RequiredFieldGuard    $requiredField    Built-in required-field evaluator
-     * @param RequiredDocumentGuard $requiredDocument Built-in required-document evaluator
-     * @param RoleGuard             $roleGuard        Built-in role evaluator
-     * @param MandaatGuard          $mandaatGuard     Mandaatregister authority evaluator
-     * @param LoggerInterface       $logger           Logger for unknown guard types
-     */
-    public function __construct(
-        ChecklistGuard $checklist,
-        RequiredFieldGuard $requiredField,
-        RequiredDocumentGuard $requiredDocument,
-        RoleGuard $roleGuard,
-        MandaatGuard $mandaatGuard,
-        private readonly LoggerInterface $logger,
-    ) {
-        $this->evaluators = [
-            'checklist'        => $checklist,
-            'requiredField'    => $requiredField,
-            'requiredDocument' => $requiredDocument,
-            'roleGuard'        => $roleGuard,
-            'mandaatGuard'     => $mandaatGuard,
-        ];
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param ChecklistGuard $checklist Built-in checklist evaluator
+	 * @param RequiredFieldGuard $requiredField Built-in required-field evaluator
+	 * @param RequiredDocumentGuard $requiredDocument Built-in required-document evaluator
+	 * @param RoleGuard $roleGuard Built-in role evaluator
+	 * @param MandaatGuard $mandateGuard Mandaatregister authority evaluator
+	 * @param LoggerInterface $logger Logger for unknown guard types
+	 */
+	public function __construct(
+		ChecklistGuard $checklist,
+		RequiredFieldGuard $requiredField,
+		RequiredDocumentGuard $requiredDocument,
+		RoleGuard $roleGuard,
+		MandaatGuard $mandateGuard,
+		private readonly LoggerInterface $logger,
+	) {
+		$this->evaluators = [
+			'checklist' => $checklist,
+			'requiredField' => $requiredField,
+			'requiredDocument' => $requiredDocument,
+			'roleGuard' => $roleGuard,
+			'mandaatGuard' => $mandateGuard,
+		];
+	}//end __construct()
 
-    /**
-     * Register an additional evaluator (DI extension point).
-     *
-     * @param string                  $type      Guard type identifier
-     * @param GuardEvaluatorInterface $evaluator Evaluator implementation
-     *
-     * @return void
+	/**
+	 * Register an additional evaluator (DI extension point).
+	 *
+	 * @param string $type Guard type identifier
+	 * @param GuardEvaluatorInterface $evaluator Evaluator implementation
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function registerEvaluator(string $type, GuardEvaluatorInterface $evaluator): void {
+		$this->evaluators[$type] = $evaluator;
+	}//end registerEvaluator()
 
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function registerEvaluator(string $type, GuardEvaluatorInterface $evaluator): void
-    {
-        $this->evaluators[$type] = $evaluator;
-    }//end registerEvaluator()
+	/**
+	 * Evaluate every guard in declaration order and collect snapshots.
+	 *
+	 * @param array<int, array<string, mixed>> $guards List of guard configs
+	 * @param array<string, mixed> $case The case
+	 * @param string $userId Current user UID
+	 *
+	 * @return array<int, array{type: string, passed: bool, failureMessage: ?string, details: array<string, mixed>}>
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function evaluateAll(array $guards, array $case, string $userId): array {
+		$results = [];
+		foreach ($guards as $guard) {
+			$type = (string)($guard['type'] ?? '');
+			if ($type === '') {
+				continue;
+			}
 
-    /**
-     * Evaluate every guard in declaration order and collect snapshots.
-     *
-     * @param array<int, array<string, mixed>> $guards List of guard configs
-     * @param array<string, mixed>             $case   The case
-     * @param string                           $userId Current user UID
-     *
-     * @return array<int, array{type: string, passed: bool, failureMessage: ?string, details: array<string, mixed>}>
+			if (isset($this->evaluators[$type]) === false) {
+				$this->logger->warning('Unknown guard type', ['type' => $type]);
+				$results[] = [
+					'type' => $type,
+					'passed' => false,
+					'failureMessage' => 'Onbekende guard',
+					'details' => ['unknown' => true],
+				];
+				continue;
+			}
 
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function evaluateAll(array $guards, array $case, string $userId): array
-    {
-        $results = [];
-        foreach ($guards as $guard) {
-            $type = (string) ($guard['type'] ?? '');
-            if ($type === '') {
-                continue;
-            }
+			$result = $this->evaluators[$type]->evaluate(guardConfig: $guard, case: $case, userId: $userId);
+			$results[] = [
+				'type' => $type,
+				'passed' => $result->passed,
+				'failureMessage' => $result->failureMessage,
+				'details' => $result->details,
+			];
+		}//end foreach
 
-            if (isset($this->evaluators[$type]) === false) {
-                $this->logger->warning('Unknown guard type', ['type' => $type]);
-                $results[] = [
-                    'type'           => $type,
-                    'passed'         => false,
-                    'failureMessage' => 'Onbekende guard',
-                    'details'        => ['unknown' => true],
-                ];
-                continue;
-            }
+		return $results;
+	}//end evaluateAll()
 
-            $result    = $this->evaluators[$type]->evaluate(guardConfig: $guard, case: $case, userId: $userId);
-            $results[] = [
-                'type'           => $type,
-                'passed'         => $result->passed,
-                'failureMessage' => $result->failureMessage,
-                'details'        => $result->details,
-            ];
-        }//end foreach
+	/**
+	 * Check if all guards in the result set passed.
+	 *
+	 * @param array<int, array{passed: bool}> $results The evaluateAll() output
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function allPassed(array $results): bool {
+		foreach ($results as $result) {
+			if ($result['passed'] !== true) {
+				return false;
+			}
+		}
 
-        return $results;
-    }//end evaluateAll()
-
-    /**
-     * Check if all guards in the result set passed.
-     *
-     * @param array<int, array{passed: bool}> $results The evaluateAll() output
-     *
-     * @return bool
-
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function allPassed(array $results): bool
-    {
-        foreach ($results as $result) {
-            if ($result['passed'] !== true) {
-                return false;
-            }
-        }
-
-        return true;
-    }//end allPassed()
+		return true;
+	}//end allPassed()
 }//end class

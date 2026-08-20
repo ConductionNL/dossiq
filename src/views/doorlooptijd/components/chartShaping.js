@@ -22,8 +22,8 @@
  * @return {number[]} Within-SLA counts, in case-type order.
  */
 export function buildDonutSeries(slaData) {
-	const types = (slaData?.byType || []).filter(t => t.total > 0)
-	return types.map(t => t.withinSla)
+	const types = (slaData?.byType || []).filter((t) => t.total > 0)
+	return types.map((t) => t.withinSla)
 }
 
 /**
@@ -33,8 +33,8 @@ export function buildDonutSeries(slaData) {
  * @return {string[]} Case-type display names, aligned with buildDonutSeries().
  */
 export function buildDonutLabels(slaData) {
-	const types = (slaData?.byType || []).filter(t => t.total > 0)
-	return types.map(t => t.name)
+	const types = (slaData?.byType || []).filter((t) => t.total > 0)
+	return types.map((t) => t.name)
 }
 
 /**
@@ -47,11 +47,13 @@ export function buildDonutLabels(slaData) {
  */
 export function buildHistogramSeries(distributionData, seriesName) {
 	const bins = distributionData?.bins || []
-	if (bins.length === 0 || bins.every(b => b.count === 0)) return []
-	return [{
-		name: seriesName,
-		data: bins.map(b => b.count),
-	}]
+	if (bins.length === 0 || bins.every((b) => b.count === 0)) return []
+	return [
+		{
+			name: seriesName,
+			data: bins.map((b) => b.count),
+		},
+	]
 }
 
 /**
@@ -65,7 +67,7 @@ export function buildHistogramSeries(distributionData, seriesName) {
  */
 export function findHistogramTargetBinIndex(bins, targetDays) {
 	if (!bins || bins.length === 0) return -1
-	let idx = bins.findIndex(b => {
+	let idx = bins.findIndex((b) => {
 		const parts = b.label.replace('+', '').split('-')
 		const min = parseInt(parts[0], 10)
 		const max = parts.length > 1 ? parseInt(parts[1], 10) : Infinity
@@ -83,10 +85,12 @@ export function findHistogramTargetBinIndex(bins, targetDays) {
  * @return {Array} ApexCharts line series.
  */
 export function buildTrendSeries(trendData, seriesName) {
-	return [{
-		name: seriesName,
-		data: (trendData || []).map(d => d.rate),
-	}]
+	return [
+		{
+			name: seriesName,
+			data: (trendData || []).map((d) => d.rate),
+		},
+	]
 }
 
 /**
@@ -97,10 +101,12 @@ export function buildTrendSeries(trendData, seriesName) {
  * @return {Array} ApexCharts line series.
  */
 export function buildThroughputSeries(throughputData, seriesName) {
-	return [{
-		name: seriesName,
-		data: (throughputData || []).map(w => w.count),
-	}]
+	return [
+		{
+			name: seriesName,
+			data: (throughputData || []).map((w) => w.count),
+		},
+	]
 }
 
 /**

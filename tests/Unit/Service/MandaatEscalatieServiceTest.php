@@ -31,102 +31,112 @@ use RuntimeException;
 /**
  * @covers \OCA\Procest\Service\MandaatEscalatieService
  */
-class MandaatEscalatieServiceTest extends TestCase
-{
-    private FakeTermijnStore $objects;
-    private MandaatEscalatieService $service;
+class MandaatEscalatieServiceTest extends TestCase {
 
-    protected function setUp(): void
-    {
-        $this->objects = new FakeTermijnStore();
-        $settings      = $this->createMock(SettingsService::class);
-        $settings->method('getObjectService')->willReturn($this->objects);
-        $settings->method('getConfigValue')->willReturnCallback(
-            static function (string $key): string {
-                return match ($key) {
-                    'register'                            => 'procest',
-                    'mandaat_schema'                       => 'mandaat',
-                    'medewerker_rol_toewijzing_schema'     => 'medewerkerRolToewijzing',
-                    'mandaat_escalatie_schema'             => 'mandaatEscalatie',
-                    default                                => '',
-                };
-            },
-        );
-        $this->service = new MandaatEscalatieService($settings, $this->createMock(LoggerInterface::class));
+	private FakeTermijnStore $objects;
 
-        // Seed mandates + assignments.
-        $this->objects->saveObject('procest', 'mandaat', [
-            'id' => 'm-low',
-            'gemandateerdeRol' => 'rol-consulent',
-            'voorwaarden' => ['plafondCents' => 500000, 'decisionTypes' => ['wmo-toekenning']],
-            'status' => 'active',
-        ]);
-        $this->objects->saveObject('procest', 'mandaat', [
-            'id' => 'm-high',
-            'gemandateerdeRol' => 'rol-manager',
-            'voorwaarden' => ['plafondCents' => 2500000, 'decisionTypes' => ['wmo-toekenning']],
-            'status' => 'active',
-        ]);
-        $this->objects->saveObject('procest', 'medewerkerRolToewijzing', [
-            'userId' => 'carol', 'rolId' => 'rol-manager', 'toewijzingType' => 'primair', 'validFrom' => '2026-01-01',
-        ]);
-    }
+	private MandaatEscalatieService $service;
 
-    /**
-     * @return void
-     */
-    public function testCreateEscalatieResolvesNextHigherHolder(): void
-    {
-        $row = $this->service->createEscalatie('Z/2026/E1', 'wmo-toekenning', 'alice', 'plafond_overschreden');
-        self::assertSame('open', $row['status']);
-        self::assertSame('carol', $row['targetUserId']);
-        self::assertSame('m-high', $row['targetMandaatId']);
-    }
+	protected function setUp(): void {
+		$this->objects = new FakeTermijnStore();
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static function (string $key): string {
+				return match ($key) {
+					'register' => 'procest',
+					'mandaat_schema' => 'mandate',
+					'medewerker_rol_toewijzing_schema' => 'medewerkerRolToewijzing',
+					'mandaat_escalatie_schema' => 'mandaatEscalatie',
+					default => '',
+				};
+			},
+		);
+		$this->service = new MandaatEscalatieService($settings, $this->createMock(LoggerInterface::class));
 
-    /**
-     * @return void
-     */
-    public function testApproveByCorrectMandateHolder(): void
-    {
-        $created = $this->service->createEscalatie('Z/2026/E2', 'wmo-toekenning', 'alice', 'niet_bevoegd');
-        $approved = $this->service->approveEscalatie((string) $created['id'], 'carol');
-        self::assertSame('goedgekeurd', $approved['status']);
-    }
+		// Seed mandates + assignments.
+		$this->objects->saveObject(
+			'procest',
+			'mandate',
+			[
+				'id' => 'm-low',
+				'mandateeRole' => 'rol-consulent',
+				'terms' => ['plafondCents' => 500000, 'decisionTypes' => ['wmo-toekenning']],
+				'status' => 'active',
+			]
+		);
+		$this->objects->saveObject(
+			'procest',
+			'mandate',
+			[
+				'id' => 'm-high',
+				'mandateeRole' => 'rol-manager',
+				'terms' => ['plafondCents' => 2500000, 'decisionTypes' => ['wmo-toekenning']],
+				'status' => 'active',
+			]
+		);
+		$this->objects->saveObject(
+			'procest',
+			'medewerkerRolToewijzing',
+			[
+				'userId' => 'carol',
+				'roleId' => 'rol-manager',
+				'allocationType' => 'primair',
+				'validFrom' => '2026-01-01',
+			]
+		);
+	}//end setUp()
 
-    /**
-     * @return void
-     */
-    public function testApproveByWrongUserRejects(): void
-    {
-        $created = $this->service->createEscalatie('Z/2026/E3', 'wmo-toekenning', 'alice', 'niet_bevoegd');
-        $this->expectException(RuntimeException::class);
-        $this->service->approveEscalatie((string) $created['id'], 'bob');
-    }
+	/**
+	 * @return void
+	 */
+	public function testCreateEscalatieResolvesNextHigherHolder(): void {
+		$row = $this->service->createEscalatie('Z/2026/E1', 'wmo-toekenning', 'alice', 'ceiling_exceeded');
+		self::assertSame('open', $row['status']);
+		self::assertSame('carol', $row['targetUserId']);
+		self::assertSame('m-high', $row['targetMandateId']);
+	}//end testCreateEscalatieResolvesNextHigherHolder()
 
-    /**
-     * @return void
-     */
-    public function testRejectEscalatieRecordsReason(): void
-    {
-        $created = $this->service->createEscalatie('Z/2026/E4', 'wmo-toekenning', 'alice', 'niet_bevoegd');
-        $rejected = $this->service->rejectEscalatie((string) $created['id'], 'Onvoldoende onderbouwing');
-        self::assertSame('afgewezen', $rejected['status']);
-        self::assertSame('Onvoldoende onderbouwing', $rejected['afgewezenReden']);
-    }
+	/**
+	 * @return void
+	 */
+	public function testApproveByCorrectMandateHolder(): void {
+		$created = $this->service->createEscalatie('Z/2026/E2', 'wmo-toekenning', 'alice', 'non_competent');
+		$approved = $this->service->approveEscalatie((string)$created['id'], 'carol');
+		self::assertSame('approved', $approved['status']);
+	}//end testApproveByCorrectMandateHolder()
 
-    /**
-     * @return void
-     */
-    public function testAutoRerouteOnPersonnelChange(): void
-    {
-        $this->service->createEscalatie('Z/2026/E5', 'wmo-toekenning', 'alice', 'niet_bevoegd');
-        $this->service->createEscalatie('Z/2026/E6', 'wmo-toekenning', 'alice', 'plafond_overschreden');
+	/**
+	 * @return void
+	 */
+	public function testApproveByWrongUserRejects(): void {
+		$created = $this->service->createEscalatie('Z/2026/E3', 'wmo-toekenning', 'alice', 'non_competent');
+		$this->expectException(RuntimeException::class);
+		$this->service->approveEscalatie((string)$created['id'], 'bob');
+	}//end testApproveByWrongUserRejects()
 
-        $count = $this->service->autoRerouteOnPersonnelChange('carol', 'dave');
-        self::assertSame(2, $count);
+	/**
+	 * @return void
+	 */
+	public function testRejectEscalatieRecordsReason(): void {
+		$created = $this->service->createEscalatie('Z/2026/E4', 'wmo-toekenning', 'alice', 'non_competent');
+		$rejected = $this->service->rejectEscalatie((string)$created['id'], 'Onvoldoende onderbouwing');
+		self::assertSame('rejected', $rejected['status']);
+		self::assertSame('Onvoldoende onderbouwing', $rejected['rejectedReason']);
+	}//end testRejectEscalatieRecordsReason()
 
-        foreach ($this->objects->store['mandaatEscalatie'] as $row) {
-            self::assertSame('dave', $row['targetUserId']);
-        }
-    }
-}
+	/**
+	 * @return void
+	 */
+	public function testAutoRerouteOnPersonnelChange(): void {
+		$this->service->createEscalatie('Z/2026/E5', 'wmo-toekenning', 'alice', 'non_competent');
+		$this->service->createEscalatie('Z/2026/E6', 'wmo-toekenning', 'alice', 'ceiling_exceeded');
+
+		$count = $this->service->autoRerouteOnPersonnelChange('carol', 'dave');
+		self::assertSame(2, $count);
+
+		foreach ($this->objects->store['mandaatEscalatie'] as $row) {
+			self::assertSame('dave', $row['targetUserId']);
+		}
+	}//end testAutoRerouteOnPersonnelChange()
+}//end class

@@ -34,208 +34,192 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Procest\Repair\SeedBezwaarBeroepData
  */
-class SeedBezwaarBeroepDataTest extends TestCase
-{
+class SeedBezwaarBeroepDataTest extends TestCase {
 
-    /**
-     * The mocked seed data service.
-     *
-     * @var SeedDataService|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private SeedDataService $seedDataService;
+	/**
+	 * The mocked seed data service.
+	 *
+	 * @var SeedDataService|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private SeedDataService $seedDataService;
 
-    /**
-     * The mocked settings service.
-     *
-     * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private SettingsService $settingsService;
+	/**
+	 * The mocked settings service.
+	 *
+	 * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private SettingsService $settingsService;
 
-    /**
-     * The mocked logger.
-     *
-     * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private LoggerInterface $logger;
+	/**
+	 * The mocked logger.
+	 *
+	 * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private LoggerInterface $logger;
 
-    /**
-     * The mocked migration output.
-     *
-     * @var IOutput|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private IOutput $output;
+	/**
+	 * The mocked migration output.
+	 *
+	 * @var IOutput|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private IOutput $output;
 
-    /**
-     * The repair step under test.
-     *
-     * @var SeedBezwaarBeroepData
-     */
-    private SeedBezwaarBeroepData $repairStep;
+	/**
+	 * The repair step under test.
+	 *
+	 * @var SeedBezwaarBeroepData
+	 */
+	private SeedBezwaarBeroepData $repairStep;
 
+	/**
+	 * Set up test fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->seedDataService = $this->createMock(SeedDataService::class);
+		$this->settingsService = $this->createMock(SettingsService::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->output = $this->createMock(IOutput::class);
 
-    /**
-     * Set up test fixtures.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->seedDataService = $this->createMock(SeedDataService::class);
-        $this->settingsService = $this->createMock(SettingsService::class);
-        $this->logger          = $this->createMock(LoggerInterface::class);
-        $this->output          = $this->createMock(IOutput::class);
+		$this->repairStep = new SeedBezwaarBeroepData(
+			$this->seedDataService,
+			$this->settingsService,
+			$this->logger,
+		);
 
-        $this->repairStep = new SeedBezwaarBeroepData(
-            $this->seedDataService,
-            $this->settingsService,
-            $this->logger,
-        );
+	}//end setUp()
 
-    }//end setUp()
+	/**
+	 * Test that getName returns a non-empty string description.
+	 *
+	 * @return void
+	 */
+	public function testGetNameReturnsNonEmptyString(): void {
+		$name = $this->repairStep->getName();
 
+		$this->assertNotEmpty($name);
+		$this->assertIsString($name);
 
-    /**
-     * Test that getName returns a non-empty string description.
-     *
-     * @return void
-     */
-    public function testGetNameReturnsNonEmptyString(): void
-    {
-        $name = $this->repairStep->getName();
+	}//end testGetNameReturnsNonEmptyString()
 
-        $this->assertNotEmpty($name);
-        $this->assertIsString($name);
+	/**
+	 * Test that getName contains relevant keywords.
+	 *
+	 * @return void
+	 */
+	public function testGetNameDescribesBezwaarBeroep(): void {
+		$name = $this->repairStep->getName();
 
-    }//end testGetNameReturnsNonEmptyString()
+		// The name should mention bezwaar/beroep so it is recognizable in logs.
+		$this->assertTrue(
+			stripos($name, 'objectionProceeding') !== false || stripos($name, 'beroep') !== false,
+			"Repair step name should mention 'objectionProceeding' or 'beroep', got: {$name}"
+		);
 
+	}//end testGetNameDescribesBezwaarBeroep()
 
-    /**
-     * Test that getName contains relevant keywords.
-     *
-     * @return void
-     */
-    public function testGetNameDescribesBezwaarBeroep(): void
-    {
-        $name = $this->repairStep->getName();
+	/**
+	 * Test that run() skips seeding when OpenRegister is not available.
+	 *
+	 * @return void
+	 */
+	public function testRunSkipsWhenOpenRegisterUnavailable(): void {
+		$this->settingsService
+			->method('isOpenRegisterAvailable')
+			->willReturn(false);
 
-        // The name should mention bezwaar/beroep so it is recognizable in logs.
-        $this->assertTrue(
-            stripos($name, 'bezwaar') !== false || stripos($name, 'beroep') !== false,
-            "Repair step name should mention 'bezwaar' or 'beroep', got: {$name}"
-        );
+		// seedBezwaarBeroepData must NOT be called when OpenRegister is off.
+		$this->seedDataService
+			->expects($this->never())
+			->method('seedBezwaarBeroepData');
 
-    }//end testGetNameDescribesBezwaarBeroep()
+		$this->output
+			->expects($this->once())
+			->method('warning')
+			->with($this->stringContains('not available'));
 
+		$this->repairStep->run($this->output);
 
-    /**
-     * Test that run() skips seeding when OpenRegister is not available.
-     *
-     * @return void
-     */
-    public function testRunSkipsWhenOpenRegisterUnavailable(): void
-    {
-        $this->settingsService
-            ->method('isOpenRegisterAvailable')
-            ->willReturn(false);
+	}//end testRunSkipsWhenOpenRegisterUnavailable()
 
-        // seedBezwaarBeroepData must NOT be called when OpenRegister is off.
-        $this->seedDataService
-            ->expects($this->never())
-            ->method('seedBezwaarBeroepData');
+	/**
+	 * Test that run() calls seedBezwaarBeroepData when OpenRegister is available.
+	 *
+	 * @return void
+	 */
+	public function testRunCallsSeedServiceWhenOpenRegisterAvailable(): void {
+		$this->settingsService
+			->method('isOpenRegisterAvailable')
+			->willReturn(true);
 
-        $this->output
-            ->expects($this->once())
-            ->method('warning')
-            ->with($this->stringContains('not available'));
+		$this->seedDataService
+			->expects($this->once())
+			->method('seedBezwaarBeroepData')
+			->willReturn([
+				'success' => true,
+				'caseTypes' => 2,
+				'statusTypes' => 8,
+				'roleTypes' => 4,
+				'workflows' => 2,
+				'skipped' => 0,
+			]);
 
-        $this->repairStep->run($this->output);
+		$this->repairStep->run($this->output);
 
-    }//end testRunSkipsWhenOpenRegisterUnavailable()
+	}//end testRunCallsSeedServiceWhenOpenRegisterAvailable()
 
+	/**
+	 * Test that run() logs an info message on successful seeding.
+	 *
+	 * @return void
+	 */
+	public function testRunOutputsInfoOnSuccess(): void {
+		$this->settingsService
+			->method('isOpenRegisterAvailable')
+			->willReturn(true);
 
-    /**
-     * Test that run() calls seedBezwaarBeroepData when OpenRegister is available.
-     *
-     * @return void
-     */
-    public function testRunCallsSeedServiceWhenOpenRegisterAvailable(): void
-    {
-        $this->settingsService
-            ->method('isOpenRegisterAvailable')
-            ->willReturn(true);
+		$this->seedDataService
+			->method('seedBezwaarBeroepData')
+			->willReturn([
+				'success' => true,
+				'caseTypes' => 2,
+				'statusTypes' => 8,
+				'roleTypes' => 4,
+				'workflows' => 2,
+				'skipped' => 0,
+			]);
 
-        $this->seedDataService
-            ->expects($this->once())
-            ->method('seedBezwaarBeroepData')
-            ->willReturn([
-                'success'     => true,
-                'caseTypes'   => 2,
-                'statusTypes' => 8,
-                'roleTypes'   => 4,
-                'workflows'   => 2,
-                'skipped'     => 0,
-            ]);
+		// Expect info() to be called at least once.
+		$this->output
+			->expects($this->atLeastOnce())
+			->method('info');
 
-        $this->repairStep->run($this->output);
+		$this->repairStep->run($this->output);
 
-    }//end testRunCallsSeedServiceWhenOpenRegisterAvailable()
+	}//end testRunOutputsInfoOnSuccess()
 
+	/**
+	 * Test that run() handles unexpected exceptions gracefully.
+	 *
+	 * @return void
+	 */
+	public function testRunHandlesExceptionsGracefully(): void {
+		$this->settingsService
+			->method('isOpenRegisterAvailable')
+			->willReturn(true);
 
-    /**
-     * Test that run() logs an info message on successful seeding.
-     *
-     * @return void
-     */
-    public function testRunOutputsInfoOnSuccess(): void
-    {
-        $this->settingsService
-            ->method('isOpenRegisterAvailable')
-            ->willReturn(true);
+		$this->seedDataService
+			->method('seedBezwaarBeroepData')
+			->willThrowException(new \RuntimeException('Unexpected error'));
 
-        $this->seedDataService
-            ->method('seedBezwaarBeroepData')
-            ->willReturn([
-                'success'     => true,
-                'caseTypes'   => 2,
-                'statusTypes' => 8,
-                'roleTypes'   => 4,
-                'workflows'   => 2,
-                'skipped'     => 0,
-            ]);
+		// run() must not throw — exceptions should be caught and logged.
+		$this->output
+			->expects($this->once())
+			->method('warning');
 
-        // Expect info() to be called at least once.
-        $this->output
-            ->expects($this->atLeastOnce())
-            ->method('info');
+		$this->repairStep->run($this->output);
 
-        $this->repairStep->run($this->output);
-
-    }//end testRunOutputsInfoOnSuccess()
-
-
-    /**
-     * Test that run() handles unexpected exceptions gracefully.
-     *
-     * @return void
-     */
-    public function testRunHandlesExceptionsGracefully(): void
-    {
-        $this->settingsService
-            ->method('isOpenRegisterAvailable')
-            ->willReturn(true);
-
-        $this->seedDataService
-            ->method('seedBezwaarBeroepData')
-            ->willThrowException(new \RuntimeException('Unexpected error'));
-
-        // run() must not throw — exceptions should be caught and logged.
-        $this->output
-            ->expects($this->once())
-            ->method('warning');
-
-        $this->repairStep->run($this->output);
-
-    }//end testRunHandlesExceptionsGracefully()
-
+	}//end testRunHandlesExceptionsGracefully()
 
 }//end class

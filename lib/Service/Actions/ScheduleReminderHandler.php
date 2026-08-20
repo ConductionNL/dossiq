@@ -21,7 +21,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-automatic-actions/tasks.md#task-5
+ * @spec openspec/specs/automatic-actions/spec.md
  */
 
 declare(strict_types=1);
@@ -39,133 +39,129 @@ use Throwable;
 /**
  * Handler for `scheduleReminder` automatic actions.
  */
-class ScheduleReminderHandler implements ActionHandlerInterface
-{
-    use HandlesTemplates;
+class ScheduleReminderHandler implements ActionHandlerInterface {
+	use HandlesTemplates;
 
-    /**
-     * Fully-qualified class name of the deferred reminder background job.
-     *
-     * The job class itself is owned by status-transition-engine / the
-     * existing background-job folder; this handler only enqueues against
-     * it. Soft-binding via a string avoids a hard dependency before that
-     * job class lands.
-     */
-    private const REMINDER_JOB_CLASS = 'OCA\\Procest\\BackgroundJob\\AutomaticActionReminderJob';
+	/**
+	 * Fully-qualified class name of the deferred reminder background job.
+	 *
+	 * The job class itself is owned by status-transition-engine / the
+	 * existing background-job folder; this handler only enqueues against
+	 * it. Soft-binding via a string avoids a hard dependency before that
+	 * job class lands.
+	 */
+	private const REMINDER_JOB_CLASS = 'OCA\\Procest\\BackgroundJob\\AutomaticActionReminderJob';
 
-    /**
-     * Constructor for ScheduleReminderHandler.
-     *
-     * @param IJobList        $jobList Nextcloud background job list.
-     * @param LoggerInterface $logger  PSR-3 logger.
-     *
-     * @return void
-     */
-    public function __construct(
-        private readonly IJobList $jobList,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor for ScheduleReminderHandler.
+	 *
+	 * @param IJobList $jobList Nextcloud background job list.
+	 * @param LoggerInterface $logger PSR-3 logger.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly IJobList $jobList,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return string The action type slug handled by this handler.
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return string The action type slug handled by this handler.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function type(): string {
+		return 'scheduleReminder';
+	}//end type()
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function type(): string
-    {
-        return 'scheduleReminder';
-    }//end type()
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @param array $actionConfig Resolved action config array.
+	 * @param array $case The full case object.
+	 * @param array $transitionContext Transition context (carries dryRun).
+	 *
+	 * @return ActionResult The outcome of scheduling the reminder.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
+		try {
+			$offsetIso = (string)($actionConfig['offsetIso8601'] ?? '');
+			$message = $this->renderTemplate(
+				template: (string)($actionConfig['messageTemplate'] ?? ''),
+				case: $case
+			);
+			$recipient = $this->resolveRecipient(
+				recipientRef: (string)($actionConfig['recipientRef'] ?? ''),
+				case: $case
+			);
 
-    /**
-     * {@inheritDoc}
-     *
-     * @param array $actionConfig      Resolved action config array.
-     * @param array $case              The full case object.
-     * @param array $transitionContext Transition context (carries dryRun).
-     *
-     * @return ActionResult The outcome of scheduling the reminder.
+			$fireAt = $this->computeFireTime(offsetIso: $offsetIso);
+			$fireAtIso = null;
+			if ($fireAt !== null) {
+				$fireAtIso = $fireAt->format(DateTimeInterface::ATOM);
+			}
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
-    {
-        try {
-            $offsetIso = (string) ($actionConfig['offsetIso8601'] ?? '');
-            $message   = $this->renderTemplate(
-                template: (string) ($actionConfig['messageTemplate'] ?? ''),
-                case: $case
-            );
-            $recipient = $this->resolveRecipient(
-                recipientRef: (string) ($actionConfig['recipientRef'] ?? ''),
-                case: $case
-            );
+			$preview = [
+				'offsetIso8601' => $offsetIso,
+				'fireAtIso' => $fireAtIso,
+				'recipient' => $recipient,
+				'message' => $message,
+			];
 
-            $fireAt    = $this->computeFireTime(offsetIso: $offsetIso);
-            $fireAtIso = null;
-            if ($fireAt !== null) {
-                $fireAtIso = $fireAt->format(DateTimeInterface::ATOM);
-            }
+			if (($transitionContext['dryRun'] ?? false) === true) {
+				return new ActionResult(succeeded: true, data: $preview);
+			}
 
-            $preview = [
-                'offsetIso8601' => $offsetIso,
-                'fireAtIso'     => $fireAtIso,
-                'recipient'     => $recipient,
-                'message'       => $message,
-            ];
+			if ($fireAt === null) {
+				return new ActionResult(succeeded: false, error: 'invalid_offset', data: $preview);
+			}
 
-            if (($transitionContext['dryRun'] ?? false) === true) {
-                return ActionResult::success($preview);
-            }
+			$arguments = [
+				'caseId' => (string)($case['id'] ?? ''),
+				'recipient' => $recipient,
+				'message' => $message,
+				'fireAtIso' => $fireAt->format(DateTimeInterface::ATOM),
+			];
 
-            if ($fireAt === null) {
-                return ActionResult::failure('invalid_offset', $preview);
-            }
+			$this->jobList->add(self::REMINDER_JOB_CLASS, $arguments);
 
-            $arguments = [
-                'caseId'    => (string) ($case['id'] ?? ''),
-                'recipient' => $recipient,
-                'message'   => $message,
-                'fireAtIso' => $fireAt->format(DateTimeInterface::ATOM),
-            ];
+			return new ActionResult(succeeded: true, data: $preview);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'ScheduleReminderHandler: failed to schedule reminder',
+				[
+					'app' => Application::APP_ID,
+					'slug' => (string)($actionConfig['slug'] ?? ''),
+					'exception' => $e->getMessage(),
+				]
+			);
+			return new ActionResult(succeeded: false, error: 'schedule_reminder_failed');
+		}//end try
+	}//end handle()
 
-            $this->jobList->add(self::REMINDER_JOB_CLASS, $arguments);
+	/**
+	 * Compute the fire-time by adding an ISO 8601 duration offset to now.
+	 *
+	 * @param string $offsetIso e.g. `P3D` (3 days), `PT2H` (2 hours).
+	 *
+	 * @return DateTimeImmutable|null
+	 */
+	private function computeFireTime(string $offsetIso): ?DateTimeImmutable {
+		if ($offsetIso === '') {
+			return null;
+		}
 
-            return ActionResult::success($preview);
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'ScheduleReminderHandler: failed to schedule reminder',
-                [
-                    'app'       => Application::APP_ID,
-                    'slug'      => (string) ($actionConfig['slug'] ?? ''),
-                    'exception' => $e->getMessage(),
-                ]
-            );
-            return ActionResult::failure('schedule_reminder_failed');
-        }//end try
-    }//end handle()
+		try {
+			$interval = new DateInterval($offsetIso);
+		} catch (Throwable $e) {
+			return null;
+		}
 
-    /**
-     * Compute the fire-time by adding an ISO 8601 duration offset to now.
-     *
-     * @param string $offsetIso e.g. `P3D` (3 days), `PT2H` (2 hours).
-     *
-     * @return DateTimeImmutable|null
-     */
-    private function computeFireTime(string $offsetIso): ?DateTimeImmutable
-    {
-        if ($offsetIso === '') {
-            return null;
-        }
-
-        try {
-            $interval = new DateInterval($offsetIso);
-        } catch (Throwable $e) {
-            return null;
-        }
-
-        return (new DateTimeImmutable('now'))->add($interval);
-    }//end computeFireTime()
+		return (new DateTimeImmutable('now'))->add($interval);
+	}//end computeFireTime()
 }//end class

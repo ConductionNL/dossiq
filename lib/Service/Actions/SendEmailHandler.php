@@ -21,7 +21,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-automatic-actions/tasks.md#task-3
+ * @spec openspec/specs/automatic-actions/spec.md
  */
 
 declare(strict_types=1);
@@ -35,114 +35,110 @@ use Psr\Log\LoggerInterface;
 /**
  * Handler for `sendEmail` automatic actions.
  */
-class SendEmailHandler implements ActionHandlerInterface
-{
-    use HandlesTemplates;
+class SendEmailHandler implements ActionHandlerInterface {
+	use HandlesTemplates;
 
-    /**
-     * Constructor for SendEmailHandler.
-     *
-     * @param ContainerInterface $container DI container — used to resolve
-     *                                      NotificatieService lazily (it is
-     *                                      not always available, e.g. during
-     *                                      dry-run unit tests).
-     * @param LoggerInterface    $logger    PSR-3 logger.
-     *
-     * @return void
-     */
-    public function __construct(
-        private readonly ContainerInterface $container,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor for SendEmailHandler.
+	 *
+	 * @param ContainerInterface $container DI container — used to resolve
+	 *                                      NotificatieService lazily (it is
+	 *                                      not always available, e.g. during
+	 *                                      dry-run unit tests).
+	 * @param LoggerInterface $logger PSR-3 logger.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly ContainerInterface $container,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return string The action type slug handled by this handler.
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return string The action type slug handled by this handler.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function type(): string {
+		return 'sendEmail';
+	}//end type()
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function type(): string
-    {
-        return 'sendEmail';
-    }//end type()
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @param array $actionConfig Resolved action config array.
+	 * @param array $case The full case object.
+	 * @param array $transitionContext Transition context (carries dryRun).
+	 *
+	 * @return ActionResult The outcome of sending the email.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
+		try {
+			$subject = $this->renderTemplate(
+				template: (string)($actionConfig['subjectTemplate'] ?? ''),
+				case: $case
+			);
+			$body = $this->renderTemplate(
+				template: (string)($actionConfig['bodyTemplate'] ?? ''),
+				case: $case
+			);
+			$recipient = $this->resolveRecipient(
+				recipientRef: (string)($actionConfig['recipientRef'] ?? ''),
+				case: $case
+			);
 
-    /**
-     * {@inheritDoc}
-     *
-     * @param array $actionConfig      Resolved action config array.
-     * @param array $case              The full case object.
-     * @param array $transitionContext Transition context (carries dryRun).
-     *
-     * @return ActionResult The outcome of sending the email.
+			$preview = [
+				'recipient' => $recipient,
+				'subject' => $subject,
+				'body' => $body,
+			];
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
-    {
-        try {
-            $subject   = $this->renderTemplate(
-                template: (string) ($actionConfig['subjectTemplate'] ?? ''),
-                case: $case
-            );
-            $body      = $this->renderTemplate(
-                template: (string) ($actionConfig['bodyTemplate'] ?? ''),
-                case: $case
-            );
-            $recipient = $this->resolveRecipient(
-                recipientRef: (string) ($actionConfig['recipientRef'] ?? ''),
-                case: $case
-            );
+			if (($transitionContext['dryRun'] ?? false) === true) {
+				return new ActionResult(succeeded: true, data: $preview);
+			}
 
-            $preview = [
-                'recipient' => $recipient,
-                'subject'   => $subject,
-                'body'      => $body,
-            ];
+			if ($recipient === '') {
+				return new ActionResult(succeeded: false, error: 'missing_recipient', data: $preview);
+			}
 
-            if (($transitionContext['dryRun'] ?? false) === true) {
-                return ActionResult::success($preview);
-            }
+			$notification = $this->resolveNotificationService();
+			if ($notification === null) {
+				return new ActionResult(succeeded: false, error: 'notificatie_unavailable', data: $preview);
+			}
 
-            if ($recipient === '') {
-                return ActionResult::failure('missing_recipient', $preview);
-            }
+			// @phpstan-ignore-next-line — NotificatieService::sendEmail is
+			// resolved lazily; signature is owned by the service itself.
+			$notification->sendEmail($recipient, $subject, $body);
 
-            $notificatie = $this->resolveNotificatieService();
-            if ($notificatie === null) {
-                return ActionResult::failure('notificatie_unavailable', $preview);
-            }
+			return new ActionResult(succeeded: true, data: $preview);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'SendEmailHandler: failed to dispatch email',
+				[
+					'app' => Application::APP_ID,
+					'slug' => (string)($actionConfig['slug'] ?? ''),
+					'exception' => $e->getMessage(),
+				]
+			);
+			return new ActionResult(succeeded: false, error: 'email_dispatch_failed');
+		}//end try
+	}//end handle()
 
-            // @phpstan-ignore-next-line — NotificatieService::sendEmail is
-            // resolved lazily; signature is owned by the service itself.
-            $notificatie->sendEmail($recipient, $subject, $body);
-
-            return ActionResult::success($preview);
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'SendEmailHandler: failed to dispatch email',
-                [
-                    'app'       => Application::APP_ID,
-                    'slug'      => (string) ($actionConfig['slug'] ?? ''),
-                    'exception' => $e->getMessage(),
-                ]
-            );
-            return ActionResult::failure('email_dispatch_failed');
-        }//end try
-    }//end handle()
-
-    /**
-     * Resolve NotificatieService from the container without a hard dep.
-     *
-     * @return object|null
-     */
-    private function resolveNotificatieService(): ?object
-    {
-        try {
-            return $this->container->get('OCA\Procest\Service\NotificatieService');
-        } catch (\Throwable $e) {
-            return null;
-        }
-    }//end resolveNotificatieService()
+	/**
+	 * Resolve NotificatieService from the container without a hard dep.
+	 *
+	 * @return object|null
+	 */
+	private function resolveNotificationService(): ?object {
+		try {
+			return $this->container->get('OCA\Procest\Service\NotificatieService');
+		} catch (\Throwable $e) {
+			return null;
+		}
+	}//end resolveNotificatieService()
 }//end class

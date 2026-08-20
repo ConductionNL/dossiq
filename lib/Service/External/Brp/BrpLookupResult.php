@@ -34,34 +34,33 @@ namespace OCA\Procest\Service\External\Brp;
  *
  * @spec openspec/changes/brp-kvk-register-sets/proposal.md
  */
-final class BrpLookupResult
-{
-    /**
-     * Construct the result value-object.
-     *
-     * @param string              $lookupStatus FOUND / NOT_FOUND /
-     *                                          LOOKUP_DEFERRED /
-     *                                          LOOKUP_ERROR.
-     * @param array<string,mixed> $persoon      Person envelope —
-     *                                          naam{voornamen,geslachtsnaam,
-     *                                          voorvoegsel}, geboorte{datum,
-     *                                          land, plaats},
-     *                                          verblijfplaats{adres,
-     *                                          postcode, woonplaats,
-     *                                          land}, geslachtsaanduiding,
-     *                                          inOnderzoek — empty for
-     *                                          NOT_FOUND / DEFERRED.
-     * @param bool                $dormant      TRUE when the adapter was
-     *                                          dormant.
-     * @param array<string,mixed> $extras       Provider-specific extras —
-     *                                          autorisatieprofielId,
-     *                                          rateLimitRemaining.
-     */
-    public function __construct(
-        public readonly string $lookupStatus,
-        public readonly array $persoon,
-        public readonly bool $dormant,
-        public readonly array $extras=[],
-    ) {
-    }//end __construct()
+final class BrpLookupResult {
+	/**
+	 * Construct the result value-object.
+	 *
+	 * @param string $lookupStatus FOUND / NOT_FOUND /
+	 *                             LOOKUP_DEFERRED /
+	 *                             LOOKUP_ERROR.
+	 * @param array<string,mixed> $persoon Person envelope —
+	 *                                     naam{voornamen,geslachtsnaam,
+	 *                                     voorvoegsel}, geboorte{datum,
+	 *                                     land, plaats},
+	 *                                     verblijfplaats{adres,
+	 *                                     postcode, woonplaats,
+	 *                                     land}, geslachtsaanduiding,
+	 *                                     inOnderzoek — empty for
+	 *                                     NOT_FOUND / DEFERRED.
+	 * @param bool $dormant TRUE when the adapter was
+	 *                      dormant.
+	 * @param array<string,mixed> $extras Provider-specific extras —
+	 *                                    autorisatieprofielId,
+	 *                                    rateLimitRemaining.
+	 */
+	public function __construct(
+		public readonly string $lookupStatus,
+		public readonly array $persoon,
+		public readonly bool $dormant,
+		public readonly array $extras = [],
+	) {
+	}//end __construct()
 }//end class

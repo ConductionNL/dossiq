@@ -31,100 +31,95 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Procest\Service\Transitions\RequiredDocumentGuard
+ *
+ * @uses \OCA\Procest\Service\Transitions\GuardResult
  */
-class RequiredDocumentGuardTest extends TestCase
-{
-    /**
-     * @return void
-     */
-    public function testFailsWhenDocumentTypeMissing(): void
-    {
-        $guard  = new RequiredDocumentGuard();
-        $result = $guard->evaluate(guardConfig: [], case: ['id' => 'c'], userId: 'u');
+class RequiredDocumentGuardTest extends TestCase {
+	/**
+	 * @return void
+	 */
+	public function testFailsWhenDocumentTypeMissing(): void {
+		$guard = new RequiredDocumentGuard();
+		$result = $guard->evaluate(guardConfig: [], case: ['id' => 'c'], userId: 'u');
 
-        self::assertFalse($result->passed);
-        self::assertSame('Required-document guard missing documentType', $result->failureMessage);
-    }//end testFailsWhenDocumentTypeMissing()
+		self::assertFalse($result->passed);
+		self::assertSame('Required-document guard missing documentType', $result->failureMessage);
+	}//end testFailsWhenDocumentTypeMissing()
 
-    /**
-     * @return void
-     */
-    public function testFailsWhenNoMatchingDocument(): void
-    {
-        $guard  = new RequiredDocumentGuard();
-        $result = $guard->evaluate(
-            guardConfig: ['documentType' => 'Besluit'],
-            case: ['documents' => [['documentType' => 'Aanvraag']]],
-            userId: 'u',
-        );
+	/**
+	 * @return void
+	 */
+	public function testFailsWhenNoMatchingDocument(): void {
+		$guard = new RequiredDocumentGuard();
+		$result = $guard->evaluate(
+			guardConfig: ['documentType' => 'Besluit'],
+			case: ['documents' => [['documentType' => 'Aanvraag']]],
+			userId: 'u',
+		);
 
-        self::assertFalse($result->passed);
-        self::assertSame('Besluit', $result->details['documentType']);
-    }//end testFailsWhenNoMatchingDocument()
+		self::assertFalse($result->passed);
+		self::assertSame('Besluit', $result->details['documentType']);
+	}//end testFailsWhenNoMatchingDocument()
 
-    /**
-     * @return void
-     */
-    public function testPassesOnDocumentTypeField(): void
-    {
-        $guard  = new RequiredDocumentGuard();
-        $result = $guard->evaluate(
-            guardConfig: ['documentType' => 'Besluit'],
-            case: ['documents' => [['documentType' => 'Besluit']]],
-            userId: 'u',
-        );
+	/**
+	 * @return void
+	 */
+	public function testPassesOnDocumentTypeField(): void {
+		$guard = new RequiredDocumentGuard();
+		$result = $guard->evaluate(
+			guardConfig: ['documentType' => 'Besluit'],
+			case: ['documents' => [['documentType' => 'Besluit']]],
+			userId: 'u',
+		);
 
-        self::assertTrue($result->passed);
-    }//end testPassesOnDocumentTypeField()
+		self::assertTrue($result->passed);
+	}//end testPassesOnDocumentTypeField()
 
-    /**
-     * @return void
-     */
-    public function testPassesOnGenericTypeField(): void
-    {
-        // Some schemas use `type` rather than `documentType`.
-        $guard  = new RequiredDocumentGuard();
-        $result = $guard->evaluate(
-            guardConfig: ['documentType' => 'Besluit'],
-            case: ['files' => [['type' => 'Besluit']]],
-            userId: 'u',
-        );
+	/**
+	 * @return void
+	 */
+	public function testPassesOnGenericTypeField(): void {
+		// Some schemas use `type` rather than `documentType`.
+		$guard = new RequiredDocumentGuard();
+		$result = $guard->evaluate(
+			guardConfig: ['documentType' => 'Besluit'],
+			case: ['files' => [['type' => 'Besluit']]],
+			userId: 'u',
+		);
 
-        self::assertTrue($result->passed);
-    }//end testPassesOnGenericTypeField()
+		self::assertTrue($result->passed);
+	}//end testPassesOnGenericTypeField()
 
-    /**
-     * @return void
-     */
-    public function testScansAllAttachmentFields(): void
-    {
-        $guard  = new RequiredDocumentGuard();
-        $result = $guard->evaluate(
-            guardConfig: ['documentType' => 'Bewijs'],
-            case: [
-                'documents'     => [['type' => 'Anders']],
-                'files'         => [['type' => 'X']],
-                'caseDocuments' => [['type' => 'Y']],
-                'attachments'   => [['documentType' => 'Bewijs']],
-            ],
-            userId: 'u',
-        );
+	/**
+	 * @return void
+	 */
+	public function testScansAllAttachmentFields(): void {
+		$guard = new RequiredDocumentGuard();
+		$result = $guard->evaluate(
+			guardConfig: ['documentType' => 'Bewijs'],
+			case: [
+				'documents' => [['type' => 'Anders']],
+				'files' => [['type' => 'X']],
+				'caseDocuments' => [['type' => 'Y']],
+				'attachments' => [['documentType' => 'Bewijs']],
+			],
+			userId: 'u',
+		);
 
-        self::assertTrue($result->passed);
-    }//end testScansAllAttachmentFields()
+		self::assertTrue($result->passed);
+	}//end testScansAllAttachmentFields()
 
-    /**
-     * @return void
-     */
-    public function testHandlesMissingAttachmentFieldsGracefully(): void
-    {
-        $guard  = new RequiredDocumentGuard();
-        $result = $guard->evaluate(
-            guardConfig: ['documentType' => 'Besluit'],
-            case: ['id' => 'c'],
-            userId: 'u',
-        );
+	/**
+	 * @return void
+	 */
+	public function testHandlesMissingAttachmentFieldsGracefully(): void {
+		$guard = new RequiredDocumentGuard();
+		$result = $guard->evaluate(
+			guardConfig: ['documentType' => 'Besluit'],
+			case: ['id' => 'c'],
+			userId: 'u',
+		);
 
-        self::assertFalse($result->passed);
-    }//end testHandlesMissingAttachmentFieldsGracefully()
+		self::assertFalse($result->passed);
+	}//end testHandlesMissingAttachmentFieldsGracefully()
 }//end class

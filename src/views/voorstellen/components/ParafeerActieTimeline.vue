@@ -22,7 +22,9 @@
 				class="parafeer-actie-timeline__entry">
 				<div class="parafeer-actie-timeline__header">
 					<strong>{{ formatStageLabel(actie) }}</strong>
-					<span class="parafeer-actie-timeline__time">{{ formatTimestamp(actie) }}</span>
+					<span class="parafeer-actie-timeline__time">{{
+						formatTimestamp(actie)
+					}}</span>
 				</div>
 				<div class="parafeer-actie-timeline__actor">
 					{{ formatActor(actie) }}
@@ -39,7 +41,7 @@
 </template>
 
 <script>
-import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { listActions } from '../../../services/parafeerActieApi.js'
 
 const ACTION_LABELS = {
@@ -55,12 +57,14 @@ export default {
 	components: {
 		NcLoadingIcon,
 	},
+
 	props: {
 		voorstelId: {
 			type: String,
 			required: true,
 		},
 	},
+
 	data() {
 		return {
 			acties: [],
@@ -68,9 +72,11 @@ export default {
 			error: '',
 		}
 	},
+
 	async mounted() {
 		await this.load()
 	},
+
 	methods: {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async load() {
@@ -87,6 +93,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * @param actie
 		 * @spec openspec/specs/parafering-actions/spec.md
@@ -99,6 +106,7 @@ export default {
 				action: localized,
 			})
 		},
+
 		/**
 		 * @param actie
 		 * @spec openspec/specs/parafering-actions/spec.md
@@ -112,6 +120,7 @@ export default {
 			}
 			return actie.actor || '—'
 		},
+
 		/**
 		 * @param actie
 		 * @spec openspec/specs/parafering-actions/spec.md

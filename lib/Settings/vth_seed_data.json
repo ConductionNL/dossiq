@@ -162,10 +162,10 @@
         {"name": "overtredingstype", "type": "string", "description": "Type overtreding"},
         {"name": "ernst", "type": "string", "description": "Ernst van de overtreding (LHS)", "enum": ["gering", "aanzienlijk", "ernstig"]},
         {"name": "gedrag", "type": "string", "description": "Gedrag van de overtreder (LHS)", "enum": ["goedwillend", "onverschillig", "calculerend", "crimineel"]},
-        {"name": "interventie", "type": "string", "description": "Gekozen interventie (uit LHS matrix)"},
-        {"name": "dwangsomBedrag", "type": "number", "description": "Dwangsom per overtreding (EUR)"},
-        {"name": "dwangsomMaximaal", "type": "number", "description": "Maximale dwangsom (EUR)"},
-        {"name": "begunstigingstermijn", "type": "integer", "description": "Begunstigingstermijn in dagen"},
+        {"name": "intervention", "type": "string", "description": "Gekozen interventie (uit LHS matrix)"},
+        {"name": "penaltyPaymentAmount", "type": "number", "description": "Dwangsom per overtreding (EUR)"},
+        {"name": "penaltyPaymentMaximum", "type": "number", "description": "Maximale dwangsom (EUR)"},
+        {"name": "compliancePeriod", "type": "integer", "description": "Begunstigingstermijn in dagen"},
         {"name": "bronInspectie", "type": "string", "description": "Referentie naar de toezichtzaak"}
       ]
     },
@@ -200,10 +200,10 @@
       "version": 1,
       "status": "active",
       "items": [
-        {"order": 1, "label": "Fundering conform tekening", "type": "ja_nee_nvt", "required": true, "fotoRequired": false, "helpText": "Controleer of de fundering overeenkomt met de goedgekeurde bouwtekening"},
-        {"order": 2, "label": "Wapening aanwezig en correct", "type": "ja_nee_nvt", "required": true, "fotoRequired": false, "helpText": "Controleer diameter, hart-op-hart afstand en dekking van de wapening"},
-        {"order": 3, "label": "Waterkering conform bestek", "type": "ja_nee_nvt", "required": true, "fotoRequired": true, "helpText": "Controleer waterkeringsmaatregelen en maak foto bij afwijking"},
-        {"order": 4, "label": "Maatvoering gecontroleerd", "type": "getal", "required": true, "fotoRequired": false, "helpText": "Meet de afwijking in mm ten opzichte van de tekening"}
+        {"order": 1, "label": "Fundering conform tekening", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer of de fundering overeenkomt met de goedgekeurde bouwtekening"},
+        {"order": 2, "label": "Wapening aanwezig en correct", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer diameter, hart-op-hart afstand en dekking van de wapening"},
+        {"order": 3, "label": "Waterkering conform bestek", "type": "yes_no_na", "required": true, "photoRequired": true, "helpText": "Controleer waterkeringsmaatregelen en maak foto bij afwijking"},
+        {"order": 4, "label": "Maatvoering gecontroleerd", "type": "getal", "required": true, "photoRequired": false, "helpText": "Meet de afwijking in mm ten opzichte van de tekening"}
       ]
     },
     {
@@ -213,11 +213,11 @@
       "version": 1,
       "status": "active",
       "items": [
-        {"order": 1, "label": "Metselwerk conform tekening", "type": "ja_nee_nvt", "required": true, "fotoRequired": false, "helpText": "Controleer metselwerk op conformiteit met de bouwtekening"},
-        {"order": 2, "label": "Kozijnen correct geplaatst", "type": "ja_nee_nvt", "required": true, "fotoRequired": false, "helpText": "Controleer plaatsing, waterdichtheid en isolatie van kozijnen"},
-        {"order": 3, "label": "Dakconstructie conform bestek", "type": "ja_nee_nvt", "required": true, "fotoRequired": true, "helpText": "Controleer dakconstructie, gordingen en spanten"},
-        {"order": 4, "label": "Leidingen correct aangelegd", "type": "ja_nee_nvt", "required": true, "fotoRequired": false, "helpText": "Controleer water-, gas- en elektriciteitsleidingen"},
-        {"order": 5, "label": "Brandwering aangebracht", "type": "ja_nee_nvt", "required": true, "fotoRequired": true, "helpText": "Controleer brandwerende doorvoeringen en scheidingen"}
+        {"order": 1, "label": "Metselwerk conform tekening", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer metselwerk op conformiteit met de bouwtekening"},
+        {"order": 2, "label": "Kozijnen correct geplaatst", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer plaatsing, waterdichtheid en isolatie van kozijnen"},
+        {"order": 3, "label": "Dakconstructie conform bestek", "type": "yes_no_na", "required": true, "photoRequired": true, "helpText": "Controleer dakconstructie, gordingen en spanten"},
+        {"order": 4, "label": "Leidingen correct aangelegd", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer water-, gas- en elektriciteitsleidingen"},
+        {"order": 5, "label": "Brandwering aangebracht", "type": "yes_no_na", "required": true, "photoRequired": true, "helpText": "Controleer brandwerende doorvoeringen en scheidingen"}
       ]
     },
     {
@@ -227,12 +227,12 @@
       "version": 1,
       "status": "active",
       "items": [
-        {"order": 1, "label": "Afwerking conform bestek", "type": "ja_nee_nvt", "required": true, "fotoRequired": false, "helpText": "Controleer afwerking vloeren, wanden en plafonds"},
-        {"order": 2, "label": "Installaties werkend", "type": "ja_nee_nvt", "required": true, "fotoRequired": false, "helpText": "Test verwarming, ventilatie, elektra en sanitair"},
-        {"order": 3, "label": "Brandveiligheid gewaarborgd", "type": "ja_nee_nvt", "required": true, "fotoRequired": true, "helpText": "Controleer rookmelders, vluchtroutes, noodverlichting"},
-        {"order": 4, "label": "Toegankelijkheid conform Bouwbesluit", "type": "ja_nee_nvt", "required": true, "fotoRequired": false, "helpText": "Controleer drempels, deurbreedtes, toilet toegankelijkheid"},
-        {"order": 5, "label": "Energielabel bepaald", "type": "tekst", "required": true, "fotoRequired": false, "helpText": "Noteer het energielabel (A++++ t/m G)"},
-        {"order": 6, "label": "As-built tekeningen ontvangen", "type": "ja_nee_nvt", "required": true, "fotoRequired": false, "helpText": "Controleer of as-built tekeningen zijn aangeleverd"}
+        {"order": 1, "label": "Afwerking conform bestek", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer afwerking vloeren, wanden en plafonds"},
+        {"order": 2, "label": "Installaties werkend", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Test verwarming, ventilatie, elektra en sanitair"},
+        {"order": 3, "label": "Brandveiligheid gewaarborgd", "type": "yes_no_na", "required": true, "photoRequired": true, "helpText": "Controleer rookmelders, vluchtroutes, noodverlichting"},
+        {"order": 4, "label": "Toegankelijkheid conform Bouwbesluit", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer drempels, deurbreedtes, toilet toegankelijkheid"},
+        {"order": 5, "label": "Energielabel bepaald", "type": "text", "required": true, "photoRequired": false, "helpText": "Noteer het energielabel (A++++ t/m G)"},
+        {"order": 6, "label": "As-built tekeningen ontvangen", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer of as-built tekeningen zijn aangeleverd"}
       ]
     }
   ],

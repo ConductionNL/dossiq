@@ -10,11 +10,12 @@
 			</div>
 			<div class="doorlooptijd-header__actions">
 				<!-- Date range presets -->
-				<NcActions :force-menu="true">
+				<NcActions :forceMenu="true">
 					<template #icon>
 						<Calendar :size="20" />
 					</template>
-					<NcActionButton v-for="preset in datePresets"
+					<NcActionButton
+						v-for="preset in datePresets"
 						:key="preset.key"
 						:class="{ 'active-preset': selectedPreset === preset.key }"
 						@click="applyPreset(preset.key)">
@@ -23,15 +24,17 @@
 				</NcActions>
 
 				<!-- Case type filter -->
-				<NcActions :force-menu="true">
+				<NcActions :forceMenu="true">
 					<template #icon>
 						<FilterVariant :size="20" />
 					</template>
-					<NcActionButton :class="{ 'active-preset': !selectedCaseType }"
+					<NcActionButton
+						:class="{ 'active-preset': !selectedCaseType }"
 						@click="selectedCaseType = null">
 						{{ t('procest', 'All case types') }}
 					</NcActionButton>
-					<NcActionButton v-for="ct in caseTypesWithSla"
+					<NcActionButton
+						v-for="ct in caseTypesWithSla"
 						:key="ct.id"
 						:class="{ 'active-preset': selectedCaseType === ct.id }"
 						@click="selectedCaseType = ct.id">
@@ -40,7 +43,8 @@
 				</NcActions>
 
 				<!-- Back to dashboard -->
-				<NcButton type="tertiary"
+				<NcButton
+					type="tertiary"
 					@click="$router.push({ name: 'Dashboard' })">
 					<template #icon>
 						<ArrowLeft :size="20" />
@@ -64,78 +68,104 @@
 
 		<!-- Empty state: no cases -->
 		<div v-else-if="showNoCasesState" class="doorlooptijd-empty">
-			<p>{{ t('procest', 'No case data available for processing time analysis.') }}</p>
+			<p>
+				{{
+					t(
+						'procest',
+						'No case data available for processing time analysis.',
+					)
+				}}
+			</p>
 		</div>
 
 		<!-- Empty state: no SLA targets -->
 		<div v-else-if="showNoSlaState" class="doorlooptijd-empty">
-			<p>{{ t('procest', 'No SLA targets configured. Set processing deadlines on case types in Settings to enable compliance tracking.') }}</p>
-			<NcButton type="primary"
-				@click="$router.push({ name: 'Settings' })">
+			<p>
+				{{
+					t(
+						'procest',
+						'No SLA targets configured. Set processing deadlines on case types in Settings to enable compliance tracking.',
+					)
+				}}
+			</p>
+			<NcButton
+				type="primary"
+				@click="$router.push({ name: 'ProcestConfiguration' })">
 				{{ t('procest', 'Go to Settings') }}
 			</NcButton>
 		</div>
 
 		<!-- Empty state: no data in range -->
 		<div v-else-if="showNoDataInRange" class="doorlooptijd-empty">
-			<p>{{ t('procest', 'No completed cases in the selected date range.') }}</p>
+			<p>
+				{{ t('procest', 'No completed cases in the selected date range.') }}
+			</p>
 		</div>
 
 		<!-- Main content -->
 		<div v-else class="doorlooptijd-content">
 			<!-- KPI row -->
 			<DeadlineKpiRow
-				:sla-data="slaData"
-				:at-risk-count="atRiskCases.length"
-				:completed-count="filteredCompletedCases.length" />
+				:slaData="slaData"
+				:atRiskCount="atRiskCases.length"
+				:completedCount="filteredCompletedCases.length" />
 
 			<!-- Charts (donut / histogram / trend / throughput) -->
 			<ComplianceCharts
-				:sla-data="slaData"
-				:distribution-data="distributionData"
-				:trend-data="trendData"
-				:throughput-data="throughputData" />
+				:slaData="slaData"
+				:distributionData="distributionData"
+				:trendData="trendData"
+				:throughputData="throughputData" />
 
 			<!-- Woo statutory-deadline panel -->
 			<div class="chart-card chart-card--full">
 				<WooDeadlinePanel
 					:cases="wooCases"
 					:loading="loading"
-					@click-case="$router.push({ name: 'CaseDetail', params: { id: $event } })"
-					@view-all="$router.push({ name: 'Cases', query: { caseTypeContains: 'woo' } })" />
+					@clickCase="
+						$router.push({ name: 'CaseDetail', params: { id: $event } })
+					"
+					@viewAll="
+						$router.push({
+							name: 'Cases',
+							query: { caseTypeContains: 'woo' },
+						})
+					" />
 			</div>
 
 			<!-- At-risk cases panel -->
 			<DeadlineCaseTable
 				:cases="atRiskCases"
-				@select-case="$router.push({ name: 'CaseDetail', params: { id: $event } })" />
+				@selectCase="
+					$router.push({ name: 'CaseDetail', params: { id: $event } })
+				" />
 
 			<!-- Performance breakdown table -->
-			<CaseTypeBreakdown :performance-data="performanceData" />
+			<CaseTypeBreakdown :performanceData="performanceData" />
 		</div>
 	</div>
 </template>
 
 <script>
-import { NcButton, NcActions, NcActionButton } from '@nextcloud/vue'
+import { NcActionButton, NcActions, NcButton } from '@nextcloud/vue'
+import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
 import Calendar from 'vue-material-design-icons/Calendar.vue'
 import FilterVariant from 'vue-material-design-icons/FilterVariant.vue'
-import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
-import { useObjectStore } from '../store/modules/object.js'
-import {
-	computeSlaCompliance,
-	computeProcessingTimeDistribution,
-	computeMonthlyTrend,
-	getAtRiskCases,
-	computePerformanceTable,
-	parseDurationToDays,
-} from '../utils/doorlooptijdHelpers.js'
-import { computeWeeklyThroughput, getWooCases } from '../utils/dashboardHelpers.js'
 import WooDeadlinePanel from './dashboard/WooDeadlinePanel.vue'
-import DeadlineKpiRow from './doorlooptijd/components/DeadlineKpiRow.vue'
+import CaseTypeBreakdown from './doorlooptijd/components/CaseTypeBreakdown.vue'
 import ComplianceCharts from './doorlooptijd/components/ComplianceCharts.vue'
 import DeadlineCaseTable from './doorlooptijd/components/DeadlineCaseTable.vue'
-import CaseTypeBreakdown from './doorlooptijd/components/CaseTypeBreakdown.vue'
+import DeadlineKpiRow from './doorlooptijd/components/DeadlineKpiRow.vue'
+import { useObjectStore } from '../store/modules/object.js'
+import { computeWeeklyThroughput, getWooCases } from '../utils/dashboardHelpers.js'
+import {
+	computeMonthlyTrend,
+	computePerformanceTable,
+	computeProcessingTimeDistribution,
+	computeSlaCompliance,
+	getAtRiskCases,
+	parseDurationToDays,
+} from '../utils/doorlooptijdHelpers.js'
 
 export default {
 	name: 'DoorlooptijdDashboard',
@@ -152,6 +182,7 @@ export default {
 		DeadlineCaseTable,
 		CaseTypeBreakdown,
 	},
+
 	data() {
 		return {
 			loading: true,
@@ -164,11 +195,13 @@ export default {
 			serverMetrics: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		datePresets() {
 			return [
@@ -179,31 +212,33 @@ export default {
 				{ key: 'all', label: t('procest', 'All time') },
 			]
 		},
+
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		dateRange() {
 			const now = new Date()
 			let from = null
 			switch (this.selectedPreset) {
-			case '3m':
-				from = new Date(now.getFullYear(), now.getMonth() - 3, 1)
-				break
-			case '6m':
-				from = new Date(now.getFullYear(), now.getMonth() - 6, 1)
-				break
-			case '12m':
-				from = new Date(now.getFullYear(), now.getMonth() - 12, 1)
-				break
-			case 'year':
-				from = new Date(now.getFullYear(), 0, 1)
-				break
-			case 'all':
-				from = null
-				break
-			default:
-				from = new Date(now.getFullYear(), now.getMonth() - 12, 1)
+				case '3m':
+					from = new Date(now.getFullYear(), now.getMonth() - 3, 1)
+					break
+				case '6m':
+					from = new Date(now.getFullYear(), now.getMonth() - 6, 1)
+					break
+				case '12m':
+					from = new Date(now.getFullYear(), now.getMonth() - 12, 1)
+					break
+				case 'year':
+					from = new Date(now.getFullYear(), 0, 1)
+					break
+				case 'all':
+					from = null
+					break
+				default:
+					from = new Date(now.getFullYear(), now.getMonth() - 12, 1)
 			}
 			return { from, to: now }
 		},
+
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		statusTypeMap() {
 			const map = new Map()
@@ -212,28 +247,32 @@ export default {
 			}
 			return map
 		},
+
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		completedCases() {
-			return this.allCases.filter(c => {
+			return this.allCases.filter((c) => {
 				const st = this.statusTypeMap.get(c.status)
 				return st?.isFinal && c.endDate
 			})
 		},
+
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		openCases() {
-			return this.allCases.filter(c => {
+			return this.allCases.filter((c) => {
 				const st = this.statusTypeMap.get(c.status)
 				return !st?.isFinal
 			})
 		},
+
 		/**
 		 * Open Woo cases with statutory-deadline countdown and severity.
 		 *
-		 * @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-V1-004
+		 * @spec openspec/specs/dashboard/spec.md
 		 */
 		wooCases() {
 			return getWooCases(this.openCases, this.caseTypes)
 		},
+
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		filteredCompletedCases() {
 			let cases = this.completedCases
@@ -241,92 +280,136 @@ export default {
 			// Apply date range
 			if (this.dateRange.from) {
 				const fromStr = this.dateRange.from.toISOString().slice(0, 10)
-				cases = cases.filter(c => c.endDate && c.endDate.slice(0, 10) >= fromStr)
+				cases = cases.filter(
+					(c) => c.endDate && c.endDate.slice(0, 10) >= fromStr,
+				)
 			}
 
 			// Apply case type filter
 			if (this.selectedCaseType) {
-				cases = cases.filter(c => c.caseType === this.selectedCaseType)
+				cases = cases.filter((c) => c.caseType === this.selectedCaseType)
 			}
 
 			return cases
 		},
+
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		filteredOpenCases() {
 			if (this.selectedCaseType) {
-				return this.openCases.filter(c => c.caseType === this.selectedCaseType)
+				return this.openCases.filter(
+					(c) => c.caseType === this.selectedCaseType,
+				)
 			}
 			return this.openCases
 		},
+
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		caseTypesWithSla() {
-			return this.caseTypes.filter(ct => ct.processingDeadline && parseDurationToDays(ct.processingDeadline))
+			return this.caseTypes.filter(
+				(ct) =>
+					ct.processingDeadline
+					&& parseDurationToDays(ct.processingDeadline),
+			)
 		},
+
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		showNoCasesState() {
 			return !this.loading && this.allCases.length === 0
 		},
+
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		showNoSlaState() {
-			return !this.loading && this.allCases.length > 0 && this.caseTypesWithSla.length === 0
+			return (
+				!this.loading
+				&& this.allCases.length > 0
+				&& this.caseTypesWithSla.length === 0
+			)
 		},
+
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		showNoDataInRange() {
-			return !this.loading
+			return (
+				!this.loading
 				&& this.allCases.length > 0
 				&& this.caseTypesWithSla.length > 0
 				&& this.filteredCompletedCases.length === 0
 				&& this.atRiskCases.length === 0
+			)
 		},
+
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		slaData() {
 			return computeSlaCompliance(this.filteredCompletedCases, this.caseTypes)
 		},
+
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		distributionData() {
-			return computeProcessingTimeDistribution(this.filteredCompletedCases, this.caseTypes)
+			return computeProcessingTimeDistribution(
+				this.filteredCompletedCases,
+				this.caseTypes,
+			)
 		},
+
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		trendMonths() {
 			switch (this.selectedPreset) {
-			case '3m': return 3
-			case '6m': return 6
-			case 'year': {
-				const now = new Date()
-				return now.getMonth() + 1
-			}
-			case 'all': return 24
-			default: return 12
+				case '3m':
+					return 3
+				case '6m':
+					return 6
+				case 'year': {
+					const now = new Date()
+					return now.getMonth() + 1
+				}
+				case 'all':
+					return 24
+				default:
+					return 12
 			}
 		},
+
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		trendData() {
 			const casesForTrend = this.selectedCaseType
-				? this.completedCases.filter(c => c.caseType === this.selectedCaseType)
+				? this.completedCases.filter(
+						(c) => c.caseType === this.selectedCaseType,
+					)
 				: this.completedCases
-			return computeMonthlyTrend(casesForTrend, this.caseTypes, this.trendMonths)
+			return computeMonthlyTrend(
+				casesForTrend,
+				this.caseTypes,
+				this.trendMonths,
+			)
 		},
+
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		atRiskCases() {
 			return getAtRiskCases(this.filteredOpenCases, this.caseTypes, 0.25)
 		},
+
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		performanceData() {
-			return computePerformanceTable(this.filteredCompletedCases, this.caseTypes)
+			return computePerformanceTable(
+				this.filteredCompletedCases,
+				this.caseTypes,
+			)
 		},
+
 		/**
 		 * Weekly throughput — completed cases closed per ISO week over the
 		 * trailing 12 weeks of the selected range.
 		 *
-		 * @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-V1-005
+		 * @spec openspec/specs/dashboard/spec.md
 		 */
 		throughputData() {
 			return computeWeeklyThroughput(this.filteredCompletedCases, 12)
 		},
 	},
+
 	async mounted() {
 		await this.loadData()
 	},
+
 	methods: {
 		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T05 */
 		async loadData() {
@@ -334,10 +417,16 @@ export default {
 			try {
 				// Primary path: server-aggregated metrics (kpi/compliance/breakdown/cases).
 				try {
-					const { fetchMetrics } = await import('../services/doorlooptijdApi.js')
-					this.serverMetrics = await fetchMetrics({ caseType: this.selectedCaseType })
+					const { fetchMetrics } =
+						await import('../services/doorlooptijdApi.js')
+					this.serverMetrics = await fetchMetrics({
+						caseType: this.selectedCaseType,
+					})
 				} catch (apiErr) {
-					console.warn('Doorlooptijd server metrics unavailable, falling back to client aggregation', apiErr)
+					console.warn(
+						'Doorlooptijd server metrics unavailable, falling back to client aggregation',
+						apiErr,
+					)
 					this.serverMetrics = null
 				}
 
@@ -347,15 +436,19 @@ export default {
 					this.objectStore.fetchCollection('statusType', { _limit: 500 }),
 				])
 
-				this.allCases = results[0].status === 'fulfilled' ? (results[0].value || []) : []
-				this.caseTypes = results[1].status === 'fulfilled' ? (results[1].value || []) : []
-				this.statusTypes = results[2].status === 'fulfilled' ? (results[2].value || []) : []
+				this.allCases =
+					results[0].status === 'fulfilled' ? results[0].value || [] : []
+				this.caseTypes =
+					results[1].status === 'fulfilled' ? results[1].value || [] : []
+				this.statusTypes =
+					results[2].status === 'fulfilled' ? results[2].value || [] : []
 			} catch (err) {
 				console.error('Doorlooptijd data fetch error:', err)
 			} finally {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * Apply a date-range preset (e.g. '3m', '12m', 'year', 'all').
 		 *
@@ -444,8 +537,31 @@ export default {
 }
 
 @keyframes pulse {
-	0%, 100% { opacity: 1; }
-	50% { opacity: 0.5; }
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
+}
+
+/*
+ * Respect a reduced-motion preference (WCAG 2.3.3; gate-45).
+ *
+ * The three skeletons above pulse indefinitely while the dashboard loads, and
+ * an indefinite animation is exactly what someone with vestibular sensitivity
+ * sets this preference to avoid. The skeleton still needs to read as "not real
+ * data yet", so the animation is dropped and a dimmed, static state is kept
+ * rather than the placeholder becoming indistinguishable from a loaded card.
+ */
+@media (prefers-reduced-motion: reduce) {
+	.skeleton-kpi,
+	.skeleton-chart,
+	.skeleton-table {
+		animation: none;
+		opacity: 0.6;
+	}
 }
 
 /* Empty states */

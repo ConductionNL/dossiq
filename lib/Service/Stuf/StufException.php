@@ -17,7 +17,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md
  */
 
 declare(strict_types=1);
@@ -29,6 +29,5 @@ use RuntimeException;
 /**
  * Base StUF adapter exception.
  */
-class StufException extends RuntimeException
-{
+class StufException extends RuntimeException {
 }//end class

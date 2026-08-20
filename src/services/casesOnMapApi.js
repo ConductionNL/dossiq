@@ -35,7 +35,9 @@ import { generateUrl } from '@nextcloud/router'
 /** Stable key for procest's cases-on-map overview (one per app). */
 export const CASES_ON_MAP_KEY = 'procest-cases-on-map'
 
-const OVERVIEWS_URL = generateUrl('/apps/openregister/api/integrations/maps/overviews')
+const OVERVIEWS_URL = generateUrl(
+	'/apps/openregister/api/integrations/maps/overviews',
+)
 
 /**
  * Declare (or refresh) procest's cases-on-map overview with OpenRegister's
@@ -50,7 +52,11 @@ const OVERVIEWS_URL = generateUrl('/apps/openregister/api/integrations/maps/over
  * @return {Promise<object|null>} The stored widget render contract, or null on failure.
  * @spec openspec/specs/case-map-overview/spec.md
  */
-export async function registerCasesOnMapOverview({ register = 'procest', schema = 'case', title = 'Cases on map' } = {}) {
+export async function registerCasesOnMapOverview({
+	register = 'procest',
+	schema = 'case',
+	title = 'Cases on map',
+} = {}) {
 	try {
 		const response = await axios.post(OVERVIEWS_URL, {
 			overviewKey: CASES_ON_MAP_KEY,
@@ -60,7 +66,11 @@ export async function registerCasesOnMapOverview({ register = 'procest', schema 
 		})
 		return response.data
 	} catch (err) {
-		console.warn('[procest] maps-overview register failed for', CASES_ON_MAP_KEY, err)
+		console.warn(
+			'[procest] maps-overview register failed for',
+			CASES_ON_MAP_KEY,
+			err,
+		)
 		return null
 	}
 }
@@ -79,14 +89,23 @@ export async function registerCasesOnMapOverview({ register = 'procest', schema 
  * @return {Promise<Array<object>>} The RBAC-scoped point rows (possibly empty).
  * @spec openspec/specs/case-map-overview/spec.md
  */
-export async function fetchCasePoints({ register = 'procest', schema = 'case', filters = {} } = {}) {
+export async function fetchCasePoints({
+	register = 'procest',
+	schema = 'case',
+	filters = {},
+} = {}) {
 	const url = `${OVERVIEWS_URL}/${encodeURIComponent(register)}/${encodeURIComponent(schema)}/points`
 	try {
 		const response = await axios.get(url, { params: filters })
 		const data = response.data || {}
 		return Array.isArray(data.points) ? data.points : []
 	} catch (err) {
-		console.warn('[procest] maps-overview points fetch failed for', register, schema, err)
+		console.warn(
+			'[procest] maps-overview points fetch failed for',
+			register,
+			schema,
+			err,
+		)
 		return []
 	}
 }

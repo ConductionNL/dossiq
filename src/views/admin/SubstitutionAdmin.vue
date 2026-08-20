@@ -35,7 +35,8 @@
 				v-model="filterText"
 				type="search"
 				class="substitution-admin__search"
-				:placeholder="t('procest', 'Filter by handler…')">
+				:aria-label="t('procest', 'Filter by handler…')"
+				:placeholder="t('procest', 'Filter by handler…')" />
 		</div>
 
 		<NcLoadingIcon v-if="loading" :size="32" />
@@ -47,11 +48,11 @@
 		<table v-else class="substitution-admin__table">
 			<thead>
 				<tr>
-					<th>{{ t('procest', 'Absentee') }}</th>
-					<th>{{ t('procest', 'Substitute') }}</th>
-					<th>{{ t('procest', 'Period') }}</th>
-					<th>{{ t('procest', 'Scope') }}</th>
-					<th>{{ t('procest', 'Status') }}</th>
+					<th scope="col">{{ t('procest', 'Absentee') }}</th>
+					<th scope="col">{{ t('procest', 'Substitute') }}</th>
+					<th scope="col">{{ t('procest', 'Period') }}</th>
+					<th scope="col">{{ t('procest', 'Scope') }}</th>
+					<th scope="col">{{ t('procest', 'Status') }}</th>
 					<th />
 				</tr>
 			</thead>
@@ -61,12 +62,19 @@
 					<td>{{ sub.substitute }}</td>
 					<td>{{ sub.startDate }} → {{ sub.endDate }}</td>
 					<td>{{ sub.scope }}</td>
-					<td><span :class="`status status--${sub.status}`">{{ sub.status }}</span></td>
+					<td>
+						<span :class="`status status--${sub.status}`">{{
+							sub.status
+						}}</span>
+					</td>
 					<td class="substitution-admin__row-actions">
 						<NcButton type="tertiary" @click="openActions(sub)">
 							{{ t('procest', 'Actions') }}
 						</NcButton>
-						<NcButton v-if="sub.status === 'active'" type="tertiary" @click="revoke(sub.id)">
+						<NcButton
+							v-if="sub.status === 'active'"
+							type="tertiary"
+							@click="revoke(sub.id)">
 							{{ t('procest', 'Revoke') }}
 						</NcButton>
 					</td>
@@ -75,22 +83,29 @@
 		</table>
 
 		<!-- Capacity-stamped action list -->
-		<div v-if="selectedSub" class="substitution-admin__detail" data-testid="substitution-actions">
+		<div
+			v-if="selectedSub"
+			class="substitution-admin__detail"
+			data-testid="substitution-actions">
 			<h3>{{ t('procest', 'Actions performed under this substitution') }}</h3>
 			<NcEmptyContent
 				v-if="actions.length === 0"
 				:name="t('procest', 'No actions recorded yet')" />
 			<ul v-else>
 				<li v-for="(a, idx) in actions" :key="idx">
-					{{ a.timestamp }} — {{ a.caseTitle || a.caseId }} — {{ a.action }}
-					({{ t('procest', 'namens {who}', { who: a.actedOnBehalfOf }) }})
+					{{ a.timestamp }} — {{ a.caseTitle || a.caseId }} —
+					{{ a.action }} ({{
+						t('procest', 'on behalf of {who}', {
+							who: a.actedOnBehalfOf,
+						})
+					}})
 				</li>
 			</ul>
 		</div>
 
 		<SubstitutionFormModal
 			v-if="showForm"
-			:allow-coordinator="true"
+			:allowCoordinator="true"
 			@created="onCreated"
 			@close="showForm = false" />
 
@@ -103,11 +118,15 @@
 
 <script>
 import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
-import AccountSwitch from 'vue-material-design-icons/AccountSwitch.vue'
 import AccountArrowRight from 'vue-material-design-icons/AccountArrowRight.vue'
-import SubstitutionFormModal from '../../modals/SubstitutionFormModal.vue'
+import AccountSwitch from 'vue-material-design-icons/AccountSwitch.vue'
 import BulkReassignModal from '../../modals/BulkReassignModal.vue'
-import { listSubstitutions, revokeSubstitution, fetchSubstitutionActions } from '../../services/substitutionApi.js'
+import SubstitutionFormModal from '../../modals/SubstitutionFormModal.vue'
+import {
+	fetchSubstitutionActions,
+	listSubstitutions,
+	revokeSubstitution,
+} from '../../services/substitutionApi.js'
 
 export default {
 	name: 'SubstitutionAdmin',
@@ -120,6 +139,7 @@ export default {
 		SubstitutionFormModal,
 		BulkReassignModal,
 	},
+
 	data() {
 		return {
 			loading: true,
@@ -131,6 +151,7 @@ export default {
 			actions: [],
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		filtered() {
@@ -138,15 +159,18 @@ export default {
 			if (!q) {
 				return this.substitutions
 			}
-			return this.substitutions.filter(s =>
-				(s.absentee || '').toLowerCase().includes(q)
-				|| (s.substitute || '').toLowerCase().includes(q),
+			return this.substitutions.filter(
+				(s) =>
+					(s.absentee || '').toLowerCase().includes(q)
+					|| (s.substitute || '').toLowerCase().includes(q),
 			)
 		},
 	},
+
 	async mounted() {
 		await this.load()
 	},
+
 	methods: {
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		async load() {
@@ -160,17 +184,23 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		async onCreated() {
 			this.showForm = false
 			await this.load()
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		async onReassigned() {
 			this.showReassign = false
 			await this.load()
 		},
-		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
+
+		/**
+		 * @param id
+		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+		 */
 		async revoke(id) {
 			try {
 				await revokeSubstitution(id)
@@ -179,7 +209,11 @@ export default {
 				console.error('[SubstitutionAdmin] revoke failed', err)
 			}
 		},
-		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
+
+		/**
+		 * @param sub
+		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+		 */
 		async openActions(sub) {
 			this.selectedSub = sub
 			this.actions = []

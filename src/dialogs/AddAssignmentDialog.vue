@@ -6,57 +6,71 @@
 	<NcDialog
 		:open="true"
 		:name="t('procest', 'Add role assignment')"
-		@update:open="v => { if (!v) $emit('close') }">
+		@update:open="
+			(v) => {
+				if (!v) $emit('close')
+			}
+		">
 		<div class="add-assignment">
 			<div class="form-group">
-				<label class="required" for="aa-person">{{ t('procest', 'Person (UID / email)') }}</label>
+				<label class="required" for="aa-person">{{
+					t('procest', 'Person (UID / email)')
+				}}</label>
 				<NcTextField
 					id="aa-person"
-					:value="form.persoonId"
+					:modelValue="form.persoonId"
 					:error="!!errors.persoonId"
-					:helper-text="errors.persoonId"
-					@update:value="v => form.persoonId = v" />
+					:helperText="errors.persoonId"
+					@update:modelValue="(v) => (form.persoonId = v)" />
 			</div>
 
 			<div class="form-group">
-				<label class="required" for="aa-role">{{ t('procest', 'Role') }}</label>
+				<label class="required" for="aa-role">{{
+					t('procest', 'Role')
+				}}</label>
 				<NcSelect
 					id="aa-role"
-					:value="selectedRole"
+					:modelValue="selectedRole"
 					:options="roleOptions"
-					:input-label="t('procest', 'Role')"
-					@input="v => form.rolId = v ? v.id : ''" />
-				<span v-if="errors.rolId" class="field-error">{{ errors.rolId }}</span>
+					:inputLabel="t('procest', 'Role')"
+					@update:modelValue="(v) => (form.roleId = v ? v.id : '')" />
+				<span v-if="errors.roleId" class="field-error">{{
+					errors.roleId
+				}}</span>
 			</div>
 
 			<div class="form-group">
 				<label for="aa-type">{{ t('procest', 'Type') }}</label>
 				<NcSelect
 					id="aa-type"
-					:value="selectedType"
+					:modelValue="selectedType"
 					:options="typeOptions"
-					:input-label="t('procest', 'Type')"
-					@input="v => form.toewijzingType = v ? v.id : ''" />
+					:inputLabel="t('procest', 'Type')"
+					@update:modelValue="
+						(v) => (form.allocationType = v ? v.id : '')
+					" />
 			</div>
 
 			<div class="form-group">
-				<label class="required" for="aa-vanaf">{{ t('procest', 'Vanaf') }}</label>
+				<label class="required" for="aa-vanaf">{{
+					t('procest', 'From')
+				}}</label>
 				<input
 					id="aa-vanaf"
 					type="date"
 					class="add-assignment__date"
 					:value="form.vanaf"
-					@input="form.vanaf = $event.target.value">
+					@input="form.vanaf = $event.target.value" />
 			</div>
 
 			<div class="form-group">
-				<label for="aa-tot">{{ t('procest', 'Tot en met') }}</label>
+				<label for="aa-tot">{{ t('procest', 'Up to and including') }}</label>
 				<input
 					id="aa-tot"
 					type="date"
 					class="add-assignment__date"
 					:value="form.totEnMet"
-					@input="form.totEnMet = $event.target.value">
+					@input="form.totEnMet = $event.target.value" />
 			</div>
 		</div>
 
@@ -72,8 +86,8 @@
 </template>
 
 <script>
-import { NcButton, NcDialog, NcSelect, NcTextField } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton, NcDialog, NcSelect, NcTextField } from '@nextcloud/vue'
 
 export default {
 	name: 'AddAssignmentDialog',
@@ -81,47 +95,57 @@ export default {
 	props: {
 		roleOptions: { type: Array, default: () => [] },
 	},
+
 	emits: ['save', 'close'],
 	data() {
 		return {
 			errors: {},
 			form: {
 				persoonId: '',
-				rolId: '',
-				toewijzingType: 'reguliere',
+				roleId: '',
+				allocationType: 'reguliere',
 				vanaf: new Date().toISOString().slice(0, 10),
 				totEnMet: '',
 			},
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		typeOptions() {
 			return [
-				{ id: 'reguliere', label: t('procest', 'Reguliere toewijzing') },
-				{ id: 'waarnemer', label: t('procest', 'Waarnemer') },
-				{ id: 'plaatsvervanger', label: t('procest', 'Plaatsvervanger') },
+				{ id: 'reguliere', label: t('procest', 'Regular assignment') },
+				{ id: 'observer', label: t('procest', 'Substitute') },
+				{ id: 'plaatsvervanger', label: t('procest', 'Deputy') },
 			]
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedRole() {
-			return this.roleOptions.find(o => o.id === this.form.rolId) || null
+			return this.roleOptions.find((o) => o.id === this.form.roleId) || null
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedType() {
-			return this.typeOptions.find(o => o.id === this.form.toewijzingType) || this.typeOptions[0]
+			return (
+				this.typeOptions.find((o) => o.id === this.form.allocationType)
+				|| this.typeOptions[0]
+			)
 		},
 	},
+
 	methods: {
 		t,
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		validate() {
 			const errs = {}
-			if (!this.form.persoonId) errs.persoonId = t('procest', 'Person is required')
-			if (!this.form.rolId) errs.rolId = t('procest', 'Role is required')
+			if (!this.form.persoonId)
+				errs.persoonId = t('procest', 'Person is required')
+			if (!this.form.roleId) errs.roleId = t('procest', 'Role is required')
 			this.errors = errs
 			return Object.keys(errs).length === 0
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		save() {
 			if (!this.validate()) return

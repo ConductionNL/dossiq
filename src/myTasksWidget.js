@@ -1,15 +1,11 @@
-import Vue from 'vue'
-import { PiniaVuePlugin } from 'pinia'
-import pinia from './pinia.js'
+import { createApp } from 'vue'
 import MyTasksWidget from './views/widgets/MyTasksWidget.vue'
-
-Vue.use(PiniaVuePlugin)
+import pinia from './pinia.js'
 
 OCA.Dashboard.register('procest_my_tasks_widget', async (el, { widget }) => {
-	Vue.mixin({ methods: { t, n } })
-	const View = Vue.extend(MyTasksWidget)
-	new View({
-		pinia,
-		propsData: { title: widget.title },
-	}).$mount(el)
+	const app = createApp(MyTasksWidget, { title: widget.title })
+	app.use(pinia)
+	app.config.globalProperties.t = t
+	app.config.globalProperties.n = n
+	app.mount(el)
 })

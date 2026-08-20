@@ -1,84 +1,103 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 <!-- SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl> -->
 <template>
-	<NcDialog v-if="open"
-		:name="t('procest', 'Advies uitbrengen')"
+	<NcDialog
+		v-if="open"
+		:name="t('procest', 'Issue advice')"
 		size="normal"
-		:can-close="!submitting"
+		:canClose="!submitting"
 		@closing="onClose">
 		<div class="consultation-response-form">
-			<div v-if="consultationSubject" class="consultation-response-form__subject">
-				<span class="consultation-response-form__subject-label">{{ t('procest', 'Onderwerp:') }}</span>
+			<div
+				v-if="consultationSubject"
+				class="consultation-response-form__subject">
+				<span class="consultation-response-form__subject-label">{{
+					t('procest', 'Subject:')
+				}}</span>
 				{{ consultationSubject }}
 			</div>
 
 			<div class="consultation-response-form__field">
 				<label class="consultation-response-form__label">
-					{{ t('procest', 'Advies') }} *
+					{{ t('procest', 'Advice') }} *
 				</label>
 				<NcSelect
 					v-model="form.advies"
 					:options="adviesOptions"
-					:aria-label-combobox="t('procest', 'Advies')"
+					:aria-label-combobox="t('procest', 'Advice')"
 					label="label"
-					:reduce="opt => opt.value"
-					:placeholder="t('procest', 'Selecteer adviestype')" />
+					:reduce="(opt) => opt.value"
+					:placeholder="t('procest', 'Select advice type')" />
 			</div>
 
 			<div v-if="showToelichting" class="consultation-response-form__field">
-				<label class="consultation-response-form__label">
-					{{ t('procest', 'Toelichting') }} <span v-if="toelichtingRequired">*</span>
+				<label
+					class="consultation-response-form__label"
+					for="consultation-response-toelichting">
+					{{ t('procest', 'Explanation') }}
+					<span v-if="toelichtingRequired">*</span>
 				</label>
 				<textarea
-					v-model="form.toelichting"
+					id="consultation-response-toelichting"
+					v-model="form.notes"
 					class="consultation-response-form__textarea"
 					rows="4"
-					:placeholder="t('procest', 'Geef een toelichting op uw advies...')" />
+					:placeholder="
+						t('procest', 'Provide an explanation for your advice...')
+					" />
 			</div>
 
 			<!-- Conditions — only shown for positief_met_voorwaarden -->
 			<div v-if="showVoorwaarden" class="consultation-response-form__field">
 				<label class="consultation-response-form__label">
-					{{ t('procest', 'Voorwaarden') }}
+					{{ t('procest', 'Conditions') }}
 				</label>
 				<div
-					v-for="(voorwaarde, idx) in form.voorwaarden"
+					v-for="(voorwaarde, idx) in form.terms"
 					:key="idx"
 					class="consultation-response-form__condition-row">
 					<input
 						v-model="voorwaarde.description"
 						class="consultation-response-form__condition-input"
-						:placeholder="t('procest', 'Beschrijving voorwaarde')"
-						type="text">
+						:aria-label="
+							t('procest', 'Condition description {n}', { n: idx + 1 })
+						"
+						:placeholder="t('procest', 'Condition description')"
+						type="text" />
 					<NcSelect
 						v-model="voorwaarde.priority"
 						:options="priorityOptions"
-						:aria-label-combobox="t('procest', 'Prioriteit voorwaarde {n}', { n: idx + 1 })"
+						:aria-label-combobox="
+							t('procest', 'Priority condition {n}', { n: idx + 1 })
+						"
 						label="label"
-						:reduce="opt => opt.value"
+						:reduce="(opt) => opt.value"
 						class="consultation-response-form__condition-priority"
-						:placeholder="t('procest', 'Prioriteit')" />
+						:placeholder="t('procest', 'Priority')" />
 					<NcButton
 						type="tertiary"
-						:title="t('procest', 'Verwijder voorwaarde')"
+						:title="t('procest', 'Remove condition')"
 						@click="removeVoorwaarde(idx)">
 						✕
 					</NcButton>
 				</div>
 				<NcButton @click="addVoorwaarde">
-					{{ t('procest', 'Voorwaarde toevoegen') }}
+					{{ t('procest', 'Add condition') }}
 				</NcButton>
 			</div>
 
 			<div class="consultation-response-form__field">
-				<label class="consultation-response-form__label">
-					{{ t('procest', 'Datum advies') }} *
+				<label
+					class="consultation-response-form__label"
+					for="consultation-response-datum">
+					{{ t('procest', 'Advice date') }} *
 				</label>
 				<input
-					v-model="form.datum"
+					id="consultation-response-datum"
+					v-model="form.date"
 					type="date"
 					class="consultation-response-form__date-input"
-					:max="today">
+					:max="today" />
 			</div>
 
 			<NcNoteCard v-if="validationError" type="error">
@@ -90,11 +109,12 @@
 			<NcButton :disabled="submitting" @click="onClose">
 				{{ t('procest', 'Annuleren') }}
 			</NcButton>
-			<NcButton
-				type="primary"
-				:disabled="!canSubmit"
-				@click="onSubmit">
-				{{ submitting ? t('procest', 'Bezig...') : t('procest', 'Advies indienen') }}
+			<NcButton type="primary" :disabled="!canSubmit" @click="onSubmit">
+				{{
+					submitting
+						? t('procest', 'Bezig...')
+						: t('procest', 'Submit advice')
+				}}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -111,20 +131,24 @@ export default {
 		NcNoteCard,
 		NcSelect,
 	},
+
 	props: {
 		open: {
 			type: Boolean,
 			default: false,
 		},
+
 		consultationId: {
 			type: String,
 			required: true,
 		},
+
 		consultationSubject: {
 			type: String,
 			default: '',
 		},
 	},
+
 	emits: ['close', 'submitted'],
 	data() {
 		return {
@@ -132,49 +156,64 @@ export default {
 			validationError: '',
 			form: {
 				advies: null,
-				toelichting: '',
-				voorwaarden: [],
-				datum: '',
+				notes: '',
+				terms: [],
+				date: '',
 			},
+
 			adviesOptions: [
-				{ label: this.t('procest', 'Positief'), value: 'positief' },
-				{ label: this.t('procest', 'Positief met voorwaarden'), value: 'positief_met_voorwaarden' },
-				{ label: this.t('procest', 'Negatief'), value: 'negatief' },
-				{ label: this.t('procest', 'Niet van toepassing'), value: 'niet_van_toepassing' },
+				{ label: this.t('procest', 'Positive'), value: 'positive' },
+				{
+					label: this.t('procest', 'Positive with conditions'),
+					value: 'positief_with_terms',
+				},
+				{ label: this.t('procest', 'Negative'), value: 'negative' },
+				{
+					label: this.t('procest', 'Not applicable'),
+					value: 'non_from_application',
+				},
 			],
+
 			priorityOptions: [
-				{ label: this.t('procest', 'Hoog'), value: 'hoog' },
-				{ label: this.t('procest', 'Normaal'), value: 'normaal' },
-				{ label: this.t('procest', 'Laag'), value: 'laag' },
+				{ label: this.t('procest', 'High'), value: 'high' },
+				{ label: this.t('procest', 'Normal'), value: 'normal' },
+				{ label: this.t('procest', 'Low'), value: 'low' },
 			],
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		today() {
 			return new Date().toISOString().slice(0, 10)
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		showVoorwaarden() {
-			return this.form.advies === 'positief_met_voorwaarden'
+			return this.form.advies === 'positief_with_terms'
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		showToelichting() {
 			return this.form.advies !== null
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		toelichtingRequired() {
-			return this.form.advies !== 'niet_van_toepassing'
+			return this.form.advies !== 'non_from_application'
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		canSubmit() {
 			if (this.submitting) return false
 			if (!this.form.advies) return false
-			if (this.toelichtingRequired && this.form.toelichting.trim() === '') return false
-			if (!this.form.datum) return false
+			if (this.toelichtingRequired && this.form.notes.trim() === '')
+				return false
+			if (!this.form.date) return false
 			return true
 		},
 	},
+
 	watch: {
 		/**
 		 * @param value
@@ -186,41 +225,48 @@ export default {
 				this.submitting = false
 				this.form = {
 					advies: null,
-					toelichting: '',
-					voorwaarden: [],
-					datum: this.today,
+					notes: '',
+					terms: [],
+					date: this.today,
 				}
 			}
 		},
 	},
+
 	methods: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		addVoorwaarde() {
-			this.form.voorwaarden.push({ description: '', priority: 'normaal' })
+			this.form.terms.push({ description: '', priority: 'normal' })
 		},
+
 		/**
 		 * @param idx
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
 		 */
 		removeVoorwaarde(idx) {
-			this.form.voorwaarden.splice(idx, 1)
+			this.form.terms.splice(idx, 1)
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		validate() {
 			if (!this.form.advies) {
-				this.validationError = this.t('procest', 'Selecteer een adviestype.')
+				this.validationError = this.t('procest', 'Select an advice type.')
 				return false
 			}
-			if (this.toelichtingRequired && this.form.toelichting.trim() === '') {
-				this.validationError = this.t('procest', 'Toelichting is verplicht voor dit adviestype.')
+			if (this.toelichtingRequired && this.form.notes.trim() === '') {
+				this.validationError = this.t(
+					'procest',
+					'Explanation is required for this advice type.',
+				)
 				return false
 			}
-			if (!this.form.datum) {
-				this.validationError = this.t('procest', 'Datum is verplicht.')
+			if (!this.form.date) {
+				this.validationError = this.t('procest', 'Date is required.')
 				return false
 			}
 			return true
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		onSubmit() {
 			this.validationError = ''
@@ -229,12 +275,13 @@ export default {
 			this.$emit('submitted', {
 				consultationId: this.consultationId,
 				advies: this.form.advies,
-				toelichting: this.form.toelichting.trim(),
-				voorwaarden: this.showVoorwaarden ? [...this.form.voorwaarden] : [],
-				datum: this.form.datum,
+				notes: this.form.notes.trim(),
+				terms: this.showVoorwaarden ? [...this.form.terms] : [],
+				date: this.form.date,
 			})
 			this.submitting = false
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		onClose() {
 			if (this.submitting) return

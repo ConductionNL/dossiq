@@ -1,0 +1,139 @@
+openapi: 3.0.3
+info:
+  title: Procest ZGW Autorisaties API (AC)
+  description: |
+    Machine-readable description of the routed surface of Procest's ZGW
+    Autorisaties Component (AC) API, generated from the app's route table
+    (appinfo/routes.php). It documents paths, verbs and parameters only —
+    payload semantics (request/response bodies, business rules) follow the
+    VNG ZGW 1.x standard. See
+    https://vng-realisatie.github.io/gemma-zaken/standaard/autorisaties/index
+    for the authoritative resource schemas. Procest tracks the ZGW 1.x
+    standard line.
+
+    Unlike the other five ZGW APIs, AC exposes a single, fixed resource
+    (applicaties) — the route is not parameterized by `{resource}`.
+    Applicaties map to OpenRegister's Consumer entities, not register
+    objects.
+  version: '1.0.0'
+servers:
+  - url: /apps/procest
+    description: Procest app base path
+components:
+  securitySchemes:
+    ZGWToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT bearer token issued to a registered ZGW consumer (applicatie).
+  schemas:
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+        code:
+          type: string
+        invalidParams:
+          type: array
+          items:
+            type: object
+  responses:
+    BadRequest:
+      description: Bad Request — validation error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Unauthorized — missing or invalid JWT bearer token.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Forbidden — consumer lacks the required scope.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Not Found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+security:
+  - ZGWToken: []
+paths:
+  /api/zgw/autorisaties/v1/applicaties:
+    get:
+      operationId: ac#index
+      summary: List applicaties (ZGW consumers).
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: ac#create
+      summary: Create an applicatie (ac-001 clientId uniqueness, ac-002/ac-003 scope consistency rules apply).
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/zgw/autorisaties/v1/applicaties/{uuid}:
+    get:
+      operationId: ac#show
+      summary: Retrieve a single applicatie by UUID.
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      operationId: ac#update
+      summary: Full update of an applicatie.
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      operationId: ac#patch
+      summary: Partial update of an applicatie.
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      operationId: ac#destroy
+      summary: Delete an applicatie.
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '204': { description: No Content }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }

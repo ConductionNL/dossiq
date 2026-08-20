@@ -55,7 +55,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 */
 		/**
 		 * @param state
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		activeAction(state) {
 			return state.actions.find((a) => a.status === 'opgelegd') || null
@@ -69,12 +69,12 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 */
 		/**
 		 * @param state
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		totalVerbeurd(state) {
 			return state.actions
 				.filter((a) => a.status === 'verbeurd')
-				.reduce((sum, a) => sum + (a.dwangsomBedrag || 0), 0)
+				.reduce((sum, a) => sum + (a.penaltyPaymentAmount || 0), 0)
 		},
 
 		/**
@@ -85,7 +85,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 */
 		/**
 		 * @param state
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		ernstLevels(state) {
 			return Object.keys(state.lhsMatrix)
@@ -99,7 +99,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 */
 		/**
 		 * @param state
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		gedragLevels(state) {
 			const first = Object.values(state.lhsMatrix)[0]
@@ -116,17 +116,20 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 */
 		/**
 		 * @param caseId
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		async fetchActions(caseId) {
 			this.loading = true
 			this.error = null
 			try {
 				const objectStore = useObjectStore()
-				const response = await objectStore.fetchCollection('handhavingsactie', {
-					'_filters[case]': caseId,
-					limit: 100,
-				})
+				const response = await objectStore.fetchCollection(
+					'handhavingsactie',
+					{
+						'_filters[case]': caseId,
+						limit: 100,
+					},
+				)
 				this.actions = response?.results || response || []
 				return this.actions
 			} catch (error) {
@@ -148,7 +151,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 		/**
 		 * @param ernst
 		 * @param gedrag
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		lookupLhs(ernst, gedrag) {
 			if (!this.lhsMatrix[ernst]) {
@@ -162,7 +165,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 *
 		 * @return {Promise<void>}
 		 */
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/** @spec openspec/specs/vth-module/spec.md */
 		async loadLhsMatrix() {
 			if (this.matrixLoaded) {
 				return
@@ -178,9 +181,10 @@ export const useEnforcementStore = defineStore('enforcement', {
 				if (response.ok) {
 					const data = await response.json()
 					if (data.config?.lhsMatrix) {
-						this.lhsMatrix = typeof data.config.lhsMatrix === 'string'
-							? JSON.parse(data.config.lhsMatrix)
-							: data.config.lhsMatrix
+						this.lhsMatrix =
+							typeof data.config.lhsMatrix === 'string'
+								? JSON.parse(data.config.lhsMatrix)
+								: data.config.lhsMatrix
 					}
 				}
 				this.matrixLoaded = true
@@ -199,7 +203,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 */
 		/**
 		 * @param matrix
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		async saveLhsMatrix(matrix) {
 			try {
@@ -231,15 +235,22 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 */
 		/**
 		 * @param actionData
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		async createAction(actionData) {
 			this.loading = true
 			this.error = null
 			try {
 				// Auto-lookup intervention if not provided
-				if (!actionData.interventie && actionData.ernst && actionData.gedrag) {
-					actionData.interventie = this.lookupLhs(actionData.ernst, actionData.gedrag)
+				if (
+					!actionData.intervention
+					&& actionData.severity
+					&& actionData.behaviour
+				) {
+					actionData.intervention = this.lookupLhs(
+						actionData.severity,
+						actionData.behaviour,
+					)
 				}
 
 				const objectStore = useObjectStore()
@@ -268,7 +279,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 		/**
 		 * @param actionId
 		 * @param newStatus
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		async updateStatus(actionId, newStatus) {
 			this.loading = true
@@ -307,7 +318,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 		/**
 		 * @param caseId
 		 * @param action
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		async createBegunstigingTask(caseId, action) {
 			try {
@@ -315,7 +326,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 				return await objectStore.saveObject('task', {
 					case: caseId,
 					title: 'Hercontrole uitvoeren',
-					description: `Begunstigingstermijn van ${action.begunstigingstermijn} dagen is verlopen. Voer hercontrole uit voor ${action.interventie}.`,
+					description: `Begunstigingstermijn van ${action.compliance_period} dagen is verlopen. Voer hercontrole uit voor ${action.intervention}.`,
 					status: 'open',
 					relatedObject: action.id,
 				})

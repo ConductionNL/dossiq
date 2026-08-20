@@ -37,92 +37,87 @@ use Psr\Log\LoggerInterface;
 /**
  * Seed standard templates (zaaktypen, mandaat-matrix, roles) into a tenant.
  */
-class TenantSeedService
-{
-    /**
-     * Constructor.
-     *
-     * @param LoggerInterface $logger Logger.
-     */
-    public function __construct(
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class TenantSeedService {
+	/**
+	 * Constructor.
+	 *
+	 * @param LoggerInterface $logger Logger.
+	 */
+	public function __construct(
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Seed standard zaaktype templates into the tenant schema.
-     *
-     * @param string $schemaName Tenant schema name.
-     * @param string $tier       Tier (basic|standard|enterprise) — drives template set.
-     *
-     * @return array<string, mixed> Seed report (counts).
-     */
-    public function seedZaaktypeTemplates(string $schemaName, string $tier): array
-    {
-        $templates = $this->resolveTemplatesForTier(tier: $tier);
-        $this->logger->info(
-            'Procest: seeding zaaktype templates into tenant schema',
-            ['schemaName' => $schemaName, 'tier' => $tier, 'count' => count($templates)]
-        );
-        return ['templates' => $templates];
-    }//end seedZaaktypeTemplates()
+	/**
+	 * Seed standard zaaktype templates into the tenant schema.
+	 *
+	 * @param string $schemaName Tenant schema name.
+	 * @param string $tier Tier (basic|standard|enterprise) — drives template set.
+	 *
+	 * @return array<string, mixed> Seed report (counts).
+	 */
+	public function seedZaaktypeTemplates(string $schemaName, string $tier): array {
+		$templates = $this->resolveTemplatesForTier(tier: $tier);
+		$this->logger->info(
+			'Procest: seeding zaaktype templates into tenant schema',
+			['schemaName' => $schemaName, 'tier' => $tier, 'count' => count($templates)]
+		);
+		return ['templates' => $templates];
+	}//end seedZaaktypeTemplates()
 
-    /**
-     * Seed the default mandaat-matrix template into the tenant schema.
-     *
-     * @param string $schemaName Tenant schema name.
-     *
-     * @return array<string, mixed> Seed report.
-     */
-    public function seedMandaatMatrix(string $schemaName): array
-    {
-        $this->logger->info(
-            'Procest: seeding default mandaat-matrix into tenant schema',
-            ['schemaName' => $schemaName]
-        );
+	/**
+	 * Seed the default mandaat-matrix template into the tenant schema.
+	 *
+	 * @param string $schemaName Tenant schema name.
+	 *
+	 * @return array<string, mixed> Seed report.
+	 */
+	public function seedMandaatMatrix(string $schemaName): array {
+		$this->logger->info(
+			'Procest: seeding default mandaat-matrix into tenant schema',
+			['schemaName' => $schemaName]
+		);
 
-        return ['mandaat_matrix_seeded' => true];
-    }//end seedMandaatMatrix()
+		return ['mandaat_matrix_seeded' => true];
+	}//end seedMandaatMatrix()
 
-    /**
-     * Create the default per-tenant roles.
-     *
-     * @param string             $schemaName Tenant schema name.
-     * @param array<int, string> $roles      Role names.
-     *
-     * @return array<int, string> Roles created.
-     */
-    public function createDefaultRoles(string $schemaName, array $roles): array
-    {
-        $this->logger->info(
-            'Procest: creating default tenant roles',
-            ['schemaName' => $schemaName, 'roles' => $roles]
-        );
-        return $roles;
-    }//end createDefaultRoles()
+	/**
+	 * Create the default per-tenant roles.
+	 *
+	 * @param string $schemaName Tenant schema name.
+	 * @param array<int, string> $roles Role names.
+	 *
+	 * @return array<int, string> Roles created.
+	 */
+	public function createDefaultRoles(string $schemaName, array $roles): array {
+		$this->logger->info(
+			'Procest: creating default tenant roles',
+			['schemaName' => $schemaName, 'roles' => $roles]
+		);
+		return $roles;
+	}//end createDefaultRoles()
 
-    /**
-     * Resolve the per-tier template list.
-     *
-     * @param string $tier Tier.
-     *
-     * @return array<int, string>
-     */
-    private function resolveTemplatesForTier(string $tier): array
-    {
-        $base = ['bezwaar', 'beroep', 'klacht'];
-        if ($tier === 'standard') {
-            return array_merge($base, ['vergunning_bouw', 'vergunning_apv', 'subsidieaanvraag']);
-        }
+	/**
+	 * Resolve the per-tier template list.
+	 *
+	 * @param string $tier Tier.
+	 *
+	 * @return array<int, string>
+	 */
+	private function resolveTemplatesForTier(string $tier): array {
+		$base = ['objectionProceeding', 'beroep', 'complaint'];
+		if ($tier === 'standard') {
+			return array_merge($base, ['vergunning_bouw', 'vergunning_apv', 'subsidieaanvraag']);
+		}
 
-        if ($tier === 'enterprise') {
-            return array_merge(
-                $base,
-                ['vergunning_bouw', 'vergunning_apv', 'subsidieaanvraag'],
-                ['handhaving', 'planschade', 'omgevingsvergunning_wabo']
-            );
-        }
+		if ($tier === 'enterprise') {
+			return array_merge(
+				$base,
+				['vergunning_bouw', 'vergunning_apv', 'subsidieaanvraag'],
+				['handhaving', 'planschade', 'omgevingsvergunning_wabo']
+			);
+		}
 
-        return $base;
-    }//end resolveTemplatesForTier()
+		return $base;
+	}//end resolveTemplatesForTier()
 }//end class

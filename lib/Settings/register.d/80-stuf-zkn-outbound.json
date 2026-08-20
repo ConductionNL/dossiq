@@ -19,18 +19,18 @@
             "@type": "StufEndpoint",
             "required": [
                 "id",
-                "naam",
-                "gemeenteCode",
-                "ontvangerApplicatie",
-                "ontvangerOrganisatie",
-                "ontvangerGebruiker",
-                "zenderApplicatie",
-                "zenderOrganisatie",
+                "name",
+                "municipalityCode",
+                "recipientApplication",
+                "recipientOrganisation",
+                "recipientUser",
+                "senderApplication",
+                "senderOrganisation",
                 "endpointUrl",
                 "soapVersion",
                 "stufVersion",
-                "sectormodel",
-                "authenticatie"
+                "sectorModel",
+                "authentication"
             ],
             "properties": {
                 "id": {
@@ -38,37 +38,37 @@
                     "description": "Stable identifier of this endpoint (e.g. stuf-ep-amersfoort-key2zaken).",
                     "maxLength": 128
                 },
-                "naam": {
+                "name": {
                     "type": "string",
                     "description": "Human-readable endpoint name shown in the admin UI.",
                     "maxLength": 255
                 },
-                "gemeenteCode": {
+                "municipalityCode": {
                     "type": "string",
                     "description": "4-digit gemeente CBS code (e.g. 0307 for Amersfoort).",
                     "maxLength": 16
                 },
-                "ontvangerApplicatie": {
+                "recipientApplication": {
                     "type": "string",
                     "description": "Receiving zaaksysteem application name (StUF stuurgegevens.ontvanger.applicatie).",
                     "maxLength": 255
                 },
-                "ontvangerOrganisatie": {
+                "recipientOrganisation": {
                     "type": "string",
                     "description": "Receiving organisation (gemeente).",
                     "maxLength": 255
                 },
-                "ontvangerGebruiker": {
+                "recipientUser": {
                     "type": "string",
                     "description": "Receiving system user identifier.",
                     "maxLength": 255
                 },
-                "zenderApplicatie": {
+                "senderApplication": {
                     "type": "string",
                     "description": "Sender (Procest) application identifier.",
                     "maxLength": 255
                 },
-                "zenderOrganisatie": {
+                "senderOrganisation": {
                     "type": "string",
                     "description": "Sender organisation (gemeente).",
                     "maxLength": 255
@@ -89,25 +89,25 @@
                     "description": "StUF protocol version.",
                     "enum": ["0310"]
                 },
-                "sectormodel": {
+                "sectorModel": {
                     "type": "string",
                     "description": "StUF sectormodel; ZKN for cases.",
                     "enum": ["ZKN"]
                 },
-                "authenticatie": {
+                "authentication": {
                     "type": "object",
                     "description": "Authentication block (WSSE UsernameToken). The password itself is never stored in the schema; only the vault reference is persisted.",
-                    "required": ["type", "gebruikersnaam", "wachtwoordKluisRef"],
+                    "required": ["type", "username", "passwordVaultRef"],
                     "properties": {
                         "type": {
                             "type": "string",
                             "enum": ["wsse-usernametoken"]
                         },
-                        "gebruikersnaam": {
+                        "username": {
                             "type": "string",
                             "maxLength": 255
                         },
-                        "wachtwoordKluisRef": {
+                        "passwordVaultRef": {
                             "type": "string",
                             "description": "Vault reference (e.g. vault://stuf/amersfoort/key2zaken).",
                             "maxLength": 512
@@ -119,7 +119,7 @@
                     "description": "Vault reference for the mutual-TLS client certificate (PEM).",
                     "maxLength": 512
                 },
-                "zaakIdentificatieStrategie": {
+                "caseIdentificationStrategy": {
                     "type": "string",
                     "description": "Zaak ID allocation strategy (vooraf = pre-allocate via Du01; achteraf = server allocates on Lk01).",
                     "enum": ["vooraf", "achteraf"]
@@ -131,14 +131,14 @@
                         "type": "string"
                     }
                 },
-                "vrijeBerichtenTemplates": {
+                "freeMessagesTemplates": {
                     "type": "array",
                     "description": "Registered free-message templates per endpoint.",
                     "items": {
                         "type": "object",
-                        "required": ["naam", "verplichteVelden"],
+                        "required": ["name", "verplichteVelden"],
                         "properties": {
-                            "naam": {
+                            "name": {
                                 "type": "string"
                             },
                             "verplichteVelden": {
@@ -173,10 +173,10 @@
             "required": [
                 "id",
                 "endpointId",
-                "richting",
-                "berichtSoort",
+                "direction",
+                "messageKind",
                 "envelopeXml",
-                "verzondenOp"
+                "sentOn"
             ],
             "properties": {
                 "id": {
@@ -189,12 +189,12 @@
                     "description": "Reference to the StufEndpoint used.",
                     "maxLength": 128
                 },
-                "richting": {
+                "direction": {
                     "type": "string",
                     "description": "Message direction.",
-                    "enum": ["uitgaand", "inkomend"]
+                    "enum": ["outbound", "inbound"]
                 },
-                "berichtSoort": {
+                "messageKind": {
                     "type": "string",
                     "description": "StUF message type code (Lk01, Lk02, Lk03, Bv01, Lv01, La01, Du01, Fo02).",
                     "enum": ["Lk01", "Lk02", "Lk03", "Bv01", "Lv01", "La01", "Du01", "Fo02"]
@@ -204,12 +204,12 @@
                     "description": "Entity type (ZAK, NPS, NNP).",
                     "maxLength": 32
                 },
-                "functie": {
+                "role": {
                     "type": "string",
                     "description": "StUF functie (e.g. creeerZaak, actualiseerZaak, geefZaakDetails, zetStatus, genereerZaakIdentificatie).",
                     "maxLength": 128
                 },
-                "referentienummer": {
+                "referenceNumber": {
                     "type": "string",
                     "description": "Outbound referentienummer (ULID, unique per envelope).",
                     "maxLength": 64
@@ -219,7 +219,7 @@
                     "description": "crossRefnummer set by inbound responses to refer back to a referentienummer.",
                     "maxLength": 64
                 },
-                "zaakIdentificatie": {
+                "caseIdentification": {
                     "type": "string",
                     "description": "Zaak ID this message refers to (if known).",
                     "maxLength": 64
@@ -238,7 +238,7 @@
                     "type": "integer",
                     "description": "HTTP response status code."
                 },
-                "duurMs": {
+                "durationMs": {
                     "type": "integer",
                     "description": "Wall-clock duration in milliseconds."
                 },
@@ -255,33 +255,33 @@
                         "details": {
                             "type": "string"
                         },
-                        "soort": {
+                        "kind": {
                             "type": "string",
                             "enum": ["transient", "permanent"]
                         }
                     }
                 },
-                "verzondenOp": {
+                "sentOn": {
                     "type": "string",
                     "format": "date-time",
                     "description": "When the message was sent (or registered, for inbound messages)."
                 },
-                "ontvangenOp": {
+                "receivedOn": {
                     "type": "string",
                     "format": "date-time",
                     "description": "When the response was received."
                 },
-                "gerelateerdeZaakId": {
+                "relatedCaseId": {
                     "type": "string",
                     "description": "Zaak identificatie this message is related to, if applicable.",
                     "maxLength": 128
                 },
-                "bronEntiteit": {
+                "sourceEntity": {
                     "type": "string",
                     "description": "Type of the procest source entity that triggered this message.",
                     "enum": ["case", "contact"]
                 },
-                "bronId": {
+                "sourceId": {
                     "type": "string",
                     "description": "Identifier of the procest source entity that triggered this message.",
                     "maxLength": 128
@@ -296,9 +296,9 @@
                     "description": "Retry history.",
                     "items": {
                         "type": "object",
-                        "required": ["poging", "timestamp"],
+                        "required": ["attempt", "timestamp"],
                         "properties": {
-                            "poging": {
+                            "attempt": {
                                 "type": "integer"
                             },
                             "timestamp": {
@@ -308,7 +308,7 @@
                             "httpStatus": {
                                 "type": "integer"
                             },
-                            "duurMs": {
+                            "durationMs": {
                                 "type": "integer"
                             },
                             "fout": {
@@ -329,10 +329,10 @@
             "@type": "ZaaksysteemMapping",
             "required": [
                 "id",
-                "bronEntiteit",
-                "bronId",
-                "externEntiteit",
-                "externIdentificatie",
+                "sourceEntity",
+                "sourceId",
+                "externalEntity",
+                "externalIdentification",
                 "endpointId"
             ],
             "properties": {
@@ -341,12 +341,12 @@
                     "description": "Stable identifier (e.g. map-evenement-tour-amersfoort).",
                     "maxLength": 128
                 },
-                "bronEntiteit": {
+                "sourceEntity": {
                     "type": "string",
                     "description": "Type of procest entity bound to the external one.",
                     "enum": ["case", "contact"]
                 },
-                "bronId": {
+                "sourceId": {
                     "type": "string",
                     "description": "Identifier of the procest entity (case id or contact id).",
                     "maxLength": 128
@@ -356,12 +356,12 @@
                     "description": "Procest case id this mapping relates to (set for case mappings; mirrors bronId for bronEntiteit=case).",
                     "maxLength": 128
                 },
-                "externEntiteit": {
+                "externalEntity": {
                     "type": "string",
                     "description": "External entity type (ZAK, NPS, NNP).",
                     "enum": ["ZAK", "NPS", "NNP"]
                 },
-                "externIdentificatie": {
+                "externalIdentification": {
                     "type": "string",
                     "description": "External identifier (zaak ID or betrokkene ID).",
                     "maxLength": 128
@@ -371,12 +371,12 @@
                     "description": "Reference to the StufEndpoint used.",
                     "maxLength": 128
                 },
-                "laatsteSynchronisatie": {
+                "lastSynchronisation": {
                     "type": "string",
                     "format": "date-time",
                     "description": "Timestamp of last successful sync."
                 },
-                "synchronisatieStatus": {
+                "synchronisationStatus": {
                     "type": "string",
                     "description": "Sync status.",
                     "enum": ["in_sync", "fout", "geannuleerd", "wacht"]
@@ -390,7 +390,7 @@
                             "veld": {
                                 "type": "string"
                             },
-                            "waarde": {
+                            "value": {
                                 "type": "string"
                             },
                             "geplandOp": {
@@ -411,32 +411,32 @@
                 "slug": "amersfoort-key2zaken"
             },
             "id": "stuf-ep-amersfoort-key2zaken",
-            "naam": "Gemeente Amersfoort - Centric Key2Zaken",
-            "gemeenteCode": "0307",
-            "ontvangerApplicatie": "Key2Zaken",
-            "ontvangerOrganisatie": "Gemeente Amersfoort",
-            "ontvangerGebruiker": "procest",
-            "zenderApplicatie": "Procest",
-            "zenderOrganisatie": "Gemeente Amersfoort",
+            "name": "Gemeente Amersfoort - Centric Key2Zaken",
+            "municipalityCode": "0307",
+            "recipientApplication": "Key2Zaken",
+            "recipientOrganisation": "Gemeente Amersfoort",
+            "recipientUser": "procest",
+            "senderApplication": "Procest",
+            "senderOrganisation": "Gemeente Amersfoort",
             "endpointUrl": "https://stuf.amersfoort.nl/CGS/StUFZKN/2.04/OntvangAsynchroon",
             "soapVersion": "1.1",
             "stufVersion": "0310",
-            "sectormodel": "ZKN",
-            "authenticatie": {
+            "sectorModel": "ZKN",
+            "authentication": {
                 "type": "wsse-usernametoken",
-                "gebruikersnaam": "procest_amersfoort",
-                "wachtwoordKluisRef": "vault://stuf/amersfoort/key2zaken"
+                "username": "procest_amersfoort",
+                "passwordVaultRef": "vault://stuf/amersfoort/key2zaken"
             },
             "tlsClientCertRef": "vault://pki/procest-amersfoort.pem",
-            "zaakIdentificatieStrategie": "achteraf",
+            "caseIdentificationStrategy": "achteraf",
             "zaaktypeMappings": {
                 "evenementenvergunning": "Evenementenvergunning",
                 "klacht-openbare-ruimte": "Klacht openbare ruimte",
                 "vraag-algemeen": "Algemene vraag KCC"
             },
-            "vrijeBerichtenTemplates": [
+            "freeMessagesTemplates": [
                 {
-                    "naam": "zetStatus",
+                    "name": "zetStatus",
                     "verplichteVelden": ["zaakIdentificatie", "statusType", "datumStatusGezet"]
                 }
             ],

@@ -46,181 +46,175 @@ use Throwable;
 /**
  * Public facade for the procest workflow engine.
  */
-class WorkflowEngineService
-{
-    /**
-     * Constructor.
-     *
-     * @param WorkflowDefinitionService $definitionService Workflow definition CRUD/lookup.
-     * @param StatusTransitionService   $transitionService Transition execution engine.
-     * @param GuardRegistry             $guardRegistry     Strategy-pattern guard registry.
-     * @param LoggerInterface           $logger            Logger.
-     */
-    public function __construct(
-        private readonly WorkflowDefinitionService $definitionService,
-        private readonly StatusTransitionService $transitionService,
-        private readonly GuardRegistry $guardRegistry,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class WorkflowEngineService {
+	/**
+	 * Constructor.
+	 *
+	 * @param WorkflowDefinitionService $definitionService Workflow definition CRUD/lookup.
+	 * @param StatusTransitionService $transitionService Transition execution engine.
+	 * @param GuardRegistry $guardRegistry Strategy-pattern guard registry.
+	 * @param LoggerInterface $logger Logger.
+	 */
+	public function __construct(
+		private readonly WorkflowDefinitionService $definitionService,
+		private readonly StatusTransitionService $transitionService,
+		private readonly GuardRegistry $guardRegistry,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Resolve the currently-active workflow definition for a case type.
-     *
-     * Delegates to WorkflowDefinitionService::getActiveDefinitionFor() so that
-     * the validFrom/validUntil temporal-validity rules in W-5 are applied
-     * consistently with the rest of the engine.
-     *
-     * @param string $caseTypeId The case-type id.
-     *
-     * @return array<string, mixed>|null The active definition, or null when none.
-     *
-     * @spec openspec/changes/workflow-engine-enhancement/tasks.md#W-3
-     */
-    public function getActiveWorkflow(string $caseTypeId): ?array
-    {
-        return $this->definitionService->getActiveDefinitionFor(caseTypeId: $caseTypeId);
-    }//end getActiveWorkflow()
+	/**
+	 * Resolve the currently-active workflow definition for a case type.
+	 *
+	 * Delegates to WorkflowDefinitionService::getActiveDefinitionFor() so that
+	 * the validFrom/validUntil temporal-validity rules in W-5 are applied
+	 * consistently with the rest of the engine.
+	 *
+	 * @param string $caseTypeId The case-type id.
+	 *
+	 * @return array<string, mixed>|null The active definition, or null when none.
+	 *
+	 * @spec openspec/changes/workflow-engine-enhancement/tasks.md#W-3
+	 */
+	public function getActiveWorkflow(string $caseTypeId): ?array {
+		return $this->definitionService->getActiveDefinitionFor(caseTypeId: $caseTypeId);
+	}//end getActiveWorkflow()
 
-    /**
-     * Resolve a workflow definition by case id (uses case.workflowTemplate +
-     * case.workflowVersion binding).
-     *
-     * @param string $caseId The case id.
-     *
-     * @return array<string, mixed>|null The bound workflow definition.
-     *
-     * @spec openspec/changes/workflow-engine-enhancement/tasks.md#W-5
-     */
-    public function getWorkflowForCase(string $caseId): ?array
-    {
-        return $this->definitionService->getDefinitionForCase(caseId: $caseId);
-    }//end getWorkflowForCase()
+	/**
+	 * Resolve a workflow definition by case id (uses case.workflowTemplate +
+	 * case.workflowVersion binding).
+	 *
+	 * @param string $caseId The case id.
+	 *
+	 * @return array<string, mixed>|null The bound workflow definition.
+	 *
+	 * @spec openspec/changes/workflow-engine-enhancement/tasks.md#W-5
+	 */
+	public function getWorkflowForCase(string $caseId): ?array {
+		return $this->definitionService->getDefinitionForCase(caseId: $caseId);
+	}//end getWorkflowForCase()
 
-    /**
-     * List the transitions the given user can attempt from the case's current
-     * status. Guard evaluation is performed per-transition; transitions whose
-     * roleGuard hides them are silently filtered out, while non-role failed
-     * guards are returned with `available: false` + `unmetGuards: [...]` so
-     * the UI can render disabled buttons with explanations.
-     *
-     * @param string      $caseId The case id.
-     * @param string|null $userId Optional user id; defaults to the current user.
-     *
-     * @return array<int, array<string, mixed>> The transitions list.
-     *
-     * @spec openspec/changes/workflow-engine-enhancement/tasks.md#W-3
-     */
-    public function getAvailableTransitions(string $caseId, ?string $userId=null): array
-    {
-        return $this->transitionService->getAvailableTransitions(caseId: $caseId, userId: $userId);
-    }//end getAvailableTransitions()
+	/**
+	 * List the transitions the given user can attempt from the case's current
+	 * status. Guard evaluation is performed per-transition; transitions whose
+	 * roleGuard hides them are silently filtered out, while non-role failed
+	 * guards are returned with `available: false` + `unmetGuards: [...]` so
+	 * the UI can render disabled buttons with explanations.
+	 *
+	 * @param string $caseId The case id.
+	 * @param string|null $userId Optional user id; defaults to the current user.
+	 *
+	 * @return array{transitions: array<int, array<string, mixed>>, current: array<string, mixed>} The transitions envelope.
+	 *
+	 * @spec openspec/changes/workflow-engine-enhancement/tasks.md#W-3
+	 */
+	public function getAvailableTransitions(string $caseId, ?string $userId = null): array {
+		return $this->transitionService->getAvailableTransitions(caseId: $caseId, userId: $userId);
+	}//end getAvailableTransitions()
 
-    /**
-     * Evaluate a single transition's guards against a case + user.
-     *
-     * @param array<string, mixed> $transition The transition definition.
-     * @param array<string, mixed> $case       The hydrated case object.
-     * @param string|null          $userId     Optional user id; defaults to the current user.
-     *
-     * @return array{isSatisfied: bool, unmetGuards: array<int, array<string, mixed>>}
-     *
-     * @spec openspec/changes/workflow-engine-enhancement/tasks.md#W-3
-     */
-    public function evaluateGuards(array $transition, array $case, ?string $userId=null): array
-    {
-        $guards = $this->extractGuards(transition: $transition);
+	/**
+	 * Evaluate a single transition's guards against a case + user.
+	 *
+	 * @param array<string, mixed> $transition The transition definition.
+	 * @param array<string, mixed> $case The hydrated case object.
+	 * @param string|null $userId Optional user id; defaults to the current user.
+	 *
+	 * @return array{isSatisfied: bool, unmetGuards: array<int, array<string, mixed>>}
+	 *
+	 * @spec openspec/changes/workflow-engine-enhancement/tasks.md#W-3
+	 */
+	public function evaluateGuards(array $transition, array $case, ?string $userId = null): array {
+		$guards = $this->extractGuards(transition: $transition);
 
-        $results     = $this->guardRegistry->evaluateAll(
-            guards: $guards,
-            case: $case,
-            userId: (string) ($userId ?? '')
-        );
-        $isSatisfied = $this->guardRegistry->allPassed(results: $results);
+		$results = $this->guardRegistry->evaluateAll(
+			guards: $guards,
+			case: $case,
+			userId: (string)($userId ?? '')
+		);
+		$isSatisfied = $this->guardRegistry->allPassed(results: $results);
 
-        $unmet = [];
-        foreach ($results as $r) {
-            $passed = (bool) ($r['passed'] ?? ($r['result']['passed'] ?? false));
-            if ($passed === false) {
-                $unmet[] = $r;
-            }
-        }
+		$unmet = [];
+		foreach ($results as $r) {
+			$passed = (bool)$r['passed'];
+			if ($passed === false) {
+				$unmet[] = $r;
+			}
+		}
 
-        return [
-            'isSatisfied' => $isSatisfied,
-            'unmetGuards' => $unmet,
-        ];
-    }//end evaluateGuards()
+		return [
+			'isSatisfied' => $isSatisfied,
+			'unmetGuards' => $unmet,
+		];
+	}//end evaluateGuards()
 
-    /**
-     * Execute a transition by id on a case. Guards are re-evaluated server-side
-     * by the underlying StatusTransitionService; on guard failure the
-     * transition is refused and the unmet guards are surfaced to the caller.
-     *
-     * @param string      $caseId       The case id.
-     * @param string      $transitionId The transition id.
-     * @param string|null $userId       Optional user id; defaults to the current user.
-     * @param string|null $comment      Optional comment for the transition record.
-     *
-     * @return array<string, mixed> The transition outcome envelope.
-     *
-     * @spec openspec/changes/workflow-engine-enhancement/tasks.md#W-3
-     */
-    public function executeTransition(
-        string $caseId,
-        string $transitionId,
-        ?string $userId=null,
-        ?string $comment=null,
-    ): array {
-        try {
-            return $this->transitionService->execute(
-                caseId: $caseId,
-                transitionId: $transitionId,
-                comment: $comment,
-                userId: $userId,
-            );
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'WorkflowEngineService::executeTransition failed: '.$e->getMessage(),
-                [
-                    'app'          => Application::APP_ID,
-                    'caseId'       => $caseId,
-                    'transitionId' => $transitionId,
-                ]
-            );
-            throw $e;
-        }
-    }//end executeTransition()
+	/**
+	 * Execute a transition by id on a case. Guards are re-evaluated server-side
+	 * by the underlying StatusTransitionService; on guard failure the
+	 * transition is refused and the unmet guards are surfaced to the caller.
+	 *
+	 * @param string $caseId The case id.
+	 * @param string $transitionId The transition id.
+	 * @param string|null $userId Optional user id; defaults to the current user.
+	 * @param string|null $comment Optional comment for the transition record.
+	 *
+	 * @return array<string, mixed> The transition outcome envelope.
+	 *
+	 * @spec openspec/changes/workflow-engine-enhancement/tasks.md#W-3
+	 */
+	public function executeTransition(
+		string $caseId,
+		string $transitionId,
+		?string $userId = null,
+		?string $comment = null,
+	): array {
+		try {
+			return $this->transitionService->execute(
+				caseId: $caseId,
+				transitionId: $transitionId,
+				comment: $comment,
+				userId: $userId,
+			);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'WorkflowEngineService::executeTransition failed: ' . $e->getMessage(),
+				[
+					'app' => Application::APP_ID,
+					'caseId' => $caseId,
+					'transitionId' => $transitionId,
+				]
+			);
+			throw $e;
+		}
+	}//end executeTransition()
 
-    /**
-     * Extract the guards array from a transition definition, recognising both
-     * the modern `guards: [{ type, ... }]` shape and the legacy `allowedRoles`
-     * promotion form. Mirrors StatusTransitionService::extractGuards() so the
-     * facade and the engine read the same definition consistently.
-     *
-     * @param array<string, mixed> $transition The transition.
-     *
-     * @return array<int, array<string, mixed>> The guards list.
-     */
-    private function extractGuards(array $transition): array
-    {
-        $guards = $transition['guards'] ?? [];
-        if (is_array($guards) === false) {
-            $guards = [];
-        }
+	/**
+	 * Extract the guards array from a transition definition, recognising both
+	 * the modern `guards: [{ type, ... }]` shape and the legacy `allowedRoles`
+	 * promotion form. Mirrors StatusTransitionService::extractGuards() so the
+	 * facade and the engine read the same definition consistently.
+	 *
+	 * @param array<string, mixed> $transition The transition.
+	 *
+	 * @return array<int, array<string, mixed>> The guards list.
+	 */
+	private function extractGuards(array $transition): array {
+		$guards = $transition['guards'] ?? [];
+		if (is_array($guards) === false) {
+			$guards = [];
+		}
 
-        $allowedRoles = $transition['allowedRoles'] ?? null;
-        if (is_array($allowedRoles) === true && count($allowedRoles) > 0) {
-            $guards[] = ['type' => 'roleGuard', 'allowedRoles' => $allowedRoles];
-        }
+		$allowedRoles = $transition['allowedRoles'] ?? null;
+		if (is_array($allowedRoles) === true && count($allowedRoles) > 0) {
+			$guards[] = ['type' => 'roleGuard', 'allowedRoles' => $allowedRoles];
+		}
 
-        $list = [];
-        foreach ($guards as $guard) {
-            if (is_array($guard) === true) {
-                $list[] = $guard;
-            }
-        }
+		$list = [];
+		foreach ($guards as $guard) {
+			if (is_array($guard) === true) {
+				$list[] = $guard;
+			}
+		}
 
-        return $list;
-    }//end extractGuards()
+		return $list;
+	}//end extractGuards()
 }//end class

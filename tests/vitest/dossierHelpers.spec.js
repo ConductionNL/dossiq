@@ -25,11 +25,15 @@ describe('confidentialityOrdinal', () => {
 	it('orders the hierarchy lowest to highest', () => {
 		expect(confidentialityOrdinal('openbaar')).toBe(0)
 		expect(confidentialityOrdinal('intern')).toBe(2)
-		expect(confidentialityOrdinal('zeer_geheim')).toBe(CONFIDENTIALITY_HIERARCHY.length - 1)
+		expect(confidentialityOrdinal('zeer_geheim')).toBe(
+			CONFIDENTIALITY_HIERARCHY.length - 1,
+		)
 	})
 
 	it('fails closed on unknown levels (most restrictive)', () => {
-		expect(confidentialityOrdinal('bogus')).toBe(CONFIDENTIALITY_HIERARCHY.length - 1)
+		expect(confidentialityOrdinal('bogus')).toBe(
+			CONFIDENTIALITY_HIERARCHY.length - 1,
+		)
 		expect(confidentialityOrdinal('')).toBe(CONFIDENTIALITY_HIERARCHY.length - 1)
 	})
 })
@@ -50,15 +54,15 @@ describe('canShare', () => {
 
 describe('isTransitionAllowed', () => {
 	it('permits forward transitions only', () => {
-		expect(isTransitionAllowed('concept', 'definitief')).toBe(true)
-		expect(isTransitionAllowed('definitief', 'gearchiveerd')).toBe(true)
+		expect(isTransitionAllowed('draft', 'final')).toBe(true)
+		expect(isTransitionAllowed('final', 'archived')).toBe(true)
 	})
 
 	it('rejects reverse, skipping and self transitions', () => {
-		expect(isTransitionAllowed('definitief', 'concept')).toBe(false)
-		expect(isTransitionAllowed('gearchiveerd', 'definitief')).toBe(false)
-		expect(isTransitionAllowed('concept', 'gearchiveerd')).toBe(false)
-		expect(isTransitionAllowed('concept', 'concept')).toBe(false)
+		expect(isTransitionAllowed('final', 'draft')).toBe(false)
+		expect(isTransitionAllowed('archived', 'final')).toBe(false)
+		expect(isTransitionAllowed('draft', 'archived')).toBe(false)
+		expect(isTransitionAllowed('draft', 'draft')).toBe(false)
 	})
 })
 
@@ -82,14 +86,16 @@ describe('groupByType', () => {
 			{ id: '3', informatieobjecttype: 'Aanvraag' },
 		])
 		expect(groups).toHaveLength(2)
-		const byType = Object.fromEntries(groups.map(g => [g.informatieobjecttype, g.count]))
+		const byType = Object.fromEntries(
+			groups.map((g) => [g.informatieobjecttype, g.count]),
+		)
 		expect(byType.Advies).toBe(2)
 		expect(byType.Aanvraag).toBe(1)
 	})
 
 	it('falls back to onbekend for untyped documents', () => {
 		const groups = groupByType([{ id: '1' }])
-		expect(groups[0].informatieobjecttype).toBe('onbekend')
+		expect(groups[0].informatieobjecttype).toBe('unknown')
 	})
 })
 

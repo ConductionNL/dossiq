@@ -47,149 +47,150 @@ use OCP\IRequest;
  *
  * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
  */
-class SetupController extends Controller
-{
-    /**
-     * Setup contract version; matches manifest.setup.version.
-     *
-     * @var int
-     */
-    private const SETUP_VERSION = 1;
+class SetupController extends Controller {
+	/**
+	 * Setup contract version; matches manifest.setup.version.
+	 *
+	 * @var int
+	 */
+	private const SETUP_VERSION = 1;
 
-    /**
-     * Construct the setup controller.
-     *
-     * @param string          $appName         The app id.
-     * @param IRequest        $request         The request.
-     * @param IAppConfig      $appConfig       App-config reader/writer.
-     * @param SettingsService $settingsService OpenRegister availability + config import.
-     * @param SeedDataService $seedDataService Bezwaar/beroep seeder.
-     */
-    public function __construct(
-        string $appName,
-        IRequest $request,
-        private readonly IAppConfig $appConfig,
-        private readonly SettingsService $settingsService,
-        private readonly SeedDataService $seedDataService,
-    ) {
-        parent::__construct(appName: $appName, request: $request);
-    }//end __construct()
+	/**
+	 * Construct the setup controller.
+	 *
+	 * @param string $appName The app id.
+	 * @param IRequest $request The request.
+	 * @param IAppConfig $appConfig App-config reader/writer.
+	 * @param SettingsService $settingsService OpenRegister availability + config import.
+	 * @param SeedDataService $seedDataService Bezwaar/beroep seeder.
+	 */
+	public function __construct(
+		string $appName,
+		IRequest $request,
+		private readonly IAppConfig $appConfig,
+		private readonly SettingsService $settingsService,
+		private readonly SeedDataService $seedDataService,
+	) {
+		parent::__construct(appName: $appName, request: $request);
+	}//end __construct()
 
-    /**
-     * Report per-step setup status for the wizard.
-     *
-     * @return DataResponse `{ version, completed, steps: { <id>: { done } } }`.
-     *
-     * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
-     */
-    #[AuthorizedAdminSetting(AdminSettings::class)]
-    public function status(): DataResponse
-    {
-        $registerDone = $this->settingsService->isOpenRegisterAvailable() === true
-            && $this->config(key: 'register') !== ''
-            && $this->config(key: 'case_type_schema') !== '';
-        $seedDone     = $this->config(key: 'setup_seed_done') === '1';
-        $completed    = $registerDone;
+	/**
+	 * Report per-step setup status for the wizard.
+	 *
+	 * @return DataResponse `{ version, completed, steps: { <id>: { done } } }`.
+	 *
+	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 */
+	#[AuthorizedAdminSetting(AdminSettings::class)]
+	public function status(): DataResponse {
+		$registerDone = $this->settingsService->isOpenRegisterAvailable() === true
+			&& $this->config(key: 'register') !== ''
+			&& $this->config(key: 'case_type_schema') !== '';
+		$seedDone = $this->config(key: 'setup_seed_done') === '1';
+		$completed = $registerDone;
 
-        if ($completed === true) {
-            $this->appConfig->setValueString('procest', 'setup_completed_version', (string) self::SETUP_VERSION);
-        }
+		if ($completed === true) {
+			$this->appConfig->setValueString('procest', 'setup_completed_version', (string)self::SETUP_VERSION);
+		}
 
-        return new DataResponse(
-            [
-                'version'   => self::SETUP_VERSION,
-                'completed' => $completed,
-                'steps'     => [
-                    'register-check' => ['done' => $registerDone],
-                    'seed'           => ['done' => $seedDone],
-                ],
-            ]
-        );
-    }//end status()
+		$response = [
+			'version' => self::SETUP_VERSION,
+			'completed' => $completed,
+			'steps' => [
+				'register-check' => ['done' => $registerDone],
+				'seed' => ['done' => $seedDone],
+			],
+		];
 
-    /**
-     * Persist app-config values from a `config-fields` / `choice` step.
-     *
-     * @return DataResponse `{ success }`.
-     *
-     * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
-     */
-    #[AuthorizedAdminSetting(AdminSettings::class)]
-    public function saveConfig(): DataResponse
-    {
-        foreach ($this->request->getParams() as $key => $value) {
-            if (in_array($key, ['_route'], true) === true) {
-                continue;
-            }
+		// Financial-integration (dwangsom uitbetaling) capability: surface a
+		// missing callback secret before go-live rather than after an
+		// incident (enforce-dwangsom-callback-signature spec).
+		if ($this->config(key: 'dwangsom_uitbetaling_schema') !== '') {
+			$response['dwangsom_callback_secret_configured'] = $this->config(key: 'dwangsom_callback_secret') !== '';
+		}
 
-            if (is_scalar($value) === true) {
-                $stored = (string) $value;
-            } else {
-                $stored = json_encode($value);
-            }
+		return new DataResponse($response);
+	}//end status()
 
-            $this->appConfig->setValueString(
-                'procest',
-                (string) $key,
-                $stored,
-            );
-        }
+	/**
+	 * Persist app-config values from a `config-fields` / `choice` step.
+	 *
+	 * @return DataResponse `{ success }`.
+	 *
+	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 */
+	#[AuthorizedAdminSetting(AdminSettings::class)]
+	public function saveConfig(): DataResponse {
+		foreach ($this->request->getParams() as $key => $value) {
+			if (in_array($key, ['_route'], true) === true) {
+				continue;
+			}
 
-        return new DataResponse(['success' => true]);
-    }//end saveConfig()
+			$stored = $value;
+			if (is_scalar($value) === false) {
+				$stored = json_encode($value);
+			}
 
-    /**
-     * Run a privileged server-side setup action.
-     *
-     * @param string $actionId One of `init-register` | `seed`.
-     *
-     * @return DataResponse `{ success, message, detail }`.
-     *
-     * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
-     */
-    #[AuthorizedAdminSetting(AdminSettings::class)]
-    public function runAction(string $actionId): DataResponse
-    {
-        if ($actionId === 'init-register') {
-            $this->settingsService->loadConfiguration(force: true);
-            return new DataResponse(['success' => true, 'message' => 'Register and schemas initialised.']);
-        }
+			$this->appConfig->setValueString(
+				'procest',
+				(string)$key,
+				(string)$stored,
+			);
+		}
 
-        if ($actionId === 'seed') {
-            $result = $this->seedDataService->seedBezwaarBeroepData();
-            if (($result['success'] ?? false) === false) {
-                return new DataResponse(
-                    ['success' => false, 'message' => ($result['message'] ?? 'Seed failed')],
-                    Http::STATUS_UNPROCESSABLE_ENTITY,
-                );
-            }
+		return new DataResponse(['success' => true]);
+	}//end saveConfig()
 
-            $this->appConfig->setValueString('procest', 'setup_seed_done', '1');
-            $message = sprintf(
-                'Seeded %d case types, %d status types, %d role types (%d skipped).',
-                ($result['caseTypes'] ?? 0),
-                ($result['statusTypes'] ?? 0),
-                ($result['roleTypes'] ?? 0),
-                ($result['skipped'] ?? 0),
-            );
-            return new DataResponse(['success' => true, 'message' => $message, 'detail' => $result]);
-        }
+	/**
+	 * Run a privileged server-side setup action.
+	 *
+	 * @param string $actionId One of `init-register` | `seed`.
+	 *
+	 * @return DataResponse `{ success, message, detail }`.
+	 *
+	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 */
+	#[AuthorizedAdminSetting(AdminSettings::class)]
+	public function runAction(string $actionId): DataResponse {
+		if ($actionId === 'init-register') {
+			$this->settingsService->loadConfiguration(force: true);
+			return new DataResponse(['success' => true, 'message' => 'Register and schemas initialised.']);
+		}
 
-        return new DataResponse(
-            ['success' => false, 'message' => 'Unknown setup action: '.$actionId],
-            Http::STATUS_NOT_FOUND,
-        );
-    }//end runAction()
+		if ($actionId === 'seed') {
+			$result = $this->seedDataService->seedBezwaarBeroepData();
+			if (($result['success'] ?? false) === false) {
+				return new DataResponse(
+					['success' => false, 'message' => ($result['message'] ?? 'Seed failed')],
+					Http::STATUS_UNPROCESSABLE_ENTITY,
+				);
+			}
 
-    /**
-     * Read a procest app-config string value.
-     *
-     * @param string $key The config key.
-     *
-     * @return string The value, or '' when unset.
-     */
-    private function config(string $key): string
-    {
-        return $this->appConfig->getValueString('procest', $key, '');
-    }//end config()
+			$this->appConfig->setValueString('procest', 'setup_seed_done', '1');
+			$message = sprintf(
+				'Seeded %d case types, %d status types, %d role types (%d skipped).',
+				($result['caseTypes'] ?? 0),
+				($result['statusTypes'] ?? 0),
+				($result['roleTypes'] ?? 0),
+				($result['skipped'] ?? 0),
+			);
+			return new DataResponse(['success' => true, 'message' => $message, 'detail' => $result]);
+		}
+
+		return new DataResponse(
+			['success' => false, 'message' => 'Unknown setup action: ' . $actionId],
+			Http::STATUS_NOT_FOUND,
+		);
+	}//end runAction()
+
+	/**
+	 * Read a procest app-config string value.
+	 *
+	 * @param string $key The config key.
+	 *
+	 * @return string The value, or '' when unset.
+	 */
+	private function config(string $key): string {
+		return $this->appConfig->getValueString('procest', $key, '');
+	}//end config()
 }//end class

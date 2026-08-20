@@ -1,6 +1,7 @@
 {
+    "_note": "Dutch hoofdzaak/deelzaak demo (Omgevingsvergunning/Bouwtoezicht/Milieuadvies) DISABLED for the German-federal English demo — see lib/Settings/register.d/46-demo-cases-english.json. The importer reads `components.objects`, so this data is parked under `components._objects_disabled`. Rename it back to `objects` to re-enable the deelzaak-hierarchy demo.",
     "components": {
-        "objects": [
+        "_objects_disabled": [
             {
                 "@self": {
                     "register": "procest",
@@ -72,7 +73,7 @@
                 "identifier": "2026-0042",
                 "caseType": "omgevingsvergunning-type",
                 "assignee": "j.bakker",
-                "priority": "normaal",
+                "priority": "normal",
                 "startDate": "2026-04-01",
                 "deadline": "2026-05-27",
                 "parentCase": null,
@@ -88,7 +89,7 @@
                 "identifier": "2026-0043",
                 "caseType": "bouwtoezicht-type",
                 "assignee": "m.visser",
-                "priority": "normaal",
+                "priority": "normal",
                 "startDate": "2026-04-03",
                 "deadline": "2026-05-01",
                 "parentCase": "hoofdzaak-omgverg-keizersgracht"
@@ -103,7 +104,7 @@
                 "identifier": "2026-0044",
                 "caseType": "milieu-type",
                 "assignee": "p.de.vries",
-                "priority": "hoog",
+                "priority": "high",
                 "startDate": "2026-04-03",
                 "deadline": "2026-04-24",
                 "parentCase": "hoofdzaak-omgverg-keizersgracht",

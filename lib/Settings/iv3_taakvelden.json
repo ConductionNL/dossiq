@@ -1,0 +1,132 @@
+{
+    "version": "iv3-bbv-v2",
+    "geldigVanaf": "2023-01-01",
+    "source": "BBV/Iv3 functional classification (CBS Informatie voor Derden). v2 resolves the v1 known limitation by adding the official 2023 Wmo/Jeugd taakveld-6 refinement, sourced directly from the Rijksoverheid 'Iv3-Informatievoorschrift Gemeenten en Gemeenschappelijke regelingen 2023 1.0' (section 1 'Belangrijkste wijzigingen', blad 4-5, and the per-taakveld definitions blad 27-34) plus the accompanying 'Veelgestelde vragen verfijning Iv3 jeugd en Wmo' FAQ (both rijksoverheid.nl, retrieved 2026-07-14). See openspec/changes/archive/2026-07-14-iv3-taakveld-2023-refinement/design.md for the full citation, the deprecated-code / aggregatesUnder design, and the 6.2/6.4 rename note.",
+    "categories": [
+        {
+            "code": "0",
+            "label": "Bestuur en ondersteuning",
+            "taakvelden": [
+                { "code": "0.1", "label": "Bestuur" },
+                { "code": "0.2", "label": "Burgerzaken" },
+                { "code": "0.3", "label": "Beheer overige gebouwen en gronden" },
+                { "code": "0.4", "label": "Overhead" },
+                { "code": "0.5", "label": "Treasury" },
+                { "code": "0.61", "label": "OZB woningen" },
+                { "code": "0.62", "label": "OZB niet-woningen" },
+                { "code": "0.63", "label": "Parkeerbelasting" },
+                { "code": "0.64", "label": "Belastingen overig" },
+                { "code": "0.7", "label": "Algemene uitkeringen en overige uitkeringen gemeentefonds" },
+                { "code": "0.8", "label": "Overige baten en lasten" },
+                { "code": "0.9", "label": "Vennootschapsbelasting (VpB)" },
+                { "code": "0.10", "label": "Mutaties reserves" },
+                { "code": "0.11", "label": "Resultaat van de rekening van baten en lasten" }
+            ]
+        },
+        {
+            "code": "1",
+            "label": "Veiligheid",
+            "taakvelden": [
+                { "code": "1.1", "label": "Crisisbeheersing en brandweer" },
+                { "code": "1.2", "label": "Openbare orde en veiligheid" }
+            ]
+        },
+        {
+            "code": "2",
+            "label": "Verkeer, vervoer en waterstaat",
+            "taakvelden": [
+                { "code": "2.1", "label": "Verkeer en vervoer" },
+                { "code": "2.2", "label": "Parkeren" },
+                { "code": "2.3", "label": "Recreatieve havens" },
+                { "code": "2.4", "label": "Economische havens en waterwegen" },
+                { "code": "2.5", "label": "Openbaar vervoer" }
+            ]
+        },
+        {
+            "code": "3",
+            "label": "Economie",
+            "taakvelden": [
+                { "code": "3.1", "label": "Economische ontwikkeling" },
+                { "code": "3.2", "label": "Fysieke bedrijfsinfrastructuur" },
+                { "code": "3.3", "label": "Bedrijvenloket en bedrijfsregelingen" },
+                { "code": "3.4", "label": "Economische promotie" }
+            ]
+        },
+        {
+            "code": "4",
+            "label": "Onderwijs",
+            "taakvelden": [
+                { "code": "4.1", "label": "Openbaar basisonderwijs" },
+                { "code": "4.2", "label": "Onderwijshuisvesting" },
+                { "code": "4.3", "label": "Onderwijsbeleid en leerlingzaken" }
+            ]
+        },
+        {
+            "code": "5",
+            "label": "Sport, cultuur en recreatie",
+            "taakvelden": [
+                { "code": "5.1", "label": "Sportbeleid en activering" },
+                { "code": "5.2", "label": "Sportaccommodaties" },
+                { "code": "5.3", "label": "Cultuurpresentatie, cultuurproductie en cultuurparticipatie" },
+                { "code": "5.4", "label": "Musea" },
+                { "code": "5.5", "label": "Cultureel erfgoed" },
+                { "code": "5.6", "label": "Media" },
+                { "code": "5.7", "label": "Openbaar groen en (openlucht) recreatie" }
+            ]
+        },
+        {
+            "code": "6",
+            "label": "Sociaal domein",
+            "taakvelden": [
+                { "code": "6.1", "label": "Samenkracht en burgerparticipatie" },
+                { "code": "6.2", "label": "Toegang en eerstelijnsvoorzieningen" },
+                { "code": "6.3", "label": "Inkomensregelingen" },
+                { "code": "6.4", "label": "WSW en beschut werk" },
+                { "code": "6.5", "label": "Arbeidsparticipatie" },
+                { "code": "6.6", "label": "Maatwerkvoorzieningen (Wmo)" },
+                { "code": "6.71", "label": "Maatwerkdienstverlening 18+", "deprecated": true },
+                { "code": "6.71a", "label": "Hulp bij het huishouden (Wmo)", "aggregatesUnder": "6.71" },
+                { "code": "6.71b", "label": "Begeleiding (Wmo)", "aggregatesUnder": "6.71" },
+                { "code": "6.71c", "label": "Dagbesteding (Wmo)", "aggregatesUnder": "6.71" },
+                { "code": "6.71d", "label": "Overige maatwerkarrangementen (Wmo)", "aggregatesUnder": "6.71" },
+                { "code": "6.72", "label": "Maatwerkdienstverlening 18-", "deprecated": true },
+                { "code": "6.72a", "label": "Jeugdhulp begeleiding", "aggregatesUnder": "6.72" },
+                { "code": "6.72b", "label": "Jeugdhulp behandeling", "aggregatesUnder": "6.72" },
+                { "code": "6.72c", "label": "Jeugdhulp dagbesteding", "aggregatesUnder": "6.72" },
+                { "code": "6.72d", "label": "Jeugdhulp zonder verblijf overig", "aggregatesUnder": "6.72" },
+                { "code": "6.73a", "label": "Pleegzorg", "aggregatesUnder": "6.72" },
+                { "code": "6.73b", "label": "Gezinsgericht", "aggregatesUnder": "6.72" },
+                { "code": "6.73c", "label": "Jeugdhulp met verblijf overig", "aggregatesUnder": "6.72" },
+                { "code": "6.74a", "label": "Jeugdhulp behandeling GGZ zonder verblijf", "aggregatesUnder": "6.72" },
+                { "code": "6.74b", "label": "Jeugdhulp crisis/LTA/GGZ-verblijf", "aggregatesUnder": "6.72" },
+                { "code": "6.74c", "label": "Gesloten plaatsing", "aggregatesUnder": "6.72" },
+                { "code": "6.81", "label": "Geëscaleerde zorg 18+", "deprecated": true },
+                { "code": "6.81a", "label": "Beschermd wonen (Wmo)", "aggregatesUnder": "6.81" },
+                { "code": "6.81b", "label": "Maatschappelijke- en vrouwenopvang (Wmo)", "aggregatesUnder": "6.81" },
+                { "code": "6.82", "label": "Geëscaleerde zorg 18-", "deprecated": true },
+                { "code": "6.82a", "label": "Jeugdbescherming", "aggregatesUnder": "6.82" },
+                { "code": "6.82b", "label": "Jeugdreclassering", "aggregatesUnder": "6.82" }
+            ]
+        },
+        {
+            "code": "7",
+            "label": "Volksgezondheid en milieu",
+            "taakvelden": [
+                { "code": "7.1", "label": "Volksgezondheid" },
+                { "code": "7.2", "label": "Riolering" },
+                { "code": "7.3", "label": "Afval" },
+                { "code": "7.4", "label": "Milieubeheer" },
+                { "code": "7.5", "label": "Begraafplaatsen en crematoria" }
+            ]
+        },
+        {
+            "code": "8",
+            "label": "Volkshuisvesting, ruimtelijke ordening en stedelijke vernieuwing",
+            "taakvelden": [
+                { "code": "8.1", "label": "Ruimtelijke ordening" },
+                { "code": "8.2", "label": "Grondexploitatie (niet-bedrijventerreinen)" },
+                { "code": "8.3", "label": "Wonen en bouwen" }
+            ]
+        }
+    ]
+}

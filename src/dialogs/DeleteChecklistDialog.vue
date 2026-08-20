@@ -5,7 +5,11 @@
 <template>
 	<NcDialog
 		:name="t('procest', 'Delete checklist')"
-		:message="t('procest', 'Are you sure you want to delete \'{name}\'?', { name: checklist ? checklist.name : '' })"
+		:message="
+			t('procest', 'Are you sure you want to delete \'{name}\'?', {
+				name: checklist ? checklist.name : '',
+			})
+		"
 		@close="$emit('cancel')">
 		<template #actions>
 			<NcButton type="error" @click="$emit('confirm')">
@@ -19,8 +23,8 @@
 </template>
 
 <script>
-import { NcButton, NcDialog } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton, NcDialog } from '@nextcloud/vue'
 
 export default {
 	name: 'DeleteChecklistDialog',

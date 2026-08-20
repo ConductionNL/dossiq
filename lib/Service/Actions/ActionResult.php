@@ -22,7 +22,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-automatic-actions/tasks.md#task-1
+ * @spec openspec/specs/automatic-actions/spec.md
  */
 
 declare(strict_types=1);
@@ -37,73 +37,42 @@ namespace OCA\Procest\Service\Actions;
  * `$e->getMessage()` or raw exception text here — log the exception via
  * `LoggerInterface::error()` instead.
  */
-final class ActionResult
-{
-    /**
-     * Constructor for ActionResult.
-     *
-     * @param bool        $ok    Whether the action completed successfully.
-     * @param string|null $error Static error code on failure, null on success.
-     * @param array       $data  Handler-specific data (messageId, documentId,
-     *                           rendered preview payload, etc.).
-     *
-     * @return void
-     */
-    public function __construct(
-        public readonly bool $ok,
-        public readonly ?string $error=null,
-        public readonly array $data=[],
-    ) {
-    }//end __construct()
+final class ActionResult {
+	/**
+	 * Constructor for ActionResult.
+	 *
+	 * @param bool $succeeded Whether the action completed successfully.
+	 * @param string|null $error Static error code on failure, null on success.
+	 * @param array $data Handler-specific data (messageId, documentId,
+	 *                    rendered preview payload, etc.).
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		public readonly bool $succeeded,
+		public readonly ?string $error = null,
+		public readonly array $data = [],
+	) {
+	}//end __construct()
 
-    /**
-     * Convenience factory for a successful result.
-     *
-     * @param array $data Handler-specific data payload.
-     *
-     * @return self
+	/**
+	 * Convert this result to a primitive array for persistence on
+	 * `statusRecord.dispatchedActions[]`.
+	 *
+	 * @return array
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function toArray(): array {
+		$out = ['ok' => $this->succeeded];
+		if ($this->error !== null) {
+			$out['error'] = $this->error;
+		}
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public static function success(array $data=[]): self
-    {
-        return new self(ok: true, error: null, data: $data);
-    }//end success()
+		if ($this->data !== []) {
+			$out['data'] = $this->data;
+		}
 
-    /**
-     * Convenience factory for a failed result.
-     *
-     * @param string $error Static error code (never raw exception text).
-     * @param array  $data  Optional supplementary data (e.g. attempted URL).
-     *
-     * @return self
-
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public static function failure(string $error, array $data=[]): self
-    {
-        return new self(ok: false, error: $error, data: $data);
-    }//end failure()
-
-    /**
-     * Convert this result to a primitive array for persistence on
-     * `statusRecord.dispatchedActions[]`.
-     *
-     * @return array
-
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function toArray(): array
-    {
-        $out = ['ok' => $this->ok];
-        if ($this->error !== null) {
-            $out['error'] = $this->error;
-        }
-
-        if ($this->data !== []) {
-            $out['data'] = $this->data;
-        }
-
-        return $out;
-    }//end toArray()
+		return $out;
+	}//end toArray()
 }//end class

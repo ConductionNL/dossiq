@@ -23,7 +23,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Settings;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Settings\RegisterFragmentMerger;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 
@@ -31,190 +31,183 @@ use ReflectionMethod;
  * Unit tests for the ADR-037 register fragment deep-merge (deepMergeConfig)
  * and the directory fragment loader (mergeRegisterFragments).
  */
-class RegisterFragmentMergeTest extends TestCase
-{
-    /**
-     * Invoke a private static method on SettingsService via reflection.
-     *
-     * @param string $method The private static method name.
-     * @param array  $args   Positional arguments to pass.
-     *
-     * @return mixed The method's return value.
-     */
-    private function invokePrivateStatic(string $method, array $args)
-    {
-        $reflection = new ReflectionMethod(SettingsService::class, $method);
-        $reflection->setAccessible(true);
+class RegisterFragmentMergeTest extends TestCase {
+	/**
+	 * Invoke a private static method on SettingsService via reflection.
+	 *
+	 * @param string $method The private method name on RegisterFragmentMerger.
+	 * @param array $args Positional arguments to pass.
+	 *
+	 * @return mixed The method's return value.
+	 */
+	private function invokePrivate(string $method, array $args) {
+		$reflection = new ReflectionMethod(RegisterFragmentMerger::class, $method);
+		$reflection->setAccessible(true);
 
-        return $reflection->invokeArgs(null, $args);
+		return $reflection->invokeArgs(new RegisterFragmentMerger(), $args);
+	}//end invokePrivate()
 
-    }//end invokePrivateStatic()
+	/**
+	 * Merge fragments through the public entry point.
+	 *
+	 * @param array $base The base configuration.
+	 * @param string $dir The fragment directory.
+	 *
+	 * @return array{0: array<string,mixed>, 1: string} The merged config and hash.
+	 */
+	private function merge(array $base, string $dir): array {
+		return (new RegisterFragmentMerger())->merge(base: $base, fragmentDir: $dir);
+	}//end merge()
 
-    /**
-     * deepMergeConfig merges nested associative maps key-by-key.
-     *
-     * @return void
-     */
-    public function testDeepMergeMergesNestedMaps(): void
-    {
-        $base     = [
-            'components' => [
-                'schemas' => [
-                    'Existing' => ['title' => 'Existing'],
-                ],
-            ],
-        ];
-        $override = [
-            'components' => [
-                'schemas' => [
-                    'Added' => ['title' => 'Added'],
-                ],
-            ],
-        ];
+	/**
+	 * deepMergeConfig merges nested associative maps key-by-key.
+	 *
+	 * @return void
+	 */
+	public function testDeepMergeMergesNestedMaps(): void {
+		$base = [
+			'components' => [
+				'schemas' => [
+					'Existing' => ['title' => 'Existing'],
+				],
+			],
+		];
+		$override = [
+			'components' => [
+				'schemas' => [
+					'Added' => ['title' => 'Added'],
+				],
+			],
+		];
 
-        $result = $this->invokePrivateStatic('deepMergeConfig', [$base, $override]);
+		$result = $this->invokePrivate('deepMerge', [$base, $override]);
 
-        $this->assertArrayHasKey('Existing', $result['components']['schemas']);
-        $this->assertArrayHasKey('Added', $result['components']['schemas']);
-        $this->assertSame('Existing', $result['components']['schemas']['Existing']['title']);
-        $this->assertSame('Added', $result['components']['schemas']['Added']['title']);
+		$this->assertArrayHasKey('Existing', $result['components']['schemas']);
+		$this->assertArrayHasKey('Added', $result['components']['schemas']);
+		$this->assertSame('Existing', $result['components']['schemas']['Existing']['title']);
+		$this->assertSame('Added', $result['components']['schemas']['Added']['title']);
 
-    }//end testDeepMergeMergesNestedMaps()
+	}//end testDeepMergeMergesNestedMaps()
 
-    /**
-     * deepMergeConfig lets a scalar override replace a base scalar.
-     *
-     * @return void
-     */
-    public function testDeepMergeOverridesScalar(): void
-    {
-        $base     = ['info' => ['version' => '1.0.0', 'title' => 'Procest']];
-        $override = ['info' => ['version' => '2.0.0']];
+	/**
+	 * deepMergeConfig lets a scalar override replace a base scalar.
+	 *
+	 * @return void
+	 */
+	public function testDeepMergeOverridesScalar(): void {
+		$base = ['info' => ['version' => '1.0.0', 'title' => 'Procest']];
+		$override = ['info' => ['version' => '2.0.0']];
 
-        $result = $this->invokePrivateStatic('deepMergeConfig', [$base, $override]);
+		$result = $this->invokePrivate('deepMerge', [$base, $override]);
 
-        $this->assertSame('2.0.0', $result['info']['version']);
-        $this->assertSame('Procest', $result['info']['title']);
+		$this->assertSame('2.0.0', $result['info']['version']);
+		$this->assertSame('Procest', $result['info']['title']);
 
-    }//end testDeepMergeOverridesScalar()
+	}//end testDeepMergeOverridesScalar()
 
-    /**
-     * deepMergeConfig concatenates list arrays (ADR-037 fragment append).
-     *
-     * @return void
-     */
-    public function testDeepMergeConcatenatesLists(): void
-    {
-        $base     = ['required' => ['a', 'b']];
-        $override = ['required' => ['c']];
+	/**
+	 * deepMergeConfig concatenates list arrays (ADR-037 fragment append).
+	 *
+	 * @return void
+	 */
+	public function testDeepMergeConcatenatesLists(): void {
+		$base = ['required' => ['a', 'b']];
+		$override = ['required' => ['c']];
 
-        $result = $this->invokePrivateStatic('deepMergeConfig', [$base, $override]);
+		$result = $this->invokePrivate('deepMerge', [$base, $override]);
 
-        $this->assertSame(['a', 'b', 'c'], $result['required']);
+		$this->assertSame(['a', 'b', 'c'], $result['required']);
 
-    }//end testDeepMergeConcatenatesLists()
+	}//end testDeepMergeConcatenatesLists()
 
-    /**
-     * deepMergeConfig adds keys that exist only in the override.
-     *
-     * @return void
-     */
-    public function testDeepMergeAddsNewKeys(): void
-    {
-        $base     = ['a' => 1];
-        $override = ['b' => 2];
+	/**
+	 * deepMergeConfig adds keys that exist only in the override.
+	 *
+	 * @return void
+	 */
+	public function testDeepMergeAddsNewKeys(): void {
+		$base = ['a' => 1];
+		$override = ['b' => 2];
 
-        $result = $this->invokePrivateStatic('deepMergeConfig', [$base, $override]);
+		$result = $this->invokePrivate('deepMerge', [$base, $override]);
 
-        $this->assertSame(['a' => 1, 'b' => 2], $result);
+		$this->assertSame(['a' => 1, 'b' => 2], $result);
 
-    }//end testDeepMergeAddsNewKeys()
+	}//end testDeepMergeAddsNewKeys()
 
-    /**
-     * mergeRegisterFragments returns the base unchanged with an empty hash
-     * when the fragment directory is missing.
-     *
-     * @return void
-     */
-    public function testMergeFragmentsNoDirectory(): void
-    {
-        $base = ['info' => ['version' => '1.0.0']];
+	/**
+	 * mergeRegisterFragments returns the base unchanged with an empty hash
+	 * when the fragment directory is missing.
+	 *
+	 * @return void
+	 */
+	public function testMergeFragmentsNoDirectory(): void {
+		$base = ['info' => ['version' => '1.0.0']];
 
-        [$merged, $hash] = $this->invokePrivateStatic(
-            'mergeRegisterFragments',
-            [$base, '/nonexistent/register.d']
-        );
+		[$merged, $hash] = $this->merge($base, '/nonexistent/register.d');
 
-        $this->assertSame($base, $merged);
-        $this->assertSame('', $hash);
+		$this->assertSame($base, $merged);
+		$this->assertSame('', $hash);
 
-    }//end testMergeFragmentsNoDirectory()
+	}//end testMergeFragmentsNoDirectory()
 
-    /**
-     * mergeRegisterFragments deep-merges real fragment files in sorted
-     * order and returns a non-empty hash fingerprinting the fragment set.
-     *
-     * @return void
-     */
-    public function testMergeFragmentsMergesFilesInOrder(): void
-    {
-        $dir = sys_get_temp_dir().'/procest-frag-test-'.uniqid();
-        mkdir($dir);
+	/**
+	 * mergeRegisterFragments deep-merges real fragment files in sorted
+	 * order and returns a non-empty hash fingerprinting the fragment set.
+	 *
+	 * @return void
+	 */
+	public function testMergeFragmentsMergesFilesInOrder(): void {
+		$dir = sys_get_temp_dir() . '/procest-frag-test-' . uniqid();
+		mkdir($dir);
 
-        file_put_contents(
-            $dir.'/10-first.json',
-            json_encode(['components' => ['schemas' => ['First' => ['title' => 'First']]]])
-        );
-        file_put_contents(
-            $dir.'/20-second.json',
-            json_encode(['components' => ['schemas' => ['Second' => ['title' => 'Second']]]])
-        );
+		file_put_contents(
+			$dir . '/10-first.json',
+			json_encode(['components' => ['schemas' => ['First' => ['title' => 'First']]]])
+		);
+		file_put_contents(
+			$dir . '/20-second.json',
+			json_encode(['components' => ['schemas' => ['Second' => ['title' => 'Second']]]])
+		);
 
-        $base = ['components' => ['schemas' => ['Base' => ['title' => 'Base']]]];
+		$base = ['components' => ['schemas' => ['Base' => ['title' => 'Base']]]];
 
-        [$merged, $hash] = $this->invokePrivateStatic(
-            'mergeRegisterFragments',
-            [$base, $dir]
-        );
+		[$merged, $hash] = $this->merge($base, $dir);
 
-        // Cleanup.
-        unlink($dir.'/10-first.json');
-        unlink($dir.'/20-second.json');
-        rmdir($dir);
+		// Cleanup.
+		unlink($dir . '/10-first.json');
+		unlink($dir . '/20-second.json');
+		rmdir($dir);
 
-        $schemas = $merged['components']['schemas'];
-        $this->assertArrayHasKey('Base', $schemas);
-        $this->assertArrayHasKey('First', $schemas);
-        $this->assertArrayHasKey('Second', $schemas);
-        $this->assertNotSame('', $hash);
-        $this->assertSame(12, strlen($hash));
+		$schemas = $merged['components']['schemas'];
+		$this->assertArrayHasKey('Base', $schemas);
+		$this->assertArrayHasKey('First', $schemas);
+		$this->assertArrayHasKey('Second', $schemas);
+		$this->assertNotSame('', $hash);
+		$this->assertSame(12, strlen($hash));
 
-    }//end testMergeFragmentsMergesFilesInOrder()
+	}//end testMergeFragmentsMergesFilesInOrder()
 
-    /**
-     * mergeRegisterFragments returns an empty hash when only non-JSON files
-     * (e.g. README.md) are present.
-     *
-     * @return void
-     */
-    public function testMergeFragmentsIgnoresNonJson(): void
-    {
-        $dir = sys_get_temp_dir().'/procest-frag-readme-'.uniqid();
-        mkdir($dir);
-        file_put_contents($dir.'/README.md', '# not a fragment');
+	/**
+	 * mergeRegisterFragments returns an empty hash when only non-JSON files
+	 * (e.g. README.md) are present.
+	 *
+	 * @return void
+	 */
+	public function testMergeFragmentsIgnoresNonJson(): void {
+		$dir = sys_get_temp_dir() . '/procest-frag-readme-' . uniqid();
+		mkdir($dir);
+		file_put_contents($dir . '/README.md', '# not a fragment');
 
-        $base = ['info' => ['version' => '1.0.0']];
+		$base = ['info' => ['version' => '1.0.0']];
 
-        [$merged, $hash] = $this->invokePrivateStatic(
-            'mergeRegisterFragments',
-            [$base, $dir]
-        );
+		[$merged, $hash] = $this->merge($base, $dir);
 
-        unlink($dir.'/README.md');
-        rmdir($dir);
+		unlink($dir . '/README.md');
+		rmdir($dir);
 
-        $this->assertSame($base, $merged);
-        $this->assertSame('', $hash);
+		$this->assertSame($base, $merged);
+		$this->assertSame('', $hash);
 
-    }//end testMergeFragmentsIgnoresNonJson()
+	}//end testMergeFragmentsIgnoresNonJson()
 }//end class

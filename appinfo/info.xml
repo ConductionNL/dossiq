@@ -23,7 +23,7 @@
 
 **Requires:** [OpenRegister](https://apps.nextcloud.com/apps/openregister) (install from the [Nextcloud App Store](https://apps.nextcloud.com/apps/openregister)).
 
-Free and open source under the AGPL license.
+Free and open source under the EUPL-1.2 licence.
 
 **Support:** For support, contact support@conduction.nl. For a Service Level Agreement (SLA), contact sales@conduction.nl.
     ]]></description>
@@ -44,32 +44,62 @@ Free and open source under the AGPL license.
 
 **Vereist:** [OpenRegister](https://apps.nextcloud.com/apps/openregister) (installeer via de [Nextcloud App Store](https://apps.nextcloud.com/apps/openregister)).
 
-Vrij en open source onder de AGPL-licentie.
+Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.2.17</version>
-    <licence>agpl</licence>
+    <version>0.2.5-unstable.20260820123449</version>
+    <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Procest</namespace>
     <documentation>
-        <user>https://github.com/ConductionNL/procest</user>
-        <admin>https://github.com/ConductionNL/procest</admin>
-        <developer>https://github.com/ConductionNL/procest</developer>
+        <user>https://codeberg.org/Conduction/procest</user>
+        <admin>https://codeberg.org/Conduction/procest</admin>
+        <developer>https://codeberg.org/Conduction/procest</developer>
     </documentation>
     <category>organization</category>
     <category>tools</category>
     <category>workflow</category>
-    <website>https://github.com/ConductionNL/procest</website>
-    <discussion>https://github.com/ConductionNL/procest/discussions</discussion>
-    <bugs>https://github.com/ConductionNL/procest/issues</bugs>
-    <repository>https://github.com/ConductionNL/procest</repository>
+    <website>https://codeberg.org/Conduction/procest</website>
+    <bugs>https://codeberg.org/Conduction/procest/issues</bugs>
+    <repository>https://codeberg.org/Conduction/procest</repository>
 
-    <screenshot>https://raw.githubusercontent.com/ConductionNL/procest/main/img/app-store.svg</screenshot>
+    <screenshot>https://codeberg.org/Conduction/procest/raw/branch/main/img/screenshot-dashboard.png</screenshot>
+    <screenshot>https://codeberg.org/Conduction/procest/raw/branch/main/img/screenshot-cases.png</screenshot>
+    <screenshot>https://codeberg.org/Conduction/procest/raw/branch/main/img/screenshot-admin.png</screenshot>
 
     <dependencies>
-        <nextcloud min-version="28" max-version="34"/>
         <php min-version="8.3"/>
+        <!--
+        min-version is 32, NOT 28.
+
+        ⚠️ The reason is NOT the one an earlier revision of this comment gave.
+        That text said "openregister declares min-version=32"; measured against
+        the canonical repo on 2026-08-08, ConductionNL/openregister@development
+        declares <nextcloud min-version="32" max-version="34"/>. It was true when
+        written and was undone by openregister#2380. The openconnector#1173 rule
+        — min-version must be >= the max of every <app> dependency's floor — is
+        therefore satisfied by any value here, and imposes no constraint at all.
+        Do not re-derive this floor from openregister's.
+
+        The floor is 32 for two reasons that are true today:
+
+        1. Nothing below 32 is tested, and an untested range is an advertised
+           claim we cannot support. .github/workflows/code-quality.yml pins
+           nextcloud-test-refs to exactly ["stable32"]; the stable31 leg was
+           REMOVED, not merely dropped for coverage.
+        2. This app declares <php min-version="8.3"/> directly above. Nextcloud
+           28 does not support PHP 8.3, so the pair (NC 28, PHP 8.3) that the
+           two lines together advertise is not a configuration that exists.
+
+        max-version stays at 34, which is the fleet-wide value everywhere except
+        openconnector (35).
+        -->
+        <nextcloud min-version="32" max-version="34"/>
+        <!-- App dependency (not expressible in app-info.xsd): OpenRegister >= 0.2.16
+             (MDM engine: x-openregister-quality / x-openregister-dedup schema support and
+             on-save qualityScore/qualityStatus materialisation, ADR-045 / OR change
+             2026-06-23-mdm-foundation). -->
     </dependencies>
 
     <background-jobs>
@@ -78,29 +108,29 @@ Vrij en open source onder de AGPL-licentie.
         <job>OCA\Procest\BackgroundJob\VergaderingDeadlineJob</job>
         <job>OCA\Procest\BackgroundJob\WOODeadlineCheckJob</job>
         <job>OCA\Procest\BackgroundJob\BezwaarTermijnJob</job>
-        <job>OCA\Procest\BackgroundJob\ArchivalJob</job>
         <job>OCA\Procest\BackgroundJob\DsoDeadlineJob</job>
         <job>OCA\Procest\BackgroundJob\ResetMonthlyQuotasJob</job>
-        <job>OCA\Procest\BackgroundJob\DailyTermijnScanJob</job>
+        <job>OCA\Procest\BackgroundJob\DailyDeadlineScanJob</job>
         <job>OCA\Procest\BackgroundJob\InboundEmailJob</job>
         <job>OCA\Procest\BackgroundJob\EmailPdfRetryJob</job>
-        <job>OCA\Procest\BackgroundJob\ArchivalTriggerScanJob</job>
-        <job>OCA\Procest\BackgroundJob\ArchivalSubmissionRetryJob</job>
         <job>OCA\Procest\BackgroundJob\SentimentAnalysisJob</job>
         <job>OCA\Procest\BackgroundJob\SpecialistBeschikbaarheidRefreshJob</job>
         <job>OCA\Procest\BackgroundJob\BottleneckDetectionJob</job>
-        <job>OCA\Procest\BackgroundJob\ScanExpiringContractsJob</job>
     </background-jobs>
-
-    <commands>
-        <command>OCA\Procest\Command\ArchiefDetectReadyCommand</command>
-        <command>OCA\Procest\Command\ArchiefRetrySubmissionsCommand</command>
-        <command>OCA\Procest\Command\MigrateTenantsCommand</command>
-        <command>OCA\Procest\Command\SeedBezwaarBeroepCommand</command>
-    </commands>
 
     <repair-steps>
         <post-migration>
+            <!--
+                MUST stay first. OpenRegister's import matches a schema to an
+                existing row by SLUG, so a renamed slug in the register JSON
+                renames nothing: the import finds no match, creates a SECOND
+                schema, and every stored object keeps pointing at the old one —
+                data stranded behind a schema nothing reads, which presents as
+                an app with no records rather than as an error. Renaming the
+                slug on the existing row first makes the import recognise it.
+                Ahead of the import trigger, InitializeSettings.
+            -->
+            <step>OCA\Procest\Repair\RenameDutchSchemaSlugs</step>
             <step>OCA\Procest\Repair\InitializeSettings</step>
             <step>OCA\Procest\Repair\LoadDefaultZgwMappings</step>
             <step>OCA\Procest\Repair\SeedBezwaarBeroepData</step>
@@ -108,19 +138,107 @@ Vrij en open source onder de AGPL-licentie.
             <step>OCA\Procest\Repair\SeedBezwaarWorkflowDefinition</step>
             <step>OCA\Procest\Repair\SeedBesluitvormingTemplates</step>
             <step>OCA\Procest\Repair\RegisterOriRegister</step>
-            <step>OCA\Procest\Repair\SeedLegesData</step>
             <step>OCA\Procest\Repair\SeedLhsMatrix</step>
             <step>OCA\Procest\Repair\SeedVthMatrixCells</step>
             <step>OCA\Procest\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Procest\Repair\VthSeedDataRepairStep</step>
-            <step>OCA\Procest\Repair\SeedTermijnbewakingData</step>
-            <step>OCA\Procest\Repair\SeedArchiefEdepotData</step>
+            <step>OCA\Procest\Repair\SeedDeadlineMonitoringData</step>
+            <!--
+                Must run AFTER the register sync that adds the English columns, so it
+                can tell the rename case from the back-fill case. Matches BOTH the
+                procest and procest-default registers, which each hold live rows.
+                Idempotent, non-destructive, and refuses ambiguous renames.
+            -->
+            <step>OCA\Procest\Repair\RenameDutchDeadlineColumns</step>
+            <!--
+                Sibling of the step above, but a VALUE migration rather than a
+                column one: the `direction` column already has the right name,
+                and only the strings inside it move (inkomend/uitgaand/intern ->
+                inbound/outbound/internal).
+
+                Scoped to the `direction` COLUMN on purpose. `intern` is also a
+                value of the statutory ZGW vertrouwelijkheidaanduiding enum,
+                which is exempt from the vocabulary rule; a word-based rewrite
+                would have corrupted every confidentiality field in the install.
+            -->
+            <step>OCA\Procest\Repair\RenameDutchDirectionValues</step>
+            <step>OCA\Procest\Repair\MigrateArchivalToOpenRegister</step>
             <step>OCA\Procest\Repair\SeedKccWerkplekData</step>
             <step>OCA\Procest\Repair\BackfillInformatieobjectMetadata</step>
             <step>OCA\Procest\Repair\LinkInFlightContractDecisionsRepair</step>
             <step>OCA\Procest\Repair\LinkInFlightRemainingDecisionsRepair</step>
+            <step>OCA\Procest\Repair\SeedVerwerkingsactiviteiten</step>
+            <!--
+                Must run AFTER the register sync that adds the English columns, so it
+                can tell a rename from a back-fill. Covers every renamed property
+                together: a register-scoped step that moved some owners and not others
+                would leave the rest silently reading null.
+            -->
+            <step>OCA\Procest\Repair\RenameDutchColumns</step>
+            <!--
+                Must run AFTER RenameDutchColumns: that step moves the COLUMNS,
+                this one moves what is IN them, across every mapped property
+                rather than the single `direction` column
+                RenameDutchDirectionValues covers. Once the schema declares
+                `upheld`, a row still holding `gegrond` does not error — a filter
+                on the new value returns null and the caller reads that as
+                "nothing to do".
+
+                The ZGW and StUF vocabularies are deliberately NOT in its map:
+                they are the standard's, they travel on the wire, and the ZGW
+                `vertrouwelijkheidaanduiding` values (openbaar … zeer_geheim) are
+                statutory. Translating them would break the mapping the adapter
+                exists to perform.
+            -->
+            <step>OCA\Procest\Repair\RenameDutchValues</step>
         </post-migration>
+        <!--
+            FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
+            `Installer::installAppLastSteps()` guards both the pre-migration and
+            post-migration blocks with `if ($previousVersion !== '')`, and only
+            `repair-steps/install` runs unconditionally afterwards. Until this block
+            existed a brand-new Procest install ran NONE of the steps above — the
+            register was never imported and not one of the twelve seed steps ran, so
+            a fresh instance had no ZGW mappings, no bezwaar/beroep data, no LHS or
+            VTH matrices and no workflow templates.
+
+            Only baseline-CREATING steps are listed. Deliberately EXCLUDED, because
+            each operates on data a fresh install does not have:
+              MigrateWorkflowDefinitions        one-way migration
+              RenameDutchDeadlineColumns        rename over existing rows
+              RenameDutchDirectionValues        rewrite over existing rows
+              MigrateArchivalToOpenRegister     one-way migration
+              BackfillInformatieobjectMetadata  backfill over existing documents
+              LinkInFlight*DecisionsRepair      link IN-FLIGHT decisions; none exist yet
+        -->
+        <install>
+            <step>OCA\Procest\Repair\InitializeSettings</step>
+            <step>OCA\Procest\Repair\LoadDefaultZgwMappings</step>
+            <step>OCA\Procest\Repair\SeedBezwaarBeroepData</step>
+            <step>OCA\Procest\Repair\SeedBezwaarWorkflowDefinition</step>
+            <step>OCA\Procest\Repair\SeedBesluitvormingTemplates</step>
+            <step>OCA\Procest\Repair\RegisterOriRegister</step>
+            <step>OCA\Procest\Repair\SeedLhsMatrix</step>
+            <step>OCA\Procest\Repair\SeedVthMatrixCells</step>
+            <step>OCA\Procest\Repair\SeedVthWorkflowTemplates</step>
+            <step>OCA\Procest\Repair\VthSeedDataRepairStep</step>
+            <step>OCA\Procest\Repair\SeedDeadlineMonitoringData</step>
+            <step>OCA\Procest\Repair\SeedKccWerkplekData</step>
+            <step>OCA\Procest\Repair\SeedVerwerkingsactiviteiten</step>
+        </install>
     </repair-steps>
+
+    <commands>
+        <command>OCA\Procest\Command\BackfillLegalHoldsCommand</command>
+        <command>OCA\Procest\Command\MigrateTenantsCommand</command>
+        <command>OCA\Procest\Command\SeedBezwaarBeroepCommand</command>
+    </commands>
+
+    <settings>
+        <admin>OCA\Procest\Settings\AdminSettings</admin>
+        <admin>OCA\Procest\Settings\EmailSettings</admin>
+        <admin-section>OCA\Procest\Sections\SettingsSection</admin-section>
+    </settings>
 
     <navigations>
         <navigation>
@@ -130,10 +248,4 @@ Vrij en open source onder de AGPL-licentie.
             <icon>app.svg</icon>
         </navigation>
     </navigations>
-
-    <settings>
-        <admin>OCA\Procest\Settings\AdminSettings</admin>
-        <admin>OCA\Procest\Settings\EmailSettings</admin>
-        <admin-section>OCA\Procest\Sections\SettingsSection</admin-section>
-    </settings>
 </info>

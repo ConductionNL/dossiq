@@ -17,9 +17,9 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-dso-omgevingsloket-client/tasks.md#task-1
- * @spec openspec/changes/retrofit-2026-05-24-dso-omgevingsloket-client/tasks.md#task-2
- * @spec openspec/changes/retrofit-2026-05-24-dso-omgevingsloket-client/tasks.md#task-3
+ * @spec openspec/specs/dso-omgevingsloket-client/spec.md
+ * @spec openspec/specs/dso-omgevingsloket-client/spec.md
+ * @spec openspec/specs/dso-omgevingsloket-client/spec.md
  */
 
 declare(strict_types=1);
@@ -28,6 +28,7 @@ namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Service for DSO/Omgevingsloket intake processing.
@@ -36,296 +37,238 @@ use Psr\Log\LoggerInterface;
  * Supports multiple activities per application and calculates
  * deadlines based on procedure type (regulier: 8 weeks, uitgebreid: 26 weeks).
  */
-class DsoIntakeService
-{
+class DsoIntakeService {
 
-    /**
-     * Deadline durations per procedure type (ISO 8601).
-     */
-    private const DEADLINE_DURATIONS = [
-        'regulier'   => 'P56D',
-        'uitgebreid' => 'P182D',
-    ];
+	/**
+	 * Deadline durations per procedure type (ISO 8601).
+	 */
+	private const DEADLINE_DURATIONS = [
+		'regulier' => 'P56D',
+		'uitgebreid' => 'P182D',
+	];
 
-    /**
-     * Constructor.
-     *
-     * @param SettingsService $settingsService Settings service
-     * @param LoggerInterface $logger          Logger
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService Settings service
+	 * @param LoggerInterface $logger Logger
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Process a DSO vergunningaanvraag and create a case.
-     *
-     * @param array<string, mixed> $dsoMessage The DSO message payload
-     *
-     * @return array<string, mixed> Created case data with ID
-     *
-     * @throws \RuntimeException If OpenRegister is unavailable or configuration missing
+	/**
+	 * Process a DSO vergunningaanvraag and create a case.
+	 *
+	 * @param array<string, mixed> $dsoMessage The DSO message payload
+	 *
+	 * @return array<string, mixed> Created case data with ID
+	 *
+	 * @throws \RuntimeException If OpenRegister is unavailable or configuration missing
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function processAanvraag(array $dsoMessage): array {
+		return $this->createCase(mappedData: $this->map(dsoMessage: $dsoMessage));
+	}//end processAanvraag()
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function processAanvraag(array $dsoMessage): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
-        }
+	/**
+	 * Reduce the DSO activiteiten list to a flat list of activity names.
+	 *
+	 * A structured activity contributes its `naam`; a scalar one is used as-is.
+	 *
+	 * @param mixed $activiteiten The raw activiteiten entry from the DSO payload
+	 *
+	 * @return array<int|string, mixed> The activity names, in payload order
+	 */
+	private function extractActivityNames(mixed $activiteiten): array {
+		return array_map(
+			static function ($act) {
+				if (is_array($act) === true) {
+					return $act['name'] ?? '';
+				}
 
-        $register = $this->settingsService->getConfigValue('register');
-        if (empty($register) === true) {
-            throw new \RuntimeException('Procest register not configured');
-        }
+				return (string)$act;
+			},
+			$activiteiten,
+		);
+	}//end extractActivityNames()
 
-        // Extract fields from DSO message.
-        $activiteiten  = $dsoMessage['activiteiten'] ?? [];
-        $locatie       = $dsoMessage['locatie'] ?? '';
-        $aanvrager     = $dsoMessage['aanvrager'] ?? [];
-        $bouwkosten    = $dsoMessage['bouwkosten'] ?? 0;
-        $procedureType = $dsoMessage['procedureType'] ?? 'regulier';
-        $dsoZaaknummer = $dsoMessage['zaaknummer'] ?? '';
-        $bijlagen      = $dsoMessage['bijlagen'] ?? [];
+	/**
+	 * Persist the DSO-specific case properties as case property objects.
+	 *
+	 * Properties with an empty value are skipped rather than written as blanks.
+	 *
+	 * @param object $objectService The OpenRegister object service
+	 * @param string $register Register slug
+	 * @param string $schema Case property schema slug
+	 * @param string $caseId UUID of the case the properties belong to
+	 * @param array<string, mixed> $properties Property name to value map
+	 *
+	 * @return void
+	 */
+	private function storeCaseProperties(
+		object $objectService,
+		string $register,
+		string $schema,
+		string $caseId,
+		array $properties,
+	): void {
+		foreach ($properties as $name => $value) {
+			if ($value === '') {
+				continue;
+			}
 
-        // Build activity description.
-        $activityNames = array_map(
-            static function ($act) {
-                if (is_array($act) === true) {
-                    return $act['naam'] ?? '';
-                }
+			$objectService->saveObject(
+				object: [
+					'case' => $caseId,
+					'name' => $name,
+					'value' => $value,
+				],
+				register: $register,
+				schema: $schema
+			);
+		}
+	}//end storeCaseProperties()
 
-                return (string) $act;
-            },
-            $activiteiten,
-        );
-        $activityStr   = implode(', ', array_filter($activityNames));
+	/**
+	 * Get the processing deadline duration for a procedure type.
+	 *
+	 * @param string $procedureType The procedure type (regulier or uitgebreid)
+	 *
+	 * @return string ISO 8601 duration
+	 */
+	public function getDeadlineDuration(string $procedureType): string {
+		return self::DEADLINE_DURATIONS[$procedureType] ?? self::DEADLINE_DURATIONS['regulier'];
+	}//end getDeadlineDuration()
 
-        // Determine processing deadline.
-        $deadline = self::DEADLINE_DURATIONS[$procedureType] ?? self::DEADLINE_DURATIONS['regulier'];
+	/**
+	 * Map a raw DSO payload to a structured case array.
+	 *
+	 * @param array<string, mixed> $dsoMessage The DSO vergunningaanvraag payload
+	 *
+	 * @return array<string, mixed> Structured case data ready for createCase()
+	 *
+	 * @spec openspec/changes/vth-module/tasks.md#task-3
+	 */
+	public function map(array $dsoMessage): array {
+		$activiteiten = $dsoMessage['activiteiten'] ?? [];
+		$location = $dsoMessage['location'] ?? '';
+		$applicant = $dsoMessage['applicant'] ?? [];
+		$bouwkosten = $dsoMessage['bouwkosten'] ?? 0;
+		$procedureType = $dsoMessage['procedureType'] ?? 'regulier';
+		$dsoZaaknummer = $dsoMessage['zaaknummer'] ?? '';
+		$attachments = $dsoMessage['attachments'] ?? [];
 
-        // Create the case.
-        $caseSchema = $this->settingsService->getConfigValue('case_schema');
+		$activityNames = $this->extractActivityNames(activiteiten: $activiteiten);
+		$activityStr = implode(', ', array_filter($activityNames));
 
-        $title = 'Omgevingsvergunning';
-        if ($activityStr !== '') {
-            $title .= ': '.$activityStr;
-        }
+		$deadline = self::DEADLINE_DURATIONS[$procedureType] ?? self::DEADLINE_DURATIONS['regulier'];
 
-        $description = 'Vergunningaanvraag ontvangen via DSO/Omgevingsloket';
-        if ($dsoZaaknummer !== '') {
-            $description .= ' (DSO: '.$dsoZaaknummer.')';
-        }
+		$title = 'Omgevingsvergunning';
+		if ($activityStr !== '') {
+			$title .= ': ' . $activityStr;
+		}
 
-        $caseData = [
-            'title'       => $title,
-            'description' => $description,
-            'startDate'   => date('Y-m-d'),
-            'priority'    => 'normal',
-        ];
+		$description = 'Vergunningaanvraag ontvangen via DSO/Omgevingsloket';
+		if ($dsoZaaknummer !== '') {
+			$description .= ' (DSO: ' . $dsoZaaknummer . ')';
+		}
 
-        $caseObj = $objectService->saveObject(object: $caseData, register: $register, schema: $caseSchema);
-        $caseId  = $caseObj->getUuid();
+		// Cast only after the array case has been JSON-encoded, so an array
+		// value never reaches the string cast (which would warn).
+		$locationRaw = $location;
+		if (is_array($location) === true) {
+			$locationRaw = json_encode($location);
+		}
 
-        // Store DSO-specific properties.
-        $propertySchema = $this->settingsService->getConfigValue('case_property_schema');
-        if (is_array($locatie) === true) {
-            $locatieValue = json_encode($locatie);
-        } else {
-            $locatieValue = $locatie;
-        }
+		$locationStr = (string)$locationRaw;
 
-        $properties = [
-            'dsoZaaknummer' => $dsoZaaknummer,
-            'activiteiten'  => $activityStr,
-            'locatie'       => $locatieValue,
-            'bouwkosten'    => (string) $bouwkosten,
-            'procedureType' => $procedureType,
-            'aanvragerNaam' => $aanvrager['naam'] ?? '',
-        ];
+		return [
+			'title' => $title,
+			'description' => $description,
+			'startDate' => date('Y-m-d'),
+			'priority' => 'normal',
+			'dsoZaaknummer' => $dsoZaaknummer,
+			'activiteiten' => $activityStr,
+			'activityNames' => $activityNames,
+			'location' => $locationStr,
+			'bouwkosten' => (string)$bouwkosten,
+			'procedureType' => $procedureType,
+			'aanvragerNaam' => $applicant['name'] ?? '',
+			'deadline' => $deadline,
+			'attachments' => $attachments,
+		];
+	}//end map()
 
-        foreach ($properties as $name => $value) {
-            if ($value === '') {
-                continue;
-            }
+	/**
+	 * Create a case from pre-mapped DSO data.
+	 *
+	 * @param array<string, mixed> $mappedData Structured case data from map()
+	 *
+	 * @return array<string, mixed> Created case data with ID
+	 *
+	 * @throws \RuntimeException If OpenRegister is unavailable or configuration missing.
+	 *
+	 * @spec openspec/changes/vth-module/tasks.md#task-3
+	 */
+	public function createCase(array $mappedData): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
 
-            $objectService->saveObject(
-                object: [
-                    'case'  => $caseId,
-                    'name'  => $name,
-                    'value' => $value,
-                ],
-                register: $register,
-                schema: $propertySchema
-            );
-        }
+		$register = $this->settingsService->getConfigValue('register');
+		if (empty($register) === true) {
+			throw new RuntimeException('Procest register not configured');
+		}
 
-        $this->logger->info(
-            'DSO intake processed: case '.$caseId.' (DSO: '.$dsoZaaknummer.')',
-            ['app' => Application::APP_ID],
-        );
+		$caseSchema = $this->settingsService->getConfigValue('case_schema');
+		$caseData = [
+			'title' => $mappedData['title'] ?? 'Omgevingsvergunning',
+			'description' => $mappedData['description'] ?? '',
+			'startDate' => $mappedData['startDate'] ?? date('Y-m-d'),
+			'priority' => $mappedData['priority'] ?? 'normal',
+		];
 
-        return [
-            'caseId'        => $caseId,
-            'dsoZaaknummer' => $dsoZaaknummer,
-            'activiteiten'  => $activityNames,
-            'procedureType' => $procedureType,
-            'deadline'      => $deadline,
-        ];
-    }//end processAanvraag()
+		// OpenRegister's signature is
+		// saveObject(array|ObjectEntity $object, ?array $extend = [], $register = null, $schema = null, ...)
+		// so the register/schema slugs MUST be passed by name — positionally
+		// they would land in $object and $extend and raise a TypeError.
+		$caseObj = $objectService->saveObject(object: $caseData, register: $register, schema: $caseSchema);
+		$caseId = $caseObj->getUuid();
 
-    /**
-     * Get the processing deadline duration for a procedure type.
-     *
-     * @param string $procedureType The procedure type (regulier or uitgebreid)
-     *
-     * @return string ISO 8601 duration
-     */
-    public function getDeadlineDuration(string $procedureType): string
-    {
-        return self::DEADLINE_DURATIONS[$procedureType] ?? self::DEADLINE_DURATIONS['regulier'];
-    }//end getDeadlineDuration()
+		$dsoZaaknummer = $mappedData['dsoZaaknummer'] ?? '';
+		$propertySchema = $this->settingsService->getConfigValue('case_property_schema');
 
-    /**
-     * Map a raw DSO payload to a structured case array.
-     *
-     * @param array<string, mixed> $dsoMessage The DSO vergunningaanvraag payload
-     *
-     * @return array<string, mixed> Structured case data ready for createCase()
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-3
-     */
-    public function map(array $dsoMessage): array
-    {
-        $activiteiten  = $dsoMessage['activiteiten'] ?? [];
-        $locatie       = $dsoMessage['locatie'] ?? '';
-        $aanvrager     = $dsoMessage['aanvrager'] ?? [];
-        $bouwkosten    = $dsoMessage['bouwkosten'] ?? 0;
-        $procedureType = $dsoMessage['procedureType'] ?? 'regulier';
-        $dsoZaaknummer = $dsoMessage['zaaknummer'] ?? '';
-        $bijlagen      = $dsoMessage['bijlagen'] ?? [];
+		$this->storeCaseProperties(
+			objectService: $objectService,
+			register: $register,
+			schema: $propertySchema,
+			caseId: $caseId,
+			properties: [
+				'dsoZaaknummer' => $dsoZaaknummer,
+				'activiteiten' => $mappedData['activiteiten'] ?? '',
+				'location' => $mappedData['location'] ?? '',
+				'bouwkosten' => $mappedData['bouwkosten'] ?? '',
+				'procedureType' => $mappedData['procedureType'] ?? '',
+				'aanvragerNaam' => $mappedData['aanvragerNaam'] ?? '',
+			],
+		);
 
-        $activityNames = array_map(
-            static function ($act) {
-                if (is_array($act) === true) {
-                    return $act['naam'] ?? '';
-                }
+		$this->logger->info(
+			'DSO intake processed: case ' . $caseId . ' (DSO: ' . $dsoZaaknummer . ')',
+			['app' => Application::APP_ID],
+		);
 
-                return (string) $act;
-            },
-            $activiteiten,
-        );
-        $activityStr   = implode(', ', array_filter($activityNames));
-
-        $deadline = self::DEADLINE_DURATIONS[$procedureType] ?? self::DEADLINE_DURATIONS['regulier'];
-
-        $title = 'Omgevingsvergunning';
-        if ($activityStr !== '') {
-            $title .= ': '.$activityStr;
-        }
-
-        $description = 'Vergunningaanvraag ontvangen via DSO/Omgevingsloket';
-        if ($dsoZaaknummer !== '') {
-            $description .= ' (DSO: '.$dsoZaaknummer.')';
-        }
-
-        if (is_array($locatie) === true) {
-            $locatieStr = json_encode($locatie);
-        } else {
-            $locatieStr = (string) $locatie;
-        }
-
-        return [
-            'title'         => $title,
-            'description'   => $description,
-            'startDate'     => date('Y-m-d'),
-            'priority'      => 'normal',
-            'dsoZaaknummer' => $dsoZaaknummer,
-            'activiteiten'  => $activityStr,
-            'activityNames' => $activityNames,
-            'locatie'       => $locatieStr,
-            'bouwkosten'    => (string) $bouwkosten,
-            'procedureType' => $procedureType,
-            'aanvragerNaam' => $aanvrager['naam'] ?? '',
-            'deadline'      => $deadline,
-            'bijlagen'      => $bijlagen,
-        ];
-    }//end map()
-
-    /**
-     * Create a case from pre-mapped DSO data.
-     *
-     * @param array<string, mixed> $mappedData Structured case data from map()
-     *
-     * @return array<string, mixed> Created case data with ID
-     *
-     * @throws \RuntimeException If OpenRegister is unavailable or configuration missing.
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-3
-     */
-    public function createCase(array $mappedData): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        if (empty($register) === true) {
-            throw new \RuntimeException('Procest register not configured');
-        }
-
-        $caseSchema = $this->settingsService->getConfigValue('case_schema');
-        $caseData   = [
-            'title'       => $mappedData['title'] ?? 'Omgevingsvergunning',
-            'description' => $mappedData['description'] ?? '',
-            'startDate'   => $mappedData['startDate'] ?? date('Y-m-d'),
-            'priority'    => $mappedData['priority'] ?? 'normal',
-        ];
-
-        $caseObj = $objectService->saveObject($register, $caseSchema, $caseData);
-        $caseId  = $caseObj->getUuid();
-
-        $propertySchema = $this->settingsService->getConfigValue('case_property_schema');
-        $properties     = [
-            'dsoZaaknummer' => $mappedData['dsoZaaknummer'] ?? '',
-            'activiteiten'  => $mappedData['activiteiten'] ?? '',
-            'locatie'       => $mappedData['locatie'] ?? '',
-            'bouwkosten'    => $mappedData['bouwkosten'] ?? '',
-            'procedureType' => $mappedData['procedureType'] ?? '',
-            'aanvragerNaam' => $mappedData['aanvragerNaam'] ?? '',
-        ];
-
-        foreach ($properties as $name => $value) {
-            if ($value === '') {
-                continue;
-            }
-
-            $objectService->saveObject(
-                $register,
-                $propertySchema,
-                [
-                    'case'  => $caseId,
-                    'name'  => $name,
-                    'value' => $value,
-                ]
-            );
-        }
-
-        $this->logger->info(
-            'DSO intake: created case '.$caseId,
-            ['app' => Application::APP_ID],
-        );
-
-        return [
-            'caseId'        => $caseId,
-            'dsoZaaknummer' => $mappedData['dsoZaaknummer'] ?? '',
-            'activiteiten'  => $mappedData['activityNames'] ?? [],
-            'procedureType' => $mappedData['procedureType'] ?? '',
-            'deadline'      => $mappedData['deadline'] ?? '',
-        ];
-    }//end createCase()
+		return [
+			'caseId' => $caseId,
+			'dsoZaaknummer' => $dsoZaaknummer,
+			'activiteiten' => $mappedData['activityNames'] ?? [],
+			'procedureType' => $mappedData['procedureType'] ?? '',
+			'deadline' => $mappedData['deadline'] ?? '',
+		];
+	}//end createCase()
 }//end class

@@ -27,14 +27,19 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
-use OCA\Procest\Service\Beschikking\MockArchivalAdapter;
+use OCA\Procest\Service\BerichtenboxRoutingService;
+use OCA\Procest\Service\Beschikking\AuditPacketBuilder;
+use OCA\Procest\Service\Beschikking\BeschikkingRepository;
+use OCA\Procest\Service\Beschikking\BezwaarTermijnScheduler;
+use OCA\Procest\Service\Beschikking\MandaatVerifier;
 use OCA\Procest\Service\Beschikking\MockSigningAdapter;
 use OCA\Procest\Service\Beschikking\MockTemplateEngineAdapter;
-use OCA\Procest\Service\BerichtenboxRoutingService;
+use OCA\Procest\Service\Beschikking\OpenRegisterArchivalAdapter;
 use OCA\Procest\Service\BeschikkingService;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\StateMachineService;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -45,298 +50,310 @@ use RuntimeException;
  * pipeline relies on: find (named id/register/schema), searchObjectsBySlug
  * (positional), and saveObject (positional, assigns ids and persists).
  */
-class FakeObjectService
-{
-    /**
-     * Stored objects keyed by schema then id.
-     *
-     * @var array<string, array<string, array<string, mixed>>>
-     */
-    public array $store = [];
+class FakeObjectService {
 
-    /**
-     * Auto-increment id counter.
-     *
-     * @var int
-     */
-    private int $seq = 0;
+	/**
+	 * Stored objects keyed by schema then id.
+	 *
+	 * @var array<string, array<string, array<string, mixed>>>
+	 */
+	public array $store = [];
 
-    /**
-     * Find a single object by id.
-     *
-     * @param string $id       The object id.
-     * @param string $register The register id (named).
-     * @param string $schema   The schema id (named).
-     *
-     * @return array<string, mixed>|null
-     */
-    public function find(string $id, string $register = '', string $schema = ''): ?array
-    {
-        return ($this->store[$schema][$id] ?? null);
-    }//end find()
+	/**
+	 * Auto-increment id counter.
+	 *
+	 * @var integer
+	 */
+	private int $seq = 0;
 
-    /**
-     * Search objects by simple equality filters (real searchObjectsBySlug()).
-     *
-     * @param string               $register The register slug.
-     * @param string               $schema   The schema slug.
-     * @param array<string, mixed> $filters  Equality filters.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array
-    {
-        $rows = array_values($this->store[$schema] ?? []);
+	/**
+	 * Find a single object by id.
+	 *
+	 * @param string $id The object id.
+	 * @param string $register The register id (named).
+	 * @param string $schema The schema id (named).
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	public function find(string $id, string $register = '', string $schema = ''): ?array {
+		return ($this->store[$schema][$id] ?? null);
+	}//end find()
 
-        return array_values(array_filter(
-            $rows,
-            static function (array $row) use ($filters): bool {
-                foreach ($filters as $key => $value) {
-                    if (($row[$key] ?? null) !== $value) {
-                        return false;
-                    }
-                }
+	/**
+	 * Search objects by simple equality filters (real searchObjectsBySlug()).
+	 *
+	 * @param string $register The register slug.
+	 * @param string $schema The schema slug.
+	 * @param array<string, mixed> $filters Equality filters.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+		$rows = array_values($this->store[$schema] ?? []);
 
-                return true;
-            },
-        ));
-    }//end searchObjectsBySlug()
+		return array_values(
+			array_filter(
+				$rows,
+				static function (array $row) use ($filters): bool {
+					foreach ($filters as $key => $value) {
+						if (($row[$key] ?? null) !== $value) {
+							return false;
+						}
+					}
 
-    /**
-     * Persist an object, assigning an id when absent.
-     *
-     * @param string               $register The register id.
-     * @param string               $schema   The schema id.
-     * @param array<string, mixed> $object   The object payload.
-     *
-     * @return array<string, mixed>
-     */
-    public function saveObject(string $register, string $schema, array $object): array
-    {
-        if (empty($object['id']) === true) {
-            $this->seq++;
-            $object['id'] = $schema.'-'.$this->seq;
-        }
+					return true;
+				},
+			)
+		);
+	}//end searchObjectsBySlug()
 
-        $this->store[$schema][$object['id']] = $object;
+	/**
+	 * Persist an object, assigning an id when absent.
+	 *
+	 * @param string $register The register id.
+	 * @param string $schema The schema id.
+	 * @param array<string, mixed> $object The object payload.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function saveObject(string $register, string $schema, array $object): array {
+		if (empty($object['id']) === true) {
+			$this->seq++;
+			$object['id'] = $schema . '-' . $this->seq;
+		}
 
-        return $object;
-    }//end saveObject()
+		$this->store[$schema][$object['id']] = $object;
+
+		return $object;
+	}//end saveObject()
 }//end class
 
 /**
  * Unit tests for BeschikkingService.
  *
  * @covers \OCA\Procest\Service\BeschikkingService
+ *
+ * @uses \OCA\Procest\Service\BerichtenboxRoutingService
+ * @uses \OCA\Procest\Service\Beschikking\AuditPacketBuilder
+ * @uses \OCA\Procest\Service\Beschikking\BeschikkingRepository
+ * @uses \OCA\Procest\Service\Beschikking\BezwaarTermijnScheduler
+ * @uses \OCA\Procest\Service\Beschikking\MandaatVerifier
+ * @uses \OCA\Procest\Service\Beschikking\MockSigningAdapter
+ * @uses \OCA\Procest\Service\Beschikking\MockTemplateEngineAdapter
+ * @uses \OCA\Procest\Service\Beschikking\OpenRegisterArchivalAdapter
+ * @uses \OCA\Procest\Service\StateMachineService
+ * @uses \OCA\Procest\Service\Support\SearchesObjects
  */
-class BeschikkingServiceTest extends TestCase
-{
-    /**
-     * The in-memory object store.
-     *
-     * @var FakeObjectService
-     */
-    private FakeObjectService $objects;
+class BeschikkingServiceTest extends TestCase {
 
-    /**
-     * The service under test.
-     *
-     * @var BeschikkingService
-     */
-    private BeschikkingService $service;
+	/**
+	 * The in-memory object store.
+	 *
+	 * @var FakeObjectService
+	 */
+	private FakeObjectService $objects;
 
-    /**
-     * Set up fixtures with a wired-up service graph.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->objects = new FakeObjectService();
+	/**
+	 * The service under test.
+	 *
+	 * @var BeschikkingService
+	 */
+	private BeschikkingService $service;
 
-        $settings = $this->createMock(SettingsService::class);
-        $settings->method('getObjectService')->willReturn($this->objects);
-        $settings->method('getConfigValue')->willReturnCallback(
-            static function (string $key): string {
-                return match ($key) {
-                    'register'                  => 'procest',
-                    'beschikking_schema'        => 'beschikking',
-                    'state_machine_log_schema'  => 'stateMachineLog',
-                    'bezwaar_trigger_schema'    => 'bezwaarTrigger',
-                    'mandaat_regeling_schema'   => 'mandaatRegeling',
-                    default                     => '',
-                };
-            },
-        );
+	/**
+	 * Set up fixtures with a wired-up service graph.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->objects = new FakeObjectService();
 
-        $logger       = $this->createMock(LoggerInterface::class);
-        $stateMachine = new StateMachineService($settings, $logger);
-        $routing      = new BerichtenboxRoutingService($logger);
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static function (string $key): string {
+				return match ($key) {
+					'register' => 'procest',
+					'beschikking_schema' => 'beschikking',
+					'state_machine_log_schema' => 'stateMachineLog',
+					'bezwaar_trigger_schema' => 'bezwaarTrigger',
+					'mandaat_regeling_schema' => 'mandaatRegeling',
+					default => '',
+				};
+			},
+		);
 
-        $this->service = new BeschikkingService(
-            $settings,
-            $stateMachine,
-            $routing,
-            new MockTemplateEngineAdapter(),
-            new MockSigningAdapter(),
-            new MockArchivalAdapter(),
-            $logger,
-        );
+		$logger = $this->createMock(LoggerInterface::class);
+		$stateMachine = new StateMachineService($settings, $logger);
+		$routing = new BerichtenboxRoutingService($logger);
 
-        // Seed a WMO mandaatregeling covering the afdelingsmanager level.
-        $this->objects->saveObject('procest', 'mandaatRegeling', [
-            'id'             => 'mr-2024-007-wmo',
-            'naam'           => 'Mandaatregeling WMO',
-            'mandaatGroepen' => [
-                ['niveau' => 'consulent', 'tot_bedrag' => 5000, 'zaaktypes' => ['wmo-melding'], 'beschikkingTypes' => ['toekenning']],
-                ['niveau' => 'afdelingsmanager', 'tot_bedrag' => 25000, 'zaaktypes' => ['wmo-melding'], 'beschikkingTypes' => ['toekenning', 'afwijzing']],
-            ],
-        ]);
-    }//end setUp()
+		$signingAdapter = new MockSigningAdapter();
 
-    /**
-     * Compose a beschikking in the ontwerp status with a rendered PDF.
-     *
-     * @return array<string, mixed> The composed beschikking (for chaining).
-     */
-    private function composeWmo(): array
-    {
-        $beschikking = $this->service->compose(
-            'zaak-2026-wmo-1',
-            'tpl-wmo-v1',
-            [
-                'beschikkingType' => 'toekenning',
-                'geadresseerde'   => ['type' => 'burger', 'bsn' => '123456789', 'naam' => 'M. Jansen', 'berichtenboxBevestigd' => true],
-                'motivering'      => 'Toegekend op basis van onderzoek.',
-            ],
-        );
+		$this->service = new BeschikkingService(
+			$stateMachine,
+			$routing,
+			new MockTemplateEngineAdapter(),
+			$signingAdapter,
+			new OpenRegisterArchivalAdapter($this->createMock(ContainerInterface::class), $logger),
+			new BeschikkingRepository($settings, $logger),
+			new MandaatVerifier($settings, $logger),
+			new AuditPacketBuilder($settings, $signingAdapter, $logger),
+			new BezwaarTermijnScheduler($settings, $logger),
+		);
 
-        // The compose path does not set zaaktype/legesbedrag; patch them in
-        // (ontwerp status permits edits) so the mandaat lookup can resolve.
-        return $this->service->updateFields($beschikking['id'], ['zaaktype' => 'wmo-melding', 'legesbedrag' => 4000]);
-    }//end composeWmo()
+		// Seed a WMO mandaatregeling covering the afdelingsmanager level.
+		$this->objects->saveObject(
+			'procest',
+			'mandaatRegeling',
+			[
+				'id' => 'mr-2024-007-wmo',
+				'name' => 'Mandaatregeling WMO',
+				'mandateGroups' => [
+					['level' => 'consulent', 'to_amount' => 5000, 'caseTypes' => ['wmo-melding'], 'decisionTypes' => ['toekenning']],
+					['level' => 'afdelingsmanager', 'to_amount' => 25000, 'caseTypes' => ['wmo-melding'], 'decisionTypes' => ['toekenning', 'rejection']],
+				],
+			]
+		);
+	}//end setUp()
 
-    /**
-     * Composition produces a draft with PDF/A-3 composition metadata. [T05]
-     *
-     * @return void
-     */
-    public function testComposeCreatesDraft(): void
-    {
-        $beschikking = $this->composeWmo();
+	/**
+	 * Compose a beschikking in the ontwerp status with a rendered PDF.
+	 *
+	 * @return array<string, mixed> The composed beschikking (for chaining).
+	 */
+	private function composeWmo(): array {
+		$decision = $this->service->compose(
+			'zaak-2026-wmo-1',
+			'tpl-wmo-v1',
+			[
+				'decisionType' => 'toekenning',
+				'addressee' => ['type' => 'burger', 'bsn' => '123456789', 'name' => 'M. Jansen', 'messageBoxConfirmed' => true],
+				'rationale' => 'Toegekend op basis van onderzoek.',
+			],
+		);
 
-        $this->assertSame('ontwerp', $beschikking['huidigeStatus']);
-        $this->assertSame('pdf-a3', $beschikking['samengesteldeInhoud']['format']);
-        $this->assertNotEmpty($beschikking['samengesteldeInhoud']['bestandId']);
-    }//end testComposeCreatesDraft()
+		// The compose path does not set zaaktype/legesbedrag; patch them in
+		// (ontwerp status permits edits) so the mandaat lookup can resolve.
+		return $this->service->updateFields($decision['id'], ['caseType' => 'wmo-melding', 'feeAmount' => 4000]);
+	}//end composeWmo()
 
-    /**
-     * The full lifecycle reaches gearchiveerd with all evidence recorded. [V01]
-     *
-     * @return void
-     */
-    public function testFullLifecycle(): void
-    {
-        $beschikking = $this->composeWmo();
-        $id          = $beschikking['id'];
+	/**
+	 * Composition produces a draft with PDF/A-3 composition metadata. [T05]
+	 *
+	 * @return void
+	 */
+	public function testComposeCreatesDraft(): void {
+		$decision = $this->composeWmo();
 
-        $afterAkkoord = $this->service->akkoord($id, 'afdelingsmanager-wmo-15');
-        $this->assertSame('akkoord-mandaat', $afterAkkoord['huidigeStatus']);
-        $this->assertSame('afdelingsmanager', $afterAkkoord['mandaatGegeven']['mandaatNiveau']);
+		$this->assertSame('draft', $decision['currentStatus']);
+		$this->assertSame('pdf-a3', $decision['compositeContent']['format']);
+		$this->assertNotEmpty($decision['compositeContent']['fileId']);
+	}//end testComposeCreatesDraft()
 
-        $afterSign = $this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
-        $this->assertSame('ondertekend', $afterSign['huidigeStatus']);
-        $this->assertNotEmpty($afterSign['handtekening']['validatieRapportId']);
+	/**
+	 * The full lifecycle reaches gearchiveerd with all evidence recorded. [V01]
+	 *
+	 * @return void
+	 */
+	public function testFullLifecycle(): void {
+		$decision = $this->composeWmo();
+		$id = $decision['id'];
 
-        $afterSend = $this->service->verzend($id, 'afdelingsmanager-wmo-15');
-        $this->assertSame('verzonden', $afterSend['huidigeStatus']);
-        $this->assertNotEmpty($afterSend['bezwaarTermijnEindDatum']);
+		$afterApproved = $this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->assertSame('approved-mandate', $afterApproved['currentStatus']);
+		// Outer key renamed; the inner `mandaatNiveau` is nested JSON and is
+		// deliberately left Dutch until the JSON-rewrite migration.
+		$this->assertSame('afdelingsmanager', $afterApproved['mandateGranted']['mandateLevel']);
 
-        // A BezwaarTrigger was created with a 6-week termijn. [V08]
-        $triggers = $this->objects->searchObjectsBySlug('procest', 'bezwaarTrigger', ['beschikkingId' => $id]);
-        $this->assertCount(1, $triggers);
-        $this->assertTrue($triggers[0]['archiefTriggerActief']);
+		$afterSign = $this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$this->assertSame('signed', $afterSign['currentStatus']);
+		$this->assertNotEmpty($afterSign['signature']['validationRapportId']);
 
-        $afterArchive = $this->service->archive($id);
-        $this->assertSame('gearchiveerd', $afterArchive['huidigeStatus']);
-        $this->assertNotEmpty($afterArchive['archief']['archiefId']);
-        $this->assertNotEmpty($afterArchive['archief']['vernietigingsdatum']);
+		$afterSend = $this->service->verzend($id, 'afdelingsmanager-wmo-15');
+		$this->assertSame('sent', $afterSend['currentStatus']);
+		$this->assertNotEmpty($afterSend['objectionTermEndDate']);
 
-        // Every transition was logged. [V05 logging]
-        $logs = $this->objects->searchObjectsBySlug('procest', 'stateMachineLog', ['beschikkingId' => $id]);
-        $this->assertGreaterThanOrEqual(4, count($logs));
-    }//end testFullLifecycle()
+		// A BezwaarTrigger was created with a 6-week termijn. [V08]
+		$triggers = $this->objects->searchObjectsBySlug('procest', 'bezwaarTrigger', ['decisionId' => $id]);
+		$this->assertCount(1, $triggers);
+		$this->assertTrue($triggers[0]['archiveTriggerActive']);
 
-    /**
-     * Mandaat is rejected when the approver level cannot cover the bedrag. [V03]
-     *
-     * @return void
-     */
-    public function testMandaatRejectedWhenOverLimit(): void
-    {
-        $beschikking = $this->composeWmo();
-        // Raise the bedrag above the consulent limit while still ontwerp.
-        $beschikking = $this->service->updateFields($beschikking['id'], ['legesbedrag' => 9000]);
+		$afterArchive = $this->service->archive($id);
+		$this->assertSame('archived', $afterArchive['currentStatus']);
+		$this->assertNotEmpty($afterArchive['archive']['archiveId']);
+		$this->assertNotEmpty($afterArchive['archive']['destructionDate']);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('mandaat_insufficient');
+		// Every transition was logged. [V05 logging]
+		$logs = $this->objects->searchObjectsBySlug('procest', 'stateMachineLog', ['decisionId' => $id]);
+		$this->assertGreaterThanOrEqual(4, count($logs));
+	}//end testFullLifecycle()
 
-        // A consulent may only sign up to 5000.
-        $this->service->akkoord($beschikking['id'], 'consulent-wmo-3');
-    }//end testMandaatRejectedWhenOverLimit()
+	/**
+	 * Mandaat is rejected when the approver level cannot cover the bedrag. [V03]
+	 *
+	 * @return void
+	 */
+	public function testMandaatRejectedWhenOverLimit(): void {
+		$decision = $this->composeWmo();
+		// Raise the bedrag above the consulent limit while still ontwerp.
+		$decision = $this->service->updateFields($decision['id'], ['feeAmount' => 9000]);
 
-    /**
-     * Editing a content field once ondertekend is rejected. [V02]
-     *
-     * @return void
-     */
-    public function testImmutabilityAfterSigning(): void
-    {
-        $beschikking = $this->composeWmo();
-        $id          = $beschikking['id'];
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('mandaat_insufficient');
 
-        $this->service->akkoord($id, 'afdelingsmanager-wmo-15');
-        $this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		// A consulent may only sign up to 5000.
+		$this->service->akkoord($decision['id'], 'consulent-wmo-3');
+	}//end testMandaatRejectedWhenOverLimit()
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('immutable');
+	/**
+	 * Editing a content field once ondertekend is rejected. [V02]
+	 *
+	 * @return void
+	 */
+	public function testImmutabilityAfterSigning(): void {
+		$decision = $this->composeWmo();
+		$id = $decision['id'];
 
-        $this->service->updateFields($id, ['motivering' => 'gewijzigd']);
-    }//end testImmutabilityAfterSigning()
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
 
-    /**
-     * An invalid transition (verzend before onderteken) is rejected. [V05]
-     *
-     * @return void
-     */
-    public function testInvalidTransitionRejected(): void
-    {
-        $beschikking = $this->composeWmo();
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('immutable');
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('invalid_transition');
+		$this->service->updateFields($id, ['rationale' => 'gewijzigd']);
+	}//end testImmutabilityAfterSigning()
 
-        // Cannot verzend straight from ontwerp.
-        $this->service->verzend($beschikking['id'], 'afdelingsmanager-wmo-15');
-    }//end testInvalidTransitionRejected()
+	/**
+	 * An invalid transition (verzend before onderteken) is rejected. [V05]
+	 *
+	 * @return void
+	 */
+	public function testInvalidTransitionRejected(): void {
+		$decision = $this->composeWmo();
 
-    /**
-     * The audit-pakket is a non-empty, verifiable ZIP. [V04]
-     *
-     * @return void
-     */
-    public function testAuditPacketIsZip(): void
-    {
-        $beschikking = $this->composeWmo();
-        $id          = $beschikking['id'];
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('invalid_transition');
 
-        $this->service->akkoord($id, 'afdelingsmanager-wmo-15');
-        $this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		// Cannot verzend straight from ontwerp.
+		$this->service->verzend($decision['id'], 'afdelingsmanager-wmo-15');
+	}//end testInvalidTransitionRejected()
 
-        $zip = $this->service->exportAuditPacket($id);
+	/**
+	 * The audit-pakket is a non-empty, verifiable ZIP. [V04]
+	 *
+	 * @return void
+	 */
+	public function testAuditPacketIsZip(): void {
+		$decision = $this->composeWmo();
+		$id = $decision['id'];
 
-        // ZIP local-file-header magic bytes.
-        $this->assertSame("PK\x03\x04", substr($zip, 0, 4));
-        $this->assertGreaterThan(100, strlen($zip));
-    }//end testAuditPacketIsZip()
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+
+		$zip = $this->service->exportAuditPacket($id);
+
+		// ZIP local-file-header magic bytes.
+		$this->assertSame("PK\x03\x04", substr($zip, 0, 4));
+		$this->assertGreaterThan(100, strlen($zip));
+	}//end testAuditPacketIsZip()
 }//end class

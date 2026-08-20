@@ -75,7 +75,11 @@ export async function askQuestion(caseId, question) {
  * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
  */
 export async function summarize(caseId, type = 'case', documentId = null) {
-	const response = await axios.post(`${baseUrl}/summarize`, { caseId, type, documentId })
+	const response = await axios.post(`${baseUrl}/summarize`, {
+		caseId,
+		type,
+		documentId,
+	})
 	return response.data
 }
 

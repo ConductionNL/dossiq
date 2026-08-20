@@ -2,40 +2,65 @@
 <template>
 	<div class="sub-entity-tab">
 		<div v-if="isCreate" class="sub-entity-tab__notice">
-			<p>{{ t('procest', 'Save the case type first before adding decision types.') }}</p>
+			<p>
+				{{
+					t(
+						'procest',
+						'Save the case type first before adding decision types.',
+					)
+				}}
+			</p>
 		</div>
 
 		<template v-else>
 			<!-- Deprecation notice: decision types are now managed by decidesk -->
 			<NcNoteCard type="warning">
-				{{ t('procest', 'Decision types are now managed by decidesk (procest-delegate-contract-decision). Local decision type configuration is kept for historical read access only. New decision flows are raised via the decidesk integration (ADR-019).') }}
+				{{
+					t(
+						'procest',
+						'Decision types are now managed by decidesk (procest-delegate-contract-decision). Local decision type configuration is kept for historical read access only. New decision flows are raised via the decidesk integration (ADR-019).',
+					)
+				}}
 			</NcNoteCard>
 			<NcLoadingIcon v-if="loading" />
 
 			<template v-else>
 				<div v-if="items.length > 0" class="sub-entity-tab__list">
-					<div
-						v-for="item in items"
-						:key="item.id"
-						class="sub-entity-row">
+					<div v-for="item in items" :key="item.id" class="sub-entity-row">
 						<template v-if="editingId !== item.id">
 							<span class="sub-entity-row__name">{{ item.name }}</span>
 							<span v-if="item.isDraft" class="sub-entity-row__badge">
 								{{ t('procest', 'Draft') }}
 							</span>
-							<span v-if="item.publicationRequired" class="sub-entity-row__badge">
+							<span
+								v-if="item.publicationRequired"
+								class="sub-entity-row__badge">
 								{{ t('procest', 'Publication required') }}
 							</span>
 							<span v-if="item.validFrom" class="sub-entity-row__meta">
 								{{ item.validFrom }}
 							</span>
 							<div class="sub-entity-row__actions">
-								<NcButton type="tertiary" @click="startEdit(item)">
+								<NcButton
+									type="tertiary"
+									:aria-label="
+										t('procest', 'Edit {name}', {
+											name: item.name,
+										})
+									"
+									@click="startEdit(item)">
 									<template #icon>
 										<PencilIcon :size="20" />
 									</template>
 								</NcButton>
-								<NcButton type="tertiary" @click="deleteItem(item)">
+								<NcButton
+									type="tertiary"
+									:aria-label="
+										t('procest', 'Delete {name}', {
+											name: item.name,
+										})
+									"
+									@click="deleteItem(item)">
 									<template #icon>
 										<DeleteIcon :size="20" />
 									</template>
@@ -47,42 +72,54 @@
 							<div class="sub-entity-row__edit-form">
 								<div class="edit-row">
 									<NcTextField
-										:value="editForm.name"
+										:modelValue="editForm.name"
 										:label="t('procest', 'Name')"
 										:error="!!editError"
 										class="edit-field"
-										@update:value="v => editForm.name = v" />
+										@update:modelValue="
+											(v) => (editForm.name = v)
+										" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
-										:value="editForm.description"
+										:modelValue="editForm.description"
 										:label="t('procest', 'Description')"
 										class="edit-field edit-field--full"
-										@update:value="v => editForm.description = v" />
+										@update:modelValue="
+											(v) => (editForm.description = v)
+										" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
-										:value="editForm.validFrom"
+										:modelValue="editForm.validFrom"
 										:label="t('procest', 'Valid from')"
 										type="date"
 										class="edit-field"
-										@update:value="v => editForm.validFrom = v" />
+										@update:modelValue="
+											(v) => (editForm.validFrom = v)
+										" />
 									<NcTextField
-										:value="editForm.validUntil"
+										:modelValue="editForm.validUntil"
 										:label="t('procest', 'Valid until')"
 										type="date"
 										class="edit-field"
-										@update:value="v => editForm.validUntil = v" />
+										@update:modelValue="
+											(v) => (editForm.validUntil = v)
+										" />
 								</div>
 								<div class="edit-row">
 									<NcCheckboxRadioSwitch
-										:checked="editForm.isDraft"
-										@update:checked="v => editForm.isDraft = v">
+										:modelValue="editForm.isDraft"
+										@update:modelValue="
+											(v) => (editForm.isDraft = v)
+										">
 										{{ t('procest', 'Draft') }}
 									</NcCheckboxRadioSwitch>
 									<NcCheckboxRadioSwitch
-										:checked="editForm.publicationRequired"
-										@update:checked="v => editForm.publicationRequired = v">
+										:modelValue="editForm.publicationRequired"
+										@update:modelValue="
+											(v) => (editForm.publicationRequired = v)
+										">
 										{{ t('procest', 'Publication required') }}
 									</NcCheckboxRadioSwitch>
 								</div>
@@ -90,7 +127,10 @@
 									{{ editError }}
 								</p>
 								<div class="edit-actions">
-									<NcButton type="primary" :disabled="saving" @click="saveEdit">
+									<NcButton
+										type="primary"
+										:disabled="saving"
+										@click="saveEdit">
 										{{ t('procest', 'Save') }}
 									</NcButton>
 									<NcButton @click="cancelEdit">
@@ -118,18 +158,34 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcNoteCard, NcTextField, NcCheckboxRadioSwitch } from '@nextcloud/vue'
-import PencilIcon from 'vue-material-design-icons/Pencil.vue'
+import {
+	NcButton,
+	NcCheckboxRadioSwitch,
+	NcLoadingIcon,
+	NcNoteCard,
+	NcTextField,
+} from '@nextcloud/vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
+import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 
 export default {
 	name: 'DecisionTypesTab',
-	components: { NcButton, NcLoadingIcon, NcNoteCard, NcTextField, NcCheckboxRadioSwitch, PencilIcon, DeleteIcon },
+	components: {
+		NcButton,
+		NcLoadingIcon,
+		NcNoteCard,
+		NcTextField,
+		NcCheckboxRadioSwitch,
+		PencilIcon,
+		DeleteIcon,
+	},
+
 	props: {
 		caseTypeId: { type: String, default: null },
 		isCreate: { type: Boolean, default: false },
 	},
+
 	data() {
 		return {
 			loading: false,
@@ -141,13 +197,23 @@ export default {
 			saving: false,
 		}
 	},
+
 	async mounted() {
 		if (!this.isCreate && this.caseTypeId) await this.loadItems()
 	},
+
 	methods: {
 		emptyForm() {
-			return { name: '', description: '', isDraft: true, publicationRequired: false, validFrom: '', validUntil: '' }
+			return {
+				name: '',
+				description: '',
+				isDraft: true,
+				publicationRequired: false,
+				validFrom: '',
+				validUntil: '',
+			}
 		},
+
 		async loadItems() {
 			this.loading = true
 			this.error = ''
@@ -159,16 +225,19 @@ export default {
 				})
 				this.items = results || []
 			} catch (e) {
-				this.error = e.message || t('procest', 'Failed to load decision types')
+				this.error =
+					e.message || t('procest', 'Failed to load decision types')
 			}
 			this.loading = false
 		},
+
 		startAdd() {
 			this.editingId = 'new'
 			this.editForm = this.emptyForm()
 			this.editError = ''
 			this.items.push({ id: 'new', name: '' })
 		},
+
 		/**
 		 * @param item the decision type row being edited
 		 */
@@ -178,17 +247,23 @@ export default {
 				name: item.name || '',
 				description: item.description || '',
 				isDraft: item.isDraft === true || item.isDraft === 'true',
-				publicationRequired: item.publicationRequired === true || item.publicationRequired === 'true',
+				publicationRequired:
+					item.publicationRequired === true
+					|| item.publicationRequired === 'true',
+
 				validFrom: item.validFrom || '',
 				validUntil: item.validUntil || '',
 			}
 			this.editError = ''
 		},
+
 		cancelEdit() {
-			if (this.editingId === 'new') this.items = this.items.filter(i => i.id !== 'new')
+			if (this.editingId === 'new')
+				this.items = this.items.filter((i) => i.id !== 'new')
 			this.editingId = null
 			this.editError = ''
 		},
+
 		async saveEdit() {
 			this.editError = ''
 			if (!this.editForm.name.trim()) {
@@ -210,32 +285,46 @@ export default {
 				if (this.editingId !== 'new') data.id = this.editingId
 				const result = await objectStore.saveObject('decisionType', data)
 				if (!result) {
-					this.editError = objectStore.getError('decisionType') || t('procest', 'Failed to save decision type')
+					this.editError =
+						objectStore.getError('decisionType')
+						|| t('procest', 'Failed to save decision type')
 					return
 				}
 				this.editingId = null
 				await this.loadItems()
 			} catch (e) {
-				this.editError = e.message || t('procest', 'Failed to save decision type')
+				this.editError =
+					e.message || t('procest', 'Failed to save decision type')
 			} finally {
 				this.saving = false
 			}
 		},
+
 		/**
 		 * @param item the decision type row being deleted
 		 */
 		async deleteItem(item) {
-			if (!confirm(t('procest', 'Delete decision type "{name}"?', { name: item.name }))) return
+			if (
+				!confirm(
+					t('procest', 'Delete decision type "{name}"?', {
+						name: item.name,
+					}),
+				)
+			)
+				return
 			try {
 				const objectStore = useObjectStore()
 				const ok = await objectStore.deleteObject('decisionType', item.id)
 				if (!ok) {
-					this.error = objectStore.getError('decisionType') || t('procest', 'Failed to delete decision type')
+					this.error =
+						objectStore.getError('decisionType')
+						|| t('procest', 'Failed to delete decision type')
 					return
 				}
 				await this.loadItems()
 			} catch (e) {
-				this.error = e.message || t('procest', 'Failed to delete decision type')
+				this.error =
+					e.message || t('procest', 'Failed to delete decision type')
 			}
 		},
 	},

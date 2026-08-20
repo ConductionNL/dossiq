@@ -31,48 +31,18 @@ namespace OCA\Procest\Service\Transitions;
  *
  * @spec openspec/changes/status-transition-engine/tasks.md#T04
  */
-final class GuardResult
-{
-    /**
-     * Constructor.
-     *
-     * @param bool                 $passed         Whether the guard passed
-     * @param string|null          $failureMessage Optional user-facing failure message
-     * @param array<string, mixed> $details        Structured guard details (e.g. silent role hide)
-     */
-    public function __construct(
-        public readonly bool $passed,
-        public readonly ?string $failureMessage=null,
-        public readonly array $details=[],
-    ) {
-    }//end __construct()
-
-    /**
-     * Convenience constructor for a passing result.
-     *
-     * @param array<string, mixed> $details Optional details
-     *
-     * @return self
-
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public static function pass(array $details=[]): self
-    {
-        return new self(passed: true, failureMessage: null, details: $details);
-    }//end pass()
-
-    /**
-     * Convenience constructor for a failing result.
-     *
-     * @param string               $message User-facing failure message
-     * @param array<string, mixed> $details Optional structured details
-     *
-     * @return self
-
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public static function fail(string $message, array $details=[]): self
-    {
-        return new self(passed: false, failureMessage: $message, details: $details);
-    }//end fail()
+final class GuardResult {
+	/**
+	 * Constructor.
+	 *
+	 * @param bool $passed Whether the guard passed
+	 * @param string|null $failureMessage Optional user-facing failure message
+	 * @param array<string, mixed> $details Structured guard details (e.g. silent role hide)
+	 */
+	public function __construct(
+		public readonly bool $passed,
+		public readonly ?string $failureMessage = null,
+		public readonly array $details = [],
+	) {
+	}//end __construct()
 }//end class

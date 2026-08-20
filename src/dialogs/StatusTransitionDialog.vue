@@ -10,15 +10,15 @@
 				v-model="selectedStatus"
 				:options="statusOptions"
 				:placeholder="t('procest', 'Select new status')"
-				:input-label="t('procest', 'New status')"
+				:inputLabel="t('procest', 'New status')"
 				label="label"
-				track-by="value" />
+				trackBy="value" />
 			<NcTextField
 				v-model="besluitdatum"
 				:label="t('procest', 'Besluitdatum (optional)')"
 				type="date" />
 			<NcTextArea
-				v-model="toelichting"
+				v-model="notes"
 				:label="t('procest', 'Toelichting (optional)')" />
 			<p v-if="error" class="form-error">
 				{{ error }}
@@ -27,7 +27,10 @@
 				<NcButton :disabled="!selectedStatus || submitting" @click="submit">
 					{{ t('procest', 'Apply') }}
 				</NcButton>
-				<NcButton type="secondary" :disabled="submitting" @click="$emit('close')">
+				<NcButton
+					type="secondary"
+					:disabled="submitting"
+					@click="$emit('close')">
 					{{ t('procest', 'Cancel') }}
 				</NcButton>
 			</div>
@@ -37,13 +40,13 @@
 
 <script>
 import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
 import { translate as t } from '@nextcloud/l10n'
-import NcDialog from '@nextcloud/vue/dist/Components/NcDialog.js'
-import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
-import NcSelect from '@nextcloud/vue/dist/Components/NcSelect.js'
-import NcTextField from '@nextcloud/vue/dist/Components/NcTextField.js'
-import NcTextArea from '@nextcloud/vue/dist/Components/NcTextArea.js'
+import { generateUrl } from '@nextcloud/router'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
+import NcTextArea from '@nextcloud/vue/components/NcTextArea'
+import NcTextField from '@nextcloud/vue/components/NcTextField'
 
 export default {
 	name: 'StatusTransitionDialog',
@@ -54,29 +57,32 @@ export default {
 		NcTextField,
 		NcTextArea,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
 	},
+
 	emits: ['close', 'submitted'],
 	data() {
 		return {
 			selectedStatus: null,
 			besluitdatum: '',
-			toelichting: '',
+			notes: '',
 			submitting: false,
 			error: null,
 			statusOptions: [
-				{ label: t('procest', 'Ingediend'), value: 'ingediend' },
-				{ label: t('procest', 'In behandeling'), value: 'in_behandeling' },
-				{ label: t('procest', 'Verleend'), value: 'verleend' },
-				{ label: t('procest', 'Geweigerd'), value: 'geweigerd' },
-				{ label: t('procest', 'Ingetrokken'), value: 'ingetrokken' },
+				{ label: t('procest', 'Submitted'), value: 'submitted' },
+				{ label: t('procest', 'In handling'), value: 'in_handling' },
+				{ label: t('procest', 'Granted'), value: 'granted' },
+				{ label: t('procest', 'Refused'), value: 'refused' },
+				{ label: t('procest', 'Withdrawn'), value: 'withdrawn' },
 			],
 		}
 	},
+
 	methods: {
 		t,
 		async submit() {
@@ -84,11 +90,15 @@ export default {
 			this.submitting = true
 			this.error = null
 			try {
-				const url = generateUrl('/apps/procest/api/dso/cases/' + encodeURIComponent(this.caseId) + '/transition')
+				const url = generateUrl(
+					'/apps/procest/api/dso/cases/'
+						+ encodeURIComponent(this.caseId)
+						+ '/transition',
+				)
 				const res = await axios.post(url, {
 					newStatus: this.selectedStatus.value,
 					besluitdatum: this.besluitdatum || null,
-					toelichting: this.toelichting || null,
+					notes: this.notes || null,
 				})
 				this.$emit('submitted', res.data)
 			} catch (err) {
@@ -108,10 +118,12 @@ export default {
 	flex-direction: column;
 	gap: 12px;
 }
+
 .dso-transition-form__actions {
 	display: flex;
 	gap: 8px;
 }
+
 .form-error {
 	color: var(--color-error);
 }

@@ -1,64 +1,35 @@
+# Procest — Conduction PHPStan config.
+#
+# The shared base is the single source of truth. Everything here is either the
+# app's own tracked debt or an ignore naming a symbol that exists in no other
+# fleet app. Anything you are tempted to add that another app would also need
+# belongs in the base, not here.
+#
+# No baseline. Procest carries zero suppressed PHPStan errors: `phpstan-baseline.neon`
+# was deleted once its last 10 live entries (injected-but-unused constructor
+# dependencies) were fixed at source. Do NOT reintroduce it — a baseline makes the
+# `phpstan` leg of `composer check:strict` exit 0 while real errors remain, which is
+# exactly what it was doing here. Fix at source, or add a documented `ignoreErrors`
+# pattern below with a written justification.
 includes:
-    # Per-app tracked lint debt lives here (auto-generated via `phpstan --generate-baseline`).
-    # Apps without debt ship an empty baseline file; canonical includes are otherwise byte-identical
-    # across the fleet.
-    - phpstan-baseline.neon
+    - vendor/conduction/hydra-gates/quality-config/phpstan-base.neon
 
 parameters:
-    level: 5
-    paths:
-        - lib
-    bootstrapFiles:
-        - phpstan-bootstrap.php
-    excludePaths:
-        - vendor
-        - vendor-bin
-        # Apps that ship a verbatim template snapshot under lib/Resources/template/ (e.g. openbuilt).
-        - lib/Resources/template
-    scanDirectories:
-        - vendor/nextcloud/ocp
-    reportUnmatchedIgnoredErrors: false
+    # App-specific only. The base already sets level, paths, bootstrapFiles,
+    # excludePaths, scanDirectories and every fleet-wide ignore.
+    typeAliases:
+        # OCP declares `@psalm-type DataResponseType = ...` in the DataResponse
+        # class docblock and immediately uses it as a @template bound. PHPStan
+        # does not pick the alias up from that position and resolves the bound
+        # to a non-existent class `OCP\AppFramework\Http\DataResponseType`, so
+        # EVERY `new DataResponse(...)` is reported as a type error. This is a
+        # verbatim copy of the OCP alias, not a widening — it makes the generic
+        # bound resolvable instead of silencing the rule.
+        DataResponseType: 'array|int|float|string|bool|object|null|\stdClass|\JsonSerializable'
+
     ignoreErrors:
-        # Nextcloud server internals (\OC, OC_App, OC\) not stubbed in nextcloud/ocp
-        - '#Call to an undefined method OC::#'
-        - '#Class OC not found#'
-        - '#Access to static property \$server on an unknown class OC#'
-        - '#unknown class OC\\#'
-        - '#Caught class OC\\#'
-        - '#unknown class OC_App#'
-        - '#Class OC_App not found#'
-        # OCA\DAV is server-internal and not in nextcloud/ocp stubs
-        - '#unknown class OCA\\DAV\\#'
-        - '#Class OCA\\DAV\\#'
-        # OCA classes from other apps (OpenRegister) not available during static analysis
-        - '#unknown class OCA\\OpenRegister\\#'
-        - '#OCA\\OpenRegister\\[a-zA-Z\\]+.*not found#'
-        - '#on an unknown class OCA\\OpenRegister\\#'
-        - '#has invalid return type OCA\\OpenRegister\\#'
-        - '#has invalid type OCA\\OpenRegister\\#'
-        - '#implements unknown interface OCA\\OpenRegister\\#'
-        # GuzzleHttp is available at runtime via Nextcloud but not in composer require
-        - '#unknown class GuzzleHttp\\#'
-        - '#GuzzleHttp\\[a-zA-Z\\]+.*not found#'
-        - '#on an unknown class GuzzleHttp\\#'
-        - '#invalid type GuzzleHttp\\#'
-        - '#Caught class GuzzleHttp\\#'
-        # Doctrine\DBAL is shipped by Nextcloud server but not stubbed in nextcloud/ocp
-        - '#unknown class Doctrine\\DBAL\\#'
-        - '#Doctrine\\DBAL\\[a-zA-Z\\]+.*not found#'
-        - '#on an unknown class Doctrine\\DBAL\\#'
-        # Dynamic HTTP status codes from business rule validation results
-        # (matches both `Parameter $statusCode` and `Parameter #N $statusCode` forms emitted by phpstan)
-        - '#Parameter (\#\d+ )?\$statusCode of class OCP\\AppFramework\\Http\\JSONResponse constructor expects#'
-        # registerRepairStep exists on server; not yet in nextcloud/ocp stub used for analysis
-        - '#Call to an undefined method OCP\\AppFramework\\Bootstrap\\IRegistrationContext::registerRepairStep#'
         # registerJob exists on server; not yet in nextcloud/ocp stub used for analysis
         - '#Call to an undefined method OCP\\AppFramework\\Bootstrap\\IRegistrationContext::registerJob#'
-        # OCP stub gaps for methods that exist at runtime
-        - '#Call to an undefined method OCP\\IRequest::getContent\(\)#'
-        - '#Call to an undefined method OCP\\IRequest::setParameter\(\)#'
-        - '#Call to an undefined method OCP\\Mail\\IMessage::attachFile\(\)#'
-        - '#Call to an undefined method OCP\\AppFramework\\Db\\Entity::jsonSerialize#'
         # registerEventListener accepts the listener FQCN string at runtime; the
         # OCP generic signature is narrower than the server resolver.
         - '#Parameter \$listener of method OCP\\AppFramework\\Bootstrap\\IRegistrationContext::registerEventListener\(\) expects class-string#'

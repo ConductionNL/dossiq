@@ -29,7 +29,7 @@ export const useAdviceStore = defineStore('advice', {
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		pendingRequests(state) {
-			return state.requests.filter((r) => r.status === 'aangevraagd')
+			return state.requests.filter((r) => r.status === 'requested')
 		},
 
 		/**
@@ -45,7 +45,7 @@ export const useAdviceStore = defineStore('advice', {
 		overdueRequests(state) {
 			const now = new Date()
 			return state.requests.filter((r) => {
-				if (r.status !== 'aangevraagd' || !r.deadline) {
+				if (r.status !== 'requested' || !r.deadline) {
 					return false
 				}
 				return new Date(r.deadline) < now
@@ -63,7 +63,7 @@ export const useAdviceStore = defineStore('advice', {
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		receivedRequests(state) {
-			return state.requests.filter((r) => r.status === 'ontvangen')
+			return state.requests.filter((r) => r.status === 'received')
 		},
 
 		/**
@@ -77,8 +77,12 @@ export const useAdviceStore = defineStore('advice', {
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		allAdviceReceived(state) {
-			return state.requests.length > 0
-				&& state.requests.every((r) => r.status === 'ontvangen' || r.status === 'verlopen')
+			return (
+				state.requests.length > 0
+				&& state.requests.every(
+					(r) => r.status === 'received' || r.status === 'expired',
+				)
+			)
 		},
 	},
 
@@ -98,10 +102,13 @@ export const useAdviceStore = defineStore('advice', {
 			this.error = null
 			try {
 				const objectStore = useObjectStore()
-				const response = await objectStore.fetchCollection('adviesAanvraag', {
-					'_filters[case]': caseId,
-					limit: 100,
-				})
+				const response = await objectStore.fetchCollection(
+					'adviesAanvraag',
+					{
+						'_filters[case]': caseId,
+						limit: 100,
+					},
+				)
 				this.requests = response?.results || response || []
 				return this.requests
 			} catch (error) {
@@ -130,18 +137,18 @@ export const useAdviceStore = defineStore('advice', {
 				const objectStore = useObjectStore()
 				const saved = await objectStore.saveObject('adviesAanvraag', {
 					...requestData,
-					status: 'aangevraagd',
+					status: 'requested',
 					requestedAt: new Date().toISOString(),
 				})
 				this.requests.push(saved)
 
 				// Create task for the adviseur if internal
-				if (requestData.type === 'intern' && requestData.adviseur) {
+				if (requestData.type === 'intern' && requestData.advisor) {
 					await objectStore.saveObject('task', {
 						case: requestData.case,
-						title: `Advies uitbrengen: ${requestData.onderwerp || 'Adviesaanvraag'}`,
+						title: `Advies uitbrengen: ${requestData.subject || 'Adviesaanvraag'}`,
 						description: requestData.questions || '',
-						assignee: requestData.adviseur,
+						assignee: requestData.advisor,
 						status: 'open',
 						dueDate: requestData.deadline,
 					})
@@ -180,9 +187,9 @@ export const useAdviceStore = defineStore('advice', {
 				const objectStore = useObjectStore()
 				const updated = await objectStore.saveObject('adviesAanvraag', {
 					...request,
-					status: 'ontvangen',
+					status: 'received',
 					receivedAt: new Date().toISOString(),
-					adviesDocument: documentId || request.adviesDocument,
+					adviceDocument: documentId || request.adviceDocument,
 				})
 
 				const index = this.requests.findIndex((r) => r.id === requestId)
@@ -219,14 +226,14 @@ export const useAdviceStore = defineStore('advice', {
 				const objectStore = useObjectStore()
 				const updated = await objectStore.saveObject('adviesAanvraag', {
 					...request,
-					status: 'verlopen',
+					status: 'expired',
 				})
 
 				// Create task for behandelaar
 				await objectStore.saveObject('task', {
 					case: request.case,
-					title: `Advies verlopen: ${request.onderwerp || request.adviseur}`,
-					description: `Advies van ${request.adviseur} is verlopen. Beoordeel of procedure kan doorgaan zonder dit advies.`,
+					title: `Advies verlopen: ${request.subject || request.advisor}`,
+					description: `Advies van ${request.advisor} is verlopen. Beoordeel of procedure kan doorgaan zonder dit advies.`,
 					status: 'open',
 				})
 

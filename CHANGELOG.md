@@ -2,6 +2,82 @@
 
 All notable changes to Procest are documented in this file.
 
+## [0.3.4] - 2026-07-25
+
+### Changed
+
+- `i18n(schema)`: re-authored 46 Dutch `title` values in `lib/Settings/procest_register.json` (register `0.13.0` → `0.13.1`) to English across the `complaint`/`complaintDisposition`/`hearing` (Awb chapter 9 klacht flow), `bezwaar`/`beroep`/`bacAdviceRequest` (objection/appeal flow), `voorstel`/`parafeerroute`/`parafeeractie`/`paraferingAuditEntry` (B&W sign-off flow), and `caseType`/`documentType`/`decisionType`/`case`/`location` schemas — property titles are now the canonical English source for manifest-driven UI labels, translated back to Dutch via l10n (`Category`/`Handler`/`Participants` already had l10n entries; 39 new EN/NL key pairs added to `l10n/en.json`, `l10n/nl.json`, `l10n/en.js`, `l10n/nl.js`). Property keys, enum values, and descriptions are unchanged — this is a labels-only change.
+
+## [0.2.39] - 2026-07-06
+
+### Added
+
+- `semantic-case-intake`: procest is now a provider of OpenRegister's `ns#Case` semantic handoff kind — this BACKS the README "Pipelinq Bridge" claim (graduated from roadmap to shipped).
+  - `case` schema declares `implements: ["https://openregister.app/ns#Case"]` + a COMPLETE `handoffContract` binding validated against the REAL OpenRegister `HandoffKindContracts` (mandatory title→title, summary→description, channel→intakeChannel, source→handoffSource; optional requester→requester, priority→priority).
+  - New ADR-048 semantic-reference properties `requester` (canonical requester — the initiator display fields are its projection, one write path) and `handoffSource` (provenance back-link to the originating request).
+  - Declarative `caseHandoffIntake` notification (`x-openregister-notifications`, created + notIn filter on handoffSource) — no imperative dispatch.
+  - Handoff provenance surfaced in the Werkvoorraad intake (origin badge) and on the CaseDetail overview (origin, received-at, source-object link via OR's URN resolver). English + Dutch i18n.
+  - No app-local creation endpoint — handoff creation flows through OpenRegister (ADR-022). Requires OpenRegister with the merged semantic-object-handoff engine.
+
+## [0.2.38] - 2026-07-06
+
+### Added
+
+- `external-integrations-test-environments`: external-integration seams wired to real TEST environments behind a per-integration config tier, defaulting to `log` (no external call happens unknowingly).
+  - `IntegrationMode` config-tier resolver (`integration.<name>.mode`, fail-closed to `log`); `Application.php` factory bindings replace the hardcoded Log/Mock aliases for BRP, KvK, DigiD, eHerkenning.
+  - `HaalCentraalBrpAdapter` (Haal Centraal BRP Personen bevragen; `mock`=ghcr.io/brp-api/personen-mock offline, `test`=proefomgeving; X-API-KEY; BSN never logged) and `KvkApiAdapter` (KvK Zoeken; `test`=api.kvk.nl/test with the documented public test key). Both fail-soft.
+  - `SimulatorDigidSamlAdapter` + `SimulatorEHerkenningSamlAdapter` (maykinmedia mock-login pattern, `simulator:true` assertions, no real SAML) via `integration.digid.mode=simulator`; permanently capped at beta.
+  - DSO config-ready seam (`DsoLvAuthService::getBaseUrl()` reads `integration.dso.baseUrl`, warn-and-empty when unset).
+  - Offline contract lane (`tests/Unit/Service/External/BrpKvkContractTest.php`) against REAL recorded mock/test-API responses (`tests/fixtures/contracts/`), aligned with the brp-kvk-register-sets seeds; `IntegrationTierTest` for the tier + adapter + simulator contracts.
+  - Features-overlay promotion (brp/kvk/digid → beta with reasons; dso reason added); `docs/admin/integrations.md` (config tiers, key documentation, access-request register).
+
+### Deviations / blocked (out of session scope)
+
+- Formal aansluittrajecten — BRP proefomgeving key, DSO pre-prod (PKIoverheid cert), Logius DigiD preproductie (real SAML), NA e-Depot — are customer-side and were NOT started; config seams are ready to flip on grant. e-Depot MDTO validation + Preservica rehearsal are deferred to `migrate-archival-to-or` (OR archival pipeline).
+
+## [0.2.37] - 2026-07-06
+
+### Added
+
+- `brp-kvk-register-sets`: BRP/KvK register sets + initiator (indiener) selection and display.
+  - ADR-037 fragment `lib/Settings/register.d/25-brp-kvk.json`: `brpPerson` (Haal Centraal naming, `format: bsn` via OpenRegister's validator) and `kvkCompany` (KvK Zoeken naming) schemas, seeded with the OFFICIAL fictitious fixtures — 10 personen-mock personas (all 11-proef valid) and 10 KvK test companies incl. the pinned 69599084/68750110/69599068/55344526 (fetched from api.kvk.nl/test) — every row marked as fictitious test data. Seeds double as the contract fixtures for `external-integrations-test-environments`.
+  - `case` schema: additive optional `initiatorType` (person|company|contact) / `initiatorSourceId` / `initiatorDisplayName` projection fields (canonical requester semantic reference is `semantic-case-intake`'s; one write path via `initiatorProjection()`).
+  - Initiator UI: `InitiatorPicker` (Person/Company/Contact tabs, register-tier search via the object store, contacts via core contactsmenu with graceful empty state) in the StartCaseWidget create flow (optional, skippable via `InitiatorPickerModal`); `InitiatorSection` on the CaseDetail overview (name + type + source id deep-linking to the seeded register object; renders nothing when unset). English + Dutch i18n.
+
+## [0.2.36] - 2026-07-06
+
+### Added
+
+- `avg-verwerkingenlogging` (thin consumer of OpenRegister's verwerkingenlogging, VNG Logging Verwerkingen / AVG art. 30): procest contributes domain content and a scoped FG window — no log engine of its own.
+  - Processing-activity catalogue `lib/Settings/verwerkingsactiviteiten.json` (zaakafhandeling, omgevingsvergunning, bezwaarschrift, Woo-verzoek, klacht, klantcontact-registratie, zaak-archivering) seeded into OR's verwerkingsregister as drafts by the `SeedVerwerkingsactiviteiten` repair step (upsert-by-code; FG-published status survives upgrades).
+  - `x-openregister-processing` read-logging opt-in (`logReads: true` + activity attribution + subjectIdFields) on the person-bearing schemas `case`, `role`, `customerContact` and `contactmoment`.
+  - FG/admin view **Processing activities (AVG)** (`/verwerkingen`, settings section): catalogue review status, unclassified-processing counter (OR's flagged fallback), and the per-betrokkene inzageverzoek export entry point (`InzageExportModal`) delegating to OR's `/api/avg/verwerkingen/betrokkene`. English + Dutch i18n.
+  - Docs `docs/admin/verwerkingenlogging.md`: VNG API consumption for external audit tooling (OR endpoints, procest register scope) + known limitations (per-case-type attribution, ZGW client identity — OR-side gaps).
+
+## [0.2.35] - 2026-07-06
+
+### Added
+
+- `consume-or-mdm` (ADR-045 / ADR-022): procest now declares master-data-management rules for OpenRegister's MDM engine — no app-local MDM code or UI.
+  - `x-openregister-quality` + `x-openregister-dedup` annotations on the `case` (identifier / vergunningaanvraagRef exact match — DSO double-intake guard; title normalized+levenshtein; blocking per caseType), `supplier` (kvkNumber/iban exact, legalName fuzzy, kvkNumber `^[0-9]{8}$` format rule) and `partnerOrganization` (oin exact, name fuzzy, contactEmail format rule) schemas in `lib/Settings/procest_register.json` (in-place, not register.d, to avoid the union-merge pitfall).
+  - OR-materialised `qualityScore`/`qualityStatus` declared as facetable properties on all three schemas. Schema versions bumped.
+  - Explicit non-adoption of `x-openregister-survivorship` (no trust-tiered source records in procest); steward workflow documented in `docs/admin/master-data-stewardship.md`.
+  - Requires OpenRegister >= 0.2.16 (recorded in `appinfo/info.xml` dependencies comment).
+
+### Fixed
+
+- Removed a duplicate `x-schema-org` JSON key on the `supplier` schema (pre-existing).
+
+## [0.2.34] - 2026-07-06
+
+### Changed
+
+- `align-claims-and-licence`: app metadata now tells the truth about the code as shipped.
+  - `appinfo/info.xml` licence flipped `agpl` → `EUPL-1.2` (matches `LICENSE`; the SPDX token is accepted by Nextcloud's app-info.xsd enum since nextcloud/server PR #60212). EN/NL description licence sentences updated; version bumped to 0.2.34.
+  - `appinfo/info.xml` element order fixed to pass app-info.xsd validation (php before nextcloud in `<dependencies>`; repair-steps/commands/settings/navigations reordered) — pre-existing schema violations.
+  - README: licence badge → EUPL-1.2; Unified Search attributed to OpenRegister (provided centrally — procest ships no own search provider); Pipelinq Bridge marked roadmap (see `openspec/changes/semantic-case-intake/`); DMN removed from shipped process-standards claims (roadmap); three dead docs links fixed; platform matrix corrected to Nextcloud 28–34 / PHP 8.3+.
+  - `openspec/features.overlay.json`: `archief-edepot-handover` and `multi-tenancy` downgraded `stable` → `beta` with reasons (mock/log e-Depot adapter; tenant stack not yet on the OpenRegister boundary).
+
 ## [Unreleased]
 
 ### Changed

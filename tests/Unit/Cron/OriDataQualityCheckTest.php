@@ -32,48 +32,47 @@ use Psr\Log\LoggerInterface;
  * Minimal ObjectService stub matching named-argument signatures used in
  * OriDataQualityCheck so createMock() honours named args.
  */
-interface QualityObjectServiceStub
-{
-    /**
-     * Slug-aware search bridge (real ObjectService::searchObjectsBySlug()).
-     *
-     * @param string              $registerSlug The register slug
-     * @param string              $schemaSlug   The schema slug
-     * @param array<string,mixed> $filters      Query parameters
-     *
-     * @return array<int,mixed>|int
-     */
-    public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters=[]): array | int;
+interface QualityObjectServiceStub {
+	/**
+	 * Slug-aware search bridge (real ObjectService::searchObjectsBySlug()).
+	 *
+	 * @param string $registerSlug The register slug
+	 * @param string $schemaSlug The schema slug
+	 * @param array<string,mixed> $filters Query parameters
+	 *
+	 * @return array<int,mixed>|int
+	 */
+	public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array|int;
 
-    /**
-     * Search objects (real ObjectService::searchObjects()).
-     *
-     * @param array<string,mixed> $query Query with @self block and field filters.
-     *
-     * @return array<int,mixed>|int
-     */
-    public function searchObjects(array $query=[]): array | int;
+	/**
+	 * Search objects (real ObjectService::searchObjects()).
+	 *
+	 * @param array<string,mixed> $query Query with @self block and field filters.
+	 *
+	 * @return array<int,mixed>|int
+	 */
+	public function searchObjects(array $query = []): array|int;
 
-    /**
-     * Find a single object by ID (real ObjectService::find()).
-     *
-     * @param int|string $id     The object ID or slug
-     * @param mixed      ...$args Remaining find() args (extend/files/register/schema).
-     *
-     * @return mixed
-     */
-    public function find(int | string $id, ...$args): mixed;
+	/**
+	 * Find a single object by ID (real ObjectService::find()).
+	 *
+	 * @param int|string $id The object ID or slug
+	 * @param mixed ...$args Remaining find() args (extend/files/register/schema).
+	 *
+	 * @return mixed
+	 */
+	public function find(int|string $id, ...$args): mixed;
 
-    /**
-     * Save an object.
-     *
-     * @param array  $object   The object data
-     * @param string $register The register slug
-     * @param string $schema   The schema slug
-     *
-     * @return array
-     */
-    public function saveObject(array $object, string $register, string $schema): array;
+	/**
+	 * Save an object.
+	 *
+	 * @param array $object The object data
+	 * @param string $register The register slug
+	 * @param string $schema The schema slug
+	 *
+	 * @return array
+	 */
+	public function saveObject(array $object, string $register, string $schema): array;
 }//end interface
 
 /**
@@ -81,141 +80,131 @@ interface QualityObjectServiceStub
  *
  * @covers \OCA\Procest\Cron\OriDataQualityCheck
  */
-class OriDataQualityCheckTest extends TestCase
-{
+class OriDataQualityCheckTest extends TestCase {
 
-    /**
-     * The mocked time factory.
-     *
-     * @var ITimeFactory|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private ITimeFactory $timeFactory;
+	/**
+	 * The mocked time factory.
+	 *
+	 * @var ITimeFactory|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private ITimeFactory $timeFactory;
 
-    /**
-     * The mocked settings service.
-     *
-     * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private SettingsService $settingsService;
+	/**
+	 * The mocked settings service.
+	 *
+	 * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private SettingsService $settingsService;
 
-    /**
-     * The mocked app manager.
-     *
-     * @var IAppManager|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private IAppManager $appManager;
+	/**
+	 * The mocked app manager.
+	 *
+	 * @var IAppManager|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private IAppManager $appManager;
 
-    /**
-     * The mocked logger.
-     *
-     * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private LoggerInterface $logger;
+	/**
+	 * The mocked logger.
+	 *
+	 * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private LoggerInterface $logger;
 
-    /**
-     * The job under test.
-     *
-     * @var OriDataQualityCheck
-     */
-    private OriDataQualityCheck $job;
+	/**
+	 * The job under test.
+	 *
+	 * @var OriDataQualityCheck
+	 */
+	private OriDataQualityCheck $job;
 
+	/**
+	 * Set up test fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->timeFactory = $this->createMock(ITimeFactory::class);
+		$this->settingsService = $this->createMock(SettingsService::class);
+		$this->appManager = $this->createMock(IAppManager::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
 
-    /**
-     * Set up test fixtures.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->timeFactory     = $this->createMock(ITimeFactory::class);
-        $this->settingsService = $this->createMock(SettingsService::class);
-        $this->appManager      = $this->createMock(IAppManager::class);
-        $this->logger          = $this->createMock(LoggerInterface::class);
+		$this->job = new OriDataQualityCheck(
+			time: $this->timeFactory,
+			settingsService: $this->settingsService,
+			appManager: $this->appManager,
+			logger: $this->logger,
+		);
 
-        $this->job = new OriDataQualityCheck(
-            time: $this->timeFactory,
-            settingsService: $this->settingsService,
-            appManager: $this->appManager,
-            logger: $this->logger,
-        );
+	}//end setUp()
 
-    }//end setUp()
+	/**
+	 * Test that run() exits early when OpenRegister is not installed.
+	 *
+	 * @return void
+	 */
+	public function testRunExitsEarlyWhenOpenRegisterNotInstalled(): void {
+		$this->appManager
+			->method('getInstalledApps')
+			->willReturn(['procest', 'contacts']);
 
+		$this->settingsService
+			->expects($this->never())
+			->method('getObjectService');
 
-    /**
-     * Test that run() exits early when OpenRegister is not installed.
-     *
-     * @return void
-     */
-    public function testRunExitsEarlyWhenOpenRegisterNotInstalled(): void
-    {
-        $this->appManager
-            ->method('getInstalledApps')
-            ->willReturn(['procest', 'contacts']);
+		$ref = new \ReflectionMethod(objectOrMethod: $this->job, method: 'run');
+		$ref->setAccessible(accessible: true);
+		$ref->invoke($this->job, null);
 
-        $this->settingsService
-            ->expects($this->never())
-            ->method('getObjectService');
+	}//end testRunExitsEarlyWhenOpenRegisterNotInstalled()
 
-        $ref = new \ReflectionMethod(objectOrMethod: $this->job, method: 'run');
-        $ref->setAccessible(accessible: true);
-        $ref->invoke($this->job, null);
+	/**
+	 * Test that run() exits early when ObjectService is unavailable.
+	 *
+	 * @return void
+	 */
+	public function testRunExitsEarlyWhenObjectServiceUnavailable(): void {
+		$this->appManager
+			->method('getInstalledApps')
+			->willReturn(['openregister', 'procest']);
 
-    }//end testRunExitsEarlyWhenOpenRegisterNotInstalled()
+		$this->settingsService
+			->method('getObjectService')
+			->willReturn(null);
 
+		$ref = new \ReflectionMethod(objectOrMethod: $this->job, method: 'run');
+		$ref->setAccessible(accessible: true);
+		$ref->invoke($this->job, null);
 
-    /**
-     * Test that run() exits early when ObjectService is unavailable.
-     *
-     * @return void
-     */
-    public function testRunExitsEarlyWhenObjectServiceUnavailable(): void
-    {
-        $this->appManager
-            ->method('getInstalledApps')
-            ->willReturn(['openregister', 'procest']);
+		$this->assertTrue(true);
 
-        $this->settingsService
-            ->method('getObjectService')
-            ->willReturn(null);
+	}//end testRunExitsEarlyWhenObjectServiceUnavailable()
 
-        $ref = new \ReflectionMethod(objectOrMethod: $this->job, method: 'run');
-        $ref->setAccessible(accessible: true);
-        $ref->invoke($this->job, null);
+	/**
+	 * Test that run() invokes data quality checks and logs completion when available.
+	 *
+	 * @return void
+	 */
+	public function testRunInvokesQualityChecksWhenAvailable(): void {
+		$this->appManager
+			->method('getInstalledApps')
+			->willReturn(['openregister', 'procest']);
 
-        $this->assertTrue(true);
+		$objectService = $this->createMock(QualityObjectServiceStub::class);
+		$objectService->method('searchObjectsBySlug')->willReturn([]);
+		$objectService->method('find')->willReturn(null);
+		$objectService->method('saveObject')->willReturn([]);
 
-    }//end testRunExitsEarlyWhenObjectServiceUnavailable()
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+		$this->settingsService->method('getConfigValue')->willReturn('procest-register');
 
+		$this->logger
+			->expects($this->atLeastOnce())
+			->method('info');
 
-    /**
-     * Test that run() invokes data quality checks and logs completion when available.
-     *
-     * @return void
-     */
-    public function testRunInvokesQualityChecksWhenAvailable(): void
-    {
-        $this->appManager
-            ->method('getInstalledApps')
-            ->willReturn(['openregister', 'procest']);
+		$ref = new \ReflectionMethod(objectOrMethod: $this->job, method: 'run');
+		$ref->setAccessible(accessible: true);
+		$ref->invoke($this->job, null);
 
-        $objectService = $this->createMock(QualityObjectServiceStub::class);
-        $objectService->method('searchObjectsBySlug')->willReturn([]);
-        $objectService->method('find')->willReturn(null);
-        $objectService->method('saveObject')->willReturn([]);
-
-        $this->settingsService->method('getObjectService')->willReturn($objectService);
-        $this->settingsService->method('getConfigValue')->willReturn('procest-register');
-
-        $this->logger
-            ->expects($this->atLeastOnce())
-            ->method('info');
-
-        $ref = new \ReflectionMethod(objectOrMethod: $this->job, method: 'run');
-        $ref->setAccessible(accessible: true);
-        $ref->invoke($this->job, null);
-
-    }//end testRunInvokesQualityChecksWhenAvailable()
-
+	}//end testRunInvokesQualityChecksWhenAvailable()
 
 }//end class

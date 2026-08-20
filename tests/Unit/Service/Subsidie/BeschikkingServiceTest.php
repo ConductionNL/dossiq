@@ -38,87 +38,82 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Procest\Service\Subsidie\BeschikkingService
  *
+ * @uses \OCA\Procest\Service\Subsidie\SubsidieService
+ *
  * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-09
  */
-class BeschikkingServiceTest extends TestCase
-{
+class BeschikkingServiceTest extends TestCase {
 
-    private BeschikkingService $service;
+	private BeschikkingService $service;
 
-    /**
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $settings = $this->createMock(SettingsService::class);
-        $session  = $this->createMock(IUserSession::class);
-        $logger   = $this->createMock(LoggerInterface::class);
-        $core     = new SubsidieService($settings, $logger);
-        $this->service = new BeschikkingService($settings, $core, $session, $logger);
-    }//end setUp()
+	/**
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$session = $this->createMock(IUserSession::class);
+		$logger = $this->createMock(LoggerInterface::class);
+		$core = new SubsidieService($settings, $logger);
+		$this->service = new BeschikkingService($settings, $core, $session, $logger);
+	}//end setUp()
 
-    /**
-     * @return void
-     */
-    public function testBezwaartermijnSixWeeks(): void
-    {
-        $publicatie = new DateTimeImmutable('2026-06-01');
-        $this->assertSame('2026-07-13', $this->service->computeBezwaartermijn($publicatie)->format('Y-m-d'));
-    }//end testBezwaartermijnSixWeeks()
+	/**
+	 * @return void
+	 */
+	public function testBezwaartermijnSixWeeks(): void {
+		$publication = new DateTimeImmutable('2026-06-01');
+		$this->assertSame('2026-07-13', $this->service->computeBezwaartermijn($publication)->format('Y-m-d'));
+	}//end testBezwaartermijnSixWeeks()
 
-    /**
-     * REQ-SUB-001: a draft with a non-reconciling voorschot-schema is rejected.
-     *
-     * @return void
-     */
-    public function testDraftRejectsMismatchedVoorschot(): void
-    {
-        $this->expectException(OCSBadRequestException::class);
-        $this->service->assertDraftValid([
-            'verleendBedrag'  => 450000,
-            'voorschotSchema' => [
-                ['datum' => '2026-01-15', 'bedrag' => 100000],
-            ],
-        ]);
-    }//end testDraftRejectsMismatchedVoorschot()
+	/**
+	 * REQ-SUB-001: a draft with a non-reconciling voorschot-schema is rejected.
+	 *
+	 * @return void
+	 */
+	public function testDraftRejectsMismatchedVoorschot(): void {
+		$this->expectException(OCSBadRequestException::class);
+		$this->service->assertDraftValid([
+			'grantedAmount' => 450000,
+			'advanceSchema' => [
+				['date' => '2026-01-15', 'amount' => 100000],
+			],
+		]);
+	}//end testDraftRejectsMismatchedVoorschot()
 
-    /**
-     * A draft with a reconciling voorschot-schema (passed as a JSON string)
-     * is accepted.
-     *
-     * @return void
-     */
-    public function testDraftAcceptsReconcilingVoorschot(): void
-    {
-        $this->service->assertDraftValid([
-            'verleendBedrag'  => 240000,
-            'voorschotSchema' => json_encode([
-                ['datum' => '2026-01-15', 'bedrag' => 120000],
-                ['datum' => '2027-01-15', 'bedrag' => 120000],
-            ]),
-        ]);
-        $this->addToAssertionCount(1);
-    }//end testDraftAcceptsReconcilingVoorschot()
+	/**
+	 * A draft with a reconciling voorschot-schema (passed as a JSON string)
+	 * is accepted.
+	 *
+	 * @return void
+	 */
+	public function testDraftAcceptsReconcilingVoorschot(): void {
+		$this->service->assertDraftValid([
+			'grantedAmount' => 240000,
+			'advanceSchema' => json_encode([
+				['date' => '2026-01-15', 'amount' => 120000],
+				['date' => '2027-01-15', 'amount' => 120000],
+			]),
+		]);
+		$this->addToAssertionCount(1);
+	}//end testDraftAcceptsReconcilingVoorschot()
 
-    /**
-     * A non-positive verleendBedrag is rejected.
-     *
-     * @return void
-     */
-    public function testDraftRejectsNonPositiveAmount(): void
-    {
-        $this->expectException(OCSBadRequestException::class);
-        $this->service->assertDraftValid(['verleendBedrag' => 0]);
-    }//end testDraftRejectsNonPositiveAmount()
+	/**
+	 * A non-positive verleendBedrag is rejected.
+	 *
+	 * @return void
+	 */
+	public function testDraftRejectsNonPositiveAmount(): void {
+		$this->expectException(OCSBadRequestException::class);
+		$this->service->assertDraftValid(['grantedAmount' => 0]);
+	}//end testDraftRejectsNonPositiveAmount()
 
-    /**
-     * A draft with no voorschot-schema (lump-sum grant) is accepted.
-     *
-     * @return void
-     */
-    public function testDraftAllowsNoVoorschot(): void
-    {
-        $this->service->assertDraftValid(['verleendBedrag' => 10000]);
-        $this->addToAssertionCount(1);
-    }//end testDraftAllowsNoVoorschot()
+	/**
+	 * A draft with no voorschot-schema (lump-sum grant) is accepted.
+	 *
+	 * @return void
+	 */
+	public function testDraftAllowsNoVoorschot(): void {
+		$this->service->assertDraftValid(['grantedAmount' => 10000]);
+		$this->addToAssertionCount(1);
+	}//end testDraftAllowsNoVoorschot()
 }//end class

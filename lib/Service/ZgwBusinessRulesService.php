@@ -1,14 +1,15 @@
 <?php
 
 /**
- * Procest ZGW Business Rules Service (Dispatcher)
+ * Procest ZGW Business Rules Service
  *
- * Thin dispatcher that delegates validation and enrichment to per-register
- * rule services:
- * - ZgwZrcRulesService  (Zaken API rules)
- * - ZgwZtcRulesService  (Catalogi API rules)
- * - ZgwDrcRulesService  (Documenten API rules)
- * - ZgwBrcRulesService  (Besluiten API rules)
+ * The entry point every ZGW write passes through. It owns the cross-cutting
+ * checks that must run BEFORE any per-resource rule — catalogi concept
+ * protection (ztc-009/010), the draft→published publish guard (CT-02b), the
+ * destroy guard on caseTypes with active cases (CT-01d), and closed-zaak
+ * protection (zrc-007) — and then hands the request to
+ * {@see \OCA\Procest\Service\Zgw\ZgwRulesDispatcher}, which owns the routing
+ * table to the per-register rule services (ZRC, ZTC, DRC, BRC).
  *
  * Cross-register rules (zrc-005, brc-005, brc-006) live in ZgwService.
  *
@@ -23,401 +24,286 @@
  *
  * @link https://procest.nl
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
- *
- * @spec openspec/changes/retrofit-2026-05-24-zgw-business-rules-compliance/tasks.md#task-2
+ * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use OCA\Procest\Service\Zgw\ZgwRulesDispatcher;
+
 /**
- * Dispatcher for ZGW business rule validation and enrichment.
+ * Applies the cross-cutting ZGW guards, then delegates to the rules dispatcher.
  *
- * Delegates to per-register rule services (ZRC, ZTC, DRC, BRC).
  * Handles cross-register concerns like concept protection (ztc-009/010)
  * and closed-zaak protection (zrc-007) before delegating.
+ *
+ * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
-class ZgwBusinessRulesService
-{
-    /**
-     * Constructor.
-     *
-     * @param ZgwZrcRulesService $zrcRules ZRC (Zaken) rules
-     * @param ZgwZtcRulesService $ztcRules ZTC (Catalogi) rules
-     * @param ZgwDrcRulesService $drcRules DRC (Documenten) rules
-     * @param ZgwBrcRulesService $brcRules BRC (Besluiten) rules
-     *
-     * @return void
-     */
-    public function __construct(
-        private readonly ZgwZrcRulesService $zrcRules,
-        private readonly ZgwZtcRulesService $ztcRules,
-        private readonly ZgwDrcRulesService $drcRules,
-        private readonly ZgwBrcRulesService $brcRules,
-    ) {
-    }//end __construct()
+class ZgwBusinessRulesService {
+	/**
+	 * Constructor.
+	 *
+	 * @param ZgwZtcRulesService $ztcRules ZTC (Catalogi) rules, used by the concept/publish/destroy guards
+	 * @param ZgwRulesDispatcher $dispatcher Routes a validated request to the rules service that owns it
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly ZgwZtcRulesService $ztcRules,
+		private readonly ZgwRulesDispatcher $dispatcher,
+	) {
+	}//end __construct()
 
-    /**
-     * Validate and enrich a request body before saving.
-     *
-     * @param string      $zgwApi              The ZGW API group (e.g. 'zaken', 'besluiten')
-     * @param string      $resource            The ZGW resource name (e.g. 'zaken', 'besluiten')
-     * @param string      $action              The action ('create', 'update', 'patch', 'destroy')
-     * @param array       $body                The ZGW request body (Dutch field names)
-     * @param array|null  $existingObject      The existing object data (for update/patch/destroy)
-     * @param object|null $objectService       The OpenRegister ObjectService
-     * @param array|null  $mappingConfig       The mapping config
-     * @param bool|null   $parentZaaktypeDraft Whether the parent zaaktype isDraft (for ztc-010)
-     * @param bool|null   $zaakClosed          Whether the (parent) zaak is closed (for zrc-007)
-     * @param bool        $hasGeforceerd       Whether consumer has geforceerd-bijwerken scope
-     *
-     * @return array{valid: bool, status: int, detail: string, enrichedBody: array}
-     *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     * @SuppressWarnings(PHPMD.NPathComplexity)
-     * @SuppressWarnings(PHPMD.ExcessiveParameterList)
-     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)    — ZGW scope flag from middleware
+	/**
+	 * Validate and enrich a request body before saving.
+	 *
+	 * @param string $zgwApi The ZGW API group (e.g. 'zaken', 'besluiten')
+	 * @param string $resource The ZGW resource name (e.g. 'zaken', 'besluiten')
+	 * @param string $action The action ('create', 'update', 'patch', 'destroy')
+	 * @param array $body The ZGW request body (Dutch field names)
+	 * @param array|null $existingObject The existing object data (for update/patch/destroy)
+	 * @param object|null $objectService The OpenRegister ObjectService
+	 * @param array|null $mappingConfig The mapping config
+	 * @param bool|null $parentCaseTypeDraft Whether the parent zaaktype isDraft (for ztc-010)
+	 * @param bool|null $caseClosed Whether the (parent) zaak is closed (for zrc-007)
+	 * @param bool $hasGeforceerd Whether consumer has geforceerd-bijwerken scope
+	 *
+	 * @return array{valid: bool, status: int, detail: string, enrichedBody: array}
+	 *
+	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+	 * @SuppressWarnings(PHPMD.NPathComplexity)
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList)
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag)    — ZGW scope flag from middleware
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function validate(
+		string $zgwApi,
+		string $resource,
+		string $action,
+		array $body,
+		?array $existingObject = null,
+		?object $objectService = null,
+		?array $mappingConfig = null,
+		?bool $parentCaseTypeDraft = null,
+		?bool $caseClosed = null,
+		bool $hasGeforceerd = true,
+	): array {
+		// Set context on the ZTC rules this service guards with directly, and
+		// on every rules service the dispatcher can route to.
+		$this->ztcRules->setContext($objectService, $mappingConfig);
+		$this->dispatcher->setContext($objectService, $mappingConfig);
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function validate(
-        string $zgwApi,
-        string $resource,
-        string $action,
-        array $body,
-        ?array $existingObject=null,
-        ?object $objectService=null,
-        ?array $mappingConfig=null,
-        ?bool $parentZaaktypeDraft=null,
-        ?bool $zaakClosed=null,
-        bool $hasGeforceerd=true
-    ): array {
-        // Set context on all per-register rule services.
-        $this->zrcRules->setContext($objectService, $mappingConfig);
-        $this->ztcRules->setContext($objectService, $mappingConfig);
-        $this->drcRules->setContext($objectService, $mappingConfig);
-        $this->brcRules->setContext($objectService, $mappingConfig);
+		// ---- ZTC cross-cutting concerns (concept protection) ----
+		if ($zgwApi === 'catalogi') {
+			$draftCheck = $this->applyCatalogiDraftRules(
+				resource: $resource,
+				action: $action,
+				body: $body,
+				existingObject: $existingObject,
+				parentCaseTypeDraft: $parentCaseTypeDraft
+			);
+			if ($draftCheck !== null) {
+				return $draftCheck;
+			}
 
-        // ---- ZTC cross-cutting concerns (concept protection) ----
-        if ($zgwApi === 'catalogi') {
-            // Default concept=true for new concept resources.
-            if ($action === 'create') {
-                $body = $this->ztcRules->defaultConcept($body, $resource);
-            }
+			$publishGuard = $this->guardCaseTypePublish(
+				resource: $resource,
+				action: $action,
+				body: $body,
+				existingObject: $existingObject,
+				mappingConfig: $mappingConfig
+			);
+			if ($publishGuard !== null) {
+				return $publishGuard;
+			}
 
-            // Preserve concept on update/patch (only changeable via /publish).
-            if ($action === 'update' || $action === 'patch') {
-                $body = $this->ztcRules->preserveConcept($body, $resource, $existingObject);
-            }
+			$destroyGuard = $this->guardCaseTypeDestroy(
+				resource: $resource,
+				action: $action,
+				body: $body,
+				existingObject: $existingObject,
+				mappingConfig: $mappingConfig
+			);
+			if ($destroyGuard !== null) {
+				return $destroyGuard;
+			}
+		}//end if
 
-            // Ztc-009/ztc-010: Protect published types from modification.
-            $conceptCheck = $this->ztcRules->checkConceptProtection(
-                $resource,
-                $action,
-                $body,
-                $existingObject,
-                $parentZaaktypeDraft
-            );
-            if ($conceptCheck !== null) {
-                return $conceptCheck;
-            }
+		// ---- ZRC cross-cutting concern: closed zaak protection (zrc-007) ----
+		if ($caseClosed === true && $hasGeforceerd === false) {
+			return [
+				'valid' => false,
+				'status' => 403,
+				'detail' => 'Zaak is afgesloten. Wijzigingen zijn niet toegestaan zonder scope zaken.geforceerd-bijwerken.',
+				'code' => 'permission_denied',
+				'invalidParams' => [
+					[
+						'name' => 'nonFieldErrors',
+						'code' => 'zaak-closed',
+						'reason' => 'De zaak is afgesloten.',
+					],
+				],
+				'enrichedBody' => [],
+			];
+		}
 
-            // CT-02b — publish guard: when a caseType transitions from draft to
-            // published (isDraft toggled false), require status types + final
-            // status + validFrom before allowing the save.
-            if ($resource === 'zaaktypen'
-                && ($action === 'update' || $action === 'patch')
-                && isset($body['isDraft']) === true
-                && (bool) $body['isDraft'] === false
-                && is_array($existingObject) === true
-                && (bool) ($existingObject['isDraft'] ?? false) === true
-            ) {
-                $register   = (string) ($mappingConfig['sourceRegister'] ?? '');
-                $caseTypeId = (string) ($existingObject['id'] ?? '');
-                if ($register !== '' && $caseTypeId !== '') {
-                    $publishErrors = $this->ztcRules->validatePublish($register, $caseTypeId);
-                    if (count($publishErrors) > 0) {
-                        return [
-                            'valid'        => false,
-                            'status'       => 422,
-                            'detail'       => implode('; ', $publishErrors),
-                            'code'         => 'publish_validation_failed',
-                            'enrichedBody' => $body,
-                        ];
-                    }
-                }
-            }
+		// ---- Delegate to per-register rule services ----
+		return $this->dispatcher->dispatch(
+			zgwApi: $zgwApi,
+			resource: $resource,
+			action: $action,
+			body: $body,
+			existingObject: $existingObject
+		);
+	}//end validate()
 
-            // CT-01d — destroy guard: block deletion of a caseType that still
-            // has active (non-final) cases. Allow closed-only with the caller's
-            // explicit confirmation flag.
-            if ($resource === 'zaaktypen'
-                && $action === 'destroy'
-                && is_array($existingObject) === true
-            ) {
-                $register   = (string) ($mappingConfig['sourceRegister'] ?? '');
-                $caseTypeId = (string) ($existingObject['id'] ?? '');
-                $confirmed  = (bool) ($body['_confirm'] ?? false);
-                if ($register !== '' && $caseTypeId !== '') {
-                    $delGuard = $this->ztcRules->validateDeletion($register, $caseTypeId);
-                    if ($delGuard['blocked'] === true) {
-                        return [
-                            'valid'        => false,
-                            'status'       => 409,
-                            'detail'       => (string) $delGuard['message'],
-                            'code'         => 'destroy_blocked_active_cases',
-                            'enrichedBody' => $body,
-                        ];
-                    }
+	/**
+	 * Apply the ZTC concept defaults/preservation and the ztc-009/ztc-010
+	 * published-type protection.
+	 *
+	 * @param string $resource The ZGW resource name
+	 * @param string $action The action
+	 * @param array $body The request body, enriched in place
+	 * @param array|null $existingObject The existing object data
+	 * @param bool|null $parentCaseTypeDraft Whether the parent zaaktype isDraft
+	 *
+	 * @return array|null The guard response, or null when the request may proceed
+	 */
+	private function applyCatalogiDraftRules(
+		string $resource,
+		string $action,
+		array &$body,
+		?array $existingObject,
+		?bool $parentCaseTypeDraft,
+	): ?array {
+		// Default concept=true for new concept resources.
+		if ($action === 'create') {
+			$body = $this->ztcRules->defaultConcept($body, $resource);
+		}
 
-                    if ($delGuard['requiresConfirmation'] === true && $confirmed === false) {
-                        return [
-                            'valid'        => false,
-                            'status'       => 409,
-                            'detail'       => (string) $delGuard['message'],
-                            'code'         => 'destroy_requires_confirmation',
-                            'enrichedBody' => $body,
-                        ];
-                    }
-                }//end if
-            }//end if
-        }//end if
+		// Preserve concept on update/patch (only changeable via /publish).
+		if (in_array($action, ['update', 'patch'], true) === true) {
+			$body = $this->ztcRules->preserveConcept($body, $resource, $existingObject);
+		}
 
-        // ---- ZRC cross-cutting concern: closed zaak protection (zrc-007) ----
-        if ($zaakClosed === true && $hasGeforceerd === false) {
-            return [
-                'valid'         => false,
-                'status'        => 403,
-                'detail'        => 'Zaak is afgesloten. Wijzigingen zijn niet toegestaan zonder scope zaken.geforceerd-bijwerken.',
-                'code'          => 'permission_denied',
-                'invalidParams' => [
-                    [
-                        'name'   => 'nonFieldErrors',
-                        'code'   => 'zaak-closed',
-                        'reason' => 'De zaak is afgesloten.',
-                    ],
-                ],
-                'enrichedBody'  => [],
-            ];
-        }
+		// Ztc-009/ztc-010: Protect published types from modification.
+		return $this->ztcRules->checkConceptProtection(
+			$resource,
+			$action,
+			$body,
+			$existingObject,
+			$parentCaseTypeDraft
+		);
+	}//end applyCatalogiConceptRules()
 
-        // ---- Delegate to per-register rule services ----
-        return $this->dispatchToRegister(
-            zgwApi: $zgwApi,
-            resource: $resource,
-            action: $action,
-            body: $body,
-            existingObject: $existingObject
-        );
-    }//end validate()
+	/**
+	 * CT-02b — publish guard: when a caseType transitions from draft to
+	 * published (isDraft toggled false), require status types + final status
+	 * + validFrom before allowing the save.
+	 *
+	 * @param string $resource The ZGW resource name
+	 * @param string $action The action
+	 * @param array $body The request body
+	 * @param array|null $existingObject The existing object data
+	 * @param array|null $mappingConfig The mapping config
+	 *
+	 * @return array|null The guard response, or null when the save may proceed
+	 */
+	private function guardCaseTypePublish(
+		string $resource,
+		string $action,
+		array $body,
+		?array $existingObject,
+		?array $mappingConfig,
+	): ?array {
+		if ($resource !== 'zaaktypen'
+			|| in_array($action, ['update', 'patch'], true) === false
+			|| isset($body['isDraft']) === false
+			|| (bool)$body['isDraft'] !== false
+			|| is_array($existingObject) === false
+			|| (bool)($existingObject['isDraft'] ?? false) !== true
+		) {
+			return null;
+		}
 
-    /**
-     * Dispatch to the appropriate per-register rule service.
-     *
-     * @param string     $zgwApi         The ZGW API group
-     * @param string     $resource       The ZGW resource name
-     * @param string     $action         The action
-     * @param array      $body           The request body
-     * @param array|null $existingObject The existing object data
-     *
-     * @return array The validation result
-     *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     * @SuppressWarnings(PHPMD.NPathComplexity)
-     */
-    private function dispatchToRegister(
-        string $zgwApi,
-        string $resource,
-        string $action,
-        array $body,
-        ?array $existingObject
-    ): array {
-        $valid = [
-            'valid'        => true,
-            'status'       => 200,
-            'detail'       => '',
-            'enrichedBody' => $body,
-        ];
+		$register = (string)($mappingConfig['sourceRegister'] ?? '');
+		$caseTypeId = (string)($existingObject['id'] ?? '');
+		if (in_array('', [$register, $caseTypeId], true) === true) {
+			return null;
+		}
 
-        // --- Zaken API (ZRC) ---
-        if ($zgwApi === 'zaken') {
-            return $this->dispatchZrc(
-                resource: $resource,
-                action: $action,
-                body: $body,
-                existingObject: $existingObject
-            );
-        }
+		$publishErrors = $this->ztcRules->validatePublish($register, $caseTypeId);
+		if (count($publishErrors) === 0) {
+			return null;
+		}
 
-        // --- Catalogi API (ZTC) ---
-        if ($zgwApi === 'catalogi') {
-            return $this->dispatchZtc(
-                resource: $resource,
-                action: $action,
-                body: $body,
-                existingObject: $existingObject
-            );
-        }
+		return [
+			'valid' => false,
+			'status' => 422,
+			'detail' => implode('; ', $publishErrors),
+			'code' => 'publish_validation_failed',
+			'enrichedBody' => $body,
+		];
+	}//end guardZaaktypePublish()
 
-        // --- Documenten API (DRC) ---
-        if ($zgwApi === 'documenten') {
-            return $this->dispatchDrc(
-                resource: $resource,
-                action: $action,
-                body: $body,
-                existingObject: $existingObject
-            );
-        }
+	/**
+	 * CT-01d — destroy guard: block deletion of a caseType that still has
+	 * active (non-final) cases. Allow closed-only with the caller's explicit
+	 * confirmation flag.
+	 *
+	 * @param string $resource The ZGW resource name
+	 * @param string $action The action
+	 * @param array $body The request body
+	 * @param array|null $existingObject The existing object data
+	 * @param array|null $mappingConfig The mapping config
+	 *
+	 * @return array|null The guard response, or null when the delete may proceed
+	 */
+	private function guardCaseTypeDestroy(
+		string $resource,
+		string $action,
+		array $body,
+		?array $existingObject,
+		?array $mappingConfig,
+	): ?array {
+		if ($resource !== 'zaaktypen'
+			|| $action !== 'destroy'
+			|| is_array($existingObject) === false
+		) {
+			return null;
+		}
 
-        // --- Besluiten API (BRC) ---
-        if ($zgwApi === 'besluiten') {
-            return $this->dispatchBrc(
-                resource: $resource,
-                action: $action,
-                body: $body,
-                existingObject: $existingObject
-            );
-        }
+		$register = (string)($mappingConfig['sourceRegister'] ?? '');
+		$caseTypeId = (string)($existingObject['id'] ?? '');
+		$confirmed = (bool)($body['_confirm'] ?? false);
+		if (in_array('', [$register, $caseTypeId], true) === true) {
+			return null;
+		}
 
-        return $valid;
-    }//end dispatchToRegister()
+		$delGuard = $this->ztcRules->validateDeletion($register, $caseTypeId);
+		if ($delGuard['blocked'] === true) {
+			return [
+				'valid' => false,
+				'status' => 409,
+				'detail' => (string)$delGuard['message'],
+				'code' => 'destroy_blocked_active_cases',
+				'enrichedBody' => $body,
+			];
+		}
 
-    /**
-     * Dispatch ZRC (Zaken API) rules.
-     *
-     * @param string     $resource       The resource name
-     * @param string     $action         The action
-     * @param array      $body           The request body
-     * @param array|null $existingObject The existing object data
-     *
-     * @return array The validation result
-     *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     */
-    private function dispatchZrc(string $resource, string $action, array $body, ?array $existingObject): array
-    {
-        return match (true) {
-            $resource === 'zaken' && $action === 'create'
-                => $this->zrcRules->rulesZakenCreate($body),
-            $resource === 'zaken' && $action === 'update'
-                => $this->zrcRules->rulesZakenUpdate($body, $existingObject),
-            $resource === 'zaken' && $action === 'patch'
-                => $this->zrcRules->rulesZakenPatch($body, $existingObject),
-            $resource === 'statussen' && $action === 'create'
-                => $this->zrcRules->rulesStatussenCreate($body),
-            $resource === 'resultaten' && $action === 'create'
-                => $this->zrcRules->rulesResultatenCreate($body),
-            $resource === 'rollen' && $action === 'create'
-                => $this->zrcRules->rulesRollenCreate($body),
-            $resource === 'zaakinformatieobjecten' && $action === 'create'
-                => $this->zrcRules->rulesZaakinformatieobjectenCreate($body),
-            $resource === 'zaakinformatieobjecten' && $action === 'update'
-                => $this->zrcRules->rulesZaakinformatieobjectenUpdate($body, $existingObject),
-            $resource === 'zaakinformatieobjecten' && $action === 'patch'
-                => $this->zrcRules->rulesZaakinformatieobjectenPatch($body, $existingObject),
-            $resource === 'zaakeigenschappen' && $action === 'create'
-                => $this->zrcRules->rulesZaakeigenschappenCreate($body),
-            default => $this->isValid(body: $body),
-        };//end match
-    }//end dispatchZrc()
+		if ($delGuard['requiresConfirmation'] === true && $confirmed === false) {
+			return [
+				'valid' => false,
+				'status' => 409,
+				'detail' => (string)$delGuard['message'],
+				'code' => 'destroy_requires_confirmation',
+				'enrichedBody' => $body,
+			];
+		}
 
-    /**
-     * Dispatch ZTC (Catalogi API) rules.
-     *
-     * @param string     $resource       The resource name
-     * @param string     $action         The action
-     * @param array      $body           The request body
-     * @param array|null $existingObject The existing object data
-     *
-     * @return array The validation result
-     *
-     * @psalm-suppress UnusedParam — $existingObject reserved for update validation rules
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $existingObject reserved for update rules
-     */
-    private function dispatchZtc(string $resource, string $action, array $body, ?array $existingObject): array
-    {
-        return match (true) {
-            $resource === 'zaaktypen' && $action === 'create'
-                => $this->ztcRules->rulesZaaktypenCreate($body),
-            $resource === 'besluittypen' && $action === 'create'
-                => $this->ztcRules->rulesBesluittypenCreate($body),
-            $resource === 'zaaktype-informatieobjecttypen' && $action === 'create'
-                => $this->ztcRules->rulesZaaktypeinformatieobjecttypenCreate($body),
-            $resource === 'resultaattypen' && $action === 'create'
-                => $this->ztcRules->rulesResultaattypenCreate($body),
-            default => $this->isValid(body: $body),
-        };
-    }//end dispatchZtc()
-
-    /**
-     * Dispatch DRC (Documenten API) rules.
-     *
-     * @param string     $resource       The resource name
-     * @param string     $action         The action
-     * @param array      $body           The request body
-     * @param array|null $existingObject The existing object data
-     *
-     * @return array The validation result
-     */
-    private function dispatchDrc(string $resource, string $action, array $body, ?array $existingObject): array
-    {
-        return match (true) {
-            $resource === 'enkelvoudiginformatieobjecten' && $action === 'create'
-                => $this->drcRules->rulesEnkelvoudiginformatieobjectenCreate($body),
-            $resource === 'enkelvoudiginformatieobjecten' && $action === 'update'
-                => $this->drcRules->rulesEnkelvoudiginformatieobjectenUpdate($body, $existingObject),
-            $resource === 'enkelvoudiginformatieobjecten' && $action === 'patch'
-                => $this->drcRules->rulesEnkelvoudiginformatieobjectenPatch($body, $existingObject),
-            $resource === 'enkelvoudiginformatieobjecten' && $action === 'destroy'
-                => $this->drcRules->rulesEnkelvoudiginformatieobjectenDestroy($body, $existingObject),
-            $resource === 'objectinformatieobjecten' && $action === 'create'
-                => $this->drcRules->rulesObjectinformatieobjectenCreate($body),
-            default => $this->isValid(body: $body),
-        };
-    }//end dispatchDrc()
-
-    /**
-     * Dispatch BRC (Besluiten API) rules.
-     *
-     * @param string     $resource       The resource name
-     * @param string     $action         The action
-     * @param array      $body           The request body
-     * @param array|null $existingObject The existing object data
-     *
-     * @return array The validation result
-     */
-    private function dispatchBrc(string $resource, string $action, array $body, ?array $existingObject): array
-    {
-        return match (true) {
-            $resource === 'besluiten' && $action === 'create'
-                => $this->brcRules->rulesBesluitenCreate($body),
-            $resource === 'besluiten' && $action === 'update'
-                => $this->brcRules->rulesBesluitenUpdate($body, $existingObject),
-            $resource === 'besluiten' && $action === 'patch'
-                => $this->brcRules->rulesBesluitenPatch($body, $existingObject),
-            $resource === 'besluitinformatieobjecten' && $action === 'create'
-                => $this->brcRules->rulesBesluitinformatieobjectenCreate($body),
-            default => $this->isValid(body: $body),
-        };
-    }//end dispatchBrc()
-
-    /**
-     * Build a successful validation result (pass-through).
-     *
-     * @param array $body The (possibly enriched) request body
-     *
-     * @return array{valid: bool, status: int, detail: string, enrichedBody: array}
-     */
-    private function isValid(array $body): array
-    {
-        return [
-            'valid'        => true,
-            'status'       => 200,
-            'detail'       => '',
-            'enrichedBody' => $body,
-        ];
-    }//end isValid()
+		return null;
+	}//end guardZaaktypeDestroy()
 }//end class

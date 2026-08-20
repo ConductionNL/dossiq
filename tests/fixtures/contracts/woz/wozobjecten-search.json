@@ -1,0 +1,29 @@
+{
+    "_embedded": {
+        "wozObjecten": [
+            {
+                "wozobjectnummer": "05180000001234",
+                "nummeraanduidingIdentificatie": "0518010000123456",
+                "grondoppervlakte": 250,
+                "gebruiksdoelen": [
+                    "woonfunctie"
+                ],
+                "vastgesteldeWaarden": [
+                    {
+                        "waardepeildatum": "2025-01-01",
+                        "vastgesteldeWaarde": 385000
+                    },
+                    {
+                        "waardepeildatum": "2024-01-01",
+                        "vastgesteldeWaarde": 362000
+                    }
+                ]
+            }
+        ]
+    },
+    "_links": {
+        "self": {
+            "href": "/wozobjecten?postcode=1234AB&huisnummer=10"
+        }
+    }
+}

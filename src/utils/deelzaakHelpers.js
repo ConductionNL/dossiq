@@ -17,7 +17,8 @@ import { translate as t } from '@nextcloud/l10n'
  *
  * Returns an empty string for counts <= 0 so the caller renders NO badge for
  * cases without sub-cases (spec REQ-DZS-005-B). For positive counts it
- * returns "N deelzaken" (the user-facing copy lives in the en/nl l10n).
+ * returns the translated "{count} sub-cases" — the English source literal,
+ * rendered as "N deelzaken" in Dutch via `l10n/nl.json`.
  *
  * @param {number} count Number of sub-cases for the case.
  * @return {string} Badge label, or '' when no badge should be shown.
@@ -28,7 +29,7 @@ export function subCaseCountBadge(count) {
 	if (!Number.isFinite(n) || n <= 0) {
 		return ''
 	}
-	return t('procest', '{count} deelzaken', { count: n })
+	return t('procest', '{count} sub-cases', { count: n })
 }
 
 /**

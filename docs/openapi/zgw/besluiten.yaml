@@ -1,0 +1,220 @@
+openapi: 3.0.3
+info:
+  title: Procest ZGW Besluiten API (BRC)
+  description: |
+    Machine-readable description of the routed surface of Procest's ZGW
+    Besluiten Registratie Component (BRC) API, generated from the app's
+    route table (appinfo/routes.php). It documents paths, verbs and
+    parameters only — payload semantics (request/response bodies, business
+    rules) follow the VNG ZGW 1.x standard. See
+    https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/index
+    for the authoritative resource schemas. Procest tracks the ZGW 1.x
+    standard line.
+
+    The `{resource}` enum below is besluiten and besluitinformatieobjecten
+    only, per BrcController's docblock and resource handling — besluittypen
+    is served under the catalogi (ZTC) API, not here.
+  version: '1.0.0'
+servers:
+  - url: /apps/procest
+    description: Procest app base path
+components:
+  securitySchemes:
+    ZGWToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT bearer token issued to a registered ZGW consumer (applicatie).
+  schemas:
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+        code:
+          type: string
+        invalidParams:
+          type: array
+          items:
+            type: object
+  responses:
+    BadRequest:
+      description: Bad Request — validation error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Unauthorized — missing or invalid JWT bearer token.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Forbidden — consumer lacks the required scope.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Not Found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+security:
+  - ZGWToken: []
+paths:
+  /api/zgw/besluiten/v1/{resource}/{uuid}/audittrail:
+    get:
+      operationId: brc#audittrailIndex
+      summary: List audit trail entries for a besluiten resource.
+      parameters:
+        - name: resource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [besluiten, besluitinformatieobjecten]
+        - name: uuid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: array, items: { type: object } } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/zgw/besluiten/v1/{resource}/{uuid}/audittrail/{auditUuid}:
+    get:
+      operationId: brc#audittrailShow
+      summary: Retrieve a specific audit trail entry for a besluiten resource.
+      parameters:
+        - name: resource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [besluiten, besluitinformatieobjecten]
+        - name: uuid
+          in: path
+          required: true
+          schema: { type: string }
+        - name: auditUuid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/zgw/besluiten/v1/{resource}:
+    get:
+      operationId: brc#index
+      summary: List resources of the given besluiten type.
+      parameters:
+        - name: resource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [besluiten, besluitinformatieobjecten]
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: brc#create
+      summary: Create a resource of the given besluiten type. Creating a besluitinformatieobject syncs the corresponding objectinformatieobject in DRC.
+      parameters:
+        - name: resource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [besluiten, besluitinformatieobjecten]
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/zgw/besluiten/v1/{resource}/{uuid}:
+    get:
+      operationId: brc#show
+      summary: Retrieve a single resource of the given besluiten type by UUID.
+      parameters:
+        - name: resource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [besluiten, besluitinformatieobjecten]
+        - name: uuid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      operationId: brc#update
+      summary: Full update of a resource. besluitinformatieobjecten are immutable and return 405 (brc-004).
+      parameters:
+        - name: resource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [besluiten, besluitinformatieobjecten]
+        - name: uuid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      operationId: brc#patch
+      summary: Partial update of a resource. besluitinformatieobjecten are immutable and return 405 (brc-004).
+      parameters:
+        - name: resource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [besluiten, besluitinformatieobjecten]
+        - name: uuid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      operationId: brc#destroy
+      summary: Delete a resource of the given besluiten type. Deleting a besluitinformatieobject syncs deletion of the corresponding objectinformatieobject in DRC.
+      parameters:
+        - name: resource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [besluiten, besluitinformatieobjecten]
+        - name: uuid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '204': { description: No Content }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }

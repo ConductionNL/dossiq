@@ -30,62 +30,55 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Procest\Service\TenantOnboardingService
  */
-class TenantOnboardingServiceTest extends TestCase
-{
-    private TenantOnboardingService $svc;
+class TenantOnboardingServiceTest extends TestCase {
+	private TenantOnboardingService $svc;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->svc = new TenantOnboardingService(
-            tenantSaasService: $this->createMock(TenantSaasService::class),
-            appManager: $this->createMock(IAppManager::class),
-            container: $this->createMock(ContainerInterface::class),
-            logger: $this->createMock(LoggerInterface::class),
-        );
-    }
+	protected function setUp(): void {
+		parent::setUp();
+		$this->svc = new TenantOnboardingService(
+			tenantSaasService: $this->createMock(TenantSaasService::class),
+			appManager: $this->createMock(IAppManager::class),
+			container: $this->createMock(ContainerInterface::class),
+			logger: $this->createMock(LoggerInterface::class),
+			billingService: $this->createMock(\OCA\Procest\Service\TenantBillingService::class),
+		);
+	}
 
-    public function testStepsConstantDeclaresSevenCanonicalSteps(): void
-    {
-        $this->assertCount(7, TenantOnboardingService::STEPS);
-        $this->assertSame(
-            ['contract', 'mandate_import', 'sso_setup', 'branding', 'zaaktype_selection', 'first_user', 'go_live'],
-            TenantOnboardingService::STEPS
-        );
-    }
+	public function testStepsConstantDeclaresSevenCanonicalSteps(): void {
+		$this->assertCount(7, TenantOnboardingService::STEPS);
+		$this->assertSame(
+			['contract', 'mandate_import', 'sso_setup', 'branding', 'zaaktype_selection', 'first_user', 'go_live'],
+			TenantOnboardingService::STEPS
+		);
+	}
 
-    public function testMarkStepCompleteRejectsUnknownStep(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unknown onboarding step');
-        $this->svc->markStepComplete('tenant-1', 'not-a-step', 'alice');
-    }
+	public function testMarkStepCompleteRejectsUnknownStep(): void {
+		$this->expectException(InvalidArgumentException::class);
+		$this->expectExceptionMessage('Unknown onboarding step');
+		$this->svc->markStepComplete('tenant-1', 'not-a-step', 'alice');
+	}
 
-    public function testCreateOnboardingReturnsEmptyWhenOrUnavailable(): void
-    {
-        $this->assertSame([], $this->svc->createOnboarding('tenant-1'));
-    }
+	public function testCreateOnboardingReturnsEmptyWhenOrUnavailable(): void {
+		$this->assertSame([], $this->svc->createOnboarding('tenant-1'));
+	}
 
-    public function testGetProgressReturnsZeroWhenOrUnavailable(): void
-    {
-        $p = $this->svc->getProgress('tenant-1');
-        $this->assertSame(0, $p['completed']);
-        $this->assertSame(7, $p['total']);
-        $this->assertSame(0.0, $p['fraction']);
-        $this->assertSame([], $p['steps']);
-    }
+	public function testGetProgressReturnsZeroWhenOrUnavailable(): void {
+		$p = $this->svc->getProgress('tenant-1');
+		$this->assertSame(0, $p['completed']);
+		$this->assertSame(7, $p['total']);
+		$this->assertSame(0.0, $p['fraction']);
+		$this->assertSame([], $p['steps']);
+	}
 
-    public function testValidateGoLiveReportsMissingWhenOrUnavailable(): void
-    {
-        $r = $this->svc->validateGoLive('tenant-1');
-        $this->assertFalse($r['ready']);
-        $this->assertContains('openregister_unavailable', $r['missing']);
-    }
+	public function testValidateGoLiveReportsMissingWhenOrUnavailable(): void {
+		$r = $this->svc->validateGoLive('tenant-1');
+		$this->assertFalse($r['ready']);
+		$this->assertContains('openregister_unavailable', $r['missing']);
+	}
 
-    public function testActivateRefusesWhenNotReady(): void
-    {
-        $r = $this->svc->activate('tenant-1');
-        $this->assertFalse($r['activated']);
-        $this->assertArrayHasKey('missing', $r);
-    }
+	public function testActivateRefusesWhenNotReady(): void {
+		$r = $this->svc->activate('tenant-1');
+		$this->assertFalse($r['activated']);
+		$this->assertArrayHasKey('missing', $r);
+	}
 }

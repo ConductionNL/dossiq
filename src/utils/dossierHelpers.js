@@ -40,9 +40,9 @@ export const PUBLISH_THRESHOLD = 'vertrouwelijk'
  * @type {Object<string, string[]>}
  */
 export const STATUS_TRANSITIONS = {
-	concept: ['definitief'],
-	definitief: ['gearchiveerd'],
-	gearchiveerd: [],
+	draft: ['final'],
+	final: ['archived'],
+	archived: [],
 }
 
 /**
@@ -55,7 +55,7 @@ export const STATUS_TRANSITIONS = {
  */
 export function confidentialityOrdinal(level) {
 	const index = CONFIDENTIALITY_HIERARCHY.indexOf(level)
-	return index === -1 ? (CONFIDENTIALITY_HIERARCHY.length - 1) : index
+	return index === -1 ? CONFIDENTIALITY_HIERARCHY.length - 1 : index
 }
 
 /**
@@ -98,7 +98,10 @@ export function isClassificationAllowed(defaultLevel, requestedLevel) {
 	if (!requestedLevel) {
 		return true
 	}
-	return confidentialityOrdinal(requestedLevel) >= confidentialityOrdinal(defaultLevel)
+	return (
+		confidentialityOrdinal(requestedLevel)
+		>= confidentialityOrdinal(defaultLevel)
+	)
 }
 
 /**
@@ -111,13 +114,13 @@ export function isClassificationAllowed(defaultLevel, requestedLevel) {
 export function groupByType(documents) {
 	const groups = {}
 	documents.forEach((doc) => {
-		const type = doc.informatieobjecttype || 'onbekend'
+		const type = doc.informatieobjecttype || 'unknown'
 		if (!groups[type]) {
 			groups[type] = []
 		}
 		groups[type].push(doc)
 	})
-	return Object.keys(groups).map(type => ({
+	return Object.keys(groups).map((type) => ({
 		informatieobjecttype: type,
 		count: groups[type].length,
 		documents: groups[type],
@@ -136,7 +139,7 @@ export function formatSize(bytes) {
 	if (value < 1024) {
 		return value + ' B'
 	}
-	if (value < (1024 * 1024)) {
+	if (value < 1024 * 1024) {
 		return (value / 1024).toFixed(1) + ' KB'
 	}
 	return (value / (1024 * 1024)).toFixed(1) + ' MB'

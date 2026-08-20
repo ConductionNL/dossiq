@@ -54,7 +54,9 @@ export async function akkoord(id) {
  * @spec openspec/changes/beschikking-generatie/tasks.md#T22
  */
 export async function onderteken(id, tspProvider) {
-	const response = await axios.patch(`${baseUrl}/${id}/onderteken`, { tspProvider })
+	const response = await axios.patch(`${baseUrl}/${id}/onderteken`, {
+		tspProvider,
+	})
 	return response.data
 }
 
@@ -91,7 +93,9 @@ export async function updateFields(id, updates) {
  * @spec openspec/changes/beschikking-generatie/tasks.md#T22
  */
 export async function exportAuditPacket(id) {
-	const response = await axios.get(`${baseUrl}/${id}/audit-pakket`, { responseType: 'blob' })
+	const response = await axios.get(`${baseUrl}/${id}/audit-pakket`, {
+		responseType: 'blob',
+	})
 	return response.data
 }
 

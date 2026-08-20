@@ -22,7 +22,7 @@
  * @link https://procest.nl
  *
  * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-1
- * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-2
+ * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 
 declare(strict_types=1);
@@ -31,6 +31,7 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\ZgwService;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 
@@ -44,287 +45,290 @@ use OCP\IRequest;
  *
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  */
-class NrcController extends ZgwController
-{
-    /**
-     * The ZGW API identifier for the Notificaties register.
-     *
-     * @var string
-     */
-    private const ZGW_API = 'notificaties';
+class NrcController extends ZgwController {
+	/**
+	 * The ZGW API identifier for the Notificaties register.
+	 *
+	 * @var string
+	 */
+	private const ZGW_API = 'notificaties';
 
-    /**
-     * Constructor.
-     *
-     * @param string     $appName    The app name.
-     * @param IRequest   $request    The incoming request.
-     * @param ZgwService $zgwService The shared ZGW service.
-     */
-    public function __construct(
-        string $appName,
-        IRequest $request,
-        private readonly ZgwService $zgwService,
-    ) {
-        parent::__construct(appName: $appName, request: $request);
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param string $appName The app name.
+	 * @param IRequest $request The incoming request.
+	 * @param ZgwService $zgwService The shared ZGW service.
+	 */
+	public function __construct(
+		string $appName,
+		IRequest $request,
+		private readonly ZgwService $zgwService,
+	) {
+		parent::__construct(appName: $appName, request: $request);
+	}//end __construct()
 
-    /**
-     * List resources of the given type.
-     *
-     * @param string $resource The ZGW resource name (e.g. kanaal, abonnement).
-     *
-     * @return JSONResponse
-     *
-     * @NoCSRFRequired
-     * @PublicPage
-     * @CORS
+	/**
+	 * List resources of the given type.
+	 *
+	 * @param string $resource The ZGW resource name (e.g. kanaal, abonnement).
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoCSRFRequired
+	 * @PublicPage
+	 * @CORS
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	#[AnonRateLimit(limit: 120, period: 60)]
+	public function index(string $resource): JSONResponse {
+		$authError = $this->zgwService->validateJwtAuth($this->request);
+		if ($authError !== null) {
+			return $authError;
+		}
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function index(string $resource): JSONResponse
-    {
-        $authError = $this->zgwService->validateJwtAuth($this->request);
-        if ($authError !== null) {
-            return $authError;
-        }
+		return $this->zgwService->handleIndex($this->request, self::ZGW_API, $resource);
+	}//end index()
 
-        return $this->zgwService->handleIndex($this->request, self::ZGW_API, $resource);
-    }//end index()
+	/**
+	 * Create a new resource of the given type.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoCSRFRequired
+	 * @PublicPage
+	 * @CORS
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	#[AnonRateLimit(limit: 30, period: 60)]
+	public function create(string $resource): JSONResponse {
+		$authError = $this->zgwService->validateJwtAuth($this->request);
+		if ($authError !== null) {
+			return $authError;
+		}
 
-    /**
-     * Create a new resource of the given type.
-     *
-     * @param string $resource The ZGW resource name.
-     *
-     * @return JSONResponse
-     *
-     * @NoCSRFRequired
-     * @PublicPage
-     * @CORS
+		// SB2: Gate creates on notificaties.publiceren scope (canonical format).
+		if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'notificaties.publiceren') === false) {
+			return $this->scopeDeniedResponse(scope: 'notificaties.publiceren');
+		}
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function create(string $resource): JSONResponse
-    {
-        $authError = $this->zgwService->validateJwtAuth($this->request);
-        if ($authError !== null) {
-            return $authError;
-        }
+		return $this->zgwService->handleCreate($this->request, self::ZGW_API, $resource);
+	}//end create()
 
-        // SB2: Gate creates on notificaties.publiceren scope (canonical format).
-        if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'notificaties.publiceren') === false) {
-            return $this->scopeDeniedResponse(scope: 'notificaties.publiceren');
-        }
+	/**
+	 * Retrieve a single resource by UUID.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 * @param string $uuid The resource UUID.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoCSRFRequired
+	 * @PublicPage
+	 * @CORS
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	#[AnonRateLimit(limit: 120, period: 60)]
+	public function show(string $resource, string $uuid): JSONResponse {
+		$authError = $this->zgwService->validateJwtAuth($this->request);
+		if ($authError !== null) {
+			return $authError;
+		}
 
-        return $this->zgwService->handleCreate($this->request, self::ZGW_API, $resource);
-    }//end create()
+		return $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
+	}//end show()
 
-    /**
-     * Retrieve a single resource by UUID.
-     *
-     * @param string $resource The ZGW resource name.
-     * @param string $uuid     The resource UUID.
-     *
-     * @return JSONResponse
-     *
-     * @NoCSRFRequired
-     * @PublicPage
-     * @CORS
+	/**
+	 * Full update (PUT) a resource by UUID.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 * @param string $uuid The resource UUID.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoCSRFRequired
+	 * @PublicPage
+	 * @CORS
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	#[AnonRateLimit(limit: 30, period: 60)]
+	public function update(string $resource, string $uuid): JSONResponse {
+		$authError = $this->zgwService->validateJwtAuth($this->request);
+		if ($authError !== null) {
+			return $authError;
+		}
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function show(string $resource, string $uuid): JSONResponse
-    {
-        $authError = $this->zgwService->validateJwtAuth($this->request);
-        if ($authError !== null) {
-            return $authError;
-        }
+		// SB2: Gate updates on notificaties.publiceren scope (canonical format).
+		if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'notificaties.publiceren') === false) {
+			return $this->scopeDeniedResponse(scope: 'notificaties.publiceren');
+		}
 
-        return $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
-    }//end show()
+		return $this->zgwService->handleUpdate(
+			$this->request,
+			self::ZGW_API,
+			$resource,
+			$uuid,
+			false
+		);
+	}//end update()
 
-    /**
-     * Full update (PUT) a resource by UUID.
-     *
-     * @param string $resource The ZGW resource name.
-     * @param string $uuid     The resource UUID.
-     *
-     * @return JSONResponse
-     *
-     * @NoCSRFRequired
-     * @PublicPage
-     * @CORS
+	/**
+	 * Partial update (PATCH) a resource by UUID.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 * @param string $uuid The resource UUID.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoCSRFRequired
+	 * @PublicPage
+	 * @CORS
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	#[AnonRateLimit(limit: 30, period: 60)]
+	public function patch(string $resource, string $uuid): JSONResponse {
+		$authError = $this->zgwService->validateJwtAuth($this->request);
+		if ($authError !== null) {
+			return $authError;
+		}
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function update(string $resource, string $uuid): JSONResponse
-    {
-        $authError = $this->zgwService->validateJwtAuth($this->request);
-        if ($authError !== null) {
-            return $authError;
-        }
+		// SB2: Gate patches on notificaties.publiceren scope (canonical format).
+		if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'notificaties.publiceren') === false) {
+			return $this->scopeDeniedResponse(scope: 'notificaties.publiceren');
+		}
 
-        // SB2: Gate updates on notificaties.publiceren scope (canonical format).
-        if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'notificaties.publiceren') === false) {
-            return $this->scopeDeniedResponse(scope: 'notificaties.publiceren');
-        }
+		return $this->zgwService->handleUpdate(
+			$this->request,
+			self::ZGW_API,
+			$resource,
+			$uuid,
+			true
+		);
+	}//end patch()
 
-        return $this->zgwService->handleUpdate(
-            $this->request,
-            self::ZGW_API,
-            $resource,
-            $uuid,
-            false
-        );
-    }//end update()
+	/**
+	 * Delete a resource by UUID.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 * @param string $uuid The resource UUID.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoCSRFRequired
+	 * @PublicPage
+	 * @CORS
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	#[AnonRateLimit(limit: 30, period: 60)]
+	public function destroy(string $resource, string $uuid): JSONResponse {
+		$authError = $this->zgwService->validateJwtAuth($this->request);
+		if ($authError !== null) {
+			return $authError;
+		}
 
-    /**
-     * Partial update (PATCH) a resource by UUID.
-     *
-     * @param string $resource The ZGW resource name.
-     * @param string $uuid     The resource UUID.
-     *
-     * @return JSONResponse
-     *
-     * @NoCSRFRequired
-     * @PublicPage
-     * @CORS
+		// SB2: Gate destroys on notificaties.publiceren scope (canonical format).
+		if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'notificaties.publiceren') === false) {
+			return $this->scopeDeniedResponse(scope: 'notificaties.publiceren');
+		}
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function patch(string $resource, string $uuid): JSONResponse
-    {
-        $authError = $this->zgwService->validateJwtAuth($this->request);
-        if ($authError !== null) {
-            return $authError;
-        }
+		return $this->zgwService->handleDestroy(
+			$this->request,
+			self::ZGW_API,
+			$resource,
+			$uuid
+		);
+	}//end destroy()
 
-        // SB2: Gate patches on notificaties.publiceren scope (canonical format).
-        if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'notificaties.publiceren') === false) {
-            return $this->scopeDeniedResponse(scope: 'notificaties.publiceren');
-        }
+	/**
+	 * Accept a notificatie (echo back the body with 201).
+	 *
+	 * This endpoint receives incoming ZGW notifications and acknowledges them.
+	 *
+	 * Rate-limit rationale: tight — a notification fans out to every
+	 * subscribed channel, so one cheap call can generate a lot of downstream
+	 * delivery work.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoCSRFRequired
+	 * @PublicPage
+	 * @CORS
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	#[AnonRateLimit(limit: 30, period: 60)]
+	public function notificatieCreate(): JSONResponse {
+		$authError = $this->zgwService->validateJwtAuth($this->request);
+		if ($authError !== null) {
+			return $authError;
+		}
 
-        return $this->zgwService->handleUpdate(
-            $this->request,
-            self::ZGW_API,
-            $resource,
-            $uuid,
-            true
-        );
-    }//end patch()
+		$body = $this->request->getParams();
+		unset($body['_route']);
 
-    /**
-     * Delete a resource by UUID.
-     *
-     * @param string $resource The ZGW resource name.
-     * @param string $uuid     The resource UUID.
-     *
-     * @return JSONResponse
-     *
-     * @NoCSRFRequired
-     * @PublicPage
-     * @CORS
+		return new JSONResponse(data: $body, statusCode: Http::STATUS_CREATED);
+	}//end notificatieCreate()
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function destroy(string $resource, string $uuid): JSONResponse
-    {
-        $authError = $this->zgwService->validateJwtAuth($this->request);
-        if ($authError !== null) {
-            return $authError;
-        }
+	/**
+	 * List audit trail entries for a resource.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 * @param string $uuid The resource UUID.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoCSRFRequired
+	 * @PublicPage
+	 * @CORS
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	#[AnonRateLimit(limit: 120, period: 60)]
+	public function audittrailIndex(string $resource, string $uuid): JSONResponse {
+		$authError = $this->zgwService->validateJwtAuth($this->request);
+		if ($authError !== null) {
+			return $authError;
+		}
 
-        // SB2: Gate destroys on notificaties.publiceren scope (canonical format).
-        if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'notificaties.publiceren') === false) {
-            return $this->scopeDeniedResponse(scope: 'notificaties.publiceren');
-        }
+		return $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
+	}//end audittrailIndex()
 
-        return $this->zgwService->handleDestroy(
-            $this->request,
-            self::ZGW_API,
-            $resource,
-            $uuid
-        );
-    }//end destroy()
+	/**
+	 * Retrieve a single audit trail entry for a resource.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 * @param string $uuid The resource UUID.
+	 * @param string $auditUuid The audit trail entry UUID.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoCSRFRequired
+	 * @PublicPage
+	 * @CORS
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	#[AnonRateLimit(limit: 120, period: 60)]
+	public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse {
+		$authError = $this->zgwService->validateJwtAuth($this->request);
+		if ($authError !== null) {
+			return $authError;
+		}
 
-    /**
-     * Accept a notificatie (echo back the body with 201).
-     *
-     * This endpoint receives incoming ZGW notifications and acknowledges them.
-     *
-     * @return JSONResponse
-     *
-     * @NoCSRFRequired
-     * @PublicPage
-     * @CORS
-
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function notificatieCreate(): JSONResponse
-    {
-        $authError = $this->zgwService->validateJwtAuth($this->request);
-        if ($authError !== null) {
-            return $authError;
-        }
-
-        $body = $this->request->getParams();
-        unset($body['_route']);
-
-        return new JSONResponse(data: $body, statusCode: Http::STATUS_CREATED);
-    }//end notificatieCreate()
-
-    /**
-     * List audit trail entries for a resource.
-     *
-     * @param string $resource The ZGW resource name.
-     * @param string $uuid     The resource UUID.
-     *
-     * @return JSONResponse
-     *
-     * @NoCSRFRequired
-     * @PublicPage
-     * @CORS
-
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function audittrailIndex(string $resource, string $uuid): JSONResponse
-    {
-        $authError = $this->zgwService->validateJwtAuth($this->request);
-        if ($authError !== null) {
-            return $authError;
-        }
-
-        return $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
-    }//end audittrailIndex()
-
-    /**
-     * Retrieve a single audit trail entry for a resource.
-     *
-     * @param string $resource  The ZGW resource name.
-     * @param string $uuid      The resource UUID.
-     * @param string $auditUuid The audit trail entry UUID.
-     *
-     * @return JSONResponse
-     *
-     * @NoCSRFRequired
-     * @PublicPage
-     * @CORS
-
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse
-    {
-        $authError = $this->zgwService->validateJwtAuth($this->request);
-        if ($authError !== null) {
-            return $authError;
-        }
-
-        return $this->zgwService->handleAudittrailShow(
-            $this->request,
-            self::ZGW_API,
-            $resource,
-            $uuid,
-            $auditUuid
-        );
-    }//end audittrailShow()
+		return $this->zgwService->handleAudittrailShow(
+			$this->request,
+			self::ZGW_API,
+			$resource,
+			$uuid,
+			$auditUuid
+		);
+	}//end audittrailShow()
 }//end class

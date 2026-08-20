@@ -2,11 +2,11 @@
 	<div class="duration-picker">
 		<div class="duration-picker__input-row">
 			<NcTextField
-				:value="daysInput"
+				:modelValue="daysInput"
 				:label="t('procest', 'Days')"
 				type="number"
 				class="duration-picker__field"
-				@update:value="onDaysChange" />
+				@update:modelValue="onDaysChange" />
 			<span class="duration-picker__iso">
 				{{ displayValue || t('procest', 'Enter days') }}
 			</span>
@@ -17,7 +17,9 @@
 				v-for="preset in presets"
 				:key="preset.value"
 				class="duration-picker__preset"
-				:class="{ 'duration-picker__preset--active': value === preset.value }"
+				:class="{
+					'duration-picker__preset--active': value === preset.value,
+				}"
 				type="button"
 				@click="selectPreset(preset)">
 				{{ preset.label }}
@@ -28,24 +30,27 @@
 
 <script>
 import { NcTextField } from '@nextcloud/vue'
-import { parseDuration, isValidDuration } from '../../../utils/durationHelpers.js'
+import { isValidDuration, parseDuration } from '../../../utils/durationHelpers.js'
 
 export default {
 	name: 'DurationPicker',
 	components: {
 		NcTextField,
 	},
+
 	props: {
 		value: {
 			type: String,
 			default: '',
 		},
+
 		presetType: {
 			type: String,
 			default: 'deadline',
-			validator: v => ['deadline', 'extension'].includes(v),
+			validator: (v) => ['deadline', 'extension'].includes(v),
 		},
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		daysInput() {
@@ -59,6 +64,7 @@ export default {
 			if (parsed.days) totalDays += parsed.days
 			return String(totalDays)
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		displayValue() {
 			if (!this.value || !isValidDuration(this.value)) return ''
@@ -71,6 +77,7 @@ export default {
 			}
 			return `${this.value} (${days} ${t('procest', 'days')})`
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		presets() {
 			if (this.presetType === 'extension') {
@@ -88,6 +95,7 @@ export default {
 			]
 		},
 	},
+
 	methods: {
 		/**
 		 * @param val
@@ -101,6 +109,7 @@ export default {
 			}
 			this.$emit('input', `P${days}D`)
 		},
+
 		/**
 		 * @param preset
 		 * @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md
@@ -155,5 +164,11 @@ export default {
 	border-color: var(--color-primary);
 	color: var(--color-primary);
 	font-weight: 500;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.duration-picker__preset {
+		transition: none;
+	}
 }
 </style>

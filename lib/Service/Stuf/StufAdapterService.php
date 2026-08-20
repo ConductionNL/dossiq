@@ -4,14 +4,19 @@
  * Procest StufAdapterService.
  *
  * The orchestrator. Each public method takes a procest entity (a `case`) and a
- * StufEndpoint, builds the right envelope through StufMessageBuilder, sends it
- * via StufHttpClient, logs the round-trip into StufMessage, persists the
- * resulting ZaaksysteemMapping when applicable, and drives the circuit breaker.
+ * StufEndpoint, builds the right envelope through StufMessageBuilder, logs the
+ * outbound row, and hands the envelope to {@see StufOutboundTransport} to be
+ * sent and classified.
  *
- * Retries are handled here (5s, 30s, 2m, 10m) and reuse the same
- * referentienummer for idempotency — the queued retry job calls back into
- * `retrySend()` which short-circuits on circuit-open and feeds the retry
- * log on the existing StufMessage row.
+ * Retries, circuit-breaker bookkeeping and the permanent-failure signal live in
+ * StufOutboundTransport; the case → zaak mapping lives in
+ * {@see StufCaseMappingStore}. This class is left with WHAT to send and what to
+ * report back to the caller.
+ *
+ * The retry schedule (5s, 30s, 2m, 10m) reuses the same referentienummer for
+ * idempotency — the queued retry job calls back into `retrySend()`, which
+ * short-circuits on circuit-open and feeds the retry log on the existing
+ * StufMessage row.
  *
  * @category Service
  * @package  OCA\Procest\Service\Stuf
@@ -27,651 +32,428 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
  */
 
 declare(strict_types=1);
 
 namespace OCA\Procest\Service\Stuf;
 
-use DateTimeImmutable;
-use DateTimeZone;
 use OCA\Procest\Service\StufMessageBuilder;
-use OCP\BackgroundJob\IJobList;
 use Psr\Log\LoggerInterface;
 
 /**
  * Orchestrates StUF operations against legacy zaaksystemen.
+ *
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
  */
-class StufAdapterService
-{
-    /**
-     * Exponential-backoff schedule for kennisgeving retries (seconds).
-     */
-    public const RETRY_BACKOFF_SECONDS = [5, 30, 120, 600];
+class StufAdapterService {
+	/**
+	 * Exponential-backoff schedule for kennisgeving retries (seconds).
+	 *
+	 * Canonically owned by {@see StufOutboundTransport}, which is the only code
+	 * that reads it; re-exported here because it is part of this service's
+	 * published surface.
+	 */
+	public const RETRY_BACKOFF_SECONDS = StufOutboundTransport::RETRY_BACKOFF_SECONDS;
 
-    /**
-     * Constructor.
-     *
-     * @param StufMessageBuilder      $builder        The envelope builder (inbound + outbound).
-     * @param StufHttpClient          $httpClient     The HTTP transport.
-     * @param StufMessageHandler      $messageHandler The audit log handler.
-     * @param StufMessageParser       $parser         The response parser.
-     * @param CircuitBreakerService   $circuitBreaker The circuit breaker.
-     * @param ContactBetrokkeneMapper $contactMapper  The contact mapper.
-     * @param StufRegisterAccess      $register       The register access helper.
-     * @param NeedsInputDispatcher    $needsInput     The needs-input dispatcher.
-     * @param IJobList                $jobList        The background job list (for retry scheduling).
-     * @param LoggerInterface         $logger         The logger.
-     */
-    public function __construct(
-        private StufMessageBuilder $builder,
-        private StufHttpClient $httpClient,
-        private StufMessageHandler $messageHandler,
-        private StufMessageParser $parser,
-        private CircuitBreakerService $circuitBreaker,
-        private ContactBetrokkeneMapper $contactMapper,
-        private StufRegisterAccess $register,
-        private NeedsInputDispatcher $needsInput,
-        private IJobList $jobList,
-        private LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param StufMessageBuilder $builder The outbound envelope builder.
+	 * @param StufOutboundTransport $transport The send + response classifier.
+	 * @param StufMessageHandler $messageHandler The audit log handler.
+	 * @param StufMessageParser $parser The response parser.
+	 * @param CircuitBreakerService $circuitBreaker The circuit breaker.
+	 * @param StufRegisterAccess $register The register access helper.
+	 * @param StufCaseMappingStore $mappings The case → zaak mapping store.
+	 * @param NeedsInputDispatcher $needsInput The needs-input dispatcher.
+	 * @param LoggerInterface $logger The logger.
+	 */
+	public function __construct(
+		private StufMessageBuilder $builder,
+		private StufOutboundTransport $transport,
+		private StufMessageHandler $messageHandler,
+		private StufMessageParser $parser,
+		private CircuitBreakerService $circuitBreaker,
+		private StufRegisterAccess $register,
+		private StufCaseMappingStore $mappings,
+		private NeedsInputDispatcher $needsInput,
+		private LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Create a zaak in the zaaksysteem from a procest case.
-     *
-     * @param array $case     The case array (id, type, omschrijving, startdatum, betrokkenen, documenten).
-     * @param array $endpoint The StufEndpoint.
-     * @param array $opts     Options: includeDocuments (bool), payloadLimitBytes (int).
-     *
-     * @return array{success:bool,referentienummer:string,stufMessageId:string,zaakIdentificatie:?string,mappingId:?string,fout:?array<string,mixed>}
-     *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
-     */
-    public function creeerZaak(array $case, array $endpoint, ?array $opts=[]): array
-    {
-        $opts = ($opts ?? []);
-        if ($this->circuitBreaker->checkEndpoint(endpoint: $endpoint) === false) {
-            $this->needsInput->dispatch(type: 'stuf_circuit_open', context: ['endpointId' => ($endpoint['id'] ?? '')]);
-            throw new CircuitOpenException(message: 'Circuit breaker is open');
-        }
+	/**
+	 * Create a zaak in the zaaksysteem from a procest case.
+	 *
+	 * @param array $case The case array (id, type, omschrijving, startdatum, betrokkenen, documenten).
+	 * @param array $endpoint The StufEndpoint.
+	 * @param array $opts Options: includeDocuments (bool), payloadLimitBytes (int).
+	 *
+	 * @return array{success:bool,referentienummer:string,stufMessageId:string,caseIdentification:?string,mappingId:?string,fout:?array<string,mixed>}
+	 *
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
+	 */
+	public function creeerZaak(array $case, array $endpoint, ?array $opts = []): array {
+		if ($this->circuitBreaker->checkEndpoint(endpoint: $endpoint) === false) {
+			$this->needsInput->dispatch(type: 'stuf_circuit_open', context: ['endpointId' => ($endpoint['id'] ?? '')]);
+			throw new CircuitOpenException(message: 'Circuit breaker is open');
+		}
 
-        $zaakId = null;
-        if (($endpoint['zaakIdentificatieStrategie'] ?? '') === 'vooraf') {
-            $zaakId = $this->genereerZaakIdentificatie(endpoint: $endpoint);
-            // Anticipatory mapping.
-            $this->persistCaseMapping(case: $case, externId: $zaakId, endpoint: $endpoint);
-        }
+		$caseId = null;
+		if (($endpoint['caseIdentificationStrategy'] ?? '') === 'vooraf') {
+			$caseId = $this->genereerZaakIdentificatie(endpoint: $endpoint);
+			// Anticipatory mapping.
+			$this->mappings->persist(case: $case, externId: $caseId, endpoint: $endpoint);
+		}
 
-        $envelope = $this->builder->buildLk01CreeerZaak(
-            case: $case,
-            endpoint: $endpoint,
-            zaakId: $zaakId,
-            opts: $opts
-        );
+		$envelope = $this->builder->buildLk01CreeerZaak(
+			case: $case,
+			endpoint: $endpoint,
+			caseId: $caseId,
+			opts: ($opts ?? [])
+		);
 
-        $referentienummer = $this->extractReferentienummer(envelope: $envelope);
-        $msg = $this->messageHandler->logOutbound(
-            endpoint: $endpoint,
-            envelopeXml: $envelope,
-            referentienummer: $referentienummer,
-            berichtSoort: 'Lk01',
-            functie: 'creeerZaak',
-            zaakId: $zaakId,
-            bronEntiteit: 'case',
-            bronId: (string) ($case['id'] ?? '')
-        );
+		$referentienummer = $this->extractReferentienummer(envelope: $envelope);
+		$result = $this->transport->dispatch(
+			endpoint: $endpoint,
+			envelope: $envelope,
+			message: $this->messageHandler->logOutbound(
+				endpoint: $endpoint,
+				envelopeXml: $envelope,
+				referentienummer: $referentienummer,
+				messageKind: 'Lk01',
+				role: 'creeerZaak',
+				caseId: $caseId,
+				bronEntiteit: 'case',
+				sourceId: (string)($case['id'] ?? '')
+			),
+			role: 'creeerZaak'
+		);
 
-        $result = $this->dispatch(
-            endpoint: $endpoint,
-            envelope: $envelope,
-            message: $msg,
-            functie: 'creeerZaak',
-            timeoutSeconds: StufHttpClient::DEFAULT_TIMEOUT_SECONDS
-        );
+		$serverCaseId = ($result['caseIdentification'] ?? $caseId);
+		$mapping = null;
+		if ($result['success'] === true && $serverCaseId !== null && $serverCaseId !== '') {
+			$mapping = $this->mappings->persist(case: $case, externId: $serverCaseId, endpoint: $endpoint);
+		}
 
-        $serverZaakId = ($result['zaakIdentificatie'] ?? $zaakId);
-        $mapping      = null;
-        if ($result['success'] === true && $serverZaakId !== null && $serverZaakId !== '') {
-            $mapping = $this->persistCaseMapping(case: $case, externId: $serverZaakId, endpoint: $endpoint);
-        }
+		$caseIdentification = $serverCaseId;
+		if ($serverCaseId === '') {
+			$caseIdentification = null;
+		}
 
-        $zaakIdentificatie = $serverZaakId;
-        if ($serverZaakId === '') {
-            $zaakIdentificatie = null;
-        }
+		return [
+			'success' => $result['success'],
+			'referentienummer' => $referentienummer,
+			'stufMessageId' => $result['messageId'],
+			'caseIdentification' => $caseIdentification,
+			'mappingId' => ($mapping['id'] ?? null),
+			'fout' => ($result['fout'] ?? null),
+		];
+	}//end creeerZaak()
 
-        return [
-            'success'           => $result['success'],
-            'referentienummer'  => $referentienummer,
-            'stufMessageId'     => (string) ($result['messageId'] ?? ($msg['id'] ?? '')),
-            'zaakIdentificatie' => $zaakIdentificatie,
-            'mappingId'         => ($mapping['id'] ?? null),
-            'fout'              => ($result['fout'] ?? null),
-        ];
-    }//end creeerZaak()
+	/**
+	 * Update an existing zaak via Lk02.
+	 *
+	 * @param array $case The case with updated fields.
+	 * @param array $endpoint The StufEndpoint.
+	 *
+	 * @return array{success:bool,referentienummer:string,stufMessageId:string,fout:?array<string,mixed>}
+	 *
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
+	 */
+	public function actualiseerZaak(array $case, array $endpoint): array {
+		if ($this->circuitBreaker->checkEndpoint(endpoint: $endpoint) === false) {
+			throw new CircuitOpenException(message: 'Circuit breaker is open');
+		}
 
-    /**
-     * Update an existing zaak via Lk02.
-     *
-     * @param array $case     The case with updated fields.
-     * @param array $endpoint The StufEndpoint.
-     *
-     * @return array{success:bool,referentienummer:string,stufMessageId:string,fout:?array<string,mixed>}
-     *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
-     */
-    public function actualiseerZaak(array $case, array $endpoint): array
-    {
-        if ($this->circuitBreaker->checkEndpoint(endpoint: $endpoint) === false) {
-            throw new CircuitOpenException(message: 'Circuit breaker is open');
-        }
+		$mapping = $this->mappings->find(case: $case, endpoint: $endpoint);
+		if ($mapping === null) {
+			$this->logger->warning(
+				message: 'StUF actualiseerZaak: no mapping for case {id}',
+				context: ['id' => ($case['id'] ?? '')]
+			);
+			return [
+				'success' => false,
+				'referentienummer' => '',
+				'stufMessageId' => '',
+				'fout' => [
+					'code' => 'NO_MAPPING',
+					'omschrijving' => 'Geen mapping voor case',
+					'details' => '',
+					'kind' => 'permanent',
+				],
+			];
+		}
 
-        $mapping = $this->register->findOne(
-            schema: StufRegisterAccess::SCHEMA_MAPPING,
-            filters: [
-                'bronEntiteit' => 'case',
-                'bronId'       => (string) ($case['id'] ?? ''),
-                'endpointId'   => (string) ($endpoint['id'] ?? ''),
-            ]
-        );
-        if ($mapping === null) {
-            $this->logger->warning(
-                message: 'StUF actualiseerZaak: no mapping for case {id}',
-                context: ['id' => ($case['id'] ?? '')]
-            );
-            return [
-                'success'          => false,
-                'referentienummer' => '',
-                'stufMessageId'    => '',
-                'fout'             => [
-                    'code'         => 'NO_MAPPING',
-                    'omschrijving' => 'Geen mapping voor case',
-                    'details'      => '',
-                    'soort'        => 'permanent',
-                ],
-            ];
-        }
+		$envelope = $this->builder->buildLk02ActualiseerZaak(case: $case, mapping: $mapping, endpoint: $endpoint);
+		$referentienummer = $this->extractReferentienummer(envelope: $envelope);
+		$result = $this->transport->dispatch(
+			endpoint: $endpoint,
+			envelope: $envelope,
+			message: $this->messageHandler->logOutbound(
+				endpoint: $endpoint,
+				envelopeXml: $envelope,
+				referentienummer: $referentienummer,
+				messageKind: 'Lk02',
+				role: 'actualiseerZaak',
+				caseId: (string)($mapping['externalIdentification'] ?? ''),
+				bronEntiteit: 'case',
+				sourceId: (string)($case['id'] ?? '')
+			),
+			role: 'actualiseerZaak'
+		);
 
-        $envelope         = $this->builder->buildLk02ActualiseerZaak(case: $case, mapping: $mapping, endpoint: $endpoint);
-        $referentienummer = $this->extractReferentienummer(envelope: $envelope);
-        $msg = $this->messageHandler->logOutbound(
-            endpoint: $endpoint,
-            envelopeXml: $envelope,
-            referentienummer: $referentienummer,
-            berichtSoort: 'Lk02',
-            functie: 'actualiseerZaak',
-            zaakId: (string) ($mapping['externIdentificatie'] ?? ''),
-            bronEntiteit: 'case',
-            bronId: (string) ($case['id'] ?? '')
-        );
+		return [
+			'success' => $result['success'],
+			'referentienummer' => $referentienummer,
+			'stufMessageId' => $result['messageId'],
+			'fout' => $result['fout'],
+		];
+	}//end actualiseerZaak()
 
-        $result = $this->dispatch(
-            endpoint: $endpoint,
-            envelope: $envelope,
-            message: $msg,
-            functie: 'actualiseerZaak',
-            timeoutSeconds: StufHttpClient::DEFAULT_TIMEOUT_SECONDS
-        );
+	/**
+	 * Synchronously query zaak details (Lv01 → La01, up to 30s).
+	 *
+	 * @param string $caseId The zaak identificatie.
+	 * @param array $endpoint The StufEndpoint.
+	 * @param array $gewensteElementen Optional gewenste zkn elements to scope.
+	 *
+	 * @return array|null The Zaak object array, or null on parse failure.
+	 *
+	 * @throws TimeoutException When the response does not arrive within the timeout.
+	 *
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-synchronous-zaak-query
+	 */
+	public function geefZaakDetails(string $caseId, array $endpoint, array $gewensteElementen = []): ?array {
+		if ($this->circuitBreaker->checkEndpoint(endpoint: $endpoint) === false) {
+			throw new CircuitOpenException(message: 'Circuit breaker is open');
+		}
 
-        return [
-            'success'          => $result['success'],
-            'referentienummer' => $referentienummer,
-            'stufMessageId'    => (string) ($result['messageId'] ?? ($msg['id'] ?? '')),
-            'fout'             => ($result['fout'] ?? null),
-        ];
-    }//end actualiseerZaak()
+		$envelope = $this->builder->buildLv01GeefDetails(
+			caseId: $caseId,
+			endpoint: $endpoint,
+			gewensteElementen: $gewensteElementen
+		);
+		$msg = $this->messageHandler->logOutbound(
+			endpoint: $endpoint,
+			envelopeXml: $envelope,
+			referentienummer: $this->extractReferentienummer(envelope: $envelope),
+			messageKind: 'Lv01',
+			role: 'geefZaakDetails',
+			caseId: $caseId
+		);
 
-    /**
-     * Synchronously query zaak details (Lv01 → La01, up to 30s).
-     *
-     * @param string $zaakId            The zaak identificatie.
-     * @param array  $endpoint          The StufEndpoint.
-     * @param array  $gewensteElementen Optional gewenste zkn elements to scope.
-     *
-     * @return array|null The Zaak object array, or null on parse failure.
-     *
-     * @throws TimeoutException When the response does not arrive within the timeout.
-     *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-synchronous-zaak-query
-     */
-    public function geefZaakDetails(string $zaakId, array $endpoint, array $gewensteElementen=[]): ?array
-    {
-        if ($this->circuitBreaker->checkEndpoint(endpoint: $endpoint) === false) {
-            throw new CircuitOpenException(message: 'Circuit breaker is open');
-        }
+		$response = $this->transport->send(endpoint: $endpoint, envelope: $envelope, role: 'geefZaakDetails');
 
-        $envelope         = $this->builder->buildLv01GeefDetails(zaakId: $zaakId, endpoint: $endpoint, gewensteElementen: $gewensteElementen);
-        $referentienummer = $this->extractReferentienummer(envelope: $envelope);
-        $msg = $this->messageHandler->logOutbound(
-            endpoint: $endpoint,
-            envelopeXml: $envelope,
-            referentienummer: $referentienummer,
-            berichtSoort: 'Lv01',
-            functie: 'geefZaakDetails',
-            zaakId: $zaakId
-        );
+		if ($response['httpStatus'] === 0 && ($response['fout']['code'] ?? '') === 'TIMEOUT') {
+			$this->messageHandler->transitionStatus(
+				msg: $msg,
+				newStatus: 'fout',
+				extras: ['fout' => $response['fout'], 'duurMs' => $response['durationMs']]
+			);
+			$this->needsInput->dispatch(
+				type: 'stuf_timeout',
+				context: ['endpointId' => ($endpoint['id'] ?? ''), 'stufMessageId' => ($msg['id'] ?? '')]
+			);
+			throw new TimeoutException(message: 'StUF geefZaakDetails timed out');
+		}
 
-        $response = $this->httpClient->send(
-            endpoint: $endpoint,
-            envelopeXml: $envelope,
-            soapActionFunc: 'geefZaakDetails',
-            timeoutSeconds: StufHttpClient::DEFAULT_TIMEOUT_SECONDS
-        );
+		$this->messageHandler->transitionStatus(
+			msg: $msg,
+			newStatus: $this->statusForHttp(httpStatus: (int)$response['httpStatus']),
+			extras: [
+				'httpStatus' => $response['httpStatus'],
+				'duurMs' => $response['durationMs'],
+				'responseEnvelopeXml' => $response['responseXml'],
+				'fout' => $response['fout'],
+			]
+		);
 
-        if ($response['httpStatus'] === 0 && isset($response['fout']['code']) === true && $response['fout']['code'] === 'TIMEOUT') {
-            $this->messageHandler->transitionStatus(
-                msg: $msg,
-                newStatus: 'fout',
-                extras: ['fout' => $response['fout'], 'duurMs' => ($response['durationMs'] ?? 0)]
-            );
-            $this->needsInput->dispatch(
-                type: 'stuf_timeout',
-                context: ['endpointId' => ($endpoint['id'] ?? ''), 'stufMessageId' => ($msg['id'] ?? '')]
-            );
-            throw new TimeoutException(message: 'StUF geefZaakDetails timed out');
-        }
+		if ($this->isSuccessful(httpStatus: (int)$response['httpStatus']) === false) {
+			return null;
+		}
 
-        $detailStatus = 'fout';
-        if ($response['httpStatus'] >= 200 && $response['httpStatus'] < 300) {
-            $detailStatus = 'bevestigd';
-        }
+		return $this->parser->parseZaakDetails(responseXml: $response['responseXml']);
+	}//end geefZaakDetails()
 
-        $this->messageHandler->transitionStatus(
-            msg: $msg,
-            newStatus: $detailStatus,
-            extras: [
-                'httpStatus'          => ($response['httpStatus'] ?? 0),
-                'duurMs'              => ($response['durationMs'] ?? 0),
-                'responseEnvelopeXml' => ($response['responseXml'] ?? ''),
-                'fout'                => ($response['fout'] ?? null),
-            ]
-        );
+	/**
+	 * Send a vrijBericht (free message) using a registered template.
+	 *
+	 * @param string $name The template name.
+	 * @param array $payload The payload values.
+	 * @param array $endpoint The StufEndpoint.
+	 *
+	 * @return array{success:bool,referentienummer:string,stufMessageId:string,fout:?array<string,mixed>}
+	 *
+	 * @throws VrijBerichtNotRegisteredException If the template is not registered.
+	 *
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-free-message-templates
+	 */
+	public function vrijBericht(string $name, array $payload, array $endpoint): array {
+		if ($this->circuitBreaker->checkEndpoint(endpoint: $endpoint) === false) {
+			throw new CircuitOpenException(message: 'Circuit breaker is open');
+		}
 
-        if ($response['httpStatus'] < 200 || $response['httpStatus'] >= 300) {
-            return null;
-        }
+		$envelope = $this->builder->buildDu01VrijBericht(name: $name, payload: $payload, endpoint: $endpoint);
+		$referentienummer = $this->extractReferentienummer(envelope: $envelope);
+		$caseId = (string)($payload['caseIdentification'] ?? '');
+		$caseIdArg = $caseId;
+		if ($caseId === '') {
+			$caseIdArg = null;
+		}
 
-        return $this->parser->parseZaakDetails(responseXml: (string) ($response['responseXml'] ?? ''));
-    }//end geefZaakDetails()
+		$result = $this->transport->dispatch(
+			endpoint: $endpoint,
+			envelope: $envelope,
+			message: $this->messageHandler->logOutbound(
+				endpoint: $endpoint,
+				envelopeXml: $envelope,
+				referentienummer: $referentienummer,
+				messageKind: 'Du01',
+				role: $name,
+				caseId: $caseIdArg
+			),
+			role: $name
+		);
 
-    /**
-     * Send a vrijBericht (free message) using a registered template.
-     *
-     * @param string $name     The template name.
-     * @param array  $payload  The payload values.
-     * @param array  $endpoint The StufEndpoint.
-     *
-     * @return array{success:bool,referentienummer:string,stufMessageId:string,fout:?array<string,mixed>}
-     *
-     * @throws VrijBerichtNotRegisteredException If the template is not registered.
-     *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-free-message-templates
-     */
-    public function vrijBericht(string $name, array $payload, array $endpoint): array
-    {
-        if ($this->circuitBreaker->checkEndpoint(endpoint: $endpoint) === false) {
-            throw new CircuitOpenException(message: 'Circuit breaker is open');
-        }
+		return [
+			'success' => $result['success'],
+			'referentienummer' => $referentienummer,
+			'stufMessageId' => $result['messageId'],
+			'fout' => $result['fout'],
+		];
+	}//end vrijBericht()
 
-        $envelope         = $this->builder->buildDu01VrijBericht(name: $name, payload: $payload, endpoint: $endpoint);
-        $referentienummer = $this->extractReferentienummer(envelope: $envelope);
-        $zaakId           = (string) ($payload['zaakIdentificatie'] ?? '');
-        $zaakIdArg        = $zaakId;
-        if ($zaakId === '') {
-            $zaakIdArg = null;
-        }
+	/**
+	 * Request a pre-allocated zaak identificatie via Du01 → La01.
+	 *
+	 * @param array $endpoint The StufEndpoint.
+	 *
+	 * @return string The allocated zaak ID (empty on failure).
+	 *
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-zaak-identificatie-allocation
+	 */
+	public function genereerZaakIdentificatie(array $endpoint): string {
+		$envelope = $this->builder->buildDu01GenereerZaakId(endpoint: $endpoint);
+		$msg = $this->messageHandler->logOutbound(
+			endpoint: $endpoint,
+			envelopeXml: $envelope,
+			referentienummer: $this->extractReferentienummer(envelope: $envelope),
+			messageKind: 'Du01',
+			role: 'genereerZaakIdentificatie'
+		);
 
-        $msg = $this->messageHandler->logOutbound(
-            endpoint: $endpoint,
-            envelopeXml: $envelope,
-            referentienummer: $referentienummer,
-            berichtSoort: 'Du01',
-            functie: $name,
-            zaakId: $zaakIdArg
-        );
+		$response = $this->transport->send(
+			endpoint: $endpoint,
+			envelope: $envelope,
+			role: 'genereerZaakIdentificatie'
+		);
+		$confirmation = $this->parser->parseBevestiging(responseXml: $response['responseXml']);
 
-        $result = $this->dispatch(
-            endpoint: $endpoint,
-            envelope: $envelope,
-            message: $msg,
-            functie: $name,
-            timeoutSeconds: StufHttpClient::DEFAULT_TIMEOUT_SECONDS
-        );
+		$this->messageHandler->transitionStatus(
+			msg: $msg,
+			newStatus: $this->statusForHttp(httpStatus: (int)$response['httpStatus']),
+			extras: [
+				'httpStatus' => $response['httpStatus'],
+				'duurMs' => $response['durationMs'],
+				'responseEnvelopeXml' => $response['responseXml'],
+				'caseIdentification' => ($confirmation['caseIdentification'] ?? ''),
+			]
+		);
 
-        return [
-            'success'          => $result['success'],
-            'referentienummer' => $referentienummer,
-            'stufMessageId'    => (string) ($result['messageId'] ?? ($msg['id'] ?? '')),
-            'fout'             => ($result['fout'] ?? null),
-        ];
-    }//end vrijBericht()
+		return (string)($confirmation['caseIdentification'] ?? '');
+	}//end genereerZaakIdentificatie()
 
-    /**
-     * Request a pre-allocated zaak identificatie via Du01 → La01.
-     *
-     * @param array $endpoint The StufEndpoint.
-     *
-     * @return string The allocated zaak ID (empty on failure).
-     *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-zaak-identificatie-allocation
-     */
-    public function genereerZaakIdentificatie(array $endpoint): string
-    {
-        $envelope         = $this->builder->buildDu01GenereerZaakId(endpoint: $endpoint);
-        $referentienummer = $this->extractReferentienummer(envelope: $envelope);
-        $msg = $this->messageHandler->logOutbound(
-            endpoint: $endpoint,
-            envelopeXml: $envelope,
-            referentienummer: $referentienummer,
-            berichtSoort: 'Du01',
-            functie: 'genereerZaakIdentificatie'
-        );
+	/**
+	 * Re-send an outbound message (called by the StufRetryJob).
+	 *
+	 * @param string $stufMessageId The audit message id.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
+	 */
+	public function retrySend(string $stufMessageId): void {
+		$msg = $this->register->findOne(
+			schema: StufRegisterAccess::SCHEMA_MESSAGE,
+			filters: ['id' => $stufMessageId]
+		);
+		if ($msg === null) {
+			$this->logger->warning(message: 'StUF retry: message {id} not found', context: ['id' => $stufMessageId]);
+			return;
+		}
 
-        $response = $this->httpClient->send(
-            endpoint: $endpoint,
-            envelopeXml: $envelope,
-            soapActionFunc: 'genereerZaakIdentificatie',
-            timeoutSeconds: StufHttpClient::DEFAULT_TIMEOUT_SECONDS
-        );
+		$endpoint = $this->register->findOne(
+			schema: StufRegisterAccess::SCHEMA_ENDPOINT,
+			filters: ['id' => (string)($msg['endpointId'] ?? '')]
+		);
+		if ($endpoint === null) {
+			$this->logger->warning(message: 'StUF retry: endpoint {id} not found', context: ['id' => ($msg['endpointId'] ?? '')]);
+			return;
+		}
 
-        $bv = $this->parser->parseBevestiging(responseXml: (string) ($response['responseXml'] ?? ''));
+		if ($this->circuitBreaker->checkEndpoint(endpoint: $endpoint) === false) {
+			$this->logger->info(message: 'StUF retry: circuit open, skip');
+			return;
+		}
 
-        $vrijStatus = 'fout';
-        if ($response['httpStatus'] >= 200 && $response['httpStatus'] < 300) {
-            $vrijStatus = 'bevestigd';
-        }
+		$role = (string)($msg['role'] ?? '');
 
-        $this->messageHandler->transitionStatus(
-            msg: $msg,
-            newStatus: $vrijStatus,
-            extras: [
-                'httpStatus'          => ($response['httpStatus'] ?? 0),
-                'duurMs'              => ($response['durationMs'] ?? 0),
-                'responseEnvelopeXml' => ($response['responseXml'] ?? ''),
-                'zaakIdentificatie'   => ($bv['zaakIdentificatie'] ?? ''),
-            ]
-        );
+		$this->transport->handleResponse(
+			endpoint: $endpoint,
+			response: $this->transport->send(
+				endpoint: $endpoint,
+				envelope: (string)($msg['envelopeXml'] ?? ''),
+				role: $role
+			),
+			message: $msg,
+			role: $role,
+			attempt: (count(value: (array)($msg['retries'] ?? [])) + 1)
+		);
+	}//end retrySend()
 
-        return (string) ($bv['zaakIdentificatie'] ?? '');
-    }//end genereerZaakIdentificatie()
+	/**
+	 * Whether an HTTP status is a 2xx success.
+	 *
+	 * @param int $httpStatus The status code.
+	 *
+	 * @return bool True on 2xx.
+	 */
+	private function isSuccessful(int $httpStatus): bool {
+		return ($httpStatus >= 200 && $httpStatus < 300);
+	}//end isSuccessful()
 
-    /**
-     * Re-send an outbound message (called by the StufRetryJob).
-     *
-     * @param string $stufMessageId The audit message id.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
-     */
-    public function retrySend(string $stufMessageId): void
-    {
-        $msg = $this->register->findOne(
-            schema: StufRegisterAccess::SCHEMA_MESSAGE,
-            filters: ['id' => $stufMessageId]
-        );
-        if ($msg === null) {
-            $this->logger->warning(message: 'StUF retry: message {id} not found', context: ['id' => $stufMessageId]);
-            return;
-        }
+	/**
+	 * The StufMessage status a synchronous round-trip lands in.
+	 *
+	 * @param int $httpStatus The status code.
+	 *
+	 * @return string Either 'bevestigd' or 'fout'.
+	 */
+	private function statusForHttp(int $httpStatus): string {
+		if ($this->isSuccessful(httpStatus: $httpStatus) === true) {
+			return 'bevestigd';
+		}
 
-        $endpoint = $this->register->findOne(
-            schema: StufRegisterAccess::SCHEMA_ENDPOINT,
-            filters: ['id' => (string) ($msg['endpointId'] ?? '')]
-        );
-        if ($endpoint === null) {
-            $this->logger->warning(message: 'StUF retry: endpoint {id} not found', context: ['id' => ($msg['endpointId'] ?? '')]);
-            return;
-        }
+		return 'fout';
+	}//end statusForHttp()
 
-        if ($this->circuitBreaker->checkEndpoint(endpoint: $endpoint) === false) {
-            $this->logger->info(message: 'StUF retry: circuit open, skip');
-            return;
-        }
+	/**
+	 * Extract the referentienummer from an envelope (best-effort).
+	 *
+	 * @param string $envelope The envelope XML.
+	 *
+	 * @return string The referentienummer (empty if not present).
+	 *
+	 * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
+	 * out-parameter, which PHPMD does not model.
+	 */
+	private function extractReferentienummer(string $envelope): string {
+		if (preg_match(pattern: '#<stuf:referentienummer>([^<]+)</stuf:referentienummer>#', subject: $envelope, matches: $matches) === 1) {
+			return $matches[1];
+		}
 
-        $envelope = (string) ($msg['envelopeXml'] ?? '');
-        $functie  = (string) ($msg['functie'] ?? '');
-        $attempt  = (count(value: (array) ($msg['retries'] ?? [])) + 1);
-
-        $response = $this->httpClient->send(
-            endpoint: $endpoint,
-            envelopeXml: $envelope,
-            soapActionFunc: $functie,
-            timeoutSeconds: StufHttpClient::DEFAULT_TIMEOUT_SECONDS
-        );
-
-        $this->handleResponse(
-            endpoint: $endpoint,
-            response: $response,
-            message: $msg,
-            functie: $functie,
-            attempt: $attempt
-        );
-    }//end retrySend()
-
-    /**
-     * Dispatch a kennisgeving envelope (Lk01/Lk02/Du01/Bv01-expecting) — send, parse, log, retry-on-transient.
-     *
-     * @param array  $endpoint       The StufEndpoint.
-     * @param string $envelope       The envelope XML.
-     * @param array  $message        The persisted StufMessage row.
-     * @param string $functie        The functie for SOAPAction.
-     * @param int    $timeoutSeconds The HTTP timeout.
-     *
-     * @return array{success:bool,messageId:string,zaakIdentificatie:?string,fout:?array<string,mixed>}
-     */
-    private function dispatch(array $endpoint, string $envelope, array $message, string $functie, int $timeoutSeconds): array
-    {
-        $response = $this->httpClient->send(
-            endpoint: $endpoint,
-            envelopeXml: $envelope,
-            soapActionFunc: $functie,
-            timeoutSeconds: $timeoutSeconds
-        );
-        return $this->handleResponse(endpoint: $endpoint, response: $response, message: $message, functie: $functie, attempt: 1);
-    }//end dispatch()
-
-    /**
-     * Handle an HTTP response: parse Bv01/Fo02, classify, persist, and retry on transient.
-     *
-     * @param array  $endpoint The StufEndpoint.
-     * @param array  $response The httpClient response.
-     * @param array  $message  The StufMessage row.
-     * @param string $functie  The functie.
-     * @param int    $attempt  The current attempt number (1-indexed).
-     *
-     * @return array{success:bool,messageId:string,zaakIdentificatie:?string,fout:?array<string,mixed>}
-     */
-    private function handleResponse(array $endpoint, array $response, array $message, string $functie, int $attempt): array
-    {
-        $endpointId = (string) ($endpoint['id'] ?? '');
-        $messageId  = (string) ($message['id'] ?? '');
-        $httpStatus = (int) ($response['httpStatus'] ?? 0);
-        $duration   = (int) ($response['durationMs'] ?? 0);
-        $body       = (string) ($response['responseXml'] ?? '');
-        $transport  = ($response['fout'] ?? null);
-
-        if ($httpStatus >= 200 && $httpStatus < 300) {
-            $bv     = $this->parser->parseBevestiging(responseXml: $body);
-            $extras = [
-                'httpStatus'          => $httpStatus,
-                'duurMs'              => $duration,
-                'responseEnvelopeXml' => $body,
-            ];
-            if (($bv['zaakIdentificatie'] ?? null) !== null) {
-                $extras['zaakIdentificatie'] = $bv['zaakIdentificatie'];
-            }
-
-            $this->messageHandler->transitionStatus(msg: $message, newStatus: 'bevestigd', extras: $extras);
-            $this->circuitBreaker->resetEndpoint(endpoint: $endpoint);
-            return [
-                'success'           => true,
-                'messageId'         => $messageId,
-                'zaakIdentificatie' => ($bv['zaakIdentificatie'] ?? null),
-                'fout'              => null,
-            ];
-        }
-
-        $fout = $transport;
-        if ($fout === null && $body !== '') {
-            $parsed = $this->parser->parseError(responseXml: $body);
-            $fout   = [
-                'code'         => ($parsed['code'] ?? ''),
-                'omschrijving' => ($parsed['omschrijving'] ?? ''),
-                'details'      => ($parsed['details'] ?? ''),
-                'soort'        => ($parsed['soort'] ?? 'permanent'),
-            ];
-        }
-
-        $isTransient = ($this->isTransientHttp(httpStatus: $httpStatus) === true || ($fout['soort'] ?? '') === 'transient');
-        if ($isTransient === true && $attempt < (count(value: self::RETRY_BACKOFF_SECONDS) + 1)) {
-            $this->messageHandler->recordRetry(
-                msg: $message,
-                attempt: $attempt,
-                httpStatus: $httpStatus,
-                fout: ($fout ?? []),
-                durationMs: $duration
-            );
-            $this->circuitBreaker->recordFailure(endpoint: $endpoint, fout: ($fout ?? []));
-            $this->scheduleRetry(messageId: $messageId, attempt: $attempt);
-            return [
-                'success'           => false,
-                'messageId'         => $messageId,
-                'zaakIdentificatie' => null,
-                'fout'              => $fout,
-            ];
-        }
-
-        // Permanent failure path.
-        $this->messageHandler->transitionStatus(
-            msg: $message,
-            newStatus: 'fout',
-            extras: [
-                'httpStatus'          => $httpStatus,
-                'duurMs'              => $duration,
-                'responseEnvelopeXml' => $body,
-                'fout'                => $fout,
-            ]
-        );
-        $this->circuitBreaker->recordFailure(endpoint: $endpoint, fout: ($fout ?? []));
-        $this->needsInput->dispatch(
-            type: 'stuf_permanent_error',
-            context: ['endpointId' => $endpointId, 'stufMessageId' => $messageId, 'fout' => ($fout ?? []), 'functie' => $functie]
-        );
-        return [
-            'success'           => false,
-            'messageId'         => $messageId,
-            'zaakIdentificatie' => null,
-            'fout'              => $fout,
-        ];
-    }//end handleResponse()
-
-    /**
-     * Persist a case → zaak mapping (idempotent).
-     *
-     * @param array  $case     The case.
-     * @param string $externId The external zaak identificatie.
-     * @param array  $endpoint The endpoint.
-     *
-     * @return array The mapping row.
-     */
-    private function persistCaseMapping(array $case, string $externId, array $endpoint): array
-    {
-        $existing       = $this->register->findOne(
-            schema: StufRegisterAccess::SCHEMA_MAPPING,
-            filters: [
-                'bronEntiteit' => 'case',
-                'bronId'       => (string) ($case['id'] ?? ''),
-                'endpointId'   => (string) ($endpoint['id'] ?? ''),
-            ]
-        );
-        $data           = ($existing ?? [
-            'id'             => 'map-'.bin2hex(string: random_bytes(length: 6)),
-            'bronEntiteit'   => 'case',
-            'bronId'         => (string) ($case['id'] ?? ''),
-            'caseId'         => (string) ($case['id'] ?? ''),
-            'endpointId'     => (string) ($endpoint['id'] ?? ''),
-            'externEntiteit' => 'ZAK',
-        ]);
-        $data['caseId'] = (string) ($case['id'] ?? '');
-        $data['externIdentificatie'] = $externId;
-        $syncMoment = new DateTimeImmutable(
-            datetime: 'now',
-            timezone: new DateTimeZone(timezone: 'Europe/Amsterdam')
-        );
-        $data['laatsteSynchronisatie'] = $syncMoment->format(format: 'c');
-        $data['synchronisatieStatus']  = 'in_sync';
-        return $this->register->saveObject(schema: StufRegisterAccess::SCHEMA_MAPPING, data: $data);
-    }//end persistCaseMapping()
-
-    /**
-     * Schedule a delayed retry via the background job list.
-     *
-     * @param string $messageId The StufMessage id.
-     * @param int    $attempt   The attempt number that just failed (1-indexed).
-     *
-     * @return void
-     */
-    private function scheduleRetry(string $messageId, int $attempt): void
-    {
-        $delayIndex = max(0, ($attempt - 1));
-        $delay      = (self::RETRY_BACKOFF_SECONDS[$delayIndex] ?? 600);
-        try {
-            $this->jobList->add(
-                'OCA\\Procest\\BackgroundJob\\StufRetryJob',
-                ['stufMessageId' => $messageId, 'runAt' => (time() + $delay)]
-            );
-        } catch (\Throwable $e) {
-            $this->logger->warning(message: 'StUF retry scheduling failed: {error}', context: ['error' => $e->getMessage()]);
-        }
-
-        $this->logger->info(
-            message: 'StUF retry scheduled for {id} after {delay}s (attempt {attempt})',
-            context: ['id' => $messageId, 'delay' => $delay, 'attempt' => $attempt]
-        );
-    }//end scheduleRetry()
-
-    /**
-     * Classify an HTTP status code as transient (retry) or permanent.
-     *
-     * @param int $httpStatus The status code.
-     *
-     * @return bool
-     */
-    private function isTransientHttp(int $httpStatus): bool
-    {
-        if ($httpStatus === 0) {
-            return true;
-        }
-
-        if ($httpStatus >= 500 && $httpStatus < 600) {
-            return true;
-        }
-
-        if ($httpStatus === 408 || $httpStatus === 429) {
-            return true;
-        }
-
-        return false;
-    }//end isTransientHttp()
-
-    /**
-     * Extract the referentienummer from an envelope (best-effort).
-     *
-     * @param string $envelope The envelope XML.
-     *
-     * @return string The referentienummer (empty if not present).
-     */
-    private function extractReferentienummer(string $envelope): string
-    {
-        if (preg_match(pattern: '#<stuf:referentienummer>([^<]+)</stuf:referentienummer>#', subject: $envelope, matches: $matches) === 1) {
-            return $matches[1];
-        }
-
-        return '';
-    }//end extractReferentienummer()
+		return '';
+	}//end extractReferentienummer()
 }//end class

@@ -20,14 +20,14 @@
 			<!-- Absentee (coordinator only; self otherwise) -->
 			<div v-if="allowCoordinator" class="form-group">
 				<NcTextField
-					:value.sync="form.absentee"
+					v-model="form.absentee"
 					:label="t('procest', 'Absent handler (user id)')"
 					:placeholder="t('procest', 'Handler being covered…')" />
 			</div>
 
 			<div class="form-group">
 				<NcTextField
-					:value.sync="form.substitute"
+					v-model="form.substitute"
 					:label="t('procest', 'Substitute (user id)')"
 					:placeholder="t('procest', 'Waarnemer who covers the work…')"
 					:error="!!errors.substitute" />
@@ -39,17 +39,19 @@
 			<div class="form-row">
 				<div class="form-group">
 					<label for="sub-start">{{ t('procest', 'Start date') }} *</label>
-					<input id="sub-start"
+					<input
+						id="sub-start"
 						v-model="form.startDate"
 						type="date"
-						class="substitution-form__date">
+						class="substitution-form__date" />
 				</div>
 				<div class="form-group">
 					<label for="sub-end">{{ t('procest', 'End date') }} *</label>
-					<input id="sub-end"
+					<input
+						id="sub-end"
 						v-model="form.endDate"
 						type="date"
-						class="substitution-form__date">
+						class="substitution-form__date" />
 				</div>
 			</div>
 
@@ -57,31 +59,33 @@
 				<NcSelect
 					v-model="selectedReason"
 					:options="reasonOptions"
-					:input-label="t('procest', 'Reason')"
+					:inputLabel="t('procest', 'Reason')"
 					:aria-label-combobox="t('procest', 'Reason')"
 					label="label"
-					track-by="value" />
+					trackBy="value" />
 			</div>
 
 			<div class="form-group">
 				<NcSelect
 					v-model="selectedScope"
 					:options="scopeOptions"
-					:input-label="t('procest', 'Scope')"
+					:inputLabel="t('procest', 'Scope')"
 					:aria-label-combobox="t('procest', 'Scope')"
 					label="label"
-					track-by="value" />
+					trackBy="value" />
 			</div>
 
-			<div v-if="selectedScope && selectedScope.value === 'caseTypes'" class="form-group">
+			<div
+				v-if="selectedScope && selectedScope.value === 'caseTypes'"
+				class="form-group">
 				<NcSelect
 					v-model="selectedCaseTypes"
 					:options="caseTypes"
 					:multiple="true"
-					:input-label="t('procest', 'Case types')"
+					:inputLabel="t('procest', 'Case types')"
 					:aria-label-combobox="t('procest', 'Case types')"
 					label="title"
-					track-by="id" />
+					trackBy="id" />
 			</div>
 
 			<div class="form-group">
@@ -132,6 +136,7 @@ export default {
 		NcSelect,
 		NcTextField,
 	},
+
 	props: {
 		/** When true the absentee field is shown (coordinator acts for others). */
 		allowCoordinator: {
@@ -139,6 +144,7 @@ export default {
 			default: false,
 		},
 	},
+
 	emits: ['created', 'close'],
 	data() {
 		return {
@@ -149,6 +155,7 @@ export default {
 				endDate: '',
 				comment: '',
 			},
+
 			selectedReason: { value: 'verlof', label: t('procest', 'Leave') },
 			selectedScope: { value: 'all', label: t('procest', 'All work') },
 			selectedCaseTypes: [],
@@ -158,11 +165,13 @@ export default {
 			serverError: '',
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		reasonOptions() {
 			return [
@@ -171,6 +180,7 @@ export default {
 				{ value: 'anders', label: t('procest', 'Other') },
 			]
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		scopeOptions() {
 			return [
@@ -179,19 +189,24 @@ export default {
 			]
 		},
 	},
+
 	async mounted() {
 		await this.loadCaseTypes()
 	},
+
 	methods: {
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		async loadCaseTypes() {
 			try {
-				const results = await this.objectStore.fetchCollection('caseType', { _limit: 200 })
+				const results = await this.objectStore.fetchCollection('caseType', {
+					_limit: 200,
+				})
 				this.caseTypes = Array.isArray(results) ? results : []
 			} catch (err) {
 				this.caseTypes = []
 			}
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		validate() {
 			const errs = {}
@@ -201,6 +216,7 @@ export default {
 			this.errors = errs
 			return Object.keys(errs).length === 0
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		async submit() {
 			this.serverError = ''
@@ -214,9 +230,16 @@ export default {
 					substitute: this.form.substitute.trim(),
 					startDate: this.form.startDate,
 					endDate: this.form.endDate,
-					reason: this.selectedReason ? this.selectedReason.value : 'verlof',
+					reason: this.selectedReason
+						? this.selectedReason.value
+						: 'verlof',
+
 					scope,
-					scopeRefs: scope === 'caseTypes' ? this.selectedCaseTypes.map(ct => ct.id) : [],
+					scopeRefs:
+						scope === 'caseTypes'
+							? this.selectedCaseTypes.map((ct) => ct.id)
+							: [],
+
 					comment: this.form.comment,
 				}
 				if (this.allowCoordinator && this.form.absentee.trim()) {
@@ -225,13 +248,15 @@ export default {
 				const created = await createSubstitution(payload)
 				this.$emit('created', created)
 			} catch (err) {
-				this.serverError = err?.response?.data?.error
+				this.serverError =
+					err?.response?.data?.error
 					|| err?.message
 					|| t('procest', 'Failed to register substitution.')
 			} finally {
 				this.saving = false
 			}
 		},
+
 		/**
 		 * @param open
 		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md

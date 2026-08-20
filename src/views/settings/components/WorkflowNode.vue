@@ -6,8 +6,13 @@
 			'workflow-node--final': status.isFinal,
 		}"
 		:style="nodeStyle"
+		role="button"
+		tabindex="0"
+		:aria-label="t('procest', 'Status: {name}', { name: status.name })"
 		@mousedown.stop="onMouseDown"
-		@click.stop="$emit('select')">
+		@click.stop="$emit('select')"
+		@keydown.enter="$emit('select')"
+		@keydown.space.prevent="$emit('select')">
 		<!-- Input port (top) -->
 		<div
 			class="workflow-node__port workflow-node__port--input"
@@ -16,32 +21,66 @@
 		<!-- Header -->
 		<div class="workflow-node__header">
 			<span class="workflow-node__name">{{ status.name }}</span>
-			<span
-				v-if="steps.length > 0"
-				class="workflow-node__badge">
+			<span v-if="steps.length > 0" class="workflow-node__badge">
 				{{ steps.length }}
 			</span>
-			<span
-				v-if="status.isFinal"
-				class="workflow-node__final-badge">
+			<span v-if="status.isFinal" class="workflow-node__final-badge">
 				{{ t('procest', 'Final') }}
 			</span>
+
+			<!-- Keyboard-operable actions menu — connect/disconnect/delete have
+				no keyboard equivalent otherwise (mouse-only port-drag and
+				drag-and-drop). Separate focusable control; stop propagation so
+				it never also fires the node's own select/drag handlers. -->
+			<NcActions
+				class="workflow-node__actions"
+				:inline="0"
+				:aria-label="
+					t('procest', 'Actions for status {name}', { name: status.name })
+				"
+				@click.stop
+				@keydown.stop>
+				<NcActionButton
+					v-for="target in connectableStatuses"
+					:key="'connect-' + target.id"
+					@click="$emit('keyboard-connect', target.id)">
+					{{ t('procest', 'Connect to {name}', { name: target.name }) }}
+				</NcActionButton>
+				<NcActionButton
+					v-for="transition in outgoingTransitions"
+					:key="'disconnect-' + transition.id"
+					@click="$emit('keyboard-disconnect', transition.id)">
+					{{
+						t('procest', 'Disconnect from {name}', {
+							name: targetName(transition.toStatus),
+						})
+					}}
+				</NcActionButton>
+				<NcActionButton @click="$emit('add-step')">
+					{{ t('procest', 'Add step') }}
+				</NcActionButton>
+				<NcActionButton @click="$emit('delete-status')">
+					{{ t('procest', 'Delete status') }}
+				</NcActionButton>
+			</NcActions>
 		</div>
 
 		<!-- Steps list -->
-		<div
-			v-if="steps.length > 0"
-			class="workflow-node__steps">
+		<div v-if="steps.length > 0" class="workflow-node__steps">
 			<div
 				v-for="step in steps"
 				:key="step.id"
 				class="workflow-node__step"
 				:class="{ 'workflow-node__step--required': step.isRequired }"
 				draggable="true"
+				role="button"
+				tabindex="0"
 				@dragstart.stop="onStepDragStart(step, $event)"
 				@dragover.prevent
 				@drop.stop="onStepDrop(step, $event)"
-				@click.stop="$emit('step-click', step)">
+				@click.stop="$emit('step-click', step)"
+				@keydown.enter="$emit('step-click', step)"
+				@keydown.space.prevent="$emit('step-click', step)">
 				<span class="workflow-node__step-name">{{ step.title }}</span>
 				<span
 					v-if="step.checklist && step.checklist.length > 0"
@@ -52,9 +91,7 @@
 		</div>
 
 		<!-- Add step button -->
-		<button
-			class="workflow-node__add-step"
-			@click.stop="$emit('add-step')">
+		<button class="workflow-node__add-step" @click.stop="$emit('add-step')">
 			+ {{ t('procest', 'Add step') }}
 		</button>
 
@@ -66,32 +103,67 @@
 </template>
 
 <script>
+import { NcActionButton, NcActions } from '@nextcloud/vue'
+
 export default {
 	name: 'WorkflowNode',
+	components: {
+		NcActions,
+		NcActionButton,
+	},
+
 	props: {
 		status: {
 			type: Object,
 			required: true,
 		},
+
 		steps: {
 			type: Array,
 			default: () => [],
 		},
+
 		position: {
 			type: Object,
 			default: () => ({ x: 0, y: 0 }),
 		},
+
 		selected: {
 			type: Boolean,
 			default: false,
 		},
+
+		/** Every other status node — used to build the keyboard "Connect to…" menu. */
+		otherStatuses: {
+			type: Array,
+			default: () => [],
+		},
+
+		/** Transitions whose `fromStatus` is this node — used for "Disconnect from…". */
+		outgoingTransitions: {
+			type: Array,
+			default: () => [],
+		},
 	},
-	emits: ['select', 'drag-start', 'connection-start', 'connection-end', 'step-click', 'add-step'],
+
+	emits: [
+		'select',
+		'drag-start',
+		'connection-start',
+		'connection-end',
+		'step-click',
+		'add-step',
+		'keyboard-connect',
+		'keyboard-disconnect',
+		'delete-status',
+	],
+
 	data() {
 		return {
 			draggedStepId: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		nodeStyle() {
@@ -101,8 +173,39 @@ export default {
 				top: `${this.position.y}px`,
 			}
 		},
+
+		/**
+		 * Other statuses this node does not already have an outgoing
+		 * transition to — the valid "Connect to…" targets (mirrors the
+		 * DUPLICATE_TRANSITION validation rule by simply not offering to
+		 * create one).
+		 */
+		/** @spec openspec/specs/visual-workflow-editor/spec.md#requirement-keyboard-operable-canvas */
+		connectableStatuses() {
+			const connectedIds = new Set(
+				this.outgoingTransitions.map((t) => t.toStatus),
+			)
+			return this.otherStatuses.filter((s) => !connectedIds.has(s.id))
+		},
 	},
+
 	methods: {
+		/**
+		 * Resolve a status id to its display name from `otherStatuses`.
+		 *
+		 * @param {string} statusId UUID of the status
+		 * @return {string} The status name, or the id if not found
+		 */
+		/**
+		 * @param statusId
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-keyboard-operable-canvas
+		 */
+		targetName(statusId) {
+			return (
+				this.otherStatuses.find((s) => s.id === statusId)?.name || statusId
+			)
+		},
+
 		/**
 		 * @param event
 		 * @spec openspec/specs/workflow-definition-model/spec.md
@@ -202,7 +305,12 @@ export default {
 	gap: 8px;
 	padding: 8px 12px;
 	background: var(--color-background-dark);
-	border-radius: var(--border-radius-large, 8px) var(--border-radius-large, 8px) 0 0;
+	border-radius: var(--border-radius-large, 8px) var(--border-radius-large, 8px) 0
+		0;
+}
+
+.workflow-node__actions {
+	flex-shrink: 0;
 }
 
 .workflow-node__name {

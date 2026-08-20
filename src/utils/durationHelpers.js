@@ -15,7 +15,7 @@ const DURATION_REGEX = /^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?$/
  */
 /**
  * @param value
- * @spec openspec/changes/milestone-tracking/tasks.md
+ * @spec openspec/specs/milestone-tracking/spec.md
  */
 export function isValidDuration(value) {
 	if (!value || typeof value !== 'string') return false
@@ -30,7 +30,7 @@ export function isValidDuration(value) {
  */
 /**
  * @param iso
- * @spec openspec/changes/milestone-tracking/tasks.md
+ * @spec openspec/specs/milestone-tracking/spec.md
  */
 export function parseDuration(iso) {
 	if (!isValidDuration(iso)) return null
@@ -51,7 +51,7 @@ export function parseDuration(iso) {
  */
 /**
  * @param iso
- * @spec openspec/changes/milestone-tracking/tasks.md
+ * @spec openspec/specs/milestone-tracking/spec.md
  */
 export function formatDuration(iso) {
 	const parsed = parseDuration(iso)
@@ -94,12 +94,15 @@ export function formatDuration(iso) {
  */
 /**
  * @param value
- * @spec openspec/changes/milestone-tracking/tasks.md
+ * @spec openspec/specs/milestone-tracking/spec.md
  */
 export function getDurationError(value) {
 	if (!value) return ''
 	if (!isValidDuration(value)) {
-		return t('procest', 'Must be a valid ISO 8601 duration (e.g., P56D for 56 days, P8W for 8 weeks, P2M for 2 months)')
+		return t(
+			'procest',
+			'Must be a valid ISO 8601 duration (e.g., P56D for 56 days, P8W for 8 weeks, P2M for 2 months)',
+		)
 	}
 	return ''
 }

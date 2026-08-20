@@ -14,8 +14,8 @@
 // marker formatting.)
 
 import { translate as t } from '@nextcloud/l10n'
-import { useObjectStore } from '../store/modules/object.js'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
+import { useObjectStore } from '../store/modules/object.js'
 import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
 
 // Guard so each lookup collection is fetched at most once per page load.
@@ -77,7 +77,13 @@ function lookupRelatedName(type, uuid) {
 		return uuid
 	}
 	const collection = store.collections[type]
-	if (!collection && !lookupFetchStarted[type]) {
+	// `registerObjectType` seeds `collections[type] = []` (a truthy empty
+	// array) before any fetch, so a plain `!collection` guard treats a
+	// registered-but-unfetched type as already loaded and never fires the
+	// lookup — leaving reference cells stuck on the raw UUID. Fetch whenever
+	// the collection is empty; `lookupFetchStarted` still guards against
+	// re-fetching a type that genuinely resolved to zero rows.
+	if ((!collection || collection.length === 0) && !lookupFetchStarted[type]) {
 		// Only fetch once the type is registered (initializeStores done).
 		if (store.objectTypeRegistry && store.objectTypeRegistry[type]) {
 			lookupFetchStarted[type] = true
@@ -89,24 +95,24 @@ function lookupRelatedName(type, uuid) {
 	const hit = (collection || []).find(
 		(o) => o.id === uuid || (o['@self'] && o['@self'].id === uuid),
 	)
-	return hit ? (hit.title || hit.name || uuid) : uuid
+	return hit ? hit.title || hit.name || uuid : uuid
 }
 
 const VOORSTEL_STATUS_LABELS = {
-	concept: 'Concept',
-	in_parafering: 'In parafering',
-	ter_accordering: 'Ter accordering',
-	geaccordeerd: 'Geaccordeerd',
-	aangeboden: 'Aangeboden',
-	besloten: 'Besloten',
-	gearchiveerd: 'Gearchiveerd',
-	teruggestuurd: 'Teruggestuurd',
+	concept: 'Draft',
+	in_parafering: 'Awaiting initials',
+	ter_accordering: 'Awaiting approval',
+	geaccordeerd: 'Approved',
+	aangeboden: 'Presented',
+	besloten: 'Decided',
+	gearchiveerd: 'Archived',
+	teruggestuurd: 'Returned',
 }
 
 const VOORSTEL_TYPE_LABELS = {
-	dt_advies: 'DT-advies',
-	collegeadvies: 'Collegeadvies',
-	raadsvoorstel: 'Raadsvoorstel',
+	dt_advies: 'Management team advice',
+	collegeadvies: 'Executive board advice',
+	raadsvoorstel: 'Council proposal',
 }
 
 /**
@@ -135,10 +141,12 @@ function voorstelSteps(row) {
  */
 function rowUpdated(row) {
 	if (!row) return undefined
-	return (row['@self'] && row['@self'].updated)
+	return (
+		(row['@self'] && row['@self'].updated)
 		|| (row._self && row._self.updated)
 		|| row.updatedAt
 		|| undefined
+	)
 }
 
 export default {
@@ -148,7 +156,8 @@ export default {
 	 * @param {string} value The raw `type`.
 	 * @return {string}
 	 */
-	voorstelType: (value) => t('procest', VOORSTEL_TYPE_LABELS[value] || value || '-'),
+	proposalType: (value) =>
+		t('procest', VOORSTEL_TYPE_LABELS[value] || value || '-'),
 
 	/**
 	 * Human label for a voorstel `status` enum value (also rendered as a
@@ -157,7 +166,8 @@ export default {
 	 * @param {string} value The raw `status`.
 	 * @return {string}
 	 */
-	voorstelStatus: (value) => t('procest', VOORSTEL_STATUS_LABELS[value] || value || '-'),
+	voorstelStatus: (value) =>
+		t('procest', VOORSTEL_STATUS_LABELS[value] || value || '-'),
 
 	/**
 	 * `currentStep / totalSteps` progress for a voorstel's parafeerroute.
@@ -183,7 +193,7 @@ export default {
 		const steps = voorstelSteps(row)
 		if (!steps.length || !row || !row.currentStep) return '-'
 		const current = steps.find((s) => s.order === row.currentStep)
-		return current ? (current.label || current.actor || '-') : '-'
+		return current ? current.label || current.actor || '-' : '-'
 	},
 
 	/**
@@ -196,7 +206,9 @@ export default {
 	voorstelDaysInStep: (value, row) => {
 		const updated = rowUpdated(row)
 		if (!updated) return '-'
-		const days = Math.floor((Date.now() - new Date(updated).getTime()) / 86400000)
+		const days = Math.floor(
+			(Date.now() - new Date(updated).getTime()) / 86400000,
+		)
 		return `${days}d`
 	},
 

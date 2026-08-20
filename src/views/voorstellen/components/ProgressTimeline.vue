@@ -1,5 +1,8 @@
 <template>
-	<div class="progress-timeline" role="list" :aria-label="t('procest', 'Parafering voortgang')">
+	<div
+		class="progress-timeline"
+		role="list"
+		:aria-label="t('procest', 'Parafering voortgang')">
 		<div
 			v-for="step in steps"
 			:key="step.order"
@@ -13,7 +16,11 @@
 			</div>
 			<div class="progress-timeline__content">
 				<div class="progress-timeline__label">
-					{{ step.label || step.actor || t('procest', 'Stap {n}', { n: step.order }) }}
+					{{
+						step.label
+						|| step.actor
+						|| t('procest', 'Step {n}', { n: step.order })
+					}}
 				</div>
 				<div class="progress-timeline__type">
 					{{ formatStepType(step.type) }}
@@ -21,8 +28,10 @@
 				<div v-if="isCompleted(step)" class="progress-timeline__meta">
 					{{ getCompletionInfo(step) }}
 				</div>
-				<div v-else-if="isCurrent(step)" class="progress-timeline__meta progress-timeline__meta--waiting">
-					{{ t('procest', 'Wachtend') }}
+				<div
+					v-else-if="isCurrent(step)"
+					class="progress-timeline__meta progress-timeline__meta--waiting">
+					{{ t('procest', 'Waiting') }}
 				</div>
 			</div>
 		</div>
@@ -31,13 +40,13 @@
 
 <script>
 import CheckCircle from 'vue-material-design-icons/CheckCircle.vue'
-import ProgressClock from 'vue-material-design-icons/ProgressClock.vue'
 import CircleOutline from 'vue-material-design-icons/CircleOutline.vue'
+import ProgressClock from 'vue-material-design-icons/ProgressClock.vue'
 
 const STEP_TYPE_LABELS = {
-	advies: 'Advies',
-	parafering: 'Parafering',
-	accordering: 'Accordering',
+	advies: 'Advice',
+	parafering: 'Endorsement',
+	accordering: 'Approval',
 }
 
 export default {
@@ -47,27 +56,33 @@ export default {
 		ProgressClock,
 		CircleOutline,
 	},
+
 	props: {
 		steps: {
 			type: Array,
 			required: true,
 		},
+
 		currentStep: {
 			type: Number,
 			default: 0,
 		},
+
 		acties: {
 			type: Array,
 			default: () => [],
 		},
 	},
+
 	methods: {
 		isCompleted(step) {
 			return step.order < this.currentStep
 		},
+
 		isCurrent(step) {
 			return step.order === this.currentStep
 		},
+
 		/**
 		 * @param step
 		 * @spec openspec/specs/parafering-actions/spec.md
@@ -77,29 +92,32 @@ export default {
 			if (this.isCurrent(step)) return 'progress-timeline__step--current'
 			return 'progress-timeline__step--pending'
 		},
+
 		/**
 		 * @param type
 		 * @spec openspec/specs/parafering-actions/spec.md
 		 */
 		formatStepType(type) {
-			return STEP_TYPE_LABELS[type] || type || ''
+			return t('procest', STEP_TYPE_LABELS[type] || type || '')
 		},
+
 		/**
 		 * @param step
 		 * @spec openspec/specs/parafering-actions/spec.md
 		 */
 		getCompletionInfo(step) {
-			const actie = this.acties.find(a => a.step === step.order)
+			const actie = this.acties.find((a) => a.step === step.order)
 			if (!actie) return ''
 			const date = actie._self?.created || actie.timestamp
 			const formatted = date ? new Date(date).toLocaleDateString('nl-NL') : ''
-			const action = actie.action === 'parafered'
-				? t('procest', 'Geparafeerd')
-				: actie.action === 'advised'
-					? t('procest', 'Geadviseerd')
-					: actie.action === 'skipped'
-						? t('procest', 'Overgeslagen')
-						: actie.action
+			const action =
+				actie.action === 'parafered'
+					? t('procest', 'Endorsed')
+					: actie.action === 'advised'
+						? t('procest', 'Advised')
+						: actie.action === 'skipped'
+							? t('procest', 'Skipped')
+							: actie.action
 			return `${action} door ${actie.actor} — ${formatted}`
 		},
 	},

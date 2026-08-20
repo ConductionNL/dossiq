@@ -46,148 +46,177 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T12
  */
-class BezwaarTermijnJob extends TimedJob
-{
+class BezwaarTermijnJob extends TimedJob {
 
-    use SearchesObjects;
+	use SearchesObjects;
 
-    /**
-     * Constructor.
-     *
-     * @param ITimeFactory       $time               The time factory.
-     * @param BeschikkingService $beschikkingService The beschikking service.
-     * @param SettingsService    $settingsService    The settings service.
-     * @param IAppManager        $appManager         The app manager.
-     * @param LoggerInterface    $logger             The logger.
-     */
-    public function __construct(
-        ITimeFactory $time,
-        private readonly BeschikkingService $beschikkingService,
-        private readonly SettingsService $settingsService,
-        private readonly IAppManager $appManager,
-        private readonly LoggerInterface $logger,
-    ) {
-        parent::__construct(time: $time);
-        $this->setInterval(seconds: 86400);
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param ITimeFactory $time The time factory.
+	 * @param BeschikkingService $decisionService The beschikking service.
+	 * @param SettingsService $settingsService The settings service.
+	 * @param IAppManager $appManager The app manager.
+	 * @param LoggerInterface $logger The logger.
+	 */
+	public function __construct(
+		ITimeFactory $time,
+		private readonly BeschikkingService $decisionService,
+		private readonly SettingsService $settingsService,
+		private readonly IAppManager $appManager,
+		private readonly LoggerInterface $logger,
+	) {
+		parent::__construct(time: $time);
+		$this->setInterval(seconds: 86400);
+	}//end __construct()
 
-    /**
-     * Run the bezwaartermijn check.
-     *
-     * @param mixed $argument The job argument (unused).
-     *
-     * @return void
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     */
-    protected function run($argument): void
-    {
-        if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {
-            return;
-        }
+	/**
+	 * Run the bezwaartermijn check.
+	 *
+	 * @param mixed $argument The job argument (unused).
+	 *
+	 * @return void
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 */
+	protected function run($argument): void {
+		if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {
+			return;
+		}
 
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return;
-        }
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return;
+		}
 
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('bezwaar_trigger_schema');
-        if ($register === '' || $schema === '') {
-            return;
-        }
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('bezwaar_trigger_schema');
+		if (in_array('', [$register, $schema], true) === true) {
+			return;
+		}
 
-        try {
-            $triggers = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $schema,
-                filters: ['archiefTriggerActief' => true],
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error('BezwaarTermijnJob: query failed', ['exception' => $e->getMessage()]);
-            return;
-        }
+		try {
+			$triggers = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: ['archiveTriggerActive' => true],
+			);
+		} catch (\Throwable $e) {
+			$this->logger->error('BezwaarTermijnJob: query failed', ['exception' => $e->getMessage()]);
+			return;
+		}
 
-        $today    = (new DateTimeImmutable())->format('Y-m-d');
-        $archived = 0;
+		$today = (new DateTimeImmutable())->format('Y-m-d');
+		$archived = 0;
 
-        foreach ((array) $triggers as $trigger) {
-            $arr           = $this->toArray(value: $trigger);
-            $archiefDatum  = (string) ($arr['archiefDatum'] ?? '');
-            $bezwaar       = ($arr['bezwaarOntvangen'] ?? false) === true;
-            $beschikkingId = (string) ($arr['beschikkingId'] ?? '');
+		foreach ((array)$triggers as $trigger) {
+			$wasArchived = $this->processTrigger(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				trigger: $trigger,
+				today: $today,
+			);
+			if ($wasArchived === true) {
+				$archived++;
+			}
+		}//end foreach
 
-            if ($beschikkingId === '' || $archiefDatum === '' || $archiefDatum > $today) {
-                continue;
-            }
+		if ($archived > 0) {
+			$this->logger->info(
+				'BezwaarTermijnJob: archived ' . $archived . ' beschikking(en)',
+				['app' => Application::APP_ID],
+			);
+		}
+	}//end run()
 
-            if ($bezwaar === true) {
-                $this->deactivateTrigger(objectService: $objectService, register: $register, schema: $schema, trigger: $arr);
-                continue;
-            }
+	/**
+	 * Process a single bezwaarTrigger: archive the beschikking when its
+	 * bezwaartermijn has lapsed without a bezwaar, otherwise deactivate.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param string $register The register id.
+	 * @param string $schema The bezwaarTrigger schema id.
+	 * @param mixed $trigger The raw trigger entity or array.
+	 * @param string $today Today's date as `Y-m-d`.
+	 *
+	 * @return bool True when a beschikking was archived.
+	 */
+	private function processTrigger(
+		object $objectService,
+		string $register,
+		string $schema,
+		mixed $trigger,
+		string $today,
+	): bool {
+		$arr = $this->toArray(value: $trigger);
+		$archiveDate = (string)($arr['archiveDate'] ?? '');
+		$objection = ($arr['objectionReceived'] ?? false) === true;
+		$decisionId = (string)($arr['decisionId'] ?? '');
 
-            try {
-                $this->beschikkingService->archive($beschikkingId);
-                $this->deactivateTrigger(objectService: $objectService, register: $register, schema: $schema, trigger: $arr);
-                $archived++;
-            } catch (\Throwable $e) {
-                $this->logger->error(
-                    'BezwaarTermijnJob: archival failed',
-                    ['exception' => $e->getMessage(), 'beschikkingId' => $beschikkingId],
-                );
-            }
-        }//end foreach
+		if ($decisionId === '' || $archiveDate === '' || $archiveDate > $today) {
+			return false;
+		}
 
-        if ($archived > 0) {
-            $this->logger->info(
-                'BezwaarTermijnJob: archived '.$archived.' beschikking(en)',
-                ['app' => Application::APP_ID],
-            );
-        }
-    }//end run()
+		if ($objection === true) {
+			$this->deactivateTrigger(objectService: $objectService, register: $register, schema: $schema, trigger: $arr);
+			return false;
+		}
 
-    /**
-     * Deactivate a trigger so it is not processed again (idempotency).
-     *
-     * @param object               $objectService The OpenRegister object service.
-     * @param string               $register      The register id.
-     * @param string               $schema        The bezwaarTrigger schema id.
-     * @param array<string, mixed> $trigger       The trigger payload.
-     *
-     * @return void
-     */
-    private function deactivateTrigger(object $objectService, string $register, string $schema, array $trigger): void
-    {
-        $trigger['archiefTriggerActief'] = false;
+		try {
+			$this->decisionService->archive($decisionId);
+			$this->deactivateTrigger(objectService: $objectService, register: $register, schema: $schema, trigger: $arr);
+			return true;
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'BezwaarTermijnJob: archival failed',
+				['exception' => $e->getMessage(), 'decisionId' => $decisionId],
+			);
+		}//end try
 
-        try {
-            $objectService->saveObject(object: $trigger, register: $register, schema: $schema);
-        } catch (\Throwable $e) {
-            $this->logger->error('BezwaarTermijnJob: deactivate failed', ['exception' => $e->getMessage()]);
-        }
-    }//end deactivateTrigger()
+		return false;
+	}//end processTrigger()
 
-    /**
-     * Normalise an ObjectService value to an array.
-     *
-     * @param mixed $value The entity or array.
-     *
-     * @return array<string, mixed>
-     */
-    private function toArray(mixed $value): array
-    {
-        if (is_array($value) === true) {
-            return $value;
-        }
+	/**
+	 * Deactivate a trigger so it is not processed again (idempotency).
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param string $register The register id.
+	 * @param string $schema The bezwaarTrigger schema id.
+	 * @param array<string, mixed> $trigger The trigger payload.
+	 *
+	 * @return void
+	 */
+	private function deactivateTrigger(object $objectService, string $register, string $schema, array $trigger): void {
+		$trigger['archiveTriggerActive'] = false;
 
-        if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-            $serialised = $value->jsonSerialize();
-            if (is_array($serialised) === true) {
-                return $serialised;
-            }
-        }
+		try {
+			$objectService->saveObject(object: $trigger, register: $register, schema: $schema);
+		} catch (\Throwable $e) {
+			$this->logger->error('BezwaarTermijnJob: deactivate failed', ['exception' => $e->getMessage()]);
+		}
+	}//end deactivateTrigger()
 
-        return [];
-    }//end toArray()
+	/**
+	 * Normalise an ObjectService value to an array.
+	 *
+	 * @param mixed $value The entity or array.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function toArray(mixed $value): array {
+		if (is_array($value) === true) {
+			return $value;
+		}
+
+		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
+			$serialised = $value->jsonSerialize();
+			if (is_array($serialised) === true) {
+				return $serialised;
+			}
+		}
+
+		return [];
+	}//end toArray()
 }//end class

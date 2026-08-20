@@ -20,8 +20,8 @@
  * @link https://procest.nl
  *
  * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-5
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md#task-1
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md#task-3
+ * @spec openspec/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
 
 declare(strict_types=1);
@@ -37,95 +37,83 @@ use OCP\Util;
 /**
  * Dashboard widget showing tasks assigned to the current user.
  */
-class MyTasksWidget implements IWidget
-{
-    /**
-     * Constructor.
-     *
-     * @param IL10N         $l10n L10N service
-     * @param IURLGenerator $url  URL generator
-     */
-    public function __construct(
-        private IL10N $l10n,
-        private IURLGenerator $url
-    ) {
-    }//end __construct()
+class MyTasksWidget implements IWidget {
+	/**
+	 * Constructor.
+	 *
+	 * @param IL10N $l10n L10N service
+	 * @param IURLGenerator $url URL generator
+	 */
+	public function __construct(
+		private IL10N $l10n,
+		private IURLGenerator $url,
+	) {
+	}//end __construct()
 
-    /**
-     * Get the unique identifier for this widget.
-     *
-     * @inheritDoc
-     * @return     string The widget identifier
-     */
-    public function getId(): string
-    {
-        return 'procest_my_tasks_widget';
+	/**
+	 * Get the unique identifier for this widget.
+	 *
+	 * @inheritDoc
+	 * @return string The widget identifier
+	 */
+	public function getId(): string {
+		return 'procest_my_tasks_widget';
+	}//end getId()
 
-    }//end getId()
+	/**
+	 * Get the display title for this widget.
+	 *
+	 * @inheritDoc
+	 * @return string The widget title
+	 */
+	public function getTitle(): string {
+		return $this->l10n->t('My Tasks');
+	}//end getTitle()
 
-    /**
-     * Get the display title for this widget.
-     *
-     * @inheritDoc
-     * @return     string The widget title
-     */
-    public function getTitle(): string
-    {
-        return $this->l10n->t('My Tasks');
+	/**
+	 * Get the display order for this widget.
+	 *
+	 * @inheritDoc
+	 * @return int The widget order
+	 */
+	public function getOrder(): int {
+		return 12;
+	}//end getOrder()
 
-    }//end getTitle()
+	/**
+	 * Get the CSS icon class for this widget.
+	 *
+	 * @inheritDoc
+	 * @return string The icon CSS class
+	 */
+	public function getIconClass(): string {
+		return 'icon-procest-widget';
+	}//end getIconClass()
 
-    /**
-     * Get the display order for this widget.
-     *
-     * @inheritDoc
-     * @return     int The widget order
-     */
-    public function getOrder(): int
-    {
-        return 12;
+	/**
+	 * Get the URL for the widget's full view.
+	 *
+	 * @inheritDoc
+	 * @return string|null The widget URL or null
+	 */
+	public function getUrl(): ?string {
+		return $this->url->linkToRouteAbsolute(Application::APP_ID . '.dashboard.page');
+	}//end getUrl()
 
-    }//end getOrder()
+	/**
+	 * Load the widget scripts and styles.
+	 *
+	 * @inheritDoc
+	 * @return void
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) — Nextcloud Util API is static by design
+	 */
+	public function load(): void {
+		// Shared vendor chunks emitted by webpack splitChunks (see webpack.config.js).
+		Util::addScript(Application::APP_ID, Application::APP_ID . '-shared-vendor');
+		Util::addScript(Application::APP_ID, Application::APP_ID . '-shared-nc-vue');
+		Util::addScript(Application::APP_ID, Application::APP_ID . '-myTasksWidget');
+		Util::addStyle(Application::APP_ID, 'dashboardWidgets');
 
-    /**
-     * Get the CSS icon class for this widget.
-     *
-     * @inheritDoc
-     * @return     string The icon CSS class
-     */
-    public function getIconClass(): string
-    {
-        return 'icon-procest-widget';
-
-    }//end getIconClass()
-
-    /**
-     * Get the URL for the widget's full view.
-     *
-     * @inheritDoc
-     * @return     string|null The widget URL or null
-     */
-    public function getUrl(): ?string
-    {
-        return $this->url->linkToRouteAbsolute(Application::APP_ID.'.dashboard.page');
-
-    }//end getUrl()
-
-    /**
-     * Load the widget scripts and styles.
-     *
-     * @inheritDoc
-     * @return     void
-     *
-     * @SuppressWarnings(PHPMD.StaticAccess) — Nextcloud Util API is static by design
-     */
-    public function load(): void
-    {
-        // Shared vendor chunks emitted by webpack splitChunks (see webpack.config.js).
-        Util::addScript(Application::APP_ID, Application::APP_ID.'-shared-vendor');
-        Util::addScript(Application::APP_ID, Application::APP_ID.'-shared-nc-vue');
-        Util::addScript(Application::APP_ID, Application::APP_ID.'-myTasksWidget');
-        Util::addStyle(Application::APP_ID, 'dashboardWidgets');
-
-    }//end load()
+	}//end load()
 }//end class

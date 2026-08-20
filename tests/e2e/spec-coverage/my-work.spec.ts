@@ -1,8 +1,11 @@
 /*
  * SPDX-FileCopyrightText: 2026 Procest Contributors
- * SPDX-License-Identifier: AGPL-3.0-or-later
+ * SPDX-License-Identifier: EUPL-1.2
  *
  * Gate-19 spec-coverage tests for my-work spec.
+ *
+ * My Work is now a standard CnIndexPage card list scoped to the current
+ * user (assignee = current uid), not the legacy 4-tab case+task board.
  * Each test is tagged with the scenario it covers.
  *
  * Note: Use /apps/procest/<route> (not /index.php/apps/procest/<route>)
@@ -11,42 +14,38 @@
 
 import { test, expect } from '@playwright/test'
 import { dismissSupportDialog } from '../helpers/nav'
+// Route named after the component that renders it, so this spec states WHICH
+// screen it covers in executable code rather than in a comment.
+import { MyWorkCards } from '../helpers/page-components'
 
 test.describe('My Work spec coverage', () => {
-
-	// @e2e openspec/specs/my-work/spec.md#filter-tab-layout
-	test('filter tabs are visible (All, Cases, Tasks)', async ({ page }) => {
-		await page.goto('/apps/procest/my-work')
-		// h2 heading shows "My Work (N)" — match the main content heading
-		await expect(page.getByRole('heading', { name: /My Work/ }).first()).toBeVisible({ timeout: 10000 })
-		// Filter tabs must be present regardless of item count: All (0), Cases (0), Tasks (0)
-		await expect(page.getByRole('tab', { name: /All/ })).toBeVisible()
-		await expect(page.getByRole('tab', { name: /Cases/ })).toBeVisible()
-		await expect(page.getByRole('tab', { name: /Tasks/ })).toBeVisible()
-	})
-
-	// @e2e openspec/specs/my-work/spec.md#no-assigned-items
-	test('shows empty state when no items are assigned to the user', async ({ page }) => {
-		await page.goto('/apps/procest/my-work')
-		// MyWork.vue shows NcEmptyContent with "No items assigned to you"
-		// when the user has no cases or tasks assigned.
+	// @e2e openspec/specs/my-work/spec.md#personal-workload-view
+	test("shows the current user's assigned cases as a card list", async ({
+		page,
+	}) => {
+		await page.goto(`/index.php/apps/procest${MyWorkCards}`)
+		await dismissSupportDialog(page)
+		// The My Work route renders NO page heading — measured on a CI runner
+		// (2026-08-04) it exposes zero `heading` roles. Identify the view by
+		// the sort controls unique to it, plus its card/table toggle.
+		await expect(page.getByRole('button', { name: 'Urgency' })).toBeVisible({
+			timeout: 15000,
+		})
+		await expect(page.getByRole('button', { name: 'Newest' })).toBeVisible()
+		// Card/table view toggle is present (card view is the default)
 		await expect(
-			page.getByText('No items assigned to you'),
+			page.getByRole('button', { name: /Cards/ }).first(),
 		).toBeVisible({ timeout: 10000 })
 	})
 
-	// @e2e openspec/specs/my-work/spec.md#empty-after-filtering
-	test('filter tabs remain clickable with zero items', async ({ page }) => {
-		await page.goto('/apps/procest/my-work')
-		// The "Support Procest" dialog auto-opens and its modal-mask intercepts
-		// pointer events, blocking the tab click. Dismiss it first.
+	// @e2e openspec/specs/my-work/spec.md#personal-workload-view
+	test('view mode can be switched between cards and table', async ({ page }) => {
+		await page.goto(`/index.php/apps/procest${MyWorkCards}`)
 		await dismissSupportDialog(page)
-		await expect(page.getByRole('tab', { name: /Cases/ })).toBeVisible({ timeout: 10000 })
-		// Clicking a tab with 0 items should not error — the empty state should persist
-		await page.getByRole('tab', { name: /Cases/ }).click()
+		const tableToggle = page.getByRole('button', { name: /Table/ }).first()
+		await expect(tableToggle).toBeVisible({ timeout: 10000 })
+		await tableToggle.click()
+		// Switching view must not error
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
-		// The tab is still visible after clicking
-		await expect(page.getByRole('tab', { name: /Cases/ })).toBeVisible()
 	})
-
 })

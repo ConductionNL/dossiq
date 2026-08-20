@@ -26,9 +26,16 @@
 		@closing="$emit('close')">
 		<div class="deelzaak-create">
 			<!-- Parent case context -->
-			<div v-if="parentCaseType" class="deelzaak-create__parent-context" role="status">
-				<span class="parent-context-label">{{ t('procest', 'Parent case type') }}</span>
-				<span class="parent-context-value">{{ parentCaseType.title || parentCaseType.name }}</span>
+			<div
+				v-if="parentCaseType"
+				class="deelzaak-create__parent-context"
+				role="status">
+				<span class="parent-context-label">{{
+					t('procest', 'Parent case type')
+				}}</span>
+				<span class="parent-context-value">{{
+					parentCaseType.title || parentCaseType.name
+				}}</span>
 			</div>
 
 			<NcLoadingIcon v-if="loadingTypes" :size="32" />
@@ -38,7 +45,12 @@
 				<NcEmptyContent
 					v-if="availableCaseTypes.length === 0"
 					:name="t('procest', 'No allowed sub-case types')"
-					:description="t('procest', 'The parent case type does not allow any sub-cases. Configure sub-case types on the parent case type in Settings.')">
+					:description="
+						t(
+							'procest',
+							'The parent case type does not allow any sub-cases. Configure sub-case types on the parent case type in Settings.',
+						)
+					">
 					<template #icon>
 						<AlertCircleOutline :size="48" />
 					</template>
@@ -47,17 +59,19 @@
 				<template v-else>
 					<!-- Case Type Selection (restricted to parent.subCaseTypes) -->
 					<div class="form-group">
-						<label for="dc-case-type">{{ t('procest', 'Sub-case type') }} *</label>
+						<label for="dc-case-type"
+							>{{ t('procest', 'Sub-case type') }} *</label
+						>
 						<NcSelect
 							id="dc-case-type"
 							v-model="selectedCaseType"
 							:options="availableCaseTypes"
 							:aria-label-combobox="t('procest', 'Sub-case type')"
-							:input-label="t('procest', 'Sub-case type')"
+							:inputLabel="t('procest', 'Sub-case type')"
 							label="title"
-							track-by="id"
+							trackBy="id"
 							:placeholder="t('procest', 'Select a sub-case type…')"
-							@input="onCaseTypeSelected" />
+							@update:modelValue="onCaseTypeSelected" />
 						<p v-if="errors.caseType" class="form-error" role="alert">
 							{{ errors.caseType }}
 						</p>
@@ -68,10 +82,15 @@
 						<label for="dc-title">{{ t('procest', 'Title') }} *</label>
 						<NcTextField
 							id="dc-title"
-							:value="form.title"
+							:modelValue="form.title"
 							:placeholder="t('procest', 'Enter sub-case title…')"
 							:error="!!errors.title"
-							@update:value="v => { form.title = v; errors.title = '' }" />
+							@update:modelValue="
+								(v) => {
+									form.title = v
+									errors.title = ''
+								}
+							" />
 						<p v-if="errors.title" class="form-error" role="alert">
 							{{ errors.title }}
 						</p>
@@ -79,7 +98,9 @@
 
 					<!-- Description -->
 					<div class="form-group">
-						<label for="dc-description">{{ t('procest', 'Description') }}</label>
+						<label for="dc-description">{{
+							t('procest', 'Description')
+						}}</label>
 						<textarea
 							id="dc-description"
 							v-model="form.description"
@@ -89,7 +110,10 @@
 					</div>
 
 					<!-- Validation error from server -->
-					<p v-if="serverError" class="form-error form-error--server" role="alert">
+					<p
+						v-if="serverError"
+						class="form-error form-error--server"
+						role="alert">
 						{{ serverError }}
 					</p>
 				</template>
@@ -124,10 +148,9 @@ import {
 	NcTextField,
 } from '@nextcloud/vue'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
-
-import { useObjectStore } from '../store/modules/object.js'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
-import { generateIdentifier, calculateDeadline } from '../utils/caseHelpers.js'
+import { useObjectStore } from '../store/modules/object.js'
+import { calculateDeadline, generateIdentifier } from '../utils/caseHelpers.js'
 
 export default {
 	name: 'DeelzaakCreateModal',
@@ -140,18 +163,21 @@ export default {
 		NcTextField,
 		AlertCircleOutline,
 	},
+
 	props: {
 		/** Parent case UUID — will be set as `parentCase` on the new sub-case. */
 		parentCase: {
 			type: String,
 			required: true,
 		},
+
 		/** Parent caseType object — used to filter the allowed child types. */
 		parentCaseType: {
 			type: Object,
 			default: null,
 		},
 	},
+
 	emits: ['created', 'close'],
 	data() {
 		return {
@@ -160,6 +186,7 @@ export default {
 				description: '',
 				caseType: null,
 			},
+
 			selectedCaseType: null,
 			caseTypes: [],
 			statusTypes: [],
@@ -169,16 +196,20 @@ export default {
 			serverError: '',
 		}
 	},
+
 	computed: {
 		objectStore() {
 			return useObjectStore()
 		},
+
 		deelzaakStore() {
 			return useDeelzaakStore()
 		},
+
 		dialogTitle() {
 			return t('procest', 'Create sub-case')
 		},
+
 		/**
 		 * @spec openspec/changes/deelzaak-support/tasks.md#T08
 		 * Filter caseTypes to ONLY those listed on parentCaseType.subCaseTypes.
@@ -189,21 +220,26 @@ export default {
 				return []
 			}
 			const allowedSet = new Set(allowed.map(String))
-			return this.caseTypes.filter(ct =>
-				allowedSet.has(String(ct.id))
-				|| allowedSet.has(String(ct.slug))
-				|| allowedSet.has(String(ct.uuid)),
+			return this.caseTypes.filter(
+				(ct) =>
+					allowedSet.has(String(ct.id))
+					|| allowedSet.has(String(ct.slug))
+					|| allowedSet.has(String(ct.uuid)),
 			)
 		},
 	},
+
 	async mounted() {
 		await this.loadCaseTypes()
 	},
+
 	methods: {
 		async loadCaseTypes() {
 			this.loadingTypes = true
 			try {
-				const results = await this.objectStore.fetchCollection('caseType', { _limit: 200 })
+				const results = await this.objectStore.fetchCollection('caseType', {
+					_limit: 200,
+				})
 				this.caseTypes = Array.isArray(results) ? results : []
 			} catch (err) {
 				console.error('[DeelzaakCreateModal] Failed to load caseTypes', err)
@@ -212,6 +248,7 @@ export default {
 				this.loadingTypes = false
 			}
 		},
+
 		async onCaseTypeSelected(caseType) {
 			this.form.caseType = caseType?.id || null
 			this.errors.caseType = ''
@@ -220,17 +257,24 @@ export default {
 				return
 			}
 			try {
-				const results = await this.objectStore.fetchCollection('statusType', {
-					'_filters[caseType]': caseType.id,
-					_order: JSON.stringify({ order: 'asc' }),
-					_limit: 100,
-				})
+				const results = await this.objectStore.fetchCollection(
+					'statusType',
+					{
+						'_filters[caseType]': caseType.id,
+						_order: JSON.stringify({ order: 'asc' }),
+						_limit: 100,
+					},
+				)
 				this.statusTypes = Array.isArray(results) ? results : []
 			} catch (err) {
-				console.error('[DeelzaakCreateModal] Failed to load statusTypes', err)
+				console.error(
+					'[DeelzaakCreateModal] Failed to load statusTypes',
+					err,
+				)
 				this.statusTypes = []
 			}
 		},
+
 		validate() {
 			const errs = {}
 			if (!this.form.title || !this.form.title.trim()) {
@@ -242,6 +286,7 @@ export default {
 			this.errors = errs
 			return Object.keys(errs).length === 0
 		},
+
 		/**
 		 * @spec openspec/changes/deelzaak-support/tasks.md#T08
 		 * Submit creates a `case` with `parentCase` set, optionally pre-checked
@@ -260,16 +305,23 @@ export default {
 					childCaseTypeId: this.selectedCaseType.id,
 				})
 				if (v && v.ok === false) {
-					this.serverError = v.reason || t('procest', 'Sub-case validation failed.')
+					this.serverError =
+						v.reason || t('procest', 'Sub-case validation failed.')
 					this.saving = false
 					return
 				}
 
 				const now = new Date()
 				const startDate = now.toISOString().split('T')[0] + 'T00:00:00Z'
-				const deadline = calculateDeadline(now, this.selectedCaseType.processingDeadline)
-				const initialStatus = [...this.statusTypes].sort((a, b) => (a.order || 0) - (b.order || 0))[0]
-				const currentUser = (typeof OC !== 'undefined' && OC?.currentUser) || 'unknown'
+				const deadline = calculateDeadline(
+					now,
+					this.selectedCaseType.processingDeadline,
+				)
+				const initialStatus = [...this.statusTypes].sort(
+					(a, b) => (a.order || 0) - (b.order || 0),
+				)[0]
+				const currentUser =
+					(typeof OC !== 'undefined' && OC?.currentUser) || 'unknown'
 
 				const caseData = {
 					title: this.form.title.trim(),
@@ -278,8 +330,13 @@ export default {
 					caseType: this.selectedCaseType.id,
 					status: initialStatus?.id || null,
 					startDate,
-					deadline: deadline ? deadline.toISOString().split('T')[0] + 'T17:00:00Z' : null,
-					confidentiality: this.selectedCaseType.confidentiality || 'public',
+					deadline: deadline
+						? deadline.toISOString().split('T')[0] + 'T17:00:00Z'
+						: null,
+
+					confidentiality:
+						this.selectedCaseType.confidentiality || 'public',
+
 					assignee: this.selectedCaseType.defaultAssignee || null,
 					intakeChannel: 'manual',
 					priority: 'normal',
@@ -289,19 +346,28 @@ export default {
 					parentCase: this.parentCase,
 					// statusHistory/activity are JSON-encoded strings per the
 					// case schema (procest_register.json).
-					statusHistory: JSON.stringify([{
-						status: initialStatus?.id || null,
-						date: now.toISOString(),
-						changedBy: currentUser,
-					}]),
-					activity: JSON.stringify([{
-						date: now.toISOString(),
-						type: 'created',
-						description: t('procest', 'Sub-case created with type \'{type}\'', {
-							type: this.selectedCaseType.title,
-						}),
-						user: currentUser,
-					}]),
+					statusHistory: JSON.stringify([
+						{
+							status: initialStatus?.id || null,
+							date: now.toISOString(),
+							changedBy: currentUser,
+						},
+					]),
+
+					activity: JSON.stringify([
+						{
+							date: now.toISOString(),
+							type: 'created',
+							description: t(
+								'procest',
+								"Sub-case created with type '{type}'",
+								{
+									type: this.selectedCaseType.title,
+								},
+							),
+							user: currentUser,
+						},
+					]),
 				}
 
 				const result = await this.objectStore.saveObject('case', caseData)
@@ -310,13 +376,15 @@ export default {
 				}
 			} catch (err) {
 				console.error('[DeelzaakCreateModal] Failed to create sub-case', err)
-				this.serverError = err?.response?.data?.message
+				this.serverError =
+					err?.response?.data?.message
 					|| err?.message
 					|| t('procest', 'Failed to create sub-case.')
 			} finally {
 				this.saving = false
 			}
 		},
+
 		onDialogClose(open) {
 			if (!open) {
 				this.$emit('close')

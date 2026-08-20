@@ -22,7 +22,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/migrate-parafering-to-or-audit/specs/parafering-audit-via-or/spec.md
+ * @spec openspec/specs/parafering-audit-via-or/spec.md
  *
  * @link https://procest.nl
  */
@@ -45,129 +45,125 @@ use Throwable;
  *
  * @implements IEventListener<ParafeerTransitionEvent>
  */
-class ParaferingAuditListener implements IEventListener
-{
-    /**
-     * Constructor.
-     *
-     * @param AuditTrailMapper $auditTrailMapper OR audit-trail writer (hash-chained, immutable)
-     * @param SettingsService  $settingsService  Procest settings bridge (resolves the voorstel ObjectEntity)
-     * @param LoggerInterface  $logger           PSR-3 logger
-     */
-    public function __construct(
-        private readonly AuditTrailMapper $auditTrailMapper,
-        private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class ParaferingAuditListener implements IEventListener {
+	/**
+	 * Constructor.
+	 *
+	 * @param AuditTrailMapper $auditTrailMapper OR audit-trail writer (hash-chained, immutable)
+	 * @param SettingsService $settingsService Procest settings bridge (resolves the voorstel ObjectEntity)
+	 * @param LoggerInterface $logger PSR-3 logger
+	 */
+	public function __construct(
+		private readonly AuditTrailMapper $auditTrailMapper,
+		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Handle a ParafeerTransitionEvent.
-     *
-     * Resolves the voorstel ObjectEntity from OR and writes a namespaced
-     * (`procest.parafering.{action}`) audit-trail entry carrying the transition
-     * context in the `changed` JSON column. Audit-write failures are swallowed —
-     * they MUST NOT propagate back to the routing service.
-     *
-     * @param Event $event The dispatched event
-     *
-     * @return void
-     *
-     * @spec openspec/changes/migrate-parafering-to-or-audit/specs/parafering-audit-via-or/spec.md
-     */
-    public function handle(Event $event): void
-    {
-        if (($event instanceof ParafeerTransitionEvent) === false) {
-            return;
-        }
+	/**
+	 * Handle a ParafeerTransitionEvent.
+	 *
+	 * Resolves the voorstel ObjectEntity from OR and writes a namespaced
+	 * (`procest.parafering.{action}`) audit-trail entry carrying the transition
+	 * context in the `changed` JSON column. Audit-write failures are swallowed —
+	 * they MUST NOT propagate back to the routing service.
+	 *
+	 * @param Event $event The dispatched event
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/parafering-audit-via-or/spec.md
+	 */
+	public function handle(Event $event): void {
+		if (($event instanceof ParafeerTransitionEvent) === false) {
+			return;
+		}
 
-        try {
-            $object = $this->resolveVoorstelEntity(voorstelId: $event->getVoorstelId());
-            if ($object === null) {
-                $this->logger->warning(
-                    'Procest: ParaferingAuditListener could not resolve voorstel ObjectEntity; audit entry skipped',
-                    ['voorstel' => $event->getVoorstelId()],
-                );
-                return;
-            }
+		try {
+			$object = $this->resolveProposalEntity(proposalId: $event->getVoorstelId());
+			if ($object === null) {
+				$this->logger->warning(
+					'Procest: ParaferingAuditListener could not resolve voorstel ObjectEntity; audit entry skipped',
+					['proposal' => $event->getVoorstelId()],
+				);
+				return;
+			}
 
-            $action  = 'procest.parafering.'.$event->getAction();
-            $context = $this->buildContext(event: $event);
+			$action = 'procest.parafering.' . $event->getAction();
+			$context = $this->buildContext(event: $event);
 
-            $this->auditTrailMapper->createAuditTrailEntry(
-                object: $object,
-                action: $action,
-                context: $context,
-            );
-        } catch (Throwable $e) {
-            // Swallow — audit-write failures MUST NOT propagate back to the
-            // routing service. Detectable via OR's audit-trail-immutable
-            // mutation log and this error log entry.
-            $this->logger->error(
-                'Procest: ParaferingAuditListener failed',
-                [
-                    'voorstel'  => $event->getVoorstelId(),
-                    'action'    => $event->getAction(),
-                    'exception' => $e->getMessage(),
-                ],
-            );
-        }//end try
-    }//end handle()
+			$this->auditTrailMapper->createAuditTrailEntry(
+				object: $object,
+				action: $action,
+				context: $context,
+			);
+		} catch (Throwable $e) {
+			// Swallow — audit-write failures MUST NOT propagate back to the
+			// routing service. Detectable via OR's audit-trail-immutable
+			// mutation log and this error log entry.
+			$this->logger->error(
+				'Procest: ParaferingAuditListener failed',
+				[
+					'proposal' => $event->getVoorstelId(),
+					'action' => $event->getAction(),
+					'exception' => $e->getMessage(),
+				],
+			);
+		}//end try
+	}//end handle()
 
-    /**
-     * Build the audit `$context` array persisted in the OR `changed` JSON column.
-     *
-     * @param ParafeerTransitionEvent $event The transition event
-     *
-     * @return array<string, mixed>
-     */
-    private function buildContext(ParafeerTransitionEvent $event): array
-    {
-        $context = [
-            'parafeerrouteId' => $event->getVoorstelId(),
-            'paraffeerstapId' => $event->getStep(),
-            'fromState'       => null,
-            'toState'         => $event->getAction(),
-            'actorUuid'       => $event->getActor(),
-            'actorRole'       => $event->getActorRole(),
-        ];
+	/**
+	 * Build the audit `$context` array persisted in the OR `changed` JSON column.
+	 *
+	 * @param ParafeerTransitionEvent $event The transition event
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function buildContext(ParafeerTransitionEvent $event): array {
+		$context = [
+			'parafeerrouteId' => $event->getVoorstelId(),
+			'paraffeerstapId' => $event->getStep(),
+			'fromState' => null,
+			'toState' => $event->getAction(),
+			'actorUuid' => $event->getActor(),
+			'actorRole' => $event->getActorRole(),
+		];
 
-        $reason = $event->getReason();
-        if ($reason !== null && $reason !== '') {
-            $context['comment'] = $reason;
-        }
+		$reason = $event->getReason();
+		if ($reason !== null && $reason !== '') {
+			$context['comment'] = $reason;
+		}
 
-        return $context;
-    }//end buildContext()
+		return $context;
+	}//end buildContext()
 
-    /**
-     * Resolve the OR ObjectEntity for a voorstel id/slug.
-     *
-     * Returns null when OR is unavailable, the register/schema config is
-     * missing, or the object cannot be loaded — the caller logs and skips.
-     *
-     * @param string $voorstelId The voorstel UUID/slug
-     *
-     * @return ObjectEntity|null
-     */
-    private function resolveVoorstelEntity(string $voorstelId): ?ObjectEntity
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
+	/**
+	 * Resolve the OR ObjectEntity for a voorstel id/slug.
+	 *
+	 * Returns null when OR is unavailable, the register/schema config is
+	 * missing, or the object cannot be loaded — the caller logs and skips.
+	 *
+	 * @param string $proposalId The voorstel UUID/slug
+	 *
+	 * @return ObjectEntity|null
+	 */
+	private function resolveProposalEntity(string $proposalId): ?ObjectEntity {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
 
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('voorstel_schema');
-        if ($register === '' || $schema === '') {
-            return null;
-        }
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('voorstel_schema');
+		if ($register === '' || $schema === '') {
+			return null;
+		}
 
-        $entity = $objectService->find($voorstelId, register: $register, schema: $schema);
-        if ($entity instanceof ObjectEntity) {
-            return $entity;
-        }
+		$entity = $objectService->find($proposalId, register: $register, schema: $schema);
+		if ($entity instanceof ObjectEntity) {
+			return $entity;
+		}
 
-        return null;
-    }//end resolveVoorstelEntity()
+		return null;
+	}//end resolveVoorstelEntity()
 }//end class

@@ -5,7 +5,7 @@
                 "slug": "portaalBericht",
                 "icon": "MessageOutline",
                 "version": "1.0.0",
-                "x-schema-org-type": "schema:Message",
+                "x-schema-org": "schema:Message",
                 "title": "Portaal Bericht",
                 "description": "A message sent by a citizen (burger/bedrijf/gemachtigde) to the case handler via the Mijn gemeente citizen portal, linked to a Procest case. Citizen identity (BSN/KvK) is a Nextcloud/DigiD session identity, never invented as a contact schema.",
                 "type": "object",
@@ -16,54 +16,66 @@
                 ],
                 "properties": {
                     "caseId": {
+                        "title": "Case ID",
                         "type": "string",
                         "description": "Procest case id (zaakId) the message is attached to."
                     },
                     "caseReference": {
+                        "title": "Case Reference",
                         "type": "string",
                         "description": "Human-readable case kenmerk (e.g. Z/2026/09128)."
                     },
                     "senderType": {
+                        "title": "Sender Type",
                         "type": "string",
-                        "enum": ["burger", "bedrijf", "gemachtigde"],
+                        "enum": ["burger", "bedrijf", "authorisedRepresentative"],
                         "description": "Type of the authenticated sender."
                     },
                     "senderRef": {
+                        "title": "Sender Reference",
                         "type": "string",
                         "description": "Pseudonymous subject reference of the sender (BSN/KvK hash), never the raw BSN. Used for IDOR scoping."
                     },
                     "senderName": {
+                        "title": "Sender Name",
                         "type": "string",
                         "description": "Display name of the sender."
                     },
                     "recipientRef": {
+                        "title": "Recipient Reference",
                         "type": "string",
                         "description": "Handler/medewerker reference the message is routed to."
                     },
                     "subject": {
+                        "title": "Subject",
                         "type": "string",
                         "description": "Optional subject of the message."
                     },
                     "content": {
+                        "title": "Content",
                         "type": "string",
                         "description": "Body of the citizen's message."
                     },
                     "attachments": {
+                        "title": "Attachments",
                         "type": "array",
                         "items": {"type": "string"},
                         "description": "OpenRegister document ids attached to the message."
                     },
                     "direction": {
+                        "title": "Direction",
                         "type": "string",
                         "enum": ["citizen_to_handler", "handler_to_citizen"],
                         "description": "Direction of the message."
                     },
                     "sentAt": {
+                        "title": "Sent On",
                         "type": "string",
                         "format": "date-time",
                         "description": "When the message was sent."
                     },
                     "readByRecipientAt": {
+                        "title": "Read On",
                         "type": "string",
                         "format": "date-time",
                         "description": "When the recipient read the message (null until read)."
@@ -74,87 +86,104 @@
                 "slug": "portaalVerzoek",
                 "icon": "FileDocumentEditOutline",
                 "version": "1.0.0",
-                "x-schema-org-type": "schema:Action",
+                "x-schema-org": "schema:Action",
                 "title": "Portaal Verzoek",
                 "description": "A citizen-initiated request submitted via the Mijn gemeente portal: a bezwaarschrift (objection), klachtschrift (complaint) or subsidie-aanvraag. Creates a new bezwaar/klacht/subsidie case in Procest.",
                 "type": "object",
                 "required": [
-                    "soort",
+                    "kind",
                     "submitterRef"
                 ],
                 "properties": {
-                    "soort": {
+                    "kind": {
+                        "title": "Kind",
                         "type": "string",
-                        "enum": ["bezwaarschrift", "klachtschrift", "subsidie-aanvraag"],
+                        "enum": ["bezwaarschrift", "klachtschrift", "subsidy-request"],
                         "description": "Type of request."
                     },
-                    "tegenZaakId": {
+                    "againstCaseId": {
+                        "title": "Contested Case ID",
                         "type": "string",
                         "description": "Source case id the request contests (for bezwaar)."
                     },
-                    "tegenBeschikkingId": {
+                    "againstDecisionId": {
+                        "title": "Contested Decision ID",
                         "type": "string",
                         "description": "Decision id the objection is filed against."
                     },
                     "submitterType": {
+                        "title": "Submitter Type",
                         "type": "string",
-                        "enum": ["burger", "bedrijf", "gemachtigde"],
+                        "enum": ["burger", "bedrijf", "authorisedRepresentative"],
                         "description": "Type of the authenticated submitter."
                     },
                     "submitterRef": {
+                        "title": "Submitter Reference",
                         "type": "string",
                         "description": "Pseudonymous subject reference of the submitter (never raw BSN). Used for IDOR scoping."
                     },
                     "submitterName": {
+                        "title": "Submitter Name",
                         "type": "string",
                         "description": "Display name of the submitter."
                     },
-                    "categorie": {
+                    "category": {
+                        "title": "Category",
                         "type": "string",
                         "description": "Category of a klacht (Bejegening, Doorlooptijd, Communicatie, Medische/Zorgkwaliteit, Andere)."
                     },
-                    "onderwerp": {
+                    "subject": {
+                        "title": "Subject",
                         "type": "string",
                         "description": "Subject of the request."
                     },
-                    "motivering": {
+                    "rationale": {
+                        "title": "Motivation",
                         "type": "string",
                         "description": "Reasoning / description of the request."
                     },
-                    "betrokkenMedewerker": {
+                    "involvedEmployee": {
+                        "title": "Involved Employee",
                         "type": "string",
                         "description": "Optional employee/department referenced in a complaint."
                     },
                     "attachments": {
+                        "title": "Attachments",
                         "type": "array",
                         "items": {"type": "string"},
                         "description": "OpenRegister document ids attached to the request."
                     },
                     "submittedAt": {
+                        "title": "Submitted On",
                         "type": "string",
                         "format": "date-time",
                         "description": "When the request was submitted."
                     },
-                    "binnenTermijn": {
+                    "withinTerm": {
+                        "title": "Within Deadline",
                         "type": "boolean",
                         "description": "Whether the request was filed within the statutory deadline."
                     },
                     "deadline": {
+                        "title": "Deadline",
                         "type": "string",
                         "format": "date",
                         "description": "The applicable statutory deadline at the moment of filing."
                     },
-                    "nieuweZaakId": {
+                    "newCaseId": {
+                        "title": "New Case ID",
                         "type": "string",
                         "description": "Id of the new Procest case created from this request."
                     },
-                    "referentie": {
+                    "reference": {
+                        "title": "Reference",
                         "type": "string",
                         "description": "Citizen-facing reference number (e.g. KL-2026-00001)."
                     },
                     "status": {
+                        "title": "Status",
                         "type": "string",
-                        "enum": ["ontvangen", "in-behandeling", "afgehandeld"],
+                        "enum": ["received", "in-handling", "handled"],
                         "description": "Processing status."
                     }
                 }
@@ -163,7 +192,7 @@
                 "slug": "portaalNotificatieVoorkeur",
                 "icon": "BellCogOutline",
                 "version": "1.0.0",
-                "x-schema-org-type": "schema:Thing",
+                "x-schema-org": "schema:Thing",
                 "title": "Portaal Notificatie Voorkeur",
                 "description": "A citizen's notification preferences for the Mijn gemeente portal. Berichtenbox is statutory and always remains active. One record per subject reference.",
                 "type": "object",
@@ -172,59 +201,73 @@
                 ],
                 "properties": {
                     "subjectRef": {
+                        "title": "Subject Reference",
                         "type": "string",
                         "description": "Pseudonymous subject reference (never raw BSN). One preference record per subject."
                     },
-                    "emailActief": {
+                    "emailActive": {
+                        "title": "Email Active",
                         "type": "boolean",
                         "description": "Whether email notifications are active."
                     },
-                    "emailAdres": {
+                    "emailAddress": {
+                        "title": "Email Address",
                         "type": "string",
                         "description": "The notification email address."
                     },
                     "emailGeverifieerd": {
+                        "title": "Email Verified",
                         "type": "boolean",
                         "description": "Whether the email address has been verified."
                     },
-                    "pendingEmailAdres": {
+                    "pendingEmailAddress": {
+                        "title": "Pending Email Address",
                         "type": "string",
                         "description": "A new, not-yet-verified email address."
                     },
                     "pendingEmailToken": {
+                        "title": "Pending Email Token",
                         "type": "string",
                         "description": "Verification token for the pending email address."
                     },
                     "pendingEmailExpiresAt": {
+                        "title": "Pending Email Expires On",
                         "type": "string",
                         "format": "date-time",
                         "description": "When the pending email verification expires (7 days)."
                     },
-                    "berichtenboxActief": {
+                    "messageBoxActive": {
+                        "title": "Berichtenbox Active",
                         "type": "boolean",
                         "description": "Whether Berichtenbox is active. Always true (statutory)."
                     },
-                    "smsActief": {
+                    "smsActive": {
+                        "title": "SMS Active",
                         "type": "boolean",
                         "description": "Whether SMS notifications are active."
                     },
-                    "smsNummer": {
+                    "smsNumber": {
+                        "title": "SMS Number",
                         "type": "string",
                         "description": "The SMS notification phone number."
                     },
                     "eventStatuswijziging": {
+                        "title": "Event Status Change",
                         "type": "boolean",
                         "description": "Notify on case status change."
                     },
-                    "eventDocumentToegevoegd": {
+                    "eventDocumentAdded": {
+                        "title": "Event Document Added",
                         "type": "boolean",
                         "description": "Notify when a document is added."
                     },
-                    "eventBerichtVanBehandelaar": {
+                    "eventMessageFromHandler": {
+                        "title": "Event Message From Handler",
                         "type": "boolean",
                         "description": "Notify on a reply from the handler."
                     },
-                    "eventTermijnHerinnering": {
+                    "eventTermReminder": {
+                        "title": "Event Deadline Reminder",
                         "type": "boolean",
                         "description": "Notify on deadline reminders."
                     }
@@ -248,15 +291,15 @@
                     "slug": "portaal-pref-demo-burger"
                 },
                 "subjectRef": "demo-burger-123456789",
-                "emailActief": true,
-                "emailAdres": "marja@example.nl",
+                "emailActive": true,
+                "emailAddress": "marja@example.nl",
                 "emailGeverifieerd": true,
-                "berichtenboxActief": true,
-                "smsActief": false,
+                "messageBoxActive": true,
+                "smsActive": false,
                 "eventStatuswijziging": true,
-                "eventDocumentToegevoegd": true,
-                "eventBerichtVanBehandelaar": true,
-                "eventTermijnHerinnering": true
+                "eventDocumentAdded": true,
+                "eventMessageFromHandler": true,
+                "eventTermReminder": true
             },
             {
                 "@self": {

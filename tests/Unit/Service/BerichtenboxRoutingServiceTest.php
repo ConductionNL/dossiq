@@ -35,82 +35,77 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Procest\Service\BerichtenboxRoutingService
  */
-class BerichtenboxRoutingServiceTest extends TestCase
-{
-    /**
-     * The service under test.
-     *
-     * @var BerichtenboxRoutingService
-     */
-    private BerichtenboxRoutingService $service;
+class BerichtenboxRoutingServiceTest extends TestCase {
+	/**
+	 * The service under test.
+	 *
+	 * @var BerichtenboxRoutingService
+	 */
+	private BerichtenboxRoutingService $service;
 
-    /**
-     * Set up fixtures.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $logger        = $this->createMock(LoggerInterface::class);
-        $this->service = new BerichtenboxRoutingService($logger);
-    }//end setUp()
+	/**
+	 * Set up fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$logger = $this->createMock(LoggerInterface::class);
+		$this->service = new BerichtenboxRoutingService($logger);
+	}//end setUp()
 
-    /**
-     * A confirmed burger routes to MijnOverheid.
-     *
-     * @return void
-     */
-    public function testBurgerRoutesToMijnOverheid(): void
-    {
-        $result = $this->service->routeToBerichtenbox([
-            'kenmerk'       => 'Z/2026/1/B01',
-            'geadresseerde' => [
-                'type'                  => 'burger',
-                'bsn'                   => '123456789',
-                'berichtenboxBevestigd' => true,
-            ],
-        ]);
+	/**
+	 * A confirmed burger routes to MijnOverheid.
+	 *
+	 * @return void
+	 */
+	public function testBurgerRoutesToMijnOverheid(): void {
+		$result = $this->service->routeToBerichtenbox([
+			'reference' => 'Z/2026/1/B01',
+			'addressee' => [
+				'type' => 'burger',
+				'bsn' => '123456789',
+				'messageBoxConfirmed' => true,
+			],
+		]);
 
-        $this->assertSame('berichtenbox-mijnoverheid', $result['kanaal']);
-        $this->assertNotEmpty($result['berichtId']);
-        $this->assertSame('systeem', $result['verzondenDoor']);
-    }//end testBurgerRoutesToMijnOverheid()
+		$this->assertSame('berichtenbox-mijnoverheid', $result['notificationChannel']);
+		$this->assertNotEmpty($result['messageId']);
+		$this->assertSame('systeem', $result['sentBy']);
+	}//end testBurgerRoutesToMijnOverheid()
 
-    /**
-     * A confirmed bedrijf routes to eHerkenning.
-     *
-     * @return void
-     */
-    public function testBedrijfRoutesToEherkenning(): void
-    {
-        $result = $this->service->routeToBerichtenbox([
-            'kenmerk'       => 'Z/2026/2/B01',
-            'geadresseerde' => [
-                'type'                  => 'bedrijf',
-                'oin'                   => '00000001234567890000',
-                'berichtenboxBevestigd' => true,
-            ],
-        ]);
+	/**
+	 * A confirmed bedrijf routes to eHerkenning.
+	 *
+	 * @return void
+	 */
+	public function testBedrijfRoutesToEherkenning(): void {
+		$result = $this->service->routeToBerichtenbox([
+			'reference' => 'Z/2026/2/B01',
+			'addressee' => [
+				'type' => 'bedrijf',
+				'oin' => '00000001234567890000',
+				'messageBoxConfirmed' => true,
+			],
+		]);
 
-        $this->assertSame('berichtenbox-eherkenning', $result['kanaal']);
-    }//end testBedrijfRoutesToEherkenning()
+		$this->assertSame('berichtenbox-eherkenning', $result['notificationChannel']);
+	}//end testBedrijfRoutesToEherkenning()
 
-    /**
-     * An unconfirmed channel falls back to print-post.
-     *
-     * @return void
-     */
-    public function testFallbackToPrint(): void
-    {
-        $result = $this->service->routeToBerichtenbox([
-            'kenmerk'       => 'Z/2026/3/B01',
-            'geadresseerde' => [
-                'type'                  => 'burger',
-                'bsn'                   => '987654321',
-                'berichtenboxBevestigd' => false,
-            ],
-        ]);
+	/**
+	 * An unconfirmed channel falls back to print-post.
+	 *
+	 * @return void
+	 */
+	public function testFallbackToPrint(): void {
+		$result = $this->service->routeToBerichtenbox([
+			'reference' => 'Z/2026/3/B01',
+			'addressee' => [
+				'type' => 'burger',
+				'bsn' => '987654321',
+				'messageBoxConfirmed' => false,
+			],
+		]);
 
-        $this->assertSame('print-post', $result['kanaal']);
-    }//end testFallbackToPrint()
+		$this->assertSame('print-post', $result['notificationChannel']);
+	}//end testFallbackToPrint()
 }//end class

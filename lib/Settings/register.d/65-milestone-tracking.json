@@ -18,15 +18,15 @@
         "type": "object",
         "required": ["caseType", "identifier", "label", "order"],
         "properties": {
-          "caseType":                    {"type": "string", "facetable": true, "description": "UUID of the parent caseType this milestone belongs to."},
-          "identifier":                  {"type": "string", "maxLength": 255, "facetable": true, "description": "Slug identifier (e.g. aanvraag_ontvangen) used in the API and as the per-zaaktype primary key."},
-          "label":                       {"type": "string", "maxLength": 255, "description": "Dutch display name shown to end users (e.g. 'Aanvraag ontvangen')."},
-          "order":                       {"type": "integer", "default": 1, "description": "Position in the milestone sequence (1, 2, 3 ...)."},
-          "description":                 {"type": "string", "description": "Optional longer explanation visible on hover or in the config UI."},
-          "triggerEvent":                {"type": "string", "maxLength": 255, "description": "n8n workflow event name. A POST to /milestones/trigger with this event marks the milestone reached."},
-          "mappedStatusType":            {"type": "string", "description": "UUID reference to a statusType. When a case reaches this status, the milestone is reached automatically."},
-          "expectedDurationWorkingDays": {"type": "integer", "description": "Working days expected from case start (or previous milestone) to this milestone. Used for deadline + bottleneck analysis."},
-          "dependsOn":                   {"type": "array", "items": {"type": "string"}, "description": "Milestone identifiers that must be reached before this one."}
+          "caseType":                    {"type": "string", "title": "Case Type", "facetable": true, "description": "UUID of the parent caseType this milestone belongs to."},
+          "identifier":                  {"type": "string", "title": "Identifier", "maxLength": 255, "facetable": true, "description": "Slug identifier (e.g. aanvraag_ontvangen) used in the API and as the per-zaaktype primary key."},
+          "label":                       {"type": "string", "title": "Label", "maxLength": 255, "description": "Dutch display name shown to end users (e.g. 'Aanvraag ontvangen')."},
+          "order":                       {"type": "integer", "title": "Order", "default": 1, "description": "Position in the milestone sequence (1, 2, 3 ...)."},
+          "description":                 {"type": "string", "title": "Description", "description": "Optional longer explanation visible on hover or in the config UI."},
+          "triggerEvent":                {"type": "string", "title": "Trigger Event", "maxLength": 255, "description": "n8n workflow event name. A POST to /milestones/trigger with this event marks the milestone reached."},
+          "mappedStatusType":            {"type": "string", "title": "Mapped Status Type", "description": "UUID reference to a statusType. When a case reaches this status, the milestone is reached automatically."},
+          "expectedDurationWorkingDays": {"type": "integer", "title": "Expected Duration Working Days", "description": "Working days expected from case start (or previous milestone) to this milestone. Used for deadline + bottleneck analysis."},
+          "dependsOn":                   {"type": "array", "title": "Depends On", "items": {"type": "string"}, "description": "Milestone identifiers that must be reached before this one."}
         }
       },
       "milestoneRecord": {
@@ -38,15 +38,15 @@
         "type": "object",
         "required": ["case", "milestoneDefinition"],
         "properties": {
-          "case":                {"type": "string", "facetable": true, "description": "Reference to the parent case."},
-          "milestoneDefinition": {"type": "string", "facetable": true, "description": "UUID of the milestoneDefinition this record reaches."},
-          "milestoneIdentifier": {"type": "string", "maxLength": 255, "facetable": true, "description": "Slug from the caseType milestone configuration (denormalised for query/strip)."},
-          "reached":             {"type": "boolean", "default": true, "facetable": true, "description": "Whether the milestone is reached (true) or reversed (false)."},
-          "reachedAt":           {"type": "string", "format": "date-time", "description": "Timestamp when the milestone was first reached."},
-          "reachedBy":           {"type": "string", "description": "User UID, n8n execution ID, or status record UUID, depending on trigger source."},
-          "trigger":             {"type": "string", "enum": ["manual", "workflow", "status_transition"], "default": "manual", "facetable": true, "description": "How the milestone was reached."},
-          "reversedAt":          {"type": "string", "format": "date-time", "description": "Timestamp when the milestone was reversed (null if never reversed)."},
-          "reversalReason":      {"type": "string", "description": "Justification text provided by the user who reversed the milestone."}
+          "case":                {"type": "string", "title": "Case", "facetable": true, "description": "Reference to the parent case."},
+          "milestoneDefinition": {"type": "string", "title": "Milestone Definition", "facetable": true, "description": "UUID of the milestoneDefinition this record reaches."},
+          "milestoneIdentifier": {"type": "string", "title": "Milestone Identifier", "maxLength": 255, "facetable": true, "description": "Slug from the caseType milestone configuration (denormalised for query/strip)."},
+          "reached":             {"type": "boolean", "title": "Reached", "default": true, "facetable": true, "description": "Whether the milestone is reached (true) or reversed (false)."},
+          "reachedAt":           {"type": "string", "title": "Reached At", "format": "date-time", "description": "Timestamp when the milestone was first reached."},
+          "reachedBy":           {"type": "string", "title": "Reached By", "description": "User UID, n8n execution ID, or status record UUID, depending on trigger source."},
+          "trigger":             {"type": "string", "title": "Trigger", "enum": ["manual", "workflow", "status_transition"], "default": "manual", "facetable": true, "description": "How the milestone was reached."},
+          "reversedAt":          {"type": "string", "title": "Reversed At", "format": "date-time", "description": "Timestamp when the milestone was reversed (null if never reversed)."},
+          "reversalReason":      {"type": "string", "title": "Reversal Reason", "description": "Justification text provided by the user who reversed the milestone."}
         }
       }
     }

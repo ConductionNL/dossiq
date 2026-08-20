@@ -12,29 +12,41 @@
 			<CnDetailCard
 				v-for="agendaCase in cases"
 				:key="agendaCase.id"
-				:title="(agendaCase.agendanummer || '') + ' ' + (agendaCase.title || '')">
+				:title="
+					(agendaCase.agendanummer || '') + ' ' + (agendaCase.title || '')
+				">
 				<div class="vergadering-detail__form">
-					<label :for="'besluittype-' + agendaCase.id">{{ t('procest', 'Besluittype') }}</label>
+					<label :for="'besluittype-' + agendaCase.id">{{
+						t('procest', 'Decision type')
+					}}</label>
 					<NcSelect
 						v-model="forms[agendaCase.id].decisionType"
-						:input-id="'besluittype-' + agendaCase.id"
-						:input-label="t('procest', 'Besluittype')"
+						:inputId="'besluittype-' + agendaCase.id"
+						:inputLabel="t('procest', 'Decision type')"
 						:options="decisionTypes" />
 
-					<label :for="'stem-' + agendaCase.id">{{ t('procest', 'Stemuitslag') }}</label>
+					<label :for="'stem-' + agendaCase.id">{{
+						t('procest', 'Stemuitslag')
+					}}</label>
 					<input
 						:id="'stem-' + agendaCase.id"
 						v-model="forms[agendaCase.id].stemuitslag"
 						type="text"
-						:placeholder="t('procest', 'bijv. Unaniem of 23 voor / 8 tegen')">
+						:placeholder="
+							t('procest', 'e.g. Unanimous or 23 for / 8 against')
+						" />
 
-					<label :for="'leden-' + agendaCase.id">{{ t('procest', 'Aanwezige leden (komma-gescheiden)') }}</label>
+					<label :for="'leden-' + agendaCase.id">{{
+						t('procest', 'Aanwezige leden (komma-gescheiden)')
+					}}</label>
 					<input
 						:id="'leden-' + agendaCase.id"
 						v-model="forms[agendaCase.id].attendees"
-						type="text">
+						type="text" />
 
-					<label :for="'toelichting-' + agendaCase.id">{{ t('procest', 'Toelichting') }}</label>
+					<label :for="'toelichting-' + agendaCase.id">{{
+						t('procest', 'Explanation')
+					}}</label>
 					<textarea
 						:id="'toelichting-' + agendaCase.id"
 						v-model="forms[agendaCase.id].explanation"
@@ -47,9 +59,7 @@
 							@click="recordBesluit(agendaCase)">
 							{{ t('procest', 'Besluit vastleggen') }}
 						</NcButton>
-						<NcButton
-							type="secondary"
-							@click="aanhouden(agendaCase)">
+						<NcButton type="secondary" @click="aanhouden(agendaCase)">
 							{{ t('procest', 'Aanhouden') }}
 						</NcButton>
 					</div>
@@ -60,8 +70,8 @@
 </template>
 
 <script>
+import { CnDetailCard, CnDetailPage } from '@conduction/nextcloud-vue'
 import { NcButton, NcSelect } from '@nextcloud/vue'
-import { CnDetailPage, CnDetailCard } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'
 
 export default {
@@ -72,12 +82,14 @@ export default {
 		CnDetailPage,
 		CnDetailCard,
 	},
+
 	props: {
 		id: {
 			type: String,
 			required: true,
 		},
 	},
+
 	data() {
 		return {
 			loading: true,
@@ -87,20 +99,23 @@ export default {
 			decisionTypes: ['Goedgekeurd', 'Verworpen', 'Aangehouden'],
 		}
 	},
+
 	computed: {
-		/** @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-005 */
+		/** @spec openspec/specs/besluitvorming-workflow/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
 	},
+
 	created() {
 		this.loadCases()
 	},
+
 	methods: {
 		/**
 		 * Load all geagendeerde cases for the meeting.
 		 *
-		 * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-005
+		 * @spec openspec/specs/besluitvorming-workflow/spec.md
 		 */
 		async loadCases() {
 			this.loading = true
@@ -110,15 +125,17 @@ export default {
 					'_filters[vergaderdatum]': this.id,
 					_limit: 100,
 				})
-				this.cases = Array.isArray(results) ? results : (results?.results || [])
+				this.cases = Array.isArray(results)
+					? results
+					: results?.results || []
 				this.meetingDate = this.cases[0]?.vergaderdatum || this.id
 				for (const c of this.cases) {
-					this.$set(this.forms, c.id, {
+					this.forms[c.id] = {
 						decisionType: '',
 						stemuitslag: '',
 						attendees: '',
 						explanation: '',
-					})
+					}
 				}
 			} catch (error) {
 				console.error('Failed to load vergadering cases:', error)
@@ -127,6 +144,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * Whether the required fields for a case are filled.
 		 *
@@ -137,11 +155,12 @@ export default {
 			const f = this.forms[caseId]
 			return !!(f && f.decisionType && f.stemuitslag && f.explanation)
 		},
+
 		/**
 		 * Create the decision object and transition the case.
 		 *
 		 * @param {object} agendaCase The case object.
-		 * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-005
+		 * @spec openspec/specs/besluitvorming-workflow/spec.md
 		 */
 		async recordBesluit(agendaCase) {
 			const f = this.forms[agendaCase.id]
@@ -156,7 +175,8 @@ export default {
 					decisionDate: new Date().toISOString().slice(0, 10),
 					governingBody: agendaCase.vergadergremium || '',
 					decisionType: f.decisionType,
-					explanation: f.explanation + ' (Stemuitslag: ' + f.stemuitslag + ')',
+					explanation:
+						f.explanation + ' (Stemuitslag: ' + f.stemuitslag + ')',
 				})
 				await this.objectStore.createObject('caseProperty', {
 					case: agendaCase.id,
@@ -166,9 +186,10 @@ export default {
 				await this.recordAttendees(agendaCase.id, f.attendees)
 				await this.loadCases()
 			} catch (error) {
-				console.error('Failed to record besluit:', error)
+				console.error('Failed to record decision:', error)
 			}
 		},
+
 		/**
 		 * Record attending members as role objects.
 		 *
@@ -176,7 +197,10 @@ export default {
 		 * @param {string} attendees Comma-separated attendee uids.
 		 */
 		async recordAttendees(caseId, attendees) {
-			const list = (attendees || '').split(',').map(a => a.trim()).filter(Boolean)
+			const list = (attendees || '')
+				.split(',')
+				.map((a) => a.trim())
+				.filter(Boolean)
 			for (const person of list) {
 				await this.objectStore.createObject('role', {
 					case: caseId,
@@ -185,11 +209,12 @@ export default {
 				})
 			}
 		},
+
 		/**
 		 * Defer (aanhouden) — route the case back to Gereed voor agendering.
 		 *
 		 * @param {object} agendaCase The case object.
-		 * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-005
+		 * @spec openspec/specs/besluitvorming-workflow/spec.md
 		 */
 		async aanhouden(agendaCase) {
 			try {
@@ -199,7 +224,7 @@ export default {
 				})
 				await this.loadCases()
 			} catch (error) {
-				console.error('Failed to defer besluit:', error)
+				console.error('Failed to defer decision:', error)
 			}
 		},
 	},
@@ -213,6 +238,7 @@ export default {
 	gap: 8px;
 	max-width: 520px;
 }
+
 .vergadering-detail__actions {
 	display: flex;
 	gap: 8px;

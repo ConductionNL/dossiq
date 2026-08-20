@@ -9,7 +9,11 @@
 			</NcButton>
 
 			<h3 class="case-type-detail__title">
-				{{ isCreate ? t('procest', 'New Case Type') : (form.title || t('procest', 'Case Type')) }}
+				{{
+					isCreate
+						? t('procest', 'New Case Type')
+						: form.title || t('procest', 'Case Type')
+				}}
 			</h3>
 
 			<div class="case-type-detail__actions">
@@ -26,9 +30,16 @@
 					{{ t('procest', 'Unpublish') }}
 				</NcButton>
 				<NcButton
-					type="primary"
-					:disabled="saving"
-					@click="save">
+					v-if="!isCreate"
+					type="secondary"
+					:disabled="duplicating"
+					@click="duplicate">
+					<template v-if="duplicating" #icon>
+						<NcLoadingIcon :size="20" />
+					</template>
+					{{ t('procest', 'Duplicate') }}
+				</NcButton>
+				<NcButton type="primary" :disabled="saving" @click="save">
 					<template v-if="saving" #icon>
 						<NcLoadingIcon :size="20" />
 					</template>
@@ -38,13 +49,27 @@
 		</div>
 
 		<!-- Active case warning -->
-		<div v-if="activeCaseCount > 0 && !isCreate" class="case-type-detail__warning">
-			<p>{{ t('procest', 'There are {count} active cases of this type. Changes will only apply to new cases.', { count: activeCaseCount }) }}</p>
+		<div
+			v-if="activeCaseCount > 0 && !isCreate"
+			class="case-type-detail__warning">
+			<p>
+				{{
+					t(
+						'procest',
+						'There are {count} active cases of this type. Changes will only apply to new cases.',
+						{ count: activeCaseCount },
+					)
+				}}
+			</p>
 		</div>
 
 		<!-- Publish errors -->
-		<div v-if="publishErrors.length > 0" class="case-type-detail__publish-errors">
-			<p><strong>{{ t('procest', 'Cannot publish:') }}</strong></p>
+		<div
+			v-if="publishErrors.length > 0"
+			class="case-type-detail__publish-errors">
+			<p>
+				<strong>{{ t('procest', 'Cannot publish:') }}</strong>
+			</p>
 			<ul>
 				<li v-for="(err, i) in publishErrors" :key="i">
 					{{ err }}
@@ -69,7 +94,9 @@
 					v-for="tab in tabs"
 					:key="tab.id"
 					class="case-type-detail__tab"
-					:class="{ 'case-type-detail__tab--active': activeTab === tab.id }"
+					:class="{
+						'case-type-detail__tab--active': activeTab === tab.id,
+					}"
 					@click="activeTab = tab.id">
 					{{ tab.label }}
 				</button>
@@ -84,57 +111,62 @@
 					@update="onFieldUpdate" />
 				<StatusesTab
 					v-else-if="activeTab === 'statuses'"
-					:case-type-id="caseTypeId"
-					:is-create="isCreate" />
+					:caseTypeId="caseTypeId"
+					:isCreate="isCreate" />
 				<ResultsTab
 					v-else-if="activeTab === 'results'"
-					:case-type-id="caseTypeId"
-					:is-create="isCreate" />
+					:caseTypeId="caseTypeId"
+					:isCreate="isCreate" />
 				<RolesTab
 					v-else-if="activeTab === 'roles'"
-					:case-type-id="caseTypeId"
-					:is-create="isCreate" />
+					:caseTypeId="caseTypeId"
+					:isCreate="isCreate" />
 				<PropertiesTab
 					v-else-if="activeTab === 'properties'"
-					:case-type-id="caseTypeId"
-					:is-create="isCreate" />
+					:caseTypeId="caseTypeId"
+					:isCreate="isCreate" />
 				<DocumentTypesTab
 					v-else-if="activeTab === 'documents'"
-					:case-type-id="caseTypeId"
-					:is-create="isCreate" />
+					:caseTypeId="caseTypeId"
+					:isCreate="isCreate" />
 				<DecisionTypesTab
 					v-else-if="activeTab === 'decisions'"
-					:case-type-id="caseTypeId"
-					:is-create="isCreate" />
+					:caseTypeId="caseTypeId"
+					:isCreate="isCreate" />
 				<SubCaseTypesTab
 					v-else-if="activeTab === 'subCaseTypes'"
-					:case-type-id="caseTypeId" />
+					:caseTypeId="caseTypeId" />
 				<WorkflowTab
 					v-else-if="activeTab === 'workflow'"
-					:case-type-id="caseTypeId" />
+					:caseTypeId="caseTypeId" />
 				<EmailTemplateAdmin
 					v-else-if="activeTab === 'emailTemplates'"
-					:case-type-id="caseTypeId" />
+					:caseTypeId="caseTypeId" />
 			</div>
 		</template>
 	</div>
 </template>
 
 <script>
+import axios from '@nextcloud/axios'
+import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import ArrowLeftIcon from 'vue-material-design-icons/ArrowLeft.vue'
+import EmailTemplateAdmin from '../casetypes/components/EmailTemplateAdmin.vue'
+import DecisionTypesTab from './tabs/DecisionTypesTab.vue'
+import DocumentTypesTab from './tabs/DocumentTypesTab.vue'
 import GeneralTab from './tabs/GeneralTab.vue'
-import StatusesTab from './tabs/StatusesTab.vue'
-import WorkflowTab from './tabs/WorkflowTab.vue'
+import PropertiesTab from './tabs/PropertiesTab.vue'
 import ResultsTab from './tabs/ResultsTab.vue'
 import RolesTab from './tabs/RolesTab.vue'
-import PropertiesTab from './tabs/PropertiesTab.vue'
-import DocumentTypesTab from './tabs/DocumentTypesTab.vue'
-import DecisionTypesTab from './tabs/DecisionTypesTab.vue'
+import StatusesTab from './tabs/StatusesTab.vue'
 import SubCaseTypesTab from './tabs/SubCaseTypesTab.vue'
-import EmailTemplateAdmin from '../casetypes/components/EmailTemplateAdmin.vue'
+import WorkflowTab from './tabs/WorkflowTab.vue'
 import { useObjectStore } from '../../store/modules/object.js'
-import { validateCaseType, validateForPublish } from '../../utils/caseTypeValidation.js'
+import {
+	validateCaseType,
+	validateForPublish,
+} from '../../utils/caseTypeValidation.js'
 
 const EMPTY_FORM = {
 	title: '',
@@ -152,6 +184,7 @@ const EMPTY_FORM = {
 	extensionPeriod: '',
 	suspensionAllowed: false,
 	confidentiality: '',
+	iv3TaskField: '',
 	publicationRequired: false,
 	publicationText: '',
 	responsibleUnit: '',
@@ -179,12 +212,14 @@ export default {
 		SubCaseTypesTab,
 		EmailTemplateAdmin,
 	},
+
 	props: {
 		caseTypeId: {
 			type: String,
 			default: null,
 		},
 	},
+
 	data() {
 		return {
 			form: { ...EMPTY_FORM },
@@ -197,16 +232,20 @@ export default {
 			publishErrors: [],
 			statusTypes: [],
 			activeCaseCount: 0,
+			duplicating: false,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		isCreate() {
 			return !this.caseTypeId
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		tabs() {
 			return [
@@ -223,6 +262,7 @@ export default {
 			]
 		},
 	},
+
 	/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 	async mounted() {
 		if (!this.isCreate) {
@@ -231,11 +271,15 @@ export default {
 			this.form.identifier = 'CT-' + Date.now()
 		}
 	},
+
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		async loadCaseType() {
 			this.loadingDetail = true
-			const data = await this.objectStore.fetchObject('caseType', this.caseTypeId)
+			const data = await this.objectStore.fetchObject(
+				'caseType',
+				this.caseTypeId,
+			)
 			if (data) {
 				this.form = { ...EMPTY_FORM, ...data }
 			}
@@ -293,9 +337,12 @@ export default {
 				} else {
 					this.form = { ...EMPTY_FORM, ...result }
 				}
-				setTimeout(() => { this.saveSuccess = false }, 3000)
+				setTimeout(() => {
+					this.saveSuccess = false
+				}, 3000)
 			} else {
-				this.saveError = this.objectStore.getError('caseType')
+				this.saveError =
+					this.objectStore.getError('caseType')
 					|| t('procest', 'Failed to save case type')
 			}
 		},
@@ -306,10 +353,13 @@ export default {
 			this.saveError = ''
 
 			// Fetch status types for validation
-			const statusTypes = await this.objectStore.fetchCollection('statusType', {
-				'_filters[caseType]': this.caseTypeId,
-				_limit: 100,
-			})
+			const statusTypes = await this.objectStore.fetchCollection(
+				'statusType',
+				{
+					'_filters[caseType]': this.caseTypeId,
+					_limit: 100,
+				},
+			)
 
 			const result = validateForPublish(this.form, statusTypes || [])
 			if (!result.valid) {
@@ -325,12 +375,42 @@ export default {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		async unpublish() {
 			const confirmed = confirm(
-				t('procest', 'Unpublishing this case type will prevent new cases from being created. Existing cases will continue to function. Continue?'),
+				t(
+					'procest',
+					'Unpublishing this case type will prevent new cases from being created. Existing cases will continue to function. Continue?',
+				),
 			)
 			if (!confirmed) return
 
 			this.form.isDraft = true
 			await this.save()
+		},
+
+		/**
+		 * Deep-copy this case type into a new draft, then navigate to it.
+		 *
+		 * @spec openspec/changes/zaaktype-copy/tasks.md#T11
+		 */
+		async duplicate() {
+			this.saveError = ''
+			this.duplicating = true
+			try {
+				const response = await axios.post(
+					generateUrl('/apps/procest/api/case-definitions/{id}/copy', {
+						id: this.caseTypeId,
+					}),
+				)
+				const newId = response.data?.id
+				if (newId) {
+					this.$emit('duplicated', newId)
+				}
+			} catch (err) {
+				this.saveError =
+					err.response?.data?.error
+					|| t('procest', 'Failed to duplicate case type')
+			} finally {
+				this.duplicating = false
+			}
 		},
 	},
 }

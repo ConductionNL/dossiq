@@ -4,16 +4,18 @@
 			<table>
 				<thead>
 					<tr>
-						<th>{{ t('procest', 'ZGW Resource') }}</th>
-						<th>{{ t('procest', 'Status') }}</th>
-						<th>{{ t('procest', 'Actions') }}</th>
+						<th scope="col">{{ t('procest', 'ZGW Resource') }}</th>
+						<th scope="col">{{ t('procest', 'Status') }}</th>
+						<th scope="col">{{ t('procest', 'Actions') }}</th>
 					</tr>
 				</thead>
 				<tbody>
 					<tr v-for="key in resourceKeys" :key="key">
 						<td>{{ key }}</td>
 						<td>
-							<span v-if="mappings[key] && mappings[key].enabled" class="status-enabled">
+							<span
+								v-if="mappings[key] && mappings[key].enabled"
+								class="status-enabled">
 								{{ t('procest', 'Enabled') }}
 							</span>
 							<span v-else-if="mappings[key]" class="status-disabled">
@@ -38,8 +40,8 @@
 
 		<ZgwMappingDialog
 			:open="editingKey !== null"
-			:resource-key="editingKey || ''"
-			:mapping="editingKey ? (mappings[editingKey] || {}) : {}"
+			:resourceKey="editingKey || ''"
+			:mapping="editingKey ? mappings[editingKey] || {} : {}"
 			@save="saveMapping"
 			@close="editingKey = null" />
 
@@ -51,8 +53,8 @@
 
 <script>
 import { NcButton } from '@nextcloud/vue'
-import { useZgwMappingStore } from '../../store/modules/zgwMapping.js'
 import ZgwMappingDialog from '../../dialogs/ZgwMappingDialog.vue'
+import { useZgwMappingStore } from '../../store/modules/zgwMapping.js'
 
 export default {
 	name: 'ZgwMappingSettings',
@@ -60,33 +62,48 @@ export default {
 		NcButton,
 		ZgwMappingDialog,
 	},
+
 	data() {
 		return {
 			editingKey: null,
 			saved: false,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		store() {
 			return useZgwMappingStore()
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		mappings() {
 			return this.store.mappings
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		resourceKeys() {
 			return [
-				'zaak', 'zaaktype', 'status', 'statustype',
-				'resultaat', 'resultaattype', 'rol', 'roltype',
-				'eigenschap', 'besluit', 'besluittype', 'informatieobjecttype',
+				'case',
+				'case_type',
+				'status',
+				'statustype',
+				'result',
+				'resultaattype',
+				'role',
+				'roltype',
+				'eigenschap',
+				'decision',
+				'besluittype',
+				'informatieobjecttype',
 			]
 		},
 	},
+
 	async mounted() {
 		await this.store.fetchMappings()
 	},
+
 	methods: {
 		/**
 		 * @param key
@@ -105,7 +122,9 @@ export default {
 			if (result) {
 				this.editingKey = null
 				this.saved = true
-				setTimeout(() => { this.saved = false }, 3000)
+				setTimeout(() => {
+					this.saved = false
+				}, 3000)
 			}
 		},
 
@@ -116,7 +135,9 @@ export default {
 		async resetMapping(key) {
 			await this.store.resetMapping(key)
 			this.saved = true
-			setTimeout(() => { this.saved = false }, 3000)
+			setTimeout(() => {
+				this.saved = false
+			}, 3000)
 		},
 	},
 }

@@ -72,51 +72,50 @@ namespace OCA\Procest\Service\External\Ztc;
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
-interface ZtcCatalogiAdapterInterface
-{
-    /**
-     * Resolve a `zaaktypeIdentificatie` to a canonical Catalogi-API
-     * URL on the named receiver.
-     *
-     * @param string              $zaaktypeIdentificatie The receiver-side
-     *                                                   identifier (e.g.
-     *                                                   `ZAAK-2026-WOO`).
-     * @param string              $receiverSourceSlug    Which openconnector
-     *                                                   Source row to use
-     *                                                   for the lookup.
-     * @param array<string,mixed> $context               Optional context —
-     *                                                   correlationId.
-     *
-     * @return ZtcResult The lookup outcome (status + canonical URL).
-     */
-    public function resolveZaakType(string $zaaktypeIdentificatie, string $receiverSourceSlug, array $context=[]): ZtcResult;
+interface ZtcCatalogiAdapterInterface {
+	/**
+	 * Resolve a `zaaktypeIdentificatie` to a canonical Catalogi-API
+	 * URL on the named receiver.
+	 *
+	 * @param string $caseTypeId The receiver-side
+	 *                           zaaktypeIdentificatie
+	 *                           (e.g. `ZAAK-2026-WOO`).
+	 * @param string $receiverSourceSlug Which openconnector
+	 *                                   Source row to use
+	 *                                   for the lookup.
+	 * @param array<string,mixed> $context Optional context —
+	 *                                     correlationId.
+	 *
+	 * @return ZtcResult The lookup outcome (status + canonical URL).
+	 */
+	public function resolveZaakType(string $caseTypeId, string $receiverSourceSlug, array $context = []): ZtcResult;
 
-    /**
-     * Import a `ZaakType` envelope from a neighbouring Catalogi-API
-     * into the tenant's own ZTC.
-     *
-     * @param string              $zaaktypeUrl Canonical receiver-side
-     *                                         URL (output of
-     *                                         resolveZaakType() or
-     *                                         operator paste).
-     * @param array<string,mixed> $context     Optional context
-     *                                         —
-     *                                         targetCatalogusUrl
-     *                                         (the tenant's own
-     *                                         catalogus the
-     *                                         import targets),
-     *                                         correlationId.
-     *
-     * @return ZtcResult The import outcome (status +
-     *                   `localZaakTypeUrl`).
-     */
-    public function importZaakType(string $zaaktypeUrl, array $context=[]): ZtcResult;
+	/**
+	 * Import a `ZaakType` envelope from a neighbouring Catalogi-API
+	 * into the tenant's own ZTC.
+	 *
+	 * @param string $caseTypeUrl Canonical receiver-side
+	 *                            URL (output of
+	 *                            resolveZaakType() or
+	 *                            operator paste).
+	 * @param array<string,mixed> $context Optional context
+	 *                                     —
+	 *                                     targetCatalogusUrl
+	 *                                     (the tenant's own
+	 *                                     catalogus the
+	 *                                     import targets),
+	 *                                     correlationId.
+	 *
+	 * @return ZtcResult The import outcome (status +
+	 *                   `localZaakTypeUrl`).
+	 */
+	public function importZaakType(string $caseTypeUrl, array $context = []): ZtcResult;
 
-    /**
-     * Whether the adapter is dormant — i.e. wired but not contacting
-     * an external Catalogi-API.
-     *
-     * @return bool TRUE when the adapter is a log-only stub.
-     */
-    public function isDormant(): bool;
+	/**
+	 * Whether the adapter is dormant — i.e. wired but not contacting
+	 * an external Catalogi-API.
+	 *
+	 * @return bool TRUE when the adapter is a log-only stub.
+	 */
+	public function isDormant(): bool;
 }//end interface

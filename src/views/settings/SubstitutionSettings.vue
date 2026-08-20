@@ -22,7 +22,12 @@
 		</div>
 
 		<p class="substitution-settings__intro">
-			{{ t('procest', 'Register a colleague to handle your cases and tasks while you are away. They will see your work in their My Work and receive your deadline signals for the period. Substitution does not grant any extra permissions — your colleague only sees what they are already allowed to access.') }}
+			{{
+				t(
+					'procest',
+					'Register a colleague to handle your cases and tasks while you are away. They will see your work in their My Work and receive your deadline signals for the period. Substitution does not grant any extra permissions — your colleague only sees what they are already allowed to access.',
+				)
+			}}
 		</p>
 
 		<NcLoadingIcon v-if="loading" :size="32" />
@@ -30,7 +35,9 @@
 		<NcEmptyContent
 			v-else-if="ownSubstitutions.length === 0"
 			:name="t('procest', 'No substitutions')"
-			:description="t('procest', 'You have not registered any waarnemer yet.')">
+			:description="
+				t('procest', 'You have not registered any waarnemer yet.')
+			">
 			<template #icon>
 				<AccountSwitch :size="48" />
 			</template>
@@ -39,11 +46,11 @@
 		<table v-else class="substitution-settings__table">
 			<thead>
 				<tr>
-					<th>{{ t('procest', 'Substitute') }}</th>
-					<th>{{ t('procest', 'Period') }}</th>
-					<th>{{ t('procest', 'Scope') }}</th>
-					<th>{{ t('procest', 'Reason') }}</th>
-					<th>{{ t('procest', 'Status') }}</th>
+					<th scope="col">{{ t('procest', 'Substitute') }}</th>
+					<th scope="col">{{ t('procest', 'Period') }}</th>
+					<th scope="col">{{ t('procest', 'Scope') }}</th>
+					<th scope="col">{{ t('procest', 'Reason') }}</th>
+					<th scope="col">{{ t('procest', 'Status') }}</th>
 					<th />
 				</tr>
 			</thead>
@@ -53,7 +60,11 @@
 					<td>{{ sub.startDate }} → {{ sub.endDate }}</td>
 					<td>{{ sub.scope }}</td>
 					<td>{{ sub.reason }}</td>
-					<td><span :class="`status status--${sub.status}`">{{ sub.status }}</span></td>
+					<td>
+						<span :class="`status status--${sub.status}`">{{
+							sub.status
+						}}</span>
+					</td>
 					<td>
 						<NcButton
 							v-if="sub.status === 'active'"
@@ -78,7 +89,10 @@
 import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import AccountSwitch from 'vue-material-design-icons/AccountSwitch.vue'
 import SubstitutionFormModal from '../../modals/SubstitutionFormModal.vue'
-import { listSubstitutions, revokeSubstitution } from '../../services/substitutionApi.js'
+import {
+	listSubstitutions,
+	revokeSubstitution,
+} from '../../services/substitutionApi.js'
 
 export default {
 	name: 'SubstitutionSettings',
@@ -89,6 +103,7 @@ export default {
 		AccountSwitch,
 		SubstitutionFormModal,
 	},
+
 	data() {
 		return {
 			loading: true,
@@ -96,19 +111,23 @@ export default {
 			showModal: false,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		currentUser() {
 			return (typeof OC !== 'undefined' && OC?.currentUser) || ''
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		ownSubstitutions() {
-			return this.substitutions.filter(s => s.absentee === this.currentUser)
+			return this.substitutions.filter((s) => s.absentee === this.currentUser)
 		},
 	},
+
 	async mounted() {
 		await this.load()
 	},
+
 	methods: {
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		async load() {
@@ -122,12 +141,17 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		async onCreated() {
 			this.showModal = false
 			await this.load()
 		},
-		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
+
+		/**
+		 * @param id
+		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+		 */
 		async revoke(id) {
 			try {
 				await revokeSubstitution(id)

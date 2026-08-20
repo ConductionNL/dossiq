@@ -1,5 +1,6 @@
 <template>
-	<NcDialog v-if="open"
+	<NcDialog
+		v-if="open"
 		:name="t('procest', 'Edit ZGW Mapping: {key}', { key: resourceKey })"
 		size="large"
 		@closing="$emit('close')">
@@ -7,8 +8,8 @@
 			<div class="form-group">
 				<label>{{ t('procest', 'Enabled') }}</label>
 				<NcCheckboxRadioSwitch
-					:checked="form.enabled"
-					@update:checked="v => form.enabled = v">
+					:modelValue="form.enabled"
+					@update:modelValue="(v) => (form.enabled = v)">
 					{{ t('procest', 'Enable this mapping') }}
 				</NcCheckboxRadioSwitch>
 			</div>
@@ -16,46 +17,58 @@
 			<div class="form-group">
 				<label>{{ t('procest', 'Source Register') }}</label>
 				<NcTextField
-					:value="form.sourceRegister"
+					:modelValue="form.sourceRegister"
 					:label="t('procest', 'Register ID')"
-					@update:value="v => form.sourceRegister = v" />
+					@update:modelValue="(v) => (form.sourceRegister = v)" />
 			</div>
 
 			<div class="form-group">
 				<label>{{ t('procest', 'Source Schema') }}</label>
 				<NcTextField
-					:value="form.sourceSchema"
+					:modelValue="form.sourceSchema"
 					:label="t('procest', 'Schema ID')"
-					@update:value="v => form.sourceSchema = v" />
+					@update:modelValue="(v) => (form.sourceSchema = v)" />
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Property Mapping (outbound: English → Dutch)') }}</label>
+				<label for="zgw-mapping-property">{{
+					t('procest', 'Property Mapping (outbound: English → Dutch)')
+				}}</label>
 				<textarea
+					id="zgw-mapping-property"
 					v-model="propertyMappingJson"
 					class="mapping-textarea"
 					rows="10" />
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Reverse Mapping (inbound: Dutch → English)') }}</label>
+				<label for="zgw-mapping-reverse">{{
+					t('procest', 'Reverse Mapping (inbound: Dutch → English)')
+				}}</label>
 				<textarea
+					id="zgw-mapping-reverse"
 					v-model="reverseMappingJson"
 					class="mapping-textarea"
 					rows="10" />
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Value Mappings (enum translations)') }}</label>
+				<label for="zgw-mapping-value">{{
+					t('procest', 'Value Mappings (enum translations)')
+				}}</label>
 				<textarea
+					id="zgw-mapping-value"
 					v-model="valueMappingJson"
 					class="mapping-textarea"
 					rows="6" />
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Query Parameter Mapping') }}</label>
+				<label for="zgw-mapping-query-param">{{
+					t('procest', 'Query Parameter Mapping')
+				}}</label>
 				<textarea
+					id="zgw-mapping-query-param"
 					v-model="queryParamMappingJson"
 					class="mapping-textarea"
 					rows="6" />
@@ -78,7 +91,12 @@
 </template>
 
 <script>
-import { NcButton, NcCheckboxRadioSwitch, NcDialog, NcTextField } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcCheckboxRadioSwitch,
+	NcDialog,
+	NcTextField,
+} from '@nextcloud/vue'
 
 export default {
 	name: 'ZgwMappingDialog',
@@ -88,20 +106,24 @@ export default {
 		NcDialog,
 		NcTextField,
 	},
+
 	props: {
 		open: {
 			type: Boolean,
 			default: false,
 		},
+
 		resourceKey: {
 			type: String,
 			default: '',
 		},
+
 		mapping: {
 			type: Object,
 			default: () => ({}),
 		},
 	},
+
 	emits: ['save', 'close'],
 	data() {
 		return {
@@ -110,6 +132,7 @@ export default {
 				sourceRegister: '',
 				sourceSchema: '',
 			},
+
 			propertyMappingJson: '{}',
 			reverseMappingJson: '{}',
 			valueMappingJson: '{}',
@@ -117,6 +140,7 @@ export default {
 			jsonError: null,
 		}
 	},
+
 	watch: {
 		open: {
 			immediate: true,
@@ -131,6 +155,7 @@ export default {
 			},
 		},
 	},
+
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		initFromMapping() {
@@ -140,10 +165,26 @@ export default {
 				sourceRegister: mapping.sourceRegister || '',
 				sourceSchema: mapping.sourceSchema || '',
 			}
-			this.propertyMappingJson = JSON.stringify(mapping.propertyMapping || {}, null, 2)
-			this.reverseMappingJson = JSON.stringify(mapping.reverseMapping || {}, null, 2)
-			this.valueMappingJson = JSON.stringify(mapping.valueMapping || {}, null, 2)
-			this.queryParamMappingJson = JSON.stringify(mapping.queryParameterMapping || {}, null, 2)
+			this.propertyMappingJson = JSON.stringify(
+				mapping.propertyMapping || {},
+				null,
+				2,
+			)
+			this.reverseMappingJson = JSON.stringify(
+				mapping.reverseMapping || {},
+				null,
+				2,
+			)
+			this.valueMappingJson = JSON.stringify(
+				mapping.valueMapping || {},
+				null,
+				2,
+			)
+			this.queryParamMappingJson = JSON.stringify(
+				mapping.queryParameterMapping || {},
+				null,
+				2,
+			)
 			this.jsonError = null
 		},
 
@@ -158,7 +199,11 @@ export default {
 				valueMapping = JSON.parse(this.valueMappingJson)
 				queryParameterMapping = JSON.parse(this.queryParamMappingJson)
 			} catch (e) {
-				this.jsonError = t('procest', 'Invalid JSON in one of the mapping fields: {error}', { error: e.message })
+				this.jsonError = t(
+					'procest',
+					'Invalid JSON in one of the mapping fields: {error}',
+					{ error: e.message },
+				)
 				return
 			}
 

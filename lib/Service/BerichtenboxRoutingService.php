@@ -40,78 +40,75 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T15
  */
-class BerichtenboxRoutingService
-{
-    /**
-     * Constructor.
-     *
-     * @param LoggerInterface $logger The logger.
-     */
-    public function __construct(
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class BerichtenboxRoutingService {
+	/**
+	 * Constructor.
+	 *
+	 * @param LoggerInterface $logger The logger.
+	 */
+	public function __construct(
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Route a beschikking to the appropriate Berichtenbox channel.
-     *
-     * @param array<string, mixed> $beschikking The beschikking object.
-     *
-     * @return array{kanaal: string, verzondenOp: string, verzondenDoor: string, berichtId: string} The verzending record.
-     *
-     * @spec openspec/changes/beschikking-generatie/tasks.md#T15
-     */
-    public function routeToBerichtenbox(array $beschikking): array
-    {
-        $geadresseerde = (array) ($beschikking['geadresseerde'] ?? []);
-        $kanaal        = $this->resolveChannel(geadresseerde: $geadresseerde);
+	/**
+	 * Route a beschikking to the appropriate Berichtenbox channel.
+	 *
+	 * @param array<string, mixed> $decision The beschikking object.
+	 *
+	 * @return array{notificationChannel: string, sentOn: string, sentBy: string, messageId: string} The verzending record.
+	 *
+	 * @spec openspec/changes/beschikking-generatie/tasks.md#T15
+	 */
+	public function routeToBerichtenbox(array $decision): array {
+		$addressee = (array)($decision['addressee'] ?? []);
+		$channel = $this->resolveChannel(addressee: $addressee);
 
-        // The berichtId is assigned by the downstream Berichtenbox provider; in
-        // the absence of a live channel we derive a stable, non-identifying id
-        // from the beschikking kenmerk so the delivery record is reproducible.
-        $kenmerk   = (string) ($beschikking['kenmerk'] ?? ($beschikking['id'] ?? 'onbekend'));
-        $berichtId = strtoupper(substr($kanaal, 0, 2)).'-'.substr(hash('sha256', $kenmerk.$kanaal), 0, 12);
+		// The berichtId is assigned by the downstream Berichtenbox provider; in
+		// the absence of a live channel we derive a stable, non-identifying id
+		// from the beschikking kenmerk so the delivery record is reproducible.
+		$reference = (string)($decision['reference'] ?? ($decision['id'] ?? 'unknown'));
+		$messageId = strtoupper(substr($channel, 0, 2)) . '-' . substr(hash('sha256', $reference . $channel), 0, 12);
 
-        $this->logger->info(
-            'BerichtenboxRoutingService: beschikking gerouteerd',
-            [
-                'kenmerk' => $kenmerk,
-                'kanaal'  => $kanaal,
-            ],
-        );
+		$this->logger->info(
+			'BerichtenboxRoutingService: beschikking gerouteerd',
+			[
+				'reference' => $reference,
+				'notificationChannel' => $channel,
+			],
+		);
 
-        return [
-            'kanaal'        => $kanaal,
-            'verzondenOp'   => (new DateTimeImmutable())->format('c'),
-            'verzondenDoor' => 'systeem',
-            'berichtId'     => $berichtId,
-        ];
-    }//end routeToBerichtenbox()
+		return [
+			'notificationChannel' => $channel,
+			'sentOn' => (new DateTimeImmutable())->format('c'),
+			'sentBy' => 'systeem',
+			'messageId' => $messageId,
+		];
+	}//end routeToBerichtenbox()
 
-    /**
-     * Resolve the Berichtenbox channel for an addressee.
-     *
-     * @param array<string, mixed> $geadresseerde The addressee block.
-     *
-     * @return string The channel slug.
-     */
-    private function resolveChannel(array $geadresseerde): string
-    {
-        $type      = (string) ($geadresseerde['type'] ?? '');
-        $bevestigd = ($geadresseerde['berichtenboxBevestigd'] ?? false) === true;
+	/**
+	 * Resolve the Berichtenbox channel for an addressee.
+	 *
+	 * @param array<string, mixed> $addressee The addressee block.
+	 *
+	 * @return string The channel slug.
+	 */
+	private function resolveChannel(array $addressee): string {
+		$type = (string)($addressee['type'] ?? '');
+		$bevestigd = ($addressee['messageBoxConfirmed'] ?? false) === true;
 
-        if ($bevestigd === false) {
-            return 'print-post';
-        }
+		if ($bevestigd === false) {
+			return 'print-post';
+		}
 
-        if ($type === 'burger' && ($geadresseerde['bsn'] ?? '') !== '') {
-            return 'berichtenbox-mijnoverheid';
-        }
+		if ($type === 'burger' && ($addressee['bsn'] ?? '') !== '') {
+			return 'berichtenbox-mijnoverheid';
+		}
 
-        if ($type === 'bedrijf' && ($geadresseerde['oin'] ?? '') !== '') {
-            return 'berichtenbox-eherkenning';
-        }
+		if ($type === 'bedrijf' && ($addressee['oin'] ?? '') !== '') {
+			return 'berichtenbox-eherkenning';
+		}
 
-        return 'print-post';
-    }//end resolveChannel()
+		return 'print-post';
+	}//end resolveChannel()
 }//end class

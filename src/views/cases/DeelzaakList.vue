@@ -18,7 +18,10 @@
 	<div class="deelzaak-list">
 		<div class="deelzaak-list__header">
 			<div class="deelzaak-list__title">
-				<NcButton type="tertiary" :aria-label="t('procest', 'Back to parent case')" @click="goToParent">
+				<NcButton
+					type="tertiary"
+					:aria-label="t('procest', 'Back to parent case')"
+					@click="goToParent">
 					<template #icon>
 						<ArrowLeft :size="20" />
 					</template>
@@ -69,10 +72,7 @@
 				<FolderMultipleOutline :size="48" />
 			</template>
 			<template #action>
-				<NcButton
-					v-if="canCreate"
-					type="primary"
-					@click="showCreate = true">
+				<NcButton v-if="canCreate" type="primary" @click="showCreate = true">
 					{{ t('procest', 'Create first sub-case') }}
 				</NcButton>
 			</template>
@@ -82,12 +82,12 @@
 			<table class="viewTable">
 				<thead>
 					<tr>
-						<th>{{ t('procest', 'Identifier') }}</th>
-						<th>{{ t('procest', 'Title') }}</th>
-						<th>{{ t('procest', 'Status') }}</th>
-						<th>{{ t('procest', 'Assignee') }}</th>
-						<th>{{ t('procest', 'Deadline') }}</th>
-						<th>{{ t('procest', 'Completed') }}</th>
+						<th scope="col">{{ t('procest', 'Identifier') }}</th>
+						<th scope="col">{{ t('procest', 'Title') }}</th>
+						<th scope="col">{{ t('procest', 'Status') }}</th>
+						<th scope="col">{{ t('procest', 'Assignee') }}</th>
+						<th scope="col">{{ t('procest', 'Deadline') }}</th>
+						<th scope="col">{{ t('procest', 'Completed') }}</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -99,13 +99,17 @@
 						<td>{{ subCase.identifier || '—' }}</td>
 						<td>{{ subCase.title || '—' }}</td>
 						<td>
-							<span class="status-badge" :class="getStatusClass(subCase)">
+							<span
+								class="status-badge"
+								:class="getStatusClass(subCase)">
 								{{ getStatusName(subCase) }}
 							</span>
 						</td>
 						<td>{{ subCase.assignee || '—' }}</td>
 						<td>{{ formatDate(subCase.deadline) }}</td>
-						<td>{{ subCase.endDate ? formatDate(subCase.endDate) : '—' }}</td>
+						<td>
+							{{ subCase.endDate ? formatDate(subCase.endDate) : '—' }}
+						</td>
 					</tr>
 				</tbody>
 			</table>
@@ -113,36 +117,42 @@
 
 		<DeelzaakCreateModal
 			v-if="showCreate && parentCaseId"
-			:parent-case="parentCaseId"
-			:parent-case-type="parentCaseType"
+			:parentCase="parentCaseId"
+			:parentCaseType="parentCaseType"
 			@created="onSubCaseCreated"
 			@close="showCreate = false" />
 
 		<DeelzaakDeleteWarningModal
 			v-if="showDeleteWarning && parentCaseId"
-			:parent-case-id="parentCaseId"
-			:sub-case-count="totalCount"
+			:parentCaseId="parentCaseId"
+			:subCaseCount="totalCount"
 			@deleted="onParentDeleted"
 			@close="showDeleteWarning = false" />
+
+		<CnConfirmDialog
+			v-if="showDeleteConfirm"
+			ref="deleteConfirmDialog"
+			:dialogTitle="t('procest', 'Delete case')"
+			:message="t('procest', 'Are you sure you want to delete this case?')"
+			variant="error"
+			:confirmLabel="t('procest', 'Delete')"
+			@confirm="onConfirmDeleteParent"
+			@close="showDeleteConfirm = false" />
 	</div>
 </template>
 
 <script>
-import {
-	NcButton,
-	NcEmptyContent,
-	NcLoadingIcon,
-} from '@nextcloud/vue'
+import { CnConfirmDialog } from '@conduction/nextcloud-vue'
+import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
 import Delete from 'vue-material-design-icons/Delete.vue'
 import FolderMultipleOutline from 'vue-material-design-icons/FolderMultipleOutline.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
-
-import { useObjectStore } from '../../store/modules/object.js'
-import { useDeelzaakStore } from '../../store/modules/deelzaak.js'
-import { initializeStores } from '../../store/store.js'
 import DeelzaakCreateModal from '../../modals/DeelzaakCreateModal.vue'
 import DeelzaakDeleteWarningModal from '../../modals/DeelzaakDeleteWarningModal.vue'
+import { useDeelzaakStore } from '../../store/modules/deelzaak.js'
+import { useObjectStore } from '../../store/modules/object.js'
+import { initializeStores } from '../../store/store.js'
 import { formatDate } from '../../utils/caseHelpers.js'
 import { requiresOrphanWarning } from '../../utils/deelzaakHelpers.js'
 
@@ -158,7 +168,9 @@ export default {
 		Plus,
 		DeelzaakCreateModal,
 		DeelzaakDeleteWarningModal,
+		CnConfirmDialog,
 	},
+
 	props: {
 		/** Optional override for the parent case UUID (otherwise read from $route.params.id). */
 		caseId: {
@@ -166,6 +178,7 @@ export default {
 			default: null,
 		},
 	},
+
 	data() {
 		return {
 			parent: null,
@@ -174,21 +187,27 @@ export default {
 			loading: true,
 			showCreate: false,
 			showDeleteWarning: false,
+			showDeleteConfirm: false,
 		}
 	},
+
 	computed: {
 		objectStore() {
 			return useObjectStore()
 		},
+
 		deelzaakStore() {
 			return useDeelzaakStore()
 		},
+
 		parentCaseId() {
 			return this.caseId || this.$route?.params?.id || null
 		},
+
 		subCases() {
 			return this.deelzaakStore.getSubCases || []
 		},
+
 		sortedSubCases() {
 			return [...this.subCases].sort((a, b) => {
 				// Open before closed; within each group sort by deadline asc.
@@ -197,23 +216,31 @@ export default {
 				if (aOpen !== bOpen) {
 					return aOpen ? -1 : 1
 				}
-				const aDeadline = a.deadline ? new Date(a.deadline).getTime() : Number.POSITIVE_INFINITY
-				const bDeadline = b.deadline ? new Date(b.deadline).getTime() : Number.POSITIVE_INFINITY
+				const aDeadline = a.deadline
+					? new Date(a.deadline).getTime()
+					: Number.POSITIVE_INFINITY
+				const bDeadline = b.deadline
+					? new Date(b.deadline).getTime()
+					: Number.POSITIVE_INFINITY
 				return aDeadline - bDeadline
 			})
 		},
+
 		completedCount() {
-			return this.subCases.filter(sc => sc.endDate).length
+			return this.subCases.filter((sc) => sc.endDate).length
 		},
+
 		totalCount() {
 			return this.subCases.length
 		},
+
 		rollUpText() {
 			return t('procest', '({completed}/{total} completed)', {
 				completed: this.completedCount,
 				total: this.totalCount,
 			})
 		},
+
 		canCreate() {
 			if (!this.parent) {
 				return false
@@ -228,22 +255,33 @@ export default {
 			const allowed = this.parentCaseType?.subCaseTypes || []
 			return Array.isArray(allowed) && allowed.length > 0
 		},
+
 		emptyDescription() {
 			if (this.canCreate) {
-				return t('procest', 'This case has no sub-cases yet. Use the button above to create the first one.')
+				return t(
+					'procest',
+					'This case has no sub-cases yet. Use the button above to create the first one.',
+				)
 			}
 			if (this.parent?.parentCase) {
 				return t('procest', 'Sub-cases cannot themselves have sub-cases.')
 			}
 			if (this.parent?.endDate) {
-				return t('procest', 'This case is closed; sub-cases can no longer be added.')
+				return t(
+					'procest',
+					'This case is closed; sub-cases can no longer be added.',
+				)
 			}
 			return t('procest', 'The parent case type does not allow any sub-cases.')
 		},
+
 		parentRoute() {
-			return this.parent ? { name: 'CaseDetail', params: { id: this.parent.id } } : { name: 'Cases' }
+			return this.parent
+				? { name: 'CaseDetail', params: { id: this.parent.id } }
+				: { name: 'Cases' }
 		},
 	},
+
 	watch: {
 		parentCaseId: {
 			immediate: false,
@@ -252,6 +290,7 @@ export default {
 			},
 		},
 	},
+
 	async mounted() {
 		// Object types are registered by App.vue's async created(), which
 		// does not block child mounting — on a deep link this tab can
@@ -259,6 +298,7 @@ export default {
 		await initializeStores()
 		await this.reload()
 	},
+
 	methods: {
 		formatDate,
 		async reload() {
@@ -269,9 +309,15 @@ export default {
 			this.loading = true
 			try {
 				const results = await Promise.all([
-					this.objectStore.fetchObject('case', this.parentCaseId).catch(() => null),
-					this.deelzaakStore.fetchSubCases(this.parentCaseId).catch(() => []),
-					this.objectStore.fetchCollection('statusType', { _limit: 200 }).catch(() => []),
+					this.objectStore
+						.fetchObject('case', this.parentCaseId)
+						.catch(() => null),
+					this.deelzaakStore
+						.fetchSubCases(this.parentCaseId)
+						.catch(() => []),
+					this.objectStore
+						.fetchCollection('statusType', { _limit: 200 })
+						.catch(() => []),
 				])
 				const parent = results[0]
 				const statusTypes = results[2]
@@ -282,7 +328,7 @@ export default {
 						.catch(() => null)
 				}
 				const cache = {}
-				for (const st of (statusTypes || [])) {
+				for (const st of statusTypes || []) {
 					cache[st.id] = st
 				}
 				this.statusTypeCache = cache
@@ -292,12 +338,14 @@ export default {
 				this.loading = false
 			}
 		},
+
 		getStatusName(subCase) {
 			if (!subCase.status) {
 				return '—'
 			}
 			return this.statusTypeCache[subCase.status]?.name || '—'
 		},
+
 		getStatusClass(subCase) {
 			if (!subCase.status) {
 				return ''
@@ -308,15 +356,18 @@ export default {
 			}
 			return 'status-badge--active'
 		},
+
 		openSubCase(subCase) {
 			this.$router.push({
 				name: 'DeelzaakDetail',
 				params: { parentId: this.parentCaseId, id: subCase.id },
 			})
 		},
+
 		goToParent() {
 			this.$router.push(this.parentRoute)
 		},
+
 		async onSubCaseCreated(newId) {
 			this.showCreate = false
 			await this.reload()
@@ -327,6 +378,7 @@ export default {
 				})
 			}
 		},
+
 		/**
 		 * Delete the parent case. When it still has sub-cases, open the
 		 * orphan-warning modal (which unlinks the children, then deletes);
@@ -334,21 +386,36 @@ export default {
 		 *
 		 * @spec openspec/changes/deelzaak-support/tasks.md#T11
 		 */
-		async onDeleteParent() {
+		onDeleteParent() {
 			if (requiresOrphanWarning(this.totalCount)) {
 				this.showDeleteWarning = true
 				return
 			}
-			if (!window.confirm(t('procest', 'Are you sure you want to delete this case?'))) {
-				return
-			}
+			this.showDeleteConfirm = true
+		},
+
+		/**
+		 * Confirm-handler for the CnConfirmDialog opened by onDeleteParent().
+		 * Runs the actual delete and reports the outcome back to the dialog.
+		 *
+		 * @spec openspec/changes/deelzaak-support/tasks.md#T11
+		 */
+		async onConfirmDeleteParent() {
 			try {
 				await this.objectStore.deleteObject('case', this.parentCaseId)
+				this.showDeleteConfirm = false
 				this.onParentDeleted(this.parentCaseId)
 			} catch (err) {
 				console.error('[DeelzaakList] parent delete failed', err)
+				this.$refs.deleteConfirmDialog.setResult({
+					error: t(
+						'procest',
+						'The case could not be deleted. Please try again.',
+					),
+				})
 			}
 		},
+
 		/**
 		 * @param deletedId
 		 * @spec openspec/changes/deelzaak-support/tasks.md#T11
@@ -460,5 +527,11 @@ export default {
 .status-badge--final {
 	background: var(--color-success);
 	color: white;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.viewTableRow {
+		transition: none;
+	}
 }
 </style>

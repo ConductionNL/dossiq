@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2026 Procest Contributors
- * SPDX-License-Identifier: AGPL-3.0-or-later
+ * SPDX-License-Identifier: EUPL-1.2
  *
  * Shared navigation helpers for Procest e2e tests.
  *
@@ -21,7 +21,8 @@ import { Page } from '@playwright/test'
  * The app's sidebar navigation container.
  * @param page
  */
-export const sidebarNav = (page: Page) => page.locator('[id^="app-navigation"]').first()
+export const sidebarNav = (page: Page) =>
+	page.locator('[id^="app-navigation"]').first()
 
 /**
  * Dismiss the "Support Procest" dialog if it is open. The dialog's
@@ -32,59 +33,89 @@ export const sidebarNav = (page: Page) => page.locator('[id^="app-navigation"]')
 export async function dismissSupportDialog(page: Page): Promise<void> {
 	const supportDialog = page.locator('[data-testid-modal="cn-support-dialog"]')
 	if (await supportDialog.isVisible().catch(() => false)) {
-		await supportDialog.getByRole('button', { name: 'Close' }).click().catch(() => {})
-		await supportDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+		await supportDialog
+			.getByRole('button', { name: 'Close' })
+			.click()
+			.catch(() => {})
+		await supportDialog
+			.waitFor({ state: 'hidden', timeout: 5000 })
+			.catch(() => {})
 	}
 }
 
 /**
- * Land on the app (a route that resolves), dismiss the support dialog, then
- * click a sidebar nav entry by its visible label to reach the target view.
+ * Read every sidebar link as `{ label, href }` straight out of the DOM.
  *
- * After the procest-nav-dedup-and-grouping pass several leaves moved under
- * collapsible groups (e.g. the "Cases" GROUP header is a non-navigating
- * `href="#"` toggle whose list leaf is "All cases"). If the requested label
- * resolves to such a group toggle, expand it and click the same-group leaf.
+ * Deliberately NOT `getByRole('link', …)`: most nav leaves live inside a
+ * COLLAPSED group, so they are present in the DOM but `display:none`. A
+ * role/visibility-based locator cannot see them, and the old implementation
+ * therefore fell through to clicking a locator that matched nothing.
  * @param page
- * @param label
  */
-/**
- * Stale top-level labels that became collapsible GROUP headers in the
- * nav-dedup-and-grouping pass, mapped to their actual navigating list leaf.
- * Lets older specs keep calling `navTo(page, 'Cases')` and still land on the
- * case list rather than just toggling the (non-navigating) group header.
- */
-const GROUP_LEAF_ALIAS: Record<string, string> = {
-	Cases: 'All cases',
+async function readNavLinks(
+	page: Page,
+): Promise<Array<{ label: string; href: string | null }>> {
+	return await sidebarNav(page)
+		.locator('a')
+		.evaluateAll((els) =>
+			els.map((e) => ({
+				label: (e.textContent || '').trim().replace(/\s+/g, ' '),
+				href: e.getAttribute('href'),
+			})),
+		)
 }
 
+/**
+ * Navigate to a procest view by its sidebar label.
+ *
+ * WHY THIS DEEP-LINKS INSTEAD OF CLICKING
+ * ---------------------------------------
+ * This helper used to land on the app root and CLICK the sidebar entry,
+ * because of a belief — stated in this file for months — that "a cold deep
+ * link resets the history-mode router to the Dashboard". Measured on a CI
+ * runner (2026-08-04), that is false: `/index.php/apps/procest/cases`,
+ * `/my-work`, `/doorlooptijd` and `/tasks` each render their own view on a
+ * direct GET.
+ *
+ * The click path, by contrast, was the single largest cause of CI failure.
+ * The nav renders its leaves inside COLLAPSED groups ("Work queue",
+ * "Reports", "Personal settings"), so `My work`, `Workflow board`,
+ * `Processing time`, `Proposals`, `Objections` and `Appeals` are all
+ * `display:none` on load. Playwright's `.click()` waits for actionability,
+ * and this suite sets no `actionTimeout`, so each such click blocked for the
+ * ENTIRE 60s test budget and then failed with a bare timeout that named an
+ * element rather than the cause. 122 tests × up to 2×60s is what pushed the
+ * job past the shared workflow's 45-minute cap, where it was cancelled having
+ * run only 65 tests.
+ *
+ * Resolving the label to its `href` and navigating directly is immune to
+ * collapsed groups, needs no group-expansion bookkeeping, and is faster.
+ * @param page
+ * @param label exact sidebar label, e.g. 'Cases', 'My work'
+ */
 export async function navTo(page: Page, label: string): Promise<void> {
-	// Land on the app ROOT (resolves to the Dashboard reliably). A cold deep
-	// link to a sub-route like /cases resets the history-mode router back to
-	// the Dashboard, leaving the target view unrendered — so always reach the
-	// target by a client-side sidebar click from a resolved root.
 	await page.goto('/index.php/apps/procest')
 	await dismissSupportDialog(page)
-	const effectiveLabel = GROUP_LEAF_ALIAS[label] ?? label
-	const candidates = sidebarNav(page).getByRole('link', { name: effectiveLabel, exact: true })
-	const count = await candidates.count()
-	// A label can match both a collapsible GROUP header (href="#") and a
-	// same-named navigating leaf (e.g. the "Subsidies" group + "Subsidies"
-	// list). Prefer the real navigating link; otherwise expand the group.
-	let chosen = candidates.first()
-	for (let i = 0; i < count; i++) {
-		const c = candidates.nth(i)
-		const h = await c.getAttribute('href').catch(() => null)
-		if (h && h !== '#') { chosen = c; break }
+
+	const links = await readNavLinks(page)
+	// Prefer a real navigating entry; a group header renders as href="#".
+	const target = links.find((l) => l.label === label && l.href && l.href !== '#')
+
+	if (!target || !target.href) {
+		// Fail FAST and by NAME. The old code swallowed this into two
+		// full-length action timeouts and then silently asserted against the
+		// Dashboard, so a renamed nav label surfaced as an unrelated
+		// "element not found" 60s later.
+		const available = links
+			.filter((l) => l.href && l.href !== '#')
+			.map((l) => l.label)
+		throw new Error(
+			`[procest e2e] navTo('${label}'): no navigating sidebar link with that exact label.\n`
+				+ `Available navigating labels: ${JSON.stringify(available)}`,
+		)
 	}
-	const href = await chosen.getAttribute('href').catch(() => null)
-	if (href === '#' || href === null) {
-		// Group toggle (or no direct link) — expand it so its leaves render.
-		await chosen.click().catch(() => {})
-		await dismissSupportDialog(page)
-	} else {
-		await chosen.click()
-	}
+
+	await page.goto(target.href)
 	await dismissSupportDialog(page)
 }
 
@@ -98,21 +129,12 @@ export async function navTo(page: Page, label: string): Promise<void> {
  * @param route in-app vue-router path, e.g. '/tasks'
  */
 export async function navToRoute(page: Page, route: string): Promise<void> {
-	await page.goto('/index.php/apps/procest')
-	await dismissSupportDialog(page)
-	// Drive vue-router directly. A bare deep-link `goto` resets the
-	// history-mode router to the Dashboard, and pushState/popstate does not
-	// re-run vue-router's guards — `$router.push` is the only reliable
-	// client-side navigation for a route that has no sidebar link.
-	await page.evaluate((r) => {
-		const els = document.querySelectorAll('*')
-		for (const el of els) {
-			// @ts-expect-error Vue 2 attaches the instance as __vue__
-			const vm = el.__vue__
-			if (vm && vm.$router) { vm.$router.push(r); return }
-		}
-	}, route)
-	await page.waitForTimeout(800)
+	// A direct GET renders the target view — measured on a CI runner
+	// (2026-08-04) for /cases, /my-work, /doorlooptijd and /tasks. The previous
+	// `$router.push` dance existed only to work around a deep-link reset that
+	// does not actually happen, and it silently went nowhere whenever the
+	// router handle could not be reached (returning as if it had navigated).
+	await page.goto(`/index.php/apps/procest${route}`)
 	await dismissSupportDialog(page)
 }
 
@@ -130,7 +152,9 @@ export async function loadAllAdminSections(page: Page): Promise<void> {
 	// few steps. The page does expensive layout on each scroll; the calling
 	// tests use test.slow() so the per-test budget covers it.
 	for (let i = 0; i < 4; i++) {
-		await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight)).catch(() => {})
+		await page
+			.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+			.catch(() => {})
 		await page.waitForTimeout(500)
 	}
 	await page.evaluate(() => window.scrollTo(0, 0)).catch(() => {})
@@ -162,6 +186,27 @@ const NON_PROCEST_NOISE = [
 ]
 
 /**
+ * Request URLs whose console errors are environment noise, matched against the
+ * console message's LOCATION rather than its text.
+ *
+ * A failed subresource logs the bare text "Failed to load resource: the server
+ * responded with a status of 404 (Not Found)" — the URL appears only in
+ * `location()`. Filtering that text outright would hide real procest 404s, so
+ * match the URL instead.
+ *
+ * procest probes optional cross-app capabilities on load (e.g. whether the
+ * hermiq assistant is installed). On an instance that does not ship the other
+ * app those probes 404 BY DESIGN, which is not a procest defect — the CI
+ * instance installs only openregister alongside procest.
+ */
+const NON_PROCEST_URL_NOISE = [
+	'/apps/hermiq/',
+	'/apps/user_status/',
+	'/status.php',
+	'favicon',
+]
+
+/**
  * Attach console-error + 5xx listeners and return a live array of
  * procest-origin errors. Filters out known Nextcloud-core / environment
  * noise so a test fails only on errors the app itself is responsible for.
@@ -174,6 +219,8 @@ export function trackProcestErrors(page: Page): string[] {
 		if (m.type() !== 'error') return
 		const text = m.text()
 		if (NON_PROCEST_NOISE.some((n) => text.includes(n))) return
+		const url = m.location()?.url ?? ''
+		if (url && NON_PROCEST_URL_NOISE.some((n) => url.includes(n))) return
 		errors.push(text)
 	})
 	page.on('response', (r) => {

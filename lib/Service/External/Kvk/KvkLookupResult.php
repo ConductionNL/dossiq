@@ -36,33 +36,32 @@ namespace OCA\Procest\Service\External\Kvk;
  * @spec openspec/changes/leverancier-zaakportaal-02-eherkenning-auth/tasks.md
  * @spec openspec/changes/brp-kvk-register-sets/proposal.md
  */
-final class KvkLookupResult
-{
-    /**
-     * Construct the result value-object.
-     *
-     * @param string              $lookupStatus FOUND / NOT_FOUND /
-     *                                          LOOKUP_DEFERRED /
-     *                                          LOOKUP_ERROR.
-     * @param string              $kvkNumber    Echoed input.
-     * @param array<string,mixed> $entity       Entity envelope —
-     *                                          rechtsvorm, statutaireNaam,
-     *                                          rsin, sbiCodes[],
-     *                                          hoofdvestiging{adres,
-     *                                          bezoekadres, postadres},
-     *                                          uitschrijvingsdatum,
-     *                                          bestuurders[] — empty for
-     *                                          NOT_FOUND / DEFERRED.
-     * @param bool                $dormant      TRUE when the adapter was
-     *                                          dormant.
-     * @param array<string,mixed> $extras       Provider-specific extras.
-     */
-    public function __construct(
-        public readonly string $lookupStatus,
-        public readonly string $kvkNumber,
-        public readonly array $entity,
-        public readonly bool $dormant,
-        public readonly array $extras=[],
-    ) {
-    }//end __construct()
+final class KvkLookupResult {
+	/**
+	 * Construct the result value-object.
+	 *
+	 * @param string $lookupStatus FOUND / NOT_FOUND /
+	 *                             LOOKUP_DEFERRED /
+	 *                             LOOKUP_ERROR.
+	 * @param string $kvkNumber Echoed input.
+	 * @param array<string,mixed> $entity Entity envelope —
+	 *                                    rechtsvorm, statutaireNaam,
+	 *                                    rsin, sbiCodes[],
+	 *                                    hoofdvestiging{adres,
+	 *                                    bezoekadres, postadres},
+	 *                                    uitschrijvingsdatum,
+	 *                                    bestuurders[] — empty for
+	 *                                    NOT_FOUND / DEFERRED.
+	 * @param bool $dormant TRUE when the adapter was
+	 *                      dormant.
+	 * @param array<string,mixed> $extras Provider-specific extras.
+	 */
+	public function __construct(
+		public readonly string $lookupStatus,
+		public readonly string $kvkNumber,
+		public readonly array $entity,
+		public readonly bool $dormant,
+		public readonly array $extras = [],
+	) {
+	}//end __construct()
 }//end class

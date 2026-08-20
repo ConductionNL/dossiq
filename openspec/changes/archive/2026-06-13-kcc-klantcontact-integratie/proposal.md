@@ -15,7 +15,7 @@ Dutch municipalities manage citizen contact through their KlantContactCentrum (K
 
 ## Impact
 - New schemas, new module, new Vue components for CTI popup, routing admin, and reporting.
-- Integrates with OpenConnector (CTI, email, chat), OpenCatalogi (BRP/KvK lookup), Procest (case creation), MyDash (dashboard widgets), Docudesk (outbound templates).
+- Integrates with OpenConnector (CTI, email, chat), OpenCatalogi (BRP/KvK lookup), Procest (case creation), LaunchPad (dashboard widgets), Docudesk (outbound templates).
 - Reuses Procest case infrastructure (status types, activity timeline, document attachments) for contact linking.
 - Requires n8n workflows for async email intake, callback scheduling, and deadline monitoring.
 

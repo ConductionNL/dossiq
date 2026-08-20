@@ -21,32 +21,53 @@
 		<NcEmptyContent
 			v-if="!loading && assignments.length === 0"
 			:name="t('procest', 'No role assignments')"
-			:description="t('procest', 'Assign roles to employees to enable mandate-driven authorisation.')">
+			:description="
+				t(
+					'procest',
+					'Assign roles to employees to enable mandate-driven authorisation.',
+				)
+			">
 			<template #icon>
 				<AccountMultiple :size="48" />
 			</template>
 		</NcEmptyContent>
 
-		<table v-if="!loading && assignments.length > 0" class="toewijzingen-table__table">
+		<table
+			v-if="!loading && assignments.length > 0"
+			class="toewijzingen-table__table">
 			<thead>
 				<tr>
-					<th>{{ t('procest', 'Person') }}</th>
-					<th>{{ t('procest', 'Role') }}</th>
-					<th>{{ t('procest', 'Type') }}</th>
-					<th>{{ t('procest', 'Vanaf') }}</th>
-					<th>{{ t('procest', 'Tot en met') }}</th>
-					<th>{{ t('procest', 'Acties') }}</th>
+					<th scope="col">{{ t('procest', 'Person') }}</th>
+					<th scope="col">{{ t('procest', 'Role') }}</th>
+					<th scope="col">{{ t('procest', 'Type') }}</th>
+					<th scope="col">{{ t('procest', 'From') }}</th>
+					<th scope="col">{{ t('procest', 'Up to and including') }}</th>
+					<th scope="col">{{ t('procest', 'Acties') }}</th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr
 					v-for="a in assignments"
 					:key="a.id"
-					:class="{ 'toewijzingen-table__row--waarnemer': isWaarnemer(a) }">
-					<td>{{ a.personLabel || a.medewerkerLabel || a.persoonId || a.medewerker || '—' }}</td>
+					:class="{
+						'toewijzingen-table__row--waarnemer': isWaarnemer(a),
+					}">
+					<td>
+						{{
+							a.personLabel
+							|| a.medewerkerLabel
+							|| a.persoonId
+							|| a.medewerker
+							|| '—'
+						}}
+					</td>
 					<td>{{ roleLabel(a) }}</td>
 					<td>
-						<span class="toewijzingen-table__type" :class="typeClass(a)">{{ a.toewijzingType || a.type || 'reguliere' }}</span>
+						<span
+							class="toewijzingen-table__type"
+							:class="typeClass(a)"
+							>{{ a.allocationType || a.type || 'reguliere' }}</span
+						>
 					</td>
 					<td>{{ a.vanaf || a.geldigVanaf || '—' }}</td>
 					<td>{{ a.totEnMet || a.geldigTotEnMet || '—' }}</td>
@@ -61,7 +82,7 @@
 
 		<AddAssignmentDialog
 			v-if="addOpen"
-			:role-options="roleOptions"
+			:roleOptions="roleOptions"
 			@save="onAdd"
 			@close="addOpen = false" />
 
@@ -74,23 +95,33 @@
 </template>
 
 <script>
-import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
+import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import axios from '@nextcloud/axios'
-import Plus from 'vue-material-design-icons/Plus.vue'
+import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import AccountMultiple from 'vue-material-design-icons/AccountMultiple.vue'
+import Plus from 'vue-material-design-icons/Plus.vue'
 import AddAssignmentDialog from '../../../dialogs/AddAssignmentDialog.vue'
 import EndAssignmentDialog from '../../../dialogs/EndAssignmentDialog.vue'
 
 export default {
 	name: 'MandaatToewijzingenTable',
-	components: { NcButton, NcEmptyContent, NcLoadingIcon, Plus, AccountMultiple, AddAssignmentDialog, EndAssignmentDialog },
+	components: {
+		NcButton,
+		NcEmptyContent,
+		NcLoadingIcon,
+		Plus,
+		AccountMultiple,
+		AddAssignmentDialog,
+		EndAssignmentDialog,
+	},
+
 	props: {
 		assignments: { type: Array, default: () => [] },
 		loading: { type: Boolean, default: false },
 		roleOptions: { type: Array, default: () => [] },
 	},
+
 	emits: ['reload'],
 	data() {
 		return {
@@ -98,6 +129,7 @@ export default {
 			ending: null,
 		}
 	},
+
 	methods: {
 		t,
 		/**
@@ -105,9 +137,10 @@ export default {
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		isWaarnemer(a) {
-			const tt = (a.toewijzingType || a.type || '').toLowerCase()
-			return tt === 'waarnemer' || tt === 'plaatsvervanger'
+			const tt = (a.allocationType || a.type || '').toLowerCase()
+			return tt === 'observer' || tt === 'plaatsvervanger'
 		},
+
 		/**
 		 * @param a
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
@@ -117,14 +150,16 @@ export default {
 				? 'toewijzingen-table__type--waarnemer'
 				: 'toewijzingen-table__type--regular'
 		},
+
 		/**
 		 * @param a
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		roleLabel(a) {
-			const opt = this.roleOptions.find(o => o.id === (a.rolId || a.role))
-			return opt ? opt.label : (a.rolLabel || a.rolId || a.role || '—')
+			const opt = this.roleOptions.find((o) => o.id === (a.roleId || a.role))
+			return opt ? opt.label : a.rolLabel || a.roleId || a.role || '—'
 		},
+
 		/**
 		 * @param a
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
@@ -132,30 +167,56 @@ export default {
 		openEnd(a) {
 			this.ending = a
 		},
+
 		/**
 		 * @param payload
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		async onAdd(payload) {
 			try {
-				await axios.post(generateUrl('/apps/procest/api/mandate/toewijzingen'), payload)
+				await axios.post(
+					generateUrl('/apps/procest/api/mandate/toewijzingen'),
+					payload,
+				)
 				this.addOpen = false
 				this.$emit('reload')
-			} catch (e) { /* dialog stays open */ }
+			} catch (e) {
+				/* dialog stays open */
+			}
 		},
+
 		/**
-		 * @param endDate
-		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 * End an assignment by setting its end date.
+		 *
+		 * ⚠️ Two corrections here, both verified against the shipped
+		 * `medewerker_rol_toewijzing_schema` (`userId, rolId, toewijzingType,
+		 * validFrom, validUntil`):
+		 *
+		 * 1. The end date is `validUntil`. This used to send `totEnMet`, which
+		 *    is not a property of the schema at all.
+		 * 2. OpenRegister's `saveObject()` is PUT-semantic — keys omitted from
+		 *    the payload are NULLED, not left alone. Sending the end date on its
+		 *    own would therefore have wiped `userId`, `rolId`, `toewijzingType`
+		 *    and `validFrom` off the record. The whole assignment is spread in
+		 *    and only `validUntil` overridden.
+		 *
+		 * @param {string} endDate The last day the assignment is in force.
+		 * @spec openspec/specs/mandaat-matrix/spec.md
 		 */
 		async onEnd(endDate) {
 			try {
 				await axios.patch(
-					generateUrl('/apps/procest/api/mandate/toewijzingen/' + encodeURIComponent(this.ending.id)),
-					{ totEnMet: endDate },
+					generateUrl(
+						'/apps/procest/api/mandate/toewijzingen/'
+							+ encodeURIComponent(this.ending.id),
+					),
+					{ ...this.ending, validUntil: endDate },
 				)
 				this.ending = null
 				this.$emit('reload')
-			} catch (e) { /* dialog stays open */ }
+			} catch (e) {
+				/* dialog stays open */
+			}
 		},
 	},
 }

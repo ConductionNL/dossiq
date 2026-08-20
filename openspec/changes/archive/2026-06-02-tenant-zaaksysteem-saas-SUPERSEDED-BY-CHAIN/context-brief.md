@@ -125,7 +125,7 @@ AND toont de tenant-admin een real-time billing-dashboard met huidige maandstand
 - **Decidesk**: contract-ondertekening tijdens onboarding, mandaat-besluitvorming per tenant
 - **Shillinq**: facturatie op basis van TenantBillingEvents
 - **NLDesign**: theming-tokens als basis voor per-tenant CSS-variabelen
-- **MyDash**: per-tenant BI-dashboards met strikte tenant-filter op alle queries
+- **LaunchPad**: per-tenant BI-dashboards met strikte tenant-filter op alle queries
 - **Pipelinq**: workflow-templates die per tenant kunnen worden geforkt
 
 ## Target Users

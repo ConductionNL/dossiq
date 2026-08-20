@@ -10,42 +10,62 @@
 			<NcButton @click="$emit('cancel')">
 				{{ t('procest', 'Back to list') }}
 			</NcButton>
-			<NcButton type="primary" :disabled="saving" @click="$emit('save', localChecklist)">
-				{{ saving ? t('procest', 'Saving...') : t('procest', 'Save checklist') }}
+			<NcButton
+				type="primary"
+				:disabled="saving"
+				@click="$emit('save', localChecklist)">
+				{{
+					saving
+						? t('procest', 'Saving...')
+						: t('procest', 'Save checklist')
+				}}
 			</NcButton>
 		</div>
 
 		<div class="checklist-editor__field">
-			<label class="checklist-editor__label">{{ t('procest', 'Name') }}</label>
+			<label class="checklist-editor__label" for="checklist-editor-name">{{
+				t('procest', 'Name')
+			}}</label>
 			<input
+				id="checklist-editor-name"
 				v-model="localChecklist.name"
 				type="text"
 				class="checklist-editor__input"
-				:placeholder="t('procest', 'e.g. Bouwtoezicht fase 1 - Fundering')">
+				:placeholder="
+					t('procest', 'e.g. Bouwtoezicht fase 1 - Fundering')
+				" />
 		</div>
 
 		<div class="checklist-editor__field">
-			<label class="checklist-editor__label">{{ t('procest', 'Version') }}</label>
+			<label class="checklist-editor__label" for="checklist-editor-version">{{
+				t('procest', 'Version')
+			}}</label>
 			<input
+				id="checklist-editor-version"
 				v-model.number="localChecklist.version"
 				type="number"
 				class="checklist-editor__input"
-				min="1">
+				min="1" />
 		</div>
 
 		<div class="checklist-editor__field">
 			<label class="checklist-editor__label">
-				<input v-model="localChecklist.active" type="checkbox">
+				<input v-model="localChecklist.active" type="checkbox" />
 				{{ t('procest', 'Active') }}
 			</label>
 		</div>
 
 		<div class="checklist-editor__field">
-			<label class="checklist-editor__label">{{ t('procest', 'Valid from') }}</label>
+			<label
+				class="checklist-editor__label"
+				for="checklist-editor-valid-from"
+				>{{ t('procest', 'Valid from') }}</label
+			>
 			<input
+				id="checklist-editor-valid-from"
 				v-model="localChecklist.validFrom"
 				type="date"
-				class="checklist-editor__input">
+				class="checklist-editor__input" />
 		</div>
 
 		<div class="checklist-editor__items">
@@ -65,7 +85,8 @@
 						v-model="item.question"
 						type="text"
 						class="checklist-editor__input checklist-editor__input--question"
-						:placeholder="t('procest', 'Question or instruction')">
+						:aria-label="t('procest', 'Question or instruction')"
+						:placeholder="t('procest', 'Question or instruction')" />
 					<select v-model="item.type" class="checklist-editor__select">
 						<option value="boolean">
 							{{ t('procest', 'Yes/No') }}
@@ -81,23 +102,26 @@
 						</option>
 					</select>
 					<label class="checklist-editor__checkbox-label">
-						<input v-model="item.required" type="checkbox">
+						<input v-model="item.required" type="checkbox" />
 						{{ t('procest', 'Required') }}
 					</label>
 					<input
 						v-model.number="item.weight"
 						type="number"
 						class="checklist-editor__input checklist-editor__input--weight"
+						:aria-label="t('procest', 'Weight')"
 						:placeholder="t('procest', 'Weight')"
 						min="0"
-						max="100">
+						max="100" />
 				</div>
 				<NcButton type="error" @click="removeItem(index)">
 					{{ t('procest', 'Remove') }}
 				</NcButton>
 			</div>
 
-			<p v-if="localChecklist.items.length === 0" class="checklist-editor__empty">
+			<p
+				v-if="localChecklist.items.length === 0"
+				class="checklist-editor__empty">
 				{{ t('procest', 'No items yet. Add items to build the checklist.') }}
 			</p>
 		</div>
@@ -119,6 +143,7 @@ export default {
 			type: Object,
 			required: true,
 		},
+
 		saving: {
 			type: Boolean,
 			default: false,
@@ -131,7 +156,7 @@ export default {
 		return {
 			localChecklist: {
 				...this.checklist,
-				items: (this.checklist.items || []).map(item => ({ ...item })),
+				items: (this.checklist.items || []).map((item) => ({ ...item })),
 			},
 		}
 	},

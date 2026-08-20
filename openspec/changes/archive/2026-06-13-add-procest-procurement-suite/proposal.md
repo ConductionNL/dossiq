@@ -87,9 +87,9 @@ state machines, no custom audit tables.
    - `docudesk` for contract documents, signed PDFs, attachments.
    - `openregister` for RBAC, audit, retention, lifecycle,
      aggregations, scheduled workflows.
-   - `mydash` for the analytics surface — procest emits events, mydash
+   - `launchpad` for the analytics surface — procest emits events, launchpad
      reads via runtime GraphQL (per ADR-024 §10 and
-     `feedback_mydash-no-or-dependency.md`).
+     `feedback_launchpad-no-or-dependency.md`).
    - `financeq` — `[future]` reference only; the repo does not yet
      exist. Spend / cost integration is documented as a placeholder.
 

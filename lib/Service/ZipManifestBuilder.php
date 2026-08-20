@@ -33,218 +33,236 @@ namespace OCA\Procest\Service;
 
 use OCP\IUser;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
+use ZipArchive;
 
 /**
  * Builds a manifest-bearing, type-foldered ZIP export of a dossier.
  */
-class ZipManifestBuilder
-{
-    /**
-     * Manifest.csv column order.
-     */
-    public const MANIFEST_COLUMNS = [
-        'bestandsnaam',
-        'titel',
-        'informatieobjecttype',
-        'status',
-        'vertrouwelijkheidaanduiding',
-        'creatiedatum',
-        'auteur',
-    ];
+class ZipManifestBuilder {
+	/**
+	 * Manifest.csv column order.
+	 */
+	public const MANIFEST_COLUMNS = [
+		'fileName',
+		'title',
+		'informatieobjecttype',
+		'status',
+		'vertrouwelijkheidaanduiding',
+		'creatiedatum',
+		'auteur',
+	];
 
-    /**
-     * Constructor.
-     *
-     * @param ZgwDocumentService          $documentService Binary file storage service.
-     * @param InformatieobjectAccessGuard $accessGuard     Confidentiality guard.
-     * @param LoggerInterface             $logger          Logger.
-     */
-    public function __construct(
-        private readonly ZgwDocumentService $documentService,
-        private readonly InformatieobjectAccessGuard $accessGuard,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Archive layout: one sub-folder per informatieobjecttype.
+	 */
+	public const LAYOUT_PER_TYPE = 'per-type';
 
-    /**
-     * Build a CSV manifest string for a list of informatieobjecten.
-     *
-     * @param array<int, array<string, mixed>> $documents The documents to describe.
-     *
-     * @return string The manifest.csv content.
-     *
-     * @spec openspec/changes/document-zaakdossier/tasks.md#T04
-     */
-    public function buildManifest(array $documents): string
-    {
-        $handle = fopen('php://temp', 'r+');
-        if ($handle === false) {
-            return '';
-        }
+	/**
+	 * Archive layout: every document at the archive root.
+	 */
+	public const LAYOUT_FLAT = 'flat';
 
-        fputcsv($handle, self::MANIFEST_COLUMNS);
-        foreach ($documents as $doc) {
-            $row = [];
-            foreach (self::MANIFEST_COLUMNS as $column) {
-                $row[] = (string) ($doc[$column] ?? '');
-            }
+	/**
+	 * Constructor.
+	 *
+	 * @param ZgwDocumentService $documentService Binary file storage service.
+	 * @param InformatieobjectAccessGuard $accessGuard Confidentiality guard.
+	 * @param LoggerInterface $logger Logger.
+	 */
+	public function __construct(
+		private readonly ZgwDocumentService $documentService,
+		private readonly InformatieobjectAccessGuard $accessGuard,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-            fputcsv($handle, $row);
-        }
+	/**
+	 * Build a CSV manifest string for a list of informatieobjecten.
+	 *
+	 * @param array<int, array<string, mixed>> $documents The documents to describe.
+	 *
+	 * @return string The manifest.csv content.
+	 *
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T04
+	 */
+	public function buildManifest(array $documents): string {
+		$handle = fopen('php://temp', 'r+');
+		if ($handle === false) {
+			return '';
+		}
 
-        rewind($handle);
-        $csv = (string) stream_get_contents($handle);
-        fclose($handle);
+		fputcsv($handle, self::MANIFEST_COLUMNS);
+		foreach ($documents as $doc) {
+			$row = [];
+			foreach (self::MANIFEST_COLUMNS as $column) {
+				$row[] = (string)($doc[$column] ?? '');
+			}
 
-        return $csv;
-    }//end buildManifest()
+			fputcsv($handle, $row);
+		}
 
-    /**
-     * Filter a document list to those the user is cleared to read.
-     *
-     * @param IUser|null                       $user      The caller, or null (treated as no extra filtering).
-     * @param array<int, array<string, mixed>> $documents Candidate documents.
-     *
-     * @return array<int, array<string, mixed>> The clearance-filtered list.
-     *
-     * @spec openspec/changes/document-zaakdossier/tasks.md#T04
-     */
-    public function filterByClearance(?IUser $user, array $documents): array
-    {
-        if ($user === null) {
-            return array_values($documents);
-        }
+		rewind($handle);
+		$csv = (string)stream_get_contents($handle);
+		fclose($handle);
 
-        return array_values($this->accessGuard->filterDossierForUser(user: $user, informatieobjecten: $documents));
-    }//end filterByClearance()
+		return $csv;
+	}//end buildManifest()
 
-    /**
-     * Build a ZIP archive at the given path for the supplied documents.
-     *
-     * Documents above the caller's clearance are excluded before any file is
-     * read. The archive contains one sub-folder per informatieobjecttype (when
-     * $subfolderPerType is true) plus a `manifest.csv` at the root.
-     *
-     * @param string                           $targetPath       Filesystem path to write the ZIP to.
-     * @param IUser|null                       $user             The caller (for clearance filtering).
-     * @param array<int, array<string, mixed>> $documents        Candidate documents.
-     * @param bool                             $subfolderPerType Organise into per-type sub-folders.
-     *
-     * @return array<string, mixed> Result with `path`, `included` count and `excluded` count.
-     *
-     * @throws \RuntimeException When the ZIP archive cannot be created.
-     *
-     * @spec openspec/changes/document-zaakdossier/tasks.md#T04
-     */
-    public function buildZip(string $targetPath, ?IUser $user, array $documents, bool $subfolderPerType=true): array
-    {
-        $candidateCount = count($documents);
-        $included       = $this->filterByClearance(user: $user, documents: $documents);
-        $excluded       = ($candidateCount - count($included));
+	/**
+	 * Filter a document list to those the user is cleared to read.
+	 *
+	 * @param IUser|null $user The caller, or null (treated as no extra filtering).
+	 * @param array<int, array<string, mixed>> $documents Candidate documents.
+	 *
+	 * @return array<int, array<string, mixed>> The clearance-filtered list.
+	 *
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T04
+	 */
+	public function filterByClearance(?IUser $user, array $documents): array {
+		if ($user === null) {
+			return array_values($documents);
+		}
 
-        $zip = new \ZipArchive();
-        if ($zip->open($targetPath, (\ZipArchive::CREATE | \ZipArchive::OVERWRITE)) !== true) {
-            throw new \RuntimeException('Could not create ZIP archive at '.$targetPath);
-        }
+		return array_values($this->accessGuard->filterDossierForUser(user: $user, informatieobjecten: $documents));
+	}//end filterByClearance()
 
-        // Manifest.csv at the archive root.
-        $zip->addFromString('manifest.csv', $this->buildManifest(documents: $included));
+	/**
+	 * Build a ZIP archive at the given path for the supplied documents.
+	 *
+	 * Documents above the caller's clearance are excluded before any file is
+	 * read. Under self::LAYOUT_PER_TYPE the archive contains one sub-folder per
+	 * informatieobjecttype; under self::LAYOUT_FLAT every document sits at the
+	 * root. A `manifest.csv` is always written at the root.
+	 *
+	 * @param string $targetPath Filesystem path to write the ZIP to.
+	 * @param IUser|null $user The caller (for clearance filtering).
+	 * @param array<int, array<string, mixed>> $documents Candidate documents.
+	 * @param string $layout self::LAYOUT_PER_TYPE or self::LAYOUT_FLAT.
+	 *
+	 * @return array<string, mixed> Result with `path`, `included` count and `excluded` count.
+	 *
+	 * @throws \RuntimeException When the ZIP archive cannot be created.
+	 *
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T04
+	 */
+	public function buildZip(string $targetPath, ?IUser $user, array $documents, string $layout = self::LAYOUT_PER_TYPE): array {
+		$candidateCount = count($documents);
+		$included = $this->filterByClearance(user: $user, documents: $documents);
+		$excluded = ($candidateCount - count($included));
 
-        $usedNames = [];
-        foreach ($included as $doc) {
-            $infoId   = (string) ($doc['id'] ?? ($doc['uuid'] ?? ''));
-            $fileName = (string) ($doc['bestandsnaam'] ?? '');
-            if ($infoId === '' || $fileName === '') {
-                continue;
-            }
+		$zip = new ZipArchive();
+		if ($zip->open($targetPath, (ZipArchive::CREATE | ZipArchive::OVERWRITE)) !== true) {
+			throw new RuntimeException('Could not create ZIP archive at ' . $targetPath);
+		}
 
-            $entryName = $this->buildEntryName(
-                doc: $doc,
-                fileName: $fileName,
-                subfolderPerType: $subfolderPerType,
-                usedNames: $usedNames,
-            );
+		// Manifest.csv at the archive root.
+		$zip->addFromString('manifest.csv', $this->buildManifest(documents: $included));
 
-            try {
-                // Read one file at a time; content is released before the next iteration.
-                $content = $this->documentService->getContent(uuid: $infoId, fileName: $fileName);
-                $zip->addFromString($entryName, $content);
-                unset($content);
-            } catch (\Throwable $e) {
-                $this->logger->warning(
-                    'Procest dossier ZIP: skipped unreadable file '.$fileName.' ('.$e->getMessage().')'
-                );
-            }
-        }//end foreach
+		$usedNames = [];
+		foreach ($included as $doc) {
+			$infoId = (string)($doc['id'] ?? ($doc['uuid'] ?? ''));
+			$fileName = (string)($doc['fileName'] ?? '');
+			if ($infoId === '' || $fileName === '') {
+				continue;
+			}
 
-        $zip->close();
+			$entryName = $this->buildEntryName(
+				doc: $doc,
+				fileName: $fileName,
+				layout: $layout,
+				usedNames: $usedNames,
+			);
 
-        return [
-            'path'     => $targetPath,
-            'included' => count($included),
-            'excluded' => $excluded,
-        ];
-    }//end buildZip()
+			try {
+				// Read one file at a time; content is released before the next iteration.
+				$content = $this->documentService->getContent(uuid: $infoId, fileName: $fileName);
+				$zip->addFromString($entryName, $content);
+				unset($content);
+			} catch (\Throwable $e) {
+				$this->logger->warning(
+					'Procest dossier ZIP: skipped unreadable file ' . $fileName . ' (' . $e->getMessage() . ')'
+				);
+			}
+		}//end foreach
 
-    /**
-     * Compute the unique in-archive entry name for a document.
-     *
-     * @param array<string, mixed> $doc              The document record.
-     * @param string               $fileName         The base filename.
-     * @param bool                 $subfolderPerType Whether to prefix with the type folder.
-     * @param array<string, int>   $usedNames        Reference of already-used names for de-duplication.
-     *
-     * @return string The unique entry name.
-     */
-    private function buildEntryName(array $doc, string $fileName, bool $subfolderPerType, array &$usedNames): string
-    {
-        $prefix = '';
-        if ($subfolderPerType === true) {
-            $type   = (string) ($doc['informatieobjecttype'] ?? 'onbekend');
-            $prefix = $this->sanitizeSegment(segment: $type).'/';
-        }
+		$zip->close();
 
-        $entry = $prefix.$this->sanitizeSegment(segment: $fileName, keepDots: true);
+		return [
+			'path' => $targetPath,
+			'included' => count($included),
+			'excluded' => $excluded,
+		];
+	}//end buildZip()
 
-        if (isset($usedNames[$entry]) === true) {
-            $usedNames[$entry]++;
-            $dot = strrpos($fileName, '.');
-            if ($dot === false) {
-                $base      = $fileName;
-                $extension = '';
-            } else {
-                $base      = substr($fileName, 0, $dot);
-                $extension = substr($fileName, $dot);
-            }
+	/**
+	 * Compute the unique in-archive entry name for a document.
+	 *
+	 * @param array<string, mixed> $doc The document record.
+	 * @param string $fileName The base filename.
+	 * @param string $layout self::LAYOUT_PER_TYPE or self::LAYOUT_FLAT.
+	 * @param array<string, int> $usedNames Reference of already-used names for de-duplication.
+	 *
+	 * @return string The unique entry name.
+	 */
+	private function buildEntryName(array $doc, string $fileName, string $layout, array &$usedNames): string {
+		$prefix = '';
+		if ($layout === self::LAYOUT_PER_TYPE) {
+			$type = (string)($doc['informatieobjecttype'] ?? 'unknown');
+			$prefix = $this->sanitizeFolderName(name: $type) . '/';
+		}
 
-            $entry = $prefix.$this->sanitizeSegment(segment: $base, keepDots: true).'_'.$usedNames[$entry].$extension;
-        } else {
-            $usedNames[$entry] = 0;
-        }
+		$entry = $prefix . $this->sanitizeFileName(name: $fileName);
 
-        return $entry;
-    }//end buildEntryName()
+		if (isset($usedNames[$entry]) === false) {
+			$usedNames[$entry] = 0;
+			return $entry;
+		}
 
-    /**
-     * Sanitise a path segment for safe inclusion in a ZIP entry name.
-     *
-     * @param string $segment  The raw segment.
-     * @param bool   $keepDots Whether to preserve dots (for filenames with extensions).
-     *
-     * @return string The sanitised segment.
-     */
-    private function sanitizeSegment(string $segment, bool $keepDots=false): string
-    {
-        $segment = str_replace(['/', '\\', "\0"], '_', $segment);
-        $segment = trim($segment);
-        if ($keepDots === false) {
-            $segment = str_replace('.', '_', $segment);
-        }
+		$usedNames[$entry]++;
 
-        if ($segment === '' || $segment === '.' || $segment === '..') {
-            return 'onbekend';
-        }
+		$base = $fileName;
+		$extension = '';
+		$dot = strrpos($fileName, '.');
+		if ($dot !== false) {
+			$base = substr($fileName, 0, $dot);
+			$extension = substr($fileName, $dot);
+		}
 
-        return $segment;
-    }//end sanitizeSegment()
+		return $prefix . $this->sanitizeFileName(name: $base) . '_' . $usedNames[$entry] . $extension;
+	}//end buildEntryName()
+
+	/**
+	 * Sanitise a folder segment for safe inclusion in a ZIP entry name.
+	 *
+	 * A folder segment carries no extension, so dots are flattened before the
+	 * shared filename rules are applied — that also collapses `.` and `..`
+	 * traversal segments into harmless underscores.
+	 *
+	 * @param string $name The raw folder name.
+	 *
+	 * @return string The sanitised folder name.
+	 */
+	private function sanitizeFolderName(string $name): string {
+		return $this->sanitizeFileName(name: str_replace('.', '_', $name));
+	}//end sanitizeFolderName()
+
+	/**
+	 * Sanitise a filename for safe inclusion in a ZIP entry name.
+	 *
+	 * Dots are preserved so the extension survives; separators and NUL bytes
+	 * are flattened so the entry can never escape the archive root.
+	 *
+	 * @param string $name The raw filename.
+	 *
+	 * @return string The sanitised filename.
+	 */
+	private function sanitizeFileName(string $name): string {
+		$clean = trim(str_replace(['/', '\\', "\0"], '_', $name));
+		if ($clean === '' || $clean === '.' || $clean === '..') {
+			return 'unknown';
+		}
+
+		return $clean;
+	}//end sanitizeFileName()
 }//end class

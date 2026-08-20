@@ -1,8 +1,5 @@
 <template>
-	<div
-		class="workflow-editor"
-		@dragover.prevent
-		@drop="onCanvasDrop">
+	<div class="workflow-editor" @dragover.prevent @drop="onCanvasDrop">
 		<!-- Validation banner -->
 		<WorkflowValidationBanner
 			:errors="validationErrors"
@@ -12,7 +9,8 @@
 			<!-- Palette -->
 			<WorkflowPalette
 				class="workflow-editor__palette"
-				@drag-start="onPaletteDragStart" />
+				@dragStart="onPaletteDragStart"
+				@addStatus="onAddStatusKeyboard" />
 
 			<!-- Canvas -->
 			<div
@@ -24,16 +22,14 @@
 				@mouseup="onCanvasMouseUp"
 				@wheel="onCanvasWheel">
 				<!-- SVG layer for transitions -->
-				<svg
-					class="workflow-editor__svg"
-					:viewBox="svgViewBox">
+				<svg class="workflow-editor__svg" :viewBox="svgViewBox">
 					<!-- Existing transitions -->
 					<WorkflowTransitionArrow
 						v-for="transition in transitions"
 						:key="transition.id"
 						:transition="transition"
-						:from-pos="getNodeCenter(transition.fromStatus)"
-						:to-pos="getNodeCenter(transition.toStatus)"
+						:fromPos="getNodeCenter(transition.fromStatus)"
+						:toPos="getNodeCenter(transition.toStatus)"
 						:selected="selectedTransition === transition.id"
 						@click="selectTransition(transition.id)"
 						@dblclick="editTransition(transition.id)" />
@@ -58,12 +54,19 @@
 					:steps="getStepsForStatus(status.id)"
 					:position="nodePositions[status.id] || { x: 100, y: 100 }"
 					:selected="selectedNode === status.id"
+					:otherStatuses="statusNodes.filter((s) => s.id !== status.id)"
+					:outgoingTransitions="
+						transitions.filter((t) => t.fromStatus === status.id)
+					"
 					@select="selectNode(status.id)"
-					@drag-start="onNodeDragStart(status.id, $event)"
-					@connection-start="onConnectionStart(status.id, $event)"
-					@connection-end="onConnectionEnd(status.id)"
-					@step-click="onStepClick"
-					@add-step="onAddStep(status.id)" />
+					@dragStart="onNodeDragStart(status.id, $event)"
+					@connectionStart="onConnectionStart(status.id, $event)"
+					@connectionEnd="onConnectionEnd(status.id)"
+					@stepClick="onStepClick"
+					@addStep="onAddStep(status.id)"
+					@keyboardConnect="onConnectionKeyboard(status.id, $event)"
+					@keyboardDisconnect="onDisconnectionKeyboard"
+					@deleteStatus="onDeleteStatusNode(status.id)" />
 			</div>
 		</div>
 
@@ -71,16 +74,17 @@
 		<StepConfigPanel
 			v-if="selectedStep"
 			:step="selectedStep"
-			:role-types="roleTypes"
-			:read-only="isPublished"
+			:roleTypes="roleTypes"
+			:readOnly="isPublished"
 			@update="onStepUpdate"
+			@delete="onStepDelete"
 			@close="selectedStep = null" />
 
 		<TransitionConfigPanel
 			v-if="selectedTransitionData"
 			:transition="selectedTransitionData"
-			:role-types="roleTypes"
-			:document-types="documentTypes"
+			:roleTypes="roleTypes"
+			:documentTypes="documentTypes"
 			@update="onTransitionUpdate"
 			@delete="onTransitionDelete"
 			@close="selectedTransition = null" />
@@ -88,14 +92,14 @@
 </template>
 
 <script>
-import WorkflowNode from './components/WorkflowNode.vue'
-import WorkflowTransitionArrow from './components/WorkflowTransitionArrow.vue'
-import WorkflowPalette from './components/WorkflowPalette.vue'
-import WorkflowValidationBanner from './components/WorkflowValidationBanner.vue'
 import StepConfigPanel from './components/StepConfigPanel.vue'
 import TransitionConfigPanel from './components/TransitionConfigPanel.vue'
-import { useWorkflowStore } from '../../store/modules/workflow.js'
+import WorkflowNode from './components/WorkflowNode.vue'
+import WorkflowPalette from './components/WorkflowPalette.vue'
+import WorkflowTransitionArrow from './components/WorkflowTransitionArrow.vue'
+import WorkflowValidationBanner from './components/WorkflowValidationBanner.vue'
 import { useObjectStore } from '../../store/modules/object.js'
+import { useWorkflowStore } from '../../store/modules/workflow.js'
 
 export default {
 	name: 'WorkflowEditor',
@@ -107,16 +111,19 @@ export default {
 		StepConfigPanel,
 		TransitionConfigPanel,
 	},
+
 	props: {
 		caseTypeId: {
 			type: String,
 			required: true,
 		},
+
 		templateId: {
 			type: String,
 			default: null,
 		},
 	},
+
 	data() {
 		return {
 			/** @type {Array} Status type objects for the case type */
@@ -149,32 +156,42 @@ export default {
 			paletteDragType: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		workflowStore() {
 			return useWorkflowStore()
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		steps() {
 			return this.workflowStore.parsedSteps
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		transitions() {
 			return this.workflowStore.parsedTransitions
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		nodePositions() {
 			return this.workflowStore.parsedNodePositions
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		selectedTransitionData() {
 			if (!this.selectedTransition) return null
-			return this.transitions.find((t) => t.id === this.selectedTransition) || null
+			return (
+				this.transitions.find((t) => t.id === this.selectedTransition)
+				|| null
+			)
 		},
+
 		/**
 		 * True when the loaded workflow template is published (not a draft).
 		 *
@@ -192,6 +209,7 @@ export default {
 			// isDraft true ⇒ editable; isDraft false ⇒ published/deprecated
 			return tpl.isDraft === false
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		canvasStyle() {
 			return {
@@ -199,35 +217,41 @@ export default {
 				transformOrigin: '0 0',
 			}
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		svgViewBox() {
 			return '0 0 2000 1500'
 		},
 	},
+
 	async mounted() {
 		await this.loadData()
 	},
+
 	methods: {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async loadData() {
 			// Load status types for this case type
-			this.statusNodes = await this.objectStore.fetchCollection('statusType', {
-				'_filters[caseType]': this.caseTypeId,
-				_limit: 100,
-				_order: { order: 'asc' },
-			}) || []
+			this.statusNodes =
+				(await this.objectStore.fetchCollection('statusType', {
+					'_filters[caseType]': this.caseTypeId,
+					_limit: 100,
+					_order: { order: 'asc' },
+				})) || []
 
 			// Load role types
-			this.roleTypes = await this.objectStore.fetchCollection('roleType', {
-				'_filters[caseType]': this.caseTypeId,
-				_limit: 100,
-			}) || []
+			this.roleTypes =
+				(await this.objectStore.fetchCollection('roleType', {
+					'_filters[caseType]': this.caseTypeId,
+					_limit: 100,
+				})) || []
 
 			// Load document types
-			this.documentTypes = await this.objectStore.fetchCollection('documentType', {
-				'_filters[caseType]': this.caseTypeId,
-				_limit: 100,
-			}) || []
+			this.documentTypes =
+				(await this.objectStore.fetchCollection('documentType', {
+					'_filters[caseType]': this.caseTypeId,
+					_limit: 100,
+				})) || []
 
 			// Load or create workflow template
 			if (this.templateId) {
@@ -252,7 +276,8 @@ export default {
 				}
 			})
 			if (changed && this.workflowStore.currentTemplate) {
-				this.workflowStore.currentTemplate.nodePositions = JSON.stringify(positions)
+				this.workflowStore.currentTemplate.nodePositions =
+					JSON.stringify(positions)
 			}
 		},
 
@@ -339,9 +364,11 @@ export default {
 		onCanvasMouseMove(event) {
 			if (this.draggingNode) {
 				const rect = this.$refs.canvas.getBoundingClientRect()
-				const x = (event.clientX - rect.left - this.panOffset.x) / this.zoom
+				const x =
+					(event.clientX - rect.left - this.panOffset.x) / this.zoom
 					- this.draggingNode.offsetX
-				const y = (event.clientY - rect.top - this.panOffset.y) / this.zoom
+				const y =
+					(event.clientY - rect.top - this.panOffset.y) / this.zoom
 					- this.draggingNode.offsetY
 				this.workflowStore.updateNodePosition(
 					this.draggingNode.statusId,
@@ -350,8 +377,10 @@ export default {
 				)
 			} else if (this.drawingConnection) {
 				const rect = this.$refs.canvas.getBoundingClientRect()
-				this.drawingConnection.currentX = (event.clientX - rect.left - this.panOffset.x) / this.zoom
-				this.drawingConnection.currentY = (event.clientY - rect.top - this.panOffset.y) / this.zoom
+				this.drawingConnection.currentX =
+					(event.clientX - rect.left - this.panOffset.x) / this.zoom
+				this.drawingConnection.currentY =
+					(event.clientY - rect.top - this.panOffset.y) / this.zoom
 			} else if (this.panning) {
 				this.panOffset.x = event.clientX - this.panStart.x
 				this.panOffset.y = event.clientY - this.panStart.y
@@ -376,7 +405,10 @@ export default {
 		 */
 		onCanvasMouseDown(event) {
 			// Only pan if clicking empty canvas area
-			if (event.target === this.$refs.canvas || event.target.classList.contains('workflow-editor__svg')) {
+			if (
+				event.target === this.$refs.canvas
+				|| event.target.classList.contains('workflow-editor__svg')
+			) {
 				this.panning = true
 				this.panStart = {
 					x: event.clientX - this.panOffset.x,
@@ -420,7 +452,10 @@ export default {
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onConnectionEnd(statusId) {
-			if (this.drawingConnection && this.drawingConnection.fromStatus !== statusId) {
+			if (
+				this.drawingConnection
+				&& this.drawingConnection.fromStatus !== statusId
+			) {
 				this.workflowStore.addTransition(
 					this.drawingConnection.fromStatus,
 					statusId,
@@ -466,6 +501,159 @@ export default {
 			this.paletteDragType = null
 		},
 
+		/**
+		 * Keyboard alternative to dragging a status node from the palette
+		 * onto the canvas (`WorkflowPalette.vue`'s "Add status node"
+		 * button). Creates a `statusType` the same way `onCanvasDrop`
+		 * does, placed at the next default grid slot (same layout as
+		 * `ensureNodePositions()`), and selects it so the properties panel
+		 * opens immediately for a keyboard-only user.
+		 */
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		async onAddStatusKeyboard() {
+			const index = this.statusNodes.length
+			const x = 100 + (index % 4) * 250
+			const y = 100 + Math.floor(index / 4) * 200
+
+			const statusType = await this.objectStore.saveObject('statusType', {
+				name: t('procest', 'New status'),
+				caseType: this.caseTypeId,
+				order: this.statusNodes.length + 1,
+				isFinal: false,
+			})
+
+			if (statusType) {
+				this.statusNodes.push(statusType)
+				this.workflowStore.updateNodePosition(statusType.id, x, y)
+				this.$emit('dirty')
+				this.selectNode(statusType.id)
+			}
+		},
+
+		/**
+		 * Draw a keyboard-initiated transition from `fromStatusId` to
+		 * `toStatusId` — the keyboard equivalent of dragging from one
+		 * node's output port to another's input port. Reuses the exact
+		 * same store action (`addTransition`) the mouse path
+		 * (`onConnectionEnd`) calls.
+		 *
+		 * @param {string} fromStatusId Source status UUID
+		 * @param {string} toStatusId   Target status UUID
+		 */
+		/**
+		 * @param fromStatusId
+		 * @param toStatusId
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-keyboard-operable-canvas
+		 */
+		onConnectionKeyboard(fromStatusId, toStatusId) {
+			this.workflowStore.addTransition(fromStatusId, toStatusId)
+			this.$emit('dirty')
+		},
+
+		/**
+		 * Remove a transition via its keyboard-reachable "Disconnect
+		 * from…" menu item. Reuses the same store action
+		 * (`removeTransition`) the mouse path (`onTransitionDelete`)
+		 * calls, and clears the selection if the removed transition was
+		 * selected.
+		 *
+		 * @param {string} transitionId UUID of the transition to remove
+		 */
+		/**
+		 * @param transitionId
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-keyboard-operable-canvas
+		 */
+		onDisconnectionKeyboard(transitionId) {
+			this.workflowStore.removeTransition(transitionId)
+			if (this.selectedTransition === transitionId) {
+				this.selectedTransition = null
+			}
+			this.$emit('dirty')
+		},
+
+		/**
+		 * Delete a status node: guards "at least one final status must
+		 * remain" (mirrors `StatusesTab.vue::deleteStatusType()`),
+		 * confirms with the user, deletes the underlying `statusType`
+		 * object, then drops it (and its steps/incident transitions) from
+		 * the working copy via `workflowStore.removeStatusNode()`.
+		 *
+		 * @param {string} statusId UUID of the status to delete
+		 */
+		/**
+		 * @param statusId
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-drag-and-drop-workflow-canvas
+		 */
+		async onDeleteStatusNode(statusId) {
+			const target = this.statusNodes.find((s) => s.id === statusId)
+			if (!target) return
+
+			if (target.isFinal) {
+				const otherFinals = this.statusNodes.filter(
+					(s) => s.id !== statusId && s.isFinal,
+				)
+				if (otherFinals.length === 0) {
+					this.validationErrors = [
+						{
+							type: 'error',
+							message: t(
+								'procest',
+								'At least one status must be marked as final',
+							),
+						},
+					]
+					return
+				}
+			}
+
+			if (
+				!confirm(
+					t(
+						'procest',
+						'Delete status "{name}"? This also removes its steps and transitions.',
+						{ name: target.name },
+					),
+				)
+			) {
+				return
+			}
+
+			const ok = await this.objectStore.deleteObject('statusType', statusId)
+			if (!ok) {
+				this.validationErrors = [
+					{
+						type: 'error',
+						message: t('procest', 'Failed to delete status'),
+					},
+				]
+				return
+			}
+
+			this.workflowStore.removeStatusNode(statusId)
+			this.statusNodes = this.statusNodes.filter((s) => s.id !== statusId)
+			if (this.selectedNode === statusId) {
+				this.selectedNode = null
+			}
+			this.$emit('dirty')
+		},
+
+		/**
+		 * Delete a step from the selected node's step list. Reuses the
+		 * same store action (`removeStep`) — previously implemented but
+		 * never called from any component.
+		 *
+		 * @param {string} stepId UUID of the step to delete
+		 */
+		/**
+		 * @param stepId
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-step-configuration-panel
+		 */
+		onStepDelete(stepId) {
+			this.workflowStore.removeStep(stepId)
+			this.selectedStep = null
+			this.$emit('dirty')
+		},
+
 		// --- Step management ---
 		/**
 		 * @param statusId
@@ -493,7 +681,10 @@ export default {
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onTransitionUpdate(updatedTransition) {
-			this.workflowStore.updateTransition(updatedTransition.id, updatedTransition)
+			this.workflowStore.updateTransition(
+				updatedTransition.id,
+				updatedTransition,
+			)
 			this.$emit('dirty')
 		},
 
@@ -508,9 +699,18 @@ export default {
 		},
 
 		// --- Public API ---
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * Validate the current graph against the real engine constraints,
+		 * passing this component's `statusNodes` through — the store only
+		 * holds `steps`/`transitions`, so it cannot see `isFinal` on its own.
+		 *
+		 * @return {boolean} True when the graph has no validation errors
+		 */
+		/** @spec openspec/specs/visual-workflow-editor/spec.md#requirement-workflow-editor-validation */
 		validate() {
-			this.validationErrors = this.workflowStore.validateWorkflow()
+			this.validationErrors = this.workflowStore.validateWorkflow(
+				this.statusNodes,
+			)
 			return this.validationErrors.length === 0
 		},
 	},

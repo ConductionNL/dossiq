@@ -1,6 +1,32 @@
 ---
-status: done
-status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change; capability code confirmed present on development.
+status: partial
+status-note: |
+  Downgraded from `done` on 2026-07-16 (procest#229). The prior note read
+  "capability code confirmed present on development" — but code being present is
+  not the same as the feature running, and REQ-SUB-007 and REQ-SUB-008 do not
+  run. Their capability methods are implemented and unit-tested yet have ZERO
+  callers, so no user or API path can reach them:
+
+  - REQ-SUB-007 (bewijsstukken): PARTIALLY CLOSED on 2026-08-05. The
+    immutability half now runs: `BewijsstukService::assertMutable()` is invoked
+    from `BewijsstukImmutabilityListener`, which subscribes to OpenRegister's
+    PRE-persist `ObjectUpdatingEvent`/`ObjectDeletingEvent` and stops the save,
+    so a bewijsstuk linked to a vaststelling can no longer be edited or deleted
+    through the generic object write path the frontend uses (ADR-022). The rest
+    of the requirement is STILL not running: `::verifyHash()` has no caller so
+    no hash is verified on read, and there is no bewijsstuk route, no nightly
+    archief-trigger and no Docudesk PDF/A handover.
+  - REQ-SUB-008 (staatssteun): `StaatssteunClassifier::requiresStaatssteunGrondslag()`
+    is never invoked — no de-minimis gate runs on assessment, and no AGVV/TAM
+    melding is emitted.
+  - Related: `SubsidieService::isVoorschotReleasable()` has no caller, and
+    `TussenrapportageService::approveReport()` only sets a status — there is no
+    voorschot-release engine behind it, so an approved report releases nothing.
+
+  The remaining REQ-SUB requirements are implemented and reachable. Completing
+  007/008 is tracked feature work, not a bug fix: it needs a product decision on
+  the archival/Docudesk and TAM-register integrations. Tracked in procest#229.
+  This spec must NOT be marked `done` again until those paths execute.
 ---
 # subsidieverlening-keten Specification
 

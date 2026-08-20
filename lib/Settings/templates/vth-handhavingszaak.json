@@ -9,9 +9,9 @@
     {"name": "overtredingstype", "type": "string"},
     {"name": "ernst", "type": "string", "enum": ["gering", "aanzienlijk", "ernstig"]},
     {"name": "gedrag", "type": "string", "enum": ["goedwillend", "onverschillig", "calculerend", "crimineel"]},
-    {"name": "interventie", "type": "string"},
+    {"name": "intervention", "type": "string"},
     {"name": "dwangsombedrag", "type": "number"},
-    {"name": "begunstigingstermijn", "type": "integer"}
+    {"name": "compliancePeriod", "type": "integer"}
   ],
-  "roleTypes": ["behandelaar", "overtreder", "toezichthouder"]
+  "roleTypes": ["handler", "overtreder", "toezichthouder"]
 }

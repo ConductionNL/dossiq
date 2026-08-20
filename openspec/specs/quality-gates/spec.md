@@ -40,20 +40,32 @@ justification, never a blanket rule removal or baseline.
 - **THEN** no `phpmd.baseline.xml` is referenced
 - **AND** PHPMD reports zero violations
 
-### Requirement: PHPStan baseline is documented and minimal
+### Requirement: PHPStan runs with no baseline
 
-The PHPStan gate MAY ship a baseline (`phpstan-baseline.neon`), but it SHALL
-contain only tracked, documented debt and SHALL carry a header explaining each
-remaining category and where it is owned. Stub-precision false positives SHALL
-be expressed as documented `ignoreErrors` patterns in `phpstan.neon`, not as
+The PHPStan gate SHALL run with no baseline file: every PHPStan error in `lib/`
+is fixed at source rather than suppressed. Stub-precision false positives — the
+only legitimate suppressions — SHALL be expressed as documented `ignoreErrors`
+patterns in `phpstan.neon`, each carrying a written justification, never as
 opaque baseline entries.
 
-#### Scenario: Baseline header documents remaining debt
+A baseline is prohibited because it decouples the gate's exit code from the
+codebase's actual state: `composer check:strict` exits 0 while the suppressed
+errors remain, and stale entries accumulate silently as the underlying code is
+fixed. When this requirement was introduced, the 14-entry baseline was hiding
+10 live errors and had already rotted 4 entries into no-ops.
 
-- **WHEN** a developer opens `phpstan-baseline.neon`
-- **THEN** a header comment explains the single remaining category
-  (injected-but-unused dependencies) and the work that will remove it
-- **AND** PHPStan analysis reports `[OK] No errors` with the baseline applied
+#### Scenario: PHPStan passes without a baseline file
+
+- **WHEN** `composer phpstan` runs
+- **THEN** no `phpstan-baseline.neon` exists and `phpstan.neon` declares no
+  `includes:` for one
+- **AND** PHPStan analysis reports `[OK] No errors` with exit code 0
+
+#### Scenario: A reintroduced baseline cannot silently hide errors
+
+- **WHEN** a developer empties or deletes the suppression configuration
+- **THEN** PHPStan's result SHALL be unchanged, because no error is being
+  suppressed — the gate's green is bought entirely by the source
 
 ### Requirement: CI uses a served Codeberg runner
 

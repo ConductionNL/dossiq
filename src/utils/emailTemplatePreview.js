@@ -7,7 +7,7 @@
  * variables green and unknown (unresolved) variables red. No DOM/Vue deps so
  * the logic is unit-testable under the node vitest environment.
  *
- * @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md
+ * @spec openspec/specs/case-email-integration/spec.md
  */
 
 const PLACEHOLDER_RE = /{{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*}}/g
@@ -43,10 +43,8 @@ export function collectUnresolved(text, knownNames) {
  */
 export function renderPreview(body, knownNames) {
 	const known = new Set(knownNames || [])
-	const escape = (s) => String(s)
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
+	const escape = (s) =>
+		String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 	const re = new RegExp(PLACEHOLDER_RE.source, 'g')
 	const rendered = escape(body || '').replace(re, (full, name) => {
 		const cls = known.has(name) ? 'etpl-var-ok' : 'etpl-var-bad'

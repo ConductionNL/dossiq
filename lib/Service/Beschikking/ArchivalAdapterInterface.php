@@ -3,10 +3,11 @@
 /**
  * Procest Beschikking Archival Adapter Interface.
  *
- * Contract for the OpenRegister archief-ingest integration. The real adapter
- * (delivered in the openregister repo, change task T25) stores the PDF/A-3
- * with TMLO/MDTO metadata and computes a vernietigingsdatum; the MockAdapter
- * returns a deterministic stub so the ArchivalJob is testable in isolation.
+ * Contract for recording a beschikking in durable archival storage. The
+ * OpenRegisterArchivalAdapter implementation records the beschikking on
+ * OpenRegister's declarative archival pipeline (x-openregister-archival on the
+ * case schema) and returns the Archiefwet vernietigingsdatum derived from the
+ * declared bewaartermijn (migrate-archival-to-or, ADR-022).
  *
  * @category Interface
  * @package  OCA\Procest\Service\Beschikking
@@ -34,18 +35,17 @@ namespace OCA\Procest\Service\Beschikking;
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T25
  */
-interface ArchivalAdapterInterface
-{
-    /**
-     * Ingest a beschikking with its metadata into the archief.
-     *
-     * @param string               $beschikkingId The beschikking UUID.
-     * @param string               $bestandId     The Nextcloud file id of the signed PDF/A-3.
-     * @param array<string, mixed> $tmloMetadata  The TMLO-1.2 or MDTO metadata block.
-     *
-     * @return array{archiefId: string, vernietigingsdatum: string} The archival result.
-     *
-     * @spec openspec/changes/beschikking-generatie/tasks.md#T25
-     */
-    public function ingest(string $beschikkingId, string $bestandId, array $tmloMetadata): array;
+interface ArchivalAdapterInterface {
+	/**
+	 * Ingest a beschikking with its metadata into the archief.
+	 *
+	 * @param string $decisionId The beschikking UUID.
+	 * @param string $fileId The Nextcloud file id of the signed PDF/A-3.
+	 * @param array<string, mixed> $tmloMetadata The TMLO-1.2 or MDTO metadata block.
+	 *
+	 * @return array{archiveId: string, destructionDate: string} The archival result.
+	 *
+	 * @spec openspec/changes/beschikking-generatie/tasks.md#T25
+	 */
+	public function ingest(string $decisionId, string $fileId, array $tmloMetadata): array;
 }//end interface

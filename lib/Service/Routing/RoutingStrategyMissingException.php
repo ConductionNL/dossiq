@@ -34,6 +34,5 @@ use RuntimeException;
  *
  * @spec openspec/changes/role-based-step-routing/tasks.md#T03
  */
-class RoutingStrategyMissingException extends RuntimeException
-{
+class RoutingStrategyMissingException extends RuntimeException {
 }//end class

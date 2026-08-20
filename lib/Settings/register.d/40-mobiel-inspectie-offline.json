@@ -5,7 +5,7 @@
         "slug": "fieldInspection",
         "icon": "ClipboardSearchOutline",
         "version": "1.0.0",
-        "x-schema-org-type": "schema:Action",
+        "x-schema-org": "schema:Action",
         "title": "Field Inspection",
         "description": "A planned or in-progress field inspection synchronized to an inspector's device for offline fieldwork. Extends a Procest case with offline lifecycle metadata.",
         "type": "object",
@@ -17,35 +17,46 @@
         "properties": {
           "caseRef": {
             "type": "string",
+            "title": "Case Reference",
             "description": "Reference to the Procest case this inspection belongs to"
           },
           "inspectorRef": {
             "type": "string",
+            "title": "Inspector Reference",
             "description": "User UID of the inspector assigned to this inspection"
+          },
+          "checklistTemplateRef": {
+            "type": "string",
+            "title": "Checklist Template Reference",
+            "description": "Reference to the inspectionChecklist template the inspector must complete for this inspection. Read off the planned item by the field-inspection leaf (offlineConfig.templateRefField) to load the checklist offline, and copied onto the resulting checklistResult"
           },
           "scheduledAt": {
             "type": "string",
             "format": "date-time",
+            "title": "Scheduled At",
             "description": "Planned start date and time"
           },
           "startedAt": {
             "type": "string",
             "format": "date-time",
+            "title": "Started At",
             "description": "Actual start date and time (set when work begins on site)"
           },
           "completedAt": {
             "type": "string",
             "format": "date-time",
+            "title": "Completed At",
             "description": "Date and time the inspection was completed"
           },
           "gpsLocation": {
             "type": "object",
+            "title": "GPS Location",
             "description": "GPS coordinates captured at inspection start",
             "properties": {
-              "lat": { "type": "number" },
-              "lon": { "type": "number" },
-              "accuracy": { "type": "number", "description": "Accuracy in meters" },
-              "timestamp": { "type": "string", "format": "date-time" }
+              "lat": { "type": "number", "title": "Latitude", "description": "Geographic latitude coordinate" },
+              "lon": { "type": "number", "title": "Longitude", "description": "Geographic longitude coordinate" },
+              "accuracy": { "type": "number", "title": "Accuracy", "description": "Accuracy in meters" },
+              "timestamp": { "type": "string", "format": "date-time", "title": "Timestamp", "description": "Timestamp at which the GPS reading was taken" }
             }
           },
           "status": {
@@ -57,20 +68,24 @@
               "conflict"
             ],
             "default": "planned",
+            "title": "Status",
             "description": "Offline lifecycle status of the inspection"
           },
           "offlineCreatedAt": {
             "type": "string",
             "format": "date-time",
+            "title": "Offline Created At",
             "description": "Timestamp the record was created on the offline device"
           },
           "syncedAt": {
             "type": "string",
             "format": "date-time",
+            "title": "Synced At",
             "description": "Timestamp the record was successfully synchronized to the server"
           },
           "deviceId": {
             "type": "string",
+            "title": "Device ID",
             "description": "Stable identifier of the device that owns the offline copy"
           }
         }
@@ -79,7 +94,7 @@
         "slug": "checklistResult",
         "icon": "ClipboardCheckOutline",
         "version": "1.0.0",
-        "x-schema-org-type": "schema:Report",
+        "x-schema-org": "schema:Report",
         "title": "Checklist Result",
         "description": "Per-item answers captured offline for a single field inspection against a checklist template.",
         "type": "object",
@@ -90,36 +105,43 @@
         "properties": {
           "inspectionRef": {
             "type": "string",
+            "title": "Inspection Reference",
             "description": "Reference to the fieldInspection this result belongs to"
           },
           "checklistTemplateRef": {
             "type": "string",
+            "title": "Checklist Template Reference",
             "description": "Reference to the inspectionChecklist template used"
           },
           "items": {
             "type": "array",
+            "title": "Items",
             "description": "Per-question answers",
             "items": {
               "type": "object",
               "properties": {
-                "questionId": { "type": "string" },
-                "answer": { "type": "string" },
+                "questionId": { "type": "string", "title": "Question ID", "description": "Reference to the checklist template question" },
+                "answer": { "type": "string", "title": "Answer", "description": "Answer given for this checklist question" },
                 "evidenceRefs": {
                   "type": "array",
                   "items": { "type": "string" },
+                  "title": "Evidence References",
                   "description": "References to fieldEvidence records for this answer"
                 },
-                "notes": { "type": "string" },
-                "answeredAt": { "type": "string", "format": "date-time" },
+                "notes": { "type": "string", "title": "Notes", "description": "Optional notes for this checklist item" },
+                "answeredAt": { "type": "string", "format": "date-time", "title": "Answered At", "description": "Timestamp at which this question was answered" },
                 "gpsAtAnswer": {
                   "type": "object",
+                  "title": "GPS At Answer",
+                  "description": "GPS location at the time the question was answered",
                   "properties": {
-                    "lat": { "type": "number" },
-                    "lon": { "type": "number" },
-                    "accuracy": { "type": "number" },
+                    "lat": { "type": "number", "title": "Latitude", "description": "Geographic latitude coordinate" },
+                    "lon": { "type": "number", "title": "Longitude", "description": "Geographic longitude coordinate" },
+                    "accuracy": { "type": "number", "title": "Accuracy", "description": "GPS accuracy in meters" },
                     "source": {
                       "type": "string",
                       "enum": ["sensor", "sensorless"],
+                      "title": "Source",
                       "description": "Whether coordinates came from the GPS sensor or fell back to the case address"
                     }
                   }
@@ -133,7 +155,7 @@
         "slug": "fieldEvidence",
         "icon": "CameraOutline",
         "version": "1.0.0",
-        "x-schema-org-type": "schema:MediaObject",
+        "x-schema-org": "schema:MediaObject",
         "title": "Field Evidence",
         "description": "A piece of evidence (photo, voice memo, document, or sketch) captured offline during a field inspection.",
         "type": "object",
@@ -144,6 +166,7 @@
         "properties": {
           "inspectionRef": {
             "type": "string",
+            "title": "Inspection Reference",
             "description": "Reference to the fieldInspection this evidence belongs to"
           },
           "type": {
@@ -154,31 +177,39 @@
               "document",
               "sketch"
             ],
+            "title": "Type",
             "description": "Kind of evidence captured"
           },
           "localBlobRef": {
             "type": "string",
+            "title": "Local Blob Reference",
             "description": "IndexedDB reference to the local blob prior to upload"
           },
           "cloudUrl": {
             "type": "string",
+            "title": "Cloud URL",
             "description": "URL of the uploaded file once synced (nullable until upload completes)"
           },
           "gpsLocation": {
             "type": "object",
+            "title": "GPS Location",
+            "description": "GPS coordinates captured at the moment the evidence was recorded",
             "properties": {
-              "lat": { "type": "number" },
-              "lon": { "type": "number" },
-              "accuracy": { "type": "number" },
-              "timestamp": { "type": "string", "format": "date-time" }
+              "lat": { "type": "number", "title": "Latitude", "description": "Geographic latitude coordinate" },
+              "lon": { "type": "number", "title": "Longitude", "description": "Geographic longitude coordinate" },
+              "accuracy": { "type": "number", "title": "Accuracy", "description": "GPS accuracy in meters" },
+              "timestamp": { "type": "string", "format": "date-time", "title": "Timestamp", "description": "Timestamp at which the GPS reading was taken" }
             }
           },
           "capturedAt": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "title": "Captured At",
+            "description": "Timestamp at which the evidence was captured"
           },
           "transcription": {
             "type": "string",
+            "title": "Transcription",
             "description": "Transcribed text for voice_memo evidence"
           },
           "transcriptionStatus": {
@@ -190,11 +221,15 @@
               "failed",
               "not_applicable"
             ],
-            "default": "not_applicable"
+            "default": "not_applicable",
+            "title": "Transcription Status",
+            "description": "Current status of the transcription process"
           },
           "tags": {
             "type": "array",
-            "items": { "type": "string" }
+            "items": { "type": "string" },
+            "title": "Tags",
+            "description": "Free-form classification tags for this evidence item"
           },
           "sensitivityLevel": {
             "type": "string",
@@ -205,15 +240,16 @@
               "special_category"
             ],
             "default": "internal",
+            "title": "Sensitivity Level",
             "description": "AVG/GDPR sensitivity classification of the evidence"
           }
         }
       },
       "syncQueue": {
         "slug": "syncQueue",
-        "icon": "SyncOutline",
+        "icon": "Sync",
         "version": "1.0.0",
-        "x-schema-org-type": "schema:Action",
+        "x-schema-org": "schema:Action",
         "title": "Sync Queue Operation",
         "description": "A single mutation queued offline to be replayed against OpenRegister when the device reconnects.",
         "type": "object",
@@ -226,6 +262,7 @@
         "properties": {
           "deviceId": {
             "type": "string",
+            "title": "Device ID",
             "description": "Device that queued the operation"
           },
           "operationType": {
@@ -236,36 +273,46 @@
               "upload",
               "transcribe",
               "delete"
-            ]
+            ],
+            "title": "Operation Type",
+            "description": "Type of sync operation, e.g. create, update, delete"
           },
           "targetEntity": {
             "type": "string",
+            "title": "Target Entity",
             "description": "Schema slug the operation targets (e.g. checklistResult, fieldEvidence)"
           },
           "targetId": {
             "type": "string",
+            "title": "Target ID",
             "description": "Identifier of the target object"
           },
           "payload": {
             "type": "object",
+            "title": "Payload",
             "description": "Operation payload to replay"
           },
           "queuedAt": {
             "type": "string",
             "format": "date-time",
+            "title": "Queued At",
             "description": "Timestamp the operation was queued (replay ordering key)"
           },
           "attemptCount": {
             "type": "integer",
             "default": 0,
+            "title": "Attempt Count",
             "description": "Number of replay attempts made"
           },
           "lastAttemptAt": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "title": "Last Attempt At",
+            "description": "Timestamp of the most recent sync attempt"
           },
           "lastError": {
             "type": "string",
+            "title": "Last Error",
             "description": "Last error message recorded on failure"
           },
           "status": {
@@ -277,7 +324,9 @@
               "conflict",
               "failed"
             ],
-            "default": "pending"
+            "default": "pending",
+            "title": "Status",
+            "description": "Current status of this sync queue entry"
           }
         }
       },
@@ -285,7 +334,7 @@
         "slug": "conflictRecord",
         "icon": "AlertOctagonOutline",
         "version": "1.0.0",
-        "x-schema-org-type": "schema:Action",
+        "x-schema-org": "schema:Action",
         "title": "Conflict Record",
         "description": "Records a concurrent-edit, deleted-remote, or permission-lost conflict detected while replaying a queued operation, plus its resolution for AVG audit.",
         "type": "object",
@@ -296,14 +345,17 @@
         "properties": {
           "syncQueueRef": {
             "type": "string",
+            "title": "Sync Queue Reference",
             "description": "Reference to the syncQueue operation that conflicted"
           },
           "serverVersion": {
             "type": "object",
+            "title": "Server Version",
             "description": "Snapshot of the server-side object at conflict time"
           },
           "clientVersion": {
             "type": "object",
+            "title": "Client Version",
             "description": "Snapshot of the client-side (offline) object at conflict time"
           },
           "conflictType": {
@@ -312,7 +364,9 @@
               "concurrent_edit",
               "deleted_remote",
               "permission_lost"
-            ]
+            ],
+            "title": "Conflict Type",
+            "description": "Type of conflict detected during synchronization"
           },
           "resolution": {
             "type": "string",
@@ -321,15 +375,19 @@
               "server_wins",
               "manual_merge"
             ],
+            "title": "Resolution",
             "description": "Resolution choice (null until resolved)"
           },
           "resolvedBy": {
             "type": "string",
+            "title": "Resolved By",
             "description": "User UID who resolved the conflict"
           },
           "resolvedAt": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "title": "Resolved At",
+            "description": "Timestamp at which the conflict was resolved"
           }
         }
       }

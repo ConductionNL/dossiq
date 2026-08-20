@@ -2,28 +2,44 @@
 	<div class="step-config-panel">
 		<div class="step-config-panel__header">
 			<h4>{{ t('procest', 'Step Configuration') }}</h4>
-			<NcButton type="tertiary" @click="$emit('close')">
-				<template #icon>
-					<CloseIcon :size="20" />
-				</template>
-			</NcButton>
+			<div class="step-config-panel__header-actions">
+				<NcButton
+					v-if="!readOnly"
+					type="tertiary"
+					class="step-config-panel__delete-button"
+					@click="$emit('delete', localStep.id)">
+					{{ t('procest', 'Delete step') }}
+				</NcButton>
+				<NcButton
+					type="tertiary"
+					:aria-label="t('procest', 'Close step configuration')"
+					@click="$emit('close')">
+					<template #icon>
+						<CloseIcon :size="20" />
+					</template>
+				</NcButton>
+			</div>
 		</div>
 
 		<div class="step-config-panel__body">
 			<!-- Title -->
 			<div class="step-config-panel__field">
-				<label>{{ t('procest', 'Title') }}</label>
+				<label for="step-config-title">{{ t('procest', 'Title') }}</label>
 				<input
+					id="step-config-title"
 					v-model="localStep.title"
 					type="text"
 					class="step-config-panel__input"
-					@input="emitUpdate">
+					@input="emitUpdate" />
 			</div>
 
 			<!-- Description -->
 			<div class="step-config-panel__field">
-				<label>{{ t('procest', 'Description') }}</label>
+				<label for="step-config-description">{{
+					t('procest', 'Description')
+				}}</label>
 				<textarea
+					id="step-config-description"
 					v-model="localStep.description"
 					class="step-config-panel__textarea"
 					rows="3"
@@ -36,8 +52,10 @@
 					id="step-required"
 					v-model="localStep.isRequired"
 					type="checkbox"
-					@change="emitUpdate">
-				<label for="step-required">{{ t('procest', 'Required step (blocks status transition)') }}</label>
+					@change="emitUpdate" />
+				<label for="step-required">{{
+					t('procest', 'Required step (blocks status transition)')
+				}}</label>
 			</div>
 
 			<!-- Assignee Role -->
@@ -76,18 +94,18 @@
 						type="text"
 						class="step-config-panel__input"
 						:placeholder="t('procest', 'Checklist item')"
-						@input="emitUpdate">
+						:aria-label="t('procest', 'Checklist item')"
+						@input="emitUpdate" />
 					<NcButton
 						type="tertiary"
+						:aria-label="t('procest', 'Remove checklist item')"
 						@click="removeChecklistItem(index)">
 						<template #icon>
 							<CloseIcon :size="16" />
 						</template>
 					</NcButton>
 				</div>
-				<NcButton
-					type="secondary"
-					@click="addChecklistItem">
+				<NcButton type="secondary" @click="addChecklistItem">
 					{{ t('procest', 'Add checklist item') }}
 				</NcButton>
 			</div>
@@ -98,45 +116,53 @@
 					type="button"
 					class="step-config-panel__advanced-toggle"
 					@click="advancedOpen = !advancedOpen">
-					<span>{{ t('procest', 'Geavanceerd') }}</span>
-					<span class="step-config-panel__advanced-caret">{{ advancedOpen ? '▾' : '▸' }}</span>
+					<span>{{ t('procest', 'Advanced') }}</span>
+					<span class="step-config-panel__advanced-caret">{{
+						advancedOpen ? '▾' : '▸'
+					}}</span>
 				</button>
 
-				<div
-					v-if="readOnly"
-					class="step-config-panel__advanced-banner">
-					{{ t('procest', 'Gepubliceerde versies zijn niet bewerkbaar — kloon eerst een nieuwe versie.') }}
+				<div v-if="readOnly" class="step-config-panel__advanced-banner">
+					{{
+						t(
+							'procest',
+							'Published versions are not editable — clone a new version first.',
+						)
+					}}
 				</div>
 
 				<div v-if="advancedOpen" class="step-config-panel__advanced-body">
 					<!-- SLA -->
 					<div class="step-config-panel__field">
-						<label>{{ t('procest', 'SLA') }}</label>
+						<label for="step-config-sla-value">{{
+							t('procest', 'SLA')
+						}}</label>
 						<div class="step-config-panel__sla-row">
 							<input
+								id="step-config-sla-value"
 								v-model.number="localConfig.sla.value"
 								type="number"
 								min="1"
 								:max="slaValueMax"
 								class="step-config-panel__input step-config-panel__sla-value"
 								:disabled="readOnly"
-								@input="emitUpdate">
+								@input="emitUpdate" />
 							<select
 								v-model="localConfig.sla.unit"
 								class="step-config-panel__select"
 								:disabled="readOnly"
 								@change="emitUpdate">
 								<option value="">
-									{{ t('procest', 'Geen SLA') }}
+									{{ t('procest', 'No SLA') }}
 								</option>
 								<option value="hours">
-									{{ t('procest', 'uren') }}
+									{{ t('procest', 'hours') }}
 								</option>
 								<option value="businessDays">
-									{{ t('procest', 'werkdagen') }}
+									{{ t('procest', 'working days') }}
 								</option>
 								<option value="calendarDays">
-									{{ t('procest', 'kalenderdagen') }}
+									{{ t('procest', 'calendar days') }}
 								</option>
 							</select>
 						</div>
@@ -144,7 +170,9 @@
 
 					<!-- Required fields -->
 					<div class="step-config-panel__field">
-						<label>{{ t('procest', 'Verplichte velden bij afronden') }}</label>
+						<label>{{
+							t('procest', 'Required fields on completion')
+						}}</label>
 						<div
 							v-for="(field, index) in localConfig.requiredFields"
 							:key="`field-${index}`"
@@ -152,13 +180,19 @@
 							<input
 								v-model="localConfig.requiredFields[index]"
 								type="text"
-								:placeholder="t('procest', 'Veldnaam (property path)')"
+								:placeholder="
+									t('procest', 'Field name (property path)')
+								"
+								:aria-label="
+									t('procest', 'Field name (property path)')
+								"
 								class="step-config-panel__input"
 								:disabled="readOnly"
-								@input="emitUpdate">
+								@input="emitUpdate" />
 							<NcButton
 								type="tertiary"
 								:disabled="readOnly"
+								:aria-label="t('procest', 'Remove required field')"
 								@click="removeRequiredField(index)">
 								<template #icon>
 									<CloseIcon :size="16" />
@@ -169,7 +203,7 @@
 							type="secondary"
 							:disabled="readOnly"
 							@click="addRequiredField">
-							{{ t('procest', 'Veld toevoegen') }}
+							{{ t('procest', 'Add field') }}
 						</NcButton>
 					</div>
 
@@ -180,10 +214,12 @@
 								v-model="escalationEnabled"
 								type="checkbox"
 								:disabled="readOnly"
-								@change="onEscalationToggle">
-							{{ t('procest', 'Escalatie inschakelen') }}
+								@change="onEscalationToggle" />
+							{{ t('procest', 'Enable escalation') }}
 						</label>
-						<div v-if="escalationEnabled" class="step-config-panel__escalation">
+						<div
+							v-if="escalationEnabled"
+							class="step-config-panel__escalation">
 							<select
 								v-model="localConfig.escalationRule.trigger"
 								class="step-config-panel__select"
@@ -198,46 +234,53 @@
 							</select>
 							<div class="step-config-panel__sla-row">
 								<input
-									v-model.number="localConfig.escalationRule.offset"
+									v-model.number="
+										localConfig.escalationRule.offset
+									"
 									type="number"
 									min="0"
+									:aria-label="t('procest', 'Escalation offset')"
 									class="step-config-panel__input step-config-panel__sla-value"
 									:disabled="readOnly"
-									@input="emitUpdate">
+									@input="emitUpdate" />
 								<select
 									v-model="localConfig.escalationRule.offsetUnit"
 									class="step-config-panel__select"
 									:disabled="readOnly"
 									@change="emitUpdate">
 									<option value="hours">
-										{{ t('procest', 'uren') }}
+										{{ t('procest', 'hours') }}
 									</option>
 									<option value="businessDays">
-										{{ t('procest', 'werkdagen') }}
+										{{ t('procest', 'working days') }}
 									</option>
 								</select>
 							</div>
 							<input
 								v-model="localConfig.escalationRule.notifyRole"
 								type="text"
-								:placeholder="t('procest', 'Waarschuw rol (UUID)')"
+								:placeholder="t('procest', 'Warn role (UUID)')"
+								:aria-label="t('procest', 'Warn role (UUID)')"
 								class="step-config-panel__input"
 								:disabled="readOnly"
-								@input="emitUpdate">
+								@input="emitUpdate" />
 							<input
 								v-model="localConfig.escalationRule.escalateToRole"
 								type="text"
-								:placeholder="t('procest', 'Escaleer naar rol (UUID)')"
+								:placeholder="
+									t('procest', 'Escalate to role (UUID)')
+								"
+								:aria-label="t('procest', 'Escalate to role (UUID)')"
 								class="step-config-panel__input"
 								:disabled="readOnly"
-								@input="emitUpdate">
+								@input="emitUpdate" />
 							<label class="step-config-panel__inline-check">
 								<input
 									v-model="localConfig.escalationRule.openIncident"
 									type="checkbox"
 									:disabled="readOnly"
-									@change="emitUpdate">
-								{{ t('procest', 'Maak ook een incident aan') }}
+									@change="emitUpdate" />
+								{{ t('procest', 'Also create an incident') }}
 							</label>
 						</div>
 					</div>
@@ -270,33 +313,35 @@
 						v-model="action.title"
 						type="text"
 						:placeholder="t('procest', 'Task title')"
+						:aria-label="t('procest', 'Task title')"
 						class="step-config-panel__input"
-						@input="emitUpdate">
+						@input="emitUpdate" />
 					<input
 						v-if="action.type === 'notify'"
 						v-model="action.message"
 						type="text"
 						:placeholder="t('procest', 'Notification message')"
+						:aria-label="t('procest', 'Notification message')"
 						class="step-config-panel__input"
-						@input="emitUpdate">
+						@input="emitUpdate" />
 					<input
 						v-if="action.type === 'webhook'"
 						v-model="action.url"
 						type="url"
 						:placeholder="t('procest', 'Webhook URL')"
+						:aria-label="t('procest', 'Webhook URL')"
 						class="step-config-panel__input"
-						@input="emitUpdate">
+						@input="emitUpdate" />
 					<NcButton
 						type="tertiary"
+						:aria-label="t('procest', 'Remove action')"
 						@click="removeAction(index)">
 						<template #icon>
 							<CloseIcon :size="16" />
 						</template>
 					</NcButton>
 				</div>
-				<NcButton
-					type="secondary"
-					@click="addAction">
+				<NcButton type="secondary" @click="addAction">
 					{{ t('procest', 'Add action') }}
 				</NcButton>
 			</div>
@@ -316,21 +361,25 @@ export default {
 		NcButton,
 		CloseIcon,
 	},
+
 	props: {
 		step: {
 			type: Object,
 			required: true,
 		},
+
 		roleTypes: {
 			type: Array,
 			default: () => [],
 		},
+
 		readOnly: {
 			type: Boolean,
 			default: false,
 		},
 	},
-	emits: ['update', 'close'],
+
+	emits: ['update', 'close', 'delete'],
 	data() {
 		return {
 			localStep: { ...this.step },
@@ -338,11 +387,17 @@ export default {
 			localActions: this.parseActions(this.step.automaticActions),
 			localConfig: this.parseConfig(this.step.config),
 			advancedOpen: false,
-			escalationEnabled: !!(this.step && this.step.config && this.step.config.escalationRule),
+			escalationEnabled: !!(
+				this.step
+				&& this.step.config
+				&& this.step.config.escalationRule
+			),
+
 			slaValueMax: 10000,
 			dragCheckIndex: null,
 		}
 	},
+
 	watch: {
 		step: {
 			/**
@@ -354,11 +409,17 @@ export default {
 				this.localChecklist = this.parseChecklist(newStep.checklist)
 				this.localActions = this.parseActions(newStep.automaticActions)
 				this.localConfig = this.parseConfig(newStep.config)
-				this.escalationEnabled = !!(newStep && newStep.config && newStep.config.escalationRule)
+				this.escalationEnabled = !!(
+					newStep
+					&& newStep.config
+					&& newStep.config.escalationRule
+				)
 			},
+
 			deep: true,
 		},
 	},
+
 	methods: {
 		/**
 		 * @param config
@@ -367,47 +428,99 @@ export default {
 		parseConfig(config) {
 			let raw = config
 			if (typeof raw === 'string') {
-				try { raw = JSON.parse(raw) } catch { raw = null }
+				try {
+					raw = JSON.parse(raw)
+				} catch {
+					raw = null
+				}
 			}
 			const safe = raw && typeof raw === 'object' ? raw : {}
 			return {
 				sla: {
-					value: safe.sla && Number.isFinite(safe.sla.value) ? safe.sla.value : null,
-					unit: safe.sla && typeof safe.sla.unit === 'string' ? safe.sla.unit : '',
+					value:
+						safe.sla && Number.isFinite(safe.sla.value)
+							? safe.sla.value
+							: null,
+
+					unit:
+						safe.sla && typeof safe.sla.unit === 'string'
+							? safe.sla.unit
+							: '',
 				},
-				requiredFields: Array.isArray(safe.requiredFields) ? [...safe.requiredFields] : [],
-				autoActions: Array.isArray(safe.autoActions) ? [...safe.autoActions] : [],
-				escalationRule: safe.escalationRule && typeof safe.escalationRule === 'object'
-					? {
-						trigger: typeof safe.escalationRule.trigger === 'string' ? safe.escalationRule.trigger : 'preBreach',
-						offset: Number.isFinite(safe.escalationRule.offset) ? safe.escalationRule.offset : 0,
-						offsetUnit: typeof safe.escalationRule.offsetUnit === 'string' ? safe.escalationRule.offsetUnit : 'businessDays',
-						notifyRole: typeof safe.escalationRule.notifyRole === 'string' ? safe.escalationRule.notifyRole : '',
-						escalateToRole: typeof safe.escalationRule.escalateToRole === 'string' ? safe.escalationRule.escalateToRole : '',
-						openIncident: !!safe.escalationRule.openIncident,
-					}
-					: {
-						trigger: 'preBreach',
-						offset: 0,
-						offsetUnit: 'businessDays',
-						notifyRole: '',
-						escalateToRole: '',
-						openIncident: false,
-					},
+
+				requiredFields: Array.isArray(safe.requiredFields)
+					? [...safe.requiredFields]
+					: [],
+
+				autoActions: Array.isArray(safe.autoActions)
+					? [...safe.autoActions]
+					: [],
+
+				escalationRule:
+					safe.escalationRule && typeof safe.escalationRule === 'object'
+						? {
+								trigger:
+									typeof safe.escalationRule.trigger === 'string'
+										? safe.escalationRule.trigger
+										: 'preBreach',
+
+								offset: Number.isFinite(safe.escalationRule.offset)
+									? safe.escalationRule.offset
+									: 0,
+
+								offsetUnit:
+									typeof safe.escalationRule.offsetUnit
+									=== 'string'
+										? safe.escalationRule.offsetUnit
+										: 'businessDays',
+
+								notifyRole:
+									typeof safe.escalationRule.notifyRole
+									=== 'string'
+										? safe.escalationRule.notifyRole
+										: '',
+
+								escalateToRole:
+									typeof safe.escalationRule.escalateToRole
+									=== 'string'
+										? safe.escalationRule.escalateToRole
+										: '',
+
+								openIncident: !!safe.escalationRule.openIncident,
+							}
+						: {
+								trigger: 'preBreach',
+								offset: 0,
+								offsetUnit: 'businessDays',
+								notifyRole: '',
+								escalateToRole: '',
+								openIncident: false,
+							},
 			}
 		},
 
 		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
 		buildConfigPayload() {
 			const out = {}
-			if (this.localConfig.sla.value != null && this.localConfig.sla.unit !== '') {
-				out.sla = { value: this.localConfig.sla.value, unit: this.localConfig.sla.unit }
+			if (
+				this.localConfig.sla.value != null
+				&& this.localConfig.sla.unit !== ''
+			) {
+				out.sla = {
+					value: this.localConfig.sla.value,
+					unit: this.localConfig.sla.unit,
+				}
 			}
-			const fields = this.localConfig.requiredFields.filter(f => typeof f === 'string' && f.trim() !== '')
+			const fields = this.localConfig.requiredFields.filter(
+				(f) => typeof f === 'string' && f.trim() !== '',
+			)
 			if (fields.length > 0) {
 				out.requiredFields = fields
 			}
-			if (Array.isArray(this.localConfig.autoActions) && this.localConfig.autoActions.length > 0) {
+			if (
+				Array.isArray(this.localConfig.autoActions)
+				&& this.localConfig.autoActions.length > 0
+			) {
 				out.autoActions = this.localConfig.autoActions
 			}
 			if (this.escalationEnabled) {
@@ -443,7 +556,11 @@ export default {
 		parseChecklist(checklist) {
 			if (!checklist) return []
 			if (typeof checklist === 'string') {
-				try { return JSON.parse(checklist) } catch { return [] }
+				try {
+					return JSON.parse(checklist)
+				} catch {
+					return []
+				}
 			}
 			return [...checklist]
 		},
@@ -455,7 +572,11 @@ export default {
 		parseActions(actions) {
 			if (!actions) return []
 			if (typeof actions === 'string') {
-				try { return JSON.parse(actions) } catch { return [] }
+				try {
+					return JSON.parse(actions)
+				} catch {
+					return []
+				}
 			}
 			return [...actions]
 		},
@@ -511,7 +632,10 @@ export default {
 		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		onCheckDrop(targetIndex, event) {
-			if (this.dragCheckIndex !== null && this.dragCheckIndex !== targetIndex) {
+			if (
+				this.dragCheckIndex !== null
+				&& this.dragCheckIndex !== targetIndex
+			) {
 				const item = this.localChecklist.splice(this.dragCheckIndex, 1)[0]
 				this.localChecklist.splice(targetIndex, 0, item)
 				this.emitUpdate()
@@ -559,6 +683,12 @@ export default {
 	justify-content: space-between;
 	padding: 12px 16px;
 	border-bottom: 1px solid var(--color-border);
+}
+
+.step-config-panel__header-actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
 }
 
 .step-config-panel__header h4 {

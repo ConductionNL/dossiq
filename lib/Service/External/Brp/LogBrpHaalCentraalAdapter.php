@@ -39,65 +39,63 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/brp-kvk-register-sets/proposal.md
  */
-class LogBrpHaalCentraalAdapter implements BrpHaalCentraalAdapterInterface
-{
-    /**
-     * Construct the log-backed BRP adapter.
-     *
-     * @param LoggerInterface $logger Structured logger.
-     */
-    public function __construct(private readonly LoggerInterface $logger)
-    {
-    }//end __construct()
+class LogBrpHaalCentraalAdapter implements BrpHaalCentraalAdapterInterface {
+	/**
+	 * Construct the log-backed BRP adapter.
+	 *
+	 * @param LoggerInterface $logger Structured logger.
+	 */
+	public function __construct(
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Log the (BSN-REDACTED) intent + synthesise a LOOKUP_DEFERRED
-     * result.
-     *
-     * Per AVG / WBP article 9 the BSN value is NEVER passed to the
-     * structured logger; only a redaction marker + an
-     * `bsn_length_check` boolean. The `context.correlationId` is
-     * tenant-scoped + does not contain person data.
-     *
-     * @param string              $bsn     9-digit Burgerservicenummer
-     *                                     — never logged.
-     * @param array<string,mixed> $context Lookup context.
-     *
-     * @return BrpLookupResult The dispatch outcome.
-     */
-    public function lookup(string $bsn, array $context=[]): BrpLookupResult
-    {
-        $this->logger->info(
-            'Procest BRP / Haal Centraal lookup deferred (no outbound connector bound)',
-            [
-                'bsn'              => '[REDACTED]',
-                'bsn_length_check' => (strlen($bsn) === 9),
-                'context'          => $context,
-            ]
-        );
+	/**
+	 * Log the (BSN-REDACTED) intent + synthesise a LOOKUP_DEFERRED
+	 * result.
+	 *
+	 * Per AVG / WBP article 9 the BSN value is NEVER passed to the
+	 * structured logger; only a redaction marker + an
+	 * `bsn_length_check` boolean. The `context.correlationId` is
+	 * tenant-scoped + does not contain person data.
+	 *
+	 * @param string $bsn 9-digit Burgerservicenummer
+	 *                    — never logged.
+	 * @param array<string,mixed> $context Lookup context.
+	 *
+	 * @return BrpLookupResult The dispatch outcome.
+	 */
+	public function lookup(string $bsn, array $context = []): BrpLookupResult {
+		$this->logger->info(
+			'Procest BRP / Haal Centraal lookup deferred (no outbound connector bound)',
+			[
+				'bsn' => '[REDACTED]',
+				'bsn_length_check' => (strlen($bsn) === 9),
+				'context' => $context,
+			]
+		);
 
-        return new BrpLookupResult(
-            lookupStatus: 'LOOKUP_DEFERRED',
-            persoon: [],
-            dormant: true,
-            extras: [
-                'reason' => 'no-outbound-connector-bound',
-                'note'   => 'Bind openconnector source slug `brp-haalcentraal` (PKIoverheid Services-server cert '
-                    .'+ Logius/RvIG autorisatieprofiel + Haal Centraal BRP Personen API endpoint) and override '
-                    .'BrpHaalCentraalAdapterInterface in Application::register() to enable real lookup. NEVER log BSN values.',
-            ],
-        );
-    }//end lookup()
+		return new BrpLookupResult(
+			lookupStatus: 'LOOKUP_DEFERRED',
+			persoon: [],
+			dormant: true,
+			extras: [
+				'reason' => 'no-outbound-connector-bound',
+				'note' => 'Bind openconnector source slug `brp-haalcentraal` (PKIoverheid Services-server cert '
+					. '+ Logius/RvIG autorisatieprofiel + Haal Centraal BRP Personen API endpoint) and override '
+					. 'BrpHaalCentraalAdapterInterface in Application::register() to enable real lookup. NEVER log BSN values.',
+			],
+		);
+	}//end lookup()
 
-    /**
-     * Report whether this adapter is dormant.
-     *
-     * @inheritDoc
-     *
-     * @return bool
-     */
-    public function isDormant(): bool
-    {
-        return true;
-    }//end isDormant()
+	/**
+	 * Report whether this adapter is dormant.
+	 *
+	 * @inheritDoc
+	 *
+	 * @return bool
+	 */
+	public function isDormant(): bool {
+		return true;
+	}//end isDormant()
 }//end class

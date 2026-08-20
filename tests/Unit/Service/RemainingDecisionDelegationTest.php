@@ -37,162 +37,155 @@ use RuntimeException;
  * @covers \OCA\Procest\Service\BezwaarDecisionDelegationService
  * @covers \OCA\Procest\Service\AdviceDelegationService
  */
-class RemainingDecisionDelegationTest extends TestCase
-{
-    /**
-     * raiseDecision fails CLOSED when the dispatched event is not handled.
-     *
-     * @return void
-     */
-    public function testRaiseDecisionFailsClosedWhenEventUnhandled(): void
-    {
-        // Dispatcher that does NOT handle the event (decidesk listener absent).
-        $dispatcher = $this->createMock(IEventDispatcher::class);
-        $dispatcher->method('dispatchTyped');
+class RemainingDecisionDelegationTest extends TestCase {
+	/**
+	 * raiseDecision fails CLOSED when the dispatched event is not handled.
+	 *
+	 * @return void
+	 */
+	public function testRaiseDecisionFailsClosedWhenEventUnhandled(): void {
+		// Dispatcher that does NOT handle the event (decidesk listener absent).
+		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher->method('dispatchTyped');
 
-        $core = new ContractDecisionDelegationService(
-            $dispatcher,
-            $this->createMock(LoggerInterface::class),
-        );
+		$core = new ContractDecisionDelegationService(
+			$dispatcher,
+			$this->createMock(LoggerInterface::class),
+		);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Decision service unavailable');
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('Decision service unavailable');
 
-        $core->raiseDecision(
-            decisionType: ContractDecisionDelegationService::DECISION_TYPE_ADVICE,
-            externalReference: 'case-1',
-            subject: ['subjectSchema' => 'adviesAanvraag', 'subjectId' => 'a-1'],
-        );
-    }//end testRaiseDecisionFailsClosedWhenEventUnhandled()
+		$core->raiseDecision(
+			decisionType: ContractDecisionDelegationService::DECISION_TYPE_ADVICE,
+			externalReference: 'case-1',
+			subject: ['subjectSchema' => 'adviesAanvraag', 'subjectId' => 'a-1'],
+		);
+	}//end testRaiseDecisionFailsClosedWhenEventUnhandled()
 
-    /**
-     * raiseDecision returns the decidesk decisionId when the event is handled.
-     *
-     * @return void
-     */
-    public function testRaiseDecisionReturnsRefWhenHandled(): void
-    {
-        $core = $this->coreThatHandlesWith(
-                'decision-uuid-123',
-                function (DecisionRequestedEvent $event): void {
-                    // The decisionType + sourceApp provenance must be carried.
-                    $this->assertSame('advice', $event->getDecisionType());
-                    $this->assertSame('procest', $event->getSourceApp());
-                }
-                );
+	/**
+	 * raiseDecision returns the decidesk decisionId when the event is handled.
+	 *
+	 * @return void
+	 */
+	public function testRaiseDecisionReturnsRefWhenHandled(): void {
+		$core = $this->coreThatHandlesWith(
+			'decision-uuid-123',
+			function (DecisionRequestedEvent $event): void {
+				// The decisionType + sourceApp provenance must be carried.
+				$this->assertSame('advice', $event->getDecisionType());
+				$this->assertSame('procest', $event->getSourceApp());
+			}
+		);
 
-        $ref = $core->raiseDecision(
-            decisionType: ContractDecisionDelegationService::DECISION_TYPE_ADVICE,
-            externalReference: 'case-1',
-            subject: ['subjectSchema' => 'adviesAanvraag', 'subjectId' => 'a-1'],
-        );
+		$ref = $core->raiseDecision(
+			decisionType: ContractDecisionDelegationService::DECISION_TYPE_ADVICE,
+			externalReference: 'case-1',
+			subject: ['subjectSchema' => 'adviesAanvraag', 'subjectId' => 'a-1'],
+		);
 
-        $this->assertSame('decision-uuid-123', $ref);
-    }//end testRaiseDecisionReturnsRefWhenHandled()
+		$this->assertSame('decision-uuid-123', $ref);
+	}//end testRaiseDecisionReturnsRefWhenHandled()
 
-    /**
-     * The bezwaar sibling dispatches a bezwaar-decision Decision and returns the ref.
-     *
-     * @return void
-     */
-    public function testBezwaarSiblingRaisesBezwaarDecision(): void
-    {
-        $core = $this->coreThatHandlesWith(
-                'bd-1',
-                function (DecisionRequestedEvent $event): void {
-                    $this->assertSame('bezwaar-decision', $event->getDecisionType());
-                    $this->assertSame('bezwaarDecision', $event->getSubjectSchema());
-                }
-                );
+	/**
+	 * The bezwaar sibling dispatches a bezwaar-decision Decision and returns the ref.
+	 *
+	 * @return void
+	 */
+	public function testBezwaarSiblingRaisesBezwaarDecision(): void {
+		$core = $this->coreThatHandlesWith(
+			'bd-1',
+			function (DecisionRequestedEvent $event): void {
+				$this->assertSame('bezwaar-decision', $event->getDecisionType());
+				$this->assertSame('bezwaarDecision', $event->getSubjectSchema());
+			}
+		);
 
-        $sibling = new BezwaarDecisionDelegationService($core);
+		$sibling = new BezwaarDecisionDelegationService($core);
 
-        $ref = $sibling->raiseBezwaarDecision(
-                'bezwaar-1',
-                [
-                    'subjectId'       => 'dec-1',
-                    'dispositionType' => 'ongegrond',
-                    'reasoning'       => 'r',
-                    'legalBasis'      => 'Awb 7:11',
-                ]
-                );
+		$ref = $sibling->raiseBezwaarDecision(
+			'bezwaar-1',
+			[
+				'subjectId' => 'dec-1',
+				'dispositionType' => 'dismissed',
+				'reasoning' => 'r',
+				'legalBasis' => 'Awb 7:11',
+			]
+		);
 
-        $this->assertSame('bd-1', $ref);
-    }//end testBezwaarSiblingRaisesBezwaarDecision()
+		$this->assertSame('bd-1', $ref);
+	}//end testBezwaarSiblingRaisesBezwaarDecision()
 
-    /**
-     * The advice sibling fails CLOSED when the event is not handled.
-     *
-     * @return void
-     */
-    public function testAdviceSiblingFailsClosed(): void
-    {
-        $dispatcher = $this->createMock(IEventDispatcher::class);
-        $dispatcher->method('dispatchTyped');
+	/**
+	 * The advice sibling fails CLOSED when the event is not handled.
+	 *
+	 * @return void
+	 */
+	public function testAdviceSiblingFailsClosed(): void {
+		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher->method('dispatchTyped');
 
-        $core    = new ContractDecisionDelegationService(
-            $dispatcher,
-            $this->createMock(LoggerInterface::class),
-        );
-        $sibling = new AdviceDelegationService($core);
+		$core = new ContractDecisionDelegationService(
+			$dispatcher,
+			$this->createMock(LoggerInterface::class),
+		);
+		$sibling = new AdviceDelegationService($core);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Decision service unavailable');
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('Decision service unavailable');
 
-        $sibling->raiseAdviceDecision('adviesAanvraag', 'a-1', ['externalReference' => 'case-1']);
-    }//end testAdviceSiblingFailsClosed()
+		$sibling->raiseAdviceDecision('adviesAanvraag', 'a-1', ['externalReference' => 'case-1']);
+	}//end testAdviceSiblingFailsClosed()
 
-    /**
-     * The voorstel besluit path dispatches a report-adoption Decision.
-     *
-     * @return void
-     */
-    public function testVoorstelBesluitRaisesReportAdoption(): void
-    {
-        $core = $this->coreThatHandlesWith(
-                'ra-1',
-                function (DecisionRequestedEvent $event): void {
-                    $this->assertSame('report-adoption', $event->getDecisionType());
-                    $this->assertSame('voorstel', $event->getSubjectSchema());
-                }
-                );
+	/**
+	 * The voorstel besluit path dispatches a report-adoption Decision.
+	 *
+	 * @return void
+	 */
+	public function testVoorstelBesluitRaisesReportAdoption(): void {
+		$core = $this->coreThatHandlesWith(
+			'ra-1',
+			function (DecisionRequestedEvent $event): void {
+				$this->assertSame('report-adoption', $event->getDecisionType());
+				$this->assertSame('proposal', $event->getSubjectSchema());
+			}
+		);
 
-        $sibling = new AdviceDelegationService($core);
+		$sibling = new AdviceDelegationService($core);
 
-        $ref = $sibling->raiseVoorstelBesluit('voorstel-1', ['title' => 'Besluit X']);
-        $this->assertSame('ra-1', $ref);
-    }//end testVoorstelBesluitRaisesReportAdoption()
+		$ref = $sibling->raiseVoorstelBesluit('voorstel-1', ['title' => 'Besluit X']);
+		$this->assertSame('ra-1', $ref);
+	}//end testVoorstelBesluitRaisesReportAdoption()
 
-    /**
-     * Build a delegation core whose dispatcher simulates the decidesk listener
-     * marking the event handled and writing the given decisionId.
-     *
-     * @param string        $decisionId The decisionId the simulated listener writes.
-     * @param callable|null $assert     Optional assertion callback on the dispatched event.
-     *
-     * @return ContractDecisionDelegationService
-     */
-    private function coreThatHandlesWith(string $decisionId, ?callable $assert=null): ContractDecisionDelegationService
-    {
-        $dispatcher = $this->createMock(IEventDispatcher::class);
-        $dispatcher->expects($this->once())
-            ->method('dispatchTyped')
-            ->willReturnCallback(
-                    function (Event $event) use ($decisionId, $assert): void {
-                        $this->assertInstanceOf(DecisionRequestedEvent::class, $event);
-                        if ($assert !== null) {
-                            $assert($event);
-                        }
+	/**
+	 * Build a delegation core whose dispatcher simulates the decidesk listener
+	 * marking the event handled and writing the given decisionId.
+	 *
+	 * @param string $decisionId The decisionId the simulated listener writes.
+	 * @param callable|null $assert Optional assertion callback on the dispatched event.
+	 *
+	 * @return ContractDecisionDelegationService
+	 */
+	private function coreThatHandlesWith(string $decisionId, ?callable $assert = null): ContractDecisionDelegationService {
+		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher->expects($this->once())
+			->method('dispatchTyped')
+			->willReturnCallback(
+				function (Event $event) use ($decisionId, $assert): void {
+					$this->assertInstanceOf(DecisionRequestedEvent::class, $event);
+					if ($assert !== null) {
+						$assert($event);
+					}
 
-                        // Simulate the decidesk in-process listener writing the result.
-                        $event->setHandled(true);
-                        $event->setDecisionId($decisionId);
-                    }
-                    );
+					// Simulate the decidesk in-process listener writing the result.
+					$event->setHandled(true);
+					$event->setDecisionId($decisionId);
+				}
+			);
 
-        return new ContractDecisionDelegationService(
-            $dispatcher,
-            $this->createMock(LoggerInterface::class),
-        );
-    }//end coreThatHandlesWith()
+		return new ContractDecisionDelegationService(
+			$dispatcher,
+			$this->createMock(LoggerInterface::class),
+		);
+	}//end coreThatHandlesWith()
 }//end class

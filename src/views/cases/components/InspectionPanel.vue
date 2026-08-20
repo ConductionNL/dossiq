@@ -2,7 +2,10 @@
 	<div class="inspection-panel">
 		<div class="inspection-panel__header">
 			<h3>{{ t('procest', 'Inspections') }}</h3>
-			<NcButton v-if="canInspect" type="primary" @click="showChecklistForm = true">
+			<NcButton
+				v-if="canInspect"
+				type="primary"
+				@click="showChecklistForm = true">
 				{{ t('procest', 'New inspection') }}
 			</NcButton>
 		</div>
@@ -17,7 +20,12 @@
 					:style="{ width: progressPercent + '%' }" />
 			</div>
 			<span class="inspection-panel__progress-label">
-				{{ t('procest', 'Inspection {completed}/{total} completed', { completed: completedPhases, total: totalPhases }) }}
+				{{
+					t('procest', 'Inspection {completed}/{total} completed', {
+						completed: completedPhases,
+						total: totalPhases,
+					})
+				}}
 			</span>
 		</div>
 
@@ -27,7 +35,11 @@
 				v-for="report in reports"
 				:key="report.id"
 				class="inspection-panel__report"
-				@click="toggleReport(report.id)">
+				role="button"
+				tabindex="0"
+				@click="toggleReport(report.id)"
+				@keydown.enter="toggleReport(report.id)"
+				@keydown.space.prevent="toggleReport(report.id)">
 				<div class="inspection-panel__report-header">
 					<span
 						class="inspection-panel__result-badge"
@@ -40,30 +52,59 @@
 					<span class="inspection-panel__report-inspector">
 						{{ report.inspector }}
 					</span>
-					<span v-if="report.failedItems > 0" class="inspection-panel__failed-count">
-						{{ t('procest', '{count} failed', { count: report.failedItems }) }}
+					<span
+						v-if="report.failedItems > 0"
+						class="inspection-panel__failed-count">
+						{{
+							t('procest', '{count} failed', {
+								count: report.failedItems,
+							})
+						}}
 					</span>
 				</div>
 
 				<!-- Expandable detail -->
-				<div v-if="expandedReport === report.id" class="inspection-panel__report-detail">
+				<div
+					v-if="expandedReport === report.id"
+					class="inspection-panel__report-detail">
 					<div
-						v-for="(item, index) in (report.items || [])"
+						v-for="(item, index) in report.items || []"
 						:key="index"
 						class="inspection-panel__check-item"
 						:class="'inspection-panel__check-item--' + item.result">
 						<span class="inspection-panel__check-icon">
-							{{ item.result === 'pass' ? '\u2713' : item.result === 'fail' ? '\u2717' : '\u2014' }}
+							{{
+								item.result === 'pass'
+									? '\u2713'
+									: item.result === 'fail'
+										? '\u2717'
+										: '\u2014'
+							}}
 						</span>
-						<span class="inspection-panel__check-label">{{ item.label || item.itemId }}</span>
-						<span v-if="item.comment" class="inspection-panel__check-comment">
+						<span class="inspection-panel__check-label">{{
+							item.label || item.itemId
+						}}</span>
+						<span
+							v-if="item.comment"
+							class="inspection-panel__check-comment">
 							{{ item.comment }}
 						</span>
-						<span v-if="item.measurement !== undefined && item.measurement !== null" class="inspection-panel__check-measurement">
+						<span
+							v-if="
+								item.measurement !== undefined
+								&& item.measurement !== null
+							"
+							class="inspection-panel__check-measurement">
 							{{ item.measurement }}
 						</span>
-						<span v-if="item.photos && item.photos.length > 0" class="inspection-panel__check-photos">
-							{{ t('procest', '{count} photos', { count: item.photos.length }) }}
+						<span
+							v-if="item.photos && item.photos.length > 0"
+							class="inspection-panel__check-photos">
+							{{
+								t('procest', '{count} photos', {
+									count: item.photos.length,
+								})
+							}}
 						</span>
 					</div>
 					<p v-if="report.remarks" class="inspection-panel__remarks">
@@ -83,46 +124,77 @@
 				<h4>{{ t('procest', 'Complete inspection checklist') }}</h4>
 
 				<!-- Checklist selector -->
-				<div v-if="!selectedChecklist" class="inspection-panel__checklist-selector">
+				<div
+					v-if="!selectedChecklist"
+					class="inspection-panel__checklist-selector">
 					<p>{{ t('procest', 'Select a checklist:') }}</p>
 					<div
 						v-for="cl in activeChecklists"
 						:key="cl.id"
 						class="inspection-panel__checklist-option"
-						@click="selectedChecklist = cl">
+						role="button"
+						tabindex="0"
+						@click="selectedChecklist = cl"
+						@keydown.enter="selectedChecklist = cl"
+						@keydown.space.prevent="selectedChecklist = cl">
 						<strong>{{ cl.name }}</strong>
-						<small>{{ t('procest', '{count} items', { count: (cl.items || []).length }) }}</small>
+						<small>{{
+							t('procest', '{count} items', {
+								count: (cl.items || []).length,
+							})
+						}}</small>
 					</div>
 				</div>
 
 				<!-- Checklist items form -->
-				<div v-if="selectedChecklist" class="inspection-panel__checklist-form">
-					<p><strong>{{ selectedChecklist.name }}</strong></p>
+				<div
+					v-if="selectedChecklist"
+					class="inspection-panel__checklist-form">
+					<p>
+						<strong>{{ selectedChecklist.name }}</strong>
+					</p>
 
 					<div
 						v-for="(item, index) in selectedChecklist.items"
 						:key="index"
 						class="inspection-panel__form-item">
-						<label class="inspection-panel__form-label">
+						<label
+							class="inspection-panel__form-label"
+							:for="`inspection-item-${index}-input`">
 							{{ item.order }}. {{ item.label }}
-							<span v-if="item.required" class="inspection-panel__required">*</span>
+							<span
+								v-if="item.required"
+								class="inspection-panel__required"
+								>*</span
+							>
 						</label>
 						<p v-if="item.helpText" class="inspection-panel__help">
 							{{ item.helpText }}
 						</p>
 
 						<!-- Yes/No/N.A. -->
-						<div v-if="item.type === 'ja_nee_nvt'" class="inspection-panel__radio-group">
+						<div
+							v-if="item.type === 'yes_no_na'"
+							class="inspection-panel__radio-group">
 							<label>
-								<input v-model="formResults[index].result" type="radio" value="pass">
+								<input
+									v-model="formResults[index].result"
+									type="radio"
+									value="pass" />
 								{{ t('procest', 'Yes') }}
 							</label>
 							<label>
-								<input v-model="formResults[index].result" type="radio" value="fail">
+								<input
+									v-model="formResults[index].result"
+									type="radio"
+									value="fail" />
 								{{ t('procest', 'No') }}
 							</label>
 							<label>
-								<input v-model="formResults[index].result" type="radio" value="nvt">
+								<input
+									v-model="formResults[index].result"
+									type="radio"
+									value="nvt" />
 								{{ t('procest', 'N/A') }}
 							</label>
 						</div>
@@ -130,30 +202,36 @@
 						<!-- Number -->
 						<input
 							v-if="item.type === 'getal'"
+							:id="`inspection-item-${index}-input`"
 							v-model.number="formResults[index].measurement"
 							type="number"
 							class="inspection-panel__input"
-							:placeholder="t('procest', 'Measurement value')">
+							:placeholder="t('procest', 'Measurement value')" />
 
 						<!-- Text -->
 						<input
-							v-if="item.type === 'tekst'"
+							v-if="item.type === 'text'"
+							:id="`inspection-item-${index}-input`"
 							v-model="formResults[index].comment"
 							type="text"
 							class="inspection-panel__input"
-							:placeholder="t('procest', 'Enter text')">
+							:placeholder="t('procest', 'Enter text')" />
 
 						<!-- Comment for all types -->
 						<input
-							v-if="item.type !== 'tekst'"
+							v-if="item.type !== 'text'"
 							v-model="formResults[index].comment"
 							type="text"
 							class="inspection-panel__input inspection-panel__input--comment"
-							:placeholder="t('procest', 'Comment (optional)')">
+							:aria-label="t('procest', 'Comment (optional)')"
+							:placeholder="t('procest', 'Comment (optional)')" />
 
 						<!-- Photo upload warning -->
 						<p
-							v-if="item.fotoRequired && formResults[index].result === 'fail'"
+							v-if="
+								item.photoRequired
+								&& formResults[index].result === 'fail'
+							"
 							class="inspection-panel__photo-warning">
 							{{ t('procest', 'Photo required for failed items') }}
 						</p>
@@ -164,7 +242,11 @@
 							type="primary"
 							:disabled="submitting"
 							@click="submitReport">
-							{{ submitting ? t('procest', 'Submitting...') : t('procest', 'Submit report') }}
+							{{
+								submitting
+									? t('procest', 'Submitting...')
+									: t('procest', 'Submit report')
+							}}
 						</NcButton>
 						<NcButton @click="closeForm">
 							{{ t('procest', 'Cancel') }}
@@ -177,8 +259,8 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import { useInspectionStore } from '../../../store/modules/inspection.js'
 
 export default {
@@ -194,10 +276,12 @@ export default {
 			type: String,
 			required: true,
 		},
+
 		caseTypeId: {
 			type: String,
 			required: true,
 		},
+
 		canInspect: {
 			type: Boolean,
 			default: true,
@@ -219,27 +303,37 @@ export default {
 		inspectionStore() {
 			return useInspectionStore()
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		reports() {
 			return this.inspectionStore.reports
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		activeChecklists() {
 			return this.inspectionStore.activeChecklists
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		loading() {
 			return this.inspectionStore.loading
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		totalPhases() {
 			return this.activeChecklists.length
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		completedPhases() {
-			const completedChecklistIds = new Set(this.reports.map((r) => r.checklist))
-			return this.activeChecklists.filter((c) => completedChecklistIds.has(c.id)).length
+			const completedChecklistIds = new Set(
+				this.reports.map((r) => r.checklist),
+			)
+			return this.activeChecklists.filter((c) =>
+				completedChecklistIds.has(c.id),
+			).length
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		progressPercent() {
 			if (this.totalPhases === 0) {
@@ -262,6 +356,7 @@ export default {
 				}
 			},
 		},
+
 		caseTypeId: {
 			immediate: true,
 			/**
@@ -274,6 +369,7 @@ export default {
 				}
 			},
 		},
+
 		/**
 		 * @param checklist
 		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
@@ -300,9 +396,9 @@ export default {
 		 */
 		resultLabel(result) {
 			const labels = {
-				conform: t('procest', 'Conform'),
-				niet_conform: t('procest', 'Non-conform'),
-				deels_conform: t('procest', 'Partially conform'),
+				conform: t('procest', 'Compliant'),
+				non_conform: t('procest', 'Non-conform'),
+				partly_conform: t('procest', 'Partially conform'),
 			}
 			return labels[result] || result
 		},
@@ -566,5 +662,11 @@ export default {
 	display: flex;
 	gap: 8px;
 	margin-top: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.inspection-panel__progress-fill {
+		transition: none;
+	}
 }
 </style>

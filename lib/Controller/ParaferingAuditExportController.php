@@ -42,170 +42,192 @@ use Throwable;
 /**
  * Read-only action controller for the parafering audit trail export.
  */
-class ParaferingAuditExportController extends Controller
-{
-    /**
-     * Groups that may export the audit trail.
-     */
-    private const ALLOWED_GROUPS = ['auditors', 'secretariaat', 'beheerders', 'admin'];
+class ParaferingAuditExportController extends Controller {
+	/**
+	 * Groups that may export the audit trail.
+	 */
+	private const ALLOWED_GROUPS = ['auditors', 'secretariaat', 'beheerders', 'admin'];
 
-    /**
-     * Constructor.
-     *
-     * @param string            $appName           Nextcloud app id
-     * @param IRequest          $request           Incoming request
-     * @param IUserSession      $userSession       Current user session
-     * @param IGroupManager     $groupManager      Group manager (for RBAC check)
-     * @param AuditTrailService $auditTrailService The audit-trail service
-     * @param SettingsService   $settingsService   Procest settings bridge
-     * @param LoggerInterface   $logger            PSR-3 logger
-     */
-    public function __construct(
-        string $appName,
-        IRequest $request,
-        private readonly IUserSession $userSession,
-        private readonly IGroupManager $groupManager,
-        private readonly AuditTrailService $auditTrailService,
-        private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
-    ) {
-        parent::__construct(appName: $appName, request: $request);
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param string $appName Nextcloud app id
+	 * @param IRequest $request Incoming request
+	 * @param IUserSession $userSession Current user session
+	 * @param IGroupManager $groupManager Group manager (for RBAC check)
+	 * @param AuditTrailService $auditTrailService The audit-trail service
+	 * @param SettingsService $settingsService Procest settings bridge
+	 * @param LoggerInterface $logger PSR-3 logger
+	 */
+	public function __construct(
+		string $appName,
+		IRequest $request,
+		private readonly IUserSession $userSession,
+		private readonly IGroupManager $groupManager,
+		private readonly AuditTrailService $auditTrailService,
+		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+		parent::__construct(appName: $appName, request: $request);
+	}//end __construct()
 
-    /**
-     * Export the audit trail for a voorstel.
-     *
-     * @param string $id     Voorstel UUID/slug from the route
-     * @param string $format Export format (currently only "json")
-     *
-     * @return JSONResponse
-     *
-     * @spec openspec/specs/parafering-audit-trail/spec.md
-     */
-    #[NoAdminRequired]
-    public function export(string $id, string $format='json'): JSONResponse
-    {
-        try {
-            $user = $this->userSession->getUser();
-            if ($user === null) {
-                return new JSONResponse(
-                    ['message' => 'Authentication required'],
-                    Http::STATUS_UNAUTHORIZED,
-                );
-            }
+	/**
+	 * Export the audit trail for a voorstel.
+	 *
+	 * @param string $id Voorstel UUID/slug from the route
+	 * @param string $format Export format (currently only "json")
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/parafering-audit-trail/spec.md
+	 */
+	#[NoAdminRequired]
+	public function export(string $id, string $format = 'json'): JSONResponse {
+		try {
+			$user = $this->userSession->getUser();
+			if ($user === null) {
+				return new JSONResponse(
+					['message' => 'Authentication required'],
+					Http::STATUS_UNAUTHORIZED,
+				);
+			}
 
-            $uid     = $user->getUID();
-            $allowed = false;
-            foreach (self::ALLOWED_GROUPS as $group) {
-                if ($this->groupManager->isInGroup($uid, $group) === true) {
-                    $allowed = true;
-                    break;
-                }
-            }
+			$uid = $user->getUID();
+			if ($this->isAuditorAuthorized(uid: $uid) === false) {
+				return new JSONResponse(
+					['message' => 'Audit export requires auditor role'],
+					Http::STATUS_FORBIDDEN,
+				);
+			}
 
-            // Also allow Nextcloud admins (defensive default).
-            if ($allowed === false && $this->groupManager->isAdmin($uid) === true) {
-                $allowed = true;
-            }
+			if ($id === '') {
+				return new JSONResponse(
+					['message' => 'voorstel id is required'],
+					Http::STATUS_BAD_REQUEST,
+				);
+			}
 
-            if ($allowed === false) {
-                return new JSONResponse(
-                    ['message' => 'Audit export requires auditor role'],
-                    Http::STATUS_FORBIDDEN,
-                );
-            }
+			$proposalOnderwerp = $this->resolveProposalOnderwerp(proposalId: $id);
+			if ($proposalOnderwerp === null) {
+				return new JSONResponse(
+					['message' => 'Voorstel not found'],
+					Http::STATUS_NOT_FOUND,
+				);
+			}
 
-            if ($id === '') {
-                return new JSONResponse(
-                    ['message' => 'voorstel id is required'],
-                    Http::STATUS_BAD_REQUEST,
-                );
-            }
+			$envelope = $this->auditTrailService->export(
+				proposalId: $id,
+				proposalOnderwerp: $proposalOnderwerp,
+				exportedBy: $uid,
+			);
 
-            $voorstelOnderwerp = $this->resolveVoorstelOnderwerp(voorstelId: $id);
-            if ($voorstelOnderwerp === null) {
-                return new JSONResponse(
-                    ['message' => 'Voorstel not found'],
-                    Http::STATUS_NOT_FOUND,
-                );
-            }
+			if (strtolower($format) !== 'json') {
+				// XML/CSV profiles deferred (per design.md); JSON is the V1 canonical format.
+				$envelope['metadata']['note'] = 'Only JSON export is supported in V1';
+			}
 
-            $envelope = $this->auditTrailService->export(
-                voorstelId: $id,
-                voorstelOnderwerp: $voorstelOnderwerp,
-                exportedBy: $uid,
-            );
+			return new JSONResponse($envelope, Http::STATUS_OK);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Procest: parafering audit export failed',
+				['proposal' => $id, 'exception' => $e->getMessage()],
+			);
 
-            if (strtolower($format) !== 'json') {
-                // XML/CSV profiles deferred (per design.md); JSON is the V1 canonical format.
-                $envelope['metadata']['note'] = 'Only JSON export is supported in V1';
-            }
+			return new JSONResponse(
+				['message' => 'Export failed'],
+				Http::STATUS_INTERNAL_SERVER_ERROR,
+			);
+		}//end try
+	}//end export()
 
-            return new JSONResponse($envelope, Http::STATUS_OK);
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest: parafering audit export failed',
-                ['voorstel' => $id, 'exception' => $e->getMessage()],
-            );
+	/**
+	 * Determine whether a user may export audit trails.
+	 *
+	 * @param string $uid The acting user UID
+	 *
+	 * @return bool
+	 */
+	private function isAuditorAuthorized(string $uid): bool {
+		foreach (self::ALLOWED_GROUPS as $group) {
+			if ($this->groupManager->isInGroup($uid, $group) === true) {
+				return true;
+			}
+		}
 
-            return new JSONResponse(
-                ['message' => 'Export failed'],
-                Http::STATUS_INTERNAL_SERVER_ERROR,
-            );
-        }//end try
-    }//end export()
+		// Also allow Nextcloud admins (defensive default).
+		return $this->groupManager->isAdmin($uid) === true;
+	}//end isAuditorAuthorized()
 
-    /**
-     * Resolve the voorstel onderwerp (or null when not found).
-     *
-     * @param string $voorstelId The voorstel UUID/slug
-     *
-     * @return string|null
-     */
-    private function resolveVoorstelOnderwerp(string $voorstelId): ?string
-    {
-        try {
-            $objectService = $this->settingsService->getObjectService();
-            if ($objectService === null) {
-                return null;
-            }
+	/**
+	 * Coerce an OpenRegister result value into an associative array.
+	 *
+	 * @param mixed $value Result value from ObjectService
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function coerceToArray(mixed $value): array {
+		if (is_array($value) === true) {
+			return $value;
+		}
 
-            $register = $this->settingsService->getConfigValue('register');
-            $schema   = $this->settingsService->getConfigValue('voorstel_schema');
-            if ($register === '' || $schema === '') {
-                return null;
-            }
+		if (is_object($value) === false) {
+			return [];
+		}
 
-            $voorstel = $objectService->find($voorstelId, register: $register, schema: $schema);
-            if ($voorstel === null) {
-                return null;
-            }
+		if (method_exists($value, 'jsonSerialize') === true) {
+			$serialized = $value->jsonSerialize();
+			if (is_array($serialized) === true) {
+				return $serialized;
+			}
 
-            $array = [];
-            if (is_array($voorstel) === true) {
-                $array = $voorstel;
-            } else if (is_object($voorstel) === true) {
-                if (method_exists($voorstel, 'jsonSerialize') === true) {
-                    $serialized = $voorstel->jsonSerialize();
-                    if (is_array($serialized) === true) {
-                        $array = $serialized;
-                    }
-                } else if (method_exists($voorstel, 'toArray') === true) {
-                    $arr = $voorstel->toArray();
-                    if (is_array($arr) === true) {
-                        $array = $arr;
-                    }
-                }
-            }
+			return [];
+		}
 
-            return (string) ($array['onderwerp'] ?? '');
-        } catch (Throwable $e) {
-            $this->logger->warning(
-                'Procest: failed to resolve voorstel onderwerp for export',
-                ['voorstel' => $voorstelId, 'exception' => $e->getMessage()],
-            );
+		if (method_exists($value, 'toArray') === true) {
+			$arr = $value->toArray();
+			if (is_array($arr) === true) {
+				return $arr;
+			}
+		}
 
-            return null;
-        }//end try
-    }//end resolveVoorstelOnderwerp()
+		return [];
+	}//end coerceToArray()
+
+	/**
+	 * Resolve the voorstel onderwerp (or null when not found).
+	 *
+	 * @param string $proposalId The voorstel UUID/slug
+	 *
+	 * @return string|null
+	 */
+	private function resolveProposalOnderwerp(string $proposalId): ?string {
+		try {
+			$objectService = $this->settingsService->getObjectService();
+			if ($objectService === null) {
+				return null;
+			}
+
+			$register = $this->settingsService->getConfigValue('register');
+			$schema = $this->settingsService->getConfigValue('voorstel_schema');
+			if ($register === '' || $schema === '') {
+				return null;
+			}
+
+			$proposal = $objectService->find($proposalId, register: $register, schema: $schema);
+			if ($proposal === null) {
+				return null;
+			}
+
+			$array = $this->coerceToArray(value: $proposal);
+
+			return (string)($array['subject'] ?? '');
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Procest: failed to resolve voorstel onderwerp for export',
+				['proposal' => $proposalId, 'exception' => $e->getMessage()],
+			);
+
+			return null;
+		}//end try
+	}//end resolveVoorstelOnderwerp()
 }//end class

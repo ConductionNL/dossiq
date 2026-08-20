@@ -37,69 +37,63 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-20
  */
-class TerugvorderingServiceTest extends TestCase
-{
+class TerugvorderingServiceTest extends TestCase {
 
-    private TerugvorderingService $service;
+	private TerugvorderingService $service;
 
-    /**
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $settings      = $this->createMock(SettingsService::class);
-        $logger        = $this->createMock(LoggerInterface::class);
-        $this->service = new TerugvorderingService($settings, $logger);
-    }//end setUp()
+	/**
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$logger = $this->createMock(LoggerInterface::class);
+		$this->service = new TerugvorderingService($settings, $logger);
+	}//end setUp()
 
-    /**
-     * @return void
-     */
-    public function testTermijnDates(): void
-    {
-        $publicatie = new DateTimeImmutable('2026-06-01');
-        // 6 weeks bezwaartermijn.
-        $this->assertSame('2026-07-13', $this->service->computeBezwaartermijn($publicatie)->format('Y-m-d'));
-        // 4 weeks betaaltermijn.
-        $this->assertSame('2026-06-29', $this->service->computeBetaaltermijn($publicatie)->format('Y-m-d'));
-    }//end testTermijnDates()
+	/**
+	 * @return void
+	 */
+	public function testTermijnDates(): void {
+		$publication = new DateTimeImmutable('2026-06-01');
+		// 6 weeks bezwaartermijn.
+		$this->assertSame('2026-07-13', $this->service->computeBezwaartermijn($publication)->format('Y-m-d'));
+		// 4 weeks betaaltermijn.
+		$this->assertSame('2026-06-29', $this->service->computeBetaaltermijn($publication)->format('Y-m-d'));
+	}//end testTermijnDates()
 
-    /**
-     * AWB 4:97 invorderingsrente: 6 % p/a over a one-year window on €30.000.
-     *
-     * @return void
-     */
-    public function testInvorderingsrenteOneYear(): void
-    {
-        $vanaf = new DateTimeImmutable('2026-01-01');
-        $tot   = new DateTimeImmutable('2027-01-01');
-        // 365 days at 6 %: 30000 * 0.06 * (365/365) = 1800.00.
-        $this->assertSame(1800.0, $this->service->computeInvorderingsrente(30000.0, $vanaf, $tot));
-    }//end testInvorderingsrenteOneYear()
+	/**
+	 * AWB 4:97 invorderingsrente: 6 % p/a over a one-year window on €30.000.
+	 *
+	 * @return void
+	 */
+	public function testInvorderingsrenteOneYear(): void {
+		$from = new DateTimeImmutable('2026-01-01');
+		$tot = new DateTimeImmutable('2027-01-01');
+		// 365 days at 6 %: 30000 * 0.06 * (365/365) = 1800.00.
+		$this->assertSame(1800.0, $this->service->computeInvorderingsrente(30000.0, $from, $tot));
+	}//end testInvorderingsrenteOneYear()
 
-    /**
-     * Rente is zero when the end date is on or before the start date, or when
-     * nothing is outstanding.
-     *
-     * @return void
-     */
-    public function testInvorderingsrenteGuards(): void
-    {
-        $vanaf = new DateTimeImmutable('2026-01-01');
-        $this->assertSame(0.0, $this->service->computeInvorderingsrente(30000.0, $vanaf, $vanaf));
-        $tot = new DateTimeImmutable('2025-01-01');
-        $this->assertSame(0.0, $this->service->computeInvorderingsrente(30000.0, $vanaf, $tot));
-        $tot2 = new DateTimeImmutable('2027-01-01');
-        $this->assertSame(0.0, $this->service->computeInvorderingsrente(0.0, $vanaf, $tot2));
-    }//end testInvorderingsrenteGuards()
+	/**
+	 * Rente is zero when the end date is on or before the start date, or when
+	 * nothing is outstanding.
+	 *
+	 * @return void
+	 */
+	public function testInvorderingsrenteGuards(): void {
+		$from = new DateTimeImmutable('2026-01-01');
+		$this->assertSame(0.0, $this->service->computeInvorderingsrente(30000.0, $from, $from));
+		$tot = new DateTimeImmutable('2025-01-01');
+		$this->assertSame(0.0, $this->service->computeInvorderingsrente(30000.0, $from, $tot));
+		$tot2 = new DateTimeImmutable('2027-01-01');
+		$this->assertSame(0.0, $this->service->computeInvorderingsrente(0.0, $from, $tot2));
+	}//end testInvorderingsrenteGuards()
 
-    /**
-     * @return void
-     */
-    public function testPaymentStatusMachine(): void
-    {
-        $this->assertSame('opgelegd', $this->service->statusAfterPayment(30000.0, 0.0));
-        $this->assertSame('gedeeltelijk_betaald', $this->service->statusAfterPayment(30000.0, 10000.0));
-        $this->assertSame('betaald', $this->service->statusAfterPayment(30000.0, 30000.0));
-    }//end testPaymentStatusMachine()
+	/**
+	 * @return void
+	 */
+	public function testPaymentStatusMachine(): void {
+		$this->assertSame('opgelegd', $this->service->statusAfterPayment(30000.0, 0.0));
+		$this->assertSame('gedeeltelijk_paid', $this->service->statusAfterPayment(30000.0, 10000.0));
+		$this->assertSame('paid', $this->service->statusAfterPayment(30000.0, 30000.0));
+	}//end testPaymentStatusMachine()
 }//end class

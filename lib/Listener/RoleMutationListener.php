@@ -48,126 +48,122 @@ use Throwable;
  *
  * @spec openspec/changes/role-based-step-routing/tasks.md#T04
  */
-class RoleMutationListener implements IEventListener
-{
-    /**
-     * Constructor.
-     *
-     * @param RoleResolverService $resolver        Resolver to invalidate
-     * @param SettingsService     $settingsService Schema slug bridge
-     * @param LoggerInterface     $logger          Logger
-     */
-    public function __construct(
-        private readonly RoleResolverService $resolver,
-        private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class RoleMutationListener implements IEventListener {
+	/**
+	 * Constructor.
+	 *
+	 * @param RoleResolverService $resolver Resolver to invalidate
+	 * @param SettingsService $settingsService Schema slug bridge
+	 * @param LoggerInterface $logger Logger
+	 */
+	public function __construct(
+		private readonly RoleResolverService $resolver,
+		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Handle an OpenRegister object lifecycle event.
-     *
-     * Only role-schema events are honoured. The case id is extracted from
-     * the object payload and the resolver cache is flushed.
-     *
-     * @param Event $event The dispatched event
-     *
-     * @return void
+	/**
+	 * Handle an OpenRegister object lifecycle event.
+	 *
+	 * Only role-schema events are honoured. The case id is extracted from
+	 * the object payload and the resolver cache is flushed.
+	 *
+	 * @param Event $event The dispatched event
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/role-based-step-routing/spec.md
+	 */
+	public function handle(Event $event): void {
+		if ($event instanceof ObjectCreatedEvent === false
+			&& $event instanceof ObjectUpdatedEvent === false
+			&& $event instanceof ObjectDeletedEvent === false
+		) {
+			return;
+		}
 
-     * @spec openspec/specs/role-based-step-routing/spec.md
-     */
-    public function handle(Event $event): void
-    {
-        if ($event instanceof ObjectCreatedEvent === false
-            && $event instanceof ObjectUpdatedEvent === false
-            && $event instanceof ObjectDeletedEvent === false
-        ) {
-            return;
-        }
+		try {
+			$object = $this->extractObject(event: $event);
+			if ($object === null) {
+				return;
+			}
 
-        try {
-            $object = $this->extractObject(event: $event);
-            if ($object === null) {
-                return;
-            }
+			if ($this->isRoleSchema(object: $object) === false) {
+				return;
+			}
 
-            if ($this->isRoleSchema(object: $object) === false) {
-                return;
-            }
+			$caseId = (string)($object['case'] ?? '');
+			if ($caseId === '') {
+				return;
+			}
 
-            $caseId = (string) ($object['case'] ?? '');
-            if ($caseId === '') {
-                return;
-            }
+			$this->resolver->invalidateCache($caseId);
+		} catch (Throwable $e) {
+			$this->logger->debug(
+				'Procest: role mutation listener swallowed exception: ' . $e->getMessage(),
+			);
+		}//end try
+	}//end handle()
 
-            $this->resolver->invalidateCache($caseId);
-        } catch (Throwable $e) {
-            $this->logger->debug(
-                'Procest: role mutation listener swallowed exception: '.$e->getMessage(),
-            );
-        }//end try
-    }//end handle()
+	/**
+	 * Whether the given object belongs to the `role` schema.
+	 *
+	 * @param array<string, mixed> $object The object payload
+	 *
+	 * @return bool
+	 */
+	private function isRoleSchema(array $object): bool {
+		$schemaSlug = $this->settingsService->getConfigValue('role_schema');
+		if ($schemaSlug === '') {
+			return false;
+		}
 
-    /**
-     * Whether the given object belongs to the `role` schema.
-     *
-     * @param array<string, mixed> $object The object payload
-     *
-     * @return bool
-     */
-    private function isRoleSchema(array $object): bool
-    {
-        $schemaSlug = $this->settingsService->getConfigValue('role_schema');
-        if ($schemaSlug === '') {
-            return false;
-        }
+		$candidate = (string)(
+			$object['@self']['schema'] ?? ($object['schema'] ?? '')
+		);
 
-        $candidate = (string) (
-            $object['@self']['schema'] ?? ($object['schema'] ?? '')
-        );
+		return $candidate !== '' && (
+			$candidate === $schemaSlug
+			|| str_ends_with($candidate, '/' . $schemaSlug)
+		);
+	}//end isRoleSchema()
 
-        return $candidate !== '' && (
-            $candidate === $schemaSlug
-            || str_ends_with($candidate, '/'.$schemaSlug)
-        );
-    }//end isRoleSchema()
+	/**
+	 * Extract the object payload from an event.
+	 *
+	 * @param Event $event The event
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function extractObject(Event $event): ?array {
+		foreach (['getObject', 'getNewObject', 'getOldObject'] as $method) {
+			if (method_exists($event, $method) === false) {
+				continue;
+			}
 
-    /**
-     * Extract the object payload from an event.
-     *
-     * @param Event $event The event
-     *
-     * @return array<string, mixed>|null
-     */
-    private function extractObject(Event $event): ?array
-    {
-        foreach (['getObject', 'getNewObject', 'getOldObject'] as $method) {
-            if (method_exists($event, $method) === false) {
-                continue;
-            }
+			$value = $event->{$method}();
+			if (is_array($value) === true) {
+				return $value;
+			}
 
-            $value = $event->{$method}();
-            if (is_array($value) === true) {
-                return $value;
-            }
+			if (is_object($value) === true) {
+				if (method_exists($value, 'jsonSerialize') === true) {
+					$serialised = $value->jsonSerialize();
+					if (is_array($serialised) === true) {
+						return $serialised;
+					}
+				}
 
-            if (is_object($value) === true) {
-                if (method_exists($value, 'jsonSerialize') === true) {
-                    $serialised = $value->jsonSerialize();
-                    if (is_array($serialised) === true) {
-                        return $serialised;
-                    }
-                }
+				if (method_exists($value, 'toArray') === true) {
+					$arr = $value->toArray();
+					if (is_array($arr) === true) {
+						return $arr;
+					}
+				}
+			}
+		}//end foreach
 
-                if (method_exists($value, 'toArray') === true) {
-                    $arr = $value->toArray();
-                    if (is_array($arr) === true) {
-                        return $arr;
-                    }
-                }
-            }
-        }//end foreach
-
-        return null;
-    }//end extractObject()
+		return null;
+	}//end extractObject()
 }//end class

@@ -36,119 +36,113 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Procest\Service\DsoLvAuthService
  */
-class DsoLvAuthServiceTest extends TestCase
-{
+class DsoLvAuthServiceTest extends TestCase {
 
-    /**
-     * The IAppConfig mock.
-     *
-     * @var IAppConfig|MockObject
-     */
-    private IAppConfig $appConfig;
+	/**
+	 * The IAppConfig mock.
+	 *
+	 * @var IAppConfig|MockObject
+	 */
+	private IAppConfig $appConfig;
 
-    /**
-     * The LoggerInterface mock.
-     *
-     * @var LoggerInterface|MockObject
-     */
-    private LoggerInterface $logger;
+	/**
+	 * The LoggerInterface mock.
+	 *
+	 * @var LoggerInterface|MockObject
+	 */
+	private LoggerInterface $logger;
 
-    /**
-     * The service under test.
-     *
-     * @var DsoLvAuthService
-     */
-    private DsoLvAuthService $service;
+	/**
+	 * The service under test.
+	 *
+	 * @var DsoLvAuthService
+	 */
+	private DsoLvAuthService $service;
 
-    /**
-     * Set up test fixtures.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
+	/**
+	 * Set up test fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		parent::setUp();
 
-        $this->appConfig = $this->createMock(IAppConfig::class);
-        $this->logger    = $this->createMock(LoggerInterface::class);
-        $this->service   = new DsoLvAuthService(
-            appConfig: $this->appConfig,
-            logger: $this->logger,
-        );
-    }//end setUp()
+		$this->appConfig = $this->createMock(IAppConfig::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->service = new DsoLvAuthService(
+			appConfig: $this->appConfig,
+			logger: $this->logger,
+		);
+	}//end setUp()
 
-    /**
-     * Test that getAuthHeaders returns Bearer token when configured.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
-     */
-    public function testGetAuthHeadersReturnsBearerTokenWhenConfigured(): void
-    {
-        $this->appConfig
-            ->method('getValueString')
-            ->willReturn('test-bearer-token-abc123');
+	/**
+	 * Test that getAuthHeaders returns Bearer token when configured.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
+	 */
+	public function testGetAuthHeadersReturnsBearerTokenWhenConfigured(): void {
+		$this->appConfig
+			->method('getValueString')
+			->willReturn('test-bearer-token-abc123');
 
-        $headers = $this->service->getAuthHeaders();
+		$headers = $this->service->getAuthHeaders();
 
-        $this->assertSame(
-            ['Authorization' => 'Bearer test-bearer-token-abc123'],
-            $headers
-        );
-    }//end testGetAuthHeadersReturnsBearerTokenWhenConfigured()
+		$this->assertSame(
+			['Authorization' => 'Bearer test-bearer-token-abc123'],
+			$headers
+		);
+	}//end testGetAuthHeadersReturnsBearerTokenWhenConfigured()
 
-    /**
-     * Test that getAuthHeaders returns empty array and logs warning when token is not set.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
-     */
-    public function testGetAuthHeadersReturnsEmptyArrayAndLogsWarningWhenNotConfigured(): void
-    {
-        $this->appConfig
-            ->method('getValueString')
-            ->willReturn('');
+	/**
+	 * Test that getAuthHeaders returns empty array and logs warning when token is not set.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
+	 */
+	public function testGetAuthHeadersReturnsEmptyArrayAndLogsWarningWhenNotConfigured(): void {
+		$this->appConfig
+			->method('getValueString')
+			->willReturn('');
 
-        $this->logger
-            ->expects($this->once())
-            ->method('warning');
+		$this->logger
+			->expects($this->once())
+			->method('warning');
 
-        $headers = $this->service->getAuthHeaders();
+		$headers = $this->service->getAuthHeaders();
 
-        $this->assertSame([], $headers);
-    }//end testGetAuthHeadersReturnsEmptyArrayAndLogsWarningWhenNotConfigured()
+		$this->assertSame([], $headers);
+	}//end testGetAuthHeadersReturnsEmptyArrayAndLogsWarningWhenNotConfigured()
 
-    /**
-     * Test that isAuthConfigured returns true when a token is set.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
-     */
-    public function testIsAuthConfiguredReturnsTrueWhenTokenSet(): void
-    {
-        $this->appConfig
-            ->method('getValueString')
-            ->willReturn('some-token');
+	/**
+	 * Test that isAuthConfigured returns true when a token is set.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
+	 */
+	public function testIsAuthConfiguredReturnsTrueWhenTokenSet(): void {
+		$this->appConfig
+			->method('getValueString')
+			->willReturn('some-token');
 
-        $this->assertTrue($this->service->isAuthConfigured());
-    }//end testIsAuthConfiguredReturnsTrueWhenTokenSet()
+		$this->assertTrue($this->service->isAuthConfigured());
+	}//end testIsAuthConfiguredReturnsTrueWhenTokenSet()
 
-    /**
-     * Test that isAuthConfigured returns false when token is empty.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
-     */
-    public function testIsAuthConfiguredReturnsFalseWhenTokenEmpty(): void
-    {
-        $this->appConfig
-            ->method('getValueString')
-            ->willReturn('');
+	/**
+	 * Test that isAuthConfigured returns false when token is empty.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
+	 */
+	public function testIsAuthConfiguredReturnsFalseWhenTokenEmpty(): void {
+		$this->appConfig
+			->method('getValueString')
+			->willReturn('');
 
-        $this->assertFalse($this->service->isAuthConfigured());
-    }//end testIsAuthConfiguredReturnsFalseWhenTokenEmpty()
+		$this->assertFalse($this->service->isAuthConfigured());
+	}//end testIsAuthConfiguredReturnsFalseWhenTokenEmpty()
 }//end class

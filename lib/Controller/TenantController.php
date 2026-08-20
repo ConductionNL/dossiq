@@ -22,7 +22,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-multi-tenancy/tasks.md#task-1
+ * @spec openspec/specs/multi-tenancy/spec.md
  */
 
 declare(strict_types=1);
@@ -47,108 +47,103 @@ use OCP\IUserSession;
  * methods below remain: they wrap provisioning workflow, resource-usage
  * aggregation, and current-tenant resolution.
  */
-class TenantController extends Controller
-{
-    /**
-     * Constructor for the TenantController.
-     *
-     * @param IRequest      $request       The request object
-     * @param TenantService $tenantService The tenant service
-     * @param IUserSession  $userSession   The user session
-     *
-     * @return void
-     */
-    public function __construct(
-        IRequest $request,
-        private TenantService $tenantService,
-        private IUserSession $userSession,
-    ) {
-        parent::__construct(appName: Application::APP_ID, request: $request);
-    }//end __construct()
+class TenantController extends Controller {
+	/**
+	 * Constructor for the TenantController.
+	 *
+	 * @param IRequest $request The request object
+	 * @param TenantService $tenantService The tenant service
+	 * @param IUserSession $userSession The user session
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		IRequest $request,
+		private TenantService $tenantService,
+		private IUserSession $userSession,
+	) {
+		parent::__construct(appName: Application::APP_ID, request: $request);
+	}//end __construct()
 
-    /**
-     * Provision a tenant with register, group, and default schemas.
-     *
-     * @param string $tenantId The tenant UUID
-     *
-     * @return JSONResponse The provisioning result
+	/**
+	 * Provision a tenant with register, group, and default schemas.
+	 *
+	 * @param string $tenantId The tenant UUID
+	 *
+	 * @return JSONResponse The provisioning result
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	#[AuthorizedAdminSetting(AdminSettings::class)]
+	public function provision(string $tenantId): JSONResponse {
+		if ($this->isPlatformAdmin() === false) {
+			return new JSONResponse(['success' => false, 'error' => 'Admin required'], 403);
+		}
 
-      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-      */
-    #[AuthorizedAdminSetting(AdminSettings::class)]
-    public function provision(string $tenantId): JSONResponse
-    {
-        if ($this->isPlatformAdmin() === false) {
-            return new JSONResponse(['success' => false, 'error' => 'Admin required'], 403);
-        }
+		$result = $this->tenantService->provisionTenant($tenantId);
 
-        $result = $this->tenantService->provisionTenant($tenantId);
+		if (isset($result['error']) === true) {
+			return new JSONResponse(['success' => false, 'error' => $result['error']], 500);
+		}
 
-        if (isset($result['error']) === true) {
-            return new JSONResponse(['success' => false, 'error' => $result['error']], 500);
-        }
+		return new JSONResponse(['success' => true, 'tenant' => $result]);
+	}//end provision()
 
-        return new JSONResponse(['success' => true, 'tenant' => $result]);
-    }//end provision()
+	/**
+	 * Get resource usage for a tenant.
+	 *
+	 * @param string $tenantId The tenant UUID
+	 *
+	 * @return JSONResponse The resource usage
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	#[AuthorizedAdminSetting(AdminSettings::class)]
+	public function usage(string $tenantId): JSONResponse {
+		if ($this->isPlatformAdmin() === false) {
+			return new JSONResponse(['success' => false, 'error' => 'Admin required'], 403);
+		}
 
-    /**
-     * Get resource usage for a tenant.
-     *
-     * @param string $tenantId The tenant UUID
-     *
-     * @return JSONResponse The resource usage
+		$usage = $this->tenantService->getResourceUsage($tenantId);
+		return new JSONResponse(['success' => true, 'usage' => $usage]);
+	}//end usage()
 
-      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-      */
-    #[AuthorizedAdminSetting(AdminSettings::class)]
-    public function usage(string $tenantId): JSONResponse
-    {
-        if ($this->isPlatformAdmin() === false) {
-            return new JSONResponse(['success' => false, 'error' => 'Admin required'], 403);
-        }
+	/**
+	 * Get the current user's tenant.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @return JSONResponse The current tenant
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function current(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-        $usage = $this->tenantService->getResourceUsage($tenantId);
-        return new JSONResponse(['success' => true, 'usage' => $usage]);
-    }//end usage()
+		$tenant = $this->tenantService->getTenantForUser($user->getUID());
+		if ($tenant === null) {
+			return new JSONResponse(
+				['success' => true, 'tenant' => null, 'message' => 'No tenant assigned']
+			);
+		}
 
-    /**
-     * Get the current user's tenant.
-     *
-     * @NoAdminRequired
-     *
-     * @return JSONResponse The current tenant
+		return new JSONResponse(['success' => true, 'tenant' => $tenant]);
+	}//end current()
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function current(): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+	/**
+	 * Check if current user is a platform administrator.
+	 *
+	 * @return bool True if admin
+	 */
+	private function isPlatformAdmin(): bool {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return false;
+		}
 
-        $tenant = $this->tenantService->getTenantForUser($user->getUID());
-        if ($tenant === null) {
-            return new JSONResponse(
-                ['success' => true, 'tenant' => null, 'message' => 'No tenant assigned']
-            );
-        }
-
-        return new JSONResponse(['success' => true, 'tenant' => $tenant]);
-    }//end current()
-
-    /**
-     * Check if current user is a platform administrator.
-     *
-     * @return bool True if admin
-     */
-    private function isPlatformAdmin(): bool
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return false;
-        }
-
-        return $this->tenantService->isPlatformAdmin($user->getUID());
-    }//end isPlatformAdmin()
+		return $this->tenantService->isPlatformAdmin($user->getUID());
+	}//end isPlatformAdmin()
 }//end class

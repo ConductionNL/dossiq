@@ -34,27 +34,26 @@ use Psr\Log\LoggerInterface;
  * Declares named-argument signatures matching production calls in
  * RaadsinformatieFeedController so createMock() generates a proper stub.
  */
-interface FeedObjectServiceStub
-{
-    /**
-     * Slug-aware search bridge (real ObjectService::searchObjectsBySlug()).
-     *
-     * @param string              $registerSlug The register slug
-     * @param string              $schemaSlug   The schema slug
-     * @param array<string,mixed> $filters      Query parameters
-     *
-     * @return array<int,mixed>|int
-     */
-    public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters=[]): array | int;
+interface FeedObjectServiceStub {
+	/**
+	 * Slug-aware search bridge (real ObjectService::searchObjectsBySlug()).
+	 *
+	 * @param string $registerSlug The register slug
+	 * @param string $schemaSlug The schema slug
+	 * @param array<string,mixed> $filters Query parameters
+	 *
+	 * @return array<int,mixed>|int
+	 */
+	public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array|int;
 
-    /**
-     * Search objects (real ObjectService::searchObjects()).
-     *
-     * @param array<string,mixed> $query Query with @self block and field filters.
-     *
-     * @return array<int,mixed>|int
-     */
-    public function searchObjects(array $query=[]): array | int;
+	/**
+	 * Search objects (real ObjectService::searchObjects()).
+	 *
+	 * @param array<string,mixed> $query Query with @self block and field filters.
+	 *
+	 * @return array<int,mixed>|int
+	 */
+	public function searchObjects(array $query = []): array|int;
 }//end interface
 
 /**
@@ -62,187 +61,169 @@ interface FeedObjectServiceStub
  *
  * @covers \OCA\Procest\Controller\RaadsinformatieFeedController
  */
-class RaadsinformatieFeedControllerTest extends TestCase
-{
+class RaadsinformatieFeedControllerTest extends TestCase {
 
-    /**
-     * The mocked request.
-     *
-     * @var IRequest|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private IRequest $request;
+	/**
+	 * The mocked request.
+	 *
+	 * @var IRequest|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private IRequest $request;
 
-    /**
-     * The mocked settings service.
-     *
-     * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private SettingsService $settingsService;
+	/**
+	 * The mocked settings service.
+	 *
+	 * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private SettingsService $settingsService;
 
-    /**
-     * The mocked logger.
-     *
-     * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private LoggerInterface $logger;
+	/**
+	 * The mocked logger.
+	 *
+	 * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private LoggerInterface $logger;
 
-    /**
-     * The controller under test.
-     *
-     * @var RaadsinformatieFeedController
-     */
-    private RaadsinformatieFeedController $controller;
+	/**
+	 * The controller under test.
+	 *
+	 * @var RaadsinformatieFeedController
+	 */
+	private RaadsinformatieFeedController $controller;
 
+	/**
+	 * Set up test fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->request = $this->createMock(IRequest::class);
+		$this->settingsService = $this->createMock(SettingsService::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
 
-    /**
-     * Set up test fixtures.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->request         = $this->createMock(IRequest::class);
-        $this->settingsService = $this->createMock(SettingsService::class);
-        $this->logger          = $this->createMock(LoggerInterface::class);
+		$this->controller = new RaadsinformatieFeedController(
+			request: $this->request,
+			settingsService: $this->settingsService,
+			logger: $this->logger,
+		);
 
-        $this->controller = new RaadsinformatieFeedController(
-            request: $this->request,
-            settingsService: $this->settingsService,
-            logger: $this->logger,
-        );
+	}//end setUp()
 
-    }//end setUp()
+	/**
+	 * Test vergaderingen() returns a DataDisplayResponse.
+	 *
+	 * @return void
+	 */
+	public function testVergaderingenReturnsDataDisplayResponse(): void {
+		$this->settingsService->method('getObjectService')->willReturn(null);
 
+		$response = $this->controller->vergaderingen();
 
-    /**
-     * Test vergaderingen() returns a DataDisplayResponse.
-     *
-     * @return void
-     */
-    public function testVergaderingenReturnsDataDisplayResponse(): void
-    {
-        $this->settingsService->method('getObjectService')->willReturn(null);
+		$this->assertInstanceOf(DataDisplayResponse::class, $response);
 
-        $response = $this->controller->vergaderingen();
+	}//end testVergaderingenReturnsDataDisplayResponse()
 
-        $this->assertInstanceOf(DataDisplayResponse::class, $response);
+	/**
+	 * Test agendapunten() returns a DataDisplayResponse.
+	 *
+	 * @return void
+	 */
+	public function testAgendapuntenReturnsDataDisplayResponse(): void {
+		$this->settingsService->method('getObjectService')->willReturn(null);
 
-    }//end testVergaderingenReturnsDataDisplayResponse()
+		$response = $this->controller->agendapunten();
 
+		$this->assertInstanceOf(DataDisplayResponse::class, $response);
 
-    /**
-     * Test agendapunten() returns a DataDisplayResponse.
-     *
-     * @return void
-     */
-    public function testAgendapuntenReturnsDataDisplayResponse(): void
-    {
-        $this->settingsService->method('getObjectService')->willReturn(null);
+	}//end testAgendapuntenReturnsDataDisplayResponse()
 
-        $response = $this->controller->agendapunten();
+	/**
+	 * Test documenten() returns a DataDisplayResponse.
+	 *
+	 * @return void
+	 */
+	public function testDocumentenReturnsDataDisplayResponse(): void {
+		$this->settingsService->method('getObjectService')->willReturn(null);
 
-        $this->assertInstanceOf(DataDisplayResponse::class, $response);
+		$response = $this->controller->documenten();
 
-    }//end testAgendapuntenReturnsDataDisplayResponse()
+		$this->assertInstanceOf(DataDisplayResponse::class, $response);
 
+	}//end testDocumentenReturnsDataDisplayResponse()
 
-    /**
-     * Test documenten() returns a DataDisplayResponse.
-     *
-     * @return void
-     */
-    public function testDocumentenReturnsDataDisplayResponse(): void
-    {
-        $this->settingsService->method('getObjectService')->willReturn(null);
+	/**
+	 * Test feed response contains valid Atom XML elements.
+	 *
+	 * @return void
+	 */
+	public function testFeedResponseContainsAtomXml(): void {
+		$objectService = $this->createMock(FeedObjectServiceStub::class);
+		$objectService->method('searchObjectsBySlug')->willReturn([
+			[
+				'@self' => ['slug' => 'raadsvergadering-2026-06-15'],
+				'name' => 'Raadsvergadering 15 juni 2026',
+				'startDate' => '2026-06-15T19:00:00+02:00',
+				'location' => 'Raadzaal',
+				'status' => 'planned',
+			],
+		]);
 
-        $response = $this->controller->documenten();
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
 
-        $this->assertInstanceOf(DataDisplayResponse::class, $response);
+		$response = $this->controller->vergaderingen();
+		$body = $response->render();
 
-    }//end testDocumentenReturnsDataDisplayResponse()
+		$this->assertStringContainsString('<feed', $body);
+		$this->assertStringContainsString('<entry>', $body);
+		$this->assertStringContainsString('Raadsvergadering 15 juni 2026', $body);
 
+	}//end testFeedResponseContainsAtomXml()
 
-    /**
-     * Test feed response contains valid Atom XML elements.
-     *
-     * @return void
-     */
-    public function testFeedResponseContainsAtomXml(): void
-    {
-        $objectService = $this->createMock(FeedObjectServiceStub::class);
-        $objectService->method('searchObjectsBySlug')->willReturn([
-            [
-                '@self'      => ['slug' => 'raadsvergadering-2026-06-15'],
-                'naam'       => 'Raadsvergadering 15 juni 2026',
-                'startDatum' => '2026-06-15T19:00:00+02:00',
-                'locatie'    => 'Raadzaal',
-                'status'     => 'gepland',
-            ],
-        ]);
+	/**
+	 * Test feed response sets Atom Content-Type header.
+	 *
+	 * @return void
+	 */
+	public function testFeedResponseSetsAtomContentType(): void {
+		$this->settingsService->method('getObjectService')->willReturn(null);
 
-        $this->settingsService->method('getObjectService')->willReturn($objectService);
+		$response = $this->controller->vergaderingen();
+		$headers = $response->getHeaders();
 
-        $response = $this->controller->vergaderingen();
-        $body     = $response->render();
+		$this->assertArrayHasKey('Content-Type', $headers);
+		$this->assertStringContainsString('atom+xml', $headers['Content-Type']);
 
-        $this->assertStringContainsString('<feed', $body);
-        $this->assertStringContainsString('<entry>', $body);
-        $this->assertStringContainsString('Raadsvergadering 15 juni 2026', $body);
+	}//end testFeedResponseSetsAtomContentType()
 
-    }//end testFeedResponseContainsAtomXml()
+	/**
+	 * Test feed response includes Cache-Control header.
+	 *
+	 * @return void
+	 */
+	public function testFeedResponseIncludesCacheControlHeader(): void {
+		$this->settingsService->method('getObjectService')->willReturn(null);
 
+		$response = $this->controller->vergaderingen();
+		$headers = $response->getHeaders();
 
-    /**
-     * Test feed response sets Atom Content-Type header.
-     *
-     * @return void
-     */
-    public function testFeedResponseSetsAtomContentType(): void
-    {
-        $this->settingsService->method('getObjectService')->willReturn(null);
+		$this->assertArrayHasKey('Cache-Control', $headers);
 
-        $response = $this->controller->vergaderingen();
-        $headers  = $response->getHeaders();
+	}//end testFeedResponseIncludesCacheControlHeader()
 
-        $this->assertArrayHasKey('Content-Type', $headers);
-        $this->assertStringContainsString('atom+xml', $headers['Content-Type']);
+	/**
+	 * Test feed returns valid XML even when no objects are available.
+	 *
+	 * @return void
+	 */
+	public function testFeedReturnsValidXmlWhenNoObjects(): void {
+		$this->settingsService->method('getObjectService')->willReturn(null);
 
-    }//end testFeedResponseSetsAtomContentType()
+		$response = $this->controller->vergaderingen();
+		$body = $response->render();
 
+		$this->assertStringContainsString('<feed', $body);
+		$this->assertStringContainsString('</feed>', $body);
 
-    /**
-     * Test feed response includes Cache-Control header.
-     *
-     * @return void
-     */
-    public function testFeedResponseIncludesCacheControlHeader(): void
-    {
-        $this->settingsService->method('getObjectService')->willReturn(null);
-
-        $response = $this->controller->vergaderingen();
-        $headers  = $response->getHeaders();
-
-        $this->assertArrayHasKey('Cache-Control', $headers);
-
-    }//end testFeedResponseIncludesCacheControlHeader()
-
-
-    /**
-     * Test feed returns valid XML even when no objects are available.
-     *
-     * @return void
-     */
-    public function testFeedReturnsValidXmlWhenNoObjects(): void
-    {
-        $this->settingsService->method('getObjectService')->willReturn(null);
-
-        $response = $this->controller->vergaderingen();
-        $body     = $response->render();
-
-        $this->assertStringContainsString('<feed', $body);
-        $this->assertStringContainsString('</feed>', $body);
-
-    }//end testFeedReturnsValidXmlWhenNoObjects()
-
+	}//end testFeedReturnsValidXmlWhenNoObjects()
 
 }//end class

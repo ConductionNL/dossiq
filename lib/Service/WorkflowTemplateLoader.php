@@ -33,202 +33,193 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/status-transition-engine/tasks.md#T03
  */
-class WorkflowTemplateLoader
-{
+class WorkflowTemplateLoader {
 
-    /**
-     * Per-request cache keyed by caseTypeId. The value is either a decoded
-     * template array, or `false` to indicate a confirmed miss (so we don't
-     * re-query on every lookup).
-     *
-     * @var array<string, array<string, mixed>|false>
-     */
-    private array $cache = [];
+	/**
+	 * Per-request cache keyed by caseTypeId. The value is either a decoded
+	 * template array, or `false` to indicate a confirmed miss (so we don't
+	 * re-query on every lookup).
+	 *
+	 * @var array<string, array<string, mixed>|false>
+	 */
+	private array $cache = [];
 
-    /**
-     * Constructor.
-     *
-     * @param SettingsService $settingsService Bridge to OpenRegister + config
-     * @param LoggerInterface $logger          Logger
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService Bridge to OpenRegister + config
+	 * @param LoggerInterface $logger Logger
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Get the active workflow template for a caseType.
-     *
-     * @param string $caseTypeId The caseType UUID
-     *
-     * @return array<string, mixed>|null The template with `transitions` and `steps` decoded, or null when none active
+	/**
+	 * Get the active workflow template for a caseType.
+	 *
+	 * @param string $caseTypeId The caseType UUID
+	 *
+	 * @return array<string, mixed>|null The template with `transitions` and `steps` decoded, or null when none active
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function getActiveTemplate(string $caseTypeId): ?array {
+		if ($caseTypeId === '') {
+			return null;
+		}
 
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function getActiveTemplate(string $caseTypeId): ?array
-    {
-        if ($caseTypeId === '') {
-            return null;
-        }
+		if (isset($this->cache[$caseTypeId]) === true) {
+			if ($this->cache[$caseTypeId] === false) {
+				return null;
+			}
 
-        if (isset($this->cache[$caseTypeId]) === true) {
-            if ($this->cache[$caseTypeId] === false) {
-                return null;
-            }
+			return $this->cache[$caseTypeId];
+		}
 
-            return $this->cache[$caseTypeId];
-        }
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			$this->cache[$caseTypeId] = false;
+			return null;
+		}
 
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            $this->cache[$caseTypeId] = false;
-            return null;
-        }
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$templateSchema = $this->settingsService->getConfigValue(key: 'workflow_template_schema');
+		if ($register === '' || $templateSchema === '') {
+			$this->cache[$caseTypeId] = false;
+			return null;
+		}
 
-        $register       = $this->settingsService->getConfigValue(key: 'register');
-        $templateSchema = $this->settingsService->getConfigValue(key: 'workflow_template_schema');
-        if ($register === '' || $templateSchema === '') {
-            $this->cache[$caseTypeId] = false;
-            return null;
-        }
+		try {
+			// OpenRegister's ObjectService exposes `searchObjects($query)` —
+			// there is NO `findObjects()` method (its absence is what previously
+			// broke the engine: the call threw and every lookup returned empty).
+			// The register/schema context lives under the `@self` block; object
+			// field filters (caseType, isActive) sit at the top level and are
+			// applied as server-side equality matches.
+			$found = $objectService->searchObjects(
+				[
+					'@self' => [
+						'register' => (int)$register,
+						'schema' => (int)$templateSchema,
+					],
+					'caseType' => $caseTypeId,
+					'isActive' => true,
+				],
+			);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'WorkflowTemplateLoader: searchObjects failed',
+				['exception' => $e->getMessage(), 'caseType' => $caseTypeId],
+			);
+			$this->cache[$caseTypeId] = false;
+			return null;
+		}//end try
 
-        try {
-            // OpenRegister's ObjectService exposes `searchObjects($query)` —
-            // there is NO `findObjects()` method (its absence is what previously
-            // broke the engine: the call threw and every lookup returned empty).
-            // The register/schema context lives under the `@self` block; object
-            // field filters (caseType, isActive) sit at the top level and are
-            // applied as server-side equality matches.
-            $found = $objectService->searchObjects(
-                [
-                    '@self'    => [
-                        'register' => (int) $register,
-                        'schema'   => (int) $templateSchema,
-                    ],
-                    'caseType' => $caseTypeId,
-                    'isActive' => true,
-                ],
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'WorkflowTemplateLoader: searchObjects failed',
-                ['exception' => $e->getMessage(), 'caseType' => $caseTypeId],
-            );
-            $this->cache[$caseTypeId] = false;
-            return null;
-        }//end try
+		// The normalise() helper already coerces any non-array result (e.g. the
+		// int that searchObjects() returns in count mode) to an empty list.
+		$templates = $this->normalise(value: $found);
+		if (count($templates) === 0) {
+			$this->cache[$caseTypeId] = false;
+			return null;
+		}
 
-        // The normalise() helper already coerces any non-array result (e.g. the
-        // int that searchObjects() returns in count mode) to an empty list.
-        $templates = $this->normalise(value: $found);
-        if (count($templates) === 0) {
-            $this->cache[$caseTypeId] = false;
-            return null;
-        }
+		$template = $templates[0];
+		$this->decodeJsonField(template: $template, field: 'transitions');
+		$this->decodeJsonField(template: $template, field: 'steps');
 
-        $template = $templates[0];
-        $this->decodeJsonField(template: $template, field: 'transitions');
-        $this->decodeJsonField(template: $template, field: 'steps');
+		$this->cache[$caseTypeId] = $template;
+		return $template;
+	}//end getActiveTemplate()
 
-        $this->cache[$caseTypeId] = $template;
-        return $template;
-    }//end getActiveTemplate()
+	/**
+	 * Convenience: get a single transition definition by its id.
+	 *
+	 * @param string $caseTypeId CaseType UUID
+	 * @param string $transitionId Transition id (from the template's transitions[])
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function getTransitionById(string $caseTypeId, string $transitionId): ?array {
+		$template = $this->getActiveTemplate(caseTypeId: $caseTypeId);
+		if ($template === null) {
+			return null;
+		}
 
-    /**
-     * Convenience: get a single transition definition by its id.
-     *
-     * @param string $caseTypeId   CaseType UUID
-     * @param string $transitionId Transition id (from the template's transitions[])
-     *
-     * @return array<string, mixed>|null
+		$transitions = $template['transitions'] ?? [];
+		if (is_array($transitions) === false) {
+			return null;
+		}
 
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function getTransitionById(string $caseTypeId, string $transitionId): ?array
-    {
-        $template = $this->getActiveTemplate(caseTypeId: $caseTypeId);
-        if ($template === null) {
-            return null;
-        }
+		foreach ($transitions as $transition) {
+			if (is_array($transition) === false) {
+				continue;
+			}
 
-        $transitions = $template['transitions'] ?? [];
-        if (is_array($transitions) === false) {
-            return null;
-        }
+			if ((string)($transition['id'] ?? '') === $transitionId) {
+				return $transition;
+			}
+		}
 
-        foreach ($transitions as $transition) {
-            if (is_array($transition) === false) {
-                continue;
-            }
+		return null;
+	}//end getTransitionById()
 
-            if ((string) ($transition['id'] ?? '') === $transitionId) {
-                return $transition;
-            }
-        }
+	/*
+	 * NO clearCache() HERE.
+	 *
+	 * Same as `Cmmn\CaseModelLoader`: it emptied the per-request memo below,
+	 * had no caller in either consumer (`Cmmn\CaseModelLoader`,
+	 * `StatusTransitionService`), and the memo does not outlive the request.
+	 */
 
-        return null;
-    }//end getTransitionById()
+	/**
+	 * Normalise the result of ObjectService::searchObjects() to a list of arrays.
+	 *
+	 * @param mixed $value Raw result
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function normalise(mixed $value): array {
+		if (is_array($value) === false) {
+			return [];
+		}
 
-    /**
-     * Clear the per-request cache (call when a template is updated mid-request).
-     *
-     * @return void
+		$list = [];
+		foreach ($value as $item) {
+			if (is_array($item) === true) {
+				$list[] = $item;
+				continue;
+			}
 
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function clearCache(): void
-    {
-        $this->cache = [];
-    }//end clearCache()
+			if (is_object($item) === true && method_exists($item, 'jsonSerialize') === true) {
+				$serialized = $item->jsonSerialize();
+				if (is_array($serialized) === true) {
+					$list[] = $serialized;
+				}
+			}
+		}
 
-    /**
-     * Normalise the result of ObjectService::searchObjects() to a list of arrays.
-     *
-     * @param mixed $value Raw result
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function normalise(mixed $value): array
-    {
-        if (is_array($value) === false) {
-            return [];
-        }
+		return $list;
+	}//end normalise()
 
-        $list = [];
-        foreach ($value as $item) {
-            if (is_array($item) === true) {
-                $list[] = $item;
-                continue;
-            }
-
-            if (is_object($item) === true && method_exists($item, 'jsonSerialize') === true) {
-                $serialized = $item->jsonSerialize();
-                if (is_array($serialized) === true) {
-                    $list[] = $serialized;
-                }
-            }
-        }
-
-        return $list;
-    }//end normalise()
-
-    /**
-     * Decode a JSON-string field on the template in place.
-     *
-     * @param array<string, mixed> $template The template (passed by reference)
-     * @param string               $field    The field name
-     *
-     * @return void
-     */
-    private function decodeJsonField(array &$template, string $field): void
-    {
-        $value = $template[$field] ?? null;
-        if (is_string($value) === true && $value !== '') {
-            $decoded = json_decode($value, true);
-            if (is_array($decoded) === true) {
-                $template[$field] = $decoded;
-            }
-        }
-    }//end decodeJsonField()
+	/**
+	 * Decode a JSON-string field on the template in place.
+	 *
+	 * @param array<string, mixed> $template The template (passed by reference)
+	 * @param string $field The field name
+	 *
+	 * @return void
+	 */
+	private function decodeJsonField(array &$template, string $field): void {
+		$value = $template[$field] ?? null;
+		if (is_string($value) === true && $value !== '') {
+			$decoded = json_decode($value, true);
+			if (is_array($decoded) === true) {
+				$template[$field] = $decoded;
+			}
+		}
+	}//end decodeJsonField()
 }//end class

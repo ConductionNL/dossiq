@@ -7,7 +7,7 @@
   - circuit-breaker health. Rendered as a tab inside AdminRoot's
   - CnSettingsSection, so it carries no NcSettingsSection wrapper of its own.
   -
-  - @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-rest-surface
+  - @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-rest-surface
   -
   - @visual exclude Admin-only read-only panel rendered inside AdminRoot's settings section; its table only shows StUF endpoints + circuit-breaker health fetched from the backend, which requires a seeded zaaksysteem endpoint and the OpenRegister register installed. Without a live endpoint the view is its empty state, so a screenshot baseline would capture nothing meaningful. Covered by the env-gated live-e2e job; the render logic (healthClass/healthLabel) is unit-testable JS, not a stable pixel surface.
 -->
@@ -16,28 +16,36 @@
 		<table class="stuf-endpoints__table" data-testid="stuf-endpoints-table">
 			<thead>
 				<tr>
-					<th>{{ t('procest', 'Name') }}</th>
-					<th>{{ t('procest', 'Gemeente code') }}</th>
-					<th>{{ t('procest', 'Application') }}</th>
-					<th>{{ t('procest', 'SOAP version') }}</th>
-					<th>{{ t('procest', 'Strategy') }}</th>
-					<th>{{ t('procest', 'Health') }}</th>
-					<th>{{ t('procest', 'Active') }}</th>
+					<th scope="col">{{ t('procest', 'Name') }}</th>
+					<th scope="col">{{ t('procest', 'Municipality code') }}</th>
+					<th scope="col">{{ t('procest', 'Application') }}</th>
+					<th scope="col">{{ t('procest', 'SOAP version') }}</th>
+					<th scope="col">{{ t('procest', 'Strategy') }}</th>
+					<th scope="col">{{ t('procest', 'Health') }}</th>
+					<th scope="col">{{ t('procest', 'Active') }}</th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr v-for="row in endpoints" :key="row.id">
-					<td>{{ row.naam }}</td>
-					<td>{{ row.gemeenteCode }}</td>
-					<td>{{ row.ontvangerApplicatie }}</td>
+					<td>{{ row.name }}</td>
+					<td>{{ row.municipalityCode }}</td>
+					<td>{{ row.recipientApplication }}</td>
 					<td>{{ row.soapVersion }}</td>
-					<td>{{ row.zaakIdentificatieStrategie || '—' }}</td>
+					<td>{{ row.caseIdentificationStrategy || '—' }}</td>
 					<td>
-						<span class="stuf-endpoints__health" :class="healthClass(row)">
+						<span
+							class="stuf-endpoints__health"
+							:class="healthClass(row)">
 							{{ healthLabel(row) }}
 						</span>
 					</td>
-					<td>{{ row.actief ? t('procest', 'Active') : t('procest', 'Inactive') }}</td>
+					<td>
+						{{
+							row.actief
+								? t('procest', 'Active')
+								: t('procest', 'Inactive')
+						}}
+					</td>
 				</tr>
 				<tr v-if="!endpoints.length">
 					<td colspan="7" class="stuf-endpoints__empty">
@@ -47,7 +55,12 @@
 			</tbody>
 		</table>
 		<p class="stuf-endpoints__note">
-			{{ t('procest', 'Endpoints, credentials (WSSE), and mTLS certificates are managed by the platform operator. Reach out to your administrator to add or rotate them.') }}
+			{{
+				t(
+					'procest',
+					'Endpoints, credentials (WSSE), and mTLS certificates are managed by the platform operator. Reach out to your administrator to add or rotate them.',
+				)
+			}}
 		</p>
 		<p v-if="loadError" class="stuf-endpoints__error">
 			{{ loadError }}
@@ -67,9 +80,11 @@ export default {
 			loadError: '',
 		}
 	},
+
 	mounted() {
 		this.reload()
 	},
+
 	methods: {
 		/**
 		 * Reload the StUF endpoint list + circuit-breaker health from the backend.
@@ -86,6 +101,7 @@ export default {
 				showError(this.loadError)
 			}
 		},
+
 		/**
 		 * Map an endpoint's breaker health state to its CSS modifier class.
 		 *
@@ -93,9 +109,11 @@ export default {
 		 * @spec exclude presentational CSS-class mapping — no business logic
 		 */
 		healthClass(row) {
-			const state = row && row.health && row.health.state ? row.health.state : 'ok'
+			const state =
+				row && row.health && row.health.state ? row.health.state : 'ok'
 			return 'stuf-endpoints__health--' + state
 		},
+
 		/**
 		 * Map an endpoint's breaker health state to a human label.
 		 *
@@ -103,7 +121,8 @@ export default {
 		 * @spec exclude presentational label mapping — no business logic
 		 */
 		healthLabel(row) {
-			const state = row && row.health && row.health.state ? row.health.state : 'ok'
+			const state =
+				row && row.health && row.health.state ? row.health.state : 'ok'
 			if (state === 'circuit_open') {
 				return t('procest', 'Circuit open')
 			}
@@ -121,16 +140,19 @@ export default {
 	width: 100%;
 	border-collapse: collapse;
 }
+
 .stuf-endpoints__table th,
 .stuf-endpoints__table td {
 	padding: 6px 8px;
 	border-bottom: 1px solid var(--color-border);
 	text-align: left;
 }
+
 .stuf-endpoints__empty {
 	color: var(--color-text-maxcontrast);
 	font-style: italic;
 }
+
 .stuf-endpoints__health {
 	display: inline-block;
 	padding: 2px 8px;
@@ -138,23 +160,28 @@ export default {
 	font-size: 11px;
 	font-weight: bold;
 }
+
 .stuf-endpoints__health--ok {
 	background: var(--color-success);
 	color: white;
 }
+
 .stuf-endpoints__health--degraded {
 	background: var(--color-warning);
 	color: white;
 }
+
 .stuf-endpoints__health--circuit_open {
 	background: var(--color-error);
 	color: white;
 }
+
 .stuf-endpoints__note {
 	color: var(--color-text-maxcontrast);
 	margin-top: 12px;
 	font-size: 13px;
 }
+
 .stuf-endpoints__error {
 	color: var(--color-error);
 	margin-top: 12px;

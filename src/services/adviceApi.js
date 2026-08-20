@@ -60,16 +60,27 @@ export async function getAdviceForCase(caseId) {
 	const response = await axios.get(orUrl(), {
 		params: { _filters: JSON.stringify({ case: caseId }), _limit: 200 },
 	})
-	return response.data?.results || response.data || []
+	// `x?.results || x || []` admits a STRING: a non-empty body that is not JSON
+	// (Nextcloud answers an unmatched app route with an HTML page under HTTP 200)
+	// falls through to the raw body, and a `v-for` over a string renders one row
+	// per character. See procest#784.
+	const body = response.data
+	if (Array.isArray(body)) {
+		return body
+	}
+	if (body !== null && typeof body === 'object' && Array.isArray(body.results)) {
+		return body.results
+	}
+	return []
 }
 
 /**
  * Transition the status of an advice request.
  *
- * Use { to: 'aangevraagd' } right after creating an advice object to fire
+ * Use { to: 'requested' } right after creating an advice object to fire
  * the notification to the adviseur (workflow side-effect).
  *
- * Use { to: 'ontvangen', adviesDocument: '<fileId>' } to mark received.
+ * Use { to: 'received', adviceDocument: '<fileId>' } to mark received.
  *
  * @param {string} id   Advice UUID
  * @param {object} body Transition payload (to, adviesDocument, ...)
@@ -102,7 +113,7 @@ export async function dispatchReminder(id) {
 
 /**
  * Create an advice request (CRUD via manifest renderer) and fire the
- * "aangevraagd" notification via transitionStatus.
+ * "requested" notification via transitionStatus.
  *
  * Kept as a convenience for the case-detail dialog so callers do not need
  * to chain two requests manually.
@@ -123,11 +134,13 @@ export async function dispatchReminder(id) {
  * @param {object} data Advice payload (case, adviseur, type, deadline, ...)
  * @return {Promise<object>} Created record
  * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
- * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-001-remaining-decisionadvice-flows-are-raised-as-decidesk-decisions
+ * @spec openspec/specs/remaining-decision-delegation/spec.md
  */
 export async function createAdviceWithNotification(data) {
-	const caseId = data.case || data.caseRef || data.zaak
-	const url = generateUrl('/apps/procest/api/vth/cases/{caseId}/advice-requests', { caseId })
+	const caseId = data.case || data.caseRef || data.case
+	const url = generateUrl('/apps/procest/api/vth/cases/{caseId}/advice-requests', {
+		caseId,
+	})
 	const created = await axios.post(url, {
 		...data,
 		requestedAt: new Date().toISOString(),

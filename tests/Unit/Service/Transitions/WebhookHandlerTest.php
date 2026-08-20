@@ -36,134 +36,130 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Procest\Service\Transitions\WebhookHandler
+ *
+ * @uses \OCA\Procest\Service\Transitions\ActionResult
  */
-class WebhookHandlerTest extends TestCase
-{
-    /**
-     * @return void
-     */
-    public function testFailsWhenUrlMissing(): void
-    {
-        $handler = new WebhookHandler(
-            clientService: $this->createMock(IClientService::class),
-            logger: new NullLogger(),
-        );
+class WebhookHandlerTest extends TestCase {
+	/**
+	 * @return void
+	 */
+	public function testFailsWhenUrlMissing(): void {
+		$handler = new WebhookHandler(
+			clientService: $this->createMock(IClientService::class),
+			logger: new NullLogger(),
+		);
 
-        $result = $handler->handle(
-            actionConfig: ['type' => 'webhook'],
-            case: ['id' => 'c'],
-            transitionContext: [],
-        );
+		$result = $handler->handle(
+			actionConfig: ['type' => 'webhook'],
+			case: ['id' => 'c'],
+			transitionContext: [],
+		);
 
-        self::assertFalse($result->ok);
-        self::assertSame('webhook_invalid_url', $result->error);
-    }//end testFailsWhenUrlMissing()
+		self::assertFalse($result->succeeded);
+		self::assertSame('webhook_invalid_url', $result->error);
+	}//end testFailsWhenUrlMissing()
 
-    /**
-     * @return void
-     */
-    public function testFailsWhenUrlSchemeNotHttp(): void
-    {
-        $handler = new WebhookHandler(
-            clientService: $this->createMock(IClientService::class),
-            logger: new NullLogger(),
-        );
+	/**
+	 * @return void
+	 */
+	public function testFailsWhenUrlSchemeNotHttp(): void {
+		$handler = new WebhookHandler(
+			clientService: $this->createMock(IClientService::class),
+			logger: new NullLogger(),
+		);
 
-        $result = $handler->handle(
-            actionConfig: ['type' => 'webhook', 'url' => 'ftp://example.com/x'],
-            case: ['id' => 'c'],
-            transitionContext: [],
-        );
+		$result = $handler->handle(
+			actionConfig: ['type' => 'webhook', 'url' => 'ftp://example.com/x'],
+			case: ['id' => 'c'],
+			transitionContext: [],
+		);
 
-        self::assertFalse($result->ok);
-        self::assertSame('webhook_invalid_url', $result->error);
-    }//end testFailsWhenUrlSchemeNotHttp()
+		self::assertFalse($result->succeeded);
+		self::assertSame('webhook_invalid_url', $result->error);
+	}//end testFailsWhenUrlSchemeNotHttp()
 
-    /**
-     * @return void
-     */
-    public function testSucceedsOn2xxAndForwardsPayload(): void
-    {
-        $captured = null;
+	/**
+	 * @return void
+	 */
+	public function testSucceedsOn2xxAndForwardsPayload(): void {
+		$captured = null;
 
-        $response = $this->createMock(IResponse::class);
-        $response->method('getStatusCode')->willReturn(202);
+		$response = $this->createMock(IResponse::class);
+		$response->method('getStatusCode')->willReturn(202);
 
-        $client = $this->createMock(IClient::class);
-        $client->method('post')->willReturnCallback(
-            function (string $url, array $options) use (&$captured, $response): IResponse {
-                $captured = ['url' => $url, 'options' => $options];
-                return $response;
-            }
-        );
+		$client = $this->createMock(IClient::class);
+		$client->method('post')->willReturnCallback(
+			function (string $url, array $options) use (&$captured, $response): IResponse {
+				$captured = ['url' => $url, 'options' => $options];
+				return $response;
+			}
+		);
 
-        $clientService = $this->createMock(IClientService::class);
-        $clientService->method('newClient')->willReturn($client);
+		$clientService = $this->createMock(IClientService::class);
+		$clientService->method('newClient')->willReturn($client);
 
-        $handler = new WebhookHandler($clientService, new NullLogger());
+		$handler = new WebhookHandler($clientService, new NullLogger());
 
-        $result = $handler->handle(
-            actionConfig: ['type' => 'webhook', 'url' => 'https://example.com/hook', 'headers' => ['X-Auth' => 'k']],
-            case: ['id' => 'case-7'],
-            transitionContext: ['transitionLabel' => 'Decided'],
-        );
+		$result = $handler->handle(
+			actionConfig: ['type' => 'webhook', 'url' => 'https://example.com/hook', 'headers' => ['X-Auth' => 'k']],
+			case: ['id' => 'case-7'],
+			transitionContext: ['transitionLabel' => 'Decided'],
+		);
 
-        self::assertTrue($result->ok);
-        self::assertSame(202, $result->data['status']);
-        self::assertSame('https://example.com/hook', $captured['url']);
-        self::assertSame(['X-Auth' => 'k'], $captured['options']['headers']);
-        self::assertSame(5, $captured['options']['timeout']);
-        self::assertSame(['id' => 'case-7'], $captured['options']['json']['case']);
-        self::assertSame(['transitionLabel' => 'Decided'], $captured['options']['json']['transition']);
-    }//end testSucceedsOn2xxAndForwardsPayload()
+		self::assertTrue($result->succeeded);
+		self::assertSame(202, $result->data['status']);
+		self::assertSame('https://example.com/hook', $captured['url']);
+		self::assertSame(['X-Auth' => 'k'], $captured['options']['headers']);
+		self::assertSame(5, $captured['options']['timeout']);
+		self::assertSame(['id' => 'case-7'], $captured['options']['json']['case']);
+		self::assertSame(['transitionLabel' => 'Decided'], $captured['options']['json']['transition']);
+	}//end testSucceedsOn2xxAndForwardsPayload()
 
-    /**
-     * @return void
-     */
-    public function testFailsOnNon2xxResponse(): void
-    {
-        $response = $this->createMock(IResponse::class);
-        $response->method('getStatusCode')->willReturn(503);
+	/**
+	 * @return void
+	 */
+	public function testFailsOnNon2xxResponse(): void {
+		$response = $this->createMock(IResponse::class);
+		$response->method('getStatusCode')->willReturn(503);
 
-        $client = $this->createMock(IClient::class);
-        $client->method('post')->willReturn($response);
+		$client = $this->createMock(IClient::class);
+		$client->method('post')->willReturn($response);
 
-        $clientService = $this->createMock(IClientService::class);
-        $clientService->method('newClient')->willReturn($client);
+		$clientService = $this->createMock(IClientService::class);
+		$clientService->method('newClient')->willReturn($client);
 
-        $handler = new WebhookHandler($clientService, new NullLogger());
+		$handler = new WebhookHandler($clientService, new NullLogger());
 
-        $result = $handler->handle(
-            actionConfig: ['type' => 'webhook', 'url' => 'https://example.com/h'],
-            case: ['id' => 'c'],
-            transitionContext: [],
-        );
+		$result = $handler->handle(
+			actionConfig: ['type' => 'webhook', 'url' => 'https://example.com/h'],
+			case: ['id' => 'c'],
+			transitionContext: [],
+		);
 
-        self::assertFalse($result->ok);
-        self::assertSame('webhook_non_2xx', $result->error);
-        self::assertSame(503, $result->data['status']);
-    }//end testFailsOnNon2xxResponse()
+		self::assertFalse($result->succeeded);
+		self::assertSame('webhook_non_2xx', $result->error);
+		self::assertSame(503, $result->data['status']);
+	}//end testFailsOnNon2xxResponse()
 
-    /**
-     * @return void
-     */
-    public function testSwallowsTransportException(): void
-    {
-        $client = $this->createMock(IClient::class);
-        $client->method('post')->willThrowException(new RuntimeException('timeout'));
+	/**
+	 * @return void
+	 */
+	public function testSwallowsTransportException(): void {
+		$client = $this->createMock(IClient::class);
+		$client->method('post')->willThrowException(new RuntimeException('timeout'));
 
-        $clientService = $this->createMock(IClientService::class);
-        $clientService->method('newClient')->willReturn($client);
+		$clientService = $this->createMock(IClientService::class);
+		$clientService->method('newClient')->willReturn($client);
 
-        $handler = new WebhookHandler($clientService, new NullLogger());
+		$handler = new WebhookHandler($clientService, new NullLogger());
 
-        $result = $handler->handle(
-            actionConfig: ['type' => 'webhook', 'url' => 'https://example.com/h'],
-            case: ['id' => 'c'],
-            transitionContext: [],
-        );
+		$result = $handler->handle(
+			actionConfig: ['type' => 'webhook', 'url' => 'https://example.com/h'],
+			case: ['id' => 'c'],
+			transitionContext: [],
+		);
 
-        self::assertFalse($result->ok);
-        self::assertSame('webhook_failed', $result->error);
-    }//end testSwallowsTransportException()
+		self::assertFalse($result->succeeded);
+		self::assertSame('webhook_failed', $result->error);
+	}//end testSwallowsTransportException()
 }//end class

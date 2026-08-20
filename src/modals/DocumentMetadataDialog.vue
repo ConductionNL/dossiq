@@ -8,8 +8,13 @@
 			</h2>
 
 			<ul v-if="files.length > 0" class="dossier-metadata-dialog__files">
-				<li v-for="(file, idx) in files" :key="idx" class="dossier-metadata-dialog__file">
-					<span class="dossier-metadata-dialog__file-name">{{ file.name }}</span>
+				<li
+					v-for="(file, idx) in files"
+					:key="idx"
+					class="dossier-metadata-dialog__file">
+					<span class="dossier-metadata-dialog__file-name">{{
+						file.name
+					}}</span>
 					<NcProgressBar
 						v-if="progress[idx] !== undefined"
 						:value="progress[idx]"
@@ -19,29 +24,29 @@
 
 			<NcSelect
 				v-model="selectedType"
-				:input-label="t('procest', 'Document type')"
+				:inputLabel="t('procest', 'Document type')"
 				:options="typeOptions"
-				:reduce="option => option.id"
+				:reduce="(option) => option.id"
 				label="label"
 				:clearable="false"
 				required />
 
 			<NcSelect
 				v-model="selectedClassification"
-				:input-label="t('procest', 'Confidentiality')"
+				:inputLabel="t('procest', 'Confidentiality')"
 				:options="classificationOptions"
-				:reduce="option => option.id"
+				:reduce="(option) => option.id"
 				label="label"
 				:clearable="false"
 				required />
 
 			<NcTextField
-				:value.sync="titel"
+				v-model="title"
 				:label="t('procest', 'Title')"
 				:placeholder="t('procest', 'Document title')" />
 
 			<NcTextArea
-				:value.sync="beschrijving"
+				v-model="description"
 				:label="t('procest', 'Description')"
 				:placeholder="t('procest', 'Optional description')" />
 
@@ -73,7 +78,7 @@ import {
 /**
  * Upload metadata dialog. Collects the required informatieobjecttype and
  * vertrouwelijkheidaanduiding (with the type's default), an editable titel and
- * an optional beschrijving, shared across all dropped/selected files, and
+ * an optional description, shared across all dropped/selected files, and
  * surfaces a per-file upload progress bar.
  *
  * @spec openspec/changes/document-zaakdossier/tasks.md#T07
@@ -88,41 +93,49 @@ export default {
 		NcTextArea,
 		NcTextField,
 	},
+
 	props: {
 		open: {
 			type: Boolean,
 			default: false,
 		},
+
 		files: {
 			type: Array,
 			default: () => [],
 		},
+
 		types: {
 			type: Array,
 			default: () => [],
 		},
+
 		progress: {
 			type: Object,
 			default: () => ({}),
 		},
+
 		errors: {
 			type: Object,
 			default: () => ({}),
 		},
+
 		uploading: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: ['close', 'submit'],
 	data() {
 		return {
 			selectedType: '',
 			selectedClassification: '',
-			titel: '',
-			beschrijving: '',
+			title: '',
+			description: '',
 		}
 	},
+
 	computed: {
 		/**
 		 * Dropdown options for the document type catalog.
@@ -131,12 +144,14 @@ export default {
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
 		 */
 		typeOptions() {
-			return this.types.map(type => ({
+			return this.types.map((type) => ({
 				id: type.id || type.uuid,
-				label: type.omschrijving || type.id,
-				vertrouwelijkheidaanduiding: type.vertrouwelijkheidaanduiding || 'intern',
+				label: type.description || type.id,
+				vertrouwelijkheidaanduiding:
+					type.vertrouwelijkheidaanduiding || 'intern',
 			}))
 		},
+
 		/**
 		 * Confidentiality dropdown options (ordered lowest to highest).
 		 *
@@ -146,15 +161,22 @@ export default {
 		classificationOptions() {
 			return [
 				{ id: 'openbaar', label: this.t('procest', 'Public') },
-				{ id: 'beperkt_openbaar', label: this.t('procest', 'Limited public') },
+				{
+					id: 'beperkt_openbaar',
+					label: this.t('procest', 'Limited public'),
+				},
 				{ id: 'intern', label: this.t('procest', 'Internal') },
-				{ id: 'zaakvertrouwelijk', label: this.t('procest', 'Case-confidential') },
+				{
+					id: 'zaakvertrouwelijk',
+					label: this.t('procest', 'Case-confidential'),
+				},
 				{ id: 'vertrouwelijk', label: this.t('procest', 'Confidential') },
 				{ id: 'confidentieel', label: this.t('procest', 'Restricted') },
 				{ id: 'geheim', label: this.t('procest', 'Secret') },
 				{ id: 'zeer_geheim', label: this.t('procest', 'Top secret') },
 			]
 		},
+
 		/**
 		 * Whether the required fields are filled.
 		 *
@@ -165,6 +187,7 @@ export default {
 			return this.selectedType !== '' && this.selectedClassification !== ''
 		},
 	},
+
 	watch: {
 		/**
 		 * When the type changes, default the classification from the type.
@@ -173,11 +196,12 @@ export default {
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
 		 */
 		selectedType(newType) {
-			const match = this.typeOptions.find(option => option.id === newType)
+			const match = this.typeOptions.find((option) => option.id === newType)
 			if (match && this.selectedClassification === '') {
 				this.selectedClassification = match.vertrouwelijkheidaanduiding
 			}
 		},
+
 		/**
 		 * Pre-fill the title from the first filename when files change.
 		 *
@@ -185,11 +209,12 @@ export default {
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
 		 */
 		files(files) {
-			if (files.length === 1 && this.titel === '') {
-				this.titel = files[0].name
+			if (files.length === 1 && this.title === '') {
+				this.title = files[0].name
 			}
 		},
 	},
+
 	methods: {
 		/**
 		 * Emit the collected shared metadata for upload.
@@ -203,8 +228,8 @@ export default {
 			this.$emit('submit', {
 				informatieobjecttype: this.selectedType,
 				vertrouwelijkheidaanduiding: this.selectedClassification,
-				titel: this.titel,
-				beschrijving: this.beschrijving,
+				title: this.title,
+				description: this.description,
 			})
 		},
 	},

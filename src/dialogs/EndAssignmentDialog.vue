@@ -6,19 +6,30 @@
 	<NcDialog
 		:open="true"
 		:name="t('procest', 'End role assignment')"
-		@update:open="v => { if (!v) $emit('close') }">
+		@update:open="
+			(v) => {
+				if (!v) $emit('close')
+			}
+		">
 		<div class="end-assignment">
 			<p>
-				{{ t('procest', 'Setting an end date closes the assignment. The person retains the role through end-of-day.') }}
+				{{
+					t(
+						'procest',
+						'Setting an end date closes the assignment. The person retains the role through end-of-day.',
+					)
+				}}
 			</p>
 			<div class="form-group">
-				<label class="required" for="ea-end">{{ t('procest', 'End date') }}</label>
+				<label class="required" for="ea-end">{{
+					t('procest', 'End date')
+				}}</label>
 				<input
 					id="ea-end"
 					type="date"
 					class="end-assignment__date"
 					:value="endDate"
-					@input="endDate = $event.target.value">
+					@input="endDate = $event.target.value" />
 			</div>
 		</div>
 
@@ -26,7 +37,10 @@
 			<NcButton @click="$emit('close')">
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
-			<NcButton type="primary" :disabled="!endDate" @click="$emit('save', endDate)">
+			<NcButton
+				type="primary"
+				:disabled="!endDate"
+				@click="$emit('save', endDate)">
 				{{ t('procest', 'End assignment') }}
 			</NcButton>
 		</template>
@@ -34,8 +48,8 @@
 </template>
 
 <script>
-import { NcButton, NcDialog } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton, NcDialog } from '@nextcloud/vue'
 
 export default {
 	name: 'EndAssignmentDialog',
@@ -43,12 +57,14 @@ export default {
 	props: {
 		assignment: { type: Object, required: true },
 	},
+
 	emits: ['save', 'close'],
 	data() {
 		return {
 			endDate: new Date().toISOString().slice(0, 10),
 		}
 	},
+
 	methods: { t },
 }
 </script>
