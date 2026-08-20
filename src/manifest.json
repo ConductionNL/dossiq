@@ -1176,7 +1176,8 @@
 								"extensionCount",
 								"handoffSource",
 								"intakeChannel"
-							]
+							],
+							"overrides": { "status": { "editable": false } }
 						}
 					},
 					{
@@ -1868,7 +1869,8 @@
 								"awbReference",
 								"receiptDate",
 								"decisionDeadline"
-							]
+							],
+							"overrides": { "status": { "editable": false } }
 						}
 					},
 					{
@@ -2119,7 +2121,8 @@
 								"deviationRationale",
 								"legalCostsCompensation",
 								"status"
-							]
+							],
+							"overrides": { "status": { "editable": false } }
 						}
 					},
 					{
@@ -2138,7 +2141,8 @@
 								"decisionDocument",
 								"publishedAt",
 								"notifiedRecipients"
-							]
+							],
+							"overrides": { "publishedAt": { "editable": false } }
 						}
 					},
 					{
@@ -3911,7 +3915,8 @@
 								"matrixVersion",
 								"recommendedIntervention",
 								"recommendedBy"
-							]
+							],
+							"overrides": { "recommendedBy": { "editable": false } }
 						}
 					},
 					{
@@ -3927,7 +3932,8 @@
 								"overrideJustification",
 								"overrideBy",
 								"overrideAuthority"
-							]
+							],
+							"overrides": { "overrideBy": { "editable": false } }
 						}
 					},
 					{
@@ -4311,7 +4317,8 @@
 								"status",
 								"assignedAt",
 								"deadline"
-							]
+							],
+							"overrides": { "status": { "editable": false }, "assignedAt": { "editable": false } }
 						}
 					},
 					{
@@ -4330,7 +4337,8 @@
 								"adviceDocuments",
 								"signatureEvidence",
 								"hearingReportRef"
-							]
+							],
+							"overrides": { "adviceIssuedAt": { "editable": false } }
 						}
 					},
 					{
