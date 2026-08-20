@@ -225,7 +225,7 @@ export default {
 .email-thread__body {
 	font-size: 0.875rem;
 	white-space: pre-wrap;
-	word-break: break-word;
+	overflow-wrap: break-word;
 }
 
 .email-thread__messages {
