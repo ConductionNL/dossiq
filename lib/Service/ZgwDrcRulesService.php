@@ -115,11 +115,12 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 		}
 
 		// Drc-006b: If indicatieGebruiksrecht is explicitly true, gebruiksrechten must exist.
+		// No null-check on the result: validateIndicationGebruiksrechtTrue()
+		// returns `array` unconditionally — on create the document does not yet
+		// exist, so indicatieGebruiksrecht=true is ALWAYS an error. The old
+		// `if ($error !== null)` could never be false.
 		if ($body['indicatieGebruiksrecht'] === true && $this->objectService !== null) {
-			$error = $this->validateIndicationGebruiksrechtTrue(body: $body);
-			if ($error !== null) {
-				return $error;
-			}
+			return $this->validateIndicationGebruiksrechtTrue(body: $body);
 		}
 
 		// Drc-008: Check unique identificatie + bronorganisatie.

@@ -439,7 +439,7 @@ class WorkflowDefinitionRepository {
 			return true;
 		}
 
-		return (is_array($results) === true && count($results) > 0);
+		return (count($results) > 0);
 	}//end hasCasesFor()
 
 	/**

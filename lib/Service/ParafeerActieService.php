@@ -597,10 +597,9 @@ class ParafeerActieService {
 			);
 
 			$rows = [];
-			if (is_array($results) === true) {
-				foreach ($results as $row) {
-					$rows[] = $this->normalizer->toArray(value: $row);
-				}
+			// No is_array() guard: $results is already typed as an array.
+			foreach ($results as $row) {
+				$rows[] = $this->normalizer->toArray(value: $row);
 			}
 
 			// Sort by createdAt ascending; fall back to created/_self.created.

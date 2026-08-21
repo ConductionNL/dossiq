@@ -277,7 +277,10 @@ class SamenwerkverzoekService {
 	 *
 	 * @return object The OpenRegister ObjectService
 	 *
-	 * @throws \RuntimeException When the service is not available
+	 * No @throws: the service is injected (ADR-083), so this method only reads a
+	 * property and cannot throw. The stale `@throws \RuntimeException` described
+	 * the old lazy-container lookup that ADR-083 removed; PHPStan 2 reports it as
+	 * throws.unusedType.
 	 */
 	private function getObjectService(): object {
 		// Injected (ADR-083), so this cannot fail — a property read throws

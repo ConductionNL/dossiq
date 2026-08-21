@@ -136,7 +136,7 @@ final class BrkResponseMapper {
 		}
 
 		// A single associative entry (not a list) is wrapped.
-		if (array_is_list($raw) === false && $raw !== []) {
+		if (array_is_list($raw) === false) {
 			$raw = [$raw];
 		}
 

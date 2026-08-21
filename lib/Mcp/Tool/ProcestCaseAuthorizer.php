@@ -153,7 +153,9 @@ class ProcestCaseAuthorizer {
 			return false;
 		}
 
-		return is_array($roles) === true && count($roles) > 0;
+		// No is_array() probe: $roles is already typed as an array, so the check
+		// is always true (PHPStan 2: function.alreadyNarrowedType).
+		return count($roles) > 0;
 	}//end hasRoleOnCase()
 
 	/**

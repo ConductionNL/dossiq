@@ -97,10 +97,9 @@ class AuditTrailService {
 		);
 
 		$entries = [];
-		if (is_array($results) === true) {
-			foreach ($results as $row) {
-				$entries[] = $this->toArray(value: $row);
-			}
+		// No is_array() guard: $results is already typed as an array.
+		foreach ($results as $row) {
+			$entries[] = $this->toArray(value: $row);
 		}
 
 		usort(

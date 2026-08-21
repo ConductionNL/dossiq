@@ -1220,7 +1220,7 @@ class ZgwService {
 			);
 
 			// Merge direct fields into mapped data (array fields that Twig drops).
-			if (empty($directFields) === false && is_array($englishData) === true) {
+			if (empty($directFields) === false) {
 				$englishData = array_merge($englishData, $directFields);
 			}
 
@@ -1302,7 +1302,7 @@ class ZgwService {
 			}//end if
 
 			// Apply _directFields after PATCH merge to ensure they override correctly.
-			if (empty($directFields) === false && is_array($englishData) === true) {
+			if (empty($directFields) === false) {
 				$englishData = array_merge($englishData, $directFields);
 			}
 

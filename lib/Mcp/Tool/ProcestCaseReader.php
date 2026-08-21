@@ -195,9 +195,9 @@ class ProcestCaseReader {
 		}
 
 		$rows = [];
-		if (is_array($records) === true) {
-			$rows = $records;
-		}
+		// No is_array() guard: $records is already typed as an array, so the
+		// check was always true (PHPStan 2: function.alreadyNarrowedType).
+		$rows = $records;
 
 		$list = [];
 		foreach ($rows as $record) {

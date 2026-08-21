@@ -185,7 +185,9 @@ class BrondatumArchiefValidator extends ZgwRulesBase {
 		string $fieldValue,
 		array $requiredFor,
 	): array {
-		$hasValue = ($fieldValue !== '' && $fieldValue !== null);
+		// $fieldValue is a non-nullable string parameter, so `!== null` was
+		// always true (PHPStan 2: notIdentical.alwaysTrue).
+		$hasValue = ($fieldValue !== '');
 
 		$isRequired = in_array($afleidingswijze, $requiredFor, true);
 

@@ -800,7 +800,7 @@ class AcController extends ZgwController {
 		$clientIds = [];
 
 		// Primary clientId is the consumer name.
-		if (isset($data['name']) === true && $data['name'] !== '' && $data['name'] !== null) {
+		if (isset($data['name']) === true && $data['name'] !== '') {
 			$clientIds[] = $data['name'];
 		}
 
@@ -834,7 +834,7 @@ class AcController extends ZgwController {
 
 		// Build clientIds: primary name + any extras from authConfig.
 		$clientIds = [];
-		if (isset($data['name']) === true && $data['name'] !== '' && $data['name'] !== null) {
+		if (isset($data['name']) === true && $data['name'] !== '') {
 			$clientIds[] = $data['name'];
 		}
 

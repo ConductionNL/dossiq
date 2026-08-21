@@ -154,7 +154,7 @@ class WOODocumentAssessmentService {
 				],
 			);
 
-			if (is_array($existing) === true && count($existing) > 0) {
+			if (count($existing) > 0) {
 				$existingId = $existing[0]['id'] ?? $existing[0]['uuid'] ?? null;
 				$saved[] = $objectService->saveObject(
 					object: $assessment,
@@ -300,13 +300,12 @@ class WOODocumentAssessmentService {
 			filters: ['case' => $caseId, '_limit' => 500],
 		);
 
+		// No is_array() guard: $docs is already typed as an array.
 		$allDocs = [];
-		if (is_array($docs) === true) {
-			foreach ($docs as $doc) {
-				$docId = $doc['id'] ?? $doc['uuid'] ?? null;
-				if ($docId !== null) {
-					$allDocs[$docId] = true;
-				}
+		foreach ($docs as $doc) {
+			$docId = $doc['id'] ?? $doc['uuid'] ?? null;
+			if ($docId !== null) {
+				$allDocs[$docId] = true;
 			}
 		}
 
@@ -335,13 +334,12 @@ class WOODocumentAssessmentService {
 			filters: ['caseRef' => $caseId, '_limit' => 500],
 		);
 
+		// No is_array() guard: $assessed is already typed as an array.
 		$assessedDocIds = [];
-		if (is_array($assessed) === true) {
-			foreach ($assessed as $item) {
-				$docRef = $item['documentRef'] ?? null;
-				if ($docRef !== null) {
-					$assessedDocIds[$docRef] = true;
-				}
+		foreach ($assessed as $item) {
+			$docRef = $item['documentRef'] ?? null;
+			if ($docRef !== null) {
+				$assessedDocIds[$docRef] = true;
 			}
 		}
 
@@ -402,7 +400,7 @@ class WOODocumentAssessmentService {
 			],
 		);
 
-		if (is_array($existing) === true && count($existing) > 0) {
+		if (count($existing) > 0) {
 			return $existing[0];
 		}
 
