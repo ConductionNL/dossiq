@@ -28,6 +28,24 @@ parameters:
         DataResponseType: 'array|int|float|string|bool|object|null|\stdClass|\JsonSerializable'
 
     ignoreErrors:
+        # ApprovalStepNotificationListener dispatches on ANOTHER APP's event classes.
+        #
+        # It compares get_class($event) against
+        # 'OCA\OpenRegister\Event\ApprovalStepApprovedEvent' / ...RejectedEvent,
+        # held as string constants precisely so Procest carries no hard dependency
+        # on OpenRegister. Those classes therefore do not exist in this app's
+        # vendor tree, so the analyser types get_class($event) as
+        # class-string<Event>, decides neither comparison can ever match, and
+        # reports both as always-false. At runtime OpenRegister is installed and
+        # dispatches them.
+        #
+        # Surfaced by hydra-gates v1.8.2's `treatPhpDocTypesAsCertain: false`.
+        # Scoped to the one file: an always-false class comparison anywhere else
+        # is still a real finding.
+        -
+            message: '#Strict comparison using === between class-string#'
+            path: lib/Listener/ApprovalStepNotificationListener.php
+
         # registerJob exists on server; not yet in nextcloud/ocp stub used for analysis
         - '#Call to an undefined method OCP\\AppFramework\\Bootstrap\\IRegistrationContext::registerJob#'
         # registerEventListener accepts the listener FQCN string at runtime; the
