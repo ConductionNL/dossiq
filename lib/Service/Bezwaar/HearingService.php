@@ -543,7 +543,7 @@ class HearingService {
 				schema: $schema,
 				filters: ['case' => $caseId]
 			);
-			if (is_array($existing) === true && $existing !== []) {
+			if ($existing !== []) {
 				return null;
 			}
 		} catch (\Throwable $e) {

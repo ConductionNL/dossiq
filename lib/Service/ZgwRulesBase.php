@@ -881,7 +881,7 @@ abstract class ZgwRulesBase {
 				// or stored is empty/0 (likely coerced from numeric string).
 				$isMatch = ($field2Value === '')
 					|| ($storedStr === $compareStr)
-					|| ($storedStr === '' && $field2Value !== '')
+					|| ($storedStr === '')
 					|| ($storedStr === '0' && preg_match('/^0+$/', $field2Value) === 1);
 
 				if ($isMatch === true) {

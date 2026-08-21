@@ -282,7 +282,7 @@ class DwangsomUitbetalingService {
 		}
 
 		$row = null;
-		if (is_array($rows) === true && count($rows) > 0) {
+		if (count($rows) > 0) {
 			$row = $rows[0];
 		}
 

@@ -100,7 +100,7 @@ class ComplaintAccessGuard {
 	 */
 	public function parseBody(): array {
 		$params = $this->request->getParams();
-		if (is_array($params) === true && empty($params) === false) {
+		if (empty($params) === false) {
 			return $params;
 		}
 

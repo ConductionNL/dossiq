@@ -276,7 +276,7 @@ class DispositionService {
 			filters: ['complaint' => $complaintId, '_limit' => 1]
 		);
 
-		if (is_array($results) === true && count($results) > 0) {
+		if (count($results) > 0) {
 			return $results[0];
 		}
 

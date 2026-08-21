@@ -176,6 +176,14 @@ class ChecklistPayloadReader {
 	 * @param mixed $items The candidate item list.
 	 * @param array<string, array<string, mixed>> $out The index, updated in place.
 	 *
+	 * @param-out array<int|string, array<int|string, mixed>> $out Both key types
+	 *        WIDEN on write. Outer: $id is cast to string, but PHP coerces a
+	 *        CANONICAL NUMERIC string array key to an integer — and $id falls back
+	 *        to `$item['order']` or the loop `$index`, which are numeric far more
+	 *        often than not. Inner: `$item` is only narrowed to `array` by the
+	 *        `is_array()` guard above, so its own keys are unproven. Lookups
+	 *        coerce identically, so the index still works.
+	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/inspection-checklists/spec.md

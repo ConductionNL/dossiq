@@ -564,7 +564,7 @@ class DrcController extends ZgwController {
 			$this->cascadeDeleteGebruiksrechten(eioUuid: $uuid);
 
 			// Delete stored files.
-			if (isset($fileName) === true && $fileName !== null) {
+			if (isset($fileName) === true) {
 				try {
 					$this->zgwService->getDocumentService()->deleteFiles(uuid: $uuid);
 				} catch (\Throwable $e) {

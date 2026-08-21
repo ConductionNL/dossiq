@@ -154,7 +154,7 @@ class TenantContextMiddleware extends Middleware {
 	 */
 	public function resolveTenantIdFromRequest(): ?string {
 		$header = $this->request->getHeader('X-Tenant-Id');
-		if (is_string($header) === true && $header !== '') {
+		if ($header !== '') {
 			return $header;
 		}
 

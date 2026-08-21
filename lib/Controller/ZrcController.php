@@ -789,10 +789,9 @@ class ZrcController extends ZgwController {
 	public function zoek(): JSONResponse {
 		$indexResponse = $this->index(resource: 'zaken');
 		// The zoek endpoint reuses the list handler but returns 201 Created.
-		$responseData = [];
-		if ($indexResponse instanceof JSONResponse) {
-			$responseData = $indexResponse->getData() ?? [];
-		}
+		// No instanceof guard: index() is declared to return JSONResponse, so the
+		// check was always true (PHPStan 2: instanceof.alwaysTrue).
+		$responseData = ($indexResponse->getData() ?? []);
 
 		return new JSONResponse(data: $responseData, statusCode: Http::STATUS_CREATED);
 	}//end zoek()

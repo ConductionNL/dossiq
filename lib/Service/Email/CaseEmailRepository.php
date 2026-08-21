@@ -299,7 +299,7 @@ class CaseEmailRepository {
 			filters: ['identifier' => $identifier, '_limit' => 1],
 		);
 
-		if (is_array($results) === true && count($results) > 0) {
+		if (count($results) > 0) {
 			return $results[0]['id'] ?? $results[0]['uuid'] ?? null;
 		}
 

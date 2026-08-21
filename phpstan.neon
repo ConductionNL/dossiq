@@ -50,3 +50,28 @@ parameters:
           paths:
               - lib/Controller/CaseDefinitionController.php
               - lib/Repair/SeedVthWorkflowTemplates.php
+        # ApprovalStepNotificationListener dispatches on `get_class($event)` against
+        # OpenRegister's ApprovalStep{Approved,Rejected}Event class-strings. Those
+        # classes are co-installed at runtime but absent from static analysis, so
+        # PHPStan narrows get_class() to class-string<Event> and concludes the
+        # comparison can never match — i.e. that the listener can never handle its
+        # own events. It does; the classes simply are not on the analysis path.
+        #
+        # Same family as the @implements ignore above. Comparing class-strings
+        # rather than using instanceof is deliberate here for exactly this reason:
+        # an instanceof would be a compile-time reference to an absent class.
+        - message: '#Strict comparison using === between class-string and .OCA\\\\OpenRegister\\\\Event\\\\ApprovalStep(Approved|Rejected)Event. will always evaluate to false#'
+          identifier: identical.alwaysFalse
+          path: lib/Listener/ApprovalStepNotificationListener.php
+        # InboundEmailJob::markProcessed() is an INTENTIONAL no-op placeholder: its
+        # own comment records that a real IMAP flag-set / folder-move needs an open
+        # connection that fetchUnreadBatch's scope does not currently expose, and
+        # that the dedup guarantee comes from isAlreadyLinked() instead. PHPStan 2
+        # correctly observes the body has no side effects (void.pure).
+        #
+        # Kept rather than deleted so the call site and the documented intent stay
+        # visible; delete the method AND this ignore together when the IMAP
+        # connection is plumbed through.
+        - message: '#Method .+InboundEmailJob::markProcessed\(\) returns void but does not have any side effects#'
+          identifier: void.pure
+          path: lib/BackgroundJob/InboundEmailJob.php

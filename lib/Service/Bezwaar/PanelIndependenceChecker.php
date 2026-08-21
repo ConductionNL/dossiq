@@ -194,7 +194,7 @@ class PanelIndependenceChecker {
 			filters: ['case' => $caseId]
 		);
 		$objection = null;
-		if (is_array($objections) === true && $objections !== []) {
+		if ($objections !== []) {
 			$objection = $objections[0];
 		}
 

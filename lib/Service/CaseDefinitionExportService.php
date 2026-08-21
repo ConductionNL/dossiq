@@ -169,7 +169,7 @@ class CaseDefinitionExportService {
 				continue;
 			}
 
-			if ($component === 'workflows' && is_array($data) === true) {
+			if ($component === 'workflows') {
 				$this->addWorkflowEntries(zip: $zip, workflows: $data);
 				continue;
 			}

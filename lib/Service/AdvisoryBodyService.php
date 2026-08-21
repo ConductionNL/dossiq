@@ -115,7 +115,7 @@ class AdvisoryBodyService {
 			filters: ['id' => $id, '_limit' => 1],
 		);
 
-		if (is_array($results) === true && empty($results) === false) {
+		if (empty($results) === false) {
 			return $results[0];
 		}
 
