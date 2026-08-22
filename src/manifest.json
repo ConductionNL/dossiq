@@ -2588,7 +2588,7 @@
 			"title": "Processing time",
 			"_note": "SLA / processing-time analytics. Was nominally type:dashboard but its config was ONE 12x12 widget whose slot rendered a complete second dashboard with its own <h2> — the dashboard-in-dashboard antipattern (hydra#316). Now five widgets over one shared store (src/store/modules/doorlooptijd.js). The presentational sub-components in views/doorlooptijd/components/ are unchanged; only their host moved.",
 			"config": {
-				"subtitle": "SLA adherence and processing time analysis",
+				"description": "SLA adherence and processing time analysis",
 				"pageFilters": [
 					{
 						"key": "period",
@@ -2705,7 +2705,7 @@
 			"title": "Process mining",
 			"_note": "Bottleneck analysis over the case statusRecord history. The figures come from a dedicated ProcessMiningService aggregation endpoint, not a register query, so the widgets are type:custom and read one shared store (src/store/modules/processMining.js) rather than a register/schema binding. The page owns the heading, the period presets and the case-type filter; each widget renders content only — a widget that drew its own page heading would be the dashboard-in-dashboard antipattern (hydra#316).",
 			"config": {
-				"subtitle": "Bottleneck analysis from recorded case status history",
+				"description": "Bottleneck analysis from recorded case status history",
 				"pageFilters": [
 					{
 						"key": "period",
@@ -4505,7 +4505,7 @@
 			"title": "Deadline monitoring",
 			"_note": "Deadline-monitoring KPIs plus the quarterly report and annual dwangsom audit. The figures come from /api/termijn/* aggregation endpoints, not a register query, so the widgets are type:custom over one shared store (src/store/modules/termijnDashboard.js). The page owns the heading and the case-type filter; the quarter and year inputs stay inside their own widgets because they scope THAT report, not the page.",
 			"config": {
-				"subtitle": "Deadline compliance, quarterly reporting and the annual dwangsom audit",
+				"description": "Deadline compliance, quarterly reporting and the annual dwangsom audit",
 				"widgets": [
 					{
 						"id": "td-kpis",

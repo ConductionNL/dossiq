@@ -220,9 +220,14 @@ test.describe('Settings page', () => {
 		// asserted here but exist nowhere in src/ — that surface was removed.
 		// `Settings.vue` renders a CnSettingsSection named "Configuration"
 		// with a primary "Save" action, which is the current contract.
-		await expect(page.getByRole('button', { name: 'Save' })).toBeVisible({
-			timeout: 15000,
-		})
+		// `exact` matters here. The retired in-app page rendered only section
+		// chrome, so a loose "Save" matched exactly one button. The real admin
+		// surface renders every section, and four of them have their own
+		// labelled save ("Save mandate matrix settings", "Save consultation
+		// settings", …). The Configuration section's control is the bare one.
+		await expect(
+			page.getByRole('button', { name: 'Save', exact: true }),
+		).toBeVisible({ timeout: 15000 })
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
