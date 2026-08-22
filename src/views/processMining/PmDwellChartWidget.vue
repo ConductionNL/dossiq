@@ -35,7 +35,10 @@ export default {
 	components: { CnChartWidget, NcLoadingIcon },
 	mixins: [pmWidgetMixin],
 	computed: {
-		/** @return {Array} Bar series for the scoped case type. */
+		/**
+		 * @return {Array} Bar series for the scoped case type.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		series() {
 			return buildDwellSeries(
 				this.pmPrimaryCaseType?.dwellTime,
@@ -43,12 +46,18 @@ export default {
 			)
 		},
 
-		/** @return {Array<string>} Status names along the x-axis. */
+		/**
+		 * @return {Array<string>} Status names along the x-axis.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		categories() {
 			return buildDwellCategories(this.pmPrimaryCaseType?.dwellTime)
 		},
 
-		/** @return {object} ApexCharts options. */
+		/**
+		 * @return {object} ApexCharts options.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		options() {
 			return {
 				plotOptions: { bar: { borderRadius: 4, columnWidth: '60%' } },

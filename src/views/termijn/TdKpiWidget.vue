@@ -75,7 +75,10 @@ export default {
 	components: { CnKpiGrid, CnStatsBlock, NcLoadingIcon, NcNoteCard },
 	mixins: [tdWidgetMixin],
 	computed: {
-		/** @return {object|null} The KPI block from the shared store. */
+		/**
+		 * @return {object|null} The KPI block from the shared store.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		kpi() {
 			return this.tdStore.kpi
 		},
@@ -91,7 +94,10 @@ export default {
 
 	methods: {
 		t,
-		/** Ask the store for the KPI block scoped to the header's case type. */
+		/**
+		 * Ask the store for the KPI block scoped to the header's case type.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		reload() {
 			this.tdStore.loadKpi({ caseType: this.tdCaseType })
 		},

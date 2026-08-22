@@ -27,6 +27,7 @@ import { fetchProcessMiningReport } from '../../services/processMiningApi.js'
  *
  * @param {string} preset One of `3m`, `6m`, `12m`, `all`.
  * @return {{from: string|null, to: string}} The resolved range.
+ * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
  */
 export function resolvePeriod(preset) {
 	const now = new Date()
@@ -63,11 +64,13 @@ export const useProcessMiningStore = defineStore('processMining', {
 		/**
 		 * @param state
 		 * @return {Array<object>} Per-case-type report blocks, never null.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		caseTypesList: (state) => state.report?.caseTypes || [],
 		/**
 		 * @param state
 		 * @return {Array<object>} Weekly throughput points, never null.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		throughputTrend: (state) => state.report?.throughputTrend || [],
 	},
@@ -85,6 +88,7 @@ export const useProcessMiningStore = defineStore('processMining', {
 		 * @param {string|null} [opts.caseType] CaseType id to scope on.
 		 * @param {boolean}     [opts.force]    Refetch even if already loaded.
 		 * @return {Promise<void>}
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		async load({ preset = '12m', caseType = null, force = false } = {}) {
 			const { from, to } = resolvePeriod(preset)

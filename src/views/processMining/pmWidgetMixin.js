@@ -20,23 +20,38 @@ export const pmWidgetMixin = {
 	},
 
 	computed: {
-		/** @return {object} The shared process-mining store. */
+		/**
+		 * @return {object} The shared process-mining store.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		pmStore() {
 			return useProcessMiningStore()
 		},
-		/** @return {string} Selected period preset, defaulting to 12 months. */
+		/**
+		 * @return {string} Selected period preset, defaulting to 12 months.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		pmPreset() {
 			return this.workspace?.period || '12m'
 		},
-		/** @return {string|null} Selected case-type id, or null for all. */
+		/**
+		 * @return {string|null} Selected case-type id, or null for all.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		pmCaseType() {
 			return this.workspace?.caseType || null
 		},
-		/** @return {boolean} Whether the shared report is being fetched. */
+		/**
+		 * @return {boolean} Whether the shared report is being fetched.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		pmLoading() {
 			return this.pmStore.loading
 		},
-		/** @return {Array<object>} Per-case-type blocks from the report. */
+		/**
+		 * @return {Array<object>} Per-case-type blocks from the report.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		pmCaseTypes() {
 			return this.pmStore.caseTypesList
 		},
@@ -45,6 +60,7 @@ export const pmWidgetMixin = {
 		 * filtered one, else the busiest (the report is ordered by volume).
 		 *
 		 * @return {object|null}
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		pmPrimaryCaseType() {
 			if (this.pmCaseType) {
@@ -66,7 +82,10 @@ export const pmWidgetMixin = {
 	},
 
 	methods: {
-		/** Ask the shared store for the current query; it deduplicates. */
+		/**
+		 * Ask the shared store for the current query; it deduplicates.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		pmLoad() {
 			this.pmStore.load({ preset: this.pmPreset, caseType: this.pmCaseType })
 		},

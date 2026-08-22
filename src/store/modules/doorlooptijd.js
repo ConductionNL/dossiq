@@ -37,6 +37,7 @@ import { useObjectStore } from './object.js'
  *
  * @param {string} preset One of `3m`, `6m`, `12m`, `year`, `all`.
  * @return {{from: Date|null, to: Date}} The resolved range; `from` null = no bound.
+ * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
  */
 export function resolveRange(preset) {
 	const now = new Date()
@@ -65,6 +66,7 @@ export function resolveRange(preset) {
  *
  * @param {string} preset The period preset key.
  * @return {number} Month count.
+ * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
  */
 export function trendMonthsFor(preset) {
 	switch (preset) {
@@ -98,16 +100,34 @@ export const useDoorlooptijdStore = defineStore('doorlooptijd', {
 			for (const st of s.statusTypes) m.set(st.id, st)
 			return m
 		},
+		/**
+		 * Cases that reached a final status and carry an end date.
+		 *
+		 * @return {Array<object>} The completed cases.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		completedCases() {
 			return this.allCases.filter(
 				(c) => this.statusTypeMap.get(c.status)?.isFinal && c.endDate,
 			)
 		},
+		/**
+		 * Cases still in a non-final status.
+		 *
+		 * @return {Array<object>} The open cases.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		openCases() {
 			return this.allCases.filter(
 				(c) => !this.statusTypeMap.get(c.status)?.isFinal,
 			)
 		},
+		/**
+		 * Open Woo cases with their statutory-deadline countdown.
+		 *
+		 * @return {Array<object>} The Woo cases.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		wooCases() {
 			return getWooCases(this.openCases, this.caseTypes)
 		},
@@ -131,6 +151,7 @@ export const useDoorlooptijdStore = defineStore('doorlooptijd', {
 		 * silently yielding empty collections. initializeStores() is idempotent.
 		 *
 		 * @return {Promise<void>}
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		async load() {
 			if (this.loaded) return
@@ -175,6 +196,7 @@ export const useDoorlooptijdStore = defineStore('doorlooptijd', {
 		 * @param {string}      preset     Period preset key.
 		 * @param {string|null} [caseType] Case type to scope on.
 		 * @return {Array<object>} Matching cases.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		filteredCompleted(preset, caseType = null) {
 			let cases = this.completedCases
@@ -194,6 +216,7 @@ export const useDoorlooptijdStore = defineStore('doorlooptijd', {
 		 *
 		 * @param {string|null} [caseType] Case type to scope on.
 		 * @return {Array<object>} Matching cases.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		filteredOpen(caseType = null) {
 			return caseType
@@ -207,6 +230,7 @@ export const useDoorlooptijdStore = defineStore('doorlooptijd', {
 		 * @param {string}      preset     Period preset key.
 		 * @param {string|null} [caseType] Case type to scope on.
 		 * @return {object} Compliance block.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		slaData(preset, caseType) {
 			return computeSlaCompliance(
@@ -221,6 +245,7 @@ export const useDoorlooptijdStore = defineStore('doorlooptijd', {
 		 * @param {string}      preset     Period preset key.
 		 * @param {string|null} [caseType] Case type to scope on.
 		 * @return {object} Distribution block.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		distributionData(preset, caseType) {
 			return computeProcessingTimeDistribution(
@@ -236,6 +261,7 @@ export const useDoorlooptijdStore = defineStore('doorlooptijd', {
 		 * @param {string}      preset     Period preset key.
 		 * @param {string|null} [caseType] Case type to scope on.
 		 * @return {object} Trend block.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		trendData(preset, caseType) {
 			const cases = caseType
@@ -250,6 +276,7 @@ export const useDoorlooptijdStore = defineStore('doorlooptijd', {
 		 * @param {string}      preset     Period preset key.
 		 * @param {string|null} [caseType] Case type to scope on.
 		 * @return {object} Throughput block.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		throughputData(preset, caseType) {
 			return computeWeeklyThroughput(
@@ -263,6 +290,7 @@ export const useDoorlooptijdStore = defineStore('doorlooptijd', {
 		 *
 		 * @param {string|null} [caseType] Case type to scope on.
 		 * @return {Array<object>} At-risk cases.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		atRiskCases(caseType) {
 			return getAtRiskCases(this.filteredOpen(caseType), this.caseTypes, 0.25)
@@ -274,6 +302,7 @@ export const useDoorlooptijdStore = defineStore('doorlooptijd', {
 		 * @param {string}      preset     Period preset key.
 		 * @param {string|null} [caseType] Case type to scope on.
 		 * @return {Array<object>} Table rows.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		performanceData(preset, caseType) {
 			return computePerformanceTable(

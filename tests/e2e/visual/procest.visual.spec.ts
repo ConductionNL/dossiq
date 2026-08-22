@@ -36,12 +36,10 @@ test.describe('Procest — visual baselines', () => {
 		await shootByNav(page, `${APP}#/`, 'Cases', 'cases.png')
 	})
 
-	// The FG window on OR's processing-activity register
-	// (avg-verwerkingenlogging). The surface is data-light (catalogue table or
 	// The "verwerkingen overview (AVG)" baseline was retired with the page it
 	// shot: page-topology-cleanup (C1) moved the processing-activity register to
 	// OpenRegister per ADR-047, so the screenshot belongs to OR's /avg surface,
-	// not here. Its baseline PNG is deleted rather than left to rot green.
+	// not here.
 })
 
 /*

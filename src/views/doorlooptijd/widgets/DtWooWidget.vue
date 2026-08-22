@@ -22,7 +22,10 @@ export default {
 	components: { WooDeadlinePanel },
 	mixins: [dtWidgetMixin],
 	methods: {
-		/** Show every Woo case on the case index. */
+		/**
+		 * Show every Woo case on the case index.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		viewAllWoo() {
 			this.$router.push({ name: 'Cases', query: { caseTypeContains: 'woo' } })
 		},

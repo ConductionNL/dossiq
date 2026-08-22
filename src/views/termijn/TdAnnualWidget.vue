@@ -54,12 +54,18 @@ export default {
 	},
 
 	computed: {
-		/** @return {object|null} The loaded annual audit. */
+		/**
+		 * @return {object|null} The loaded annual audit.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		annual() {
 			return this.tdStore.annual
 		},
 
-		/** @return {number} Total dwangsom in euros (the API reports cents). */
+		/**
+		 * @return {number} Total dwangsom in euros (the API reports cents).
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		totalEuros() {
 			const cents = this.annual?.summary?.totalCents
 			return cents ? cents / 100 : 0
@@ -77,12 +83,16 @@ export default {
 		 *
 		 * @param {string} v Raw field value.
 		 * @return {void}
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		onYear(v) {
 			this.year = Number(v) || this.year
 		},
 
-		/** Load the audit for the entered year. */
+		/**
+		 * Load the audit for the entered year.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		load() {
 			this.tdStore.loadAnnual(this.year)
 		},

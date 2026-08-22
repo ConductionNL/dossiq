@@ -59,7 +59,10 @@ export default {
 	components: { NcLoadingIcon },
 	mixins: [pmWidgetMixin],
 	computed: {
-		/** @return {Array<object>} Top-10 bottleneck rows across case types. */
+		/**
+		 * @return {Array<object>} Top-10 bottleneck rows across case types.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		rows() {
 			return buildBottleneckRows(this.pmCaseTypes, 10)
 		},

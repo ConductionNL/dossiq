@@ -21,19 +21,31 @@ export const dtWidgetMixin = {
 	},
 
 	computed: {
-		/** @return {object} The shared processing-time store. */
+		/**
+		 * @return {object} The shared processing-time store.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		dtStore() {
 			return useDoorlooptijdStore()
 		},
-		/** @return {string} Period preset from the page header. */
+		/**
+		 * @return {string} Period preset from the page header.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		dtPreset() {
 			return this.workspace?.period || '12m'
 		},
-		/** @return {string|null} Case type from the page header. */
+		/**
+		 * @return {string|null} Case type from the page header.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		dtCaseType() {
 			return this.workspace?.caseType || null
 		},
-		/** @return {boolean} Whether the shared collections are still loading. */
+		/**
+		 * @return {boolean} Whether the shared collections are still loading.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		dtLoading() {
 			return this.dtStore.loading
 		},
@@ -49,6 +61,7 @@ export const dtWidgetMixin = {
 		 *
 		 * @param {string} id Case id.
 		 * @return {void}
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		openCase(id) {
 			this.$router.push({ name: 'CaseDetail', params: { id } })

@@ -38,17 +38,26 @@ export default {
 	},
 
 	computed: {
-		/** @return {object} The shared deadline-monitoring store. */
+		/**
+		 * @return {object} The shared deadline-monitoring store.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		tdStore() {
 			return useTermijnDashboardStore()
 		},
 
-		/** @return {Array<object>} Selectable case types. */
+		/**
+		 * @return {Array<object>} Selectable case types.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		options() {
 			return this.tdStore.zaaktypeOptions
 		},
 
-		/** @return {object|null} The option matching the context, or null. */
+		/**
+		 * @return {object|null} The option matching the context, or null.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		selected() {
 			const current = this.workspace?.caseType
 			return this.options.find((o) => o.id === current) || null
@@ -66,6 +75,7 @@ export default {
 		 *
 		 * @param {object|null} opt The chosen option, or null to clear.
 		 * @return {void}
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		onChange(opt) {
 			if (this.workspace) {

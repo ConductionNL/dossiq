@@ -37,7 +37,10 @@ export default {
 	components: { CnChartWidget, NcLoadingIcon },
 	mixins: [pmWidgetMixin],
 	computed: {
-		/** @return {Array} Line series of cases closed per week. */
+		/**
+		 * @return {Array} Line series of cases closed per week.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		series() {
 			return buildThroughputSeries(
 				this.pmStore.throughputTrend,
@@ -45,12 +48,18 @@ export default {
 			)
 		},
 
-		/** @return {Array<string>} Week labels along the x-axis. */
+		/**
+		 * @return {Array<string>} Week labels along the x-axis.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		categories() {
 			return buildThroughputCategories(this.pmStore.throughputTrend)
 		},
 
-		/** @return {object} ApexCharts options. */
+		/**
+		 * @return {object} ApexCharts options.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		options() {
 			return {
 				yaxis: {

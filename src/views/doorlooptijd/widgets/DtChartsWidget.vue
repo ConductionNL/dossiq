@@ -28,22 +28,34 @@ export default {
 	components: { ComplianceCharts, NcLoadingIcon },
 	mixins: [dtWidgetMixin],
 	computed: {
-		/** @return {object} SLA compliance block. */
+		/**
+		 * @return {object} SLA compliance block.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		slaData() {
 			return this.dtStore.slaData(this.dtPreset, this.dtCaseType)
 		},
 
-		/** @return {object} Processing-time distribution block. */
+		/**
+		 * @return {object} Processing-time distribution block.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		distributionData() {
 			return this.dtStore.distributionData(this.dtPreset, this.dtCaseType)
 		},
 
-		/** @return {object} Monthly trend block. */
+		/**
+		 * @return {object} Monthly trend block.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		trendData() {
 			return this.dtStore.trendData(this.dtPreset, this.dtCaseType)
 		},
 
-		/** @return {object} Weekly throughput block. */
+		/**
+		 * @return {object} Weekly throughput block.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		throughputData() {
 			return this.dtStore.throughputData(this.dtPreset, this.dtCaseType)
 		},

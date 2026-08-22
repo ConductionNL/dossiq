@@ -349,7 +349,7 @@
 		{
 			"id": "AvgRegisterLink",
 			"label": "Processing activities (AVG)",
-			"icon": "ShieldAccountOutline",
+			"icon": "ShieldLockOutline",
 			"href": "/apps/openregister/#/avg",
 			"section": "settings",
 			"order": 95
