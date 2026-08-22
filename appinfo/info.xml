@@ -191,6 +191,19 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 exists to perform.
             -->
             <step>OCA\Procest\Repair\RenameDutchValues</step>
+            <!--
+                Hermiq owns the EU AI Act Art. 14 oversight record now, and
+                procest's own oversight page is retired. This replays the
+                DECISIONS already in procest's audit log through the same event
+                every new decision travels, so old evidence takes the identical
+                path as new evidence and hermiq never reads procest's register.
+                Idempotent (stable externalRef per source entry) and non-fatal
+                (a missing hermiq logs and continues) — an upgrade must not fail
+                because an audit projection could not complete, and the local
+                copies remain to replay from. POST-MIGRATION only: a fresh
+                install has no history to move.
+            -->
+            <step>OCA\Procest\Repair\MigrateAiOversightToHermiq</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
