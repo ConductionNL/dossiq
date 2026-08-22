@@ -16,17 +16,32 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Flow;
 
+use OCA\OpenRegister\Service\Flow\IFlowNode;
 use OCA\OpenRegister\Service\Flow\RegisterFlowNodesEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
+use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
- * Presents procest's six case actions to OpenRegister's flow engine.
+ * Presents procest's case actions to OpenRegister's flow engine.
  *
  * ADR-065: OpenRegister owns the flow engine and no leaf app grows a second
- * one. procest does not keep one — it CONTRIBUTES the six things its cases can
- * do, which is what FlowNodeRegistry is built for and what hermiq already does
- * with its agent nodes.
+ * one. procest does not keep one — it CONTRIBUTES what its cases can do, which
+ * is what FlowNodeRegistry is built for and what hermiq already does.
+ *
+ * TWO VOCABULARIES, DELIBERATELY DISTINCT IDS. procest carries two action
+ * systems and both ship a `sendEmail`. The LIVE transition vocabulary — what
+ * SideEffectDispatcher fires on every status change — takes the plain
+ * `procest.*` ids; the configured-action catalogue takes `procest.action.*`.
+ * Without that split one handler would silently shadow the other and a flow
+ * builder picking "Send email" would get whichever registered last.
+ *
+ * NODES ARE RESOLVED FROM A LIST, not injected one per constructor parameter.
+ * Fifteen named parameters is not a wiring style, it is a coupling problem —
+ * phpmd said so at 15 params and a coupling of 17. A class-string list keeps
+ * adding a node to one line and keeps this class's own dependencies at two.
  *
  * @template-implements IEventListener<RegisterFlowNodesEvent>
  *
@@ -34,44 +49,45 @@ use OCP\EventDispatcher\IEventListener;
  */
 class ProcestFlowNodeListener implements IEventListener {
 
+    /**
+     * The nodes procest contributes, in catalogue order.
+     *
+     * The live transition vocabulary first — it is the one that runs.
+     *
+     * @var class-string<IFlowNode>[]
+     */
+    private const NODES = [
+        // Live: fired by SideEffectDispatcher on every status change.
+        ProcestTxSendEmailNode::class,
+        ProcestTxCreateTaskNode::class,
+        ProcestTxCreateSubCaseNode::class,
+        ProcestTxWebhookNode::class,
+        ProcestTxSetFieldNode::class,
+        ProcestTxNotifyNode::class,
+        ProcestTxBesluitvormingActivateNode::class,
+        ProcestTxBesluitvormingPublishNode::class,
+        ProcestTxEvaluateDecisionNode::class,
+        // The configured-action catalogue.
+        ProcestSendEmailNode::class,
+        ProcestNotifyRoleNode::class,
+        ProcestCallWebhookNode::class,
+        ProcestCreateDocumentNode::class,
+        ProcestMergeTemplateNode::class,
+        ProcestScheduleReminderNode::class,
+    ];
+
 
     /**
      * Constructor.
      *
-     * @param ProcestSendEmailNode        $sendEmail        Send a templated email.
-     * @param ProcestNotifyRoleNode       $notifyRole       Notify a role on the case.
-     * @param ProcestCallWebhookNode      $callWebhook      POST to a configured endpoint.
-     * @param ProcestCreateDocumentNode   $createDocument   Render a document onto the case.
-     * @param ProcestMergeTemplateNode    $mergeTemplate    Render a template into a field.
-     * @param ProcestScheduleReminderNode $scheduleReminder Queue a reminder.
-     * @param ProcestTxSendEmailNode $sendEmailTx Live transition action `sendEmail`.
-     * @param ProcestTxCreateTaskNode $createTaskTx Live transition action `createTask`.
-     * @param ProcestTxCreateSubCaseNode $createSubCaseTx Live transition action `createSubCase`.
-     * @param ProcestTxWebhookNode $webhookTx Live transition action `webhook`.
-     * @param ProcestTxSetFieldNode $setFieldTx Live transition action `setField`.
-     * @param ProcestTxNotifyNode $notifyTx Live transition action `notify`.
-     * @param ProcestTxBesluitvormingActivateNode $besluitvormingActivateTx Live transition action `besluitvormingActivate`.
-     * @param ProcestTxBesluitvormingPublishNode $besluitvormingPublishTx Live transition action `besluitvormingPublish`.
-     * @param ProcestTxEvaluateDecisionNode $evaluateDecisionTx Live transition action `evaluateDecision`.
+     * @param ContainerInterface $container Resolves each node.
+     * @param LoggerInterface    $logger    The logger.
      *
      * @return void
      */
     public function __construct(
-        private readonly ProcestSendEmailNode $sendEmail,
-        private readonly ProcestNotifyRoleNode $notifyRole,
-        private readonly ProcestCallWebhookNode $callWebhook,
-        private readonly ProcestCreateDocumentNode $createDocument,
-        private readonly ProcestMergeTemplateNode $mergeTemplate,
-        private readonly ProcestScheduleReminderNode $scheduleReminder,
-        private readonly ProcestTxSendEmailNode $sendEmailTx,
-        private readonly ProcestTxCreateTaskNode $createTaskTx,
-        private readonly ProcestTxCreateSubCaseNode $createSubCaseTx,
-        private readonly ProcestTxWebhookNode $webhookTx,
-        private readonly ProcestTxSetFieldNode $setFieldTx,
-        private readonly ProcestTxNotifyNode $notifyTx,
-        private readonly ProcestTxBesluitvormingActivateNode $besluitvormingActivateTx,
-        private readonly ProcestTxBesluitvormingPublishNode $besluitvormingPublishTx,
-        private readonly ProcestTxEvaluateDecisionNode $evaluateDecisionTx,
+        private readonly ContainerInterface $container,
+        private readonly LoggerInterface $logger,
     ) {
 
     }//end __construct()
@@ -79,6 +95,12 @@ class ProcestFlowNodeListener implements IEventListener {
 
     /**
      * Register procest's nodes on the catalogue.
+     *
+     * A node that cannot be constructed is logged and SKIPPED rather than
+     * aborting the loop: one unresolvable dependency must not cost the other
+     * fourteen their place in the catalogue, and a missing node is visible
+     * (the flow editor simply does not offer it) where a failed registration
+     * would take everything down with it.
      *
      * @param Event $event The event to handle.
      *
@@ -91,25 +113,23 @@ class ProcestFlowNodeListener implements IEventListener {
             return;
         }
 
-        $event->registerNode(node: $this->sendEmail);
-        $event->registerNode(node: $this->notifyRole);
-        $event->registerNode(node: $this->callWebhook);
-        $event->registerNode(node: $this->createDocument);
-        $event->registerNode(node: $this->mergeTemplate);
-        $event->registerNode(node: $this->scheduleReminder);
+        foreach (self::NODES as $class) {
+            try {
+                $node = $this->container->get($class);
+            } catch (Throwable $e) {
+                $this->logger->warning(
+                    'ProcestFlowNodeListener: could not construct a flow node; it will not be offered',
+                    ['node' => $class, 'error' => $e->getMessage()],
+                );
+                continue;
+            }
 
-        // The LIVE vocabulary: what SideEffectDispatcher fires on every status
-        // change. These take the plain `procest.*` ids; the configured-action
-        // catalogue above takes `procest.action.*`, because both ship a sendEmail.
-        $event->registerNode(node: $this->sendEmailTx);
-        $event->registerNode(node: $this->createTaskTx);
-        $event->registerNode(node: $this->createSubCaseTx);
-        $event->registerNode(node: $this->webhookTx);
-        $event->registerNode(node: $this->setFieldTx);
-        $event->registerNode(node: $this->notifyTx);
-        $event->registerNode(node: $this->besluitvormingActivateTx);
-        $event->registerNode(node: $this->besluitvormingPublishTx);
-        $event->registerNode(node: $this->evaluateDecisionTx);
+            if (($node instanceof IFlowNode) === false) {
+                continue;
+            }
+
+            $event->registerNode(node: $node);
+        }//end foreach
 
     }//end handle()
 

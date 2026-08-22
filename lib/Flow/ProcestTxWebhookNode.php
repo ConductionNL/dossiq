@@ -32,7 +32,7 @@ use OCP\IURLGenerator;
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-class ProcestTxWebhookNode extends ProcestActionNode {
+class ProcestTxWebhookNode extends ProcestTransitionNode {
 
 
     /**

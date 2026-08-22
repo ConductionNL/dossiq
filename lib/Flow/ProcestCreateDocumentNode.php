@@ -65,20 +65,6 @@ class ProcestCreateDocumentNode extends ProcestActionNode {
 
 
     /**
-     * This node's id.
-     *
-     * `procest.action.*`, not `procest.*`: the live transition vocabulary owns
-     * the plain names and both systems ship a `sendEmail`.
-     *
-     * @return string The namespaced node id.
-     */
-    protected function nodeId(): string {
-        return 'procest.action.' . $this->handler->type();
-
-    }//end nodeId()
-
-
-    /**
      * Config keys without which this action cannot run.
      *
      * @return string[] The required key names.

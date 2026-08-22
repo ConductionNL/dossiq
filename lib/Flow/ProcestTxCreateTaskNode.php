@@ -32,7 +32,7 @@ use OCP\IURLGenerator;
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-class ProcestTxCreateTaskNode extends ProcestActionNode {
+class ProcestTxCreateTaskNode extends ProcestTransitionNode {
 
 
     /**
