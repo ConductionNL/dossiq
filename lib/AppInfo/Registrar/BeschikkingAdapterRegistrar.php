@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest beschikking adapter registrar.
+ * Dossiq beschikking adapter registrar.
  *
  * Binds the three beschikking cross-app integration seams — template render,
  * digital signing and archival ingest — to the implementation that is actually
@@ -9,7 +9,7 @@
  * availability probe and its fallback live with the classes they choose between.
  *
  * @category AppInfo
- * @package  OCA\Procest\AppInfo\Registrar
+ * @package  OCA\Dossiq\AppInfo\Registrar
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -17,7 +17,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -27,18 +27,18 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\AppInfo\Registrar;
+namespace OCA\Dossiq\AppInfo\Registrar;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Beschikking\ArchivalAdapterInterface;
-use OCA\Procest\Service\Beschikking\LibresignApiClient;
-use OCA\Procest\Service\Beschikking\LibresignSigningAdapter;
-use OCA\Procest\Service\Beschikking\MockSigningAdapter;
-use OCA\Procest\Service\Beschikking\MockTemplateEngineAdapter;
-use OCA\Procest\Service\Beschikking\OpenRegisterArchivalAdapter;
-use OCA\Procest\Service\Beschikking\SigningAdapterInterface;
-use OCA\Procest\Service\Beschikking\TemplateEngineAdapterInterface;
-use OCA\Procest\Service\ZgwDocumentService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Beschikking\ArchivalAdapterInterface;
+use OCA\Dossiq\Service\Beschikking\LibresignApiClient;
+use OCA\Dossiq\Service\Beschikking\LibresignSigningAdapter;
+use OCA\Dossiq\Service\Beschikking\MockSigningAdapter;
+use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
+use OCA\Dossiq\Service\Beschikking\OpenRegisterArchivalAdapter;
+use OCA\Dossiq\Service\Beschikking\SigningAdapterInterface;
+use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
+use OCA\Dossiq\Service\ZgwDocumentService;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use Psr\Container\ContainerInterface;
 
@@ -70,7 +70,7 @@ class BeschikkingAdapterRegistrar {
 		// SigningAdapterInterface: LibreSign (LibreCode) when the app is
 		// installed+enabled, else the pre-existing MockSigningAdapter stub —
 		// see openspec/changes/libresign-besluit-signing/design.md §6.
-		// procest never hard-depends on LibreSign: its absence is a clean,
+		// dossiq never hard-depends on LibreSign: its absence is a clean,
 		// logged, translated fallback to the unchanged pre-existing
 		// behaviour, not an error.
 		$context->registerService(

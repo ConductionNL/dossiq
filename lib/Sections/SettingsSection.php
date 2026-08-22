@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest Settings Section
+ * Dossiq Settings Section
  *
- * Defines the Procest section in the Nextcloud admin settings.
+ * Defines the Dossiq section in the Nextcloud admin settings.
  *
  * @category Sections
- * @package  OCA\Procest\Sections
+ * @package  OCA\Dossiq\Sections
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -17,19 +17,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Sections;
+namespace OCA\Dossiq\Sections;
 
 use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCP\Settings\IIconSection;
 
 /**
- * Defines the Procest section in the Nextcloud admin settings.
+ * Defines the Dossiq section in the Nextcloud admin settings.
  */
 class SettingsSection implements IIconSection {
 	/**
@@ -52,7 +52,7 @@ class SettingsSection implements IIconSection {
 	 * @return string
 	 */
 	public function getID(): string {
-		return 'procest';
+		return 'dossiq';
 	}//end getID()
 
 	/**
@@ -61,7 +61,7 @@ class SettingsSection implements IIconSection {
 	 * @return string
 	 */
 	public function getName(): string {
-		return $this->l->t('Procest');
+		return $this->l->t('Dossiq');
 	}//end getName()
 
 	/**
@@ -79,6 +79,6 @@ class SettingsSection implements IIconSection {
 	 * @return string
 	 */
 	public function getIcon(): string {
-		return $this->urlGenerator->imagePath(appName: 'procest', file: 'app-dark.svg');
+		return $this->urlGenerator->imagePath(appName: 'dossiq', file: 'app-dark.svg');
 	}//end getIcon()
 }//end class

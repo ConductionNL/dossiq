@@ -3,11 +3,11 @@
 /**
  * Workflow Engine Schema Unit Tests
  *
- * Validates that the procest_register.json schema configuration is valid
+ * Validates that the dossiq_register.json schema configuration is valid
  * and contains all required schema definitions for the workflow engine feature.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Settings
+ * @package  OCA\Dossiq\Tests\Unit\Settings
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -15,12 +15,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Settings;
+namespace OCA\Dossiq\Tests\Unit\Settings;
 
 use PHPUnit\Framework\TestCase;
 
@@ -28,7 +28,7 @@ use PHPUnit\Framework\TestCase;
  * Unit tests verifying the workflow engine schema registration.
  *
  * The workflow engine feature requires a `workflowTemplate` schema in
- * procest_register.json. These tests validate the schema file is well-formed
+ * dossiq_register.json. These tests validate the schema file is well-formed
  * and contains the expected schema definitions.
  */
 class WorkflowEngineSchemaTest extends TestCase {
@@ -48,12 +48,12 @@ class WorkflowEngineSchemaTest extends TestCase {
 	private array $registerData;
 
 	/**
-	 * Set up test fixtures — load procest_register.json.
+	 * Set up test fixtures — load dossiq_register.json.
 	 *
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->schemaFilePath = __DIR__ . '/../../../lib/Settings/procest_register.json';
+		$this->schemaFilePath = __DIR__ . '/../../../lib/Settings/dossiq_register.json';
 
 		$content = file_get_contents($this->schemaFilePath);
 		$this->registerData = json_decode($content, true);
@@ -61,19 +61,19 @@ class WorkflowEngineSchemaTest extends TestCase {
 	}//end setUp()
 
 	/**
-	 * Test that procest_register.json exists and is valid JSON.
+	 * Test that dossiq_register.json exists and is valid JSON.
 	 *
 	 * @return void
 	 */
 	public function testRegisterFileExistsAndIsValidJson(): void {
-		$this->assertFileExists($this->schemaFilePath, 'procest_register.json must exist');
-		$this->assertSame(JSON_ERROR_NONE, json_last_error(), 'procest_register.json must be valid JSON');
+		$this->assertFileExists($this->schemaFilePath, 'dossiq_register.json must exist');
+		$this->assertSame(JSON_ERROR_NONE, json_last_error(), 'dossiq_register.json must be valid JSON');
 		$this->assertIsArray($this->registerData);
 
 	}//end testRegisterFileExistsAndIsValidJson()
 
 	/**
-	 * Test that procest_register.json follows OpenAPI structure.
+	 * Test that dossiq_register.json follows OpenAPI structure.
 	 *
 	 * @return void
 	 */
@@ -100,7 +100,7 @@ class WorkflowEngineSchemaTest extends TestCase {
 		$this->assertArrayHasKey(
 			'workflowTemplate',
 			$schemas,
-			'workflowTemplate schema must be defined in procest_register.json for the workflow engine feature'
+			'workflowTemplate schema must be defined in dossiq_register.json for the workflow engine feature'
 		);
 
 	}//end testWorkflowTemplateSchemaIsRegistered()
@@ -140,7 +140,7 @@ class WorkflowEngineSchemaTest extends TestCase {
 			$this->assertArrayHasKey(
 				$schemaName,
 				$schemas,
-				"Core schema '{$schemaName}' must be present in procest_register.json"
+				"Core schema '{$schemaName}' must be present in dossiq_register.json"
 			);
 		}
 

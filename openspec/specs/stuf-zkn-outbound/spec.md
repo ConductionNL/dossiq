@@ -1,16 +1,16 @@
 # stuf-zkn-outbound Specification
 
 ## Purpose
-TBD - created by archiving change procest-stuf-zkn-outbound-gateway. Update Purpose after archive.
+TBD - created by archiving change dossiq-stuf-zkn-outbound-gateway. Update Purpose after archive.
 
-@e2e exclude The StUF-ZKN/BG outbound gateway is a SOAP integration engine: envelope construction (Lk01/Lk02/Lv01/Du01), Bv01/La01/Fo02 response parsing, WSSE-from-vault, HTTPS-only + mTLS transport, circuit-breaker thresholds, retry scheduling and contact-betrokkene mapping are all backend behaviours proven by the Vitest-free PHPUnit unit suite (`StufMessageBuilderOutboundTest`, `StufMessageParserTest`, `CircuitBreakerServiceTest`, `ContactBetrokkeneMapperTest`) and, where a live peer is required, by the env-gated live-e2e + Newman jobs that talk to a seeded zaaksysteem. There is no procest-only browser surface that drives a real StUF round-trip without an external zaaksysteem endpoint installed; the two admin read-only views (StufEndpoints, StufAuditLog) only render what the backend persists. Mirrors the `zgw-autorisaties-api` (Newman/PHPUnit, no Playwright UI) precedent.
+@e2e exclude The StUF-ZKN/BG outbound gateway is a SOAP integration engine: envelope construction (Lk01/Lk02/Lv01/Du01), Bv01/La01/Fo02 response parsing, WSSE-from-vault, HTTPS-only + mTLS transport, circuit-breaker thresholds, retry scheduling and contact-betrokkene mapping are all backend behaviours proven by the Vitest-free PHPUnit unit suite (`StufMessageBuilderOutboundTest`, `StufMessageParserTest`, `CircuitBreakerServiceTest`, `ContactBetrokkeneMapperTest`) and, where a live peer is required, by the env-gated live-e2e + Newman jobs that talk to a seeded zaaksysteem. There is no dossiq-only browser surface that drives a real StUF round-trip without an external zaaksysteem endpoint installed; the two admin read-only views (StufEndpoints, StufAuditLog) only render what the backend persists. Mirrors the `zgw-autorisaties-api` (Newman/PHPUnit, no Playwright UI) precedent.
 
 ## Requirements
 ### Requirement: Outbound envelope construction
 
 The system SHALL construct StUF 0310 SOAP 1.1 envelopes for the outbound
 message set (Lk01 creeerZaak, Lk02 actualiseerZaak, Lv01 geefZaakDetails, Du01
-genereerZaakIdentificatie and Du01 vrijBericht) from a procest `case` and the
+genereerZaakIdentificatie and Du01 vrijBericht) from a dossiq `case` and the
 target endpoint, with a `zkn:`-namespaced stuurgegevens block carrying a fresh
 26-character ULID-like referentienummer and a millisecond-precise
 Europe/Amsterdam tijdstipBericht. The outbound methods SHALL live on the same
@@ -114,7 +114,7 @@ fields are present before sending.
 The system SHALL persist one append-only `stufMessage` row per outbound
 envelope (and per inbound reception), recording the full envelope XML, HTTP
 status, duration, retry history, lifecycle status, and a generic source-ref
-(`bronEntiteit`/`bronId`/`gerelateerdeZaakId`) back to the procest entity that
+(`bronEntiteit`/`bronId`/`gerelateerdeZaakId`) back to the dossiq entity that
 triggered it.
 
 #### Scenario: Outbound send is logged
@@ -124,7 +124,7 @@ triggered it.
 
 ### Requirement: Bidirectional mapping
 
-The system SHALL maintain a `zaaksysteemMapping` linking a procest entity
+The system SHALL maintain a `zaaksysteemMapping` linking a dossiq entity
 (`bronEntiteit` ∈ {case, contact} + `bronId`, plus `caseId` for case mappings)
 to its external zaaksysteem identifier, reused idempotently across retries and
 updates.

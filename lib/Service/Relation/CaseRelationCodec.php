@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest case-relation codec.
+ * Dossiq case-relation codec.
  *
  * Owns the on-disk shape of the `case.relatedCases` field and every pure
  * operation over a relation list: decoding it (the field is a JSON-encoded
@@ -19,7 +19,7 @@
  * written relation must not make the whole list unreadable.
  *
  * @category Service
- * @package  OCA\Procest\Service\Relation
+ * @package  OCA\Dossiq\Service\Relation
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,7 +27,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -37,7 +37,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Relation;
+namespace OCA\Dossiq\Service\Relation;
 
 /**
  * Encodes, decodes and edits the typed peer-relation list of a case.

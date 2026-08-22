@@ -2,7 +2,7 @@
 	"info": {
 		"name": "handler-vervanging-waarneming — substitution + bulk reassignment",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"description": "Contract tests for the procest substitution + bulk-reassignment endpoints (handler-vervanging-waarneming). Authenticated as admin (= procest coordinator). Validates auth posture, validation rejections, and response shapes. No fixtures are persisted that need teardown beyond optional self-substitution which is revoked."
+		"description": "Contract tests for the dossiq substitution + bulk-reassignment endpoints (handler-vervanging-waarneming). Authenticated as admin (= dossiq coordinator). Validates auth posture, validation rejections, and response shapes. No fixtures are persisted that need teardown beyond optional self-substitution which is revoked."
 	},
 	"auth": {
 		"type": "basic",

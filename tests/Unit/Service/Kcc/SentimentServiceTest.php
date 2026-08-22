@@ -6,7 +6,7 @@
  * Covers the deterministic Dutch sentiment analyser used by the KCC werkplek.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Kcc
+ * @package  OCA\Dossiq\Tests\Unit\Service\Kcc
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,20 +15,20 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Kcc;
+namespace OCA\Dossiq\Tests\Unit\Service\Kcc;
 
-use OCA\Procest\Service\Kcc\SentimentService;
+use OCA\Dossiq\Service\Kcc\SentimentService;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Procest\Service\Kcc\SentimentService
+ * @covers \OCA\Dossiq\Service\Kcc\SentimentService
  */
 class SentimentServiceTest extends TestCase {
 	private SentimentService $service;

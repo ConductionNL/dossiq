@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest Route Configuration
+ * Dossiq Route Configuration
  *
- * Defines all HTTP routes for the Procest application.
+ * Defines all HTTP routes for the Dossiq application.
  *
  * @category Routes
- * @package  OCA\Procest
+ * @package  OCA\Dossiq
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -17,7 +17,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
@@ -26,22 +26,22 @@ declare(strict_types=1);
 // (`/{path}`), settings#index/create/load, preferences#getPreference/setPreference,
 // metrics#index and health#index — are now provided by the OpenRegister AppHost
 // canonical route table (ADR-040). URLs, verbs and route names are unchanged.
-// The procest-bespoke dashboard PWA assets (dashboard#serviceWorker /
+// The dossiq-bespoke dashboard PWA assets (dashboard#serviceWorker /
 // dashboard#webManifest) and every domain route below are passed through as
 // `$extra`; they are inserted before the catch-all so they keep priority.
 //
 // ⚠️ The AppHost builder is invoked through a `class_exists()` guard. Nextcloud
-// `include`s this file for EVERY procest request, so an unguarded static call
+// `include`s this file for EVERY dossiq request, so an unguarded static call
 // to a class in another app makes every route in the app fatal with HTTP 500
-// when openregister is absent — not just the AppHost ones. Procest does not
+// when openregister is absent — not just the AppHost ones. Dossiq does not
 // declare `<app>openregister</app>`, so an admin can create exactly that
 // configuration. Fixing only the controllers MOVES the fatal here rather than
 // removing it. The fallback branch below reproduces `Routes::standard()`'s
-// output locally so procest still routes without openregister.
+// output locally so dossiq still routes without openregister.
 // See decidesk#377 / #388.
 $extra = [
         // Backend manifest delta — case-type navigation (case-type-navigation).
-        // Consumed by useAppManifest('procest', bundled, { mergeStrategy: 'delta' }).
+        // Consumed by useAppManifest('dossiq', bundled, { mergeStrategy: 'delta' }).
     ['name' => 'manifest#manifest',  'url' => '/api/manifest',           'verb' => 'GET'],
 
         // AI-Assisted Processing (specific endpoints precede wildcard routes).
@@ -228,7 +228,7 @@ $extra = [
         // GIS / cases-on-map: the multi-object overview is served by
         // OpenRegister's page-level maps-overview surface (OR #154) — RBAC-scoped
         // marker points at /apps/openregister/api/integrations/maps/overviews/...
-        // Procest's bespoke GIS-proxy / WMS-WFS-proxy / WFS-export / WFS-XML /
+        // Dossiq's bespoke GIS-proxy / WMS-WFS-proxy / WFS-export / WFS-XML /
         // map-layer-CRUD / cases-geo routes were removed with that migration
         // (issue #112, ADR-022). PDOK address resolution is owned separately by
         // the migrate-pdok-to-openconnector change.
@@ -264,7 +264,7 @@ $extra = [
     ['name' => 'parafeerRoute#addStep',      'url' => '/api/parafeer-route/voorstel/{voorstelId}/add-step',       'verb' => 'POST'],
 
         // Voorstel → besluit registration delegates to a decidesk report-adoption
-        // Decision (procest-delegate-remaining-decisions-to-decidesk, ADR-019).
+        // Decision (dossiq-delegate-remaining-decisions-to-decidesk, ADR-019).
         // The parafeerroute above is untouched; only the besluit decision moves.
     ['name' => 'voorstelBesluit#registerBesluit', 'url' => '/api/voorstellen/{voorstelId}/register-besluit',       'verb' => 'POST'],
 
@@ -346,7 +346,7 @@ $extra = [
         // ── Notes @mention notifications (ncvue-w2-leaves-adoption) ─────
         // Note storage/CRUD is owned entirely by the OpenRegister notes
         // integration leaf (nc-vue CnNotesTab). This is the only
-        // procest-side side-effect: turning a saved note's @mention
+        // dossiq-side side-effect: turning a saved note's @mention
         // tokens into real Nextcloud notifications.
     ['name' => 'notes#mention', 'url' => '/api/notes/mention', 'verb' => 'POST'],
 
@@ -438,13 +438,13 @@ $extra = [
         // stay in-app (zaak-domain). CRUD over the partner/transfer schemas
         // is served by the OpenRegister manifest renderer.
         //
-        // The bespoke procest public-share controller + its token routes
+        // The bespoke dossiq public-share controller + its token routes
         // (/api/public/share/*, /api/public/status/*) were REMOVED: the
         // citizen-facing public case-status page now resolves anonymously
         // through OR's `#[PublicPage]` endpoint
         // `GET /apps/openregister/api/public/case-tokens/{token}` — an
         // audited, RBAC-respecting surface (only public-group-readable
-        // fields), not a hand-maintained procest auth surface.
+        // fields), not a hand-maintained dossiq auth surface.
     ['name' => 'caseSharing#createShare',      'url' => '/api/shares',                   'verb' => 'POST'],
     ['name' => 'caseSharing#revokeShare',      'url' => '/api/shares/{shareId}',         'verb' => 'DELETE'],
     ['name' => 'caseSharing#initiateTransfer', 'url' => '/api/transfers',                'verb' => 'POST'],
@@ -584,7 +584,7 @@ $extra = [
 
         // GIS map-layer CRUD removed (issue #112): base-layer config is now
         // declarative on OpenRegister's maps-overview surface (PDOK WMTS default,
-        // overridable) — procest no longer manages WMS/WFS overlay layers.
+        // overridable) — dossiq no longer manages WMS/WFS overlay layers.
         // ── DSO / Omgevingsloket (DSO controller endpoints) ──────────────
     ['name' => 'dso#dashboard',            'url' => '/api/dso/dashboard',                                'verb' => 'GET'],
     ['name' => 'dso#transitionStatus',     'url' => '/api/dso/cases/{caseId}/transition',                'verb' => 'POST'],
@@ -648,7 +648,7 @@ $extra = [
 
         // Archief / e-Depot handover is owned by OpenRegister (migrate-archival-to-or,
         // ADR-022): retention, transfer, proof and destruction run through OR's
-        // /api/archival, /api/transfers, /api/settings/edepot surfaces. Procest
+        // /api/archival, /api/transfers, /api/settings/edepot surfaces. Dossiq
         // contributes retention config declaratively (x-openregister-archival on the
         // case schema) and places legal holds via BezwaarLegalHoldListener; it exposes
         // no archief endpoints of its own.
@@ -691,7 +691,7 @@ $extra = [
 
         // ── Termijnbewaking + dwangsom engine (AWB 4:13/4:14/4:17) ─────────
         // Public webhook for openconnector/ERP payment confirmation callbacks.
-    ['name' => 'dwangsomPaymentCallback#callback', 'url' => '/api/procest/openconnector/dwangsom-payment-callback', 'verb' => 'POST'],
+    ['name' => 'dwangsomPaymentCallback#callback', 'url' => '/api/dossiq/openconnector/dwangsom-payment-callback', 'verb' => 'POST'],
         // TermijnInstance lifecycle (caseworker / handler).
     ['name' => 'termijn#create',     'url' => '/api/termijn/instances',                  'verb' => 'POST'],
     ['name' => 'termijn#show',       'url' => '/api/termijn/instances/{id}',             'verb' => 'GET'],
@@ -754,7 +754,7 @@ $extra = [
 
         // NOTE: dashboard#page (`/`) and the SPA catch-all (`/{path}`,
         // dashboard#catchAll) are supplied by Routes::standard(); both resolve to
-        // procest's DashboardController, which implements them locally.
+        // dossiq's DashboardController, which implements them locally.
 ];
 
 // Preferred path: the OpenRegister AppHost owns the canonical route table.

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Beschikking Signing Adapter Interface.
+ * Dossiq Beschikking Signing Adapter Interface.
  *
  * Contract for the OpenConnector eIDAS-TSP signing integration. The real
  * adapter (delivered in the openconnector repo, change task T23) orchestrates
@@ -9,7 +9,7 @@
  * durable validatierapport id; the MockAdapter returns a deterministic stub.
  *
  * @category Interface
- * @package  OCA\Procest\Service\Beschikking
+ * @package  OCA\Dossiq\Service\Beschikking
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,14 +20,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T23
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Beschikking;
+namespace OCA\Dossiq\Service\Beschikking;
 
 /**
  * Signs a beschikking PDF via an eIDAS-qualified TSP (OpenConnector).

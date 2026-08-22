@@ -25,21 +25,21 @@
  * an empty body takes.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\ParafeerRouteController;
-use OCA\Procest\Service\ParafeerRouteService;
+use OCA\Dossiq\Controller\ParafeerRouteController;
+use OCA\Dossiq\Service\ParafeerRouteService;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -52,7 +52,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Wire-contract tests for ParafeerRouteController.
  *
- * @covers \OCA\Procest\Controller\ParafeerRouteController
+ * @covers \OCA\Dossiq\Controller\ParafeerRouteController
  */
 class ParafeerRouteControllerContractTest extends TestCase {
 
@@ -113,7 +113,7 @@ class ParafeerRouteControllerContractTest extends TestCase {
 		$this->logger = $this->createMock(LoggerInterface::class);
 
 		$this->controller = new ParafeerRouteController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			routeService: $this->routeService,
 			userSession: $this->userSession,

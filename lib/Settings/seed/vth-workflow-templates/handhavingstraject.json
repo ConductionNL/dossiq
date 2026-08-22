@@ -1,5 +1,5 @@
 {
-  "_format": "procest-vth-workflow-template-v1",
+  "_format": "dossiq-vth-workflow-template-v1",
   "slug": "handhavingstraject",
   "title": "Handhavingstraject",
   "description": "Workflow voor een handhavingstraject conform de Landelijke Handhavingsstrategie (LHS). Volgt de Awb-procedure 5:24 met redelijke termijn voor herstel.",

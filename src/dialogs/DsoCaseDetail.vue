@@ -4,7 +4,7 @@
 -->
 <template>
 	<NcDialog
-		:name="t('procest', 'Omgevingsvergunning — Detail')"
+		:name="t('dossiq', 'Omgevingsvergunning — Detail')"
 		size="large"
 		:canClose="true"
 		@close="$emit('close')">
@@ -13,58 +13,58 @@
 				<!-- Lifecycle action bar -->
 				<div class="dso-case-detail__actions">
 					<NcButton type="primary" @click="showTransitionDialog = true">
-						{{ t('procest', 'Status transition') }}
+						{{ t('dossiq', 'Status transition') }}
 					</NcButton>
 					<NcButton type="secondary" @click="showBeschikkingDialog = true">
-						{{ t('procest', 'Generate beschikking') }}
+						{{ t('dossiq', 'Generate beschikking') }}
 					</NcButton>
 					<NcButton type="secondary" @click="showSamenwerkDialog = true">
-						{{ t('procest', 'Collaboration') }}
+						{{ t('dossiq', 'Collaboration') }}
 					</NcButton>
 					<NcButton type="secondary" @click="showDoorstuurDialog = true">
-						{{ t('procest', 'Forward') }}
+						{{ t('dossiq', 'Forward') }}
 					</NcButton>
 				</div>
 
 				<!-- Aanvraag section -->
 				<section class="dso-section">
-					<h3>{{ t('procest', 'Application') }}</h3>
+					<h3>{{ t('dossiq', 'Application') }}</h3>
 					<dl class="dso-dl">
-						<dt>{{ t('procest', 'Title') }}</dt>
+						<dt>{{ t('dossiq', 'Title') }}</dt>
 						<dd>{{ zaak.title || '—' }}</dd>
-						<dt>{{ t('procest', 'DSO Status') }}</dt>
+						<dt>{{ t('dossiq', 'DSO Status') }}</dt>
 						<dd>{{ zaak.dsoStatus || '—' }}</dd>
-						<dt>{{ t('procest', 'Procedure type') }}</dt>
+						<dt>{{ t('dossiq', 'Procedure type') }}</dt>
 						<dd>{{ zaak.procedureType || '—' }}</dd>
-						<dt>{{ t('procest', 'Deadline') }}</dt>
+						<dt>{{ t('dossiq', 'Deadline') }}</dt>
 						<dd>{{ formatDate(zaak.deadlineDate) }}</dd>
-						<dt>{{ t('procest', 'Competent Authority') }}</dt>
+						<dt>{{ t('dossiq', 'Competent Authority') }}</dt>
 						<dd>{{ zaak.competentAuthority || '—' }}</dd>
-						<dt>{{ t('procest', 'Permit application ref') }}</dt>
+						<dt>{{ t('dossiq', 'Permit application ref') }}</dt>
 						<dd>{{ zaak.permitApplicationRef || '—' }}</dd>
 					</dl>
 				</section>
 
 				<!-- Decision section (when verleend/geweigerd) -->
 				<section v-if="zaak.besluitdatum" class="dso-section">
-					<h3>{{ t('procest', 'Decision') }}</h3>
+					<h3>{{ t('dossiq', 'Decision') }}</h3>
 					<dl class="dso-dl">
-						<dt>{{ t('procest', 'Decision date') }}</dt>
+						<dt>{{ t('dossiq', 'Decision date') }}</dt>
 						<dd>{{ formatDate(zaak.besluitdatum) }}</dd>
-						<dt>{{ t('procest', 'Explanation') }}</dt>
+						<dt>{{ t('dossiq', 'Explanation') }}</dt>
 						<dd>{{ zaak.dsoNotes || '—' }}</dd>
 					</dl>
 				</section>
 
 				<!-- Samenwerkverzoeken section -->
 				<section class="dso-section">
-					<h3>{{ t('procest', 'Collaboration requests') }}</h3>
+					<h3>{{ t('dossiq', 'Collaboration requests') }}</h3>
 					<p
 						v-if="
 							!zaak.collaboration_requests
 							|| zaak.collaboration_requests.length === 0
 						">
-						{{ t('procest', 'No samenwerkverzoeken linked') }}
+						{{ t('dossiq', 'No samenwerkverzoeken linked') }}
 					</p>
 					<ul v-else>
 						<li v-for="swId in zaak.collaboration_requests" :key="swId">
@@ -75,7 +75,7 @@
 
 				<!-- Activity timeline -->
 				<section class="dso-section">
-					<h3>{{ t('procest', 'Activity timeline') }}</h3>
+					<h3>{{ t('dossiq', 'Activity timeline') }}</h3>
 					<ul v-if="activityEntries.length > 0" class="dso-activity">
 						<li v-for="(entry, idx) in activityEntries" :key="idx">
 							<span class="dso-activity__timestamp">{{
@@ -90,7 +90,7 @@
 						</li>
 					</ul>
 					<p v-else>
-						{{ t('procest', 'No activity recorded') }}
+						{{ t('dossiq', 'No activity recorded') }}
 					</p>
 				</section>
 			</div>
@@ -113,29 +113,29 @@
 
 			<!-- Inline transition form -->
 			<div v-if="showTransitionDialog" class="dso-transition-form">
-				<h3>{{ t('procest', 'Transition status') }}</h3>
+				<h3>{{ t('dossiq', 'Transition status') }}</h3>
 				<NcSelect
 					v-model="transitionStatus"
 					:options="transitionOptions"
-					:inputLabel="t('procest', 'New status')"
+					:inputLabel="t('dossiq', 'New status')"
 					inputId="transition-status" />
 				<NcTextField
 					v-model="transitionToelichting"
-					:label="t('procest', 'Explanation')" />
+					:label="t('dossiq', 'Explanation')" />
 				<NcTextField
 					v-if="requiresBesluitdatum"
 					v-model="transitionBesluitdatum"
-					:label="t('procest', 'Decision date')"
+					:label="t('dossiq', 'Decision date')"
 					type="date" />
 				<div class="dso-transition-form__actions">
 					<NcButton
 						type="primary"
 						:disabled="!transitionStatus"
 						@click="executeTransition">
-						{{ t('procest', 'Confirm') }}
+						{{ t('dossiq', 'Confirm') }}
 					</NcButton>
 					<NcButton type="tertiary" @click="showTransitionDialog = false">
-						{{ t('procest', 'Cancel') }}
+						{{ t('dossiq', 'Cancel') }}
 					</NcButton>
 				</div>
 			</div>
@@ -185,11 +185,11 @@ export default {
 			transitionToelichting: '',
 			transitionBesluitdatum: '',
 			transitionOptions: [
-				{ label: t('procest', 'Submitted'), value: 'submitted' },
-				{ label: t('procest', 'In handling'), value: 'in_handling' },
-				{ label: t('procest', 'Granted'), value: 'granted' },
-				{ label: t('procest', 'Refused'), value: 'refused' },
-				{ label: t('procest', 'Withdrawn'), value: 'withdrawn' },
+				{ label: t('dossiq', 'Submitted'), value: 'submitted' },
+				{ label: t('dossiq', 'In handling'), value: 'in_handling' },
+				{ label: t('dossiq', 'Granted'), value: 'granted' },
+				{ label: t('dossiq', 'Refused'), value: 'refused' },
+				{ label: t('dossiq', 'Withdrawn'), value: 'withdrawn' },
 			],
 		}
 	},
@@ -242,7 +242,7 @@ export default {
 				}
 				const { data } = await axios.post(
 					generateUrl(
-						'/apps/procest/api/dso/cases/'
+						'/apps/dossiq/api/dso/cases/'
 							+ encodeURIComponent(this.caseId)
 							+ '/transition',
 					),

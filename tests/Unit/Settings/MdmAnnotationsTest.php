@@ -3,15 +3,15 @@
 /**
  * MDM Annotations Test (consume-or-mdm)
  *
- * Verifies procest's ADR-045 consumer posture: the case, supplier and
+ * Verifies dossiq's ADR-045 consumer posture: the case, supplier and
  * partnerOrganization schemas in the register template declare the
  * x-openregister-quality and x-openregister-dedup annotations exactly as
  * fixed in the change design, declare the OR-materialised qualityScore /
  * qualityStatus fields, and declare NO x-openregister-survivorship
- * (no trust-tiered source-record schema exists in procest).
+ * (no trust-tiered source-record schema exists in dossiq).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Settings
+ * @package  OCA\Dossiq\Tests\Unit\Settings
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,12 +22,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Settings;
+namespace OCA\Dossiq\Tests\Unit\Settings;
 
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Procest\Repair\InitializeSettings
+ * @covers \OCA\Dossiq\Repair\InitializeSettings
  */
 class MdmAnnotationsTest extends TestCase {
 	private const ANNOTATED_SCHEMAS = ['case', 'supplier', 'partnerOrganization'];
@@ -39,7 +39,7 @@ class MdmAnnotationsTest extends TestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$path = __DIR__ . '/../../../lib/Settings/procest_register.json';
+		$path = __DIR__ . '/../../../lib/Settings/dossiq_register.json';
 		$this->assertFileExists($path);
 		$this->register = json_decode((string)file_get_contents($path), true);
 		$this->assertIsArray($this->register, 'register template must be valid JSON');
@@ -148,7 +148,7 @@ class MdmAnnotationsTest extends TestCase {
 			$this->assertArrayNotHasKey(
 				'x-openregister-survivorship',
 				$schema,
-				"{$slug} must not declare survivorship — procest has no trust-tiered source-record schema"
+				"{$slug} must not declare survivorship — dossiq has no trust-tiered source-record schema"
 			);
 		}
 	}

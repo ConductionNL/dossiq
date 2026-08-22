@@ -20,7 +20,7 @@ import { generateUrl } from '@nextcloud/router'
  * @return {string} Base URL
  */
 function baseUrl(caseId) {
-	return generateUrl(`/apps/procest/api/case/${caseId}/cmmn-plan`)
+	return generateUrl(`/apps/dossiq/api/case/${caseId}/cmmn-plan`)
 }
 
 /**

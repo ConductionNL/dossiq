@@ -12,18 +12,18 @@
  * scope and the exact value set, not just the happy-path mapping.
  *
  * @category Test
- * @package  OCA\Procest\Tests\Unit\Repair
+ * @package  OCA\Dossiq\Tests\Unit\Repair
  * @author   Conduction Development Team <info@conduction.nl>
  * @license  EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
- * @link     https://procest.nl
+ * @link     https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Repair;
+namespace OCA\Dossiq\Tests\Unit\Repair;
 
-use OCA\Procest\Repair\RenameDutchDirectionValues;
-use OCA\Procest\Service\ZgwRulesBase;
+use OCA\Dossiq\Repair\RenameDutchDirectionValues;
+use OCA\Dossiq\Service\ZgwRulesBase;
 use OCP\DB\Exception as DbException;
 use OCP\DB\IPreparedStatement;
 use OCP\DB\IResult;
@@ -36,7 +36,7 @@ use ReflectionClass;
 /**
  * Unit tests for RenameDutchDirectionValues.
  *
- * @covers \OCA\Procest\Repair\RenameDutchDirectionValues
+ * @covers \OCA\Dossiq\Repair\RenameDutchDirectionValues
  */
 class RenameDutchDirectionValuesTest extends TestCase {
 
@@ -93,7 +93,7 @@ class RenameDutchDirectionValuesTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testItUpdatesEachDutchValueOnAProcestShardTable(): void {
+	public function testItUpdatesEachDutchValueOnADossiqShardTable(): void {
 		$registers = $this->createMock(IResult::class);
 		$registers->method('fetchAll')->willReturn([17]);
 
@@ -154,7 +154,7 @@ class RenameDutchDirectionValuesTest extends TestCase {
 			$pairs
 		);
 
-	}//end testItUpdatesEachDutchValueOnAProcestShardTable()
+	}//end testItUpdatesEachDutchValueOnADossiqShardTable()
 
 
 	/**
@@ -176,7 +176,7 @@ class RenameDutchDirectionValuesTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testAnInstallWithoutProcestRegistersReportsInsteadOfSilentlyPassing(): void {
+	public function testAnInstallWithoutDossiqRegistersReportsInsteadOfSilentlyPassing(): void {
 		$result = $this->createMock(IResult::class);
 		$result->method('fetchAll')->willReturn([]);
 
@@ -193,7 +193,7 @@ class RenameDutchDirectionValuesTest extends TestCase {
 		$step = new RenameDutchDirectionValues($db, $this->createMock(LoggerInterface::class));
 		$step->run($output);
 
-	}//end testAnInstallWithoutProcestRegistersReportsInsteadOfSilentlyPassing()
+	}//end testAnInstallWithoutDossiqRegistersReportsInsteadOfSilentlyPassing()
 
 
 	/**
@@ -311,7 +311,7 @@ class RenameDutchDirectionValuesTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testBothProcestRegistersAreInScope(): void {
+	public function testBothDossiqRegistersAreInScope(): void {
 		$this->assertSame('procest', $this->constant('REGISTER_SLUG_PREFIX'));
 
 		$markers = ['openregister_table_17_', 'openregister_table_2424_'];
@@ -319,7 +319,7 @@ class RenameDutchDirectionValuesTest extends TestCase {
 		$this->assertTrue($this->call('isShardOf', ['oc_openregister_table_17_928', $markers]));
 		$this->assertTrue($this->call('isShardOf', ['oc_openregister_table_2424_928', $markers]));
 
-	}//end testBothProcestRegistersAreInScope()
+	}//end testBothDossiqRegistersAreInScope()
 
 
 	/**

@@ -14,13 +14,13 @@
 	<div class="case-tab case-tab--tasks">
 		<div class="case-tab__header">
 			<h3 class="case-tab__title">
-				{{ t('procest', 'Tasks') }}
+				{{ t('dossiq', 'Tasks') }}
 				<span v-if="tasks.length > 0" class="case-tab__count"
 					>({{ completedCount }}/{{ tasks.length }})</span
 				>
 			</h3>
 			<NcButton type="primary" @click="onNewTask">
-				{{ t('procest', 'New task') }}
+				{{ t('dossiq', 'New task') }}
 			</NcButton>
 		</div>
 
@@ -28,9 +28,9 @@
 
 		<NcEmptyContent
 			v-else-if="tasks.length === 0"
-			:title="t('procest', 'No tasks yet')"
+			:title="t('dossiq', 'No tasks yet')"
 			:description="
-				t('procest', 'Create a task to track work on this case.')
+				t('dossiq', 'Create a task to track work on this case.')
 			" />
 
 		<ul v-else class="case-tab__list">
@@ -177,24 +177,24 @@ export default {
 
 		dueLabel(task) {
 			if (this.isOverdue(task)) {
-				return t('procest', 'Overdue: {date}', {
+				return t('dossiq', 'Overdue: {date}', {
 					date: formatDate(task.dueDate),
 				})
 			}
 			if (
 				task.dueDate.slice(0, 10) === new Date().toISOString().slice(0, 10)
 			) {
-				return t('procest', 'Due today')
+				return t('dossiq', 'Due today')
 			}
-			return t('procest', 'Due: {date}', { date: formatDate(task.dueDate) })
+			return t('dossiq', 'Due: {date}', { date: formatDate(task.dueDate) })
 		},
 
 		statusLabel(status) {
 			const labels = {
-				available: t('procest', 'Open'),
-				active: t('procest', 'In progress'),
-				completed: t('procest', 'Completed'),
-				blocked: t('procest', 'Blocked'),
+				available: t('dossiq', 'Open'),
+				active: t('dossiq', 'In progress'),
+				completed: t('dossiq', 'Completed'),
+				blocked: t('dossiq', 'Blocked'),
 			}
 			return labels[status] || status || '—'
 		},
@@ -208,9 +208,9 @@ export default {
 
 		priorityLabel(priority) {
 			const labels = {
-				low: t('procest', 'Low'),
-				high: t('procest', 'High'),
-				urgent: t('procest', 'Urgent'),
+				low: t('dossiq', 'Low'),
+				high: t('dossiq', 'High'),
+				urgent: t('dossiq', 'Urgent'),
 			}
 			return labels[priority] || priority
 		},

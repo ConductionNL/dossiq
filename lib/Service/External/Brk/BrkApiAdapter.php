@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Live Procest BRK adapter (Kadaster Haal Centraal BRK Bevragen API v2).
+ * Live Dossiq BRK adapter (Kadaster Haal Centraal BRK Bevragen API v2).
  *
  * Calls the Kadaster Haal Centraal BRK Bevragen API v2 — the authoritative,
  * key-gated cadastral (parcel/ownership-reference) channel Kadaster
@@ -24,13 +24,13 @@
  * BAG/BRP/KvK adapters' fail-soft contract.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Brk
+ * @package  OCA\Dossiq\Service\External\Brk
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://kadaster.github.io/BRK-bevragen/
  *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
@@ -41,9 +41,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Brk;
+namespace OCA\Dossiq\Service\External\Brk;
 
-use OCA\Procest\Service\External\IntegrationMode;
+use OCA\Dossiq\Service\External\IntegrationMode;
 use OCP\Http\Client\IClientService;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -161,7 +161,7 @@ class BrkApiAdapter implements BrkAdapterInterface {
 			return $this->foundSearchResult(percelen: $percelen);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest BRK kadastrale-aanduiding lookup failed',
+				'Dossiq BRK kadastrale-aanduiding lookup failed',
 				[
 					'kadastraleGemeenteCode' => $kadastraleMunicipalityCode,
 					'sectie' => $normalizedSection,
@@ -306,7 +306,7 @@ class BrkApiAdapter implements BrkAdapterInterface {
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest BRK object lookup failed',
+				'Dossiq BRK object lookup failed',
 				['id' => $id, 'error' => $e->getMessage(), 'context' => $context]
 			);
 
@@ -350,7 +350,7 @@ class BrkApiAdapter implements BrkAdapterInterface {
 	 */
 	private function errorResult(int $status, array $context): BrkLookupResult {
 		$this->logger->warning(
-			'Procest BRK lookup returned a non-success status',
+			'Dossiq BRK lookup returned a non-success status',
 			['status' => $status, 'context' => $context]
 		);
 

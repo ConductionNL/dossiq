@@ -1,9 +1,9 @@
 /**
- * Procest landing page.
+ * Dossiq landing page.
  *
  * Composes the brand <DetailHero> + <WidgetShelf> from
  * @conduction/docusaurus-preset/components, mirroring the connext page
- * at sites/www/src/pages/apps/procest.mdx.
+ * at sites/www/src/pages/apps/dossiq.mdx.
  *
  * Written as .js (not .mdx) because the docs site has the docs plugin
  * pointed at `path: './'`, and an MDX file in src/pages/ trips the
@@ -19,7 +19,7 @@ import {
   AppMock,
 } from '@conduction/docusaurus-preset/components';
 
-const PROCEST_ICON = (
+const DOSSIQ_ICON = (
   <svg viewBox="0 0 24 24">
     <circle cx="12" cy="12" r="9" />
     <path d="M12 7v5l3 3" />
@@ -266,37 +266,37 @@ const WIDGETS = [
 export default function Home() {
   return (
     <Layout
-      title="Procest, case management and BPMN workflows for Nextcloud"
+      title="Dossiq, case management and BPMN workflows for Nextcloud"
       description="Case management for VTH and citizen processes on Nextcloud. Workflow engine plus typed registers plus an audit trail."
     >
       <main className="marketing-page">
         <DetailHero
           background="cobalt"
-          appId="procest"
+          appId="dossiq"
           status={{ label: 'Stable', color: 'var(--c-mint-500)' }}
           version="v1.6"
           locales="NL · EN"
-          title="Procest"
+          title="Dossiq"
           tagline={TAGLINE}
           primaryCta={{
             label: 'Install from app store',
-            href: 'https://apps.nextcloud.com/apps/procest',
+            href: 'https://apps.nextcloud.com/apps/dossiq',
             tone: 'orange',
           }}
           secondaryCta={{ label: 'Read the docs', href: '/docs/' }}
           tertiaryCta={{
             label: 'View on GitHub',
-            href: 'https://github.com/ConductionNL/procest',
+            href: 'https://github.com/ConductionNL/dossiq',
           }}
           iconColor="var(--c-orange-knvb)"
-          icon={PROCEST_ICON}
-          illustration={<AppMock app="procest" />}
+          icon={DOSSIQ_ICON}
+          illustration={<AppMock app="dossiq" />}
         />
 
         <WidgetShelf
           eyebrow="Widgets we ship"
           title="On every Nextcloud dashboard."
-          lede="Install Procest and these widgets show up on the home screen of every case-worker. No extra config, no separate inbox app."
+          lede="Install Dossiq and these widgets show up on the home screen of every case-worker. No extra config, no separate inbox app."
           widgets={WIDGETS}
         />
       </main>

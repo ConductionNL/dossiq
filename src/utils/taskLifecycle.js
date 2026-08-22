@@ -20,11 +20,11 @@ export const TASK_STATUSES = {
  */
 function getStatusLabels() {
 	return {
-		available: t('procest', 'Available'),
-		active: t('procest', 'Active'),
-		completed: t('procest', 'Completed'),
-		terminated: t('procest', 'Terminated'),
-		disabled: t('procest', 'Disabled'),
+		available: t('dossiq', 'Available'),
+		active: t('dossiq', 'Active'),
+		completed: t('dossiq', 'Completed'),
+		terminated: t('dossiq', 'Terminated'),
+		disabled: t('dossiq', 'Disabled'),
 	}
 }
 
@@ -41,10 +41,10 @@ const TRANSITION_MAP = {
  */
 function getTransitionLabels() {
 	return {
-		active: t('procest', 'Start'),
-		completed: t('procest', 'Complete'),
-		terminated: t('procest', 'Terminate'),
-		disabled: t('procest', 'Disable'),
+		active: t('dossiq', 'Start'),
+		completed: t('dossiq', 'Complete'),
+		terminated: t('dossiq', 'Terminate'),
+		disabled: t('dossiq', 'Disable'),
 	}
 }
 

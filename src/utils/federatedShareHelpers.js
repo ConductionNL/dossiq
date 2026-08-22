@@ -42,7 +42,7 @@ export function federatedSharesListEndpoint() {
  * @return {string} the endpoint path.
  */
 export function createFederatedShareEndpoint() {
-	return '/apps/procest/api/federation/shares'
+	return '/apps/dossiq/api/federation/shares'
 }
 
 /**
@@ -52,7 +52,7 @@ export function createFederatedShareEndpoint() {
  * @return {string} the endpoint path.
  */
 export function revokeFederatedShareEndpoint(shareId) {
-	return `/apps/procest/api/federation/shares/${encodeURIComponent(shareId)}`
+	return `/apps/dossiq/api/federation/shares/${encodeURIComponent(shareId)}`
 }
 
 /**
@@ -62,7 +62,7 @@ export function revokeFederatedShareEndpoint(shareId) {
  * @return {string} the endpoint path.
  */
 export function federatedActivityEndpoint(federatedShareId) {
-	return `/apps/procest/api/federation/activity/${encodeURIComponent(federatedShareId)}`
+	return `/apps/dossiq/api/federation/activity/${encodeURIComponent(federatedShareId)}`
 }
 
 /**
@@ -74,7 +74,7 @@ export function federatedActivityEndpoint(federatedShareId) {
  * @return {string} the endpoint path.
  */
 export function publicFederatedTransferEndpoint(shareToken, transferId) {
-	return `/apps/procest/api/public/federation/transfers/${shareToken}/${transferId}`
+	return `/apps/dossiq/api/public/federation/transfers/${shareToken}/${transferId}`
 }
 
 /**

@@ -4,34 +4,34 @@
   @spec openspec/changes/dso-omgevingsloket/tasks.md#T08
 -->
 <template>
-	<NcDialog :name="t('procest', 'Change status')" @closing="$emit('close')">
+	<NcDialog :name="t('dossiq', 'Change status')" @closing="$emit('close')">
 		<div class="dso-transition-form">
 			<NcSelect
 				v-model="selectedStatus"
 				:options="statusOptions"
-				:placeholder="t('procest', 'Select new status')"
-				:inputLabel="t('procest', 'New status')"
+				:placeholder="t('dossiq', 'Select new status')"
+				:inputLabel="t('dossiq', 'New status')"
 				label="label"
 				trackBy="value" />
 			<NcTextField
 				v-model="besluitdatum"
-				:label="t('procest', 'Besluitdatum (optional)')"
+				:label="t('dossiq', 'Besluitdatum (optional)')"
 				type="date" />
 			<NcTextArea
 				v-model="notes"
-				:label="t('procest', 'Toelichting (optional)')" />
+				:label="t('dossiq', 'Toelichting (optional)')" />
 			<p v-if="error" class="form-error">
 				{{ error }}
 			</p>
 			<div class="dso-transition-form__actions">
 				<NcButton :disabled="!selectedStatus || submitting" @click="submit">
-					{{ t('procest', 'Apply') }}
+					{{ t('dossiq', 'Apply') }}
 				</NcButton>
 				<NcButton
 					type="secondary"
 					:disabled="submitting"
 					@click="$emit('close')">
-					{{ t('procest', 'Cancel') }}
+					{{ t('dossiq', 'Cancel') }}
 				</NcButton>
 			</div>
 		</div>
@@ -74,11 +74,11 @@ export default {
 			submitting: false,
 			error: null,
 			statusOptions: [
-				{ label: t('procest', 'Submitted'), value: 'submitted' },
-				{ label: t('procest', 'In handling'), value: 'in_handling' },
-				{ label: t('procest', 'Granted'), value: 'granted' },
-				{ label: t('procest', 'Refused'), value: 'refused' },
-				{ label: t('procest', 'Withdrawn'), value: 'withdrawn' },
+				{ label: t('dossiq', 'Submitted'), value: 'submitted' },
+				{ label: t('dossiq', 'In handling'), value: 'in_handling' },
+				{ label: t('dossiq', 'Granted'), value: 'granted' },
+				{ label: t('dossiq', 'Refused'), value: 'refused' },
+				{ label: t('dossiq', 'Withdrawn'), value: 'withdrawn' },
 			],
 		}
 	},
@@ -91,7 +91,7 @@ export default {
 			this.error = null
 			try {
 				const url = generateUrl(
-					'/apps/procest/api/dso/cases/'
+					'/apps/dossiq/api/dso/cases/'
 						+ encodeURIComponent(this.caseId)
 						+ '/transition',
 				)

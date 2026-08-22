@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Bezwaar Advice Requested Listener.
+ * Dossiq Bezwaar Advice Requested Listener.
  *
  * Watches OpenRegister `bezwaar` (lifecycle) object updates for the
  * status transition to "Hearing planned" (the canonical state where
@@ -15,7 +15,7 @@
  * fall back to manual assignment via the BAC index page.
  *
  * @category Listener
- * @package  OCA\Procest\Listener
+ * @package  OCA\Dossiq\Listener
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,16 +26,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Listener;
+namespace OCA\Dossiq\Listener;
 
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
-use OCA\Procest\Service\Bezwaar\AdvisoryCommitteeService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -115,7 +115,7 @@ class BezwaarAdviceRequestedListener implements IEventListener {
 			);
 		} catch (Throwable $e) {
 			$this->logger->debug(
-				'Procest BAC: advice-requested listener swallowed '
+				'Dossiq BAC: advice-requested listener swallowed '
 				. 'exception: ' . $e->getMessage(),
 			);
 		}//end try

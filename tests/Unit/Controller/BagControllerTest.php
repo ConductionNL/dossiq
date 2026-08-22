@@ -9,7 +9,7 @@
  * dormant) rather than an HTTP error.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,11 +20,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\BagController;
-use OCA\Procest\Service\External\Bag\BagAdapterInterface;
-use OCA\Procest\Service\External\Bag\BagLookupResult;
+use OCA\Dossiq\Controller\BagController;
+use OCA\Dossiq\Service\External\Bag\BagAdapterInterface;
+use OCA\Dossiq\Service\External\Bag\BagLookupResult;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -33,9 +33,9 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Controller\BagController
+ * @covers \OCA\Dossiq\Controller\BagController
  *
- * @uses \OCA\Procest\Service\External\Bag\BagLookupResult
+ * @uses \OCA\Dossiq\Service\External\Bag\BagLookupResult
  */
 class BagControllerTest extends TestCase {
 
@@ -80,7 +80,7 @@ class BagControllerTest extends TestCase {
 		$this->userSession->method('getUser')->willReturn($user);
 
 		$this->controller = new BagController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			bagAdapter: $this->bagAdapter,
 			userSession: $this->userSession,
@@ -98,7 +98,7 @@ class BagControllerTest extends TestCase {
 		$unauthSession->method('getUser')->willReturn(null);
 
 		$controller = new BagController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			bagAdapter: $this->bagAdapter,
 			userSession: $unauthSession,
@@ -221,7 +221,7 @@ class BagControllerTest extends TestCase {
 		$unauthSession->method('getUser')->willReturn(null);
 
 		$controller = new BagController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			bagAdapter: $this->bagAdapter,
 			userSession: $unauthSession,

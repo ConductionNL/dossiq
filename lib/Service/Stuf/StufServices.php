@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest StufServices collaborator bundle.
+ * Dossiq StufServices collaborator bundle.
  *
  * The StUF SOAP surface needs eight collaborators to answer one request:
  * a field mapper, a message builder, an outbound adapter, register access,
@@ -11,7 +11,7 @@
  * is itself autowired by the Nextcloud container.
  *
  * @category Service
- * @package  OCA\Procest\Service\Stuf
+ * @package  OCA\Dossiq\Service\Stuf
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,17 +22,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/stuf-integration/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Stuf;
+namespace OCA\Dossiq\Service\Stuf;
 
-use OCA\Procest\Service\StufFieldMappingService;
-use OCA\Procest\Service\StufMessageBuilder;
+use OCA\Dossiq\Service\StufFieldMappingService;
+use OCA\Dossiq\Service\StufMessageBuilder;
 
 /**
  * Immutable bundle of the collaborators the StUF surface needs.

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Zaakdossier Download Controller
+ * Dossiq Zaakdossier Download Controller
  *
  * Binary download surface for the ZGW DRC case dossier: a ZIP export with
  * manifest, a single-file download, and a ZGW DRC-compatible streaming
@@ -18,7 +18,7 @@
  * ADR-005 Rule 3).
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,7 +26,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -36,12 +36,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Http\RangeStreamResponse;
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\Zaakdossier\DossierZipExporter;
-use OCA\Procest\Service\Zaakdossier\InformatieobjectReader;
+use OCA\Dossiq\Http\RangeStreamResponse;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Zaakdossier\DossierZipExporter;
+use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDownloadResponse;
@@ -138,7 +138,7 @@ class ZaakdossierDownloadController extends Controller {
 				flatLayout: ($this->request->getParam('subfolderPerType', '1') === '0'),
 			);
 		} catch (\Throwable $e) {
-			$this->logger->error('Procest dossier ZIP build failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq dossier ZIP build failed: ' . $e->getMessage());
 			return new JSONResponse(['error' => 'ZIP export failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 

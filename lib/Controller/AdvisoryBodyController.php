@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Advisory Body Controller
+ * Dossiq Advisory Body Controller
  *
  * Read-only REST API over the adviesorgaan (advisory body) directory: the
  * full list and a specialization-ranked search.
@@ -12,7 +12,7 @@
  * do not own it.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,7 +20,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -30,9 +30,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\AdvisoryBodyService;
+use OCA\Dossiq\Service\AdvisoryBodyService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

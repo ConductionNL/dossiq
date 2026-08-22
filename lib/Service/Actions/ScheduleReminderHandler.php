@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest ScheduleReminderHandler
+ * Dossiq ScheduleReminderHandler
  *
  * Enqueues a Nextcloud background job that fires an in-app reminder
  * `offsetIso8601` from now. In dry-run mode it returns the computed fire
  * time + rendered message without scheduling anything.
  *
  * @category Service
- * @package  OCA\Procest\Service\Actions
+ * @package  OCA\Dossiq\Service\Actions
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -19,19 +19,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/automatic-actions/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Actions;
+namespace OCA\Dossiq\Service\Actions;
 
 use DateInterval;
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\BackgroundJob\IJobList;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -50,7 +50,7 @@ class ScheduleReminderHandler implements ActionHandlerInterface {
 	 * it. Soft-binding via a string avoids a hard dependency before that
 	 * job class lands.
 	 */
-	private const REMINDER_JOB_CLASS = 'OCA\\Procest\\BackgroundJob\\AutomaticActionReminderJob';
+	private const REMINDER_JOB_CLASS = 'OCA\\Dossiq\\BackgroundJob\\AutomaticActionReminderJob';
 
 	/**
 	 * Constructor for ScheduleReminderHandler.

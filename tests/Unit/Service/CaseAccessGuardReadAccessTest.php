@@ -11,7 +11,7 @@
  * here.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,10 +27,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\IGroupManager;
 use OCP\IUser;
 use PHPUnit\Framework\TestCase;
@@ -39,7 +39,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for the per-case read predicate.
  *
- * @covers \OCA\Procest\Service\CaseAccessGuard
+ * @covers \OCA\Dossiq\Service\CaseAccessGuard
  */
 class CaseAccessGuardReadAccessTest extends TestCase {
 

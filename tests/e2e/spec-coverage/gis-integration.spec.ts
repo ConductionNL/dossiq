@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Gate-19 spec-coverage tests for the gis-integration spec.
@@ -15,7 +15,7 @@
  * the test soft-passes (the map view is a registry-wired manifest page; the
  * map-tile rendering itself is exercised manually, not in CI).
  *
- * Note: Use /apps/procest/<route> (not /index.php/apps/procest/<route>)
+ * Note: Use /apps/dossiq/<route> (not /index.php/apps/dossiq/<route>)
  * so the Vue history-mode router can resolve the route correctly.
  */
 
@@ -27,7 +27,7 @@ test.describe('GIS integration spec coverage', () => {
 	test('cases-on-map view renders the map dashboard chrome without a 5xx', async ({
 		page,
 	}) => {
-		const response = await page.goto('/apps/procest/cases-map')
+		const response = await page.goto('/apps/dossiq/cases-map')
 		await dismissSupportDialog(page)
 
 		// Never a server error, regardless of whether the route is mounted.

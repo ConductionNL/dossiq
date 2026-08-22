@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Tenant Context Middleware
+ * Dossiq Tenant Context Middleware
  *
  * Resolves the requesting tenant from headers / user / route parameter and
  * binds it onto the request-scoped `TenantContext` service. Runs after the
@@ -14,7 +14,7 @@
  *   2. The current user's `tenantUser` membership row (one-to-one)
  *
  * @category Middleware
- * @package  OCA\Procest\Middleware
+ * @package  OCA\Dossiq\Middleware
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,18 +23,18 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Middleware;
+namespace OCA\Dossiq\Middleware;
 
-use OCA\Procest\Service\TenantContext;
-use OCA\Procest\Service\TenantProvisioningService;
-use OCA\Procest\Service\TenantSaasService;
+use OCA\Dossiq\Service\TenantContext;
+use OCA\Dossiq\Service\TenantProvisioningService;
+use OCA\Dossiq\Service\TenantSaasService;
 use OCP\AppFramework\Middleware;
 use OCP\IRequest;
 use OCP\IUserSession;
@@ -51,14 +51,14 @@ class TenantContextMiddleware extends Middleware {
 	 * @var array<int, string>
 	 */
 	private const EXEMPT_CONTROLLERS = [
-		'OCA\Procest\Controller\SettingsController',
+		'OCA\Dossiq\Controller\SettingsController',
 		// Health + metrics are served by the OpenRegister AppHost engine
 		// (ADR-040); the dispatched controller is the generic class.
 		'OCA\OpenRegister\AppHost\Controller\GenericHealthController',
 		'OCA\OpenRegister\AppHost\Controller\GenericMetricsController',
-		'OCA\Procest\Controller\TenantController',
-		'OCA\Procest\Controller\TenantSaasController',
-		'OCA\Procest\Controller\DashboardController',
+		'OCA\Dossiq\Controller\TenantController',
+		'OCA\Dossiq\Controller\TenantSaasController',
+		'OCA\Dossiq\Controller\DashboardController',
 	];
 
 	/**
@@ -106,7 +106,7 @@ class TenantContextMiddleware extends Middleware {
 		$tenant = $this->tenantSaasService->getById($tenantId);
 		if ($tenant === null) {
 			$this->logger->info(
-				'Procest: TenantContextMiddleware could not resolve tenant',
+				'Dossiq: TenantContextMiddleware could not resolve tenant',
 				['tenantId' => $tenantId]
 			);
 			return;
@@ -119,7 +119,7 @@ class TenantContextMiddleware extends Middleware {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: schema-name build failed in TenantContextMiddleware',
+				'Dossiq: schema-name build failed in TenantContextMiddleware',
 				['tenantId' => $tenantId, 'exception' => $e->getMessage()]
 			);
 			return;
@@ -173,7 +173,7 @@ class TenantContextMiddleware extends Middleware {
 			// middleware only fires when an X-Tenant-Id is explicitly supplied.
 			unset($rows);
 		} catch (Throwable $e) {
-			$this->logger->info('Procest: tenant lookup miss', ['exception' => $e->getMessage()]);
+			$this->logger->info('Dossiq: tenant lookup miss', ['exception' => $e->getMessage()]);
 		}
 
 		return null;

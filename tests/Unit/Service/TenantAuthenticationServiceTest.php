@@ -4,29 +4,29 @@
  * TenantAuthenticationService Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\TenantAuthenticationService;
+use OCA\Dossiq\Service\TenantAuthenticationService;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\TenantAuthenticationService
+ * @covers \OCA\Dossiq\Service\TenantAuthenticationService
  */
 class TenantAuthenticationServiceTest extends TestCase {
 	private TenantAuthenticationService $svc;

@@ -1,15 +1,15 @@
 <?php
 
 /**
- * Procest Beschikking Template-Engine Adapter Interface.
+ * Dossiq Beschikking Template-Engine Adapter Interface.
  *
  * Contract for the Docudesk template-engine integration. The real adapter
  * (delivered in the docudesk repo, change task T26) renders a versioned
  * template to PDF/A-3 from zaakdata; the MockAdapter returns a deterministic
- * stub so the Procest pipeline is testable without a live Docudesk instance.
+ * stub so the Dossiq pipeline is testable without a live Docudesk instance.
  *
  * @category Interface
- * @package  OCA\Procest\Service\Beschikking
+ * @package  OCA\Dossiq\Service\Beschikking
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,14 +20,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T26
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Beschikking;
+namespace OCA\Dossiq\Service\Beschikking;
 
 /**
  * Renders a beschikking template (Docudesk) to PDF/A-3.

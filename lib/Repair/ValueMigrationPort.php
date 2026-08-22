@@ -11,7 +11,7 @@
  * BUILDING the double, so no amount of stubbing gets past it.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,7 +25,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
 /**
  * The three storage operations the value migration performs.

@@ -3,9 +3,9 @@
 /**
  * Test stub mirroring OpenRegister's LifecycleGuardInterface.
  *
- * Procest's lib/Lifecycle guards implement OR's
+ * Dossiq's lib/Lifecycle guards implement OR's
  * OCA\OpenRegister\Lifecycle\LifecycleGuardInterface, which is only present
- * at runtime when OpenRegister is installed. This stub lets the procest unit
+ * at runtime when OpenRegister is installed. This stub lets the dossiq unit
  * suite + static analysers resolve the type without the OR app on the
  * classpath. It is autoloaded via the OCA\OpenRegister\ → tests/Stubs/ map in
  * composer.json (autoload-dev).
@@ -22,7 +22,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);

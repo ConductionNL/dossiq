@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Hermiq Anonymisation Client.
+ * Dossiq Hermiq Anonymisation Client.
  *
  * The single thin HTTP boundary for every outbound call this app makes to
  * Hermiq's structured PII-span-detection surface
@@ -19,7 +19,7 @@
  * and never lets the LLM component remove a rule-detected span.
  *
  * @category Service
- * @package  OCA\Procest\Service\Assistant
+ * @package  OCA\Dossiq\Service\Assistant
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -30,16 +30,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-1
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Assistant;
+namespace OCA\Dossiq\Service\Assistant;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;

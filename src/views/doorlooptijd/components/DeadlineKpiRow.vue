@@ -16,21 +16,21 @@
 				{{ slaData.overallRate !== null ? slaData.overallRate + '%' : '—' }}
 			</div>
 			<div class="kpi-card__label">
-				{{ t('procest', 'SLA Compliance') }}
+				{{ t('dossiq', 'SLA Compliance') }}
 			</div>
 			<div class="kpi-card__sub">
 				{{
 					slaData.total > 0
-						? t('procest', '{within}/{total} within SLA', {
+						? t('dossiq', '{within}/{total} within SLA', {
 								within: slaData.withinSla,
 								total: slaData.total,
 							})
-						: t('procest', 'No data')
+						: t('dossiq', 'No data')
 				}}
 			</div>
 			<div v-if="slaData.excluded > 0" class="kpi-card__note">
 				{{
-					t('procest', '{count} cases excluded — no SLA target', {
+					t('dossiq', '{count} cases excluded — no SLA target', {
 						count: slaData.excluded,
 					})
 				}}
@@ -42,10 +42,10 @@
 				{{ atRiskCount }}
 			</div>
 			<div class="kpi-card__label">
-				{{ t('procest', 'At Risk') }}
+				{{ t('dossiq', 'At Risk') }}
 			</div>
 			<div class="kpi-card__sub">
-				{{ t('procest', 'cases near or past deadline') }}
+				{{ t('dossiq', 'cases near or past deadline') }}
 			</div>
 		</div>
 
@@ -54,10 +54,10 @@
 				{{ completedCount }}
 			</div>
 			<div class="kpi-card__label">
-				{{ t('procest', 'Completed') }}
+				{{ t('dossiq', 'Completed') }}
 			</div>
 			<div class="kpi-card__sub">
-				{{ t('procest', 'in selected period') }}
+				{{ t('dossiq', 'in selected period') }}
 			</div>
 		</div>
 	</div>

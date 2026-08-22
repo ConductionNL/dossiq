@@ -11,7 +11,7 @@
  * database.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Listener
+ * @package  OCA\Dossiq\Tests\Unit\Listener
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,17 +25,17 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Listener;
+namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Procest\Listener\ChecklistRunImmutabilityListener;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Listener\ChecklistRunImmutabilityListener;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Listener\ChecklistRunImmutabilityListener
+ * @covers \OCA\Dossiq\Listener\ChecklistRunImmutabilityListener
  */
 class ChecklistRunImmutabilityListenerTest extends TestCase {
 	/**

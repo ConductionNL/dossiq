@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest case-hierarchy overlap guard.
+ * Dossiq case-hierarchy overlap guard.
  *
  * Answers one question for the peer-relation surface: are these two cases
  * already linked through the hoofdzaak/deelzaak hierarchy? When they are, a
@@ -17,7 +17,7 @@
  * return it in: a scalar UUID, or an expanded object carrying `id`/`uuid`.
  *
  * @category Service
- * @package  OCA\Procest\Service\Relation
+ * @package  OCA\Dossiq\Service\Relation
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,7 +25,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -35,7 +35,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Relation;
+namespace OCA\Dossiq\Service\Relation;
 
 /**
  * Detects an existing hoofdzaak/deelzaak link between two cases.

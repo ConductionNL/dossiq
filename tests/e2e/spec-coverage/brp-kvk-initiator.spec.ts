@@ -7,7 +7,7 @@
  * (repair import, OR bsn validation, fixture parity against the live mock /
  * KvK test API) carry @e2e excludes in the specs — they are proven by
  * PHPUnit (BrpKvkRegisterSetsTest) and the external-integrations contract
- * lanes. These tests drive the procest-owned UI through real clicks: the
+ * lanes. These tests drive the dossiq-owned UI through real clicks: the
  * StartCaseWidget initiator step, cross-source search on the seeded
  * register sets, persistence of the projection fields, and the detail
  * display (including the no-initiator empty case).
@@ -15,10 +15,10 @@
 
 import { test, expect } from '@playwright/test'
 
-// The app is history-mode, not hash-mode: `/index.php/apps/procest/index#/`
+// The app is history-mode, not hash-mode: `/index.php/apps/dossiq/index#/`
 // loaded a non-route and left the dashboard unrendered, so the StartCaseWidget
 // cards were never there to click.
-const APP_ROOT = '/index.php/apps/procest'
+const APP_ROOT = '/index.php/apps/dossiq'
 
 test.describe('Initiator selection (brp-kvk-register-sets)', () => {
 	// FIXME(#718): the Dashboard manifest declares twelve widgets (four `stat`,
@@ -45,7 +45,7 @@ test.describe('Initiator selection (brp-kvk-register-sets)', () => {
 	})
 
 	// FIXME(#718): needs a seeded `brp` register-set fixture. ci-seed.sh
-	// provisions the procest register + schemas but creates no BRP objects, so
+	// provisions the dossiq register + schemas but creates no BRP objects, so
 	// on a runner there is no "Stephan Janssen" to find.
 	// @e2e openspec/specs/initiator-selection/spec.md#person-search-hits-the-brp-register-set
 	test.fixme('person search lists a seeded personen-mock persona with BSN', async ({

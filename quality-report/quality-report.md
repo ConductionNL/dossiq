@@ -2,12 +2,12 @@
 
 | | |
 |---|---|
-| **Repository** | ConductionNL/procest |
+| **Repository** | ConductionNL/dossiq |
 | **Commit** | 56c418e |
 | **Branch** | development |
 | **Event** | push |
 | **Generated** | 2026-03-14 18:02 UTC |
-| **Workflow Run** | https://github.com/ConductionNL/procest/actions/runs/23093290324 |
+| **Workflow Run** | https://github.com/ConductionNL/dossiq/actions/runs/23093290324 |
 
 ## Summary
 
@@ -84,4 +84,4 @@
 
 ---
 
-*Generated automatically by the [Quality workflow](https://github.com/ConductionNL/procest/actions/runs/23093290324).*
+*Generated automatically by the [Quality workflow](https://github.com/ConductionNL/dossiq/actions/runs/23093290324).*

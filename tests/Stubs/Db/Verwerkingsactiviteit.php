@@ -3,7 +3,7 @@
 /**
  * Test stub for OpenRegister's Verwerkingsactiviteit entity.
  *
- * Minimal surface needed by procest unit tests: the catalogue seed repair
+ * Minimal surface needed by dossiq unit tests: the catalogue seed repair
  * step (SeedVerwerkingsactiviteiten) sets the descriptive AVG art. 30
  * fields and reads code/status. Mirrors the real OR entity's setters and
  * its rechtsgrond vocabulary so vocabulary assertions stay honest.
@@ -18,7 +18,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);

@@ -1,7 +1,7 @@
 /**
  * WOZ (Waardering Onroerende Zaken) value lookup shim.
  *
- * Thin fetch wrapper over procest's own `woz#*` routes
+ * Thin fetch wrapper over dossiq's own `woz#*` routes
  * (`/api/external/woz/{value,value/{wozobjectnummer}}`), backed by the
  * authoritative Kadaster Haal Centraal WOZ Bevragen API adapter
  * (`WozApiAdapter`) — dormant by default until `integration.woz.mode` is
@@ -25,7 +25,7 @@
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-const BASE_URL = generateUrl('/apps/procest/api/external/woz')
+const BASE_URL = generateUrl('/apps/dossiq/api/external/woz')
 
 /**
  * Look up WOZ object(s) by postcode + huisnummer.

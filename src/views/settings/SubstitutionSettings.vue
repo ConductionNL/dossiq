@@ -12,19 +12,19 @@
 <template>
 	<div class="substitution-settings">
 		<div class="substitution-settings__header">
-			<h2>{{ t('procest', 'Substitution (vervanging)') }}</h2>
+			<h2>{{ t('dossiq', 'Substitution (vervanging)') }}</h2>
 			<NcButton type="primary" @click="showModal = true">
 				<template #icon>
 					<AccountSwitch :size="20" />
 				</template>
-				{{ t('procest', 'Register substitution') }}
+				{{ t('dossiq', 'Register substitution') }}
 			</NcButton>
 		</div>
 
 		<p class="substitution-settings__intro">
 			{{
 				t(
-					'procest',
+					'dossiq',
 					'Register a colleague to handle your cases and tasks while you are away. They will see your work in their My Work and receive your deadline signals for the period. Substitution does not grant any extra permissions — your colleague only sees what they are already allowed to access.',
 				)
 			}}
@@ -34,10 +34,8 @@
 
 		<NcEmptyContent
 			v-else-if="ownSubstitutions.length === 0"
-			:name="t('procest', 'No substitutions')"
-			:description="
-				t('procest', 'You have not registered any waarnemer yet.')
-			">
+			:name="t('dossiq', 'No substitutions')"
+			:description="t('dossiq', 'You have not registered any waarnemer yet.')">
 			<template #icon>
 				<AccountSwitch :size="48" />
 			</template>
@@ -46,11 +44,11 @@
 		<table v-else class="substitution-settings__table">
 			<thead>
 				<tr>
-					<th scope="col">{{ t('procest', 'Substitute') }}</th>
-					<th scope="col">{{ t('procest', 'Period') }}</th>
-					<th scope="col">{{ t('procest', 'Scope') }}</th>
-					<th scope="col">{{ t('procest', 'Reason') }}</th>
-					<th scope="col">{{ t('procest', 'Status') }}</th>
+					<th scope="col">{{ t('dossiq', 'Substitute') }}</th>
+					<th scope="col">{{ t('dossiq', 'Period') }}</th>
+					<th scope="col">{{ t('dossiq', 'Scope') }}</th>
+					<th scope="col">{{ t('dossiq', 'Reason') }}</th>
+					<th scope="col">{{ t('dossiq', 'Status') }}</th>
 					<th />
 				</tr>
 			</thead>
@@ -69,9 +67,9 @@
 						<NcButton
 							v-if="sub.status === 'active'"
 							type="tertiary"
-							:aria-label="t('procest', 'Revoke substitution')"
+							:aria-label="t('dossiq', 'Revoke substitution')"
 							@click="revoke(sub.id)">
-							{{ t('procest', 'Revoke') }}
+							{{ t('dossiq', 'Revoke') }}
 						</NcButton>
 					</td>
 				</tr>

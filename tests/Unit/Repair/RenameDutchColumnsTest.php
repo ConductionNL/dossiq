@@ -9,7 +9,7 @@
  * decide whether customer data MOVES, is COPIED, or is deliberately left alone.
  *
  * @category Test
- * @package  OCA\Procest\Tests\Unit\Repair
+ * @package  OCA\Dossiq\Tests\Unit\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,9 +27,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Repair;
+namespace OCA\Dossiq\Tests\Unit\Repair;
 
-use OCA\Procest\Repair\RenameDutchColumns;
+use OCA\Dossiq\Repair\RenameDutchColumns;
 use OCP\IDBConnection;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;

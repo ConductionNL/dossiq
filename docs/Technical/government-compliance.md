@@ -1,9 +1,9 @@
-# Procest: Overheidsfunctionaliteiten
+# Dossiq: Overheidsfunctionaliteiten
 
 > Functiepagina voor Nederlandse overheidsorganisaties.
 > Gebruik deze checklist om te toetsen aan uw Programma van Eisen.
 
-**Product:** Procest
+**Product:** Dossiq
 **Categorie:** Zaakgericht werken & case management
 **Licentie:** EUPL-1.2 (vrije open source)
 **Leverancier:** Conduction B.V.
@@ -204,7 +204,7 @@
 |---------|-------------|
 | **Nextcloud-native** | Geen apart systeem: case management in uw bestaande samenwerkingsplatform |
 | **Lichtgewicht** | Geen Java/Spring stack: draait als Nextcloud-app |
-| **CRM + Zaak in één** | Pipelinq (CRM) → Procest (zaak) is een unieke geïntegreerde workflow |
+| **CRM + Zaak in één** | Pipelinq (CRM) → Dossiq (zaak) is een unieke geïntegreerde workflow |
 | **NL Design System** | Overheidshuisstijl via design tokens |
 | **Data-hergebruik** | Zaakdata op OpenRegister is herbruikbaar door andere apps |
 | **Gefedereerd** | Cross-organisatie zaakafhandeling via Nextcloud federatie |

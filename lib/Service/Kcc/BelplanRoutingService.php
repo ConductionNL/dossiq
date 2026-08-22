@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest KCC BelplanRoutingService
+ * Dossiq KCC BelplanRoutingService
  *
  * Routes inbound KCC calls to the best-matched specialist based on a
  * `belplan` configuration: keuzemenu options → vaardigheid mapping →
@@ -14,7 +14,7 @@
  * unit-tested deterministically without an upstream KCC dependency.
  *
  * @category Service
- * @package  OCA\Procest\Service\Kcc
+ * @package  OCA\Dossiq\Service\Kcc
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,14 +23,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Kcc;
+namespace OCA\Dossiq\Service\Kcc;
 
 /**
  * Belplan-driven KCC call routing.

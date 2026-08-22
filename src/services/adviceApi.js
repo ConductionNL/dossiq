@@ -1,5 +1,5 @@
 /**
- * Advice API service for Procest.
+ * Advice API service for Dossiq.
  *
  * CRUD lives on OpenRegister (manifest renderer pattern):
  *   GET    /apps/openregister/api/objects/procest/adviesAanvraag
@@ -8,9 +8,9 @@
  *   PUT    /apps/openregister/api/objects/procest/adviesAanvraag/{id}
  *   DELETE /apps/openregister/api/objects/procest/adviesAanvraag/{id}
  *
- * Workflow actions stay on the Procest controller:
- *   POST   /apps/procest/api/advice/{id}/transition  — fires notification
- *   POST   /apps/procest/api/advice/{id}/remind      — dispatches reminder
+ * Workflow actions stay on the Dossiq controller:
+ *   POST   /apps/dossiq/api/advice/{id}/transition  — fires notification
+ *   POST   /apps/dossiq/api/advice/{id}/remind      — dispatches reminder
  *
  * Uses @nextcloud/axios so CSRF tokens are attached automatically.
  *
@@ -23,7 +23,7 @@ import { generateUrl } from '@nextcloud/router'
 const REGISTER = 'procest'
 const SCHEMA = 'adviesAanvraag'
 const OR_BASE = `apps/openregister/api/objects/${REGISTER}/${SCHEMA}`
-const ACTION_BASE = 'apps/procest/api/advice'
+const ACTION_BASE = 'apps/dossiq/api/advice'
 
 /**
  * Build an OpenRegister objects URL.
@@ -37,7 +37,7 @@ function orUrl(path = '') {
 }
 
 /**
- * Build a Procest workflow-action URL.
+ * Build a Dossiq workflow-action URL.
  *
  * @param {string} path Sub-path (id/action)
  * @return {string} Fully qualified Nextcloud URL
@@ -124,7 +124,7 @@ export async function dispatchReminder(id) {
 /**
  * Create an advice request and raise the decidesk advice Decision.
  *
- * Routes through the procest `advice#createForCase` controller endpoint
+ * Routes through the dossiq `advice#createForCase` controller endpoint
  * (AdviceService::requestAdvice) instead of writing the object directly to
  * OpenRegister, so the advice request raises a decidesk `advice` Decision via
  * the ADR-019 integration registry (procest-delegate-remaining-decisions-to-decidesk,
@@ -138,7 +138,7 @@ export async function dispatchReminder(id) {
  */
 export async function createAdviceWithNotification(data) {
 	const caseId = data.case || data.caseRef || data.case
-	const url = generateUrl('/apps/procest/api/vth/cases/{caseId}/advice-requests', {
+	const url = generateUrl('/apps/dossiq/api/vth/cases/{caseId}/advice-requests', {
 		caseId,
 	})
 	const created = await axios.post(url, {

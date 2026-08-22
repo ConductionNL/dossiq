@@ -6,15 +6,15 @@
   entirely to OpenRegister's per-subject extract (OR-PA-7): OR produces the
   extract scoped to the caller's tenant, includes activity purpose + legal
   basis per entry, logs the export action itself, and denies non-FG users
-  (OR-PA-8). Procest only renders the form and offers the result as a JSON
-  download — no procest-side log query or storage.
+  (OR-PA-8). Dossiq only renders the form and offers the result as a JSON
+  download — no dossiq-side log query or storage.
 
   @spec openspec/specs/avg-verwerkingenlogging/spec.md
 -->
 <template>
 	<NcModal
 		size="normal"
-		:name="t('procest', 'Data subject access export')"
+		:name="t('dossiq', 'Data subject access export')"
 		@close="$emit('close')">
 		<div class="inzage-export">
 			<!-- No <h2> here: NcModal's `name` prop already renders the dialog
@@ -25,7 +25,7 @@
 			<p class="inzage-export__hint">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Produces the per-subject processing extract from OpenRegister (AVG art. 15). The export itself is logged.',
 					)
 				}}
@@ -35,14 +35,14 @@
 				v-model="idType"
 				class="inzage-export__field"
 				:options="idTypes"
-				:inputLabel="t('procest', 'Subject identifier type')"
+				:inputLabel="t('dossiq', 'Subject identifier type')"
 				:clearable="false" />
 
 			<NcTextField
 				v-model="idValue"
 				class="inzage-export__field"
-				:label="t('procest', 'Subject identifier value')"
-				:placeholder="t('procest', 'e.g. a BSN or contact reference')" />
+				:label="t('dossiq', 'Subject identifier value')"
+				:placeholder="t('dossiq', 'e.g. a BSN or contact reference')" />
 
 			<div v-if="error" class="inzage-export__error" role="alert">
 				{{ error }}
@@ -55,7 +55,7 @@
 				<p>
 					{{
 						n(
-							'procest',
+							'dossiq',
 							'%n logged processing found for this subject.',
 							'%n logged processings found for this subject.',
 							result.count,
@@ -63,13 +63,13 @@
 					}}
 				</p>
 				<NcButton type="secondary" @click="download">
-					{{ t('procest', 'Download extract (JSON)') }}
+					{{ t('dossiq', 'Download extract (JSON)') }}
 				</NcButton>
 			</div>
 
 			<div class="inzage-export__actions">
 				<NcButton type="tertiary" @click="$emit('close')">
-					{{ t('procest', 'Close') }}
+					{{ t('dossiq', 'Close') }}
 				</NcButton>
 				<NcButton
 					type="primary"
@@ -78,7 +78,7 @@
 					<template #icon>
 						<NcLoadingIcon v-if="loading" :size="20" />
 					</template>
-					{{ t('procest', 'Produce extract') }}
+					{{ t('dossiq', 'Produce extract') }}
 				</NcButton>
 			</div>
 		</div>
@@ -130,12 +130,12 @@ export default {
 			} catch (err) {
 				if (err.response && err.response.status === 403) {
 					this.error = t(
-						'procest',
+						'dossiq',
 						'Privacy-officer or admin privileges are required for this export.',
 					)
 				} else {
 					this.error = t(
-						'procest',
+						'dossiq',
 						'The extract could not be produced. Please try again.',
 					)
 				}

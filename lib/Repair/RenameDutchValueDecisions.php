@@ -14,7 +14,7 @@
  * rest exactly as ZGW spells them.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -28,7 +28,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
 /**
  * Pure predicates for the Dutch-to-English value migration.

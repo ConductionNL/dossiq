@@ -3,7 +3,7 @@
 /**
  * WOO publication (via OpenCatalogi) API service.
  *
- * Wraps the procest /api/cases/{id}/woo/publish and /woo/withdraw endpoints.
+ * Wraps the dossiq /api/cases/{id}/woo/publish and /woo/withdraw endpoints.
  * All HTTP traffic uses @nextcloud/axios for CSRF + auth interop.
  *
  * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
@@ -17,7 +17,7 @@ import { generateUrl } from '@nextcloud/router'
  * @param path
  */
 function base(caseId, path) {
-	return generateUrl('/apps/procest/api/cases/' + caseId + '/woo' + path)
+	return generateUrl('/apps/dossiq/api/cases/' + caseId + '/woo' + path)
 }
 
 /**

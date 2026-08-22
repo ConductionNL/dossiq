@@ -12,8 +12,8 @@
 			{
 				"id": "welcome",
 				"type": "info",
-				"title": "Welkom bij Procest",
-				"body": "Laten we Procest klaarzetten. Initialiseer eerst het register; laad daarna optioneel de Bezwaar & Beroep voorbeelddata."
+				"title": "Welkom bij Dossiq",
+				"body": "Laten we Dossiq klaarzetten. Initialiseer eerst het register; laad daarna optioneel de Bezwaar & Beroep voorbeelddata."
 			},
 			{
 				"id": "register-check",
@@ -43,7 +43,7 @@
 		"completionConfigKey": "walkthrough_completed_version",
 		"tours": [
 			{
-				"id": "procest:getting-started",
+				"id": "dossiq:getting-started",
 				"title": "Getting started",
 				"trigger": "first-visit",
 				"minAppVersion": "0.2.17",
@@ -52,7 +52,7 @@
 						"id": "welcome",
 						"sinceVersion": "0.2.17",
 						"placement": "center",
-						"title": "Welcome to Procest",
+						"title": "Welcome to Dossiq",
 						"body": "Let's take a quick spin through case handling — we'll register a case together so you can see how the pieces fit. You'll add the record yourself.",
 						"target": {
 							"kind": "page",
@@ -244,7 +244,7 @@
 			"id": "CaseTypesMenu",
 			"label": "Case types",
 			"icon": "FolderCogOutline",
-			"route": "ProcestConfiguration",
+			"route": "DossiqConfiguration",
 			"section": "settings",
 			"order": 95
 		},
@@ -384,7 +384,7 @@
 			"id": "SettingsMenu",
 			"label": "Configuration",
 			"icon": "CogOutline",
-			"route": "ProcestConfiguration",
+			"route": "DossiqConfiguration",
 			"section": "settings",
 			"order": 99
 		},
@@ -424,7 +424,7 @@
 				"dateRange": {
 					"enabled": true,
 					"showHeaderPicker": false,
-					"persistKey": "procest-dashboard-range",
+					"persistKey": "dossiq-dashboard-range",
 					"default": {
 						"preset": "month"
 					},
@@ -1277,7 +1277,7 @@
 									"metric": "sum",
 									"field": "hours",
 									"filter": {
-										"subjectApp": "procest",
+										"subjectApp": "dossiq",
 										"subjectId": "@objectId"
 									}
 								}
@@ -1541,7 +1541,7 @@
 						"type": "custom",
 						"title": "Case assistant",
 						"icon": "Lightbulb",
-						"_note": "Case-assistant chat panel (case-assistant-via-hermiq). Resolved via page slots (widget-case-assistant -> CaseAssistantPanel); conversational assistance is delegated to Hermiq (fleet rule: AI lives in Hermiq), procest only enriches with case context the current user may read. Availability-gated: renders nothing when the hermiq app is not installed/enabled."
+						"_note": "Case-assistant chat panel (case-assistant-via-hermiq). Resolved via page slots (widget-case-assistant -> CaseAssistantPanel); conversational assistance is delegated to Hermiq (fleet rule: AI lives in Hermiq), dossiq only enriches with case context the current user may read. Availability-gated: renders nothing when the hermiq app is not installed/enabled."
 					},
 					{
 						"id": "cmmn-case-plan",
@@ -2653,7 +2653,7 @@
 			}
 		},
 		{
-			"id": "ProcestConfiguration",
+			"id": "DossiqConfiguration",
 			"route": "/settings",
 			"type": "settings",
 			"title": "Configuration",
@@ -4598,11 +4598,11 @@
 			"type": "custom",
 			"title": "Processing activities (AVG)",
 			"component": "VerwerkingenOverviewView",
-			"_note": "FG/admin window on OpenRegister's processing-activity register scoped to procest (avg-verwerkingenlogging thin consumer): catalogue review status, unclassified-processing counter (OR-PA-4 fallback), and the per-betrokkene inzageverzoek export entry point (OR-PA-7 via InzageExportModal). All data comes from OR's /api/avg endpoints; OR denies non-FG/non-admin callers fail-closed (OR-PA-8). No standard list type applies — the data source is OR's AVG API, not a procest register schema."
+			"_note": "FG/admin window on OpenRegister's processing-activity register scoped to dossiq (avg-verwerkingenlogging thin consumer): catalogue review status, unclassified-processing counter (OR-PA-4 fallback), and the per-betrokkene inzageverzoek export entry point (OR-PA-7 via InzageExportModal). All data comes from OR's /api/avg endpoints; OR denies non-FG/non-admin callers fail-closed (OR-PA-8). No standard list type applies — the data source is OR's AVG API, not a dossiq register schema."
 		}
 	],
 	"observability": {
-		"_note": "Declarative observability via OpenRegister's AppHost engine (ADR-040). Reproduces the output of the now-deleted hand-written HealthController + MetricsController. The /api/health and /api/metrics routes are aliased to AppHost\\Controller\\GenericHealth#index / GenericMetrics#index, so the engine reads this block at request time. Parity: metric names (with the engine-added procest_ prefix), types, HELP texts and label keys (incl. the caseType JSON field surfacing as the case_type label) match the pre-adoption contract; the implicit procest_info / procest_up gauges are emitted by the engine. The APCu controller-local cache is replaced by the engine's per-metric cacheTtl via the distributed cache (same 30s/60s TTLs, shared across workers).",
+		"_note": "Declarative observability via OpenRegister's AppHost engine (ADR-040). Reproduces the output of the now-deleted hand-written HealthController + MetricsController. The /api/health and /api/metrics routes are aliased to AppHost\\Controller\\GenericHealth#index / GenericMetrics#index, so the engine reads this block at request time. Parity: metric names (with the engine-added dossiq_ prefix), types, HELP texts and label keys (incl. the caseType JSON field surfacing as the case_type label) match the pre-adoption contract; the implicit dossiq_info / dossiq_up gauges are emitted by the engine. The APCu controller-local cache is replaced by the engine's per-metric cacheTtl via the distributed cache (same 30s/60s TTLs, shared across workers).",
 		"health": {
 			"statusCodePolicy": "adr006",
 			"checks": [
@@ -4708,31 +4708,31 @@
 		{
 			"registerSlug": "procest",
 			"schemaSlug": "case",
-			"urlTemplate": "/apps/procest/cases/{uuid}",
+			"urlTemplate": "/apps/dossiq/cases/{uuid}",
 			"displayName": "Case"
 		},
 		{
 			"registerSlug": "procest",
 			"schemaSlug": "task",
-			"urlTemplate": "/apps/procest/tasks/{uuid}",
+			"urlTemplate": "/apps/dossiq/tasks/{uuid}",
 			"displayName": "Task"
 		},
 		{
 			"registerSlug": "procest",
 			"schemaSlug": "objectionProceeding",
-			"urlTemplate": "/apps/procest/bezwaren/{uuid}",
+			"urlTemplate": "/apps/dossiq/bezwaren/{uuid}",
 			"displayName": "Bezwaar"
 		},
 		{
 			"registerSlug": "procest",
 			"schemaSlug": "proposal",
-			"urlTemplate": "/apps/procest/voorstellen/{uuid}",
+			"urlTemplate": "/apps/dossiq/voorstellen/{uuid}",
 			"displayName": "Voorstel"
 		},
 		{
 			"registerSlug": "procest",
 			"schemaSlug": "beroep",
-			"urlTemplate": "/apps/procest/beroepen/{uuid}",
+			"urlTemplate": "/apps/dossiq/beroepen/{uuid}",
 			"displayName": "Beroep"
 		}
 	]

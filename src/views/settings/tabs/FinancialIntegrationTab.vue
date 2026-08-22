@@ -7,9 +7,9 @@
 		<p class="financial-integration-tab__description">
 			{{
 				t(
-					'procest',
+					'dossiq',
 					'Configure the shared secret used to validate the X-Procest-Signature HMAC-SHA256 header on the public dwangsom payment-confirmation callback ({endpoint}). Without a configured secret, every callback request is rejected (HTTP 401) — an unconfigured secret is never treated as an implicit pass.',
-					{ endpoint: '/apps/procest/api/dwangsom/payment-callback' },
+					{ endpoint: '/apps/dossiq/api/dwangsom/payment-callback' },
 				)
 			}}
 		</p>
@@ -17,7 +17,7 @@
 		<NcNoteCard v-if="!secretConfigured" type="warning">
 			{{
 				t(
-					'procest',
+					'dossiq',
 					'No callback secret is configured. Every dwangsom payment-confirmation callback is currently being rejected with HTTP 401.',
 				)
 			}}
@@ -26,10 +26,10 @@
 		<div class="form-group">
 			<NcPasswordField
 				:modelValue="dwangsomCallbackSecret"
-				:label="t('procest', 'Dwangsom callback secret')"
+				:label="t('dossiq', 'Dwangsom callback secret')"
 				:helperText="
 					t(
-						'procest',
+						'dossiq',
 						'Shared HMAC-SHA256 signing secret. Provide this value to the ERP/openconnector integrator so it can sign X-Procest-Signature headers.',
 					)
 				"
@@ -37,7 +37,7 @@
 		</div>
 
 		<NcButton :disabled="saving" @click="generateSecret">
-			{{ t('procest', 'Generate random secret') }}
+			{{ t('dossiq', 'Generate random secret') }}
 		</NcButton>
 		<NcLoadingIcon v-if="saving" :size="20" />
 	</div>

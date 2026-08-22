@@ -1,7 +1,7 @@
 # npm License Report
 
 **Generated:** 2026-03-14 17:59 UTC
-**Repository:** ConductionNL/procest
+**Repository:** ConductionNL/dossiq
 **Ref:** 56c418e2199b64f9354cbcdbe8cbc8c6626c50dd
 
 ## Summary
@@ -195,7 +195,7 @@
 | pinia | 2.3.1 | MIT | approved |  |
 | postcss | 8.5.6 | MIT | approved |  |
 | prettier | 2.8.8 | MIT | approved |  |
-| procest | 0.1.0 | EUPL-1.2 | approved |  |
+| dossiq | 0.1.0 | EUPL-1.2 | approved |  |
 | property-information | 6.5.0 | MIT | approved |  |
 | proxy-from-env | 1.1.0 | MIT | approved |  |
 | querystringify | 2.2.0 | MIT | approved |  |

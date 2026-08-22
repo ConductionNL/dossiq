@@ -1,5 +1,5 @@
 /**
- * OpenRegister analytics-series client for Procest.
+ * OpenRegister analytics-series client for Dossiq.
  *
  * Consumes OpenRegister's page-level analytics-series integration surface
  * (ADR-022) — the leaf-foundation render contract landed on openregister
@@ -12,11 +12,11 @@
  *   GET  /apps/openregister/api/integrations/analytics/series/{seriesKey}
  *        — fetch the RBAC-scoped render contract.
  *
- * Procest OWNS the SLA maths (deadlines / breaches / throughput in
+ * Dossiq OWNS the SLA maths (deadlines / breaches / throughput in
  * doorlooptijdHelpers.js + chartShaping.js) and hands the resulting series to
  * OR; OR owns persistence + the chart-ready render contract. The chart is then
  * drawn by `@conduction/nextcloud-vue`'s declarative `CnChartWidget` (which
- * owns the chart engine) — procest embeds no chart library of its own.
+ * owns the chart engine) — dossiq embeds no chart library of its own.
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
@@ -36,6 +36,9 @@ const REGISTER_URL = generateUrl(
  *
  * @param {object} series The series to register.
  * @param {string} series.seriesKey Stable key (e.g. `procest-sla-compliance-by-type`).
+ *   These keys are FROZEN at the old `procest-` prefix across the app-id
+ *   rename: OR upserts on `seriesKey`, so renaming one orphans the stored
+ *   series rather than moving it.
  * @param {string[]} series.labels Category / slice labels.
  * @param {Array} series.datasets Chart datasets ([{ name, data }] or number[] for pie/donut).
  * @param {string} [series.title] Human-readable chart title.
@@ -64,11 +67,7 @@ export async function registerSeries({
 		})
 		return response.data
 	} catch (err) {
-		console.warn(
-			'[procest] analytics-series register failed for',
-			seriesKey,
-			err,
-		)
+		console.warn('[dossiq] analytics-series register failed for', seriesKey, err)
 		return null
 	}
 }

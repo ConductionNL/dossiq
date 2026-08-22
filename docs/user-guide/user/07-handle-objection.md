@@ -6,7 +6,7 @@ description: Open a bezwaar, route it to the advisory committee, capture the BAC
 
 # Handle an objection (bezwaar)
 
-Procest implements the Dutch bezwaar-beroep workflow as a first-class flow. A bezwaar is an objection to an earlier decision; it gets routed to a *bezwaaradviescommissie* (BAC) which produces an *advies*, after which the authority records a *beslissing op bezwaar*. Each step has its own list in the navigation.
+Dossiq implements the Dutch bezwaar-beroep workflow as a first-class flow. A bezwaar is an objection to an earlier decision; it gets routed to a *bezwaaradviescommissie* (BAC) which produces an *advies*, after which the authority records a *beslissing op bezwaar*. Each step has its own list in the navigation.
 
 ## Goal
 
@@ -20,7 +20,7 @@ By the end you will have opened a bezwaar from the Bezwaren list, walked it to t
 
 ## Steps
 
-1. From the Procest navigation, click **Bezwaren**. The list opens with the same Cards/Table toggle as the regular case list. Click a bezwaar to open it.
+1. From the Dossiq navigation, click **Bezwaren**. The list opens with the same Cards/Table toggle as the regular case list. Click a bezwaar to open it.
 
    ![Bezwaren list](/screenshots/tutorials/user/07-handle-objection-01.png)
 
@@ -49,7 +49,7 @@ You have handled the bezwaar correctly when: a row exists in **BAC-adviezen** re
 | Symptom | Fix |
 |---|---|
 | **Route to BAC** is missing | The current status of the bezwaar does not permit it: transition to a status that has *Naar BAC* as an allowed next step. |
-| BAC-advies form fields are empty | The Advice schema is not mapped to the bezwaar register: see [Manage Procest settings](../admin/03-admin-settings.md). |
+| BAC-advies form fields are empty | The Advice schema is not mapped to the bezwaar register: see [Manage Dossiq settings](../admin/03-admin-settings.md). |
 | Beslissing op bezwaar opens but does not pre-fill from BAC advice | The BAC advisory has not been saved as *Afgerond*; reopen it and finalise before recording the decision. |
 
 ## Reference

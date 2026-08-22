@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Awb proceeding scanner.
+ * Dossiq Awb proceeding scanner.
  *
  * Answers one question for the legal-hold backfill: which cases still have at
  * least one OPEN Awb proceeding (bezwaar/objection/beroep)? A proceeding is
@@ -14,7 +14,7 @@
  * lives here, and the write side lives in {@see LegalHoldApplier}.
  *
  * @category Command
- * @package  OCA\Procest\Command\Backfill
+ * @package  OCA\Dossiq\Command\Backfill
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,7 +22,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -32,7 +32,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Command\Backfill;
+namespace OCA\Dossiq\Command\Backfill;
 
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -47,6 +47,9 @@ class AwbProceedingScanner {
 	 *
 	 * @var string
 	 */
+	// FROZEN: OpenRegister register SLUG, not this app's id. Unchanged by the
+	// procest -> dossiq rename — a renamed value resolves no register and the
+	// scanner would list zero objects while reporting success.
 	private const REGISTER = 'procest';
 
 	/**

@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Procest Beroep Escalation Service.
+ * Dossiq Beroep Escalation Service.
  *
  * Domain service for the beroep capability — the municipality's tracking
  * envelope around a citizen's appeal of a beslissing op bezwaar at the
- * administrative court (rechtbank). Procest does NOT run the court process;
+ * administrative court (rechtbank). Dossiq does NOT run the court process;
  * this service captures the operations that cannot be handled by the
  * manifest-driven CRUD path:
  *
@@ -37,7 +37,7 @@
  * Static error messages only — exception details never bubble to controllers.
  *
  * @category Service
- * @package  OCA\Procest\Service\Bezwaar
+ * @package  OCA\Dossiq\Service\Bezwaar
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -48,16 +48,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Bezwaar;
+namespace OCA\Dossiq\Service\Bezwaar;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\StatusTransitionService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\StatusTransitionService;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -124,7 +124,7 @@ class BeroepService {
 	 * record. The OpenRegister audit trail captures actor + change diff
 	 * automatically; this method writes no bespoke audit entries.
 	 *
-	 * @param string $caseId UUID of the procest case
+	 * @param string $caseId UUID of the dossiq case
 	 *                       wrapping the beroep
 	 * @param string $sourceObjectionId UUID of the bezwaar
 	 *                                lifecycle record
@@ -210,7 +210,7 @@ class BeroepService {
 			return $objectService->saveObject(object: $record, register: $register, schema: $appealSchema);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest beroep: failed to register: ' . $e->getMessage()
+				'Dossiq beroep: failed to register: ' . $e->getMessage()
 			);
 			throw new RuntimeException('Could not register beroep');
 		}
@@ -279,7 +279,7 @@ class BeroepService {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest beroep: failed to add file-inspection request: '
+				'Dossiq beroep: failed to add file-inspection request: '
 				. $e->getMessage()
 			);
 			throw new RuntimeException(
@@ -294,7 +294,7 @@ class BeroepService {
 	 * It persisted the rechtbank's categorical uitspraak onto the beroep
 	 * record. Nothing called it — nothing calls this service at all: the only
 	 * reference to `BeroepService` outside its own file is a prose sentence in
-	 * `lib/Settings/procest_register.json`. There is no controller, listener
+	 * `lib/Settings/dossiq_register.json`. There is no controller, listener
 	 * or job that records a judgment, so wiring this method would have meant
 	 * inventing the surface that records a court ruling, which is a feature
 	 * decision and not dead-code removal.
@@ -376,7 +376,7 @@ class BeroepService {
 			// engine + workflow template own the new-case fork; we only
 			// record the chosen cascade on the beroep for traceability.
 			$this->logger->info(
-				'Procest beroep: new_primary_decision cascade requested',
+				'Dossiq beroep: new_primary_decision cascade requested',
 				['beroepId' => $appealId]
 			);
 		}
@@ -390,7 +390,7 @@ class BeroepService {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest beroep: failed to persist cascade: ' . $e->getMessage()
+				'Dossiq beroep: failed to persist cascade: ' . $e->getMessage()
 			);
 			throw new RuntimeException('Could not persist cascade');
 		}
@@ -441,7 +441,7 @@ class BeroepService {
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest beroep: reopen transition failed: '
+				'Dossiq beroep: reopen transition failed: '
 				. $e->getMessage()
 			);
 			return null;
@@ -472,7 +472,7 @@ class BeroepService {
 	/**
 	 * Decide whether the appellant filed past the 6-week window.
 	 *
-	 * Informational only — Procest never refuses or auto-closes a beroep
+	 * Informational only — Dossiq never refuses or auto-closes a beroep
 	 * on timeliness; only the rechtbank weighs verschoonbare
 	 * termijnoverschrijding.
 	 *

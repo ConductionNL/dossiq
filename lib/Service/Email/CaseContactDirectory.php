@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest case contact directory.
+ * Dossiq case contact directory.
  *
  * Knows every shape a contact address can take on a case object and reduces
  * them to one normalised, validated allow-list. Cases carry contacts in four
@@ -17,7 +17,7 @@
  * read as "no restriction applies" — not as "no contact matched".
  *
  * @category Service
- * @package  OCA\Procest\Service\Email
+ * @package  OCA\Dossiq\Service\Email
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,7 +25,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -35,7 +35,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Email;
+namespace OCA\Dossiq\Service\Email;
 
 /**
  * Collects the normalised contact addresses registered on a case.

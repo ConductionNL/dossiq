@@ -14,7 +14,7 @@
  * ValueMigrationPort, so this class is wiring that can be tested with a fake.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -28,7 +28,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -59,7 +59,7 @@ class RenameDutchValues implements IRepairStep
      */
     public function getName(): string
     {
-        return 'Translate stored procest Dutch enum values to English';
+        return 'Translate stored dossiq Dutch enum values to English';
 
     }//end getName()
 

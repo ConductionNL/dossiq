@@ -4,7 +4,7 @@ status: done
 
 ## Purpose
 
-Provide deelzaak (sub-case) support in Procest: creating sub-cases from a parent case, listing them on the parent detail, parent breadcrumb navigation, progress roll-up, case-list count badges, and deletion protection. Maps to the ZGW `hoofdzaak` / `deelzaken` relations on the Zaak resource.
+Provide deelzaak (sub-case) support in Dossiq: creating sub-cases from a parent case, listing them on the parent detail, parent breadcrumb navigation, progress roll-up, case-list count badges, and deletion protection. Maps to the ZGW `hoofdzaak` / `deelzaken` relations on the Zaak resource.
 
 The deelzaak UI panel, sub-case create flow, parent breadcrumb, count badge, and orphan-deletion protection are all built (manifest Sub-cases tab → DeelzaakList/DeelzaakDetail, the `subCaseCount` column formatter, and DeelzaakDeleteWarningModal). UI scenarios are exercised by `tests/e2e/spec-coverage/deelzaak-support.spec.ts`; the ZGW `hoofdzaak`/`deelzaken` API response shape is verified at the integration tier (Newman ZGW collection), not via Playwright.
 
@@ -98,7 +98,7 @@ The parent case detail SHALL display a progress indicator
 
 ### Requirement: Sub-case count in case list
 
-The case list view SHALL display a sub-case count badge for cases that have one or more sub-cases. Cases with zero sub-cases MUST NOT show a badge. The counts MUST be loaded in a single batch query per list page, not one request per row. Procest's case list is manifest-driven (CnIndexPage), so the badge is implemented as a column with a `subCaseCount` formatter backed by the deelzaak store; sub-cases themselves (cases with a non-null `parentCase`) never show a badge.
+The case list view SHALL display a sub-case count badge for cases that have one or more sub-cases. Cases with zero sub-cases MUST NOT show a badge. The counts MUST be loaded in a single batch query per list page, not one request per row. Dossiq's case list is manifest-driven (CnIndexPage), so the badge is implemented as a column with a `subCaseCount` formatter backed by the deelzaak store; sub-cases themselves (cases with a non-null `parentCase`) never show a badge.
 
 #### Scenario: Case list shows sub-case count
 

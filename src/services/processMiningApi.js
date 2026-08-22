@@ -1,8 +1,8 @@
 /**
- * Process mining bottleneck-report API service for Procest.
+ * Process mining bottleneck-report API service for Dossiq.
  *
  * Wraps the single backend endpoint:
- *   GET /apps/procest/api/reports/process-mining
+ *   GET /apps/dossiq/api/reports/process-mining
  *
  * The dashboard consumes the full payload; this service exposes one
  * function so the Vue layer never duplicates query-param wiring.
@@ -15,7 +15,7 @@
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-const REPORT_URL = generateUrl('/apps/procest/api/reports/process-mining')
+const REPORT_URL = generateUrl('/apps/dossiq/api/reports/process-mining')
 
 /**
  * Fetch the process-mining bottleneck report.

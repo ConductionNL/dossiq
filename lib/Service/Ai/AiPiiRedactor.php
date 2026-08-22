@@ -1,19 +1,19 @@
 <?php
 
 /**
- * Procest AI PII redactor.
+ * Dossiq AI PII redactor.
  *
  * The single definition of what counts as deterministically-detectable PII in
  * free text (BSN, IBAN, Dutch phone number, postcode) and the two things
- * procest does with it: scrub it out of a prompt before the prompt leaves the
+ * dossiq does with it: scrub it out of a prompt before the prompt leaves the
  * app, and report its exact character spans so a human can review them.
  *
- * Split out of {@see \OCA\Procest\Service\AiService} so the pattern set and both
+ * Split out of {@see \OCA\Dossiq\Service\AiService} so the pattern set and both
  * of its consumers sit in one small class — the two can never drift apart on
  * WHICH patterns count as PII.
  *
  * @category Service
- * @package  OCA\Procest\Service\Ai
+ * @package  OCA\Dossiq\Service\Ai
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,7 +21,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -31,7 +31,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Ai;
+namespace OCA\Dossiq\Service\Ai;
 
 /**
  * Detects and scrubs deterministically-detectable PII.

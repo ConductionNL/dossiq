@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Bezwaar Hearing Scheduled Listener.
+ * Dossiq Bezwaar Hearing Scheduled Listener.
  *
  * Watches OpenRegister `bezwaar` (lifecycle) object updates for the
  * status transition to "Hearing planned" and optionally seeds a
@@ -15,7 +15,7 @@
  * page.
  *
  * @category Listener
- * @package  OCA\Procest\Listener
+ * @package  OCA\Dossiq\Listener
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,16 +26,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Listener;
+namespace OCA\Dossiq\Listener;
 
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
-use OCA\Procest\Service\Bezwaar\HearingService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\Bezwaar\HearingService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -110,7 +110,7 @@ class BezwaarHearingScheduledListener implements IEventListener {
 			$this->hearingService->seedDefaultHearing(objectionId: $objectionId);
 		} catch (Throwable $e) {
 			$this->logger->debug(
-				'Procest hearing: scheduled listener swallowed exception: '
+				'Dossiq hearing: scheduled listener swallowed exception: '
 				. $e->getMessage(),
 			);
 		}//end try

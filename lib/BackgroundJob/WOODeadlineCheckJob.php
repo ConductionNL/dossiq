@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest WOO Deadline Check Job
+ * Dossiq WOO Deadline Check Job
  *
  * Daily background job that checks WOO case deadlines and sends T-7 warning
  * notifications to the assigned behandelaar per WOO Art. 4.4.
  *
  * @category BackgroundJob
- * @package  OCA\Procest\BackgroundJob
+ * @package  OCA\Dossiq\BackgroundJob
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,12 +23,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\BackgroundJob;
+namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
-use OCA\Procest\Service\WOODeadlineService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\WOODeadlineService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;

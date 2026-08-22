@@ -4,7 +4,7 @@
 /**
  * Set webpack's runtime public path so dynamically-imported chunks load from
  * the directory Nextcloud actually serves the app's JS from — e.g.
- * `/custom_apps/procest/js/` in dev, `/apps/procest/js/` in a standard install.
+ * `/custom_apps/dossiq/js/` in dev, `/apps/dossiq/js/` in a standard install.
  * Without this, webpack's default `'auto'` publicPath resolves lazy chunks
  * (e.g. the Leaflet bundle behind the map view, or the manifest validator) to a
  * path Nextcloud answers with the app-shell HTML, producing
@@ -19,4 +19,4 @@
 import { generateFilePath } from '@nextcloud/router'
 
 // eslint-disable-next-line no-undef
-__webpack_public_path__ = generateFilePath('procest', 'js', '')
+__webpack_public_path__ = generateFilePath('dossiq', 'js', '')

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest MandaatMatrixController.
+ * Dossiq MandaatMatrixController.
  *
  * REST surface for the mandaat-matrix backend: authorization checks,
  * import, escalation approve/reject/list, audit-trail retrieval.
@@ -11,7 +11,7 @@
  * that the caller is the resolved mandate holder).
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,21 +22,21 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/mandaat-matrix-09-tests-and-docs/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\MandaatCheckService;
-use OCA\Procest\Service\MandaatEscalatieService;
-use OCA\Procest\Service\MandaatGebruikService;
-use OCA\Procest\Service\MandaatImportService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\MandaatCheckService;
+use OCA\Dossiq\Service\MandaatEscalatieService;
+use OCA\Dossiq\Service\MandaatGebruikService;
+use OCA\Dossiq\Service\MandaatImportService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -205,7 +205,7 @@ class MandaatMatrixController extends Controller {
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest MandaatMatrixController: could not resolve applicant identity: ' . $e->getMessage()
+				'Dossiq MandaatMatrixController: could not resolve applicant identity: ' . $e->getMessage()
 			);
 			return [];
 		}

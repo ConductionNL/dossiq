@@ -4,7 +4,7 @@
  * CallbackService Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Kcc
+ * @package  OCA\Dossiq\Tests\Unit\Service\Kcc
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,11 +20,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Kcc;
+namespace OCA\Dossiq\Tests\Unit\Service\Kcc;
 
-use OCA\Procest\Service\Kcc\CallbackService;
-use OCA\Procest\Service\Kcc\SlaCalculator;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\Kcc\CallbackService;
+use OCA\Dossiq\Service\Kcc\SlaCalculator;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -32,9 +32,9 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for CallbackService.
  *
- * @covers \OCA\Procest\Service\Kcc\CallbackService
+ * @covers \OCA\Dossiq\Service\Kcc\CallbackService
  *
- * @uses \OCA\Procest\Service\Kcc\SlaCalculator
+ * @uses \OCA\Dossiq\Service\Kcc\SlaCalculator
  */
 class CallbackServiceTest extends TestCase {
 

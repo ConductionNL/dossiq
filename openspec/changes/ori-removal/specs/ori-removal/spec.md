@@ -1,6 +1,6 @@
-# ORI removal — procest drops the raadsinformatie registers
+# ORI removal — dossiq drops the raadsinformatie registers
 
-Paired with decidesk `ori-adoption` (ships first). procest removes the ORI
+Paired with decidesk `ori-adoption` (ships first). dossiq removes the ORI
 register and all surfaces over it; existing data migrates to decidesk before
 anything is deleted; cases link to decidesk meetings cross-app.
 
@@ -8,7 +8,7 @@ anything is deleted; cases link to decidesk meetings cross-app.
 
 ### Requirement: REQ-ORIR-001 — Removal MUST be gated on verified migration parity
 
-procest MUST NOT delete the `ori` OpenRegister register, or any object in it,
+dossiq MUST NOT delete the `ori` OpenRegister register, or any object in it,
 until its objects are verifiably migrated into decidesk. The move renames
 schemas, properties and enum values, so it is a **data migration** executed by
 decidesk's `occ decidesk:import-ori` (mapping table, dry-run and rollback per
@@ -19,7 +19,7 @@ Decision + VotingRound), not by trusting the import command's own report.
 
 #### Scenario: Removal blocked while unmigrated objects exist
 
-- GIVEN an upgraded procest whose `ori` register still contains objects without matching `ori:*` import tags in decidesk
+- GIVEN an upgraded dossiq whose `ori` register still contains objects without matching `ori:*` import tags in decidesk
 - WHEN the `RetireOriRegister` repair step runs during `occ upgrade`
 - THEN it warns, leaves the register and all its objects intact, and the upgrade still succeeds
 
@@ -35,7 +35,7 @@ Decision + VotingRound), not by trusting the import command's own report.
 - WHEN the repair step runs
 - THEN it is a no-op with an informational message and the upgrade succeeds
 
-### Requirement: REQ-ORIR-002 — procest MUST stop shipping and provisioning the ORI register
+### Requirement: REQ-ORIR-002 — dossiq MUST stop shipping and provisioning the ORI register
 
 `lib/Settings/ori_register.json` and `lib/Repair/RegisterOriRegister.php` MUST
 be deleted, together with their `appinfo/info.xml` registrations (both the
@@ -51,8 +51,8 @@ indistinguishable from a pass.
 
 #### Scenario: Fresh install has no ORI register
 
-- GIVEN a clean Nextcloud with OpenRegister and the new procest version
-- WHEN procest is installed and its repair steps run
+- GIVEN a clean Nextcloud with OpenRegister and the new dossiq version
+- WHEN dossiq is installed and its repair steps run
 - THEN no OpenRegister register with slug `ori` exists and no ORI schemas were created
 
 #### Scenario: No dangling ORI code references
@@ -65,24 +65,24 @@ indistinguishable from a pass.
 
 `lib/Controller/RaadsinformatieFeedController.php` and the routes
 `/feed/ori/vergaderingen.rss`, `/feed/ori/agendapunten.rss` and
-`/feed/ori/documenten.rss` MUST be removed from procest. Consumers are pointed
+`/feed/ori/documenten.rss` MUST be removed from dossiq. Consumers are pointed
 at decidesk's replacement feeds (`/apps/decidesk/feed/ori/meetings.rss`,
 `/feed/ori/agenda-items.rss`, `/feed/ori/documents.rss` — same ORI wire shape,
-served by decidesk's adapter). procest's release notes MUST document the URL
-change; procest MUST NOT proxy or redirect (the app may be installed without
+served by decidesk's adapter). dossiq's release notes MUST document the URL
+change; dossiq MUST NOT proxy or redirect (the app may be installed without
 decidesk, and a half-alive feed is worse than a documented move).
 
-#### Scenario: procest feed routes are gone
+#### Scenario: dossiq feed routes are gone
 
-- GIVEN the new procest version
-- WHEN an anonymous client requests `/apps/procest/feed/ori/vergaderingen.rss`
+- GIVEN the new dossiq version
+- WHEN an anonymous client requests `/apps/dossiq/feed/ori/vergaderingen.rss`
 - THEN it receives a 404 (route not registered), and the routes file contains no `/feed/ori/` entries
 
 ### Requirement: REQ-ORIR-004 — Cases MUST link to decidesk meetings cross-app
 
-procest's vergadering-backed cases (the `case` objects managed by
+dossiq's vergadering-backed cases (the `case` objects managed by
 `VergaderingCaseService` and advanced by `VergaderingDeadlineJob`) are KEPT.
-Where such a case references a council meeting record, the procest `case`
+Where such a case references a council meeting record, the dossiq `case`
 schema MUST gain an optional additive `meetingRef` property holding the
 decidesk `Meeting` uuid, and the meeting detail surface
 (`VergaderingDetailView`, route `/besluitvorming/vergaderingen/:id`) MUST

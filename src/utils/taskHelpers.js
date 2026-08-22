@@ -22,14 +22,14 @@ const PRIORITY_WEIGHTS = {
 export function getPriorityLevels() {
 	return {
 		urgent: {
-			label: t('procest', 'Urgent'),
+			label: t('dossiq', 'Urgent'),
 			weight: 1,
 			cssVar: '--color-error',
 		},
-		high: { label: t('procest', 'High'), weight: 2, cssVar: '--color-warning' },
-		normal: { label: t('procest', 'Normal'), weight: 3, cssVar: null },
+		high: { label: t('dossiq', 'High'), weight: 2, cssVar: '--color-warning' },
+		normal: { label: t('dossiq', 'Normal'), weight: 3, cssVar: null },
 		low: {
-			label: t('procest', 'Low'),
+			label: t('dossiq', 'Low'),
 			weight: 4,
 			cssVar: '--color-text-maxcontrast',
 		},
@@ -98,9 +98,9 @@ export function getOverdueText(task) {
 	const diffMs = now - due
 	const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 	if (diffDays === 1) {
-		return t('procest', '1 day overdue')
+		return t('dossiq', '1 day overdue')
 	}
-	return t('procest', '{days} days overdue', { days: diffDays })
+	return t('dossiq', '{days} days overdue', { days: diffDays })
 }
 
 /**

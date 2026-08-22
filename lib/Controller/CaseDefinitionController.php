@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Case Definition Controller
+ * Dossiq Case Definition Controller
  *
  * Handles API endpoints for exporting and importing case type definitions
  * as portable ZIP archives for DTAP pipeline deployment.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -18,9 +18,9 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-3
+ * @spec openspec/changes/archive/retrofit-2026-05-24-annotate-procest/tasks.md#task-3
  * @spec openspec/specs/case-types/spec.md
  * @spec openspec/specs/case-types/spec.md
  * @spec openspec/changes/zaaktype-copy/tasks.md#T06
@@ -29,12 +29,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\CaseDefinitionExportService;
-use OCA\Procest\Service\CaseDefinitionImportService;
-use OCA\Procest\Service\CaseTypeCopyService;
-use OCA\Procest\Settings\AdminSettings;
+use OCA\Dossiq\Service\CaseDefinitionExportService;
+use OCA\Dossiq\Service\CaseDefinitionImportService;
+use OCA\Dossiq\Service\CaseTypeCopyService;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;

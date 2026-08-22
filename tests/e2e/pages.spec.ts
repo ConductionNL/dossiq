@@ -16,7 +16,7 @@ test.describe('Dashboard', () => {
 		// sidebar (client-side). A direct GET of the bare app root leaves
 		// vue-router's history-mode location empty so the '/' route never
 		// resolves and the dashboard renders an empty router-view.
-		await page.goto('/index.php/apps/procest/cases')
+		await page.goto('/index.php/apps/dossiq/cases')
 		await page
 			.locator('[id^="app-navigation"]')
 			.first()
@@ -53,15 +53,15 @@ test.describe('Cases page', () => {
 	})
 
 	// FIXME(#427): under the CI env the Cases create dialog opens the generic
-	// CnFormDialog ("Create Item") with an empty form body instead of procest's
+	// CnFormDialog ("Create Item") with an empty form body instead of dossiq's
 	// CaseCreateDialog — the `case` schema's fields never resolve there. Renders
 	// fine in a normal dev container. Re-enable once the schema config wires up.
 	test.fixme('new case modal has correct fields', async ({ page }) => {
-		await page.goto('/index.php/apps/procest/cases')
+		await page.goto('/index.php/apps/dossiq/cases')
 		// CnIndexPage labels the create button "Add <SchemaTitle>" when the
 		// schema title resolves, "Add Item" otherwise — match either.
 		await page.getByRole('button', { name: /^Add (Item|Case|Task)$/ }).click()
-		// procest's custom CaseCreateDialog (.case-create-dialog) — scope to it
+		// dossiq's custom CaseCreateDialog (.case-create-dialog) — scope to it
 		// so e.g. the case-type combobox doesn't collide with the sidebar filter.
 		const modal = page.locator('.case-create-dialog')
 		await expect(modal.getByRole('heading', { name: 'New Case' })).toBeVisible({
@@ -195,7 +195,7 @@ test.describe('Doorlooptijd page', () => {
 
 test.describe('Settings page', () => {
 	// @e2e openspec/specs/admin-settings/spec.md#in-app-settings-page-renders-configuration-sections
-	// NOTE ON THE URL: these used the un-prefixed `/apps/procest/settings`.
+	// NOTE ON THE URL: these used the un-prefixed `/apps/dossiq/settings`.
 	// Measured on a CI runner (2026-08-04), a deep link WITHOUT the
 	// `/index.php` prefix does not render the target view — the same URL with
 	// the prefix does. (Several comments in this suite asserted the opposite.)
@@ -204,7 +204,7 @@ test.describe('Settings page', () => {
 	test('renders the configuration section and its save control', async ({
 		page,
 	}) => {
-		await page.goto('/index.php/apps/procest/settings')
+		await page.goto('/index.php/apps/dossiq/settings')
 		await dismissSupportDialog(page)
 		await loadAllAdminSections(page)
 		// "Version Information" and a "Re-import configuration" button were
@@ -221,10 +221,10 @@ test.describe('Settings page', () => {
 	// measured `.settings-form` count 0, and NO scrollable container, so this
 	// is not a lazy-mount timing problem: the type:"settings" page's
 	// `section-admin` slot (AdminRootView) never renders its body. The same
-	// components do render on /settings/admin/procest, but this scenario is
+	// components do render on /settings/admin/dossiq, but this scenario is
 	// spec'd against the IN-APP page, so it is not retargeted.
 	test.fixme('has schema configuration fields', async ({ page }) => {
-		await page.goto('/index.php/apps/procest/settings')
+		await page.goto('/index.php/apps/dossiq/settings')
 		await dismissSupportDialog(page)
 		await loadAllAdminSections(page)
 		// Scope to the configuration form — "Register" otherwise also matches
@@ -247,9 +247,9 @@ test.describe('Settings page', () => {
 	})
 
 	// FIXME(#719): same gap — no "Case Type Management" heading renders on the
-	// in-app settings page (it does on /settings/admin/procest).
+	// in-app settings page (it does on /settings/admin/dossiq).
 	test.fixme('has case type management section', async ({ page }) => {
-		await page.goto('/index.php/apps/procest/settings')
+		await page.goto('/index.php/apps/dossiq/settings')
 		await dismissSupportDialog(page)
 		await loadAllAdminSections(page)
 		await expect(

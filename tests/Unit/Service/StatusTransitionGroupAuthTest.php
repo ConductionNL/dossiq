@@ -11,7 +11,7 @@
  * bespoke role-resolution scheme.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,14 +19,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\Transitions\TransitionAuthorizer;
+use OCA\Dossiq\Service\Transitions\TransitionAuthorizer;
 use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -35,7 +35,7 @@ use Psr\Log\LoggerInterface;
  * Tests for TransitionAuthorizer::isTransitionGroupAuthorized(), the gate
  * StatusTransitionService delegates its role routing to.
  *
- * @covers \OCA\Procest\Service\Transitions\TransitionAuthorizer
+ * @covers \OCA\Dossiq\Service\Transitions\TransitionAuthorizer
  *
  * @spec openspec/changes/migrate-role-routing-to-or-rbac/tasks.md#P-5.1
  */

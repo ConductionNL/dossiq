@@ -5,19 +5,19 @@ status-note: Reverse-synced 2026-06-13 from archived implemented changes. Member
 # supplier-portal Specification
 
 ## Purpose
-Provides a self-service portal where suppliers authenticate via eHerkenning and view their own tenders, contracts, invoices, KPIs, and case messages, scoped strictly to their organisation. It registers the supplier OpenRegister schemas and case types, enforces supplier-scoped access with audit logging and PII masking, and supports sensitive mutations such as IBAN changes through re-authentication and 4-eyes Procest workflows. It also surfaces expected payment dates, invoice age analysis, contract expiry warnings, renewal requests, and nightly-aggregated supplier KPIs with municipal benchmarks.
+Provides a self-service portal where suppliers authenticate via eHerkenning and view their own tenders, contracts, invoices, KPIs, and case messages, scoped strictly to their organisation. It registers the supplier OpenRegister schemas and case types, enforces supplier-scoped access with audit logging and PII masking, and supports sensitive mutations such as IBAN changes through re-authentication and 4-eyes Dossiq workflows. It also surfaces expected payment dates, invoice age analysis, contract expiry warnings, renewal requests, and nightly-aggregated supplier KPIs with municipal benchmarks.
 ## Requirements
 ### Requirement: Supplier-Portal Schemas Are Registered
 
 The system SHALL register seven OpenRegister schemas — `Supplier`, `SupplierUser`,
 `SupplierTender`, `SupplierContract`, `SupplierInvoice`, `SupplierMessage`, and `SupplierKPI` —
-through the procest register on app install or upgrade, including the relations between them.
+through the dossiq register on app install or upgrade, including the relations between them.
 
 #### Scenario: All seven schemas exist after install
 
-- GIVEN a fresh procest install with OpenRegister available
+- GIVEN a fresh dossiq install with OpenRegister available
 - WHEN the schema-registration repair step runs
-- THEN each of the seven schemas SHALL be retrievable from the procest register with a schema UUID
+- THEN each of the seven schemas SHALL be retrievable from the dossiq register with a schema UUID
 - AND `SupplierUser` SHALL declare a `supplierRef` reference to `Supplier`
 - AND `SupplierTender`, `SupplierContract`, and `SupplierInvoice` SHALL each declare a
   `supplierRef` reference to `Supplier`
@@ -32,15 +32,15 @@ through the procest register on app install or upgrade, including the relations 
 - AND it SHALL be marked for write-once handling so that immutability can be enforced at the API
   layer by a later chain member
 
-### Requirement: Supplier Procest Case Types Are Declared
+### Requirement: Supplier Dossiq Case Types Are Declared
 
-The system SHALL declare four Procest zaaktypes used by the portal mutation and renewal flows:
+The system SHALL declare four Dossiq zaaktypes used by the portal mutation and renewal flows:
 `Leverancier-contractverlenging-verzoek`, `Leverancier-IBAN-wijziging`,
 `Leverancier-accreditatie-verificatie`, and `Leverancier-mutatie`.
 
 #### Scenario: All four case types exist after install
 
-- GIVEN a fresh procest install
+- GIVEN a fresh dossiq install
 - WHEN the case-type registration repair step runs
 - THEN each of the four supplier zaaktypes SHALL be retrievable by its identifier
 - AND `Leverancier-IBAN-wijziging` SHALL declare a 4-eyes approval workflow posture
@@ -311,7 +311,7 @@ The system SHALL create an immutable inbound message and notify the case handler
 - GIVEN a supplier viewing one of its own cases
 - WHEN it submits a message with optional attachments (≤5 files, ≤10 MB each)
 - THEN a `SupplierMessage` with `direction` = inbound SHALL be created and a notification sent to
-  the handler's Procest inbox and email
+  the handler's Dossiq inbox and email
 - AND the supplier SHALL see a success confirmation and the message in the thread
 - AND a supplier SHALL NOT be able to message a case outside its scope
 
@@ -322,7 +322,7 @@ thread immutable.
 
 #### Scenario: Handler response appears in the supplier thread
 
-- GIVEN a handler responds to a supplier message in Procest
+- GIVEN a handler responds to a supplier message in Dossiq
 - WHEN the response is recorded
 - THEN a `SupplierMessage` with `direction` = outbound SHALL be created and the supplier emailed
 - AND the thread SHALL display messages chronologically with sender and timestamp
@@ -341,14 +341,14 @@ The system SHALL apply address and contact-person changes immediately and audit 
 
 ### Requirement: IBAN Change Requires Re-Auth and 4-Eyes Approval
 
-The system SHALL hold an IBAN change behind re-authentication and a 4-eyes Procest workflow before
+The system SHALL hold an IBAN change behind re-authentication and a 4-eyes Dossiq workflow before
 it takes effect.
 
 #### Scenario: IBAN change opens a 4-eyes case and is not applied yet
 
 - GIVEN a user submits an IBAN change after re-authenticating
 - WHEN the request is submitted
-- THEN a Procest zaak of type `Leverancier-IBAN-wijziging` with a 4-eyes workflow SHALL be created
+- THEN a Dossiq zaak of type `Leverancier-IBAN-wijziging` with a 4-eyes workflow SHALL be created
 - AND the Supplier IBAN SHALL NOT change until both reviewers approve
 - AND on approval the IBAN SHALL be updated and the supplier notified; on rejection the old IBAN
   SHALL remain active
@@ -361,7 +361,7 @@ The system SHALL submit SBI/accreditation changes for verification without auto-
 
 - GIVEN a user submits an accreditation change with proof attachments
 - WHEN the request is submitted
-- THEN a Procest zaak of type `Leverancier-accreditatie-verificatie` SHALL be created and the
+- THEN a Dossiq zaak of type `Leverancier-accreditatie-verificatie` SHALL be created and the
   change SHALL NOT be applied until the municipal team approves
 
 ### Requirement: Nightly KPI Aggregation
@@ -522,16 +522,16 @@ The system SHALL flag contracts within 90 days of expiry and compute the days re
 
 ### Requirement: Contract Renewal Request
 
-The system SHALL create a Procest renewal zaak when a supplier requests renewal and notify the
+The system SHALL create a Dossiq renewal zaak when a supplier requests renewal and notify the
 account manager.
 
-#### Scenario: Renewal request opens a Procest case
+#### Scenario: Renewal request opens a Dossiq case
 
 @e2e exclude Backend REST contract — exercised via the Newman leverancier-contract-api collection + ContractControllerTest (role gate, manual-only, window, cross-supplier 403); no UI surface in this chain member. Contract renewal UI is chain member 10.
 
 - GIVEN a contracts or admin user requests renewal of a manual-renewal contract within 90 days
 - WHEN the request endpoint is called
-- THEN a Procest zaak of type `Leverancier-contractverlenging-verzoek` SHALL be created with the
+- THEN a Dossiq zaak of type `Leverancier-contractverlenging-verzoek` SHALL be created with the
   contract reference and an email sent to the account manager
 - AND a cross-supplier contract request SHALL return 403
 

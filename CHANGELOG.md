@@ -1,18 +1,18 @@
 # Changelog
 
-All notable changes to Procest are documented in this file.
+All notable changes to Dossiq are documented in this file.
 
 ## [0.3.4] - 2026-07-25
 
 ### Changed
 
-- `i18n(schema)`: re-authored 46 Dutch `title` values in `lib/Settings/procest_register.json` (register `0.13.0` → `0.13.1`) to English across the `complaint`/`complaintDisposition`/`hearing` (Awb chapter 9 klacht flow), `bezwaar`/`beroep`/`bacAdviceRequest` (objection/appeal flow), `voorstel`/`parafeerroute`/`parafeeractie`/`paraferingAuditEntry` (B&W sign-off flow), and `caseType`/`documentType`/`decisionType`/`case`/`location` schemas — property titles are now the canonical English source for manifest-driven UI labels, translated back to Dutch via l10n (`Category`/`Handler`/`Participants` already had l10n entries; 39 new EN/NL key pairs added to `l10n/en.json`, `l10n/nl.json`, `l10n/en.js`, `l10n/nl.js`). Property keys, enum values, and descriptions are unchanged — this is a labels-only change.
+- `i18n(schema)`: re-authored 46 Dutch `title` values in `lib/Settings/dossiq_register.json` (register `0.13.0` → `0.13.1`) to English across the `complaint`/`complaintDisposition`/`hearing` (Awb chapter 9 klacht flow), `bezwaar`/`beroep`/`bacAdviceRequest` (objection/appeal flow), `voorstel`/`parafeerroute`/`parafeeractie`/`paraferingAuditEntry` (B&W sign-off flow), and `caseType`/`documentType`/`decisionType`/`case`/`location` schemas — property titles are now the canonical English source for manifest-driven UI labels, translated back to Dutch via l10n (`Category`/`Handler`/`Participants` already had l10n entries; 39 new EN/NL key pairs added to `l10n/en.json`, `l10n/nl.json`, `l10n/en.js`, `l10n/nl.js`). Property keys, enum values, and descriptions are unchanged — this is a labels-only change.
 
 ## [0.2.39] - 2026-07-06
 
 ### Added
 
-- `semantic-case-intake`: procest is now a provider of OpenRegister's `ns#Case` semantic handoff kind — this BACKS the README "Pipelinq Bridge" claim (graduated from roadmap to shipped).
+- `semantic-case-intake`: dossiq is now a provider of OpenRegister's `ns#Case` semantic handoff kind — this BACKS the README "Pipelinq Bridge" claim (graduated from roadmap to shipped).
   - `case` schema declares `implements: ["https://openregister.app/ns#Case"]` + a COMPLETE `handoffContract` binding validated against the REAL OpenRegister `HandoffKindContracts` (mandatory title→title, summary→description, channel→intakeChannel, source→handoffSource; optional requester→requester, priority→priority).
   - New ADR-048 semantic-reference properties `requester` (canonical requester — the initiator display fields are its projection, one write path) and `handoffSource` (provenance back-link to the originating request).
   - Declarative `caseHandoffIntake` notification (`x-openregister-notifications`, created + notIn filter on handoffSource) — no imperative dispatch.
@@ -48,20 +48,20 @@ All notable changes to Procest are documented in this file.
 
 ### Added
 
-- `avg-verwerkingenlogging` (thin consumer of OpenRegister's verwerkingenlogging, VNG Logging Verwerkingen / AVG art. 30): procest contributes domain content and a scoped FG window — no log engine of its own.
+- `avg-verwerkingenlogging` (thin consumer of OpenRegister's verwerkingenlogging, VNG Logging Verwerkingen / AVG art. 30): dossiq contributes domain content and a scoped FG window — no log engine of its own.
   - Processing-activity catalogue `lib/Settings/verwerkingsactiviteiten.json` (zaakafhandeling, omgevingsvergunning, bezwaarschrift, Woo-verzoek, klacht, klantcontact-registratie, zaak-archivering) seeded into OR's verwerkingsregister as drafts by the `SeedVerwerkingsactiviteiten` repair step (upsert-by-code; FG-published status survives upgrades).
   - `x-openregister-processing` read-logging opt-in (`logReads: true` + activity attribution + subjectIdFields) on the person-bearing schemas `case`, `role`, `customerContact` and `contactmoment`.
   - FG/admin view **Processing activities (AVG)** (`/verwerkingen`, settings section): catalogue review status, unclassified-processing counter (OR's flagged fallback), and the per-betrokkene inzageverzoek export entry point (`InzageExportModal`) delegating to OR's `/api/avg/verwerkingen/betrokkene`. English + Dutch i18n.
-  - Docs `docs/admin/verwerkingenlogging.md`: VNG API consumption for external audit tooling (OR endpoints, procest register scope) + known limitations (per-case-type attribution, ZGW client identity — OR-side gaps).
+  - Docs `docs/admin/verwerkingenlogging.md`: VNG API consumption for external audit tooling (OR endpoints, dossiq register scope) + known limitations (per-case-type attribution, ZGW client identity — OR-side gaps).
 
 ## [0.2.35] - 2026-07-06
 
 ### Added
 
-- `consume-or-mdm` (ADR-045 / ADR-022): procest now declares master-data-management rules for OpenRegister's MDM engine — no app-local MDM code or UI.
-  - `x-openregister-quality` + `x-openregister-dedup` annotations on the `case` (identifier / vergunningaanvraagRef exact match — DSO double-intake guard; title normalized+levenshtein; blocking per caseType), `supplier` (kvkNumber/iban exact, legalName fuzzy, kvkNumber `^[0-9]{8}$` format rule) and `partnerOrganization` (oin exact, name fuzzy, contactEmail format rule) schemas in `lib/Settings/procest_register.json` (in-place, not register.d, to avoid the union-merge pitfall).
+- `consume-or-mdm` (ADR-045 / ADR-022): dossiq now declares master-data-management rules for OpenRegister's MDM engine — no app-local MDM code or UI.
+  - `x-openregister-quality` + `x-openregister-dedup` annotations on the `case` (identifier / vergunningaanvraagRef exact match — DSO double-intake guard; title normalized+levenshtein; blocking per caseType), `supplier` (kvkNumber/iban exact, legalName fuzzy, kvkNumber `^[0-9]{8}$` format rule) and `partnerOrganization` (oin exact, name fuzzy, contactEmail format rule) schemas in `lib/Settings/dossiq_register.json` (in-place, not register.d, to avoid the union-merge pitfall).
   - OR-materialised `qualityScore`/`qualityStatus` declared as facetable properties on all three schemas. Schema versions bumped.
-  - Explicit non-adoption of `x-openregister-survivorship` (no trust-tiered source records in procest); steward workflow documented in `docs/admin/master-data-stewardship.md`.
+  - Explicit non-adoption of `x-openregister-survivorship` (no trust-tiered source records in dossiq); steward workflow documented in `docs/admin/master-data-stewardship.md`.
   - Requires OpenRegister >= 0.2.16 (recorded in `appinfo/info.xml` dependencies comment).
 
 ### Fixed
@@ -75,7 +75,7 @@ All notable changes to Procest are documented in this file.
 - `align-claims-and-licence`: app metadata now tells the truth about the code as shipped.
   - `appinfo/info.xml` licence flipped `agpl` → `EUPL-1.2` (matches `LICENSE`; the SPDX token is accepted by Nextcloud's app-info.xsd enum since nextcloud/server PR #60212). EN/NL description licence sentences updated; version bumped to 0.2.34.
   - `appinfo/info.xml` element order fixed to pass app-info.xsd validation (php before nextcloud in `<dependencies>`; repair-steps/commands/settings/navigations reordered) — pre-existing schema violations.
-  - README: licence badge → EUPL-1.2; Unified Search attributed to OpenRegister (provided centrally — procest ships no own search provider); Pipelinq Bridge marked roadmap (see `openspec/changes/semantic-case-intake/`); DMN removed from shipped process-standards claims (roadmap); three dead docs links fixed; platform matrix corrected to Nextcloud 28–34 / PHP 8.3+.
+  - README: licence badge → EUPL-1.2; Unified Search attributed to OpenRegister (provided centrally — dossiq ships no own search provider); Pipelinq Bridge marked roadmap (see `openspec/changes/semantic-case-intake/`); DMN removed from shipped process-standards claims (roadmap); three dead docs links fixed; platform matrix corrected to Nextcloud 28–34 / PHP 8.3+.
   - `openspec/features.overlay.json`: `archief-edepot-handover` and `multi-tenancy` downgraded `stable` → `beta` with reasons (mock/log e-Depot adapter; tenant stack not yet on the OpenRegister boundary).
 
 ## [Unreleased]

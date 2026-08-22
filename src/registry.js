@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 //
-// V2 component registry for procest.
+// V2 component registry for dossiq.
 //
 // Every entry here corresponds to a manifest `type: "custom"` page or a
 // sidebar tab that uses `component:` instead of `widgets[]`. The registry
@@ -28,7 +28,7 @@ import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicati
 import BezwaarBeroepOverview from './components/bezwaar/BezwaarBeroepOverview.vue'
 // Case-list CSV/Excel export via the OR export leaf — actions-slot component
 // on the Cases page (manifest `pages[].actionsComponent`). Builds the OR
-// export-leaf URL client-side; no procest-side serialization (ADR-022).
+// export-leaf URL client-side; no dossiq-side serialization (ADR-022).
 // @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
 import CaseListExportAction from './components/export/CaseListExportAction.vue'
 // Initiator (indiener) selection + display — brp-kvk-register-sets.
@@ -51,7 +51,7 @@ import VergaderingDetailView from './views/besluitvorming/VergaderingDetailView.
 import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
 import AdviesPanel from './views/cases/components/AdviesPanel.vue'
 // Case-assistant chat panel — conversational assistance delegated to Hermiq
-// (fleet rule: AI functionality lives in Hermiq; procest is a thin consumer).
+// (fleet rule: AI functionality lives in Hermiq; dossiq is a thin consumer).
 // @spec openspec/specs/case-assistant-via-hermiq/spec.md
 import CaseAssistantPanel from './views/cases/components/CaseAssistantPanel.vue'
 // Case-email integration — leaf-first per ADR-022. The sidebar tab
@@ -83,7 +83,7 @@ import DeelzaakList from './views/cases/DeelzaakList.vue'
 // Cases-on-map — full-screen multi-object overview. Consumes OpenRegister's
 // page-level maps-overview leaf (OR #154): OR owns the geometry extraction,
 // RBAC scoping, and base-layer config; the markers render through the lib's
-// `CnMapWidget`. No bespoke Leaflet / WMS / WFS stack in procest (ADR-022).
+// `CnMapWidget`. No bespoke Leaflet / WMS / WFS stack in dossiq (ADR-022).
 // @spec openspec/specs/case-map-overview/spec.md
 import CasesOnMapView from './views/CasesOnMapView.vue'
 import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
@@ -161,7 +161,7 @@ const registry = {
 	CaseListExportAction: {
 		kind: 'page',
 		component: CaseListExportAction,
-		_note: 'Cases-page actions-slot "Export" menu (CSV/Excel); receives no props (CnIndexPage\'s #actions slot is unscoped). Builds the OR export-leaf URL client-side — no procest-side serialization (ADR-022).',
+		_note: 'Cases-page actions-slot "Export" menu (CSV/Excel); receives no props (CnIndexPage\'s #actions slot is unscoped). Builds the OR export-leaf URL client-side — no dossiq-side serialization (ADR-022).',
 	},
 
 	// --- Genuine exceptions: no abstract manifest analogue. ---
@@ -239,7 +239,7 @@ const registry = {
 	CaseAssistantPanel: {
 		kind: 'widget',
 		component: CaseAssistantPanel,
-		_note: 'CaseDetail chat panel delegating conversational assistance to Hermiq (fleet rule: AI lives in Hermiq; procest only enriches with authorized case context). Availability-gated: renders NOTHING when the hermiq app is not installed/enabled.',
+		_note: 'CaseDetail chat panel delegating conversational assistance to Hermiq (fleet rule: AI lives in Hermiq; dossiq only enriches with authorized case context). Availability-gated: renders NOTHING when the hermiq app is not installed/enabled.',
 	},
 
 	// --- CMMN adaptive case plan (cmmn-adaptive-case). ---
@@ -342,7 +342,7 @@ const registry = {
 	// The former bespoke LocalBackend scheduling surface is replaced by OR's
 	// `calendar` integration leaf (CalendarProvider): the leaf owns event
 	// list/create/link/unlink/delete and fetches straight from OR using the
-	// objectId/register/schema/apiBase that CnObjectSidebar injects. Procest
+	// objectId/register/schema/apiBase that CnObjectSidebar injects. Dossiq
 	// keeps only zaak-specific metadata + external Qmatic/JCC (ADR-022 exception).
 	// @spec openspec/changes/migrate-appointments-to-calendar-leaf/tasks.md#P1.2
 	CalendarLeafTab: {
@@ -369,7 +369,7 @@ const registry = {
 	// The existing "case-notes" CaseDetail body widget renders CnNotesCard,
 	// which predates @mention and does not emit it. This sidebar tab renders
 	// the full CnNotesTab (which does emit `mention`) and forwards the event
-	// to procest's own notification endpoint — see CaseNotesTab.vue for the
+	// to dossiq's own notification endpoint — see CaseNotesTab.vue for the
 	// full rationale. Wired as a `component:` sidebar tab on CaseDetail.
 	// @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
 	CaseNotesTab: {
@@ -395,13 +395,13 @@ const registry = {
 	},
 
 	// --- Besluitvorming (decision-making) sidebar tab — decidesk leaf. ---
-	// "decidesk owns it; procest shows a leaf" (ADR-019 / ADR-022). The
+	// "decidesk owns it; dossiq shows a leaf" (ADR-019 / ADR-022). The
 	// decidesk `decidesk-decisions` integration leaf (registered cross-app on
 	// the shared OR integration registry by decidesk's global init script)
 	// surfaces proposals/advice/decisions linked to this case via decidesk's
 	// subjectId back-reference. The wrapper resolves the registered provider's
 	// tab at render time and forwards the case `{ register, schema, objectId }`
-	// context that CnObjectSidebar injects. Retires procest's former standalone
+	// context that CnObjectSidebar injects. Retires dossiq's former standalone
 	// Voorstellen/Advies/Agenda nav (those pages stay routable for deep links).
 	// @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
 	BesluitvormingLeafTab: {

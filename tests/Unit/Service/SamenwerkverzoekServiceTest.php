@@ -7,24 +7,24 @@
  * initiation, accept/reject responses, and per-object authorization.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
-use OCA\Procest\Service\SamenwerkverzoekService;
+use OCA\Dossiq\Service\SamenwerkverzoekService;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -67,7 +67,7 @@ interface SamenwerkObjectServiceStub {
 /**
  * Unit tests for SamenwerkverzoekService.
  *
- * @covers \OCA\Procest\Service\SamenwerkverzoekService
+ * @covers \OCA\Dossiq\Service\SamenwerkverzoekService
  */
 class SamenwerkverzoekServiceTest extends TestCase {
 

@@ -4,13 +4,13 @@
  * Tests for the OpenRegister autoload prelude.
  *
  * @category Test
- * @package  OCA\Procest\Tests\Unit\AppInfo
+ * @package  OCA\Dossiq\Tests\Unit\AppInfo
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -18,9 +18,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\AppInfo;
+namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Procest\AppInfo\OpenRegisterAutoloader;
+use OCA\Dossiq\AppInfo\OpenRegisterAutoloader;
 use PHPUnit\Framework\TestCase;
 
 /**

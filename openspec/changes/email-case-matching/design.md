@@ -5,11 +5,11 @@
 Three facts ground this change:
 
 1. **The case number is `identifier`, format `YYYY-NNNN`.** The `case` schema
-   (`lib/Settings/procest_register.json`) has no `zaaknummer`/`caseNumber` property and no `pattern`;
+   (`lib/Settings/dossiq_register.json`) has no `zaaknummer`/`caseNumber` property and no `pattern`;
    `identifier` is read-only and materialised by OpenRegister from
    `x-openregister-calculations.identifier = concat(year(startDate), "-", sequence(scope: yearly, pad: 4))`
    — e.g. `2026-0042`. There is **no `ZAAK-` prefix in the data.**
-2. **Procest's existing inbound path doesn't cover this.** `InboundEmailJob` polls one shared
+2. **Dossiq's existing inbound path doesn't cover this.** `InboundEmailJob` polls one shared
    functional IMAP mailbox with its own IMAP client and recognises only the bracketed subject tag
    `/\[([A-Z]+-\d{4}-\d{4,6})\]/` — which the schema-generated identifier can never produce
    (prefixed, bracket-required, while `CaseEmailRepository` then looks the raw prefixed string up
@@ -110,8 +110,8 @@ After this change, two apps will carry near-identical 1000-line matcher transpor
 one method. The honest architectural direction (ADR-012, ADR-022): lift the core — message iteration,
 cursor, per-user settings/status, idempotent `linkEmail` — into the OpenRegister email leaf as a
 generic matching engine that accepts app-registered **recognizers**; pipelinq contributes the
-correspondent-address recognizer (+ public-domain guard), procest contributes the case-number
-recognizer (pattern + identifier resolution — the only genuinely procest-specific ~100 lines of this
+correspondent-address recognizer (+ public-domain guard), dossiq contributes the case-number
+recognizer (pattern + identifier resolution — the only genuinely dossiq-specific ~100 lines of this
 change). That is a separate openregister change; this change keeps the seam clean (D1) so the
 extraction is mechanical. Until it lands, duplication is accepted and recorded here rather than
 hidden.

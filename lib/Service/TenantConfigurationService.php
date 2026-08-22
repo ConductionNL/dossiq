@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest Tenant Configuration Service
+ * Dossiq Tenant Configuration Service
  *
  * Per-tenant configuration: branding, locale, feature flags, custom CSS.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,17 +15,17 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-08-configuration-branding/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
-use OCA\Procest\Service\Tenant\TenantBrandingSanitiser;
+use OCA\Dossiq\Service\Tenant\TenantBrandingSanitiser;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -191,14 +191,14 @@ class TenantConfigurationService {
 		}
 
 		if (isset($branding['secondaryColor']) === true && $this->isHexColor(val: (string)$branding['secondaryColor']) === true) {
-			$tokens['--procest-color-secondary'] = (string)$branding['secondaryColor'];
+			$tokens['--dossiq-color-secondary'] = (string)$branding['secondaryColor'];
 		}
 
 		if (isset($branding['fontFamily']) === true) {
 			$fontFamily = (string)$branding['fontFamily'];
 			// Drop quotes and dangerous chars.
 			$fontFamily = preg_replace('/[^a-zA-Z0-9_\\- ,]/', '', $fontFamily) ?? '';
-			$tokens['--procest-font-family'] = $fontFamily;
+			$tokens['--dossiq-font-family'] = $fontFamily;
 		}
 
 		return $tokens;
@@ -286,7 +286,7 @@ class TenantConfigurationService {
 				uuid: $uuidArg
 			);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest: tenantConfiguration save failed', ['exception' => $e->getMessage()]);
+			$this->logger->error('Dossiq: tenantConfiguration save failed', ['exception' => $e->getMessage()]);
 			return $next;
 		}
 	}//end mergeConfig()

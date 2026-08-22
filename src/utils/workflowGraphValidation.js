@@ -78,7 +78,7 @@ export function validateWorkflowGraph({ statusNodes, transitions } = {}) {
 				type: 'error',
 				code: RULES.DANGLING_EDGE,
 				message: t(
-					'procest',
+					'dossiq',
 					'Transition "{label}" references a status that no longer exists',
 					{ label: edge.label || `${edge.fromStatus} → ${edge.toStatus}` },
 				),
@@ -97,7 +97,7 @@ export function validateWorkflowGraph({ statusNodes, transitions } = {}) {
 				type: 'warning',
 				code: RULES.DUPLICATE_TRANSITION,
 				message: t(
-					'procest',
+					'dossiq',
 					'Duplicate transition from "{from}" to "{to}"',
 					{ from: nodeName(edge.fromStatus), to: nodeName(edge.toStatus) },
 				),
@@ -112,7 +112,7 @@ export function validateWorkflowGraph({ statusNodes, transitions } = {}) {
 		issues.push({
 			type: 'error',
 			code: RULES.NO_FINAL_STATUS,
-			message: t('procest', 'Workflow has no final status defined'),
+			message: t('dossiq', 'Workflow has no final status defined'),
 		})
 	}
 
@@ -134,7 +134,7 @@ export function validateWorkflowGraph({ statusNodes, transitions } = {}) {
 					type: 'warning',
 					code: RULES.ORPHAN_NODE,
 					message: t(
-						'procest',
+						'dossiq',
 						'Status "{name}" has no transitions connecting it to the rest of the workflow',
 						{ name: n.name },
 					),
@@ -162,7 +162,7 @@ export function validateWorkflowGraph({ statusNodes, transitions } = {}) {
 				type: 'error',
 				code: RULES.UNREACHABLE_FINAL,
 				message: t(
-					'procest',
+					'dossiq',
 					'Final status "{name}" cannot be reached from any starting status',
 					{ name: n.name },
 				),
@@ -215,7 +215,7 @@ export function validateWorkflowGraph({ statusNodes, transitions } = {}) {
 						type: 'warning',
 						code: RULES.CYCLE_NO_EXIT,
 						message: t(
-							'procest',
+							'dossiq',
 							'Cycle detected with no exit to a final status: {names}',
 							{ names: cycleNodes.map(nodeName).join(' → ') },
 						),

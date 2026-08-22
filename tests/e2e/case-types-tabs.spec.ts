@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Case-types admin smoke — covers the 7-tab integration spec'd by
@@ -13,7 +13,7 @@
 
 import { test, expect } from '@playwright/test'
 
-const ADMIN_SETTINGS_URL = '/settings/admin/procest'
+const ADMIN_SETTINGS_URL = '/settings/admin/dossiq'
 
 test.describe('Case-types admin — 7-tab integration shell', () => {
 	// Same reason as spec-coverage/admin-settings.spec.ts: the Nextcloud admin
@@ -58,7 +58,7 @@ test.describe('Case-types admin — 7-tab integration shell', () => {
 		// 500 indicates a routing/ZgwBusinessRulesService bootstrap defect).
 		await page.goto(ADMIN_SETTINGS_URL)
 		const res = await request.patch(
-			'/index.php/apps/procest/api/case-types/non-existent-uuid',
+			'/index.php/apps/dossiq/api/case-types/non-existent-uuid',
 			{
 				data: { isDraft: false },
 				failOnStatusCode: false,

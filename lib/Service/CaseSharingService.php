@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest Case Sharing Service
+ * Dossiq Case Sharing Service
  *
  * Service for managing case shares, token generation, and permission enforcement.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -17,26 +17,26 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTime;
-use OCA\Procest\Service\Sharing\CaseAccessPolicy;
-use OCA\Procest\Service\Sharing\CaseTokenShareService;
-use OCA\Procest\Service\Sharing\FederatedCaseShareService;
-use OCA\Procest\Service\Sharing\OpenRegisterSharingGateway;
+use OCA\Dossiq\Service\Sharing\CaseAccessPolicy;
+use OCA\Dossiq\Service\Sharing\CaseTokenShareService;
+use OCA\Dossiq\Service\Sharing\FederatedCaseShareService;
+use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
 use Psr\Log\LoggerInterface;
 
 /**
  * Entry point for case sharing, and the owner of the in-app partner hand-off.
  *
- * Procest shares a case in three distinct ways, each with its own trust model,
+ * Dossiq shares a case in three distinct ways, each with its own trust model,
  * and this class is the seam between them:
  *
  *  - a PUBLIC token link, delegated to {@see CaseTokenShareService}, which
@@ -218,7 +218,7 @@ class CaseSharingService {
 		);
 
 		$this->logger->info(
-			'Procest: Partner share created',
+			'Dossiq: Partner share created',
 			[
 				'caseId' => $caseId,
 				'partnerId' => $partnerId,
@@ -319,7 +319,7 @@ class CaseSharingService {
 		$result = $objectService->saveObject(object: $shareData, register: (int)$register, schema: (int)$shareSchema);
 
 		$this->logger->info(
-			'Procest: Case share revoked',
+			'Dossiq: Case share revoked',
 			['shareId' => $shareId, 'revokedBy' => $userId]
 		);
 

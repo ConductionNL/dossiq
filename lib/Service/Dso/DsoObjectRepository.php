@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest DsoObjectRepository.
+ * Dossiq DsoObjectRepository.
  *
  * OpenRegister read collaborator for the DSO Omgevingsloket surface. Split out
  * of DsoController so that controller keeps only endpoint shape: resolving the
@@ -11,7 +11,7 @@
  * defer to services).
  *
  * @category Service
- * @package  OCA\Procest\Service\Dso
+ * @package  OCA\Dossiq\Service\Dso
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,7 +19,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -29,10 +29,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Dso;
+namespace OCA\Dossiq\Service\Dso;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -90,7 +90,7 @@ class DsoObjectRepository {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
-				'Procest DsoObjectRepository: could not load zaak ' . $caseId . ': ' . $e->getMessage()
+				'Dossiq DsoObjectRepository: could not load zaak ' . $caseId . ': ' . $e->getMessage()
 			);
 			return null;
 		}//end try
@@ -127,7 +127,7 @@ class DsoObjectRepository {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
-				'Procest DsoObjectRepository: could not load samenwerkverzoek ' . $samenwerkId . ': ' . $e->getMessage()
+				'Dossiq DsoObjectRepository: could not load samenwerkverzoek ' . $samenwerkId . ': ' . $e->getMessage()
 			);
 			return null;
 		}//end try

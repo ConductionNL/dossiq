@@ -1,6 +1,6 @@
-# Procest API-contract tests (Newman)
+# Dossiq API-contract tests (Newman)
 
-Newman/Postman contract tests that exercise procest's HTTP controllers directly,
+Newman/Postman contract tests that exercise dossiq's HTTP controllers directly,
 locking the API contract. Per the gate-19 split, **API/contract correctness lives
 in Newman**; Playwright drives the UI only.
 
@@ -10,7 +10,7 @@ in Newman**; Playwright drives the UI only.
 | --- | --- | --- | --- | --- |
 | 0. Setup | OR workflow-template lookup, case seeding | seeds caseType + transition IDs + two cases | — | — |
 | 1. Status Transition Engine | `GET /api/case/{id}/available-transitions`, `GET .../transition-history`, `POST .../transition` | returns real transitions/current/history + executes a valid transition | 409 guard-failed, 404 unknown transition, 400 missing `transitionId` | 401 no-auth |
-| 2. Case (zaak) CRUD | OpenRegister `/api/objects/{register}/{schema}` (ADR-022; procest owns no case-CRUD controller) | create → read → update → delete with id capture | — | anon read (OR reads are not auth-gated — see note) |
+| 2. Case (zaak) CRUD | OpenRegister `/api/objects/{register}/{schema}` (ADR-022; dossiq owns no case-CRUD controller) | create → read → update → delete with id capture | — | anon read (OR reads are not auth-gated — see note) |
 | 3. Settings | `GET /api/settings`, `POST /api/settings/load` | 200 + contract shape | — | 401 no-auth, 401 invalid-auth |
 | 4. Complaints | `GET /api/complaints`, `POST /api/complaints` | — (see KNOWN BUG) | 400 missing-fields validation | 401 no-auth |
 | 9. Teardown | deletes the seeded cases | idempotent cleanup | — | — |
@@ -50,14 +50,14 @@ quarantine test goes RED — flip it to a happy-path 200 assertion at that point
 ./run-newman.sh
 
 # or directly:
-npx newman run procest.postman_collection.json \
+npx newman run dossiq.postman_collection.json \
   --env-var baseUrl=http://localhost:8080 \
   --env-var adminUser=admin \
   --env-var adminPass=admin
 ```
 
 `run-newman.sh` prefers a globally-installed `newman`, falls back to `npx newman`,
-and serialises runs under `flock /tmp/uiaudit-procest.lock` to avoid tripping the
+and serialises runs under `flock /tmp/uiaudit-dossiq.lock` to avoid tripping the
 Nextcloud brute-force protection when multiple agents run in parallel.
 
 ## Auth-isolation detail (important for reuse)
@@ -83,8 +83,8 @@ This is the reusable Newman authz pattern for the fleet.
 
 Case CRUD is delegated to OpenRegister (ADR-022). OR's object-read API returns the
 object to an **anonymous** request (`200`) — authorization on case data is OR's
-responsibility, not procest's. The folder-2 anon test documents this honestly
-rather than asserting a `401` the OR API never returns. The procest controllers
+responsibility, not dossiq's. The folder-2 anon test documents this honestly
+rather than asserting a `401` the OR API never returns. The dossiq controllers
 themselves (folders 1, 3, 4) **are** auth-gated and return `401`.
 
 ## Collection variables

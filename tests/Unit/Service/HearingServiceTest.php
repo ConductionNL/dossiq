@@ -6,7 +6,7 @@
  * Tests for hearing scheduling, outcome recording, and Talk room creation.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,14 +19,14 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\Bezwaar\BezwaarAuditTrail;
-use OCA\Procest\Service\Bezwaar\HearingMinutesRecorder;
-use OCA\Procest\Service\Bezwaar\HearingSchedulePlanner;
-use OCA\Procest\Service\HearingService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\OwningCaseResolver;
+use OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail;
+use OCA\Dossiq\Service\Bezwaar\HearingMinutesRecorder;
+use OCA\Dossiq\Service\Bezwaar\HearingSchedulePlanner;
+use OCA\Dossiq\Service\HearingService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -77,7 +77,7 @@ interface HearingObjectServiceStub {
 /**
  * Unit tests for HearingService.
  *
- * @covers \OCA\Procest\Service\HearingService
+ * @covers \OCA\Dossiq\Service\HearingService
  */
 class HearingServiceTest extends TestCase {
 

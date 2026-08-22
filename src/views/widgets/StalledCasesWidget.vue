@@ -5,14 +5,14 @@
 		:loading="loading"
 		hideHeader
 		borderless
-		:emptyText="t('procest', 'All cases active')"
+		:emptyText="t('dossiq', 'All cases active')"
 		@rowClick="onRowClick">
 		<template #footer>
 			<a
 				class="cn-data-table__view-all"
 				:href="viewAllUrl"
 				@click.prevent="onViewAll">
-				{{ t('procest', 'View all') }} →
+				{{ t('dossiq', 'View all') }} →
 			</a>
 		</template>
 	</CnDataTable>
@@ -61,7 +61,7 @@ export default {
 		 * @spec openspec/specs/signalering-widgets/spec.md
 		 */
 		viewAllUrl() {
-			return generateUrl('/apps/procest/cases')
+			return generateUrl('/apps/dossiq/cases')
 		},
 
 		/** @spec openspec/specs/signalering-widgets/spec.md */
@@ -69,10 +69,10 @@ export default {
 			return this.stalledCases.slice(0, 5).map((item) => ({
 				id: item.id,
 				mainText: item.title,
-				subText: t('procest', '{days} days inactive', {
+				subText: t('dossiq', '{days} days inactive', {
 					days: item.daysSinceActivity,
 				}),
-				targetUrl: generateUrl(`/apps/procest/cases/${item.id}`),
+				targetUrl: generateUrl(`/apps/dossiq/cases/${item.id}`),
 			}))
 		},
 	},
@@ -103,7 +103,7 @@ export default {
 		 * @return {void}
 		 */
 		onViewAll() {
-			navigateTo(generateUrl('/apps/procest/cases'))
+			navigateTo(generateUrl('/apps/dossiq/cases'))
 		},
 
 		/**

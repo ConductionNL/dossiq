@@ -6,4 +6,4 @@ const app = createApp(AdminRoot)
 app.use(pinia)
 app.config.globalProperties.t = t
 app.config.globalProperties.n = n
-app.mount('#procest-settings')
+app.mount('#dossiq-settings')

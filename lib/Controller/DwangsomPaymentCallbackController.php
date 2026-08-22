@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest DwangsomPaymentCallbackController.
+ * Dossiq DwangsomPaymentCallbackController.
  *
  * Public webhook endpoint hit by openconnector (or the configured ERP
  * directly) to confirm or update the actual state of a dwangsom
@@ -10,7 +10,7 @@
  * and dispatches to {@see DwangsomUitbetalingService::handleCallback}.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,17 +21,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\DwangsomUitbetalingService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\DwangsomUitbetalingService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -156,12 +157,21 @@ class DwangsomPaymentCallbackController extends Controller {
 	 * @spec openspec/changes/enforce-dwangsom-callback-signature/specs/financial-integration/spec.md
 	 */
 	private function validateSignature(string $rawBody): bool {
-		$secret = (string)$this->appConfig->getValueString('procest', 'dwangsom_callback_secret', '');
+		// App-config namespace follows the app id (Repair\MigrateAppConfigKeys
+		// copies the stored secret across the procest -> dossiq rename). The
+		// `X-Procest-Signature` header name below does NOT follow it — see there.
+		$secret = (string)$this->appConfig->getValueString(Application::APP_ID, 'dwangsom_callback_secret', '');
 		if ($secret === '') {
 			$this->logger->warning('Dwangsom callback: rejected — no dwangsom_callback_secret configured');
 			return false;
 		}
 
+		// FROZEN HEADER NAME. `X-Procest-Signature` is sent by the EXTERNAL
+		// payment provider, which signs its callbacks with a header name
+		// configured on their side. Renaming it here does not rename it there:
+		// getHeader() would return '' for every real callback and each one would
+		// be rejected as unsigned. This moves only in a coordinated change with
+		// the provider.
 		$supplied = (string)$this->request->getHeader('X-Procest-Signature');
 		if ($supplied === '') {
 			return false;

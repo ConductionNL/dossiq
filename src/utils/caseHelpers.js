@@ -159,9 +159,9 @@ export function getCaseOverdueText(caseObj, isFinal = false) {
 	const diffMs = now - deadline
 	const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 	if (diffDays === 1) {
-		return t('procest', '1 day overdue')
+		return t('dossiq', '1 day overdue')
 	}
-	return t('procest', '{days} days overdue', { days: diffDays })
+	return t('dossiq', '{days} days overdue', { days: diffDays })
 }
 
 /**
@@ -188,14 +188,14 @@ export function formatDeadlineCountdown(caseObj, isFinal = false) {
 		}
 	}
 	if (isCaseDueToday(caseObj, isFinal)) {
-		return { text: t('procest', 'Due today'), style: 'deadline--today' }
+		return { text: t('dossiq', 'Due today'), style: 'deadline--today' }
 	}
 	if (isCaseDueTomorrow(caseObj, isFinal)) {
-		return { text: t('procest', 'Due tomorrow'), style: 'deadline--tomorrow' }
+		return { text: t('dossiq', 'Due tomorrow'), style: 'deadline--tomorrow' }
 	}
 	const days = getDaysRemaining(caseObj.deadline)
 	return {
-		text: t('procest', '{days} days remaining', { days }),
+		text: t('dossiq', '{days} days remaining', { days }),
 		style: 'deadline--ok',
 	}
 }

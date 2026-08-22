@@ -7,7 +7,7 @@
  * `nummeraanduidingId` save-path enforcement (bag-location-save-validation).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Listener
+ * @package  OCA\Dossiq\Tests\Unit\Listener
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,24 +21,24 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Listener;
+namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Procest\Listener\LocationBagValidationListener;
-use OCA\Procest\Service\External\Bag\BagAdapterInterface;
-use OCA\Procest\Service\External\Bag\BagLookupResult;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Listener\LocationBagValidationListener;
+use OCA\Dossiq\Service\External\Bag\BagAdapterInterface;
+use OCA\Dossiq\Service\External\Bag\BagLookupResult;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Listener\LocationBagValidationListener
+ * @covers \OCA\Dossiq\Listener\LocationBagValidationListener
  *
- * @uses \OCA\Procest\Service\External\Bag\BagLookupResult
+ * @uses \OCA\Dossiq\Service\External\Bag\BagLookupResult
  */
 class LocationBagValidationListenerTest extends TestCase {
 

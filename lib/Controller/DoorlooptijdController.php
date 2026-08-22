@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Doorlooptijd (throughput-time) Controller
+ * Dossiq Doorlooptijd (throughput-time) Controller
  *
  * Thin REST entry-point for the throughput-time dashboard. Reads query
  * parameters, validates types, delegates to {@see DoorlooptijdService}.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,17 +18,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T02
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\DoorlooptijdService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\DoorlooptijdService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

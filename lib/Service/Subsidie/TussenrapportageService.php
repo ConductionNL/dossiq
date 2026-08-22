@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Tussenrapportage Service.
+ * Dossiq Tussenrapportage Service.
  *
  * Interim-report (tussenrapportage) workflow within a grant execution
  * (REQ-SUB-004). Owns auto-creation cadence (jaarlijks/halfjaarlijks),
@@ -12,7 +12,7 @@
  * to OpenRegister via SettingsService.
  *
  * @category Service
- * @package  OCA\Procest\Service\Subsidie
+ * @package  OCA\Dossiq\Service\Subsidie
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,16 +23,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Subsidie;
+namespace OCA\Dossiq\Service\Subsidie;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -143,7 +143,7 @@ class TussenrapportageService {
 		try {
 			return $objectService->saveObject(object: $record, register: $register, schema: $schema);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest subsidie: createExpected tussenrapportage failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq subsidie: createExpected tussenrapportage failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon tussenrapportage niet aanmaken');
 		}
 	}//end createExpected()
@@ -186,7 +186,7 @@ class TussenrapportageService {
 		try {
 			return $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string)$reportId);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest subsidie: approveReport failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq subsidie: approveReport failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon tussenrapportage niet goedkeuren');
 		}
 	}//end approveReport()
@@ -227,7 +227,7 @@ class TussenrapportageService {
 		try {
 			return $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string)$reportId);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest subsidie: partialApprove failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq subsidie: partialApprove failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon tussenrapportage niet gedeeltelijk goedkeuren');
 		}
 	}//end partialApprove()

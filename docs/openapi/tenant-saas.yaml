@@ -1,14 +1,14 @@
 openapi: 3.0.0
 info:
-  title: Procest Tenant SaaS API
+  title: Dossiq Tenant SaaS API
   description: |
     Tenant SaaS chain (tenant-zaaksysteem-saas-01..12) endpoints — CRUD,
     onboarding, configuration, quotas, billing, lifecycle. All endpoints are
     admin-only (#[AuthorizedAdminSetting]) unless documented otherwise.
   version: '0.1.0'
 servers:
-  - url: '/index.php/apps/procest'
-    description: Procest app base path
+  - url: '/index.php/apps/dossiq'
+    description: Dossiq app base path
 
 components:
   securitySchemes:

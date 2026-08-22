@@ -1,5 +1,5 @@
 /**
- * Object store for Procest — powered by @conduction/nextcloud-vue.
+ * Object store for Dossiq — powered by @conduction/nextcloud-vue.
  *
  * Uses createObjectStore('object') to maintain the same Pinia store ID
  * that all existing views reference. The full implementation (CRUD,

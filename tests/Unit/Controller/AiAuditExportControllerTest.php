@@ -7,7 +7,7 @@
  * unauthenticated) and the CSV/JSON export shape.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,10 +23,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\AiAuditExportController;
-use OCA\Procest\Service\Ai\AiAuditService;
+use OCA\Dossiq\Controller\AiAuditExportController;
+use OCA\Dossiq\Service\Ai\AiAuditService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
@@ -40,7 +40,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for AiAuditExportController::export().
  *
- * @covers \OCA\Procest\Controller\AiAuditExportController
+ * @covers \OCA\Dossiq\Controller\AiAuditExportController
  */
 class AiAuditExportControllerTest extends TestCase {
 
@@ -72,7 +72,7 @@ class AiAuditExportControllerTest extends TestCase {
 		}
 
 		return new AiAuditExportController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			userSession: $userSession,
 			groupManager: $this->groupManager,

@@ -12,7 +12,7 @@ status: done
 
 ## Summary
 
-Canonical product-pages documentation structure for the Procest documentation site, conforming to the `@conduction/docusaurus-preset` fleet standard.
+Canonical product-pages documentation structure for the Dossiq documentation site, conforming to the `@conduction/docusaurus-preset` fleet standard.
 ## Requirements
 ### Requirement: Canonical folder taxonomy
 
@@ -117,7 +117,7 @@ automatically.
 
 #### Scenario: Features folder is capital-F
 
-- **GIVEN** the Procest documentation site is built with Docusaurus
+- **GIVEN** the Dossiq documentation site is built with Docusaurus
 - **WHEN** a user browses the documentation sidebar
 - **THEN** the Features section MUST appear with the exact label
   `Features` (capital F)
@@ -134,7 +134,7 @@ automatically.
 
 #### Scenario: Legacy root MDs are in Technical/
 
-- **GIVEN** the Procest repository
+- **GIVEN** the Dossiq repository
 - **WHEN** a developer searches for the architecture reference document
 - **THEN** the file MUST be found at `docs/Technical/architecture.md`
 - **AND** no equivalent document MUST exist at the `docs/` root
@@ -167,7 +167,7 @@ Documentation section.
 
 #### Scenario: index.md renders as site introduction
 
-- **GIVEN** the Procest documentation site is running
+- **GIVEN** the Dossiq documentation site is running
 - **WHEN** a user opens the Documentation section
 - **THEN** the first page shown MUST be the Introduction page
 - **AND** the page title MUST be "Introduction"
@@ -197,7 +197,7 @@ the following topics in order:
 
 #### Scenario: Installation guide is accessible from sidebar
 
-- **GIVEN** the Procest documentation site is running
+- **GIVEN** the Dossiq documentation site is running
 - **WHEN** a user navigates the Documentation sidebar
 - **THEN** an "Installation" entry MUST be visible in the sidebar
 - **AND** clicking "Installation" MUST render the installation guide
@@ -218,7 +218,7 @@ the following topics in order:
 ### Requirement: REQ-DOCS-004 Redocusaurus API documentation route
 
 The documentation site SHALL mount `redocusaurus@^2.0.0` as a
-Docusaurus plugin, configured to render the Procest OpenAPI spec
+Docusaurus plugin, configured to render the Dossiq OpenAPI spec
 at route `/api`. The Docusaurus navbar SHALL include an
 "API Documentation" link pointing to `/api`.
 
@@ -227,7 +227,7 @@ and patch upgrades are permitted, major is not).
 
 #### Scenario: API Documentation navbar item exists
 
-- **GIVEN** the Procest documentation site is running
+- **GIVEN** the Dossiq documentation site is running
 - **WHEN** a user views any page in the documentation
 - **THEN** an "API Documentation" link MUST be present in the navbar
 - **AND** clicking that link MUST navigate to `/api`
@@ -288,7 +288,7 @@ A passing gate returns no output and exits with code 0.
 
 #### Scenario: Em-dash gate passes
 
-- **GIVEN** the Procest repository with all `docs/` files present
+- **GIVEN** the Dossiq repository with all `docs/` files present
 - **WHEN** `git grep -E '—' docs/` is run
 - **THEN** the command MUST return no output
 - **AND** the exit code MUST be 0
@@ -394,9 +394,9 @@ sidebar_position: 1
 and MUST contain the following four sections:
 
 1. **Prerequisites** — Nextcloud 28 or higher; OpenRegister app enabled
-2. **App Store installation** — install Procest from the Nextcloud App Store;
+2. **App Store installation** — install Dossiq from the Nextcloud App Store;
    enable the app via the Apps admin panel
-3. **Post-install configuration** — procest register is created automatically
+3. **Post-install configuration** — dossiq register is created automatically
    via the repair step; case-type configuration; ZGW API endpoint mapping
    in the Admin Settings panel
 4. **Troubleshooting** — register not found: re-run the Nextcloud repair step;
@@ -414,14 +414,14 @@ and MUST contain the following four sections:
 - **GIVEN** a user follows the installation guide for the first time
 - **WHEN** they reach the post-install configuration section
 - **THEN** they MUST find instructions for configuring the ZGW API
-  endpoint mapping in the Procest Admin Settings panel
+  endpoint mapping in the Dossiq Admin Settings panel
 
 #### Scenario: Installation guide documents the register repair step
 
-- **GIVEN** a user installs Procest and finds the register is missing
+- **GIVEN** a user installs Dossiq and finds the register is missing
 - **WHEN** they follow the troubleshooting section
 - **THEN** they MUST find the instruction to re-run the Nextcloud
-  repair step to recreate the procest register
+  repair step to recreate the dossiq register
 
 ---
 
@@ -437,7 +437,7 @@ plugins: [
   [
     'redocusaurus',
     {
-      specs: [{ spec: 'static/oas/procest.json', route: '/api/' }],
+      specs: [{ spec: 'static/oas/dossiq.json', route: '/api/' }],
     },
   ],
 ],
@@ -449,8 +449,8 @@ The navbar MUST include:
 { to: '/api/', label: 'API Documentation', position: 'left' }
 ```
 
-`docs/static/oas/procest.json` MUST exist with a minimal valid OAS
-shim (`openapi: 3.0.0`, `info.title: Procest`, `info.version: 0.0.0`,
+`docs/static/oas/dossiq.json` MUST exist with a minimal valid OAS
+shim (`openapi: 3.0.0`, `info.title: Dossiq`, `info.version: 0.0.0`,
 `paths: {}`) until the real spec lands via issue #442.
 
 #### Scenario: API Documentation navbar item is visible
@@ -468,7 +468,7 @@ shim (`openapi: 3.0.0`, `info.title: Procest`, `info.version: 0.0.0`,
 
 #### Scenario: OAS shim is a structurally valid OpenAPI 3.0 document
 
-- **GIVEN** `docs/static/oas/procest.json` exists
+- **GIVEN** `docs/static/oas/dossiq.json` exists
 - **WHEN** its JSON is parsed
 - **THEN** it MUST contain `openapi`, `info`, and `paths` top-level
   keys with valid values so Redocusaurus does not throw on load
@@ -550,9 +550,9 @@ The 12 known affected files are:
 
 #### Scenario: market-analysis.md title uses colon not em-dash
 
-- **GIVEN** the title was `# Procest — Feature Analysis`
+- **GIVEN** the title was `# Dossiq — Feature Analysis`
 - **WHEN** the em-dash sweep is complete
-- **THEN** the title MUST read `# Procest: Feature Analysis`
+- **THEN** the title MUST read `# Dossiq: Feature Analysis`
 
 ---
 

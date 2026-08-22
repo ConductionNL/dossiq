@@ -7,20 +7,18 @@
 -->
 <template>
 	<div class="mandaat-import">
-		<h3>{{ t('procest', 'Import mandate export') }}</h3>
+		<h3>{{ t('dossiq', 'Import mandate export') }}</h3>
 		<p class="mandaat-import__description">
 			{{
 				t(
-					'procest',
+					'dossiq',
 					'Paste or upload a Decidesk mandate export (CSV/JSON). The preview shows which mandaten will be created, updated, or skipped before you approve the import.',
 				)
 			}}
 		</p>
 
 		<div class="mandaat-import__upload">
-			<label for="mandaat-import-file">{{
-				t('procest', 'Upload file')
-			}}</label>
+			<label for="mandaat-import-file">{{ t('dossiq', 'Upload file') }}</label>
 			<input
 				id="mandaat-import-file"
 				type="file"
@@ -30,13 +28,13 @@
 
 		<div class="mandaat-import__paste">
 			<label for="mandaat-import-paste">{{
-				t('procest', 'Or paste content')
+				t('dossiq', 'Or paste content')
 			}}</label>
 			<textarea
 				id="mandaat-import-paste"
 				v-model="raw"
 				class="mandaat-import__textarea"
-				:placeholder="t('procest', 'Paste CSV or JSON here…')"
+				:placeholder="t('dossiq', 'Paste CSV or JSON here…')"
 				rows="8" />
 		</div>
 
@@ -46,7 +44,7 @@
 					<NcLoadingIcon v-if="running" :size="18" />
 					<EyeOutline v-else :size="18" />
 				</template>
-				{{ t('procest', 'Preview') }}
+				{{ t('dossiq', 'Preview') }}
 			</NcButton>
 			<NcButton
 				v-if="previewResult"
@@ -56,7 +54,7 @@
 				<template #icon>
 					<CheckBold :size="18" />
 				</template>
-				{{ t('procest', 'Approve & import') }}
+				{{ t('dossiq', 'Approve & import') }}
 			</NcButton>
 		</div>
 
@@ -65,18 +63,18 @@
 		</NcNoteCard>
 
 		<div v-if="previewResult" class="mandaat-import__preview">
-			<h4>{{ t('procest', 'Preview') }}</h4>
+			<h4>{{ t('dossiq', 'Preview') }}</h4>
 			<div class="mandaat-import__counters">
 				<span class="mandaat-import__counter mandaat-import__counter--good">
 					{{
-						t('procest', '{n} new', {
+						t('dossiq', '{n} new', {
 							n: previewResult.summary?.create || 0,
 						})
 					}}
 				</span>
 				<span class="mandaat-import__counter mandaat-import__counter--warn">
 					{{
-						t('procest', '{n} update', {
+						t('dossiq', '{n} update', {
 							n: previewResult.summary?.update || 0,
 						})
 					}}
@@ -84,14 +82,14 @@
 				<span
 					class="mandaat-import__counter mandaat-import__counter--neutral">
 					{{
-						t('procest', '{n} skip', {
+						t('dossiq', '{n} skip', {
 							n: previewResult.summary?.skip || 0,
 						})
 					}}
 				</span>
 				<span class="mandaat-import__counter mandaat-import__counter--alert">
 					{{
-						t('procest', '{n} conflicts', {
+						t('dossiq', '{n} conflicts', {
 							n: previewResult.summary?.conflicts || 0,
 						})
 					}}
@@ -148,7 +146,7 @@ export default {
 			this.importId = null
 			try {
 				const res = await axios.post(
-					generateUrl('/apps/procest/api/mandate/import'),
+					generateUrl('/apps/dossiq/api/mandate/import'),
 					{ payload: this.raw },
 				)
 				this.previewResult = res.data
@@ -157,7 +155,7 @@ export default {
 				this.error =
 					e?.response?.data?.message
 					|| e.message
-					|| t('procest', 'Preview failed')
+					|| t('dossiq', 'Preview failed')
 			} finally {
 				this.running = false
 			}
@@ -171,7 +169,7 @@ export default {
 			try {
 				await axios.post(
 					generateUrl(
-						'/apps/procest/api/mandate/import/'
+						'/apps/dossiq/api/mandate/import/'
 							+ encodeURIComponent(this.importId)
 							+ '/approve',
 					),
@@ -184,7 +182,7 @@ export default {
 				this.error =
 					e?.response?.data?.message
 					|| e.message
-					|| t('procest', 'Approve failed')
+					|| t('dossiq', 'Approve failed')
 			} finally {
 				this.approving = false
 			}

@@ -5,7 +5,7 @@
 
 ## Overview
 
-Adds a dedicated Doorlooptijd (processing time) analytics view to the Procest dashboard, enabling case managers and team leads to monitor SLA adherence, identify processing bottlenecks, and track compliance trends. Dutch regulations (Awb, Woo) impose strict processing deadlines, making this view essential for proactive case management.
+Adds a dedicated Doorlooptijd (processing time) analytics view to the Dossiq dashboard, enabling case managers and team leads to monitor SLA adherence, identify processing bottlenecks, and track compliance trends. Dutch regulations (Awb, Woo) impose strict processing deadlines, making this view essential for proactive case management.
 
 ## Features
 

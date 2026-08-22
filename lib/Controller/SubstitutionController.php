@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest SubstitutionController.
+ * Dossiq SubstitutionController.
  *
  * REST API for vervanging/waarneming (handler substitution). All endpoints are
  * #[NoAdminRequired] with explicit per-method guards: a handler may only set
@@ -14,7 +14,7 @@
  * lives on {@see CaseReassignmentController}.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,7 +22,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -32,11 +32,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\Substitution\SubstitutionAccessGuard;
-use OCA\Procest\Service\SubstitutionAuditService;
-use OCA\Procest\Service\SubstitutionService;
+use OCA\Dossiq\Service\Substitution\SubstitutionAccessGuard;
+use OCA\Dossiq\Service\SubstitutionAuditService;
+use OCA\Dossiq\Service\SubstitutionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;

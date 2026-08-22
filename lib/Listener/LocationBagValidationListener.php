@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Location BAG Validation Listener
+ * Dossiq Location BAG Validation Listener
  *
  * Enforces the `location` schema's documented `source: bag` ⇒
  * `nummeraanduidingId` contract at save time (closes the
@@ -19,7 +19,7 @@
  *
  * Hooks into OpenRegister's pre-persist `ObjectCreatingEvent` /
  * `ObjectUpdatingEvent` (`StoppableEventInterface`) — the same generic
- * object-save event pipeline every procest schema save goes through (no
+ * object-save event pipeline every dossiq schema save goes through (no
  * dedicated `LocationService` write path exists at HEAD — see
  * `openspec/changes/bag-location-save-validation/design.md` §2). Unlike the
  * post-persist `ObjectCreatedEvent`/`ObjectUpdatedEvent` pair
@@ -27,13 +27,13 @@
  * prevents the invalid row from ever reaching the database.
  *
  * @category Listener
- * @package  OCA\Procest\Listener
+ * @package  OCA\Dossiq\Listener
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/bag-location-save-validation/spec.md
  *
@@ -43,13 +43,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Listener;
+namespace OCA\Dossiq\Listener;
 
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Procest\Service\External\Bag\BagAdapterInterface;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\External\Bag\BagAdapterInterface;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\IL10N;
@@ -127,7 +127,7 @@ class LocationBagValidationListener implements IEventListener {
 			$payload = $entity->jsonSerialize();
 		} catch (Throwable $e) {
 			$this->logger->debug(
-				'Procest: location BAG validation could not read the object payload: ' . $e->getMessage()
+				'Dossiq: location BAG validation could not read the object payload: ' . $e->getMessage()
 			);
 			return;
 		}//end try
@@ -223,7 +223,7 @@ class LocationBagValidationListener implements IEventListener {
 			$result = $this->bagAdapter->lookupObject('nummeraanduiding', $id);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest: BAG existence check for nummeraanduidingId failed, accepting with warning',
+				'Dossiq: BAG existence check for nummeraanduidingId failed, accepting with warning',
 				['addressDesignationId' => $id, 'error' => $e->getMessage()]
 			);
 			return false;
@@ -235,7 +235,7 @@ class LocationBagValidationListener implements IEventListener {
 
 		if ($result->lookupStatus !== 'FOUND') {
 			$this->logger->info(
-				'Procest: BAG existence check for nummeraanduidingId inconclusive, accepting with warning',
+				'Dossiq: BAG existence check for nummeraanduidingId inconclusive, accepting with warning',
 				['addressDesignationId' => $id, 'lookupStatus' => $result->lookupStatus]
 			);
 		}

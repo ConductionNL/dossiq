@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Bezwaar Decision Listener.
+ * Dossiq Bezwaar Decision Listener.
  *
  * Observes OpenRegister object events on the `bezwaar` schema and
  * blocks a transition into status "Decision on objection" when no
@@ -17,7 +17,7 @@
  * that bezwaar persistence is never blocked by a defective lookup.
  *
  * @category Listener
- * @package  OCA\Procest\Listener
+ * @package  OCA\Dossiq\Listener
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -28,15 +28,15 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Listener;
+namespace OCA\Dossiq\Listener;
 
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -123,7 +123,7 @@ class BezwaarDecisionListener implements IEventListener {
 			$this->revertStatus(objection: $object, event: $event);
 		} catch (Throwable $e) {
 			$this->logger->debug(
-				'Procest bezwaar-decision: guard derivation swallowed '
+				'Dossiq bezwaar-decision: guard derivation swallowed '
 				. 'exception: ' . $e->getMessage()
 			);
 		}//end try
@@ -161,7 +161,7 @@ class BezwaarDecisionListener implements IEventListener {
 		// A bezwaarDecision is "decided" either when it carries the legacy
 		// local `status:published` (historical records) OR when it has been
 		// delegated to decidesk and carries a `decisionRef` (the besluit is the
-		// decidesk outcome — procest-delegate-remaining-decisions-to-decidesk,
+		// decidesk outcome — dossiq-delegate-remaining-decisions-to-decidesk,
 		// REQ-PDRD-001/REQ-PDRD-003). Both satisfy the published-decision guard.
 		// OpenRegister's ObjectService::findAll() takes ONE config array. This
 		// call used to pass ($register, $decisionSchema, $filters)
@@ -188,7 +188,7 @@ class BezwaarDecisionListener implements IEventListener {
 			);
 		} catch (Throwable $e) {
 			$this->logger->debug(
-				'Procest bezwaar-decision: lookup failed — allowing '
+				'Dossiq bezwaar-decision: lookup failed — allowing '
 				. 'transition by default: ' . $e->getMessage()
 			);
 			return true;
@@ -209,7 +209,7 @@ class BezwaarDecisionListener implements IEventListener {
 		// applies to a lookup it cannot complete.
 		if (count($all) >= self::DECISION_PROBE_LIMIT) {
 			$this->logger->warning(
-				'Procest bezwaar-decision: decision probe hit its bound of '
+				'Dossiq bezwaar-decision: decision probe hit its bound of '
 				. self::DECISION_PROBE_LIMIT . ' rows — allowing the transition '
 				. 'rather than reverting on an incomplete scan',
 				['bezwaarId' => $objectionId]
@@ -288,14 +288,14 @@ class BezwaarDecisionListener implements IEventListener {
 				uuid: (string)$objectionId
 			);
 			$this->logger->warning(
-				'Procest bezwaar-decision: blocked transition into "'
+				'Dossiq bezwaar-decision: blocked transition into "'
 				. self::PROTECTED_STATUS . '" — no published bezwaarDecision; '
 				. 'reverted to "' . $previous . '"',
 				['bezwaarId' => $objectionId]
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest bezwaar-decision: revert failed: ' . $e->getMessage()
+				'Dossiq bezwaar-decision: revert failed: ' . $e->getMessage()
 			);
 		}
 	}//end revertStatus()

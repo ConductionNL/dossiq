@@ -1,10 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Gate-19 spec-coverage tests for the deelzaak (sub-case) UI surface.
  *
- * These tests drive a real browser against the deployed procest app. They are
+ * These tests drive a real browser against the deployed dossiq app. They are
  * defensively guarded: every surface is data-dependent (it needs the seeded
  * hoofdzaak/deelzaak demo objects and the deelzaak build to be deployed). On a
  * fresh/unseeded register or a deploy that predates this change the test SKIPS

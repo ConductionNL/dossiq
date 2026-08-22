@@ -3,12 +3,12 @@
 		<div class="duration-picker__input-row">
 			<NcTextField
 				:modelValue="daysInput"
-				:label="t('procest', 'Days')"
+				:label="t('dossiq', 'Days')"
 				type="number"
 				class="duration-picker__field"
 				@update:modelValue="onDaysChange" />
 			<span class="duration-picker__iso">
-				{{ displayValue || t('procest', 'Enter days') }}
+				{{ displayValue || t('dossiq', 'Enter days') }}
 			</span>
 		</div>
 
@@ -73,25 +73,25 @@ export default {
 			const weeks = Math.floor(days / 7)
 			const remainder = days % 7
 			if (remainder === 0 && weeks > 0) {
-				return `${this.value} (${weeks} ${t('procest', 'weeks')})`
+				return `${this.value} (${weeks} ${t('dossiq', 'weeks')})`
 			}
-			return `${this.value} (${days} ${t('procest', 'days')})`
+			return `${this.value} (${days} ${t('dossiq', 'days')})`
 		},
 
 		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		presets() {
 			if (this.presetType === 'extension') {
 				return [
-					{ label: t('procest', '2 weeks'), value: 'P14D' },
-					{ label: t('procest', '4 weeks'), value: 'P28D' },
-					{ label: t('procest', '6 weeks'), value: 'P42D' },
+					{ label: t('dossiq', '2 weeks'), value: 'P14D' },
+					{ label: t('dossiq', '4 weeks'), value: 'P28D' },
+					{ label: t('dossiq', '6 weeks'), value: 'P42D' },
 				]
 			}
 			return [
-				{ label: t('procest', '6 weeks'), value: 'P42D' },
-				{ label: t('procest', '8 weeks'), value: 'P56D' },
-				{ label: t('procest', '13 weeks'), value: 'P91D' },
-				{ label: t('procest', '26 weeks'), value: 'P182D' },
+				{ label: t('dossiq', '6 weeks'), value: 'P42D' },
+				{ label: t('dossiq', '8 weeks'), value: 'P56D' },
+				{ label: t('dossiq', '13 weeks'), value: 'P91D' },
+				{ label: t('dossiq', '26 weeks'), value: 'P182D' },
 			]
 		},
 	},

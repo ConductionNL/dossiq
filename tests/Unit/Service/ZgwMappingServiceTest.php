@@ -6,7 +6,7 @@
  * Tests for the ZGW mapping configuration service.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -14,14 +14,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\ZgwMappingService;
+use OCA\Dossiq\Service\ZgwMappingService;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -29,7 +29,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for the ZgwMappingService class.
  *
- * @covers \OCA\Procest\Service\ZgwMappingService
+ * @covers \OCA\Dossiq\Service\ZgwMappingService
  */
 class ZgwMappingServiceTest extends TestCase {
 
@@ -79,7 +79,7 @@ class ZgwMappingServiceTest extends TestCase {
 		$this->appConfig
 			->expects($this->once())
 			->method('getValueString')
-			->with('procest', 'zgw_mapping_zaak', '')
+			->with('dossiq', 'zgw_mapping_zaak', '')
 			->willReturn('');
 
 		$this->assertNull($this->service->getMapping('zaak'));
@@ -97,7 +97,7 @@ class ZgwMappingServiceTest extends TestCase {
 		$this->appConfig
 			->expects($this->once())
 			->method('getValueString')
-			->with('procest', 'zgw_mapping_zaak', '')
+			->with('dossiq', 'zgw_mapping_zaak', '')
 			->willReturn(json_encode($config));
 
 		$result = $this->service->getMapping('zaak');
@@ -115,7 +115,7 @@ class ZgwMappingServiceTest extends TestCase {
 		$this->appConfig
 			->expects($this->once())
 			->method('getValueString')
-			->with('procest', 'zgw_mapping_zaak', '')
+			->with('dossiq', 'zgw_mapping_zaak', '')
 			->willReturn('not-valid-json');
 
 		$this->assertNull($this->service->getMapping('zaak'));
@@ -134,7 +134,7 @@ class ZgwMappingServiceTest extends TestCase {
 			->expects($this->once())
 			->method('setValueString')
 			->with(
-				'procest',
+				'dossiq',
 				'zgw_mapping_zaaktype',
 				json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
 			);
@@ -156,7 +156,7 @@ class ZgwMappingServiceTest extends TestCase {
 		$this->appConfig
 			->expects($this->once())
 			->method('deleteKey')
-			->with('procest', 'zgw_mapping_status');
+			->with('dossiq', 'zgw_mapping_status');
 
 		$this->service->deleteMapping('status');
 

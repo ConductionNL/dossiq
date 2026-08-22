@@ -1,19 +1,19 @@
 <?php
 
 /**
- * Procest AI prompt factory.
+ * Dossiq AI prompt factory.
  *
- * Every prompt template procest sends to the configured AI model, in one place:
+ * Every prompt template dossiq sends to the configured AI model, in one place:
  * document classification, structured-data extraction, knowledge-base Q&A,
  * summarisation, routing and next-step suggestions. Each returns the prompt
  * text only — no model call, no config, no I/O.
  *
- * Split out of {@see \OCA\Procest\Service\AiService} so the wording of what we
+ * Split out of {@see \OCA\Dossiq\Service\AiService} so the wording of what we
  * ask a model (and the JSON shape we demand back) is reviewable as a set,
  * without the surrounding orchestration.
  *
  * @category Service
- * @package  OCA\Procest\Service\Ai
+ * @package  OCA\Dossiq\Service\Ai
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,7 +21,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -31,7 +31,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Ai;
+namespace OCA\Dossiq\Service\Ai;
 
 /**
  * Builds the prompt text for each AI-assisted operation.

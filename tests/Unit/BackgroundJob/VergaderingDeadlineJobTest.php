@@ -7,7 +7,7 @@
  * cases when their agenda-publication deadline is reached.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\BackgroundJob
+ * @package  OCA\Dossiq\Tests\Unit\BackgroundJob
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,10 +20,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\BackgroundJob;
+namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
-use OCA\Procest\BackgroundJob\VergaderingDeadlineJob;
-use OCA\Procest\Service\VergaderingCaseService;
+use OCA\Dossiq\BackgroundJob\VergaderingDeadlineJob;
+use OCA\Dossiq\Service\VergaderingCaseService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
@@ -32,7 +32,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for VergaderingDeadlineJob.
  *
- * @covers \OCA\Procest\BackgroundJob\VergaderingDeadlineJob
+ * @covers \OCA\Dossiq\BackgroundJob\VergaderingDeadlineJob
  */
 class VergaderingDeadlineJobTest extends TestCase {
 
@@ -99,7 +99,7 @@ class VergaderingDeadlineJobTest extends TestCase {
 	public function testRunExitsEarlyWhenOpenRegisterNotInstalled(): void {
 		$this->appManager
 			->method('getInstalledApps')
-			->willReturn(['procest', 'contacts']);
+			->willReturn(['dossiq', 'contacts']);
 
 		$this->vergaderingCaseService
 			->expects($this->never())
@@ -119,7 +119,7 @@ class VergaderingDeadlineJobTest extends TestCase {
 	public function testRunCallsCheckDeadlinesWhenOpenRegisterInstalled(): void {
 		$this->appManager
 			->method('getInstalledApps')
-			->willReturn(['openregister', 'procest']);
+			->willReturn(['openregister', 'dossiq']);
 
 		$this->vergaderingCaseService
 			->expects($this->once())
@@ -140,7 +140,7 @@ class VergaderingDeadlineJobTest extends TestCase {
 	public function testRunLogsWhenCasesAdvanced(): void {
 		$this->appManager
 			->method('getInstalledApps')
-			->willReturn(['openregister', 'procest']);
+			->willReturn(['openregister', 'dossiq']);
 
 		$this->vergaderingCaseService
 			->method('checkDeadlines')

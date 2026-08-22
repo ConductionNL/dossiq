@@ -11,10 +11,10 @@
 
 ### Requirement: BRP person register schema exists in OpenRegister
 
-The procest register configuration SHALL provide a `brpPerson` schema (ADR-037 fragment
+The dossiq register configuration SHALL provide a `brpPerson` schema (ADR-037 fragment
 `lib/Settings/register.d/25-brp-kvk.json`) following Haal Centraal BRP Personen bevragen field
 naming: `burgerservicenummer` (string, `format: bsn` — validated by OpenRegister's registered BSN
-format, no procest-side duplicate per ADR-011), `naam` (geslachtsnaam, voornamen, voorvoegsel),
+format, no dossiq-side duplicate per ADR-011), `naam` (geslachtsnaam, voornamen, voorvoegsel),
 `geboorte` (datum), and `verblijfplaats` (straat, huisnummer, postcode, woonplaats). The schema
 SHALL carry `x-schema-org: schema:Person` and map to the ZGW Rol betrokkene `natuurlijk_persoon`.
 The schema is a simplified test model named after the API conventions — it SHALL NOT claim or
@@ -24,14 +24,14 @@ require a live BRP connection.
 
 @e2e exclude Repair-step/OR-import behaviour with no browser surface; schema shape, Haal Centraal naming, and additive/idempotency guards proven by PHPUnit (BrpKvkRegisterSetsTest); live import happens in the deploy lane.
 
-- **GIVEN** a procest install with OpenRegister active
+- **GIVEN** a dossiq install with OpenRegister active
 - **WHEN** the register configuration is (re-)imported via the Repair step
-- **THEN** the `brpPerson` schema MUST exist in the procest register with the Haal Centraal field names
+- **THEN** the `brpPerson` schema MUST exist in the dossiq register with the Haal Centraal field names
 - **AND** re-running the import MUST leave existing rows valid (idempotent, additive)
 
 #### Scenario: BSN validation is enforced by OpenRegister
 
-@e2e exclude OR's validation engine (registered bsn format, ValidateObject.php) — enforced server-side in OpenRegister, e2e-tested there; procest proves every shipped seed passes the 11-proef via PHPUnit so the import can never trip it.
+@e2e exclude OR's validation engine (registered bsn format, ValidateObject.php) — enforced server-side in OpenRegister, e2e-tested there; dossiq proves every shipped seed passes the 11-proef via PHPUnit so the import can never trip it.
 
 - **WHEN** a `brpPerson` object is saved with a `burgerservicenummer` that fails the 11-proef
 - **THEN** OpenRegister's `bsn` format validation MUST reject the object

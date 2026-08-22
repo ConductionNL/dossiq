@@ -1,4 +1,4 @@
-# Coverage Report — procest
+# Coverage Report — dossiq
 
 Generated: 2026-05-24 08:36 UTC
 Branch: development
@@ -7,9 +7,9 @@ Scanner: opsx-coverage-scan v1
 ## Scan scope
 
 - **PHP**: `lib/**/*.php` — 172 files, 1235 methods enumerated (no `lib/Migration/` or `lib/Db/` in this app).
-- **Vue/JS/TS**: `src/**/*.{vue,js,ts}` — **NOT** bucketed in this pass. Many procest specs are frontend-only or frontend-primary (visual-workflow-editor, doorlooptijd-dashboard, my-work, parafering-dashboard, task-management, signalering-widgets, procest-object-store/store-migration). A v2 should enumerate `src/`.
+- **Vue/JS/TS**: `src/**/*.{vue,js,ts}` — **NOT** bucketed in this pass. Many dossiq specs are frontend-only or frontend-primary (visual-workflow-editor, doorlooptijd-dashboard, my-work, parafering-dashboard, task-management, signalering-widgets, dossiq-object-store/store-migration). A v2 should enumerate `src/`.
 - **Specs**: 47 directories under `openspec/specs/`, **359 REQs** extracted across 4 heading conventions (`REQ-XX-NN`, `Requirement: <title>`, `Requirement N: <title>`, `ZRC-NNN`).
-- **Removed-lines cache**: `/tmp/removed-lines-procest.txt` (46749 lines, built in 2.6s — well under the 30s budget).
+- **Removed-lines cache**: `/tmp/removed-lines-dossiq.txt` (46749 lines, built in 2.6s — well under the 30s budget).
 - **No `.opsx-ignore`** in repo; nothing suppressed.
 
 ## Summary
@@ -19,8 +19,8 @@ Scanner: opsx-coverage-scan v1
 | annotated | 58 files / ~30 methods explicitly tagged + ~278 inherited via file-level @spec | — (already tagged) |
 | plumbing | 6 files + 151 `__construct` methods | — (never tagged) |
 | 1 — REQ matched | (folded into 'annotated' — see notes) | — (confidence-scored per-method Bucket 1 deferred) |
-| 2a — existing capability, no REQ | 76 files / 684 methods / **22 clusters** | `/opsx-reverse-spec procest --extend <cap>` |
-| 2b — no capability owner | 32 files / 223 methods / **12 clusters** | `/opsx-reverse-spec procest --cluster <name>` |
+| 2a — existing capability, no REQ | 76 files / 684 methods / **22 clusters** | `/opsx-reverse-spec dossiq --extend <cap>` |
+| 2b — no capability owner | 32 files / 223 methods / **12 clusters** | `/opsx-reverse-spec dossiq --cluster <name>` |
 | 3a — REQ broken (code removed) | 2 spec-clusters | Verify Vue impl still ships |
 | 3b — REQ never implemented (or moved) | 7 spec-clusters | Mark deferred, moved, or build |
 | 4 — ADR conformance | 40 files missing SPDX-FileCopyrightText; 114 files missing file-level @spec | Follow-up issue |
@@ -29,7 +29,7 @@ Scanner: opsx-coverage-scan v1
 
 ## Bucket 1 — Ready to annotate
 
-> **Note**: this scan did not run a per-method confidence-scored Bucket 1 pass. The 58 already-annotated files cover ~308 methods (30 method-level + 278 inheriting from file-level `@spec`). The high-ROI Bucket 1 targets that are NOT yet annotated are flagged here as ready for `/opsx-annotate procest`:
+> **Note**: this scan did not run a per-method confidence-scored Bucket 1 pass. The 58 already-annotated files cover ~308 methods (30 method-level + 278 inheriting from file-level `@spec`). The high-ROI Bucket 1 targets that are NOT yet annotated are flagged here as ready for `/opsx-annotate dossiq`:
 
 ### capability: zgw-api-mapping (5 controllers, ~120 methods)
 
@@ -122,7 +122,7 @@ Dashboard/{DeadlineAlerts,OverdueCases,StalledCases,TaskReminders}Widget.php. Th
 | pdok-integration | 2 | 22 | PdokBag + PdokLocatieserver services |
 | map-component | 2 | 10 | GisProxyController + Service |
 | admin-settings | 2 | 15 | SettingsController + SettingsService (also touches register-resolver, central to ADR-022) |
-| procest-app-scaffold | 2 | 13 | InitializeSettings + SeedDataService |
+| dossiq-app-scaffold | 2 | 13 | InitializeSettings + SeedDataService |
 | case-location | 1 | 7 | LocationService |
 | prometheus-metrics | 1 | 13 | MetricsController (Bucket 1 candidate) |
 | vth-workflow-templates | 1 | 12 | SeedVthWorkflowTemplates |
@@ -157,7 +157,7 @@ Fee calculation + export for leges (Dutch municipal fees). No spec.
 | template-library | 2 | 8 | TemplateController + Service |
 | multi-tenancy | 2 | 13 | TenantController + Service |
 | ai-assistance | 2 | 35 | AiController (13) + AiService (22) — substantial AI surface |
-| mcp-integration | 1 | 21 | ProcestToolProvider — fleet-wide MCP provider pattern (per Hydra ADR-019 / OpenRegister AI orchestrator) |
+| mcp-integration | 1 | 21 | DossiqToolProvider — fleet-wide MCP provider pattern (per Hydra ADR-019 / OpenRegister AI orchestrator) |
 | dso-omgevingsloket | 1 | 3 | DsoIntakeService — `dso-omgevingsloket` change is open but no archived spec |
 | ops-observability | 1 | 6 | HealthController |
 
@@ -178,7 +178,7 @@ Fee calculation + export for leges (Dutch municipal fees). No spec.
 
 ### Specs that look implemented but are entirely frontend (v2 scan needed)
 
-`my-work` (11 REQs → `src/views/MyWork.vue`), `task-management` (13 REQs → `src/views/tasks/`), `case-dashboard-view` (12 REQs → Vue views), `case-map-overview` (4 REQs), `procest-object-store` (10 REQs → `src/store/`), `procest-store-migration` (3 REQs → `src/store/`), `procest-case-management` (13 REQs → mix), `case-types` REQ-CT-* (Vue settings tab partly).
+`my-work` (11 REQs → `src/views/MyWork.vue`), `task-management` (13 REQs → `src/views/tasks/`), `case-dashboard-view` (12 REQs → Vue views), `case-map-overview` (4 REQs), `dossiq-object-store` (10 REQs → `src/store/`), `dossiq-store-migration` (3 REQs → `src/store/`), `dossiq-case-management` (13 REQs → mix), `case-types` REQ-CT-* (Vue settings tab partly).
 
 ## Bucket 4 — ADR conformance findings
 
@@ -191,7 +191,7 @@ Fee calculation + export for leges (Dutch municipal fees). No spec.
 - All 10 lib/Service/Actions/ handlers
 - All 8 appointment-booking files
 - All 5 berichtenbox-integration files
-- AiController + AiService + ProcestToolProvider (MCP)
+- AiController + AiService + DossiqToolProvider (MCP)
 
 (See `bucket_2a` + `bucket_2b` in the JSON for the full per-file breakdown.)
 
@@ -209,9 +209,9 @@ Affected files include: every Zgw* service in lib/Service/ (12), every appointme
 
 ## Notes for the human reviewer
 
-1. **Vue/JS/TS not scanned.** Procest is roughly half frontend; many specs are Vue-only and look "unimplemented" only because the PHP scan missed them. Schedule a v2 to enumerate `src/`. Specs primarily landing in Bucket 3 because of this: `visual-workflow-editor`, `doorlooptijd-dashboard`, `my-work`, `task-management`, `parafering-dashboard`, `procest-object-store`, `procest-store-migration`, parts of `case-map-overview`, `case-dashboard-view`.
+1. **Vue/JS/TS not scanned.** Dossiq is roughly half frontend; many specs are Vue-only and look "unimplemented" only because the PHP scan missed them. Schedule a v2 to enumerate `src/`. Specs primarily landing in Bucket 3 because of this: `visual-workflow-editor`, `doorlooptijd-dashboard`, `my-work`, `task-management`, `parafering-dashboard`, `dossiq-object-store`, `dossiq-store-migration`, parts of `case-map-overview`, `case-dashboard-view`.
 
-2. **Coverage is bimodal.** The codebase has TWO well-annotated subsystems (status-transition-engine + role-based-step-routing + parafering family + KPI aggregation, ~58 files at 100% file-level @spec) and one COMPLETELY un-annotated subsystem (ZGW API + ZGW rules + dashboards + actions + AI + 2b clusters). The annotated half was clearly built spec-first with `/opsx-apply`; the unannotated half predates that workflow. `/opsx-annotate procest` should be cheap because the file→capability mapping is unambiguous.
+2. **Coverage is bimodal.** The codebase has TWO well-annotated subsystems (status-transition-engine + role-based-step-routing + parafering family + KPI aggregation, ~58 files at 100% file-level @spec) and one COMPLETELY un-annotated subsystem (ZGW API + ZGW rules + dashboards + actions + AI + 2b clusters). The annotated half was clearly built spec-first with `/opsx-apply`; the unannotated half predates that workflow. `/opsx-annotate dossiq` should be cheap because the file→capability mapping is unambiguous.
 
 3. **Duplicate-handler watch.** `lib/Service/Actions/SendEmailHandler.php` and `lib/Service/Transitions/SendEmailHandler.php` are likely parallel implementations of the same action (one for the older Actions registry, one for the new transitions engine). Same pattern for `lib/Service/ChecklistService.php` (top-level, unannotated) vs `lib/Service/Inspection/ChecklistService.php` (16 methods, file-level @spec to inspection-checklists). Verify which is canonical before annotating — annotating both will pollute the bucket.
 
@@ -230,13 +230,13 @@ Affected files include: every Zgw* service in lib/Service/ (12), every appointme
 
 7. **Plumbing is light** — only 6 files + 151 constructors. No empty BackgroundJob `run()` bodies, no dispatch-only listener handles (all 10 listeners have real domain logic).
 
-## Coverage Scan Complete — procest
+## Coverage Scan Complete — dossiq
 
 Buckets: annotated=58 | plumbing=6 | 1=N (folded into annotated; see notes) | 2a=76/22 clusters | 2b=32/12 clusters | 3a=2 | 3b=7 | 4=2 rules (114 missing-spec files + 40 missing-SPDX files)
 
 Next:
 1. Read this report — confirm Bucket 1 / cluster assignments before annotating
-2. `/opsx-annotate procest` — minimum: tag the 5 ZGW controllers + MetricsController + 7 Dashboard widgets + AcController = ~25 file-level tags closing ~70% of the visible gap
-3. `/opsx-reverse-spec procest --extend zgw-api-mapping` — highest-ROI Bucket 2a target
-4. `/opsx-reverse-spec procest --cluster appointment-booking` — pilot the cluster path
+2. `/opsx-annotate dossiq` — minimum: tag the 5 ZGW controllers + MetricsController + 7 Dashboard widgets + AcController = ~25 file-level tags closing ~70% of the visible gap
+3. `/opsx-reverse-spec dossiq --extend zgw-api-mapping` — highest-ROI Bucket 2a target
+4. `/opsx-reverse-spec dossiq --cluster appointment-booking` — pilot the cluster path
 5. Schedule a v2 scan that covers `src/` for the frontend-only specs in Bucket 3

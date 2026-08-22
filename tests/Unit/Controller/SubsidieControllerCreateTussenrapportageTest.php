@@ -10,13 +10,13 @@
  * closes that gap.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
  *
@@ -26,13 +26,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\SubsidieController;
-use OCA\Procest\Service\Subsidie\BeschikkingService;
-use OCA\Procest\Service\Subsidie\SubsidieService;
-use OCA\Procest\Service\Subsidie\TussenrapportageService;
-use OCA\Procest\Service\Subsidie\VaststellingService;
+use OCA\Dossiq\Controller\SubsidieController;
+use OCA\Dossiq\Service\Subsidie\BeschikkingService;
+use OCA\Dossiq\Service\Subsidie\SubsidieService;
+use OCA\Dossiq\Service\Subsidie\TussenrapportageService;
+use OCA\Dossiq\Service\Subsidie\VaststellingService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\IRequest;
@@ -43,7 +43,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Unit tests for SubsidieController::createTussenrapportage().
  *
- * @covers \OCA\Procest\Controller\SubsidieController
+ * @covers \OCA\Dossiq\Controller\SubsidieController
  */
 final class SubsidieControllerCreateTussenrapportageTest extends TestCase {
 
@@ -143,7 +143,7 @@ final class SubsidieControllerCreateTussenrapportageTest extends TestCase {
 			[
 				'periodeStart' => '2026-01-01',
 				'periodeEind' => '2026-06-30',
-				'_route' => 'procest.subsidie.createTussenrapportage',
+				'_route' => 'dossiq.subsidie.createTussenrapportage',
 				'uitvoeringId' => 'U/2026/1',
 			]
 		);
@@ -184,7 +184,7 @@ final class SubsidieControllerCreateTussenrapportageTest extends TestCase {
 		$this->withParams(
 			[
 				'uitvoeringId' => 'U/2026/2',
-				'_route' => 'procest.subsidie.createTussenrapportage',
+				'_route' => 'dossiq.subsidie.createTussenrapportage',
 				'frequentie' => 'halfjaarlijks',
 			]
 		);

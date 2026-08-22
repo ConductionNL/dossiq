@@ -7,7 +7,7 @@
 		:registry="registry"
 		:pageTypes="pageTypes"
 		:formatters="formatters"
-		appId="procest"
+		appId="dossiq"
 		:translate="translateForApp"
 		:permissions="permissions">
 		<!--
@@ -177,7 +177,7 @@ export default {
 		 * @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md
 		 */
 		translateForApp(key) {
-			return ncT('procest', key)
+			return ncT('dossiq', key)
 		},
 	},
 }

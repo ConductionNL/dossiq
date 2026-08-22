@@ -1,17 +1,17 @@
 <?php
 
 /**
- * Procest external-ZGW client port.
+ * Dossiq external-ZGW client port.
  *
  * The Zaakgericht Werken (ZGW) APIs (Zaken-API, Documenten-API,
  * Besluiten-API, Catalogi-API, Autorisaties-API) are the VNG
  * Realisatie reference protocols every Dutch zaaksysteem must
- * speak. Procest is itself a ZGW-compliant zaaksysteem, but on
+ * speak. Dossiq is itself a ZGW-compliant zaaksysteem, but on
  * certain lifecycles it acts as a *client* talking to a
  * neighbouring municipality's ZGW stack:
  *  - Cross-municipality zaak hand-off (Wet Open Overheid / Wob /
  *    Woo: a complainant's bezwaar travels to the neighbouring
- *    gemeente — procest posts the `Zaak` + `Document` envelopes
+ *    gemeente — dossiq posts the `Zaak` + `Document` envelopes
  *    to the receiving stack via Zaken-API + Documenten-API).
  *  - VTH zaak push to a regional uitvoeringsdienst (omgevingsdienst
  *    or veiligheidsregio) — same client shape, different
@@ -33,13 +33,13 @@
  * staging environments.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Zgw
+ * @package  OCA\Dossiq\Service\External\Zgw
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://vng-realisatie.github.io/gemma-zaken/standaard/
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
@@ -51,7 +51,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Zgw;
+namespace OCA\Dossiq\Service\External\Zgw;
 
 /**
  * External-ZGW client port.

@@ -14,12 +14,12 @@ By the end you will have opened My Work, used the tabs to switch between cases a
 
 ## Prerequisites
 
-- Completed [Open Procest for the first time](./01-first-launch.md).
+- Completed [Open Dossiq for the first time](./01-first-launch.md).
 - At least one case or task assigned to your user: otherwise the list is legitimately empty.
 
 ## Steps
 
-1. In the Procest navigation, click **My Work**. The page header reads *My Work* with a count.
+1. In the Dossiq navigation, click **My Work**. The page header reads *My Work* with a count.
 
    ![My Work landing](/screenshots/tutorials/user/02-my-work-01.png)
 

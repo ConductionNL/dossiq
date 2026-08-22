@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest StufMessageHandler.
+ * Dossiq StufMessageHandler.
  *
  * Owns the per-call audit log (StufMessage) — creates one row per outbound
  * envelope, updates it when the response arrives, appends retries to the
  * `retries[]` array, and transitions the status.
  *
  * @category Service
- * @package  OCA\Procest\Service\Stuf
+ * @package  OCA\Dossiq\Service\Stuf
  *
  * @author    Conduction <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,14 +19,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Stuf;
+namespace OCA\Dossiq\Service\Stuf;
 
 use DateTimeImmutable;
 use DateTimeZone;
@@ -82,8 +82,8 @@ class StufMessageHandler {
 	 * @param string $messageKind The bericht code (Lk01, Lv01, ...).
 	 * @param string $role The functie (creeerZaak, ...).
 	 * @param string|null $caseId Optional zaak identificatie.
-	 * @param string|null $bronEntiteit Optional procest source-entity type (case, contact).
-	 * @param string|null $sourceId Optional procest source-entity id.
+	 * @param string|null $bronEntiteit Optional dossiq source-entity type (case, contact).
+	 * @param string|null $sourceId Optional dossiq source-entity id.
 	 *
 	 * @return array The persisted StufMessage as array.
 	 *

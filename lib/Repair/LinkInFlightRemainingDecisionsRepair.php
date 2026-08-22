@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Procest Link In-Flight Remaining Decisions Repair
+ * Dossiq Link In-Flight Remaining Decisions Repair
  *
- * Migration repair step for `procest-delegate-remaining-decisions-to-decidesk`:
+ * Migration repair step for `dossiq-delegate-remaining-decisions-to-decidesk`:
  * for each open beslissing-op-bezwaar / advies / consultatie / voorstel object
  * that does NOT yet carry a `decisionRef`, link it forward to a decidesk
  * Decision (of the appropriate decisionType) so its outcome can complete in
@@ -16,7 +16,7 @@
  * and does not fail the migration.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,20 +25,20 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-006-in-flight-remaining-decision-cases-are-migrated-without-data-loss
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
-use OCA\Procest\Service\AdviceDelegationService;
-use OCA\Procest\Service\BezwaarDecisionDelegationService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
-use OCA\Procest\Service\TenantSaasService;
+use OCA\Dossiq\Service\AdviceDelegationService;
+use OCA\Dossiq\Service\BezwaarDecisionDelegationService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\TenantSaasService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -99,7 +99,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 	 * @return string
 	 */
 	public function getName(): string {
-		return 'Link in-flight Procest bezwaar/advies/consultatie/voorstel objects to decidesk Decisions';
+		return 'Link in-flight Dossiq bezwaar/advies/consultatie/voorstel objects to decidesk Decisions';
 	}//end getName()
 
 	/**

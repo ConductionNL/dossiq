@@ -34,13 +34,13 @@
  * out of reach at this layer.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -48,14 +48,14 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\MandaatMatrixController;
-use OCA\Procest\Service\MandaatCheckService;
-use OCA\Procest\Service\MandaatEscalatieService;
-use OCA\Procest\Service\MandaatGebruikService;
-use OCA\Procest\Service\MandaatImportService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Controller\MandaatMatrixController;
+use OCA\Dossiq\Service\MandaatCheckService;
+use OCA\Dossiq\Service\MandaatEscalatieService;
+use OCA\Dossiq\Service\MandaatGebruikService;
+use OCA\Dossiq\Service\MandaatImportService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -68,7 +68,7 @@ use RuntimeException;
 /**
  * Wire-contract tests for MandaatMatrixController.
  *
- * @covers \OCA\Procest\Controller\MandaatMatrixController
+ * @covers \OCA\Dossiq\Controller\MandaatMatrixController
  */
 class MandaatMatrixControllerContractTest extends TestCase {
 
@@ -153,7 +153,7 @@ class MandaatMatrixControllerContractTest extends TestCase {
 		$this->logger = $this->createMock(LoggerInterface::class);
 
 		$this->controller = new MandaatMatrixController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			userSession: $this->userSession,
 			check: $this->check,

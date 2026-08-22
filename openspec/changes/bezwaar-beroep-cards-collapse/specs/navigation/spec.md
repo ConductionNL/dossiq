@@ -8,7 +8,7 @@ The `BezwaarBeroepGroup` group and its four child leaves (`Bezwaren`, `Beroepen`
 
 #### Scenario: Single menu item replaces nested group
 
-- GIVEN the user opens the procest app in Nextcloud
+- GIVEN the user opens the dossiq app in Nextcloud
 - WHEN the sidebar navigation is rendered
 - THEN a single "Bezwaar & Beroep" menu item appears at the top level with no nested sub-items beneath it
 
@@ -82,6 +82,6 @@ Per the ADR-044 hard invariant, no page is removed. The routes `/bezwaren`, `/be
 
 #### Scenario: E2E test suite can reach all former leaf routes
 
-- GIVEN an e2e test suite targeting procest
+- GIVEN an e2e test suite targeting dossiq
 - WHEN each of the four former leaf routes is visited in sequence
 - THEN all four pages load without error and the Playwright accessibility snapshot contains the expected page heading for each

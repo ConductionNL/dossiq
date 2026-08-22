@@ -21,7 +21,7 @@ The signature check has a fail-open default:
 // lib/Controller/DwangsomPaymentCallbackController.php:150-156
 private function validateSignature(string $rawBody): bool
 {
-    $secret = (string) $this->appConfig->getValueString('procest', 'dwangsom_callback_secret', '');
+    $secret = (string) $this->appConfig->getValueString('dossiq', 'dwangsom_callback_secret', '');
     if ($secret === '') {
         $this->logger->info('Dwangsom callback: no secret configured (dev-mode permissive)');
         return true;
@@ -37,7 +37,7 @@ real severity is that **there is no way to configure the secret in production**:
 
 ```
 $ grep -rn "dwangsom_callback_secret" lib/ src/
-lib/Controller/DwangsomPaymentCallbackController.php:152:  $secret = (string) $this->appConfig->getValueString('procest', 'dwangsom_callback_secret', '');
+lib/Controller/DwangsomPaymentCallbackController.php:152:  $secret = (string) $this->appConfig->getValueString('dossiq', 'dwangsom_callback_secret', '');
 ```
 
 That is the *only* reference to the key in the entire codebase — no admin settings field, no
@@ -56,7 +56,7 @@ caller is the configured financial system. This directly contradicts the spec's 
   automatic pass. Deployments that have not configured the secret will see the callback start
   rejecting requests — this is the intended fix, not a regression, but it must be called out
   before rollout so ops sets the secret ahead of time.
-- Add an admin-settings field (existing procest admin settings page / `SettingsController`) to
+- Add an admin-settings field (existing dossiq admin settings page / `SettingsController`) to
   configure `dwangsom_callback_secret`, so there is an actual UI path to set it — closing the gap
   that made the fail-open default unavoidable in practice.
 - Surface the missing-secret state on the existing setup/health surface (`SetupController::status()`

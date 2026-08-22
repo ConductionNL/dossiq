@@ -32,7 +32,7 @@ Each app in this workspace has its own git repository. The container mounts the 
 [host] test loop (optional, max 3) → deferred tests (optional, once) → archive (once) → git commit → github sync
 ```
 
-**Input**: Optionally specify `<app> <change-name>` (e.g., `/opsx-apply-loop procest add-sla-tracking`). If omitted, prompt for app and change.
+**Input**: Optionally specify `<app> <change-name>` (e.g., `/opsx-apply-loop dossiq add-sla-tracking`). If omitted, prompt for app and change.
 
 ---
 
@@ -46,7 +46,7 @@ Each app in this workspace has its own git repository. The container mounts the 
 
 ```bash
 # Scan for active changes across all apps
-for app in procest pipelinq openregister opencatalogi docudesk mydash nldesign openconnector softwarecatalog zaakafhandelapp openklant larpingapp planix; do
+for app in dossiq pipelinq openregister opencatalogi docudesk mydash nldesign openconnector softwarecatalog zaakafhandelapp openklant larpingapp planix; do
   if [ -d "$app/openspec/changes" ]; then
     for change_dir in $app/openspec/changes/*/; do
       if [ -f "${change_dir}tasks.md" ] && [[ "$change_dir" != *"/archive/"* ]]; then

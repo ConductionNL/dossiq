@@ -4,13 +4,13 @@
  * Tests for the canonical AppHost route table's method contract.
  *
  * @category Test
- * @package  OCA\Procest\Tests\Unit\AppInfo
+ * @package  OCA\Dossiq\Tests\Unit\AppInfo
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -18,7 +18,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\AppInfo;
+namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -29,7 +29,7 @@ use ReflectionClass;
  * controller when this app does not ship a class of that name.
  *
  * `OCA\OpenRegister\AppHost\Bootstrap::aliasControllerUnlessLeafDefinesIt()`
- * registers the DI alias `OCA\Procest\Controller\XController` ->
+ * registers the DI alias `OCA\Dossiq\Controller\XController` ->
  * `OCA\OpenRegister\AppHost\Controller\GenericXController` ONLY when the leaf
  * class does not exist. So the seam has two sides, and they fail differently:
  *
@@ -43,7 +43,7 @@ use ReflectionClass;
  *     matches the URL, the dispatcher reflects the method, and the request
  *     dies with a 500.
  *
- * Measured 2026-08-08: procest ships its own SettingsController with
+ * Measured 2026-08-08: dossiq ships its own SettingsController with
  * `index/create/load` but no `update()`, while the canonical table routes
  * `PUT /api/settings` to `settings#update` — and `src/store/modules/
  * enforcement.js::saveLhsMatrix()` sends exactly that request. Saving the LHS
@@ -116,7 +116,7 @@ class CanonicalRouteMethodContractTest extends TestCase {
 		$missing = [];
 
 		foreach (self::CANONICAL_ROUTES as $prefix => $methods) {
-			$class = 'OCA\\Procest\\Controller\\' . $prefix . 'Controller';
+			$class = 'OCA\\Dossiq\\Controller\\' . $prefix . 'Controller';
 
 			// The class file existing on disk is what makes the AppHost skip
 			// the alias. `class_exists()` alone would be satisfied by the DI

@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 #
-# SPDX-FileCopyrightText: 2026 Procest Contributors
+# SPDX-FileCopyrightText: 2026 Dossiq Contributors
 # SPDX-License-Identifier: EUPL-1.2
 #
-# Provision Procest's OpenRegister register + schemas on a freshly installed
+# Provision Dossiq's OpenRegister register + schemas on a freshly installed
 # Nextcloud, for the shared `E2E Tests (Playwright)` CI job.
 #
 # Wired up as the workflow's `playwright-seed-command`. That step runs AFTER
 # `php -S` is up and with cwd set to the Nextcloud server root, so this is
 # invoked as:
 #
-#     playwright-seed-command: 'bash apps/procest/tests/e2e/ci-seed.sh'
+#     playwright-seed-command: 'bash apps/dossiq/tests/e2e/ci-seed.sh'
 #
 # WHY THIS IS NEEDED — AND WHY IT REPLACED `php occ maintenance:repair`
 # --------------------------------------------------------------------
@@ -22,7 +22,7 @@
 #      "User 'Anonymous' does not have permission to 'create' objects in
 #      schema '…'". `Repair\InitializeSettings::run()` catches `\Throwable` and
 #      downgrades it to `$output->warning(...)`, so both `occ app:enable
-#      procest` and `occ maintenance:repair` still exit 0.
+#      dossiq` and `occ maintenance:repair` still exit 0.
 #   2. The repair step calls `loadConfiguration(force: false)`. The non-forced
 #      path is version-guarded: it can advance the recorded configuration
 #      version WITHOUT applying the register, so a second run then sees
@@ -77,19 +77,19 @@ USER_PASS="${ADMIN_PASSWORD:-${NC_ADMIN_PASS:-admin}}"
 echo "[ci-seed] target:  ${BASE}"
 echo "[ci-seed] app dir: ${APP_DIR}"
 
-# ── 1. Import the Procest configuration ──────────────────────────────────────
-# Procest has no bespoke import route, but it does not need one: its
+# ── 1. Import the Dossiq configuration ──────────────────────────────────────
+# Dossiq has no bespoke import route, but it does not need one: its
 # `appinfo/routes.php` returns `\OCA\OpenRegister\AppHost\Routes::standard(...)`,
 # whose canonical table ships `settings#load` at POST /api/settings/load. On
-# procest that name resolves to
-# OCA\Procest\Controller\SettingsController::load(), which calls
+# dossiq that name resolves to
+# OCA\Dossiq\Controller\SettingsController::load(), which calls
 # `loadConfiguration(force: true)` — precisely the forced import the repair step
 # cannot perform.
 #
 # ⚠️ Prefer this over OpenRegister's generic importer, and not only for
 # convenience: `SettingsService::loadConfiguration()` deep-merges every
 # `lib/Settings/register.d/*.json` fragment on top of the
-# `procest_register.json` monolith (ADR-037) before importing, and folds the
+# `dossiq_register.json` monolith (ADR-037) before importing, and folds the
 # fragment-set hash into the version. Posting the monolith alone to the generic
 # importer would provision 64 schemas but MISS the ~67 schema keys the 20
 # fragments contribute (brp-kvk, kcc-werkplek, deelzaak, termijnbewaking,
@@ -103,7 +103,7 @@ echo "[ci-seed] app dir: ${APP_DIR}"
 # strict-cookie precondition is satisfied because a Basic-auth request carries
 # no session cookie at all). Without the header this POST is rejected as a CSRF
 # failure.
-IMPORT_URL="${BASE}/index.php/apps/procest/api/settings/load"
+IMPORT_URL="${BASE}/index.php/apps/dossiq/api/settings/load"
 echo "[ci-seed] POST ${IMPORT_URL} (forced import, fragments merged)"
 
 IMPORT_BODY="$(mktemp)"
@@ -129,13 +129,13 @@ head -c 2000 "$IMPORT_BODY"; echo
 IMPORT_OK=0
 if [ "$IMPORT_CODE" = "200" ] && grep -q '"success":[[:space:]]*true' "$IMPORT_BODY"; then
 	IMPORT_OK=1
-	echo "[ci-seed] procest settings#load reported success."
+	echo "[ci-seed] dossiq settings#load reported success."
 else
-	echo "[ci-seed] procest settings#load did not report success; falling back to the OpenRegister importer."
+	echo "[ci-seed] dossiq settings#load did not report success; falling back to the OpenRegister importer."
 fi
 
 # ── 1b. Fallback: OpenRegister's generic configuration importer ──────────────
-# Independent of procest's own controller wiring, so it still provisions the
+# Independent of dossiq's own controller wiring, so it still provisions the
 # core register if `settings#load` is unavailable (e.g. an OpenRegister build
 # whose AppHost route table predates `settings#load`). Admin-only. It reads the
 # upload under the literal form key `file`; a raw JSON request body is NOT one
@@ -143,18 +143,18 @@ fi
 # the form-encoded string is fine.
 #
 # NOTE this fallback posts the MONOLITH ONLY — it cannot merge register.d
-# fragments (that merge lives in procest's SettingsService). It is a degraded
+# fragments (that merge lives in dossiq's SettingsService). It is a degraded
 # path that gets the core case/caseType/statusType/task/workflowTemplate schemas
 # in place; the verification below is what decides whether that was enough.
 if [ "$IMPORT_OK" != "1" ]; then
-	REGISTER_JSON="${APP_DIR}/lib/Settings/procest_register.json"
+	REGISTER_JSON="${APP_DIR}/lib/Settings/dossiq_register.json"
 	if [ ! -f "$REGISTER_JSON" ]; then
-		echo "::error::procest_register.json not found at ${REGISTER_JSON}."
+		echo "::error::dossiq_register.json not found at ${REGISTER_JSON}."
 		exit 1
 	fi
 
 	OR_URL="${BASE}/index.php/apps/openregister/api/configurations/import"
-	echo "[ci-seed] POST ${OR_URL} (file=procest_register.json, force=true)"
+	echo "[ci-seed] POST ${OR_URL} (file=dossiq_register.json, force=true)"
 	OR_BODY="$(mktemp)"
 	OR_CODE="$(
 		curl -sS -o "$OR_BODY" -w '%{http_code}' \
@@ -163,7 +163,7 @@ if [ "$IMPORT_OK" != "1" ]; then
 			-H 'OCS-APIRequest: true' \
 			-F "file=@${REGISTER_JSON}" \
 			-F 'force=true' \
-			-F 'appId=procest' \
+			-F 'appId=dossiq' \
 			--max-time 900 \
 			"$OR_URL" || echo 000
 	)"
@@ -177,7 +177,7 @@ fi
 # by (helpers/fixtures.ts builds every object URL as
 # /apps/openregister/api/objects/procest/<schema>).
 #
-# ⚠️ The required slugs below are READ OUT of lib/Settings/procest_register.json
+# ⚠️ The required slugs below are READ OUT of lib/Settings/dossiq_register.json
 # (`components.registers.procest.slug` and `components.schemas.<k>.slug`), NOT
 # derived by kebab-casing a display name. OpenRegister resolves a schema segment
 # with `LOWER(slug)`, so `caseType` is correct and `case-type` is not — the
@@ -218,7 +218,7 @@ slugs = {i.get('slug') for i in items if isinstance(i, dict)}
 missing = [s for s in required if s not in slugs]
 print(f'[ci-seed] {kind} present ({len(slugs)}): {sorted(s for s in slugs if s)}')
 if missing:
-    print(f'::error::Procest {kind} missing after import: {missing}')
+    print(f'::error::Dossiq {kind} missing after import: {missing}')
     print('::error::tests/e2e/helpers/fixtures.ts cannot seed a case, caseType, '
           'statusType, workflowTemplate, task or complaint without them, and every '
           'UI spec then asserts against an empty list.')
@@ -256,7 +256,7 @@ for schema in case caseType statusType; do
 	fi
 done
 
-echo "[ci-seed] Procest register + schemas provisioned."
+echo "[ci-seed] Dossiq register + schemas provisioned."
 
 # ── 3. Warm the SPA so the first spec doesn't pay the cold start ─────────────
 # The shared workflow serves Nextcloud with `php -S 0.0.0.0:8080`. It sets
@@ -269,10 +269,10 @@ echo "[ci-seed] Procest register + schemas provisioned."
 # Failures are ignored on purpose: this is a warm-up, not a gate. The real
 # checks are above and below.
 for path in \
-	"/index.php/apps/procest/" \
-	"/index.php/apps/procest/api/settings" \
-	"/index.php/apps/procest/api/manifest" \
-	"/index.php/settings/admin/procest" \
+	"/index.php/apps/dossiq/" \
+	"/index.php/apps/dossiq/api/settings" \
+	"/index.php/apps/dossiq/api/manifest" \
+	"/index.php/settings/admin/dossiq" \
 	"/index.php/apps/openregister/api/registers?_limit=1"
 do
 	code="$(curl -sS -o /dev/null -w '%{http_code}' -u "${USER_NAME}:${USER_PASS}" \
@@ -283,8 +283,8 @@ done
 # Pull the main webpack bundle once so it is in the page cache.
 #
 # Do NOT hardcode the URL. Nextcloud serves an app's assets from whichever apps
-# directory it was installed into — `/apps/procest/js/…` on the CI runner,
-# `/custom_apps/procest/js/…` in the docker dev images — and asking for the
+# directory it was installed into — `/apps/dossiq/js/…` on the CI runner,
+# `/custom_apps/dossiq/js/…` in the docker dev images — and asking for the
 # wrong one does not 404. It returns **HTTP 200 with `text/html`**: the NC error
 # page, served through index.php. A status-code check therefore reports success
 # while fetching a 40 KB HTML page instead of a multi-MB bundle, so the warm-up
@@ -294,13 +294,13 @@ done
 # response is actually JavaScript.
 APP_HTML="$(mktemp)"
 curl -sS -u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' \
-	"${BASE}/index.php/apps/procest/" -o "$APP_HTML" || true
+	"${BASE}/index.php/apps/dossiq/" -o "$APP_HTML" || true
 
 # `|| true` is load-bearing: grep exits 1 when it matches nothing, and under
 # `set -euo pipefail` that aborts the script right here — so the case the gate
 # below exists to explain (no bundle) would die with a bare non-zero exit and
 # none of the diagnosis. Let it fall through to the gate instead.
-BUNDLE_SRC="$(grep -oE 'src="[^"]*procest-main[^"]*"' "$APP_HTML" \
+BUNDLE_SRC="$(grep -oE 'src="[^"]*dossiq-main[^"]*"' "$APP_HTML" \
 	| head -1 | sed 's/^src="//; s/"$//' || true)"
 
 if [ -n "$BUNDLE_SRC" ]; then
@@ -331,14 +331,14 @@ if [ "${GITHUB_ACTIONS:-}" = "true" ] || [ "${CI:-}" = "true" ]; then
 	case "$BUNDLE_INFO" in
 		*javascript*)
 			if [ "${BUNDLE_BYTES:-0}" -lt 10000 ] 2>/dev/null; then
-				echo "::error::The Procest frontend bundle served as JavaScript but is only ${BUNDLE_BYTES} bytes."
+				echo "::error::The Dossiq frontend bundle served as JavaScript but is only ${BUNDLE_BYTES} bytes."
 				echo "::error::A truncated or empty bundle mounts no Vue app; every UI spec would fail on a selector timeout."
 				exit 1
 			fi
 			echo "[ci-seed] bundle verified as JavaScript (${BUNDLE_BYTES} bytes)."
 			;;
 		*)
-			echo "::error::The Procest frontend bundle did not serve as JavaScript (got: ${BUNDLE_INFO:-<not found>})."
+			echo "::error::The Dossiq frontend bundle did not serve as JavaScript (got: ${BUNDLE_INFO:-<not found>})."
 			echo "::error::The SPA cannot mount, so every UI spec would fail on a selector timeout with a misleading cause."
 			echo "::error::Check the 'Build app frontend' step — a missing bundle returns HTTP 200 text/html, not 404."
 			exit 1

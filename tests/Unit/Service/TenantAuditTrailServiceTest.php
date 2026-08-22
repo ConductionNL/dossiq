@@ -8,7 +8,7 @@
  * attests a control it cannot back.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,16 +19,16 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\TenantAuditTrailService;
+use OCA\Dossiq\Service\TenantAuditTrailService;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\TenantAuditTrailService
+ * @covers \OCA\Dossiq\Service\TenantAuditTrailService
  */
 class TenantAuditTrailServiceTest extends TestCase {
 	private TenantAuditTrailService $svc;

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest OpenRegister Archival Adapter.
+ * Dossiq OpenRegister Archival Adapter.
  *
  * Repoints beschikking archival onto the OpenRegister archival pipeline: the
  * beschikking is a durable OpenRegister object and its retention/destruction is
@@ -13,7 +13,7 @@
  * whose 15-year retention was hard-coded app-side.
  *
  * @category Service
- * @package  OCA\Procest\Service\Beschikking
+ * @package  OCA\Dossiq\Service\Beschikking
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,14 +24,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Beschikking;
+namespace OCA\Dossiq\Service\Beschikking;
 
 use DateInterval;
 use DateTimeImmutable;

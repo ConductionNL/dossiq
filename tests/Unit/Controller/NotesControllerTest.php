@@ -7,7 +7,7 @@
  * payload validation, and delegation to MentionNotificationService.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,17 +15,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/ncvue-w2-leaves-adoption/specs/ncvue-w2-leaves-adoption/spec.md#REQ-W2L-003
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\NotesController;
-use OCA\Procest\Service\MentionNotificationService;
+use OCA\Dossiq\Controller\NotesController;
+use OCA\Dossiq\Service\MentionNotificationService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -36,7 +36,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for NotesController.
  *
- * @covers \OCA\Procest\Controller\NotesController
+ * @covers \OCA\Dossiq\Controller\NotesController
  */
 class NotesControllerTest extends TestCase {
 

@@ -35,7 +35,7 @@
 			@click.stop
 			@keydown.stop>
 			<span class="hidden-visually">{{
-				t('procest', 'Select case {identifier}', {
+				t('dossiq', 'Select case {identifier}', {
 					identifier: caseItem.identifier || caseItem.id,
 				})
 			}}</span>
@@ -53,7 +53,7 @@
 		</p>
 		<div class="case-card__footer">
 			<span class="case-card__assignee">
-				{{ caseItem.assignee || t('procest', 'Unassigned') }}
+				{{ caseItem.assignee || t('dossiq', 'Unassigned') }}
 			</span>
 			<span
 				v-if="deadlineLabel"
@@ -80,7 +80,7 @@
 				v-for="col in otherColumns"
 				:key="col.id"
 				@click="$emit('move', caseItem.id, col.id)">
-				{{ t('procest', 'Move to {status}', { status: col.name }) }}
+				{{ t('dossiq', 'Move to {status}', { status: col.name }) }}
 			</NcActionButton>
 		</NcActions>
 	</div>
@@ -165,12 +165,12 @@ export default {
 		deadlineLabel() {
 			if (this.daysRemaining === null) return null
 			if (this.daysRemaining < 0) {
-				return this.t('procest', '{days} days overdue', {
+				return this.t('dossiq', '{days} days overdue', {
 					days: Math.abs(this.daysRemaining),
 				})
 			}
-			if (this.daysRemaining === 0) return this.t('procest', 'Due today')
-			return this.t('procest', '{days} days', { days: this.daysRemaining })
+			if (this.daysRemaining === 0) return this.t('dossiq', 'Due today')
+			return this.t('dossiq', '{days} days', { days: this.daysRemaining })
 		},
 
 		/**

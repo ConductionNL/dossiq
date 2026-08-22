@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest CaseReassignmentService.
+ * Dossiq CaseReassignmentService.
  *
  * Permanent bulk transfer of a handler's open workload to another handler —
  * the coordinator-driven counterpart of temporary substitution. Preview is
@@ -14,7 +14,7 @@
  * service performs the data work.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,7 +22,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -32,14 +32,14 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTime;
 use DateTimeImmutable;
 use InvalidArgumentException;
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\ReassignmentBatch;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\ReassignmentBatch;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Notification\IManager;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -272,7 +272,7 @@ class CaseReassignmentService {
 		}
 
 		$this->logger->info(
-			'Procest bulk reassignment executed',
+			'Dossiq bulk reassignment executed',
 			['batchId' => $batchId, 'from' => $fromUser, 'to' => $toUser, 'actor' => $actorId, 'succeeded' => $succeeded, 'failed' => $failed]
 		);
 

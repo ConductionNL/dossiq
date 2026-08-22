@@ -13,7 +13,7 @@
  * rather than passing.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,7 +21,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -31,19 +31,19 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\ConflictOfInterestService;
-use OCA\Procest\Service\External\Brp\BrpHaalCentraalAdapterInterface;
-use OCA\Procest\Service\External\Brp\BrpLookupResult;
-use OCA\Procest\Service\MedewerkerIdentityResolverInterface;
+use OCA\Dossiq\Service\ConflictOfInterestService;
+use OCA\Dossiq\Service\External\Brp\BrpHaalCentraalAdapterInterface;
+use OCA\Dossiq\Service\External\Brp\BrpLookupResult;
+use OCA\Dossiq\Service\MedewerkerIdentityResolverInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\ConflictOfInterestService
+ * @covers \OCA\Dossiq\Service\ConflictOfInterestService
  *
- * @uses \OCA\Procest\Service\External\Brp\BrpLookupResult
+ * @uses \OCA\Dossiq\Service\External\Brp\BrpLookupResult
  */
 class ConflictOfInterestServiceTest extends TestCase {
 

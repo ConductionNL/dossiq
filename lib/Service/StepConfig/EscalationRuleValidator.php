@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Escalation Rule Validator.
+ * Dossiq Escalation Rule Validator.
  *
  * Validation rules 5, 6 and 7 of the WorkflowStep `config` block — everything
  * that concerns `config.escalationRule`. Split out of StepConfigValidator so
@@ -18,7 +18,7 @@
  * class produced a given error.
  *
  * @category Service
- * @package  OCA\Procest\Service\StepConfig
+ * @package  OCA\Dossiq\Service\StepConfig
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,7 +26,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -36,7 +36,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\StepConfig;
+namespace OCA\Dossiq\Service\StepConfig;
 
 /**
  * Pure-function validator for WorkflowStep.config.escalationRule.

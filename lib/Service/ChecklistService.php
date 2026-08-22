@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Checklist Service (per-run progress and conformity)
+ * Dossiq Checklist Service (per-run progress and conformity)
  *
  * REQ-003 of openspec/specs/inspection-checklists/spec.md: the PURE half of
  * inspection checklist handling. Every method here is a function of the payload
@@ -29,7 +29,7 @@
  * live in `ChecklistPayloadReader` so they are stated once.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -37,7 +37,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -47,9 +47,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\Service\Support\ChecklistPayloadReader;
+use OCA\Dossiq\Service\Support\ChecklistPayloadReader;
 use RuntimeException;
 
 /**

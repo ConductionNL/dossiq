@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest first-time setup contract (ADR-042).
+ * Dossiq first-time setup contract (ADR-042).
  *
  * Backs the abstract CnSetupWizard: reports per-step completion
  * (`GET /api/setup/status`), persists config values from `choice` / `config-fields`
@@ -12,7 +12,7 @@
  * OpenRegister's RBAC create-check is satisfied.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,18 +23,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\SeedDataService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Settings\AdminSettings;
+use OCA\Dossiq\Service\SeedDataService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -90,7 +90,7 @@ class SetupController extends Controller {
 		$completed = $registerDone;
 
 		if ($completed === true) {
-			$this->appConfig->setValueString('procest', 'setup_completed_version', (string)self::SETUP_VERSION);
+			$this->appConfig->setValueString('dossiq', 'setup_completed_version', (string)self::SETUP_VERSION);
 		}
 
 		$response = [
@@ -132,7 +132,7 @@ class SetupController extends Controller {
 			}
 
 			$this->appConfig->setValueString(
-				'procest',
+				'dossiq',
 				(string)$key,
 				(string)$stored,
 			);
@@ -166,7 +166,7 @@ class SetupController extends Controller {
 				);
 			}
 
-			$this->appConfig->setValueString('procest', 'setup_seed_done', '1');
+			$this->appConfig->setValueString('dossiq', 'setup_seed_done', '1');
 			$message = sprintf(
 				'Seeded %d case types, %d status types, %d role types (%d skipped).',
 				($result['caseTypes'] ?? 0),
@@ -184,13 +184,13 @@ class SetupController extends Controller {
 	}//end runAction()
 
 	/**
-	 * Read a procest app-config string value.
+	 * Read a dossiq app-config string value.
 	 *
 	 * @param string $key The config key.
 	 *
 	 * @return string The value, or '' when unset.
 	 */
 	private function config(string $key): string {
-		return $this->appConfig->getValueString('procest', $key, '');
+		return $this->appConfig->getValueString('dossiq', $key, '');
 	}//end config()
 }//end class

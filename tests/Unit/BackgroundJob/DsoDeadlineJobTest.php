@@ -7,22 +7,22 @@
  * calculation, per-zaak exception isolation, and notification dispatch.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\BackgroundJob
+ * @package  OCA\Dossiq\Tests\Unit\BackgroundJob
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T05
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\BackgroundJob;
+namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
-use OCA\Procest\BackgroundJob\DsoDeadlineJob;
+use OCA\Dossiq\BackgroundJob\DsoDeadlineJob;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IAppConfig;
 use OCP\Notification\IManager as INotificationManager;
@@ -76,7 +76,7 @@ interface DsoDeadlineObjectServiceStub {
 /**
  * Unit tests for DsoDeadlineJob.
  *
- * @covers \OCA\Procest\BackgroundJob\DsoDeadlineJob
+ * @covers \OCA\Dossiq\BackgroundJob\DsoDeadlineJob
  */
 class DsoDeadlineJobTest extends TestCase {
 

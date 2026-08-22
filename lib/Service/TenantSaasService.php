@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Tenant SaaS Service
+ * Dossiq Tenant SaaS Service
  *
  * Service that owns the SaaS-shape Tenant CRUD + lifecycle state machine,
  * backed by the seven OpenRegister schemas declared in chain member 01.
@@ -12,7 +12,7 @@
  * primitives required by chain members 02-11.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,18 +23,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-02-tenant-crud-lifecycle/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
@@ -53,8 +53,10 @@ class TenantSaasService {
 	use SearchesObjects;
 
 	/**
-	 * Procest register slug.
+	 * Dossiq register slug.
 	 */
+	// FROZEN: OpenRegister register SLUG, not this app's id, and unchanged by
+	// the procest -> dossiq rename.
 	public const REGISTER = 'procest';
 
 	/**
@@ -200,7 +202,7 @@ class TenantSaasService {
 
 			return null;
 		} catch (Throwable $e) {
-			$this->logger->info('Procest: TenantSaasService::getById miss', ['tenantId' => $tenantId, 'exception' => $e->getMessage()]);
+			$this->logger->info('Dossiq: TenantSaasService::getById miss', ['tenantId' => $tenantId, 'exception' => $e->getMessage()]);
 			return null;
 		}
 	}//end getById()
@@ -249,7 +251,7 @@ class TenantSaasService {
 
 			return [];
 		} catch (Throwable $e) {
-			$this->logger->error('Procest: TenantSaasService::listActive failed', ['exception' => $e->getMessage()]);
+			$this->logger->error('Dossiq: TenantSaasService::listActive failed', ['exception' => $e->getMessage()]);
 			return [];
 		}//end try
 	}//end listActive()
@@ -314,7 +316,7 @@ class TenantSaasService {
 			$objectService->deleteObject(register: self::REGISTER, schema: self::SCHEMA_TENANT, id: $tenantId);
 			return true;
 		} catch (Throwable $e) {
-			$this->logger->error('Procest: TenantSaasService::delete failed', ['tenantId' => $tenantId, 'exception' => $e->getMessage()]);
+			$this->logger->error('Dossiq: TenantSaasService::delete failed', ['tenantId' => $tenantId, 'exception' => $e->getMessage()]);
 			return false;
 		}
 	}//end delete()
@@ -408,7 +410,7 @@ class TenantSaasService {
 			);
 			return is_array($rows) && count($rows) > 0;
 		} catch (Throwable $e) {
-			$this->logger->info('Procest: slugExists lookup failed', ['slug' => $slug, 'exception' => $e->getMessage()]);
+			$this->logger->info('Dossiq: slugExists lookup failed', ['slug' => $slug, 'exception' => $e->getMessage()]);
 			return false;
 		}
 	}//end slugExists()
@@ -445,7 +447,7 @@ class TenantSaasService {
 			return $tenant;
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: TenantSaasService::saveTenant failed',
+				'Dossiq: TenantSaasService::saveTenant failed',
 				['exception' => $e->getMessage()]
 			);
 			throw new RuntimeException('Failed to persist tenant: ' . $e->getMessage(), 0, $e);
@@ -468,7 +470,7 @@ class TenantSaasService {
 		try {
 			return $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
 		} catch (Throwable $e) {
-			$this->logger->error('Procest: Could not resolve ObjectService', ['exception' => $e->getMessage()]);
+			$this->logger->error('Dossiq: Could not resolve ObjectService', ['exception' => $e->getMessage()]);
 			return null;
 		}
 	}//end getObjectService()

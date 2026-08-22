@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest legal-hold applier.
+ * Dossiq legal-hold applier.
  *
  * The write half of the legal-hold backfill: walk the candidate cases the
  * {@see AwbProceedingScanner} found, report each one, and — only when the
@@ -18,7 +18,7 @@
  *   that cannot be placed is a finding.
  *
  * @category Command
- * @package  OCA\Procest\Command\Backfill
+ * @package  OCA\Dossiq\Command\Backfill
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,7 +26,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -36,7 +36,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Command\Backfill;
+namespace OCA\Dossiq\Command\Backfill;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Output\OutputInterface;

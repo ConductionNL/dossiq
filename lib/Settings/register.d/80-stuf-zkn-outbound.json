@@ -65,7 +65,7 @@
                 },
                 "senderApplication": {
                     "type": "string",
-                    "description": "Sender (Procest) application identifier.",
+                    "description": "Sender (Dossiq) application identifier.",
                     "maxLength": 255
                 },
                 "senderOrganisation": {
@@ -82,26 +82,39 @@
                 "soapVersion": {
                     "type": "string",
                     "description": "SOAP envelope version.",
-                    "enum": ["1.1", "1.2"]
+                    "enum": [
+                        "1.1",
+                        "1.2"
+                    ]
                 },
                 "stufVersion": {
                     "type": "string",
                     "description": "StUF protocol version.",
-                    "enum": ["0310"]
+                    "enum": [
+                        "0310"
+                    ]
                 },
                 "sectorModel": {
                     "type": "string",
                     "description": "StUF sectormodel; ZKN for cases.",
-                    "enum": ["ZKN"]
+                    "enum": [
+                        "ZKN"
+                    ]
                 },
                 "authentication": {
                     "type": "object",
                     "description": "Authentication block (WSSE UsernameToken). The password itself is never stored in the schema; only the vault reference is persisted.",
-                    "required": ["type", "username", "passwordVaultRef"],
+                    "required": [
+                        "type",
+                        "username",
+                        "passwordVaultRef"
+                    ],
                     "properties": {
                         "type": {
                             "type": "string",
-                            "enum": ["wsse-usernametoken"]
+                            "enum": [
+                                "wsse-usernametoken"
+                            ]
                         },
                         "username": {
                             "type": "string",
@@ -122,11 +135,14 @@
                 "caseIdentificationStrategy": {
                     "type": "string",
                     "description": "Zaak ID allocation strategy (vooraf = pre-allocate via Du01; achteraf = server allocates on Lk01).",
-                    "enum": ["vooraf", "achteraf"]
+                    "enum": [
+                        "vooraf",
+                        "achteraf"
+                    ]
                 },
                 "zaaktypeMappings": {
                     "type": "object",
-                    "description": "Map from procest case.type (slug) to the zaaksysteem's zkn:zaaktype.omschrijving used in Lk01 builds.",
+                    "description": "Map from dossiq case.type (slug) to the zaaksysteem's zkn:zaaktype.omschrijving used in Lk01 builds.",
                     "additionalProperties": {
                         "type": "string"
                     }
@@ -136,7 +152,10 @@
                     "description": "Registered free-message templates per endpoint.",
                     "items": {
                         "type": "object",
-                        "required": ["name", "verplichteVelden"],
+                        "required": [
+                            "name",
+                            "verplichteVelden"
+                        ],
                         "properties": {
                             "name": {
                                 "type": "string"
@@ -168,7 +187,7 @@
             "icon": "Forum",
             "version": "1.0.0",
             "summary": "Append-only audit log entry for one StUF SOAP envelope (outbound or inbound).",
-            "description": "Persists the full XML envelope sent or received, plus HTTP status, timing, retry history, and a generic source-reference back to the procest entity that triggered the message.",
+            "description": "Persists the full XML envelope sent or received, plus HTTP status, timing, retry history, and a generic source-reference back to the dossiq entity that triggered the message.",
             "@type": "StufMessage",
             "required": [
                 "id",
@@ -192,12 +211,24 @@
                 "direction": {
                     "type": "string",
                     "description": "Message direction.",
-                    "enum": ["outbound", "inbound"]
+                    "enum": [
+                        "outbound",
+                        "inbound"
+                    ]
                 },
                 "messageKind": {
                     "type": "string",
                     "description": "StUF message type code (Lk01, Lk02, Lk03, Bv01, Lv01, La01, Du01, Fo02).",
-                    "enum": ["Lk01", "Lk02", "Lk03", "Bv01", "Lv01", "La01", "Du01", "Fo02"]
+                    "enum": [
+                        "Lk01",
+                        "Lk02",
+                        "Lk03",
+                        "Bv01",
+                        "Lv01",
+                        "La01",
+                        "Du01",
+                        "Fo02"
+                    ]
                 },
                 "entiteittype": {
                     "type": "string",
@@ -257,7 +288,10 @@
                         },
                         "kind": {
                             "type": "string",
-                            "enum": ["transient", "permanent"]
+                            "enum": [
+                                "transient",
+                                "permanent"
+                            ]
                         }
                     }
                 },
@@ -278,25 +312,36 @@
                 },
                 "sourceEntity": {
                     "type": "string",
-                    "description": "Type of the procest source entity that triggered this message.",
-                    "enum": ["case", "contact"]
+                    "description": "Type of the dossiq source entity that triggered this message.",
+                    "enum": [
+                        "case",
+                        "contact"
+                    ]
                 },
                 "sourceId": {
                     "type": "string",
-                    "description": "Identifier of the procest source entity that triggered this message.",
+                    "description": "Identifier of the dossiq source entity that triggered this message.",
                     "maxLength": 128
                 },
                 "status": {
                     "type": "string",
                     "description": "Message lifecycle status.",
-                    "enum": ["verzonden", "bevestigd", "fout", "wacht_op_retry"]
+                    "enum": [
+                        "verzonden",
+                        "bevestigd",
+                        "fout",
+                        "wacht_op_retry"
+                    ]
                 },
                 "retries": {
                     "type": "array",
                     "description": "Retry history.",
                     "items": {
                         "type": "object",
-                        "required": ["attempt", "timestamp"],
+                        "required": [
+                            "attempt",
+                            "timestamp"
+                        ],
                         "properties": {
                             "attempt": {
                                 "type": "integer"
@@ -324,7 +369,7 @@
             "title": "Zaaksysteem Mapping",
             "icon": "LinkVariant",
             "version": "1.0.0",
-            "summary": "Bidirectional mapping between a procest entity (case/contact) and its zaaksysteem identifier.",
+            "summary": "Bidirectional mapping between a dossiq entity (case/contact) and its zaaksysteem identifier.",
             "description": "Survives across updates and is the authoritative source for the external ID (zaak identificatie or betrokkene identificatie).",
             "@type": "ZaaksysteemMapping",
             "required": [
@@ -343,23 +388,30 @@
                 },
                 "sourceEntity": {
                     "type": "string",
-                    "description": "Type of procest entity bound to the external one.",
-                    "enum": ["case", "contact"]
+                    "description": "Type of dossiq entity bound to the external one.",
+                    "enum": [
+                        "case",
+                        "contact"
+                    ]
                 },
                 "sourceId": {
                     "type": "string",
-                    "description": "Identifier of the procest entity (case id or contact id).",
+                    "description": "Identifier of the dossiq entity (case id or contact id).",
                     "maxLength": 128
                 },
                 "caseId": {
                     "type": "string",
-                    "description": "Procest case id this mapping relates to (set for case mappings; mirrors bronId for bronEntiteit=case).",
+                    "description": "Dossiq case id this mapping relates to (set for case mappings; mirrors bronId for bronEntiteit=case).",
                     "maxLength": 128
                 },
                 "externalEntity": {
                     "type": "string",
                     "description": "External entity type (ZAK, NPS, NNP).",
-                    "enum": ["ZAK", "NPS", "NNP"]
+                    "enum": [
+                        "ZAK",
+                        "NPS",
+                        "NNP"
+                    ]
                 },
                 "externalIdentification": {
                     "type": "string",
@@ -379,7 +431,12 @@
                 "synchronisationStatus": {
                     "type": "string",
                     "description": "Sync status.",
-                    "enum": ["in_sync", "fout", "geannuleerd", "wacht"]
+                    "enum": [
+                        "in_sync",
+                        "fout",
+                        "geannuleerd",
+                        "wacht"
+                    ]
                 },
                 "openstaandeWijzigingen": {
                     "type": "array",
@@ -415,6 +472,7 @@
             "municipalityCode": "0307",
             "recipientApplication": "Key2Zaken",
             "recipientOrganisation": "Gemeente Amersfoort",
+            "_comment_stuf_identity": "recipientUser / senderApplication / authentication.username / tlsClientCertRef below are DELIBERATELY still `procest`-branded after the procest -> dossiq app-id rename. They are this sender's identity as the RECEIVING zaaksysteem (Centric Key2Zaken) knows it: senderApplication is the StUF zender.applicatie the receiver matches on, the WSSE username is a credential provisioned at the municipality, and the TLS client cert is a vault path to an issued certificate. Renaming any of them here does not rename them there — the messages would simply be rejected, or silently ignored, until the municipality re-provisions. These move only in a coordinated pass with the receiving party.",
             "recipientUser": "procest",
             "senderApplication": "Procest",
             "senderOrganisation": "Gemeente Amersfoort",
@@ -437,7 +495,11 @@
             "freeMessagesTemplates": [
                 {
                     "name": "zetStatus",
-                    "verplichteVelden": ["zaakIdentificatie", "statusType", "datumStatusGezet"]
+                    "verplichteVelden": [
+                        "zaakIdentificatie",
+                        "statusType",
+                        "datumStatusGezet"
+                    ]
                 }
             ],
             "actief": true,

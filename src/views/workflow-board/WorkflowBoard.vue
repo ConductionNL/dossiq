@@ -18,18 +18,18 @@
 	<div class="workflow-board">
 		<div class="workflow-board__header">
 			<div>
-				<h2>{{ t('procest', 'Workflow Board') }}</h2>
+				<h2>{{ t('dossiq', 'Workflow Board') }}</h2>
 				<p class="workflow-board__subtitle">
 					{{
 						t(
-							'procest',
+							'dossiq',
 							'Drag cases between statuses, or use a case card\'s "Move to…" menu, to advance their workflow',
 						)
 					}}
 				</p>
 			</div>
 			<NcButton type="tertiary" @click="$router.push({ name: 'Dashboard' })">
-				{{ t('procest', 'Dashboard') }}
+				{{ t('dossiq', 'Dashboard') }}
 			</NcButton>
 		</div>
 
@@ -38,7 +38,7 @@
 		<div v-else-if="error" class="workflow-board__error">
 			<p>{{ error }}</p>
 			<NcButton type="tertiary" @click="fetchData">
-				{{ t('procest', 'Retry') }}
+				{{ t('dossiq', 'Retry') }}
 			</NcButton>
 		</div>
 
@@ -46,7 +46,7 @@
 			<p>
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'No workflow statuses configured. Define status types in Settings to use the board.',
 					)
 				}}
@@ -60,7 +60,7 @@
 				<span class="workflow-board__bulk-bar__count">
 					{{
 						n(
-							'procest',
+							'dossiq',
 							'%n case selected',
 							'%n cases selected',
 							selection.caseIds.length,
@@ -69,10 +69,10 @@
 				</span>
 				<div class="workflow-board__bulk-bar__actions">
 					<NcButton @click="openBulkDialog">
-						{{ t('procest', 'Change status…') }}
+						{{ t('dossiq', 'Change status…') }}
 					</NcButton>
 					<NcButton type="tertiary" @click="clearSelectionHandler">
-						{{ t('procest', 'Cancel') }}
+						{{ t('dossiq', 'Cancel') }}
 					</NcButton>
 				</div>
 			</div>
@@ -81,7 +81,7 @@
 				class="workflow-board__columns"
 				tabindex="0"
 				role="region"
-				:aria-label="t('procest', 'Workflow board columns')">
+				:aria-label="t('dossiq', 'Workflow board columns')">
 				<BoardColumn
 					v-for="col in columns"
 					:key="col.id"
@@ -396,8 +396,8 @@ export default {
 				}
 				this.casesByStatus = grouped
 			} catch (err) {
-				console.error('[procest] failed to load workflow board', err)
-				this.error = this.t('procest', 'Failed to load the workflow board.')
+				console.error('[dossiq] failed to load workflow board', err)
+				this.error = this.t('dossiq', 'Failed to load the workflow board.')
 			} finally {
 				if (!background) {
 					this.loading = false
@@ -451,7 +451,7 @@ export default {
 			if (!targetStatusId) {
 				showError(
 					this.t(
-						'procest',
+						'dossiq',
 						"That status is not part of this case's workflow.",
 					),
 				)
@@ -475,7 +475,7 @@ export default {
 					throw new Error('save returned no result')
 				}
 			} catch (err) {
-				console.error('[procest] failed to advance case status', err)
+				console.error('[dossiq] failed to advance case status', err)
 				// Revert: pull from the new column, restore in the old one.
 				const revertedNew = (this.casesByStatus[newColumn] || []).filter(
 					(c) => String(c.id) !== String(caseId),
@@ -487,7 +487,7 @@ export default {
 				]
 				showError(
 					this.t(
-						'procest',
+						'dossiq',
 						'Could not move the case. You may not have permission, or the change failed.',
 					),
 				)

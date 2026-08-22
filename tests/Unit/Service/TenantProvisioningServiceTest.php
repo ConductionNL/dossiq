@@ -7,32 +7,32 @@
  * and the rollback behaviour (drops the schema when `createSchema` step ran).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-03-schema-provisioning/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
 use InvalidArgumentException;
-use OCA\Procest\Service\TenantProvisioningService;
-use OCA\Procest\Service\TenantSaasService;
-use OCA\Procest\Service\TenantSchemaProvisioner;
-use OCA\Procest\Service\TenantSeedService;
-use OCA\Procest\Service\TenantWelcomeMailer;
+use OCA\Dossiq\Service\TenantProvisioningService;
+use OCA\Dossiq\Service\TenantSaasService;
+use OCA\Dossiq\Service\TenantSchemaProvisioner;
+use OCA\Dossiq\Service\TenantSeedService;
+use OCA\Dossiq\Service\TenantWelcomeMailer;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\TenantProvisioningService
+ * @covers \OCA\Dossiq\Service\TenantProvisioningService
  */
 class TenantProvisioningServiceTest extends TestCase {
 	private TenantProvisioningService $service;

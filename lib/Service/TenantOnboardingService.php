@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Tenant Onboarding Service
+ * Dossiq Tenant Onboarding Service
  *
  * Owns the per-tenant onboarding checklist — fork the 7-step template,
  * track progress, mark steps complete, validate go-live readiness.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -16,14 +16,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
@@ -77,7 +77,7 @@ class TenantOnboardingService {
 	public function createOnboarding(string $tenantId): array {
 		$objectService = $this->getObjectService();
 		if ($objectService === null) {
-			$this->logger->info('Procest: createOnboarding skipped — OR unavailable');
+			$this->logger->info('Dossiq: createOnboarding skipped — OR unavailable');
 			return [];
 		}
 
@@ -95,7 +95,7 @@ class TenantOnboardingService {
 				}
 			} catch (Throwable $e) {
 				$this->logger->error(
-					'Procest: createOnboarding step write failed',
+					'Dossiq: createOnboarding step write failed',
 					['tenantId' => $tenantId, 'step' => $step, 'exception' => $e->getMessage()]
 				);
 			}
@@ -227,7 +227,7 @@ class TenantOnboardingService {
 
 			return $task;
 		} catch (Throwable $e) {
-			$this->logger->error('Procest: markStepComplete failed', ['exception' => $e->getMessage()]);
+			$this->logger->error('Dossiq: markStepComplete failed', ['exception' => $e->getMessage()]);
 			return null;
 		}//end try
 	}//end markStepComplete()
@@ -286,7 +286,7 @@ class TenantOnboardingService {
 		try {
 			$tenant = $this->tenantSaasService->updateStatus(tenantId: $tenantId, newStatus: 'active');
 		} catch (Throwable $e) {
-			$this->logger->error('Procest: activation transition failed', ['exception' => $e->getMessage()]);
+			$this->logger->error('Dossiq: activation transition failed', ['exception' => $e->getMessage()]);
 			return ['activated' => false, 'missing' => ['transition_failed']];
 		}
 

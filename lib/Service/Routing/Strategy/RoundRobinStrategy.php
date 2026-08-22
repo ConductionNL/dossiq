@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Round-Robin Routing Strategy
+ * Dossiq Round-Robin Routing Strategy
  *
  * Rotates across the participants of `roleType` for the case's caseType. The
  * cursor is persisted in IAppConfig under
@@ -9,7 +9,7 @@
  * worker processes and PHP-FPM restarts.
  *
  * @category Service
- * @package  OCA\Procest\Service\Routing\Strategy
+ * @package  OCA\Dossiq\Service\Routing\Strategy
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -20,15 +20,15 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Routing\Strategy;
+namespace OCA\Dossiq\Service\Routing\Strategy;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Routing\RoutingStrategyInterface;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Routing\RoutingStrategyInterface;
 use OCP\IAppConfig;
 
 /**

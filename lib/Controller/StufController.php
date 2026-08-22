@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest StUF Controller
+ * Dossiq StUF Controller
  *
  * Handles BOTH directions of StUF-ZKN/BG:
  *   - INBOUND server reception: raw XML POST at /api/stuf/{zaken,personen},
@@ -13,12 +13,12 @@
  *     StufMessage row and transitions it to "bevestigd".
  *
  * The controller owns only the HTTP surface. Envelope parsing and per-message
- * dispatch live in {@see \OCA\Procest\Service\Stuf\StufSoapRequestDispatcher};
+ * dispatch live in {@see \OCA\Dossiq\Service\Stuf\StufSoapRequestDispatcher};
  * the raw-envelope reads the async webhook needs live in
- * {@see \OCA\Procest\Service\Stuf\StufEnvelopeInspector}.
+ * {@see \OCA\Dossiq\Service\Stuf\StufEnvelopeInspector}.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -29,7 +29,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/stuf-integration/spec.md
  * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-rest-surface
@@ -37,15 +37,15 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\Stuf\CircuitOpenException;
-use OCA\Procest\Service\Stuf\StufEnvelopeInspector;
-use OCA\Procest\Service\Stuf\StufException;
-use OCA\Procest\Service\Stuf\StufRegisterAccess;
-use OCA\Procest\Service\Stuf\StufServices;
-use OCA\Procest\Service\Stuf\StufSoapRequestDispatcher;
-use OCA\Procest\Settings\AdminSettings;
+use OCA\Dossiq\Service\Stuf\CircuitOpenException;
+use OCA\Dossiq\Service\Stuf\StufEnvelopeInspector;
+use OCA\Dossiq\Service\Stuf\StufException;
+use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
+use OCA\Dossiq\Service\Stuf\StufServices;
+use OCA\Dossiq\Service\Stuf\StufSoapRequestDispatcher;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -259,7 +259,7 @@ class StufController extends Controller {
 
 		$endpoint = $this->inspector->resolveEndpoint(
 			envelopeXml: $rawXml,
-			headerEndpointId: (string)$this->request->getHeader(name: 'x-procest-endpoint-id')
+			headerEndpointId: (string)$this->request->getHeader(name: 'x-dossiq-endpoint-id')
 		);
 		if ($endpoint === null) {
 			$this->logger->warning(message: 'StUF inbound: could not resolve endpoint from envelope');
@@ -306,7 +306,7 @@ class StufController extends Controller {
 	 * `stuf#inbound` with a `postfix`, because openregister's AppHost
 	 * Routes::standard() rejects duplicates by `name` alone and never reads
 	 * `postfix` — that form throws "Duplicate route name" at boot and takes the
-	 * whole app's routing down. Measured: it failed procest's E2E seed.
+	 * whole app's routing down. Measured: it failed dossiq's E2E seed.
 	 *
 	 * Remove once every configured sender posts to /api/stuf/inbound.
 	 *

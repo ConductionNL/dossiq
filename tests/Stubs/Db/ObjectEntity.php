@@ -3,9 +3,9 @@
 /**
  * Test stub for OpenRegister's ObjectEntity.
  *
- * Minimal surface needed by procest unit tests: the audit listener resolves an
+ * Minimal surface needed by dossiq unit tests: the audit listener resolves an
  * ObjectEntity from OR's ObjectService and hands it to AuditTrailMapper. Only
- * the accessors the procest code touches are stubbed.
+ * the accessors the dossiq code touches are stubbed.
  *
  * @category Stub
  * @package  OCA\OpenRegister\Db
@@ -17,7 +17,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
@@ -131,7 +131,7 @@ class ObjectEntity implements \OCA\OpenRegister\Contract\ObjectEntityInterface {
 	/**
 	 * Minimal stand-in for the real ObjectEntity::jsonSerialize() — merges
 	 * the raw object data with an `@self.schema` (and `@self.id`) envelope,
-	 * matching the fields procest listeners actually read.
+	 * matching the fields dossiq listeners actually read.
 	 *
 	 * @return array<string, mixed>
 	 */

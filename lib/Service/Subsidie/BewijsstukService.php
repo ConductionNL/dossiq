@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Bewijsstuk Service.
+ * Dossiq Bewijsstuk Service.
  *
  * Evidence-document (bewijsstuk) management (REQ-SUB-007): upload metadata
  * handling against a per-phase type whitelist, bewaartermijn assignment per
@@ -11,7 +11,7 @@
  * pure and unit-tested.
  *
  * @category Service
- * @package  OCA\Procest\Service\Subsidie
+ * @package  OCA\Dossiq\Service\Subsidie
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,16 +22,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Subsidie;
+namespace OCA\Dossiq\Service\Subsidie;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -188,7 +188,7 @@ class BewijsstukService {
 		try {
 			return $objectService->saveObject(object: $record, register: $register, schema: $schema);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest subsidie: bewijsstuk create failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq subsidie: bewijsstuk create failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon bewijsstuk niet opslaan');
 		}
 	}//end create()

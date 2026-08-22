@@ -110,4 +110,4 @@ These are NOT VNG test bugs but issues we discovered and fixed in our implementa
 ---
 
 *Last updated: 2026-03-07*
-*Procest version: 0.4.0*
+*Dossiq version: 0.4.0*

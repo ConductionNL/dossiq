@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest role delegation resolver.
+ * Dossiq role delegation resolver.
  *
  * Owns the `role.delegate` substitution step of role routing: given the raw
  * participants a routing strategy produced and the case's role records, it
@@ -17,7 +17,7 @@
  * to an unbounded set of users.
  *
  * @category Service
- * @package  OCA\Procest\Service\Routing
+ * @package  OCA\Dossiq\Service\Routing
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,7 +25,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -35,10 +35,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Routing;
+namespace OCA\Dossiq\Service\Routing;
 
 use DateTimeImmutable;
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -126,7 +126,7 @@ class RoleDelegationResolver {
 
 			if (isset($visited[$delegate]) === true) {
 				$this->logger->warning(
-					'Procest: delegation cycle detected',
+					'Dossiq: delegation cycle detected',
 					[
 						'event' => 'RoleRoutingDelegationCycle',
 						'original' => $participant,

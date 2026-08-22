@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Dormant default Procest external-ZGW adapter.
+ * Dormant default Dossiq external-ZGW adapter.
  *
  * Records the would-be ZGW Zaken-API / Documenten-API push to the
  * structured logger and returns a synthetic PUSH_DEFERRED result so
@@ -10,16 +10,16 @@
  * until an openconnector-backed binding to the receiving ZGW stack
  * is wired in via `Application::register()`. Mirrors the
  * `LogDigidSamlAdapter` / `LogEHerkenningSamlAdapter`
- * dormant-default pattern used across the Procest external surface.
+ * dormant-default pattern used across the Dossiq external surface.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Zgw
+ * @package  OCA\Dossiq\Service\External\Zgw
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  *
@@ -29,12 +29,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Zgw;
+namespace OCA\Dossiq\Service\External\Zgw;
 
 use Psr\Log\LoggerInterface;
 
 /**
- * Dormant log-backed Procest external-ZGW adapter.
+ * Dormant log-backed Dossiq external-ZGW adapter.
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
@@ -67,7 +67,7 @@ class LogZgwExternalAdapter implements ZgwExternalAdapterInterface {
 		$correlationId = (string)($context['correlationId'] ?? 'zgw-zaak-' . bin2hex(random_bytes(6)));
 
 		$this->logger->info(
-			'Procest external-ZGW submitZaak deferred (no outbound connector bound)',
+			'Dossiq external-ZGW submitZaak deferred (no outbound connector bound)',
 			[
 				'correlationId' => $correlationId,
 				'zaakEnvelope' => $sanitised,
@@ -110,7 +110,7 @@ class LogZgwExternalAdapter implements ZgwExternalAdapterInterface {
 		$correlationId = (string)($context['correlationId'] ?? 'zgw-doc-' . bin2hex(random_bytes(6)));
 
 		$this->logger->info(
-			'Procest external-ZGW submitDocument deferred (no outbound connector bound)',
+			'Dossiq external-ZGW submitDocument deferred (no outbound connector bound)',
 			[
 				'correlationId' => $correlationId,
 				'documentEnvelope' => $sanitised,

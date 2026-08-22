@@ -16,21 +16,21 @@
  *  - the payload is nested under `results`, the shape the frontend reads.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\AdvisoryBodyController;
-use OCA\Procest\Service\AdvisoryBodyService;
+use OCA\Dossiq\Controller\AdvisoryBodyController;
+use OCA\Dossiq\Service\AdvisoryBodyService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -41,7 +41,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Wire-contract tests for AdvisoryBodyController.
  *
- * @covers \OCA\Procest\Controller\AdvisoryBodyController
+ * @covers \OCA\Dossiq\Controller\AdvisoryBodyController
  */
 class AdvisoryBodyControllerContractTest extends TestCase {
 
@@ -86,7 +86,7 @@ class AdvisoryBodyControllerContractTest extends TestCase {
 		$this->userSession = $this->createMock(IUserSession::class);
 
 		$this->controller = new AdvisoryBodyController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			advisoryBodyService: $this->advisoryBodyService,
 			userSession: $this->userSession,

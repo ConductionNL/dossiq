@@ -11,7 +11,7 @@
 			<span class="workflow-validation__message">{{ error.message }}</span>
 		</div>
 		<button class="workflow-validation__dismiss" @click="$emit('dismiss')">
-			{{ t('procest', 'Dismiss') }}
+			{{ t('dossiq', 'Dismiss') }}
 		</button>
 	</div>
 </template>

@@ -8,14 +8,14 @@ status: done
 
 @e2e exclude Pure data-layer plumbing spec; store/register/schema setup is covered by PHPUnit repair-step tests.
 
-Procest owns **no database tables**. All data is stored as OpenRegister objects in a dedicated `procest` register containing schemas for all entity types. This spec defines how the register and schemas are configured, how the repair step initializes the data model, how the frontend interacts with the OpenRegister API, the Pinia store patterns, cross-entity reference semantics, error handling, pagination, RBAC, cascade behaviors, and performance considerations.
+Dossiq owns **no database tables**. All data is stored as OpenRegister objects in a dedicated `procest` register containing schemas for all entity types. This spec defines how the register and schemas are configured, how the repair step initializes the data model, how the frontend interacts with the OpenRegister API, the Pinia store patterns, cross-entity reference semantics, error handling, pagination, RBAC, cascade behaviors, and performance considerations.
 
-OpenRegister integration is the foundational layer upon which all other Procest features are built.
+OpenRegister integration is the foundational layer upon which all other Dossiq features are built.
 
 **Standards**: OpenAPI 3.0.0 (schema format), OpenRegister API conventions
 **Feature tier**: MVP (foundation for all features)
 
-**Competitive context**: Most competitors own their data layer directly -- Dimpact ZAC uses PostgreSQL with 89 Flyway migrations, xxllnc Zaken uses PostgreSQL with CQRS event sourcing via RabbitMQ, ArkCase uses JPA/Hibernate with single-table inheritance, and Flowable uses MyBatis with separate runtime/history tables. Procest's approach of delegating all storage to OpenRegister (a separate Nextcloud app) is architecturally unique: it provides schema validation, audit trails, and RBAC without maintaining database migrations, at the cost of being coupled to OpenRegister's API.
+**Competitive context**: Most competitors own their data layer directly -- Dimpact ZAC uses PostgreSQL with 89 Flyway migrations, xxllnc Zaken uses PostgreSQL with CQRS event sourcing via RabbitMQ, ArkCase uses JPA/Hibernate with single-table inheritance, and Flowable uses MyBatis with separate runtime/history tables. Dossiq's approach of delegating all storage to OpenRegister (a separate Nextcloud app) is architecturally unique: it provides schema validation, audit trails, and RBAC without maintaining database migrations, at the cost of being coupled to OpenRegister's API.
 
 ---
 
@@ -23,7 +23,7 @@ OpenRegister integration is the foundational layer upon which all other Procest 
 
 ```
 +--------------------------------------------------+
-|  Procest Frontend (Vue 2 + Pinia)                |
+|  Dossiq Frontend (Vue 2 + Pinia)                |
 |  - Object store via @conduction/nextcloud-vue    |
 |  - API service layer with error handling         |
 +-------------------+------------------------------+
@@ -56,7 +56,7 @@ OpenRegister integration is the foundational layer upon which all other Procest 
 |-------|-------|
 | Name | `procest` |
 | Slug | `procest` |
-| Description | Case management register for Procest |
+| Description | Case management register for Dossiq |
 
 ### Schema Inventory
 
@@ -117,8 +117,8 @@ The system MUST define its register and all schemas in a JSON configuration file
 
 #### Scenario: Configuration file exists and is valid
 
-- GIVEN the Procest app source code
-- THEN the file `lib/Settings/procest_register.json` MUST exist
+- GIVEN the Dossiq app source code
+- THEN the file `lib/Settings/dossiq_register.json` MUST exist
 - AND it MUST be valid JSON
 - AND it MUST conform to OpenAPI 3.0.0 format
 - AND it MUST define a register with app `procest`
@@ -126,7 +126,7 @@ The system MUST define its register and all schemas in a JSON configuration file
 
 #### Scenario: Schema defines required properties for case
 
-- GIVEN the `case` schema definition in `procest_register.json`
+- GIVEN the `case` schema definition in `dossiq_register.json`
 - THEN it MUST define the following required properties:
   - `title` (string, max 255)
   - `caseType` (string, format: uuid, reference to caseType)
@@ -137,7 +137,7 @@ The system MUST define its register and all schemas in a JSON configuration file
 
 #### Scenario: Schema defines required properties for task
 
-- GIVEN the `task` schema definition in `procest_register.json`
+- GIVEN the `task` schema definition in `dossiq_register.json`
 - THEN it MUST define:
   - `title` (string, required)
   - `status` (string, enum: available, active, completed, terminated, disabled, required, default: "available")
@@ -153,7 +153,7 @@ The system MUST define its register and all schemas in a JSON configuration file
 #### Scenario: Schema count matches slug-to-config mapping
 
 - GIVEN the `SettingsService::SLUG_TO_CONFIG_KEY` constant
-- THEN every schema slug defined in `procest_register.json` MUST have a corresponding entry in the mapping
+- THEN every schema slug defined in `dossiq_register.json` MUST have a corresponding entry in the mapping
 - AND every mapping entry MUST correspond to a valid `CONFIG_KEYS` entry for persisting the schema ID
 
 ---
@@ -167,17 +167,17 @@ The system MUST import the register configuration during app installation and up
 
 #### Scenario: First install creates register and all schemas
 
-- GIVEN Procest is being installed for the first time on a Nextcloud instance with OpenRegister
+- GIVEN Dossiq is being installed for the first time on a Nextcloud instance with OpenRegister
 - WHEN the repair step `InitializeSettings::run()` executes
 - THEN it MUST call `SettingsService::loadConfiguration(force: true)`
-- AND `loadConfiguration` MUST call `ConfigurationService::importFromApp()` with the parsed `procest_register.json` content
+- AND `loadConfiguration` MUST call `ConfigurationService::importFromApp()` with the parsed `dossiq_register.json` content
 - AND the `procest` register MUST be created in OpenRegister
 - AND all schemas MUST be created with their property definitions
 - AND `autoConfigureAfterImport()` MUST persist all register and schema IDs to `IAppConfig`
 
 #### Scenario: Upgrade adds new schemas without data loss
 
-- GIVEN Procest was previously installed with fewer schemas
+- GIVEN Dossiq was previously installed with fewer schemas
 - AND existing cases, tasks, and roles exist in the register
 - WHEN the repair step runs during upgrade
 - THEN new schemas MUST be created
@@ -193,7 +193,7 @@ The system MUST import the register configuration during app installation and up
 
 #### Scenario: Repair step handles missing OpenRegister gracefully
 
-- GIVEN Procest is installed but OpenRegister is NOT installed
+- GIVEN Dossiq is installed but OpenRegister is NOT installed
 - WHEN the repair step runs
 - THEN `SettingsService::isOpenRegisterAvailable()` MUST return false
 - AND the repair step MUST log a warning: "OpenRegister is not installed or enabled. Skipping auto-configuration."
@@ -201,7 +201,7 @@ The system MUST import the register configuration during app installation and up
 
 #### Scenario: Configuration file validation
 
-- GIVEN the `procest_register.json` file contains invalid JSON
+- GIVEN the `dossiq_register.json` file contains invalid JSON
 - WHEN `loadConfiguration()` is called
 - THEN it MUST return `{ success: false, message: 'Invalid JSON in configuration file' }`
 - AND no partial import MUST occur
@@ -217,7 +217,7 @@ The frontend MUST interact with OpenRegister's REST API for all CRUD operations.
 
 #### Scenario: Base URL pattern
 
-- GIVEN the Procest frontend needs to access OpenRegister
+- GIVEN the Dossiq frontend needs to access OpenRegister
 - THEN all API calls MUST use the base URL pattern: `/index.php/apps/openregister/api/objects/procest/{schema}`
 - AND for single objects: `/index.php/apps/openregister/api/objects/procest/{schema}/{uuid}`
 
@@ -339,7 +339,7 @@ The frontend MUST use the `createObjectStore` pattern from `@conduction/nextclou
 
 ### REQ-OREG-006: Cross-Entity References
 
-Entities in Procest reference each other via UUID. The frontend MUST resolve these references to display meaningful data (titles, names) rather than raw UUIDs.
+Entities in Dossiq reference each other via UUID. The frontend MUST resolve these references to display meaningful data (titles, names) rather than raw UUIDs.
 
 **Tier**: MVP
 
@@ -382,7 +382,7 @@ Entities in Procest reference each other via UUID. The frontend MUST resolve the
 
 ### REQ-OREG-007: Schema Validation Rules
 
-OpenRegister MUST validate objects against their schema definitions before storage. Procest schemas MUST define appropriate validation constraints.
+OpenRegister MUST validate objects against their schema definitions before storage. Dossiq schemas MUST define appropriate validation constraints.
 
 **Tier**: MVP
 
@@ -502,7 +502,7 @@ The system MUST define what happens to dependent entities when a parent entity i
 
 ### REQ-OREG-010: Audit Trail Integration
 
-All create, update, and delete operations on Procest objects MUST be captured in the audit trail, integrated via the `auditTrailsPlugin()` in the object store.
+All create, update, and delete operations on Dossiq objects MUST be captured in the audit trail, integrated via the `auditTrailsPlugin()` in the object store.
 
 **Tier**: MVP
 
@@ -547,7 +547,7 @@ The system MUST enforce access control via OpenRegister's RBAC system. Configura
 
 #### Scenario: Nextcloud admin settings page requires admin
 
-- GIVEN a non-admin user navigates to the Procest admin settings URL
+- GIVEN a non-admin user navigates to the Dossiq admin settings URL
 - THEN the Nextcloud admin settings system MUST prevent access
 
 ---
@@ -594,7 +594,7 @@ The frontend MUST minimize API round-trips by fetching related entities efficien
 
 ### REQ-OREG-013: ZGW API Layer
 
-The system MUST provide ZGW-compliant API endpoints that map between ZGW Dutch field names and Procest's English field names, enabling interoperability with the Dutch government API ecosystem.
+The system MUST provide ZGW-compliant API endpoints that map between ZGW Dutch field names and Dossiq's English field names, enabling interoperability with the Dutch government API ecosystem.
 
 **Tier**: MVP
 
@@ -664,13 +664,13 @@ Case ---------------------------------------------------------------+
 
 | Entity | List | Get | Create | Update | Delete |
 |--------|------|-----|--------|--------|--------|
-| Case | `GET .../procest/case` | `GET .../procest/case/{id}` | `POST .../procest/case` | `PUT .../procest/case/{id}` | `DELETE .../procest/case/{id}` |
-| Task | `GET .../procest/task` | `GET .../procest/task/{id}` | `POST .../procest/task` | `PUT .../procest/task/{id}` | `DELETE .../procest/task/{id}` |
-| Role | `GET .../procest/role` | `GET .../procest/role/{id}` | `POST .../procest/role` | `PUT .../procest/role/{id}` | `DELETE .../procest/role/{id}` |
-| Result | `GET .../procest/result` | `GET .../procest/result/{id}` | `POST .../procest/result` | `PUT .../procest/result/{id}` | `DELETE .../procest/result/{id}` |
-| Decision | `GET .../procest/decision` | `GET .../procest/decision/{id}` | `POST .../procest/decision` | `PUT .../procest/decision/{id}` | `DELETE .../procest/decision/{id}` |
-| CaseType | `GET .../procest/caseType` | `GET .../procest/caseType/{id}` | `POST .../procest/caseType` | `PUT .../procest/caseType/{id}` | `DELETE .../procest/caseType/{id}` |
-| StatusType | `GET .../procest/statusType` | `GET .../procest/statusType/{id}` | `POST ...` | `PUT ...` | `DELETE ...` |
+| Case | `GET .../dossiq/case` | `GET .../dossiq/case/{id}` | `POST .../dossiq/case` | `PUT .../dossiq/case/{id}` | `DELETE .../dossiq/case/{id}` |
+| Task | `GET .../dossiq/task` | `GET .../dossiq/task/{id}` | `POST .../dossiq/task` | `PUT .../dossiq/task/{id}` | `DELETE .../dossiq/task/{id}` |
+| Role | `GET .../dossiq/role` | `GET .../dossiq/role/{id}` | `POST .../dossiq/role` | `PUT .../dossiq/role/{id}` | `DELETE .../dossiq/role/{id}` |
+| Result | `GET .../dossiq/result` | `GET .../dossiq/result/{id}` | `POST .../dossiq/result` | `PUT .../dossiq/result/{id}` | `DELETE .../dossiq/result/{id}` |
+| Decision | `GET .../dossiq/decision` | `GET .../dossiq/decision/{id}` | `POST .../dossiq/decision` | `PUT .../dossiq/decision/{id}` | `DELETE .../dossiq/decision/{id}` |
+| CaseType | `GET .../dossiq/caseType` | `GET .../dossiq/caseType/{id}` | `POST .../dossiq/caseType` | `PUT .../dossiq/caseType/{id}` | `DELETE .../dossiq/caseType/{id}` |
+| StatusType | `GET .../dossiq/statusType` | `GET .../dossiq/statusType/{id}` | `POST ...` | `PUT ...` | `DELETE ...` |
 | (etc.) | (same pattern for all remaining schemas) | | | | |
 
 Base URL: `/index.php/apps/openregister/api/objects`
@@ -682,8 +682,8 @@ Base URL: `/index.php/apps/openregister/api/objects`
 **Core architecture implemented; individual patterns differ from spec in store approach.**
 
 **Implemented (with file paths):**
-- **Configuration file**: `lib/Settings/procest_register.json` exists, is valid JSON, conforms to OpenAPI 3.0.0, defines a register with app `procest`. Defines all schemas with `x-schema-org` and `x-zgw-equivalent` annotations (REQ-OREG-001).
-- **Repair step**: `lib/Repair/InitializeSettings.php` calls `SettingsService::loadConfiguration()` which uses `ConfigurationService::importFromApp('procest')` from OpenRegister. Handles missing OpenRegister gracefully with warning. Is idempotent (REQ-OREG-002).
+- **Configuration file**: `lib/Settings/dossiq_register.json` exists, is valid JSON, conforms to OpenAPI 3.0.0, defines a register with app `procest`. Defines all schemas with `x-schema-org` and `x-zgw-equivalent` annotations (REQ-OREG-001).
+- **Repair step**: `lib/Repair/InitializeSettings.php` calls `SettingsService::loadConfiguration()` which uses `ConfigurationService::importFromApp('dossiq')` from OpenRegister. Handles missing OpenRegister gracefully with warning. Is idempotent (REQ-OREG-002).
 - **Settings service**: `lib/Service/SettingsService.php` with `loadConfiguration()`, `getSettings()`, `updateSettings()`, `autoConfigureAfterImport()`. Maps schema slugs to config keys via `SLUG_TO_CONFIG_KEY` constant (REQ-OREG-002).
 - **Settings controller**: `lib/Controller/SettingsController.php` with routes `GET /api/settings` and `POST /api/settings` (REQ-OREG-003).
 - **Settings store**: `src/store/modules/settings.js` -- Pinia store that fetches and saves settings with loading/error state tracking.
@@ -708,8 +708,8 @@ Base URL: `/index.php/apps/openregister/api/objects`
 - **OpenAPI 3.0.0**: The register configuration file follows this format.
 - **ZGW APIs (VNG Realisatie)**: Full ZGW-compliant API layer with ZRC, ZTC, DRC, BRC, NRC, and AC endpoints.
 - **CMMN 1.1**: Task lifecycle states follow the CasePlanModel/HumanTask pattern.
-- **Schema.org**: Entity type annotations in `procest_register.json`.
-- **Common Ground**: Layered architecture with data in OpenRegister (information layer) and Procest as process layer.
+- **Schema.org**: Entity type annotations in `dossiq_register.json`.
+- **Common Ground**: Layered architecture with data in OpenRegister (information layer) and Dossiq as process layer.
 - **Competitive reference**: Dimpact ZAC (PostgreSQL + 89 Flyway migrations), xxllnc Zaken (CQRS + event sourcing), ArkCase (JPA/Hibernate), Flowable (MyBatis + runtime/history tables).
 
 ### Specificity Assessment

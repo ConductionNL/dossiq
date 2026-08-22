@@ -7,22 +7,22 @@
  * selection, Docudesk availability fallback, and stub bijlage creation.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\BeschikkingGenerationService;
+use OCA\Dossiq\Service\BeschikkingGenerationService;
 use OCP\IAppConfig;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -32,7 +32,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for BeschikkingGenerationService.
  *
- * @covers \OCA\Procest\Service\BeschikkingGenerationService
+ * @covers \OCA\Dossiq\Service\BeschikkingGenerationService
  */
 class BeschikkingGenerationServiceTest extends TestCase {
 

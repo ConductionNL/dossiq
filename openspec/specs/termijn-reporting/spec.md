@@ -28,7 +28,7 @@ The system SHALL produce a quarterly termijn-KPI report per zaaktype and an annu
 #### Scenario: Dashboard KPI endpoint returns aggregates
 
 - **GIVEN** the dashboard requests the termijn KPI widget
-- **WHEN** `GET /api/procest/dashboard/termijn-kpi` is called
+- **WHEN** `GET /api/dossiq/dashboard/termijn-kpi` is called
 - **THEN** the response SHALL return totalZaken, withinTermijnPercent, avgDurationDays, overrunCount, dwangsomTotal, and lastUpdated
 - **AND** the aggregate SHALL be cached and refreshed at least hourly
 

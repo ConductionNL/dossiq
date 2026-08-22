@@ -6,7 +6,7 @@
  * Tests for the nightly ORI data quality check background job.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Cron
+ * @package  OCA\Dossiq\Tests\Unit\Cron
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,10 +19,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Cron;
+namespace OCA\Dossiq\Tests\Unit\Cron;
 
-use OCA\Procest\Cron\OriDataQualityCheck;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Cron\OriDataQualityCheck;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
@@ -78,7 +78,7 @@ interface QualityObjectServiceStub {
 /**
  * Unit tests for OriDataQualityCheck.
  *
- * @covers \OCA\Procest\Cron\OriDataQualityCheck
+ * @covers \OCA\Dossiq\Cron\OriDataQualityCheck
  */
 class OriDataQualityCheckTest extends TestCase {
 
@@ -145,7 +145,7 @@ class OriDataQualityCheckTest extends TestCase {
 	public function testRunExitsEarlyWhenOpenRegisterNotInstalled(): void {
 		$this->appManager
 			->method('getInstalledApps')
-			->willReturn(['procest', 'contacts']);
+			->willReturn(['dossiq', 'contacts']);
 
 		$this->settingsService
 			->expects($this->never())
@@ -165,7 +165,7 @@ class OriDataQualityCheckTest extends TestCase {
 	public function testRunExitsEarlyWhenObjectServiceUnavailable(): void {
 		$this->appManager
 			->method('getInstalledApps')
-			->willReturn(['openregister', 'procest']);
+			->willReturn(['openregister', 'dossiq']);
 
 		$this->settingsService
 			->method('getObjectService')
@@ -187,7 +187,7 @@ class OriDataQualityCheckTest extends TestCase {
 	public function testRunInvokesQualityChecksWhenAvailable(): void {
 		$this->appManager
 			->method('getInstalledApps')
-			->willReturn(['openregister', 'procest']);
+			->willReturn(['openregister', 'dossiq']);
 
 		$objectService = $this->createMock(QualityObjectServiceStub::class);
 		$objectService->method('searchObjectsBySlug')->willReturn([]);

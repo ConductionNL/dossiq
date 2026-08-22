@@ -23,7 +23,7 @@
 
 		<template v-else>
 			<div v-if="tree.length === 0" class="cmmn-plan-panel__empty">
-				{{ t('procest', 'No case plan items') }}
+				{{ t('dossiq', 'No case plan items') }}
 			</div>
 
 			<ul v-else class="cmmn-plan-panel__tree">
@@ -180,7 +180,7 @@ export default {
 				this.applyPlan(plan)
 			} catch (error) {
 				this.errorMessage = t(
-					'procest',
+					'dossiq',
 					'This action could not be completed. The case plan may have changed — try reloading.',
 				)
 				console.error('CMMN case-plan action failed:', error)

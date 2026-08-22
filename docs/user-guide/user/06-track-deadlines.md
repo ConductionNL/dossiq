@@ -6,7 +6,7 @@ description: "Use the dashboard widgets (Deadline Alerts, Task Due Reminders, St
 
 # Track deadlines and lead times on the dashboard
 
-The Procest dashboard is the deadline radar. Three widgets do most of the work: *Deadline Alerts* (cases nearing or past their statutory term), *Task Due Reminders* (tasks crossing their due date), and *Stalled Cases* (cases that have not changed status in too long).
+The Dossiq dashboard is the deadline radar. Three widgets do most of the work: *Deadline Alerts* (cases nearing or past their statutory term), *Task Due Reminders* (tasks crossing their due date), and *Stalled Cases* (cases that have not changed status in too long).
 
 ## Goal
 
@@ -14,12 +14,12 @@ By the end you will have read the three deadline widgets on the dashboard, jumpe
 
 ## Prerequisites
 
-- Completed [Open Procest for the first time](./01-first-launch.md).
+- Completed [Open Dossiq for the first time](./01-first-launch.md).
 - Cases with deadlines configured on their case-type (deadlines without a configured case-type are not tracked).
 
 ## Steps
 
-1. Open the Procest dashboard. The widget shelf renders along the page: *Cases by Status*, *Cases by Type*, *My Work*, *Deadline Alerts*, *Task Due Reminders*, *Stalled Cases*, *Case Map*.
+1. Open the Dossiq dashboard. The widget shelf renders along the page: *Cases by Status*, *Cases by Type*, *My Work*, *Deadline Alerts*, *Task Due Reminders*, *Stalled Cases*, *Case Map*.
 
    ![Dashboard widget shelf](/screenshots/tutorials/user/06-track-deadlines-01.png)
 
@@ -43,7 +43,7 @@ You have the dashboard set up correctly when: at least one of the three deadline
 
 | Symptom | Fix |
 |---|---|
-| All three widgets read *Widget not available* | The register is not connected: see [Manage Procest settings](../admin/03-admin-settings.md). |
+| All three widgets read *Widget not available* | The register is not connected: see [Manage Dossiq settings](../admin/03-admin-settings.md). |
 | Deadlines never go amber or red | The case-type has no deadline configured, or the warning thresholds are too short: adjust under **Case Types**. |
 | A case is overdue but missing from *Deadline Alerts* | The case-type's deadline field is not mapped to the Case schema; an admin checks the schema mapping. |
 

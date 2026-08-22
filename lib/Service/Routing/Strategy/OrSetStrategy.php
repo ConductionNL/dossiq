@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest OR-Set Routing Strategy
+ * Dossiq OR-Set Routing Strategy
  *
  * Returns the union of participants whose role binding matches any of the
  * rule's `roleTypes`. Used to normalise the legacy
  * `StatusTransition.allowedRoles` array — any of the listed roles may act.
  *
  * @category Service
- * @package  OCA\Procest\Service\Routing\Strategy
+ * @package  OCA\Dossiq\Service\Routing\Strategy
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -19,14 +19,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Routing\Strategy;
+namespace OCA\Dossiq\Service\Routing\Strategy;
 
-use OCA\Procest\Service\Routing\RoutingStrategyInterface;
+use OCA\Dossiq\Service\Routing\RoutingStrategyInterface;
 
 /**
  * OR-set strategy.

@@ -39,7 +39,7 @@ via `caseType.workflowTemplate` reference.
 
 #### Scenario: Reviewer confirms no parallel workflow engine
 
-- **GIVEN** the procest codebase after this change
+- **GIVEN** the dossiq codebase after this change
 - **WHEN** scanned for classes named `BezwaarService`, `BezwaarWorkflow`,
   `BezwaarTermijnService`, or `BeroepService`
 - **THEN** no such classes SHALL exist in `lib/`; all lifecycle is
@@ -104,7 +104,7 @@ is authored for lifecycle guards.
 When a bezwaar case is created, the system MUST:
 
 1. Accept a reference to the contested decision (primair besluit) —
-   either as a procest `case` UUID (the original case) or a `decision`
+   either as a dossiq `case` UUID (the original case) or a `decision`
    UUID within it.
 2. Store the cross-reference via `case.relatedCases` (JSON-encoded array
    containing the primair besluit case UUID) AND via the `objection`
@@ -157,7 +157,7 @@ The AWB decision deadline MUST be derived from the bezwaar caseType's
 The effective deadline displayed to the handler MUST be calculated as:
 `startDate + P6W + (extensionCount × P6W) - opschortingDuration`.
 
-Procest MUST NOT author an `AwbTermijnService` or
+Dossiq MUST NOT author an `AwbTermijnService` or
 `OpschortingCalculator` class. Deadline display MUST use the `case.deadline`
 field (updated declaratively by the workflow engine on each verdaging or
 opschorting registration) and `x-openregister-calculations` for
@@ -308,7 +308,7 @@ bestuursorgaan does NOT follow the advice in the `appealDecision`, then
 deviation from committee advice must be reasoned).
 
 The committee's `reportDocument` (full written advice) MUST be a
-Nextcloud file referenced by URI, not stored in procest tables.
+Nextcloud file referenced by URI, not stored in dossiq tables.
 
 #### Scenario: Committee advice is recorded with all required fields
 
@@ -473,7 +473,7 @@ required by tender specifications.
 
 ---
 
-### Requirement: REQ-BBW-011 Bezwaar en beroep registers SHALL be reachable through the procest manifest navigation
+### Requirement: REQ-BBW-011 Bezwaar en beroep registers SHALL be reachable through the dossiq manifest navigation
 
 `src/manifest.json` MUST declare:
 
@@ -499,7 +499,7 @@ for index or detail pages.
 
 - **GIVEN** the manifest declares the bezwaarzaken page with
   `filter: { caseType: ["bezwaar"] }`
-- **WHEN** a behandelaar opens `/index.php/apps/procest/bezwaarzaken`
+- **WHEN** a behandelaar opens `/index.php/apps/dossiq/bezwaarzaken`
 - **THEN** the page MUST render via `CnIndexPage` showing only bezwaar
   cases with deadline column and primair besluit reference visible;
   no per-bezwaar controller is invoked

@@ -17,7 +17,7 @@
       (confirmed multi-site duplicates: `'Aanbestedingen'` in `TenderList.vue` +
       `LeverancierDashboard.vue`; `'Actie'` in `TenderList.vue` + `ContractList.vue`;
       `'Afgesloten'` in `ConsultationDashboard.vue` (2 sites)).
-- [ ] 2.2 Replace the literal Dutch string in every `t('procest', '<dutch>')` call with a new
+- [ ] 2.2 Replace the literal Dutch string in every `t('dossiq', '<dutch>')` call with a new
       English source key (e.g. `'Actie'` → `'Action'`, `'Afgesloten'` → `'Closed'`,
       `'Aanbestedingen'` → `'Tenders'`, `'Alle statussen'` → `'All statuses'`).
 - [ ] 2.3 Add the new English key to `l10n/en.json` with itself as the value.
@@ -36,7 +36,7 @@
 
 - [ ] 3.1 For each genuinely-untranslated English-source key, add the correct Dutch translation to
       `l10n/nl.json` (do not machine-translate blindly — check the surrounding UI context / other
-      procest strings for house terminology, e.g. existing `bezwaar`/`beroep` vocabulary).
+      dossiq strings for house terminology, e.g. existing `bezwaar`/`beroep` vocabulary).
 - [ ] 3.2 Re-run the en/nl diff script from proposal.md and confirm 0 remaining gaps.
 
 ## 4. Prevent regression
@@ -45,7 +45,7 @@
       `en.json` has a key absent from `nl.json`, alongside its existing "used-in-code but missing
       from en.json" check.
 - [ ] 4.2 Add a lightweight lint/grep-based check (or extend the same script) that flags any new
-      `t('procest', '<literal>')` call whose literal contains common Dutch stopwords/diacritics, to
+      `t('dossiq', '<literal>')` call whose literal contains common Dutch stopwords/diacritics, to
       catch future Dutch-as-key regressions before merge.
 
 ## 5. Spec + traceability

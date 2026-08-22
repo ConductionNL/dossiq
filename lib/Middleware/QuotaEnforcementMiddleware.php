@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest Quota Enforcement Middleware
+ * Dossiq Quota Enforcement Middleware
  *
  * Decides per-request whether the action is within tenant quota.
  *
  * @category Middleware
- * @package  OCA\Procest\Middleware
+ * @package  OCA\Dossiq\Middleware
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,17 +15,17 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Middleware;
+namespace OCA\Dossiq\Middleware;
 
-use OCA\Procest\Service\TenantContext;
-use OCA\Procest\Service\TenantQuotaService;
+use OCA\Dossiq\Service\TenantContext;
+use OCA\Dossiq\Service\TenantQuotaService;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Middleware;
 use OCP\IRequest;
@@ -88,14 +88,14 @@ class QuotaEnforcementMiddleware extends Middleware {
 
 		if ($decision['decision'] === TenantQuotaService::DECISION_THROTTLE) {
 			$this->logger->warning(
-				'Procest quota throttled',
+				'Dossiq quota throttled',
 				['tenantId' => $tenantId, 'quotaType' => $quotaType]
 			);
 		}
 
 		if ($decision['soft'] === true) {
 			$this->logger->info(
-				'Procest quota soft-limit hit',
+				'Dossiq quota soft-limit hit',
 				['tenantId' => $tenantId, 'quotaType' => $quotaType]
 			);
 		}
@@ -140,7 +140,7 @@ class QuotaEnforcementMiddleware extends Middleware {
 			return 'cases_per_month';
 		}
 
-		if (str_starts_with($path, '/api/') === true || str_contains($path, '/index.php/apps/procest/api/') === true) {
+		if (str_starts_with($path, '/api/') === true || str_contains($path, '/index.php/apps/dossiq/api/') === true) {
 			return 'api_calls_per_hour';
 		}
 

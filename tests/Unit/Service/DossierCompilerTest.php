@@ -4,7 +4,7 @@
  * DossierCompiler Unit Tests.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,10 +20,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\DossierCompiler;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\DossierCompiler;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -31,7 +31,7 @@ use RuntimeException;
 /**
  * Unit tests for DossierCompiler.
  *
- * @covers \OCA\Procest\Service\DossierCompiler
+ * @covers \OCA\Dossiq\Service\DossierCompiler
  */
 class DossierCompilerTest extends TestCase {
 

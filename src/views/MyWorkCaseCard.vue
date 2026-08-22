@@ -33,7 +33,7 @@
 			v-if="deadlineLabel"
 			class="mywork-card__deadline"
 			:class="{ 'mywork-card__deadline--overdue': overdue }">
-			{{ t('procest', 'Deadline') }}: {{ deadlineLabel }}
+			{{ t('dossiq', 'Deadline') }}: {{ deadlineLabel }}
 		</span>
 	</button>
 </template>
@@ -94,7 +94,7 @@ export default {
 				this.object.title
 				|| this.object.name
 				|| this.identifier
-				|| t('procest', 'Untitled case')
+				|| t('dossiq', 'Untitled case')
 			)
 		},
 
@@ -155,11 +155,11 @@ export default {
 			const tier = this.urgencyEntry && this.urgencyEntry.tier
 			switch (tier) {
 				case 'overdue':
-					return t('procest', 'Overdue')
+					return t('dossiq', 'Overdue')
 				case 'critical':
-					return t('procest', 'Critical')
+					return t('dossiq', 'Critical')
 				case 'warning':
-					return t('procest', 'Due soon')
+					return t('dossiq', 'Due soon')
 				default:
 					return ''
 			}

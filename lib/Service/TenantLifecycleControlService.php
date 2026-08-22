@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Tenant Lifecycle Control Service
+ * Dossiq Tenant Lifecycle Control Service
  *
  * Wraps the suspension / reactivation / termination flows around the
  * tenant state machine in `TenantSaasService`. Handles billing
  * settlement before termination and webhook notification to Shillinq.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -17,14 +17,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-11-suspension-termination/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
@@ -65,7 +65,7 @@ class TenantLifecycleControlService {
 	public function suspend(string $tenantId, string $reason): array {
 		$row = $this->tenantSaasService->updateStatus(tenantId: $tenantId, newStatus: 'suspended');
 		$this->logger->warning(
-			'Procest: tenant suspended',
+			'Dossiq: tenant suspended',
 			['tenantId' => $tenantId, 'reason' => $reason]
 		);
 		return $row;
@@ -80,7 +80,7 @@ class TenantLifecycleControlService {
 	 */
 	public function reactivate(string $tenantId): array {
 		$row = $this->tenantSaasService->updateStatus(tenantId: $tenantId, newStatus: 'active');
-		$this->logger->info('Procest: tenant reactivated', ['tenantId' => $tenantId]);
+		$this->logger->info('Dossiq: tenant reactivated', ['tenantId' => $tenantId]);
 		return $row;
 	}//end reactivate()
 
@@ -97,14 +97,14 @@ class TenantLifecycleControlService {
 		$unsettled = $this->countUnsettledEvents(tenantId: $tenantId);
 		if ($unsettled > 0) {
 			$this->logger->warning(
-				'Procest: terminating tenant with unsettled billing events — Shillinq export must run first',
+				'Dossiq: terminating tenant with unsettled billing events — Shillinq export must run first',
 				['tenantId' => $tenantId, 'unsettledEvents' => $unsettled]
 			);
 		}
 
 		$row = $this->tenantSaasService->updateStatus(tenantId: $tenantId, newStatus: 'terminated');
 		$this->logger->warning(
-			'Procest: tenant terminated',
+			'Dossiq: tenant terminated',
 			['tenantId' => $tenantId, 'reason' => $reason, 'retentionYears' => $retentionYears]
 		);
 		return [

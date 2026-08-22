@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Register ORI Register Repair Step
+ * Dossiq Register ORI Register Repair Step
  *
  * Repair step that idempotently provisions the ORI (Open Raadsinformatie)
  * register and all its entity schemas via the OpenRegister ConfigurationService.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,10 +20,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
@@ -81,14 +81,14 @@ class RegisterOriRegister implements IRepairStep {
 			$output->warning(
 				'OpenRegister is not installed or enabled. Skipping ORI register provisioning.'
 			);
-			$this->logger->warning('Procest: OpenRegister not available, skipping ORI register provisioning');
+			$this->logger->warning('Dossiq: OpenRegister not available, skipping ORI register provisioning');
 			return;
 		}
 
 		$configPath = __DIR__ . '/../Settings/ori_register.json';
 		if (file_exists(filename: $configPath) === false) {
 			$output->warning('ORI register file not found at ' . $configPath);
-			$this->logger->error('Procest: ORI register file not found at ' . $configPath);
+			$this->logger->error('Dossiq: ORI register file not found at ' . $configPath);
 			return;
 		}
 
@@ -99,7 +99,7 @@ class RegisterOriRegister implements IRepairStep {
 		} catch (\Exception $e) {
 			$output->warning('Could not access ConfigurationService: ' . $e->getMessage());
 			$this->logger->error(
-				'Procest: Could not access ConfigurationService for ORI',
+				'Dossiq: Could not access ConfigurationService for ORI',
 				['exception' => $e->getMessage()]
 			);
 			return;
@@ -125,13 +125,13 @@ class RegisterOriRegister implements IRepairStep {
 
 			$output->info('ORI register provisioned successfully (version: ' . $configVersion . ')');
 			$this->logger->info(
-				'Procest: ORI register provisioned',
+				'Dossiq: ORI register provisioned',
 				['version' => $configVersion, 'result' => $importResult]
 			);
 		} catch (\Throwable $e) {
 			$output->warning('Could not provision ORI register: ' . $e->getMessage());
 			$this->logger->error(
-				'Procest: ORI register provisioning failed',
+				'Dossiq: ORI register provisioning failed',
 				['exception' => $e->getMessage()]
 			);
 		}//end try

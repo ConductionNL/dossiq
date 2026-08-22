@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest procest:bezwaar:seed command.
+ * Dossiq dossiq:bezwaar:seed command.
  *
  * One-shot, idempotent seed of the Bezwaar & Beroep case types (plus their
  * status types and role types) onto OpenRegister, from
@@ -13,7 +13,7 @@
  * skipped.
  *
  * @category Command
- * @package  OCA\Procest\Command
+ * @package  OCA\Dossiq\Command
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,14 +24,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Command;
+namespace OCA\Dossiq\Command;
 
-use OCA\Procest\Service\SeedDataService;
+use OCA\Dossiq\Service\SeedDataService;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use Symfony\Component\Console\Command\Command;
@@ -63,7 +63,7 @@ class SeedBezwaarBeroepCommand extends Command {
 	 * @return void
 	 */
 	protected function configure(): void {
-		$this->setName(name: 'procest:bezwaar:seed')
+		$this->setName(name: 'dossiq:bezwaar:seed')
 			->setDescription('Seed the Bezwaar & Beroep case types, status types and role types (idempotent).');
 	}//end configure()
 
@@ -104,7 +104,7 @@ class SeedBezwaarBeroepCommand extends Command {
 			return Command::FAILURE;
 		}
 
-		$output->writeln('<info>procest:bezwaar:seed done</info>');
+		$output->writeln('<info>dossiq:bezwaar:seed done</info>');
 		$output->writeln('  case types   = ' . ($result['caseTypes'] ?? 0));
 		$output->writeln('  status types = ' . ($result['statusTypes'] ?? 0));
 		$output->writeln('  role types   = ' . ($result['roleTypes'] ?? 0));

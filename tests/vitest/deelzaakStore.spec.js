@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2026 Conduction / Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Conduction / Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Component-layer unit tests for the deelzaak (sub-case) Pinia store

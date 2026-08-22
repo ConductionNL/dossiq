@@ -1,13 +1,13 @@
 # federated-case-collaboration Specification
 
 ## Purpose
-Extend procest's existing in-instance case sharing/transfer (`CaseSharingService::createPartnerShare`, `CaseTransferService`) to work across Nextcloud instances over OpenRegister's OCM federation leaf, closing the "Planned" cross-organization sharing, activity feed and handoff-workflow items in `docs/Features/case-sharing-collaboration.md`. Procest owns case-domain semantics (what crosses the boundary, authority, custody); OpenRegister's `FederationShareService`/`FederatedShareMapper`/`OpenRegisterCloudFederationProvider` own OCM transport, token minting, and revocation-status storage.
+Extend dossiq's existing in-instance case sharing/transfer (`CaseSharingService::createPartnerShare`, `CaseTransferService`) to work across Nextcloud instances over OpenRegister's OCM federation leaf, closing the "Planned" cross-organization sharing, activity feed and handoff-workflow items in `docs/Features/case-sharing-collaboration.md`. Dossiq owns case-domain semantics (what crosses the boundary, authority, custody); OpenRegister's `FederationShareService`/`FederatedShareMapper`/`OpenRegisterCloudFederationProvider` own OCM transport, token minting, and revocation-status storage.
 
 ## Requirements
 
 ### Requirement: Federated Case Share Is A Redacted Snapshot, Never The Live Case
 
-Procest SHALL create a federated case share by building a purpose-made `caseFederatedShare` object containing only fields from a hard-coded allow-list and document references actually attached to the case, and SHALL share that object — never the live case object — through OpenRegister's `FederationShareService::createOutgoingShare()` with `permissions: 'read'`. A field or document not explicitly selected, or a field outside the allow-list, SHALL NOT cross the boundary. Requesting a disallowed field SHALL fail the whole request with an explicit error, not silently drop the field.
+Dossiq SHALL create a federated case share by building a purpose-made `caseFederatedShare` object containing only fields from a hard-coded allow-list and document references actually attached to the case, and SHALL share that object — never the live case object — through OpenRegister's `FederationShareService::createOutgoingShare()` with `permissions: 'read'`. A field or document not explicitly selected, or a field outside the allow-list, SHALL NOT cross the boundary. Requesting a disallowed field SHALL fail the whole request with an explicit error, not silently drop the field.
 
 #### Scenario: Creating a federated share includes only allow-listed fields
 
@@ -35,14 +35,14 @@ Procest SHALL create a federated case share by building a purpose-made `caseFede
 
 ### Requirement: Federated Share Revocation Is Immediate And Single-Sourced
 
-Procest SHALL revoke a federated case share by setting the underlying OpenRegister `FederatedShare.status` to `revoked` via `FederationShareService::setStatus()`. Every downstream check (OR's own federation-object read endpoint, procest's transfer-token resolution, procest's remote-activity token resolution) SHALL consult that same status column, so revocation takes effect immediately across all surfaces without a separate procest-side flag to keep in sync.
+Dossiq SHALL revoke a federated case share by setting the underlying OpenRegister `FederatedShare.status` to `revoked` via `FederationShareService::setStatus()`. Every downstream check (OR's own federation-object read endpoint, dossiq's transfer-token resolution, dossiq's remote-activity token resolution) SHALL consult that same status column, so revocation takes effect immediately across all surfaces without a separate dossiq-side flag to keep in sync.
 
 #### Scenario: A revoked federated share can no longer authenticate any remote action
 
 - **GIVEN** an accepted federated case share with an active OR `FederatedShare`
 - **WHEN** the owning org revokes the share
 - **THEN** the OR `FederatedShare.status` SHALL become `revoked`
-- **AND** a subsequent remote request bearing that share's token SHALL be rejected by procest's own token-resolution checks
+- **AND** a subsequent remote request bearing that share's token SHALL be rejected by dossiq's own token-resolution checks
 
 @e2e exclude Revocation-status propagation is a same-process check (one DB row read by two code paths), verified by PHPUnit; no distinct browser UI surface beyond the existing "Revoke" action already covered by the wired sharing tab.
 
@@ -65,7 +65,7 @@ Unlike `canUserAccessCase()` (which fails open when OpenRegister is unavailable,
 
 ### Requirement: Shared Activity Stream Is Async, Append-Only, Scoped To One Federated Share
 
-Procest SHALL provide a collaboration activity stream (`caseFederatedActivity`) scoped to exactly one federated case share, postable by the owning org (local session, authorized via case access) and by the remote org (authenticated via the federated share's scoped bearer token). Entries SHALL be append-only — an actor SHALL NOT be able to edit or delete another actor's entry. Real-time co-editing SHALL NOT be implemented or implied by this stream; it is documented as async collaboration.
+Dossiq SHALL provide a collaboration activity stream (`caseFederatedActivity`) scoped to exactly one federated case share, postable by the owning org (local session, authorized via case access) and by the remote org (authenticated via the federated share's scoped bearer token). Entries SHALL be append-only — an actor SHALL NOT be able to edit or delete another actor's entry. Real-time co-editing SHALL NOT be implemented or implied by this stream; it is documented as async collaboration.
 
 #### Scenario: A local handler posts an activity entry
 

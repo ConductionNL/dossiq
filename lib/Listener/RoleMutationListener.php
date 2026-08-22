@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Role Mutation Listener
+ * Dossiq Role Mutation Listener
  *
  * Listens to OpenRegister object lifecycle events on the `role` schema and
  * invalidates the RoleResolverService cache for the affected case. Role
@@ -13,7 +13,7 @@
  * resolver lazily and benefit from the freshly invalidated cache.
  *
  * @category Listener
- * @package  OCA\Procest\Listener
+ * @package  OCA\Dossiq\Listener
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -24,18 +24,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Listener;
+namespace OCA\Dossiq\Listener;
 
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
-use OCA\Procest\Service\RoleResolverService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\RoleResolverService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -101,7 +101,7 @@ class RoleMutationListener implements IEventListener {
 			$this->resolver->invalidateCache($caseId);
 		} catch (Throwable $e) {
 			$this->logger->debug(
-				'Procest: role mutation listener swallowed exception: ' . $e->getMessage(),
+				'Dossiq: role mutation listener swallowed exception: ' . $e->getMessage(),
 			);
 		}//end try
 	}//end handle()

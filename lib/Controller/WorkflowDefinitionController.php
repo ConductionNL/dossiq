@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Workflow Definition Controller
+ * Dossiq Workflow Definition Controller
  *
  * Action endpoints for workflowTemplate lifecycle transitions. Pure CRUD
  * is handled by the manifest renderer + OpenRegister auto-routing under
@@ -10,7 +10,7 @@
  * consumer-contract endpoints used by status-transition-engine.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,18 +21,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/workflow-definition-model/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\WorkflowDefinitionService;
-use OCA\Procest\Settings\AdminSettings;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\WorkflowDefinitionService;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;

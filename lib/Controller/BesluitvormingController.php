@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest BesluitvormingController
+ * Dossiq BesluitvormingController
  *
  * REST API controller for besluitvorming (decision-making) workflow operations.
  * Currently exposes a single endpoint to activate a besluitvorming template
  * bundle (case type + status types + property defs + document types + roles).
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -17,18 +17,18 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-2
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\TemplateLibraryService;
-use OCA\Procest\Settings\AdminSettings;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\TemplateLibraryService;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -74,7 +74,7 @@ class BesluitvormingController extends Controller {
 	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @deprecated Decision types (bvw-* templates) are now managed by decidesk
-	 *             (procest-delegate-contract-decision). Template activation is
+	 *             (dossiq-delegate-contract-decision). Template activation is
 	 *             kept for historical read access until the sunset of the local
 	 *             besluit engine. New decision flows must use
 	 *             ContractDecisionDelegationService::raiseContractDecision().

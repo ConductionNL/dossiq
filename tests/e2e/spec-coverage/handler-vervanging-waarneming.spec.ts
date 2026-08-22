@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Gate-19 spec-coverage tests for the handler-vervanging-waarneming spec.
@@ -8,7 +8,7 @@
  * the My Work substituted-work integration). API/contract assertions live in
  * the Newman collection, not here.
  *
- * Note: Use /apps/procest/<route> (not /index.php/...) so the Vue history-mode
+ * Note: Use /apps/dossiq/<route> (not /index.php/...) so the Vue history-mode
  * router resolves the route. Tests are defensive — when a surface is not
  * deployed/rendered in the target instance the body-level assertions skip
  * gracefully rather than hard-failing the suite.
@@ -24,7 +24,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	test('user substitution settings page renders with a register action', async ({
 		page,
 	}) => {
-		await page.goto(`/index.php/apps/procest${SubstitutionSettings}`)
+		await page.goto(`/index.php/apps/dossiq${SubstitutionSettings}`)
 		await dismissSupportDialog(page)
 		const heading = page.getByRole('heading', { name: /Substitution/ }).first()
 		if (await becomesVisible(heading)) {
@@ -43,7 +43,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	test('opening the substitution form shows the substitute field', async ({
 		page,
 	}) => {
-		await page.goto(`/index.php/apps/procest${SubstitutionSettings}`)
+		await page.goto(`/index.php/apps/dossiq${SubstitutionSettings}`)
 		await dismissSupportDialog(page)
 		const btn = page
 			.getByRole('button', { name: /Register substitution/ })
@@ -68,7 +68,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	test('My Work renders without error and supports the substituted filter when present', async ({
 		page,
 	}) => {
-		await page.goto('/index.php/apps/procest/my-work')
+		await page.goto('/index.php/apps/dossiq/my-work')
 		await dismissSupportDialog(page)
 		// The My Work route renders no page heading (measured on a CI runner
 		// 2026-08-04) — assert the view by a control it does render.
@@ -93,7 +93,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	test('coordinator admin exposes a bulk-reassign action with a mandatory preview', async ({
 		page,
 	}) => {
-		await page.goto(`/index.php/apps/procest${SubstitutionAdmin}`)
+		await page.goto(`/index.php/apps/dossiq${SubstitutionAdmin}`)
 		await dismissSupportDialog(page)
 		const heading = page
 			.getByRole('heading', { name: /Substitutions & reassignment/ })
@@ -121,7 +121,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	test('coordinator admin lists substitutions with an actions affordance', async ({
 		page,
 	}) => {
-		await page.goto(`/index.php/apps/procest${SubstitutionAdmin}`)
+		await page.goto(`/index.php/apps/dossiq${SubstitutionAdmin}`)
 		await dismissSupportDialog(page)
 		const heading = page
 			.getByRole('heading', { name: /Substitutions & reassignment/ })

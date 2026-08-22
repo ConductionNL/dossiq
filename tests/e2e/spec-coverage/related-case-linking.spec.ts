@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Gate-19 spec-coverage tests for the related-case-linking UI surface

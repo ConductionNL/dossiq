@@ -128,7 +128,7 @@
           "case": {
             "type": "string",
             "title": "Case Reference",
-            "description": "Reference to the procest case (case id)",
+            "description": "Reference to the dossiq case (case id)",
             "facetable": true
           },
           "deadlineDefinition": {

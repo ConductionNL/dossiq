@@ -4,7 +4,7 @@
 	<NcModal v-if="open" size="normal" @close="$emit('close')">
 		<div class="dossier-metadata-dialog">
 			<h2 class="dossier-metadata-dialog__title">
-				{{ t('procest', 'Document metadata') }}
+				{{ t('dossiq', 'Document metadata') }}
 			</h2>
 
 			<ul v-if="files.length > 0" class="dossier-metadata-dialog__files">
@@ -24,7 +24,7 @@
 
 			<NcSelect
 				v-model="selectedType"
-				:inputLabel="t('procest', 'Document type')"
+				:inputLabel="t('dossiq', 'Document type')"
 				:options="typeOptions"
 				:reduce="(option) => option.id"
 				label="label"
@@ -33,7 +33,7 @@
 
 			<NcSelect
 				v-model="selectedClassification"
-				:inputLabel="t('procest', 'Confidentiality')"
+				:inputLabel="t('dossiq', 'Confidentiality')"
 				:options="classificationOptions"
 				:reduce="(option) => option.id"
 				label="label"
@@ -42,23 +42,23 @@
 
 			<NcTextField
 				v-model="title"
-				:label="t('procest', 'Title')"
-				:placeholder="t('procest', 'Document title')" />
+				:label="t('dossiq', 'Title')"
+				:placeholder="t('dossiq', 'Document title')" />
 
 			<NcTextArea
 				v-model="description"
-				:label="t('procest', 'Description')"
-				:placeholder="t('procest', 'Optional description')" />
+				:label="t('dossiq', 'Description')"
+				:placeholder="t('dossiq', 'Optional description')" />
 
 			<div class="dossier-metadata-dialog__actions">
 				<NcButton @click="$emit('close')">
-					{{ t('procest', 'Cancel') }}
+					{{ t('dossiq', 'Cancel') }}
 				</NcButton>
 				<NcButton
 					type="primary"
 					:disabled="!canSubmit || uploading"
 					@click="submit">
-					{{ t('procest', 'Upload') }}
+					{{ t('dossiq', 'Upload') }}
 				</NcButton>
 			</div>
 		</div>
@@ -160,20 +160,20 @@ export default {
 		 */
 		classificationOptions() {
 			return [
-				{ id: 'openbaar', label: this.t('procest', 'Public') },
+				{ id: 'openbaar', label: this.t('dossiq', 'Public') },
 				{
 					id: 'beperkt_openbaar',
-					label: this.t('procest', 'Limited public'),
+					label: this.t('dossiq', 'Limited public'),
 				},
-				{ id: 'intern', label: this.t('procest', 'Internal') },
+				{ id: 'intern', label: this.t('dossiq', 'Internal') },
 				{
 					id: 'zaakvertrouwelijk',
-					label: this.t('procest', 'Case-confidential'),
+					label: this.t('dossiq', 'Case-confidential'),
 				},
-				{ id: 'vertrouwelijk', label: this.t('procest', 'Confidential') },
-				{ id: 'confidentieel', label: this.t('procest', 'Restricted') },
-				{ id: 'geheim', label: this.t('procest', 'Secret') },
-				{ id: 'zeer_geheim', label: this.t('procest', 'Top secret') },
+				{ id: 'vertrouwelijk', label: this.t('dossiq', 'Confidential') },
+				{ id: 'confidentieel', label: this.t('dossiq', 'Restricted') },
+				{ id: 'geheim', label: this.t('dossiq', 'Secret') },
+				{ id: 'zeer_geheim', label: this.t('dossiq', 'Top secret') },
 			]
 		},
 

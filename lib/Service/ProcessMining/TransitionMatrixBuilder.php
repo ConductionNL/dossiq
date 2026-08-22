@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest TransitionMatrixBuilder.
+ * Dossiq TransitionMatrixBuilder.
  *
  * The transition-frequency metric family of the process-mining report: the
  * from→to matrix over the recorded `statusRecord` chain, plus rework-loop
@@ -14,7 +14,7 @@
  * OpenRegister.
  *
  * @category Service
- * @package  OCA\Procest\Service\ProcessMining
+ * @package  OCA\Dossiq\Service\ProcessMining
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,7 +22,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -32,7 +32,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\ProcessMining;
+namespace OCA\Dossiq\Service\ProcessMining;
 
 /**
  * Builds the from→to transition matrix and detects rework loops.

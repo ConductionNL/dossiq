@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest ORI Data Quality Check Background Job
+ * Dossiq ORI Data Quality Check Background Job
  *
  * Nightly background job that validates ORI (Open Raadsinformatie) object
  * quality: missing recommended fields (locatie, voorzitter), broken slug
@@ -9,7 +9,7 @@
  * data_quality_issues log surfaced by the admin dashboard.
  *
  * @category Cron
- * @package  OCA\Procest\Cron
+ * @package  OCA\Dossiq\Cron
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,11 +22,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Cron;
+namespace OCA\Dossiq\Cron;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -100,7 +100,7 @@ class OriDataQualityCheck extends TimedJob {
 		$this->writeQualityLog(objectService: $objectService, issues: $issues);
 
 		$this->logger->info(
-			'Procest: ORI data quality check completed',
+			'Dossiq: ORI data quality check completed',
 			[
 				'issueCount' => count(value: $issues),
 				'app' => Application::APP_ID,
@@ -128,7 +128,7 @@ class OriDataQualityCheck extends TimedJob {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
-				'Procest: could not fetch vergaderingen for quality check',
+				'Dossiq: could not fetch vergaderingen for quality check',
 				['exception' => $e->getMessage()]
 			);
 			return $issues;
@@ -170,7 +170,7 @@ class OriDataQualityCheck extends TimedJob {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
-				'Procest: could not fetch agendapunten for integrity check',
+				'Dossiq: could not fetch agendapunten for integrity check',
 				['exception' => $e->getMessage()]
 			);
 			return $issues;
@@ -325,7 +325,7 @@ class OriDataQualityCheck extends TimedJob {
 	}//end checkOrphanedDocumenten()
 
 	/**
-	 * Write the quality issues to the Procest register as a data_quality_issues entry.
+	 * Write the quality issues to the Dossiq register as a data_quality_issues entry.
 	 *
 	 * @param object $objectService The OpenRegister ObjectService
 	 * @param array<int,array> $issues Collected quality issues
@@ -359,7 +359,7 @@ class OriDataQualityCheck extends TimedJob {
 		} catch (\Throwable $e) {
 			// Schema may not exist yet; log the result instead.
 			$this->logger->info(
-				'Procest: ORI quality check result',
+				'Dossiq: ORI quality check result',
 				['log' => $log, 'app' => Application::APP_ID]
 			);
 		}//end try

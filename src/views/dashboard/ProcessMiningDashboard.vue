@@ -3,7 +3,7 @@
 <!--
 	Process mining bottleneck dashboard.
 
-	Procest ships the DATA PROVIDER (ProcessMiningService + ProcessMiningController)
+	Dossiq ships the DATA PROVIDER (ProcessMiningService + ProcessMiningController)
 	and this page config only — every visualisation is an existing nc-vue leaf
 	(ADR-Leaf-First, mirrors the doorlooptijd dashboard's ComplianceCharts.vue):
 
@@ -23,11 +23,11 @@
 	<div class="process-mining-dashboard">
 		<div class="process-mining-dashboard__header">
 			<div>
-				<h2>{{ t('procest', 'Process Mining') }}</h2>
+				<h2>{{ t('dossiq', 'Process Mining') }}</h2>
 				<p class="process-mining-dashboard__subtitle">
 					{{
 						t(
-							'procest',
+							'dossiq',
 							'Bottleneck analysis from recorded case status history',
 						)
 					}}
@@ -49,14 +49,14 @@
 				<NcSelect
 					:modelValue="caseTypeFilter"
 					:options="caseTypeOptions"
-					:inputLabel="t('procest', 'Filter by case type')"
-					:placeholder="t('procest', 'All case types')"
+					:inputLabel="t('dossiq', 'Filter by case type')"
+					:placeholder="t('dossiq', 'All case types')"
 					@update:modelValue="onCaseTypeChange" />
 				<NcButton type="secondary" @click="load">
 					<template #icon>
 						<Refresh :size="18" />
 					</template>
-					{{ t('procest', 'Refresh') }}
+					{{ t('dossiq', 'Refresh') }}
 				</NcButton>
 			</div>
 		</div>
@@ -70,29 +70,27 @@
 		<div
 			v-else-if="!loading && kpiSummary.totalCases === 0"
 			class="process-mining-dashboard__empty">
-			<p>{{ t('procest', 'No status history in the selected period.') }}</p>
+			<p>{{ t('dossiq', 'No status history in the selected period.') }}</p>
 		</div>
 
 		<div v-else-if="!loading" class="process-mining-dashboard__content">
 			<CnKpiGrid :columns="4">
 				<CnStatsBlock
-					:title="t('procest', 'Cases analysed')"
+					:title="t('dossiq', 'Cases analysed')"
 					:count="kpiSummary.totalCases"
 					variant="primary" />
 				<CnStatsBlock
-					:title="t('procest', 'Case types')"
+					:title="t('dossiq', 'Case types')"
 					:count="kpiSummary.caseTypeCount"
 					variant="default" />
 				<CnStatsBlock
-					:title="t('procest', 'Overall rework rate')"
+					:title="t('dossiq', 'Overall rework rate')"
 					variant="warning">
 					<template #value>
 						{{ kpiSummary.overallReworkPercent }}%
 					</template>
 				</CnStatsBlock>
-				<CnStatsBlock
-					:title="t('procest', 'Top bottleneck')"
-					variant="error">
+				<CnStatsBlock :title="t('dossiq', 'Top bottleneck')" variant="error">
 					<template #value>
 						{{ topBottleneckLabel }}
 					</template>
@@ -102,7 +100,7 @@
 			<NcNoteCard v-if="kpiSummary.overallReworkPercent >= 20" type="warning">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'{percent}% of recorded transitions revisit a status the case had already left — a high rework rate usually means guard conditions or handler routing need a closer look.',
 						{ percent: kpiSummary.overallReworkPercent },
 					)
@@ -112,7 +110,7 @@
 			<div class="process-mining-dashboard__charts">
 				<div class="chart-card">
 					<h3>
-						{{ t('procest', 'Dwell time by status (median hours)') }}
+						{{ t('dossiq', 'Dwell time by status (median hours)') }}
 					</h3>
 					<div v-if="dwellSeries.length > 0" class="chart-container">
 						<CnChartWidget
@@ -123,12 +121,12 @@
 							:options="dwellOptions" />
 					</div>
 					<div v-else class="chart-empty">
-						{{ t('procest', 'No dwell-time data available') }}
+						{{ t('dossiq', 'No dwell-time data available') }}
 					</div>
 				</div>
 
 				<div class="chart-card">
-					<h3>{{ t('procest', 'Throughput (cases closed per week)') }}</h3>
+					<h3>{{ t('dossiq', 'Throughput (cases closed per week)') }}</h3>
 					<div v-if="throughputSeries.length > 0" class="chart-container">
 						<CnChartWidget
 							type="line"
@@ -138,19 +136,17 @@
 							:options="throughputOptions" />
 					</div>
 					<div v-else class="chart-empty">
-						{{
-							t('procest', 'No completed cases in the selected range')
-						}}
+						{{ t('dossiq', 'No completed cases in the selected range') }}
 					</div>
 				</div>
 			</div>
 
 			<div class="process-mining-dashboard__table-section">
-				<h3>{{ t('procest', 'Bottleneck ranking') }}</h3>
+				<h3>{{ t('dossiq', 'Bottleneck ranking') }}</h3>
 				<p class="process-mining-dashboard__table-hint">
 					{{
 						t(
-							'procest',
+							'dossiq',
 							'Ranked by median dwell time × case volume — the statuses most worth investigating first.',
 						)
 					}}
@@ -160,11 +156,11 @@
 					class="process-mining-dashboard__table">
 					<thead>
 						<tr>
-							<th scope="col">{{ t('procest', 'Case type') }}</th>
-							<th scope="col">{{ t('procest', 'Status') }}</th>
-							<th scope="col">{{ t('procest', 'Median hours') }}</th>
-							<th scope="col">{{ t('procest', 'Visits') }}</th>
-							<th scope="col">{{ t('procest', 'Score') }}</th>
+							<th scope="col">{{ t('dossiq', 'Case type') }}</th>
+							<th scope="col">{{ t('dossiq', 'Status') }}</th>
+							<th scope="col">{{ t('dossiq', 'Median hours') }}</th>
+							<th scope="col">{{ t('dossiq', 'Visits') }}</th>
+							<th scope="col">{{ t('dossiq', 'Score') }}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -178,7 +174,7 @@
 					</tbody>
 				</table>
 				<p v-else class="process-mining-dashboard__empty-hint">
-					{{ t('procest', 'No bottleneck data for the selected period.') }}
+					{{ t('dossiq', 'No bottleneck data for the selected period.') }}
 				</p>
 			</div>
 		</div>
@@ -244,10 +240,10 @@ export default {
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		datePresets() {
 			return [
-				{ key: '3m', label: t('procest', 'Last 3 months') },
-				{ key: '6m', label: t('procest', 'Last 6 months') },
-				{ key: '12m', label: t('procest', 'Last 12 months') },
-				{ key: 'all', label: t('procest', 'All time') },
+				{ key: '3m', label: t('dossiq', 'Last 3 months') },
+				{ key: '6m', label: t('dossiq', 'Last 6 months') },
+				{ key: '12m', label: t('dossiq', 'Last 12 months') },
+				{ key: 'all', label: t('dossiq', 'All time') },
 			]
 		},
 
@@ -291,7 +287,7 @@ export default {
 		dwellSeries() {
 			return buildDwellSeries(
 				this.primaryCaseType?.dwellTime,
-				t('procest', 'Median hours'),
+				t('dossiq', 'Median hours'),
 			)
 		},
 
@@ -304,8 +300,8 @@ export default {
 		dwellOptions() {
 			return {
 				plotOptions: { bar: { borderRadius: 4, columnWidth: '60%' } },
-				xaxis: { title: { text: t('procest', 'Status') } },
-				yaxis: { title: { text: t('procest', 'Median hours') } },
+				xaxis: { title: { text: t('dossiq', 'Status') } },
+				yaxis: { title: { text: t('dossiq', 'Median hours') } },
 				colors: ['var(--color-warning)'],
 			}
 		},
@@ -314,7 +310,7 @@ export default {
 		throughputSeries() {
 			return buildThroughputSeries(
 				this.report?.throughputTrend,
-				t('procest', 'Cases closed'),
+				t('dossiq', 'Cases closed'),
 			)
 		},
 
@@ -418,7 +414,7 @@ export default {
 				this.error =
 					err?.response?.data?.message
 					|| err.message
-					|| t('procest', 'Failed to load process-mining report')
+					|| t('dossiq', 'Failed to load process-mining report')
 				this.report = null
 			} finally {
 				this.loading = false

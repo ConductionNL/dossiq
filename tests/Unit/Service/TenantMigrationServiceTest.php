@@ -3,13 +3,13 @@
 /**
  * TenantMigrationService Unit Tests
  *
- * Verifies the one-time, idempotent migration of legacy procest `tenant` schema
+ * Verifies the one-time, idempotent migration of legacy dossiq `tenant` schema
  * objects onto OpenRegister Organisations (migrate-tenant-to-or-tenant,
  * ADR-022): row → Organisation field mapping, status vocabulary mapping, UUID
  * preservation, slug-based idempotency, and graceful no-op when OR is absent.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -17,16 +17,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\OpenRegister\Db\Organisation;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\TenantMigrationService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TenantMigrationService;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -36,7 +36,7 @@ use RuntimeException;
 /**
  * Unit tests for TenantMigrationService.
  *
- * @covers \OCA\Procest\Service\TenantMigrationService
+ * @covers \OCA\Dossiq\Service\TenantMigrationService
  */
 class TenantMigrationServiceTest extends TestCase {
 	/**
@@ -117,7 +117,7 @@ class TenantMigrationServiceTest extends TestCase {
 		$settings->method('getObjectService')->willReturn($objectService);
 
 		$appManager = $this->createMock(IAppManager::class);
-		$appManager->method('getInstalledApps')->willReturn(['openregister', 'procest']);
+		$appManager->method('getInstalledApps')->willReturn(['openregister', 'dossiq']);
 
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturn($mapper);
@@ -175,7 +175,7 @@ class TenantMigrationServiceTest extends TestCase {
 	}
 
 	/**
-	 * Legacy procest statuses map to OR's lifecycle vocabulary.
+	 * Legacy dossiq statuses map to OR's lifecycle vocabulary.
 	 *
 	 * @return void
 	 */
@@ -260,7 +260,7 @@ class TenantMigrationServiceTest extends TestCase {
 		$settings->method('getObjectService')->willReturn($this->objectServiceWithRows([]));
 
 		$appManager = $this->createMock(IAppManager::class);
-		$appManager->method('getInstalledApps')->willReturn(['procest']);
+		$appManager->method('getInstalledApps')->willReturn(['dossiq']);
 
 		$container = $this->createMock(ContainerInterface::class);
 

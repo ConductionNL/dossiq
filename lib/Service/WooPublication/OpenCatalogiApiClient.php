@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest OpenCatalogi API Client.
+ * Dossiq OpenCatalogi API Client.
  *
  * The boundary for every outbound call this app makes to OpenCatalogi's
  * publication model. OpenCatalogi is a peer app on the SAME Nextcloud
@@ -41,7 +41,7 @@
  * and is therefore outside ADR-080 D2/D3.
  *
  * @category Service
- * @package  OCA\Procest\Service\WooPublication
+ * @package  OCA\Dossiq\Service\WooPublication
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -59,10 +59,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\WooPublication;
+namespace OCA\Dossiq\Service\WooPublication;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;
 use OCP\IURLGenerator;

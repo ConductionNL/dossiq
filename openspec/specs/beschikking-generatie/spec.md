@@ -1,17 +1,17 @@
 ---
 status: done
 note: >-
-  Implemented and archived 2026-06-13 (change beschikking-generatie). BeschikkingService/BeschikkingGenerationService/BeschikkingController + adapter interfaces (template/signing/archival) + Vue dialogs shipped. Three cross-app integrations remain deferred ([~]): Berichtenbox routing (openconnector), archival ingestion (openregister), PDF/A-3 template engine (docudesk) — each consumed via an adapter interface in procest.
+  Implemented and archived 2026-06-13 (change beschikking-generatie). BeschikkingService/BeschikkingGenerationService/BeschikkingController + adapter interfaces (template/signing/archival) + Vue dialogs shipped. Three cross-app integrations remain deferred ([~]): Berichtenbox routing (openconnector), archival ingestion (openregister), PDF/A-3 template engine (docudesk) — each consumed via an adapter interface in dossiq.
 ---
 
 # beschikking-generatie Specification
 
 ## Purpose
-Composes a conceptbeschikking from a template + current zaakdata, drives the verleend/geweigerd outcome with prefilled motivation, renders a PDF, attaches it as a `bijlage`, and routes it to the addressee. Procest owns composition + workflow; PDF rendering, archival, and Berichtenbox delivery are integrated via adapter interfaces backed by docudesk/openregister/openconnector.
+Composes a conceptbeschikking from a template + current zaakdata, drives the verleend/geweigerd outcome with prefilled motivation, renders a PDF, attaches it as a `bijlage`, and routes it to the addressee. Dossiq owns composition + workflow; PDF rendering, archival, and Berichtenbox delivery are integrated via adapter interfaces backed by docudesk/openregister/openconnector.
 ## Requirements
 ### Requirement: Conceptbeschikking vanuit zaakgegevens samenstellen (REQ-BES-001)
 
-The system SHALL compose a conceptbeschikking from a template (Docudesk) and the current zaakdata (Procest), with all required fields prepopulated and missing required fields explicitly marked.
+The system SHALL compose a conceptbeschikking from a template (Docudesk) and the current zaakdata (Dossiq), with all required fields prepopulated and missing required fields explicitly marked.
 
 **Feature tier**: V1
 
@@ -222,7 +222,7 @@ The system SHALL provide an exportable audit-proof package containing all state 
   - Berichtenbox delivery proofs (berichtId, timestamps)
   - Any linked bezwaar-zaak ID
   - A manifest file describing the package contents
-- **AND** the ZIP SHALL be cryptographically signed by Procest (PKCS#7)
+- **AND** the ZIP SHALL be cryptographically signed by Dossiq (PKCS#7)
 - **AND** the response SHALL include `Content-Type: application/zip` with appropriate download headers
 
 #### Scenario: eIDAS-signature is verifiable in audit-pakket
@@ -255,19 +255,19 @@ Beschikking templates in Docudesk SHALL be versioned with an effective date (`in
 
 ### Requirement: Data Model for Beschikking (REQ-BES-011)
 
-The Procest register SHALL define the `Beschikking`, `StateMachineLog`, `BezwaarTrigger`, and `MandaatRegeling` entities with all required properties, constraints, and relations per the data model in design.md.
+The Dossiq register SHALL define the `Beschikking`, `StateMachineLog`, `BezwaarTrigger`, and `MandaatRegeling` entities with all required properties, constraints, and relations per the data model in design.md.
 
 **Feature tier**: V1
 
 #### Scenario: Beschikking entity is fully queryable
 
-- **GIVEN** a Procest instance with seeded beschikkingen
+- **GIVEN** a Dossiq instance with seeded beschikkingen
 - **WHEN** the system queries `GET /api/beschikkingen?huidigeStatus=ondertekend`
 - **THEN** the response SHALL include all ondertekend beschikkingen with their full payloads
 
 #### Scenario: Immutability of ondertekend beschikking is enforced at schema level
 
-- **GIVEN** the `Beschikking` schema definition in `procest_register.json`
+- **GIVEN** the `Beschikking` schema definition in `dossiq_register.json`
 - **WHEN** the schema is inspected
 - **THEN** it SHALL include a `readOnlyFields` array or equivalent guard that lists `motivering`, `beslissing`, `geadresseerde`, etc.
 - **AND** these fields SHALL be immutable once `huidigeStatus ∈ {ondertekend, verzonden, ontvangen-bevestiging, gearchiveerd}`

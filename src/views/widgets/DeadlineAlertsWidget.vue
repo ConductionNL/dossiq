@@ -5,14 +5,14 @@
 		:loading="loading"
 		hideHeader
 		borderless
-		:emptyText="t('procest', 'No deadline alerts')"
+		:emptyText="t('dossiq', 'No deadline alerts')"
 		@rowClick="onRowClick">
 		<template #footer>
 			<a
 				class="cn-data-table__view-all"
 				:href="viewAllUrl"
 				@click.prevent="onViewAll">
-				{{ t('procest', 'View all') }} →
+				{{ t('dossiq', 'View all') }} →
 			</a>
 		</template>
 	</CnDataTable>
@@ -61,7 +61,7 @@ export default {
 		 * @spec openspec/specs/signalering-widgets/spec.md
 		 */
 		viewAllUrl() {
-			return generateUrl('/apps/procest/cases')
+			return generateUrl('/apps/dossiq/cases')
 		},
 
 		/** @spec openspec/specs/signalering-widgets/spec.md */
@@ -69,21 +69,21 @@ export default {
 			const overdueItems = this.alerts.overdue.map((item) => ({
 				id: item.id,
 				mainText: item.title,
-				subText: t('procest', '{days} days overdue', {
+				subText: t('dossiq', '{days} days overdue', {
 					days: item.daysOverdue,
 				}),
-				targetUrl: generateUrl(`/apps/procest/cases/${item.id}`),
+				targetUrl: generateUrl(`/apps/dossiq/cases/${item.id}`),
 			}))
 			const atRiskItems = this.alerts.atRisk.map((item) => ({
 				id: item.id,
 				mainText: item.title,
 				subText:
 					item.daysRemaining === 0
-						? t('procest', 'Due today')
-						: t('procest', '{days} days remaining', {
+						? t('dossiq', 'Due today')
+						: t('dossiq', '{days} days remaining', {
 								days: item.daysRemaining,
 							}),
-				targetUrl: generateUrl(`/apps/procest/cases/${item.id}`),
+				targetUrl: generateUrl(`/apps/dossiq/cases/${item.id}`),
 			}))
 			return [...overdueItems, ...atRiskItems].slice(0, 5)
 		},
@@ -115,7 +115,7 @@ export default {
 		 * @return {void}
 		 */
 		onViewAll() {
-			navigateTo(generateUrl('/apps/procest/cases'))
+			navigateTo(generateUrl('/apps/dossiq/cases'))
 		},
 
 		/**

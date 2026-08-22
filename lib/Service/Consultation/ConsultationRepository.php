@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest consultation repository.
+ * Dossiq consultation repository.
  *
  * Every OpenRegister read, delete and query the consultation surface performs:
  * listing a case's consultations, fetching one, resolving the public secure
@@ -23,7 +23,7 @@
  * so a closed consultation must stop resolving rather than stay readable.
  *
  * @category Service
- * @package  OCA\Procest\Service\Consultation
+ * @package  OCA\Dossiq\Service\Consultation
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -31,7 +31,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -41,11 +41,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Consultation;
+namespace OCA\Dossiq\Service\Consultation;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -252,7 +252,7 @@ class ConsultationRepository {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to find consultation by token: ' . $e->getMessage(),
+				'Dossiq: failed to find consultation by token: ' . $e->getMessage(),
 				['app' => Application::APP_ID],
 			);
 			return null;

@@ -1,17 +1,17 @@
 <?php
 
 /**
- * Result value-object returned by a Procest ZTC / Catalogi-API
+ * Result value-object returned by a Dossiq ZTC / Catalogi-API
  * adapter call.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Ztc
+ * @package  OCA\Dossiq\Service\External\Ztc
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  *
@@ -21,7 +21,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Ztc;
+namespace OCA\Dossiq\Service\External\Ztc;
 
 /**
  * Result of a ZTC / Catalogi-API resolve / import attempt.

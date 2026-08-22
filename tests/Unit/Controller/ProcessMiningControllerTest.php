@@ -9,7 +9,7 @@
  * delegating to {@see ProcessMiningService::getReport()}.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,17 +20,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T04
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\ProcessMiningController;
-use OCA\Procest\Service\ProcessMiningService;
+use OCA\Dossiq\Controller\ProcessMiningController;
+use OCA\Dossiq\Service\ProcessMiningService;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -40,7 +40,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Controller\ProcessMiningController
+ * @covers \OCA\Dossiq\Controller\ProcessMiningController
  */
 class ProcessMiningControllerTest extends TestCase {
 	/**
@@ -51,7 +51,7 @@ class ProcessMiningControllerTest extends TestCase {
 		$userSession->method('getUser')->willReturn(null);
 
 		$controller = new ProcessMiningController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->createMock(IRequest::class),
 			userSession: $userSession,
 			groupManager: $this->createMock(IGroupManager::class),
@@ -79,7 +79,7 @@ class ProcessMiningControllerTest extends TestCase {
 		$groupManager->method('isAdmin')->with('regular-user')->willReturn(false);
 
 		$controller = new ProcessMiningController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->createMock(IRequest::class),
 			userSession: $userSession,
 			groupManager: $groupManager,
@@ -114,7 +114,7 @@ class ProcessMiningControllerTest extends TestCase {
 		$service->method('getReport')->willReturn(['period' => [], 'caseTypes' => []]);
 
 		$controller = new ProcessMiningController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->createMock(IRequest::class),
 			userSession: $userSession,
 			groupManager: $groupManager,
@@ -147,7 +147,7 @@ class ProcessMiningControllerTest extends TestCase {
 		);
 
 		$controller = new ProcessMiningController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $request,
 			userSession: $userSession,
 			groupManager: $groupManager,
@@ -193,7 +193,7 @@ class ProcessMiningControllerTest extends TestCase {
 			->willReturn(['period' => ['from' => '2026-01-01', 'to' => '2026-12-31'], 'caseTypes' => []]);
 
 		$controller = new ProcessMiningController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $request,
 			userSession: $userSession,
 			groupManager: $groupManager,
@@ -228,7 +228,7 @@ class ProcessMiningControllerTest extends TestCase {
 		$service->method('getReport')->willThrowException(new \RuntimeException('secret internal detail'));
 
 		$controller = new ProcessMiningController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->createMock(IRequest::class),
 			userSession: $userSession,
 			groupManager: $groupManager,

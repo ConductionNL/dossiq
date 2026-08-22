@@ -13,13 +13,13 @@
 	<div class="case-tab case-tab--decisions">
 		<div class="case-tab__header">
 			<h3 class="case-tab__title">
-				{{ t('procest', 'Decisions') }}
+				{{ t('dossiq', 'Decisions') }}
 				<span v-if="decisions.length > 0" class="case-tab__count"
 					>({{ decisions.length }})</span
 				>
 			</h3>
 			<NcButton type="primary" @click="openCreate">
-				{{ t('procest', 'Add decision') }}
+				{{ t('dossiq', 'Add decision') }}
 			</NcButton>
 		</div>
 
@@ -27,9 +27,9 @@
 
 		<NcEmptyContent
 			v-else-if="decisions.length === 0"
-			:title="t('procest', 'No decisions yet')"
+			:title="t('dossiq', 'No decisions yet')"
 			:description="
-				t('procest', 'Record a decision (besluit) taken on this case.')
+				t('dossiq', 'Record a decision (besluit) taken on this case.')
 			" />
 
 		<ul v-else class="case-tab__list">
@@ -48,10 +48,10 @@
 					}}</strong>
 					<NcActions :inline="0" @click.stop>
 						<NcActionButton @click="openEdit(decision)">
-							{{ t('procest', 'Edit') }}
+							{{ t('dossiq', 'Edit') }}
 						</NcActionButton>
 						<NcActionButton @click="openDelete(decision)">
-							{{ t('procest', 'Delete') }}
+							{{ t('dossiq', 'Delete') }}
 						</NcActionButton>
 					</NcActions>
 				</div>
@@ -61,14 +61,14 @@
 					</span>
 					<span v-if="decision.decisionDate">
 						{{
-							t('procest', 'Decided: {date}', {
+							t('dossiq', 'Decided: {date}', {
 								date: formatDate(decision.decisionDate),
 							})
 						}}
 					</span>
 					<span v-if="decision.effectiveDate">
 						{{
-							t('procest', 'Effective: {date}', {
+							t('dossiq', 'Effective: {date}', {
 								date: formatDate(decision.effectiveDate),
 							})
 						}}
@@ -83,9 +83,7 @@
 			:fields="formFields"
 			:item="editItem"
 			:dialogTitle="
-				editItem
-					? t('procest', 'Edit decision')
-					: t('procest', 'Add decision')
+				editItem ? t('dossiq', 'Edit decision') : t('dossiq', 'Add decision')
 			"
 			@confirm="onFormConfirm"
 			@close="showFormDialog = false" />
@@ -158,27 +156,27 @@ export default {
 				enumLabels[dt.id] = dt.title || dt.name || dt.id
 			}
 			return [
-				{ key: 'title', label: t('procest', 'Title'), required: true },
+				{ key: 'title', label: t('dossiq', 'Title'), required: true },
 				{
 					key: 'decisionType',
-					label: t('procest', 'Decision type'),
+					label: t('dossiq', 'Decision type'),
 					widget: 'select',
 					enum: this.decisionTypes.map((dt) => dt.id),
 					enumLabels,
 				},
 				{
 					key: 'decisionDate',
-					label: t('procest', 'Decision date'),
+					label: t('dossiq', 'Decision date'),
 					widget: 'datetime',
 				},
 				{
 					key: 'effectiveDate',
-					label: t('procest', 'Effective date'),
+					label: t('dossiq', 'Effective date'),
 					widget: 'datetime',
 				},
 				{
 					key: 'description',
-					label: t('procest', 'Description'),
+					label: t('dossiq', 'Description'),
 					widget: 'textarea',
 				},
 			]
@@ -255,12 +253,12 @@ export default {
 					await this.reload()
 				} else {
 					this.$refs.formDialog.setResult({
-						error: t('procest', 'Could not save decision'),
+						error: t('dossiq', 'Could not save decision'),
 					})
 				}
 			} catch (err) {
 				this.$refs.formDialog.setResult({
-					error: err.message || t('procest', 'Could not save decision'),
+					error: err.message || t('dossiq', 'Could not save decision'),
 				})
 			}
 		},
@@ -272,7 +270,7 @@ export default {
 				await this.reload()
 			} catch (err) {
 				this.$refs.deleteDialog.setResult({
-					error: err.message || t('procest', 'Could not delete decision'),
+					error: err.message || t('dossiq', 'Could not delete decision'),
 				})
 			}
 		},

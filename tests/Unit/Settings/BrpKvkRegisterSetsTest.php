@@ -12,7 +12,7 @@
  * schema (union-merge guard: required arrays untouched).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Settings
+ * @package  OCA\Dossiq\Tests\Unit\Settings
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,12 +23,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Settings;
+namespace OCA\Dossiq\Tests\Unit\Settings;
 
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Procest\Repair\InitializeSettings
+ * @covers \OCA\Dossiq\Repair\InitializeSettings
  */
 class BrpKvkRegisterSetsTest extends TestCase {
 	private const PINNED_KVK = ['69599084', '68750110', '69599068', '55344526'];
@@ -63,7 +63,7 @@ class BrpKvkRegisterSetsTest extends TestCase {
 		$person = $schemas['brpPerson']['properties'];
 		// 'bsn' is not a registered OpenRegister string format (see the field's
 		// own description); the fragment intentionally pattern-validates the
-		// nine-digit BSN instead (ADR-011 — no procest-side validator).
+		// nine-digit BSN instead (ADR-011 — no dossiq-side validator).
 		$this->assertSame('^[0-9]{9}$', $person['citizenServiceNumber']['pattern'], 'BSN must be pattern-validated as nine digits (ADR-011)');
 		foreach (['name', 'birth', 'residence'] as $block) {
 			$this->assertArrayHasKey($block, $person, "Haal Centraal block {$block} required");
@@ -164,7 +164,7 @@ class BrpKvkRegisterSetsTest extends TestCase {
 	 */
 	public function testCaseSchemaInitiatorFieldsAreAdditive(): void {
 		$register = json_decode(
-			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/procest_register.json'),
+			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'),
 			true
 		);
 		$case = $register['components']['schemas']['case'];
@@ -192,7 +192,7 @@ class BrpKvkRegisterSetsTest extends TestCase {
 	 */
 	public function testMergedRegisterSurvivesFragmentUnion(): void {
 		$required = json_decode(
-			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/procest_register.json'),
+			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'),
 			true
 		)['components']['schemas']['case']['required'];
 

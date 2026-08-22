@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Tenant SaaS Controller
+ * Dossiq Tenant SaaS Controller
  *
  * REST API for SaaS tenant CRUD + lifecycle transitions, backed by the
  * `tenant` register schema declared in chain member 01.
@@ -11,7 +11,7 @@
  * (Nextcloud SecurityMiddleware default — no `@NoAdminRequired`).
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,20 +20,20 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-02-tenant-crud-lifecycle/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\TenantBillingService;
-use OCA\Procest\Service\TenantSaasService;
-use OCA\Procest\Settings\AdminSettings;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\TenantBillingService;
+use OCA\Dossiq\Service\TenantSaasService;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;

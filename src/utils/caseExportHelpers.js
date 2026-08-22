@@ -5,7 +5,7 @@
  * OpenRegister ships the export leaf `GET
  * /apps/openregister/api/objects/{register}/{schema}/export?format=csv|json|excel`
  * (ObjectsController::export -> ExportService), which honours request
- * filters and the current user. Per ADR-022 procest consumes this leaf
+ * filters and the current user. Per ADR-022 dossiq consumes this leaf
  * rather than serialising CSV/Excel itself — this module only builds the
  * URL; the browser download and the actual export run entirely in
  * openregister.

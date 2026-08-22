@@ -1,7 +1,7 @@
 {
 	"info": {
-		"name": "Procest deelzaken API (deelzaak-support)",
-		"description": "Contract checks for the procest deelzaken (sub-case) REST surface served by DeelzaakController: the batch counts endpoint (single round-trip for a list page — REQ-DZS-005-C), the children list, and the parent lookup. The collection is read-only and self-contained: it asserts the response SHAPE and auth behaviour rather than seeding objects, so it is safe to run against any deployed register. SPDX-License-Identifier: EUPL-1.2",
+		"name": "Dossiq deelzaken API (deelzaak-support)",
+		"description": "Contract checks for the dossiq deelzaken (sub-case) REST surface served by DeelzaakController: the batch counts endpoint (single round-trip for a list page — REQ-DZS-005-C), the children list, and the parent lookup. The collection is read-only and self-contained: it asserts the response SHAPE and auth behaviour rather than seeding objects, so it is safe to run against any deployed register. SPDX-License-Identifier: EUPL-1.2",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"auth": {
@@ -12,7 +12,7 @@
 		]
 	},
 	"variable": [
-		{ "key": "base_url", "value": "http://localhost:8080/index.php/apps/procest" }
+		{ "key": "base_url", "value": "http://localhost:8080/index.php/apps/dossiq" }
 	],
 	"item": [
 		{

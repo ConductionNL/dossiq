@@ -5,7 +5,7 @@
 			<p>
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Save the case type first before adding decision types.',
 					)
 				}}
@@ -17,7 +17,7 @@
 			<NcNoteCard type="warning">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Decision types are now managed by decidesk (procest-delegate-contract-decision). Local decision type configuration is kept for historical read access only. New decision flows are raised via the decidesk integration (ADR-019).',
 					)
 				}}
@@ -30,12 +30,12 @@
 						<template v-if="editingId !== item.id">
 							<span class="sub-entity-row__name">{{ item.name }}</span>
 							<span v-if="item.isDraft" class="sub-entity-row__badge">
-								{{ t('procest', 'Draft') }}
+								{{ t('dossiq', 'Draft') }}
 							</span>
 							<span
 								v-if="item.publicationRequired"
 								class="sub-entity-row__badge">
-								{{ t('procest', 'Publication required') }}
+								{{ t('dossiq', 'Publication required') }}
 							</span>
 							<span v-if="item.validFrom" class="sub-entity-row__meta">
 								{{ item.validFrom }}
@@ -44,7 +44,7 @@
 								<NcButton
 									type="tertiary"
 									:aria-label="
-										t('procest', 'Edit {name}', {
+										t('dossiq', 'Edit {name}', {
 											name: item.name,
 										})
 									"
@@ -56,7 +56,7 @@
 								<NcButton
 									type="tertiary"
 									:aria-label="
-										t('procest', 'Delete {name}', {
+										t('dossiq', 'Delete {name}', {
 											name: item.name,
 										})
 									"
@@ -73,7 +73,7 @@
 								<div class="edit-row">
 									<NcTextField
 										:modelValue="editForm.name"
-										:label="t('procest', 'Name')"
+										:label="t('dossiq', 'Name')"
 										:error="!!editError"
 										class="edit-field"
 										@update:modelValue="
@@ -83,7 +83,7 @@
 								<div class="edit-row">
 									<NcTextField
 										:modelValue="editForm.description"
-										:label="t('procest', 'Description')"
+										:label="t('dossiq', 'Description')"
 										class="edit-field edit-field--full"
 										@update:modelValue="
 											(v) => (editForm.description = v)
@@ -92,7 +92,7 @@
 								<div class="edit-row">
 									<NcTextField
 										:modelValue="editForm.validFrom"
-										:label="t('procest', 'Valid from')"
+										:label="t('dossiq', 'Valid from')"
 										type="date"
 										class="edit-field"
 										@update:modelValue="
@@ -100,7 +100,7 @@
 										" />
 									<NcTextField
 										:modelValue="editForm.validUntil"
-										:label="t('procest', 'Valid until')"
+										:label="t('dossiq', 'Valid until')"
 										type="date"
 										class="edit-field"
 										@update:modelValue="
@@ -113,14 +113,14 @@
 										@update:modelValue="
 											(v) => (editForm.isDraft = v)
 										">
-										{{ t('procest', 'Draft') }}
+										{{ t('dossiq', 'Draft') }}
 									</NcCheckboxRadioSwitch>
 									<NcCheckboxRadioSwitch
 										:modelValue="editForm.publicationRequired"
 										@update:modelValue="
 											(v) => (editForm.publicationRequired = v)
 										">
-										{{ t('procest', 'Publication required') }}
+										{{ t('dossiq', 'Publication required') }}
 									</NcCheckboxRadioSwitch>
 								</div>
 								<p v-if="editError" class="edit-error">
@@ -131,10 +131,10 @@
 										type="primary"
 										:disabled="saving"
 										@click="saveEdit">
-										{{ t('procest', 'Save') }}
+										{{ t('dossiq', 'Save') }}
 									</NcButton>
 									<NcButton @click="cancelEdit">
-										{{ t('procest', 'Cancel') }}
+										{{ t('dossiq', 'Cancel') }}
 									</NcButton>
 								</div>
 							</div>
@@ -142,11 +142,11 @@
 					</div>
 				</div>
 				<p v-else class="sub-entity-tab__empty">
-					{{ t('procest', 'No decision types configured yet.') }}
+					{{ t('dossiq', 'No decision types configured yet.') }}
 				</p>
 
 				<NcButton v-if="editingId === null" @click="startAdd">
-					{{ t('procest', 'Add Decision Type') }}
+					{{ t('dossiq', 'Add Decision Type') }}
 				</NcButton>
 
 				<p v-if="error" class="sub-entity-tab__error">
@@ -226,7 +226,7 @@ export default {
 				this.items = results || []
 			} catch (e) {
 				this.error =
-					e.message || t('procest', 'Failed to load decision types')
+					e.message || t('dossiq', 'Failed to load decision types')
 			}
 			this.loading = false
 		},
@@ -267,7 +267,7 @@ export default {
 		async saveEdit() {
 			this.editError = ''
 			if (!this.editForm.name.trim()) {
-				this.editError = t('procest', 'Name is required')
+				this.editError = t('dossiq', 'Name is required')
 				return
 			}
 			this.saving = true
@@ -287,14 +287,14 @@ export default {
 				if (!result) {
 					this.editError =
 						objectStore.getError('decisionType')
-						|| t('procest', 'Failed to save decision type')
+						|| t('dossiq', 'Failed to save decision type')
 					return
 				}
 				this.editingId = null
 				await this.loadItems()
 			} catch (e) {
 				this.editError =
-					e.message || t('procest', 'Failed to save decision type')
+					e.message || t('dossiq', 'Failed to save decision type')
 			} finally {
 				this.saving = false
 			}
@@ -306,7 +306,7 @@ export default {
 		async deleteItem(item) {
 			if (
 				!confirm(
-					t('procest', 'Delete decision type "{name}"?', {
+					t('dossiq', 'Delete decision type "{name}"?', {
 						name: item.name,
 					}),
 				)
@@ -318,13 +318,13 @@ export default {
 				if (!ok) {
 					this.error =
 						objectStore.getError('decisionType')
-						|| t('procest', 'Failed to delete decision type')
+						|| t('dossiq', 'Failed to delete decision type')
 					return
 				}
 				await this.loadItems()
 			} catch (e) {
 				this.error =
-					e.message || t('procest', 'Failed to delete decision type')
+					e.message || t('dossiq', 'Failed to delete decision type')
 			}
 		},
 	},

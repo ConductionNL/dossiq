@@ -1,11 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Gate-19 spec-coverage tests for the parafering-audit-via-or spec
  * (migrate-parafering-to-or-audit, ADR-022 / consume-or-audit-trail-fleet-wide).
  *
- * Procest no longer writes a parallel `paraferingAuditEntry` store: every
+ * Dossiq no longer writes a parallel `paraferingAuditEntry` store: every
  * parafeerroute transition is recorded through OpenRegister's native,
  * hash-chained, append-only audit trail by ParaferingAuditListener. These
  * tests assert that contract from the consumer side: OR audit entries with
@@ -88,7 +88,7 @@ test.describe('Parafering audit via OR — spec coverage', () => {
 	// @e2e parafering-audit-via-or::existing-paraferingauditentry-objects-remain
 	// @e2e parafering-audit-via-or::historical-audit-records-readable-after-migration
 	test('paraferingAuditEntry schema is deprecated but retained for historical reads', async () => {
-		const registerJson = resolve(REPO_ROOT, 'lib/Settings/procest_register.json')
+		const registerJson = resolve(REPO_ROOT, 'lib/Settings/dossiq_register.json')
 		const json = JSON.parse(readFileSync(registerJson, 'utf8'))
 		// Locate the schema object regardless of nesting depth.
 		const text = readFileSync(registerJson, 'utf8')
@@ -145,12 +145,12 @@ test.describe('Parafering audit via OR — spec coverage', () => {
 	})
 
 	// @e2e parafering-audit-via-or::or-enforces-immutability-natively
-	test('OR enforces audit immutability natively (no procest validator needed)', async () => {
+	test('OR enforces audit immutability natively (no dossiq validator needed)', async () => {
 		const ctx = await request.newContext({
 			// Single source of truth — see tests/e2e/base-url.ts.
 			baseURL: BASE_URL,
 		})
-		// A PUT/DELETE on an audit-trail entry must not be a procest concern; OR
+		// A PUT/DELETE on an audit-trail entry must not be a dossiq concern; OR
 		// rejects mutation. We assert the endpoint does not accept a PUT as 200.
 		const res = await ctx.put(`${OR_API}/audit-trails/__none__`, {
 			failOnStatusCode: false,

@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Load Default ZGW Mappings Repair Step
+ * Dossiq Load Default ZGW Mappings Repair Step
  *
  * Repair step that loads default ZGW API mapping configurations into IAppConfig.
  * These mappings define how English OpenRegister properties translate to/from
  * Dutch ZGW API properties using Twig templates.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -19,18 +19,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
 use DateTime;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\ZgwMappingService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\ZgwMappingService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -73,7 +73,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * @return string
 	 */
 	public function getName(): string {
-		return 'Load default ZGW API mapping configurations for Procest';
+		return 'Load default ZGW API mapping configurations for Dossiq';
 	}//end getName()
 
 	/**
@@ -92,7 +92,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 
 		$registerId = $this->settingsService->getConfigValue(key: 'register', default: '');
 		if ($registerId === '') {
-			$output->warning('No Procest register configured yet. Skipping ZGW mapping defaults.');
+			$output->warning('No Dossiq register configured yet. Skipping ZGW mapping defaults.');
 			return;
 		}
 
@@ -120,7 +120,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 		$this->createDefaultKanalen(output: $output);
 
 		$this->logger->info(
-			'Procest: Default ZGW mappings loaded',
+			'Dossiq: Default ZGW mappings loaded',
 			['loaded' => $loaded, 'total' => count(value: $defaults)]
 		);
 	}//end run()
@@ -180,7 +180,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	/**
 	 * Get the default mapping configurations for all 12 ZGW resources.
 	 *
-	 * @param string $registerId The Procest register ID
+	 * @param string $registerId The Dossiq register ID
 	 *
 	 * @return array<string, array> Mapping configurations keyed by resource key
 	 *
@@ -300,7 +300,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for Zaak (case).
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -426,7 +426,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for ZaakType (caseType).
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -464,7 +464,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'verlengingstermijn' => '{{ extensionPeriod }}',
 				'publicatieIndicatie' => '{{ publicationRequired }}',
 				'productenOfDiensten' => '{{ productsOrServices | json_encode }}',
-				'selectielijstProcestype' => '{{ selectionListProcessType }}',
+				'selectielijstDossiqype' => '{{ selectionListProcessType }}',
 				'referentieproces' => '{{ referenceProcess | json_encode }}',
 				'responsible' => '{{ responsible }}',
 				'gerelateerdeZaaktypen' => '{{ relatedCaseTypes | json_encode }}',
@@ -491,7 +491,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'extensionAllowed' => '{{ verlengingMogelijk }}',
 				'extensionPeriod' => '{{ verlengingstermijn }}',
 				'publicationRequired' => '{{ publicatieIndicatie }}',
-				'selectionListProcessType' => '{{ selectielijstProcestype }}',
+				'selectionListProcessType' => '{{ selectielijstDossiqype }}',
 				'responsible' => '{{ verantwoordelijke }}',
 				'productsOrServices' => '{{ productenOfDiensten | json_encode }}',
 				'referenceProcess' => '{{ referentieproces | json_encode }}',
@@ -531,7 +531,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for Status.
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -577,7 +577,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for StatusType (statusType).
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -630,7 +630,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for Resultaat (result).
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -676,7 +676,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for ResultaatType (resultType).
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -743,7 +743,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for Rol (role).
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -792,7 +792,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for RolType (roleType).
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -833,7 +833,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for Eigenschap (propertyDefinition).
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -877,7 +877,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for Besluit (decision).
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -938,7 +938,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for BesluitType (decisionType).
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -1006,7 +1006,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for InformatieObjectType (documentType).
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -1067,7 +1067,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for EnkelvoudigInformatieObject (document).
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -1167,7 +1167,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for ObjectInformatieObject (documentLink).
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -1214,7 +1214,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for GebruiksRechten (usageRights).
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -1255,7 +1255,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for Kanaal (notification channel).
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -1294,7 +1294,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for Abonnement (notification subscription).
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -1329,7 +1329,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for Catalogus.
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -1380,7 +1380,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for ZaaktypeInformatieobjecttype.
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -1516,8 +1516,15 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	private function getDefaultApplicaties(): array {
 		return [
 			[
+				// FROZEN client ids + secrets below. These are ZGW consumer
+				// credentials registered in the ZGW consumer table and referenced
+				// by name from tests/zgw/seed-consumers.sh and the Postman
+				// environments. A renamed id here makes the seed script look up a
+				// consumer that does not exist — a KeyError that aborts the whole
+				// e2e job before a single test runs. `procest-admin` is also a
+				// Nextcloud GROUP id (see TransitionAuthorizer::ADMIN_GROUP_ID).
 				'name' => 'procest-admin',
-				'description' => 'Procest Admin (development)',
+				'description' => 'Dossiq Admin (development)',
 				'authorizationType' => 'jwt-zgw',
 				'userId' => 'admin',
 				'authorizationConfiguration' => [
@@ -1529,7 +1536,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			],
 			[
 				'name' => 'procest-limited',
-				'description' => 'Procest Limited (testing)',
+				'description' => 'Dossiq Limited (testing)',
 				'authorizationType' => 'jwt-zgw',
 				'userId' => 'admin',
 				'authorizationConfiguration' => [
@@ -1653,7 +1660,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for ZaakEigenschap (case property).
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -1698,7 +1705,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for ZaakInformatieObject (case document link).
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -1746,7 +1753,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for ZaakObject (case object).
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -1794,7 +1801,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for KlantContact (customer contact).
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -1839,7 +1846,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for BesluitInformatieObject (decision document link).
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */
@@ -1884,7 +1891,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get default mapping for Verzending (dispatch).
 	 *
 	 * @param string $registerId The register ID
-	 * @param array $settings The Procest settings
+	 * @param array $settings The Dossiq settings
 	 *
 	 * @return array
 	 */

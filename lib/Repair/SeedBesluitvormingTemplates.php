@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Seed Besluitvorming Templates Repair Step
+ * Dossiq Seed Besluitvorming Templates Repair Step
  *
  * Repair step that seeds the three pre-configured bestuurlijke-besluitvorming
  * zaaktype bundles (College-besluit, Raadsbesluit, Mandaatbesluit) into
@@ -9,7 +9,7 @@
  * step does not duplicate records.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,17 +20,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
-use OCA\Procest\Service\BesluitvormingTemplateService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\BesluitvormingTemplateService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -65,7 +65,7 @@ class SeedBesluitvormingTemplates implements IRepairStep {
 	 * @spec openspec/specs/besluitvorming-workflow/spec.md
 	 */
 	public function getName(): string {
-		return 'Seed besluitvorming zaaktype templates for Procest';
+		return 'Seed besluitvorming zaaktype templates for Dossiq';
 	}//end getName()
 
 	/**
@@ -103,7 +103,7 @@ class SeedBesluitvormingTemplates implements IRepairStep {
 		} catch (\Throwable $e) {
 			$output->warning('Could not seed besluitvorming templates: ' . $e->getMessage());
 			$this->logger->error(
-				'Procest besluitvorming template seed failed',
+				'Dossiq besluitvorming template seed failed',
 				['exception' => $e->getMessage()],
 			);
 		}//end try

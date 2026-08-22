@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest StufRetryJob.
+ * Dossiq StufRetryJob.
  *
  * On-demand background job that retries an outbound StUF kennisgeving whose
  * previous attempt produced a transient failure. Scheduled by
@@ -9,7 +9,7 @@
  * Each invocation reuses the SAME referentienummer for idempotency.
  *
  * @category BackgroundJob
- * @package  OCA\Procest\BackgroundJob
+ * @package  OCA\Dossiq\BackgroundJob
  *
  * @author    Conduction <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,16 +20,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\BackgroundJob;
+namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Procest\Service\Stuf\StufAdapterService;
+use OCA\Dossiq\Service\Stuf\StufAdapterService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\Job;
 use Psr\Log\LoggerInterface;

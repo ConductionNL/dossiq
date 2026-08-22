@@ -55,7 +55,7 @@ try {
 $consumers = [
     [
         'name' => 'procest-admin',
-        'description' => 'Procest Admin (CI test - superuser)',
+        'description' => 'Dossiq Admin (CI test - superuser)',
         'authorization_type' => 'jwt-zgw',
         'user_id' => 'admin',
         'authorization_configuration' => json_encode([
@@ -67,7 +67,7 @@ $consumers = [
     ],
     [
         'name' => 'procest-limited',
-        'description' => 'Procest Limited (CI test - restricted)',
+        'description' => 'Dossiq Limited (CI test - restricted)',
         'authorization_type' => 'jwt-zgw',
         'user_id' => 'admin',
         'authorization_configuration' => json_encode([

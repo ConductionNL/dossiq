@@ -5,8 +5,8 @@ status: done
 # parafering-via-or-approval Specification
 
 ## Purpose
-Define the procest-side contract for routing parafering (signing-route) chains through
-OpenRegister's `approval-workflow` capability (ADR-022). Procest's consumer-facing API
+Define the dossiq-side contract for routing parafering (signing-route) chains through
+OpenRegister's `approval-workflow` capability (ADR-022). Dossiq's consumer-facing API
 surface is preserved; chain-state, role enforcement, advance-on-approval and decision
 history are delegated to OpenRegister's `ApprovalChain` / `ApprovalStep` entities via the
 `ParaferingApprovalBridge` seam. The deprecated `Parafeerroute` schema remains read-only
@@ -15,13 +15,13 @@ until sunset.
 ## Requirements
 ### Requirement: Parafering Initiation Creates an OR ApprovalChain
 
-SHALL be the requirement that when a voorstel is submitted for parafering, procest creates
+SHALL be the requirement that when a voorstel is submitted for parafering, dossiq creates
 an OR `ApprovalChain` with one step per parafeerder/adviseur in the route. No new
 `Parafeerroute` rows are created after this migration ships.
 
 #### Scenario: Voorstel submission creates OR ApprovalChain
 
-- GIVEN a voorstel object with UUID `voorstel-abc` stored in a procest OR register
+- GIVEN a voorstel object with UUID `voorstel-abc` stored in a dossiq OR register
 - AND a parafeerroute configured with three parafeerders in order: teamleider, afdelingshoofd, directeur
 - WHEN the steller submits the voorstel for parafering
 - THEN an `ApprovalChain` SHALL be created in OR with three steps (order 1, 2, 3)
@@ -32,9 +32,9 @@ an OR `ApprovalChain` with one step per parafeerder/adviseur in the route. No ne
 #### Scenario: Existing parafeerroute rows remain read-only
 
 - GIVEN a legacy `Parafeerroute` object with UUID `legacy-route-001` exists in OR
-- WHEN procest code runs after migration
+- WHEN dossiq code runs after migration
 - THEN the legacy object SHALL remain readable via `GET /api/objects/{register}/{schema}/legacy-route-001`
-- AND procest SHALL NOT create new `Parafeerroute` objects for any new voorstel submissions
+- AND dossiq SHALL NOT create new `Parafeerroute` objects for any new voorstel submissions
 
 ---
 
@@ -48,15 +48,15 @@ overslaan) are emitted through OR's approval-step decision endpoints.
 - GIVEN an ApprovalStep with `status: pending` for `voorstel-abc`
 - AND the requesting user is a member of the step's `role` group
 - WHEN the parafeerder clicks "Paraferen"
-- THEN procest SHALL call `POST /api/approval-steps/{id}/approve` (or equivalent OR DI class)
+- THEN dossiq SHALL call `POST /api/approval-steps/{id}/approve` (or equivalent OR DI class)
 - AND OR SHALL set `status: approved` and advance the next waiting step to `pending`
-- AND the response from procest's parafering endpoint SHALL reflect the updated state
+- AND the response from dossiq's parafering endpoint SHALL reflect the updated state
 
 #### Scenario: Terugsturen emits via OR reject endpoint
 
 - GIVEN an ApprovalStep with `status: pending` for `voorstel-abc`
 - WHEN the parafeerder clicks "Terugsturen" with comment "Financiele paragraaf ontbreekt"
-- THEN procest SHALL call `POST /api/approval-steps/{id}/reject` with the comment
+- THEN dossiq SHALL call `POST /api/approval-steps/{id}/reject` with the comment
 - AND OR SHALL set `status: rejected` with `decidedAt` and `decidedBy`
 - AND no next step SHALL be advanced
 
@@ -64,7 +64,7 @@ overslaan) are emitted through OR's approval-step decision endpoints.
 
 - GIVEN an ApprovalStep for an advisory step with `status: pending`
 - WHEN the adviseur submits advice text
-- THEN procest SHALL call `POST /api/approval-steps/{id}/approve` with a JSON comment
+- THEN dossiq SHALL call `POST /api/approval-steps/{id}/approve` with a JSON comment
   containing `{"text": "<advice>", "_meta": {"action": "advised", "advice": "<advice>"}}`
 - AND OR SHALL advance the next waiting step
 
@@ -97,14 +97,14 @@ is unchanged from the user perspective.
 
 ### Requirement: No New Parafeerroute Rows After Migration
 
-MUST NOT be violated: after this migration ships, no code path in procest creates new
+MUST NOT be violated: after this migration ships, no code path in dossiq creates new
 `Parafeerroute` objects in OR. The schema is deprecated. All new parafering chains are
 OR `ApprovalChain` objects.
 
-#### Scenario: Procest code does not write to deprecated schema
+#### Scenario: Dossiq code does not write to deprecated schema
 
 - GIVEN the migration is deployed
-- WHEN any procest endpoint is called that initiates or advances a parafering flow
+- WHEN any dossiq endpoint is called that initiates or advances a parafering flow
 - THEN no OR object of schema type `Parafeerroute` SHALL be created or updated
 - AND the OR object store for `Parafeerroute` SHALL contain only pre-migration rows
 
@@ -114,7 +114,7 @@ OR `ApprovalChain` objects.
 
 SHALL be the requirement that existing `Parafeerroute` rows written before the migration
 are preserved read-only and accessible via the OR API until the schema is sunset (one major
-procest release after migration). No historical backfill into OR ApprovalChain tables occurs.
+dossiq release after migration). No historical backfill into OR ApprovalChain tables occurs.
 
 #### Scenario: Legacy parafeerroute readable via OR API
 
@@ -127,8 +127,8 @@ procest release after migration). No historical backfill into OR ApprovalChain t
 
 ### Requirement: End-to-End Test Exercises OR Approval-Workflow Store
 
-MUST be the requirement that the procest test suite includes at least one end-to-end test
-that creates a parafering chain via procest's API and verifies the chain and step records
+MUST be the requirement that the dossiq test suite includes at least one end-to-end test
+that creates a parafering chain via dossiq's API and verifies the chain and step records
 exist in OR's approval-workflow store.
 
 #### Scenario: E2E parafering test uses OR approval store
@@ -137,5 +137,5 @@ exist in OR's approval-workflow store.
 - WHEN the E2E test submits a voorstel for parafering and approves all steps
 - THEN the test SHALL assert that `GET /api/approval-chains` returns the chain
 - AND the test SHALL assert that all steps have `status: approved` in OR's approval tables
-- AND the test SHALL NOT assert against any procest-local `Parafeerroute` table
+- AND the test SHALL NOT assert against any dossiq-local `Parafeerroute` table
 

@@ -3,7 +3,7 @@
 <template>
 	<NcDialog
 		v-if="open"
-		:name="t('procest', 'Issue advice')"
+		:name="t('dossiq', 'Issue advice')"
 		size="normal"
 		:canClose="!submitting"
 		@closing="onClose">
@@ -12,29 +12,29 @@
 				v-if="consultationSubject"
 				class="consultation-response-form__subject">
 				<span class="consultation-response-form__subject-label">{{
-					t('procest', 'Subject:')
+					t('dossiq', 'Subject:')
 				}}</span>
 				{{ consultationSubject }}
 			</div>
 
 			<div class="consultation-response-form__field">
 				<label class="consultation-response-form__label">
-					{{ t('procest', 'Advice') }} *
+					{{ t('dossiq', 'Advice') }} *
 				</label>
 				<NcSelect
 					v-model="form.advies"
 					:options="adviesOptions"
-					:aria-label-combobox="t('procest', 'Advice')"
+					:aria-label-combobox="t('dossiq', 'Advice')"
 					label="label"
 					:reduce="(opt) => opt.value"
-					:placeholder="t('procest', 'Select advice type')" />
+					:placeholder="t('dossiq', 'Select advice type')" />
 			</div>
 
 			<div v-if="showToelichting" class="consultation-response-form__field">
 				<label
 					class="consultation-response-form__label"
 					for="consultation-response-toelichting">
-					{{ t('procest', 'Explanation') }}
+					{{ t('dossiq', 'Explanation') }}
 					<span v-if="toelichtingRequired">*</span>
 				</label>
 				<textarea
@@ -43,14 +43,14 @@
 					class="consultation-response-form__textarea"
 					rows="4"
 					:placeholder="
-						t('procest', 'Provide an explanation for your advice...')
+						t('dossiq', 'Provide an explanation for your advice...')
 					" />
 			</div>
 
 			<!-- Conditions — only shown for positief_met_voorwaarden -->
 			<div v-if="showVoorwaarden" class="consultation-response-form__field">
 				<label class="consultation-response-form__label">
-					{{ t('procest', 'Conditions') }}
+					{{ t('dossiq', 'Conditions') }}
 				</label>
 				<div
 					v-for="(voorwaarde, idx) in form.terms"
@@ -60,29 +60,29 @@
 						v-model="voorwaarde.description"
 						class="consultation-response-form__condition-input"
 						:aria-label="
-							t('procest', 'Condition description {n}', { n: idx + 1 })
+							t('dossiq', 'Condition description {n}', { n: idx + 1 })
 						"
-						:placeholder="t('procest', 'Condition description')"
+						:placeholder="t('dossiq', 'Condition description')"
 						type="text" />
 					<NcSelect
 						v-model="voorwaarde.priority"
 						:options="priorityOptions"
 						:aria-label-combobox="
-							t('procest', 'Priority condition {n}', { n: idx + 1 })
+							t('dossiq', 'Priority condition {n}', { n: idx + 1 })
 						"
 						label="label"
 						:reduce="(opt) => opt.value"
 						class="consultation-response-form__condition-priority"
-						:placeholder="t('procest', 'Priority')" />
+						:placeholder="t('dossiq', 'Priority')" />
 					<NcButton
 						type="tertiary"
-						:title="t('procest', 'Remove condition')"
+						:title="t('dossiq', 'Remove condition')"
 						@click="removeVoorwaarde(idx)">
 						✕
 					</NcButton>
 				</div>
 				<NcButton @click="addVoorwaarde">
-					{{ t('procest', 'Add condition') }}
+					{{ t('dossiq', 'Add condition') }}
 				</NcButton>
 			</div>
 
@@ -90,7 +90,7 @@
 				<label
 					class="consultation-response-form__label"
 					for="consultation-response-datum">
-					{{ t('procest', 'Advice date') }} *
+					{{ t('dossiq', 'Advice date') }} *
 				</label>
 				<input
 					id="consultation-response-datum"
@@ -107,13 +107,13 @@
 
 		<template #actions>
 			<NcButton :disabled="submitting" @click="onClose">
-				{{ t('procest', 'Annuleren') }}
+				{{ t('dossiq', 'Annuleren') }}
 			</NcButton>
 			<NcButton type="primary" :disabled="!canSubmit" @click="onSubmit">
 				{{
 					submitting
-						? t('procest', 'Bezig...')
-						: t('procest', 'Submit advice')
+						? t('dossiq', 'Bezig...')
+						: t('dossiq', 'Submit advice')
 				}}
 			</NcButton>
 		</template>
@@ -162,22 +162,22 @@ export default {
 			},
 
 			adviesOptions: [
-				{ label: this.t('procest', 'Positive'), value: 'positive' },
+				{ label: this.t('dossiq', 'Positive'), value: 'positive' },
 				{
-					label: this.t('procest', 'Positive with conditions'),
+					label: this.t('dossiq', 'Positive with conditions'),
 					value: 'positief_with_terms',
 				},
-				{ label: this.t('procest', 'Negative'), value: 'negative' },
+				{ label: this.t('dossiq', 'Negative'), value: 'negative' },
 				{
-					label: this.t('procest', 'Not applicable'),
+					label: this.t('dossiq', 'Not applicable'),
 					value: 'non_from_application',
 				},
 			],
 
 			priorityOptions: [
-				{ label: this.t('procest', 'High'), value: 'high' },
-				{ label: this.t('procest', 'Normal'), value: 'normal' },
-				{ label: this.t('procest', 'Low'), value: 'low' },
+				{ label: this.t('dossiq', 'High'), value: 'high' },
+				{ label: this.t('dossiq', 'Normal'), value: 'normal' },
+				{ label: this.t('dossiq', 'Low'), value: 'low' },
 			],
 		}
 	},
@@ -250,18 +250,18 @@ export default {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		validate() {
 			if (!this.form.advies) {
-				this.validationError = this.t('procest', 'Select an advice type.')
+				this.validationError = this.t('dossiq', 'Select an advice type.')
 				return false
 			}
 			if (this.toelichtingRequired && this.form.notes.trim() === '') {
 				this.validationError = this.t(
-					'procest',
+					'dossiq',
 					'Explanation is required for this advice type.',
 				)
 				return false
 			}
 			if (!this.form.date) {
-				this.validationError = this.t('procest', 'Date is required.')
+				this.validationError = this.t('dossiq', 'Date is required.')
 				return false
 			}
 			return true

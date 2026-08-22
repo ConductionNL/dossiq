@@ -1,8 +1,8 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
- * ONE place that decides which Nextcloud the procest e2e suite talks to.
+ * ONE place that decides which Nextcloud the dossiq e2e suite talks to.
  *
  * Why this file exists
  * --------------------
@@ -66,14 +66,14 @@ export function resolveBaseURL(): string {
 	if (process.env.CI || process.env.GITHUB_ACTIONS) {
 		// eslint-disable-next-line no-console
 		console.warn(
-			'[procest e2e] no PLAYWRIGHT_BASE_URL / NEXTCLOUD_URL / NC_BASE_URL / BASE_URL set; '
+			'[dossiq e2e] no PLAYWRIGHT_BASE_URL / NEXTCLOUD_URL / NC_BASE_URL / BASE_URL set; '
 				+ `using the CI-local default ${CI_DEFAULT_BASE_URL}.`,
 		)
 		return CI_DEFAULT_BASE_URL
 	}
 
 	throw new Error(
-		'[procest e2e] No target Nextcloud configured. Set PLAYWRIGHT_BASE_URL (preferred), '
+		'[dossiq e2e] No target Nextcloud configured. Set PLAYWRIGHT_BASE_URL (preferred), '
 			+ 'NEXTCLOUD_URL, NC_BASE_URL or BASE_URL to the instance you want to test, e.g.\n\n'
 			+ '    PLAYWRIGHT_BASE_URL=http://localhost:8095 npx playwright test\n\n'
 			+ 'There is deliberately no default: the historic one was http://localhost:8080, '

@@ -5,7 +5,7 @@
 <template>
 	<div class="vergadering-detail">
 		<CnDetailPage
-			:title="t('procest', 'Vergadering')"
+			:title="t('dossiq', 'Vergadering')"
 			:subtitle="meetingDate"
 			:loading="loading"
 			:sidebar="false">
@@ -17,27 +17,27 @@
 				">
 				<div class="vergadering-detail__form">
 					<label :for="'besluittype-' + agendaCase.id">{{
-						t('procest', 'Decision type')
+						t('dossiq', 'Decision type')
 					}}</label>
 					<NcSelect
 						v-model="forms[agendaCase.id].decisionType"
 						:inputId="'besluittype-' + agendaCase.id"
-						:inputLabel="t('procest', 'Decision type')"
+						:inputLabel="t('dossiq', 'Decision type')"
 						:options="decisionTypes" />
 
 					<label :for="'stem-' + agendaCase.id">{{
-						t('procest', 'Stemuitslag')
+						t('dossiq', 'Stemuitslag')
 					}}</label>
 					<input
 						:id="'stem-' + agendaCase.id"
 						v-model="forms[agendaCase.id].stemuitslag"
 						type="text"
 						:placeholder="
-							t('procest', 'e.g. Unanimous or 23 for / 8 against')
+							t('dossiq', 'e.g. Unanimous or 23 for / 8 against')
 						" />
 
 					<label :for="'leden-' + agendaCase.id">{{
-						t('procest', 'Aanwezige leden (komma-gescheiden)')
+						t('dossiq', 'Aanwezige leden (komma-gescheiden)')
 					}}</label>
 					<input
 						:id="'leden-' + agendaCase.id"
@@ -45,7 +45,7 @@
 						type="text" />
 
 					<label :for="'toelichting-' + agendaCase.id">{{
-						t('procest', 'Explanation')
+						t('dossiq', 'Explanation')
 					}}</label>
 					<textarea
 						:id="'toelichting-' + agendaCase.id"
@@ -57,10 +57,10 @@
 							type="primary"
 							:disabled="!isComplete(agendaCase.id)"
 							@click="recordBesluit(agendaCase)">
-							{{ t('procest', 'Besluit vastleggen') }}
+							{{ t('dossiq', 'Besluit vastleggen') }}
 						</NcButton>
 						<NcButton type="secondary" @click="aanhouden(agendaCase)">
-							{{ t('procest', 'Aanhouden') }}
+							{{ t('dossiq', 'Aanhouden') }}
 						</NcButton>
 					</div>
 				</div>

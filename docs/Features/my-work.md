@@ -26,7 +26,7 @@ Items are grouped under an **UPCOMING** section header with a count.
 
 ## Interaction
 
-Clicking on a case navigates to the case detail view at `/apps/procest/cases/{uuid}`. Clicking on a task would navigate to the task detail view.
+Clicking on a case navigates to the case detail view at `/apps/dossiq/cases/{uuid}`. Clicking on a task would navigate to the task detail view.
 
 ## Data Source
 

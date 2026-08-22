@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Procest Application
+ * Dossiq Application
  *
- * Main application class for the Procest case management app.
+ * Main application class for the Dossiq case management app.
  *
  * This class is deliberately thin. Every actual registration lives in a
  * dedicated registrar under `lib/AppInfo/Registrar/`, so the class references
@@ -12,7 +12,7 @@
  * knows the three phases: bind services, wire listeners, boot.
  *
  * @category AppInfo
- * @package  OCA\Procest\AppInfo
+ * @package  OCA\Dossiq\AppInfo
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -23,17 +23,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\AppInfo;
+namespace OCA\Dossiq\AppInfo;
 
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
-use OCA\Procest\AppInfo\Registrar\BootRegistrar;
-use OCA\Procest\AppInfo\Registrar\ListenerRegistrar;
-use OCA\Procest\AppInfo\Registrar\ServiceRegistrar;
+use OCA\Dossiq\AppInfo\Registrar\BootRegistrar;
+use OCA\Dossiq\AppInfo\Registrar\ListenerRegistrar;
+use OCA\Dossiq\AppInfo\Registrar\ServiceRegistrar;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -41,12 +41,19 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\EventDispatcher\IEventDispatcher;
 
 /**
- * Main application class for the Procest case management app.
+ * Main application class for the Dossiq case management app.
  *
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
 class Application extends App implements IBootstrap {
-	public const APP_ID = 'procest';
+	/*
+	 * NOTE: this moved from 'procest' to 'dossiq' with <id> in appinfo/info.xml.
+	 * Nextcloud namespaces oc_appconfig and oc_preferences by app id, so the two
+	 * Repair\Migrate* steps registered in info.xml carry the stored values
+	 * across. The OpenRegister register SLUG deliberately did NOT move and is
+	 * still 'procest' — see the note in appinfo/info.xml.
+	 */
+	public const APP_ID = 'dossiq';
 
 	/**
 	 * Constructor for the Application class.
@@ -88,8 +95,8 @@ class Application extends App implements IBootstrap {
 		// depends on the interface so its own logic can be exercised against a
 		// fake; only this binding knows the database.
 		$context->registerServiceAlias(
-			\OCA\Procest\Repair\ValueMigrationPort::class,
-			\OCA\Procest\Repair\DbValueMigrationPort::class
+			\OCA\Dossiq\Repair\ValueMigrationPort::class,
+			\OCA\Dossiq\Repair\DbValueMigrationPort::class
 		);
 		(new ServiceRegistrar())->register(context: $context);
 		(new ListenerRegistrar())->register(context: $context);

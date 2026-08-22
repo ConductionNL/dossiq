@@ -3,10 +3,10 @@
 /**
  * PHPUnit Bootstrap
  *
- * Bootstrap file for PHPUnit tests in the Procest app.
+ * Bootstrap file for PHPUnit tests in the Dossiq app.
  *
  * @category Tests
- * @package  OCA\Procest\Tests
+ * @package  OCA\Dossiq\Tests
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -14,7 +14,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
@@ -256,16 +256,16 @@ require_once __DIR__ . '/Unit/Fixtures/FakeTermijnStore.php';
 require_once __DIR__ . '/Stubs/HttpClientStubs.php';
 
 // IMcpToolProvider stub — loaded when the openregister runtime (PR #1466,
-// ai-chat-companion-orchestrator) is absent. ProcestToolProvider implements
+// ai-chat-companion-orchestrator) is absent. DossiqToolProvider implements
 // OCA\OpenRegister\Mcp\IMcpToolProvider; the stub no-ops when the real
 // interface is present (e.g. when the openregister app is installed). Must be
-// in place before \OC_App::loadApp('procest') below tries to load that class.
+// in place before \OC_App::loadApp('dossiq') below tries to load that class.
 if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
 	include_once __DIR__ . '/Stubs/Mcp/IMcpToolProvider.php';
 }
 
 // Decidesk decision-event stubs — loaded when the decidesk app is absent so the
-// procest delegation services + DecisionConcludedListener can be unit-tested
+// dossiq delegation services + DecisionConcludedListener can be unit-tested
 // against the decidesk event contract. The real classes ship in decidesk
 // (OCA\Decidesk\Event\*); these stubs no-op when the real classes are present.
 if (class_exists('\\OCA\\Decidesk\\Event\\DecisionRequestedEvent') === false) {
@@ -303,7 +303,7 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletingEvent') === false) {
 }
 
 // OpenRegister AppHost stubs (ADR-040) — loaded when the openregister runtime
-// is absent so Application::register() (Bootstrap::register) and procest's
+// is absent so Application::register() (Bootstrap::register) and dossiq's
 // DashboardController (extends GenericDashboardController) resolve in bare CI
 // containers + standalone static analysis. The stubs self-skip when the real
 // classes are present (openregister installed).
@@ -317,6 +317,6 @@ if (class_exists('\\OCA\\OpenRegister\\AppHost\\Controller\\GenericDashboardCont
 
 if (defined('OC_CONSOLE') === false && class_exists('\OC_App') === true) {
 	\OC_App::loadApps();
-	\OC_App::loadApp('procest');
+	\OC_App::loadApp('dossiq');
 	OC_Hook::clear();
 }

@@ -24,7 +24,7 @@ GEMMA (GEMeentelijke Model Architectuur) is the reference architecture for all 3
 | Softwarecatalog | Domeinspecifiek portaal | Interaction |
 | OpenConnector | Integratiecomponent / Servicebus | Integration |
 | DocuDesk | Documentbeheercomponent | Services |
-| Procest | Zaakafhandelcomponent | Process |
+| Dossiq | Zaakafhandelcomponent | Process |
 | OpenZaak | Zaakregistratiecomponent | Services / Data |
 
 Check for:
@@ -40,7 +40,7 @@ Check for:
 ┌─────────────────────────────────────┐
 │ Layer 5: Interaction                │ ← Portals, apps, UIs (Softwarecatalog, frontends)
 ├─────────────────────────────────────┤
-│ Layer 4: Process                    │ ← Business process orchestration (Procest, workflows)
+│ Layer 4: Process                    │ ← Business process orchestration (Dossiq, workflows)
 ├─────────────────────────────────────┤
 │ Layer 3: Integration                │ ← API gateway, FSC, connectors (OpenConnector)
 ├─────────────────────────────────────┤

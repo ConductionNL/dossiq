@@ -1,18 +1,18 @@
 <template>
 	<div class="step-config-panel">
 		<div class="step-config-panel__header">
-			<h4>{{ t('procest', 'Step Configuration') }}</h4>
+			<h4>{{ t('dossiq', 'Step Configuration') }}</h4>
 			<div class="step-config-panel__header-actions">
 				<NcButton
 					v-if="!readOnly"
 					type="tertiary"
 					class="step-config-panel__delete-button"
 					@click="$emit('delete', localStep.id)">
-					{{ t('procest', 'Delete step') }}
+					{{ t('dossiq', 'Delete step') }}
 				</NcButton>
 				<NcButton
 					type="tertiary"
-					:aria-label="t('procest', 'Close step configuration')"
+					:aria-label="t('dossiq', 'Close step configuration')"
 					@click="$emit('close')">
 					<template #icon>
 						<CloseIcon :size="20" />
@@ -24,7 +24,7 @@
 		<div class="step-config-panel__body">
 			<!-- Title -->
 			<div class="step-config-panel__field">
-				<label for="step-config-title">{{ t('procest', 'Title') }}</label>
+				<label for="step-config-title">{{ t('dossiq', 'Title') }}</label>
 				<input
 					id="step-config-title"
 					v-model="localStep.title"
@@ -36,7 +36,7 @@
 			<!-- Description -->
 			<div class="step-config-panel__field">
 				<label for="step-config-description">{{
-					t('procest', 'Description')
+					t('dossiq', 'Description')
 				}}</label>
 				<textarea
 					id="step-config-description"
@@ -54,19 +54,19 @@
 					type="checkbox"
 					@change="emitUpdate" />
 				<label for="step-required">{{
-					t('procest', 'Required step (blocks status transition)')
+					t('dossiq', 'Required step (blocks status transition)')
 				}}</label>
 			</div>
 
 			<!-- Assignee Role -->
 			<div class="step-config-panel__field">
-				<label>{{ t('procest', 'Assignee role') }}</label>
+				<label>{{ t('dossiq', 'Assignee role') }}</label>
 				<select
 					v-model="localStep.assigneeRole"
 					class="step-config-panel__select"
 					@change="emitUpdate">
 					<option :value="null">
-						{{ t('procest', 'Any role') }}
+						{{ t('dossiq', 'Any role') }}
 					</option>
 					<option
 						v-for="role in roleTypes"
@@ -79,7 +79,7 @@
 
 			<!-- Checklist -->
 			<div class="step-config-panel__section">
-				<h5>{{ t('procest', 'Checklist') }}</h5>
+				<h5>{{ t('dossiq', 'Checklist') }}</h5>
 				<div
 					v-for="(item, index) in localChecklist"
 					:key="item.id"
@@ -93,12 +93,12 @@
 						v-model="item.label"
 						type="text"
 						class="step-config-panel__input"
-						:placeholder="t('procest', 'Checklist item')"
-						:aria-label="t('procest', 'Checklist item')"
+						:placeholder="t('dossiq', 'Checklist item')"
+						:aria-label="t('dossiq', 'Checklist item')"
 						@input="emitUpdate" />
 					<NcButton
 						type="tertiary"
-						:aria-label="t('procest', 'Remove checklist item')"
+						:aria-label="t('dossiq', 'Remove checklist item')"
 						@click="removeChecklistItem(index)">
 						<template #icon>
 							<CloseIcon :size="16" />
@@ -106,7 +106,7 @@
 					</NcButton>
 				</div>
 				<NcButton type="secondary" @click="addChecklistItem">
-					{{ t('procest', 'Add checklist item') }}
+					{{ t('dossiq', 'Add checklist item') }}
 				</NcButton>
 			</div>
 
@@ -116,7 +116,7 @@
 					type="button"
 					class="step-config-panel__advanced-toggle"
 					@click="advancedOpen = !advancedOpen">
-					<span>{{ t('procest', 'Advanced') }}</span>
+					<span>{{ t('dossiq', 'Advanced') }}</span>
 					<span class="step-config-panel__advanced-caret">{{
 						advancedOpen ? '▾' : '▸'
 					}}</span>
@@ -125,7 +125,7 @@
 				<div v-if="readOnly" class="step-config-panel__advanced-banner">
 					{{
 						t(
-							'procest',
+							'dossiq',
 							'Published versions are not editable — clone a new version first.',
 						)
 					}}
@@ -135,7 +135,7 @@
 					<!-- SLA -->
 					<div class="step-config-panel__field">
 						<label for="step-config-sla-value">{{
-							t('procest', 'SLA')
+							t('dossiq', 'SLA')
 						}}</label>
 						<div class="step-config-panel__sla-row">
 							<input
@@ -153,16 +153,16 @@
 								:disabled="readOnly"
 								@change="emitUpdate">
 								<option value="">
-									{{ t('procest', 'No SLA') }}
+									{{ t('dossiq', 'No SLA') }}
 								</option>
 								<option value="hours">
-									{{ t('procest', 'hours') }}
+									{{ t('dossiq', 'hours') }}
 								</option>
 								<option value="businessDays">
-									{{ t('procest', 'working days') }}
+									{{ t('dossiq', 'working days') }}
 								</option>
 								<option value="calendarDays">
-									{{ t('procest', 'calendar days') }}
+									{{ t('dossiq', 'calendar days') }}
 								</option>
 							</select>
 						</div>
@@ -171,7 +171,7 @@
 					<!-- Required fields -->
 					<div class="step-config-panel__field">
 						<label>{{
-							t('procest', 'Required fields on completion')
+							t('dossiq', 'Required fields on completion')
 						}}</label>
 						<div
 							v-for="(field, index) in localConfig.requiredFields"
@@ -181,10 +181,10 @@
 								v-model="localConfig.requiredFields[index]"
 								type="text"
 								:placeholder="
-									t('procest', 'Field name (property path)')
+									t('dossiq', 'Field name (property path)')
 								"
 								:aria-label="
-									t('procest', 'Field name (property path)')
+									t('dossiq', 'Field name (property path)')
 								"
 								class="step-config-panel__input"
 								:disabled="readOnly"
@@ -192,7 +192,7 @@
 							<NcButton
 								type="tertiary"
 								:disabled="readOnly"
-								:aria-label="t('procest', 'Remove required field')"
+								:aria-label="t('dossiq', 'Remove required field')"
 								@click="removeRequiredField(index)">
 								<template #icon>
 									<CloseIcon :size="16" />
@@ -203,7 +203,7 @@
 							type="secondary"
 							:disabled="readOnly"
 							@click="addRequiredField">
-							{{ t('procest', 'Add field') }}
+							{{ t('dossiq', 'Add field') }}
 						</NcButton>
 					</div>
 
@@ -215,7 +215,7 @@
 								type="checkbox"
 								:disabled="readOnly"
 								@change="onEscalationToggle" />
-							{{ t('procest', 'Enable escalation') }}
+							{{ t('dossiq', 'Enable escalation') }}
 						</label>
 						<div
 							v-if="escalationEnabled"
@@ -226,10 +226,10 @@
 								:disabled="readOnly"
 								@change="emitUpdate">
 								<option value="preBreach">
-									{{ t('procest', 'Vóór deadline (pre-breach)') }}
+									{{ t('dossiq', 'Vóór deadline (pre-breach)') }}
 								</option>
 								<option value="slaBreached">
-									{{ t('procest', 'Na deadline (sla-breached)') }}
+									{{ t('dossiq', 'Na deadline (sla-breached)') }}
 								</option>
 							</select>
 							<div class="step-config-panel__sla-row">
@@ -239,7 +239,7 @@
 									"
 									type="number"
 									min="0"
-									:aria-label="t('procest', 'Escalation offset')"
+									:aria-label="t('dossiq', 'Escalation offset')"
 									class="step-config-panel__input step-config-panel__sla-value"
 									:disabled="readOnly"
 									@input="emitUpdate" />
@@ -249,28 +249,26 @@
 									:disabled="readOnly"
 									@change="emitUpdate">
 									<option value="hours">
-										{{ t('procest', 'hours') }}
+										{{ t('dossiq', 'hours') }}
 									</option>
 									<option value="businessDays">
-										{{ t('procest', 'working days') }}
+										{{ t('dossiq', 'working days') }}
 									</option>
 								</select>
 							</div>
 							<input
 								v-model="localConfig.escalationRule.notifyRole"
 								type="text"
-								:placeholder="t('procest', 'Warn role (UUID)')"
-								:aria-label="t('procest', 'Warn role (UUID)')"
+								:placeholder="t('dossiq', 'Warn role (UUID)')"
+								:aria-label="t('dossiq', 'Warn role (UUID)')"
 								class="step-config-panel__input"
 								:disabled="readOnly"
 								@input="emitUpdate" />
 							<input
 								v-model="localConfig.escalationRule.escalateToRole"
 								type="text"
-								:placeholder="
-									t('procest', 'Escalate to role (UUID)')
-								"
-								:aria-label="t('procest', 'Escalate to role (UUID)')"
+								:placeholder="t('dossiq', 'Escalate to role (UUID)')"
+								:aria-label="t('dossiq', 'Escalate to role (UUID)')"
 								class="step-config-panel__input"
 								:disabled="readOnly"
 								@input="emitUpdate" />
@@ -280,7 +278,7 @@
 									type="checkbox"
 									:disabled="readOnly"
 									@change="emitUpdate" />
-								{{ t('procest', 'Also create an incident') }}
+								{{ t('dossiq', 'Also create an incident') }}
 							</label>
 						</div>
 					</div>
@@ -289,7 +287,7 @@
 
 			<!-- Automatic Actions -->
 			<div class="step-config-panel__section">
-				<h5>{{ t('procest', 'Automatic actions on completion') }}</h5>
+				<h5>{{ t('dossiq', 'Automatic actions on completion') }}</h5>
 				<div
 					v-for="(action, index) in localActions"
 					:key="index"
@@ -299,42 +297,42 @@
 						class="step-config-panel__select"
 						@change="emitUpdate">
 						<option value="createTask">
-							{{ t('procest', 'Create task') }}
+							{{ t('dossiq', 'Create task') }}
 						</option>
 						<option value="notify">
-							{{ t('procest', 'Send notification') }}
+							{{ t('dossiq', 'Send notification') }}
 						</option>
 						<option value="webhook">
-							{{ t('procest', 'Call webhook') }}
+							{{ t('dossiq', 'Call webhook') }}
 						</option>
 					</select>
 					<input
 						v-if="action.type === 'createTask'"
 						v-model="action.title"
 						type="text"
-						:placeholder="t('procest', 'Task title')"
-						:aria-label="t('procest', 'Task title')"
+						:placeholder="t('dossiq', 'Task title')"
+						:aria-label="t('dossiq', 'Task title')"
 						class="step-config-panel__input"
 						@input="emitUpdate" />
 					<input
 						v-if="action.type === 'notify'"
 						v-model="action.message"
 						type="text"
-						:placeholder="t('procest', 'Notification message')"
-						:aria-label="t('procest', 'Notification message')"
+						:placeholder="t('dossiq', 'Notification message')"
+						:aria-label="t('dossiq', 'Notification message')"
 						class="step-config-panel__input"
 						@input="emitUpdate" />
 					<input
 						v-if="action.type === 'webhook'"
 						v-model="action.url"
 						type="url"
-						:placeholder="t('procest', 'Webhook URL')"
-						:aria-label="t('procest', 'Webhook URL')"
+						:placeholder="t('dossiq', 'Webhook URL')"
+						:aria-label="t('dossiq', 'Webhook URL')"
 						class="step-config-panel__input"
 						@input="emitUpdate" />
 					<NcButton
 						type="tertiary"
-						:aria-label="t('procest', 'Remove action')"
+						:aria-label="t('dossiq', 'Remove action')"
 						@click="removeAction(index)">
 						<template #icon>
 							<CloseIcon :size="16" />
@@ -342,7 +340,7 @@
 					</NcButton>
 				</div>
 				<NcButton type="secondary" @click="addAction">
-					{{ t('procest', 'Add action') }}
+					{{ t('dossiq', 'Add action') }}
 				</NcButton>
 			</div>
 		</div>

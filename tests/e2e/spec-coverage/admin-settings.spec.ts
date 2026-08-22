@@ -1,18 +1,18 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Gate-19 spec-coverage tests for admin-settings spec.
  * Each test is tagged with the scenario it covers.
  *
- * Note: Nextcloud admin settings are served at /settings/admin/procest.
+ * Note: Nextcloud admin settings are served at /settings/admin/dossiq.
  * The AdminRoot.vue component renders inside Nextcloud's settings framework.
  */
 
 import { test, expect, request } from '@playwright/test'
 import { BASE_URL } from '../base-url'
 
-const ADMIN_SETTINGS_URL = '/settings/admin/procest'
+const ADMIN_SETTINGS_URL = '/settings/admin/dossiq'
 
 test.describe('Admin Settings spec coverage', () => {
 	// The Nextcloud admin settings page mounts AdminRoot.vue's fourteen

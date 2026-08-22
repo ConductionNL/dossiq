@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest MergeTemplateHandler
+ * Dossiq MergeTemplateHandler
  *
  * Renders a text/markdown template into a case field via ObjectService.
  * In dry-run mode it returns the rendered content + target field without
  * persisting any update.
  *
  * @category Service
- * @package  OCA\Procest\Service\Actions
+ * @package  OCA\Dossiq\Service\Actions
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -19,16 +19,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/automatic-actions/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Actions;
+namespace OCA\Dossiq\Service\Actions;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;

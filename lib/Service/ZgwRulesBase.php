@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest ZGW Rules Base
+ * Dossiq ZGW Rules Base
  *
  * Shared utilities for ZGW business rule validation services.
  * Each register has its own rules service (ZgwZrcRulesService, etc.)
  * that extends this base.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -16,7 +16,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  *
@@ -26,11 +26,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use GuzzleHttp\Client;
-use OCA\Procest\Service\Support\SearchesObjects;
-use OCA\Procest\Support\SuppressesWarnings;
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Support\SuppressesWarnings;
 use Psr\Log\LoggerInterface;
 
 /**

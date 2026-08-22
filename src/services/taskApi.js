@@ -69,12 +69,12 @@ export function normalizeCalDavTask(task) {
 			const absDays = Math.abs(diffDays)
 			daysText =
 				absDays === 1
-					? t('procest', '1 day overdue')
-					: t('procest', '{days} days overdue', { days: absDays })
+					? t('dossiq', '1 day overdue')
+					: t('dossiq', '{days} days overdue', { days: absDays })
 		} else if (diffDays === 0) {
-			daysText = t('procest', 'Due today')
+			daysText = t('dossiq', 'Due today')
 		} else {
-			daysText = t('procest', '{days} days', { days: diffDays })
+			daysText = t('dossiq', '{days} days', { days: diffDays })
 		}
 	}
 
@@ -132,7 +132,7 @@ export async function fetchTasksForObject(registerId, schemaId, objectId) {
 }
 
 /**
- * Fetch all CalDAV tasks linked to the Procest register by fetching tasks
+ * Fetch all CalDAV tasks linked to the Dossiq register by fetching tasks
  * for each of the user's assigned cases.
  *
  * Strategy (DD-01 fallback): Fetch user's cases first, then batch-fetch

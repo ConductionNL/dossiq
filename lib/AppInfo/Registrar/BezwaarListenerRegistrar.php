@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest bezwaar / parafering listener registrar.
+ * Dossiq bezwaar / parafering listener registrar.
  *
  * The bezwaar and parafering listeners that are deliberately NOT narrowed to a
  * register/schema interest. The narrowed ones are subscribed from boot() by
  * {@see BezwaarSubscriptionRegistrar} — see that class for why the split exists.
  *
  * @category AppInfo
- * @package  OCA\Procest\AppInfo\Registrar
+ * @package  OCA\Dossiq\AppInfo\Registrar
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -16,7 +16,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -26,15 +26,15 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\AppInfo\Registrar;
+namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
-use OCA\Procest\Event\ParafeerTransitionEvent;
-use OCA\Procest\Listener\ApprovalStepNotificationListener;
-use OCA\Procest\Listener\BezwaarAdviceRequestedListener;
-use OCA\Procest\Listener\BezwaarDecisionListener;
-use OCA\Procest\Listener\BezwaarHearingScheduledListener;
-use OCA\Procest\Listener\ParaferingAuditListener;
+use OCA\Dossiq\Event\ParafeerTransitionEvent;
+use OCA\Dossiq\Listener\ApprovalStepNotificationListener;
+use OCA\Dossiq\Listener\BezwaarAdviceRequestedListener;
+use OCA\Dossiq\Listener\BezwaarDecisionListener;
+use OCA\Dossiq\Listener\BezwaarHearingScheduledListener;
+use OCA\Dossiq\Listener\ParaferingAuditListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
@@ -83,7 +83,7 @@ class BezwaarListenerRegistrar {
 		// step events (ADR-022 / migrate-parafering-to-or-approval-workflow):
 		// when a step is approved the next parafeerder is notified; when a step
 		// is rejected (terugsturen) the steller is notified. The OpenRegister
-		// event classes are registered by FQN string so procest carries no
+		// event classes are registered by FQN string so dossiq carries no
 		// hard compile-time dependency on the optional OpenRegister app.
 		$context->registerEventListener(
 			event: 'OCA\OpenRegister\Event\ApprovalStepApprovedEvent',

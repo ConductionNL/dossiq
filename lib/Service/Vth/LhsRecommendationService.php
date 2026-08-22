@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest LHS Recommendation Service
+ * Dossiq LHS Recommendation Service
  *
  * Single entry point for the Landelijke Handhavingsstrategie (LHS) lookup:
  *   - `recommend(ernst, gedrag, actorType, lhsVersion?)` returns the prescribed
@@ -15,7 +15,7 @@
  * OpenRegister manifest renderer; this service owns the engine actions.
  *
  * @category Service
- * @package  OCA\Procest\Service\Vth
+ * @package  OCA\Dossiq\Service\Vth
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -26,14 +26,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Vth;
+namespace OCA\Dossiq\Service\Vth;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -270,7 +270,7 @@ class LhsRecommendationService {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest LHS: matrix lookup failed: ' . $e->getMessage(),
+				'Dossiq LHS: matrix lookup failed: ' . $e->getMessage(),
 			);
 			throw new RuntimeException('LHS-matrix lookup mislukt');
 		}
@@ -317,7 +317,7 @@ class LhsRecommendationService {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest LHS: failed to save lhsRecommendation: ' . $e->getMessage(),
+				'Dossiq LHS: failed to save lhsRecommendation: ' . $e->getMessage(),
 			);
 			throw new RuntimeException('Opslaan LHS-aanbeveling mislukt');
 		}

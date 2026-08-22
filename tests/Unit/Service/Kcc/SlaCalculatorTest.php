@@ -4,7 +4,7 @@
  * SlaCalculator Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Kcc
+ * @package  OCA\Dossiq\Tests\Unit\Service\Kcc
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,15 +20,15 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Kcc;
+namespace OCA\Dossiq\Tests\Unit\Service\Kcc;
 
-use OCA\Procest\Service\Kcc\SlaCalculator;
+use OCA\Dossiq\Service\Kcc\SlaCalculator;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for SlaCalculator.
  *
- * @covers \OCA\Procest\Service\Kcc\SlaCalculator
+ * @covers \OCA\Dossiq\Service\Kcc\SlaCalculator
  */
 class SlaCalculatorTest extends TestCase {
 

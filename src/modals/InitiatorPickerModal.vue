@@ -13,7 +13,7 @@
 <template>
 	<NcModal
 		size="normal"
-		:name="t('procest', 'Who is the initiator?')"
+		:name="t('dossiq', 'Who is the initiator?')"
 		@close="$emit('close')">
 		<div class="initiator-picker-modal">
 			<!-- No <h2> here: NcModal's `name` prop already renders the dialog
@@ -24,7 +24,7 @@
 			<p class="initiator-picker-modal__hint">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Link the case to the person, company, or contact who submitted it. You can also skip this and add the initiator later.',
 					)
 				}}
@@ -33,7 +33,7 @@
 			<InitiatorPicker :value="selection" @select="selection = $event" />
 
 			<div v-if="selection" class="initiator-picker-modal__selection">
-				{{ t('procest', 'Selected:') }}
+				{{ t('dossiq', 'Selected:') }}
 				<strong>{{ selection.displayName }}</strong> ({{
 					selection.sourceId
 				}})
@@ -41,13 +41,13 @@
 
 			<div class="initiator-picker-modal__actions">
 				<NcButton type="tertiary" @click="$emit('skip')">
-					{{ t('procest', 'Skip') }}
+					{{ t('dossiq', 'Skip') }}
 				</NcButton>
 				<NcButton
 					type="primary"
 					:disabled="!selection"
 					@click="$emit('confirm', selection)">
-					{{ t('procest', 'Use as initiator') }}
+					{{ t('dossiq', 'Use as initiator') }}
 				</NcButton>
 			</div>
 		</div>

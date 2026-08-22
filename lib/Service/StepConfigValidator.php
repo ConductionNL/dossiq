@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Step Config Validator
+ * Dossiq Step Config Validator
  *
  * Pure-function validator for the additive `config` sub-object on every
  * embedded WorkflowStep inside a workflowTemplate. Runs at publish time
@@ -10,7 +10,7 @@
  * escalation rules without an accompanying SLA.
  *
  * The escalationRule half of the contract (rules 5, 6 and 7) lives in
- * {@see \OCA\Procest\Service\StepConfig\EscalationRuleValidator}; this class
+ * {@see \OCA\Dossiq\Service\StepConfig\EscalationRuleValidator}; this class
  * owns the shape-level rules and composes that validator's errors into the
  * single flat list the caller receives.
  *
@@ -20,7 +20,7 @@
  * logger and surface a static generic error string to the UI.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -31,16 +31,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/process-step-configuration/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\Service\StepConfig\EscalationRuleValidator;
+use OCA\Dossiq\Service\StepConfig\EscalationRuleValidator;
 
 /**
  * Pure-function validator for WorkflowStep.config.
@@ -49,13 +49,13 @@ use OCA\Procest\Service\StepConfig\EscalationRuleValidator;
  * openspec/changes/process-step-configuration/design.md.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/process-step-configuration/spec.md
  */

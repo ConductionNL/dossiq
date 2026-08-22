@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Dormant default Procest BRP / Haal Centraal adapter.
+ * Dormant default Dossiq BRP / Haal Centraal adapter.
  *
  * Records the would-be Haal Centraal lookup to the structured logger
  * (with BSN deliberately REDACTED — AVG / WBP article 9 prohibits
@@ -11,16 +11,16 @@
  * an openconnector-backed binding to the Haal Centraal Personen-API
  * is wired in via `Application::register()`. Mirrors the
  * `LogDigidSamlAdapter` dormant-default pattern used across the
- * Procest external surface.
+ * Dossiq external surface.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Brp
+ * @package  OCA\Dossiq\Service\External\Brp
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/brp-kvk-register-sets/proposal.md
  *
@@ -30,12 +30,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Brp;
+namespace OCA\Dossiq\Service\External\Brp;
 
 use Psr\Log\LoggerInterface;
 
 /**
- * Dormant log-backed Procest BRP / Haal Centraal adapter.
+ * Dormant log-backed Dossiq BRP / Haal Centraal adapter.
  *
  * @spec openspec/changes/brp-kvk-register-sets/proposal.md
  */
@@ -67,7 +67,7 @@ class LogBrpHaalCentraalAdapter implements BrpHaalCentraalAdapterInterface {
 	 */
 	public function lookup(string $bsn, array $context = []): BrpLookupResult {
 		$this->logger->info(
-			'Procest BRP / Haal Centraal lookup deferred (no outbound connector bound)',
+			'Dossiq BRP / Haal Centraal lookup deferred (no outbound connector bound)',
 			[
 				'bsn' => '[REDACTED]',
 				'bsn_length_check' => (strlen($bsn) === 9),

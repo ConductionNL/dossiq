@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Owning-Case Resolver.
+ * Dossiq Owning-Case Resolver.
  *
  * Resolves the case that a child object belongs to, so an endpoint whose route
  * carries only a child id can still be authorised per case.
@@ -20,7 +20,7 @@
  * these endpoints is an existence oracle.
  *
  * @category Service
- * @package  OCA\Procest\Service\Support
+ * @package  OCA\Dossiq\Service\Support
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -28,7 +28,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -38,9 +38,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Support;
+namespace OCA\Dossiq\Service\Support;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -158,7 +158,7 @@ class OwningCaseResolver {
 			$object = $objectService->find($objectId, register: (int)$register, schema: (int)$schema);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest: owning-case lookup failed — denying: ' . $e->getMessage()
+				'Dossiq: owning-case lookup failed — denying: ' . $e->getMessage()
 			);
 			return null;
 		}

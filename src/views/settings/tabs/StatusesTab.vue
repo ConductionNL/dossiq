@@ -4,7 +4,7 @@
 			<p>
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Save the case type first before adding status types.',
 					)
 				}}
@@ -36,7 +36,7 @@
 						<template v-if="editingId !== st.id">
 							<span
 								class="status-type-row__handle"
-								:title="t('procest', 'Drag to reorder')"
+								:title="t('dossiq', 'Drag to reorder')"
 								>⠿</span
 							>
 							<span class="status-type-row__order">{{
@@ -44,12 +44,12 @@
 							}}</span>
 							<span class="status-type-row__name">{{ st.name }}</span>
 							<span v-if="st.isFinal" class="status-type-row__final">
-								{{ t('procest', 'Final') }}
+								{{ t('dossiq', 'Final') }}
 							</span>
 							<span
 								v-if="st.notifyInitiator"
 								class="status-type-row__notify">
-								{{ t('procest', 'Notify') }}
+								{{ t('dossiq', 'Notify') }}
 							</span>
 							<span
 								v-if="st.notifyInitiator && st.notificationText"
@@ -60,7 +60,7 @@
 								<NcButton
 									type="tertiary"
 									:aria-label="
-										t('procest', 'Edit {name}', {
+										t('dossiq', 'Edit {name}', {
 											name: st.name,
 										})
 									"
@@ -72,7 +72,7 @@
 								<NcButton
 									type="tertiary"
 									:aria-label="
-										t('procest', 'Delete {name}', {
+										t('dossiq', 'Delete {name}', {
 											name: st.name,
 										})
 									"
@@ -90,7 +90,7 @@
 								<div class="edit-row">
 									<NcTextField
 										:modelValue="editForm.name"
-										:label="t('procest', 'Name')"
+										:label="t('dossiq', 'Name')"
 										:error="!!editError"
 										class="edit-field"
 										@update:modelValue="
@@ -98,7 +98,7 @@
 										" />
 									<NcTextField
 										:modelValue="String(editForm.order)"
-										:label="t('procest', 'Order')"
+										:label="t('dossiq', 'Order')"
 										type="number"
 										class="edit-field edit-field--small"
 										@update:modelValue="
@@ -113,14 +113,14 @@
 										@update:modelValue="
 											(v) => (editForm.isFinal = v)
 										">
-										{{ t('procest', 'Final status') }}
+										{{ t('dossiq', 'Final status') }}
 									</NcCheckboxRadioSwitch>
 									<NcCheckboxRadioSwitch
 										:modelValue="editForm.notifyInitiator"
 										@update:modelValue="
 											(v) => (editForm.notifyInitiator = v)
 										">
-										{{ t('procest', 'Notify initiator') }}
+										{{ t('dossiq', 'Notify initiator') }}
 									</NcCheckboxRadioSwitch>
 								</div>
 								<div
@@ -128,7 +128,7 @@
 									class="edit-row">
 									<NcTextField
 										:modelValue="editForm.notificationText"
-										:label="t('procest', 'Notification text')"
+										:label="t('dossiq', 'Notification text')"
 										class="edit-field"
 										@update:modelValue="
 											(v) => (editForm.notificationText = v)
@@ -142,10 +142,10 @@
 										type="primary"
 										:disabled="editSaving"
 										@click="saveEdit">
-										{{ t('procest', 'Save') }}
+										{{ t('dossiq', 'Save') }}
 									</NcButton>
 									<NcButton type="tertiary" @click="cancelEdit">
-										{{ t('procest', 'Cancel') }}
+										{{ t('dossiq', 'Cancel') }}
 									</NcButton>
 								</div>
 							</div>
@@ -156,7 +156,7 @@
 				<p v-else class="statuses-tab__empty">
 					{{
 						t(
-							'procest',
+							'dossiq',
 							'No status types defined. Add at least one to publish this case type.',
 						)
 					}}
@@ -164,17 +164,17 @@
 
 				<!-- Add new status type form -->
 				<div class="statuses-tab__add">
-					<h4>{{ t('procest', 'Add Status Type') }}</h4>
+					<h4>{{ t('dossiq', 'Add Status Type') }}</h4>
 					<div class="add-form">
 						<div class="add-form__row">
 							<NcTextField
 								:modelValue="newForm.name"
-								:label="t('procest', 'Name *')"
+								:label="t('dossiq', 'Name *')"
 								class="add-form__field"
 								@update:modelValue="(v) => (newForm.name = v)" />
 							<NcTextField
 								:modelValue="String(newForm.order)"
-								:label="t('procest', 'Order *')"
+								:label="t('dossiq', 'Order *')"
 								type="number"
 								class="add-form__field add-form__field--small"
 								@update:modelValue="
@@ -185,20 +185,20 @@
 							<NcCheckboxRadioSwitch
 								:modelValue="newForm.isFinal"
 								@update:modelValue="(v) => (newForm.isFinal = v)">
-								{{ t('procest', 'Final status') }}
+								{{ t('dossiq', 'Final status') }}
 							</NcCheckboxRadioSwitch>
 							<NcCheckboxRadioSwitch
 								:modelValue="newForm.notifyInitiator"
 								@update:modelValue="
 									(v) => (newForm.notifyInitiator = v)
 								">
-								{{ t('procest', 'Notify initiator') }}
+								{{ t('dossiq', 'Notify initiator') }}
 							</NcCheckboxRadioSwitch>
 						</div>
 						<div v-if="newForm.notifyInitiator" class="add-form__row">
 							<NcTextField
 								:modelValue="newForm.notificationText"
-								:label="t('procest', 'Notification text')"
+								:label="t('dossiq', 'Notification text')"
 								class="add-form__field"
 								@update:modelValue="
 									(v) => (newForm.notificationText = v)
@@ -211,7 +211,7 @@
 							type="primary"
 							:disabled="addSaving"
 							@click="addStatusType">
-							{{ t('procest', 'Add') }}
+							{{ t('dossiq', 'Add') }}
 						</NcButton>
 					</div>
 				</div>
@@ -331,12 +331,12 @@ export default {
 			this.addError = ''
 
 			if (!this.newForm.name || !this.newForm.name.trim()) {
-				this.addError = t('procest', 'Status type name is required')
+				this.addError = t('dossiq', 'Status type name is required')
 				return
 			}
 
 			if (!this.newForm.order || this.newForm.order <= 0) {
-				this.addError = t('procest', 'Order is required')
+				this.addError = t('dossiq', 'Order is required')
 				return
 			}
 
@@ -345,7 +345,7 @@ export default {
 			)
 			if (duplicate) {
 				this.addError = t(
-					'procest',
+					'dossiq',
 					'A status type with this order already exists',
 				)
 				return
@@ -372,7 +372,7 @@ export default {
 			} else {
 				this.addError =
 					this.objectStore.getError('statusType')
-					|| t('procest', 'Failed to add status type')
+					|| t('dossiq', 'Failed to add status type')
 			}
 		},
 
@@ -398,7 +398,7 @@ export default {
 			this.editError = ''
 
 			if (!this.editForm.name || !this.editForm.name.trim()) {
-				this.editError = t('procest', 'Status type name is required')
+				this.editError = t('dossiq', 'Status type name is required')
 				return
 			}
 
@@ -412,7 +412,7 @@ export default {
 				)?.isFinal
 				if (wasFinal && otherFinals.length === 0) {
 					this.editError = t(
-						'procest',
+						'dossiq',
 						'At least one status type must be marked as final',
 					)
 					return
@@ -425,7 +425,7 @@ export default {
 			)
 			if (duplicate) {
 				this.editError = t(
-					'procest',
+					'dossiq',
 					'A status type with this order already exists',
 				)
 				return
@@ -450,7 +450,7 @@ export default {
 			} else {
 				this.editError =
 					this.objectStore.getError('statusType')
-					|| t('procest', 'Failed to save')
+					|| t('dossiq', 'Failed to save')
 			}
 		},
 
@@ -468,7 +468,7 @@ export default {
 				)
 				if (otherFinals.length === 0) {
 					this.error = t(
-						'procest',
+						'dossiq',
 						'At least one status type must be marked as final',
 					)
 					return
@@ -477,7 +477,7 @@ export default {
 
 			if (
 				!confirm(
-					t('procest', 'Delete status type "{name}"?', { name: st.name }),
+					t('dossiq', 'Delete status type "{name}"?', { name: st.name }),
 				)
 			) {
 				return
@@ -489,7 +489,7 @@ export default {
 			} else {
 				this.error =
 					this.objectStore.getError('statusType')
-					|| t('procest', 'Failed to delete status type')
+					|| t('dossiq', 'Failed to delete status type')
 			}
 		},
 

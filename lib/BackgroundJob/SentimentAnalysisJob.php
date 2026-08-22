@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest KCC Sentiment Analysis Job.
+ * Dossiq KCC Sentiment Analysis Job.
  *
  * Periodically scores unanalysed contactmomenten (those with a transcription
  * but no sentiment record yet), persists a klantSentiment object, and appends a
@@ -9,7 +9,7 @@
  * job is resilient: a failure on one record is logged and the job continues.
  *
  * @category BackgroundJob
- * @package  OCA\Procest\BackgroundJob
+ * @package  OCA\Dossiq\BackgroundJob
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,20 +20,20 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T15
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\BackgroundJob;
+namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\ContactMomentService;
-use OCA\Procest\Service\SentimentService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\ContactMomentService;
+use OCA\Dossiq\Service\SentimentService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -108,7 +108,7 @@ class SentimentAnalysisJob extends TimedJob {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: sentiment job could not load contactmomenten: ' . $e->getMessage(),
+				'Dossiq: sentiment job could not load contactmomenten: ' . $e->getMessage(),
 				['app' => Application::APP_ID],
 			);
 			return;
@@ -125,7 +125,7 @@ class SentimentAnalysisJob extends TimedJob {
 				);
 			} catch (Throwable $e) {
 				$this->logger->error(
-					'Procest: sentiment scoring failed for a contactmoment: ' . $e->getMessage(),
+					'Dossiq: sentiment scoring failed for a contactmoment: ' . $e->getMessage(),
 					['app' => Application::APP_ID],
 				);
 			}

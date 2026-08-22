@@ -6,7 +6,7 @@
  * Exception thrown when ZGW API authentication or authorization fails.
  *
  * @category Middleware
- * @package  OCA\Procest\Middleware
+ * @package  OCA\Dossiq\Middleware
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -17,12 +17,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Middleware;
+namespace OCA\Dossiq\Middleware;
 
 /**
  * Exception for ZGW authentication and authorization failures.

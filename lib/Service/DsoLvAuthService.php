@@ -13,16 +13,16 @@
  * NOTE: Production DSO-LV requires OAuth2 with OIN-bound PKIoverheid
  * certificate (mTLS). Configuring only a bearer token is sufficient for
  * sandbox/test environments. Set key 'dso_lv_auth_token' via the Nextcloud
- * admin settings panel or via `occ config:app:set procest dso_lv_auth_token`.
+ * admin settings panel or via `occ config:app:set dossiq dso_lv_auth_token`.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
  *
@@ -32,9 +32,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 
@@ -91,9 +91,9 @@ class DsoLvAuthService {
 	public function getAuthHeaders(): array {
 		if ($this->isAuthConfigured() === false) {
 			$this->logger->warning(
-				'Procest DsoLvAuthService: dso_lv_auth_token is not configured. '
+				'Dossiq DsoLvAuthService: dso_lv_auth_token is not configured. '
 				. 'Outbound DSO-LV calls will be unauthenticated. '
-				. 'Configure via occ config:app:set procest dso_lv_auth_token --value <token>.',
+				. 'Configure via occ config:app:set dossiq dso_lv_auth_token --value <token>.',
 				['app' => Application::APP_ID]
 			);
 			return [];

@@ -19,7 +19,7 @@
 -->
 <template>
 	<NcDialog
-		:name="t('procest', 'Link related case')"
+		:name="t('dossiq', 'Link related case')"
 		:open="true"
 		size="normal"
 		@update:open="onDialogClose"
@@ -27,17 +27,17 @@
 		<div class="add-case-relation">
 			<!-- Case search picker -->
 			<div class="form-group">
-				<label for="acr-target">{{ t('procest', 'Related case') }} *</label>
+				<label for="acr-target">{{ t('dossiq', 'Related case') }} *</label>
 				<NcSelect
 					id="acr-target"
 					v-model="selectedCase"
 					:options="caseOptions"
 					:loading="searching"
-					:aria-label-combobox="t('procest', 'Related case')"
-					:inputLabel="t('procest', 'Related case')"
+					:aria-label-combobox="t('dossiq', 'Related case')"
+					:inputLabel="t('dossiq', 'Related case')"
 					label="label"
 					trackBy="id"
-					:placeholder="t('procest', 'Search for a case…')"
+					:placeholder="t('dossiq', 'Search for a case…')"
 					@search="onSearch" />
 				<p v-if="errors.target" class="form-error" role="alert">
 					{{ errors.target }}
@@ -46,16 +46,16 @@
 
 			<!-- Relation type -->
 			<div class="form-group">
-				<label for="acr-type">{{ t('procest', 'Relation type') }} *</label>
+				<label for="acr-type">{{ t('dossiq', 'Relation type') }} *</label>
 				<NcSelect
 					id="acr-type"
 					v-model="selectedType"
 					:options="typeOptions"
-					:aria-label-combobox="t('procest', 'Relation type')"
-					:inputLabel="t('procest', 'Relation type')"
+					:aria-label-combobox="t('dossiq', 'Relation type')"
+					:inputLabel="t('dossiq', 'Relation type')"
 					label="label"
 					trackBy="value"
-					:placeholder="t('procest', 'Select a relation type…')" />
+					:placeholder="t('dossiq', 'Select a relation type…')" />
 				<p v-if="errors.type" class="form-error" role="alert">
 					{{ errors.type }}
 				</p>
@@ -63,13 +63,11 @@
 
 			<!-- Toelichting (optional) -->
 			<div class="form-group">
-				<label for="acr-toelichting">{{
-					t('procest', 'Explanation')
-				}}</label>
+				<label for="acr-toelichting">{{ t('dossiq', 'Explanation') }}</label>
 				<NcTextField
 					id="acr-toelichting"
 					:modelValue="notes"
-					:placeholder="t('procest', 'Optional clarification…')"
+					:placeholder="t('dossiq', 'Optional clarification…')"
 					@update:modelValue="
 						(v) => {
 							toelichting = v
@@ -84,13 +82,13 @@
 
 		<template #actions>
 			<NcButton type="tertiary" @click="$emit('close')">
-				{{ t('procest', 'Cancel') }}
+				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 			<NcButton type="primary" :disabled="saving" @click="submit">
 				<template v-if="saving" #icon>
 					<NcLoadingIcon :size="20" />
 				</template>
-				{{ t('procest', 'Link case') }}
+				{{ t('dossiq', 'Link case') }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -220,11 +218,11 @@ export default {
 			this.submitError = ''
 
 			if (!this.selectedCase || !this.selectedCase.id) {
-				this.errors.target = t('procest', 'Select a case to relate.')
+				this.errors.target = t('dossiq', 'Select a case to relate.')
 				return
 			}
 			if (!this.selectedType || !this.selectedType.value) {
-				this.errors.type = t('procest', 'Select a relation type.')
+				this.errors.type = t('dossiq', 'Select a relation type.')
 				return
 			}
 
@@ -242,7 +240,7 @@ export default {
 				}
 				this.submitError = relationErrorMessage(result.reason)
 			} catch (e) {
-				this.submitError = t('procest', 'Could not save the relation.')
+				this.submitError = t('dossiq', 'Could not save the relation.')
 			} finally {
 				this.saving = false
 			}

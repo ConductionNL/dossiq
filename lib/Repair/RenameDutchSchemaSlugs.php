@@ -30,11 +30,11 @@
  * colliding with the first.
  *
  * @category  Repair
- * @package   OCA\Procest\Repair
+ * @package   OCA\Dossiq\Repair
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
- * @link      https://procest.nl
+ * @link      https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -42,7 +42,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
 use OCP\DB\Exception;
 use OCP\IDBConnection;
@@ -94,6 +94,9 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	 *
 	 * @var array<int, string>
 	 */
+	// FROZEN: OpenRegister register SLUG, unchanged by the procest -> dossiq
+	// app-id rename. This step exists precisely because OR matches by slug; a
+	// renamed value here would resolve no register and rename no schema.
 	private const REGISTER_SLUGS = ['procest'];
 
 	/**
@@ -124,7 +127,7 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	 *  requirement that says nothing about it.
 	 */
 	public function getName(): string {
-		return 'Rename Dutch Procest schema slugs';
+		return 'Rename Dutch Dossiq schema slugs';
 	}//end getName()
 
 	/**
@@ -141,7 +144,7 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	public function run(IOutput $output): void {
 		$schemaIds = $this->inScopeSchemaIds();
 		if ($schemaIds === []) {
-			$output->info('RenameDutchSchemaSlugs: no Procest registers on this install; nothing to do.');
+			$output->info('RenameDutchSchemaSlugs: no Dossiq registers on this install; nothing to do.');
 			return;
 		}
 

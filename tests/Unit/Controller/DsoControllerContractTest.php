@@ -27,25 +27,25 @@
  *    service's `advies` argument.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\DsoController;
-use OCA\Procest\Service\BeschikkingGenerationService;
-use OCA\Procest\Service\Dso\DsoDoorsturenNotifier;
-use OCA\Procest\Service\Dso\DsoObjectRepository;
-use OCA\Procest\Service\DsoCaseService;
-use OCA\Procest\Service\SamenwerkverzoekService;
+use OCA\Dossiq\Controller\DsoController;
+use OCA\Dossiq\Service\BeschikkingGenerationService;
+use OCA\Dossiq\Service\Dso\DsoDoorsturenNotifier;
+use OCA\Dossiq\Service\Dso\DsoObjectRepository;
+use OCA\Dossiq\Service\DsoCaseService;
+use OCA\Dossiq\Service\SamenwerkverzoekService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -233,7 +233,7 @@ class DsoContractRequestStub implements IRequest {
 	 * @return string
 	 */
 	public function getRequestUri(): string {
-		return '/apps/procest/api/dso/dashboard';
+		return '/apps/dossiq/api/dso/dashboard';
 	}//end getRequestUri()
 
 	/**
@@ -322,7 +322,7 @@ class DsoContractRequestStub implements IRequest {
 /**
  * Wire-contract tests for DsoController's dashboard/doorsturen/respond endpoints.
  *
- * @covers \OCA\Procest\Controller\DsoController
+ * @covers \OCA\Dossiq\Controller\DsoController
  */
 class DsoControllerContractTest extends TestCase {
 
@@ -402,7 +402,7 @@ class DsoControllerContractTest extends TestCase {
 	 */
 	private function controllerWith(array $params = [], string $content = ''): DsoController {
 		return new DsoController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: new DsoContractRequestStub(params: $params, content: $content),
 			dsoCaseService: $this->dsoCaseService,
 			decisionService: $this->decisionService,

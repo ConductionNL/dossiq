@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest KPI Cache Invalidation Listener
+ * Dossiq KPI Cache Invalidation Listener
  *
  * Listens to OpenRegister object lifecycle events (created, updated, deleted)
  * and increments the per-user KPI cache version counter, ensuring the next
@@ -12,7 +12,7 @@
  * avoiding thundering-herd on busy workflows.
  *
  * @category Listener
- * @package  OCA\Procest\Listener
+ * @package  OCA\Dossiq\Listener
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -23,17 +23,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Listener;
+namespace OCA\Dossiq\Listener;
 
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\ICache;
@@ -44,7 +44,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Invalidates per-user KPI caches on any OpenRegister object mutation.
  *
- * Increments the version counter key `procest_kpis_{userId}_ver` stored in
+ * Increments the version counter key `dossiq_kpis_{userId}_ver` stored in
  * the local APCu cache. The KpiController reads this version to build its
  * data cache key; a version change causes a cache miss on the next request.
  *
@@ -62,7 +62,7 @@ class KpiCacheInvalidationListener implements IEventListener {
 	/**
 	 * Cache prefix for KPI version keys.
 	 */
-	private const CACHE_PREFIX = 'procest_kpis_';
+	private const CACHE_PREFIX = 'dossiq_kpis_';
 
 	/**
 	 * Cache key suffix for the version counter.

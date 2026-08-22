@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest external auth-broker registrar.
+ * Dossiq external auth-broker registrar.
  *
  * Binds the DigiD and eHerkenning SAML seams to the adapter selected by the
  * `integration.<name>.mode` config tier. Split out of Application so the
@@ -9,7 +9,7 @@
  * simulator alternative it guards.
  *
  * @category AppInfo
- * @package  OCA\Procest\AppInfo\Registrar
+ * @package  OCA\Dossiq\AppInfo\Registrar
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -17,7 +17,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -27,15 +27,15 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\AppInfo\Registrar;
+namespace OCA\Dossiq\AppInfo\Registrar;
 
-use OCA\Procest\Service\Auth\DigidSamlAdapterInterface;
-use OCA\Procest\Service\Auth\EHerkenningSamlAdapterInterface;
-use OCA\Procest\Service\Auth\LogDigidSamlAdapter;
-use OCA\Procest\Service\Auth\LogEHerkenningSamlAdapter;
-use OCA\Procest\Service\Auth\SimulatorDigidSamlAdapter;
-use OCA\Procest\Service\Auth\SimulatorEHerkenningSamlAdapter;
-use OCA\Procest\Service\External\IntegrationMode;
+use OCA\Dossiq\Service\Auth\DigidSamlAdapterInterface;
+use OCA\Dossiq\Service\Auth\EHerkenningSamlAdapterInterface;
+use OCA\Dossiq\Service\Auth\LogDigidSamlAdapter;
+use OCA\Dossiq\Service\Auth\LogEHerkenningSamlAdapter;
+use OCA\Dossiq\Service\Auth\SimulatorDigidSamlAdapter;
+use OCA\Dossiq\Service\Auth\SimulatorEHerkenningSamlAdapter;
+use OCA\Dossiq\Service\External\IntegrationMode;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use Psr\Container\ContainerInterface;
 

@@ -12,7 +12,7 @@ Implements the B&W (Board & Aldermen: College van Burgemeester en Wethouders) de
 
 ### Backend
 
-- **New schemas** in `lib/Settings/procest_register.json`:
+- **New schemas** in `lib/Settings/dossiq_register.json`:
   - `voorstel`: the proposal document awaiting B&W decision
   - `parafeerroute`: a named sign-off chain with ordered steps
   - `parafeeractie`: an individual action taken by a paraferent
@@ -46,5 +46,5 @@ Implements the B&W (Board & Aldermen: College van Burgemeester en Wethouders) de
 Unit tests are in `tests/Unit/Service/ParaferingNotificationServiceTest.php`. They verify:
 - Notifications are sent to the correct user
 - Subject keys and parameters are set correctly
-- App ID is set to the Procest app constant
+- App ID is set to the Dossiq app constant
 - Exceptions from the notification manager are caught and logged (never thrown to callers)

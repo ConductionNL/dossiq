@@ -9,7 +9,7 @@
  * a roleType with a null/absent `ncGroupId` resolves to no group (open access).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -17,15 +17,15 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\WorkflowStepAuthorizationResolver;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\WorkflowStepAuthorizationResolver;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -53,7 +53,7 @@ interface AuthResolverObjectServiceStub {
 /**
  * Tests for WorkflowStepAuthorizationResolver::resolveGroupIds().
  *
- * @covers \OCA\Procest\Service\WorkflowStepAuthorizationResolver
+ * @covers \OCA\Dossiq\Service\WorkflowStepAuthorizationResolver
  *
  * @spec openspec/changes/migrate-role-routing-to-or-rbac/tasks.md#P-6.1
  */

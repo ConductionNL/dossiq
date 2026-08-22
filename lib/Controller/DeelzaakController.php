@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Deelzaak (sub-case) Controller
+ * Dossiq Deelzaak (sub-case) Controller
  *
  * Thin REST surface in front of {@see DeelzaakService}. Used by the case
  * detail view (parent + sub-case list) and the case list page (badge counts).
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,18 +18,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/deelzaak-support/tasks.md#T01
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\DeelzaakService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\DeelzaakService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

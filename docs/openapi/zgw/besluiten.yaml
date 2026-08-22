@@ -1,14 +1,14 @@
 openapi: 3.0.3
 info:
-  title: Procest ZGW Besluiten API (BRC)
+  title: Dossiq ZGW Besluiten API (BRC)
   description: |
-    Machine-readable description of the routed surface of Procest's ZGW
+    Machine-readable description of the routed surface of Dossiq's ZGW
     Besluiten Registratie Component (BRC) API, generated from the app's
     route table (appinfo/routes.php). It documents paths, verbs and
     parameters only — payload semantics (request/response bodies, business
     rules) follow the VNG ZGW 1.x standard. See
     https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/index
-    for the authoritative resource schemas. Procest tracks the ZGW 1.x
+    for the authoritative resource schemas. Dossiq tracks the ZGW 1.x
     standard line.
 
     The `{resource}` enum below is besluiten and besluitinformatieobjecten
@@ -16,8 +16,8 @@ info:
     is served under the catalogi (ZTC) API, not here.
   version: '1.0.0'
 servers:
-  - url: /apps/procest
-    description: Procest app base path
+  - url: /apps/dossiq
+    description: Dossiq app base path
 components:
   securitySchemes:
     ZGWToken:

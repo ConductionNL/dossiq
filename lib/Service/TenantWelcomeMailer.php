@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Tenant Welcome Mailer
+ * Dossiq Tenant Welcome Mailer
  *
  * Sends a welcome email to a freshly provisioned tenant administrator.
  * Wraps Nextcloud's IMailer so the orchestration service stays a pure
  * sequence of typed dependencies.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -17,14 +17,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-03-schema-provisioning/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use OCP\Mail\IMailer;
 use Psr\Log\LoggerInterface;
@@ -57,7 +57,7 @@ class TenantWelcomeMailer {
 		$to = $this->resolveAdminEmail(tenant: $tenant);
 		if ($to === null) {
 			$this->logger->info(
-				'Procest: no admin email on tenant — skipping welcome email',
+				'Dossiq: no admin email on tenant — skipping welcome email',
 				['tenant' => $tenant['slug'] ?? '']
 			);
 			return false;
@@ -66,13 +66,13 @@ class TenantWelcomeMailer {
 		try {
 			$msg = $this->mailer->createMessage();
 			$msg->setTo([$to]);
-			$msg->setSubject('Welkom bij Procest — uw werkomgeving is klaar');
+			$msg->setSubject('Welkom bij Dossiq — uw werkomgeving is klaar');
 			$msg->setPlainBody($this->renderBody(tenant: $tenant));
 			$this->mailer->send($msg);
 			return true;
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: sendWelcomeEmail failed',
+				'Dossiq: sendWelcomeEmail failed',
 				['tenant' => $tenant['slug'] ?? '', 'exception' => $e->getMessage()]
 			);
 			return false;
@@ -103,7 +103,7 @@ class TenantWelcomeMailer {
 
 	/**
 	 * Build the welcome body. Plain text — HTML templating is rendered by NC's
-	 * own EmailTemplate when the procest theme is available.
+	 * own EmailTemplate when the dossiq theme is available.
 	 *
 	 * @param array<string,mixed> $tenant Tenant row.
 	 *
@@ -113,7 +113,7 @@ class TenantWelcomeMailer {
 		$name = (string)($tenant['displayName'] ?? $tenant['legalName'] ?? 'gemeente');
 		$slug = (string)($tenant['slug'] ?? '');
 		$domain = (string)($tenant['domain'] ?? '');
-		$loginHint = 'uw procest-instance';
+		$loginHint = 'uw dossiq-instance';
 		if ($domain !== '') {
 			$loginHint = 'https://' . $domain;
 		}
@@ -121,7 +121,7 @@ class TenantWelcomeMailer {
 		return <<<TXT
 Beste beheerder,
 
-Welkom bij Procest. De werkomgeving voor {$name} is succesvol klaargezet
+Welkom bij Dossiq. De werkomgeving voor {$name} is succesvol klaargezet
 en is bereikbaar op {$loginHint}.
 
 Wat is er klaargezet:
@@ -136,7 +136,7 @@ Volgende stappen:
 3. Importeer uw eigen mandaten en zaaktypen
 
 Met vriendelijke groet,
-Het Procest-team
+Het Dossiq-team
 (tenant slug: {$slug})
 TXT;
 	}//end renderBody()

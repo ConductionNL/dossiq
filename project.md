@@ -1,14 +1,14 @@
-# Procest — Case Management for Nextcloud
+# Dossiq — Case Management for Nextcloud
 
 ## Overview
 
-Procest is a lightweight case management (zaakgericht werken) app for Nextcloud, built as a thin client on top of OpenRegister. It manages cases, tasks, statuses, roles, results, and decisions — the internal processing side of case management. Customer-facing concerns (clients, communication, intake) are handled by the companion app Pipelinq.
+Dossiq is a lightweight case management (zaakgericht werken) app for Nextcloud, built as a thin client on top of OpenRegister. It manages cases, tasks, statuses, roles, results, and decisions — the internal processing side of case management. Customer-facing concerns (clients, communication, intake) are handled by the companion app Pipelinq.
 
 ## Architecture
 
 - **Type**: Nextcloud App (PHP backend + Vue 2 frontend)
 - **Data layer**: OpenRegister (all data stored as register objects)
-- **Pattern**: Thin client — Procest provides UI/UX, OpenRegister handles persistence
+- **Pattern**: Thin client — Dossiq provides UI/UX, OpenRegister handles persistence
 - **License**: EUPL-1.2
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed architecture and data model decisions.
@@ -56,7 +56,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed architecture and d
 | Case Management | Create, view, edit cases with status timeline, deadlines, activity | Done |
 | Task Management | BPMN lifecycle tasks (available/active/completed) within cases | Done |
 | Dashboard | KPI cards, status chart, overdue panel, activity feed, my work preview | Done |
-| Unified Search Deep Links | Cases and tasks appear in Nextcloud search with links to Procest detail views | Done |
+| Unified Search Deep Links | Cases and tasks appear in Nextcloud search with links to Dossiq detail views | Done |
 
 ### Planned
 
@@ -87,9 +87,9 @@ These features are implemented at the OpenRegister level, benefiting all consume
 
 ### Boundary with Pipelinq
 
-Procest focuses on **internal case processing** (what happens after intake). Pipelinq handles the **customer-facing/CRM side** (who the case is about, communication with them).
+Dossiq focuses on **internal case processing** (what happens after intake). Pipelinq handles the **customer-facing/CRM side** (who the case is about, communication with them).
 
-| Concern | Procest | Pipelinq |
+| Concern | Dossiq | Pipelinq |
 |---------|---------|----------|
 | Cases (Zaken) | Owns | Links to (as context for requests) |
 | Tasks (Taken) | Owns | — |
@@ -103,7 +103,7 @@ Procest focuses on **internal case processing** (what happens after intake). Pip
 ## Key Directories
 
 ```
-procest/
+dossiq/
 ├── appinfo/          # App manifest and routes
 ├── lib/              # PHP backend (controllers, services, repair)
 ├── src/              # Vue frontend source
@@ -115,6 +115,6 @@ procest/
 
 ## Development
 
-- **Local URL**: http://localhost:8080/apps/procest/
+- **Local URL**: http://localhost:8080/apps/dossiq/
 - **Requires**: OpenRegister app installed and enabled
 - **Docker**: Part of openregister/docker-compose.yml

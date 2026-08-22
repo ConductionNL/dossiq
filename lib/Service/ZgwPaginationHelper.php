@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest ZGW Pagination Helper
+ * Dossiq ZGW Pagination Helper
  *
  * Wraps OpenRegister's pagination into ZGW HAL-style format.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -14,14 +14,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 /**
  * ZGW pagination helper
@@ -30,7 +30,7 @@ namespace OCA\Procest\Service;
  * { "count": N, "next": url|null, "previous": url|null, "results": [...] }
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @psalm-suppress UnusedClass
  */

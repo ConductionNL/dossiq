@@ -1,7 +1,7 @@
 publiccodeYmlVersion: "0.4"
 
-name: Procest
-url: "https://github.com/ConductionNL/procest"
+name: Dossiq
+url: "https://github.com/ConductionNL/dossiq"
 softwareVersion: "0.2.2"
 releaseDate: "2026-05-26"
 developmentStatus: beta
@@ -19,7 +19,7 @@ description:
     shortDescription: >
       Business process and workflow management for Nextcloud.
     longDescription: >
-      Procest is a business process and workflow management application for Nextcloud.
+      Dossiq is a business process and workflow management application for Nextcloud.
       It enables organisations to model, execute, and monitor business processes and
       workflows. Built on Open Register, it integrates with the Nextcloud ecosystem
       and supports process automation and standardisation for both government and
@@ -34,7 +34,7 @@ description:
     shortDescription: >
       Bedrijfsproces- en workflowbeheer voor Nextcloud.
     longDescription: >
-      Procest is een bedrijfsprocesbeheers- en workflowtoepassing voor Nextcloud.
+      Dossiq is een bedrijfsprocesbeheers- en workflowtoepassing voor Nextcloud.
       Het stelt organisaties in staat bedrijfsprocessen en workflows te modelleren,
       uit te voeren en te monitoren. Gebouwd op Open Register integreert het met het
       Nextcloud-ecosysteem en ondersteunt procesautomatisering en -standaardisatie

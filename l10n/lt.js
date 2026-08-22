@@ -1,5 +1,5 @@
 OC.L10N.register(
-    "procest",
+    "dossiq",
     {
     "Add step" : "Pridėti veiksmą",
     "Address" : "Adresas",
@@ -388,8 +388,8 @@ OC.L10N.register(
     "Voorstel heeft geen actieve stap" : "Voorstel neturi aktyvaus veiksmo",
     "Wanneer is deze route van toepassing?" : "Kada taikomas šis maršrutas?",
     "Weet u zeker dat u de route \"{name}\" wilt verwijderen?" : "Ar tikrai norite pašalinti maršrutą „{name}“?",
-    "Welcome to Procest! Get started by creating your first case or task using the buttons above." : "Sveiki atvykę į Procest! Pradėkite sukurdami savo pirmąją bylą ar užduotį, naudodami aukščiau esančius mygtukus.",
-    "Welcome to Procest! Get started by creating your first case type in Settings." : "Sveiki atvykę į Procest! Pradėkite nustatymuose sukurdami savo pirmąjį bylos tipą.",
+    "Welcome to Dossiq! Get started by creating your first case or task using the buttons above." : "Sveiki atvykę į Dossiq! Pradėkite sukurdami savo pirmąją bylą ar užduotį, naudodami aukščiau esančius mygtukus.",
+    "Welcome to Dossiq! Get started by creating your first case type in Settings." : "Sveiki atvykę į Dossiq! Pradėkite nustatymuose sukurdami savo pirmąjį bylos tipą.",
     "When heeftAlleAutorisaties is false, autorisaties must be specified." : "Kai heeftAlleAutorisaties yra false, turi būti nurodytos autorisaties.",
     "When heeftAlleAutorisaties is true, autorisaties must not be specified. When heeftAlleAutorisaties is false, autorisaties must be specified." : "Kai heeftAlleAutorisaties yra true, autorisaties neturi būti nurodytos. Kai heeftAlleAutorisaties yra false, autorisaties turi būti nurodytos.",
     "Why is an extension needed?" : "Kodėl reikalingas pratęsimas?",

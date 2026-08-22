@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Belplan Controller.
+ * Dossiq Belplan Controller.
  *
  * Belplan listing (KCC-medewerker readable), belplan creation/update
  * (admin-only), and a routing endpoint that resolves the destination specialist
  * for a dialed number and keuzemenu selection.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,19 +19,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T12
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\BelplanRoutingService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
-use OCA\Procest\Settings\AdminSettings;
+use OCA\Dossiq\Service\BelplanRoutingService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;

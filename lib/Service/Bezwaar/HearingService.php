@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Bezwaar Hearing Service.
+ * Dossiq Bezwaar Hearing Service.
  *
  * Domain service for the bezwaar-hearing (hoorzitting) capability under
  * Awb Art. 7:2 – 7:7. Owns the legitimate domain operations that cannot
@@ -31,7 +31,7 @@
  * article so that beroep dossier export can demonstrate compliance.
  *
  * @category Service
- * @package  OCA\Procest\Service\Bezwaar
+ * @package  OCA\Dossiq\Service\Bezwaar
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -42,18 +42,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Bezwaar;
+namespace OCA\Dossiq\Service\Bezwaar;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\OwningCaseResolver;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\OwningCaseResolver;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -213,7 +213,7 @@ class HearingService {
 			return $objectService->saveObject(object: $record, register: $register, schema: $schema);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest hearing: failed to schedule hearing: ' . $e->getMessage()
+				'Dossiq hearing: failed to schedule hearing: ' . $e->getMessage()
 			);
 			throw new RuntimeException('Could not schedule hearing');
 		}
@@ -292,7 +292,7 @@ class HearingService {
 			return $objectService->saveObject(object: $record, register: $register, schema: $schema);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest hearing: failed to record waiver: ' . $e->getMessage()
+				'Dossiq hearing: failed to record waiver: ' . $e->getMessage()
 			);
 			throw new RuntimeException('Could not record waiver');
 		}
@@ -405,7 +405,7 @@ class HearingService {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest hearing: failed to record attendance: ' . $e->getMessage()
+				'Dossiq hearing: failed to record attendance: ' . $e->getMessage()
 			);
 			throw new RuntimeException('Could not record attendance');
 		}
@@ -497,7 +497,7 @@ class HearingService {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest hearing: failed to add minutes: ' . $e->getMessage()
+				'Dossiq hearing: failed to add minutes: ' . $e->getMessage()
 			);
 			throw new RuntimeException('Could not add minutes');
 		}
@@ -548,7 +548,7 @@ class HearingService {
 			}
 		} catch (\Throwable $e) {
 			$this->logger->debug(
-				'Procest hearing: lookup for existing sessions failed: '
+				'Dossiq hearing: lookup for existing sessions failed: '
 				. $e->getMessage()
 			);
 			return null;
@@ -573,7 +573,7 @@ class HearingService {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->info(
-				'Procest hearing: seedDefaultHearing skipped for bezwaar '
+				'Dossiq hearing: seedDefaultHearing skipped for bezwaar '
 				. $objectionId . ': ' . $e->getMessage()
 			);
 			return null;
@@ -581,7 +581,7 @@ class HearingService {
 	}//end seedDefaultHearing()
 
 	/**
-	 * Resolve the underlying procest case UUID from a bezwaar
+	 * Resolve the underlying dossiq case UUID from a bezwaar
 	 * (lifecycle) UUID. Falls back to the input when bezwaar_schema is
 	 * not configured so the listener can still seed against case-keyed
 	 * inputs.
@@ -615,7 +615,7 @@ class HearingService {
 			}
 		} catch (\Throwable $e) {
 			$this->logger->debug(
-				'Procest hearing: bezwaar lookup failed: ' . $e->getMessage()
+				'Dossiq hearing: bezwaar lookup failed: ' . $e->getMessage()
 			);
 		}
 

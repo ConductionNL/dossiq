@@ -1,6 +1,6 @@
 # Admin Settings (Configuration)
 
-The Configuration page (under Settings) provides the central administration panel for Procest.
+The Configuration page (under Settings) provides the central administration panel for Dossiq.
 
 ![Admin Settings](/screenshots/admin-settings.png)
 
@@ -14,7 +14,7 @@ The Configuration page displays:
 - Re-import configuration button for resetting to defaults
 
 ### Application Information
-- **Application Name**: Procest
+- **Application Name**: Dossiq
 - **Version**: Displays the current installed version
 
 ### Support
@@ -23,7 +23,7 @@ The Configuration page displays:
 
 ## Schema Configuration
 
-The configuration section allows administrators to map Procest to OpenRegister schemas. See the [Case Types](case-types.md) documentation for the full list of configurable schema mappings.
+The configuration section allows administrators to map Dossiq to OpenRegister schemas. See the [Case Types](case-types.md) documentation for the full list of configurable schema mappings.
 
 ## ZGW API Mapping
 

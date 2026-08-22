@@ -1,13 +1,13 @@
 /**
- * Deelzaak (sub-case) API service for Procest.
+ * Deelzaak (sub-case) API service for Dossiq.
  *
  * Wraps the parent-child case relation endpoints exposed by
  * `lib/Controller/DeelzaakController.php`:
- *   GET    /apps/procest/api/deelzaken/{caseId}/children
- *   GET    /apps/procest/api/deelzaken/{caseId}/parent
- *   GET    /apps/procest/api/deelzaken/counts?ids=uuid1,uuid2,...
- *   POST   /apps/procest/api/deelzaken/validate
- *   POST   /apps/procest/api/deelzaken/{caseId}/unlink
+ *   GET    /apps/dossiq/api/deelzaken/{caseId}/children
+ *   GET    /apps/dossiq/api/deelzaken/{caseId}/parent
+ *   GET    /apps/dossiq/api/deelzaken/counts?ids=uuid1,uuid2,...
+ *   POST   /apps/dossiq/api/deelzaken/validate
+ *   POST   /apps/dossiq/api/deelzaken/{caseId}/unlink
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
@@ -17,7 +17,7 @@
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-const base = (path) => generateUrl(`/apps/procest/api/deelzaken${path}`)
+const base = (path) => generateUrl(`/apps/dossiq/api/deelzaken${path}`)
 
 /**
  * Fetch the sub-cases for a parent case.

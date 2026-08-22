@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest mandaat repository.
+ * Dossiq mandaat repository.
  *
  * The single OpenRegister access path for the mandaat matrix: the
  * rolNaam→rolId index, the prior vastgesteld besluit for a besluit number, the
@@ -16,7 +16,7 @@
  * fatal, exactly as before the split.
  *
  * @category Service
- * @package  OCA\Procest\Service\Mandaat
+ * @package  OCA\Dossiq\Service\Mandaat
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,7 +24,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -34,10 +34,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Mandaat;
+namespace OCA\Dossiq\Service\Mandaat;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 

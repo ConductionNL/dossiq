@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Guard Evaluator interface.
+ * Dossiq Guard Evaluator interface.
  *
  * Implementations evaluate a single guard configuration against a case for
  * a given user, returning a deterministic GuardResult. Guards MUST be
  * side-effect-free: they only read state.
  *
  * @category Service
- * @package  OCA\Procest\Service\Transitions
+ * @package  OCA\Dossiq\Service\Transitions
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,12 +19,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Transitions;
+namespace OCA\Dossiq\Service\Transitions;
 
 /**
  * Strategy interface for guard evaluation.

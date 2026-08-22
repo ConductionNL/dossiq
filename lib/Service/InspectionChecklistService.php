@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Inspection Checklist Service
+ * Dossiq Inspection Checklist Service
  *
  * Admin CRUD on `inspectionChecklist` schemas and per-case completion via
  * `inspectionResult` records. Used by the checklist admin UI and the
  * mobiel-inspectie consumer.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,10 +24,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;

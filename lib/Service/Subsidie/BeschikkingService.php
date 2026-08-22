@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Beschikking Service.
+ * Dossiq Beschikking Service.
  *
  * Grant-decision (beschikking) lifecycle: drafting with a validated
  * voorschot-schema (sum must equal verleend bedrag, REQ-SUB-001),
@@ -10,7 +10,7 @@
  * bezwaartermijn. Persistence delegates to OpenRegister via SettingsService.
  *
  * @category Service
- * @package  OCA\Procest\Service\Subsidie
+ * @package  OCA\Dossiq\Service\Subsidie
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,16 +21,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Subsidie;
+namespace OCA\Dossiq\Service\Subsidie;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -134,7 +134,7 @@ class BeschikkingService {
 		try {
 			return $objectService->saveObject(object: $record, register: $register, schema: $schema);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest subsidie: createDraft beschikking failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq subsidie: createDraft beschikking failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon beschikking niet aanmaken');
 		}
 	}//end createDraft()
@@ -166,7 +166,7 @@ class BeschikkingService {
 		try {
 			return $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string)$decisionId);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest subsidie: sign beschikking failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq subsidie: sign beschikking failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon beschikking niet ondertekenen');
 		}
 	}//end sign()
@@ -202,7 +202,7 @@ class BeschikkingService {
 		try {
 			return $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string)$decisionId);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest subsidie: publish beschikking failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq subsidie: publish beschikking failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon beschikking niet publiceren');
 		}
 	}//end publish()

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 //
-// Cell-formatter registry for procest's manifest-driven index pages.
+// Cell-formatter registry for dossiq's manifest-driven index pages.
 //
 // Each entry is `(value, row, property) => string|number` — pure data
 // shaping, referenced by id from `pages[].config.columns[].formatter`
@@ -157,7 +157,7 @@ export default {
 	 * @return {string}
 	 */
 	proposalType: (value) =>
-		t('procest', VOORSTEL_TYPE_LABELS[value] || value || '-'),
+		t('dossiq', VOORSTEL_TYPE_LABELS[value] || value || '-'),
 
 	/**
 	 * Human label for a voorstel `status` enum value (also rendered as a
@@ -167,7 +167,7 @@ export default {
 	 * @return {string}
 	 */
 	voorstelStatus: (value) =>
-		t('procest', VOORSTEL_STATUS_LABELS[value] || value || '-'),
+		t('dossiq', VOORSTEL_STATUS_LABELS[value] || value || '-'),
 
 	/**
 	 * `currentStep / totalSteps` progress for a voorstel's parafeerroute.

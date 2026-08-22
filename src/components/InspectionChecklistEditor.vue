@@ -1,5 +1,5 @@
 <!--
-  Procest VTH Inspection Checklist Editor
+  Dossiq VTH Inspection Checklist Editor
   SPDX-License-Identifier: EUPL-1.2
   SPDX-FileCopyrightText: 2026 Conduction B.V.
   @spec openspec/changes/vth-module/tasks.md#task-5
@@ -8,37 +8,33 @@
 	<div class="checklist-editor">
 		<div class="checklist-editor__header">
 			<NcButton @click="$emit('cancel')">
-				{{ t('procest', 'Back to list') }}
+				{{ t('dossiq', 'Back to list') }}
 			</NcButton>
 			<NcButton
 				type="primary"
 				:disabled="saving"
 				@click="$emit('save', localChecklist)">
 				{{
-					saving
-						? t('procest', 'Saving...')
-						: t('procest', 'Save checklist')
+					saving ? t('dossiq', 'Saving...') : t('dossiq', 'Save checklist')
 				}}
 			</NcButton>
 		</div>
 
 		<div class="checklist-editor__field">
 			<label class="checklist-editor__label" for="checklist-editor-name">{{
-				t('procest', 'Name')
+				t('dossiq', 'Name')
 			}}</label>
 			<input
 				id="checklist-editor-name"
 				v-model="localChecklist.name"
 				type="text"
 				class="checklist-editor__input"
-				:placeholder="
-					t('procest', 'e.g. Bouwtoezicht fase 1 - Fundering')
-				" />
+				:placeholder="t('dossiq', 'e.g. Bouwtoezicht fase 1 - Fundering')" />
 		</div>
 
 		<div class="checklist-editor__field">
 			<label class="checklist-editor__label" for="checklist-editor-version">{{
-				t('procest', 'Version')
+				t('dossiq', 'Version')
 			}}</label>
 			<input
 				id="checklist-editor-version"
@@ -51,7 +47,7 @@
 		<div class="checklist-editor__field">
 			<label class="checklist-editor__label">
 				<input v-model="localChecklist.active" type="checkbox" />
-				{{ t('procest', 'Active') }}
+				{{ t('dossiq', 'Active') }}
 			</label>
 		</div>
 
@@ -59,7 +55,7 @@
 			<label
 				class="checklist-editor__label"
 				for="checklist-editor-valid-from"
-				>{{ t('procest', 'Valid from') }}</label
+				>{{ t('dossiq', 'Valid from') }}</label
 			>
 			<input
 				id="checklist-editor-valid-from"
@@ -70,9 +66,9 @@
 
 		<div class="checklist-editor__items">
 			<div class="checklist-editor__items-header">
-				<h4>{{ t('procest', 'Checklist items') }}</h4>
+				<h4>{{ t('dossiq', 'Checklist items') }}</h4>
 				<NcButton type="secondary" @click="addItem">
-					{{ t('procest', 'Add item') }}
+					{{ t('dossiq', 'Add item') }}
 				</NcButton>
 			</div>
 
@@ -85,44 +81,44 @@
 						v-model="item.question"
 						type="text"
 						class="checklist-editor__input checklist-editor__input--question"
-						:aria-label="t('procest', 'Question or instruction')"
-						:placeholder="t('procest', 'Question or instruction')" />
+						:aria-label="t('dossiq', 'Question or instruction')"
+						:placeholder="t('dossiq', 'Question or instruction')" />
 					<select v-model="item.type" class="checklist-editor__select">
 						<option value="boolean">
-							{{ t('procest', 'Yes/No') }}
+							{{ t('dossiq', 'Yes/No') }}
 						</option>
 						<option value="text">
-							{{ t('procest', 'Text') }}
+							{{ t('dossiq', 'Text') }}
 						</option>
 						<option value="enum">
-							{{ t('procest', 'Multiple choice') }}
+							{{ t('dossiq', 'Multiple choice') }}
 						</option>
 						<option value="photo">
-							{{ t('procest', 'Photo') }}
+							{{ t('dossiq', 'Photo') }}
 						</option>
 					</select>
 					<label class="checklist-editor__checkbox-label">
 						<input v-model="item.required" type="checkbox" />
-						{{ t('procest', 'Required') }}
+						{{ t('dossiq', 'Required') }}
 					</label>
 					<input
 						v-model.number="item.weight"
 						type="number"
 						class="checklist-editor__input checklist-editor__input--weight"
-						:aria-label="t('procest', 'Weight')"
-						:placeholder="t('procest', 'Weight')"
+						:aria-label="t('dossiq', 'Weight')"
+						:placeholder="t('dossiq', 'Weight')"
 						min="0"
 						max="100" />
 				</div>
 				<NcButton type="error" @click="removeItem(index)">
-					{{ t('procest', 'Remove') }}
+					{{ t('dossiq', 'Remove') }}
 				</NcButton>
 			</div>
 
 			<p
 				v-if="localChecklist.items.length === 0"
 				class="checklist-editor__empty">
-				{{ t('procest', 'No items yet. Add items to build the checklist.') }}
+				{{ t('dossiq', 'No items yet. Add items to build the checklist.') }}
 			</p>
 		</div>
 	</div>

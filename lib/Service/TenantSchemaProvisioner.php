@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Tenant Schema Provisioner
+ * Dossiq Tenant Schema Provisioner
  *
  * Wraps the raw PostgreSQL DDL primitives (CREATE SCHEMA, table cloning,
  * DROP SCHEMA) used by the schema-per-tenant provisioning flow.
@@ -10,7 +10,7 @@
  * (UUID-derived, ≤63 chars, identifier-safe) so the DDL bind cannot inject.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,14 +19,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-03-schema-provisioning/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
 use OCP\IDBConnection;
@@ -54,6 +54,12 @@ class TenantSchemaProvisioner {
 	 * @var array<int, string>
 	 */
 	private const APPLICATION_TABLE_PREFIXES = [
+		// FROZEN. OpenRegister derives this physical table prefix from the
+		// register SLUG, which stays `procest` across the app-id rename. The
+		// tables on disk are named `oc_openregister_table_procest_*`; a renamed
+		// prefix here matches nothing, so per-tenant provisioning would clone
+		// ZERO application tables and report success — every new tenant would
+		// come up with an empty schema.
 		'oc_openregister_table_procest_',
 	];
 
@@ -150,7 +156,7 @@ class TenantSchemaProvisioner {
 		}//end foreach
 
 		$this->logger->info(
-			'Procest: cloned application tables into tenant schema',
+			'Dossiq: cloned application tables into tenant schema',
 			['schemaName' => $schemaName, 'count' => count($cloned)]
 		);
 
@@ -196,7 +202,7 @@ class TenantSchemaProvisioner {
 			$result->closeCursor();
 			return $row !== false;
 		} catch (Throwable $e) {
-			$this->logger->info('Procest: schemaExists lookup failed', ['name' => $name, 'exception' => $e->getMessage()]);
+			$this->logger->info('Dossiq: schemaExists lookup failed', ['name' => $name, 'exception' => $e->getMessage()]);
 			return false;
 		}
 	}//end schemaExists()
@@ -248,7 +254,7 @@ class TenantSchemaProvisioner {
 
 			return $tables;
 		} catch (Throwable $e) {
-			$this->logger->info('Procest: listApplicationTables failed', ['exception' => $e->getMessage()]);
+			$this->logger->info('Dossiq: listApplicationTables failed', ['exception' => $e->getMessage()]);
 			return [];
 		}//end try
 	}//end listApplicationTables()

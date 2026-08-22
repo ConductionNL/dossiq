@@ -1,15 +1,15 @@
 <?php
 
 /**
- * Procest ZGW OpenAPI Discovery Controller
+ * Dossiq ZGW OpenAPI Discovery Controller
  *
- * Publishes machine-readable OpenAPI 3.0 documents for Procest's routed ZGW
+ * Publishes machine-readable OpenAPI 3.0 documents for Dossiq's routed ZGW
  * API surface (zaken, documenten, catalogi, besluiten, autorisaties,
  * notificaties), plus a JSON discovery index. Serves only static
  * documentation content — never instance data.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,16 +20,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/zgw-openapi-publication/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -38,7 +38,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 
 /**
- * Discovery + spec-serving controller for Procest's ZGW OpenAPI documents.
+ * Discovery + spec-serving controller for Dossiq's ZGW OpenAPI documents.
  *
  * @spec openspec/specs/zgw-openapi-publication/spec.md
  */
@@ -176,6 +176,6 @@ class ZgwOpenApiController extends Controller {
 		$scheme = $this->request->getServerProtocol();
 		$serverHost = $this->request->getServerHost();
 
-		return $scheme . '://' . $serverHost . '/index.php/apps/procest/api/zgw/' . $api . '/openapi.yaml';
+		return $scheme . '://' . $serverHost . '/index.php/apps/dossiq/api/zgw/' . $api . '/openapi.yaml';
 	}//end buildSpecUrl()
 }//end class

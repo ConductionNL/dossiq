@@ -3,7 +3,7 @@
 		<NcNoteCard type="info">
 			{{
 				t(
-					'procest',
+					'dossiq',
 					'Structured consultation (adviesaanvraag) is being delivered in consultation-management. This panel will host advisory body registry, mandatory-gate config and n8n webhook endpoints.',
 				)
 			}}
@@ -11,7 +11,7 @@
 
 		<div class="setting-row">
 			<label for="consultation_default_deadline_days">
-				{{ t('procest', 'Default deadline (days) for new consultations') }}
+				{{ t('dossiq', 'Default deadline (days) for new consultations') }}
 			</label>
 			<NcInputField
 				id="consultation_default_deadline_days"
@@ -22,7 +22,7 @@
 			<p class="setting-help">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Used when an advisory body has no explicit defaultDeadlineDays configured.',
 					)
 				}}
@@ -31,7 +31,7 @@
 
 		<div class="setting-row">
 			<label for="consultation_warning_offset_days">
-				{{ t('procest', 'Warning offset (days before deadline)') }}
+				{{ t('dossiq', 'Warning offset (days before deadline)') }}
 			</label>
 			<NcInputField
 				id="consultation_warning_offset_days"
@@ -42,7 +42,7 @@
 			<p class="setting-help">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'The deadline-monitor n8n workflow uses this offset to send T-X warnings.',
 					)
 				}}
@@ -51,17 +51,17 @@
 
 		<div class="setting-row">
 			<label for="consultation_external_response_url">
-				{{ t('procest', 'External response base URL') }}
+				{{ t('dossiq', 'External response base URL') }}
 			</label>
 			<NcInputField
 				id="consultation_external_response_url"
 				v-model="externalResponseUrl"
 				:disabled="!writable"
-				placeholder="https://procest.example.org/consultation/respond/" />
+				placeholder="https://dossiq.example.org/consultation/respond/" />
 			<p class="setting-help">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Base URL used in secure response links sent to external advisory bodies. Must be HTTPS.',
 					)
 				}}
@@ -70,7 +70,7 @@
 
 		<div class="setting-row">
 			<label for="consultation_bottleneck_threshold">
-				{{ t('procest', 'Bottleneck overdue-rate threshold (0-1)') }}
+				{{ t('dossiq', 'Bottleneck overdue-rate threshold (0-1)') }}
 			</label>
 			<NcInputField
 				id="consultation_bottleneck_threshold"
@@ -81,7 +81,7 @@
 			<p class="setting-help">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'When an advisory body exceeds this overdue-rate over the trailing 30 days, the bottleneck workflow notifies coordinators.',
 					)
 				}}
@@ -98,15 +98,15 @@
 			</template>
 			{{
 				saving
-					? t('procest', 'Saving...')
-					: t('procest', 'Save consultation settings')
+					? t('dossiq', 'Saving...')
+					: t('dossiq', 'Save consultation settings')
 			}}
 		</NcButton>
 
 		<p class="docs-link">
 			<a :href="workflowDocsUrl" target="_blank" rel="noopener">
 				{{
-					t('procest', 'Read the n8n consultation workflows documentation')
+					t('dossiq', 'Read the n8n consultation workflows documentation')
 				}}
 			</a>
 		</p>
@@ -128,7 +128,7 @@ export default {
 	name: 'ConsultationSettingsTab',
 	components: { NcButton, NcInputField, NcLoadingIcon, NcNoteCard },
 	data() {
-		const initial = loadState('procest', 'consultationSettings', {})
+		const initial = loadState('dossiq', 'consultationSettings', {})
 		return {
 			defaultDeadlineDays: initial.defaultDeadlineDays ?? 28,
 			warningOffsetDays: initial.warningOffsetDays ?? 5,
@@ -152,8 +152,8 @@ export default {
 		/**
 		 * Persist the consultation settings.
 		 *
-		 * ⚠️ This used to POST `/apps/procest/api/settings/consultation`, a route
-		 * procest never declared. Nextcloud answers an unmatched app URL with its
+		 * ⚠️ This used to POST `/apps/dossiq/api/settings/consultation`, a route
+		 * dossiq never declared. Nextcloud answers an unmatched app URL with its
 		 * own HTML page under HTTP 200, so `fetch` resolved, nothing threw, and
 		 * every save silently vanished (procest#794). It now uses the app's own
 		 * canonical settings write, which carries
@@ -169,7 +169,7 @@ export default {
 			this.saving = true
 			this.error = null
 			try {
-				const res = await fetch(generateUrl('/apps/procest/api/settings'), {
+				const res = await fetch(generateUrl('/apps/dossiq/api/settings'), {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
@@ -189,12 +189,12 @@ export default {
 					}),
 				})
 				if (!res.ok) {
-					this.error = t('procest', 'Saving failed ({status})', {
+					this.error = t('dossiq', 'Saving failed ({status})', {
 						status: res.status,
 					})
 				}
 			} catch (e) {
-				this.error = e.message || t('procest', 'Saving failed')
+				this.error = e.message || t('dossiq', 'Saving failed')
 			} finally {
 				this.saving = false
 			}

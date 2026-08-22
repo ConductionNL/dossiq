@@ -15,7 +15,7 @@ supports `--dry-run` and `--rollback`, and never touches the source register.
 
 ### Mapping summary (canonical table: decidesk `ori-adoption/design.md`)
 
-| ORI (procest, source) | decidesk (target) | Rename class |
+| ORI (dossiq, source) | decidesk (target) | Rename class |
 | --- | --- | --- |
 | `vergadering` | `Meeting` | schema + property renames (`name`→`title`, `startDate`→`scheduledDate`, `type`/`status` value maps incl. `afgelast`→`cancelled`) |
 | `agendapunt` | `AgendaItem` | schema + property renames (`subject`→`title`, `omschrijving`→`description`, `sortOrder`→`orderNumber`, `attachments`→`documents`) |
@@ -27,7 +27,7 @@ supports `--dry-run` and `--rollback`, and never touches the source register.
 ## Migration runbook (per instance)
 
 1. **Preconditions.** decidesk release containing `ori-adoption` is installed
-   and enabled; OpenRegister up; procest still at the pre-removal version (the
+   and enabled; OpenRegister up; dossiq still at the pre-removal version (the
    `ori` register intact).
 2. **Dry run.** `occ decidesk:import-ori --source-register=ori --dry-run
    --strict`. Record the per-schema source counts. Fix any reported dangling
@@ -43,7 +43,7 @@ supports `--dry-run` and `--rollback`, and never touches the source register.
 4. **Verify surfaces.** decidesk feeds `/apps/decidesk/feed/ori/*.rss` return
    the migrated content anonymously; spot-check one meeting, one vote, one
    political group in the decidesk UI.
-5. **Upgrade procest** to the version carrying this change. The
+5. **Upgrade dossiq** to the version carrying this change. The
    `RetireOriRegister` repair step now finds the register's objects fully
    `ori:*`-migrated (it asks decidesk / checks tags) and retires the register;
    otherwise it warns and leaves everything in place (fail-safe: removal never
@@ -51,11 +51,11 @@ supports `--dry-run` and `--rollback`, and never touches the source register.
 
 ### Rollback
 
-- **Before procest upgrade:** `occ decidesk:import-ori --rollback` deletes
+- **Before dossiq upgrade:** `occ decidesk:import-ori --rollback` deletes
   exactly the `ori:*`-tagged decidesk objects; the untouched `ori` register is
-  still the complete record. No procest data was modified.
-- **After procest upgrade but register retirement was skipped** (guard
-  triggered): nothing was deleted; downgrade procest or re-run migration.
+  still the complete record. No dossiq data was modified.
+- **After dossiq upgrade but register retirement was skipped** (guard
+  triggered): nothing was deleted; downgrade dossiq or re-run migration.
 - **After register retirement:** the retirement step exports the register
   (schemas + objects) to a timestamped JSON backup in the app data directory
   before deletion; restoring = re-import of that file. The decidesk copy is
@@ -78,8 +78,8 @@ register). Behaviour:
 
 ## Cross-app link: case ↔ decidesk Meeting
 
-procest's vergadering-backed cases are procest `case` objects (register/schema
-from procest config) and are **kept** — `VergaderingCaseService`,
+dossiq's vergadering-backed cases are dossiq `case` objects (register/schema
+from dossiq config) and are **kept** — `VergaderingCaseService`,
 `VergaderingDeadlineJob` and their statuses continue to work on case data
 alone (the service already reads only the case register; its doc comment's
 "created in the ORI register" claim describes an ingest bridge that was never
@@ -87,8 +87,8 @@ built and is corrected as part of this change).
 
 What changes is the *reference to the meeting record*:
 
-- The procest `case` schema gains an optional `meetingRef` property (string,
-  decidesk `Meeting` uuid) in `procest_register.json` — additive.
+- The dossiq `case` schema gains an optional `meetingRef` property (string,
+  decidesk `Meeting` uuid) in `dossiq_register.json` — additive.
 - `VergaderingDetailView` (route `/besluitvorming/vergaderingen/:id`,
   manifest `src/manifest.d/50-besluitvorming.json`) stops rendering ORI
   agenda/vote data of its own and instead shows the case-side data plus an

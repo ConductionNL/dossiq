@@ -1,19 +1,19 @@
 # ZGW Newman Test Suite
 
-Newman-based test suite for validating Procest's ZGW API compliance using VNG's official Postman test collections.
+Newman-based test suite for validating Dossiq's ZGW API compliance using VNG's official Postman test collections.
 
 ## Prerequisites
 
-1. **Running environment** — Procest app installed and enabled in a Nextcloud instance
+1. **Running environment** — Dossiq app installed and enabled in a Nextcloud instance
 2. **Newman** — Install globally or locally:
    ```bash
    # Global install (recommended for container)
    npm install -g newman
 
    # Local install
-   cd procest/tests/zgw && npm install
+   cd dossiq/tests/zgw && npm install
    ```
-3. **Default test data** — Run the Procest repair step to create default applicaties and kanalen:
+3. **Default test data** — Run the Dossiq repair step to create default applicaties and kanalen:
    ```bash
    docker exec nextcloud php occ maintenance:repair
    ```
@@ -75,14 +75,14 @@ CONTAINER_NAME=my-nextcloud bash run-zgw-tests.sh
 
 ## Test Collections
 
-The test collections live in `procest/data/`:
+The test collections live in `dossiq/data/`:
 
 - **ZGW OAS tests** — Validates API responses against OpenAPI specifications for all 6 ZGW components (ZRC, ZTC, BRC, DRC, NRC, AC)
 - **ZGW business rules** — Tests business logic, edge cases, and cross-API interactions
 
 ## Environment Variables
 
-The `zgw-environment.json` file maps ZGW API URLs to Procest endpoints:
+The `zgw-environment.json` file maps ZGW API URLs to Dossiq endpoints:
 
 | Variable | Endpoint |
 |----------|----------|

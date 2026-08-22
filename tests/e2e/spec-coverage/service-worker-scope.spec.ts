@@ -1,13 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  *
  * Guards the two properties of the mobiel-inspectie-offline Service Worker
  * that, when broken, are invisible everywhere except the one request the
  * worker happens to swallow.
  *
- *  1. SCOPE DISCIPLINE — the worker is registered at the procest app-root
- *     scope, so it sees every fetch every procest page makes. It must claim
+ *  1. SCOPE DISCIPLINE — the worker is registered at the dossiq app-root
+ *     scope, so it sees every fetch every dossiq page makes. It must claim
  *     ONLY the traffic the offline field-inspection feature owns. It shipped
  *     with a tile rule that substring-matched `pdok` against
  *     `url.host + url.pathname`, which also matched this app's own address
@@ -25,7 +25,7 @@
 import { test, expect } from '@playwright/test'
 
 /**
- * Resolve the scope of procest's active service worker.
+ * Resolve the scope of dossiq's active service worker.
  *
  * @param page    The page under test.
  * @param timeout How long to wait for the worker to reach `activated`.
@@ -47,17 +47,17 @@ async function activeWorkerScope(
 		await page.waitForTimeout(250)
 	}
 	throw new Error(
-		`procest registered no ACTIVE service worker within ${timeout}ms.`,
+		`dossiq registered no ACTIVE service worker within ${timeout}ms.`,
 	)
 }
 
 /**
- * Open procest with its service worker in control of the document.
+ * Open dossiq with its service worker in control of the document.
  *
  * @param page The page under test.
  */
 async function openControlled(page: import('@playwright/test').Page): Promise<void> {
-	await page.goto('/index.php/apps/procest/dashboard')
+	await page.goto('/index.php/apps/dossiq/dashboard')
 	await expect(page).not.toHaveURL(/login/, { timeout: 15000 })
 	const scope = await activeWorkerScope(page)
 	await page.goto(scope)
@@ -73,7 +73,7 @@ test.describe('mobiel-inspectie-offline service worker', () => {
 	test('the worker script is served with a connect-src it can actually use', async ({
 		request,
 	}) => {
-		const res = await request.get('/index.php/apps/procest/service-worker.js', {
+		const res = await request.get('/index.php/apps/dossiq/service-worker.js', {
 			failOnStatusCode: false,
 		})
 		expect(res.status()).toBe(200)
@@ -95,19 +95,16 @@ test.describe('mobiel-inspectie-offline service worker', () => {
 		page,
 	}) => {
 		await openControlled(page)
-		// `/apps/procest/api/sync/...` is the one same-origin prefix the worker
+		// `/apps/dossiq/api/sync/...` is the one same-origin prefix the worker
 		// answers itself (network-first). Under the old script CSP the worker's
 		// own fetch was blocked, so this resolved to `Response.error()` and the
 		// page saw `TypeError: Failed to fetch` — the offline feature could
 		// never populate its cache in the first place.
 		const outcome = await page.evaluate(async () => {
 			try {
-				const res = await fetch(
-					'/index.php/apps/procest/api/sync/planning',
-					{
-						headers: { 'OCS-APIRequest': 'true' },
-					},
-				)
+				const res = await fetch('/index.php/apps/dossiq/api/sync/planning', {
+					headers: { 'OCS-APIRequest': 'true' },
+				})
 				return { status: res.status, type: res.type }
 			} catch (e) {
 				return { threw: String(e) }

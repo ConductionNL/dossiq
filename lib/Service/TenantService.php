@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Tenant Service
+ * Dossiq Tenant Service
  *
  * Service for managing multi-tenant isolation; delegates the tenant data model
  * to OpenRegister's Organisation entity + TenantLifecycleService per the
@@ -11,7 +11,7 @@
  * callers (TenantController, TenantMiddleware) do not require modification.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -22,7 +22,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/multi-tenancy/spec.md
  * @spec openspec/specs/multi-tenancy/spec.md
@@ -32,7 +32,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use OCP\App\IAppManager;
 use OCP\IGroupManager;
@@ -44,8 +44,8 @@ use Throwable;
 /**
  * Service for managing multi-tenant isolation backed by OR Organisations.
  *
- * Each procest tenant maps 1:1 to an OR Organisation entity. The
- * `Organisation.groups` array carries the NC group IDs used by procest for
+ * Each dossiq tenant maps 1:1 to an OR Organisation entity. The
+ * `Organisation.groups` array carries the NC group IDs used by dossiq for
  * tenant routing; `Organisation.status` carries the lifecycle state enforced
  * by `TenantMiddleware`.
  */
@@ -135,7 +135,7 @@ class TenantService {
 			}
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: getTenantByGroupId failed against OR',
+				'Dossiq: getTenantByGroupId failed against OR',
 				['groupId' => $groupId, 'exception' => $e->getMessage()]
 			);
 			return null;
@@ -173,14 +173,14 @@ class TenantService {
 			$org = $lifecycleService->provision($org, (string)$adminUid);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: provisionTenant failed via OR',
+				'Dossiq: provisionTenant failed via OR',
 				['tenantId' => $tenantId, 'exception' => $e->getMessage()]
 			);
 			return ['error' => 'Failed to provision tenant: ' . $e->getMessage()];
 		}
 
 		$this->logger->info(
-			'Procest: Tenant provisioned via OR TenantLifecycleService',
+			'Dossiq: Tenant provisioned via OR TenantLifecycleService',
 			['tenantId' => $tenantId, 'status' => $org->getStatus()]
 		);
 
@@ -299,7 +299,7 @@ class TenantService {
 			return $this->container->get('OCA\\OpenRegister\\Db\\OrganisationMapper');
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: Could not get OrganisationMapper',
+				'Dossiq: Could not get OrganisationMapper',
 				['exception' => $e->getMessage()]
 			);
 			return null;
@@ -320,7 +320,7 @@ class TenantService {
 			return $this->container->get('OCA\\OpenRegister\\Service\\TenantLifecycleService');
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: Could not get TenantLifecycleService',
+				'Dossiq: Could not get TenantLifecycleService',
 				['exception' => $e->getMessage()]
 			);
 			return null;

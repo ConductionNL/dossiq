@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest Shillinq Integration Service
+ * Dossiq Shillinq Integration Service
  *
  * Exports tenant billing events into Shillinq invoices.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,14 +15,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-10-billing-shillinq/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use OCP\Http\Client\IClientService;
 use Psr\Log\LoggerInterface;
@@ -157,7 +157,7 @@ class ShillinqIntegrationService {
 			}//end try
 		}//end while
 
-		$this->logger->error('Procest: Shillinq export failed after retries', ['attempts' => $attempt, 'lastError' => $lastErr]);
+		$this->logger->error('Dossiq: Shillinq export failed after retries', ['attempts' => $attempt, 'lastError' => $lastErr]);
 		return ['success' => false, 'attempts' => $attempt, 'lastError' => $lastErr];
 	}//end exportInvoice()
 }//end class

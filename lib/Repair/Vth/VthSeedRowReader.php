@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest VTH seed row reader.
+ * Dossiq VTH seed row reader.
  *
  * The shape-tolerant half of the VTH seed lookups: OpenRegister search results
  * arrive as plain arrays, as `{results: [...]}` envelopes, or as ObjectEntity
@@ -10,7 +10,7 @@
  * coercion rules alone.
  *
  * @category Repair
- * @package  OCA\Procest\Repair\Vth
+ * @package  OCA\Dossiq\Repair\Vth
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,7 +18,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -28,7 +28,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair\Vth;
+namespace OCA\Dossiq\Repair\Vth;
 
 /**
  * Coerces OpenRegister result rows into the shapes the VTH seed needs.

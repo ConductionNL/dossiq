@@ -1,6 +1,6 @@
 ---
 status: retired
-retired_in: procest-adopt-or-abstractions
+retired_in: dossiq-adopt-or-abstractions
 canonical_home: case-management/spec.md
 ---
 
@@ -23,7 +23,7 @@ canonical_home: case-management/spec.md
 
 ### Requirement: Parafeerroute Schema Registration
 
-The system SHALL register a `parafeerroute` schema in the Procest OpenRegister configuration with properties: name (string), caseType (reference), voorstelType (enum: dt_advies, collegeadvies, raadsvoorstel), steps (array of parafeerstap objects). Each parafeerstap SHALL have: order (integer), type (enum: advies, parafering, accordering), actor (string, user UID or group/role name), actorType (enum: user, group, role), mandatory (boolean).
+The system SHALL register a `parafeerroute` schema in the Dossiq OpenRegister configuration with properties: name (string), caseType (reference), voorstelType (enum: dt_advies, collegeadvies, raadsvoorstel), steps (array of parafeerstap objects). Each parafeerstap SHALL have: order (integer), type (enum: advies, parafering, accordering), actor (string, user UID or group/role name), actorType (enum: user, group, role), mandatory (boolean).
 
 **Feature tier**: V1
 **Schema.org type**: `schema:HowTo`
@@ -31,8 +31,8 @@ The system SHALL register a `parafeerroute` schema in the Procest OpenRegister c
 
 #### Scenario: Schema is available after app install
 
-- **WHEN** the Procest app is installed or updated
-- **THEN** the `parafeerroute` schema SHALL be registered in the Procest register via the repair step
+- **WHEN** the Dossiq app is installed or updated
+- **THEN** the `parafeerroute` schema SHALL be registered in the Dossiq register via the repair step
 - **AND** the schema SHALL enforce required properties: name, steps
 
 ### Requirement: Sequential Step Routing

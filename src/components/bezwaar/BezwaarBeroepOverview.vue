@@ -21,12 +21,12 @@
 	<div class="bezwaar-overview" data-testid="bezwaar-overview">
 		<header class="bezwaar-overview__header">
 			<h2 class="bezwaar-overview__title" data-testid="bezwaar-overview-title">
-				{{ t('procest', 'Objection & Appeal') }}
+				{{ t('dossiq', 'Objection & Appeal') }}
 			</h2>
 			<p class="bezwaar-overview__hint">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Manage objections, appeals, decisions and BAC advice from a single overview.',
 					)
 				}}
@@ -37,8 +37,8 @@
 			<CnCard
 				v-for="card in cards"
 				:key="card.id"
-				:title="t('procest', card.label)"
-				:description="t('procest', card.description)"
+				:title="t('dossiq', card.label)"
+				:description="t('dossiq', card.description)"
 				:icon="card.icon"
 				:clickable="true"
 				:data-testid="`bezwaar-card-${card.id}`"

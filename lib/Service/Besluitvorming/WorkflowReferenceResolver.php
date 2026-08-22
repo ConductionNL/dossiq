@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest WorkflowReferenceResolver.
+ * Dossiq WorkflowReferenceResolver.
  *
  * Rewrites the name-based cross-references inside a besluitvorming template's
  * workflowTemplate payload into the UUIDs of the statusType and roleType
@@ -17,7 +17,7 @@
  * Pure transformation — nothing is read from or written to OpenRegister.
  *
  * @category Service
- * @package  OCA\Procest\Service\Besluitvorming
+ * @package  OCA\Dossiq\Service\Besluitvorming
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,7 +25,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -35,7 +35,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Besluitvorming;
+namespace OCA\Dossiq\Service\Besluitvorming;
 
 /**
  * Resolves workflow step/transition name references to created UUIDs.

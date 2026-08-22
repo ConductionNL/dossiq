@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest middleware-chain registrar.
+ * Dossiq middleware-chain registrar.
  *
  * Owns the ordered SaaS middleware chain. Order is behaviour here, not style:
  * TenantContext must resolve the tenant binding before TenantIsolation sets the
@@ -9,7 +9,7 @@
  * chain in one class makes that ordering reviewable in a single screen.
  *
  * @category AppInfo
- * @package  OCA\Procest\AppInfo\Registrar
+ * @package  OCA\Dossiq\AppInfo\Registrar
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -17,7 +17,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -27,15 +27,15 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\AppInfo\Registrar;
+namespace OCA\Dossiq\AppInfo\Registrar;
 
-use OCA\Procest\Middleware\MandateValidationMiddleware;
-use OCA\Procest\Middleware\QuotaEnforcementMiddleware;
-use OCA\Procest\Middleware\TenantClaimValidationMiddleware;
-use OCA\Procest\Middleware\TenantContextMiddleware;
-use OCA\Procest\Middleware\TenantIsolationMiddleware;
-use OCA\Procest\Middleware\TenantMiddleware;
-use OCA\Procest\Middleware\ZgwAuthMiddleware;
+use OCA\Dossiq\Middleware\MandateValidationMiddleware;
+use OCA\Dossiq\Middleware\QuotaEnforcementMiddleware;
+use OCA\Dossiq\Middleware\TenantClaimValidationMiddleware;
+use OCA\Dossiq\Middleware\TenantContextMiddleware;
+use OCA\Dossiq\Middleware\TenantIsolationMiddleware;
+use OCA\Dossiq\Middleware\TenantMiddleware;
+use OCA\Dossiq\Middleware\ZgwAuthMiddleware;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**

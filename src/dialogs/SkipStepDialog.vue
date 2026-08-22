@@ -3,7 +3,7 @@
 <template>
 	<NcDialog
 		v-if="open"
-		:name="t('procest', 'Stap overslaan')"
+		:name="t('dossiq', 'Stap overslaan')"
 		size="normal"
 		:canClose="!submitting"
 		@closing="onClose">
@@ -11,30 +11,29 @@
 			<div v-if="step" class="skip-step-dialog__step">
 				<h4>
 					{{
-						t('procest', 'Stap {n}: {actor}', {
+						t('dossiq', 'Stap {n}: {actor}', {
 							n: step.order,
 							actor: step.actor,
 						})
 					}}
 				</h4>
 				<p>
-					<strong>{{ t('procest', 'Type') }}:</strong> {{ step.type
-					}}<br />
-					<strong>{{ t('procest', 'Actor type') }}:</strong>
+					<strong>{{ t('dossiq', 'Type') }}:</strong> {{ step.type }}<br />
+					<strong>{{ t('dossiq', 'Actor type') }}:</strong>
 					{{ step.actorType }}
 				</p>
 			</div>
 
 			<NcNoteCard v-if="step && step.mandatory" type="warning">
-				{{ t('procest', 'This step is mandatory and cannot be skipped.') }}
+				{{ t('dossiq', 'This step is mandatory and cannot be skipped.') }}
 			</NcNoteCard>
 
 			<NcTextArea
 				v-else
 				:modelValue="reason"
-				:label="t('procest', 'Reason for skipping')"
+				:label="t('dossiq', 'Reason for skipping')"
 				:placeholder="
-					t('procest', 'Give a reason why this step is being skipped...')
+					t('dossiq', 'Give a reason why this step is being skipped...')
 				"
 				required
 				@update:modelValue="(v) => (reason = v)" />
@@ -45,12 +44,10 @@
 		</div>
 		<template #actions>
 			<NcButton :disabled="submitting" @click="onClose">
-				{{ t('procest', 'Annuleren') }}
+				{{ t('dossiq', 'Annuleren') }}
 			</NcButton>
 			<NcButton type="primary" :disabled="!canSubmit" @click="onSubmit">
-				{{
-					submitting ? t('procest', 'Bezig...') : t('procest', 'Overslaan')
-				}}
+				{{ submitting ? t('dossiq', 'Bezig...') : t('dossiq', 'Overslaan') }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -133,7 +130,7 @@ export default {
 				this.$emit('skipped')
 			} catch (err) {
 				const apiMessage = err?.response?.data?.error
-				this.error = apiMessage || this.t('procest', 'Failed to skip')
+				this.error = apiMessage || this.t('dossiq', 'Failed to skip')
 				console.error('skipStep failed', err)
 			} finally {
 				this.submitting = false

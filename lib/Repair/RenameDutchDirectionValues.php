@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest RenameDutchDirectionValues Repair Step
+ * Dossiq RenameDutchDirectionValues Repair Step
  *
  * Rewrites the stored VALUES of the `direction` property from Dutch to English
  * so rows written before the vocabulary change stay readable afterwards.
@@ -52,7 +52,7 @@
  *     row must not come back with a direction the schema no longer allows.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -60,14 +60,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/stuf-zkn-outbound/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
 use OCP\DB\Exception;
 use OCP\IDBConnection;
@@ -89,6 +89,9 @@ class RenameDutchDirectionValues implements IRepairStep {
 	 *
 	 * @var string
 	 */
+	// FROZEN: OpenRegister register SLUG, unchanged by the procest -> dossiq
+	// app-id rename. Prefix-matches `procest` and `procest-default`; a renamed
+	// value matches neither and the rewrite silently becomes a no-op.
 	private const REGISTER_SLUG_PREFIX = 'procest';
 
 	/**
@@ -130,7 +133,7 @@ class RenameDutchDirectionValues implements IRepairStep {
 	 * @return string
 	 */
 	public function getName(): string {
-		return 'Procest: rewrite Dutch direction values (inkomend/uitgaand/intern) to English';
+		return 'Dossiq: rewrite Dutch direction values (inkomend/uitgaand/intern) to English';
 
 	}//end getName()
 

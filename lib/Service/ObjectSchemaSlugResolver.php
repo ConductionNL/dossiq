@@ -19,11 +19,11 @@
  * The lookup goes through OpenRegister's `SchemaMapper::find()`, which keeps a
  * request-scoped cache, so repeated resolutions inside one request cost one
  * query. OpenRegister is resolved through the container rather than injected,
- * matching {@see SettingsService} — Procest degrades to "unknown schema" when
+ * matching {@see SettingsService} — Dossiq degrades to "unknown schema" when
  * OpenRegister is absent instead of failing to boot.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -34,12 +34,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -129,7 +129,7 @@ class ObjectSchemaSlugResolver {
 			$slug = (string)$schemaMapper->find($schema, [], false, false)->getSlug();
 		} catch (\Throwable $e) {
 			$this->logger->debug(
-				'Procest: could not resolve schema slug for id ' . $schema,
+				'Dossiq: could not resolve schema slug for id ' . $schema,
 				['exception' => $e->getMessage()]
 			);
 		}

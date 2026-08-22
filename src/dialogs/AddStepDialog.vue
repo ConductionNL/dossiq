@@ -3,47 +3,47 @@
 <template>
 	<NcDialog
 		v-if="open"
-		:name="t('procest', 'Ad-hoc stap toevoegen')"
+		:name="t('dossiq', 'Ad-hoc stap toevoegen')"
 		size="normal"
 		:canClose="!submitting"
 		@closing="onClose">
 		<div class="add-step-dialog">
 			<div class="add-step-dialog__field">
 				<label class="add-step-dialog__label">
-					{{ t('procest', 'Invoegen na stap') }}
+					{{ t('dossiq', 'Invoegen na stap') }}
 				</label>
 				<NcSelect
 					v-model="afterStep"
 					:options="insertionOptions"
-					:aria-label-combobox="t('procest', 'Invoegen na stap')"
+					:aria-label-combobox="t('dossiq', 'Invoegen na stap')"
 					label="label"
 					:reduce="(opt) => opt.value"
-					:placeholder="t('procest', 'Select insert position')" />
+					:placeholder="t('dossiq', 'Select insert position')" />
 			</div>
 			<div class="add-step-dialog__field">
 				<label class="add-step-dialog__label">
-					{{ t('procest', 'Stap type') }}
+					{{ t('dossiq', 'Stap type') }}
 				</label>
 				<NcSelect
 					v-model="stepType"
 					:options="stepTypeOptions"
-					:aria-label-combobox="t('procest', 'Stap type')"
-					:placeholder="t('procest', 'Select type')" />
+					:aria-label-combobox="t('dossiq', 'Stap type')"
+					:placeholder="t('dossiq', 'Select type')" />
 			</div>
 			<div class="add-step-dialog__field">
 				<label class="add-step-dialog__label">
-					{{ t('procest', 'Actor type') }}
+					{{ t('dossiq', 'Actor type') }}
 				</label>
 				<NcSelect
 					v-model="actorType"
 					:options="actorTypeOptions"
-					:aria-label-combobox="t('procest', 'Actor type')"
-					:placeholder="t('procest', 'Select actor type')" />
+					:aria-label-combobox="t('dossiq', 'Actor type')"
+					:placeholder="t('dossiq', 'Select actor type')" />
 			</div>
 			<div class="add-step-dialog__field">
 				<NcTextField
 					:modelValue="actor"
-					:label="t('procest', 'Actor (UID, groep of rol)')"
+					:label="t('dossiq', 'Actor (UID, groep of rol)')"
 					required
 					@update:modelValue="(v) => (actor = v)" />
 			</div>
@@ -51,7 +51,7 @@
 				<NcCheckboxRadioSwitch
 					:modelValue="mandatory"
 					@update:modelValue="(v) => (mandatory = v)">
-					{{ t('procest', 'Verplichte stap') }}
+					{{ t('dossiq', 'Verplichte stap') }}
 				</NcCheckboxRadioSwitch>
 			</div>
 
@@ -61,13 +61,13 @@
 		</div>
 		<template #actions>
 			<NcButton :disabled="submitting" @click="onClose">
-				{{ t('procest', 'Annuleren') }}
+				{{ t('dossiq', 'Annuleren') }}
 			</NcButton>
 			<NcButton type="primary" :disabled="!canSubmit" @click="onSubmit">
 				{{
 					submitting
-						? t('procest', 'Bezig...')
-						: t('procest', 'Stap toevoegen')
+						? t('dossiq', 'Bezig...')
+						: t('dossiq', 'Stap toevoegen')
 				}}
 			</NcButton>
 		</template>
@@ -131,7 +131,7 @@ export default {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		insertionOptions() {
 			return this.routeSnapshot.map((s) => ({
-				label: this.t('procest', 'Na stap {n} — {actor}', {
+				label: this.t('dossiq', 'Na stap {n} — {actor}', {
 					n: s.order,
 					actor: s.actor,
 				}),
@@ -184,7 +184,7 @@ export default {
 				})
 				this.$emit('step-added')
 			} catch (err) {
-				this.error = this.t('procest', 'Stap toevoegen mislukt')
+				this.error = this.t('dossiq', 'Stap toevoegen mislukt')
 				console.error('addStep failed', err)
 			} finally {
 				this.submitting = false

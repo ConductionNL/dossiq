@@ -1,4 +1,4 @@
-# Data Model — Procest
+# Data Model — Dossiq
 
 > **Note:** despite the `adr-000-` filename, this is **not** an ADR — it's
 > the per-app entity catalogue. The OR-contract paragraphs below are a
@@ -7,12 +7,12 @@
 > and
 > [ADR-022 Apps consume OR abstractions](../../../hydra/openspec/architecture/adr-022-apps-consume-or-abstractions.md)),
 > not duplicates or override decisions. Any architecture decision
-> specific to procest belongs in a properly-numbered file (`adr-001-…`,
+> specific to dossiq belongs in a properly-numbered file (`adr-001-…`,
 > `adr-002-…`, …) with a Status / Date / Context / Decision /
 > Consequences shape. Filename rename to `data-model.md` (no `adr-`
-> prefix) is queued — see procest's adoption change.
+> prefix) is queued — see dossiq's adoption change.
 
-**App:** Procest — Case management, VTH, forms
+**App:** Dossiq — Case management, VTH, forms
 **Platform:** OpenRegister (register/schema/object pattern)
 **Entities:** 39
 

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest AgendaService
+ * Dossiq AgendaService
  *
  * Service for managing besluitvorming agenda items on cases. An agenda item
  * represents a scheduled discussion of a case in a college/raad meeting and
@@ -14,7 +14,7 @@
  * lives in separate meeting/voting objects in shillinq/decidesk.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,17 +23,17 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-4
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;

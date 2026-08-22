@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Case Definition Import Service
+ * Dossiq Case Definition Import Service
  *
  * Service for importing case type definitions from portable ZIP archives
  * with validation, dependency resolution, and conflict detection.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -18,15 +18,15 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-3
+ * @spec openspec/changes/archive/retrofit-2026-05-24-annotate-procest/tasks.md#task-3
  * @spec openspec/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use Psr\Log\LoggerInterface;
 use ZipArchive;

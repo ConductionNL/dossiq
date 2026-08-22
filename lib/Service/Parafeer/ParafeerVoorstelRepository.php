@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest parafeer voorstel repository.
+ * Dossiq parafeer voorstel repository.
  *
  * Resolves the (register, voorstel schema, parafeeractie schema) triple the
  * parafering action recorder works against, and loads a single voorstel by
@@ -13,7 +13,7 @@
  * recording actions against an unconfigured register would lose them.
  *
  * @category Service
- * @package  OCA\Procest\Service\Parafeer
+ * @package  OCA\Dossiq\Service\Parafeer
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,7 +21,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -31,10 +31,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Parafeer;
+namespace OCA\Dossiq\Service\Parafeer;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\ObjectArrayNormalizer;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ObjectArrayNormalizer;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use RuntimeException;
 
@@ -105,7 +105,7 @@ class ParafeerVoorstelRepository {
 		$actionSchema = $this->settingsService->getConfigValue('parafeeractie_schema');
 
 		if (empty($register) === true || empty($proposalSchema) === true || empty($actionSchema) === true) {
-			throw new RuntimeException('Procest register/schemas not configured');
+			throw new RuntimeException('Dossiq register/schemas not configured');
 		}
 
 		return [(string)$register, (string)$proposalSchema, (string)$actionSchema];

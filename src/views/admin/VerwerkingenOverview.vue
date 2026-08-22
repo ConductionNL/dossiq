@@ -15,20 +15,20 @@
 <template>
 	<div class="verwerkingen-overview">
 		<div class="verwerkingen-overview__header">
-			<h2>{{ t('procest', 'Processing activities (AVG)') }}</h2>
+			<h2>{{ t('dossiq', 'Processing activities (AVG)') }}</h2>
 			<NcButton type="primary" :disabled="denied" @click="showExport = true">
 				<template #icon>
 					<FileExportOutline :size="20" />
 				</template>
-				{{ t('procest', 'Data subject access export') }}
+				{{ t('dossiq', 'Data subject access export') }}
 			</NcButton>
 		</div>
 
 		<p class="verwerkingen-overview__hint">
 			{{
 				t(
-					'procest',
-					'The processing log, retention, and Art. 30 register are managed centrally in OpenRegister. This view is scoped to the case-handling catalogue procest contributes.',
+					'dossiq',
+					'The processing log, retention, and Art. 30 register are managed centrally in OpenRegister. This view is scoped to the case-handling catalogue dossiq contributes.',
 				)
 			}}
 		</p>
@@ -37,10 +37,10 @@
 
 		<NcEmptyContent
 			v-else-if="denied"
-			:name="t('procest', 'Access denied')"
+			:name="t('dossiq', 'Access denied')"
 			:description="
 				t(
-					'procest',
+					'dossiq',
 					'Privacy-officer or admin privileges are required to view processing activities.',
 				)
 			" />
@@ -52,7 +52,7 @@
 				data-testid="unclassified-warning">
 				{{
 					n(
-						'procest',
+						'dossiq',
 						'%n processing is not attributed to a catalogued activity and landed in the flagged fallback. Review the attribution mappings.',
 						'%n processings are not attributed to a catalogued activity and landed in the flagged fallback. Review the attribution mappings.',
 						unclassifiedCount,
@@ -62,21 +62,21 @@
 
 			<NcEmptyContent
 				v-if="activities.length === 0"
-				:name="t('procest', 'No processing activities')"
+				:name="t('dossiq', 'No processing activities')"
 				:description="
 					t(
-						'procest',
-						'Run the procest repair step to seed the case-handling catalogue as drafts.',
+						'dossiq',
+						'Run the dossiq repair step to seed the case-handling catalogue as drafts.',
 					)
 				" />
 
 			<table v-else class="verwerkingen-overview__table">
 				<thead>
 					<tr>
-						<th scope="col">{{ t('procest', 'Code') }}</th>
-						<th scope="col">{{ t('procest', 'Activity') }}</th>
-						<th scope="col">{{ t('procest', 'Legal basis') }}</th>
-						<th scope="col">{{ t('procest', 'Review status') }}</th>
+						<th scope="col">{{ t('dossiq', 'Code') }}</th>
+						<th scope="col">{{ t('dossiq', 'Activity') }}</th>
+						<th scope="col">{{ t('dossiq', 'Legal basis') }}</th>
+						<th scope="col">{{ t('dossiq', 'Review status') }}</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -100,7 +100,7 @@
 			<p class="verwerkingen-overview__footer">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Draft activities await review by the privacy officer in OpenRegister; publishing them there confirms the catalogue entry.',
 					)
 				}}
@@ -153,7 +153,7 @@ export default {
 			this.denied = false
 			try {
 				const all = await listVerwerkingsactiviteiten()
-				// Procest slice: the seeded case-handling catalogue plus the
+				// Dossiq slice: the seeded case-handling catalogue plus the
 				// platform fallback (surfaced via the unclassified counter).
 				this.activities = all.filter(
 					(a) => a.code !== FALLBACK_ACTIVITY_CODE,
@@ -189,13 +189,13 @@ export default {
 		statusLabel(status) {
 			switch (status) {
 				case 'draft':
-					return t('procest', 'Draft (awaiting FG review)')
+					return t('dossiq', 'Draft (awaiting FG review)')
 				case 'published':
-					return t('procest', 'Published')
+					return t('dossiq', 'Published')
 				case 'archived':
-					return t('procest', 'Archived')
+					return t('dossiq', 'Archived')
 				default:
-					return status || t('procest', 'Unknown')
+					return status || t('dossiq', 'Unknown')
 			}
 		},
 	},

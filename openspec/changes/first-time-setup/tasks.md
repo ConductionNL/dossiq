@@ -1,4 +1,4 @@
-# Tasks — procest first-time setup
+# Tasks — dossiq first-time setup
 
 > Blocked on the central change landing (`nextcloud-vue` `cn-setup-wizard` + manifest `setup` schema). Phase A here is the SPEC only; implementation tasks below run in Phase D.
 
@@ -18,4 +18,4 @@
 ## Phase 3: Verify
 
 - [ ] Live: fresh enable with register uninitialised → CnAppRoot gates to the wizard; complete `register-check` → app usable; run `seed` from the wizard → bezwaar/beroep seeded with NO RBAC error; both modals open from the admin page.
-- [ ] `occ procest:bezwaar:seed` still works as the CLI fallback (shares `SeedDataService`).
+- [ ] `occ dossiq:bezwaar:seed` still works as the CLI fallback (shares `SeedDataService`).

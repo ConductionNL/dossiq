@@ -11,7 +11,7 @@
  * without modifying the routing services.
  *
  * @category Event
- * @package  OCA\Procest\Event
+ * @package  OCA\Dossiq\Event
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,12 +22,12 @@
  *
  * @spec openspec/changes/parafering-audit-trail/tasks.md#T02
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Event;
+namespace OCA\Dossiq\Event;
 
 use OCP\EventDispatcher\Event;
 

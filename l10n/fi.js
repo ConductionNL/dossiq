@@ -1,5 +1,5 @@
 OC.L10N.register(
-    "procest",
+    "dossiq",
     {
     "Add step" : "Lisää vaihe",
     "Address" : "Osoite",
@@ -388,8 +388,8 @@ OC.L10N.register(
     "Voorstel heeft geen actieve stap" : "Voorstel-ehdotuksella ei ole aktiivista vaihetta",
     "Wanneer is deze route van toepassing?" : "Milloin tätä reittiä sovelletaan?",
     "Weet u zeker dat u de route \"{name}\" wilt verwijderen?" : "Haluatteko varmasti poistaa reitin \"{name}\"?",
-    "Welcome to Procest! Get started by creating your first case or task using the buttons above." : "Tervetuloa Procestiin! Aloittakaa luomalla ensimmäinen asianne tai tehtävänne yllä olevilla painikkeilla.",
-    "Welcome to Procest! Get started by creating your first case type in Settings." : "Tervetuloa Procestiin! Aloittakaa luomalla ensimmäinen asiatyyppinne asetuksissa.",
+    "Welcome to Dossiq! Get started by creating your first case or task using the buttons above." : "Tervetuloa Dossiqiin! Aloittakaa luomalla ensimmäinen asianne tai tehtävänne yllä olevilla painikkeilla.",
+    "Welcome to Dossiq! Get started by creating your first case type in Settings." : "Tervetuloa Dossiqiin! Aloittakaa luomalla ensimmäinen asiatyyppinne asetuksissa.",
     "When heeftAlleAutorisaties is false, autorisaties must be specified." : "Kun heeftAlleAutorisaties on epätosi, autorisaties on määritettävä.",
     "When heeftAlleAutorisaties is true, autorisaties must not be specified. When heeftAlleAutorisaties is false, autorisaties must be specified." : "Kun heeftAlleAutorisaties on tosi, autorisaties ei saa määrittää. Kun heeftAlleAutorisaties on epätosi, autorisaties on määritettävä.",
     "Why is an extension needed?" : "Miksi pidennystä tarvitaan?",

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Dormant default Procest KvK Handelsregister adapter.
+ * Dormant default Dossiq KvK Handelsregister adapter.
  *
  * Records the would-be Handelsregister lookup to the structured
  * logger and returns a synthetic LOOKUP_DEFERRED result so the
@@ -10,16 +10,16 @@
  * until an openconnector-backed binding to the KvK Handelsregister
  * API is wired in via `Application::register()`. Mirrors the
  * `LogEHerkenningSamlAdapter` / `LogDigidSamlAdapter`
- * dormant-default pattern used across the Procest external surface.
+ * dormant-default pattern used across the Dossiq external surface.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Kvk
+ * @package  OCA\Dossiq\Service\External\Kvk
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/leverancier-zaakportaal-02-eherkenning-auth/tasks.md
  * @spec openspec/changes/brp-kvk-register-sets/proposal.md
@@ -30,12 +30,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Kvk;
+namespace OCA\Dossiq\Service\External\Kvk;
 
 use Psr\Log\LoggerInterface;
 
 /**
- * Dormant log-backed Procest KvK Handelsregister adapter.
+ * Dormant log-backed Dossiq KvK Handelsregister adapter.
  *
  * @spec openspec/changes/leverancier-zaakportaal-02-eherkenning-auth/tasks.md
  */
@@ -65,7 +65,7 @@ class LogKvkHandelsregisterAdapter implements KvkHandelsregisterAdapterInterface
 	 */
 	public function lookup(string $kvkNumber, array $context = []): KvkLookupResult {
 		$this->logger->info(
-			'Procest KvK Handelsregister lookup deferred (no outbound connector bound)',
+			'Dossiq KvK Handelsregister lookup deferred (no outbound connector bound)',
 			[
 				'kvkNumber' => $kvkNumber,
 				'context' => $context,

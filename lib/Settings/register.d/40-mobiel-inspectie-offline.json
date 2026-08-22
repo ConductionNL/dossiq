@@ -7,7 +7,7 @@
         "version": "1.0.0",
         "x-schema-org": "schema:Action",
         "title": "Field Inspection",
-        "description": "A planned or in-progress field inspection synchronized to an inspector's device for offline fieldwork. Extends a Procest case with offline lifecycle metadata.",
+        "description": "A planned or in-progress field inspection synchronized to an inspector's device for offline fieldwork. Extends a Dossiq case with offline lifecycle metadata.",
         "type": "object",
         "required": [
           "caseRef",
@@ -18,7 +18,7 @@
           "caseRef": {
             "type": "string",
             "title": "Case Reference",
-            "description": "Reference to the Procest case this inspection belongs to"
+            "description": "Reference to the Dossiq case this inspection belongs to"
           },
           "inspectorRef": {
             "type": "string",

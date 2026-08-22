@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest BRC (Besluiten) Controller
+ * Dossiq BRC (Besluiten) Controller
  *
  * Controller for serving ZGW Besluiten API endpoints (besluiten,
  * besluitinformatieobjecten). Implements BRC-specific business rules
  * including cross-register OIO sync, cascade delete, and immutability.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -19,18 +19,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-1
+ * @spec openspec/changes/archive/retrofit-2026-05-24-annotate-procest/tasks.md#task-1
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\ZgwService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\ZgwService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;

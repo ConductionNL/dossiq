@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Migrate Workflow Definitions Repair Step
+ * Dossiq Migrate Workflow Definitions Repair Step
  *
  * Backfill repair step that promotes the implicit lifecycle of every
  * existing caseType into a seeded workflowTemplate published as
@@ -9,7 +9,7 @@
  * workflowDefinition reference set.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,19 +20,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/workflow-definition-model/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
-use OCA\Procest\Service\WorkflowDefinitionService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\WorkflowDefinitionService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -138,7 +138,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 					);
 				} catch (\Throwable $e) {
 					$this->logger->error(
-						'Procest: workflow backfill failed to list caseTypes',
+						'Dossiq: workflow backfill failed to list caseTypes',
 						['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 					);
 					$output->warning('Could not list caseTypes — skipping workflow backfill.');
@@ -235,7 +235,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: workflow backfill failed to save template',
+				'Dossiq: workflow backfill failed to save template',
 				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return self::OUTCOME_NONE;
@@ -288,7 +288,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: workflow backfill failed to pin caseType',
+				'Dossiq: workflow backfill failed to pin caseType',
 				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 			);
 		}
@@ -335,7 +335,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: workflow backfill failed to list statusTypes',
+				'Dossiq: workflow backfill failed to list statusTypes',
 				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return null;
@@ -472,7 +472,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: workflow backfill failed to list cases',
+				'Dossiq: workflow backfill failed to list cases',
 				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return;
@@ -506,7 +506,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 				);
 			} catch (\Throwable $e) {
 				$this->logger->error(
-					'Procest: workflow backfill failed to pin case',
+					'Dossiq: workflow backfill failed to pin case',
 					['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 				);
 			}

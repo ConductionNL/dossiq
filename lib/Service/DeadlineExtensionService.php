@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest DeadlineExtensionService.
+ * Dossiq DeadlineExtensionService.
  *
  * AWB 4:14 verlenging on a TermijnInstance. Validates that the
  * verlenging-count is below the TermijnDefinitie's aantalVerlengingen
@@ -10,7 +10,7 @@
  * override path bypasses the ceiling for exceptional cases.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,14 +21,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use ReflectionClass;

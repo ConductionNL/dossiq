@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest besluitvormingActivate action handler.
+ * Dossiq besluitvormingActivate action handler.
  *
  * Wires the besluitvorming parafering chain into the workflow engine. When a
  * case enters the "Parafering" status step, this auto-action resolves the
@@ -12,7 +12,7 @@
  * resolved from the case rather than caller-supplied data.
  *
  * @category Service
- * @package  OCA\Procest\Service\Transitions
+ * @package  OCA\Dossiq\Service\Transitions
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,17 +23,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Transitions;
+namespace OCA\Dossiq\Service\Transitions;
 
-use OCA\Procest\Service\BesluitvormingParafeerService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\BesluitvormingParafeerService;
+use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
 /**

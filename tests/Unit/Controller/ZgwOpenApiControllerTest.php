@@ -10,7 +10,7 @@
  * documentation access (spec Requirement: Public, read-only discovery).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,16 +21,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/zgw-openapi-publication/specs/zgw-openapi-publication/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\ZgwOpenApiController;
+use OCA\Dossiq\Controller\ZgwOpenApiController;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDisplayResponse;
 use OCP\AppFramework\Http\JSONResponse;
@@ -41,7 +41,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Unit tests for ZgwOpenApiController.
  *
- * @covers \OCA\Procest\Controller\ZgwOpenApiController
+ * @covers \OCA\Dossiq\Controller\ZgwOpenApiController
  */
 class ZgwOpenApiControllerTest extends TestCase {
 
@@ -76,7 +76,7 @@ class ZgwOpenApiControllerTest extends TestCase {
 
 		$this->request = $this->createMock(IRequest::class);
 		$this->request->method('getServerProtocol')->willReturn('https');
-		$this->request->method('getServerHost')->willReturn('procest.example.org');
+		$this->request->method('getServerHost')->willReturn('dossiq.example.org');
 
 		$this->controller = new ZgwOpenApiController(request: $this->request);
 	}//end setUp()
@@ -109,7 +109,7 @@ class ZgwOpenApiControllerTest extends TestCase {
 			self::assertArrayHasKey('specUrl', $api);
 			self::assertSame('VNG ZGW 1.x', $api['standard']);
 			self::assertStringEndsWith(
-				'/apps/procest/api/zgw/' . $api['id'] . '/openapi.yaml',
+				'/apps/dossiq/api/zgw/' . $api['id'] . '/openapi.yaml',
 				$api['specUrl']
 			);
 		}

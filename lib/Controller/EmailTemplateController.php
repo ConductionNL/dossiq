@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Email Template Controller
+ * Dossiq Email Template Controller
  *
  * REST surface for template CRUD + draft prefill + IMAP settings.
  *
@@ -9,7 +9,7 @@
  * sending, listing, linking, discarding live in NC Mail via the integration leaf.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,21 +20,21 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/case-email-integration/tasks.md#T06
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\EmailTemplateService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Settings\AdminSettings;
-use OCA\Procest\Support\SuppressesWarnings;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\EmailTemplateService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Settings\AdminSettings;
+use OCA\Dossiq\Support\SuppressesWarnings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;

@@ -4,7 +4,7 @@
  * DSOIntakeController Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,10 +22,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\DSOIntakeController;
-use OCA\Procest\Service\DsoIntakeService;
+use OCA\Dossiq\Controller\DSOIntakeController;
+use OCA\Dossiq\Service\DsoIntakeService;
 use OCP\IAppConfig;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -34,7 +34,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for DSOIntakeController.
  *
- * @covers \OCA\Procest\Controller\DSOIntakeController
+ * @covers \OCA\Dossiq\Controller\DSOIntakeController
  */
 class DSOIntakeControllerTest extends TestCase {
 
@@ -80,7 +80,7 @@ class DSOIntakeControllerTest extends TestCase {
 			->willReturnCallback(static fn (string $app, string $key, string $default = '', bool $lazy = false): string => $default);
 
 		$this->controller = new DSOIntakeController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			dsoIntakeService: $this->dsoIntakeService,
 			appConfig: $this->appConfig,

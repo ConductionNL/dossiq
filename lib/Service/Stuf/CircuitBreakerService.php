@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest CircuitBreakerService (StUF).
+ * Dossiq CircuitBreakerService (StUF).
  *
  * Per-endpoint failure isolation. After `THRESHOLD` consecutive failures the
  * circuit opens for `COOLDOWN_SECONDS` seconds; while open, `checkEndpoint`
@@ -12,7 +12,7 @@
  * survives request boundaries (it is shared across workers).
  *
  * @category Service
- * @package  OCA\Procest\Service\Stuf
+ * @package  OCA\Dossiq\Service\Stuf
  *
  * @author    Conduction <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,16 +23,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Stuf;
+namespace OCA\Dossiq\Service\Stuf;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 

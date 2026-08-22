@@ -21,28 +21,28 @@
  *  - a domain `RuntimeException` (e.g. a closed consultation) becomes a 400
  *    carrying the domain message, not a 500.
  *
- * NOTE ON THE ROUTE'S LIVENESS: procest's board records that the public
+ * NOTE ON THE ROUTE'S LIVENESS: dossiq's board records that the public
  * consultation-response PAGE renders "This page is empty" because its Vue
  * component is never registered. That is a frontend registration gap; the
  * BACKEND route is present in appinfo/routes.php and dispatches to this
  * method, so the endpoint is live and testable at the controller level.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\ConsultationPublicController;
-use OCA\Procest\Service\ConsultationService;
+use OCA\Dossiq\Controller\ConsultationPublicController;
+use OCA\Dossiq\Service\ConsultationService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -229,7 +229,7 @@ class ConsultationPublicControllerContractRequestStub implements IRequest {
 	 * @return string
 	 */
 	public function getRequestUri(): string {
-		return '/apps/procest/api/public/consultations/tok';
+		return '/apps/dossiq/api/public/consultations/tok';
 	}//end getRequestUri()
 
 	/**
@@ -309,7 +309,7 @@ class ConsultationPublicControllerContractRequestStub implements IRequest {
 /**
  * Wire-contract tests for ConsultationPublicController::publicResponsePost().
  *
- * @covers \OCA\Procest\Controller\ConsultationPublicController
+ * @covers \OCA\Dossiq\Controller\ConsultationPublicController
  */
 class ConsultationPublicControllerContractTest extends TestCase {
 
@@ -348,7 +348,7 @@ class ConsultationPublicControllerContractTest extends TestCase {
 	 */
 	private function controller(string $body = ''): ConsultationPublicController {
 		return new ConsultationPublicController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: new ConsultationPublicControllerContractRequestStub(content: $body),
 			consultationService: $this->consultationService,
 			logger: $this->logger,

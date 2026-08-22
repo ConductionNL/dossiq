@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest ParafeerActie Service
+ * Dossiq ParafeerActie Service
  *
  * Service for recording parafering actions (advies, paraferen, accorderen,
  * terugsturen) for a voorstel. Enforces per-step actor authorization,
@@ -9,7 +9,7 @@
  * signature annotation when an accordering step is completed.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -20,23 +20,23 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/parafering-actions/tasks.md#T02
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Procest\Event\ParafeerTransitionEvent;
-use OCA\Procest\Service\Parafeer\ParafeerStepGuard;
-use OCA\Procest\Service\Parafeer\ParafeerVoorstelRepository;
-use OCA\Procest\Service\Parafeer\ParaferingActionMapper;
-use OCA\Procest\Service\Support\ObjectArrayNormalizer;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Event\ParafeerTransitionEvent;
+use OCA\Dossiq\Service\Parafeer\ParafeerStepGuard;
+use OCA\Dossiq\Service\Parafeer\ParafeerVoorstelRepository;
+use OCA\Dossiq\Service\Parafeer\ParaferingActionMapper;
+use OCA\Dossiq\Service\Support\ObjectArrayNormalizer;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -219,7 +219,7 @@ class ParafeerActieService {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
-				'Procest: ParafeerTransitionEvent dispatch failed',
+				'Dossiq: ParafeerTransitionEvent dispatch failed',
 				[
 					'proposal' => $proposalId,
 					'action' => $action,
@@ -486,7 +486,7 @@ class ParafeerActieService {
 	/**
 	 * Delegate a parafering step decision to OpenRegister's approval-workflow.
 	 *
-	 * Maps the procest action onto OR's approve/reject endpoints and encodes
+	 * Maps the dossiq action onto OR's approve/reject endpoints and encodes
 	 * app-specific semantics (actorType, onBehalfOf mandate, advisory text,
 	 * skip reason) into the OR step comment as JSON `_meta`. Only runs when the
 	 * voorstel carries an `approvalChainUuid` and OR's approval-workflow is
@@ -497,7 +497,7 @@ class ParafeerActieService {
 	 *
 	 * @param array<string, mixed> $proposal The voorstel array (provides approvalChainUuid).
 	 * @param string $proposalId The voorstel UUID.
-	 * @param string $action The procest action (parafered/advised/accorded/returned/skipped).
+	 * @param string $action The dossiq action (parafered/advised/accorded/returned/skipped).
 	 * @param string $comment The human-readable comment/reden.
 	 * @param string $advice The advisory text (advies steps).
 	 * @param string|null $onBehalfOf The principal UID when acting as delegate.
@@ -566,7 +566,7 @@ class ParafeerActieService {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
-				'Procest: approval-workflow delegation failed; legacy path governs',
+				'Dossiq: approval-workflow delegation failed; legacy path governs',
 				['proposal' => $proposalId, 'action' => $action, 'exception' => $e->getMessage()]
 			);
 		}//end try
@@ -665,10 +665,10 @@ class ParafeerActieService {
 				return;
 			}
 
-			$template = "\n%%%% Procest parafering signature %%%%\n"
-				. "Geaccordeerd via Procest parafeerroute\n"
+			$template = "\n%%%% Dossiq parafering signature %%%%\n"
+				. "Geaccordeerd via Dossiq parafeerroute\n"
 				. "Acteur: %s (%s)\nStap: %d\nTijdstip: %s\n"
-				. "%%%% End Procest signature %%%%\n";
+				. "%%%% End Dossiq signature %%%%\n";
 			$annotationText = sprintf(
 				$template,
 				$actor->getUID(),

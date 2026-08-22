@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest Case Transfer Service
+ * Dossiq Case Transfer Service
  *
  * Service for managing case ownership transfers between organizations.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -17,18 +17,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTime;
-use OCA\Procest\Service\Transfer\TransferRegisterGateway;
-use OCA\Procest\Service\Transfer\TransferShareBroker;
+use OCA\Dossiq\Service\Transfer\TransferRegisterGateway;
+use OCA\Dossiq\Service\Transfer\TransferShareBroker;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -248,7 +248,7 @@ class CaseTransferService {
 		);
 
 		$this->logger->info(
-			'Procest: Case transfer initiated',
+			'Dossiq: Case transfer initiated',
 			[
 				'caseId' => $caseId,
 				'transferId' => $result->getUuid(),
@@ -383,7 +383,7 @@ class CaseTransferService {
 		);
 
 		$this->logger->info(
-			'Procest: Case transfer ' . $targetStatus,
+			'Dossiq: Case transfer ' . $targetStatus,
 			[
 				'transferId' => $transferId,
 				'caseId' => $caseId,

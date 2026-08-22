@@ -1,11 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Gate-19 spec-coverage tests for task-management spec.
  * Each test is tagged with the scenario it covers.
  *
- * Note: Use /apps/procest/<route> (not /index.php/apps/procest/<route>)
+ * Note: Use /apps/dossiq/<route> (not /index.php/apps/dossiq/<route>)
  * so the Vue history-mode router can resolve the route correctly.
  */
 
@@ -16,7 +16,7 @@ test.describe('Task Management spec coverage', () => {
 	test('global task list page renders with add button and empty state', async ({
 		page,
 	}) => {
-		await page.goto('/index.php/apps/procest/tasks')
+		await page.goto('/index.php/apps/dossiq/tasks')
 		// CnIndexPage renders with Add Task button and "No items found" empty state
 		await expect(page.getByRole('button', { name: 'Add Task' })).toBeVisible({
 			timeout: 10000,

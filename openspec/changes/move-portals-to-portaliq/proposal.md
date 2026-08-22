@@ -4,13 +4,13 @@ Refs: Conduction/procest#162 · hydra ADR-046 (Portaliq shared external portal).
 
 ## Summary
 
-Move procest's four in-app "Portal" nav surfaces into the fleet's shared external
+Move dossiq's four in-app "Portal" nav surfaces into the fleet's shared external
 portal **Portaliq** (ADR-046), by extending the dependency-free
-`OCA\Procest\Portal\PortalContributionProvider` from one audience to three and
+`OCA\Dossiq\Portal\PortalContributionProvider` from one audience to three and
 retiring the in-app Vue portal views + their nav/routes. Portaliq discovers the
-provider by convention FQCN, reads procest's OpenRegister collections RBAC-scoped
+provider by convention FQCN, reads dossiq's OpenRegister collections RBAC-scoped
 to the authenticated portal subject, and renders them in the one shared portal —
-so procest no longer hosts its own external-facing portal shells.
+so dossiq no longer hosts its own external-facing portal shells.
 
 The four retired surfaces and their new audiences:
 
@@ -24,11 +24,11 @@ The four retired surfaces and their new audiences:
 ## Why
 
 - **One shared external portal** (ADR-046), not a portal per app. Portaliq owns the
-  auth edge, the shell, the inbox and the subject resolution; procest only
+  auth edge, the shell, the inbox and the subject resolution; dossiq only
   *declares* what each audience may see and do.
 - **Zero coupling**: the provider references nothing from Portaliq, has no
   `implements`, no info.xml dependency, and is inert when Portaliq is absent.
-- **No data duplication**: Portaliq reads procest's existing OpenRegister
+- **No data duplication**: Portaliq reads dossiq's existing OpenRegister
   collections directly (ADR-022), subject-scoped + per-row verified.
 
 ## Scope
@@ -58,4 +58,4 @@ The four retired surfaces and their new audiences:
 ## Depends on
 
 - Portaliq installed (discovers + renders the contribution; contract v2.2 reader).
-- procest's existing OpenRegister schemas (case, supplier*, portaal*, inspectie*).
+- dossiq's existing OpenRegister schemas (case, supplier*, portaal*, inspectie*).

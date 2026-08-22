@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2026 Conduction / Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Conduction / Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Lightweight stub for @nextcloud/l10n used by the Vitest unit suite.

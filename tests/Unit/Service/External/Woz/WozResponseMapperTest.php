@@ -10,7 +10,7 @@
  * HTTP mocking required.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\External\Woz
+ * @package  OCA\Dossiq\Tests\Unit\Service\External\Woz
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,13 +21,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\External\Woz;
+namespace OCA\Dossiq\Tests\Unit\Service\External\Woz;
 
-use OCA\Procest\Service\External\Woz\WozResponseMapper;
+use OCA\Dossiq\Service\External\Woz\WozResponseMapper;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Procest\Service\External\Woz\WozResponseMapper
+ * @covers \OCA\Dossiq\Service\External\Woz\WozResponseMapper
  */
 class WozResponseMapperTest extends TestCase {
 	/**

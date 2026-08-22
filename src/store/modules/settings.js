@@ -26,7 +26,7 @@ export const useSettingsStore = defineStore('settings', {
 
 			try {
 				const response = await fetch(
-					generateUrl('/apps/procest/api/settings'),
+					generateUrl('/apps/dossiq/api/settings'),
 					{
 						method: 'GET',
 						headers: {
@@ -52,7 +52,7 @@ export const useSettingsStore = defineStore('settings', {
 				return this.config
 			} catch (error) {
 				this.error = error.message
-				console.error('Error fetching Procest settings:', error)
+				console.error('Error fetching Dossiq settings:', error)
 				return null
 			} finally {
 				this.loading = false
@@ -69,7 +69,7 @@ export const useSettingsStore = defineStore('settings', {
 
 			try {
 				const response = await fetch(
-					generateUrl('/apps/procest/api/settings'),
+					generateUrl('/apps/dossiq/api/settings'),
 					{
 						method: 'POST',
 						headers: {
@@ -93,7 +93,7 @@ export const useSettingsStore = defineStore('settings', {
 				return this.config
 			} catch (error) {
 				this.error = error.message
-				console.error('Error saving Procest settings:', error)
+				console.error('Error saving Dossiq settings:', error)
 				return null
 			} finally {
 				this.loading = false

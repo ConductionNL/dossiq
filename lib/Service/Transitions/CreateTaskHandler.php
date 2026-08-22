@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest createTask action handler.
+ * Dossiq createTask action handler.
  *
  * Action config shape: `{type: 'createTask', title?, assignee?, dueIn?: '<duration>'}`.
  * Creates a task linked to the case via OpenRegister ObjectService.
  *
  * @category Service
- * @package  OCA\Procest\Service\Transitions
+ * @package  OCA\Dossiq\Service\Transitions
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,14 +18,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Transitions;
+namespace OCA\Dossiq\Service\Transitions;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
 /**

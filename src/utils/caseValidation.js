@@ -46,11 +46,11 @@ export function isCaseTypeUsable(caseType) {
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 export function getCaseTypeUnusableReason(caseType) {
-	if (!caseType) return t('procest', 'Case type not found')
+	if (!caseType) return t('dossiq', 'Case type not found')
 
 	if (caseType.isDraft === true || caseType.isDraft === 'true') {
 		return t(
-			'procest',
+			'dossiq',
 			'Cannot create a case with a draft case type. The case type must be published first.',
 		)
 	}
@@ -64,7 +64,7 @@ export function getCaseTypeUnusableReason(caseType) {
 		if (validFrom > today) {
 			const dateStr = caseType.validFrom.split('T')[0]
 			return t(
-				'procest',
+				'dossiq',
 				'Cannot create a case with a case type that is not yet valid. The case type is valid from {date}.',
 				{ date: dateStr },
 			)
@@ -77,7 +77,7 @@ export function getCaseTypeUnusableReason(caseType) {
 		if (validUntil < today) {
 			const dateStr = caseType.validUntil.split('T')[0]
 			return t(
-				'procest',
+				'dossiq',
 				'Cannot create a case with an expired case type. The case type was valid until {date}.',
 				{ date: dateStr },
 			)
@@ -103,11 +103,11 @@ export function validateCaseCreate(form, caseTypes = []) {
 	const errors = {}
 
 	if (!form.title || !form.title.trim()) {
-		errors.title = t('procest', 'Title is required')
+		errors.title = t('dossiq', 'Title is required')
 	}
 
 	if (!form.caseType) {
-		errors.caseType = t('procest', 'Case type is required')
+		errors.caseType = t('dossiq', 'Case type is required')
 	} else {
 		const caseType = caseTypes.find(
 			(ct) => ct.id === form.caseType || ct.id === form.caseType?.id,
@@ -140,7 +140,7 @@ export function validateCaseUpdate(form) {
 	const errors = {}
 
 	if (!form.title || !form.title.trim()) {
-		errors.title = t('procest', 'Title is required')
+		errors.title = t('dossiq', 'Title is required')
 	}
 
 	return {
@@ -165,7 +165,7 @@ export function validateCaseUpdate(form) {
  */
 export function validateStatusChange(targetStatus, caseObj, statusTypes) {
 	if (!targetStatus) {
-		return { valid: false, error: t('procest', 'Target status is required') }
+		return { valid: false, error: t('dossiq', 'Target status is required') }
 	}
 
 	// Verify the target status belongs to this case type
@@ -174,7 +174,7 @@ export function validateStatusChange(targetStatus, caseObj, statusTypes) {
 		return {
 			valid: false,
 			error: t(
-				'procest',
+				'dossiq',
 				"Status '{status}' is not defined for this case type",
 				{ status: targetStatus.name },
 			),

@@ -2,13 +2,13 @@
 
 - **Status:** Accepted
 - **Date:** 2026-05-23
-- **Deciders:** Procest product + architecture
-- **Scope:** procest (zaaksysteem). Cross-cutting only; per-spec placements
+- **Deciders:** Dossiq product + architecture
+- **Scope:** dossiq (zaaksysteem). Cross-cutting only; per-spec placements
   live in the IA mapping table, not here.
 
 ## Context
 
-Procest has ~77 specs spanning VTH, sociaal domein, bezwaar/beroep,
+Dossiq has ~77 specs spanning VTH, sociaal domein, bezwaar/beroep,
 besluitvorming, inspecties, portalen (mijngemeente / leverancier / KCC /
 DSO), rapportages and workflow/zaaktype configuration. Without a shared
 topology contract every new spec drifts toward its own top-level menu
@@ -18,7 +18,7 @@ navigation that breaks as soon as a tenant enables a second domain.
 
 Hydra ADR-008 (annotation-driven UI) tells us *how* a spec is placed
 (`@nav`, `@route`, `@widget`). It does not tell us *which* placements
-are legal. This ADR fills that gap for procest: it is the topology
+are legal. This ADR fills that gap for dossiq: it is the topology
 contract that the per-spec IA mapping rows in
 `openspec/changes/*/proposal.md` must respect.
 
@@ -30,7 +30,7 @@ future spec, not the one-time placements.
 
 ## Decision
 
-We adopt the following nine topology rules. Every new procest spec and
+We adopt the following nine topology rules. Every new dossiq spec and
 every IA review MUST be checked against them.
 
 ### Rule 1 — Zaaktypes are data, never menu items
@@ -84,7 +84,7 @@ The dashboard ships a default widget layout *per role*, not a single
 shared default. Adding a widget MUST include its default role
 membership(s); adding a role MUST include its default widget set.
 
-**Rationale:** procest has seven primary roles with materially different
+**Rationale:** dossiq has seven primary roles with materially different
 work; a one-size-fits-all dashboard forces every user to rebuild on
 first login.
 
@@ -218,14 +218,14 @@ upgrade is a change of behaviour at one placement, not a new placement.
 
 Re-open this ADR if any of the following happens:
 - A new domain (e.g. procurement-suite, raadsinformatie-publicatie)
-  is folded into procest rather than spun out, **and** doesn't fit any
+  is folded into dossiq rather than spun out, **and** doesn't fit any
   of the nine top-level menus.
 - A second top-level exception (beyond Inspecties) is approved.
 - Role-default dashboards are replaced by a shared dashboard.
 
 ## References
 
-- IA blueprint + per-spec mapping: `openspec/changes/ia-refactor-procest/`
+- IA blueprint + per-spec mapping: `openspec/changes/ia-refactor-dossiq/`
   (and its archived form once merged).
 - Hydra ADR-008 — annotation-driven UI placement.
 - Hydra ADR-022 — apps consume OR abstractions (zaaktypes-as-data

@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest KCC Callback Service
+ * Dossiq KCC Callback Service
  *
  * Scheduling, retry and lifecycle management for KCC callback requests.
  * Retry timing (exponential backoff, max attempts) is delegated to the
  * SlaCalculator. Persistence uses the OpenRegister ObjectService.
  *
  * @category Service
- * @package  OCA\Procest\Service\Kcc
+ * @package  OCA\Dossiq\Service\Kcc
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,18 +19,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-05
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Kcc;
+namespace OCA\Dossiq\Service\Kcc;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
 
@@ -122,7 +122,7 @@ class CallbackService {
 		[$objectService, $register, $schema] = $this->resolve();
 		$saved = $objectService->saveObject(object: $payload, register: $register, schema: $schema);
 
-		$this->logger->info('Procest KCC: callback scheduled', ['agent' => $agentId]);
+		$this->logger->info('Dossiq KCC: callback scheduled', ['agent' => $agentId]);
 
 		return $this->toArray(value: $saved);
 	}//end schedule()

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Role Guard evaluator.
+ * Dossiq Role Guard evaluator.
  *
  * Guard config shape: `{type: 'roleGuard', allowedRoles: ['Behandelaar', 'Afdelingshoofd']}`.
  * Verifies the current user has at least one of the allowed roles on the
@@ -9,7 +9,7 @@
  * the transition entirely (REQ-STE-2-003).
  *
  * @category Service
- * @package  OCA\Procest\Service\Transitions
+ * @package  OCA\Dossiq\Service\Transitions
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,12 +20,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Transitions;
+namespace OCA\Dossiq\Service\Transitions;
 
 use OCP\IGroupManager;
 use OCP\IUserManager;

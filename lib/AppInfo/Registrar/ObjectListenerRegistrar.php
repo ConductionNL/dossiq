@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest object-lifecycle listener registrar.
+ * Dossiq object-lifecycle listener registrar.
  *
  * The notifier plus the OpenRegister object-lifecycle listeners that are not
  * scoped to a single subsystem: KPI cache invalidation, role-routing cache
@@ -9,7 +9,7 @@
  * Subsystem-scoped listeners live in their own registrars.
  *
  * @category AppInfo
- * @package  OCA\Procest\AppInfo\Registrar
+ * @package  OCA\Dossiq\AppInfo\Registrar
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -17,7 +17,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -27,18 +27,18 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\AppInfo\Registrar;
+namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Procest\Listener\KpiCacheInvalidationListener;
-use OCA\Procest\Listener\LocationBagValidationListener;
-use OCA\Procest\Listener\RoleMutationListener;
-use OCA\Procest\Listener\VergunningaanvraagCreatedListener;
-use OCA\Procest\Notification\Notifier;
+use OCA\Dossiq\Listener\KpiCacheInvalidationListener;
+use OCA\Dossiq\Listener\LocationBagValidationListener;
+use OCA\Dossiq\Listener\RoleMutationListener;
+use OCA\Dossiq\Listener\VergunningaanvraagCreatedListener;
+use OCA\Dossiq\Notification\Notifier;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
@@ -118,7 +118,7 @@ class ObjectListenerRegistrar {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	private function registerIntakeListeners(IRegistrationContext $context): void {
-		// DSO Omgevingsloket: create a Procest zaak when a vergunningaanvraag is
+		// DSO Omgevingsloket: create a Dossiq zaak when a vergunningaanvraag is
 		// written by OpenRegister.
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,

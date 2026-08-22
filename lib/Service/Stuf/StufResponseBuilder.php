@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest StUF response builder (inbound direction).
+ * Dossiq StUF response builder (inbound direction).
  *
- * Builds the SOAP messages procest RETURNS as a StUF receiver: the SOAP
+ * Builds the SOAP messages dossiq RETURNS as a StUF receiver: the SOAP
  * envelope wrapper, the `stuf:`-prefixed stuurgegevens header, the Bv01
  * bevestiging, the Fo01 foutbericht and the plain SOAP Fault. All
  * DOMDocument-based and XXE-safe (`LIBXML_NONET`, no entity expansion).
  *
- * Split out of {@see \OCA\Procest\Service\StufMessageBuilder}, which owned both
+ * Split out of {@see \OCA\Dossiq\Service\StufMessageBuilder}, which owned both
  * directions and so exposed fourteen public methods. That class now owns the
  * OUTBOUND `zkn:`-namespaced request builders only; the two directions share no
  * caller — the controller only ever answers, the adapter only ever asks — and
@@ -18,7 +18,7 @@
  * re-exports them from there, so they have one canonical home.
  *
  * @category Service
- * @package  OCA\Procest\Service\Stuf
+ * @package  OCA\Dossiq\Service\Stuf
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,7 +26,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -36,14 +36,14 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Stuf;
+namespace OCA\Dossiq\Service\Stuf;
 
 use DateTimeImmutable;
 use DOMDocument;
-use OCA\Procest\Service\StufMessageBuilder;
+use OCA\Dossiq\Service\StufMessageBuilder;
 
 /**
- * Builds the StUF SOAP responses procest returns as a receiver.
+ * Builds the StUF SOAP responses dossiq returns as a receiver.
  *
  * @psalm-suppress UnusedClass
  *

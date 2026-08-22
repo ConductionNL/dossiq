@@ -10,23 +10,23 @@
 		}">
 		<span
 			class="agenda-item__handle"
-			:title="t('procest', 'Sleep om te herordenen')"
+			:title="t('dossiq', 'Sleep om te herordenen')"
 			>⋮⋮</span
 		>
 		<span class="agenda-item__number">{{ item.agendanummer || '–' }}</span>
 		<span class="agenda-item__title">{{
-			item.title || t('procest', 'Onbenoemd voorstel')
+			item.title || t('dossiq', 'Onbenoemd voorstel')
 		}}</span>
 		<div class="agenda-item__toggle">
 			<NcButton
 				:type="item.handling === 'hamerstuk' ? 'primary' : 'secondary'"
 				@click="setBehandeling('hamerstuk')">
-				{{ t('procest', 'Hamerstuk') }}
+				{{ t('dossiq', 'Hamerstuk') }}
 			</NcButton>
 			<NcButton
 				:type="item.handling === 'bespreekstuk' ? 'primary' : 'secondary'"
 				@click="setBehandeling('bespreekstuk')">
-				{{ t('procest', 'Bespreekstuk') }}
+				{{ t('dossiq', 'Bespreekstuk') }}
 			</NcButton>
 		</div>
 	</div>

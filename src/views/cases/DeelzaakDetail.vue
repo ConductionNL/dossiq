@@ -22,9 +22,7 @@
 			aria-label="breadcrumb">
 			<router-link :to="parentRoute" class="deelzaak-detail__breadcrumb-link">
 				<ArrowLeft :size="16" />
-				{{
-					parent.title || parent.identifier || t('procest', 'Parent case')
-				}}
+				{{ parent.title || parent.identifier || t('dossiq', 'Parent case') }}
 			</router-link>
 			<span class="deelzaak-detail__breadcrumb-sep" aria-hidden="true">
 				›
@@ -33,7 +31,7 @@
 				{{
 					subCase
 						? subCase.title || subCase.identifier
-						: t('procest', 'Sub-case')
+						: t('dossiq', 'Sub-case')
 				}}
 			</span>
 		</nav>
@@ -42,10 +40,10 @@
 
 		<NcEmptyContent
 			v-else-if="!subCase"
-			:name="t('procest', 'Sub-case not found')"
+			:name="t('dossiq', 'Sub-case not found')"
 			:description="
 				t(
-					'procest',
+					'dossiq',
 					'The sub-case could not be loaded. It may have been deleted or unlinked from its parent.',
 				)
 			">
@@ -54,7 +52,7 @@
 			</template>
 			<template #action>
 				<NcButton type="primary" @click="goToParent">
-					{{ t('procest', 'Back to parent case') }}
+					{{ t('dossiq', 'Back to parent case') }}
 				</NcButton>
 			</template>
 		</NcEmptyContent>
@@ -72,20 +70,20 @@
 						<template #icon>
 							<OpenInNew :size="20" />
 						</template>
-						{{ t('procest', 'Open in case view') }}
+						{{ t('dossiq', 'Open in case view') }}
 					</NcButton>
 					<NcButton type="tertiary" @click="goToParent">
 						<template #icon>
 							<ArrowLeft :size="20" />
 						</template>
-						{{ t('procest', 'Back to parent') }}
+						{{ t('dossiq', 'Back to parent') }}
 					</NcButton>
 				</div>
 			</header>
 
 			<dl class="deelzaak-detail__grid">
 				<div class="deelzaak-detail__row">
-					<dt>{{ t('procest', 'Status') }}</dt>
+					<dt>{{ t('dossiq', 'Status') }}</dt>
 					<dd>
 						<span class="status-badge" :class="statusClass">
 							{{ statusName }}
@@ -93,35 +91,35 @@
 					</dd>
 				</div>
 				<div class="deelzaak-detail__row">
-					<dt>{{ t('procest', 'Assignee') }}</dt>
+					<dt>{{ t('dossiq', 'Assignee') }}</dt>
 					<dd>{{ subCase.assignee || '—' }}</dd>
 				</div>
 				<div class="deelzaak-detail__row">
-					<dt>{{ t('procest', 'Case type') }}</dt>
+					<dt>{{ t('dossiq', 'Case type') }}</dt>
 					<dd>{{ caseType ? caseType.title || caseType.name : '—' }}</dd>
 				</div>
 				<div class="deelzaak-detail__row">
-					<dt>{{ t('procest', 'Start date') }}</dt>
+					<dt>{{ t('dossiq', 'Start date') }}</dt>
 					<dd>{{ formatDate(subCase.startDate) }}</dd>
 				</div>
 				<div class="deelzaak-detail__row">
-					<dt>{{ t('procest', 'Deadline') }}</dt>
+					<dt>{{ t('dossiq', 'Deadline') }}</dt>
 					<dd>{{ formatDate(subCase.deadline) }}</dd>
 				</div>
 				<div class="deelzaak-detail__row">
-					<dt>{{ t('procest', 'Completed') }}</dt>
+					<dt>{{ t('dossiq', 'Completed') }}</dt>
 					<dd>
 						{{
 							subCase.endDate
 								? formatDate(subCase.endDate)
-								: t('procest', 'Open')
+								: t('dossiq', 'Open')
 						}}
 					</dd>
 				</div>
 			</dl>
 
 			<section v-if="subCase.description" class="deelzaak-detail__section">
-				<h3>{{ t('procest', 'Description') }}</h3>
+				<h3>{{ t('dossiq', 'Description') }}</h3>
 				<p>{{ subCase.description }}</p>
 			</section>
 		</template>
@@ -201,7 +199,7 @@ export default {
 		statusName() {
 			return (
 				this.statusType?.name
-				|| (this.subCase?.status ? '—' : t('procest', 'No status'))
+				|| (this.subCase?.status ? '—' : t('dossiq', 'No status'))
 			)
 		},
 

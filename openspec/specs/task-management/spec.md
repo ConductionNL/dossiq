@@ -12,7 +12,7 @@ Tasks represent work items within a case. They follow CMMN 1.1 HumanTask concept
 **Primary feature tier**: MVP
 **Extended features**: V1 (kanban, checklists, dependencies, templates), Enterprise (automation)
 
-**Competitive context**: Flowable provides the most comprehensive task management with a unified task service across BPMN and CMMN engines, supporting a 5-state lifecycle (created/claimed/in-progress/suspended/completed) with delegation and sub-tasks. Dimpact ZAC uses Flowable-backed tasks with WebSocket-based real-time updates and configurable worklists. xxllnc Zaken implements phase-bound tasks that become read-only when the case progresses past their phase. ArkCase uses Activiti-backed tasks with queue-based routing via Drools rules. Procest takes an OpenRegister-first approach where tasks are JSON objects with CMMN-compliant lifecycle states, avoiding the complexity of an embedded workflow engine.
+**Competitive context**: Flowable provides the most comprehensive task management with a unified task service across BPMN and CMMN engines, supporting a 5-state lifecycle (created/claimed/in-progress/suspended/completed) with delegation and sub-tasks. Dimpact ZAC uses Flowable-backed tasks with WebSocket-based real-time updates and configurable worklists. xxllnc Zaken implements phase-bound tasks that become read-only when the case progresses past their phase. ArkCase uses Activiti-backed tasks with queue-based routing via Drools rules. Dossiq takes an OpenRegister-first approach where tasks are JSON objects with CMMN-compliant lifecycle states, avoiding the complexity of an embedded workflow engine.
 
 ---
 
@@ -648,7 +648,7 @@ plate" entries.
 
 #### Scenario: Tasks does not appear as a top-level menu item
 
-- GIVEN a behandelaar opens the Procest app
+- GIVEN a behandelaar opens the Dossiq app
 - WHEN the left navigation renders
 - THEN the top-level menu MUST NOT include an entry labelled "Tasks" /
   "Taken" with a top-level icon
@@ -710,7 +710,7 @@ All task management interfaces MUST comply with WCAG AA:
 **MVP substantially implemented. V1/Enterprise features not implemented.**
 
 **Implemented (with file paths):**
-- **Task schema**: Defined in `lib/Settings/procest_register.json` with properties: `title`, `description`, `status` (enum: available/active/completed/terminated/disabled), `assignee`, `case` (UUID ref), `dueDate`, `priority` (enum: low/normal/high/urgent), `completedDate`. Matches the spec data model exactly.
+- **Task schema**: Defined in `lib/Settings/dossiq_register.json` with properties: `title`, `description`, `status` (enum: available/active/completed/terminated/disabled), `assignee`, `case` (UUID ref), `dueDate`, `priority` (enum: low/normal/high/urgent), `completedDate`. Matches the spec data model exactly.
 - **Task lifecycle**: `src/utils/taskLifecycle.js` implements the full CMMN PlanItem lifecycle with:
   - `TASK_STATUSES` constant object
   - `TRANSITION_MAP`: available -> [active, terminated, disabled], active -> [completed, terminated], completed/terminated/disabled -> [] (terminal)
@@ -748,7 +748,7 @@ This duality means some views use OpenRegister tasks while others use CalDAV tas
 ### Standards & References
 
 - **CMMN 1.1**: Task lifecycle states (Available, Active, Completed, Terminated, Disabled) follow the CMMN PlanItem lifecycle exactly. Transition rules match CMMN specification. Implemented in `src/utils/taskLifecycle.js`.
-- **Schema.org**: Tasks typed as `schema:Action` with `actionStatus` in `procest_register.json`.
+- **Schema.org**: Tasks typed as `schema:Action` with `actionStatus` in `dossiq_register.json`.
 - **BPMN 2.0**: Task patterns for assignment and lifecycle management.
 - **ZGW APIs**: No direct ZGW equivalent for tasks (ZGW does not define a task resource), but tasks complement the ZGW Zaak lifecycle. Dimpact ZAC uses Flowable tasks via its own REST API.
 - **WCAG 2.1 AA**: Spec requires color-independent indicators and keyboard accessibility. Partially implemented (text labels for overdue, but no keyboard nav).

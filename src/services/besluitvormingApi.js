@@ -3,7 +3,7 @@
 /**
  * Besluitvorming API service.
  *
- * Wraps the procest /api/besluitvorming endpoints (agenda compilation,
+ * Wraps the dossiq /api/besluitvorming endpoints (agenda compilation,
  * DROP/LVBB publication, mandaat validation). All HTTP traffic uses
  * @nextcloud/axios for CSRF + auth interop. Never use raw fetch().
  *
@@ -12,7 +12,7 @@
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-const base = (path) => generateUrl('/apps/procest/api/besluitvorming' + path)
+const base = (path) => generateUrl('/apps/dossiq/api/besluitvorming' + path)
 
 /**
  * Add a case to an agenda with a classification and order.

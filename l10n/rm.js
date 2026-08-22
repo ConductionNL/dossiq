@@ -1,5 +1,5 @@
 OC.L10N.register(
-    "procest",
+    "dossiq",
     {
     "Add step" : "Agiuntar in pass",
     "Address" : "Adressa",
@@ -388,8 +388,8 @@ OC.L10N.register(
     "Voorstel heeft geen actieve stap" : "Il voorstel n'ha nagin pass activ",
     "Wanneer is deze route van toepassing?" : "Cura vala questa route?",
     "Weet u zeker dat u de route \"{name}\" wilt verwijderen?" : "Essas vus segir che vus vulais stizzar la route «{name}»?",
-    "Welcome to Procest! Get started by creating your first case or task using the buttons above." : "Bainvegni tar Procest! Cumenzai cun crear voss emprim cas u incumbensa cun ils buttuns survart.",
-    "Welcome to Procest! Get started by creating your first case type in Settings." : "Bainvegni tar Procest! Cumenzai cun crear voss emprim tip da cas en las preferenzas.",
+    "Welcome to Dossiq! Get started by creating your first case or task using the buttons above." : "Bainvegni tar Dossiq! Cumenzai cun crear voss emprim cas u incumbensa cun ils buttuns survart.",
+    "Welcome to Dossiq! Get started by creating your first case type in Settings." : "Bainvegni tar Dossiq! Cumenzai cun crear voss emprim tip da cas en las preferenzas.",
     "When heeftAlleAutorisaties is false, autorisaties must be specified." : "Sche heeftAlleAutorisaties è false, sto autorisaties vegnir specifitgà.",
     "When heeftAlleAutorisaties is true, autorisaties must not be specified. When heeftAlleAutorisaties is false, autorisaties must be specified." : "Sche heeftAlleAutorisaties è true, na dastga autorisaties betg vegnir specifitgà. Sche heeftAlleAutorisaties è false, sto autorisaties vegnir specifitgà.",
     "Why is an extension needed?" : "Pertge è ina prolungaziun necessaria?",

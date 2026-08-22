@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest MandaatGebruikService.
+ * Dossiq MandaatGebruikService.
  *
  * Append-only audit log of mandate uses. Once logged a row is immutable
  * at the application level (the OpenRegister CRUD itself does not enforce
@@ -9,7 +9,7 @@
  * by returning 403 — see {@see MandaatController}).
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,17 +20,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/mandaat-matrix-05-case-decision-integration/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**

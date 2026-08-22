@@ -10,7 +10,7 @@
  * asymmetry this file exists to remove. A stub narrower than the real type is
  * worse than no stub at all.
  *
- * It is needed because procest's tests `createMock()` this interface while
+ * It is needed because dossiq's tests `createMock()` this interface while
  * nothing declared it: CI clones `ConductionNL/openregister` (the
  * `additional-apps` workflow input) so the real one is on the autoloader there,
  * but a dev instance has no such clone and 40 tests died with

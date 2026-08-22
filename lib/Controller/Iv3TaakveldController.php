@@ -1,18 +1,18 @@
 <?php
 
 /**
- * Procest IV3 Taakveld Controller
+ * Dossiq IV3 Taakveld Controller
  *
  * Serves the IV3/BBV taakveld reference list to the case-type settings
  * picker, and nothing else.
  *
  * What used to live here — the quarterly IV3 cost report — is gone under
  * ADR-081: Shillinq is the fleet's only general ledger and only statutory
- * reporter, and procest MUST NOT sum money or emit a statutory report. What
- * procest keeps is the CLASSIFICATION (`caseType.iv3Taakveld`), which is
+ * reporter, and dossiq MUST NOT sum money or emit a statutory report. What
+ * dossiq keeps is the CLASSIFICATION (`caseType.iv3Taakveld`), which is
  * exactly what this endpoint exists to populate.
  *
- * The list itself is still procest's for now. ADR-081 decision 1 makes
+ * The list itself is still dossiq's for now. ADR-081 decision 1 makes
  * Shillinq's `BbvTaakveld` catalogue the single taakveld authority, and this
  * endpoint is the seam that will read from it — but Shillinq does not expose
  * it cross-app yet, and deleting the local list before that would break the
@@ -20,7 +20,7 @@
  * the report goes now because it was dead; the list follows the catalogue.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -29,14 +29,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\Iv3TaakveldList;
+use OCA\Dossiq\Service\Iv3TaakveldList;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;

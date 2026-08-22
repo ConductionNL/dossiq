@@ -1,5 +1,5 @@
 /**
- * Procest parafeerroute engine API client.
+ * Dossiq parafeerroute engine API client.
  *
  * Thin wrapper around @nextcloud/axios for the voorstel routing engine
  * endpoints (start, complete-step, skip-step, add-step). Uses axios so
@@ -16,7 +16,7 @@
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-const baseUrl = () => generateUrl('/apps/procest/api/parafeer-route')
+const baseUrl = () => generateUrl('/apps/dossiq/api/parafeer-route')
 
 /**
  * Start parafering on a voorstel.

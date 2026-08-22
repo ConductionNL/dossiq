@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest CaseEnricher.
+ * Dossiq CaseEnricher.
  *
  * Derives the `_`-prefixed working fields every throughput-time metric reads
  * from a raw `case` row: normalised start/end dates, whether the case is
@@ -15,7 +15,7 @@
  * — live here and nowhere else.
  *
  * @category Service
- * @package  OCA\Procest\Service\Doorlooptijd
+ * @package  OCA\Dossiq\Service\Doorlooptijd
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,7 +23,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -33,7 +33,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Doorlooptijd;
+namespace OCA\Dossiq\Service\Doorlooptijd;
 
 use DateInterval;
 use DateTimeImmutable;

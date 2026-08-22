@@ -10,7 +10,7 @@
  * building the double, so stubbing cannot get past it.
  *
  * @category Test
- * @package  OCA\Procest\Tests\Unit\Repair
+ * @package  OCA\Dossiq\Tests\Unit\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,11 +24,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Repair;
+namespace OCA\Dossiq\Tests\Unit\Repair;
 
-use OCA\Procest\Repair\RenameDutchValueDecisions;
-use OCA\Procest\Repair\RenameDutchValues;
-use OCA\Procest\Repair\ValueMigrationPort;
+use OCA\Dossiq\Repair\RenameDutchValueDecisions;
+use OCA\Dossiq\Repair\RenameDutchValues;
+use OCA\Dossiq\Repair\ValueMigrationPort;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 

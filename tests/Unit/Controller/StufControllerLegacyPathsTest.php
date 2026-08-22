@@ -15,27 +15,27 @@
  * Each needs its OWN method because openregister's AppHost
  * Routes::standard() rejects duplicate route names by `name` alone and never
  * reads `postfix` — the two-entries-one-name form throws at boot and takes the
- * whole app's routing down. Measured: it failed procest's E2E seed.
+ * whole app's routing down. Measured: it failed dossiq's E2E seed.
  *
  * A delegation that silently stopped delegating is the failure this file
  * exists for. It would not throw and would not fail a route test; the old URL
  * would simply answer with something else, on a municipality's schedule.
  *
  * @category Test
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  * @author   Conduction Development Team <info@conduction.nl>
  * @license  EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
- * @link     https://procest.nl
+ * @link     https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\StufController;
-use OCA\Procest\Service\Stuf\StufEnvelopeInspector;
-use OCA\Procest\Service\Stuf\StufServices;
-use OCA\Procest\Service\Stuf\StufSoapRequestDispatcher;
+use OCA\Dossiq\Controller\StufController;
+use OCA\Dossiq\Service\Stuf\StufEnvelopeInspector;
+use OCA\Dossiq\Service\Stuf\StufServices;
+use OCA\Dossiq\Service\Stuf\StufSoapRequestDispatcher;
 use OCP\AppFramework\Http\DataDisplayResponse;
 use OCP\IL10N;
 use OCP\IRequest;
@@ -47,7 +47,7 @@ use ReflectionClass;
 /**
  * The Dutch path aliases delegate to their English methods.
  *
- * @covers \OCA\Procest\Controller\StufController
+ * @covers \OCA\Dossiq\Controller\StufController
  */
 class StufControllerLegacyPathsTest extends TestCase {
 
@@ -77,7 +77,7 @@ class StufControllerLegacyPathsTest extends TestCase {
 		$services = (new ReflectionClass(StufServices::class))->newInstanceWithoutConstructor();
 
 		return new class(
-			'procest',
+			'dossiq',
 			$this->createMock(IRequest::class),
 			$services,
 			$this->dispatcher,

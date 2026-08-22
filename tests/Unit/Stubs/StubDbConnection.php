@@ -9,7 +9,7 @@
  * via type-hint widening at call sites.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Stubs
+ * @package  OCA\Dossiq\Tests\Unit\Stubs
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -17,12 +17,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Stubs;
+namespace OCA\Dossiq\Tests\Unit\Stubs;
 
 /**
  * Minimal stub that mimics enough of IDBConnection for KpiAggregationService tests.

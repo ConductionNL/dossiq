@@ -1,5 +1,5 @@
 {
-  "_format": "procest-vth-workflow-template-v1",
+  "_format": "dossiq-vth-workflow-template-v1",
   "slug": "objectionProceeding",
   "title": "Bezwaar (VTH cross-link)",
   "description": "Cross-link entry: VTH-bezwaar volgt de canonieke bezwaar-lifecycle workflow (zie SeedBezwaarBeroepData). Deze entry voegt VTH-specifieke guards toe voor sectorale niet-ontvankelijkheidsgronden, maar redefinieert de bezwaar-workflow NIET.",

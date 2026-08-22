@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest PublicationService
+ * Dossiq PublicationService
  *
  * Service for publishing besluitvorming case decisions. Publishing a besluit
  * means: (a) emitting a publication record with publishedAt + channel, and
@@ -12,7 +12,7 @@
  * by openconnector wiring (out of scope for the host app build).
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,17 +21,17 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-7
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -63,7 +63,7 @@ class PublicationService {
 	 * Idempotent per (caseId, channel): re-publishing on the same channel
 	 * updates the publishedAt timestamp rather than appending duplicates.
 	 *
-	 * NOTE: As of procest-delegate-contract-decision, this method publishes the
+	 * NOTE: As of dossiq-delegate-contract-decision, this method publishes the
 	 * already-recorded ZGW Besluit (fed by the decidesk Decision outcome via
 	 * BesluitMaterialisationService) rather than authoring a new local besluit.
 	 * The publication record is appended to the case's publications[] array;

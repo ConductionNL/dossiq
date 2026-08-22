@@ -8,7 +8,7 @@
  * working-day deadline.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,21 +21,21 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\Milestone\MilestoneRepository;
-use OCA\Procest\Service\Milestone\StalledCaseDetector;
-use OCA\Procest\Service\MilestoneService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\Milestone\MilestoneRepository;
+use OCA\Dossiq\Service\Milestone\StalledCaseDetector;
+use OCA\Dossiq\Service\MilestoneService;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
  * Unit tests for MilestoneService::findStalledCases().
  *
- * @covers \OCA\Procest\Service\MilestoneService
- * @covers \OCA\Procest\Service\Milestone\StalledCaseDetector
- * @covers \OCA\Procest\Service\Milestone\MilestoneRepository
+ * @covers \OCA\Dossiq\Service\MilestoneService
+ * @covers \OCA\Dossiq\Service\Milestone\StalledCaseDetector
+ * @covers \OCA\Dossiq\Service\Milestone\MilestoneRepository
  */
 class MilestoneServiceStalledTest extends TestCase {
 

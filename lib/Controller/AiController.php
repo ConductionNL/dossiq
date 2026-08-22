@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest AI Controller
+ * Dossiq AI Controller
  *
  * Controller for AI-assisted case processing endpoints.
  * Provides document classification, data extraction, knowledge base Q&A,
  * summarization, routing suggestions, and audit trail access.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -19,7 +19,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/ai-assistance/spec.md
  * @spec openspec/specs/ai-assistance/spec.md
@@ -28,11 +28,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\Ai\AiAuditService;
-use OCA\Procest\Service\AiService;
-use OCA\Procest\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Ai\AiAuditService;
+use OCA\Dossiq\Service\AiService;
+use OCA\Dossiq\Service\CaseAccessGuard;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

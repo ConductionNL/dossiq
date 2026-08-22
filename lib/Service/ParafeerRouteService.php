@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest ParafeerRoute Service
+ * Dossiq ParafeerRoute Service
  *
  * Routing engine for the B&W parafering workflow. Captures route snapshots on
  * voorstel submission, executes sequential step activation (task + notification),
@@ -13,7 +13,7 @@
  * only owns workflow execution and read-only loads of related entities.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -24,20 +24,20 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Event\ParafeerTransitionEvent;
-use OCA\Procest\Service\Parafering\ParaferingStepActivator;
-use OCA\Procest\Service\Parafering\VoorstelRouteMapper;
-use OCA\Procest\Service\Support\ObjectArrayNormalizer;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Event\ParafeerTransitionEvent;
+use OCA\Dossiq\Service\Parafering\ParaferingStepActivator;
+use OCA\Dossiq\Service\Parafering\VoorstelRouteMapper;
+use OCA\Dossiq\Service\Support\ObjectArrayNormalizer;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -83,7 +83,7 @@ class ParafeerRouteService {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The Procest settings/config bridge to OpenRegister
+	 * @param SettingsService $settingsService The Dossiq settings/config bridge to OpenRegister
 	 * @param IUserSession $userSession The current Nextcloud user session
 	 * @param LoggerInterface $logger The logger
 	 * @param ParaferingStepActivator $stepActivator Step activation + concrete actor resolution
@@ -140,7 +140,7 @@ class ParafeerRouteService {
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest: ParafeerTransitionEvent dispatch failed',
+				'Dossiq: ParafeerTransitionEvent dispatch failed',
 				[
 					'proposal' => $proposalId,
 					'action' => $action,
@@ -188,7 +188,7 @@ class ParafeerRouteService {
 
 		// Per ADR-022, the chain-state backend is OpenRegister's approval-workflow.
 		// Create the OpenRegister ApprovalChain and persist its UUID on the voorstel.
-		// No new procest-local Parafeerroute row is written for the chain state.
+		// No new dossiq-local Parafeerroute row is written for the chain state.
 		$voorstelUuid = (string)($proposal['id'] ?? $proposal['uuid'] ?? $proposalId);
 		$chainUuid = $this->createApprovalChain(voorstelUuid: $voorstelUuid, route: $route, steps: $steps);
 		if ($chainUuid !== null) {
@@ -242,7 +242,7 @@ class ParafeerRouteService {
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest: ApprovalChain creation failed, falling back to in-array routing',
+				'Dossiq: ApprovalChain creation failed, falling back to in-array routing',
 				['proposal' => $voorstelUuid, 'exception' => $e->getMessage()]
 			);
 			return null;
@@ -566,7 +566,7 @@ class ParafeerRouteService {
 				value: $objectService->saveObject(object: $proposal, register: $register, schema: $proposalSchema)
 			);
 			$this->logger->info(
-				'Procest: voorstel {id} fully accorded',
+				'Dossiq: voorstel {id} fully accorded',
 				[
 					'id' => $proposal['id'] ?? '',
 					'app' => Application::APP_ID,
@@ -625,7 +625,7 @@ class ParafeerRouteService {
 	private function requireConfig(string $key): string {
 		$value = $this->settingsService->getConfigValue($key);
 		if ($value === '') {
-			throw new RuntimeException(sprintf('Procest configuration key %s is not set', $key));
+			throw new RuntimeException(sprintf('Dossiq configuration key %s is not set', $key));
 		}
 
 		return $value;

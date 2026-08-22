@@ -8,7 +8,7 @@
  * verwerkingsregister) is unavailable.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Repair
+ * @package  OCA\Dossiq\Tests\Unit\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,11 +19,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Repair;
+namespace OCA\Dossiq\Tests\Unit\Repair;
 
 use OCA\OpenRegister\Db\Verwerkingsactiviteit;
-use OCA\Procest\Repair\SeedVerwerkingsactiviteiten;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -32,7 +32,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for the SeedVerwerkingsactiviteiten repair step.
  *
- * @covers \OCA\Procest\Repair\SeedVerwerkingsactiviteiten
+ * @covers \OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten
  */
 class SeedVerwerkingsactiviteitenTest extends TestCase {
 	/**
@@ -159,7 +159,7 @@ class SeedVerwerkingsactiviteitenTest extends TestCase {
 		$this->step->run($this->createMock(IOutput::class));
 
 		$after = $this->mapper->findByCode(code: 'zaakafhandeling');
-		$this->assertSame('published', $after->getStatus(), 'FG activation must survive procest upgrades');
+		$this->assertSame('published', $after->getStatus(), 'FG activation must survive dossiq upgrades');
 		$this->assertNotSame('FG-renamed', $after->getNaam(), 'descriptive fields refresh from the catalogue');
 		$this->assertGreaterThan(0, $this->mapper->updates);
 
@@ -216,7 +216,7 @@ class SeedVerwerkingsactiviteitenTest extends TestCase {
 
 		$references = [];
 		$files = array_merge(
-			[__DIR__ . '/../../../lib/Settings/procest_register.json'],
+			[__DIR__ . '/../../../lib/Settings/dossiq_register.json'],
 			glob(__DIR__ . '/../../../lib/Settings/register.d/*.json')
 		);
 		foreach ($files as $file) {
@@ -250,7 +250,7 @@ class SeedVerwerkingsactiviteitenTest extends TestCase {
 	 */
 	public function testPersonBearingSchemasOptIntoReadLogging(): void {
 		$expectations = [
-			'lib/Settings/procest_register.json' => ['case', 'role', 'customerContact'],
+			'lib/Settings/dossiq_register.json' => ['case', 'role', 'customerContact'],
 			'lib/Settings/register.d/40-kcc-werkplek.json' => ['contactmoment'],
 		];
 

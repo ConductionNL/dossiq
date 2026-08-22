@@ -11,7 +11,7 @@
  * to the LIVE path and prove the BAD path is rejected.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,14 +27,14 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\Advice\AdviceAuthorizationGuard;
-use OCA\Procest\Service\Advice\AdviceNotifier;
-use OCA\Procest\Service\Advice\AdviceRepository;
-use OCA\Procest\Service\AdviceDelegationService;
-use OCA\Procest\Service\AdviceService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\Advice\AdviceAuthorizationGuard;
+use OCA\Dossiq\Service\Advice\AdviceNotifier;
+use OCA\Dossiq\Service\Advice\AdviceRepository;
+use OCA\Dossiq\Service\AdviceDelegationService;
+use OCA\Dossiq\Service\AdviceService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -85,12 +85,12 @@ interface AdviceObjectServiceStub {
 /**
  * Unit tests for AdviceService transition authorization.
  *
- * @covers \OCA\Procest\Service\AdviceService
+ * @covers \OCA\Dossiq\Service\AdviceService
  *
- * @uses \OCA\Procest\Service\Advice\AdviceAuthorizationGuard
- * @uses \OCA\Procest\Service\Advice\AdviceNotifier
- * @uses \OCA\Procest\Service\Advice\AdviceRepository
- * @uses \OCA\Procest\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Advice\AdviceAuthorizationGuard
+ * @uses \OCA\Dossiq\Service\Advice\AdviceNotifier
+ * @uses \OCA\Dossiq\Service\Advice\AdviceRepository
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class AdviceServiceAuthorizationTest extends TestCase {
 

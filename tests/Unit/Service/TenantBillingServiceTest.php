@@ -4,7 +4,7 @@
  * TenantBillingService Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,17 +15,17 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
 use InvalidArgumentException;
-use OCA\Procest\Service\TenantBillingService;
+use OCA\Dossiq\Service\TenantBillingService;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\TenantBillingService
+ * @covers \OCA\Dossiq\Service\TenantBillingService
  */
 class TenantBillingServiceTest extends TestCase {
 	private TenantBillingService $svc;
@@ -36,7 +36,7 @@ class TenantBillingServiceTest extends TestCase {
 			appManager: $this->createMock(IAppManager::class),
 			container: $this->createMock(ContainerInterface::class),
 			logger: $this->createMock(LoggerInterface::class),
-			shillinq: $this->createMock(\OCA\Procest\Service\ShillinqIntegrationService::class),
+			shillinq: $this->createMock(\OCA\Dossiq\Service\ShillinqIntegrationService::class),
 		);
 	}
 
@@ -53,7 +53,7 @@ class TenantBillingServiceTest extends TestCase {
 			['uuid' => 'e-1', 'tenantRef' => 't-1', 'eventType' => 'user_activated', 'quantity' => 1.0, 'unitPrice' => 149.0, 'currency' => 'EUR', 'occurredAt' => '2026-07-05T10:00:00+00:00', 'invoiceRef' => null],
 		];
 
-		$shillinq = $this->createMock(\OCA\Procest\Service\ShillinqIntegrationService::class);
+		$shillinq = $this->createMock(\OCA\Dossiq\Service\ShillinqIntegrationService::class);
 		$shillinq->method('buildInvoicePayload')->willReturn(['tenant_id' => 't-1', 'period' => '2026-07', 'currency' => 'EUR', 'line_items' => []]);
 		$shillinq->expects($this->once())
 			->method('exportInvoice')

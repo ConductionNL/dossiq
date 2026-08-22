@@ -20,7 +20,7 @@
  * that silently inherited the same fail-open.)
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -36,16 +36,16 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\WOOAssessmentController;
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\WOOAnonymisationAssistService;
-use OCA\Procest\Service\WOODeadlineService;
-use OCA\Procest\Service\WOODecisionService;
-use OCA\Procest\Service\WOODocumentAssessmentService;
-use OCA\Procest\Service\WooPublicationService;
+use OCA\Dossiq\Controller\WOOAssessmentController;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\WOOAnonymisationAssistService;
+use OCA\Dossiq\Service\WOODeadlineService;
+use OCA\Dossiq\Service\WOODecisionService;
+use OCA\Dossiq\Service\WOODocumentAssessmentService;
+use OCA\Dossiq\Service\WooPublicationService;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -73,8 +73,8 @@ interface WooCaseObjectServiceStub {
 /**
  * Unit tests for WOOAssessmentController per-case authorization.
  *
- * @covers \OCA\Procest\Controller\WOOAssessmentController
- * @covers \OCA\Procest\Service\CaseAccessGuard
+ * @covers \OCA\Dossiq\Controller\WOOAssessmentController
+ * @covers \OCA\Dossiq\Service\CaseAccessGuard
  */
 class WOOAssessmentControllerAuthorizationTest extends TestCase {
 
@@ -173,7 +173,7 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase {
 		);
 
 		return new WOOAssessmentController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->createMock(IRequest::class),
 			assessmentService: $this->assessmentService,
 			deadlineService: $this->deadlineService,

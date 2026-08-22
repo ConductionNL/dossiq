@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Dormant default Procest BRK adapter.
+ * Dormant default Dossiq BRK adapter.
  *
  * Records the would-be Kadaster BRK Bevragen v2 lookup to the structured
  * logger and returns a synthetic LOOKUP_DEFERRED result so the surrounding
@@ -9,16 +9,16 @@
  * until a live binding is configured via `integration.brk.mode` (resolved
  * through `Application::register()`). Mirrors the `LogBagAdapter` /
  * `LogBrpHaalCentraalAdapter` / `LogKvkHandelsregisterAdapter`
- * dormant-default pattern used across the Procest external surface.
+ * dormant-default pattern used across the Dossiq external surface.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Brk
+ * @package  OCA\Dossiq\Service\External\Brk
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  *
@@ -28,12 +28,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Brk;
+namespace OCA\Dossiq\Service\External\Brk;
 
 use Psr\Log\LoggerInterface;
 
 /**
- * Dormant log-backed Procest BRK adapter.
+ * Dormant log-backed Dossiq BRK adapter.
  *
  * @SuppressWarnings(PHPMD.LongVariable) — kadastrale-aanduiding parameter
  * names are the canonical BRK domain terms (see interface).
@@ -77,7 +77,7 @@ class LogBrkAdapter implements BrkAdapterInterface {
 		array $context = [],
 	): BrkLookupResult {
 		$this->logger->info(
-			'Procest BRK lookup deferred (no outbound connector bound)',
+			'Dossiq BRK lookup deferred (no outbound connector bound)',
 			[
 				'kadastraleGemeenteCode' => $kadastraleMunicipalityCode,
 				'sectie' => $section,
@@ -102,7 +102,7 @@ class LogBrkAdapter implements BrkAdapterInterface {
 	 */
 	public function lookupObject(string $id, array $context = []): BrkLookupResult {
 		$this->logger->info(
-			'Procest BRK lookup deferred (no outbound connector bound)',
+			'Dossiq BRK lookup deferred (no outbound connector bound)',
 			['id' => $id, 'context' => $context]
 		);
 

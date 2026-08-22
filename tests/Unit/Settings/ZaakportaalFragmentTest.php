@@ -9,7 +9,7 @@
  * schemas (case, document, decision) the portal reads from.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Settings
+ * @package  OCA\Dossiq\Tests\Unit\Settings
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,22 +20,22 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Settings;
+namespace OCA\Dossiq\Tests\Unit\Settings;
 
-use OCA\Procest\Service\Settings\RegisterFragmentMerger;
+use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Integration-style unit tests for the zaakportaal register fragment.
  *
- * @covers \OCA\Procest\Service\SettingsService
+ * @covers \OCA\Dossiq\Service\SettingsService
  *
- * @uses \OCA\Procest\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class ZaakportaalFragmentTest extends TestCase {
 
@@ -51,7 +51,7 @@ class ZaakportaalFragmentTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$base = json_decode(
-			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/procest_register.json'),
+			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'),
 			true
 		);
 
@@ -94,14 +94,14 @@ class ZaakportaalFragmentTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testPortalSchemasJoinProcestRegister(): void {
+	public function testPortalSchemasJoinDossiqRegister(): void {
 		$schemas = $this->merged['components']['registers']['procest']['schemas'];
 		$this->assertContains('portaalBericht', $schemas);
 		$this->assertContains('portaalVerzoek', $schemas);
 		$this->assertContains('portaalNotificatieVoorkeur', $schemas);
 		// KCC fragment membership still present (additive union, not overwrite).
 		$this->assertContains('callbackRequest', $schemas);
-	}//end testPortalSchemasJoinProcestRegister()
+	}//end testPortalSchemasJoinDossiqRegister()
 
 	/**
 	 * The portal seed objects are concatenated onto the objects list.

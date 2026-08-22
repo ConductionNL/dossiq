@@ -24,20 +24,20 @@
  * line would pass the other three.
  *
  * @category Test
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  * @author   Conduction Development Team <info@conduction.nl>
  * @license  EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
- * @link     https://procest.app
+ * @link     https://conduction.nl
  */
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\StufController;
-use OCA\Procest\Service\Stuf\StufEnvelopeInspector;
-use OCA\Procest\Service\Stuf\StufMessageHandler;
-use OCA\Procest\Service\Stuf\StufMessageParser;
-use OCA\Procest\Service\Stuf\StufServices;
-use OCA\Procest\Service\Stuf\StufSoapRequestDispatcher;
+use OCA\Dossiq\Controller\StufController;
+use OCA\Dossiq\Service\Stuf\StufEnvelopeInspector;
+use OCA\Dossiq\Service\Stuf\StufMessageHandler;
+use OCA\Dossiq\Service\Stuf\StufMessageParser;
+use OCA\Dossiq\Service\Stuf\StufServices;
+use OCA\Dossiq\Service\Stuf\StufSoapRequestDispatcher;
 use OCP\AppFramework\Http;
 use OCP\IL10N;
 use OCP\IRequest;
@@ -48,7 +48,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Behavioural tests for StufController::inbound().
  *
- * @covers \OCA\Procest\Controller\StufController
+ * @covers \OCA\Dossiq\Controller\StufController
  */
 class StufControllerInboundTest extends TestCase {
 
@@ -136,7 +136,7 @@ class StufControllerInboundTest extends TestCase {
 		unset($services);
 
 		return new class(
-			'procest',
+			'dossiq',
 			$this->createMock(IRequest::class),
 			$instance,
 			$this->createMock(StufSoapRequestDispatcher::class),

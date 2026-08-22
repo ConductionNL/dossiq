@@ -1,6 +1,6 @@
 # Frontend unit tests (Vitest)
 
-Pure-logic frontend unit tests for Procest. The first targets are the
+Pure-logic frontend unit tests for Dossiq. The first targets are the
 doorlooptijd (processing-time) analytics helpers and the ISO 8601 duration
 helpers under `src/utils/`, whose exact computed numbers are only ever shown
 through rendered dashboards — never asserted at the value level.

@@ -1,4 +1,4 @@
-# procest: authz-bypass-fixes
+# dossiq: authz-bypass-fixes
 
 Tracked on procest#223 (done-spec audit umbrella). Base: `origin/development` @ eeba95e63.
 Worktree: /home/rubenlinde/wave2-worktrees/procest-authz
@@ -7,7 +7,7 @@ Worktree: /home/rubenlinde/wave2-worktrees/procest-authz
 
 ### Hole 1 — AdviceService IDOR — **CONFIRMED LIVE (audit correct)**
 - `submitAdvice` @ lib/Service/AdviceService.php:426 — **ZERO callers**. Grep across php/vue/js:
-  only its own definition (426, 487) + a `procest_register.json:4887` reference. Not routed.
+  only its own definition (426, 487) + a `dossiq_register.json:4887` reference. Not routed.
   (`AdviceController` has no `submitAdvice` method; `appinfo/routes.php` has no `advice#submitAdvice`.)
 - Guard `assertAdviceCallerIsAuthorized` @ :565 is called ONLY from :444 (submitAdvice) and :516 (cancelAdvice).
 - **LIVE path**: `appinfo/routes.php:314` `advice#transitionStatus` → `AdviceController::transitionStatus:89`
@@ -53,7 +53,7 @@ Worktree: /home/rubenlinde/wave2-worktrees/procest-authz
 - **Dead `submitAdvice` writes an invalid status** (`'received'` ∉ `VALID_STATUSES`).
 - **`cancelAdvice:500` is ALSO dead** (zero callers, unrouted) — so BOTH callers of the procest#17
   guard were dead. The entire guard subsystem was unreachable.
-- **`procest_register.json:4887` `submitAdvice` is a FALSE POSITIVE** — a declarative
+- **`dossiq_register.json:4887` `submitAdvice` is a FALSE POSITIVE** — a declarative
   `x-openregister-lifecycle` transition key on the unrelated `consultation` schema, no guard/class
   binding. Left untouched.
 - **`MandaatCheckService:91`** `if ($this->conflictService !== null)` — a second latent fail-open
@@ -64,7 +64,7 @@ Worktree: /home/rubenlinde/wave2-worktrees/procest-authz
 - **`composer phpstan` ends in `|| echo 'skipping'`** → PHPStan never fails the build. 135
   pre-existing errors on development. Out of scope; noted.
 
-## Baseline + delta (REAL output, php:8.3-cli container `procest-phpunit-83:local`)
+## Baseline + delta (REAL output, php:8.3-cli container `dossiq-phpunit-83:local`)
 - Fresh `composer install` in a clean worktree; `vendor/nextcloud/ocp/OCP` resolves (no dangling-
   symlink trap). Pre-existing composer.json quirk: `config.platform.php = 8.2.22` vs `require
   php ^8.3` → installed with `--ignore-platform-req=php` (env workaround, not a code change).

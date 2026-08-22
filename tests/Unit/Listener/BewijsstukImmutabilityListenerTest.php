@@ -14,7 +14,7 @@
  * ran) would fail the suite instead of passing it.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Listener
+ * @package  OCA\Dossiq\Tests\Unit\Listener
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -28,21 +28,21 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Listener;
+namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Procest\Listener\BewijsstukImmutabilityListener;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Subsidie\BewijsstukService;
+use OCA\Dossiq\Listener\BewijsstukImmutabilityListener;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Subsidie\BewijsstukService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Listener\BewijsstukImmutabilityListener
+ * @covers \OCA\Dossiq\Listener\BewijsstukImmutabilityListener
  *
- * @uses \OCA\Procest\Service\Subsidie\BewijsstukService
+ * @uses \OCA\Dossiq\Service\Subsidie\BewijsstukService
  */
 class BewijsstukImmutabilityListenerTest extends TestCase {
 	/**

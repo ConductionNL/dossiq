@@ -7,7 +7,7 @@
  * hearing scheduling, disposition submission, analytics, and authorization.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,18 +20,18 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\ComplaintAnalyticsController;
-use OCA\Procest\Controller\ComplaintCategoryController;
-use OCA\Procest\Controller\ComplaintController;
-use OCA\Procest\Controller\ComplaintDispositionController;
-use OCA\Procest\Service\Complaint\ComplaintAccessGuard;
-use OCA\Procest\Service\ComplaintAnalyticsService;
-use OCA\Procest\Service\ComplaintService;
-use OCA\Procest\Service\DispositionService;
-use OCA\Procest\Service\HearingService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Controller\ComplaintAnalyticsController;
+use OCA\Dossiq\Controller\ComplaintCategoryController;
+use OCA\Dossiq\Controller\ComplaintController;
+use OCA\Dossiq\Controller\ComplaintDispositionController;
+use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
+use OCA\Dossiq\Service\ComplaintAnalyticsService;
+use OCA\Dossiq\Service\ComplaintService;
+use OCA\Dossiq\Service\DispositionService;
+use OCA\Dossiq\Service\HearingService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -42,12 +42,12 @@ use PHPUnit\Framework\TestCase;
 /**
  * Unit tests for ComplaintController.
  *
- * @covers \OCA\Procest\Controller\ComplaintController
- * @covers \OCA\Procest\Controller\ComplaintAnalyticsController
- * @covers \OCA\Procest\Controller\ComplaintCategoryController
- * @covers \OCA\Procest\Controller\ComplaintDispositionController
+ * @covers \OCA\Dossiq\Controller\ComplaintController
+ * @covers \OCA\Dossiq\Controller\ComplaintAnalyticsController
+ * @covers \OCA\Dossiq\Controller\ComplaintCategoryController
+ * @covers \OCA\Dossiq\Controller\ComplaintDispositionController
  *
- * @uses \OCA\Procest\Service\Complaint\ComplaintAccessGuard
+ * @uses \OCA\Dossiq\Service\Complaint\ComplaintAccessGuard
  */
 class ComplaintControllerTest extends TestCase {
 
@@ -145,28 +145,28 @@ class ComplaintControllerTest extends TestCase {
 		);
 
 		$this->controller = new ComplaintController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			complaintService: $this->complaintService,
 			accessGuard: $accessGuard,
 		);
 
 		$this->analyticsController = new ComplaintAnalyticsController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			analyticsService: $this->analyticsService,
 			accessGuard: $accessGuard,
 		);
 
 		$this->categoryController = new ComplaintCategoryController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			settingsService: $this->settingsService,
 			accessGuard: $accessGuard,
 		);
 
 		$this->dispositionController = new ComplaintDispositionController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			complaintService: $this->complaintService,
 			dispositionService: $this->dispositionService,
@@ -207,7 +207,7 @@ class ComplaintControllerTest extends TestCase {
 		$unauthSession->method('getUser')->willReturn(null);
 
 		$controller = new ComplaintController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			complaintService: $this->complaintService,
 			accessGuard: new ComplaintAccessGuard(

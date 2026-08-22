@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Procest Tenant Seed Service
+ * Dossiq Tenant Seed Service
  *
  * Seeds standard templates (zaaktypen, mandaat-matrix, default roles) into a
  * freshly provisioned tenant schema. Reads canonical templates from the
- * existing procest register seed (LHS matrix, default zaaktypen) and writes
+ * existing dossiq register seed (LHS matrix, default zaaktypen) and writes
  * them under the tenant context.
  *
  * Persistence is intentionally thin — it logs the seed intent and relies on
@@ -14,7 +14,7 @@
  * service is the orchestration hook called during provisioning.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,14 +23,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-03-schema-provisioning/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use Psr\Log\LoggerInterface;
 
@@ -59,7 +59,7 @@ class TenantSeedService {
 	public function seedZaaktypeTemplates(string $schemaName, string $tier): array {
 		$templates = $this->resolveTemplatesForTier(tier: $tier);
 		$this->logger->info(
-			'Procest: seeding zaaktype templates into tenant schema',
+			'Dossiq: seeding zaaktype templates into tenant schema',
 			['schemaName' => $schemaName, 'tier' => $tier, 'count' => count($templates)]
 		);
 		return ['templates' => $templates];
@@ -74,7 +74,7 @@ class TenantSeedService {
 	 */
 	public function seedMandaatMatrix(string $schemaName): array {
 		$this->logger->info(
-			'Procest: seeding default mandaat-matrix into tenant schema',
+			'Dossiq: seeding default mandaat-matrix into tenant schema',
 			['schemaName' => $schemaName]
 		);
 
@@ -91,7 +91,7 @@ class TenantSeedService {
 	 */
 	public function createDefaultRoles(string $schemaName, array $roles): array {
 		$this->logger->info(
-			'Procest: creating default tenant roles',
+			'Dossiq: creating default tenant roles',
 			['schemaName' => $schemaName, 'roles' => $roles]
 		);
 		return $roles;

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Terugvordering Service.
+ * Dossiq Terugvordering Service.
  *
  * Clawback (terugvordering) management for over-disbursed advances under
  * AWB 4:57. Owns clawback-case creation on vaststelling, betaaltermijn /
@@ -10,7 +10,7 @@
  * persistence delegates to OpenRegister via SettingsService.
  *
  * @category Service
- * @package  OCA\Procest\Service\Subsidie
+ * @package  OCA\Dossiq\Service\Subsidie
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,16 +21,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Subsidie;
+namespace OCA\Dossiq\Service\Subsidie;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -177,7 +177,7 @@ class TerugvorderingService {
 		try {
 			return $objectService->saveObject(object: $record, register: $register, schema: $schema);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest subsidie: createClawbackCase failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq subsidie: createClawbackCase failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon terugvordering niet aanmaken');
 		}
 	}//end createClawbackCase()

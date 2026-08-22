@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Specialist Beschikbaarheid Refresh Job.
+ * Dossiq Specialist Beschikbaarheid Refresh Job.
  *
  * Periodically refreshes the cached specialist availability records. The
  * authoritative source (pipelinq telephony / HR system) pushes status through
@@ -12,7 +12,7 @@
  * leaving the existing (stale) cache in place.
  *
  * @category BackgroundJob
- * @package  OCA\Procest\BackgroundJob
+ * @package  OCA\Dossiq\BackgroundJob
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,18 +23,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T16
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\BackgroundJob;
+namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -106,7 +106,7 @@ class SpecialistBeschikbaarheidRefreshJob extends TimedJob {
 			$records = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['_limit' => 500]);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest: specialist availability refresh could not read records (keeping cache): ' . $e->getMessage(),
+				'Dossiq: specialist availability refresh could not read records (keeping cache): ' . $e->getMessage(),
 				['app' => Application::APP_ID],
 			);
 			return;
@@ -168,7 +168,7 @@ class SpecialistBeschikbaarheidRefreshJob extends TimedJob {
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest: could not age out stale specialist record: ' . $e->getMessage(),
+				'Dossiq: could not age out stale specialist record: ' . $e->getMessage(),
 				['app' => Application::APP_ID],
 			);
 		}

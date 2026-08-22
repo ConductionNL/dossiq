@@ -14,7 +14,7 @@
   Zero note/mention logic is reimplemented here (ADR-Leaf-First):
   `CnNotesTab` owns storage, autocomplete and chip rendering end to
   end. This wrapper only adds the one thing the library component
-  cannot know about — procest's own NC notification — by listening for
+  cannot know about — dossiq's own NC notification — by listening for
   the `mention` event and forwarding its payload
   ({ objectId, register, schema, noteId, mentionedUserIds }) to
   POST /api/notes/mention. Resolves `CnNotesTab` via the existing
@@ -83,7 +83,7 @@ export default {
 
 	methods: {
 		/**
-		 * Forward a saved note's mentions to procest's own notification
+		 * Forward a saved note's mentions to dossiq's own notification
 		 * endpoint. Best-effort: the note itself is already saved by
 		 * `CnNotesTab` at this point, so a failed notification must never
 		 * surface as an error to the user typing the note.
@@ -93,7 +93,7 @@ export default {
 		async onMention(payload) {
 			try {
 				await axios.post(
-					generateUrl('/apps/procest/api/notes/mention'),
+					generateUrl('/apps/dossiq/api/notes/mention'),
 					payload,
 				)
 			} catch (e) {

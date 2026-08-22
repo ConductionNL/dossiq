@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest schema annotation reconciler.
+ * Dossiq schema annotation reconciler.
  *
  * Merges each schema's declarative `x-openregister-*` annotation blocks
  * (calculations, references, lifecycle, aggregations, object-source) from the
@@ -17,10 +17,10 @@
  * preserved, and idempotent: a schema whose live configuration already matches
  * is left untouched.
  *
- * Split out of {@see \OCA\Procest\Service\SettingsService}.
+ * Split out of {@see \OCA\Dossiq\Service\SettingsService}.
  *
  * @category Service
- * @package  OCA\Procest\Service\Settings
+ * @package  OCA\Dossiq\Service\Settings
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -28,7 +28,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -38,7 +38,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Settings;
+namespace OCA\Dossiq\Service\Settings;
 
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -79,7 +79,7 @@ class SchemaAnnotationReconciler {
 			$schemaMapper = $this->container->get('OCA\OpenRegister\Db\SchemaMapper');
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: Could not access OpenRegister SchemaMapper for declarative reconcile',
+				'Dossiq: Could not access OpenRegister SchemaMapper for declarative reconcile',
 				['exception' => $e->getMessage()]
 			);
 			return 0;
@@ -100,7 +100,7 @@ class SchemaAnnotationReconciler {
 		}//end foreach
 
 		$this->logger->info(
-			'Procest: Reconciled declarative schema configuration from register JSON',
+			'Dossiq: Reconciled declarative schema configuration from register JSON',
 			['written' => $written]
 		);
 
@@ -114,7 +114,7 @@ class SchemaAnnotationReconciler {
 	 *                                      the register JSON is missing or invalid.
 	 */
 	private function loadDeclarativeRegisterSchemas(): ?array {
-		$configPath = __DIR__ . '/../../Settings/procest_register.json';
+		$configPath = __DIR__ . '/../../Settings/dossiq_register.json';
 		if (file_exists($configPath) === false) {
 			return null;
 		}
@@ -230,7 +230,7 @@ class SchemaAnnotationReconciler {
 			$schemaMapper->update($schema);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: Failed to reconcile declarative configuration for schema ' . $slug,
+				'Dossiq: Failed to reconcile declarative configuration for schema ' . $slug,
 				['exception' => $e->getMessage()]
 			);
 			return 0;

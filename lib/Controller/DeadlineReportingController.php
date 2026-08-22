@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest DeadlineReportingController.
+ * Dossiq DeadlineReportingController.
  *
  * REST surface for the termijnbewaking reporting endpoints (dashboard
  * KPI, quarterlyReport, annualStatement dwangsommen). Defers all logic to
  * {@see DeadlineReportingService} (ADR-022).
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,16 +19,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\DeadlineReportingService;
+use OCA\Dossiq\Service\DeadlineReportingService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

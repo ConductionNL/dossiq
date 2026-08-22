@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest MandaatEscalatieService.
+ * Dossiq MandaatEscalatieService.
  *
  * Escalation engine for mandate-denied decisions: creates an escalation
  * row pointing at the next-higher mandate holder, supports approval and
@@ -9,7 +9,7 @@
  * mandate holder changes.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,17 +20,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 

@@ -3,12 +3,12 @@
 /**
  * VTH Schema Unit Tests
  *
- * Validates that the procest_register.json schema configuration contains all
+ * Validates that the dossiq_register.json schema configuration contains all
  * required VTH (Vergunningen, Toezicht, Handhaving) schema definitions and
  * that the VTH template files are valid JSON.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Settings
+ * @package  OCA\Dossiq\Tests\Unit\Settings
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -16,24 +16,24 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Settings;
+namespace OCA\Dossiq\Tests\Unit\Settings;
 
 use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests verifying the VTH workflow configuration schema and template files.
  *
- * @covers \OCA\Procest\Service\SettingsService
+ * @covers \OCA\Dossiq\Service\SettingsService
  */
 class VthSchemaTest extends TestCase {
 
 	/**
-	 * The decoded procest_register data.
+	 * The decoded dossiq_register data.
 	 *
 	 * @var array
 	 */
@@ -52,7 +52,7 @@ class VthSchemaTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$schemaFilePath = __DIR__ . '/../../../lib/Settings/procest_register.json';
+		$schemaFilePath = __DIR__ . '/../../../lib/Settings/dossiq_register.json';
 		$content = file_get_contents($schemaFilePath);
 		$this->registerData = json_decode($content, true);
 		$this->vthTemplatesDir = __DIR__ . '/../../../lib/Settings/vth-templates';
@@ -60,7 +60,7 @@ class VthSchemaTest extends TestCase {
 	}//end setUp()
 
 	/**
-	 * Test that all four VTH schemas are registered in procest_register.json.
+	 * Test that all four VTH schemas are registered in dossiq_register.json.
 	 *
 	 * @return void
 	 */
@@ -78,7 +78,7 @@ class VthSchemaTest extends TestCase {
 			$this->assertArrayHasKey(
 				$schemaName,
 				$schemas,
-				"VTH schema '{$schemaName}' must be defined in procest_register.json"
+				"VTH schema '{$schemaName}' must be defined in dossiq_register.json"
 			);
 		}
 

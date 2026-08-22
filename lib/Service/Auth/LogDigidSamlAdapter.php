@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest DigiD SAML Adapter — dormant logging implementation.
+ * Dossiq DigiD SAML Adapter — dormant logging implementation.
  *
  * Ships as the default DI binding for {@see DigidSamlAdapterInterface}.
  * Logs every call at warning level and throws a `RuntimeException` so the
@@ -14,7 +14,7 @@
  * DI binding to the active implementation.
  *
  * @category Service
- * @package  OCA\Procest\Service\Auth
+ * @package  OCA\Dossiq\Service\Auth
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,14 +25,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/zaakportaal-mijngemeente/spec.md#requirement-digid-and-eherkenning-authentication-with-wdo-mandated-trust-levels
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Auth;
+namespace OCA\Dossiq\Service\Auth;
 
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
@@ -45,7 +45,7 @@ final class LogDigidSamlAdapter implements DigidSamlAdapterInterface {
 	/**
 	 * App id for IAppConfig look-ups.
 	 */
-	public const APP_ID = 'procest';
+	public const APP_ID = 'dossiq';
 
 	/**
 	 * Feature-flag key.
@@ -84,7 +84,7 @@ final class LogDigidSamlAdapter implements DigidSamlAdapterInterface {
 				'response_len' => strlen($samlResponse),
 				'relay_state' => $relayState,
 				'activation' => 'configure openconnector DigiD broker + private key + cert; '
-					. 'occ config:app:set procest digid.feature_flag --value 1; '
+					. 'occ config:app:set dossiq digid.feature_flag --value 1; '
 					. 'swap DI binding to the active SamlAdapter implementation.',
 			]
 		);
