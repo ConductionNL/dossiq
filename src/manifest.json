@@ -2589,6 +2589,15 @@
 			"_note": "SLA / processing-time analytics. Was nominally type:dashboard but its config was ONE 12x12 widget whose slot rendered a complete second dashboard with its own <h2> — the dashboard-in-dashboard antipattern (hydra#316). Now five widgets over one shared store (src/store/modules/doorlooptijd.js). The presentational sub-components in views/doorlooptijd/components/ are unchanged; only their host moved.",
 			"config": {
 				"description": "SLA adherence and processing time analysis",
+				"headerActions": [
+					{
+						"id": "back-to-dashboard",
+						"label": "Dashboard",
+						"type": "navigate",
+						"route": "Dashboard",
+						"icon": "ViewDashboardOutline"
+					}
+				],
 				"pageFilters": [
 					{
 						"key": "period",
