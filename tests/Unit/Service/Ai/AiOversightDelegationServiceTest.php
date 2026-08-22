@@ -249,5 +249,84 @@ class AiOversightDelegationServiceTest extends TestCase {
 
     }//end testUnhandledEventReportsFalse()
 
+    /**
+     * A scalar (non-string) value is rendered rather than dropped.
+     *
+     * `confidence`-shaped fields arrive as numbers; flatten() has a branch for
+     * them that nothing exercised.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
+     */
+    public function testScalarValuesAreRendered(): void {
+        $this->service()->delegate($this->entry(['suggestion' => 42, 'actualValue' => 7.5]));
+
+        $record = $this->dispatched->getRecord();
+        $this->assertSame('42', $record['suggestion']);
+        $this->assertSame('7.5', $record['actualValue']);
+
+    }//end testScalarValuesAreRendered()
+
+
+    /**
+     * An empty array renders as an empty string, not as "[]".
+     *
+     * @return void
+     *
+     * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
+     */
+    public function testEmptyArrayRendersEmpty(): void {
+        $this->service()->delegate($this->entry(['actualValue' => []]));
+
+        $this->assertSame('', $this->dispatched->getRecord()['actualValue']);
+
+    }//end testEmptyArrayRendersEmpty()
+
+
+    /**
+     * An entry that carries its own id uses it as the reference.
+     *
+     * That is the stable half of idempotency: a stored entry has an id, and the
+     * sha1 fallback is only for entries that do not.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
+     */
+    public function testEntryIdIsUsedAsTheReference(): void {
+        $this->service()->delegate($this->entry(['id' => 'entry-uuid-1']));
+
+        $this->assertSame(
+            'procest:aiAuditEntry:entry-uuid-1',
+            $this->dispatched->getRecord()['externalRef']
+        );
+
+    }//end testEntryIdIsUsedAsTheReference()
+
+
+    /**
+     * A dispatcher that throws is reported as not-delegated, never re-raised.
+     *
+     * The handler has already acted by this point; an audit failure must not
+     * become a functional one.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
+     */
+    public function testDispatchFailureIsSwallowed(): void {
+        $dispatcher = $this->createMock(IEventDispatcher::class);
+        $dispatcher->method('dispatchTyped')
+            ->willThrowException(new \RuntimeException('bus unavailable'));
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())->method('error');
+
+        $service = new AiOversightDelegationService($dispatcher, $logger);
+
+        $this->assertFalse($service->delegate($this->entry()));
+
+    }//end testDispatchFailureIsSwallowed()
+
 
 }//end class

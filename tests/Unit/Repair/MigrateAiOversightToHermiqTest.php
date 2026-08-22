@@ -147,5 +147,75 @@ class MigrateAiOversightToHermiqTest extends TestCase {
 
     }//end testItHasAName()
 
+    /**
+     * A row that is not an array is skipped, not fed to the delegator.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
+     */
+    public function testNonArrayRowIsSkipped(): void {
+        $audit = $this->createMock(AiAuditLog::class);
+        $audit->method('list')->willReturn(
+            ['entries' => ['not-an-array'], 'total' => null, 'limit' => 200, 'offset' => 0]
+        );
+        $oversight = $this->createMock(AiOversightDelegationService::class);
+        $oversight->expects($this->never())->method('delegate');
+
+        $output = $this->createMock(IOutput::class);
+        $output->expects($this->once())->method('info')
+            ->with($this->stringContains('0 decision(s) sent to hermiq, 1 entry'));
+
+        (new MigrateAiOversightToHermiq($audit, $oversight))->run($output);
+
+    }//end testNonArrayRowIsSkipped()
+
+
+    /**
+     * An unreadable audit log warns and returns instead of failing the upgrade.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
+     */
+    public function testUnreadableAuditLogWarnsAndReturns(): void {
+        $audit = $this->createMock(AiAuditLog::class);
+        $audit->method('list')->willThrowException(new \RuntimeException('register gone'));
+
+        $output = $this->createMock(IOutput::class);
+        $output->expects($this->once())->method('warning')
+            ->with($this->stringContains('could not read the audit log'));
+        $output->expects($this->never())->method('info');
+
+        (new MigrateAiOversightToHermiq($audit, $this->createMock(AiOversightDelegationService::class)))
+            ->run($output);
+
+    }//end testUnreadableAuditLogWarnsAndReturns()
+
+
+    /**
+     * A delegation that throws is contained per entry, not per upgrade.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
+     */
+    public function testThrowingDelegationIsContained(): void {
+        $audit = $this->createMock(AiAuditLog::class);
+        $audit->method('list')->willReturn(
+            ['entries' => [['userAction' => 'accepted', 'caseId' => 'c-1']],
+             'total' => null, 'limit' => 200, 'offset' => 0]
+        );
+        $oversight = $this->createMock(AiOversightDelegationService::class);
+        $oversight->method('delegate')->willThrowException(new \RuntimeException('boom'));
+
+        $output = $this->createMock(IOutput::class);
+        $output->expects($this->once())->method('warning')
+            ->with($this->stringContains('entry failed'));
+
+        (new MigrateAiOversightToHermiq($audit, $oversight))->run($output);
+
+    }//end testThrowingDelegationIsContained()
+
 
 }//end class
