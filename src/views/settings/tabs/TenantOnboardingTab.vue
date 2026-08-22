@@ -2,14 +2,17 @@
   SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
   SPDX-License-Identifier: EUPL-1.2
 
-  Tenant Onboarding Dashboard — 7-step progress, go-live readiness check,
-  activate-tenant action. Renders the TenantOnboardingService progress and
-  validateGoLive() output (chain member 07).
+  Tenant onboarding — 7-step progress, go-live readiness check, activate-tenant
+  action. Renders the TenantOnboardingService progress and validateGoLive()
+  output (chain member 07).
+
+  A settings SECTION, not a page: onboarding a tenant is one-time setup, and it
+  sat in the daily operational navigation as a top-level entry. The section
+  frame supplies the heading; this component renders its controls and body only.
 -->
 <template>
 	<div class="tenant-onboarding">
 		<div class="tenant-onboarding__header">
-			<h2>{{ t('procest', 'Tenant onboarding') }}</h2>
 			<div class="tenant-onboarding__controls">
 				<NcSelect
 					:modelValue="selectedTenant"
@@ -178,7 +181,7 @@ const STEP_LABELS = {
 }
 
 export default {
-	name: 'TenantOnboardingDashboard',
+	name: 'TenantOnboardingTab',
 	components: {
 		NcButton,
 		NcEmptyContent,

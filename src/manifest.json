@@ -339,14 +339,6 @@
 			"order": 71
 		},
 		{
-			"id": "TenantOnboardingMenu",
-			"label": "Organisation onboarding",
-			"icon": "AccountPlusOutline",
-			"route": "TenantOnboardingDashboard",
-			"section": "settings",
-			"order": 92
-		},
-		{
 			"id": "SubstitutionMenu",
 			"label": "Substitution",
 			"icon": "AccountSwitchOutline",
@@ -4808,14 +4800,6 @@
 				"widget-td-quarterly": "TdQuarterlyWidget",
 				"widget-td-annual": "TdAnnualWidget"
 			}
-		},
-		{
-			"id": "TenantOnboardingDashboard",
-			"route": "/tenant-onboarding",
-			"type": "custom",
-			"title": "Tenant onboarding",
-			"component": "TenantOnboardingDashboard",
-			"_note": "Tenant onboarding wizard view: a per-tenant 7-step progress bar plus a go-live readiness check and an activate-tenant action, rendering TenantOnboardingService progress and validateGoLive() output. This is a stateful procedure/checklist surface driven by a service, not an object listing, so no standard page type can express the step progress and go-live gating."
 		},
 		{
 			"id": "SubstitutionSettings",

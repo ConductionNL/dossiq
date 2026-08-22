@@ -38,7 +38,6 @@ import PmCaseTypeFilter from './views/processMining/PmCaseTypeFilter.vue'
 import PmDwellChartWidget from './views/processMining/PmDwellChartWidget.vue'
 import PmKpiWidget from './views/processMining/PmKpiWidget.vue'
 import PmThroughputChartWidget from './views/processMining/PmThroughputChartWidget.vue'
-import TenantOnboardingDashboard from './views/dashboard/TenantOnboardingDashboard.vue'
 // --- Termijnbewaking + Tenant dashboards (chain-builds 06/2026). ---
 // Archief dashboard retired (migrate-archival-to-or, ADR-022): the archivist
 // views are owned by OpenRegister.
@@ -159,7 +158,6 @@ export default {
 	PmDwellChartWidget, // dwell time by status (CnChartWidget bar)
 	PmThroughputChartWidget, // weekly throughput (CnChartWidget line)
 	PmBottleneckTableWidget, // bottleneck ranking (ad-hoc row shape, no object-list leaf applies)
-	TenantOnboardingDashboard, // SaaS tenant onboarding (7-step + go-live)
 
 	// --- Migration cost: deferred to a follow-up. ---
 	VoorstelDetailView, // parafeerroute multi-step approver flow
