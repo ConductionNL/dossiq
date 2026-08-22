@@ -26,8 +26,8 @@ import {
 	getAtRiskCases,
 	parseDurationToDays,
 } from '../../utils/doorlooptijdHelpers.js'
-import { useObjectStore } from './object.js'
 import { initializeStores } from '../store.js'
+import { useObjectStore } from './object.js'
 
 /**
  * Resolve a period preset into a `{ from, to }` date pair.
@@ -37,7 +37,7 @@ import { initializeStores } from '../store.js'
  */
 export function resolveRange(preset) {
 	const now = new Date()
-	let from = null
+	let from
 	switch (preset) {
 	case '3m': from = new Date(now.getFullYear(), now.getMonth() - 3, 1); break
 	case '6m': from = new Date(now.getFullYear(), now.getMonth() - 6, 1); break
@@ -71,6 +71,7 @@ export const useDoorlooptijdStore = defineStore('doorlooptijd', {
 		statusTypes: [],
 		loading: true,
 		loaded: false,
+		error: null,
 		inflight: null,
 	}),
 
@@ -124,7 +125,10 @@ export const useDoorlooptijdStore = defineStore('doorlooptijd', {
 					this.statusTypes = r[2].status === 'fulfilled' ? r[2].value || [] : []
 					this.loaded = true
 				} catch (err) {
-					console.error('Doorlooptijd data fetch error:', err)
+					// Surfaced through state rather than the console: the widgets
+					// render an empty state from it, and a console-only failure is
+					// invisible to the user staring at a blank dashboard.
+					this.error = err?.message || 'Could not load processing-time data.'
 				} finally {
 					this.loading = false
 					this.inflight = null

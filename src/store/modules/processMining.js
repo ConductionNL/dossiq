@@ -31,7 +31,7 @@ import { fetchProcessMiningReport } from '../../services/processMiningApi.js'
 export function resolvePeriod(preset) {
 	const now = new Date()
 	const iso = (d) => d.toISOString().slice(0, 10)
-	let from = null
+	let from
 	switch (preset) {
 	case '3m':
 		from = new Date(now.getFullYear(), now.getMonth() - 3, 1)
@@ -60,9 +60,15 @@ export const useProcessMiningStore = defineStore('processMining', {
 	}),
 
 	getters: {
-		/** @return {Array<object>} Per-case-type report blocks, never null. */
+		/**
+		 * @param state
+		 * @return {Array<object>} Per-case-type report blocks, never null.
+		 */
 		caseTypesList: (state) => state.report?.caseTypes || [],
-		/** @return {Array<object>} Weekly throughput points, never null. */
+		/**
+		 * @param state
+		 * @return {Array<object>} Weekly throughput points, never null.
+		 */
 		throughputTrend: (state) => state.report?.throughputTrend || [],
 	},
 

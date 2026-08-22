@@ -16,10 +16,10 @@
 				:label="t('procest', 'Quarter (YYYY-Qn)')"
 				:placeholder="t('procest', 'e.g. 2026-Q2')"
 				@update:modelValue="(v) => (quarter = v)" />
-			<NcButton type="primary" @click="load">
+			<NcButton variant="primary" @click="load">
 				{{ t('procest', 'Load report') }}
 			</NcButton>
-			<NcButton :disabled="!quarterly" type="secondary" @click="downloadCsv">
+			<NcButton :disabled="!quarterly" variant="secondary" @click="downloadCsv">
 				<template #icon>
 					<FileExport :size="18" />
 				</template>
@@ -62,12 +62,12 @@
 </template>
 
 <script>
+import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import FileExport from 'vue-material-design-icons/FileExport.vue'
-import { translate as t } from '@nextcloud/l10n'
-import { tdWidgetMixin } from './tdWidgetMixin.js'
 import { currentQuarter } from '../../store/modules/termijnDashboard.js'
+import { tdWidgetMixin } from './tdWidgetMixin.js'
 
 const CSV_HEADERS = [
 	'case_type', 'totaal', 'binnenTermijnPercent', 'overschrijdingen',
@@ -81,21 +81,25 @@ export default {
 	data() {
 		return { quarter: currentQuarter() }
 	},
+
 	computed: {
 		/** @return {object|null} The loaded quarterly report. */
 		quarterly() {
 			return this.tdStore.quarterly
 		},
 	},
+
 	mounted() {
 		this.load()
 	},
+
 	methods: {
 		t,
 		/** Load the report for the entered quarter. */
 		load() {
 			this.tdStore.loadQuarterly(this.quarter)
 		},
+
 		/** Build and download the per-case-type CSV for the loaded quarter. */
 		downloadCsv() {
 			const perType = this.quarterly?.perType

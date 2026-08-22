@@ -46,7 +46,7 @@ import {
 	PublicAppointmentPage,
 	PublicFederatedTransferPage,
 	PublicStatusPage,
-	TenantOnboardingDashboard,
+	TenantOnboardingAdminSettings,
 	TermijnDashboard,
 } from './helpers/page-components'
 
@@ -74,8 +74,16 @@ test.describe('Dashboard page shells', () => {
 		await expectPageShell(page, ProcessMiningDashboard, 'Process mining')
 	})
 
-	test('tenant onboarding dashboard renders its heading', async ({ page }) => {
-		await expectPageShell(page, TenantOnboardingDashboard, 'Tenant onboarding')
+	// Tenant onboarding was retired as an app page by page-topology-cleanup (B3)
+	// and is now a section inside the ADMIN settings surface — an absolute
+	// Nextcloud path, not an app route, so navToRoute does not apply.
+	test('tenant onboarding renders as an administration section', async ({
+		page,
+	}) => {
+		await page.goto(`/index.php${TenantOnboardingAdminSettings}`)
+		await expect(
+			page.getByRole('heading', { name: /Tenant.?onboarding/i }).first(),
+		).toBeVisible()
 	})
 
 	test('termijn dashboard renders its deadline-monitoring heading', async ({

@@ -12,9 +12,9 @@
  * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
  */
 import axios from '@nextcloud/axios'
+import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import { defineStore } from 'pinia'
-import { translate as t } from '@nextcloud/l10n'
 
 /**
  * The quarter the current date falls in, as `YYYY-Qn`.

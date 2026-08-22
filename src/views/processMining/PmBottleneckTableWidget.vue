@@ -49,8 +49,8 @@
 </template>
 
 <script>
-import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { translate as t } from '@nextcloud/l10n'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { pmWidgetMixin } from './pmWidgetMixin.js'
 import { buildBottleneckRows } from './processMiningShaping.js'
 
@@ -64,6 +64,7 @@ export default {
 			return buildBottleneckRows(this.pmCaseTypes, 10)
 		},
 	},
+
 	methods: { t },
 }
 </script>

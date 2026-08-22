@@ -50,8 +50,12 @@ export const VerwerkingenOverview = '/verwerkingen'
 /** `src/views/workflow-board/WorkflowBoard.vue` — the kanban status board. */
 export const WorkflowBoard = '/workflow-board'
 
-/** `src/views/settings/SubstitutionSettings.vue` — self-service vervanging (manifest page `SubstitutionSettings`). */
-export const SubstitutionSettings = '/substitution'
+/**
+ * `src/views/settings/SubstitutionSettings.vue` — self-service vervanging.
+ * Retired as an app page by page-topology-cleanup (B4); it is now a PERSONAL
+ * SETTING, so this is an absolute Nextcloud settings path, not an app route.
+ */
+export const SubstitutionPersonalSettings = '/settings/user/procest'
 
 /** `src/views/admin/SubstitutionAdmin.vue` — the coordinator substitution console (manifest page `SubstitutionAdmin`). */
 export const SubstitutionAdmin = '/substitution-admin'
@@ -59,8 +63,11 @@ export const SubstitutionAdmin = '/substitution-admin'
 /** Manifest `type: "dashboard"` page — bottleneck analysis; heading comes from the page title, widgets from `src/views/processMining/`. */
 export const ProcessMiningDashboard = '/process-mining'
 
-/** `src/views/dashboard/TenantOnboardingDashboard.vue` — SaaS tenant onboarding; renders `<h2>Tenant onboarding</h2>`. */
-export const TenantOnboardingDashboard = '/tenant-onboarding'
+/**
+ * SaaS tenant onboarding. Retired as an app page by page-topology-cleanup (B3);
+ * it is now a section inside the ADMIN settings surface.
+ */
+export const TenantOnboardingAdminSettings = '/settings/admin/procest'
 
 /** Manifest `type: "dashboard"` page — AWB termijnbewaking KPIs + quarterly/annual reports; heading comes from the page title, widgets from `src/views/termijn/`. */
 export const TermijnDashboard = '/termijn-dashboard'

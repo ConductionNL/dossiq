@@ -25,8 +25,8 @@
 
 <script>
 import { CnChartWidget } from '@conduction/nextcloud-vue'
-import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { translate as t } from '@nextcloud/l10n'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { pmWidgetMixin } from './pmWidgetMixin.js'
 import { buildDwellCategories, buildDwellSeries } from './processMiningShaping.js'
 
@@ -39,10 +39,12 @@ export default {
 		series() {
 			return buildDwellSeries(this.pmPrimaryCaseType?.dwellTime, t('procest', 'Median hours'))
 		},
+
 		/** @return {Array<string>} Status names along the x-axis. */
 		categories() {
 			return buildDwellCategories(this.pmPrimaryCaseType?.dwellTime)
 		},
+
 		/** @return {object} ApexCharts options. */
 		options() {
 			return {
@@ -53,6 +55,7 @@ export default {
 			}
 		},
 	},
+
 	methods: { t },
 }
 </script>

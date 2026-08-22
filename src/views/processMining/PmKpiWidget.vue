@@ -59,9 +59,9 @@
 
 <script>
 import { CnKpiGrid, CnStatsBlock } from '@conduction/nextcloud-vue'
+import { translate as t } from '@nextcloud/l10n'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
-import { translate as t } from '@nextcloud/l10n'
 import { pmWidgetMixin } from './pmWidgetMixin.js'
 import { buildKpiSummary } from './processMiningShaping.js'
 
@@ -74,6 +74,7 @@ export default {
 		kpiSummary() {
 			return buildKpiSummary(this.pmStore.report)
 		},
+
 		/** @return {string} "Status (Nh)" for the worst bottleneck, or an em dash. */
 		topBottleneckLabel() {
 			const top = this.kpiSummary.topBottleneck
@@ -81,6 +82,7 @@ export default {
 			return `${top.statusName} (${top.medianHours}h)`
 		},
 	},
+
 	methods: { t },
 }
 </script>

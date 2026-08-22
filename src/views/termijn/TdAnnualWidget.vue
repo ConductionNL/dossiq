@@ -13,7 +13,7 @@
 				:modelValue="String(year)"
 				:label="t('procest', 'Year')"
 				@update:modelValue="onYear" />
-			<NcButton type="primary" @click="load">
+			<NcButton variant="primary" @click="load">
 				{{ t('procest', 'Load audit') }}
 			</NcButton>
 		</div>
@@ -36,9 +36,9 @@
 </template>
 
 <script>
+import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { translate as t } from '@nextcloud/l10n'
 import { tdWidgetMixin } from './tdWidgetMixin.js'
 
 export default {
@@ -48,20 +48,24 @@ export default {
 	data() {
 		return { year: new Date().getFullYear() }
 	},
+
 	computed: {
 		/** @return {object|null} The loaded annual audit. */
 		annual() {
 			return this.tdStore.annual
 		},
+
 		/** @return {number} Total dwangsom in euros (the API reports cents). */
 		totalEuros() {
 			const cents = this.annual?.summary?.totalCents
 			return cents ? cents / 100 : 0
 		},
 	},
+
 	mounted() {
 		this.load()
 	},
+
 	methods: {
 		t,
 		/**
@@ -73,6 +77,7 @@ export default {
 		onYear(v) {
 			this.year = Number(v) || this.year
 		},
+
 		/** Load the audit for the entered year. */
 		load() {
 			this.tdStore.loadAnnual(this.year)

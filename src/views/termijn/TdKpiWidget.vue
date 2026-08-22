@@ -65,9 +65,9 @@
 
 <script>
 import { CnKpiGrid, CnStatsBlock } from '@conduction/nextcloud-vue'
+import { translate as t } from '@nextcloud/l10n'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
-import { translate as t } from '@nextcloud/l10n'
 import { tdWidgetMixin } from './tdWidgetMixin.js'
 
 export default {
@@ -80,12 +80,15 @@ export default {
 			return this.tdStore.kpi
 		},
 	},
+
 	watch: {
 		tdCaseType: 'reload',
 	},
+
 	mounted() {
 		this.reload()
 	},
+
 	methods: {
 		t,
 		/** Ask the store for the KPI block scoped to the header's case type. */

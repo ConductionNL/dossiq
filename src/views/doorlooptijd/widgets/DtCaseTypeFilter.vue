@@ -19,8 +19,8 @@
 </template>
 
 <script>
-import NcSelect from '@nextcloud/vue/components/NcSelect'
 import { translate as t } from '@nextcloud/l10n'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
 import { useDoorlooptijdStore } from '../../../store/modules/doorlooptijd.js'
 
 export default {
@@ -38,6 +38,7 @@ export default {
 		options() {
 			return this.dtStore.caseTypesWithSla.map((ct) => ({ id: ct.id, label: ct.title || ct.name }))
 		},
+
 		/** @return {object|null} The option matching the context, or null. */
 		selected() {
 			const cur = this.workspace?.caseType

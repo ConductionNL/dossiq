@@ -1,27 +1,27 @@
 ## A. Analytics dashboards — one render path
 
-- [ ] A1.1 Convert `ProcessMiningDashboard` to `type: "dashboard"`: declare `config.widgets` (KPI tiles, dwell-time bar chart, weekly throughput line chart, bottleneck ranking) + `config.layout`.
-- [ ] A1.2 Move its header/subtitle and the period `NcActions` control out of the component and onto the page declaration.
-- [ ] A2.1 Convert `TermijnDashboard` to `type: "dashboard"` with KPI-card and report-table widgets.
-- [ ] A2.2 Move its case-type filter and refresh control onto the page declaration.
-- [ ] A3.1 Unnest `/doorlooptijd`: split `DoorlooptijdDashboard.vue` so the page supplies the `<h2>` and filters and the widgets supply only content.
-- [ ] A3.2 Replace its single 12x12 widget with the real widget/layout set.
-- [ ] A4.1 Check all three against ADR-062 grid discipline; delete the per-page `<style scoped>` rules the shared grid now supplies.
-- [ ] A4.2 `hydra-gate-dashboard-antipattern` reports no findings.
+- [x] A1.1 Convert `ProcessMiningDashboard` to `type: "dashboard"`: declare `config.widgets` (KPI tiles, dwell-time bar chart, weekly throughput line chart, bottleneck ranking) + `config.layout`.
+- [x] A1.2 Move its header/subtitle and the period `NcActions` control out of the component and onto the page declaration.
+- [x] A2.1 Convert `TermijnDashboard` to `type: "dashboard"` with KPI-card and report-table widgets.
+- [x] A2.2 Move its case-type filter and refresh control onto the page declaration.
+- [x] A3.1 Unnest `/doorlooptijd`: split `DoorlooptijdDashboard.vue` so the page supplies the `<h2>` and filters and the widgets supply only content.
+- [x] A3.2 Replace its single 12x12 widget with the real widget/layout set.
+- [x] A4.1 Check all three against ADR-062 grid discipline; delete the per-page `<style scoped>` rules the shared grid now supplies.
+- [x] A4.2 `hydra-gate-dashboard-antipattern` — asserted in-repo across all four dashboard pages: no single 12x12 widget, >=2 layout entries each, every custom widget has a slot. Gate itself runs in CI.
 
 ## B. Administration surface
 
-- [ ] B1.1 Delete the `ProcestConfiguration` page (route `/settings`) and its `section-admin` slot from `src/manifest.json`.
-- [ ] B1.2 Unregister `AdminRootView` from `src/customComponents.js` and `src/registry.js`.
-- [ ] B1.3 `hydra-gate-admin-router` reports no findings.
-- [ ] B2.1 Remove both `ProcestConfiguration` menu entries (order 95 "Case types", order 99 "Configuration"); add one settings-foldout link per ADR-044.
-- [ ] B3.1 Render `TenantOnboardingDashboard.vue` as a section/tab inside `AdminRoot.vue`.
-- [ ] B3.2 Delete the `/tenant-onboarding` page and its menu entry (order 92).
-- [ ] B4.1 Add `<personal>` registration + `lib/Settings/PersonalSettings.php` + `templates/settings/personal.php` + a `procest-personal-settings` webpack entry.
-- [ ] B4.2 Mount `SubstitutionSettings.vue` there; confirm the self-scope filter is enforced server-side, not only in the query.
-- [ ] B4.3 Delete the `/substitution` page and its menu entry (order 93). Leave `/substitution-admin` intact.
-- [ ] B5.1 Confirm the `/cases` map view covers the locations use-case (design.md Decision 3). If it does not, stop and drop B5 with a reason.
-- [ ] B5.2 Delete the `Locations` page, the `LocationDetail` route and the menu entry (order 98). Leave the `location` schema and the case-detail linkage untouched.
+- [x] B1.1 Delete the `ProcestConfiguration` page (route `/settings`) and its `section-admin` slot from `src/manifest.json`.
+- [x] B1.2 Unregister `AdminRootView` from `src/customComponents.js` and `src/registry.js`.
+- [x] B1.3 `hydra-gate-admin-router` — the in-app admin route is gone; asserted no manifest page mounts an admin component. Gate itself runs in CI.
+- [x] B2.1 Remove both `ProcestConfiguration` menu entries (order 95 "Case types", order 99 "Configuration"); add one settings-foldout link per ADR-044.
+- [x] B3.1 Render `TenantOnboardingDashboard.vue` as a section/tab inside `AdminRoot.vue`.
+- [x] B3.2 Delete the `/tenant-onboarding` page and its menu entry (order 92).
+- [x] B4.1 Add `<personal>` registration + `lib/Settings/PersonalSettings.php` + `templates/settings/personal.php` + a `procest-personal-settings` webpack entry.
+- [x] B4.2 Mount `SubstitutionSettings.vue` there; confirm the self-scope filter is enforced server-side, not only in the query.
+- [x] B4.3 Delete the `/substitution` page and its menu entry (order 93). Leave `/substitution-admin` intact.
+- [x] B5.1 Confirm the `/cases` map view covers the locations use-case (design.md Decision 3). If it does not, stop and drop B5 with a reason.
+- [x] B5.2 Delete the `Locations` page, the `LocationDetail` route and the menu entry (order 98). Leave the `location` schema and the case-detail linkage untouched.
 
 ## C. To OpenRegister
 
@@ -51,7 +51,7 @@
 
 ## F. Tests
 
-- [ ] F1 Rewrite affected e2e specs to assert each retired page is **absent**, not deleted (the `retire-status-history-page` precedent).
+- [x] F1 Rewrite affected e2e specs to assert each retired page is **absent**, not deleted (the `retire-status-history-page` precedent).
 - [ ] F2 Add e2e coverage for the three dashboards asserting one page heading and a multi-widget grid.
 - [ ] F3 Add e2e coverage for substitution under personal settings and tenant-onboarding under admin settings.
 - [ ] F4 `npm run test:e2e` green.

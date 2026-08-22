@@ -22,7 +22,7 @@
 			<p>
 				{{ t('procest', 'No SLA targets configured. Set processing deadlines on case types in Settings to enable compliance tracking.') }}
 			</p>
-			<NcButton type="primary" @click="goToSettings">
+			<NcButton variant="primary" @click="goToSettings">
 				{{ t('procest', 'Go to Settings') }}
 			</NcButton>
 		</div>
@@ -38,10 +38,10 @@
 </template>
 
 <script>
+import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
-import { translate as t } from '@nextcloud/l10n'
 import DeadlineKpiRow from '../components/DeadlineKpiRow.vue'
 import { dtWidgetMixin } from './dtWidgetMixin.js'
 
@@ -54,22 +54,27 @@ export default {
 		completed() {
 			return this.dtStore.filteredCompleted(this.dtPreset, this.dtCaseType)
 		},
+
 		/** @return {Array<object>} At-risk open cases in the current scope. */
 		atRisk() {
 			return this.dtStore.atRiskCases(this.dtCaseType)
 		},
+
 		/** @return {object} SLA compliance block. */
 		slaData() {
 			return this.dtStore.slaData(this.dtPreset, this.dtCaseType)
 		},
+
 		/** @return {boolean} No cases exist at all. */
 		noCases() {
 			return this.dtStore.allCases.length === 0
 		},
+
 		/** @return {boolean} Cases exist but no case type declares a deadline. */
 		noSla() {
 			return this.dtStore.allCases.length > 0 && this.dtStore.caseTypesWithSla.length === 0
 		},
+
 		/** @return {boolean} SLA is configured but this scope is empty. */
 		noDataInRange() {
 			return this.dtStore.caseTypesWithSla.length > 0
@@ -77,6 +82,7 @@ export default {
 				&& this.atRisk.length === 0
 		},
 	},
+
 	methods: {
 		t,
 		/** Send the user to the app's administration surface. */

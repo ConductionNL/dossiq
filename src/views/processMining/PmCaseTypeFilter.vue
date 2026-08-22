@@ -27,8 +27,8 @@
 </template>
 
 <script>
-import NcSelect from '@nextcloud/vue/components/NcSelect'
 import { translate as t } from '@nextcloud/l10n'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 
@@ -49,10 +49,12 @@ export default {
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @return {Array<object>} Selectable case types. */
 		options() {
 			return this.caseTypes.map((ct) => ({ id: ct.id, label: ct.title || ct.name }))
 		},
+
 		/** @return {object|null} The option matching the context, or null. */
 		selected() {
 			const current = this.workspace?.caseType
@@ -71,7 +73,7 @@ export default {
 			// looked present and did nothing. initializeStores() is idempotent.
 			await initializeStores()
 			this.caseTypes = (await this.objectStore.fetchCollection('caseType', { _limit: 100 })) || []
-		} catch (err) {
+		} catch {
 			// Still non-fatal after the await: an unreachable config leaves the
 			// filter empty, which is the same result as choosing no filter.
 			this.caseTypes = []

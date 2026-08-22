@@ -24,8 +24,8 @@
 
 <script>
 import { CnChartWidget } from '@conduction/nextcloud-vue'
-import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { translate as t } from '@nextcloud/l10n'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { pmWidgetMixin } from './pmWidgetMixin.js'
 import { buildThroughputCategories, buildThroughputSeries } from './processMiningShaping.js'
 
@@ -38,10 +38,12 @@ export default {
 		series() {
 			return buildThroughputSeries(this.pmStore.throughputTrend, t('procest', 'Cases closed'))
 		},
+
 		/** @return {Array<string>} Week labels along the x-axis. */
 		categories() {
 			return buildThroughputCategories(this.pmStore.throughputTrend)
 		},
+
 		/** @return {object} ApexCharts options. */
 		options() {
 			return {
@@ -50,12 +52,14 @@ export default {
 					forceNiceScale: true,
 					labels: { formatter: (val) => Math.round(val) },
 				},
+
 				colors: ['var(--color-primary)'],
 				stroke: { curve: 'smooth', width: 3 },
 				markers: { size: 4 },
 			}
 		},
 	},
+
 	methods: { t },
 }
 </script>

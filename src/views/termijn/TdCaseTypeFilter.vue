@@ -25,8 +25,8 @@
 </template>
 
 <script>
-import NcSelect from '@nextcloud/vue/components/NcSelect'
 import { translate as t } from '@nextcloud/l10n'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
 import { useTermijnDashboardStore } from '../../store/modules/termijnDashboard.js'
 
 export default {
@@ -42,10 +42,12 @@ export default {
 		tdStore() {
 			return useTermijnDashboardStore()
 		},
+
 		/** @return {Array<object>} Selectable case types. */
 		options() {
 			return this.tdStore.zaaktypeOptions
 		},
+
 		/** @return {object|null} The option matching the context, or null. */
 		selected() {
 			const current = this.workspace?.caseType

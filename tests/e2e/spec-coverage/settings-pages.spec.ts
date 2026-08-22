@@ -40,8 +40,11 @@ import { navToRoute, trackProcestErrors } from '../helpers/nav'
 //
 // Control labels below were measured against a CI runner (2026-08-04).
 const SETTINGS_PAGES: Array<{ name: string; route: string; addBtn: string }> = [
-	// CaseType settings form (Save control) — the /settings root.
-	{ name: 'Case Types', route: '/settings', addBtn: 'Save' },
+	// The in-app /settings page was retired by page-topology-cleanup (B1): it
+	// mounted the SAME AdminRoot.vue as /settings/admin/procest, reaching an
+	// administration component through the in-app router and bypassing the
+	// settings framework's server-side checks (ADR-004). Administration is
+	// covered by the admin-settings surface, not by an app route.
 	// Leges (the municipal-fee engine — verordeningen, articles, calculations)
 	// was retired from Procest in Wave 1 of the case-model consolidation
 	// (ADR-003). Fees are now Pipelinq products referenced from a case type's
@@ -85,11 +88,10 @@ const SETTINGS_PAGES: Array<{ name: string; route: string; addBtn: string }> = [
 	// The standalone "Status history" (StatusRecords) settings page was retired
 	// by retire-status-history-page — change history is now the CaseDetail
 	// audit-trail surface, not a page/menu item. Entry removed accordingly.
-	{
-		name: 'Case locations',
-		route: '/settings/locations',
-		addBtn: 'Add Case Location',
-	},
+	// The standalone "Case locations" page was retired by page-topology-cleanup
+	// (B5) — `case` is a required property on the `location` schema, so every
+	// location is reachable through its case via the /cases map view and the
+	// case-detail widget. No page to exercise.
 ]
 
 for (const { name, route, addBtn } of SETTINGS_PAGES) {
