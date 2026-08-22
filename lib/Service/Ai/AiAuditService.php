@@ -48,6 +48,7 @@ class AiAuditService {
 	 *
 	 * @param AiAuditLog $audit The oversight audit trail storage.
 	 * @param AiModelIdentity $modelIdentity The configured model identifier.
+	 * @param AiOversightDelegationService $oversight Sends the decision to hermiq.
 	 *
 	 * @return void
 	 */

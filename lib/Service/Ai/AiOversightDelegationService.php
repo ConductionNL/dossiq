@@ -134,14 +134,14 @@ class AiOversightDelegationService {
                     'action'         => (string) ($entry['action'] ?? ''),
                     'model'          => (string) ($entry['model'] ?? ''),
                     'prompt'         => (string) ($entry['prompt'] ?? ''),
-                    'suggestion'     => $this->flatten($entry['suggestion'] ?? ''),
+                    'suggestion'     => $this->flatten(value: ($entry['suggestion'] ?? '')),
                     'confidence'     => ($entry['confidence'] ?? null),
-                    'actualValue'    => $this->flatten($entry['actualValue'] ?? ''),
+                    'actualValue'    => $this->flatten(value: ($entry['actualValue'] ?? '')),
                     'reason'         => (string) ($entry['reason'] ?? ''),
                     'responseTimeMs' => ($entry['responseTimeMs'] ?? null),
                     // Idempotency: replaying the same entry through the repair
                     // step must not double-record it.
-                    'externalRef'    => $this->reference($entry, $subjectId),
+                    'externalRef'    => $this->reference(entry: $entry, subjectId: $subjectId),
                 ]
             );
 
