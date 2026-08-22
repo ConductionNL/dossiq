@@ -71,7 +71,7 @@ test.describe('Dashboard page shells', () => {
 	test('process mining dashboard renders its bottleneck-analysis heading', async ({
 		page,
 	}) => {
-		await expectPageShell(page, ProcessMiningDashboard, 'Process Mining')
+		await expectPageShell(page, ProcessMiningDashboard, 'Process mining')
 	})
 
 	test('tenant onboarding dashboard renders its heading', async ({ page }) => {

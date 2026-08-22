@@ -1177,7 +1177,11 @@
 								"handoffSource",
 								"intakeChannel"
 							],
-							"overrides": { "status": { "editable": false } }
+							"overrides": {
+								"status": {
+									"editable": false
+								}
+							}
 						}
 					},
 					{
@@ -1870,7 +1874,11 @@
 								"receiptDate",
 								"decisionDeadline"
 							],
-							"overrides": { "status": { "editable": false } }
+							"overrides": {
+								"status": {
+									"editable": false
+								}
+							}
 						}
 					},
 					{
@@ -2122,7 +2130,11 @@
 								"legalCostsCompensation",
 								"status"
 							],
-							"overrides": { "status": { "editable": false } }
+							"overrides": {
+								"status": {
+									"editable": false
+								}
+							}
 						}
 					},
 					{
@@ -2142,7 +2154,11 @@
 								"publishedAt",
 								"notifiedRecipients"
 							],
-							"overrides": { "publishedAt": { "editable": false } }
+							"overrides": {
+								"publishedAt": {
+									"editable": false
+								}
+							}
 						}
 					},
 					{
@@ -2636,10 +2652,101 @@
 		{
 			"id": "ProcessMiningDashboard",
 			"route": "/process-mining",
-			"type": "custom",
+			"type": "dashboard",
 			"title": "Process mining",
-			"component": "ProcessMiningDashboard",
-			"_note": "Bottleneck analysis over the case statusRecord history: a period + case-type picker drives a server-computed ProcessMiningService aggregation (per-status dwell time, bottleneck ranking, transition matrix + rework-loop detection, weekly throughput trend). The figures come from a dedicated aggregation endpoint, not a register query, so the standard dashboard/object-stats type can't supply or shape this data."
+			"_note": "Bottleneck analysis over the case statusRecord history. The figures come from a dedicated ProcessMiningService aggregation endpoint, not a register query, so the widgets are type:custom and read one shared store (src/store/modules/processMining.js) rather than a register/schema binding. The page owns the heading, the period presets and the case-type filter; each widget renders content only — a widget that drew its own page heading would be the dashboard-in-dashboard antipattern (hydra#316).",
+			"config": {
+				"subtitle": "Bottleneck analysis from recorded case status history",
+				"pageFilters": [
+					{
+						"key": "period",
+						"label": "Period",
+						"default": "12m",
+						"options": [
+							{
+								"value": "3m",
+								"label": "Last 3 months"
+							},
+							{
+								"value": "6m",
+								"label": "Last 6 months"
+							},
+							{
+								"value": "12m",
+								"label": "Last 12 months"
+							},
+							{
+								"value": "all",
+								"label": "All time"
+							}
+						]
+					}
+				],
+				"widgets": [
+					{
+						"id": "pm-kpis",
+						"title": "Overview",
+						"type": "custom"
+					},
+					{
+						"id": "pm-dwell",
+						"title": "Dwell time by status (median hours)",
+						"type": "custom"
+					},
+					{
+						"id": "pm-throughput",
+						"title": "Throughput (cases closed per week)",
+						"type": "custom"
+					},
+					{
+						"id": "pm-bottlenecks",
+						"title": "Bottleneck ranking",
+						"type": "custom"
+					}
+				],
+				"layout": [
+					{
+						"id": 1,
+						"widgetId": "pm-kpis",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 3
+					},
+					{
+						"id": 2,
+						"widgetId": "pm-dwell",
+						"gridX": 0,
+						"gridY": 3,
+						"gridWidth": 6,
+						"gridHeight": 6
+					},
+					{
+						"id": 3,
+						"widgetId": "pm-throughput",
+						"gridX": 6,
+						"gridY": 3,
+						"gridWidth": 6,
+						"gridHeight": 6
+					},
+					{
+						"id": 4,
+						"widgetId": "pm-bottlenecks",
+						"gridX": 0,
+						"gridY": 9,
+						"gridWidth": 12,
+						"gridHeight": 6
+					}
+				],
+				"documentationUrl": "https://procest.conduction.nl"
+			},
+			"slots": {
+				"header-actions": "PmCaseTypeFilter",
+				"widget-pm-kpis": "PmKpiWidget",
+				"widget-pm-dwell": "PmDwellChartWidget",
+				"widget-pm-throughput": "PmThroughputChartWidget",
+				"widget-pm-bottlenecks": "PmBottleneckTableWidget"
+			}
 		},
 		{
 			"id": "WorkflowBoard",
@@ -3916,7 +4023,11 @@
 								"recommendedIntervention",
 								"recommendedBy"
 							],
-							"overrides": { "recommendedBy": { "editable": false } }
+							"overrides": {
+								"recommendedBy": {
+									"editable": false
+								}
+							}
 						}
 					},
 					{
@@ -3933,7 +4044,11 @@
 								"overrideBy",
 								"overrideAuthority"
 							],
-							"overrides": { "overrideBy": { "editable": false } }
+							"overrides": {
+								"overrideBy": {
+									"editable": false
+								}
+							}
 						}
 					},
 					{
@@ -4318,7 +4433,14 @@
 								"assignedAt",
 								"deadline"
 							],
-							"overrides": { "status": { "editable": false }, "assignedAt": { "editable": false } }
+							"overrides": {
+								"status": {
+									"editable": false
+								},
+								"assignedAt": {
+									"editable": false
+								}
+							}
 						}
 					},
 					{
@@ -4338,7 +4460,11 @@
 								"signatureEvidence",
 								"hearingReportRef"
 							],
-							"overrides": { "adviceIssuedAt": { "editable": false } }
+							"overrides": {
+								"adviceIssuedAt": {
+									"editable": false
+								}
+							}
 						}
 					},
 					{

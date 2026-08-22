@@ -56,7 +56,7 @@ export const SubstitutionSettings = '/substitution'
 /** `src/views/admin/SubstitutionAdmin.vue` — the coordinator substitution console (manifest page `SubstitutionAdmin`). */
 export const SubstitutionAdmin = '/substitution-admin'
 
-/** `src/views/dashboard/ProcessMiningDashboard.vue` — bottleneck analysis; renders `<h2>Process Mining</h2>`. */
+/** Manifest `type: "dashboard"` page — bottleneck analysis; heading comes from the page title, widgets from `src/views/processMining/`. */
 export const ProcessMiningDashboard = '/process-mining'
 
 /** `src/views/dashboard/TenantOnboardingDashboard.vue` — SaaS tenant onboarding; renders `<h2>Tenant onboarding</h2>`. */

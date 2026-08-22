@@ -33,7 +33,11 @@ import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 // @spec openspec/changes/deelzaak-support/tasks.md#T05
 // @spec openspec/changes/deelzaak-support/tasks.md#T06
 import DeelzaakList from './views/cases/DeelzaakList.vue'
-import ProcessMiningDashboard from './views/dashboard/ProcessMiningDashboard.vue'
+import PmBottleneckTableWidget from './views/processMining/PmBottleneckTableWidget.vue'
+import PmCaseTypeFilter from './views/processMining/PmCaseTypeFilter.vue'
+import PmDwellChartWidget from './views/processMining/PmDwellChartWidget.vue'
+import PmKpiWidget from './views/processMining/PmKpiWidget.vue'
+import PmThroughputChartWidget from './views/processMining/PmThroughputChartWidget.vue'
 import TenantOnboardingDashboard from './views/dashboard/TenantOnboardingDashboard.vue'
 // --- Termijnbewaking + Tenant dashboards (chain-builds 06/2026). ---
 // Archief dashboard retired (migrate-archival-to-or, ADR-022): the archivist
@@ -131,7 +135,14 @@ export default {
 	DoorlooptijdView, // SLA dashboard — charts via OR analytics-series leaf + lib CnChartWidget (ADR-022)
 	AdminRootView, // multi-tab admin root (lib settings-custom-slot gap)
 	TermijnDashboard, // AWB termijnbewaking + dwangsom KPI dashboard
-	ProcessMiningDashboard, // bottleneck analysis — dwell time, transition matrix, rework, throughput (CnKpiGrid + CnChartWidget leaves)
+	// Process mining is a type:"dashboard" page; these are its widget slots.
+	// The page owns the heading and both filters — a widget that drew its own
+	// heading would be the dashboard-in-dashboard antipattern (hydra#316).
+	PmCaseTypeFilter, // header-actions slot: case-type filter (pageFilters cannot bind dynamic options)
+	PmKpiWidget, // headline KPI tiles (CnKpiGrid + CnStatsBlock)
+	PmDwellChartWidget, // dwell time by status (CnChartWidget bar)
+	PmThroughputChartWidget, // weekly throughput (CnChartWidget line)
+	PmBottleneckTableWidget, // bottleneck ranking (ad-hoc row shape, no object-list leaf applies)
 	TenantOnboardingDashboard, // SaaS tenant onboarding (7-step + go-live)
 
 	// --- Migration cost: deferred to a follow-up. ---
