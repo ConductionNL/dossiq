@@ -44,7 +44,6 @@ import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
-import VerwerkingenOverviewView from './views/admin/VerwerkingenOverview.vue'
 import AgendaCompilerView from './views/besluitvorming/AgendaCompilerView.vue'
 import VergaderingDetailView from './views/besluitvorming/VergaderingDetailView.vue'
 // VTH-specific case detail panels
@@ -200,13 +199,6 @@ const registry = {
 		_note: 'Coordinator substitution admin + bulk reassignment + capacity action list. Coordinator-gated server-side.',
 	},
 
-	// --- AVG verwerkingenlogging (thin consumer, OR owns the engine). ---
-	// @spec openspec/specs/avg-verwerkingenlogging/spec.md
-	VerwerkingenOverviewView: {
-		kind: 'page',
-		component: VerwerkingenOverviewView,
-		_note: "FG/admin window on OR's processing-activity register: catalogue review status, unclassified counter (OR-PA-4), inzageverzoek export entry (OR-PA-7). OR enforces FG access fail-closed.",
-	},
 
 	// --- Initiator selection + display (brp-kvk-register-sets). ---
 	// @spec openspec/specs/initiator-selection/spec.md
