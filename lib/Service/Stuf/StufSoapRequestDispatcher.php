@@ -80,7 +80,7 @@ class StufSoapRequestDispatcher {
 	 * @param StufResponseBuilder $responses The inbound response builder.
 	 * @param StufZknMessageResponder $responder The per-message-type responder.
 	 * @param StufEnvelopeInspector $inspector Resolves the sending endpoint and
-	 *                                        verifies its WSSE UsernameToken.
+	 *                                         verifies its WSSE UsernameToken.
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void

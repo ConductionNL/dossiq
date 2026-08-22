@@ -76,7 +76,7 @@ interface BrkAdapterInterface {
 	 * @param string $section Sectie (1-2 uppercase letters).
 	 * @param string $perceelnummer Perceelnummer (1-5 digits).
 	 * @param string|null $appartementsrechtSequenceNumber Optional appartementsrecht
-	 *                                                 volgnummer (`A` + 1-4 digits).
+	 *                                                     volgnummer (`A` + 1-4 digits).
 	 * @param array<string,mixed> $context Optional context —
 	 *                                     caseId, lookupReason,
 	 *                                     correlationId.

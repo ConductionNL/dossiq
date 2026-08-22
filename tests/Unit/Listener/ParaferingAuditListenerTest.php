@@ -25,11 +25,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\OpenRegister\Db\AuditTrailMapper;
-use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\Dossiq\Event\ParafeerTransitionEvent;
 use OCA\Dossiq\Listener\ParaferingAuditListener;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Db\AuditTrailMapper;
+use OCA\OpenRegister\Db\ObjectEntity;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;

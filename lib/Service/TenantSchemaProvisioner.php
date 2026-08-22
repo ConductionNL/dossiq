@@ -124,6 +124,8 @@ class TenantSchemaProvisioner {
 	 * @return array<int, string> Cloned table names.
 	 *
 	 * @throws RuntimeException On DDL failure.
+	 *
+	 * @spec openspec/specs/tenant-provisioning/spec.md#requirement-schema-per-tenant-provisioning-req-001-b
 	 */
 	public function cloneApplicationTables(string $schemaName): array {
 		$this->assertSafeIdentifier(name: $schemaName);
@@ -189,6 +191,8 @@ class TenantSchemaProvisioner {
 	 * @param string $name Schema name.
 	 *
 	 * @return bool True when present.
+	 *
+	 * @spec openspec/specs/tenant-provisioning/spec.md#requirement-schema-per-tenant-provisioning-req-001-b
 	 */
 	public function schemaExists(string $name): bool {
 		$this->assertSafeIdentifier(name: $name);

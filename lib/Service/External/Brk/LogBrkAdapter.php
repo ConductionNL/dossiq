@@ -62,7 +62,7 @@ class LogBrkAdapter implements BrkAdapterInterface {
 	 * @param string $section Sectie.
 	 * @param string $perceelnummer Perceelnummer.
 	 * @param string|null $appartementsrechtSequenceNumber Optional appartementsrecht
-	 *                                                 volgnummer.
+	 *                                                     volgnummer.
 	 * @param array<string,mixed> $context Lookup context.
 	 *
 	 * @return BrkLookupResult The dispatch outcome.

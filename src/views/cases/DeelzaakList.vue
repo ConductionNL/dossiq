@@ -234,6 +234,13 @@ export default {
 			return this.subCases.length
 		},
 
+		/**
+		 * Progress roll-up summary across the parent case's sub-cases.
+		 *
+		 * @return {string} The translated roll-up text.
+		 *
+		 * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-progress-roll-up-on-parent-case
+		 */
 		rollUpText() {
 			return t('dossiq', '({completed}/{total} completed)', {
 				completed: this.completedCount,
@@ -256,6 +263,13 @@ export default {
 			return Array.isArray(allowed) && allowed.length > 0
 		},
 
+		/**
+		 * Empty-state copy for the sub-cases section.
+		 *
+		 * @return {string} The translated description.
+		 *
+		 * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-cases-section-on-parent-case-detail
+		 */
 		emptyDescription() {
 			if (this.canCreate) {
 				return t(

@@ -214,6 +214,13 @@ export default {
 			}
 		},
 
+		/**
+		 * Load the configured decision types.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/roles-decisions/spec.md
+		 */
 		async loadItems() {
 			this.loading = true
 			this.error = ''
@@ -264,6 +271,13 @@ export default {
 			this.editError = ''
 		},
 
+		/**
+		 * Persist the edited decision type.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/roles-decisions/spec.md
+		 */
 		async saveEdit() {
 			this.editError = ''
 			if (!this.editForm.name.trim()) {
@@ -302,6 +316,8 @@ export default {
 
 		/**
 		 * @param item the decision type row being deleted
+		 *
+		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		async deleteItem(item) {
 			if (

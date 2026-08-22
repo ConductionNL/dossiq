@@ -170,6 +170,8 @@ class TenantBillingService {
 	 * @return array<string,mixed>|null Persisted event row.
 	 *
 	 * @throws InvalidArgumentException On invalid event type.
+	 *
+	 * @spec openspec/specs/tenant-billing/spec.md#requirement-billing-event-emission-on-case-lifecycle-req-007-a
 	 */
 	public function emitEvent(string $tenantId, string $eventType, float $quantity = 1.0, float $unitPrice = 0.0, string $currency = 'EUR'): ?array {
 		if (in_array($eventType, self::ALLOWED_EVENT_TYPES, true) === false) {
@@ -258,6 +260,8 @@ class TenantBillingService {
 	 * @param string $invoiceRef Shillinq invoice ref.
 	 *
 	 * @return int Number of events updated.
+	 *
+	 * @spec openspec/specs/tenant-billing/spec.md#requirement-daily-billing-export-to-shillinq-req-007-b
 	 */
 	public function markExported(array $events, string $invoiceRef): int {
 		$objectService = $this->getObjectService();

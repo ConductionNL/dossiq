@@ -112,6 +112,8 @@ export default {
 		 *
 		 * @param {string} code The error code.
 		 * @return {string} A localized message.
+		 *
+		 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-opencatalogi-absence-is-handled-gracefully
 		 */
 		mapError(code) {
 			if (code === 'not_configured') {

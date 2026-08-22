@@ -127,8 +127,8 @@ class BeroepService {
 	 * @param string $caseId UUID of the dossiq case
 	 *                       wrapping the beroep
 	 * @param string $sourceObjectionId UUID of the bezwaar
-	 *                                lifecycle record
-	 *                                being escalated
+	 *                                  lifecycle record
+	 *                                  being escalated
 	 * @param string $contestedDecisionId UUID of the
 	 *                                    appealDecision being
 	 *                                    contested

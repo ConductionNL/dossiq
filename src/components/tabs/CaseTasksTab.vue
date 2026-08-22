@@ -175,6 +175,14 @@ export default {
 			return task.dueDate.slice(0, 10) < new Date().toISOString().slice(0, 10)
 		},
 
+		/**
+		 * Human-readable due-date label for one task.
+		 *
+		 * @param {object} task The task object.
+		 * @return {string} The translated due-date label.
+		 *
+		 * @spec openspec/specs/task-management/spec.md#requirement-task-list-must-be-reached-via-mijn-werk-not-a-sibling-top-level-menu
+		 */
 		dueLabel(task) {
 			if (this.isOverdue(task)) {
 				return t('dossiq', 'Overdue: {date}', {
@@ -189,6 +197,14 @@ export default {
 			return t('dossiq', 'Due: {date}', { date: formatDate(task.dueDate) })
 		},
 
+		/**
+		 * Human-readable label for a task status.
+		 *
+		 * @param {string} status The raw status value.
+		 * @return {string} The translated status label.
+		 *
+		 * @spec openspec/specs/task-management/spec.md#requirement-task-list-must-be-reached-via-mijn-werk-not-a-sibling-top-level-menu
+		 */
 		statusLabel(status) {
 			const labels = {
 				available: t('dossiq', 'Open'),
@@ -206,6 +222,14 @@ export default {
 			return 'default'
 		},
 
+		/**
+		 * Human-readable label for a task priority.
+		 *
+		 * @param {string} priority The raw priority value.
+		 * @return {string} The translated priority label.
+		 *
+		 * @spec openspec/specs/task-management/spec.md#requirement-task-list-must-be-reached-via-mijn-werk-not-a-sibling-top-level-menu
+		 */
 		priorityLabel(priority) {
 			const labels = {
 				low: t('dossiq', 'Low'),

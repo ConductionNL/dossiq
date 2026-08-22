@@ -126,6 +126,13 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Validate the renewal-request form before submission.
+		 *
+		 * @return {boolean} True when the form may be submitted.
+		 *
+		 * @spec openspec/specs/case-management/spec.md
+		 */
 		validate() {
 			this.errors = { durationMonths: '' }
 			if (

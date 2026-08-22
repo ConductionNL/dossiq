@@ -165,6 +165,13 @@ export default {
 			return this.caseId || this.$route?.params?.id || null
 		},
 
+		/**
+		 * Label for the "compose draft" button.
+		 *
+		 * @return {string} The translated button label.
+		 *
+		 * @spec openspec/specs/case-email-integration/spec.md#requirement-the-system-shall-prefill-an-nc-mail-draft-from-a-template-it-shall-not-send-mail-itself
+		 */
 		draftButtonLabel() {
 			return this.selectedTemplate
 				? t('dossiq', 'Open draft from template')
@@ -241,6 +248,13 @@ export default {
 			this.isFinal = !!(inner.endDate || inner['@self']?.endDate)
 		},
 
+		/**
+		 * Load the email templates available for this case's zaaktype.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/case-email-integration/spec.md#requirement-the-system-shall-provide-per-zaaktype-email-templates-as-a-leaf-extension
+		 */
 		async loadTemplates() {
 			try {
 				const url = generateUrl(
@@ -266,6 +280,8 @@ export default {
 		 * which the backend (EmailTemplateService::prefillDraft) translates into
 		 * an NC Mail draft via the configured Mail account. The response carries
 		 * unresolved placeholders + the URL to the new NC Mail draft.
+		 *
+		 * @spec openspec/specs/case-email-integration/spec.md#requirement-the-system-shall-prefill-an-nc-mail-draft-from-a-template-it-shall-not-send-mail-itself
 		 */
 		async composeDraft() {
 			if (this.isFinal) {

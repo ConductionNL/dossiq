@@ -115,6 +115,8 @@ class BeschikkingService {
 	 * @return array<string, mixed> The created beschikking record.
 	 *
 	 * @throws OCSBadRequestException When validation/persistence fails.
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-001-multi-year-beschikking-with-voorschot-schema
 	 */
 	public function createDraft(string $requestId, array $payload, int $sequence): array {
 		$this->assertDraftValid(payload: $payload);
@@ -149,6 +151,8 @@ class BeschikkingService {
 	 * @return array<string, mixed> The signed beschikking record.
 	 *
 	 * @throws OCSBadRequestException When unauthenticated or persistence fails.
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-001-multi-year-beschikking-with-voorschot-schema
 	 */
 	public function sign(string $decisionId): array {
 		$user = $this->userSession->getUser();
@@ -179,6 +183,8 @@ class BeschikkingService {
 	 * @return array<string, mixed> The published beschikking record.
 	 *
 	 * @throws OCSBadRequestException When the beschikking is unsigned or persistence fails.
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-006-subsidieregister-publication-feed
 	 */
 	public function publish(string $decisionId): array {
 		[$objectService, $register, $schema] = $this->resolve();

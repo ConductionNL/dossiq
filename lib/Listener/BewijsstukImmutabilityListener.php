@@ -44,11 +44,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Subsidie\BewijsstukService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Subsidie\BewijsstukService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;

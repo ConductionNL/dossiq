@@ -142,6 +142,13 @@ export default {
 			return this.objectId || this.$route?.params?.id || null
 		},
 
+		/**
+		 * Field descriptors for the case-document create/edit form.
+		 *
+		 * @return {Array<object>} The form field descriptors.
+		 *
+		 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-005-upload-must-present-a-metadata-dialog-and-require-informatieobjecttype-and-vertrouwelijkheidaanduiding
+		 */
 		formFields() {
 			return [
 				{ key: 'title', label: t('dossiq', 'Title'), required: true },
@@ -209,6 +216,14 @@ export default {
 			this.deleteItem = doc
 		},
 
+		/**
+		 * Persist the case document through the canonical object store.
+		 *
+		 * @param {object} formData The submitted form values.
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-001-zaak-objects-must-support-linked-documents-via-zgw-informatieobject-and-zaakinformatieobject
+		 */
 		async onFormConfirm(formData) {
 			try {
 				const result = await this.objectStore.saveObject('caseDocument', {
@@ -230,6 +245,14 @@ export default {
 			}
 		},
 
+		/**
+		 * Delete the case document through the canonical object store.
+		 *
+		 * @param {string} id The caseDocument object id.
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-001-zaak-objects-must-support-linked-documents-via-zgw-informatieobject-and-zaakinformatieobject
+		 */
 		async onDeleteConfirm(id) {
 			try {
 				await this.objectStore.deleteObject('caseDocument', id)

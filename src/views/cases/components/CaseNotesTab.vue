@@ -89,6 +89,8 @@ export default {
 		 * surface as an error to the user typing the note.
 		 *
 		 * @param {object} payload `{ objectId, register, schema, noteId, mentionedUserIds }`
+		 *
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async onMention(payload) {
 			try {

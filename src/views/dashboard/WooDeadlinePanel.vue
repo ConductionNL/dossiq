@@ -95,6 +95,8 @@ export default {
 		 *
 		 * @param {string} severity One of overdue|critical|warning|ok
 		 * @return {string}
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-004-woo-deadline-tracking-panel-v1
 		 */
 		severityLabel(severity) {
 			switch (severity) {
@@ -114,6 +116,8 @@ export default {
 		 *
 		 * @param {object} item Woo row
 		 * @return {string}
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-004-woo-deadline-tracking-panel-v1
 		 */
 		countdownLabel(item) {
 			if (item.isOverdue) {

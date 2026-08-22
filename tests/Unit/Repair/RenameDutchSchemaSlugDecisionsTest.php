@@ -23,8 +23,8 @@ use OCA\Dossiq\Repair\RenameDutchSchemaSlugs;
 use OCP\DB\IResult;
 use OCP\IDBConnection;
 use OCP\Migration\IOutput;
-use Psr\Log\LoggerInterface;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 /**
  * The slug migration's decisions, exercised without a database.
@@ -158,7 +158,6 @@ final class RenameDutchSchemaSlugDecisionsTest extends TestCase {
 		self::assertSame([34, 35, 40], $ids, 'deduplicated, numeric only, no fatal');
 
 	}//end testSchemaIdsFromToleratesMalformedRows()
-
 
 	/**
 	 * Every target in the shipped map is English and distinct.

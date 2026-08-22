@@ -61,6 +61,8 @@ class SeedBezwaarBeroepCommand extends Command {
 	 * Define command name + description.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md#requirement-req-bbw-001-bezwaar-casetype-seed-shall-be-installed-with-awb-compliant-process-configuration
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'dossiq:bezwaar:seed')
@@ -76,6 +78,8 @@ class SeedBezwaarBeroepCommand extends Command {
 	 * @return int Symfony command exit code.
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 *
+	 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md#requirement-req-bbw-001-bezwaar-casetype-seed-shall-be-installed-with-awb-compliant-process-configuration
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
 		// OpenRegister enforces RBAC on saveObject against the current user.

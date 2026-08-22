@@ -32,11 +32,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
-use OCA\OpenRegister\Event\ObjectCreatedEvent;
-use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Listener\BezwaarLegalHoldListener;
 use OCA\Dossiq\Listener\BezwaarLifecycleListener;
+use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Server;
 use Psr\Log\LoggerInterface;

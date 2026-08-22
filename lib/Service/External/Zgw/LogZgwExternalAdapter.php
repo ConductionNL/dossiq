@@ -61,6 +61,8 @@ class LogZgwExternalAdapter implements ZgwExternalAdapterInterface {
 	 * @param array<string,mixed> $context Push context.
 	 *
 	 * @return ZgwPushResult The dispatch outcome.
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md#requirement-zrc-zaken-api-resources-must-be-fully-mappable
 	 */
 	public function submitZaak(array $caseEnvelope, array $context = []): ZgwPushResult {
 		$sanitised = $this->redactBsnFromRoles(caseEnvelope: $caseEnvelope);
@@ -100,6 +102,8 @@ class LogZgwExternalAdapter implements ZgwExternalAdapterInterface {
 	 * @param array<string,mixed> $context Push context.
 	 *
 	 * @return ZgwPushResult The dispatch outcome.
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md#requirement-drc-documenten-api-resources-must-be-mappable
 	 */
 	public function submitDocument(array $documentEnvelope, array $context = []): ZgwPushResult {
 		$sanitised = $documentEnvelope;

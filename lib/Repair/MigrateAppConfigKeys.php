@@ -141,8 +141,8 @@ class MigrateAppConfigKeys implements IRepairStep {
 	/**
 	 * Constructor for MigrateAppConfigKeys.
 	 *
-	 * @param IAppConfig      $appConfig The app config store to read and write.
-	 * @param LoggerInterface $logger    Logger for keys that fail to copy.
+	 * @param IAppConfig $appConfig The app config store to read and write.
+	 * @param LoggerInterface $logger Logger for keys that fail to copy.
 	 */
 	public function __construct(
 		private readonly IAppConfig $appConfig,
@@ -162,7 +162,6 @@ class MigrateAppConfigKeys implements IRepairStep {
 	 */
 	public function getName(): string {
 		return 'Copy Dossiq app configuration from the procest namespace to dossiq';
-
 	}//end getName()
 
 	/**

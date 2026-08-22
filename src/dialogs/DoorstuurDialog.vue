@@ -93,6 +93,13 @@ export default {
 
 	methods: {
 		t,
+		/**
+		 * Forward the case to another bevoegd gezag.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/dso-omgevingsloket/spec.md#requirement-req-dso-011-multi-tenancy-and-bevoegd-gezag-isolation
+		 */
 		async submit() {
 			if (!this.doelBevoegdGezag) {
 				return

@@ -127,6 +127,8 @@ class TussenrapportageService {
 	 * @return array<string, mixed> The created report record.
 	 *
 	 * @throws OCSBadRequestException When OpenRegister is unavailable/unconfigured.
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-004-tussenrapportage-as-typed-sub-zaak
 	 */
 	public function createExpected(string $uitvoeringId, array $payload): array {
 		[$objectService, $register, $schema] = $this->resolve();
@@ -161,6 +163,8 @@ class TussenrapportageService {
 	 * @return array<string, mixed> The approved report record.
 	 *
 	 * @throws OCSBadRequestException When unauthenticated or persistence fails.
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-004-tussenrapportage-as-typed-sub-zaak
 	 */
 	public function approveReport(string $reportId, ?string $beoordelingsoordeel = null, ?float $approvedAmount = null): array {
 		$user = $this->userSession->getUser();
@@ -203,6 +207,8 @@ class TussenrapportageService {
 	 * @return array<string, mixed> The updated report record.
 	 *
 	 * @throws OCSBadRequestException When the corrections text is empty or persistence fails.
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-004-tussenrapportage-as-typed-sub-zaak
 	 */
 	public function partialApprove(string $reportId, string $correctionRequest, int $currentTeller): array {
 		if (trim($correctionRequest) === '') {

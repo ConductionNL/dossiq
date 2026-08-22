@@ -229,6 +229,13 @@ export default {
 			return new Date(dateStr).toLocaleDateString('nl-NL')
 		},
 
+		/**
+		 * Execute the selected transition on the DSO case.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/dso-omgevingsloket/spec.md#requirement-req-dso-008-dso-status-lifecycle-for-vergunningaanvragen
+		 */
 		async executeTransition() {
 			if (!this.transitionStatus) {
 				return

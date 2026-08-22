@@ -206,6 +206,13 @@ export default {
 			return useDeelzaakStore()
 		},
 
+		/**
+		 * Dialog heading for the sub-case creation modal.
+		 *
+		 * @return {string} The translated title.
+		 *
+		 * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-creation-from-parent-case
+		 */
 		dialogTitle() {
 			return t('dossiq', 'Create sub-case')
 		},
@@ -275,6 +282,13 @@ export default {
 			}
 		},
 
+		/**
+		 * Validate the sub-case form before submission.
+		 *
+		 * @return {boolean} True when the form may be submitted.
+		 *
+		 * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-creation-from-parent-case
+		 */
 		validate() {
 			const errs = {}
 			if (!this.form.title || !this.form.title.trim()) {

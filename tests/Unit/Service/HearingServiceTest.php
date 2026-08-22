@@ -21,12 +21,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail;
-use OCA\Dossiq\Service\Bezwaar\HearingMinutesRecorder;
-use OCA\Dossiq\Service\Bezwaar\HearingSchedulePlanner;
 use OCA\Dossiq\Service\HearingService;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 

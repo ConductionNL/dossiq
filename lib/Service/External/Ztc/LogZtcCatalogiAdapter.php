@@ -57,6 +57,8 @@ class LogZtcCatalogiAdapter implements ZtcCatalogiAdapterInterface {
 	 * @param array<string,mixed> $context Lookup context.
 	 *
 	 * @return ZtcResult The dispatch outcome.
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md#requirement-ztc-catalogi-api-resources-must-be-fully-mappable
 	 */
 	public function resolveZaakType(string $caseTypeId, string $receiverSourceSlug, array $context = []): ZtcResult {
 		$this->logger->info(
@@ -88,6 +90,8 @@ class LogZtcCatalogiAdapter implements ZtcCatalogiAdapterInterface {
 	 * @param array<string,mixed> $context Import context.
 	 *
 	 * @return ZtcResult The dispatch outcome.
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md#requirement-ztc-catalogi-api-resources-must-be-fully-mappable
 	 */
 	public function importZaakType(string $caseTypeUrl, array $context = []): ZtcResult {
 		$this->logger->info(

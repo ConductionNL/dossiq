@@ -55,6 +55,8 @@ class TenantSeedService {
 	 * @param string $tier Tier (basic|standard|enterprise) — drives template set.
 	 *
 	 * @return array<string, mixed> Seed report (counts).
+	 *
+	 * @spec openspec/specs/tenant-schemas/spec.md#requirement-seed-tier-templates-and-default-tenant-onboarding-template-req-001-b-seed
 	 */
 	public function seedZaaktypeTemplates(string $schemaName, string $tier): array {
 		$templates = $this->resolveTemplatesForTier(tier: $tier);
@@ -71,6 +73,8 @@ class TenantSeedService {
 	 * @param string $schemaName Tenant schema name.
 	 *
 	 * @return array<string, mixed> Seed report.
+	 *
+	 * @spec openspec/specs/tenant-mandate/spec.md#requirement-mandate-matrix-validation-per-action-req-002-d-req-006-d
 	 */
 	public function seedMandaatMatrix(string $schemaName): array {
 		$this->logger->info(
@@ -88,6 +92,8 @@ class TenantSeedService {
 	 * @param array<int, string> $roles Role names.
 	 *
 	 * @return array<int, string> Roles created.
+	 *
+	 * @spec openspec/specs/tenant-schemas/spec.md#requirement-seed-tier-templates-and-default-tenant-onboarding-template-req-001-b-seed
 	 */
 	public function createDefaultRoles(string $schemaName, array $roles): array {
 		$this->logger->info(

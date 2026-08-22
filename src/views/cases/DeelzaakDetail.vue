@@ -196,6 +196,13 @@ export default {
 				: { name: 'Cases' }
 		},
 
+		/**
+		 * Display name of the sub-case's current status.
+		 *
+		 * @return {string} The status name.
+		 *
+		 * @spec openspec/specs/deelzaak-support/spec.md#requirement-parent-case-breadcrumb-navigation
+		 */
 		statusName() {
 			return (
 				this.statusType?.name

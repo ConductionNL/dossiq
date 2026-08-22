@@ -28,13 +28,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
+use OCA\Dossiq\Listener\ApprovalStepNotificationListener;
+use OCA\Dossiq\Service\ParaferingNotificationService;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\ApprovalChain;
 use OCA\OpenRegister\Db\ApprovalStep;
 use OCA\OpenRegister\Event\ApprovalStepApprovedEvent;
 use OCA\OpenRegister\Event\ApprovalStepRejectedEvent;
-use OCA\Dossiq\Listener\ApprovalStepNotificationListener;
-use OCA\Dossiq\Service\ParaferingNotificationService;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\IGroup;
 use OCP\IGroupManager;

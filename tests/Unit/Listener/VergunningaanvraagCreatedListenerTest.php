@@ -23,9 +23,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\Dossiq\Listener\VergunningaanvraagCreatedListener;
 use OCA\Dossiq\Service\DsoCaseService;
+use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\IAppConfig;
 use PHPUnit\Framework\MockObject\MockObject;

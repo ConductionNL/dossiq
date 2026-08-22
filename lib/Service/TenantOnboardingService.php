@@ -73,6 +73,8 @@ class TenantOnboardingService {
 	 * @param string $tenantId Tenant UUID.
 	 *
 	 * @return array<int, array<string, mixed>> Created task rows.
+	 *
+	 * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
 	 */
 	public function createOnboarding(string $tenantId): array {
 		$objectService = $this->getObjectService();
@@ -174,6 +176,8 @@ class TenantOnboardingService {
 	 * @return array<string,mixed>|null Updated task row.
 	 *
 	 * @throws InvalidArgumentException On invalid step.
+	 *
+	 * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
 	 */
 	public function markStepComplete(string $tenantId, string $step, string $completedBy): ?array {
 		if (in_array($step, self::STEPS, true) === false) {

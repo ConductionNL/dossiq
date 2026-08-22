@@ -61,6 +61,8 @@ class TenantLifecycleControlService {
 	 * @param string $reason Reason for suspension (audited).
 	 *
 	 * @return array<string,mixed>
+	 *
+	 * @spec openspec/specs/tenant-lifecycle/spec.md#requirement-tenant-suspension-and-reactivation-req-008-a
 	 */
 	public function suspend(string $tenantId, string $reason): array {
 		$row = $this->tenantSaasService->updateStatus(tenantId: $tenantId, newStatus: 'suspended');
@@ -77,6 +79,8 @@ class TenantLifecycleControlService {
 	 * @param string $tenantId Tenant UUID.
 	 *
 	 * @return array<string,mixed>
+	 *
+	 * @spec openspec/specs/tenant-lifecycle/spec.md#requirement-tenant-suspension-and-reactivation-req-008-a
 	 */
 	public function reactivate(string $tenantId): array {
 		$row = $this->tenantSaasService->updateStatus(tenantId: $tenantId, newStatus: 'active');
@@ -92,6 +96,8 @@ class TenantLifecycleControlService {
 	 * @param int $retentionYears Years to keep cold-stored archive.
 	 *
 	 * @return array{tenant: array<string,mixed>, unsettledEvents: int, retentionYears: int}
+	 *
+	 * @spec openspec/specs/tenant-lifecycle/spec.md#requirement-tenant-termination-and-data-archival-req-008-b
 	 */
 	public function terminate(string $tenantId, string $reason, int $retentionYears = 1): array {
 		$unsettled = $this->countUnsettledEvents(tenantId: $tenantId);

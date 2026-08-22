@@ -142,8 +142,8 @@ class SubsidieRegisterController extends Controller {
 	 *
 	 * @return array{register: string, beschikkingSchema: string, aanvraagSchema: string, regelingSchema: string}|null
 	 *                                                                                                                 The validated config, or null
-	 *                                   when a required
-	 *                                   value is unset.
+	 *                                                                                                                 when a required
+	 *                                                                                                                 value is unset.
 	 */
 	private function resolveRegisterConfig(): ?array {
 		$register = $this->settingsService->getConfigValue('register');

@@ -120,6 +120,8 @@ class ShillinqIntegrationService {
 	 * @param array<string,mixed> $payload Payload.
 	 *
 	 * @return array{success:bool, invoiceRef?:string, attempts:int, lastError?:string}
+	 *
+	 * @spec openspec/specs/tenant-billing/spec.md#requirement-daily-billing-export-to-shillinq-req-007-b
 	 */
 	public function exportInvoice(array $payload): array {
 		if ($this->shillinqBaseUrl === '' || $this->shillinqApiKey === '') {

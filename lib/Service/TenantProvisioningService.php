@@ -86,6 +86,8 @@ class TenantProvisioningService {
 	 *
 	 * @throws InvalidArgumentException When the tenant is not found or wrong status.
 	 * @throws RuntimeException On provisioning failure (after rollback).
+	 *
+	 * @spec openspec/specs/tenant-provisioning/spec.md#requirement-schema-per-tenant-provisioning-req-001-b
 	 */
 	public function provision(string $tenantId): array {
 		$tenant = $this->tenantSaasService->getById($tenantId);
@@ -195,6 +197,8 @@ class TenantProvisioningService {
 	 * @param array<int, string> $steps Steps performed (used to decide what to undo).
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/specs/tenant-provisioning/spec.md#requirement-schema-per-tenant-provisioning-req-001-b
 	 */
 	public function rollback(string $schemaName, array $steps): void {
 		if (in_array('createSchema', $steps, true) === false) {

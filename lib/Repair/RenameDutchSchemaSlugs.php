@@ -102,8 +102,8 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param IDBConnection                  $db        Database connection.
-	 * @param LoggerInterface                $logger    Logger.
+	 * @param IDBConnection $db Database connection.
+	 * @param LoggerInterface $logger Logger.
 	 * @param RenameDutchSchemaSlugDecisions $decisions The pure predicates.
 	 *
 	 * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
@@ -227,8 +227,8 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	/**
 	 * Rename one slug, scoped to this app's schemas.
 	 *
-	 * @param string          $old       Current slug.
-	 * @param string          $new       Replacement slug.
+	 * @param string $old Current slug.
+	 * @param string $new Replacement slug.
 	 * @param array<int, int> $schemaIds Schema ids in scope.
 	 *
 	 * @return bool True when the row was updated.

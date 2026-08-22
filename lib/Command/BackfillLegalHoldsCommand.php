@@ -106,6 +106,8 @@ class BackfillLegalHoldsCommand extends Command {
 	 * Define command name, description and options.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/specs/archief-edepot-handover/spec.md#requirement-legal-proceedings-must-suspend-archival-via-or-legal-holds
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'dossiq:legal-hold:backfill')

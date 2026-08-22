@@ -23,13 +23,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\OpenRegister\Db\ObjectEntity;
-use OCA\OpenRegister\Event\ObjectCreatingEvent;
-use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\Dossiq\Listener\LocationBagValidationListener;
 use OCA\Dossiq\Service\External\Bag\BagAdapterInterface;
 use OCA\Dossiq\Service\External\Bag\BagLookupResult;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Event\ObjectCreatingEvent;
+use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\EventDispatcher\Event;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;

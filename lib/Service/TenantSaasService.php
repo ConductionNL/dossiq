@@ -187,6 +187,8 @@ class TenantSaasService {
 	 * @param string $tenantId Tenant UUID.
 	 *
 	 * @return array<string,mixed>|null Persisted tenant or null when missing.
+	 *
+	 * @spec openspec/specs/tenant-crud-lifecycle/spec.md#requirement-tenant-crud-api-req-001-a-api
 	 */
 	public function getById(string $tenantId): ?array {
 		$objectService = $this->getObjectService();
@@ -215,6 +217,8 @@ class TenantSaasService {
 	 * @param int $offset Page offset.
 	 *
 	 * @return array<int, array<string,mixed>> Tenant rows.
+	 *
+	 * @spec openspec/specs/tenant-crud-lifecycle/spec.md#requirement-tenant-crud-api-req-001-a-api
 	 */
 	public function listActive(?string $statusFilter = null, int $limit = 100, int $offset = 0): array {
 		$objectService = $this->getObjectService();
@@ -305,6 +309,8 @@ class TenantSaasService {
 	 * @param string $tenantId Tenant UUID.
 	 *
 	 * @return bool True when deletion succeeded.
+	 *
+	 * @spec openspec/specs/tenant-crud-lifecycle/spec.md#requirement-tenant-lifecycle-state-machine-req-001-a-lifecycle
 	 */
 	public function delete(string $tenantId): bool {
 		$objectService = $this->getObjectService();
@@ -387,6 +393,8 @@ class TenantSaasService {
 	 * @param string $slug Candidate slug.
 	 *
 	 * @return bool True when an existing tenant uses the slug.
+	 *
+	 * @spec openspec/specs/tenant-crud-lifecycle/spec.md#requirement-tenant-creation-with-unique-slug-req-001-a
 	 */
 	public function slugExists(string $slug): bool {
 		$objectService = $this->getObjectService();

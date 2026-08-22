@@ -52,6 +52,8 @@ class TenantWelcomeMailer {
 	 * @param array<string,mixed> $tenant Tenant row (must carry adminEmail or contractRef).
 	 *
 	 * @return bool True when the message was queued.
+	 *
+	 * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
 	 */
 	public function sendWelcomeEmail(array $tenant): bool {
 		$to = $this->resolveAdminEmail(tenant: $tenant);
@@ -108,6 +110,8 @@ class TenantWelcomeMailer {
 	 * @param array<string,mixed> $tenant Tenant row.
 	 *
 	 * @return string Plain-text body.
+	 *
+	 * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
 	 */
 	public function renderBody(array $tenant): string {
 		$name = (string)($tenant['displayName'] ?? $tenant['legalName'] ?? 'gemeente');

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -53,7 +54,6 @@ class RenameDutchDirectionValuesTest extends TestCase {
 
 	}//end step()
 
-
 	/**
 	 * Read a private constant.
 	 *
@@ -63,14 +63,12 @@ class RenameDutchDirectionValuesTest extends TestCase {
 	 */
 	private function constant(string $name) {
 		return (new ReflectionClass(RenameDutchDirectionValues::class))->getConstant($name);
-
 	}//end constant()
-
 
 	/**
 	 * Call a private method.
 	 *
-	 * @param string            $name The method name.
+	 * @param string $name The method name.
 	 * @param array<int, mixed> $args The arguments.
 	 *
 	 * @return mixed
@@ -79,9 +77,7 @@ class RenameDutchDirectionValuesTest extends TestCase {
 		$method = (new ReflectionClass(RenameDutchDirectionValues::class))->getMethod($name);
 		$method->setAccessible(true);
 		return $method->invokeArgs($this->step(), $args);
-
 	}//end call()
-
 
 	/**
 	 * THE BEHAVIOURAL ARM — a procest shard table with a `direction` column is
@@ -156,7 +152,6 @@ class RenameDutchDirectionValuesTest extends TestCase {
 
 	}//end testItUpdatesEachDutchValueOnADossiqShardTable()
 
-
 	/**
 	 * The step names itself for `occ maintenance:repair`.
 	 *
@@ -166,7 +161,6 @@ class RenameDutchDirectionValuesTest extends TestCase {
 		$this->assertStringContainsString('direction', $this->step()->getName());
 
 	}//end testItNamesItself()
-
 
 	/**
 	 * An install with no procest register does nothing and SAYS so.
@@ -195,7 +189,6 @@ class RenameDutchDirectionValuesTest extends TestCase {
 
 	}//end testAnInstallWithoutDossiqRegistersReportsInsteadOfSilentlyPassing()
 
-
 	/**
 	 * A database error while resolving registers is logged and skipped, not
 	 * thrown — one broken install must not abort the whole repair run.
@@ -217,7 +210,6 @@ class RenameDutchDirectionValuesTest extends TestCase {
 		$step->run($output);
 
 	}//end testAFailedRegisterLookupIsLoggedAndSkipped()
-
 
 	/**
 	 * A table whose columns cannot be inspected is skipped rather than updated
@@ -241,7 +233,6 @@ class RenameDutchDirectionValuesTest extends TestCase {
 
 	}//end testAnUninspectableTableIsSkippedRatherThanUpdatedBlind()
 
-
 	/**
 	 * The three Dutch values map to their English equivalents.
 	 *
@@ -254,7 +245,6 @@ class RenameDutchDirectionValuesTest extends TestCase {
 		);
 
 	}//end testTheValueMapCoversTheThreeDutchDirections()
-
 
 	/**
 	 * THE EXEMPTION ARM — the step touches only the `direction` column.
@@ -269,7 +259,6 @@ class RenameDutchDirectionValuesTest extends TestCase {
 		$this->assertSame('direction', $this->constant('COLUMN'));
 
 	}//end testItTouchesOnlyTheDirectionColumn()
-
 
 	/**
 	 * THE EXEMPTION ARM, from the other side — every statutory
@@ -304,7 +293,6 @@ class RenameDutchDirectionValuesTest extends TestCase {
 
 	}//end testTheStatutoryConfidentialityValuesAreNotRewritten()
 
-
 	/**
 	 * Both procest registers are in scope — resolving one slug would migrate
 	 * half the rows and report success.
@@ -320,7 +308,6 @@ class RenameDutchDirectionValuesTest extends TestCase {
 		$this->assertTrue($this->call('isShardOf', ['oc_openregister_table_2424_928', $markers]));
 
 	}//end testBothDossiqRegistersAreInScope()
-
 
 	/**
 	 * Another app's shard table is out of scope.
@@ -341,7 +328,6 @@ class RenameDutchDirectionValuesTest extends TestCase {
 
 	}//end testAnotherAppsShardTableIsNotMatched()
 
-
 	/**
 	 * A register id that merely starts with an in-scope id is not a match.
 	 *
@@ -356,7 +342,6 @@ class RenameDutchDirectionValuesTest extends TestCase {
 		$this->assertFalse($this->call('isShardOf', ['oc_openregister_table_1700_928', $markers]));
 
 	}//end testALongerRegisterIdIsNotMatched()
-
 
 	/**
 	 * Values outside the map are left alone.
@@ -373,7 +358,6 @@ class RenameDutchDirectionValuesTest extends TestCase {
 		$this->assertArrayNotHasKey('handler_to_citizen', $map);
 
 	}//end testAnUnrecognisedDirectionVocabularyIsNotRewritten()
-
 
 	/**
 	 * The step is idempotent by construction: no English target is also a
@@ -394,6 +378,5 @@ class RenameDutchDirectionValuesTest extends TestCase {
 		}
 
 	}//end testTheMigrationIsIdempotentByConstruction()
-
 
 }//end class

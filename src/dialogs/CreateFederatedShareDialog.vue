@@ -137,6 +137,8 @@ export default {
 		/**
 		 * @param {string} value the field name.
 		 * @return {string} a human-readable label.
+		 *
+		 * @spec openspec/specs/federated-case-collaboration/spec.md#requirement-federated-case-share-is-a-redacted-snapshot-never-the-live-case
 		 */
 		fieldLabel(value) {
 			const labels = {

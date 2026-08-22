@@ -114,6 +114,8 @@ export default {
 		 * Navigate to the full tasks list.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/specs/signalering-widgets/spec.md#requirement-task-due-reminders-widget-v1
 		 */
 		onViewAll() {
 			navigateTo(generateUrl('/apps/dossiq/tasks'))

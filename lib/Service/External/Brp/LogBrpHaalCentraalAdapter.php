@@ -64,6 +64,8 @@ class LogBrpHaalCentraalAdapter implements BrpHaalCentraalAdapterInterface {
 	 * @param array<string,mixed> $context Lookup context.
 	 *
 	 * @return BrpLookupResult The dispatch outcome.
+	 *
+	 * @spec openspec/specs/brp-register/spec.md#requirement-brp-person-register-schema-exists-in-openregister
 	 */
 	public function lookup(string $bsn, array $context = []): BrpLookupResult {
 		$this->logger->info(

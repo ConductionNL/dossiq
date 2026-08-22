@@ -28,13 +28,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
-use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\Dossiq\Event\ParafeerTransitionEvent;
 use OCA\Dossiq\Listener\ApprovalStepNotificationListener;
 use OCA\Dossiq\Listener\BezwaarAdviceRequestedListener;
 use OCA\Dossiq\Listener\BezwaarDecisionListener;
 use OCA\Dossiq\Listener\BezwaarHearingScheduledListener;
 use OCA\Dossiq\Listener\ParaferingAuditListener;
+use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**

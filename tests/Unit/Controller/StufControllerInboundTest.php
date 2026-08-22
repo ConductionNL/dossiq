@@ -1,4 +1,5 @@
 <?php
+
 /**
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -97,9 +98,9 @@ class StufControllerInboundTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->inspector      = $this->createMock(StufEnvelopeInspector::class);
+		$this->inspector = $this->createMock(StufEnvelopeInspector::class);
 		$this->messageHandler = $this->createMock(StufMessageHandler::class);
-		$this->parser         = $this->createMock(StufMessageParser::class);
+		$this->parser = $this->createMock(StufMessageParser::class);
 
 		$this->parser->method('parseBevestiging')->willReturn([]);
 		$this->inspector->method('detectBerichtSoort')->willReturn('Bv01');
@@ -107,7 +108,6 @@ class StufControllerInboundTest extends TestCase {
 		$this->inspector->method('extractFunctie')->willReturn('ontvanger');
 
 	}//end setUp()
-
 
 	/**
 	 * Build the controller with the raw body pinned to a known string.
@@ -126,7 +126,7 @@ class StufControllerInboundTest extends TestCase {
 		// StufServices exposes its collaborators as readonly promoted
 		// properties, so they are stubbed on the mock rather than injected.
 		$reflection = new \ReflectionClass(StufServices::class);
-		$instance   = $reflection->newInstanceWithoutConstructor();
+		$instance = $reflection->newInstanceWithoutConstructor();
 		foreach (['messageHandler' => $this->messageHandler, 'parser' => $this->parser] as $name => $double) {
 			$property = $reflection->getProperty($name);
 			$property->setAccessible(true);
@@ -135,26 +135,16 @@ class StufControllerInboundTest extends TestCase {
 
 		unset($services);
 
-		return new class(
-			'dossiq',
-			$this->createMock(IRequest::class),
-			$instance,
-			$this->createMock(StufSoapRequestDispatcher::class),
-			$this->inspector,
-			$this->createMock(IL10N::class),
-			$this->createMock(LoggerInterface::class),
-			$body,
-		) extends StufController {
-
+		return new class('dossiq', $this->createMock(IRequest::class), $instance, $this->createMock(StufSoapRequestDispatcher::class), $this->inspector, $this->createMock(IL10N::class), $this->createMock(LoggerInterface::class), $body, ) extends StufController {
 			/**
-			 * @param string                     $appName    App id.
-			 * @param IRequest                   $request    Request.
-			 * @param StufServices               $stuf       Services.
-			 * @param StufSoapRequestDispatcher  $dispatcher Dispatcher.
-			 * @param StufEnvelopeInspector      $inspector  Inspector.
-			 * @param IL10N                      $l10n       Translations.
-			 * @param LoggerInterface            $logger     Logger.
-			 * @param string                     $body       Raw body to serve.
+			 * @param string $appName App id.
+			 * @param IRequest $request Request.
+			 * @param StufServices $stuf Services.
+			 * @param StufSoapRequestDispatcher $dispatcher Dispatcher.
+			 * @param StufEnvelopeInspector $inspector Inspector.
+			 * @param IL10N $l10n Translations.
+			 * @param LoggerInterface $logger Logger.
+			 * @param string $body Raw body to serve.
 			 */
 			public function __construct(
 				string $appName,
@@ -178,7 +168,6 @@ class StufControllerInboundTest extends TestCase {
 
 			}//end __construct()
 
-
 			/**
 			 * Serve the pinned body instead of php://input.
 			 *
@@ -186,14 +175,11 @@ class StufControllerInboundTest extends TestCase {
 			 */
 			protected function readRawBody(): string {
 				return $this->body;
-
 			}//end readRawBody()
-
 
 		};
 
 	}//end controller()
-
 
 	/**
 	 * A tampered WSSE token is refused with 422, and the envelope is never
@@ -219,7 +205,6 @@ class StufControllerInboundTest extends TestCase {
 
 	}//end testATamperedWsseTokenIsRefused()
 
-
 	/**
 	 * An envelope from an unconfigured sender is refused with 400.
 	 *
@@ -237,7 +222,6 @@ class StufControllerInboundTest extends TestCase {
 
 	}//end testAnUnresolvableEndpointIsRefused()
 
-
 	/**
 	 * An empty body is refused with 400 before anything is resolved.
 	 *
@@ -253,7 +237,6 @@ class StufControllerInboundTest extends TestCase {
 		$this->assertSame('empty body', $response->getData());
 
 	}//end testAnEmptyBodyIsRefused()
-
 
 	/**
 	 * THE POSITIVE CONTROL — a verified sender is processed and acknowledged.
@@ -277,7 +260,6 @@ class StufControllerInboundTest extends TestCase {
 
 	}//end testAVerifiedSenderIsProcessedAndAcknowledged()
 
-
 	/**
 	 * The guard is keyed to the RESOLVED endpoint, not to the envelope alone.
 	 *
@@ -297,6 +279,5 @@ class StufControllerInboundTest extends TestCase {
 		$this->controller(self::ENVELOPE)->inbound();
 
 	}//end testTheTokenIsVerifiedAgainstTheResolvedEndpoint()
-
 
 }//end class

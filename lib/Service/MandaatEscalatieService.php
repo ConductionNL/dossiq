@@ -101,8 +101,8 @@ class MandaatEscalatieService {
 	 *
 	 * @param string $decisionType Decision type.
 	 * @param string $escalationReason Reason, carried into the unresolved-path
-	 *                               warning so a dead-ended escalation is
-	 *                               traceable.
+	 *                                 warning so a dead-ended escalation is
+	 *                                 traceable.
 	 *
 	 * @return array{mandaatId:string, userId:string}
 	 *

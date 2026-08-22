@@ -102,7 +102,7 @@ class BrkApiAdapter implements BrkAdapterInterface {
 	 * @param string $section Sectie (1-2 uppercase letters).
 	 * @param string $perceelnummer Perceelnummer (1-5 digits).
 	 * @param string|null $appartementsrechtSequenceNumber Optional appartementsrecht
-	 *                                                 volgnummer.
+	 *                                                     volgnummer.
 	 * @param array<string,mixed> $context Lookup context.
 	 *
 	 * @return BrkLookupResult

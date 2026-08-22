@@ -30,7 +30,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
-use OCA\OpenRegister\AppHost\Bootstrap;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\AppInfo\OpenRegisterAutoloader;
 use OCA\Dossiq\Dashboard\CasesOverviewWidget;
@@ -41,6 +40,7 @@ use OCA\Dossiq\Dashboard\StalledCasesWidget;
 use OCA\Dossiq\Dashboard\StartCaseWidget;
 use OCA\Dossiq\Dashboard\TaskRemindersWidget;
 use OCA\Dossiq\Mcp\DossiqToolProvider;
+use OCA\OpenRegister\AppHost\Bootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**

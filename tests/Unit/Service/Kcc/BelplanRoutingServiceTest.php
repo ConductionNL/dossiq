@@ -25,7 +25,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Kcc;
 
 use OCA\Dossiq\Service\Kcc\BelplanRoutingService;
-use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 
 /**

@@ -193,6 +193,8 @@ class ContactMomentService {
 	 * @return array<string, mixed> The saved contact moment.
 	 *
 	 * @throws OCSBadRequestException When validation fails or storage is unavailable.
+	 *
+	 * @spec openspec/specs/kcc-klantcontact-integratie/spec.md#requirement-contactmoment-records-capture-full-interaction-context
 	 */
 	public function create(array $data, string $agentId): array {
 		$payload = $this->buildPayload(data: $data, agentId: $agentId);

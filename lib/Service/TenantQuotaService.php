@@ -95,6 +95,8 @@ class TenantQuotaService {
 	 * @return array<int, array<string,mixed>> Persisted quota rows.
 	 *
 	 * @throws InvalidArgumentException When tier is unknown.
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-tier-based-quota-initialisation-req-005-a-req-005-e
 	 */
 	public function initialize(string $tenantId, string $tier): array {
 		if (array_key_exists($tier, self::TIER_DEFAULTS) === false) {

@@ -24,9 +24,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\OpenRegister\Db\Organisation;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TenantMigrationService;
+use OCA\OpenRegister\Db\Organisation;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;

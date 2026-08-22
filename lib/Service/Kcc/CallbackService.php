@@ -115,6 +115,8 @@ class CallbackService {
 	 * @return array<string, mixed> The saved callback request.
 	 *
 	 * @throws OCSBadRequestException When validation fails or storage is unavailable.
+	 *
+	 * @spec openspec/specs/kcc-klantcontact-integratie/spec.md#requirement-callback-scheduling-and-sla-tracking
 	 */
 	public function schedule(array $data, string $agentId): array {
 		$payload = $this->buildPayload(data: $data, agentId: $agentId);

@@ -113,6 +113,8 @@ export default {
 		 * Navigate to the full cases list.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/specs/signalering-widgets/spec.md#requirement-deadline-alerts-widget-v1
 		 */
 		onViewAll() {
 			navigateTo(generateUrl('/apps/dossiq/cases'))

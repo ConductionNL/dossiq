@@ -73,6 +73,8 @@ final class LogDigidSamlAdapter implements DigidSamlAdapterInterface {
 	 * @return BrokerAssertionResult
 	 *
 	 * @throws RuntimeException Always.
+	 *
+	 * @spec openspec/specs/zaakportaal-mijngemeente/spec.md#requirement-digid-and-eherkenning-authentication-with-wdo-mandated-trust-levels
 	 */
 	public function decodeAssertion(string $samlResponse, string $relayState): BrokerAssertionResult {
 		$this->logger->warning(

@@ -161,6 +161,8 @@ export default {
 		 * Human-readable deadline label (WCAG: text accompanies the colour).
 		 *
 		 * @return {string|null}
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 		 */
 		deadlineLabel() {
 			if (this.daysRemaining === null) return null

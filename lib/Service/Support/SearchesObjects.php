@@ -157,10 +157,10 @@ trait SearchesObjects {
 	 * service was reached through an untyped container lookup, which returned
 	 * whatever it returned and told no one.
 	 *
-	 * @param object              $objectService The OpenRegister object service.
-	 * @param int|string          $register      Register id, UUID or slug.
-	 * @param int|string          $schema        Schema id, UUID or slug.
-	 * @param array<string,mixed> $object        The object to store.
+	 * @param object $objectService The OpenRegister object service.
+	 * @param int|string $register Register id, UUID or slug.
+	 * @param int|string $schema Schema id, UUID or slug.
+	 * @param array<string,mixed> $object The object to store.
 	 *
 	 * @return array<string,mixed>|null The stored object, or null if it cannot be represented as one.
 	 */

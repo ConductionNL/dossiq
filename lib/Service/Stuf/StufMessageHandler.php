@@ -62,7 +62,6 @@ class StufMessageHandler {
 	 */
 	public const LEGACY_DIRECTION_OUTBOUND = 'uitgaand';
 
-
 	/**
 	 * Constructor.
 	 *

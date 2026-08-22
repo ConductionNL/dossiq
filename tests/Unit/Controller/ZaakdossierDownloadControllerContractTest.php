@@ -51,11 +51,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
+use OCA\Dossiq\Controller\ZaakdossierDownloadController;
 use OCA\Dossiq\Http\RangeStreamResponse;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Zaakdossier\DossierZipExporter;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
-use OCA\Dossiq\Controller\ZaakdossierDownloadController;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;

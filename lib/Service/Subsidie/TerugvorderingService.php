@@ -154,6 +154,8 @@ class TerugvorderingService {
 	 * @return array<string, mixed> The created clawback record.
 	 *
 	 * @throws OCSBadRequestException When the amount is non-positive or persistence fails.
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-005-vaststelling-with-optional-terugvordering
 	 */
 	public function createClawbackCase(string $uitvoeringId, float $amount, ?DateTimeImmutable $publication = null): array {
 		if ($amount <= 0.0) {

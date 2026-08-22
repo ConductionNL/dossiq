@@ -100,6 +100,13 @@ export default {
 
 	methods: {
 		t,
+		/**
+		 * Send a samenwerkverzoek to the requested competent authority.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/dso-omgevingsloket/spec.md#requirement-req-dso-011-multi-tenancy-and-bevoegd-gezag-isolation
+		 */
 		async submit() {
 			if (!this.requestedCompetentAuthority) {
 				return

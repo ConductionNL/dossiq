@@ -30,10 +30,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo;
 
-use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCA\Dossiq\AppInfo\Registrar\BootRegistrar;
 use OCA\Dossiq\AppInfo\Registrar\ListenerRegistrar;
 use OCA\Dossiq\AppInfo\Registrar\ServiceRegistrar;
+use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;

@@ -28,9 +28,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
-use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
+use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**

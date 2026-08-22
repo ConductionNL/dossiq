@@ -25,9 +25,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\DsoCaseService;
+use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\IAppConfig;

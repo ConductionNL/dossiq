@@ -33,8 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\OpenRegister\Db\Organisation;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Db\Organisation;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;

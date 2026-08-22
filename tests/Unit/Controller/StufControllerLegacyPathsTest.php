@@ -1,4 +1,5 @@
 <?php
+
 /**
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -56,7 +57,6 @@ class StufControllerLegacyPathsTest extends TestCase {
 	 */
 	private $dispatcher;
 
-
 	/**
 	 * Set up the dispatcher double.
 	 *
@@ -67,7 +67,6 @@ class StufControllerLegacyPathsTest extends TestCase {
 
 	}//end setUp()
 
-
 	/**
 	 * Build the controller with a pinned request body.
 	 *
@@ -76,16 +75,7 @@ class StufControllerLegacyPathsTest extends TestCase {
 	private function controller(): StufController {
 		$services = (new ReflectionClass(StufServices::class))->newInstanceWithoutConstructor();
 
-		return new class(
-			'dossiq',
-			$this->createMock(IRequest::class),
-			$services,
-			$this->dispatcher,
-			$this->createMock(StufEnvelopeInspector::class),
-			$this->createMock(IL10N::class),
-			$this->createMock(LoggerInterface::class),
-		) extends StufController {
-
+		return new class('dossiq', $this->createMock(IRequest::class), $services, $this->dispatcher, $this->createMock(StufEnvelopeInspector::class), $this->createMock(IL10N::class), $this->createMock(LoggerInterface::class), ) extends StufController {
 			/**
 			 * Serve a fixed body instead of php://input.
 			 *
@@ -93,14 +83,11 @@ class StufControllerLegacyPathsTest extends TestCase {
 			 */
 			protected function readRawBody(): string {
 				return '<soap:Envelope/>';
-
 			}//end readRawBody()
-
 
 		};
 
 	}//end controller()
-
 
 	/**
 	 * /api/stuf/zaken reaches the same dispatch as /api/stuf/cases.
@@ -121,7 +108,6 @@ class StufControllerLegacyPathsTest extends TestCase {
 
 	}//end testTheDutchCasesPathDispatchesAsCases()
 
-
 	/**
 	 * /api/stuf/personen reaches the same dispatch as /api/stuf/persons.
 	 *
@@ -136,7 +122,6 @@ class StufControllerLegacyPathsTest extends TestCase {
 		$this->controller()->personsLegacyPath();
 
 	}//end testTheDutchPersonsPathDispatchesAsPersons()
-
 
 	/**
 	 * The two services stay distinguishable.
@@ -154,7 +139,6 @@ class StufControllerLegacyPathsTest extends TestCase {
 
 	}//end testTheTwoServicesAreNotTheSameValue()
 
-
 	/**
 	 * The service discriminators are English.
 	 *
@@ -170,6 +154,5 @@ class StufControllerLegacyPathsTest extends TestCase {
 		$this->assertSame('persons', StufSoapRequestDispatcher::SERVICE_PERSONS);
 
 	}//end testTheServiceDiscriminatorsAreEnglish()
-
 
 }//end class

@@ -40,6 +40,8 @@ export function federatedSharesListEndpoint() {
  * Build the create-federated-share endpoint.
  *
  * @return {string} the endpoint path.
+ *
+ * @spec openspec/specs/federated-case-collaboration/spec.md#requirement-federated-case-share-is-a-redacted-snapshot-never-the-live-case
  */
 export function createFederatedShareEndpoint() {
 	return '/apps/dossiq/api/federation/shares'
@@ -50,6 +52,8 @@ export function createFederatedShareEndpoint() {
  *
  * @param {string} shareId the caseFederatedShare UUID.
  * @return {string} the endpoint path.
+ *
+ * @spec openspec/specs/federated-case-collaboration/spec.md#requirement-federated-share-revocation-is-immediate-and-single-sourced
  */
 export function revokeFederatedShareEndpoint(shareId) {
 	return `/apps/dossiq/api/federation/shares/${encodeURIComponent(shareId)}`
@@ -60,6 +64,8 @@ export function revokeFederatedShareEndpoint(shareId) {
  *
  * @param {string} federatedShareId the caseFederatedShare UUID.
  * @return {string} the endpoint path.
+ *
+ * @spec openspec/specs/federated-case-collaboration/spec.md#requirement-shared-activity-stream-is-async-append-only-scoped-to-one-federated-share
  */
 export function federatedActivityEndpoint(federatedShareId) {
 	return `/apps/dossiq/api/federation/activity/${encodeURIComponent(federatedShareId)}`
@@ -72,6 +78,8 @@ export function federatedActivityEndpoint(federatedShareId) {
  * @param {string} shareToken the transfer-scoped OR federated-share bearer token.
  * @param {string} transferId the transfer UUID.
  * @return {string} the endpoint path.
+ *
+ * @spec openspec/specs/federated-case-collaboration/spec.md#requirement-case-transfer-extends-across-federation-with-idempotent-accept-reject-and-a-custody-audit-trail
  */
 export function publicFederatedTransferEndpoint(shareToken, transferId) {
 	return `/apps/dossiq/api/public/federation/transfers/${shareToken}/${transferId}`

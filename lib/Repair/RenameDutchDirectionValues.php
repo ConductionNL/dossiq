@@ -109,14 +109,13 @@ class RenameDutchDirectionValues implements IRepairStep {
 	private const VALUE_MAP = [
 		'inkomend' => 'inbound',
 		'uitgaand' => 'outbound',
-		'intern'   => 'internal',
+		'intern' => 'internal',
 	];
-
 
 	/**
 	 * Constructor.
 	 *
-	 * @param IDBConnection   $db     Database connection.
+	 * @param IDBConnection $db Database connection.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
@@ -126,7 +125,6 @@ class RenameDutchDirectionValues implements IRepairStep {
 
 	}//end __construct()
 
-
 	/**
 	 * Step name shown by `occ maintenance:repair`.
 	 *
@@ -134,9 +132,7 @@ class RenameDutchDirectionValues implements IRepairStep {
 	 */
 	public function getName(): string {
 		return 'Dossiq: rewrite Dutch direction values (inkomend/uitgaand/intern) to English';
-
 	}//end getName()
-
 
 	/**
 	 * Rewrite the direction values across every procest shard table.
@@ -200,7 +196,6 @@ class RenameDutchDirectionValues implements IRepairStep {
 
 	}//end run()
 
-
 	/**
 	 * Whether a shard table carries a `direction` column.
 	 *
@@ -226,9 +221,7 @@ class RenameDutchDirectionValues implements IRepairStep {
 		}
 
 		return $stmt->fetch(\PDO::FETCH_ASSOC) !== false;
-
 	}//end hasDirectionColumn()
-
 
 	/**
 	 * Resolve the shard tables of every register whose slug starts with the prefix.
@@ -288,9 +281,7 @@ class RenameDutchDirectionValues implements IRepairStep {
 		}
 
 		return $tables;
-
 	}//end shardTables()
-
 
 	/**
 	 * Whether a table name belongs to one of the in-scope registers.
@@ -298,7 +289,7 @@ class RenameDutchDirectionValues implements IRepairStep {
 	 * Matched on the `openregister_table_<id>_` MARKER rather than a computed
 	 * prefix, so an instance-specific table prefix cannot make the match fail.
 	 *
-	 * @param string             $table   The table name.
+	 * @param string $table The table name.
 	 * @param array<int, string> $markers The in-scope markers.
 	 *
 	 * @return bool
@@ -311,9 +302,7 @@ class RenameDutchDirectionValues implements IRepairStep {
 		}
 
 		return false;
-
 	}//end isShardOf()
-
 
 	/**
 	 * Quote an identifier for the active platform.
@@ -328,8 +317,6 @@ class RenameDutchDirectionValues implements IRepairStep {
 	 */
 	private function quote(string $identifier): string {
 		return $this->db->getDatabasePlatform()->quoteSingleIdentifier($identifier);
-
 	}//end quote()
-
 
 }//end class

@@ -27,10 +27,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\OpenRegister\Db\ObjectEntity;
-use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\Dossiq\Listener\ChecklistRunImmutabilityListener;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 

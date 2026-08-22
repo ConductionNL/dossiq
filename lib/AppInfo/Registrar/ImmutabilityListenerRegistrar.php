@@ -37,10 +37,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
-use OCA\OpenRegister\Event\ObjectDeletingEvent;
-use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\Dossiq\Listener\BewijsstukImmutabilityListener;
 use OCA\Dossiq\Listener\ChecklistRunImmutabilityListener;
+use OCA\OpenRegister\Event\ObjectDeletingEvent;
+use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**

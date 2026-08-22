@@ -128,6 +128,13 @@ export default {
 			return useObjectStore()
 		},
 
+		/**
+		 * Heading for the agenda currently being compiled.
+		 *
+		 * @return {string} The agenda title.
+		 *
+		 * @spec openspec/specs/besluitvorming-workflow/spec.md#requirement-req-bvw-004-agenda-compiler-must-support-hamerstukken-and-bespreekstukken-with-configurable-ordering
+		 */
 		agendaTitle() {
 			const label = this.meetingDate ? ' ' + this.meetingDate : ''
 			return this.t('dossiq', 'Agenda') + label

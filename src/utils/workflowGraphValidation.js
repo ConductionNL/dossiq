@@ -54,6 +54,8 @@ function asArray(raw) {
  * @param {Array|string} graph.statusNodes `statusType` objects: {id, name, isFinal}
  * @param {Array|string} graph.transitions Transition objects: {id, fromStatus, toStatus}
  * @return {Array<{type: 'error'|'warning', code: string, message: string}>} Issues found
+ *
+ * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-workflow-editor-validation
  */
 export function validateWorkflowGraph({ statusNodes, transitions } = {}) {
 	const nodes = asArray(statusNodes)

@@ -228,6 +228,8 @@ export default {
 		 * populate the transition picker (the column's available transitions).
 		 *
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/case-bulk-status-transition/spec.md#requirement-column-scoped-selection-on-the-workflow-board
 		 */
 		async loadTransitions() {
 			this.loadingTransitions = true
@@ -259,6 +261,8 @@ export default {
 		 * Run a read-only bulk preview for the currently selected transition.
 		 *
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/case-bulk-status-transition/spec.md#requirement-preview-before-execute
 		 */
 		async runPreview() {
 			this.previewLoading = true
@@ -284,6 +288,8 @@ export default {
 		 * Execute the bulk transition and render per-case results.
 		 *
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/case-bulk-status-transition/spec.md#requirement-bulk-transitions-go-through-the-engine
 		 */
 		async onExecute() {
 			if (!this.selectedTransition) return

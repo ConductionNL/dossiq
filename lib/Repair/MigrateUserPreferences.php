@@ -148,9 +148,9 @@ class MigrateUserPreferences implements IRepairStep {
 	/**
 	 * Constructor for MigrateUserPreferences.
 	 *
-	 * @param IConfig         $config      The user-value store to read and write.
-	 * @param IUserManager    $userManager The user enumeration backend.
-	 * @param LoggerInterface $logger      Logger for preferences that fail to copy.
+	 * @param IConfig $config The user-value store to read and write.
+	 * @param IUserManager $userManager The user enumeration backend.
+	 * @param LoggerInterface $logger Logger for preferences that fail to copy.
 	 */
 	public function __construct(
 		private readonly IConfig $config,
@@ -171,7 +171,6 @@ class MigrateUserPreferences implements IRepairStep {
 	 */
 	public function getName(): string {
 		return 'Copy Dossiq per-user preferences from the procest app id to dossiq';
-
 	}//end getName()
 
 	/**

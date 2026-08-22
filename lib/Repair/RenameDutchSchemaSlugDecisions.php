@@ -48,8 +48,8 @@ class RenameDutchSchemaSlugDecisions {
 	 * is visible to the collision check of a later one — otherwise two entries
 	 * targeting the same name would both look safe.
 	 *
-	 * @param array<string, string> $map      Old slug => new slug.
-	 * @param array<int, string>    $existing Slugs currently present.
+	 * @param array<string, string> $map Old slug => new slug.
+	 * @param array<int, string> $existing Slugs currently present.
 	 *
 	 * @return array{renames: array<string, string>, refused: array<string, string>}
 	 *

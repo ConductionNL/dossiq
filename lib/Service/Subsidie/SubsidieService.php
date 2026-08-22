@@ -216,6 +216,8 @@ class SubsidieService {
 	 * @return array<string, mixed> The created aanvraag record.
 	 *
 	 * @throws OCSBadRequestException When OpenRegister is unavailable/unconfigured.
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-002-awb-termijn-binding-for-each-phase
 	 */
 	public function createAanvraag(array $payload, int $termWeken = self::DEFAULT_AANVRAAG_TERMIJN_WEKEN): array {
 		[$objectService, $register, $schema] = $this->resolve(schemaConfigKey: 'subsidie_aanvraag_schema');
@@ -254,6 +256,8 @@ class SubsidieService {
 	 * @return array<string, mixed> The updated aanvraag record.
 	 *
 	 * @throws OCSBadRequestException When the transition is illegal or persistence fails.
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-002-awb-termijn-binding-for-each-phase
 	 */
 	public function transitionAanvraag(string $id, string $toStatus): array {
 		[$objectService, $register, $schema] = $this->resolve(schemaConfigKey: 'subsidie_aanvraag_schema');

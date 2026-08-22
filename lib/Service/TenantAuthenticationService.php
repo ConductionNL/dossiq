@@ -67,6 +67,8 @@ class TenantAuthenticationService {
 	 * @param string $action Requested action (create|edit|status_update|delete|...).
 	 *
 	 * @return array{allowed: bool, reason: string} Decision payload.
+	 *
+	 * @spec openspec/specs/tenant-mandate/spec.md#requirement-mandate-matrix-validation-per-action-req-002-d-req-006-d
 	 */
 	public function validateMandateMatrix(string $tenantId, string $userId, string $action): array {
 		try {

@@ -150,6 +150,13 @@ export default {
 			return this.objectId || this.$route?.params?.id || null
 		},
 
+		/**
+		 * Field descriptors for the decision create/edit form.
+		 *
+		 * @return {Array<object>} The form field descriptors.
+		 *
+		 * @spec openspec/specs/roles-decisions/spec.md
+		 */
 		formFields() {
 			const enumLabels = {}
 			for (const dt of this.decisionTypes) {
@@ -242,6 +249,14 @@ export default {
 			this.deleteItem = decision
 		},
 
+		/**
+		 * Persist the decision through the canonical object store.
+		 *
+		 * @param {object} formData The submitted form values.
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/roles-decisions/spec.md
+		 */
 		async onFormConfirm(formData) {
 			try {
 				const result = await this.objectStore.saveObject('decision', {
@@ -263,6 +278,14 @@ export default {
 			}
 		},
 
+		/**
+		 * Delete the decision through the canonical object store.
+		 *
+		 * @param {string} id The decision object id.
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/roles-decisions/spec.md
+		 */
 		async onDeleteConfirm(id) {
 			try {
 				await this.objectStore.deleteObject('decision', id)

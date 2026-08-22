@@ -136,6 +136,13 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Compose a concept beschikking from the case data plus overrides.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/beschikking-generatie/spec.md#requirement-conceptbeschikking-vanuit-zaakgegevens-samenstellen-req-bes-001
+		 */
 		async onCompose() {
 			this.submitting = true
 			this.error = ''

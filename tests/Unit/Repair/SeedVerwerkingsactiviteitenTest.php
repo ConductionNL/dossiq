@@ -21,9 +21,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Repair;
 
-use OCA\OpenRegister\Db\Verwerkingsactiviteit;
 use OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Db\Verwerkingsactiviteit;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;

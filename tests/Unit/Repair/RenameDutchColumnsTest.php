@@ -77,7 +77,7 @@ final class RenameDutchColumnsTest extends TestCase {
 	/**
 	 * Invoke a private method on the step.
 	 *
-	 * @param string       $name Method name.
+	 * @param string $name Method name.
 	 * @param array<mixed> $args Positional arguments.
 	 *
 	 * @return mixed
@@ -149,7 +149,7 @@ final class RenameDutchColumnsTest extends TestCase {
 			$targets[$new][] = $old;
 		}
 
-		$ambiguous = array_filter($targets, static fn(array $s): bool => count($s) > 1);
+		$ambiguous = array_filter($targets, static fn (array $s): bool => count($s) > 1);
 		if ($ambiguous === []) {
 			self::markTestSkipped('no target in this map has more than one source');
 		}
@@ -217,7 +217,6 @@ final class RenameDutchColumnsTest extends TestCase {
 		$this->db->method('executeStatement')->willReturn(1);
 		self::assertTrue($this->call('exec', ['ALTER TABLE x RENAME COLUMN a TO b']));
 	}//end testSuccessfulStatementReportsSuccess()
-
 
 	/**
 	 * run() renames a Dutch column it finds on a real shard table.

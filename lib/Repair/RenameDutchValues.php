@@ -36,73 +36,69 @@ use OCP\Migration\IRepairStep;
 /**
  * Rewrites stored Dutch enum values to their English replacements.
  */
-class RenameDutchValues implements IRepairStep
-{
-    /**
-     * Constructor.
-     *
-     * @param ValueMigrationPort        $gateway   Storage seam.
-     * @param RenameDutchValueDecisions $decisions Pure predicates.
-     */
-    public function __construct(
-        private readonly ValueMigrationPort $gateway,
-        private readonly RenameDutchValueDecisions $decisions,
-    ) {
-    }//end __construct()
+class RenameDutchValues implements IRepairStep {
+	/**
+	 * Constructor.
+	 *
+	 * @param ValueMigrationPort $gateway Storage seam.
+	 * @param RenameDutchValueDecisions $decisions Pure predicates.
+	 */
+	public function __construct(
+		private readonly ValueMigrationPort $gateway,
+		private readonly RenameDutchValueDecisions $decisions,
+	) {
+	}//end __construct()
 
-    /**
-     * Human-readable step name.
-     *
-     * @return string
-     *
-     * @spec exclude Data migration for the Dutch-to-English vocabulary change.
-     */
-    public function getName(): string
-    {
-        return 'Translate stored dossiq Dutch enum values to English';
+	/**
+	 * Human-readable step name.
+	 *
+	 * @return string
+	 *
+	 * @spec exclude Data migration for the Dutch-to-English vocabulary change.
+	 */
+	public function getName(): string {
+		return 'Translate stored dossiq Dutch enum values to English';
+	}//end getName()
 
-    }//end getName()
+	/**
+	 * Rewrite the stored values, one column at a time.
+	 *
+	 * @param IOutput $output Repair output.
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Data migration for the Dutch-to-English vocabulary change.
+	 */
+	public function run(IOutput $output): void {
+		$tables = $this->gateway->shardTables();
+		if ($tables === []) {
+			$output->info($this->decisions->nothingToDoMessage());
+			return;
+		}
 
-    /**
-     * Rewrite the stored values, one column at a time.
-     *
-     * @param IOutput $output Repair output.
-     *
-     * @return void
-     *
-     * @spec exclude Data migration for the Dutch-to-English vocabulary change.
-     */
-    public function run(IOutput $output): void
-    {
-        $tables = $this->gateway->shardTables();
-        if ($tables === []) {
-            $output->info($this->decisions->nothingToDoMessage());
-            return;
-        }
+		$updated = 0;
+		foreach ($tables as $table) {
+			$columns = $this->gateway->columnsOf($table);
+			if ($columns === []) {
+				continue;
+			}
 
-        $updated = 0;
-        foreach ($tables as $table) {
-            $columns = $this->gateway->columnsOf($table);
-            if ($columns === []) {
-                continue;
-            }
+			$planned = $this->decisions->plannedRewrites(
+				valueMap: RenameDutchValueDecisions::VALUE_MAP,
+				columns: $columns
+			);
 
-            $planned = $this->decisions->plannedRewrites(
-                valueMap: RenameDutchValueDecisions::VALUE_MAP,
-                columns: $columns
-            );
+			foreach ($planned as $rewrite) {
+				$updated += $this->gateway->rewrite(
+					table: $table,
+					column: $rewrite['column'],
+					old: $rewrite['old'],
+					new: $rewrite['new']
+				);
+			}
+		}
 
-            foreach ($planned as $rewrite) {
-                $updated += $this->gateway->rewrite(
-                    table: $table,
-                    column: $rewrite['column'],
-                    old: $rewrite['old'],
-                    new: $rewrite['new']
-                );
-            }
-        }
+		$output->info($this->decisions->summaryMessage(updated: $updated));
 
-        $output->info($this->decisions->summaryMessage(updated: $updated));
-
-    }//end run()
+	}//end run()
 }//end class

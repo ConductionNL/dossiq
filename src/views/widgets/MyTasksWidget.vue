@@ -103,6 +103,8 @@ export default {
 		 * Navigate to the full tasks list.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/specs/my-work/spec.md#requirement-personal-workload-dashboard-widgets-mvp
 		 */
 		onViewAll() {
 			navigateTo(generateUrl('/apps/dossiq/tasks'))

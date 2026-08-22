@@ -85,6 +85,13 @@ export default {
 
 	methods: {
 		t,
+		/**
+		 * Execute the selected DSO status transition.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/dso-omgevingsloket/spec.md#requirement-req-dso-008-dso-status-lifecycle-for-vergunningaanvragen
+		 */
 		async submit() {
 			if (!this.selectedStatus) return
 			this.submitting = true

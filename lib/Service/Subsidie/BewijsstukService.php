@@ -160,6 +160,8 @@ class BewijsstukService {
 	 * @return array<string, mixed> The created bewijsstuk record.
 	 *
 	 * @throws OCSBadRequestException When validation/persistence fails.
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-007-bewijsstukken-management-with-bewaartermijn
 	 */
 	public function create(array $payload, ?string $contents = null, ?int $regelingRetention = null): array {
 		$linkedIn = (string)($payload['linkedIn'] ?? '');

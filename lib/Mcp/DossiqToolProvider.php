@@ -34,9 +34,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Mcp;
 
-use OCA\OpenRegister\Mcp\IMcpToolProvider;
 use OCA\Dossiq\Mcp\Tool\DossiqCaseAuthorizer;
 use OCA\Dossiq\Mcp\Tool\DossiqCaseReader;
+use OCA\OpenRegister\Mcp\IMcpToolProvider;
 
 /**
  * Dossiq MCP Tool Provider.

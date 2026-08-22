@@ -114,7 +114,6 @@ class StufController extends Controller {
 
 	}//end cases()
 
-
 	/**
 	 * Serve the deprecated Dutch URL, /api/stuf/zaken.
 	 *
@@ -139,7 +138,6 @@ class StufController extends Controller {
 	#[AnonRateLimit(limit: 300, period: 60)]
 	public function casesLegacyPath(): DataDisplayResponse {
 		return $this->cases();
-
 	}//end casesLegacyPath()
 
 	/**
@@ -162,7 +160,6 @@ class StufController extends Controller {
 
 	}//end persons()
 
-
 	/**
 	 * Serve the deprecated Dutch URL, /api/stuf/personen.
 	 *
@@ -182,7 +179,6 @@ class StufController extends Controller {
 	#[AnonRateLimit(limit: 300, period: 60)]
 	public function personsLegacyPath(): DataDisplayResponse {
 		return $this->persons();
-
 	}//end personsLegacyPath()
 
 	/**
@@ -293,7 +289,6 @@ class StufController extends Controller {
 		return new DataResponse(data: 'ack', statusCode: Http::STATUS_OK);
 	}//end inbound()
 
-
 	/**
 	 * Serve the deprecated Dutch URL, /api/stuf/inkomend.
 	 *
@@ -321,9 +316,7 @@ class StufController extends Controller {
 	#[AnonRateLimit(limit: 300, period: 60)]
 	public function inboundLegacyPath(): DataResponse {
 		return $this->inbound();
-
 	}//end inboundLegacyPath()
-
 
 	/**
 	 * Read the raw request body.
@@ -344,7 +337,6 @@ class StufController extends Controller {
 	 */
 	protected function readRawBody(): string {
 		return (string)file_get_contents(filename: 'php://input');
-
 	}//end readRawBody()
 
 	/**

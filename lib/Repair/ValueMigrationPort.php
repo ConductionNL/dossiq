@@ -30,39 +30,38 @@ namespace OCA\Dossiq\Repair;
 /**
  * The three storage operations the value migration performs.
  */
-interface ValueMigrationPort
-{
-    /**
-     * Every OpenRegister shard table on this install.
-     *
-     * @return array<int, string> Table names, empty when none or unreadable.
-     *
-     * @spec exclude Seam for the Dutch-to-English vocabulary migration.
-     */
-    public function shardTables(): array;
+interface ValueMigrationPort {
+	/**
+	 * Every OpenRegister shard table on this install.
+	 *
+	 * @return array<int, string> Table names, empty when none or unreadable.
+	 *
+	 * @spec exclude Seam for the Dutch-to-English vocabulary migration.
+	 */
+	public function shardTables(): array;
 
-    /**
-     * The columns a table has.
-     *
-     * @param string $table Table name.
-     *
-     * @return array<int, string> Column names, empty when unreadable.
-     *
-     * @spec exclude Seam for the Dutch-to-English vocabulary migration.
-     */
-    public function columnsOf(string $table): array;
+	/**
+	 * The columns a table has.
+	 *
+	 * @param string $table Table name.
+	 *
+	 * @return array<int, string> Column names, empty when unreadable.
+	 *
+	 * @spec exclude Seam for the Dutch-to-English vocabulary migration.
+	 */
+	public function columnsOf(string $table): array;
 
-    /**
-     * Rewrite one stored value to another in one column.
-     *
-     * @param string $table  Table name.
-     * @param string $column Column name.
-     * @param string $old    The stored Dutch value.
-     * @param string $new    The English replacement.
-     *
-     * @return int Rows affected; 0 when the statement failed.
-     *
-     * @spec exclude Seam for the Dutch-to-English vocabulary migration.
-     */
-    public function rewrite(string $table, string $column, string $old, string $new): int;
+	/**
+	 * Rewrite one stored value to another in one column.
+	 *
+	 * @param string $table Table name.
+	 * @param string $column Column name.
+	 * @param string $old The stored Dutch value.
+	 * @param string $new The English replacement.
+	 *
+	 * @return int Rows affected; 0 when the statement failed.
+	 *
+	 * @spec exclude Seam for the Dutch-to-English vocabulary migration.
+	 */
+	public function rewrite(string $table, string $column, string $old, string $new): int;
 }//end interface

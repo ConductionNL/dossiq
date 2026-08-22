@@ -181,6 +181,8 @@ class TenantConfigurationService {
 	 * @param array<string,mixed> $config Configuration row.
 	 *
 	 * @return array<string,string> CSS-variable map.
+	 *
+	 * @spec openspec/specs/tenant-configuration/spec.md#requirement-branding-configuration-and-theming-tokens-req-004-a
 	 */
 	public function getThemingTokens(array $config): array {
 		$branding = (array)($config['branding'] ?? []);

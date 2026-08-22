@@ -62,6 +62,8 @@ class LogKvkHandelsregisterAdapter implements KvkHandelsregisterAdapterInterface
 	 * @param array<string,mixed> $context Lookup context.
 	 *
 	 * @return KvkLookupResult The dispatch outcome.
+	 *
+	 * @spec openspec/specs/kvk-register/spec.md#requirement-kvk-company-register-schema-exists-in-openregister
 	 */
 	public function lookup(string $kvkNumber, array $context = []): KvkLookupResult {
 		$this->logger->info(

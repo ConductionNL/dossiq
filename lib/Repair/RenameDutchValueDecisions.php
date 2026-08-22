@@ -429,11 +429,11 @@ class RenameDutchValueDecisions {
 	 */
 	public function columnFor(string $name): string {
 		$column = preg_replace('/([a-z0-9])([A-Z])/', '$1_$2', $name);
-		$column = strtolower((string) $column);
+		$column = strtolower((string)$column);
 		$column = preg_replace('/[^a-z0-9_]/', '_', $column);
-		$column = preg_replace('/_+/', '_', (string) $column);
+		$column = preg_replace('/_+/', '_', (string)$column);
 
-		return rtrim((string) $column, '_');
+		return rtrim((string)$column, '_');
 	}//end columnFor()
 
 	/**
@@ -444,7 +444,7 @@ class RenameDutchValueDecisions {
 	 * UPDATE against a missing column is an error rather than a no-op.
 	 *
 	 * @param array<string, array<string, string>> $valueMap Property => old => new.
-	 * @param array<int, string>                   $columns  Columns the table has.
+	 * @param array<int, string> $columns Columns the table has.
 	 *
 	 * @return array<int, array{column: string, old: string, new: string}>
 	 *
@@ -462,7 +462,7 @@ class RenameDutchValueDecisions {
 			foreach ($values as $old => $new) {
 				$planned[] = [
 					'column' => $column,
-					'old' => (string) $old,
+					'old' => (string)$old,
 					'new' => $new,
 				];
 			}
@@ -478,14 +478,14 @@ class RenameDutchValueDecisions {
 	 * inside a repair step, where an exception aborts the upgrade.
 	 *
 	 * @param array<int, array<string, mixed>> $rows Result rows.
-	 * @param string                           $key  Column to read.
+	 * @param string $key Column to read.
 	 *
 	 * @return array<int, string>
 	 *
 	 * @spec exclude Predicate of the Dutch-to-English vocabulary migration.
 	 */
 	public function column(array $rows, string $key): array {
-		return array_map(static fn (array $row): string => (string) ($row[$key] ?? ''), $rows);
+		return array_map(static fn (array $row): string => (string)($row[$key] ?? ''), $rows);
 	}//end column()
 
 	/**
@@ -532,12 +532,12 @@ class RenameDutchValueDecisions {
 		foreach ($valueMap as $property => $values) {
 			foreach ($values as $old => $new) {
 				$normalise = static fn (string $value): string
-					=> strtolower((string) preg_replace('/[^a-z0-9]/i', '', $value));
-				if ($normalise((string) $old) !== $normalise($new)) {
+					=> strtolower((string)preg_replace('/[^a-z0-9]/i', '', $value));
+				if ($normalise((string)$old) !== $normalise($new)) {
 					continue;
 				}
 
-				$offenders[] = sprintf('%s: %s -> %s', (string) $property, (string) $old, $new);
+				$offenders[] = sprintf('%s: %s -> %s', (string)$property, (string)$old, $new);
 			}
 		}
 

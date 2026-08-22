@@ -98,6 +98,13 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * Placeholder text for the motivation field, per chosen outcome.
+		 *
+		 * @return {string} The translated placeholder.
+		 *
+		 * @spec openspec/specs/dso-omgevingsloket/spec.md#requirement-req-dso-008-dso-status-lifecycle-for-vergunningaanvragen
+		 */
 		motivationPlaceholder() {
 			if (this.outcome === 'granted') {
 				return t(
@@ -119,6 +126,13 @@ export default {
 
 	methods: {
 		t,
+		/**
+		 * Record the beschikking on the DSO case.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/dso-omgevingsloket/spec.md#requirement-req-dso-008-dso-status-lifecycle-for-vergunningaanvragen
+		 */
 		async submit() {
 			if (!this.outcome) {
 				return

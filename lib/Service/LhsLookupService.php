@@ -169,8 +169,8 @@ class LhsLookupService {
 			);
 
 			// The outer is_array() is always true ($results is typed array); the inner
-		// one on $results[0] is NOT redundant and stays.
-		if (isset($results[0]) === true && is_array($results[0]) === true) {
+			// one on $results[0] is NOT redundant and stays.
+			if (isset($results[0]) === true && is_array($results[0]) === true) {
 				return array_merge($results[0], ['source' => 'register']);
 			}
 

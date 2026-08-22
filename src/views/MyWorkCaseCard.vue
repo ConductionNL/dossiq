@@ -89,6 +89,13 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * Card heading for one case on the personal work index.
+		 *
+		 * @return {string} The case title.
+		 *
+		 * @spec openspec/specs/my-work/spec.md#requirement-card-display-mvp
+		 */
 		title() {
 			return (
 				this.object.title
@@ -150,7 +157,13 @@ export default {
 			return urgencyChipClass(this.urgencyEntry && this.urgencyEntry.tier)
 		},
 
-		/** Human label for the urgency chip; '' hides the chip (normal tier). */
+		/**
+		 * Human label for the urgency chip; '' hides the chip (normal tier).
+		 *
+		 * @return {string} The translated urgency label, or '' to hide the chip.
+		 *
+		 * @spec openspec/specs/my-work/spec.md#requirement-card-display-mvp
+		 */
 		urgencyChipLabel() {
 			const tier = this.urgencyEntry && this.urgencyEntry.tier
 			switch (tier) {
