@@ -339,14 +339,6 @@
 			"order": 71
 		},
 		{
-			"id": "SubstitutionMenu",
-			"label": "Substitution",
-			"icon": "AccountSwitchOutline",
-			"route": "SubstitutionSettings",
-			"section": "settings",
-			"order": 93
-		},
-		{
 			"id": "SubstitutionAdminMenu",
 			"label": "Substitutions & reassignment",
 			"icon": "AccountSwitchOutline",
@@ -4800,14 +4792,6 @@
 				"widget-td-quarterly": "TdQuarterlyWidget",
 				"widget-td-annual": "TdAnnualWidget"
 			}
-		},
-		{
-			"id": "SubstitutionSettings",
-			"route": "/substitution",
-			"type": "custom",
-			"title": "Substitution",
-			"component": "SubstitutionSettingsView",
-			"_note": "Self-service vervanging (substitution) page: an explanatory intro about scope/permissions, a register-substitution action opening the isolated SubstitutionFormModal, and a table of the current user's own active/past substitutions filtered to where they are the absentee (enforced server-side). The standard list type can't carry the explanatory framing or the self-scoped register/revoke flow."
 		},
 		{
 			"id": "SubstitutionAdmin",

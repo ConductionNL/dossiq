@@ -12,7 +12,6 @@
 <template>
 	<div class="substitution-settings">
 		<div class="substitution-settings__header">
-			<h2>{{ t('procest', 'Substitution (vervanging)') }}</h2>
 			<NcButton type="primary" @click="showModal = true">
 				<template #icon>
 					<AccountSwitch :size="20" />

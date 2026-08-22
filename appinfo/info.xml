@@ -238,6 +238,8 @@ Vrij en open source onder de EUPL-1.2-licentie.
         <admin>OCA\Procest\Settings\AdminSettings</admin>
         <admin>OCA\Procest\Settings\EmailSettings</admin>
         <admin-section>OCA\Procest\Sections\SettingsSection</admin-section>
+        <personal>OCA\Procest\Settings\PersonalSettings</personal>
+        <personal-section>OCA\Procest\Sections\PersonalSection</personal-section>
     </settings>
 
     <navigations>

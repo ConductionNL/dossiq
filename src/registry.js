@@ -96,7 +96,6 @@ import MyWorkView from './views/MyWorkCards.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
-import SubstitutionSettingsView from './views/settings/SubstitutionSettings.vue'
 import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
 import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
 import { leafTab } from './integrations/leafTabs.js'
@@ -194,11 +193,6 @@ const registry = {
 
 	// --- Handler vervanging/waarneming (handler-vervanging-waarneming). ---
 	// @spec openspec/specs/handler-vervanging-waarneming/spec.md
-	SubstitutionSettingsView: {
-		kind: 'page',
-		component: SubstitutionSettingsView,
-		_note: 'User self-service vervanging settings; register/revoke own waarnemer. No index-page analogue (custom form + own-records table).',
-	},
 	// @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	SubstitutionAdminView: {
 		kind: 'page',
