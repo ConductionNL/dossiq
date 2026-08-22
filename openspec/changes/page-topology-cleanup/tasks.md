@@ -25,11 +25,15 @@
 
 ## C. To OpenRegister
 
-> ⏸️ **C2 DEFERRED (2026-08-22).** The fleet is mid-way through consolidating the
-> flow engine into OpenRegister (ADR-065). Re-expressing procest's automatic
-> actions as flow definitions against a moving target would have to be redone;
-> this resumes once that consolidation lands. C1 is done — it turned out to need
-> no OpenRegister work at all.
+> ▶️ **C2 UNBLOCKED (2026-08-22).** The flow-engine consolidation has landed:
+> OpenRegister now owns `lib/Service/Flow/` with `FlowEngine`,
+> `FlowNodeRegistry` and ~20 node types, and its registry is explicitly built so
+> apps CONTRIBUTE nodes rather than keep engines. See `PLAN-RESUME.md` for the
+> step order and for the dependency that makes this bigger than two pages:
+> `automaticAction` is referenced from inside `caseType.workflowSteps`
+> (`automaticActions`, `config.autoActions`, `config.escalationRule`), so
+> retiring the pages does not retire the concept.
+> C1 is done — it turned out to need no OpenRegister work at all.
 
 
 - [ ] C1.1 Diff procest's `VerwerkingenOverview.vue` against OpenRegister's `/avg` page; list what OR does not yet provide.
@@ -41,8 +45,10 @@
 
 ## D. To decidesk
 
-> ⏸️ **D1–D4 DEFERRED (2026-08-22).** Same reason as C2: decidesk's decision and
-> approval-route models sit on the flow engine being consolidated. Resumes after.
+> ▶️ **D1–D4 UNBLOCKED by the flow-engine consolidation (2026-08-22)**, with one
+> gate remaining: D1 still waits on the active `consume-decidesk-besluitvorming-leaf`
+> change, which deliberately keeps the two besluitvorming routes alive that D1
+> removes. See `PLAN-RESUME.md`.
 
 
 - [ ] D1.1 **Wait for `consume-decidesk-besluitvorming-leaf` to merge** — it deliberately keeps the two besluitvorming routes alive.
