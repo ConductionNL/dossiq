@@ -86,7 +86,12 @@ import DeelzaakList from './views/cases/DeelzaakList.vue'
 // `CnMapWidget`. No bespoke Leaflet / WMS / WFS stack in procest (ADR-022).
 // @spec openspec/specs/case-map-overview/spec.md
 import CasesOnMapView from './views/CasesOnMapView.vue'
-import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
+import DtAtRiskWidget from './views/doorlooptijd/widgets/DtAtRiskWidget.vue'
+import DtBreakdownWidget from './views/doorlooptijd/widgets/DtBreakdownWidget.vue'
+import DtCaseTypeFilter from './views/doorlooptijd/widgets/DtCaseTypeFilter.vue'
+import DtChartsWidget from './views/doorlooptijd/widgets/DtChartsWidget.vue'
+import DtKpiWidget from './views/doorlooptijd/widgets/DtKpiWidget.vue'
+import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
 import MyWorkView from './views/MyWorkCards.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
@@ -179,11 +184,6 @@ const registry = {
 		_note: "Full-screen multi-object cases-on-map overview. Markers come from OpenRegister's page-level maps-overview surface (RBAC-scoped, OR #154) and render through the lib's CnMapWidget — no bespoke Leaflet/WMS/WFS plumbing (ADR-022).",
 	},
 
-	DoorlooptijdView: {
-		kind: 'page',
-		component: DoorlooptijdView,
-		_note: "SLA / processing-time dashboard. SLA maths stays in-app (doorlooptijdHelpers.js); charts render through OR's analytics-series leaf surface via the lib CnChartWidget (ADR-022) — no bespoke chart library.",
-	},
 
 	// --- Workflow Board — Kanban with drag-to-advance status transitions. ---
 	// @spec openspec/specs/dashboard/spec.md

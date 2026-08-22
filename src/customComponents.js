@@ -54,7 +54,12 @@ import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 //     and their nav/routes are removed. ---
 // CaseMapView removed — superseded by manifest `type: 'map'` CnMapPage
 // (see openspec/changes/case-map-overview/design.md).
-import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
+import DtAtRiskWidget from './views/doorlooptijd/widgets/DtAtRiskWidget.vue'
+import DtBreakdownWidget from './views/doorlooptijd/widgets/DtBreakdownWidget.vue'
+import DtCaseTypeFilter from './views/doorlooptijd/widgets/DtCaseTypeFilter.vue'
+import DtChartsWidget from './views/doorlooptijd/widgets/DtChartsWidget.vue'
+import DtKpiWidget from './views/doorlooptijd/widgets/DtKpiWidget.vue'
+import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
 // --- Surviving custom pages — see design.md "Custom-fallback inventory". ---
 import MyWorkView from './views/MyWorkCards.vue'
 // Token-addressed advice-response surface for external advisory bodies
@@ -135,7 +140,13 @@ export default {
 	// CaseMapView removed — see import comment above.
 
 	// --- Lib gaps: would migrate once lib gains the missing primitive. ---
-	DoorlooptijdView, // SLA dashboard — charts via OR analytics-series leaf + lib CnChartWidget (ADR-022)
+	// Processing time is a type:"dashboard" page; these are its slots.
+	DtCaseTypeFilter, // header-actions slot: SLA-bearing case types only
+	DtKpiWidget, // KPI row + the three guidance states
+	DtChartsWidget, // donut / histogram / trend / throughput
+	DtWooWidget, // Woo statutory-deadline panel
+	DtAtRiskWidget, // open cases within 25% of deadline
+	DtBreakdownWidget, // per-case-type performance table
 	AdminRootView, // multi-tab admin root (lib settings-custom-slot gap)
 	// Deadline monitoring is a type:"dashboard" page; these are its slots.
 	TdCaseTypeFilter, // header-actions slot: case-type filter

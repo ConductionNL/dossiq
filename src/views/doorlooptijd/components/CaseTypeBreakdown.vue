@@ -12,7 +12,6 @@
 -->
 <template>
 	<div class="performance-table-card">
-		<h3>{{ t('procest', 'Performance by Case Type') }}</h3>
 		<table class="performance-table">
 			<thead>
 				<tr>

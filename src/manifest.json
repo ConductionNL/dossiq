@@ -2624,29 +2624,117 @@
 			"id": "Doorlooptijd",
 			"route": "/doorlooptijd",
 			"type": "dashboard",
-			"title": "Doorlooptijd",
+			"title": "Processing time",
+			"_note": "SLA / processing-time analytics. Was nominally type:dashboard but its config was ONE 12x12 widget whose slot rendered a complete second dashboard with its own <h2> — the dashboard-in-dashboard antipattern (hydra#316). Now five widgets over one shared store (src/store/modules/doorlooptijd.js). The presentational sub-components in views/doorlooptijd/components/ are unchanged; only their host moved.",
 			"config": {
+				"subtitle": "SLA adherence and processing time analysis",
+				"pageFilters": [
+					{
+						"key": "period",
+						"label": "Period",
+						"default": "12m",
+						"options": [
+							{
+								"value": "3m",
+								"label": "Last 3 months"
+							},
+							{
+								"value": "6m",
+								"label": "Last 6 months"
+							},
+							{
+								"value": "12m",
+								"label": "Last 12 months"
+							},
+							{
+								"value": "year",
+								"label": "This year"
+							},
+							{
+								"value": "all",
+								"label": "All time"
+							}
+						]
+					}
+				],
 				"widgets": [
 					{
-						"id": "doorlooptijd",
-						"title": "Doorlooptijd",
+						"id": "dt-kpis",
+						"title": "Overview",
+						"type": "custom"
+					},
+					{
+						"id": "dt-charts",
+						"title": "Compliance",
+						"type": "custom"
+					},
+					{
+						"id": "dt-woo",
+						"title": "Woo statutory deadlines",
+						"type": "custom"
+					},
+					{
+						"id": "dt-atrisk",
+						"title": "Cases at risk",
+						"type": "custom"
+					},
+					{
+						"id": "dt-breakdown",
+						"title": "Performance by case type",
 						"type": "custom"
 					}
 				],
 				"layout": [
 					{
 						"id": 1,
-						"widgetId": "doorlooptijd",
+						"widgetId": "dt-kpis",
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
-						"gridHeight": 12
+						"gridHeight": 3
+					},
+					{
+						"id": 2,
+						"widgetId": "dt-charts",
+						"gridX": 0,
+						"gridY": 3,
+						"gridWidth": 12,
+						"gridHeight": 8
+					},
+					{
+						"id": 3,
+						"widgetId": "dt-woo",
+						"gridX": 0,
+						"gridY": 11,
+						"gridWidth": 12,
+						"gridHeight": 5
+					},
+					{
+						"id": 4,
+						"widgetId": "dt-atrisk",
+						"gridX": 0,
+						"gridY": 16,
+						"gridWidth": 6,
+						"gridHeight": 6
+					},
+					{
+						"id": 5,
+						"widgetId": "dt-breakdown",
+						"gridX": 6,
+						"gridY": 16,
+						"gridWidth": 6,
+						"gridHeight": 6
 					}
 				],
 				"documentationUrl": "https://procest.conduction.nl"
 			},
 			"slots": {
-				"widget-doorlooptijd": "DoorlooptijdView"
+				"header-actions": "DtCaseTypeFilter",
+				"widget-dt-kpis": "DtKpiWidget",
+				"widget-dt-charts": "DtChartsWidget",
+				"widget-dt-woo": "DtWooWidget",
+				"widget-dt-atrisk": "DtAtRiskWidget",
+				"widget-dt-breakdown": "DtBreakdownWidget"
 			}
 		},
 		{

@@ -10,10 +10,6 @@
 -->
 <template>
 	<div class="woo-panel">
-		<h3 class="woo-panel__title">
-			{{ t('procest', 'Woo Deadlines') }}
-		</h3>
-
 		<template v-if="loading">
 			<div v-for="i in 3" :key="i" class="woo-panel__skeleton">
 				<div class="skeleton-bar" />
