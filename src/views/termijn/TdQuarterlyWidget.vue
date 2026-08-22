@@ -19,7 +19,10 @@
 			<NcButton variant="primary" @click="load">
 				{{ t('procest', 'Load report') }}
 			</NcButton>
-			<NcButton :disabled="!quarterly" variant="secondary" @click="downloadCsv">
+			<NcButton
+				:disabled="!quarterly"
+				variant="secondary"
+				@click="downloadCsv">
 				<template #icon>
 					<FileExport :size="18" />
 				</template>
@@ -38,7 +41,9 @@
 						<th scope="col">{{ t('procest', 'Avg. duration') }}</th>
 						<th scope="col">{{ t('procest', 'Extensions') }}</th>
 						<th scope="col">{{ t('procest', 'Notices of default') }}</th>
-						<th scope="col">{{ t('procest', 'Total penalty payment') }}</th>
+						<th scope="col">
+							{{ t('procest', 'Total penalty payment') }}
+						</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -70,8 +75,14 @@ import { currentQuarter } from '../../store/modules/termijnDashboard.js'
 import { tdWidgetMixin } from './tdWidgetMixin.js'
 
 const CSV_HEADERS = [
-	'case_type', 'totaal', 'binnenTermijnPercent', 'overschrijdingen',
-	'gemDoorlooptijd', 'verlengingen', 'ingebrekestellingen', 'dwangsomTotal',
+	'case_type',
+	'totaal',
+	'binnenTermijnPercent',
+	'overschrijdingen',
+	'gemDoorlooptijd',
+	'verlengingen',
+	'ingebrekestellingen',
+	'dwangsomTotal',
 ]
 
 export default {
@@ -106,14 +117,22 @@ export default {
 			if (!perType) return
 			const lines = [CSV_HEADERS.join(',')]
 			for (const [k, row] of Object.entries(perType)) {
-				lines.push([
-					k, row.totaal || 0, row.binnenTermijnPercent || 0,
-					row.overschrijdingen || 0, row.gemiddeldeDoorlooptijd || 0,
-					row.verlengingen || 0, row.ingebrekestellingen || 0,
-					row.dwangsomTotal || 0,
-				].join(','))
+				lines.push(
+					[
+						k,
+						row.totaal || 0,
+						row.binnenTermijnPercent || 0,
+						row.overschrijdingen || 0,
+						row.gemiddeldeDoorlooptijd || 0,
+						row.verlengingen || 0,
+						row.ingebrekestellingen || 0,
+						row.dwangsomTotal || 0,
+					].join(','),
+				)
 			}
-			const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' })
+			const blob = new Blob([lines.join('\n')], {
+				type: 'text/csv;charset=utf-8',
+			})
 			const url = window.URL.createObjectURL(blob)
 			const a = document.createElement('a')
 			a.href = url

@@ -55,10 +55,16 @@ export const useTermijnDashboardStore = defineStore('termijnDashboard', {
 			try {
 				const params = {}
 				if (caseType) params.case_type = caseType
-				const res = await axios.get(generateUrl('/apps/procest/api/termijn/dashboard/kpi'), { params })
+				const res = await axios.get(
+					generateUrl('/apps/procest/api/termijn/dashboard/kpi'),
+					{ params },
+				)
 				this.kpi = res.data || null
 			} catch (e) {
-				this.error = e?.response?.data?.message || e.message || t('procest', 'Failed to load KPI')
+				this.error =
+					e?.response?.data?.message
+					|| e.message
+					|| t('procest', 'Failed to load KPI')
 			} finally {
 				this.loading = false
 			}
@@ -79,14 +85,20 @@ export const useTermijnDashboardStore = defineStore('termijnDashboard', {
 			if (!periode) return
 			this.error = null
 			try {
-				const res = await axios.get(generateUrl('/apps/procest/api/termijn/reports/kwartaal'),
-					{ params: { periode } })
+				const res = await axios.get(
+					generateUrl('/apps/procest/api/termijn/reports/kwartaal'),
+					{ params: { periode } },
+				)
 				this.quarterly = res.data
 				if (this.quarterly?.perType) {
-					this.zaaktypeOptions = Object.keys(this.quarterly.perType).map((k) => ({ id: k, label: k }))
+					this.zaaktypeOptions = Object.keys(this.quarterly.perType).map(
+						(k) => ({ id: k, label: k }),
+					)
 				}
 			} catch (e) {
-				this.error = e?.response?.data?.message || e.message
+				this.error =
+					e?.response?.data?.message
+					|| e.message
 					|| t('procest', 'Failed to load quarterly report')
 			}
 		},
@@ -100,11 +112,15 @@ export const useTermijnDashboardStore = defineStore('termijnDashboard', {
 		async loadAnnual(jaar) {
 			this.error = null
 			try {
-				const res = await axios.get(generateUrl('/apps/procest/api/termijn/reports/jaarrekening'),
-					{ params: { jaar } })
+				const res = await axios.get(
+					generateUrl('/apps/procest/api/termijn/reports/jaarrekening'),
+					{ params: { jaar } },
+				)
 				this.annual = res.data
 			} catch (e) {
-				this.error = e?.response?.data?.message || e.message
+				this.error =
+					e?.response?.data?.message
+					|| e.message
 					|| t('procest', 'Failed to load annual audit')
 			}
 		},

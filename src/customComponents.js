@@ -33,18 +33,6 @@ import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 // @spec openspec/changes/deelzaak-support/tasks.md#T05
 // @spec openspec/changes/deelzaak-support/tasks.md#T06
 import DeelzaakList from './views/cases/DeelzaakList.vue'
-import PmBottleneckTableWidget from './views/processMining/PmBottleneckTableWidget.vue'
-import PmCaseTypeFilter from './views/processMining/PmCaseTypeFilter.vue'
-import PmDwellChartWidget from './views/processMining/PmDwellChartWidget.vue'
-import PmKpiWidget from './views/processMining/PmKpiWidget.vue'
-import PmThroughputChartWidget from './views/processMining/PmThroughputChartWidget.vue'
-// --- Termijnbewaking + Tenant dashboards (chain-builds 06/2026). ---
-// Archief dashboard retired (migrate-archival-to-or, ADR-022): the archivist
-// views are owned by OpenRegister.
-import TdAnnualWidget from './views/termijn/TdAnnualWidget.vue'
-import TdCaseTypeFilter from './views/termijn/TdCaseTypeFilter.vue'
-import TdKpiWidget from './views/termijn/TdKpiWidget.vue'
-import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 // --- Leverancier-zaakportaal (external supplier portal) MOVED to Portaliq
 //     (ADR-046, procest#162): the /leverancier Vue surface is retired here and
 //     re-expressed as the `supplier` audience in
@@ -61,6 +49,11 @@ import DtKpiWidget from './views/doorlooptijd/widgets/DtKpiWidget.vue'
 import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
 // --- Surviving custom pages — see design.md "Custom-fallback inventory". ---
 import MyWorkView from './views/MyWorkCards.vue'
+import PmBottleneckTableWidget from './views/processMining/PmBottleneckTableWidget.vue'
+import PmCaseTypeFilter from './views/processMining/PmCaseTypeFilter.vue'
+import PmDwellChartWidget from './views/processMining/PmDwellChartWidget.vue'
+import PmKpiWidget from './views/processMining/PmKpiWidget.vue'
+import PmThroughputChartWidget from './views/processMining/PmThroughputChartWidget.vue'
 // Token-addressed advice-response surface for external advisory bodies
 // (consultation-management TASK-CN-06). Declared as page
 // `ExternalConsultationResponse` in src/manifest.d/consultation-public.json;
@@ -71,6 +64,13 @@ import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 // Remote-org accept/reject for a federated zaakoverdracht (federated-case-collaboration).
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
+// --- Termijnbewaking + Tenant dashboards (chain-builds 06/2026). ---
+// Archief dashboard retired (migrate-archival-to-or, ADR-022): the archivist
+// views are owned by OpenRegister.
+import TdAnnualWidget from './views/termijn/TdAnnualWidget.vue'
+import TdCaseTypeFilter from './views/termijn/TdCaseTypeFilter.vue'
+import TdKpiWidget from './views/termijn/TdKpiWidget.vue'
+import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 // Mobiel-inspectie offline views retired — "Veldinspecties" now surfaces the
 // generic `field-inspection` OpenRegister integration leaf (a nc-vue builtin),
 // registered with procest's offline schema mapping in src/main.js. The custom

@@ -48,7 +48,9 @@ export const pmWidgetMixin = {
 		 */
 		pmPrimaryCaseType() {
 			if (this.pmCaseType) {
-				return this.pmCaseTypes.find((ct) => ct.id === this.pmCaseType) || null
+				return (
+					this.pmCaseTypes.find((ct) => ct.id === this.pmCaseType) || null
+				)
 			}
 			return this.pmCaseTypes[0] || null
 		},

@@ -17,7 +17,10 @@
 import { test, expect } from '@playwright/test'
 import { becomesVisible } from '../helpers/becomes-visible.js'
 import { dismissSupportDialog } from '../helpers/nav'
-import { SubstitutionAdmin, SubstitutionPersonalSettings } from '../helpers/page-components'
+import {
+	SubstitutionAdmin,
+	SubstitutionPersonalSettings,
+} from '../helpers/page-components'
 
 test.describe('Handler vervanging/waarneming spec coverage', () => {
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#handler-registers-their-own-substitution

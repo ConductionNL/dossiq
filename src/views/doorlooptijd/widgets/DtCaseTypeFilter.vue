@@ -33,10 +33,16 @@ export default {
 
 	computed: {
 		/** @return {object} The shared processing-time store. */
-		dtStore() { return useDoorlooptijdStore() },
+		dtStore() {
+			return useDoorlooptijdStore()
+		},
+
 		/** @return {Array<object>} Case types that declare an SLA. */
 		options() {
-			return this.dtStore.caseTypesWithSla.map((ct) => ({ id: ct.id, label: ct.title || ct.name }))
+			return this.dtStore.caseTypesWithSla.map((ct) => ({
+				id: ct.id,
+				label: ct.title || ct.name,
+			}))
 		},
 
 		/** @return {object|null} The option matching the context, or null. */
@@ -66,5 +72,7 @@ export default {
 </script>
 
 <style scoped>
-.dt-case-type-filter { min-width: 220px; }
+.dt-case-type-filter {
+	min-width: 220px;
+}
 </style>

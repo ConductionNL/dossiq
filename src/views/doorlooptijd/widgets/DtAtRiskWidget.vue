@@ -23,7 +23,9 @@ export default {
 	mixins: [dtWidgetMixin],
 	computed: {
 		/** @return {Array<object>} Open cases within 25% of their deadline. */
-		atRisk() { return this.dtStore.atRiskCases(this.dtCaseType) },
+		atRisk() {
+			return this.dtStore.atRiskCases(this.dtCaseType)
+		},
 	},
 }
 </script>

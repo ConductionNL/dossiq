@@ -33,17 +33,17 @@ export function resolvePeriod(preset) {
 	const iso = (d) => d.toISOString().slice(0, 10)
 	let from
 	switch (preset) {
-	case '3m':
-		from = new Date(now.getFullYear(), now.getMonth() - 3, 1)
-		break
-	case '6m':
-		from = new Date(now.getFullYear(), now.getMonth() - 6, 1)
-		break
-	case 'all':
-		from = null
-		break
-	default:
-		from = new Date(now.getFullYear(), now.getMonth() - 12, 1)
+		case '3m':
+			from = new Date(now.getFullYear(), now.getMonth() - 3, 1)
+			break
+		case '6m':
+			from = new Date(now.getFullYear(), now.getMonth() - 6, 1)
+			break
+		case 'all':
+			from = null
+			break
+		default:
+			from = new Date(now.getFullYear(), now.getMonth() - 12, 1)
 	}
 	return { from: from ? iso(from) : null, to: iso(now) }
 }
@@ -90,18 +90,24 @@ export const useProcessMiningStore = defineStore('processMining', {
 			const { from, to } = resolvePeriod(preset)
 			const key = `${from || '*'}|${to}|${caseType || '*'}`
 			if (!force && this.loadedKey === key && this.report) return
-			if (!force && this.inflight && this.loadedKey === key) return this.inflight
+			if (!force && this.inflight && this.loadedKey === key)
+				return this.inflight
 
 			this.loading = true
 			this.error = null
 			this.loadedKey = key
 			this.inflight = (async () => {
 				try {
-					this.report = await fetchProcessMiningReport({ from, to, caseType })
+					this.report = await fetchProcessMiningReport({
+						from,
+						to,
+						caseType,
+					})
 				} catch (err) {
 					// Surface the message the page shows; keep the previous report
 					// visible rather than blanking the dashboard on a transient error.
-					this.error = err?.response?.data?.message
+					this.error =
+						err?.response?.data?.message
 						|| err?.message
 						|| 'Could not load the process-mining report.'
 				} finally {

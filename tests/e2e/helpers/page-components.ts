@@ -44,7 +44,6 @@ export const CasesOnMapView = '/map'
 /** `src/views/MyWorkCards.vue` — the personal workload cards (manifest page `MyWork`). */
 export const MyWorkCards = '/my-work'
 
-
 /** `src/views/workflow-board/WorkflowBoard.vue` — the kanban status board. */
 export const WorkflowBoard = '/workflow-board'
 

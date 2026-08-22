@@ -52,7 +52,10 @@ export default {
 
 		/** @return {Array<object>} Selectable case types. */
 		options() {
-			return this.caseTypes.map((ct) => ({ id: ct.id, label: ct.title || ct.name }))
+			return this.caseTypes.map((ct) => ({
+				id: ct.id,
+				label: ct.title || ct.name,
+			}))
 		},
 
 		/** @return {object|null} The option matching the context, or null. */
@@ -72,7 +75,9 @@ export default {
 			// case-type filter was silently empty on every load — the filter
 			// looked present and did nothing. initializeStores() is idempotent.
 			await initializeStores()
-			this.caseTypes = (await this.objectStore.fetchCollection('caseType', { _limit: 100 })) || []
+			this.caseTypes =
+				(await this.objectStore.fetchCollection('caseType', { _limit: 100 }))
+				|| []
 		} catch {
 			// Still non-fatal after the await: an unreachable config leaves the
 			// filter empty, which is the same result as choosing no filter.

@@ -45,7 +45,10 @@ export const tdWidgetMixin = {
 		 * @return {string} e.g. `€ 1.234,00`.
 		 */
 		euro(v) {
-			return (Number(v) || 0).toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' })
+			return (Number(v) || 0).toLocaleString('nl-NL', {
+				style: 'currency',
+				currency: 'EUR',
+			})
 		},
 	},
 }

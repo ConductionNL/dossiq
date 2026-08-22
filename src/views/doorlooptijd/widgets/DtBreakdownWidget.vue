@@ -24,7 +24,9 @@ export default {
 	mixins: [dtWidgetMixin],
 	computed: {
 		/** @return {Array<object>} Per-case-type performance rows. */
-		performanceData() { return this.dtStore.performanceData(this.dtPreset, this.dtCaseType) },
+		performanceData() {
+			return this.dtStore.performanceData(this.dtPreset, this.dtCaseType)
+		},
 	},
 }
 </script>

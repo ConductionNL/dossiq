@@ -20,7 +20,7 @@
 					:inputLabel="t('procest', 'Tenant')"
 					:placeholder="t('procest', 'Pick a tenant')"
 					@update:modelValue="onTenantChange" />
-				<NcButton type="secondary" @click="loadProgress">
+				<NcButton variant="secondary" @click="loadProgress">
 					<template #icon>
 						<Refresh :size="18" />
 					</template>
@@ -86,7 +86,7 @@
 					<NcButton
 						v-if="step.status !== 'complete'"
 						size="small"
-						type="primary"
+						variant="primary"
 						:disabled="markingStep === step.step"
 						@click="markComplete(step.step)">
 						<template #icon>
@@ -104,7 +104,7 @@
 				<h3>{{ t('procest', 'Go-live readiness') }}</h3>
 				<NcButton
 					:disabled="checkingGoLive"
-					type="secondary"
+					variant="secondary"
 					@click="checkGoLive">
 					<template #icon>
 						<NcLoadingIcon v-if="checkingGoLive" :size="18" />
@@ -121,7 +121,7 @@
 							t('procest', 'Tenant is ready to go live.')
 						}}</span>
 						<NcButton
-							type="primary"
+							variant="primary"
 							:disabled="activating"
 							@click="activate">
 							<template #icon>
@@ -248,7 +248,10 @@ export default {
 	methods: {
 		t,
 		/**
-		 * @param step
+		 * Human-readable label for an onboarding step.
+		 *
+		 * @param {string} step The step key.
+		 * @return {string} The translated label, falling back to the key.
 		 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 		 */
 		stepLabel(step) {
@@ -256,7 +259,10 @@ export default {
 		},
 
 		/**
-		 * @param opt
+		 * Switch the section to another tenant and reload its progress.
+		 *
+		 * @param {object|null} opt The selected tenant option, or null to clear.
+		 * @return {void}
 		 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 		 */
 		onTenantChange(opt) {
@@ -346,7 +352,10 @@ export default {
 		},
 
 		/**
-		 * @param step
+		 * Mark one onboarding step complete for the selected tenant.
+		 *
+		 * @param {string} step The step key to complete.
+		 * @return {Promise<void>}
 		 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 		 */
 		async markComplete(step) {

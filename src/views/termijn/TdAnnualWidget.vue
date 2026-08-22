@@ -18,7 +18,9 @@
 			</NcButton>
 		</div>
 		<div v-if="annual" class="td-annual-widget__summary">
-			<strong>{{ t('procest', 'Total dwangsom in {y}:', { y: annual.jaar }) }}</strong>
+			<strong>{{
+				t('procest', 'Total dwangsom in {y}:', { y: annual.jaar })
+			}}</strong>
 			{{ euro(totalEuros) }}
 			<span class="td-annual-widget__pill">
 				{{ t('procest', '{n} payments', { n: annual.summary?.count || 0 }) }}
@@ -26,7 +28,9 @@
 			<span
 				v-if="(annual.warnings || []).length > 0"
 				class="td-annual-widget__pill td-annual-widget__pill--warn">
-				{{ t('procest', '{n} data warnings', { n: annual.warnings.length }) }}
+				{{
+					t('procest', '{n} data warnings', { n: annual.warnings.length })
+				}}
 			</span>
 		</div>
 		<p v-else class="td-annual-widget__empty">

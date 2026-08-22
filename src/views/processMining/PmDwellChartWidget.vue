@@ -37,7 +37,10 @@ export default {
 	computed: {
 		/** @return {Array} Bar series for the scoped case type. */
 		series() {
-			return buildDwellSeries(this.pmPrimaryCaseType?.dwellTime, t('procest', 'Median hours'))
+			return buildDwellSeries(
+				this.pmPrimaryCaseType?.dwellTime,
+				t('procest', 'Median hours'),
+			)
 		},
 
 		/** @return {Array<string>} Status names along the x-axis. */

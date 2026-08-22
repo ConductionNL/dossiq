@@ -27,7 +27,10 @@ import { CnChartWidget } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { pmWidgetMixin } from './pmWidgetMixin.js'
-import { buildThroughputCategories, buildThroughputSeries } from './processMiningShaping.js'
+import {
+	buildThroughputCategories,
+	buildThroughputSeries,
+} from './processMiningShaping.js'
 
 export default {
 	name: 'PmThroughputChartWidget',
@@ -36,7 +39,10 @@ export default {
 	computed: {
 		/** @return {Array} Line series of cases closed per week. */
 		series() {
-			return buildThroughputSeries(this.pmStore.throughputTrend, t('procest', 'Cases closed'))
+			return buildThroughputSeries(
+				this.pmStore.throughputTrend,
+				t('procest', 'Cases closed'),
+			)
 		},
 
 		/** @return {Array<string>} Week labels along the x-axis. */

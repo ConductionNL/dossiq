@@ -17,7 +17,10 @@
  * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
  */
 import { defineStore } from 'pinia'
-import { computeWeeklyThroughput, getWooCases } from '../../utils/dashboardHelpers.js'
+import {
+	computeWeeklyThroughput,
+	getWooCases,
+} from '../../utils/dashboardHelpers.js'
 import {
 	computeMonthlyTrend,
 	computePerformanceTable,
@@ -39,11 +42,20 @@ export function resolveRange(preset) {
 	const now = new Date()
 	let from
 	switch (preset) {
-	case '3m': from = new Date(now.getFullYear(), now.getMonth() - 3, 1); break
-	case '6m': from = new Date(now.getFullYear(), now.getMonth() - 6, 1); break
-	case 'year': from = new Date(now.getFullYear(), 0, 1); break
-	case 'all': from = null; break
-	default: from = new Date(now.getFullYear(), now.getMonth() - 12, 1)
+		case '3m':
+			from = new Date(now.getFullYear(), now.getMonth() - 3, 1)
+			break
+		case '6m':
+			from = new Date(now.getFullYear(), now.getMonth() - 6, 1)
+			break
+		case 'year':
+			from = new Date(now.getFullYear(), 0, 1)
+			break
+		case 'all':
+			from = null
+			break
+		default:
+			from = new Date(now.getFullYear(), now.getMonth() - 12, 1)
 	}
 	return { from, to: now }
 }
@@ -56,11 +68,16 @@ export function resolveRange(preset) {
  */
 export function trendMonthsFor(preset) {
 	switch (preset) {
-	case '3m': return 3
-	case '6m': return 6
-	case 'year': return new Date().getMonth() + 1
-	case 'all': return 24
-	default: return 12
+		case '3m':
+			return 3
+		case '6m':
+			return 6
+		case 'year':
+			return new Date().getMonth() + 1
+		case 'all':
+			return 24
+		default:
+			return 12
 	}
 }
 
@@ -82,16 +99,24 @@ export const useDoorlooptijdStore = defineStore('doorlooptijd', {
 			return m
 		},
 		completedCases() {
-			return this.allCases.filter((c) => this.statusTypeMap.get(c.status)?.isFinal && c.endDate)
+			return this.allCases.filter(
+				(c) => this.statusTypeMap.get(c.status)?.isFinal && c.endDate,
+			)
 		},
 		openCases() {
-			return this.allCases.filter((c) => !this.statusTypeMap.get(c.status)?.isFinal)
+			return this.allCases.filter(
+				(c) => !this.statusTypeMap.get(c.status)?.isFinal,
+			)
 		},
 		wooCases() {
 			return getWooCases(this.openCases, this.caseTypes)
 		},
-		caseTypesWithSla: (s) => s.caseTypes.filter(
-			(ct) => ct.processingDeadline && parseDurationToDays(ct.processingDeadline)),
+		caseTypesWithSla: (s) =>
+			s.caseTypes.filter(
+				(ct) =>
+					ct.processingDeadline
+					&& parseDurationToDays(ct.processingDeadline),
+			),
 	},
 
 	actions: {
@@ -120,15 +145,19 @@ export const useDoorlooptijdStore = defineStore('doorlooptijd', {
 						objectStore.fetchCollection('caseType', { _limit: 100 }),
 						objectStore.fetchCollection('statusType', { _limit: 500 }),
 					])
-					this.allCases = r[0].status === 'fulfilled' ? r[0].value || [] : []
-					this.caseTypes = r[1].status === 'fulfilled' ? r[1].value || [] : []
-					this.statusTypes = r[2].status === 'fulfilled' ? r[2].value || [] : []
+					this.allCases =
+						r[0].status === 'fulfilled' ? r[0].value || [] : []
+					this.caseTypes =
+						r[1].status === 'fulfilled' ? r[1].value || [] : []
+					this.statusTypes =
+						r[2].status === 'fulfilled' ? r[2].value || [] : []
 					this.loaded = true
 				} catch (err) {
 					// Surfaced through state rather than the console: the widgets
 					// render an empty state from it, and a console-only failure is
 					// invisible to the user staring at a blank dashboard.
-					this.error = err?.message || 'Could not load processing-time data.'
+					this.error =
+						err?.message || 'Could not load processing-time data.'
 				} finally {
 					this.loading = false
 					this.inflight = null
@@ -152,7 +181,9 @@ export const useDoorlooptijdStore = defineStore('doorlooptijd', {
 			const { from } = resolveRange(preset)
 			if (from) {
 				const fromStr = from.toISOString().slice(0, 10)
-				cases = cases.filter((c) => c.endDate && c.endDate.slice(0, 10) >= fromStr)
+				cases = cases.filter(
+					(c) => c.endDate && c.endDate.slice(0, 10) >= fromStr,
+				)
 			}
 			if (caseType) cases = cases.filter((c) => c.caseType === caseType)
 			return cases
@@ -165,7 +196,9 @@ export const useDoorlooptijdStore = defineStore('doorlooptijd', {
 		 * @return {Array<object>} Matching cases.
 		 */
 		filteredOpen(caseType = null) {
-			return caseType ? this.openCases.filter((c) => c.caseType === caseType) : this.openCases
+			return caseType
+				? this.openCases.filter((c) => c.caseType === caseType)
+				: this.openCases
 		},
 
 		/**
@@ -176,7 +209,10 @@ export const useDoorlooptijdStore = defineStore('doorlooptijd', {
 		 * @return {object} Compliance block.
 		 */
 		slaData(preset, caseType) {
-			return computeSlaCompliance(this.filteredCompleted(preset, caseType), this.caseTypes)
+			return computeSlaCompliance(
+				this.filteredCompleted(preset, caseType),
+				this.caseTypes,
+			)
 		},
 
 		/**
@@ -187,7 +223,10 @@ export const useDoorlooptijdStore = defineStore('doorlooptijd', {
 		 * @return {object} Distribution block.
 		 */
 		distributionData(preset, caseType) {
-			return computeProcessingTimeDistribution(this.filteredCompleted(preset, caseType), this.caseTypes)
+			return computeProcessingTimeDistribution(
+				this.filteredCompleted(preset, caseType),
+				this.caseTypes,
+			)
 		},
 
 		/**
@@ -213,7 +252,10 @@ export const useDoorlooptijdStore = defineStore('doorlooptijd', {
 		 * @return {object} Throughput block.
 		 */
 		throughputData(preset, caseType) {
-			return computeWeeklyThroughput(this.filteredCompleted(preset, caseType), 12)
+			return computeWeeklyThroughput(
+				this.filteredCompleted(preset, caseType),
+				12,
+			)
 		},
 
 		/**
@@ -234,7 +276,10 @@ export const useDoorlooptijdStore = defineStore('doorlooptijd', {
 		 * @return {Array<object>} Table rows.
 		 */
 		performanceData(preset, caseType) {
-			return computePerformanceTable(this.filteredCompleted(preset, caseType), this.caseTypes)
+			return computePerformanceTable(
+				this.filteredCompleted(preset, caseType),
+				this.caseTypes,
+			)
 		},
 	},
 })

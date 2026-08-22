@@ -85,12 +85,6 @@ import DeelzaakList from './views/cases/DeelzaakList.vue'
 // `CnMapWidget`. No bespoke Leaflet / WMS / WFS stack in procest (ADR-022).
 // @spec openspec/specs/case-map-overview/spec.md
 import CasesOnMapView from './views/CasesOnMapView.vue'
-import DtAtRiskWidget from './views/doorlooptijd/widgets/DtAtRiskWidget.vue'
-import DtBreakdownWidget from './views/doorlooptijd/widgets/DtBreakdownWidget.vue'
-import DtCaseTypeFilter from './views/doorlooptijd/widgets/DtCaseTypeFilter.vue'
-import DtChartsWidget from './views/doorlooptijd/widgets/DtChartsWidget.vue'
-import DtKpiWidget from './views/doorlooptijd/widgets/DtKpiWidget.vue'
-import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
 import MyWorkView from './views/MyWorkCards.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
@@ -181,7 +175,6 @@ const registry = {
 		_note: "Full-screen multi-object cases-on-map overview. Markers come from OpenRegister's page-level maps-overview surface (RBAC-scoped, OR #154) and render through the lib's CnMapWidget — no bespoke Leaflet/WMS/WFS plumbing (ADR-022).",
 	},
 
-
 	// --- Workflow Board — Kanban with drag-to-advance status transitions. ---
 	// @spec openspec/specs/dashboard/spec.md
 	WorkflowBoardView: {
@@ -198,7 +191,6 @@ const registry = {
 		component: SubstitutionAdminView,
 		_note: 'Coordinator substitution admin + bulk reassignment + capacity action list. Coordinator-gated server-side.',
 	},
-
 
 	// --- Initiator selection + display (brp-kvk-register-sets). ---
 	// @spec openspec/specs/initiator-selection/spec.md

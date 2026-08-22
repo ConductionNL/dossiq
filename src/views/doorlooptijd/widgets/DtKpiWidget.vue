@@ -16,18 +16,29 @@
 	<div class="dt-kpi-widget">
 		<NcLoadingIcon v-if="dtLoading" :size="24" />
 
-		<NcEmptyContent v-else-if="noCases" :name="t('procest', 'No case data available for processing time analysis.')" />
+		<NcEmptyContent
+			v-else-if="noCases"
+			:name="
+				t('procest', 'No case data available for processing time analysis.')
+			" />
 
 		<div v-else-if="noSla" class="dt-kpi-widget__guidance">
 			<p>
-				{{ t('procest', 'No SLA targets configured. Set processing deadlines on case types in Settings to enable compliance tracking.') }}
+				{{
+					t(
+						'procest',
+						'No SLA targets configured. Set processing deadlines on case types in Settings to enable compliance tracking.',
+					)
+				}}
 			</p>
 			<NcButton variant="primary" @click="goToSettings">
 				{{ t('procest', 'Go to Settings') }}
 			</NcButton>
 		</div>
 
-		<NcEmptyContent v-else-if="noDataInRange" :name="t('procest', 'No completed cases in the selected date range.')" />
+		<NcEmptyContent
+			v-else-if="noDataInRange"
+			:name="t('procest', 'No completed cases in the selected date range.')" />
 
 		<DeadlineKpiRow
 			v-else
@@ -72,14 +83,19 @@ export default {
 
 		/** @return {boolean} Cases exist but no case type declares a deadline. */
 		noSla() {
-			return this.dtStore.allCases.length > 0 && this.dtStore.caseTypesWithSla.length === 0
+			return (
+				this.dtStore.allCases.length > 0
+				&& this.dtStore.caseTypesWithSla.length === 0
+			)
 		},
 
 		/** @return {boolean} SLA is configured but this scope is empty. */
 		noDataInRange() {
-			return this.dtStore.caseTypesWithSla.length > 0
+			return (
+				this.dtStore.caseTypesWithSla.length > 0
 				&& this.completed.length === 0
 				&& this.atRisk.length === 0
+			)
 		},
 	},
 

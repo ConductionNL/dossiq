@@ -29,13 +29,24 @@ export default {
 	mixins: [dtWidgetMixin],
 	computed: {
 		/** @return {object} SLA compliance block. */
-		slaData() { return this.dtStore.slaData(this.dtPreset, this.dtCaseType) },
+		slaData() {
+			return this.dtStore.slaData(this.dtPreset, this.dtCaseType)
+		},
+
 		/** @return {object} Processing-time distribution block. */
-		distributionData() { return this.dtStore.distributionData(this.dtPreset, this.dtCaseType) },
+		distributionData() {
+			return this.dtStore.distributionData(this.dtPreset, this.dtCaseType)
+		},
+
 		/** @return {object} Monthly trend block. */
-		trendData() { return this.dtStore.trendData(this.dtPreset, this.dtCaseType) },
+		trendData() {
+			return this.dtStore.trendData(this.dtPreset, this.dtCaseType)
+		},
+
 		/** @return {object} Weekly throughput block. */
-		throughputData() { return this.dtStore.throughputData(this.dtPreset, this.dtCaseType) },
+		throughputData() {
+			return this.dtStore.throughputData(this.dtPreset, this.dtCaseType)
+		},
 	},
 }
 </script>
