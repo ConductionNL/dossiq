@@ -20,6 +20,7 @@ import { defineStore } from 'pinia'
  * The quarter the current date falls in, as `YYYY-Qn`.
  *
  * @return {string} e.g. `2026-Q3`.
+ * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
  */
 export function currentQuarter() {
 	const d = new Date()
@@ -46,6 +47,7 @@ export const useTermijnDashboardStore = defineStore('termijnDashboard', {
 		 * @param {string|null} [opts.caseType] Case type to scope on.
 		 * @param {boolean}     [opts.force]    Refetch even if already loaded.
 		 * @return {Promise<void>}
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		async loadKpi({ caseType = null, force = false } = {}) {
 			if (!force && this.loadedCaseType === caseType && this.kpi) return
@@ -80,6 +82,7 @@ export const useTermijnDashboardStore = defineStore('termijnDashboard', {
 		 *
 		 * @param {string} periode Quarter as `YYYY-Qn`.
 		 * @return {Promise<void>}
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		async loadQuarterly(periode) {
 			if (!periode) return
@@ -108,6 +111,7 @@ export const useTermijnDashboardStore = defineStore('termijnDashboard', {
 		 *
 		 * @param {number} jaar Calendar year.
 		 * @return {Promise<void>}
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		async loadAnnual(jaar) {
 			this.error = null
@@ -131,6 +135,7 @@ export const useTermijnDashboardStore = defineStore('termijnDashboard', {
 		 * behaves the same as choosing no filter.
 		 *
 		 * @return {Promise<void>}
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		async ensureZaaktypeOptions() {
 			if (this.zaaktypeOptions.length) return

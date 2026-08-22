@@ -45,12 +45,18 @@ export default {
 	},
 
 	computed: {
-		/** @return {object} The shared object store. */
+		/**
+		 * @return {object} The shared object store.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		objectStore() {
 			return useObjectStore()
 		},
 
-		/** @return {Array<object>} Selectable case types. */
+		/**
+		 * @return {Array<object>} Selectable case types.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		options() {
 			return this.caseTypes.map((ct) => ({
 				id: ct.id,
@@ -58,13 +64,22 @@ export default {
 			}))
 		},
 
-		/** @return {object|null} The option matching the context, or null. */
+		/**
+		 * @return {object|null} The option matching the context, or null.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		selected() {
 			const current = this.workspace?.caseType
 			return this.options.find((o) => o.id === current) || null
 		},
 	},
 
+	/**
+	 * Load the case types the filter offers.
+	 *
+	 * @return {Promise<void>}
+	 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+	 */
 	async mounted() {
 		try {
 			// `caseType` is only registered on the object store once
@@ -92,6 +107,7 @@ export default {
 		 *
 		 * @param {object|null} opt The chosen option, or null to clear.
 		 * @return {void}
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		onChange(opt) {
 			if (this.workspace) {

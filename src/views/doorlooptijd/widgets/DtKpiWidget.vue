@@ -61,27 +61,42 @@ export default {
 	components: { DeadlineKpiRow, NcButton, NcEmptyContent, NcLoadingIcon },
 	mixins: [dtWidgetMixin],
 	computed: {
-		/** @return {Array<object>} Completed cases in the current scope. */
+		/**
+		 * @return {Array<object>} Completed cases in the current scope.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		completed() {
 			return this.dtStore.filteredCompleted(this.dtPreset, this.dtCaseType)
 		},
 
-		/** @return {Array<object>} At-risk open cases in the current scope. */
+		/**
+		 * @return {Array<object>} At-risk open cases in the current scope.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		atRisk() {
 			return this.dtStore.atRiskCases(this.dtCaseType)
 		},
 
-		/** @return {object} SLA compliance block. */
+		/**
+		 * @return {object} SLA compliance block.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		slaData() {
 			return this.dtStore.slaData(this.dtPreset, this.dtCaseType)
 		},
 
-		/** @return {boolean} No cases exist at all. */
+		/**
+		 * @return {boolean} No cases exist at all.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		noCases() {
 			return this.dtStore.allCases.length === 0
 		},
 
-		/** @return {boolean} Cases exist but no case type declares a deadline. */
+		/**
+		 * @return {boolean} Cases exist but no case type declares a deadline.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		noSla() {
 			return (
 				this.dtStore.allCases.length > 0
@@ -89,7 +104,10 @@ export default {
 			)
 		},
 
-		/** @return {boolean} SLA is configured but this scope is empty. */
+		/**
+		 * @return {boolean} SLA is configured but this scope is empty.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		noDataInRange() {
 			return (
 				this.dtStore.caseTypesWithSla.length > 0
@@ -101,7 +119,10 @@ export default {
 
 	methods: {
 		t,
-		/** Send the user to the app's administration surface. */
+		/**
+		 * Send the user to the app's administration surface.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		goToSettings() {
 			window.location.href = '/settings/admin/procest'
 		},

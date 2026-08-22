@@ -184,7 +184,10 @@ test.describe('Doorlooptijd page', () => {
 		await navToRoute(page, '/doorlooptijd')
 		await expect(
 			page.getByRole('heading', {
-				name: 'Processing Time Analytics',
+				// page-topology-cleanup (A3): the heading is the dashboard
+				// page's title now. The old wording lives on as the subtitle,
+				// asserted separately below where this spec checks it.
+				name: 'Processing time',
 				level: 2,
 			}),
 		).toBeVisible({ timeout: 15000 })
@@ -204,27 +207,38 @@ test.describe('Settings page', () => {
 	test('renders the configuration section and its save control', async ({
 		page,
 	}) => {
-		await page.goto('/index.php/apps/procest/settings')
+		// page-topology-cleanup (B1) retired the IN-APP /settings page: it
+		// mounted the same AdminRoot.vue as /settings/admin/procest, and
+		// reaching an administration component through the in-app router
+		// bypasses the settings framework's server-side checks (ADR-004).
+		// Retargeted at the surface that owns administration, which is also
+		// where the FIXME below said these components actually render.
+		await page.goto('/index.php/settings/admin/procest')
 		await dismissSupportDialog(page)
 		await loadAllAdminSections(page)
 		// "Version Information" and a "Re-import configuration" button were
 		// asserted here but exist nowhere in src/ — that surface was removed.
 		// `Settings.vue` renders a CnSettingsSection named "Configuration"
 		// with a primary "Save" action, which is the current contract.
-		await expect(page.getByRole('button', { name: 'Save' })).toBeVisible({
-			timeout: 15000,
-		})
+		// `exact` matters here. The retired in-app page rendered only section
+		// chrome, so a loose "Save" matched exactly one button. The real admin
+		// surface renders every section, and four of them have their own
+		// labelled save ("Save mandate matrix settings", "Save consultation
+		// settings", …). The Configuration section's control is the bare one.
+		await expect(
+			page.getByRole('button', { name: 'Save', exact: true }),
+		).toBeVisible({ timeout: 15000 })
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
-	// FIXME(#719): the in-app settings page renders only its section chrome —
-	// measured `.settings-form` count 0, and NO scrollable container, so this
-	// is not a lazy-mount timing problem: the type:"settings" page's
-	// `section-admin` slot (AdminRootView) never renders its body. The same
-	// components do render on /settings/admin/procest, but this scenario is
-	// spec'd against the IN-APP page, so it is not retargeted.
-	test.fixme('has schema configuration fields', async ({ page }) => {
-		await page.goto('/index.php/apps/procest/settings')
+	// FIXME(#719) RESOLVED BY RETIREMENT. The in-app settings page rendered
+	// only its section chrome — `.settings-form` count 0, no scrollable
+	// container — because the type:"settings" page's `section-admin` slot never
+	// rendered its body. That page is gone (page-topology-cleanup B1) and the
+	// scenario is spec'd against administration, not against that route, so it
+	// is retargeted at /settings/admin/procest where the components do render.
+	test('has schema configuration fields', async ({ page }) => {
+		await page.goto('/index.php/settings/admin/procest')
 		await dismissSupportDialog(page)
 		await loadAllAdminSections(page)
 		// Scope to the configuration form — "Register" otherwise also matches

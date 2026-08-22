@@ -70,12 +70,18 @@ export default {
 	components: { CnKpiGrid, CnStatsBlock, NcLoadingIcon, NcNoteCard },
 	mixins: [pmWidgetMixin],
 	computed: {
-		/** @return {object} Headline figures for the current report. */
+		/**
+		 * @return {object} Headline figures for the current report.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		kpiSummary() {
 			return buildKpiSummary(this.pmStore.report)
 		},
 
-		/** @return {string} "Status (Nh)" for the worst bottleneck, or an em dash. */
+		/**
+		 * @return {string} "Status (Nh)" for the worst bottleneck, or an em dash.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		topBottleneckLabel() {
 			const top = this.kpiSummary.topBottleneck
 			if (!top) return '—'

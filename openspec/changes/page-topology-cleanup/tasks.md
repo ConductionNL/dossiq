@@ -25,6 +25,17 @@
 
 ## C. To OpenRegister
 
+> ▶️ **C2 UNBLOCKED (2026-08-22).** The flow-engine consolidation has landed:
+> OpenRegister now owns `lib/Service/Flow/` with `FlowEngine`,
+> `FlowNodeRegistry` and ~20 node types, and its registry is explicitly built so
+> apps CONTRIBUTE nodes rather than keep engines. See `PLAN-RESUME.md` for the
+> step order and for the dependency that makes this bigger than two pages:
+> `automaticAction` is referenced from inside `caseType.workflowSteps`
+> (`automaticActions`, `config.autoActions`, `config.escalationRule`), so
+> retiring the pages does not retire the concept.
+> C1 is done — it turned out to need no OpenRegister work at all.
+
+
 - [ ] C1.1 Diff procest's `VerwerkingenOverview.vue` against OpenRegister's `/avg` page; list what OR does not yet provide.
 - [ ] C1.2 Land the gaps in OpenRegister (openspec change in that repo). **Merge before C1.3.**
 - [ ] C1.3 Delete `/verwerkingen`, its menu entry and `VerwerkingenOverview.vue` from procest.
@@ -33,6 +44,12 @@
 - [ ] C2.3 Delete `/settings/automatic-actions`, `/settings/automatic-actions/:id`, their menu entry and the backing controller/service from procest.
 
 ## D. To decidesk
+
+> ▶️ **D1–D4 UNBLOCKED by the flow-engine consolidation (2026-08-22)**, with one
+> gate remaining: D1 still waits on the active `consume-decidesk-besluitvorming-leaf`
+> change, which deliberately keeps the two besluitvorming routes alive that D1
+> removes. See `PLAN-RESUME.md`.
+
 
 - [ ] D1.1 **Wait for `consume-decidesk-besluitvorming-leaf` to merge** — it deliberately keeps the two besluitvorming routes alive.
 - [ ] D1.2 Map procest's agenda-compiler and vergadering-detail onto decidesk's `/agenda-items` and `/meetings`; land the gaps in decidesk. **Merge before D1.3.**
@@ -45,9 +62,9 @@
 
 ## E. To hermiq
 
-- [ ] E1.1 Diff procest's AI-oversight surface against hermiq's `/approvals`, `/algorithm-register` and `ToolOversightController`; list the gaps.
-- [ ] E1.2 Land the gaps in hermiq. **Merge before E1.3.**
-- [ ] E1.3 Delete `/settings/ai-oversight`, `/settings/ai-oversight/:id` and their menu entry.
+- [x] E1.1 Diffed. Hermiq's `Approval` is a GATE (blocking, pre-action); procest's `aiAuditEntry` is retrospective evidence (what the model proposed, what the human did). `AiFeature` registers *that* human intervention exists (Art. 49); neither records the per-decision evidence (Art. 14). Real gap, not a duplicate.
+- [x] E1.2 Landed in hermiq (PR #514): `Approval.sourceType` gains `advisory`, `status` gains `overridden`, plus `advisoryContext`, a typed `AiOversightRecordedEvent`, its listener/service, and an `/ai-oversight` surface. **Merge before E1.3.**
+- [x] E1.3 Deleted `/settings/ai-oversight`, `/settings/ai-oversight/:id` and the menu entry; added a deeplink to hermiq. `AiAuditService` now delegates each decision; `MigrateAiOversightToHermiq` replays the existing ones.
 
 ## F. Tests
 

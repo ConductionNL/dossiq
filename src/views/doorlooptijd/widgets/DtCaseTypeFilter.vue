@@ -32,12 +32,18 @@ export default {
 	},
 
 	computed: {
-		/** @return {object} The shared processing-time store. */
+		/**
+		 * @return {object} The shared processing-time store.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		dtStore() {
 			return useDoorlooptijdStore()
 		},
 
-		/** @return {Array<object>} Case types that declare an SLA. */
+		/**
+		 * @return {Array<object>} Case types that declare an SLA.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		options() {
 			return this.dtStore.caseTypesWithSla.map((ct) => ({
 				id: ct.id,
@@ -45,7 +51,10 @@ export default {
 			}))
 		},
 
-		/** @return {object|null} The option matching the context, or null. */
+		/**
+		 * @return {object|null} The option matching the context, or null.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		selected() {
 			const cur = this.workspace?.caseType
 			return this.options.find((o) => o.id === cur) || null
@@ -63,6 +72,7 @@ export default {
 		 *
 		 * @param {object|null} opt The chosen option, or null to clear.
 		 * @return {void}
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		onChange(opt) {
 			if (this.workspace) this.workspace.caseType = opt ? opt.id : null

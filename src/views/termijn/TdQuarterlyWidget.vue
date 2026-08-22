@@ -94,7 +94,10 @@ export default {
 	},
 
 	computed: {
-		/** @return {object|null} The loaded quarterly report. */
+		/**
+		 * @return {object|null} The loaded quarterly report.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		quarterly() {
 			return this.tdStore.quarterly
 		},
@@ -106,12 +109,18 @@ export default {
 
 	methods: {
 		t,
-		/** Load the report for the entered quarter. */
+		/**
+		 * Load the report for the entered quarter.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		load() {
 			this.tdStore.loadQuarterly(this.quarter)
 		},
 
-		/** Build and download the per-case-type CSV for the loaded quarter. */
+		/**
+		 * Build and download the per-case-type CSV for the loaded quarter.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		downloadCsv() {
 			const perType = this.quarterly?.perType
 			if (!perType) return

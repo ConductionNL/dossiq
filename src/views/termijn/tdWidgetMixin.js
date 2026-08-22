@@ -18,11 +18,17 @@ export const tdWidgetMixin = {
 	},
 
 	computed: {
-		/** @return {object} The shared deadline-monitoring store. */
+		/**
+		 * @return {object} The shared deadline-monitoring store.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		tdStore() {
 			return useTermijnDashboardStore()
 		},
-		/** @return {string|null} Case type selected in the page header. */
+		/**
+		 * @return {string|null} Case type selected in the page header.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		tdCaseType() {
 			return this.workspace?.caseType || null
 		},
@@ -34,6 +40,7 @@ export const tdWidgetMixin = {
 		 *
 		 * @param {number|string} v Raw value.
 		 * @return {string} e.g. `92.4 %`.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		percent(v) {
 			return `${(Number(v) || 0).toFixed(1)} %`
@@ -43,6 +50,7 @@ export const tdWidgetMixin = {
 		 *
 		 * @param {number|string} v Raw value.
 		 * @return {string} e.g. `€ 1.234,00`.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		euro(v) {
 			return (Number(v) || 0).toLocaleString('nl-NL', {

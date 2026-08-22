@@ -266,14 +266,6 @@
 			"order": 96
 		},
 		{
-			"id": "AiOversightMenu",
-			"label": "AI oversight",
-			"icon": "ChartLine",
-			"route": "AiOversight",
-			"section": "settings",
-			"order": 96
-		},
-		{
 			"id": "WmsLayersMenu",
 			"label": "Map layers",
 			"icon": "LayersOutline",
@@ -357,10 +349,18 @@
 		{
 			"id": "AvgRegisterLink",
 			"label": "Processing activities (AVG)",
-			"icon": "ShieldAccountOutline",
+			"icon": "ShieldLockOutline",
 			"href": "/apps/openregister/#/avg",
 			"section": "settings",
 			"order": 95
+		},
+		{
+			"id": "AiOversightLink",
+			"label": "AI oversight",
+			"icon": "ShieldCheckOutline",
+			"href": "/apps/hermiq/ai-oversight",
+			"section": "settings",
+			"order": 96
 		}
 	],
 	"pages": [
@@ -2588,7 +2588,16 @@
 			"title": "Processing time",
 			"_note": "SLA / processing-time analytics. Was nominally type:dashboard but its config was ONE 12x12 widget whose slot rendered a complete second dashboard with its own <h2> — the dashboard-in-dashboard antipattern (hydra#316). Now five widgets over one shared store (src/store/modules/doorlooptijd.js). The presentational sub-components in views/doorlooptijd/components/ are unchanged; only their host moved.",
 			"config": {
-				"subtitle": "SLA adherence and processing time analysis",
+				"description": "SLA adherence and processing time analysis",
+				"headerActions": [
+					{
+						"id": "back-to-dashboard",
+						"label": "Dashboard",
+						"type": "navigate",
+						"route": "Dashboard",
+						"icon": "ViewDashboardOutline"
+					}
+				],
 				"pageFilters": [
 					{
 						"key": "period",
@@ -2705,7 +2714,7 @@
 			"title": "Process mining",
 			"_note": "Bottleneck analysis over the case statusRecord history. The figures come from a dedicated ProcessMiningService aggregation endpoint, not a register query, so the widgets are type:custom and read one shared store (src/store/modules/processMining.js) rather than a register/schema binding. The page owns the heading, the period presets and the case-type filter; each widget renders content only — a widget that drew its own page heading would be the dashboard-in-dashboard antipattern (hydra#316).",
 			"config": {
-				"subtitle": "Bottleneck analysis from recorded case status history",
+				"description": "Bottleneck analysis from recorded case status history",
 				"pageFilters": [
 					{
 						"key": "period",
@@ -2889,49 +2898,6 @@
 					},
 					{
 						"key": "delete",
-						"type": "handler"
-					}
-				],
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true
-				},
-				"documentationUrl": "https://procest.conduction.nl"
-			}
-		},
-		{
-			"id": "AiOversight",
-			"route": "/settings/ai-oversight",
-			"type": "index",
-			"title": "AI oversight",
-			"config": {
-				"register": "procest",
-				"schema": "aiAuditEntry",
-				"columns": [
-					{
-						"key": "type"
-					},
-					{
-						"key": "action"
-					},
-					{
-						"key": "model"
-					},
-					{
-						"key": "userAction"
-					},
-					{
-						"key": "userId"
-					}
-				],
-				"showViewAction": false,
-				"actions": [
-					{
-						"id": "view",
-						"label": "View",
-						"icon": "EyeOutline",
-						"handler": "navigate",
-						"route": "AiOversightDetail",
 						"type": "handler"
 					}
 				],
@@ -3165,62 +3131,6 @@
 						"gridY": 0,
 						"gridWidth": 12,
 						"gridHeight": 4,
-						"showTitle": false
-					}
-				],
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true,
-					"tabs": [
-						{
-							"id": "audit",
-							"label": "History",
-							"icon": "History",
-							"widgets": [
-								{
-									"type": "audit"
-								}
-							]
-						},
-						{
-							"id": "version-history",
-							"label": "Version history",
-							"icon": "FileCompare",
-							"component": "VersionHistoryLeafTab"
-						}
-					]
-				}
-			}
-		},
-		{
-			"id": "AiOversightDetail",
-			"route": "/settings/ai-oversight/:id",
-			"type": "detail",
-			"title": "AI audit entry",
-			"config": {
-				"register": "procest",
-				"schema": "aiAuditEntry",
-				"_note": "IMMUTABLE AUDIT-LOG archetype (one frozen AI suggestion + human decision, EU AI Act Art. 14 human-oversight evidence). No comms/documents, no lifecycleActions, no edit/delete — a log entry is a frozen fact, not a mutable object. The single Data widget carries the full record (type, action, caseId, documentId, model, prompt, suggestion, confidence, userAction, actualValue, reason, userId, timestamp, responseTimeMs). No content leaves, no object-lists. Register-level audit history is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
-				"widgets": [
-					{
-						"id": "ai-audit-data",
-						"type": "data",
-						"title": "AI audit entry",
-						"icon": "ShieldCheckOutline",
-						"content": {
-							"columns": 2
-						}
-					}
-				],
-				"layout": [
-					{
-						"id": "1",
-						"widgetId": "ai-audit-data",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 8,
 						"showTitle": false
 					}
 				],
@@ -4604,7 +4514,7 @@
 			"title": "Deadline monitoring",
 			"_note": "Deadline-monitoring KPIs plus the quarterly report and annual dwangsom audit. The figures come from /api/termijn/* aggregation endpoints, not a register query, so the widgets are type:custom over one shared store (src/store/modules/termijnDashboard.js). The page owns the heading and the case-type filter; the quarter and year inputs stay inside their own widgets because they scope THAT report, not the page.",
 			"config": {
-				"subtitle": "Deadline compliance, quarterly reporting and the annual dwangsom audit",
+				"description": "Deadline compliance, quarterly reporting and the annual dwangsom audit",
 				"widgets": [
 					{
 						"id": "td-kpis",

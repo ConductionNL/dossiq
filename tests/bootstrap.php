@@ -276,6 +276,13 @@ if (class_exists('\\OCA\\Decidesk\\Event\\DecisionConcludedEvent') === false) {
 	include_once __DIR__ . '/Stubs/Decidesk/Event/DecisionConcludedEvent.php';
 }
 
+// Hermiq's oversight contract. procest resolves it by name so it stays
+// installable without hermiq, which means the contract is only exercised in
+// tests if something supplies the class.
+if (class_exists('\\OCA\\Hermiq\\Event\\AiOversightRecordedEvent') === false) {
+	include_once __DIR__ . '/Stubs/Hermiq/Event/AiOversightRecordedEvent.php';
+}
+
 // bag-location-save-validation: pre-persist OpenRegister event stubs —
 // loaded when the openregister runtime is absent so
 // LocationBagValidationListenerTest can exercise handle() against real

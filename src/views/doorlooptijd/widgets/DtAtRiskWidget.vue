@@ -22,7 +22,10 @@ export default {
 	components: { DeadlineCaseTable, NcLoadingIcon },
 	mixins: [dtWidgetMixin],
 	computed: {
-		/** @return {Array<object>} Open cases within 25% of their deadline. */
+		/**
+		 * @return {Array<object>} Open cases within 25% of their deadline.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		atRisk() {
 			return this.dtStore.atRiskCases(this.dtCaseType)
 		},

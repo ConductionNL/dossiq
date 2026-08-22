@@ -23,7 +23,10 @@ export default {
 	components: { CaseTypeBreakdown, NcLoadingIcon },
 	mixins: [dtWidgetMixin],
 	computed: {
-		/** @return {Array<object>} Per-case-type performance rows. */
+		/**
+		 * @return {Array<object>} Per-case-type performance rows.
+		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 */
 		performanceData() {
 			return this.dtStore.performanceData(this.dtPreset, this.dtCaseType)
 		},
