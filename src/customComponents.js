@@ -78,7 +78,6 @@ import PublicStatusPage from './views/public/PublicStatusPage.vue'
 // InspectieList/InspectieDetail views + their offline glue (offlineDb.js,
 // syncReplayService.js) are deleted; the leaf owns the planning list, checklist
 // completion, mutation queue and reconnect-replay.
-import AdminRootView from './views/settings/AdminRoot.vue'
 // VoorstellenView removed — the Voorstellen list page is now a declarative
 // `type:"index"` on the `voorstel` schema (formatter columns + status badge,
 // see src/manifest.json + src/services/formatters.js).
@@ -147,7 +146,6 @@ export default {
 	DtWooWidget, // Woo statutory-deadline panel
 	DtAtRiskWidget, // open cases within 25% of deadline
 	DtBreakdownWidget, // per-case-type performance table
-	AdminRootView, // multi-tab admin root (lib settings-custom-slot gap)
 	// Deadline monitoring is a type:"dashboard" page; these are its slots.
 	TdCaseTypeFilter, // header-actions slot: case-type filter
 	TdKpiWidget, // headline KPI tiles (CnKpiGrid + CnStatsBlock)

@@ -241,14 +241,6 @@
 			"order": 90
 		},
 		{
-			"id": "CaseTypesMenu",
-			"label": "Case types",
-			"icon": "FolderCogOutline",
-			"route": "ProcestConfiguration",
-			"section": "settings",
-			"order": 95
-		},
-		{
 			"id": "PartnersMenu",
 			"label": "Partner organisations",
 			"icon": "OfficeBuildingOutline",
@@ -381,20 +373,20 @@
 			"permission": "admin"
 		},
 		{
-			"id": "SettingsMenu",
-			"label": "Configuration",
-			"icon": "CogOutline",
-			"route": "ProcestConfiguration",
-			"section": "settings",
-			"order": 99
-		},
-		{
 			"id": "FeaturesRoadmapMenu",
 			"label": "Features & roadmap",
 			"icon": "MapMarkerPath",
 			"route": "FeaturesRoadmap",
 			"section": "footer",
 			"order": 100
+		},
+		{
+			"id": "AdminSettingsLink",
+			"label": "Configuration",
+			"icon": "CogOutline",
+			"href": "/settings/admin/procest",
+			"section": "settings",
+			"order": 99
 		}
 	],
 	"pages": [
@@ -2845,23 +2837,6 @@
 			"_note": "Bespoke Kanban board (one column per non-final status type, drag-to-transition) rendered by a host-app SFC; no standard page type offers the drag-between-status-columns workflow surface. Mounted directly (not wrapped in a dashboard widget) so its own header is the single page title.",
 			"config": {
 				"register": "procest"
-			}
-		},
-		{
-			"id": "ProcestConfiguration",
-			"route": "/settings",
-			"type": "settings",
-			"title": "Configuration",
-			"config": {
-				"sections": [
-					{
-						"id": "admin",
-						"title": "Configuration"
-					}
-				]
-			},
-			"slots": {
-				"section-admin": "AdminRootView"
 			}
 		},
 		{

@@ -96,7 +96,6 @@ import MyWorkView from './views/MyWorkCards.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
-import AdminRootView from './views/settings/AdminRoot.vue'
 import SubstitutionSettingsView from './views/settings/SubstitutionSettings.vue'
 import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
 import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
@@ -191,11 +190,6 @@ const registry = {
 		kind: 'page',
 		component: WorkflowBoardView,
 		_note: 'Kanban board: column per non-final status, drag-to-advance via saveObject (RBAC-enforced). No declarative board page type in lib yet.',
-	},
-	AdminRootView: {
-		kind: 'page',
-		component: AdminRootView,
-		_note: 'Multi-tab admin root; pending lib settings-custom-slot support.',
 	},
 
 	// --- Handler vervanging/waarneming (handler-vervanging-waarneming). ---
