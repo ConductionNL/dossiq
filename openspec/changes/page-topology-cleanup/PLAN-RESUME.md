@@ -9,21 +9,18 @@
 
 | Item | State |
 |---|---|
-| **A** — three dashboards converted | done · in dossiq#1323 / #1328 |
-| **B** — administration surface | done · in dossiq#1323 |
-| **C1** — verwerkingen retired | done · in dossiq#1323 |
-| **E1** — AI oversight → hermiq | done · hermiq#514 + #517 **merged**; procest half in dossiq#1328 |
+| **A** — three dashboards converted | done · on `chore/page-topology-cleanup-specs` |
+| **B** — administration surface | done · same branch |
+| **C1** — verwerkingen retired | done · same branch |
+| **E1** — AI oversight → hermiq | done · hermiq#514 + #517 **merged**; dossiq#1328 **merged** into the branch |
 | **C2** — automatic actions → OR flows | **NOW UNBLOCKED** |
 | **D1–D4** — besluitvorming/committees/parafeerroutes → decidiq | **NOW UNBLOCKED**, but D1 still waits on `consume-decidesk-besluitvorming-leaf` |
 
-### Open PRs
+### Open PR
 
-- `ConductionNL/dossiq#1323` — blok A/B/C1, base `development`
-- `ConductionNL/dossiq#1328` — E1 + all gate fixes, base `chore/page-topology-cleanup-specs`
-
-The stack is deliberate: **#1328 merges into #1323's branch, then #1323 into
-`development`.** #1323 alone still fails gate-16 and gate-60 — those fixes live
-on #1328. Do not merge #1323 first.
+- `ConductionNL/dossiq#1323` — blok A/B/C1/E1 together, base `development`.
+  #1328 has been merged into its branch, so the gate-16/gate-60 fixes are in.
+  **This is the only thing between the finished work and `development`.**
 
 ### Merged already
 
@@ -33,56 +30,73 @@ on #1328. Do not merge #1323 first.
 
 ---
 
-## C2 — automatic actions become OpenRegister flows
+## C2 — automatic actions become OpenRegister flow nodes
 
-### What is actually there
+### Measured, not assumed
 
-procest's `automaticAction` schema: `slug, type, tenantId, title, description,
-config, version, isPublished, active`. Six handlers in
-`lib/Service/Actions/`: CallWebhook, CreateDocument, MergeTemplate, NotifyRole,
-ScheduleReminder, SendEmail. Two pages: `/settings/automatic-actions` and
-`/:id`.
+procest ships **six** action handlers in `lib/Service/Actions/`, each declaring
+its own `type()` slug:
 
-OR's consolidated engine is in `lib/Service/Flow/`: `FlowEngine`,
-`FlowNodeRegistry`, ~20 node types (TriggerObject, TriggerSchedule, Router,
-Map, SetFields, ObjectRead, AwaitSignal, Iterate, Explode, Merge, End, …), and
-routes `/api/flows` (CRUD + run), `/api/flow/node-catalog`,
-`/api/flow/event-catalog`, `/api/flow/validate`.
+| Handler | type() |
+|---|---|
+| `CallWebhookHandler` | `callWebhook` |
+| `CreateDocumentHandler` | `createDocument` |
+| `MergeTemplateHandler` | `mergeTemplate` |
+| `NotifyRoleHandler` | `notifyRole` |
+| `ScheduleReminderHandler` | `scheduleReminder` |
+| `SendEmailHandler` | `sendEmail` |
 
-`FlowNodeRegistry`'s own docblock says the point is that *"apps present nodes
-through OpenRegister"* — so the shape is **procest contributes nodes**, not
-procest keeps an engine.
+OpenRegister's consolidated engine registers **nineteen** node ids:
+`await-signal, batch, end, explode, filter, flow-state, iterate, map, merge,
+object-read, object-write, route, set-fields, sub-flow, switch, trigger-manual,
+trigger-object, trigger-schedule, wait`.
+
+🔑 **Every one of those is control-flow or data. Not one of them does anything
+outward-facing** — no email, no webhook, no document, no notification. So C2 is
+NOT "map six handlers onto existing nodes". All six are side-effecting actions
+that OR deliberately does not own, and mapping them would mean inventing
+behaviour OR does not have.
+
+### The seam already exists — no OpenRegister change needed
+
+`FlowNodeRegistry`'s docblock says the point is that *"apps present nodes through
+OpenRegister"*, and hermiq already does it:
+`lib/Flow/HermiqFlowNodeListener.php` listens for
+`OCA\OpenRegister\Service\Flow\RegisterFlowNodesEvent` and calls
+`$event->registerNode(...)` for `HermiqAgentNode`, `HermiqWorkloadNode` and
+`HermiqWorkloadCollectNode`.
+
+So C2 is **procest contributing six nodes the same way** — which means, like C1,
+it needs no OpenRegister-side work and the two-PR rule does not apply. The
+handlers keep their logic; they gain a node wrapper and lose their private
+registry.
 
 ### 🔴 The dependency that makes this bigger than two pages
 
-`automaticAction` is **not a standalone object**. `caseType.workflowSteps` embeds
-references to them in three places:
-
-- `automaticActions: ActionRef[]` on each step
-- `config.autoActions: ActionRef[]` fired before transition-level actions
-- `config.escalationRule` (notifyRole / escalateToRole / openIncident)
-
-Retiring the pages therefore does **not** retire the concept — every case type
-in the field references these by id. Any migration has to rewrite those
-references or keep them resolvable. **Establish this before writing the spec.**
+`automaticAction` is **not standalone**. `caseType.workflowSteps` embeds
+references in three places — `automaticActions: ActionRef[]`,
+`config.autoActions: ActionRef[]`, and `config.escalationRule` — and there are
+**9 such references in the shipped seed/templates alone**, before any customer
+data. Retiring the pages does not retire the concept: every case type in the
+field points at these by id.
 
 ### Steps
 
-1. **Inventory** every `automaticAction` in the seed data and in
-   `caseType.workflowSteps`, and map each of the six handler types onto an OR
-   node (or name the gap). `NotifyRole` and `ScheduleReminder` are the two most
-   likely to need a new node.
-2. **Land the gaps in OpenRegister** as contributed nodes — a procest-owned node
-   registered through `FlowNodeRegistry`, not a second engine. Merge first.
-3. **Migrate** `automaticAction` objects to flow definitions, and rewrite the
-   `workflowSteps` references. Repair step, idempotent, non-fatal.
-4. **Retire** in procest: both pages, the menu entry, `lib/Service/Actions/`,
-   and the `automaticAction` schema once nothing references it.
-5. Deeplink to OR's flows surface. ⚠️ **OpenRegister is hash-routed** —
-   `/apps/openregister/#/flows`, not `/apps/openregister/flows`. C1 hit this
-   exact trap and landed on OR's dashboard until corrected.
-
----
+1. **Wrap each handler as an `IFlowNode`** (`lib/Flow/Procest*Node.php`), keeping
+   the handler classes as the implementation. Register them through a
+   `ProcestFlowNodeListener` on `RegisterFlowNodesEvent`, copying hermiq's shape.
+2. **Decide the reference story for `workflowSteps`** — this is the real design
+   question, and it should be settled before any code:
+   - either `ActionRef` starts resolving to a flow node id (rewrite on migration), or
+   - the step executor calls OR's flow runner with the node inline.
+   Whichever wins, existing case types must keep working across the upgrade.
+3. **Migrate** the `automaticAction` objects to flow definitions + rewrite the
+   `workflowSteps` references. Repair step: idempotent, non-fatal, and it must
+   read required keys **without** a `??` fallback (see lesson 2).
+4. **Retire** `/settings/automatic-actions` + `/:id`, the menu entry, and
+   `ActionRegistry`/`ActionHandlerLocator` once the nodes are the only path.
+   Keep the six handler classes.
+5. **Deeplink** to `/apps/openregister/#/flows` — hash-routed. C1 hit this trap.
 
 ## D1–D4 — decision-making to decidiq
 
