@@ -42,7 +42,10 @@ import TenantOnboardingDashboard from './views/dashboard/TenantOnboardingDashboa
 // --- Termijnbewaking + Tenant dashboards (chain-builds 06/2026). ---
 // Archief dashboard retired (migrate-archival-to-or, ADR-022): the archivist
 // views are owned by OpenRegister.
-import TermijnDashboard from './views/dashboard/TermijnDashboard.vue'
+import TdAnnualWidget from './views/termijn/TdAnnualWidget.vue'
+import TdCaseTypeFilter from './views/termijn/TdCaseTypeFilter.vue'
+import TdKpiWidget from './views/termijn/TdKpiWidget.vue'
+import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 // --- Leverancier-zaakportaal (external supplier portal) MOVED to Portaliq
 //     (ADR-046, procest#162): the /leverancier Vue surface is retired here and
 //     re-expressed as the `supplier` audience in
@@ -134,7 +137,11 @@ export default {
 	// --- Lib gaps: would migrate once lib gains the missing primitive. ---
 	DoorlooptijdView, // SLA dashboard — charts via OR analytics-series leaf + lib CnChartWidget (ADR-022)
 	AdminRootView, // multi-tab admin root (lib settings-custom-slot gap)
-	TermijnDashboard, // AWB termijnbewaking + dwangsom KPI dashboard
+	// Deadline monitoring is a type:"dashboard" page; these are its slots.
+	TdCaseTypeFilter, // header-actions slot: case-type filter
+	TdKpiWidget, // headline KPI tiles (CnKpiGrid + CnStatsBlock)
+	TdQuarterlyWidget, // quarterly report table + CSV export
+	TdAnnualWidget, // annual dwangsom audit summary
 	// Process mining is a type:"dashboard" page; these are its widget slots.
 	// The page owns the heading and both filters — a widget that drew its own
 	// heading would be the dashboard-in-dashboard antipattern (hydra#316).

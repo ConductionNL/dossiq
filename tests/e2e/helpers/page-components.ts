@@ -62,7 +62,7 @@ export const ProcessMiningDashboard = '/process-mining'
 /** `src/views/dashboard/TenantOnboardingDashboard.vue` — SaaS tenant onboarding; renders `<h2>Tenant onboarding</h2>`. */
 export const TenantOnboardingDashboard = '/tenant-onboarding'
 
-/** `src/views/dashboard/TermijnDashboard.vue` — AWB termijnbewaking KPIs; renders `<h2>Deadline monitoring</h2>`. */
+/** Manifest `type: "dashboard"` page — AWB termijnbewaking KPIs + quarterly/annual reports; heading comes from the page title, widgets from `src/views/termijn/`. */
 export const TermijnDashboard = '/termijn-dashboard'
 
 /**

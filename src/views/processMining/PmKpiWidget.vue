@@ -17,17 +17,27 @@
 				<CnStatsBlock
 					:title="t('procest', 'Cases analysed')"
 					:count="kpiSummary.totalCases"
+					:showZeroCount="true"
+					:countLabel="t('procest', 'cases')"
 					variant="primary" />
 				<CnStatsBlock
 					:title="t('procest', 'Case types')"
 					:count="kpiSummary.caseTypeCount"
+					:showZeroCount="true"
+					:countLabel="t('procest', 'case types')"
 					variant="default" />
-				<CnStatsBlock :title="t('procest', 'Overall rework rate')" variant="warning">
+				<CnStatsBlock
+					:title="t('procest', 'Overall rework rate')"
+					countLabel=""
+					variant="warning">
 					<template #value>
 						{{ kpiSummary.overallReworkPercent }}%
 					</template>
 				</CnStatsBlock>
-				<CnStatsBlock :title="t('procest', 'Top bottleneck')" variant="error">
+				<CnStatsBlock
+					:title="t('procest', 'Top bottleneck')"
+					countLabel=""
+					variant="error">
 					<template #value>
 						{{ topBottleneckLabel }}
 					</template>

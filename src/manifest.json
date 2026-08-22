@@ -4689,10 +4689,62 @@
 		{
 			"id": "TermijnDashboard",
 			"route": "/termijn-dashboard",
-			"type": "custom",
-			"title": "Termijn dashboard",
-			"component": "TermijnDashboard",
-			"_note": "AWB termijnbewaking (statutory-deadline) monitor: a zaaktype filter drives a server-computed KPI bundle (total cases in period, within-term %, breached, at-risk) rendered as colour-coded compliance cards. The figures come from a dedicated deadline-aggregation endpoint, not a register query, so the standard dashboard/object-stats type can't supply or shape this data."
+			"type": "dashboard",
+			"title": "Deadline monitoring",
+			"_note": "Deadline-monitoring KPIs plus the quarterly report and annual dwangsom audit. The figures come from /api/termijn/* aggregation endpoints, not a register query, so the widgets are type:custom over one shared store (src/store/modules/termijnDashboard.js). The page owns the heading and the case-type filter; the quarter and year inputs stay inside their own widgets because they scope THAT report, not the page.",
+			"config": {
+				"subtitle": "Deadline compliance, quarterly reporting and the annual dwangsom audit",
+				"widgets": [
+					{
+						"id": "td-kpis",
+						"title": "Overview",
+						"type": "custom"
+					},
+					{
+						"id": "td-quarterly",
+						"title": "Quarterly report",
+						"type": "custom"
+					},
+					{
+						"id": "td-annual",
+						"title": "Annual dwangsom audit",
+						"type": "custom"
+					}
+				],
+				"layout": [
+					{
+						"id": 1,
+						"widgetId": "td-kpis",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					{
+						"id": 2,
+						"widgetId": "td-quarterly",
+						"gridX": 0,
+						"gridY": 4,
+						"gridWidth": 12,
+						"gridHeight": 7
+					},
+					{
+						"id": 3,
+						"widgetId": "td-annual",
+						"gridX": 0,
+						"gridY": 11,
+						"gridWidth": 12,
+						"gridHeight": 4
+					}
+				],
+				"documentationUrl": "https://procest.conduction.nl"
+			},
+			"slots": {
+				"header-actions": "TdCaseTypeFilter",
+				"widget-td-kpis": "TdKpiWidget",
+				"widget-td-quarterly": "TdQuarterlyWidget",
+				"widget-td-annual": "TdAnnualWidget"
+			}
 		},
 		{
 			"id": "TenantOnboardingDashboard",
