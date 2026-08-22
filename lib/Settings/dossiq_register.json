@@ -7,7 +7,7 @@
     },
     "x-openregister": {
         "type": "application",
-        "app": "procest",
+        "app": "dossiq",
         "openregister": "^v0.2.10",
         "description": "Case management (zaakgericht werken) for Nextcloud"
     },
