@@ -74,7 +74,10 @@ class CreateTaskHandler implements ActionHandlerInterface {
 			$task = [
 				'title' => (string)($actionConfig['title'] ?? sprintf('Taak na transitie %s', $transitionContext['transitionLabel'] ?? '')),
 				'case' => $caseId,
-				'status' => 'open',
+				// The task schema's lifecycle starts at 'available' (enum:
+				// available|active|completed|terminated|disabled). Writing 'open'
+				// produced an object no transition could advance.
+				'status' => 'available',
 				'assignee' => (string)($actionConfig['assignee'] ?? ''),
 			];
 

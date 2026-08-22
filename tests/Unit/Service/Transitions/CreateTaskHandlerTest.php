@@ -130,7 +130,15 @@ class CreateTaskHandlerTest extends TestCase {
 		self::assertSame('Review docs', $recorded['object']['title']);
 		self::assertSame('case-9', $recorded['object']['case']);
 		self::assertSame('alice', $recorded['object']['assignee']);
-		self::assertSame('open', $recorded['object']['status']);
+		// The task schema declares enum available|active|completed|terminated|disabled
+		// with initial state 'available'. A status outside that enum yields a task no
+		// lifecycle transition can advance, so assert the declared initial state.
+		self::assertSame('available', $recorded['object']['status']);
+		self::assertContains(
+			$recorded['object']['status'],
+			['available', 'active', 'completed', 'terminated', 'disabled'],
+			'CreateTaskHandler must write a status the task schema allows'
+		);
 		self::assertSame('reg-1', $recorded['register']);
 		self::assertSame('task-schema', $recorded['schema']);
 	}//end testCreatesTaskWithCaseLinkAndAssigneeOnSuccess()
