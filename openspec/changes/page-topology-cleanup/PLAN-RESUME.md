@@ -71,6 +71,35 @@ it needs no OpenRegister-side work and the two-PR rule does not apply. The
 handlers keep their logic; they gain a node wrapper and lose their private
 registry.
 
+### 🔴🔥 MEASURED 2026-08-22: THERE ARE TWO ACTION SYSTEMS, AND ONE IS DEAD
+
+Porting `SideEffectDispatcher` to the node route failed its own tests and that is
+how this surfaced. procest has **two entirely separate action vocabularies**:
+
+| | `lib/Service/Actions/` | `lib/Service/Transitions/` |
+|---|---|---|
+| interface | `Actions\ActionHandlerInterface` | `Transitions\ActionHandlerInterface` |
+| types | callWebhook, createDocument, mergeTemplate, notifyRole, scheduleReminder, sendEmail | sendEmail, createTask, createSubCase, webhook, setField, notify, besluitvormingActivate, besluitvormingPublish, evaluateDecision |
+| resolved by | `ActionRegistry::resolve(tenantId, slug)` | `ActionHandlerRegistry::getHandler(type)` |
+| fired by | **nothing** | `SideEffectDispatcher`, on every transition |
+
+Only `sendEmail` overlaps by NAME — different classes, different config keys.
+
+**`Service\Actions` has no runtime consumer.** Grepped: zero references to
+`ActionRegistry`, `ActionHandlerLocator` or any of the six handlers outside their
+own directory, and no route reaches them. `/settings/automatic-actions`
+administers `automaticAction` objects that `ActionRegistry` reads and **nothing
+executes** — the same shape as C1's dead endpoint: a surface over a capability
+that does not run.
+
+`Service\Transitions` is the live one. `caseType.workflowSteps.automaticActions[]`
+is dispatched by `SideEffectDispatcher` using ITS nine types, not the six.
+
+**Consequence for C2.** The node contribution in C2.1 wrapped the `Actions` six —
+correct for the pages, wrong for the dispatcher. Porting the dispatcher to
+`procest.<type>` would route eight of its nine live types at nodes that do not
+exist. That port is reverted; do not redo it without deciding which system moves.
+
 ### 🔴 The dependency that makes this bigger than two pages
 
 `automaticAction` is **not standalone**. `caseType.workflowSteps` embeds

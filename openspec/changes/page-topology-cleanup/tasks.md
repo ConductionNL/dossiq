@@ -39,8 +39,9 @@
 - [ ] C1.1 Diff procest's `VerwerkingenOverview.vue` against OpenRegister's `/avg` page; list what OR does not yet provide.
 - [ ] C1.2 Land the gaps in OpenRegister (openspec change in that repo). **Merge before C1.3.**
 - [ ] C1.3 Delete `/verwerkingen`, its menu entry and `VerwerkingenOverview.vue` from procest.
-- [ ] C2.1 Inventory every automatic action and map each to an OpenRegister flow definition; record anything the flow engine cannot express as an OpenRegister change, not as grounds to keep a second engine.
-- [ ] C2.2 Land the flow definitions + any engine gaps in OpenRegister. **Merge before C2.3.**
+- [x] C2.1 Inventoried. OR registers 19 nodes and every one is control-flow or data — none acts outward, so the six procest actions are CONTRIBUTED as nodes (`procest.<type>`) via `RegisterFlowNodesEvent`, the seam `FlowNodeRegistry` exists for and hermiq already uses. No OpenRegister-side change needed.
+- [ ] C2.1b Port `SideEffectDispatcher` to run step actions through OR's flow runner (full port, per the 2026-08-22 decision) instead of the private ActionRegistry.
+- [ ] C2.2 Repair step rewriting every `ActionRef` in `caseType.workflowSteps` (`automaticActions`, `config.autoActions`, `config.escalationRule`) to its `procest.<type>` node id. Idempotent, non-fatal. 9 references in the shipped seed alone.
 - [ ] C2.3 Delete `/settings/automatic-actions`, `/settings/automatic-actions/:id`, their menu entry and the backing controller/service from procest.
 
 ## D. To decidesk
