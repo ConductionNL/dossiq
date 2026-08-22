@@ -18,33 +18,34 @@ namespace OCA\Procest\Flow;
 
 use OCA\Procest\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
 use OCA\Procest\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
-use OCA\Procest\Service\Actions\CreateDocumentHandler;
+use OCA\Procest\Service\Transitions\BesluitvormingPublishHandler;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 
 /**
- * Flow node for the `createDocument` action.
+ * Flow node for the live `besluitvormingPublish` transition action.
  *
- * A thin wrapper: CreateDocumentHandler keeps the logic, this presents it to
- * OpenRegister's engine. See ProcestActionNode for why these are contributed
- * nodes rather than a mapping onto OpenRegister's own.
+ * A thin wrapper: BesluitvormingPublishHandler keeps the logic. This is the vocabulary
+ * SideEffectDispatcher actually fires on every status change, which is why it
+ * takes the plain `procest.besluitvormingPublish` id rather than the `procest.action.*`
+ * prefix the configured-action catalogue uses.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-class ProcestCreateDocumentNode extends ProcestActionNode {
+class ProcestTxBesluitvormingPublishNode extends ProcestActionNode {
 
 
     /**
      * Constructor.
      *
-     * @param CreateDocumentHandler $handler The action handler this node runs.
-     * @param IL10N              $l10n    The localisation service.
-     * @param IURLGenerator      $urls    The URL generator.
+     * @param BesluitvormingPublishHandler $handler The transition handler this node runs.
+     * @param IL10N         $l10n    The localisation service.
+     * @param IURLGenerator $urls    The URL generator.
      *
      * @return void
      */
     public function __construct(
-        private readonly CreateDocumentHandler $handler,
+        private readonly BesluitvormingPublishHandler $handler,
         IL10N $l10n,
         IURLGenerator $urls,
     ) {
@@ -56,7 +57,7 @@ class ProcestCreateDocumentNode extends ProcestActionNode {
     /**
      * The handler this node runs.
      *
-     * @return CatalogueActionHandler The action handler.
+     * @return CatalogueActionHandler|TransitionActionHandler The action handler.
      */
     protected function handler(): CatalogueActionHandler|TransitionActionHandler {
         return $this->handler;
@@ -67,13 +68,10 @@ class ProcestCreateDocumentNode extends ProcestActionNode {
     /**
      * This node's id.
      *
-     * `procest.action.*`, not `procest.*`: the live transition vocabulary owns
-     * the plain names and both systems ship a `sendEmail`.
-     *
      * @return string The namespaced node id.
      */
     protected function nodeId(): string {
-        return 'procest.action.' . $this->handler->type();
+        return 'procest.besluitvormingPublish';
 
     }//end nodeId()
 
@@ -84,7 +82,7 @@ class ProcestCreateDocumentNode extends ProcestActionNode {
      * @return string[] The required key names.
      */
     protected function requiredConfigKeys(): array {
-        return ['templateSlug', 'outputName'];
+        return [];
 
     }//end requiredConfigKeys()
 
@@ -97,7 +95,7 @@ class ProcestCreateDocumentNode extends ProcestActionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDisplayName(): string {
-        return $this->l10n->t('Create document');
+        return $this->l10n->t('Publish decision');
 
     }//end getDisplayName()
 
@@ -110,7 +108,7 @@ class ProcestCreateDocumentNode extends ProcestActionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDescription(): string {
-        return $this->l10n->t('Render a document template into a new file on the case.');
+        return $this->l10n->t('Publish the decision to DROP/LVBB.');
 
     }//end getDescription()
 

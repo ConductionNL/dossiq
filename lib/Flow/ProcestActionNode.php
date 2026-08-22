@@ -17,7 +17,8 @@ declare(strict_types=1);
 namespace OCA\Procest\Flow;
 
 use OCA\OpenRegister\Service\Flow\IFlowNode;
-use OCA\Procest\Service\Actions\ActionHandlerInterface;
+use OCA\Procest\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
+use OCA\Procest\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
 use OCP\IL10N;
 use OCP\WorkflowEngine\IManager;
 use OCP\IURLGenerator;
@@ -65,9 +66,15 @@ abstract class ProcestActionNode implements IFlowNode {
     /**
      * The handler this node runs.
      *
-     * @return ActionHandlerInterface The action handler.
+     * A UNION, because procest carries two action systems with two interfaces
+     * of the same name in different namespaces. They declare an identical
+     * `handle(array, array, array): ActionResult` and their ActionResults have
+     * an identical shape (succeeded / error / data), so one node body serves
+     * both — and naming both here says so out loud rather than duck-typing it.
+     *
+     * @return CatalogueActionHandler|TransitionActionHandler The action handler.
      */
-    abstract protected function handler(): ActionHandlerInterface;
+    abstract protected function handler(): CatalogueActionHandler|TransitionActionHandler;
 
 
     /**
@@ -79,17 +86,27 @@ abstract class ProcestActionNode implements IFlowNode {
 
 
     /**
-     * The node id, derived from the handler's own type slug.
+     * This node's id.
      *
-     * Deriving it means the id cannot drift from the handler it runs, and the
-     * migration that rewrites `ActionRef`s has one rule rather than six.
+     * Stated by the subclass rather than derived, because the two action
+     * systems both ship a `sendEmail` and their ids would collide. The LIVE
+     * transition vocabulary takes the plain `procest.<type>` names; the
+     * configured-action catalogue takes `procest.action.<type>`.
+     *
+     * @return string The namespaced node id.
+     */
+    abstract protected function nodeId(): string;
+
+
+    /**
+     * The node id.
      *
      * @return string The namespaced node id.
      *
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getId(): string {
-        return 'procest.' . $this->handler()->type();
+        return $this->nodeId();
 
     }//end getId()
 

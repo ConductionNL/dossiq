@@ -24,6 +24,15 @@ use OCA\Procest\Flow\ProcestMergeTemplateNode;
 use OCA\Procest\Flow\ProcestNotifyRoleNode;
 use OCA\Procest\Flow\ProcestScheduleReminderNode;
 use OCA\Procest\Flow\ProcestSendEmailNode;
+use OCA\Procest\Flow\ProcestTxSendEmailNode;
+use OCA\Procest\Flow\ProcestTxCreateTaskNode;
+use OCA\Procest\Flow\ProcestTxCreateSubCaseNode;
+use OCA\Procest\Flow\ProcestTxWebhookNode;
+use OCA\Procest\Flow\ProcestTxSetFieldNode;
+use OCA\Procest\Flow\ProcestTxNotifyNode;
+use OCA\Procest\Flow\ProcestTxBesluitvormingActivateNode;
+use OCA\Procest\Flow\ProcestTxBesluitvormingPublishNode;
+use OCA\Procest\Flow\ProcestTxEvaluateDecisionNode;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\TestCase;
 
@@ -52,25 +61,34 @@ class ProcestFlowNodeListenerTest extends TestCase {
         };
 
         return new ProcestFlowNodeListener(
-            $mk(ProcestSendEmailNode::class, 'procest.sendEmail'),
-            $mk(ProcestNotifyRoleNode::class, 'procest.notifyRole'),
-            $mk(ProcestCallWebhookNode::class, 'procest.callWebhook'),
-            $mk(ProcestCreateDocumentNode::class, 'procest.createDocument'),
-            $mk(ProcestMergeTemplateNode::class, 'procest.mergeTemplate'),
-            $mk(ProcestScheduleReminderNode::class, 'procest.scheduleReminder'),
+            $mk(ProcestSendEmailNode::class, 'procest.action.sendEmail'),
+            $mk(ProcestNotifyRoleNode::class, 'procest.action.notifyRole'),
+            $mk(ProcestCallWebhookNode::class, 'procest.action.callWebhook'),
+            $mk(ProcestCreateDocumentNode::class, 'procest.action.createDocument'),
+            $mk(ProcestMergeTemplateNode::class, 'procest.action.mergeTemplate'),
+            $mk(ProcestScheduleReminderNode::class, 'procest.action.scheduleReminder'),
+            $mk(ProcestTxSendEmailNode::class, 'procest.sendEmail'),
+            $mk(ProcestTxCreateTaskNode::class, 'procest.createTask'),
+            $mk(ProcestTxCreateSubCaseNode::class, 'procest.createSubCase'),
+            $mk(ProcestTxWebhookNode::class, 'procest.webhook'),
+            $mk(ProcestTxSetFieldNode::class, 'procest.setField'),
+            $mk(ProcestTxNotifyNode::class, 'procest.notify'),
+            $mk(ProcestTxBesluitvormingActivateNode::class, 'procest.besluitvormingActivate'),
+            $mk(ProcestTxBesluitvormingPublishNode::class, 'procest.besluitvormingPublish'),
+            $mk(ProcestTxEvaluateDecisionNode::class, 'procest.evaluateDecision'),
         );
 
     }//end listener()
 
 
     /**
-     * All six actions land on the catalogue.
+     * All fifteen actions land on the catalogue — both vocabularies.
      *
      * @return void
      *
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
-    public function testAllSixActionsAreRegistered(): void {
+    public function testAllFifteenActionsAreRegistered(): void {
         $event = new RegisterFlowNodesEvent();
         $this->listener()->handle($event);
 
@@ -81,17 +99,26 @@ class ProcestFlowNodeListenerTest extends TestCase {
 
         $this->assertSame(
             [
+                'procest.action.sendEmail',
+                'procest.action.notifyRole',
+                'procest.action.callWebhook',
+                'procest.action.createDocument',
+                'procest.action.mergeTemplate',
+                'procest.action.scheduleReminder',
                 'procest.sendEmail',
-                'procest.notifyRole',
-                'procest.callWebhook',
-                'procest.createDocument',
-                'procest.mergeTemplate',
-                'procest.scheduleReminder',
+                'procest.createTask',
+                'procest.createSubCase',
+                'procest.webhook',
+                'procest.setField',
+                'procest.notify',
+                'procest.besluitvormingActivate',
+                'procest.besluitvormingPublish',
+                'procest.evaluateDecision',
             ],
             $ids
         );
 
-    }//end testAllSixActionsAreRegistered()
+    }//end testAllFifteenActionsAreRegistered()
 
 
     /**

@@ -44,6 +44,15 @@ class ProcestFlowNodeListener implements IEventListener {
      * @param ProcestCreateDocumentNode   $createDocument   Render a document onto the case.
      * @param ProcestMergeTemplateNode    $mergeTemplate    Render a template into a field.
      * @param ProcestScheduleReminderNode $scheduleReminder Queue a reminder.
+     * @param ProcestTxSendEmailNode $sendEmailTx Live transition action `sendEmail`.
+     * @param ProcestTxCreateTaskNode $createTaskTx Live transition action `createTask`.
+     * @param ProcestTxCreateSubCaseNode $createSubCaseTx Live transition action `createSubCase`.
+     * @param ProcestTxWebhookNode $webhookTx Live transition action `webhook`.
+     * @param ProcestTxSetFieldNode $setFieldTx Live transition action `setField`.
+     * @param ProcestTxNotifyNode $notifyTx Live transition action `notify`.
+     * @param ProcestTxBesluitvormingActivateNode $besluitvormingActivateTx Live transition action `besluitvormingActivate`.
+     * @param ProcestTxBesluitvormingPublishNode $besluitvormingPublishTx Live transition action `besluitvormingPublish`.
+     * @param ProcestTxEvaluateDecisionNode $evaluateDecisionTx Live transition action `evaluateDecision`.
      *
      * @return void
      */
@@ -54,6 +63,15 @@ class ProcestFlowNodeListener implements IEventListener {
         private readonly ProcestCreateDocumentNode $createDocument,
         private readonly ProcestMergeTemplateNode $mergeTemplate,
         private readonly ProcestScheduleReminderNode $scheduleReminder,
+        private readonly ProcestTxSendEmailNode $sendEmailTx,
+        private readonly ProcestTxCreateTaskNode $createTaskTx,
+        private readonly ProcestTxCreateSubCaseNode $createSubCaseTx,
+        private readonly ProcestTxWebhookNode $webhookTx,
+        private readonly ProcestTxSetFieldNode $setFieldTx,
+        private readonly ProcestTxNotifyNode $notifyTx,
+        private readonly ProcestTxBesluitvormingActivateNode $besluitvormingActivateTx,
+        private readonly ProcestTxBesluitvormingPublishNode $besluitvormingPublishTx,
+        private readonly ProcestTxEvaluateDecisionNode $evaluateDecisionTx,
     ) {
 
     }//end __construct()
@@ -79,6 +97,19 @@ class ProcestFlowNodeListener implements IEventListener {
         $event->registerNode(node: $this->createDocument);
         $event->registerNode(node: $this->mergeTemplate);
         $event->registerNode(node: $this->scheduleReminder);
+
+        // The LIVE vocabulary: what SideEffectDispatcher fires on every status
+        // change. These take the plain `procest.*` ids; the configured-action
+        // catalogue above takes `procest.action.*`, because both ship a sendEmail.
+        $event->registerNode(node: $this->sendEmailTx);
+        $event->registerNode(node: $this->createTaskTx);
+        $event->registerNode(node: $this->createSubCaseTx);
+        $event->registerNode(node: $this->webhookTx);
+        $event->registerNode(node: $this->setFieldTx);
+        $event->registerNode(node: $this->notifyTx);
+        $event->registerNode(node: $this->besluitvormingActivateTx);
+        $event->registerNode(node: $this->besluitvormingPublishTx);
+        $event->registerNode(node: $this->evaluateDecisionTx);
 
     }//end handle()
 

@@ -95,7 +95,11 @@ class ProcestActionNodeTest extends TestCase {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function testIdIsDerivedFromTheHandlerType(): void {
-        $this->assertSame('procest.sendEmail', $this->node->getId());
+        // `procest.action.*`, not `procest.*`: the LIVE transition vocabulary
+        // owns the plain names and both systems ship a sendEmail. An id
+        // collision here would have one handler silently shadow the other in
+        // the catalogue.
+        $this->assertSame('procest.action.sendEmail', $this->node->getId());
 
     }//end testIdIsDerivedFromTheHandlerType()
 

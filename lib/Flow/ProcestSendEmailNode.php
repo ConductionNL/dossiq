@@ -16,7 +16,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Flow;
 
-use OCA\Procest\Service\Actions\ActionHandlerInterface;
+use OCA\Procest\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
+use OCA\Procest\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
 use OCA\Procest\Service\Actions\SendEmailHandler;
 use OCP\IL10N;
 use OCP\IURLGenerator;
@@ -55,12 +56,26 @@ class ProcestSendEmailNode extends ProcestActionNode {
     /**
      * The handler this node runs.
      *
-     * @return ActionHandlerInterface The action handler.
+     * @return CatalogueActionHandler The action handler.
      */
-    protected function handler(): ActionHandlerInterface {
+    protected function handler(): CatalogueActionHandler|TransitionActionHandler {
         return $this->handler;
 
     }//end handler()
+
+
+    /**
+     * This node's id.
+     *
+     * `procest.action.*`, not `procest.*`: the live transition vocabulary owns
+     * the plain names and both systems ship a `sendEmail`.
+     *
+     * @return string The namespaced node id.
+     */
+    protected function nodeId(): string {
+        return 'procest.action.' . $this->handler->type();
+
+    }//end nodeId()
 
 
     /**
