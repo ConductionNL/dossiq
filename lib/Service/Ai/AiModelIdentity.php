@@ -1,19 +1,19 @@
 <?php
 
 /**
- * Procest AI model identity.
+ * Dossiq AI model identity.
  *
  * Resolves the human-readable identifier of the currently configured AI model
  * (`<type>/<name>`) from app config. Stamped onto every oversight audit entry
  * and reported by the AI health check, so the Algoritmeregister trail always
  * says WHICH model produced a suggestion.
  *
- * Extracted from {@see \OCA\Procest\Service\AiService} so that the model
+ * Extracted from {@see \OCA\Dossiq\Service\AiService} so that the model
  * orchestration layer and the oversight layer ({@see AiAuditService}) read the
  * identifier from one place and can never drift on the config keys involved.
  *
  * @category Service
- * @package  OCA\Procest\Service\Ai
+ * @package  OCA\Dossiq\Service\Ai
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,7 +21,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -31,9 +31,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Ai;
+namespace OCA\Dossiq\Service\Ai;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\IAppConfig;
 
 /**

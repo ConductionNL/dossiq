@@ -7,7 +7,7 @@
  * employee-threshold alerts, and KPI summary.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,17 +20,17 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\ComplaintAnalyticsService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\ComplaintAnalyticsService;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
  * Unit tests for ComplaintAnalyticsService.
  *
- * @covers \OCA\Procest\Service\ComplaintAnalyticsService
+ * @covers \OCA\Dossiq\Service\ComplaintAnalyticsService
  */
 class ComplaintAnalyticsServiceTest extends TestCase {
 

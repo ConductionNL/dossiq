@@ -77,7 +77,7 @@
 import { NcButton, NcDialog, NcTextField } from '@nextcloud/vue'
 import { createAdviceWithNotification } from '../services/adviceApi.js'
 
-const APP_NAME = 'procest'
+const APP_NAME = 'dossiq'
 
 /**
  * Build a default deadline date 14 days from today (ISO YYYY-MM-DD).
@@ -148,7 +148,7 @@ export default {
 				await createAdviceWithNotification(payload)
 				this.$emit('created')
 			} catch (error) {
-				console.error('Procest: failed to create advice', error)
+				console.error('Dossiq: failed to create advice', error)
 				this.errorMessage = this.t(
 					this.appName,
 					'Aanmaken van advies is mislukt. Probeer het opnieuw.',

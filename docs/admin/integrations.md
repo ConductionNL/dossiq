@@ -2,12 +2,12 @@
 id: integrations
 title: External integrations (test environments)
 sidebar_position: 4
-description: How Procest's external integrations (BRP, KvK, DSO, DigiD/eHerkenning, e-Depot) are wired to real TEST environments behind a per-integration config tier. Every seam defaults to log — no external call happens unknowingly.
+description: How Dossiq's external integrations (BRP, KvK, DSO, DigiD/eHerkenning, e-Depot) are wired to real TEST environments behind a per-integration config tier. Every seam defaults to log — no external call happens unknowingly.
 ---
 
 # External integrations & test environments
 
-Procest's external-integration seams are wired to **real test environments** behind a uniform
+Dossiq's external-integration seams are wired to **real test environments** behind a uniform
 per-integration config tier (`external-integrations-test-environments`). The design rule is
 fail-closed: **every seam defaults to `log`** (dormant — no external call), so a fresh install or a
 dev instance never contacts an external service unknowingly. An operator opts a seam into a live
@@ -32,10 +32,10 @@ One app-config key selects the adapter tier per integration, plus tier-specific 
 Set a tier with, e.g.:
 
 ```bash
-occ config:app:set procest integration.kvk.mode --value test
-occ config:app:set procest integration.brp.mode --value mock
-occ config:app:set procest integration.brp.baseUrl --value http://personen-mock:5010/haalcentraal/api/brp
-occ config:app:set procest integration.digid.mode --value simulator
+occ config:app:set dossiq integration.kvk.mode --value test
+occ config:app:set dossiq integration.brp.mode --value mock
+occ config:app:set dossiq integration.brp.baseUrl --value http://personen-mock:5010/haalcentraal/api/brp
+occ config:app:set dossiq integration.digid.mode --value simulator
 ```
 
 An unknown or unset mode always falls back to `log`.
@@ -91,7 +91,7 @@ An unknown or unset mode always falls back to `log`.
   preproductie**, which needs a supplier (Leverancier-route) application + a PKIoverheid
   certificate (weeks of lead time). **This aansluiting is OUT OF SESSION SCOPE**; the real
   SAML-artifact adapter and its preprod lane are a follow-up once the cert is granted.
-- **No procest DigiD login page** exists today — the auth-broker adapter is consumed server-side
+- **No dossiq DigiD login page** exists today — the auth-broker adapter is consumed server-side
   by the `zaakportaal-mijngemeente` intake flow. The simulator login form / journey lands with
   that beta surface; the adapter contract (BSN validation, simulator flagging) is proven by
   PHPUnit here.
@@ -99,12 +99,12 @@ An unknown or unset mode always falls back to `log`.
 ### e-Depot (Nationaal Archief) — beta (customer-side aansluittraject)
 
 - The e-Depot **submission transport** is OpenRegister's (`Edepot/Transport/*`) after
-  `migrate-archival-to-or` retires procest's `EDepotSubmissionAdapterInterface`. This change
+  `migrate-archival-to-or` retires dossiq's `EDepotSubmissionAdapterInterface`. This change
   contributes only: (i) offline **MDTO XSD validation** of generated SIPs (lands with the OR
   archival pipeline — `NationaalArchief/MDTO-XSD`), and (ii) a manual **Preservica Starter**
   (`https://starter.preservica.com`, free 5 GB tier) sandbox rehearsal lane.
 - **Access request**: the NA e-Depot **aansluittraject** (impact analysis + intake) is only open to
-  zorgdragers/overheden and takes **months** — it is a **customer-side track procest supports but
+  zorgdragers/overheden and takes **months** — it is a **customer-side track dossiq supports but
   cannot initiate**, and is OUT OF SESSION SCOPE. Note: MDTO supersedes the legacy TMLO naming.
 
 ## Access-request register

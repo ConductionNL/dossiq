@@ -10,7 +10,7 @@
  * substitution surface was split; the guarantee under test is unchanged.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,17 +21,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/performance-hardening-audit-log-and-boot/specs/performance-hardening/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Substitution\SubstitutionAccessGuard;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Substitution\SubstitutionAccessGuard;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
@@ -39,7 +39,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Pagination-hardening test for the substitution surface.
  *
- * @covers \OCA\Procest\Service\Substitution\SubstitutionAccessGuard
+ * @covers \OCA\Dossiq\Service\Substitution\SubstitutionAccessGuard
  */
 class SubstitutionControllerLimitTest extends TestCase {
 	/**

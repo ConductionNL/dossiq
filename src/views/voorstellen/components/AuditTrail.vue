@@ -3,7 +3,7 @@
 		<NcLoadingIcon v-if="loading" :size="20" />
 
 		<div v-else-if="acties.length === 0" class="audit-trail__empty">
-			{{ t('procest', 'No actions recorded') }}
+			{{ t('dossiq', 'No actions recorded') }}
 		</div>
 
 		<div v-else>
@@ -19,7 +19,7 @@
 						{{ formatAction(actie.action) }}
 					</span>
 					<span class="audit-trail__step">
-						{{ t('procest', 'Step {n}', { n: actie.step }) }}
+						{{ t('dossiq', 'Step {n}', { n: actie.step }) }}
 					</span>
 					<span class="audit-trail__timestamp">
 						{{ formatTimestamp(actie) }}
@@ -30,7 +30,7 @@
 						v-if="actie.actorType === 'delegate' && actie.onBehalfOf">
 						{{
 							t(
-								'procest',
+								'dossiq',
 								'Endorsed by {delegate} on behalf of {principal}',
 								{
 									delegate: actie.actor,
@@ -44,20 +44,20 @@
 					</template>
 				</div>
 				<div v-if="actie.comment" class="audit-trail__comment">
-					<strong>{{ t('procest', 'Comment') }}:</strong>
+					<strong>{{ t('dossiq', 'Comment') }}:</strong>
 					{{ actie.comment }}
 				</div>
 				<div v-if="actie.advice" class="audit-trail__advice">
-					<strong>{{ t('procest', 'Advice') }}:</strong> {{ actie.advice }}
+					<strong>{{ t('dossiq', 'Advice') }}:</strong> {{ actie.advice }}
 				</div>
 				<div v-if="actie.mandate" class="audit-trail__mandate">
-					<em>{{ t('procest', 'Mandaat') }}: {{ actie.mandate }}</em>
+					<em>{{ t('dossiq', 'Mandaat') }}: {{ actie.mandate }}</em>
 				</div>
 			</div>
 
 			<!-- Export button -->
 			<NcButton class="audit-trail__export" @click="exportAuditTrail">
-				{{ t('procest', 'Export') }}
+				{{ t('dossiq', 'Export') }}
 			</NcButton>
 		</div>
 	</div>
@@ -98,7 +98,7 @@ export default {
 		 * @spec openspec/specs/parafering-actions/spec.md
 		 */
 		formatAction(action) {
-			return t('procest', ACTION_LABELS[action] || action)
+			return t('dossiq', ACTION_LABELS[action] || action)
 		},
 
 		/**

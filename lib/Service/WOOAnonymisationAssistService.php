@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest WOO Anonymisation Assist Service
+ * Dossiq WOO Anonymisation Assist Service
  *
  * LLM-ASSISTED redaction-span proposal for WOO document disclosure review.
  * This service is an ASSIST layered on top of the existing, unchanged
@@ -24,7 +24,7 @@
  *      explicitly approve/reject it (`reviewProposal()`) before it can flow
  *      into `WOORedactionService::queueForRedaction()`. Nothing here is
  *      auto-applied or auto-published (EU AI Act Art.14 human-in-the-loop
- *      posture procest already takes for every other AI suggestion).
+ *      posture dossiq already takes for every other AI suggestion).
  *
  * FLEET RULE: AI functionality lives in Hermiq. This class contains NO
  * prompt-building, model selection, or LLM-calling logic — that lives
@@ -33,7 +33,7 @@
  * invariant, human-review gating, and audit plumbing.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -49,13 +49,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Ai\AiAuditService;
-use OCA\Procest\Service\Assistant\HermiqAnonymisationClient;
-use OCA\Procest\Service\Assistant\HermiqAssistantException;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Ai\AiAuditService;
+use OCA\Dossiq\Service\Assistant\HermiqAnonymisationClient;
+use OCA\Dossiq\Service\Assistant\HermiqAssistantException;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 

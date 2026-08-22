@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest RenameDutchColumns Repair Step
+ * Dossiq RenameDutchColumns Repair Step
  *
  * Moves stored data from the Dutch columns to the English ones the procest
  * register now declares. Covers every vocabulary cluster migrated so far, not
@@ -38,7 +38,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -51,7 +51,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
 use OCP\DB\Exception;
 use OCP\IDBConnection;
@@ -63,8 +63,8 @@ use Psr\Log\LoggerInterface;
  * Rename procest's Dutch amount columns to their English equivalents.
  *
  * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
-	 *  migration. Pointing this at an existing spec would report conformance to a
-	 *  requirement that says nothing about it.
+ *  migration. Pointing this at an existing spec would report conformance to a
+ *  requirement that says nothing about it.
  */
 class RenameDutchColumns implements IRepairStep {
 	/**
@@ -72,6 +72,12 @@ class RenameDutchColumns implements IRepairStep {
 	 *
 	 * @var string
 	 */
+	// FROZEN: the OpenRegister register SLUG, not this app's id, and unchanged
+	// by the procest -> dossiq rename. The physical shard tables on disk are
+	// named from this prefix; a renamed value matches zero tables, so the step
+	// would migrate NOTHING and report "nothing to do" — success, with the
+	// Dutch columns left in place. Every lowercase `procest` in this file's
+	// prose names that register too, and stays for the same reason.
 	private const REGISTER_SLUG_PREFIX = 'procest';
 
 	/**

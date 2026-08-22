@@ -7,7 +7,7 @@
  * return 401 for unauthenticated requests (security fix for issue #634).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -18,16 +18,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\ZrcController;
-use OCA\Procest\Service\CaseRelationService;
-use OCA\Procest\Service\ZgwService;
+use OCA\Dossiq\Controller\ZrcController;
+use OCA\Dossiq\Service\CaseRelationService;
+use OCA\Dossiq\Service\ZgwService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -41,7 +41,7 @@ use PHPUnit\Framework\TestCase;
  * Ensures every read endpoint that was previously @PublicPage without JWT
  * validation now enforces authentication.
  *
- * @covers \OCA\Procest\Controller\ZrcController
+ * @covers \OCA\Dossiq\Controller\ZrcController
  */
 class ZrcControllerAuthTest extends TestCase {
 
@@ -110,7 +110,7 @@ class ZrcControllerAuthTest extends TestCase {
 		);
 
 		$this->controller = new ZrcController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			zgwService: $this->zgwService,
 			l10n: $this->l10n,

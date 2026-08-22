@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest OpenRegister gateway for the case-sharing surface.
+ * Dossiq OpenRegister gateway for the case-sharing surface.
  *
  * The single place the sharing surface reaches into OpenRegister. Every
  * resolution is guarded twice — the app must be installed, and the resolved
  * service must actually expose the methods the caller will invoke — because
- * procest runs against OpenRegister builds that predate the shares and
+ * dossiq runs against OpenRegister builds that predate the shares and
  * federation leaves. A missing leaf resolves to null; it never throws.
  *
  * Split out of CaseSharingService so the "is the leaf there?" question is
@@ -19,7 +19,7 @@
  * needs the same normalisation before reading fields.
  *
  * @category Service
- * @package  OCA\Procest\Service\Sharing
+ * @package  OCA\Dossiq\Service\Sharing
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,7 +27,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -37,7 +37,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Sharing;
+namespace OCA\Dossiq\Service\Sharing;
 
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -94,7 +94,7 @@ class OpenRegisterSharingGateway {
 	 *
 	 * The leaf owns token generation (256-bit non-guessable handle),
 	 * expiry, revocation, and the RBAC-respecting public resolve path;
-	 * procest mints no share tokens of its own.
+	 * dossiq mints no share tokens of its own.
 	 *
 	 * @return object|null The OR CaseTokenService, or null when OR is
 	 *                     unavailable / pre-foundation build.

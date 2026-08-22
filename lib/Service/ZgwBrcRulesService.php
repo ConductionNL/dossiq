@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest ZGW BRC (Besluiten) Business Rules Service
+ * Dossiq ZGW BRC (Besluiten) Business Rules Service
  *
  * Implements business rules for the Besluiten API as defined by VNG Realisatie.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -14,7 +14,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
  *
  * Business rules implemented:
@@ -65,7 +65,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 /**
  * BRC (Besluiten API) business rule validation and enrichment.

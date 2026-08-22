@@ -7,7 +7,7 @@
  * stamped) and the per-substitution action query.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,11 +20,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\SubstitutionAuditService;
-use OCA\Procest\Service\SubstitutionService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\SubstitutionAuditService;
+use OCA\Dossiq\Service\SubstitutionService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -53,7 +53,7 @@ if (interface_exists(SubstitutionObjectServiceStub::class) === false) {
 /**
  * Unit tests for SubstitutionAuditService.
  *
- * @covers \OCA\Procest\Service\SubstitutionAuditService
+ * @covers \OCA\Dossiq\Service\SubstitutionAuditService
  */
 class SubstitutionAuditServiceTest extends TestCase {
 

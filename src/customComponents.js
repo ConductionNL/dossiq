@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 //
-// Custom-component registry for procest's manifest-driven app shell.
+// Custom-component registry for dossiq's manifest-driven app shell.
 //
 // Every entry here is the "escape hatch" — pages or sidebar tabs that
 // don't fit one of the manifest's built-in types/widgets. Keep this
@@ -62,7 +62,7 @@ import PublicFederatedTransferPage from './views/public/PublicFederatedTransferP
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
 // Mobiel-inspectie offline views retired — "Veldinspecties" now surfaces the
 // generic `field-inspection` OpenRegister integration leaf (a nc-vue builtin),
-// registered with procest's offline schema mapping in src/main.js. The custom
+// registered with dossiq's offline schema mapping in src/main.js. The custom
 // InspectieList/InspectieDetail views + their offline glue (offlineDb.js,
 // syncReplayService.js) are deleted; the leaf owns the planning list, checklist
 // completion, mutation queue and reconnect-replay.
@@ -103,7 +103,7 @@ async function voorstelReminder({ actionId, item }) {
 	const current = steps.find((s) => s.order === item.currentStep)
 	const actor = current ? current.label || current.actor || '-' : '-'
 	try {
-		await fetch('/apps/procest/api/notifications/parafering-reminder', {
+		await fetch('/apps/dossiq/api/notifications/parafering-reminder', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
@@ -118,7 +118,7 @@ async function voorstelReminder({ actionId, item }) {
 		})
 	} catch (error) {
 		// eslint-disable-next-line no-console
-		console.error('[procest] parafering reminder failed', error)
+		console.error('[dossiq] parafering reminder failed', error)
 	}
 }
 

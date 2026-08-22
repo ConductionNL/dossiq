@@ -11,7 +11,7 @@
  * local session.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,31 +20,31 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/federated-case-collaboration/spec.md#local-transfer-acceptreject-requires-case-access-pre-existing-gap-fix
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\CaseFederationController;
-use OCA\Procest\Controller\CaseSharingController;
-use OCA\Procest\Service\CaseCollaborationService;
-use OCA\Procest\Service\CaseSharingService;
-use OCA\Procest\Service\CaseTransferService;
+use OCA\Dossiq\Controller\CaseFederationController;
+use OCA\Dossiq\Controller\CaseSharingController;
+use OCA\Dossiq\Service\CaseCollaborationService;
+use OCA\Dossiq\Service\CaseSharingService;
+use OCA\Dossiq\Service\CaseTransferService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
 use OCP\Security\Bruteforce\IThrottler;
-use Psr\Log\LoggerInterface;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Controller\CaseSharingController
- * @covers \OCA\Procest\Controller\CaseFederationController
+ * @covers \OCA\Dossiq\Controller\CaseSharingController
+ * @covers \OCA\Dossiq\Controller\CaseFederationController
  */
 class CaseSharingControllerFederationTest extends TestCase {
 	private IRequest $request;

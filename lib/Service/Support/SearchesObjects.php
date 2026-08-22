@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Procest SearchesObjects trait
+ * Dossiq SearchesObjects trait
  *
- * Shared helper that bridges procest's lib/ to OpenRegister's real
+ * Shared helper that bridges dossiq's lib/ to OpenRegister's real
  * ObjectService search API. OpenRegister's ObjectService has NO
  * `findObjects()` method — the correct entry points are
  * `searchObjects(array $query)` (numeric register/schema IDs in the
@@ -11,7 +11,7 @@
  * `searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters)`
  * (slug-aware bridge that resolves the slugs and merges `@self` itself).
  *
- * Every procest service/controller/job that previously called the
+ * Every dossiq service/controller/job that previously called the
  * non-existent `findObjects()` (which 500-ed the entire complaints,
  * hearing, DSO and raadsinformatie surface) now funnels through
  * {@see self::searchObjectsAsArrays()}, which:
@@ -24,7 +24,7 @@
  *     (`$row['field']`) keep working.
  *
  * @category Service
- * @package  OCA\Procest\Service\Support
+ * @package  OCA\Dossiq\Service\Support
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -38,7 +38,7 @@
  * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
  */
 
-namespace OCA\Procest\Service\Support;
+namespace OCA\Dossiq\Service\Support;
 
 /**
  * Trait providing the canonical OpenRegister object-search bridge.
@@ -104,7 +104,7 @@ trait SearchesObjects {
 	 * Replacement for the non-existent `ObjectService::findObject()`. The real
 	 * single-object entry point is `find(int|string $id, ?array $_extend, bool
 	 * $files, register, schema)`, which returns an `ObjectEntity` or throws
-	 * `DoesNotExistException` when the id is unknown. Procest callers expect a
+	 * `DoesNotExistException` when the id is unknown. Dossiq callers expect a
 	 * nullable associative array, so a missing object is mapped to `null`.
 	 *
 	 * @param object $objectService The OpenRegister ObjectService instance.
@@ -157,10 +157,10 @@ trait SearchesObjects {
 	 * service was reached through an untyped container lookup, which returned
 	 * whatever it returned and told no one.
 	 *
-	 * @param object              $objectService The OpenRegister object service.
-	 * @param int|string          $register      Register id, UUID or slug.
-	 * @param int|string          $schema        Schema id, UUID or slug.
-	 * @param array<string,mixed> $object        The object to store.
+	 * @param object $objectService The OpenRegister object service.
+	 * @param int|string $register Register id, UUID or slug.
+	 * @param int|string $schema Schema id, UUID or slug.
+	 * @param array<string,mixed> $object The object to store.
 	 *
 	 * @return array<string,mixed>|null The stored object, or null if it cannot be represented as one.
 	 */
@@ -225,7 +225,7 @@ trait SearchesObjects {
 	 * Coerce a searchObjects()/searchObjectsBySlug() return into a list of arrays.
 	 *
 	 * The OpenRegister search API returns `ObjectEntity[]` for a normal query or
-	 * an `int` in count mode; either way callers in procest expect a list of
+	 * an `int` in count mode; either way callers in dossiq expect a list of
 	 * associative arrays. ObjectEntity instances are flattened via jsonSerialize().
 	 *
 	 * @param mixed $rows Raw search result.

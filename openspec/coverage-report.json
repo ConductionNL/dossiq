@@ -1,6 +1,6 @@
 {
   "generated_at": "2026-05-24T08:36:00Z",
-  "app": "procest",
+  "app": "dossiq",
   "branch": "development",
   "scanner_version": "1",
   "scan_scope": "lib/**/*.php (172 files, 1235 methods). src/**/*.{vue,js,ts} not bucketed in v1 — see notes.",
@@ -185,7 +185,7 @@
         {"file": "lib/Controller/SettingsController.php", "methods": 6},
         {"file": "lib/Service/SettingsService.php", "methods": 9, "observed_behavior": "register resolver + getObjectService() — central to ADR-022 work"}
       ],
-      "procest-app-scaffold": [
+      "dossiq-app-scaffold": [
         {"file": "lib/Repair/InitializeSettings.php", "methods": 3},
         {"file": "lib/Service/SeedDataService.php", "methods": 10}
       ],
@@ -251,7 +251,7 @@
         {"file": "lib/Service/AiService.php", "methods": 22}
       ],
       "mcp-integration": [
-        {"file": "lib/Mcp/ProcestToolProvider.php", "methods": 21, "observed_behavior": "Per-app MCP tool provider (IMcpToolProvider) — registered fleet-wide via openregister AI orchestrator"}
+        {"file": "lib/Mcp/DossiqToolProvider.php", "methods": 21, "observed_behavior": "Per-app MCP tool provider (IMcpToolProvider) — registered fleet-wide via openregister AI orchestrator"}
       ],
       "dso-omgevingsloket": [
         {"file": "lib/Service/DsoIntakeService.php", "methods": 3, "observed_behavior": "DSO Omgevingsloket intake — there is an unarchived change `dso-omgevingsloket` but no spec lives in openspec/specs/ yet"}
@@ -325,12 +325,12 @@
   },
   "ignored": 0,
   "notes": [
-    "Vue/JS/TS sources under src/ (~135 files including views, components, stores) were NOT bucketed in this scan — many specs (visual-workflow-editor, doorlooptijd-dashboard, my-work, parafering-dashboard, task-management, signalering-widgets, procest-object-store, procest-store-migration) are frontend-only or frontend-primary; their PHP shadow is sometimes nil. A v2 pass should enumerate src/ and re-bucket.",
+    "Vue/JS/TS sources under src/ (~135 files including views, components, stores) were NOT bucketed in this scan — many specs (visual-workflow-editor, doorlooptijd-dashboard, my-work, parafering-dashboard, task-management, signalering-widgets, dossiq-object-store, dossiq-store-migration) are frontend-only or frontend-primary; their PHP shadow is sometimes nil. A v2 pass should enumerate src/ and re-bucket.",
     "Bucket-1 vs annotated: this scan does NOT generate per-method confidence-scored Bucket-1 entries beyond what is already annotated. The 58 'annotated' files include 30 method-level + 59 file-level @spec tags; the file-level tags imply every method in that file inherits the tag. /opsx-annotate should treat the unannotated methods in already-tagged files as candidates for explicit per-method annotation.",
     "Strongest blind spots: (1) the 5 ZGW *Controllers (ZRC/ZTC/DRC/BRC/NRC, 120 methods total) and 4 ZGW Rules services have zero @spec despite mapping directly to zgw-api-mapping (21 reqs) and zgw-business-rules-compliance (13 reqs). High ROI for /opsx-annotate. (2) MetricsController implements REQ-PROM-001..010 (prometheus-metrics has 10 explicit REQs) — straight Bucket 1.",
     "Watch for duplicates: lib/Service/Actions/SendEmailHandler.php and lib/Service/Transitions/SendEmailHandler.php look like two parallel implementations of the same action. Same for lib/Service/ChecklistService.php (top-level) vs lib/Service/Inspection/ChecklistService.php (subdir, annotated to inspection-checklists). Verify which is canonical before annotating.",
     "Spec 'voorstel-management' has 5 REQs and zero matching files in lib/Service or lib/Controller, but 389 hits in removed-lines (voorstel == subject of parafering). Almost certainly folded into the parafering-* services during refactor. Either reverse-spec a `voorstel` cluster or mark voorstel-management as moved into parafering-actions.",
-    "Spec parser supports four REQ patterns: REQ-XX-NN (15 specs), `Requirement: <title>` (24 specs), `Requirement N: <title>` (procest-case-management), and ZRC-NNN (zgw-business-rules-compliance). Final REQ count = 359 across 46 specs (1 spec, advice-management is delta-only and was counted).",
+    "Spec parser supports four REQ patterns: REQ-XX-NN (15 specs), `Requirement: <title>` (24 specs), `Requirement N: <title>` (dossiq-case-management), and ZRC-NNN (zgw-business-rules-compliance). Final REQ count = 359 across 46 specs (1 spec, advice-management is delta-only and was counted).",
     "Removed-lines cache built in 2.6s (46749 lines), under the 30s budget — Bucket 3 reverse-pass is reliable."
   ]
 }

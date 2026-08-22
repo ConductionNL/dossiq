@@ -3,7 +3,7 @@
 /**
  * Decidesk DecisionConcludedEvent test stub.
  *
- * Mirrors decidesk's merged event contract so procest's
+ * Mirrors decidesk's merged event contract so dossiq's
  * DecisionConcludedListener can be unit-tested without the decidesk app
  * installed. The real class ships in decidesk
  * (`OCA\Decidesk\Event\DecisionConcludedEvent`); this stub is loaded by

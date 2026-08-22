@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest MandaatCheckService.
+ * Dossiq MandaatCheckService.
  *
  * Authorization decision engine for mandates. Answers the question:
  * is user X authorized to take decision Y on case Z right now?
@@ -16,7 +16,7 @@
  * Money values: integer EUR cents throughout (ADR-031).
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,17 +27,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -96,7 +96,7 @@ class MandaatCheckService {
 		// indeterminate denies.
 		if ($this->conflictService === null) {
 			$this->logger->warning(
-				'Procest MandaatCheckService: no conflict-of-interest service bound — denying',
+				'Dossiq MandaatCheckService: no conflict-of-interest service bound — denying',
 				['userId' => $userId, 'caseId' => $caseId]
 			);
 			return [

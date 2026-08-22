@@ -4,7 +4,7 @@
  * BeroepDossierExport Unit Tests.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,17 +20,17 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\BeroepDossierExport;
-use OCA\Procest\Service\DossierCompiler;
+use OCA\Dossiq\Service\BeroepDossierExport;
+use OCA\Dossiq\Service\DossierCompiler;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
  * Unit tests for BeroepDossierExport.
  *
- * @covers \OCA\Procest\Service\BeroepDossierExport
+ * @covers \OCA\Dossiq\Service\BeroepDossierExport
  */
 class BeroepDossierExportTest extends TestCase {
 

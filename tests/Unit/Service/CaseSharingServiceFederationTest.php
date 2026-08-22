@@ -9,7 +9,7 @@
  * the leaf is unavailable, and audit-trail emission.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,22 +18,22 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/federated-case-collaboration/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\CaseSharingService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Sharing\CaseAccessPolicy;
-use OCA\Procest\Service\Sharing\CaseTokenShareService;
-use OCA\Procest\Service\Sharing\FederatedCaseShareService;
-use OCA\Procest\Service\Sharing\OpenRegisterSharingGateway;
-use OCA\Procest\Service\TenantAuditTrailService;
+use OCA\Dossiq\Service\CaseSharingService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Sharing\CaseAccessPolicy;
+use OCA\Dossiq\Service\Sharing\CaseTokenShareService;
+use OCA\Dossiq\Service\Sharing\FederatedCaseShareService;
+use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
+use OCA\Dossiq\Service\TenantAuditTrailService;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -141,12 +141,12 @@ final class CsfFakeFederatedShare {
 }//end class
 
 /**
- * @covers \OCA\Procest\Service\CaseSharingService
+ * @covers \OCA\Dossiq\Service\CaseSharingService
  *
- * @uses \OCA\Procest\Service\Sharing\CaseAccessPolicy
- * @uses \OCA\Procest\Service\Sharing\CaseTokenShareService
- * @uses \OCA\Procest\Service\Sharing\FederatedCaseShareService
- * @uses \OCA\Procest\Service\Sharing\OpenRegisterSharingGateway
+ * @uses \OCA\Dossiq\Service\Sharing\CaseAccessPolicy
+ * @uses \OCA\Dossiq\Service\Sharing\CaseTokenShareService
+ * @uses \OCA\Dossiq\Service\Sharing\FederatedCaseShareService
+ * @uses \OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway
  */
 class CaseSharingServiceFederationTest extends TestCase {
 	private CsfFakeObjectService $objects;

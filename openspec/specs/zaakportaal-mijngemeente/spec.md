@@ -1,11 +1,11 @@
 ---
 status: done
 note: >-
-  Citizen-portal "Mijn gemeente" delivered inside the host procest app (ADR-037).
+  Citizen-portal "Mijn gemeente" delivered inside the host dossiq app (ADR-037).
   Backend services, schemas, controller and the four citizen forms (DocumentList,
   MessagingWidget, BezwaarForm, KlachtForm) are shipped and tested (PHPUnit 46,
   vitest 53, defensive Playwright). The original app-shell/router tasks
-  (TASK-ZMP-26, TASK-ZMP-28) are SUPERSEDED by the procest manifest-v2 migration
+  (TASK-ZMP-26, TASK-ZMP-28) are SUPERSEDED by the dossiq manifest-v2 migration
   (menu + routes are declarative in src/manifest.d/50-zaakportaal.json) and were
   not rebuilt. Live-instance items (DigiD/eHerkenning edge session, IP binding,
   full E2E/axe/pentest, n8n fan-out, subsidie via opencatalogi) remain DEFERRED
@@ -23,7 +23,7 @@ status-note: >-
 
 ## Purpose
 Zaakportaal ("Mijn gemeente") is a citizen-facing portal, delivered inside the
-host procest app, that grants authenticated burgers and bedrijven real-time
+host dossiq app, that grants authenticated burgers and bedrijven real-time
 access to their cases, ACL-filtered documents, status timelines, handler
 messaging, and objection (bezwaar) / complaint (klacht) filing — all IDOR-safe
 and audit-logged. Authentication (DigiD/eHerkenning, minimum trust level
@@ -107,14 +107,14 @@ REQ-POR-003: The system SHALL allow a gemachtigde (wettelijk vertegenwoordiger, 
 
 ### Requirement: Case overview filtered by BSN or KvK
 
-REQ-POR-004: Upon login, the system SHALL retrieve all cases from Procest where the citizen (or their delegation) is involved as aanvrager, geadresseerde, or belanghebbende, and SHALL filter by BSN (for burgers/gemachtigden) or KvK (for ondernemers).
+REQ-POR-004: Upon login, the system SHALL retrieve all cases from Dossiq where the citizen (or their delegation) is involved as aanvrager, geadresseerde, or belanghebbende, and SHALL filter by BSN (for burgers/gemachtigden) or KvK (for ondernemers).
 
 #### Scenario: Burger sees her cases
-- **GIVEN** burger with BSN 123456789 has the following cases in Procest:
+- **GIVEN** burger with BSN 123456789 has the following cases in Dossiq:
   - Z/2026/09128 (Omgevingsvergunning, status vergunning-verleend)
   - Z/2026/04456 (Subsidie, status in-behandeling)
 - **WHEN** she logs in and navigates to "Mijn zaken"
-- **THEN** the portal queries the Procest CaseService with filter `bsn = 123456789`
+- **THEN** the portal queries the Dossiq CaseService with filter `bsn = 123456789`
 - **AND** both cases are retrieved and displayed as ZaakOverzichtItem entries
 - **AND** the list shows: kenmerk, zaaktype, onderwerp, status, ingediendOp, termijnen
 
@@ -123,11 +123,11 @@ REQ-POR-004: Upon login, the system SHALL retrieve all cases from Procest where 
   - Z/2026/04499 (Horeca-vergunning, status in-behandeling)
   - Z/2026/00672 (Evenementenvergunning, status afgehandeld)
 - **WHEN** he navigates to "Mijn zaken"
-- **THEN** the portal queries Procest with filter `kvkNummer = 12345678`
+- **THEN** the portal queries Dossiq with filter `kvkNummer = 12345678`
 - **AND** both cases appear in the list
 
 #### Scenario: No cases for a citizen
-- **GIVEN** a burger with BSN 999999999 has no active cases in Procest
+- **GIVEN** a burger with BSN 999999999 has no active cases in Dossiq
 - **WHEN** she logs in and navigates to "Mijn zaken"
 - **THEN** the portal displays a message: "Je hebt momenteel geen actieve zaken. Dien een nieuwe aanvraag in op [link to gemeente website]."
 
@@ -136,7 +136,7 @@ REQ-POR-004: Upon login, the system SHALL retrieve all cases from Procest where 
 REQ-POR-005: The system SHALL only display and allow download of documents marked with `downloadbaarVoor = ["aanvrager"]` or equivalent, and internal documents (adviezen, ambtelijke notities) MUST be completely hidden.
 
 #### Scenario: Citizen downloads only her documents
-- **GIVEN** case Z/2026/09128 contains 12 documents in Procest:
+- **GIVEN** case Z/2026/09128 contains 12 documents in Dossiq:
   - 6 marked `downloadbaarVoor = ["aanvrager"]` (Aanvraagformulier, Bouwtekening, Beschikking, etc.)
   - 6 internal only (Interne advies, Notities behandelaar, etc.)
 - **WHEN** the burger (aanvrager) opens the case detail
@@ -195,7 +195,7 @@ REQ-POR-006: The system SHALL display a visual timeline of case status transitio
 
 ### Requirement: Messaging between citizen and case handler
 
-REQ-POR-007: Citizens SHALL be able to send messages to their case handler, with optional file attachments. Messages SHALL be stored in Procest and trigger notifications to the handler; handler replies SHALL surface in the portal.
+REQ-POR-007: Citizens SHALL be able to send messages to their case handler, with optional file attachments. Messages SHALL be stored in Dossiq and trigger notifications to the handler; handler replies SHALL surface in the portal.
 
 #### Scenario: Citizen sends a question message
 - **GIVEN** burger is viewing case Z/2026/09128 with treatment handler "K. Bakker"
@@ -206,14 +206,14 @@ REQ-POR-007: Citizens SHALL be able to send messages to their case handler, with
   - `onderwerp = "Vraag"` (auto-generated or user-specified)
   - `inhoud = "Kunt u uitleggen wat voorwaarde 3 betekent?"`
   - `verzondenOp = now`
-- **AND** the message is posted to Procest API (PUT /messages)
+- **AND** the message is posted to Dossiq API (PUT /messages)
 - **AND** an n8n notification workflow is triggered, sending the handler an email: "Nieuwe vraag van burger op zaak Z/2026/09128"
 - **AND** the message appears in the citizen's "Berichten" tab with status "Verzonden op [timestamp]"
 
 #### Scenario: Handler's reply is visible in the portal
-- **GIVEN** the handler K. Bakker replied to the message within Procest (backend system)
+- **GIVEN** the handler K. Bakker replied to the message within Dossiq (backend system)
 - **WHEN** the citizen refreshes the case detail page
-- **THEN** the portal queries Procest for messages on this case
+- **THEN** the portal queries Dossiq for messages on this case
 - **AND** her original message is shown with the handler's reply below it
 - **AND** she receives a notification (email or Berichtenbox) saying "Je behandelaar K. Bakker heeft een antwoord gegeven"
 
@@ -227,7 +227,7 @@ REQ-POR-007: Citizens SHALL be able to send messages to their case handler, with
 
 ### Requirement: Bezwaar (objection) filing within legal deadline
 
-REQ-POR-008: When a decision is issued, the citizen SHALL be able to file a formal objection (bezwaarschrift) if the deadline (typically 6 weeks after decision) has not passed. The system SHALL validate timeliness, collect the objection grounds, and create a new bezwaar case in Procest.
+REQ-POR-008: When a decision is issued, the citizen SHALL be able to file a formal objection (bezwaarschrift) if the deadline (typically 6 weeks after decision) has not passed. The system SHALL validate timeliness, collect the objection grounds, and create a new bezwaar case in Dossiq.
 
 #### Scenario: Bezwaar form appears when deadline is open
 - **GIVEN** case Z/2026/09128 has a decision "Beschikking omgevingsvergunning" issued on 2026-04-02
@@ -256,7 +256,7 @@ REQ-POR-008: When a decision is issued, the citizen SHALL be able to file a form
   - `motivering = [text]`
   - `ingediendOp = now`
   - `binnenTermijn = true`
-- **AND** Procest creates a new bezwaarzaak: `zaak-2026-bezw-04711`
+- **AND** Dossiq creates a new bezwaarzaak: `zaak-2026-bezw-04711`
 - **AND** the citizen receives an email: "Uw bezwaarschrift is ontvangen op [date]" with reference number
 - **AND** the case detail shows: "✓ Bezwaar ingediend op [date] (zaak Z/2026-bezw-04711)"
 
@@ -286,7 +286,7 @@ REQ-POR-009: Citizens SHALL be able to file formal complaints (klacht) and subsi
   - `omschrijving = "De medewerker was onbeleefd toen ik naar het raam ging..."`
 - **WHEN** the citizen clicks "Dien klacht in"
 - **THEN** a PortaalVerzoek is created with `soort = "klachtschrift"`
-- **AND** Procest creates a complaint case (zaaktype = "klacht") with status "ontvangen"
+- **AND** Dossiq creates a complaint case (zaaktype = "klacht") with status "ontvangen"
 - **AND** the citizen receives an email receipt: "Uw klacht is ontvangen. Referentie: KL-2026-XXXXX"
 - **AND** the complaint is routed to the klachtencoördinator
 
@@ -308,7 +308,7 @@ REQ-POR-010: Citizens SHALL be able to choose which notification channels (email
 - **WHEN** she views her current preferences (email enabled, Berichtenbox enabled)
 - **AND** unchecks the "Ontvang e-mailnotificaties" checkbox
 - **THEN** the portal submits a PATCH to update PortaalNotificatieVoorkeur with `kanalen.email.actief = false`
-- **AND** Procest persists this preference
+- **AND** Dossiq persists this preference
 - **AND** a confirmation message displays: "Voorkeur opgeslagen. Je ontvangt voortaan geen e-mailnotificaties meer (behalve wettelijk verplichte berichten)."
 
 #### Scenario: Selective event notifications

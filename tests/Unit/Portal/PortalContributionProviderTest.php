@@ -3,15 +3,15 @@
 /**
  * Portal Contribution Provider Test
  *
- * Verifies procest's three-audience Portaliq contribution (ADR-046,
+ * Verifies dossiq's three-audience Portaliq contribution (ADR-046,
  * procest#162): the advertised audiences, per-audience collections/actions and
  * the fail-closed null for an unserved audience — plus a register-drift pin that
  * asserts every declared scopeField and every field-projection entry exists as a
- * property on its schema in procest_register.json (so a schema rename can never
+ * property on its schema in dossiq_register.json (so a schema rename can never
  * silently break a portal scope key or leak a dropped column).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Portal
+ * @package  OCA\Dossiq\Tests\Unit\Portal
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,13 +25,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Portal;
+namespace OCA\Dossiq\Tests\Unit\Portal;
 
-use OCA\Procest\Portal\PortalContributionProvider;
+use OCA\Dossiq\Portal\PortalContributionProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Procest\Portal\PortalContributionProvider
+ * @covers \OCA\Dossiq\Portal\PortalContributionProvider
  */
 class PortalContributionProviderTest extends TestCase {
 	/**
@@ -42,7 +42,7 @@ class PortalContributionProviderTest extends TestCase {
 	private PortalContributionProvider $provider;
 
 	/**
-	 * Schema definitions from procest_register.json, keyed by slug.
+	 * Schema definitions from dossiq_register.json, keyed by slug.
 	 *
 	 * @var array<string, array<string, mixed>>
 	 */
@@ -54,11 +54,11 @@ class PortalContributionProviderTest extends TestCase {
 
 		// Load the base register + every register.d fragment exactly as the
 		// runtime does (SettingsService merges lib/Settings/register.d/*.json
-		// on top of procest_register.json), so a scope key that lives in a
+		// on top of dossiq_register.json), so a scope key that lives in a
 		// fragment schema (e.g. portaalBericht in 50-zaakportaal.json) is
 		// resolvable by the drift pin.
 		$settingsDir = __DIR__ . '/../../../lib/Settings';
-		$basePath = $settingsDir . '/procest_register.json';
+		$basePath = $settingsDir . '/dossiq_register.json';
 		$this->assertFileExists($basePath);
 
 		$files = array_merge([$basePath], glob($settingsDir . '/register.d/*.json'));
@@ -194,7 +194,7 @@ class PortalContributionProviderTest extends TestCase {
 	 * @return array<string, mixed>
 	 */
 	private function propertiesFor(string $slug): array {
-		$this->assertArrayHasKey($slug, $this->schemas, "schema '{$slug}' must exist in procest_register.json");
+		$this->assertArrayHasKey($slug, $this->schemas, "schema '{$slug}' must exist in dossiq_register.json");
 		$props = ($this->schemas[$slug]['properties'] ?? []);
 		$this->assertNotEmpty($props, "schema '{$slug}' must declare properties");
 		return $props;

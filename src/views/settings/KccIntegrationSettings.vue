@@ -3,8 +3,8 @@
 		<NcNoteCard type="info">
 			{{
 				t(
-					'procest',
-					'Configure how the KCC-werkplek bridge identifies burgers, opens the case-voorblad, scores sentiment, and routes calls. DigiD authentication and the telephony screen-pop are delivered by OpenConnector and pipelinq respectively; only the Procest-side behaviour is configured here.',
+					'dossiq',
+					'Configure how the KCC-werkplek bridge identifies burgers, opens the case-voorblad, scores sentiment, and routes calls. DigiD authentication and the telephony screen-pop are delivered by OpenConnector and pipelinq respectively; only the Dossiq-side behaviour is configured here.',
 				)
 			}}
 		</NcNoteCard>
@@ -12,14 +12,14 @@
 		<div class="setting-row">
 			<NcSelect
 				v-model="identificationMethodOption"
-				:inputLabel="t('procest', 'Identification method')"
+				:inputLabel="t('dossiq', 'Identification method')"
 				:options="identificationMethodOptions"
 				:disabled="!writable || loading"
 				:clearable="false" />
 			<p class="setting-help">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Whether burgers are identified via DigiD (portaal/chat), identificatievragen (telefoon), or both.',
 					)
 				}}
@@ -28,7 +28,7 @@
 
 		<div class="setting-row">
 			<label for="kcc_identification_score_threshold">{{
-				t('procest', 'Identification score threshold (0.6 - 1.0)')
+				t('dossiq', 'Identification score threshold (0.6 - 1.0)')
 			}}</label>
 			<NcInputField
 				id="kcc_identification_score_threshold"
@@ -39,7 +39,7 @@
 			<p class="setting-help">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Minimum identificatievragen match score to link a burger and reveal full zaaksinfo. Below the threshold, only openbare zaaksinformatie is shown.',
 					)
 				}}
@@ -48,7 +48,7 @@
 
 		<div class="setting-row">
 			<label for="kcc_sentiment_polling_interval">{{
-				t('procest', 'Sentiment polling interval (seconds)')
+				t('dossiq', 'Sentiment polling interval (seconds)')
 			}}</label>
 			<NcInputField
 				id="kcc_sentiment_polling_interval"
@@ -60,7 +60,7 @@
 
 		<div class="setting-row">
 			<label for="kcc_specialist_availability_polling_interval">{{
-				t('procest', 'Specialist availability polling interval (seconds)')
+				t('dossiq', 'Specialist availability polling interval (seconds)')
 			}}</label>
 			<NcInputField
 				id="kcc_specialist_availability_polling_interval"
@@ -72,7 +72,7 @@
 
 		<div class="setting-row">
 			<label for="kcc_max_zaken_voorblad">{{
-				t('procest', 'Max open zaken in voorblad')
+				t('dossiq', 'Max open zaken in voorblad')
 			}}</label>
 			<NcInputField
 				id="kcc_max_zaken_voorblad"
@@ -84,7 +84,7 @@
 
 		<div class="setting-row">
 			<label for="kcc_max_contactmomenten_history">{{
-				t('procest', 'Max contactmomenten in history')
+				t('dossiq', 'Max contactmomenten in history')
 			}}</label>
 			<NcInputField
 				id="kcc_max_contactmomenten_history"
@@ -96,7 +96,7 @@
 
 		<div class="setting-row">
 			<label for="kcc_belplan_overflow_threshold_wachttijd">{{
-				t('procest', 'Belplan overflow threshold — wachttijd (seconds)')
+				t('dossiq', 'Belplan overflow threshold — wachttijd (seconds)')
 			}}</label>
 			<NcInputField
 				id="kcc_belplan_overflow_threshold_wachttijd"
@@ -108,7 +108,7 @@
 
 		<div class="setting-row">
 			<label for="kcc_belplan_overflow_threshold_wachtrij_lengte">{{
-				t('procest', 'Belplan overflow threshold — wachtrij lengte')
+				t('dossiq', 'Belplan overflow threshold — wachtrij lengte')
 			}}</label>
 			<NcInputField
 				id="kcc_belplan_overflow_threshold_wachtrij_lengte"
@@ -120,7 +120,7 @@
 
 		<div class="setting-row">
 			<label for="kcc_sentiment_trigger_words">{{
-				t('procest', 'Sentiment trigger words (one per line)')
+				t('dossiq', 'Sentiment trigger words (one per line)')
 			}}</label>
 			<textarea
 				id="kcc_sentiment_trigger_words"
@@ -132,7 +132,7 @@
 			<p class="setting-help">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Dutch words that flag negative sentiment and trigger an escalation recommendation. One word or phrase per line.',
 					)
 				}}
@@ -149,8 +149,8 @@
 				</template>
 				{{
 					saving
-						? t('procest', 'Saving...')
-						: t('procest', 'Save KCC settings')
+						? t('dossiq', 'Saving...')
+						: t('dossiq', 'Save KCC settings')
 				}}
 			</NcButton>
 		</div>
@@ -178,7 +178,7 @@ import {
 /**
  * KCC-werkplek bridge admin settings.
  *
- * Reads and writes the KCC config keys through the generic Procest settings
+ * Reads and writes the KCC config keys through the generic Dossiq settings
  * endpoint (GET /api/settings, POST /api/settings). DigiD and the telephony
  * screen-pop live in OpenConnector / pipelinq and are not configured here.
  *
@@ -210,9 +210,9 @@ export default {
 				{ id: 'digid', label: 'DigiD' },
 				{
 					id: 'bsn_questions',
-					label: t('procest', 'Identification questions'),
+					label: t('dossiq', 'Identification questions'),
 				},
-				{ id: 'both', label: t('procest', 'Both') },
+				{ id: 'both', label: t('dossiq', 'Both') },
 			],
 		}
 	},
@@ -244,7 +244,7 @@ export default {
 			this.loading = true
 			try {
 				const response = await fetch(
-					generateUrl('/apps/procest/api/settings'),
+					generateUrl('/apps/dossiq/api/settings'),
 					{
 						headers: { requesttoken: OC.requestToken },
 					},
@@ -281,7 +281,7 @@ export default {
 					),
 				}
 				const response = await fetch(
-					generateUrl('/apps/procest/api/settings'),
+					generateUrl('/apps/dossiq/api/settings'),
 					{
 						method: 'POST',
 						headers: {
@@ -295,21 +295,20 @@ export default {
 				if (response.ok) {
 					this.result = {
 						type: 'success',
-						message: t('procest', 'KCC instellingen opgeslagen'),
+						message: t('dossiq', 'KCC instellingen opgeslagen'),
 					}
 					await this.load()
 				} else {
 					this.result = {
 						type: 'error',
-						message: t('procest', 'Could not save KCC settings.'),
+						message: t('dossiq', 'Could not save KCC settings.'),
 					}
 				}
 			} catch (error) {
 				this.result = {
 					type: 'error',
 					message:
-						error.message
-						|| t('procest', 'Could not save KCC settings.'),
+						error.message || t('dossiq', 'Could not save KCC settings.'),
 				}
 			} finally {
 				this.saving = false

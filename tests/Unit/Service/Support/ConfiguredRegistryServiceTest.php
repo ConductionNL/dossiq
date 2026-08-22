@@ -4,7 +4,7 @@
  * ConfiguredRegistryService Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Support
+ * @package  OCA\Dossiq\Tests\Unit\Service\Support
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,10 +22,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Support;
+namespace OCA\Dossiq\Tests\Unit\Service\Support;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\ConfiguredRegistryService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ConfiguredRegistryService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -33,7 +33,7 @@ use RuntimeException;
 /**
  * Unit tests for ConfiguredRegistryService.
  *
- * @covers \OCA\Procest\Service\Support\ConfiguredRegistryService
+ * @covers \OCA\Dossiq\Service\Support\ConfiguredRegistryService
  */
 class ConfiguredRegistryServiceTest extends TestCase {
 

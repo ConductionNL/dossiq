@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Behavioural UI coverage for the bezwaar (objection) lifecycle index
@@ -19,14 +19,14 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { navToRoute, trackProcestErrors } from '../helpers/nav'
+import { navToRoute, trackDossiqErrors } from '../helpers/nav'
 
 test.describe('Beroepen (appeals) index page', () => {
 	// @e2e openspec/specs/bezwaar-lifecycle/spec.md#beroepen-index-page-renders-list-shell
 	test('beroepen index renders the appeals list shell with a create control', async ({
 		page,
 	}) => {
-		const errors = trackProcestErrors(page)
+		const errors = trackDossiqErrors(page)
 		// The nav renders "Appeals", not "Beroepen" — navigate by route so this
 		// does not depend on the current translation of the menu string.
 		await navToRoute(page, '/beroepen')
@@ -52,7 +52,7 @@ test.describe('Bezwaaradviescommissies (advisory committees) page', () => {
 	test('bezwaar committees page renders its own create control', async ({
 		page,
 	}) => {
-		const errors = trackProcestErrors(page)
+		const errors = trackDossiqErrors(page)
 		// The nav entry is "Objection advisory committees" and lives in a
 		// collapsed group, so it is display:none and unclickable on load.
 		// Navigate by route instead.

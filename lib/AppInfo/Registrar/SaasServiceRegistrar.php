@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest SaaS service registrar.
+ * Dossiq SaaS service registrar.
  *
  * The two SaaS services that cannot be autowired because their constructors take
  * plain strings read from app config: the tenant JWT signing secret and the
@@ -10,7 +10,7 @@
  * bootstrap class.
  *
  * @category AppInfo
- * @package  OCA\Procest\AppInfo\Registrar
+ * @package  OCA\Dossiq\AppInfo\Registrar
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,7 +18,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -28,11 +28,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\AppInfo\Registrar;
+namespace OCA\Dossiq\AppInfo\Registrar;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\ShillinqIntegrationService;
-use OCA\Procest\Service\TenantJwtService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\ShillinqIntegrationService;
+use OCA\Dossiq\Service\TenantJwtService;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\IConfig;
 use Psr\Container\ContainerInterface;
@@ -56,9 +56,9 @@ class SaasServiceRegistrar {
 	 */
 	public function register(IRegistrationContext $context): void {
 		// SaaS chain (member 05): factory the TenantJwtService with the secret
-		// from app config (procest.jwt_signing_secret). Generates a
+		// from app config (dossiq.jwt_signing_secret). Generates a
 		// per-instance random fallback when unset (dev-friendly; production
-		// must set the secret via occ config:app:set procest jwt_signing_secret).
+		// must set the secret via occ config:app:set dossiq jwt_signing_secret).
 		$context->registerService(
 			TenantJwtService::class,
 			static function (ContainerInterface $c): TenantJwtService {

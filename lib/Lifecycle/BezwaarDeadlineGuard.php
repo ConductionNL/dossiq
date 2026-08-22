@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest bezwaar deadline guard.
+ * Dossiq bezwaar deadline guard.
  *
  * OpenRegister lifecycle guard (consumed via x-openregister-lifecycle
  * `requires`) gating the `beslissen` transition on the `bezwaar` schema. The
@@ -12,7 +12,7 @@
  * term. Read-only: no mutations, no side effects (ADR-022, ADR-031).
  *
  * @category Lifecycle
- * @package  OCA\Procest\Lifecycle
+ * @package  OCA\Dossiq\Lifecycle
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,12 +23,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Lifecycle;
+namespace OCA\Dossiq\Lifecycle;
 
 use DateTimeImmutable;
 use OCA\OpenRegister\Lifecycle\GuardResult;

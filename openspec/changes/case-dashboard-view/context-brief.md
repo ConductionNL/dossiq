@@ -12,7 +12,7 @@ The Case Dashboard View is the primary working screen for behandelaars. It combi
 **Relationship to existing specs**: This spec COMPOSES elements from `case-management` (panels), `task-management` (task section), `roles-decisions` (participants, decisions), and `dashboard` (app-level overview). It adds layout, interactions, and cross-panel behaviors.
 **Feature tier**: MVP (layout, panel composition, navigation), V1 (configurable layout, quick actions, keyboard shortcuts, contactmomenten, linked objects)
 
-**Competitive context**: Dimpact ZAC uses an Angular SPA with Material UI and a tabbed case detail view (zaak-view). Key features include: full audit trail in a history tab, WebSocket-driven real-time updates (screen events), BAG object linking, and betrokkenen management. The ZAC case view integrates with Solr for search and Flowable for process state. Procest uses the `CnDetailPage` layout from `@conduction/nextcloud-vue` with a sidebar model, providing a more Nextcloud-native feel.
+**Competitive context**: Dimpact ZAC uses an Angular SPA with Material UI and a tabbed case detail view (zaak-view). Key features include: full audit trail in a history tab, WebSocket-driven real-time updates (screen events), BAG object linking, and betrokkenen management. The ZAC case view integrates with Solr for search and Flowable for process state. Dossiq uses the `CnDetailPage` layout from `@conduction/nextcloud-vue` with a sidebar model, providing a more Nextcloud-native feel.
 
 ## Layout
 
@@ -80,7 +80,7 @@ The system MUST provide a single integrated view that combines all case-related 
 - WHEN the behandelaar navigates to the case (from case list, My Work, or direct URL)
 - THEN the system MUST display all panels in a single scrollable view: status timeline (top), activity timeline (left), case info + deadline + participants + tasks + properties + decisions + documents + linked objects (right)
 - AND all data MUST load within 3 seconds (including all panel data)
-- AND the URL MUST be bookmarkable: `/apps/procest/cases/2026-042`
+- AND the URL MUST be bookmarkable: `/apps/dossiq/cases/2026-042`
 
 #### Scenario CDV-01b: Load case from different entry points
 
@@ -89,14 +89,14 @@ The system MUST provide a single integrated view that combines all case-related 
   - Case list: clicking the row in the case list
   - My Work: clicking a case item in the personal work queue
   - Werkvoorraad: clicking a case item in the team work queue
-  - Direct URL: pasting `/apps/procest/cases/2026-042`
+  - Direct URL: pasting `/apps/dossiq/cases/2026-042`
   - Notification: clicking a Nextcloud notification linking to the case
 - THEN the same case dashboard MUST render in all cases
 - AND the "Back" button MUST navigate to the entry point (not always the case list)
 
 #### Scenario CDV-01c: Case not found
 
-- GIVEN a user navigates to `/apps/procest/cases/nonexistent-id`
+- GIVEN a user navigates to `/apps/dossiq/cases/nonexistent-id`
 - THEN the system MUST display a 404 state: "Zaak niet gevonden"
 - AND a "Terug naar overzicht" button MUST be available
 
@@ -338,7 +338,7 @@ The case dashboard MUST be usable on different screen sizes, following Nextcloud
 - THEN the print layout MUST show all case information in a clean, printable format
 - AND the status timeline MUST be rendered as a text list (not interactive dots)
 - AND action buttons (Save, Delete) MUST be hidden in print view
-- AND the print output MUST include a header with case identifier, date printed, and Procest branding
+- AND the print output MUST include a header with case identifier, date printed, and Dossiq branding
 
 ---
 
@@ -503,7 +503,7 @@ The case dashboard MUST support deleting a case with appropriate warnings.
 **Substantially implemented (MVP).** The case detail view is functional with most MVP panels in place.
 
 **Implemented:**
-- Case detail page (`src/views/cases/CaseDetail.vue`) using `CnDetailPage` from `@conduction/nextcloud-vue` with sidebar support. Bookmarkable URL: `/apps/procest/cases/:id`.
+- Case detail page (`src/views/cases/CaseDetail.vue`) using `CnDetailPage` from `@conduction/nextcloud-vue` with sidebar support. Bookmarkable URL: `/apps/dossiq/cases/:id`.
 - Status timeline component (`src/views/cases/components/StatusTimeline.vue`) displaying ordered status dots with passed/current/future states and dates.
 - Status change dropdown (`NcSelect`) with status type options from case type configuration. Result prompt shown when final status is selected (with result type dropdown or free-text fallback).
 - Deadline panel (`src/views/cases/components/DeadlinePanel.vue`) showing start date, deadline, processing time, days elapsed, countdown with overdue styling, extension info (allowed/already extended), and extension request button.

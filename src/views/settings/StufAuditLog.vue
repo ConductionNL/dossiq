@@ -17,38 +17,38 @@
 		<div class="stuf-audit-log__filters">
 			<NcTextField
 				v-model="filters.endpointId"
-				:label="t('procest', 'Endpoint ID')"
-				:placeholder="t('procest', 'e.g. stuf-ep-amersfoort-key2zaken')" />
+				:label="t('dossiq', 'Endpoint ID')"
+				:placeholder="t('dossiq', 'e.g. stuf-ep-amersfoort-key2zaken')" />
 			<NcSelect
 				v-model="filters.messageKind"
 				:options="berichtSoortOptions"
-				:inputLabel="t('procest', 'Message type')"
+				:inputLabel="t('dossiq', 'Message type')"
 				clearable />
 			<NcSelect
 				v-model="filters.status"
 				:options="statusOptions"
-				:inputLabel="t('procest', 'Status')"
+				:inputLabel="t('dossiq', 'Status')"
 				clearable />
 			<NcButton type="primary" :disabled="loading" @click="reload">
 				<template v-if="loading" #icon>
 					<NcLoadingIcon :size="20" />
 				</template>
-				{{ loading ? t('procest', 'Reloading…') : t('procest', 'Reload') }}
+				{{ loading ? t('dossiq', 'Reloading…') : t('dossiq', 'Reload') }}
 			</NcButton>
 			<NcButton type="tertiary" @click="exportCsv">
-				{{ t('procest', 'Export CSV') }}
+				{{ t('dossiq', 'Export CSV') }}
 			</NcButton>
 		</div>
 		<table class="stuf-audit-log__table" data-testid="stuf-audit-log-table">
 			<thead>
 				<tr>
-					<th scope="col">{{ t('procest', 'Sent at') }}</th>
-					<th scope="col">{{ t('procest', 'Direction') }}</th>
-					<th scope="col">{{ t('procest', 'Message') }}</th>
-					<th scope="col">{{ t('procest', 'Function') }}</th>
-					<th scope="col">{{ t('procest', 'Status') }}</th>
-					<th scope="col">{{ t('procest', 'HTTP') }}</th>
-					<th scope="col">{{ t('procest', 'Duration (ms)') }}</th>
+					<th scope="col">{{ t('dossiq', 'Sent at') }}</th>
+					<th scope="col">{{ t('dossiq', 'Direction') }}</th>
+					<th scope="col">{{ t('dossiq', 'Message') }}</th>
+					<th scope="col">{{ t('dossiq', 'Function') }}</th>
+					<th scope="col">{{ t('dossiq', 'Status') }}</th>
+					<th scope="col">{{ t('dossiq', 'HTTP') }}</th>
+					<th scope="col">{{ t('dossiq', 'Duration (ms)') }}</th>
 					<th class="stuf-audit-log__actions" />
 				</tr>
 			</thead>
@@ -69,13 +69,13 @@
 					<td>{{ row.durationMs || '—' }}</td>
 					<td class="stuf-audit-log__actions">
 						<NcButton type="tertiary" @click="inspect(row)">
-							{{ t('procest', 'Inspect') }}
+							{{ t('dossiq', 'Inspect') }}
 						</NcButton>
 					</td>
 				</tr>
 				<tr v-if="!messages.length">
 					<td colspan="8" class="stuf-audit-log__empty">
-						{{ t('procest', 'No StUF messages match the filters.') }}
+						{{ t('dossiq', 'No StUF messages match the filters.') }}
 					</td>
 				</tr>
 			</tbody>
@@ -182,7 +182,7 @@ export default {
 				this.messages = Array.isArray(data.items) ? data.items : []
 				this.loadError = ''
 			} catch (e) {
-				this.loadError = t('procest', 'Failed to load StUF audit log')
+				this.loadError = t('dossiq', 'Failed to load StUF audit log')
 				showError(this.loadError)
 			} finally {
 				this.loading = false

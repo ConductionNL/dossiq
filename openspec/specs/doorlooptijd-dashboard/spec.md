@@ -174,10 +174,10 @@ The doorlooptijd dashboard SHALL provide a date range filter that controls which
 
 The main dashboard SHALL provide navigation to the doorlooptijd analytics view.
 
-@e2e exclude Navigation from the Procest in-app dashboard requires the dashboard to render its widget grid; the dashboard is marked fixme in pages.spec.ts due to a CI rendering issue.
+@e2e exclude Navigation from the Dossiq in-app dashboard requires the dashboard to render its widget grid; the dashboard is marked fixme in pages.spec.ts due to a CI rendering issue.
 
 #### Scenario: Link from main dashboard
-- **WHEN** the user views the main Procest dashboard
+- **WHEN** the user views the main Dossiq dashboard
 - **THEN** the system MUST display a navigation element (tab or link) to access the doorlooptijd dashboard
 
 ### Requirement: Doorlooptijd page render [MVP]
@@ -195,7 +195,7 @@ pure helper module (`chartShaping.js`). Decomposition MUST NOT change the
 rendered behaviour, the data fetched, or the displayed strings.
 
 #### Scenario: Doorlooptijd page renders heading
-- **GIVEN** an authenticated user on the Procest app
+- **GIVEN** an authenticated user on the Dossiq app
 - **WHEN** they navigate to the doorlooptijd page
 - **THEN** the main content MUST render a "Processing Time Analytics" page heading
 - **AND** the page MUST NOT show an Internal Server Error

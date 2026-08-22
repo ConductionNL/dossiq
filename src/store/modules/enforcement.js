@@ -1,5 +1,5 @@
 /**
- * Enforcement store module for Procest VTH.
+ * Enforcement store module for Dossiq VTH.
  *
  * Manages enforcement actions (handhavingsacties), LHS matrix lookup,
  * dwangsom tracking, and begunstigingstermijn management.
@@ -171,7 +171,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 				return
 			}
 			try {
-				const response = await fetch('/apps/procest/api/settings', {
+				const response = await fetch('/apps/dossiq/api/settings', {
 					headers: {
 						'Content-Type': 'application/json',
 						requesttoken: OC.requestToken,
@@ -207,7 +207,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 */
 		async saveLhsMatrix(matrix) {
 			try {
-				const response = await fetch('/apps/procest/api/settings', {
+				const response = await fetch('/apps/dossiq/api/settings', {
 					method: 'PUT',
 					headers: {
 						'Content-Type': 'application/json',

@@ -4,7 +4,7 @@
 
 @e2e exclude Metadata-only capability (info.xml, README, features overlay) — no UI surface; verified via app-info.xsd validation, README link checker, and JSON validation.
 
-Procest's licence metadata, README feature claims, documentation links, platform matrix, and
+Dossiq's licence metadata, README feature claims, documentation links, platform matrix, and
 feature-maturity statuses tell the truth about the code as shipped.
 
 **OpenSpec changes**: [align-claims-and-licence](../../changes/archive/2026-07-06-align-claims-and-licence/) _(archived 2026-07-06)_

@@ -5,15 +5,15 @@ TBD - created by archiving change migrate-role-routing-to-or-rbac. Update Purpos
 ## Requirements
 ### Requirement: roleType Schema Carries an ncGroupId Bridge Field
 
-The `roleType` schema in `procest_register.json` MUST include a nullable
-`ncGroupId` string property that binds a procest role to a Nextcloud group id,
+The `roleType` schema in `dossiq_register.json` MUST include a nullable
+`ncGroupId` string property that binds a dossiq role to a Nextcloud group id,
 the canonical OR RBAC role identifier. A null/empty `ncGroupId` means the role is
 unmapped and imposes no group restriction (open to all authenticated users),
 matching the pre-migration default.
 
 #### Scenario: roleType declares ncGroupId
 
-- GIVEN the `roleType` schema in `procest_register.json`
+- GIVEN the `roleType` schema in `dossiq_register.json`
 - WHEN its `properties` are inspected
 - THEN `ncGroupId` MUST be declared as a nullable string
 - AND the admin roleType editor MUST expose an editable "NC Group ID" field
@@ -53,7 +53,7 @@ transition whose role maps to no group MUST carry no `authorization` entry.
 (`IGroupManager`), with the same semantics as OR's
 `PermissionHandler::isTransitionAuthorized`: an empty/absent list is open, an
 anonymous caller is denied, admins bypass, otherwise the caller MUST belong to at
-least one listed group. Procest MUST NOT use a bespoke role-resolution scheme to
+least one listed group. Dossiq MUST NOT use a bespoke role-resolution scheme to
 make this group decision.
 
 #### Scenario: Unauthorized group is rejected
@@ -97,13 +97,13 @@ be limited to keying the per-user KPI cache version.
 
 ### Requirement: No Parallel Permission Store for OR-Owned Objects
 
-Procest MUST NOT introduce a database table or OR schema whose purpose is to
+Dossiq MUST NOT introduce a database table or OR schema whose purpose is to
 store access permissions for OR-owned objects. Access configuration lives in the
 `roleType.ncGroupId` bridge and the transition `authorization` lists.
 
 #### Scenario: No permission store added
 
-- GIVEN the procest app after this change
+- GIVEN the dossiq app after this change
 - WHEN its schemas and tables are inspected
 - THEN no new `*Permission*` / `*AccessRule*` schema or `*_perm*` table MUST exist
 

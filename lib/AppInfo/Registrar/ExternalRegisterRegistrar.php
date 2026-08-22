@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest external base-register registrar.
+ * Dossiq external base-register registrar.
  *
  * The composite over the wave-4 external base-register ports. It owns nothing
  * itself beyond the order in which the per-register registrars run, so adding a
  * sixth base register is a one-line change here plus one new small class.
  *
  * @category AppInfo
- * @package  OCA\Procest\AppInfo\Registrar
+ * @package  OCA\Dossiq\AppInfo\Registrar
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -16,7 +16,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -26,7 +26,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\AppInfo\Registrar;
+namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 

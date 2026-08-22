@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest SuppressesWarnings support trait.
+ * Dossiq SuppressesWarnings support trait.
  *
  * A scoped, greppable replacement for the `@` error-control operator.
  *
  * Several PHP core calls (imap_*, dns_get_record, fsockopen,
  * file_get_contents over a stream wrapper, unlink) report failure BOTH by
- * return value and by emitting an E_WARNING. Procest always checks the return
+ * return value and by emitting an E_WARNING. Dossiq always checks the return
  * value, so the warning is pure noise on an expected, handled outcome — but
  * `@` is the wrong tool for it: it is invisible in a diff, it swallows every
  * severity, and it stays in effect for the whole expression including nested
@@ -19,7 +19,7 @@
  * unaffected.
  *
  * @category Support
- * @package  OCA\Procest\Support
+ * @package  OCA\Dossiq\Support
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -30,12 +30,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Support;
+namespace OCA\Dossiq\Support;
 
 /**
  * Run a warning-noisy core call with its diagnostics captured instead of

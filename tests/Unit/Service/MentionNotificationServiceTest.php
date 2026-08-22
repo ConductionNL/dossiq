@@ -3,11 +3,11 @@
 /**
  * MentionNotificationService Unit Tests
  *
- * Tests for the Procest MentionNotificationService that turns a saved
+ * Tests for the Dossiq MentionNotificationService that turns a saved
  * note's `@mention` tokens (nc-vue #207) into Nextcloud notifications.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,17 +15,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/ncvue-w2-leaves-adoption/specs/ncvue-w2-leaves-adoption/spec.md#REQ-W2L-003
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\MentionNotificationService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\MentionNotificationService;
 use OCP\Notification\IManager;
 use OCP\Notification\INotification;
 use PHPUnit\Framework\TestCase;
@@ -34,7 +34,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for the MentionNotificationService class.
  *
- * @covers \OCA\Procest\Service\MentionNotificationService
+ * @covers \OCA\Dossiq\Service\MentionNotificationService
  */
 class MentionNotificationServiceTest extends TestCase {
 

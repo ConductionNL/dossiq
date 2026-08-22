@@ -16,7 +16,7 @@
 <template>
 	<NcDialog
 		v-model:open="open"
-		:name="t('procest', 'Extension request')"
+		:name="t('dossiq', 'Extension request')"
 		size="small"
 		data-testid="leverancier-renewal-modal"
 		@update:open="onOpenChange">
@@ -24,7 +24,7 @@
 			<p class="lz-renewal-intro">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Request an extension of this contract. The municipality will contact you within 14 working days.',
 					)
 				}}
@@ -32,7 +32,7 @@
 
 			<div class="lz-form-group">
 				<label class="required" for="lz-renewal-duration">
-					{{ t('procest', 'Desired extension period (months)') }}
+					{{ t('dossiq', 'Desired extension period (months)') }}
 				</label>
 				<input
 					id="lz-renewal-duration"
@@ -50,7 +50,7 @@
 
 			<div class="lz-form-group">
 				<label for="lz-renewal-reason">
-					{{ t('procest', 'Motivation') }}
+					{{ t('dossiq', 'Motivation') }}
 				</label>
 				<textarea
 					id="lz-renewal-reason"
@@ -59,7 +59,7 @@
 					maxlength="2000"
 					data-testid="leverancier-renewal-reason"
 					class="lz-input lz-textarea"
-					:placeholder="t('procest', 'Optional — note on the request')" />
+					:placeholder="t('dossiq', 'Optional — note on the request')" />
 			</div>
 
 			<div class="lz-form-actions">
@@ -68,7 +68,7 @@
 					class="lz-button"
 					data-testid="leverancier-renewal-cancel"
 					@click="close">
-					{{ t('procest', 'Annuleren') }}
+					{{ t('dossiq', 'Annuleren') }}
 				</button>
 				<button
 					type="submit"
@@ -77,8 +77,8 @@
 					:disabled="submitting">
 					{{
 						submitting
-							? t('procest', 'Sending…')
-							: t('procest', 'Submit request')
+							? t('dossiq', 'Sending…')
+							: t('dossiq', 'Submit request')
 					}}
 				</button>
 			</div>
@@ -126,6 +126,13 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Validate the renewal-request form before submission.
+		 *
+		 * @return {boolean} True when the form may be submitted.
+		 *
+		 * @spec openspec/specs/case-management/spec.md
+		 */
 		validate() {
 			this.errors = { durationMonths: '' }
 			if (
@@ -134,7 +141,7 @@ export default {
 				|| this.form.durationMonths > 60
 			) {
 				this.errors.durationMonths = this.t(
-					'procest',
+					'dossiq',
 					'Period must be between 1 and 60 months.',
 				)
 				return false

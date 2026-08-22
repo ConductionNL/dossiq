@@ -8,7 +8,7 @@
  * unconfigured or the OpenRegister lookup fails.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Ai
+ * @package  OCA\Dossiq\Tests\Unit\Service\Ai
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,11 +24,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Ai;
+namespace OCA\Dossiq\Tests\Unit\Service\Ai;
 
-use OCA\Procest\Service\Ai\AiAuditLog;
-use OCA\Procest\Service\Ai\AiAuditService;
-use OCA\Procest\Service\Ai\AiModelIdentity;
+use OCA\Dossiq\Service\Ai\AiAuditLog;
+use OCA\Dossiq\Service\Ai\AiAuditService;
+use OCA\Dossiq\Service\Ai\AiModelIdentity;
 use OCP\IAppConfig;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -57,11 +57,11 @@ interface AiAuditObjectServiceStub {
 /**
  * Unit tests for AiAuditService::listAuditEntries().
  *
- * @covers \OCA\Procest\Service\Ai\AiAuditService
+ * @covers \OCA\Dossiq\Service\Ai\AiAuditService
  *
- * @uses \OCA\Procest\Service\Ai\AiAuditLog
- * @uses \OCA\Procest\Service\Ai\AiModelIdentity
- * @uses \OCA\Procest\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Ai\AiAuditLog
+ * @uses \OCA\Dossiq\Service\Ai\AiModelIdentity
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class AiAuditServiceListTest extends TestCase {
 

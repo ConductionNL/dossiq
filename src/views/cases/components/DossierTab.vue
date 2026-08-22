@@ -8,13 +8,13 @@
 		@drop.prevent="onDrop">
 		<div class="dossier-tab__header">
 			<h3 class="dossier-tab__title">
-				{{ t('procest', 'Dossier') }} ({{ total }})
+				{{ t('dossiq', 'Dossier') }} ({{ total }})
 			</h3>
 			<div class="dossier-tab__controls">
 				<NcSelect
 					v-model="sortKey"
 					class="dossier-tab__sort"
-					:inputLabel="t('procest', 'Sort by')"
+					:inputLabel="t('dossiq', 'Sort by')"
 					:options="sortOptions"
 					:reduce="(option) => option.id"
 					label="label"
@@ -23,7 +23,7 @@
 					<template #icon>
 						<Upload :size="20" />
 					</template>
-					{{ t('procest', 'Upload document') }}
+					{{ t('dossiq', 'Upload document') }}
 				</NcButton>
 			</div>
 		</div>
@@ -32,7 +32,7 @@
 			ref="fileInput"
 			type="file"
 			multiple
-			:aria-label="t('procest', 'Upload document')"
+			:aria-label="t('dossiq', 'Upload document')"
 			class="dossier-tab__file-input"
 			@change="onFilesSelected" />
 
@@ -49,10 +49,10 @@
 
 		<NcEmptyContent
 			v-else-if="groups.length === 0"
-			:name="t('procest', 'No documents yet')"
+			:name="t('dossiq', 'No documents yet')"
 			:description="
 				t(
-					'procest',
+					'dossiq',
 					'Drag files here or use the upload button to add documents to this case.',
 				)
 			">
@@ -61,7 +61,7 @@
 			</template>
 			<template #action>
 				<NcButton type="primary" @click="triggerFilePicker">
-					{{ t('procest', 'Upload document') }}
+					{{ t('dossiq', 'Upload document') }}
 				</NcButton>
 			</template>
 		</NcEmptyContent>
@@ -83,7 +83,7 @@
 		</div>
 
 		<div v-if="dragActive" class="dossier-tab__drop-overlay">
-			{{ t('procest', 'Drop files to upload') }}
+			{{ t('dossiq', 'Drop files to upload') }}
 		</div>
 
 		<DocumentMetadataDialog
@@ -205,9 +205,9 @@ export default {
 		 */
 		sortOptions() {
 			return [
-				{ id: 'creatiedatum', label: this.t('procest', 'Creation date') },
-				{ id: 'title', label: this.t('procest', 'Title') },
-				{ id: 'status', label: this.t('procest', 'Status') },
+				{ id: 'creatiedatum', label: this.t('dossiq', 'Creation date') },
+				{ id: 'title', label: this.t('dossiq', 'Title') },
+				{ id: 'status', label: this.t('dossiq', 'Status') },
 			]
 		},
 	},
@@ -241,7 +241,7 @@ export default {
 			this.loading = true
 			try {
 				const url = generateUrl(
-					`/apps/procest/api/cases/${encodeURIComponent(this.caseId)}/dossier`,
+					`/apps/dossiq/api/cases/${encodeURIComponent(this.caseId)}/dossier`,
 				)
 				const { data } = await axios.get(url)
 				this.groups = data.groups || []
@@ -286,7 +286,7 @@ export default {
 			)
 			return match
 				? match.description || typeId
-				: typeId || this.t('procest', 'Unknown type')
+				: typeId || this.t('dossiq', 'Unknown type')
 		},
 
 		/**
@@ -373,7 +373,7 @@ export default {
 				try {
 					this.uploadProgress[index] = 0
 					const url = generateUrl(
-						`/apps/procest/api/cases/${encodeURIComponent(this.caseId)}/dossier`,
+						`/apps/dossiq/api/cases/${encodeURIComponent(this.caseId)}/dossier`,
 					)
 					await axios.post(url, form, {
 						headers: { 'Content-Type': 'multipart/form-data' },
@@ -393,11 +393,11 @@ export default {
 			}
 			this.uploading = false
 			if (anySuccess) {
-				showSuccess(this.t('procest', 'Documents uploaded'))
+				showSuccess(this.t('dossiq', 'Documents uploaded'))
 				this.closeMetadataDialog()
 				this.fetchDossier()
 			} else {
-				showError(this.t('procest', 'Upload failed'))
+				showError(this.t('dossiq', 'Upload failed'))
 			}
 		},
 
@@ -433,7 +433,7 @@ export default {
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T08
 		 */
 		async bulkMarkFinal() {
-			await this.runBulk('/apps/procest/api/informatieobjecten/bulk/status', {
+			await this.runBulk('/apps/dossiq/api/informatieobjecten/bulk/status', {
 				ids: this.selectedIds,
 				status: 'final',
 			})
@@ -447,13 +447,10 @@ export default {
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T08
 		 */
 		async bulkChangeConfidentiality(level) {
-			await this.runBulk(
-				'/apps/procest/api/informatieobjecten/bulk/metadata',
-				{
-					ids: this.selectedIds,
-					metadata: { vertrouwelijkheidaanduiding: level },
-				},
-			)
+			await this.runBulk('/apps/dossiq/api/informatieobjecten/bulk/metadata', {
+				ids: this.selectedIds,
+				metadata: { vertrouwelijkheidaanduiding: level },
+			})
 		},
 
 		/**
@@ -471,7 +468,7 @@ export default {
 				this.bulkResults = data.results || []
 				this.fetchDossier()
 			} catch (error) {
-				showError(this.t('procest', 'Bulk action failed'))
+				showError(this.t('dossiq', 'Bulk action failed'))
 			} finally {
 				this.bulkBusy = false
 			}
@@ -487,7 +484,7 @@ export default {
 			this.bulkBusy = true
 			try {
 				const url = generateUrl(
-					`/apps/procest/api/cases/${encodeURIComponent(this.caseId)}/dossier/zip`,
+					`/apps/dossiq/api/cases/${encodeURIComponent(this.caseId)}/dossier/zip`,
 				)
 				const { data } = await axios.post(
 					url,
@@ -501,7 +498,7 @@ export default {
 				link.click()
 				window.URL.revokeObjectURL(objectUrl)
 			} catch (error) {
-				showError(this.t('procest', 'ZIP export failed'))
+				showError(this.t('dossiq', 'ZIP export failed'))
 			} finally {
 				this.bulkBusy = false
 			}
@@ -528,7 +525,7 @@ export default {
 		shareDocument(document) {
 			this.$emit('count-changed', this.total)
 			showSuccess(
-				this.t('procest', 'Share requested for {name}', {
+				this.t('dossiq', 'Share requested for {name}', {
 					name: document.title,
 				}),
 			)
@@ -554,12 +551,12 @@ export default {
 		async deleteDocument(document) {
 			try {
 				const url = generateUrl(
-					`/apps/procest/api/cases/${encodeURIComponent(this.caseId)}/dossier/${encodeURIComponent(document.id)}/link`,
+					`/apps/dossiq/api/cases/${encodeURIComponent(this.caseId)}/dossier/${encodeURIComponent(document.id)}/link`,
 				)
 				await axios.delete(url)
 				this.fetchDossier()
 			} catch (error) {
-				showError(this.t('procest', 'Could not remove document'))
+				showError(this.t('dossiq', 'Could not remove document'))
 			}
 		},
 	},

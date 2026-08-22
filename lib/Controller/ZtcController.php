@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest ZTC (Catalogi) Controller
+ * Dossiq ZTC (Catalogi) Controller
  *
  * Controller for serving ZGW Catalogi API endpoints (catalogussen, zaaktypen,
  * statustypen, resultaattypen, roltypen, eigenschappen, informatieobjecttypen,
@@ -9,7 +9,7 @@
  * to ZgwService and handles ZTC-specific publish logic.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -20,17 +20,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-1
+ * @spec openspec/changes/archive/retrofit-2026-05-24-annotate-procest/tasks.md#task-1
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\ZgwService;
+use OCA\Dossiq\Service\ZgwService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -586,7 +586,7 @@ class ZtcController extends ZgwController {
 			return $data;
 		}
 
-		$baseUrl = $this->request->getServerProtocol() . '://' . $this->request->getServerHost() . '/index.php/apps/procest/api/zgw/catalogi/v1';
+		$baseUrl = $this->request->getServerProtocol() . '://' . $this->request->getServerHost() . '/index.php/apps/dossiq/api/zgw/catalogi/v1';
 		$uuid = $data['uuid'] ?? '';
 
 		if ($resource === 'besluittypen' && $uuid !== '') {

@@ -5,7 +5,7 @@
 		<span class="dossier-bulk-bar__count">
 			{{
 				n(
-					'procest',
+					'dossiq',
 					'%n document selected',
 					'%n documents selected',
 					selectedCount,
@@ -15,13 +15,13 @@
 
 		<div class="dossier-bulk-bar__actions">
 			<NcButton :disabled="busy" @click="$emit('mark-final')">
-				{{ t('procest', 'Mark as final') }}
+				{{ t('dossiq', 'Mark as final') }}
 			</NcButton>
 
 			<NcSelect
 				v-model="bulkClassification"
 				class="dossier-bulk-bar__select"
-				:inputLabel="t('procest', 'Change confidentiality')"
+				:inputLabel="t('dossiq', 'Change confidentiality')"
 				:options="classificationOptions"
 				:reduce="(option) => option.id"
 				label="label"
@@ -29,14 +29,14 @@
 				@option:selected="onClassificationSelected" />
 
 			<NcButton :disabled="busy" @click="$emit('download-zip')">
-				{{ t('procest', 'Download selection as ZIP') }}
+				{{ t('dossiq', 'Download selection as ZIP') }}
 			</NcButton>
 
 			<NcButton
 				type="tertiary"
 				:disabled="busy"
 				@click="$emit('clear-selection')">
-				{{ t('procest', 'Clear selection') }}
+				{{ t('dossiq', 'Clear selection') }}
 			</NcButton>
 		</div>
 
@@ -52,8 +52,8 @@
 				{{ result.id }}:
 				{{
 					result.success
-						? t('procest', 'OK')
-						: result.error || t('procest', 'Failed')
+						? t('dossiq', 'OK')
+						: result.error || t('dossiq', 'Failed')
 				}}
 			</li>
 		</ul>
@@ -117,20 +117,20 @@ export default {
 		 */
 		classificationOptions() {
 			return [
-				{ id: 'openbaar', label: this.t('procest', 'Public') },
+				{ id: 'openbaar', label: this.t('dossiq', 'Public') },
 				{
 					id: 'beperkt_openbaar',
-					label: this.t('procest', 'Limited public'),
+					label: this.t('dossiq', 'Limited public'),
 				},
-				{ id: 'intern', label: this.t('procest', 'Internal') },
+				{ id: 'intern', label: this.t('dossiq', 'Internal') },
 				{
 					id: 'zaakvertrouwelijk',
-					label: this.t('procest', 'Case-confidential'),
+					label: this.t('dossiq', 'Case-confidential'),
 				},
-				{ id: 'vertrouwelijk', label: this.t('procest', 'Confidential') },
-				{ id: 'confidentieel', label: this.t('procest', 'Restricted') },
-				{ id: 'geheim', label: this.t('procest', 'Secret') },
-				{ id: 'zeer_geheim', label: this.t('procest', 'Top secret') },
+				{ id: 'vertrouwelijk', label: this.t('dossiq', 'Confidential') },
+				{ id: 'confidentieel', label: this.t('dossiq', 'Restricted') },
+				{ id: 'geheim', label: this.t('dossiq', 'Secret') },
+				{ id: 'zeer_geheim', label: this.t('dossiq', 'Top secret') },
 			]
 		},
 	},

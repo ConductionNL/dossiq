@@ -12,31 +12,31 @@
 -->
 <template>
 	<NcDialog
-		:name="t('procest', 'StUF envelope')"
+		:name="t('dossiq', 'StUF envelope')"
 		:open="!!row"
 		size="large"
 		@closing="$emit('close')">
 		<div class="stuf-audit-log__details">
-			<h4>{{ t('procest', 'Request envelope') }}</h4>
+			<h4>{{ t('dossiq', 'Request envelope') }}</h4>
 			<pre class="stuf-audit-log__pre">{{
-				row.envelopeXml || t('procest', '(no envelope)')
+				row.envelopeXml || t('dossiq', '(no envelope)')
 			}}</pre>
 			<h4 v-if="row.responseEnvelopeXml">
-				{{ t('procest', 'Response envelope') }}
+				{{ t('dossiq', 'Response envelope') }}
 			</h4>
 			<pre v-if="row.responseEnvelopeXml" class="stuf-audit-log__pre">{{
 				row.responseEnvelopeXml
 			}}</pre>
 			<h4 v-if="hasRetries(row)">
-				{{ t('procest', 'Retries') }}
+				{{ t('dossiq', 'Retries') }}
 			</h4>
 			<table v-if="hasRetries(row)" class="stuf-audit-log__retries">
 				<thead>
 					<tr>
-						<th scope="col">{{ t('procest', 'Attempt') }}</th>
-						<th scope="col">{{ t('procest', 'Timestamp') }}</th>
-						<th scope="col">{{ t('procest', 'HTTP') }}</th>
-						<th scope="col">{{ t('procest', 'Duration (ms)') }}</th>
+						<th scope="col">{{ t('dossiq', 'Attempt') }}</th>
+						<th scope="col">{{ t('dossiq', 'Timestamp') }}</th>
+						<th scope="col">{{ t('dossiq', 'HTTP') }}</th>
+						<th scope="col">{{ t('dossiq', 'Duration (ms)') }}</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -49,7 +49,7 @@
 				</tbody>
 			</table>
 			<h4 v-if="row.fout">
-				{{ t('procest', 'Error') }}
+				{{ t('dossiq', 'Error') }}
 			</h4>
 			<pre v-if="row.fout" class="stuf-audit-log__pre">{{
 				pretty(row.fout)

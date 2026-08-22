@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Procest Doorlooptijd (throughput-time) Service
+ * Dossiq Doorlooptijd (throughput-time) Service
  *
  * Aggregates KPIs, monthly compliance, case-type breakdown and the open-case
  * list for the throughput-time dashboard. All metrics are computed from the
- * Procest `case` register via OpenRegister's ObjectService — no separate
+ * Dossiq `case` register via OpenRegister's ObjectService — no separate
  * analytics store. See `openspec/changes/doorlooptijd-dashboard/design.md`.
  *
  * This class is the read path and the orchestrator only. Deriving a case's
@@ -15,7 +15,7 @@
  * the two registers and assembling the four payload keys.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,19 +26,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T01
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\Service\Doorlooptijd\CaseEnricher;
-use OCA\Procest\Service\Doorlooptijd\CaseTypeThroughputCalculator;
-use OCA\Procest\Service\Doorlooptijd\DeadlineComplianceCalculator;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Doorlooptijd\CaseEnricher;
+use OCA\Dossiq\Service\Doorlooptijd\CaseTypeThroughputCalculator;
+use OCA\Dossiq\Service\Doorlooptijd\DeadlineComplianceCalculator;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
  * Computes throughput-time metrics for the case dashboard.

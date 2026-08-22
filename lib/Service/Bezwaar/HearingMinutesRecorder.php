@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Bezwaar Hearing Minutes Recorder.
+ * Dossiq Bezwaar Hearing Minutes Recorder.
  *
  * Everything the Awb art. 7:7 verslaglegging obligation demands of the
  * record a hoorzitting leaves behind. Split out of HearingService so that
@@ -14,7 +14,7 @@
  * and who may amend it", and live here and nowhere else.
  *
  * @category Service
- * @package  OCA\Procest\Service\Bezwaar
+ * @package  OCA\Dossiq\Service\Bezwaar
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,7 +22,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -32,7 +32,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Bezwaar;
+namespace OCA\Dossiq\Service\Bezwaar;
 
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -114,7 +114,7 @@ class HearingMinutesRecorder {
 			);
 		} catch (Throwable $auditError) {
 			$this->logger->error(
-				'Procest hearing: failed to log audio-denial: '
+				'Dossiq hearing: failed to log audio-denial: '
 				. $auditError->getMessage()
 			);
 		}

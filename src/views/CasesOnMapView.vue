@@ -1,10 +1,10 @@
 <template>
 	<div class="cases-on-map">
 		<div class="cases-on-map__sidebar">
-			<h2>{{ t('procest', 'Cases on map') }}</h2>
+			<h2>{{ t('dossiq', 'Cases on map') }}</h2>
 			<p class="cases-on-map__summary">
 				{{
-					t('procest', 'Showing {filtered} of {total} located cases', {
+					t('dossiq', 'Showing {filtered} of {total} located cases', {
 						filtered: features.length,
 						total: total,
 					})
@@ -13,18 +13,18 @@
 
 			<NcSelect
 				v-model="filterCaseType"
-				:inputLabel="t('procest', 'Case type')"
+				:inputLabel="t('dossiq', 'Case type')"
 				:options="caseTypeOptions"
-				:placeholder="t('procest', 'All case types')"
+				:placeholder="t('dossiq', 'All case types')"
 				:clearable="true"
 				class="cases-on-map__filter"
 				@update:modelValue="reload" />
 
 			<NcSelect
 				v-model="filterStatus"
-				:inputLabel="t('procest', 'Status')"
+				:inputLabel="t('dossiq', 'Status')"
 				:options="statusOptions"
-				:placeholder="t('procest', 'All statuses')"
+				:placeholder="t('dossiq', 'All statuses')"
 				:clearable="true"
 				class="cases-on-map__filter"
 				@update:modelValue="reload" />
@@ -33,7 +33,7 @@
 				<AlertIcon :size="20" />
 				<span>{{
 					t(
-						'procest',
+						'dossiq',
 						'Map data could not be loaded. Showing what is available.',
 					)
 				}}</span>
@@ -74,7 +74,7 @@ import { shapeMarkerFeatures } from '../services/mapFormatters.js'
  *   OR owns the geometry extraction + RBAC scoping (fail-closed, no IDOR) and
  *   the declarative base-layer config (PDOK WMTS).
  * - The markers are rendered by the library's declarative `CnMapWidget`, which
- *   owns the Leaflet engine, clustering, and tile layers. Procest embeds NO
+ *   owns the Leaflet engine, clustering, and tile layers. Dossiq embeds NO
  *   Leaflet / WMS / WFS stack of its own — the bespoke `CaseMap` /
  *   `src/components/map/*` plumbing and the `/api/cases/geo` endpoint are gone.
  * - This view owns only data shaping (status colour via `shapeMarkerFeatures`)

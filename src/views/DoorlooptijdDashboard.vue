@@ -3,9 +3,9 @@
 		<!-- Header -->
 		<div class="doorlooptijd-header">
 			<div class="doorlooptijd-header__title">
-				<h2>{{ t('procest', 'Processing Time Analytics') }}</h2>
+				<h2>{{ t('dossiq', 'Processing Time Analytics') }}</h2>
 				<p class="doorlooptijd-subtitle">
-					{{ t('procest', 'SLA adherence and processing time analysis') }}
+					{{ t('dossiq', 'SLA adherence and processing time analysis') }}
 				</p>
 			</div>
 			<div class="doorlooptijd-header__actions">
@@ -31,7 +31,7 @@
 					<NcActionButton
 						:class="{ 'active-preset': !selectedCaseType }"
 						@click="selectedCaseType = null">
-						{{ t('procest', 'All case types') }}
+						{{ t('dossiq', 'All case types') }}
 					</NcActionButton>
 					<NcActionButton
 						v-for="ct in caseTypesWithSla"
@@ -49,7 +49,7 @@
 					<template #icon>
 						<ArrowLeft :size="20" />
 					</template>
-					{{ t('procest', 'Dashboard') }}
+					{{ t('dossiq', 'Dashboard') }}
 				</NcButton>
 			</div>
 		</div>
@@ -71,7 +71,7 @@
 			<p>
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'No case data available for processing time analysis.',
 					)
 				}}
@@ -83,22 +83,22 @@
 			<p>
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'No SLA targets configured. Set processing deadlines on case types in Settings to enable compliance tracking.',
 					)
 				}}
 			</p>
 			<NcButton
 				type="primary"
-				@click="$router.push({ name: 'ProcestConfiguration' })">
-				{{ t('procest', 'Go to Settings') }}
+				@click="$router.push({ name: 'DossiqConfiguration' })">
+				{{ t('dossiq', 'Go to Settings') }}
 			</NcButton>
 		</div>
 
 		<!-- Empty state: no data in range -->
 		<div v-else-if="showNoDataInRange" class="doorlooptijd-empty">
 			<p>
-				{{ t('procest', 'No completed cases in the selected date range.') }}
+				{{ t('dossiq', 'No completed cases in the selected date range.') }}
 			</p>
 		</div>
 
@@ -205,11 +205,11 @@ export default {
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		datePresets() {
 			return [
-				{ key: '3m', label: t('procest', 'Last 3 months') },
-				{ key: '6m', label: t('procest', 'Last 6 months') },
-				{ key: '12m', label: t('procest', 'Last 12 months') },
-				{ key: 'year', label: t('procest', 'This year') },
-				{ key: 'all', label: t('procest', 'All time') },
+				{ key: '3m', label: t('dossiq', 'Last 3 months') },
+				{ key: '6m', label: t('dossiq', 'Last 6 months') },
+				{ key: '12m', label: t('dossiq', 'Last 12 months') },
+				{ key: 'year', label: t('dossiq', 'This year') },
+				{ key: 'all', label: t('dossiq', 'All time') },
 			]
 		},
 

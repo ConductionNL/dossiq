@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Procest Status Transition Service.
+ * Dossiq Status Transition Service.
  *
- * The single deterministic write path for `case.status` across Procest. The
+ * The single deterministic write path for `case.status` across Dossiq. The
  * REST API, the case detail UI, and the bezwaar/parafering/VTH workflow
  * specs all funnel transitions through `execute()`. Responsibilities:
  *
@@ -24,7 +24,7 @@
  * detail to controllers or callers.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -35,19 +35,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\Service\Transitions\CaseStatusStore;
-use OCA\Procest\Service\Transitions\GuardFailedException;
-use OCA\Procest\Service\Transitions\GuardRegistry;
-use OCA\Procest\Service\Transitions\SideEffectDispatcher;
-use OCA\Procest\Service\Transitions\TransitionAuthorizer;
-use OCA\Procest\Service\Transitions\TransitionSpecReader;
+use OCA\Dossiq\Service\Transitions\CaseStatusStore;
+use OCA\Dossiq\Service\Transitions\GuardFailedException;
+use OCA\Dossiq\Service\Transitions\GuardRegistry;
+use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
+use OCA\Dossiq\Service\Transitions\TransitionAuthorizer;
+use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -61,7 +61,7 @@ class StatusTransitionService {
 
 	/**
 	 * Group ID used to gate admin-only free-form transitions. Matches the
-	 * naming used elsewhere in Procest for the admin role.
+	 * naming used elsewhere in Dossiq for the admin role.
 	 *
 	 * Re-exported from TransitionAuthorizer, which owns the group gate, so
 	 * existing `StatusTransitionService::ADMIN_GROUP_ID` callers keep reading
@@ -461,7 +461,7 @@ class StatusTransitionService {
 	}//end replay()
 
 	/**
-	 * Check if the current (or given) user is in the procest admin group.
+	 * Check if the current (or given) user is in the dossiq admin group.
 	 *
 	 * @param string $userId UID
 	 *

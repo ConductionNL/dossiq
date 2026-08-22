@@ -1,5 +1,5 @@
 OC.L10N.register(
-    "procest",
+    "dossiq",
     {
     "Add step" : "Cuir céim leis",
     "Address" : "Seoladh",
@@ -382,8 +382,8 @@ OC.L10N.register(
     "Voorstel heeft geen actieve stap" : "Níl aon chéim ghníomhach ag an voorstel",
     "Wanneer is deze route van toepassing?" : "Cathain a bhaineann an bealach seo le hábhar?",
     "Weet u zeker dat u de route \"{name}\" wilt verwijderen?" : "An bhfuil tú cinnte gur mhaith leat an bealach \"{name}\" a scriosadh?",
-    "Welcome to Procest! Get started by creating your first case or task using the buttons above." : "Fáilte go Procest! Tosaigh trí do chéad chás nó tasc a chruthú leis na cnaipí thuas.",
-    "Welcome to Procest! Get started by creating your first case type in Settings." : "Fáilte go Procest! Tosaigh trí do chéad chineál cáis a chruthú sna Socruithe.",
+    "Welcome to Dossiq! Get started by creating your first case or task using the buttons above." : "Fáilte go Dossiq! Tosaigh trí do chéad chás nó tasc a chruthú leis na cnaipí thuas.",
+    "Welcome to Dossiq! Get started by creating your first case type in Settings." : "Fáilte go Dossiq! Tosaigh trí do chéad chineál cáis a chruthú sna Socruithe.",
     "When heeftAlleAutorisaties is false, autorisaties must be specified." : "Nuair atá heeftAlleAutorisaties bréagach, ní mór autorisaties a shonrú.",
     "When heeftAlleAutorisaties is true, autorisaties must not be specified. When heeftAlleAutorisaties is false, autorisaties must be specified." : "Nuair atá heeftAlleAutorisaties fíor, ní féidir autorisaties a shonrú. Nuair atá heeftAlleAutorisaties bréagach, ní mór autorisaties a shonrú.",
     "Why is an extension needed?" : "Cén fáth a bhfuil síneadh ag teastáil?",

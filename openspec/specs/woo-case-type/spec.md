@@ -11,7 +11,7 @@ Provides a pre-configured WOO-verzoek zaaktype template that municipalities acti
 The system MUST provide a pre-configured zaaktype template for WOO verzoeken that can be activated from a template library and customized per municipality.
 
 #### Scenario: Activate WOO zaaktype from template library
-- **GIVEN** a Procest admin navigating to the case type settings at `CaseTypeAdmin.vue`
+- **GIVEN** a Dossiq admin navigating to the case type settings at `CaseTypeAdmin.vue`
 - **WHEN** they open the template library and select "WOO Verzoek"
 - **THEN** the system MUST create a new zaaktype object in OpenRegister using the `caseType` schema
 - **AND** populate it with pre-configured status types, property definitions, document types, role types, result types, and decision types
@@ -26,14 +26,14 @@ The system MUST provide a pre-configured zaaktype template for WOO verzoeken tha
 #### Scenario: Template includes version metadata
 - **GIVEN** the WOO zaaktype template
 - **THEN** it MUST include a version number (e.g., "1.0.0") and a last-updated date
-- **AND** when Procest ships a template update, admins MUST be notified that a newer version is available
+- **AND** when Dossiq ships a template update, admins MUST be notified that a newer version is available
 - **AND** updating MUST NOT overwrite customizations already applied to existing zaaktypes
 
 #### Scenario: Template ships as JSON seed data
-- **GIVEN** the Procest app installation
+- **GIVEN** the Dossiq app installation
 - **THEN** the WOO template MUST be stored as a JSON file in `lib/Settings/templates/woo-verzoek.json`
 - **AND** the `InitializeSettings` repair step MUST register the template in the template registry
-- **AND** the template format MUST follow the same structure as `procest_register.json`
+- **AND** the template format MUST follow the same structure as `dossiq_register.json`
 
 #### Scenario: Multiple templates can coexist
 - **GIVEN** the template library contains "WOO Verzoek" and other zaaktype templates
@@ -117,7 +117,7 @@ The system MUST provide intake fields specific to WOO requests as property defin
 
 #### Scenario: Intake from external channel
 - **GIVEN** a WOO request arrives via email, post, or a web form through OpenConnector
-- **WHEN** the request is routed to Procest
+- **WHEN** the request is routed to Dossiq
 - **THEN** the system MUST pre-fill the intake form with available data from the incoming message
 - **AND** flag any missing required fields for manual completion
 
@@ -380,7 +380,7 @@ The system MUST track the objection period after a WOO decision and handle incom
 The system MUST provide reporting on WOO case processing for management oversight and statutory reporting.
 
 #### Scenario: WOO dashboard widget
-- **GIVEN** the Procest dashboard
+- **GIVEN** the Dossiq dashboard
 - **THEN** a "WOO Overzicht" widget MUST display:
   - Total active WOO cases
   - Cases approaching deadline (< 7 days)

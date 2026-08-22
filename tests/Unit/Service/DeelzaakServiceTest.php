@@ -8,7 +8,7 @@
  * `parentCase` field — never the child itself.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,25 +19,25 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\Deelzaak\CaseObjectReader;
-use OCA\Procest\Service\DeelzaakService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
+use OCA\Dossiq\Service\DeelzaakService;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
  * Unit tests for DeelzaakService::getParentCase().
  *
- * @covers \OCA\Procest\Service\DeelzaakService
+ * @covers \OCA\Dossiq\Service\DeelzaakService
  *
- * @uses \OCA\Procest\Service\Deelzaak\CaseObjectReader
+ * @uses \OCA\Dossiq\Service\Deelzaak\CaseObjectReader
  */
 class DeelzaakServiceTest extends TestCase {
 

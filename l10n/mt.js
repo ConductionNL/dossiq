@@ -1,5 +1,5 @@
 OC.L10N.register(
-    "procest",
+    "dossiq",
     {
     "Add step" : "Żid pass",
     "Address" : "Indirizz",
@@ -388,8 +388,8 @@ OC.L10N.register(
     "Voorstel heeft geen actieve stap" : "Il-voorstel m'għandux pass attiv",
     "Wanneer is deze route van toepassing?" : "Meta tapplika din ir-rotta?",
     "Weet u zeker dat u de route \"{name}\" wilt verwijderen?" : "Żgur li trid tħassar ir-rotta \"{name}\"?",
-    "Welcome to Procest! Get started by creating your first case or task using the buttons above." : "Merħba f'Procest! Ibda billi toħloq l-ewwel każ jew kompitu tiegħek bl-użu tal-buttuni ta' fuq.",
-    "Welcome to Procest! Get started by creating your first case type in Settings." : "Merħba f'Procest! Ibda billi toħloq l-ewwel tip ta' każ tiegħek fl-Issettjar.",
+    "Welcome to Dossiq! Get started by creating your first case or task using the buttons above." : "Merħba f'Dossiq! Ibda billi toħloq l-ewwel każ jew kompitu tiegħek bl-użu tal-buttuni ta' fuq.",
+    "Welcome to Dossiq! Get started by creating your first case type in Settings." : "Merħba f'Dossiq! Ibda billi toħloq l-ewwel tip ta' każ tiegħek fl-Issettjar.",
     "When heeftAlleAutorisaties is false, autorisaties must be specified." : "Meta heeftAlleAutorisaties huwa false, autorisaties iridu jiġu speċifikati.",
     "When heeftAlleAutorisaties is true, autorisaties must not be specified. When heeftAlleAutorisaties is false, autorisaties must be specified." : "Meta heeftAlleAutorisaties huwa true, autorisaties m'għandhomx jiġu speċifikati. Meta heeftAlleAutorisaties huwa false, autorisaties iridu jiġu speċifikati.",
     "Why is an extension needed?" : "Għaliex hija meħtieġa estensjoni?",

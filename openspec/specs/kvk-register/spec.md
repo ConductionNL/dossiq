@@ -11,7 +11,7 @@
 
 ### Requirement: KvK company register schema exists in OpenRegister
 
-The procest register configuration SHALL provide a `kvkCompany` schema (ADR-037 fragment
+The dossiq register configuration SHALL provide a `kvkCompany` schema (ADR-037 fragment
 `lib/Settings/register.d/25-brp-kvk.json`) following KvK Zoeken API field naming: `kvkNummer`
 (string, 8 digits), `handelsnaam`, `rechtsvorm`, and `adres` (straatnaam, huisnummer, postcode,
 plaats). The schema SHALL carry `x-schema-org: schema:Organization` and map to the ZGW Rol
@@ -22,9 +22,9 @@ conventions — it SHALL NOT claim or require a live KvK connection.
 
 @e2e exclude Repair-step/OR-import behaviour with no browser surface; schema shape and KvK Zoeken naming proven by PHPUnit (BrpKvkRegisterSetsTest); live import happens in the deploy lane.
 
-- **GIVEN** a procest install with OpenRegister active
+- **GIVEN** a dossiq install with OpenRegister active
 - **WHEN** the register configuration is (re-)imported via the Repair step
-- **THEN** the `kvkCompany` schema MUST exist in the procest register with the KvK Zoeken field names
+- **THEN** the `kvkCompany` schema MUST exist in the dossiq register with the KvK Zoeken field names
 - **AND** re-running the import MUST leave existing rows valid (idempotent, additive)
 
 ### Requirement: Seed companies are the published fictitious test companies

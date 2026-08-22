@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Gate-19 spec-coverage tests for the avg-verwerkingenlogging spec
- * (thin consumer). Procest only renders a scoped window on OpenRegister's
+ * (thin consumer). Dossiq only renders a scoped window on OpenRegister's
  * processing-activity register; the engine scenarios (read logging,
  * attribution, fallback flagging) execute inside OR and carry @e2e
- * excludes in the spec. These tests cover the procest-owned surface:
+ * excludes in the spec. These tests cover the dossiq-owned surface:
  * the FG/admin view, the export entry point, denial for unprivileged
- * callers, and the absence of procest-side log endpoints.
+ * callers, and the absence of dossiq-side log endpoints.
  */
 
 import { test, expect, request } from '@playwright/test'
@@ -18,27 +18,27 @@ import { navToRoute } from '../helpers/nav'
 // screen it covers in executable code rather than in a comment.
 import { VerwerkingenOverview } from '../helpers/page-components'
 
-const APP_URL = '/apps/procest'
+const APP_URL = '/apps/dossiq'
 // Single source of truth — see tests/e2e/base-url.ts. The old
 // `process.env.NEXTCLOUD_URL || 'http://localhost:8080'` silently targeted the
 // SHARED dev container off CI.
 const BASE = BASE_URL
 
 test.describe('AVG verwerkingenlogging spec coverage', () => {
-	// @e2e openspec/specs/avg-verwerkingenlogging/spec.md#fg-opens-the-procest-verwerkingen-overview
+	// @e2e openspec/specs/avg-verwerkingenlogging/spec.md#fg-opens-the-dossiq-verwerkingen-overview
 	test('admin (FG-equivalent) opens the verwerkingen overview', async ({
 		page,
 	}) => {
-		// The app is history-mode, NOT hash-mode: `/apps/procest#/verwerkingen`
+		// The app is history-mode, NOT hash-mode: `/apps/dossiq#/verwerkingen`
 		// loads the app root and leaves the hash unrouted, so the overview
-		// never renders. `/index.php/apps/procest/verwerkingen` renders it —
+		// never renders. `/index.php/apps/dossiq/verwerkingen` renders it —
 		// measured on a CI runner (2026-08-04).
 		await navToRoute(page, VerwerkingenOverview)
 		await expect(
 			page.getByRole('heading', { name: 'Processing activities (AVG)' }),
 		).toBeVisible({ timeout: 15000 })
 		// The catalogue table (seeded drafts) or the seed empty-state renders;
-		// either way the scoped window is up — never a procest-side error page.
+		// either way the scoped window is up — never a dossiq-side error page.
 		await expect(
 			page
 				.locator('.verwerkingen-overview__table')
@@ -50,9 +50,9 @@ test.describe('AVG verwerkingenlogging spec coverage', () => {
 	test('inzage export entry point delegates to the OpenRegister endpoint', async ({
 		page,
 	}) => {
-		// The app is history-mode, NOT hash-mode: `/apps/procest#/verwerkingen`
+		// The app is history-mode, NOT hash-mode: `/apps/dossiq#/verwerkingen`
 		// loads the app root and leaves the hash unrouted, so the overview
-		// never renders. `/index.php/apps/procest/verwerkingen` renders it —
+		// never renders. `/index.php/apps/dossiq/verwerkingen` renders it —
 		// measured on a CI runner (2026-08-04).
 		await navToRoute(page, VerwerkingenOverview)
 		await page
@@ -63,7 +63,7 @@ test.describe('AVG verwerkingenlogging spec coverage', () => {
 		).toBeVisible()
 
 		// The export MUST be produced by OR (OR-PA-7): assert the produce
-		// action calls OpenRegister's betrokkene endpoint, not a procest route.
+		// action calls OpenRegister's betrokkene endpoint, not a dossiq route.
 		const [orRequest] = await Promise.all([
 			page.waitForRequest((req) =>
 				req
@@ -98,15 +98,15 @@ test.describe('AVG verwerkingenlogging spec coverage', () => {
 		await ctx.dispose()
 	})
 
-	// @e2e openspec/specs/avg-verwerkingenlogging/spec.md#no-procest-log-endpoints-exist
-	test('procest exposes no processing-log endpoints of its own', async ({
+	// @e2e openspec/specs/avg-verwerkingenlogging/spec.md#no-dossiq-log-endpoints-exist
+	test('dossiq exposes no processing-log endpoints of its own', async ({
 		page,
 	}) => {
-		// The procest route table must not answer AVG log paths — the VNG
+		// The dossiq route table must not answer AVG log paths — the VNG
 		// Logging Verwerkingen API is OpenRegister's (OR-PA-9).
-		// A STATUS CODE CANNOT PROVE THIS. procest registers an SPA catch-all
+		// A STATUS CODE CANNOT PROVE THIS. dossiq registers an SPA catch-all
 		// (`/{path}` -> dashboard#catchAll, from Routes::standard()), so every
-		// unmatched path under /apps/procest returns the app shell with HTTP
+		// unmatched path under /apps/dossiq returns the app shell with HTTP
 		// 200 — this assertion expected 404/405 and could never pass. Note the
 		// trap: simply widening the expectation to include 200 would make it
 		// green while proving nothing, because 200 is exactly what the
@@ -122,8 +122,8 @@ test.describe('AVG verwerkingenlogging spec coverage', () => {
 		const contentType = res.headers()['content-type'] ?? ''
 		expect(
 			contentType.includes('application/json'),
-			`procest answered ${APP_URL}/api/avg/verwerkingen with ${res.status()} ${contentType} — `
-				+ 'an AVG processing-log endpoint appears to exist in procest, but the VNG Logging '
+			`dossiq answered ${APP_URL}/api/avg/verwerkingen with ${res.status()} ${contentType} — `
+				+ 'an AVG processing-log endpoint appears to exist in dossiq, but the VNG Logging '
 				+ "Verwerkingen API is OpenRegister's (OR-PA-9).",
 		).toBe(false)
 	})

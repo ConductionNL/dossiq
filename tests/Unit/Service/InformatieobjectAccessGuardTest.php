@@ -9,7 +9,7 @@
  * publish thresholds, dossier filtering, and the more-restrictive-only rule.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,10 +25,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\InformatieobjectAccessGuard;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\InformatieobjectAccessGuard;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\Files\NotPermittedException;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -38,7 +38,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for InformatieobjectAccessGuard.
  *
- * @covers \OCA\Procest\Service\InformatieobjectAccessGuard
+ * @covers \OCA\Dossiq\Service\InformatieobjectAccessGuard
  */
 class InformatieobjectAccessGuardTest extends TestCase {
 

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest ZGW ZTC resultaattype rules.
+ * Dossiq ZGW ZTC resultaattype rules.
  *
  * The Catalogi API rules for the resultaattypen resource, split out of
  * ZgwZtcRulesService. Resultaattypen are the one ZTC resource whose creation
@@ -18,7 +18,7 @@
  * - ztc-003 to ztc-008: brondatumArchiefprocedure (delegated)
  *
  * @category Service
- * @package  OCA\Procest\Service\Zgw
+ * @package  OCA\Dossiq\Service\Zgw
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,7 +26,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/
  *
  * SPDX-License-Identifier: EUPL-1.2
@@ -37,11 +37,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Zgw;
+namespace OCA\Dossiq\Service\Zgw;
 
-use OCA\Procest\Service\FieldValidator;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\ZgwRulesBase;
+use OCA\Dossiq\Service\FieldValidator;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\ZgwRulesBase;
 use Psr\Log\LoggerInterface;
 
 /**

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest StufMessageParser.
+ * Dossiq StufMessageParser.
  *
  * Parses inbound StUF SOAP responses (Bv01 bevestigingen, La01 antwoorden,
  * Fo02 foutberichten) and extracts the structured payload needed by callers.
@@ -11,7 +11,7 @@
  * on older libxml builds the parser never resolves external entities.
  *
  * @category Service
- * @package  OCA\Procest\Service\Stuf
+ * @package  OCA\Dossiq\Service\Stuf
  *
  * @author    Conduction <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,16 +22,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-synchronous-zaak-query
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Stuf;
+namespace OCA\Dossiq\Service\Stuf;
 
-use OCA\Procest\Service\StufMessageBuilder;
+use OCA\Dossiq\Service\StufMessageBuilder;
 use Psr\Log\LoggerInterface;
 use SimpleXMLElement;
 

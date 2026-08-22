@@ -1,10 +1,10 @@
 {
-  "name": "Procest — Consultation Email Fan-out (External Advisory Bodies)",
+  "name": "Dossiq — Consultation Email Fan-out (External Advisory Bodies)",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "procest/consultation-created",
+        "path": "dossiq/consultation-created",
         "options": {}
       },
       "id": "webhook",
@@ -15,7 +15,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Expected payload (dispatched by ConsultationService::createConsultation when\n// the advisory body type === 'external'):\n//\n// {\n//   consultationId, consultationNummer, caseId, caseTitle,\n//   adviesinstantie: { id, naam, email, type: 'external' },\n//   onderwerp, vraag, uiterlijkeReactiedatum,\n//   responseToken,          // 256-bit secure plaintext token (delivered ONCE)\n//   responseUrl,            // /apps/procest/external/consultations/{token}\n//   attachments: [ { documentUuid, fileName } ]\n// }\nconst payload = $input.first().json.body || $input.first().json || {};\nif (!payload.adviesinstantie || payload.adviesinstantie.type !== 'external') {\n  // Internal advisory body — group notifications are handled by NC IManager.\n  return [{ json: { skip: true, reason: 'not-external-body' } }];\n}\nif (!payload.responseToken || !payload.responseUrl) {\n  return [{ json: { skip: true, reason: 'missing-response-token-url' } }];\n}\nreturn [{ json: { skip: false, ...payload } }];"
+        "jsCode": "// Expected payload (dispatched by ConsultationService::createConsultation when\n// the advisory body type === 'external'):\n//\n// {\n//   consultationId, consultationNummer, caseId, caseTitle,\n//   adviesinstantie: { id, naam, email, type: 'external' },\n//   onderwerp, vraag, uiterlijkeReactiedatum,\n//   responseToken,          // 256-bit secure plaintext token (delivered ONCE)\n//   responseUrl,            // /apps/dossiq/external/consultations/{token}\n//   attachments: [ { documentUuid, fileName } ]\n// }\nconst payload = $input.first().json.body || $input.first().json || {};\nif (!payload.adviesinstantie || payload.adviesinstantie.type !== 'external') {\n  // Internal advisory body — group notifications are handled by NC IManager.\n  return [{ json: { skip: true, reason: 'not-external-body' } }];\n}\nif (!payload.responseToken || !payload.responseUrl) {\n  return [{ json: { skip: true, reason: 'missing-response-token-url' } }];\n}\nreturn [{ json: { skip: false, ...payload } }];"
       },
       "id": "validate",
       "name": "Validate external payload",
@@ -46,7 +46,7 @@
     },
     {
       "parameters": {
-        "fromEmail": "={{ $env.PROCEST_FROM_EMAIL || 'consultations@gemeente.nl' }}",
+        "fromEmail": "={{ $env.DOSSIQ_FROM_EMAIL || 'consultations@gemeente.nl' }}",
         "toEmail": "={{ $json.adviesinstantie.email }}",
         "subject": "Adviesaanvraag {{ $json.consultationNummer }} — {{ $json.onderwerp }}",
         "emailType": "html",
@@ -62,7 +62,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.PROCEST_BASE_URL || 'http://nextcloud' }}/index.php/apps/procest/api/consultations/{{ $json.consultationId }}/audit",
+        "url": "={{ $env.DOSSIQ_BASE_URL || 'http://nextcloud' }}/index.php/apps/dossiq/api/consultations/{{ $json.consultationId }}/audit",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpBasicAuth",
         "sendHeaders": true,
@@ -106,7 +106,7 @@
   },
   "meta": {
     "templateCredsSetupCompleted": false,
-    "owner": "procest",
+    "owner": "dossiq",
     "spec": "openspec/changes/consultation-management/specs/consultation-management/spec.md#external-advisory-body",
     "purpose": "Webhook fired when a consultation is created for an EXTERNAL advisory body. Sends the secure response link (256-bit token, delivered once) by email to the configured adviesinstantie email, then writes a BIO-compliant audit-log entry."
   }

@@ -22,7 +22,7 @@ personal-workload dashboard widgets (below) remain the at-a-glance surface.
 **Competitive context**: Dimpact ZAC provides a configurable worklist with
 signaling cards and real-time updates; xxllnc Zaken uses phase-bound task
 lists; Flowable offers a unified task inbox with claiming and delegation.
-Procest takes a deliberately simple approach: the current user's cases in the
+Dossiq takes a deliberately simple approach: the current user's cases in the
 standard index, plus dashboard widgets for tasks/overdue at-a-glance.
 
 ## Data Sources
@@ -117,14 +117,14 @@ covered by PHPUnit + smoke tests, not Playwright browser assertions.
 
 #### Scenario: My Tasks / Overdue widgets
 - GIVEN the Nextcloud dashboard is displayed
-- THEN the Procest "My Tasks" widget (`lib/Dashboard/MyTasksWidget.php`) MUST
+- THEN the Dossiq "My Tasks" widget (`lib/Dashboard/MyTasksWidget.php`) MUST
   summarise the user's assigned tasks
 - AND the "Overdue Cases" widget (`lib/Dashboard/OverdueCasesWidget.php`) MUST
   summarise overdue cases with a red indicator
 - AND clicking a widget MUST navigate into the app
 
 #### Scenario: Dashboard preview panel
-- GIVEN the user opens the Procest app dashboard (home view)
+- GIVEN the user opens the Dossiq app dashboard (home view)
 - THEN `src/views/dashboard/MyWorkPreview.vue` MUST show a summary of the
   user's assigned work
 

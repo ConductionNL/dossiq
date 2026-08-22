@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest KCC Routing Rule Service
+ * Dossiq KCC Routing Rule Service
  *
  * Loads and persists KCC routing rules and KCC agents from OpenRegister, and
  * orchestrates the pure {@see RoutingEngine} to produce a routing decision
  * plus ranked agent suggestions for a contact moment.
  *
  * @category Service
- * @package  OCA\Procest\Service\Kcc
+ * @package  OCA\Dossiq\Service\Kcc
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,16 +19,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Kcc;
+namespace OCA\Dossiq\Service\Kcc;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 
 /**

@@ -4,7 +4,7 @@ priority: high
 estimated_effort: large
 ---
 
-# Method Decomposition -- Procest
+# Method Decomposition -- Dossiq
 
 ## Purpose
 
@@ -477,7 +477,7 @@ Reduce constructor parameters by:
 ## Testing Strategy
 
 ### Before decomposition
-1. Run existing unit tests: `docker exec -w /var/www/html/custom_apps/procest nextcloud php vendor/bin/phpunit -c phpunit-unit.xml`
+1. Run existing unit tests: `docker exec -w /var/www/html/custom_apps/dossiq nextcloud php vendor/bin/phpunit -c phpunit-unit.xml`
 2. Note any pre-existing failures
 3. Run PHPMD to record current suppression count: `./vendor/bin/phpmd lib/ text phpmd.xml 2>&1 | wc -l`
 
@@ -508,11 +508,11 @@ Reduce constructor parameters by:
 - **PHPCS**: PHP CodeSniffer for PSR-12 compliance (new extracted classes must comply)
 - **Psalm/PHPStan**: Static analysis must pass on all new files
 - **PHPUnit**: All existing tests must pass without modification
-- **OpenRegister**: No changes to OpenRegister -- all decomposition is internal to Procest
+- **OpenRegister**: No changes to OpenRegister -- all decomposition is internal to Dossiq
 
 ## Standards & References
 
-- **PHPMD rules**: `phpmd.xml` in Procest root defines thresholds (CC=10, NPath=200, MethodLength=100, ClassLength=1000)
+- **PHPMD rules**: `phpmd.xml` in Dossiq root defines thresholds (CC=10, NPath=200, MethodLength=100, ClassLength=1000)
 - **PSR-12**: PHP coding style standard (enforced by PHPCS)
 - **ISO 25010**: Software quality model -- maintainability, testability, modularity sub-characteristics
 - **Clean Code (Robert C. Martin)**: Single Responsibility Principle, method length guidelines

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest DossierUploadHandler.
+ * Dossiq DossierUploadHandler.
  *
  * Upload collaborator for the ZGW DRC case dossier. Split out of
  * ZaakdossierController so that controller keeps only endpoint shape: decoding
@@ -14,7 +14,7 @@
  * get it past the gate.
  *
  * @category Service
- * @package  OCA\Procest\Service\Zaakdossier
+ * @package  OCA\Dossiq\Service\Zaakdossier
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,7 +22,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -32,10 +32,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Zaakdossier;
+namespace OCA\Dossiq\Service\Zaakdossier;
 
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\ZaakdossierService;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\ZaakdossierService;
 use OCP\IUser;
 use RuntimeException;
 

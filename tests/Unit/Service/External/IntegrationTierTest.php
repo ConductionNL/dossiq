@@ -10,7 +10,7 @@
  * simulators return simulator-flagged assertions without touching SAML.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\External
+ * @package  OCA\Dossiq\Tests\Unit\Service\External
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,13 +21,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\External;
+namespace OCA\Dossiq\Tests\Unit\Service\External;
 
-use OCA\Procest\Service\Auth\SimulatorDigidSamlAdapter;
-use OCA\Procest\Service\Auth\SimulatorEHerkenningSamlAdapter;
-use OCA\Procest\Service\External\Brp\HaalCentraalBrpAdapter;
-use OCA\Procest\Service\External\IntegrationMode;
-use OCA\Procest\Service\External\Kvk\KvkApiAdapter;
+use OCA\Dossiq\Service\Auth\SimulatorDigidSamlAdapter;
+use OCA\Dossiq\Service\Auth\SimulatorEHerkenningSamlAdapter;
+use OCA\Dossiq\Service\External\Brp\HaalCentraalBrpAdapter;
+use OCA\Dossiq\Service\External\IntegrationMode;
+use OCA\Dossiq\Service\External\Kvk\KvkApiAdapter;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
@@ -37,15 +37,15 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * @covers \OCA\Procest\Service\External\IntegrationMode
- * @covers \OCA\Procest\Service\External\Brp\HaalCentraalBrpAdapter
- * @covers \OCA\Procest\Service\External\Kvk\KvkApiAdapter
- * @covers \OCA\Procest\Service\Auth\SimulatorDigidSamlAdapter
- * @covers \OCA\Procest\Service\Auth\SimulatorEHerkenningSamlAdapter
+ * @covers \OCA\Dossiq\Service\External\IntegrationMode
+ * @covers \OCA\Dossiq\Service\External\Brp\HaalCentraalBrpAdapter
+ * @covers \OCA\Dossiq\Service\External\Kvk\KvkApiAdapter
+ * @covers \OCA\Dossiq\Service\Auth\SimulatorDigidSamlAdapter
+ * @covers \OCA\Dossiq\Service\Auth\SimulatorEHerkenningSamlAdapter
  *
- * @uses \OCA\Procest\Service\Auth\BrokerAssertionResult
- * @uses \OCA\Procest\Service\External\Brp\BrpLookupResult
- * @uses \OCA\Procest\Service\External\Kvk\KvkLookupResult
+ * @uses \OCA\Dossiq\Service\Auth\BrokerAssertionResult
+ * @uses \OCA\Dossiq\Service\External\Brp\BrpLookupResult
+ * @uses \OCA\Dossiq\Service\External\Kvk\KvkLookupResult
  */
 class IntegrationTierTest extends TestCase {
 	/**

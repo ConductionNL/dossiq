@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Seed Bezwaar Workflow Definition Repair Step
+ * Dossiq Seed Bezwaar Workflow Definition Repair Step
  *
  * Idempotently seeds a published workflowTemplate for the pre-seeded
  * Bezwaar caseType, expressing the AWB-grounded state machine
@@ -12,7 +12,7 @@
  * BezwaarLifecycleService.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,19 +23,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/bezwaar-lifecycle/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
-use OCA\Procest\Service\WorkflowDefinitionService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\WorkflowDefinitionService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -207,7 +207,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: bezwaar workflow seed — failed to list caseTypes',
+				'Dossiq: bezwaar workflow seed — failed to list caseTypes',
 				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 			);
 			$output->warning('Could not list caseTypes — skipping bezwaar workflow seed.');
@@ -270,7 +270,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: bezwaar workflow seed — failed to list statusTypes',
+				'Dossiq: bezwaar workflow seed — failed to list statusTypes',
 				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return null;
@@ -335,7 +335,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: bezwaar workflow seed — failed to save workflowTemplate',
+				'Dossiq: bezwaar workflow seed — failed to save workflowTemplate',
 				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 			);
 			$output->warning('Bezwaar workflow seed: save failed — see log.');
@@ -355,7 +355,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep {
 				);
 			} catch (\Throwable $e) {
 				$this->logger->error(
-					'Procest: bezwaar workflow seed — failed to pin caseType',
+					'Dossiq: bezwaar workflow seed — failed to pin caseType',
 					['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 				);
 			}

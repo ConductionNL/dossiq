@@ -86,8 +86,8 @@
                 <referencedClass name="OCA\OpenRegister\Mcp\IMcpToolProvider"/>
                 <!-- Nextcloud internals loaded at runtime (not in OCP stubs) -->
                 <referencedClass name="OC_Util"/>
-                <!-- Procest ZGW controller referenced in middleware (not yet implemented) -->
-                <referencedClass name="OCA\Procest\Controller\ZgwController"/>
+                <!-- Dossiq ZGW controller referenced in middleware (not yet implemented) -->
+                <referencedClass name="OCA\Dossiq\Controller\ZgwController"/>
                 <!-- Additional OCP infrastructure types used across the fleet -->
                 <referencedClass name="OCP\AppFramework\Bootstrap\IBootContext"/>
                 <referencedClass name="OCP\AppFramework\Bootstrap\IRegistrationContext"/>

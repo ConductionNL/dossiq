@@ -10,7 +10,7 @@
 // `@conduction/nextcloud-vue`'s built-in integration registry and fetch
 // from `/apps/openregister/api/objects/{register}/{schema}/{id}/integrations/{id}`.
 //
-// procest's manifest is `sidebarTabs[]` + `component:` driven (the
+// dossiq's manifest is `sidebarTabs[]` + `component:` driven (the
 // CaseEmailTab pattern), so to surface a leaf tab we resolve its bespoke
 // Vue component out of the lib's `builtinIntegrations` descriptor array
 // and register it under a registry key. CnObjectSidebar injects

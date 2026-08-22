@@ -55,7 +55,7 @@ Het dashboard toont vier kaarten:
 - Bij contracten binnen 90 dagen tot vervaldatum verschijnt een
   oranje waarschuwing "Vervalt over [n] dagen".
 - Bij `renewalOption: manual_request` en binnen 90 dagen verschijnt
-  de knop "Verlenging aanvragen". Dit creëert een Procest-zaak
+  de knop "Verlenging aanvragen". Dit creëert een Dossiq-zaak
   `leverancier-contractverlenging-verzoek`.
 
 ## IBAN wijzigen (4-ogen)

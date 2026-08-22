@@ -9,7 +9,7 @@
 				<template #icon>
 					<Plus :size="18" />
 				</template>
-				{{ t('procest', 'New role') }}
+				{{ t('dossiq', 'New role') }}
 			</NcButton>
 		</div>
 
@@ -17,10 +17,10 @@
 
 		<NcEmptyContent
 			v-if="!loading && roles.length === 0"
-			:name="t('procest', 'No organisational roles')"
+			:name="t('dossiq', 'No organisational roles')"
 			:description="
 				t(
-					'procest',
+					'dossiq',
 					'Define roles to build a mandate hierarchy. Roles can have parents (afdeling/team) and a mandaat level.',
 				)
 			">
@@ -114,7 +114,7 @@ export default {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		parentOptions() {
 			return [
-				{ id: '', label: t('procest', '(top level)') },
+				{ id: '', label: t('dossiq', '(top level)') },
 				...this.roles.map((r) => ({ id: r.id, label: r.name || r.id })),
 			]
 		},
@@ -127,7 +127,7 @@ export default {
 			)
 			if (refsAsParent)
 				return t(
-					'procest',
+					'dossiq',
 					'Cannot delete: this role is the parent of other roles. Re-parent them first.',
 				)
 			return ''
@@ -168,14 +168,14 @@ export default {
 				if (this.editingRole && this.editingRole.id) {
 					await axios.patch(
 						generateUrl(
-							'/apps/procest/api/mandate/rollen/'
+							'/apps/dossiq/api/mandate/rollen/'
 								+ encodeURIComponent(this.editingRole.id),
 						),
 						payload,
 					)
 				} else {
 					await axios.post(
-						generateUrl('/apps/procest/api/mandate/rollen'),
+						generateUrl('/apps/dossiq/api/mandate/rollen'),
 						payload,
 					)
 				}
@@ -192,7 +192,7 @@ export default {
 			try {
 				await axios.delete(
 					generateUrl(
-						'/apps/procest/api/mandate/rollen/'
+						'/apps/dossiq/api/mandate/rollen/'
 							+ encodeURIComponent(this.deleting.id),
 					),
 				)

@@ -8,7 +8,7 @@ kind: code
 every `createObjectStore`-based store (lazy — fully inert until the first `subscribe()`
 call) and fixes the first-subscription-stranded transport bug. OpenRegister already pushes
 `or-object-{uuid}` and `or-collection-{register-slug}-{schema-slug}` events for all
-OpenRegister-backed objects, so Procest's store gains a working `subscribe(type, id?)` API
+OpenRegister-backed objects, so Dossiq's store gains a working `subscribe(type, id?)` API
 from the dependency bump alone. Without view-side adoption, the multi-user surfaces (the
 workflow board above all) keep rendering stale data until a manual refresh.
 

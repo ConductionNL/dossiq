@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Cofinanciering Validator.
+ * Dossiq Cofinanciering Validator.
  *
  * Co-financing validation for multi-party funded projects (REQ-SUB-008):
  * verifies that the sum of co-financing contributions plus the requested
@@ -11,7 +11,7 @@
  * arrays handed in by the calling service.
  *
  * @category Service
- * @package  OCA\Procest\Service\Subsidie
+ * @package  OCA\Dossiq\Service\Subsidie
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,12 +22,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Subsidie;
+namespace OCA\Dossiq\Service\Subsidie;
 
 /**
  * Pure co-financing reconciliation and EU-detection helpers.

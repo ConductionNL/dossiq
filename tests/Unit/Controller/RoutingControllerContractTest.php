@@ -23,22 +23,22 @@
  *    the internal exception text.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\RoutingController;
-use OCA\Procest\Service\RoleResolverService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Controller\RoutingController;
+use OCA\Dossiq\Service\RoleResolverService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -73,7 +73,7 @@ interface RoutingControllerContractObjectService {
 /**
  * Wire-contract tests for RoutingController::reroute().
  *
- * @covers \OCA\Procest\Controller\RoutingController
+ * @covers \OCA\Dossiq\Controller\RoutingController
  */
 class RoutingControllerContractTest extends TestCase {
 
@@ -142,7 +142,7 @@ class RoutingControllerContractTest extends TestCase {
 		$this->logger = $this->createMock(LoggerInterface::class);
 
 		$this->controller = new RoutingController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			resolver: $this->resolver,
 			settingsService: $this->settingsService,

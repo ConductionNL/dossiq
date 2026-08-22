@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Organisatie Rol Controller
+ * Dossiq Organisatie Rol Controller
  *
  * The admin settings surface for the role hierarchy and person-to-role
  * assignments: OrganisatieRollen and MedewerkerRolToewijzingen.
@@ -15,12 +15,12 @@
  *
  * ⚠️ Every method carries `#[AuthorizedAdminSetting]`. The alternative —
  * repointing the frontend at OpenRegister's generic object route — also
- * resolves and also removes the symptom, and bypasses procest's admin
+ * resolves and also removes the symptom, and bypasses dossiq's admin
  * authorization; that was the retracted first fix for the sibling issue
  * procest#784.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -28,7 +28,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -38,11 +38,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Mandaat\MandaatRegistryService;
-use OCA\Procest\Settings\AdminSettings;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Mandaat\MandaatRegistryService;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -84,7 +84,7 @@ class OrganisatieRolController extends Controller {
 	 *
 	 * @return JSONResponse The roles as a JSON array.
 	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
 	 * @spec openspec/specs/mandaat-matrix/spec.md
 	 */
@@ -101,7 +101,7 @@ class OrganisatieRolController extends Controller {
 	 *
 	 * @return JSONResponse The created role.
 	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
 	 * @spec openspec/specs/mandaat-matrix/spec.md
 	 */
@@ -121,7 +121,7 @@ class OrganisatieRolController extends Controller {
 	 *
 	 * @return JSONResponse The updated role.
 	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
 	 * @spec openspec/specs/mandaat-matrix/spec.md
 	 */
@@ -145,7 +145,7 @@ class OrganisatieRolController extends Controller {
 	 *
 	 * @return JSONResponse Confirmation, or the refusal.
 	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
 	 * @spec openspec/specs/mandaat-matrix/spec.md
 	 */
@@ -176,7 +176,7 @@ class OrganisatieRolController extends Controller {
 	 *
 	 * @return JSONResponse The assignments as a JSON array.
 	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
 	 * @spec openspec/specs/mandaat-matrix/spec.md
 	 */
@@ -193,7 +193,7 @@ class OrganisatieRolController extends Controller {
 	 *
 	 * @return JSONResponse The created assignment.
 	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
 	 * @spec openspec/specs/mandaat-matrix/spec.md
 	 */
@@ -217,7 +217,7 @@ class OrganisatieRolController extends Controller {
 	 *
 	 * @return JSONResponse The updated assignment.
 	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
 	 * @spec openspec/specs/mandaat-matrix/spec.md
 	 */

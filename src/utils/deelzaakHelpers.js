@@ -29,7 +29,7 @@ export function subCaseCountBadge(count) {
 	if (!Number.isFinite(n) || n <= 0) {
 		return ''
 	}
-	return t('procest', '{count} sub-cases', { count: n })
+	return t('dossiq', '{count} sub-cases', { count: n })
 }
 
 /**
@@ -57,7 +57,7 @@ export function hasSubCaseBadge(count) {
 export function orphanWarningMessage(count) {
 	const n = Math.max(0, Number(count) || 0)
 	return t(
-		'procest',
+		'dossiq',
 		'This case has {count} sub-cases. Deleting it will unlink the sub-cases from their parent. Do you want to continue?',
 		{ count: n },
 	)

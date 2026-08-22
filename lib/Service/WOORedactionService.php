@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest WOO Redaction Service
+ * Dossiq WOO Redaction Service
  *
  * Service for optional Docudesk-driven redaction of WOO documents assessed
  * as 'deels openbaar'. Performs feature detection to decide between the
  * Docudesk pipeline and the manual upload-redacted-version fallback.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,9 +24,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\App\IAppManager;
 use Psr\Log\LoggerInterface;
 

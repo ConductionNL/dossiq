@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 <info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
-    <id>procest</id>
-    <name lang="en">Procest</name>
-    <name lang="nl">Procest</name>
+    <id>dossiq</id>
+    <name lang="en">Dossiq</name>
+    <name lang="nl">Dossiq</name>
     <summary lang="en">Case management with configurable workflows, deadlines, and decisions</summary>
     <summary lang="nl">Zaakafhandeling met configureerbare workflows, deadlines en besluiten</summary>
-    <description lang="en"><![CDATA[Procest brings structured case management to Nextcloud. Define case types, track progress through status lifecycles, manage deadlines, and record formal decisions — all within a clean, intuitive interface.
+    <description lang="en"><![CDATA[Dossiq brings structured case management to Nextcloud. Define case types, track progress through status lifecycles, manage deadlines, and record formal decisions — all within a clean, intuitive interface.
 
 **Key Features**
 
@@ -27,7 +27,7 @@ Free and open source under the EUPL-1.2 licence.
 
 **Support:** For support, contact support@conduction.nl. For a Service Level Agreement (SLA), contact sales@conduction.nl.
     ]]></description>
-    <description lang="nl"><![CDATA[Procest brengt gestructureerde zaakafhandeling naar Nextcloud. Definieer zaaktypen, volg voortgang via statuslifecycles, beheer deadlines en leg formele besluiten vast — allemaal in een overzichtelijke, intuitive interface.
+    <description lang="nl"><![CDATA[Dossiq brengt gestructureerde zaakafhandeling naar Nextcloud. Definieer zaaktypen, volg voortgang via statuslifecycles, beheer deadlines en leg formele besluiten vast — allemaal in een overzichtelijke, intuitive interface.
 
 **Belangrijkste functies**
 
@@ -51,7 +51,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
     <version>0.2.5-unstable.20260821052832</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
-    <namespace>Procest</namespace>
+    <namespace>Dossiq</namespace>
     <documentation>
         <user>https://github.com/ConductionNL/dossiq</user>
         <admin>https://github.com/ConductionNL/dossiq</admin>
@@ -96,6 +96,20 @@ Vrij en open source onder de EUPL-1.2-licentie.
         openconnector (35).
         -->
         <nextcloud min-version="32" max-version="34"/>
+        <!-- THE OPENREGISTER REGISTER SLUG IS DELIBERATELY STILL `procest`.
+             OpenRegister resolves a register by slug (derived from
+             `x-openregister.app` in lib/Settings/dossiq_register.json and
+             lib/Settings/ori_register.json), so renaming the slug alongside
+             `<id>` would not move the register — the importer would find no
+             match, create a SECOND, empty register, and orphan every stored
+             case, task, bezwaar, voorstel and vergadering. Nothing errors; the
+             app just looks empty. The same freeze applies to the register
+             `folder` (`Open Registers/Procest`), to the `oc_openregister_table_procest_`
+             prefix TenantSchemaProvisioner clones per tenant, to the
+             `procest-default` sibling register, and to every `register:` /
+             `registerSlug:` value in src/manifest*.json. The FILE was renamed
+             (procest_register.json -> dossiq_register.json) because a filename
+             is app-owned; the slug inside it is not. -->
         <!-- App dependency (not expressible in app-info.xsd): OpenRegister >= 0.2.16
              (MDM engine: x-openregister-quality / x-openregister-dedup schema support and
              on-save qualityScore/qualityStatus materialisation, ADR-045 / OR change
@@ -103,25 +117,52 @@ Vrij en open source onder de EUPL-1.2-licentie.
     </dependencies>
 
     <background-jobs>
-        <job>OCA\Procest\BackgroundJob\AdviceDeadlineJob</job>
-        <job>OCA\Procest\Cron\OriDataQualityCheck</job>
-        <job>OCA\Procest\BackgroundJob\VergaderingDeadlineJob</job>
-        <job>OCA\Procest\BackgroundJob\WOODeadlineCheckJob</job>
-        <job>OCA\Procest\BackgroundJob\BezwaarTermijnJob</job>
-        <job>OCA\Procest\BackgroundJob\DsoDeadlineJob</job>
-        <job>OCA\Procest\BackgroundJob\ResetMonthlyQuotasJob</job>
-        <job>OCA\Procest\BackgroundJob\DailyDeadlineScanJob</job>
-        <job>OCA\Procest\BackgroundJob\InboundEmailJob</job>
-        <job>OCA\Procest\BackgroundJob\EmailPdfRetryJob</job>
-        <job>OCA\Procest\BackgroundJob\SentimentAnalysisJob</job>
-        <job>OCA\Procest\BackgroundJob\SpecialistBeschikbaarheidRefreshJob</job>
-        <job>OCA\Procest\BackgroundJob\BottleneckDetectionJob</job>
+        <job>OCA\Dossiq\BackgroundJob\AdviceDeadlineJob</job>
+        <job>OCA\Dossiq\Cron\OriDataQualityCheck</job>
+        <job>OCA\Dossiq\BackgroundJob\VergaderingDeadlineJob</job>
+        <job>OCA\Dossiq\BackgroundJob\WOODeadlineCheckJob</job>
+        <job>OCA\Dossiq\BackgroundJob\BezwaarTermijnJob</job>
+        <job>OCA\Dossiq\BackgroundJob\DsoDeadlineJob</job>
+        <job>OCA\Dossiq\BackgroundJob\ResetMonthlyQuotasJob</job>
+        <job>OCA\Dossiq\BackgroundJob\DailyDeadlineScanJob</job>
+        <job>OCA\Dossiq\BackgroundJob\InboundEmailJob</job>
+        <job>OCA\Dossiq\BackgroundJob\EmailPdfRetryJob</job>
+        <job>OCA\Dossiq\BackgroundJob\SentimentAnalysisJob</job>
+        <job>OCA\Dossiq\BackgroundJob\SpecialistBeschikbaarheidRefreshJob</job>
+        <job>OCA\Dossiq\BackgroundJob\BottleneckDetectionJob</job>
     </background-jobs>
 
     <repair-steps>
         <post-migration>
             <!--
-                MUST stay first. OpenRegister's import matches a schema to an
+                THE TWO Migrate* STEPS CARRY THE `procest` -> `dossiq` APP-ID
+                RENAME AND MUST RUN FIRST IN BOTH BLOCKS.
+
+                Nextcloud namespaces both `oc_appconfig` and `oc_preferences` by
+                app id. There is no in-place app-id upgrade — the new id is
+                simply a different app — so the rename does not move the stored
+                rows, it makes every previously stored value unreachable. Every
+                reader supplies a default, so nothing errors: the admin settings
+                revert to their defaults, the imported register/schema-id
+                bookkeeping looks absent, and each user's saved UI state comes
+                back blank. Silently.
+
+                ORDER IS LOAD-BEARING. MigrateAppConfigKeys must precede
+                InitializeSettings (and the register import below it), because
+                InitializeSettings writes configuration keys itself. If it ran
+                first those keys would already exist under `dossiq` and the
+                migration would skip them as "already present", stranding the
+                old values under `procest` where nothing reads them.
+
+                Both steps are idempotent, never overwrite a newer value, never
+                delete the old rows (so a rollback still finds its config), and
+                log-and-continue rather than throwing — see their class
+                docblocks for why a throwing repair step is especially bad here.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateAppConfigKeys</step>
+            <step>OCA\Dossiq\Repair\MigrateUserPreferences</step>
+            <!--
+                MUST stay first among the register steps. OpenRegister's import matches a schema to an
                 existing row by SLUG, so a renamed slug in the register JSON
                 renames nothing: the import finds no match, creates a SECOND
                 schema, and every stored object keeps pointing at the old one —
@@ -130,26 +171,28 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 slug on the existing row first makes the import recognise it.
                 Ahead of the import trigger, InitializeSettings.
             -->
-            <step>OCA\Procest\Repair\RenameDutchSchemaSlugs</step>
-            <step>OCA\Procest\Repair\InitializeSettings</step>
-            <step>OCA\Procest\Repair\LoadDefaultZgwMappings</step>
-            <step>OCA\Procest\Repair\SeedBezwaarBeroepData</step>
-            <step>OCA\Procest\Repair\MigrateWorkflowDefinitions</step>
-            <step>OCA\Procest\Repair\SeedBezwaarWorkflowDefinition</step>
-            <step>OCA\Procest\Repair\SeedBesluitvormingTemplates</step>
-            <step>OCA\Procest\Repair\RegisterOriRegister</step>
-            <step>OCA\Procest\Repair\SeedLhsMatrix</step>
-            <step>OCA\Procest\Repair\SeedVthMatrixCells</step>
-            <step>OCA\Procest\Repair\SeedVthWorkflowTemplates</step>
-            <step>OCA\Procest\Repair\VthSeedDataRepairStep</step>
-            <step>OCA\Procest\Repair\SeedDeadlineMonitoringData</step>
+            <step>OCA\Dossiq\Repair\RenameDutchSchemaSlugs</step>
+            <step>OCA\Dossiq\Repair\InitializeSettings</step>
+            <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
+            <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
+            <step>OCA\Dossiq\Repair\MigrateWorkflowDefinitions</step>
+            <step>OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition</step>
+            <step>OCA\Dossiq\Repair\SeedBesluitvormingTemplates</step>
+            <step>OCA\Dossiq\Repair\RegisterOriRegister</step>
+            <step>OCA\Dossiq\Repair\SeedLhsMatrix</step>
+            <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
+            <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
+            <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
+            <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <!--
                 Must run AFTER the register sync that adds the English columns, so it
                 can tell the rename case from the back-fill case. Matches BOTH the
                 procest and procest-default registers, which each hold live rows.
+                Those two slugs are DELIBERATELY unchanged by the procest ->
+                dossiq app-id rename — see the <dependencies> note above.
                 Idempotent, non-destructive, and refuses ambiguous renames.
             -->
-            <step>OCA\Procest\Repair\RenameDutchDeadlineColumns</step>
+            <step>OCA\Dossiq\Repair\RenameDutchDeadlineColumns</step>
             <!--
                 Sibling of the step above, but a VALUE migration rather than a
                 column one: the `direction` column already has the right name,
@@ -161,20 +204,20 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 which is exempt from the vocabulary rule; a word-based rewrite
                 would have corrupted every confidentiality field in the install.
             -->
-            <step>OCA\Procest\Repair\RenameDutchDirectionValues</step>
-            <step>OCA\Procest\Repair\MigrateArchivalToOpenRegister</step>
-            <step>OCA\Procest\Repair\SeedKccWerkplekData</step>
-            <step>OCA\Procest\Repair\BackfillInformatieobjectMetadata</step>
-            <step>OCA\Procest\Repair\LinkInFlightContractDecisionsRepair</step>
-            <step>OCA\Procest\Repair\LinkInFlightRemainingDecisionsRepair</step>
-            <step>OCA\Procest\Repair\SeedVerwerkingsactiviteiten</step>
+            <step>OCA\Dossiq\Repair\RenameDutchDirectionValues</step>
+            <step>OCA\Dossiq\Repair\MigrateArchivalToOpenRegister</step>
+            <step>OCA\Dossiq\Repair\SeedKccWerkplekData</step>
+            <step>OCA\Dossiq\Repair\BackfillInformatieobjectMetadata</step>
+            <step>OCA\Dossiq\Repair\LinkInFlightContractDecisionsRepair</step>
+            <step>OCA\Dossiq\Repair\LinkInFlightRemainingDecisionsRepair</step>
+            <step>OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten</step>
             <!--
                 Must run AFTER the register sync that adds the English columns, so it
                 can tell a rename from a back-fill. Covers every renamed property
                 together: a register-scoped step that moved some owners and not others
                 would leave the rest silently reading null.
             -->
-            <step>OCA\Procest\Repair\RenameDutchColumns</step>
+            <step>OCA\Dossiq\Repair\RenameDutchColumns</step>
             <!--
                 Must run AFTER RenameDutchColumns: that step moves the COLUMNS,
                 this one moves what is IN them, across every mapped property
@@ -190,14 +233,14 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 statutory. Translating them would break the mapping the adapter
                 exists to perform.
             -->
-            <step>OCA\Procest\Repair\RenameDutchValues</step>
+            <step>OCA\Dossiq\Repair\RenameDutchValues</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
             `Installer::installAppLastSteps()` guards both the pre-migration and
             post-migration blocks with `if ($previousVersion !== '')`, and only
             `repair-steps/install` runs unconditionally afterwards. Until this block
-            existed a brand-new Procest install ran NONE of the steps above — the
+            existed a brand-new Dossiq install ran NONE of the steps above — the
             register was never imported and not one of the twelve seed steps ran, so
             a fresh instance had no ZGW mappings, no bezwaar/beroep data, no LHS or
             VTH matrices and no workflow templates.
@@ -212,39 +255,59 @@ Vrij en open source onder de EUPL-1.2-licentie.
               LinkInFlight*DecisionsRepair      link IN-FLIGHT decisions; none exist yet
         -->
         <install>
-            <step>OCA\Procest\Repair\InitializeSettings</step>
-            <step>OCA\Procest\Repair\LoadDefaultZgwMappings</step>
-            <step>OCA\Procest\Repair\SeedBezwaarBeroepData</step>
-            <step>OCA\Procest\Repair\SeedBezwaarWorkflowDefinition</step>
-            <step>OCA\Procest\Repair\SeedBesluitvormingTemplates</step>
-            <step>OCA\Procest\Repair\RegisterOriRegister</step>
-            <step>OCA\Procest\Repair\SeedLhsMatrix</step>
-            <step>OCA\Procest\Repair\SeedVthMatrixCells</step>
-            <step>OCA\Procest\Repair\SeedVthWorkflowTemplates</step>
-            <step>OCA\Procest\Repair\VthSeedDataRepairStep</step>
-            <step>OCA\Procest\Repair\SeedDeadlineMonitoringData</step>
-            <step>OCA\Procest\Repair\SeedKccWerkplekData</step>
-            <step>OCA\Procest\Repair\SeedVerwerkingsactiviteiten</step>
+            <!--
+                THE SAME TWO Migrate* STEPS, AND THE DUPLICATION IS THE POINT.
+                `Installer::installAppLastSteps()` guards BOTH the pre- and
+                post-migration blocks with `if ($previousVersion !== '')`; on a
+                fresh install `installed_version` is still empty, so neither
+                block runs and only `repair-steps/install` executes.
+
+                THIS IS THE PATH THE RENAME ACTUALLY TAKES. Nextcloud discovers
+                `dossiq` as a DIFFERENT app from `procest`, so enabling it IS a
+                fresh install with an empty `installed_version` — the
+                post-migration block above never fires, and the two Migrate*
+                steps would never run at all if they were declared only there.
+                Declared here they run, and on a genuine upgrade whichever block
+                fires first wins while the other is an idempotent no-op.
+
+                They stay ahead of InitializeSettings for the ordering reason
+                given in the post-migration block.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateAppConfigKeys</step>
+            <step>OCA\Dossiq\Repair\MigrateUserPreferences</step>
+            <step>OCA\Dossiq\Repair\InitializeSettings</step>
+            <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
+            <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
+            <step>OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition</step>
+            <step>OCA\Dossiq\Repair\SeedBesluitvormingTemplates</step>
+            <step>OCA\Dossiq\Repair\RegisterOriRegister</step>
+            <step>OCA\Dossiq\Repair\SeedLhsMatrix</step>
+            <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
+            <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
+            <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
+            <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
+            <step>OCA\Dossiq\Repair\SeedKccWerkplekData</step>
+            <step>OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten</step>
         </install>
     </repair-steps>
 
     <commands>
-        <command>OCA\Procest\Command\BackfillLegalHoldsCommand</command>
-        <command>OCA\Procest\Command\MigrateTenantsCommand</command>
-        <command>OCA\Procest\Command\SeedBezwaarBeroepCommand</command>
+        <command>OCA\Dossiq\Command\BackfillLegalHoldsCommand</command>
+        <command>OCA\Dossiq\Command\MigrateTenantsCommand</command>
+        <command>OCA\Dossiq\Command\SeedBezwaarBeroepCommand</command>
     </commands>
 
     <settings>
-        <admin>OCA\Procest\Settings\AdminSettings</admin>
-        <admin>OCA\Procest\Settings\EmailSettings</admin>
-        <admin-section>OCA\Procest\Sections\SettingsSection</admin-section>
+        <admin>OCA\Dossiq\Settings\AdminSettings</admin>
+        <admin>OCA\Dossiq\Settings\EmailSettings</admin>
+        <admin-section>OCA\Dossiq\Sections\SettingsSection</admin-section>
     </settings>
 
     <navigations>
         <navigation>
-            <id>procest</id>
-            <name>Procest</name>
-            <route>procest.dashboard.page</route>
+            <id>dossiq</id>
+            <name>Dossiq</name>
+            <route>dossiq.dashboard.page</route>
             <icon>app.svg</icon>
         </navigation>
     </navigations>

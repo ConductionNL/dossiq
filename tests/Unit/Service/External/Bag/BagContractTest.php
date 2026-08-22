@@ -18,7 +18,7 @@
  * lanes already do in CI.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\External\Bag
+ * @package  OCA\Dossiq\Tests\Unit\Service\External\Bag
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -29,11 +29,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\External\Bag;
+namespace OCA\Dossiq\Tests\Unit\Service\External\Bag;
 
-use OCA\Procest\Service\External\Bag\BagApiAdapter;
-use OCA\Procest\Service\External\Bag\BagResponseMapper;
-use OCA\Procest\Service\External\IntegrationMode;
+use OCA\Dossiq\Service\External\Bag\BagApiAdapter;
+use OCA\Dossiq\Service\External\Bag\BagResponseMapper;
+use OCA\Dossiq\Service\External\IntegrationMode;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
@@ -42,11 +42,11 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\External\Bag\BagApiAdapter
- * @covers \OCA\Procest\Service\External\Bag\BagResponseMapper
+ * @covers \OCA\Dossiq\Service\External\Bag\BagApiAdapter
+ * @covers \OCA\Dossiq\Service\External\Bag\BagResponseMapper
  *
- * @uses \OCA\Procest\Service\External\Bag\BagLookupResult
- * @uses \OCA\Procest\Service\External\IntegrationMode
+ * @uses \OCA\Dossiq\Service\External\Bag\BagLookupResult
+ * @uses \OCA\Dossiq\Service\External\IntegrationMode
  */
 class BagContractTest extends TestCase {
 	private const FIXTURES = __DIR__ . '/../../../../fixtures/contracts/bag';

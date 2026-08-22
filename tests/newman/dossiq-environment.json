@@ -1,0 +1,10 @@
+{
+	"id": "dossiq-local-dev",
+	"name": "Dossiq local dev",
+	"values": [
+		{"key": "base_url", "value": "http://localhost:8080/index.php/apps/dossiq", "type": "default", "enabled": true},
+		{"key": "admin_user", "value": "admin", "type": "default", "enabled": true},
+		{"key": "admin_pass", "value": "admin", "type": "secret", "enabled": true}
+	],
+	"_postman_variable_scope": "environment"
+}

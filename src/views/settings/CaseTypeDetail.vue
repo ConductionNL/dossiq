@@ -5,14 +5,14 @@
 				<template #icon>
 					<ArrowLeftIcon :size="20" />
 				</template>
-				{{ t('procest', 'Back to list') }}
+				{{ t('dossiq', 'Back to list') }}
 			</NcButton>
 
 			<h3 class="case-type-detail__title">
 				{{
 					isCreate
-						? t('procest', 'New Case Type')
-						: form.title || t('procest', 'Case Type')
+						? t('dossiq', 'New Case Type')
+						: form.title || t('dossiq', 'Case Type')
 				}}
 			</h3>
 
@@ -21,13 +21,13 @@
 					v-if="!isCreate && form.isDraft"
 					type="secondary"
 					@click="publish">
-					{{ t('procest', 'Publish') }}
+					{{ t('dossiq', 'Publish') }}
 				</NcButton>
 				<NcButton
 					v-if="!isCreate && !form.isDraft"
 					type="secondary"
 					@click="unpublish">
-					{{ t('procest', 'Unpublish') }}
+					{{ t('dossiq', 'Unpublish') }}
 				</NcButton>
 				<NcButton
 					v-if="!isCreate"
@@ -37,13 +37,13 @@
 					<template v-if="duplicating" #icon>
 						<NcLoadingIcon :size="20" />
 					</template>
-					{{ t('procest', 'Duplicate') }}
+					{{ t('dossiq', 'Duplicate') }}
 				</NcButton>
 				<NcButton type="primary" :disabled="saving" @click="save">
 					<template v-if="saving" #icon>
 						<NcLoadingIcon :size="20" />
 					</template>
-					{{ t('procest', 'Save') }}
+					{{ t('dossiq', 'Save') }}
 				</NcButton>
 			</div>
 		</div>
@@ -55,7 +55,7 @@
 			<p>
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'There are {count} active cases of this type. Changes will only apply to new cases.',
 						{ count: activeCaseCount },
 					)
@@ -68,7 +68,7 @@
 			v-if="publishErrors.length > 0"
 			class="case-type-detail__publish-errors">
 			<p>
-				<strong>{{ t('procest', 'Cannot publish:') }}</strong>
+				<strong>{{ t('dossiq', 'Cannot publish:') }}</strong>
 			</p>
 			<ul>
 				<li v-for="(err, i) in publishErrors" :key="i">
@@ -82,7 +82,7 @@
 			{{ saveError }}
 		</p>
 		<p v-if="saveSuccess" class="case-type-detail__success">
-			{{ t('procest', 'Saved successfully') }}
+			{{ t('dossiq', 'Saved successfully') }}
 		</p>
 
 		<NcLoadingIcon v-if="loadingDetail" />
@@ -249,16 +249,16 @@ export default {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		tabs() {
 			return [
-				{ id: 'general', label: t('procest', 'General') },
-				{ id: 'statuses', label: t('procest', 'Statuses') },
-				{ id: 'results', label: t('procest', 'Results') },
-				{ id: 'roles', label: t('procest', 'Roles') },
-				{ id: 'properties', label: t('procest', 'Properties') },
-				{ id: 'documents', label: t('procest', 'Docs') },
-				{ id: 'decisions', label: t('procest', 'Decisions') },
-				{ id: 'subCaseTypes', label: t('procest', 'Sub-cases') },
-				{ id: 'workflow', label: t('procest', 'Workflow') },
-				{ id: 'emailTemplates', label: t('procest', 'Email') },
+				{ id: 'general', label: t('dossiq', 'General') },
+				{ id: 'statuses', label: t('dossiq', 'Statuses') },
+				{ id: 'results', label: t('dossiq', 'Results') },
+				{ id: 'roles', label: t('dossiq', 'Roles') },
+				{ id: 'properties', label: t('dossiq', 'Properties') },
+				{ id: 'documents', label: t('dossiq', 'Docs') },
+				{ id: 'decisions', label: t('dossiq', 'Decisions') },
+				{ id: 'subCaseTypes', label: t('dossiq', 'Sub-cases') },
+				{ id: 'workflow', label: t('dossiq', 'Workflow') },
+				{ id: 'emailTemplates', label: t('dossiq', 'Email') },
 			]
 		},
 	},
@@ -321,7 +321,7 @@ export default {
 			this.validationErrors = validation.errors
 
 			if (!validation.valid) {
-				this.saveError = t('procest', 'Please fix the validation errors')
+				this.saveError = t('dossiq', 'Please fix the validation errors')
 				return
 			}
 
@@ -343,7 +343,7 @@ export default {
 			} else {
 				this.saveError =
 					this.objectStore.getError('caseType')
-					|| t('procest', 'Failed to save case type')
+					|| t('dossiq', 'Failed to save case type')
 			}
 		},
 
@@ -376,7 +376,7 @@ export default {
 		async unpublish() {
 			const confirmed = confirm(
 				t(
-					'procest',
+					'dossiq',
 					'Unpublishing this case type will prevent new cases from being created. Existing cases will continue to function. Continue?',
 				),
 			)
@@ -396,7 +396,7 @@ export default {
 			this.duplicating = true
 			try {
 				const response = await axios.post(
-					generateUrl('/apps/procest/api/case-definitions/{id}/copy', {
+					generateUrl('/apps/dossiq/api/case-definitions/{id}/copy', {
 						id: this.caseTypeId,
 					}),
 				)
@@ -407,7 +407,7 @@ export default {
 			} catch (err) {
 				this.saveError =
 					err.response?.data?.error
-					|| t('procest', 'Failed to duplicate case type')
+					|| t('dossiq', 'Failed to duplicate case type')
 			} finally {
 				this.duplicating = false
 			}

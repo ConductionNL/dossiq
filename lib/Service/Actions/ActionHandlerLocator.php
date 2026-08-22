@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest ActionHandlerLocator.
+ * Dossiq ActionHandlerLocator.
  *
  * Owns the automatic-action handler table: the list of handler implementations,
  * their lazy resolution out of the DI container, and the `type` slug index used
@@ -15,7 +15,7 @@
  * dispatch table down.
  *
  * @category Service
- * @package  OCA\Procest\Service\Actions
+ * @package  OCA\Dossiq\Service\Actions
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,7 +23,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -33,9 +33,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Actions;
+namespace OCA\Dossiq\Service\Actions;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 

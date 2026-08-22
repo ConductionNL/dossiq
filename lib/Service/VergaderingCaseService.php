@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Vergadering Case Service
+ * Dossiq Vergadering Case Service
  *
- * Service that wraps ORI vergaderingen as Procest cases, managing the
+ * Service that wraps ORI vergaderingen as Dossiq cases, managing the
  * case lifecycle (gepland → lopend → afgerond / geannuleerd), deadline
  * alerts (agenda publication T-7), and an audit trail.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,19 +21,19 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * Wraps ORI vergaderingen as Procest cases with lifecycle and deadline tracking.
+ * Wraps ORI vergaderingen as Dossiq cases with lifecycle and deadline tracking.
  *
  * A vergadering is created in the ORI register with status "planned".  Where a
- * linked Procest case already exists, this service applies the full Procest
+ * linked Dossiq case already exists, this service applies the full Dossiq
  * lifecycle engine (status, deadlines, tasks, audit trail) to it.  It does not
  * create that link itself — see the note on `createForVergadering()` below.
  *
@@ -80,7 +80,7 @@ class VergaderingCaseService {
 	/*
 	 * NO createForVergadering() HERE.
 	 *
-	 * It created a linked Procest case whenever a vergadering appeared in the
+	 * It created a linked Dossiq case whenever a vergadering appeared in the
 	 * open-raadsinformatie register. Nothing called it: the only consumer of
 	 * this service, `BackgroundJob\\VergaderingDeadlineJob`, calls
 	 * `checkDeadlines()`, and there is no listener on vergadering creation.
@@ -93,7 +93,7 @@ class VergaderingCaseService {
 	/**
 	 * Advance the status of a vergadering-backed case.
 	 *
-	 * @param string $caseId The UUID of the Procest case to advance
+	 * @param string $caseId The UUID of the Dossiq case to advance
 	 * @param string $newStatus The target status (gepland|lopend|afgerond|geannuleerd)
 	 *
 	 * @return array The updated case object
@@ -119,7 +119,7 @@ class VergaderingCaseService {
 		$caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
 
 		if (empty($register) === true || empty($caseSchema) === true) {
-			throw new RuntimeException('Procest case register/schema is not configured');
+			throw new RuntimeException('Dossiq case register/schema is not configured');
 		}
 
 		try {
@@ -131,14 +131,14 @@ class VergaderingCaseService {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to advance vergadering case status',
+				'Dossiq: failed to advance vergadering case status',
 				['caseId' => $caseId, 'newStatus' => $newStatus, 'exception' => $e->getMessage()]
 			);
 			throw new RuntimeException('Could not update vergadering case status: ' . $e->getMessage());
 		}
 
 		$this->logger->info(
-			'Procest: advanced vergadering case status',
+			'Dossiq: advanced vergadering case status',
 			['caseId' => $caseId, 'newStatus' => $newStatus]
 		);
 
@@ -194,14 +194,14 @@ class VergaderingCaseService {
 					$advanced++;
 				} catch (\Throwable $e) {
 					$this->logger->warning(
-						'Procest: could not advance deadline case',
+						'Dossiq: could not advance deadline case',
 						['caseId' => $caseId, 'exception' => $e->getMessage()]
 					);
 				}
 			}
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: deadline check for vergadering cases failed',
+				'Dossiq: deadline check for vergadering cases failed',
 				['exception' => $e->getMessage(), 'app' => Application::APP_ID]
 			);
 		}//end try

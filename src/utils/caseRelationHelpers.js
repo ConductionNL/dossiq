@@ -28,11 +28,11 @@ export const AARD_RELATIE_TYPES = ['vervolg', 'subject', 'bijdrage']
 export function relationTypeLabel(aardRelatie) {
 	switch (aardRelatie) {
 		case 'vervolg':
-			return t('procest', 'Follow-up')
+			return t('dossiq', 'Follow-up')
 		case 'subject':
-			return t('procest', 'Subject')
+			return t('dossiq', 'Subject')
 		case 'bijdrage':
-			return t('procest', 'Contribution')
+			return t('dossiq', 'Contribution')
 		default:
 			return aardRelatie
 	}
@@ -49,21 +49,21 @@ export function relationTypeLabel(aardRelatie) {
 export function relationErrorMessage(reason) {
 	switch (reason) {
 		case 'self_relation':
-			return t('procest', 'A case cannot be related to itself.')
+			return t('dossiq', 'A case cannot be related to itself.')
 		case 'duplicate':
-			return t('procest', 'This relation already exists.')
+			return t('dossiq', 'This relation already exists.')
 		case 'hierarchy_overlap':
 			return t(
-				'procest',
+				'dossiq',
 				'These cases are already linked through the main/sub-case hierarchy.',
 			)
 		case 'access_denied':
-			return t('procest', 'You do not have access to one of the cases.')
+			return t('dossiq', 'You do not have access to one of the cases.')
 		case 'invalid_aard_relatie':
-			return t('procest', 'Select a valid relation type.')
+			return t('dossiq', 'Select a valid relation type.')
 		case 'missing_case_id':
-			return t('procest', 'A target case and relation type are required.')
+			return t('dossiq', 'A target case and relation type are required.')
 		default:
-			return t('procest', 'Could not save the relation.')
+			return t('dossiq', 'Could not save the relation.')
 	}
 }

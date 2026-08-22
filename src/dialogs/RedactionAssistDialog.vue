@@ -17,7 +17,7 @@
 <template>
 	<NcDialog
 		v-if="open"
-		:name="t('procest', 'AI-assisted redaction suggestions')"
+		:name="t('dossiq', 'AI-assisted redaction suggestions')"
 		size="large"
 		:canClose="!submitting"
 		@closing="$emit('close')">
@@ -25,7 +25,7 @@
 			<p class="redaction-assist-dialog__intro">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Paste or confirm the document text below, then request redaction suggestions. Rule-based matches (BSN, IBAN, phone, postcode) are always applied; AI-proposed spans can be reviewed and deselected before approval.',
 					)
 				}}
@@ -35,7 +35,7 @@
 				<label
 					class="redaction-assist-dialog__label"
 					for="redaction-assist-text">
-					{{ t('procest', 'Document text') }}
+					{{ t('dossiq', 'Document text') }}
 				</label>
 				<textarea
 					id="redaction-assist-text"
@@ -44,13 +44,13 @@
 					:disabled="detecting"
 					:placeholder="
 						t(
-							'procest',
+							'dossiq',
 							'Paste the document text to scan for redaction candidates…',
 						)
 					" />
 				<span class="redaction-assist-dialog__hint">
 					{{
-						t('procest', '{count} / {max} characters', {
+						t('dossiq', '{count} / {max} characters', {
 							count: text.length,
 							max: maxLength,
 						})
@@ -66,7 +66,7 @@
 				<NcNoteCard v-if="proposal.source === 'rules_only'" type="info">
 					{{
 						t(
-							'procest',
+							'dossiq',
 							'AI assist is currently unavailable — showing rule-based matches only.',
 						)
 					}}
@@ -76,7 +76,7 @@
 					type="warning">
 					{{
 						t(
-							'procest',
+							'dossiq',
 							'AI-assisted detection failed ({error}) — falling back to rule-based matches only.',
 							{ error: proposal.llmError || '' },
 						)
@@ -89,9 +89,9 @@
 					<thead>
 						<tr>
 							<th />
-							<th scope="col">{{ t('procest', 'Category') }}</th>
-							<th scope="col">{{ t('procest', 'Source') }}</th>
-							<th scope="col">{{ t('procest', 'Preview') }}</th>
+							<th scope="col">{{ t('dossiq', 'Category') }}</th>
+							<th scope="col">{{ t('dossiq', 'Source') }}</th>
+							<th scope="col">{{ t('dossiq', 'Preview') }}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -101,7 +101,7 @@
 									type="checkbox"
 									:aria-label="
 										t(
-											'procest',
+											'dossiq',
 											'Select redaction candidate {category}',
 											{ category: span.category },
 										)
@@ -121,8 +121,8 @@
 									">
 									{{
 										span.source === 'rule'
-											? t('procest', 'Rule (always applied)')
-											: t('procest', 'AI-proposed')
+											? t('dossiq', 'Rule (always applied)')
+											: t('dossiq', 'AI-proposed')
 									}}
 								</span>
 							</td>
@@ -133,7 +133,7 @@
 					</tbody>
 				</table>
 				<p v-else class="redaction-assist-dialog__empty">
-					{{ t('procest', 'No redaction candidates found.') }}
+					{{ t('dossiq', 'No redaction candidates found.') }}
 				</p>
 			</template>
 		</div>
@@ -146,19 +146,19 @@
 				@click="detect">
 				{{
 					detecting
-						? t('procest', 'Scanning…')
-						: t('procest', 'Detect redaction candidates')
+						? t('dossiq', 'Scanning…')
+						: t('dossiq', 'Detect redaction candidates')
 				}}
 			</NcButton>
 			<template v-else>
 				<NcButton type="secondary" :disabled="submitting" @click="reject">
-					{{ t('procest', 'Reject') }}
+					{{ t('dossiq', 'Reject') }}
 				</NcButton>
 				<NcButton type="primary" :disabled="submitting" @click="approve">
 					{{
 						submitting
-							? t('procest', 'Applying…')
-							: t('procest', 'Approve selected')
+							? t('dossiq', 'Applying…')
+							: t('dossiq', 'Approve selected')
 					}}
 				</NcButton>
 			</template>
@@ -270,7 +270,7 @@ export default {
 			this.errorMessage = ''
 			try {
 				const url = generateUrl(
-					'/apps/procest/api/cases/'
+					'/apps/dossiq/api/cases/'
 						+ encodeURIComponent(this.caseId)
 						+ '/woo/documents/'
 						+ encodeURIComponent(this.documentRef)
@@ -317,7 +317,7 @@ export default {
 			this.errorMessage = ''
 			try {
 				const url = generateUrl(
-					'/apps/procest/api/cases/'
+					'/apps/dossiq/api/cases/'
 						+ encodeURIComponent(this.caseId)
 						+ '/woo/documents/'
 						+ encodeURIComponent(this.documentRef)

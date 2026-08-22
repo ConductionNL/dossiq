@@ -4,26 +4,26 @@
  * Tenant SaaS Register Schemas Integration Test
  *
  * Verifies that the seven SaaS tenant schemas declared in
- * `lib/Settings/procest_register.json` materialise with the documented
+ * `lib/Settings/dossiq_register.json` materialise with the documented
  * required properties, that the tier quota templates and the default-tenant
  * onboarding template are present as seed data, and that the register
  * lists every tenant schema so OpenRegister exposes them through REST.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Settings
+ * @package  OCA\Dossiq\Tests\Unit\Settings
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-01-schemas-and-seed/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Settings;
+namespace OCA\Dossiq\Tests\Unit\Settings;
 
 use PHPUnit\Framework\TestCase;
 
@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
  * Asserts the seven tenant SaaS schemas materialise as documented and that
  * tier-template + default-tenant onboarding seed rows are present.
  *
- * @covers \OCA\Procest\Repair\InitializeSettings
+ * @covers \OCA\Dossiq\Repair\InitializeSettings
  */
 class TenantSaasRegisterSchemasTest extends TestCase {
 	/**
@@ -48,7 +48,7 @@ class TenantSaasRegisterSchemasTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
-		$path = __DIR__ . '/../../../lib/Settings/procest_register.json';
+		$path = __DIR__ . '/../../../lib/Settings/dossiq_register.json';
 		$this->assertFileExists($path);
 
 		$payload = json_decode((string)file_get_contents($path), true);

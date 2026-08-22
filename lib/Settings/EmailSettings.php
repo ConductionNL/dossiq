@@ -1,16 +1,16 @@
 <?php
 
 /**
- * Procest Email (shared-mailbox) Admin Settings
+ * Dossiq Email (shared-mailbox) Admin Settings
  *
  * Registers the case-email-integration admin settings surface inside the
- * Procest settings section. The form mounts the same settings SPA
+ * Dossiq settings section. The form mounts the same settings SPA
  * (`settings/admin`); the email-specific panel is rendered by
  * `src/views/settings/EmailSettings.vue` inside `AdminRoot`. This class
  * scopes the shared-mailbox IMAP config keys for delegated admins.
  *
  * @category Settings
- * @package  OCA\Procest\Settings
+ * @package  OCA\Dossiq\Settings
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,14 +21,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Settings;
+namespace OCA\Dossiq\Settings;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
@@ -79,7 +79,7 @@ class EmailSettings implements IDelegatedSettings {
 	/**
 	 * Get the settings form template.
 	 *
-	 * Renders the shared Procest settings SPA; the email panel is mounted
+	 * Renders the shared Dossiq settings SPA; the email panel is mounted
 	 * by AdminRoot. The app version is published for the version card.
 	 *
 	 * @return TemplateResponse
@@ -104,7 +104,7 @@ class EmailSettings implements IDelegatedSettings {
 	 * @return string
 	 */
 	public function getSection(): string {
-		return 'procest';
+		return 'dossiq';
 	}//end getSection()
 
 	/**

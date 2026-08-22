@@ -12,7 +12,7 @@ external call to Kadaster is ever made unknowingly.
 
 #### Scenario: Fresh install calls nothing external
 
-- **GIVEN** a fresh procest install with no `integration.brk.mode` config
+- **GIVEN** a fresh dossiq install with no `integration.brk.mode` config
 - **WHEN** any flow calls `BrkAdapterInterface::lookupByKadastraleAanduiding()` or `::lookupObject()`
 - **THEN** the Log adapter MUST handle it, return `LOOKUP_DEFERRED`, and no external request MUST
   leave the instance
@@ -93,7 +93,7 @@ When the mode is unset or unknown, the Log adapter SHALL be bound.
 
 #### Scenario: Fresh install calls nothing external
 
-- **GIVEN** a fresh procest install with no `integration.woz.mode` config
+- **GIVEN** a fresh dossiq install with no `integration.woz.mode` config
 - **WHEN** any flow calls a `WozAdapterInterface` lookup method
 - **THEN** the Log adapter MUST handle it, return `LOOKUP_DEFERRED`, and no external request MUST
   leave the instance

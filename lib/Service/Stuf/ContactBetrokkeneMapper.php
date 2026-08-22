@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Procest ContactBetrokkeneMapper.
+ * Dossiq ContactBetrokkeneMapper.
  *
- * Maintains the bidirectional link between a procest Contact and a
+ * Maintains the bidirectional link between a dossiq Contact and a
  * zaaksysteem betrokkene (NPS = natuurlijk persoon, NNP = niet-natuurlijk
  * persoon). Implements duplicate-prevention: before creating a new
  * betrokkene the mapper first queries the zaaksysteem (Lv01 geefBetrokkene)
@@ -11,7 +11,7 @@
  * the mapping.
  *
  * @category Service
- * @package  OCA\Procest\Service\Stuf
+ * @package  OCA\Dossiq\Service\Stuf
  *
  * @author    Conduction <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,21 +22,21 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-bidirectional-mapping
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Stuf;
+namespace OCA\Dossiq\Service\Stuf;
 
 use DateTimeImmutable;
 use DateTimeZone;
 use Psr\Log\LoggerInterface;
 
 /**
- * Maps procest Contact entities to zaaksysteem betrokkenen.
+ * Maps dossiq Contact entities to zaaksysteem betrokkenen.
  */
 class ContactBetrokkeneMapper {
 	/**
@@ -57,7 +57,7 @@ class ContactBetrokkeneMapper {
 	 * Reuses an existing mapping when one already exists for the same
 	 * bronId+endpointId combo (idempotent on retry).
 	 *
-	 * @param array $contact The procest Contact (array with id, bsn).
+	 * @param array $contact The dossiq Contact (array with id, bsn).
 	 * @param string $involvedParty The external betrokkene identificatie.
 	 * @param array $endpoint The StufEndpoint.
 	 * @param string $entiteit The external entiteit (NPS|NNP).

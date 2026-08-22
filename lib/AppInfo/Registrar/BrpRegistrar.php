@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest BRP / Haal Centraal registrar.
+ * Dossiq BRP / Haal Centraal registrar.
  *
  * One base register, one registrar: binds the BRP personen seam to the Haal
  * Centraal adapter or to the dormant log-only adapter, decided by the
@@ -10,7 +10,7 @@
  * on its own.
  *
  * @category AppInfo
- * @package  OCA\Procest\AppInfo\Registrar
+ * @package  OCA\Dossiq\AppInfo\Registrar
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,7 +18,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -28,12 +28,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\AppInfo\Registrar;
+namespace OCA\Dossiq\AppInfo\Registrar;
 
-use OCA\Procest\Service\External\Brp\BrpHaalCentraalAdapterInterface;
-use OCA\Procest\Service\External\Brp\HaalCentraalBrpAdapter;
-use OCA\Procest\Service\External\Brp\LogBrpHaalCentraalAdapter;
-use OCA\Procest\Service\External\IntegrationMode;
+use OCA\Dossiq\Service\External\Brp\BrpHaalCentraalAdapterInterface;
+use OCA\Dossiq\Service\External\Brp\HaalCentraalBrpAdapter;
+use OCA\Dossiq\Service\External\Brp\LogBrpHaalCentraalAdapter;
+use OCA\Dossiq\Service\External\IntegrationMode;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use Psr\Container\ContainerInterface;
 

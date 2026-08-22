@@ -1,7 +1,7 @@
 <template>
 	<div class="workflow-palette">
 		<h4 class="workflow-palette__title">
-			{{ t('procest', 'Elements') }}
+			{{ t('dossiq', 'Elements') }}
 		</h4>
 
 		<div
@@ -9,7 +9,7 @@
 			draggable="true"
 			@dragstart="onDragStart('status', $event)">
 			<span class="workflow-palette__icon"> &#x25A1; </span>
-			<span>{{ t('procest', 'Status node') }}</span>
+			<span>{{ t('dossiq', 'Status node') }}</span>
 		</div>
 
 		<!-- Keyboard alternative to dragging the item above onto the canvas
@@ -18,14 +18,14 @@
 			type="secondary"
 			class="workflow-palette__add-button"
 			@click="$emit('add-status')">
-			{{ t('procest', 'Add status node') }}
+			{{ t('dossiq', 'Add status node') }}
 		</NcButton>
 
 		<div class="workflow-palette__help">
 			<p>
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Drag a status node onto the canvas to add it, or use the "Add status node" button.',
 					)
 				}}
@@ -33,7 +33,7 @@
 			<p>
 				{{
 					t(
-						'procest',
+						'dossiq',
 						"Connect nodes by dragging from one port to another, or use a node's keyboard actions menu.",
 					)
 				}}
@@ -41,7 +41,7 @@
 			<p>
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Click a node to select it, double-click a transition to edit.',
 					)
 				}}
@@ -49,16 +49,16 @@
 		</div>
 
 		<h4 class="workflow-palette__title">
-			{{ t('procest', 'Controls') }}
+			{{ t('dossiq', 'Controls') }}
 		</h4>
 		<div class="workflow-palette__help">
 			<p>
-				<strong>{{ t('procest', 'Pan') }}:</strong>
-				{{ t('procest', 'Click and drag on empty canvas') }}
+				<strong>{{ t('dossiq', 'Pan') }}:</strong>
+				{{ t('dossiq', 'Click and drag on empty canvas') }}
 			</p>
 			<p>
-				<strong>{{ t('procest', 'Zoom') }}:</strong>
-				{{ t('procest', 'Scroll wheel') }}
+				<strong>{{ t('dossiq', 'Zoom') }}:</strong>
+				{{ t('dossiq', 'Scroll wheel') }}
 			</p>
 		</div>
 	</div>

@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest BesluitvormingParafeerService
+ * Dossiq BesluitvormingParafeerService
  *
  * Service for orchestrating the parafering chain within the besluitvorming
  * workflow. Activates a parafeerroute for a voorstel, handles individual
  * paraaf actions, and checks chain completion.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,10 +21,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -74,7 +74,7 @@ class BesluitvormingParafeerService {
 		$proposalSchema = $this->settingsService->getConfigValue('voorstel_schema');
 
 		if (empty($register) === true || empty($proposalSchema) === true) {
-			throw new RuntimeException('Procest register or voorstel_schema not configured');
+			throw new RuntimeException('Dossiq register or voorstel_schema not configured');
 		}
 
 		// Load the voorstel.
@@ -154,7 +154,7 @@ class BesluitvormingParafeerService {
 		$actionSchema = $this->settingsService->getConfigValue('parafeeractie_schema');
 
 		if (empty($register) === true || empty($proposalSchema) === true) {
-			throw new RuntimeException('Procest register or voorstel_schema not configured');
+			throw new RuntimeException('Dossiq register or voorstel_schema not configured');
 		}
 
 		// Load voorstel.

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest LibreSign Signing Adapter.
+ * Dossiq LibreSign Signing Adapter.
  *
  * Concrete implementation of SigningAdapterInterface backed by LibreSign
  * (LibreCode), the Nextcloud-native eIDAS-aligned digital signing app.
@@ -10,7 +10,7 @@
  * LibresignApiClient, and performs a short bounded status poll. Reading
  * LibreSign's status vocabulary, persisting the signed PDF through the
  * EXISTING ZgwDocumentService binary storage path (no new storage mechanism),
- * and shaping the results procest publishes all belong to
+ * and shaping the results dossiq publishes all belong to
  * LibresignResultAssembler.
  *
  * See openspec/changes/libresign-besluit-signing/design.md for the full
@@ -18,7 +18,7 @@
  * asynchronous real-world signing flow.
  *
  * @category Service
- * @package  OCA\Procest\Service\Beschikking
+ * @package  OCA\Dossiq\Service\Beschikking
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -29,17 +29,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/libresign-besluit-signing/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Beschikking;
+namespace OCA\Dossiq\Service\Beschikking;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\ZgwDocumentService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\ZgwDocumentService;
 use OCP\App\IAppManager;
 use OCP\Files\IRootFolder;
 use OCP\IAppConfig;
@@ -51,7 +51,7 @@ use Throwable;
 /**
  * LibreSign-backed implementation of the beschikking signing adapter.
  *
- * Owns the LibreSign conversation only; the shape of what procest hands back —
+ * Owns the LibreSign conversation only; the shape of what dossiq hands back —
  * and the signed-file plumbing behind it — belongs to
  * {@see LibresignResultAssembler}.
  *
@@ -208,7 +208,7 @@ class LibresignSigningAdapter implements SigningAdapterInterface {
 	 * Degrades to a structured-but-invalid report on transport failure rather than throwing,
 	 * matching MockSigningAdapter's always-answers shape.
 	 *
-	 * @param string $validationRapportId The LibreSign request uuid (procest stores it as the validatierapport id).
+	 * @param string $validationRapportId The LibreSign request uuid (dossiq stores it as the validatierapport id).
 	 *
 	 * @return array<string, mixed>
 	 *

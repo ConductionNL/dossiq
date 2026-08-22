@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest Tenant Middleware
+ * Dossiq Tenant Middleware
  *
  * Middleware for enforcing multi-tenant data isolation.
  *
  * @category Middleware
- * @package  OCA\Procest\Middleware
+ * @package  OCA\Dossiq\Middleware
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -17,15 +17,15 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Middleware;
+namespace OCA\Dossiq\Middleware;
 
 use Exception;
-use OCA\Procest\Service\TenantService;
+use OCA\Dossiq\Service\TenantService;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Middleware;
 use OCP\IUserSession;
@@ -43,13 +43,13 @@ class TenantMiddleware extends Middleware {
 	 * Controllers that are exempt from tenant enforcement.
 	 */
 	private const EXEMPT_CONTROLLERS = [
-		'OCA\Procest\Controller\SettingsController',
+		'OCA\Dossiq\Controller\SettingsController',
 		// Health + metrics are served by the OpenRegister AppHost engine
 		// (ADR-040); the dispatched controller is the generic class.
 		'OCA\OpenRegister\AppHost\Controller\GenericHealthController',
 		'OCA\OpenRegister\AppHost\Controller\GenericMetricsController',
-		'OCA\Procest\Controller\DashboardController',
-		'OCA\Procest\Controller\TenantController',
+		'OCA\Dossiq\Controller\DashboardController',
+		'OCA\Dossiq\Controller\TenantController',
 	];
 
 	/**
@@ -104,7 +104,7 @@ class TenantMiddleware extends Middleware {
 		$tenant = $this->tenantService->getTenantForUser($userId);
 		if ($tenant === null) {
 			$this->logger->warning(
-				'Procest: User has no tenant assigned',
+				'Dossiq: User has no tenant assigned',
 				['userId' => $userId]
 			);
 			// Allow access even without tenant (single-tenant deployments).
@@ -117,7 +117,7 @@ class TenantMiddleware extends Middleware {
 		$status = ($tenant['status'] ?? null);
 		if ($status !== null && $status !== '' && $status !== 'active') {
 			$this->logger->info(
-				'Procest: Request blocked because tenant is not active',
+				'Dossiq: Request blocked because tenant is not active',
 				['userId' => $userId, 'tenantUuid' => $tenantUuid, 'status' => $status]
 			);
 			throw new Exception('Organisation is ' . $status, 403);
@@ -131,7 +131,7 @@ class TenantMiddleware extends Middleware {
 		// point died with `Error: Call to undefined method
 		// OC\AppFramework\Http\Request::setParameter()` and Nextcloud answered
 		// HTTP 500 with an HTML error page. In other words: for any user who
-		// DID have a tenant, every non-exempt Procest endpoint was a 500 —
+		// DID have a tenant, every non-exempt Dossiq endpoint was a 500 —
 		// while the single-tenant deployments that CI and the e2e rig exercise
 		// return at the `$tenant === null` branch above and never reached it.
 		//

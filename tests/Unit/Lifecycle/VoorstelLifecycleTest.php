@@ -5,10 +5,10 @@
  *
  * Verifies the voorstel state machine is declared via x-openregister-lifecycle
  * and that the VoorstelSubmitGuard enforces the submit precondition that OR
- * delegates back to procest through the transition's `requires` reference.
+ * delegates back to dossiq through the transition's `requires` reference.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Lifecycle
+ * @package  OCA\Dossiq\Tests\Unit\Lifecycle
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -16,14 +16,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Lifecycle;
+namespace OCA\Dossiq\Tests\Unit\Lifecycle;
 
-use OCA\Procest\Lifecycle\VoorstelSubmitGuard;
+use OCA\Dossiq\Lifecycle\VoorstelSubmitGuard;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -46,7 +46,7 @@ final class VoorstelLifecycleTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$registerPath = __DIR__ . '/../../../lib/Settings/procest_register.json';
+		$registerPath = __DIR__ . '/../../../lib/Settings/dossiq_register.json';
 		$register = json_decode((string)file_get_contents($registerPath), true);
 		$proposal = $register['components']['schemas']['proposal'] ?? [];
 		$this->lifecycle = ($proposal['configuration']['x-openregister-lifecycle'] ?? []);
@@ -100,7 +100,7 @@ final class VoorstelLifecycleTest extends TestCase {
 	public function testStartParaferingDeclaresSubmitGuard(): void {
 		$transitions = ($this->lifecycle['transitions'] ?? []);
 		$this->assertSame(
-			'OCA\\Procest\\Lifecycle\\VoorstelSubmitGuard',
+			'OCA\\Dossiq\\Lifecycle\\VoorstelSubmitGuard',
 			($transitions['startParafering']['requires'] ?? null)
 		);
 	}//end testStartParaferingDeclaresSubmitGuard()

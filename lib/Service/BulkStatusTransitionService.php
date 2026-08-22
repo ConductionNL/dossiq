@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Bulk Status Transition Service.
+ * Dossiq Bulk Status Transition Service.
  *
  * Bulk operations over the status-transition engine. `StatusTransitionService`
  * remains the ONLY write path for `case.status` — this service never mutates a
@@ -12,7 +12,7 @@
  * exception so one bad case never aborts the rest of the batch.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,14 +23,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\Service\Transitions\GuardFailedException;
+use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 

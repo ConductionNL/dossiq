@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Transition Authorizer.
+ * Dossiq Transition Authorizer.
  *
  * The OR-RBAC group gate for `case.status` transitions. Split out of
  * StatusTransitionService so that service keeps only the transition
@@ -21,7 +21,7 @@
  * gate is fail-closed, never fail-open.
  *
  * @category Service
- * @package  OCA\Procest\Service\Transitions
+ * @package  OCA\Dossiq\Service\Transitions
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -29,7 +29,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -39,7 +39,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Transitions;
+namespace OCA\Dossiq\Service\Transitions;
 
 use OCP\IGroupManager;
 use Psr\Log\LoggerInterface;
@@ -53,8 +53,14 @@ class TransitionAuthorizer {
 
 	/**
 	 * Group ID used to gate admin-only free-form transitions. Matches the
-	 * naming used elsewhere in Procest for the admin role.
+	 * naming used elsewhere in Dossiq for the admin role.
 	 */
+	// FROZEN at `procest-admin`. This is a NEXTCLOUD GROUP ID, and OpenRegister
+	// provisions declared groups create-only. Renaming it would not rename the
+	// existing group — it would create a new, EMPTY `dossiq-admin` and orphan
+	// the populated `procest-admin`. Every administrator who had the role would
+	// start failing this check: silent 403s for exactly the people who were
+	// granted access. Moving it needs a group migration, not a rename.
 	public const ADMIN_GROUP_ID = 'procest-admin';
 
 	/**

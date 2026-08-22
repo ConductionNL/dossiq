@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest OpenRegister return-value normalizer.
+ * Dossiq OpenRegister return-value normalizer.
  *
  * OpenRegister's ObjectService returns either a plain array (older API) or an
  * entity exposing `jsonSerialize()` / `toArray()` (newer API), so every caller
@@ -16,7 +16,7 @@
  * of the two, so both are kept and named for what they do.
  *
  * @category Service
- * @package  OCA\Procest\Service\Support
+ * @package  OCA\Dossiq\Service\Support
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,7 +24,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -34,7 +34,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Support;
+namespace OCA\Dossiq\Service\Support;
 
 /**
  * Collapses OpenRegister's array-or-entity return shape into an array.

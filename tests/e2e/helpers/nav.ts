@@ -1,15 +1,15 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Shared navigation helpers for Procest e2e tests.
+ * Shared navigation helpers for Dossiq e2e tests.
  *
- * The procest app ships a "Support Procest" dialog (`cn-support-dialog`)
+ * The dossiq app ships a "Support Dossiq" dialog (`cn-support-dialog`)
  * that can auto-open over the app and whose modal-mask subtree intercepts
  * pointer events on the sidebar navigation — breaking nav clicks. Always
  * dismiss it before interacting with the app chrome.
  *
- * Navigation note: a direct deep-link `page.goto('/apps/procest/<route>')`
+ * Navigation note: a direct deep-link `page.goto('/apps/dossiq/<route>')`
  * resets the Vue history-mode router to the Dashboard, so the deep-linked
  * route never renders its own view. Land on a route that resolves, then
  * click the sidebar nav entry (client-side) to reach the target view.
@@ -25,7 +25,7 @@ export const sidebarNav = (page: Page) =>
 	page.locator('[id^="app-navigation"]').first()
 
 /**
- * Dismiss the "Support Procest" dialog if it is open. The dialog's
+ * Dismiss the "Support Dossiq" dialog if it is open. The dialog's
  * modal-mask intercepts pointer events on the navigation, so it must be
  * closed before any nav click.
  * @param page
@@ -66,14 +66,14 @@ async function readNavLinks(
 }
 
 /**
- * Navigate to a procest view by its sidebar label.
+ * Navigate to a dossiq view by its sidebar label.
  *
  * WHY THIS DEEP-LINKS INSTEAD OF CLICKING
  * ---------------------------------------
  * This helper used to land on the app root and CLICK the sidebar entry,
  * because of a belief — stated in this file for months — that "a cold deep
  * link resets the history-mode router to the Dashboard". Measured on a CI
- * runner (2026-08-04), that is false: `/index.php/apps/procest/cases`,
+ * runner (2026-08-04), that is false: `/index.php/apps/dossiq/cases`,
  * `/my-work`, `/doorlooptijd` and `/tasks` each render their own view on a
  * direct GET.
  *
@@ -94,7 +94,7 @@ async function readNavLinks(
  * @param label exact sidebar label, e.g. 'Cases', 'My work'
  */
 export async function navTo(page: Page, label: string): Promise<void> {
-	await page.goto('/index.php/apps/procest')
+	await page.goto('/index.php/apps/dossiq')
 	await dismissSupportDialog(page)
 
 	const links = await readNavLinks(page)
@@ -110,7 +110,7 @@ export async function navTo(page: Page, label: string): Promise<void> {
 			.filter((l) => l.href && l.href !== '#')
 			.map((l) => l.label)
 		throw new Error(
-			`[procest e2e] navTo('${label}'): no navigating sidebar link with that exact label.\n`
+			`[dossiq e2e] navTo('${label}'): no navigating sidebar link with that exact label.\n`
 				+ `Available navigating labels: ${JSON.stringify(available)}`,
 		)
 	}
@@ -120,7 +120,7 @@ export async function navTo(page: Page, label: string): Promise<void> {
 }
 
 /**
- * Navigate to a procest route that has no sidebar nav entry (e.g. the global
+ * Navigate to a dossiq route that has no sidebar nav entry (e.g. the global
  * Tasks list, which the nav-dedup pass dropped as a top-level leaf). A direct
  * deep-link resets the history-mode router to the Dashboard, so land on a
  * resolving route first and then push the target route client-side via a
@@ -134,12 +134,12 @@ export async function navToRoute(page: Page, route: string): Promise<void> {
 	// `$router.push` dance existed only to work around a deep-link reset that
 	// does not actually happen, and it silently went nowhere whenever the
 	// router handle could not be reached (returning as if it had navigated).
-	await page.goto(`/index.php/apps/procest${route}`)
+	await page.goto(`/index.php/apps/dossiq${route}`)
 	await dismissSupportDialog(page)
 }
 
 /**
- * The procest admin settings page (`/settings/admin/procest`) renders its many
+ * The dossiq admin settings page (`/settings/admin/dossiq`) renders its many
  * sections progressively — the lower ones (Case Email — Shared Mailbox,
  * KCC-werkplek Integration, …) only mount once scrolled near. Scroll to the
  * bottom in steps so every section's heading + fields are in the DOM before a
@@ -162,12 +162,12 @@ export async function loadAllAdminSections(page: Page): Promise<void> {
 
 /**
  * Console / network errors that originate from Nextcloud core or the test
- * environment — NOT from the procest app — and must not fail a procest
+ * environment — NOT from the dossiq app — and must not fail a dossiq
  * coverage test. The dev instance emits a 500 on the core user-status
  * endpoint on every page load (`core: Failed to load user status`), which
  * surfaces as an un-attributed "Failed to load resource" console error.
  */
-const NON_PROCEST_NOISE = [
+const NON_DOSSIQ_NOISE = [
 	'favicon',
 	'status.php',
 	'Download the Vue Devtools',
@@ -176,10 +176,10 @@ const NON_PROCEST_NOISE = [
 	'/apps/user_status/',
 	'Failed to load resource: the server responded with a status of 500', // generic, un-attributed
 	// The dev/test instance serves a strict CSP (script-src 'nonce-…') with no
-	// explicit worker-src, so the browser blocks registering procest's
+	// explicit worker-src, so the browser blocks registering dossiq's
 	// service-worker.js. This is a CSP-hardening artifact of the test rig, not
 	// an app-logic error — the page renders fine without the SW. (The URL is
-	// procest-scoped so it is not caught by the generic filters above.)
+	// dossiq-scoped so it is not caught by the generic filters above.)
 	'service-worker.js',
 	'worker-src',
 	'violates the following Content Security Policy',
@@ -191,15 +191,15 @@ const NON_PROCEST_NOISE = [
  *
  * A failed subresource logs the bare text "Failed to load resource: the server
  * responded with a status of 404 (Not Found)" — the URL appears only in
- * `location()`. Filtering that text outright would hide real procest 404s, so
+ * `location()`. Filtering that text outright would hide real dossiq 404s, so
  * match the URL instead.
  *
- * procest probes optional cross-app capabilities on load (e.g. whether the
+ * dossiq probes optional cross-app capabilities on load (e.g. whether the
  * hermiq assistant is installed). On an instance that does not ship the other
- * app those probes 404 BY DESIGN, which is not a procest defect — the CI
- * instance installs only openregister alongside procest.
+ * app those probes 404 BY DESIGN, which is not a dossiq defect — the CI
+ * instance installs only openregister alongside dossiq.
  */
-const NON_PROCEST_URL_NOISE = [
+const NON_DOSSIQ_URL_NOISE = [
 	'/apps/hermiq/',
 	'/apps/user_status/',
 	'/status.php',
@@ -208,23 +208,23 @@ const NON_PROCEST_URL_NOISE = [
 
 /**
  * Attach console-error + 5xx listeners and return a live array of
- * procest-origin errors. Filters out known Nextcloud-core / environment
+ * dossiq-origin errors. Filters out known Nextcloud-core / environment
  * noise so a test fails only on errors the app itself is responsible for.
  * Read the returned array AFTER the page has settled.
  * @param page
  */
-export function trackProcestErrors(page: Page): string[] {
+export function trackDossiqErrors(page: Page): string[] {
 	const errors: string[] = []
 	page.on('console', (m) => {
 		if (m.type() !== 'error') return
 		const text = m.text()
-		if (NON_PROCEST_NOISE.some((n) => text.includes(n))) return
+		if (NON_DOSSIQ_NOISE.some((n) => text.includes(n))) return
 		const url = m.location()?.url ?? ''
-		if (url && NON_PROCEST_URL_NOISE.some((n) => url.includes(n))) return
+		if (url && NON_DOSSIQ_URL_NOISE.some((n) => url.includes(n))) return
 		errors.push(text)
 	})
 	page.on('response', (r) => {
-		if (r.status() >= 500 && r.url().includes('/apps/procest/')) {
+		if (r.status() >= 500 && r.url().includes('/apps/dossiq/')) {
 			errors.push(`HTTP ${r.status()} ${r.url()}`)
 		}
 	})

@@ -6,7 +6,7 @@
  * Covers the deterministic KCC routing algorithm.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Kcc
+ * @package  OCA\Dossiq\Tests\Unit\Service\Kcc
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,21 +15,20 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Kcc;
+namespace OCA\Dossiq\Tests\Unit\Service\Kcc;
 
-use OCA\Procest\Service\Kcc\BelplanRoutingService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\Kcc\BelplanRoutingService;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Procest\Service\Kcc\BelplanRoutingService
+ * @covers \OCA\Dossiq\Service\Kcc\BelplanRoutingService
  */
 class BelplanRoutingServiceTest extends TestCase {
 	private BelplanRoutingService $service;

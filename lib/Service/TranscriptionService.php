@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest TranscriptionService
+ * Dossiq TranscriptionService
  *
  * Manages voice-memo transcription for the mobiel-inspectie-offline PWA.
  * Voice memos are captured client-side and uploaded as FieldEvidence
@@ -16,7 +16,7 @@
  * deterministic stub.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,17 +25,17 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#Task-9
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use Psr\Log\LoggerInterface;
 use Throwable;
 

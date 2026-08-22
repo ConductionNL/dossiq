@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest CreateDocumentHandler
+ * Dossiq CreateDocumentHandler
  *
  * Renders a document template against the case (merge fields) and attaches
  * the resulting file to the case folder. In dry-run mode it returns the
  * rendered output name + byte count without persisting any file.
  *
  * @category Service
- * @package  OCA\Procest\Service\Actions
+ * @package  OCA\Dossiq\Service\Actions
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -19,16 +19,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/automatic-actions/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Actions;
+namespace OCA\Dossiq\Service\Actions;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -143,7 +143,7 @@ class CreateDocumentHandler implements ActionHandlerInterface {
 	 */
 	private function resolveDocumentService(): ?object {
 		try {
-			return $this->container->get('OCA\Procest\Service\ZgwDocumentService');
+			return $this->container->get('OCA\Dossiq\Service\ZgwDocumentService');
 		} catch (\Throwable $e) {
 			return null;
 		}

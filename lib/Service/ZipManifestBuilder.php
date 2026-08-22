@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Zip Manifest Builder
+ * Dossiq Zip Manifest Builder
  *
  * Builds a ZIP export of a case dossier: documents are organised into
  * per-informatieobjecttype sub-folders and accompanied by a `manifest.csv`
@@ -13,7 +13,7 @@
  * the app's established `\ZipArchive` convention.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -29,7 +29,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use OCP\IUser;
 use Psr\Log\LoggerInterface;
@@ -181,7 +181,7 @@ class ZipManifestBuilder {
 				unset($content);
 			} catch (\Throwable $e) {
 				$this->logger->warning(
-					'Procest dossier ZIP: skipped unreadable file ' . $fileName . ' (' . $e->getMessage() . ')'
+					'Dossiq dossier ZIP: skipped unreadable file ' . $fileName . ' (' . $e->getMessage() . ')'
 				);
 			}
 		}//end foreach

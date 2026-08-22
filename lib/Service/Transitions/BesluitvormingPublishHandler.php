@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest besluitvormingPublish action handler.
+ * Dossiq besluitvormingPublish action handler.
  *
  * Wires the DROP/LVBB publication dispatcher into the workflow engine. When a
  * case enters the "Bekendmaking" status step, this auto-action invokes
@@ -12,7 +12,7 @@
  * Action config shape: `{type: 'besluitvormingPublish'}`.
  *
  * @category Service
- * @package  OCA\Procest\Service\Transitions
+ * @package  OCA\Dossiq\Service\Transitions
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,16 +23,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Transitions;
+namespace OCA\Dossiq\Service\Transitions;
 
-use OCA\Procest\Service\PublicationService;
+use OCA\Dossiq\Service\PublicationService;
 use Psr\Log\LoggerInterface;
 
 /**

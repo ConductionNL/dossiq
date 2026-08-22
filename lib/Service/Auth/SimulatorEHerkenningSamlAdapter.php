@@ -6,7 +6,7 @@
  * The eHerkenning counterpart of {@see SimulatorDigidSamlAdapter}: models
  * the maykinmedia mock-login pattern with NO real SAML. Accepts a
  * locally-entered KvK number (carried in the `samlResponse` slot as a
- * JSON `{ "kvkNumber": "..." }` blob from the procest simulator form) and
+ * JSON `{ "kvkNumber": "..." }` blob from the dossiq simulator form) and
  * returns an eHerkenning `BrokerAssertionResult` explicitly marked
  * `simulator: true`. Selected by `integration.digid.mode=simulator`
  * (the DigiD/eHerkenning pair share the tier key).
@@ -15,13 +15,13 @@
  * proves the journey, not the SAML koppelvlak.
  *
  * @category Service
- * @package  OCA\Procest\Service\Auth
+ * @package  OCA\Dossiq\Service\Auth
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://github.com/maykinmedia/django-digid-eherkenning
  *
  * @spec openspec/specs/external-integration-test-wiring/spec.md
@@ -32,7 +32,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Auth;
+namespace OCA\Dossiq\Service\Auth;
 
 use RuntimeException;
 
@@ -71,7 +71,7 @@ final class SimulatorEHerkenningSamlAdapter implements EHerkenningSamlAdapterInt
 			kvkNumber: $kvkNumber,
 			assertionId: 'simulator-' . $relayState,
 			level: 3,
-			issuer: 'procest-eherkenning-simulator',
+			issuer: 'dossiq-eherkenning-simulator',
 			attributes: [
 				'simulator' => true,
 				'authenticatedBy' => 'simulator',

@@ -9,7 +9,7 @@
  * OCS envelope unwrap, and the transport-failure path.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Beschikking
+ * @package  OCA\Dossiq\Tests\Unit\Service\Beschikking
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -17,7 +17,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -27,9 +27,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Beschikking;
+namespace OCA\Dossiq\Tests\Unit\Service\Beschikking;
 
-use OCA\Procest\Service\Beschikking\LibresignApiClient;
+use OCA\Dossiq\Service\Beschikking\LibresignApiClient;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
@@ -40,7 +40,7 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * @covers \OCA\Procest\Service\Beschikking\LibresignApiClient
+ * @covers \OCA\Dossiq\Service\Beschikking\LibresignApiClient
  */
 class LibresignApiClientTest extends TestCase {
 	/**

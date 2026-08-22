@@ -3,7 +3,7 @@
 - [x] Add `ManifestController::manifest()` returning a `caseType` → `CasesGroup` children delta (no-op on anonymous / no-OpenRegister / unconfigured / empty)
 - [x] Register `GET /api/manifest` → `manifest#manifest` in `appinfo/routes.php`
 - [x] Add `ManifestControllerTest` covering the child-per-case-type path and the empty/null-objectService no-op paths
-- [x] Route `src/main.js` built manifest through `useAppManifest('procest', built, { mergeStrategy: 'delta' })` and pass the reactive resolved manifest to App.vue
+- [x] Route `src/main.js` built manifest through `useAppManifest('dossiq', built, { mergeStrategy: 'delta' })` and pass the reactive resolved manifest to App.vue
 - [x] Add `BezwaarBeroepGroup`, `SubsidiesGroup`, `CaseMap` to `src/menu-layout.json` removals; drop the `CaseMap` relocation
 - [x] Delete the `BezwaarDecisions` and `BezwaarAdviceRequests` pages, menu entries and their orphaned groups from `src/manifest.json`
 - [x] Add `viewModes` + `mapConfig` (geoField `geometry`, popupField `title`) to the Cases index page config

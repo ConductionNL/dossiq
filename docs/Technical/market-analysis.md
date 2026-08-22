@@ -1,8 +1,8 @@
-# Procest: Feature Analysis & Product Strategy
+# Dossiq: Feature Analysis & Product Strategy
 
 ## Executive Summary
 
-There is **no lightweight, self-hosted case management system that integrates with a collaboration platform**. The market has enterprise BPM suites that are heavyweight and expensive (Camunda, Flowable), Dutch government implementations that are API-only without user-facing UI (OpenZaak), and SaaS platforms with data sovereignty issues (ServiceNow, Monday.com). Procest fills all three gaps by being lightweight, Nextcloud-native, and government-ready.
+There is **no lightweight, self-hosted case management system that integrates with a collaboration platform**. The market has enterprise BPM suites that are heavyweight and expensive (Camunda, Flowable), Dutch government implementations that are API-only without user-facing UI (OpenZaak), and SaaS platforms with data sovereignty issues (ServiceNow, Monday.com). Dossiq fills all three gaps by being lightweight, Nextcloud-native, and government-ready.
 
 **Key insight**: Case management is fundamentally about coordination: tracking work, assigning tasks, meeting deadlines, managing documents, and making decisions. Nextcloud already provides task management (Calendar/VTODO), file management, real-time chat, and activity feeds. A Nextcloud-native case manager orchestrates these capabilities rather than rebuilding them.
 
@@ -256,15 +256,15 @@ There is **no lightweight, self-hosted case management system that integrates wi
 
 ### What They Lack
 
-| Gap | Opportunity for Procest |
+| Gap | Opportunity for Dossiq |
 |-----|------------------------|
 | No native collaboration platform | Chat, files, calendar, contacts are separate systems in all competitors |
-| No federation/cross-org sharing | Only Procest can share case data across organizations via Nextcloud federation |
-| Integration tax | Competitors need separate connectors for every tool; Procest gets them free |
+| No federation/cross-org sharing | Only Dossiq can share case data across organizations via Nextcloud federation |
+| Integration tax | Competitors need separate connectors for every tool; Dossiq gets them free |
 | No CRM-to-case flow | No competitor has native request-to-case conversion with a built-in CRM |
 | No NL Design System theming | No competitor supports Dutch government design tokens natively |
-| Heavyweight deployment | BPM engines require Java/Spring stacks; Procest runs inside existing Nextcloud |
-| Data locked in case silo | Procest data on OpenRegister is reusable by Pipelinq, OpenCatalogi, etc. |
+| Heavyweight deployment | BPM engines require Java/Spring stacks; Dossiq runs inside existing Nextcloud |
+| Data locked in case silo | Dossiq data on OpenRegister is reusable by Pipelinq, OpenCatalogi, etc. |
 
 ### Nextcloud-Native Advantages
 
@@ -272,7 +272,7 @@ There is **no lightweight, self-hosted case management system that integrates wi
 |------------|-------------------------------|
 | Zero-cost collaboration stack | Would need 5+ separate tool integrations for chat, files, calendar |
 | Federated cross-org cases | Requires federation protocol; no case system has this |
-| CRM + Case in one platform | Pipelinq → Procest is a unique integrated pipeline |
+| CRM + Case in one platform | Pipelinq → Dossiq is a unique integrated pipeline |
 | Design token theming | NL Design System via nldesign app is Nextcloud-specific |
 | Data platform reuse | OpenRegister objects shared across apps |
 | Air-gapped deployment | Enterprise platforms cannot function without internet |
@@ -284,19 +284,19 @@ There is **no lightweight, self-hosted case management system that integrates wi
 
 ### Positioning Statement
 
-**Procest is case management that lives where your team already works.** Built natively into Nextcloud, it turns your existing collaboration platform into a case management system: with files, calendar, chat, and activity already connected.
+**Dossiq is case management that lives where your team already works.** Built natively into Nextcloud, it turns your existing collaboration platform into a case management system: with files, calendar, chat, and activity already connected.
 
 ### Differentiation Strategy
 
 Three pillars:
 
-1. **Platform leverage**: Every Nextcloud feature (AI, workflows, federation, files) automatically benefits Procest
+1. **Platform leverage**: Every Nextcloud feature (AI, workflows, federation, files) automatically benefits Dossiq
 2. **Government-first**: ZGW standard alignment, NL Design System, GDPR-by-architecture, archival-ready
 3. **Lightweight simplicity**: No Java stack, no separate deployment; runs inside existing Nextcloud with zero additional infrastructure
 
 ### Target Segments
 
-| Segment | Why Procest | Competitors They'd Otherwise Use |
+| Segment | Why Dossiq | Competitors They'd Otherwise Use |
 |---------|------------|--------------------------------|
 | Small municipalities | Simple, affordable, NL-compliant | Spreadsheets, shared drives |
 | Government teams | ZGW-ready, sovereign, NL Design | OpenZaak + custom frontend |

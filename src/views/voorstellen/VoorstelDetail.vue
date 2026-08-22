@@ -1,10 +1,10 @@
 <template>
 	<div>
 		<CnDetailPage
-			:title="voorstel.subject || t('procest', 'Proposal')"
+			:title="voorstel.subject || t('dossiq', 'Proposal')"
 			:subtitle="formatType(voorstel.type)"
 			:backRoute="{ name: 'Voorstellen' }"
-			:backLabel="t('procest', 'Back to overview')"
+			:backLabel="t('dossiq', 'Back to overview')"
 			:loading="loading"
 			:sidebar="false">
 			<template #header-actions>
@@ -12,12 +12,12 @@
 					v-if="canRegisterBesluit"
 					type="primary"
 					@click="showBesluitDialog = true">
-					{{ t('procest', 'Register decision') }}
+					{{ t('dossiq', 'Register decision') }}
 				</NcButton>
 			</template>
 
 			<!-- Status & Progress -->
-			<CnDetailCard :title="t('procest', 'Status & Progress')">
+			<CnDetailCard :title="t('dossiq', 'Status & Progress')">
 				<div class="voorstel-detail__status">
 					<span
 						class="voorstel-detail__status-badge"
@@ -35,9 +35,9 @@
 			<!-- Actions for active parafeerder -->
 			<CnDetailCard
 				v-if="isActiveActor && !isTerminalStatus"
-				:title="t('procest', 'Take action')">
+				:title="t('dossiq', 'Take action')">
 				<NcButton type="primary" @click="actieDialogOpen = true">
-					{{ t('procest', 'Take action') }}
+					{{ t('dossiq', 'Take action') }}
 				</NcButton>
 			</CnDetailCard>
 
@@ -50,7 +50,7 @@
 				@actionRecorded="onActionCompleted" />
 
 			<!-- Parafering History (action history timeline). -->
-			<CnDetailCard :title="t('procest', 'Parafering history')">
+			<CnDetailCard :title="t('dossiq', 'Parafering history')">
 				<ParafeerActieTimeline
 					ref="actieTimeline"
 					:voorstelId="voorstel.id || voorstelId" />
@@ -59,13 +59,13 @@
 			<!-- Manager override controls -->
 			<CnDetailCard
 				v-if="canOverrideRoute"
-				:title="t('procest', 'Route-aanpassing (manager)')">
+				:title="t('dossiq', 'Route-aanpassing (manager)')">
 				<div class="voorstel-detail__override-actions">
 					<NcButton :disabled="!currentStepInfo" @click="openSkipDialog">
-						{{ t('procest', 'Stap overslaan') }}
+						{{ t('dossiq', 'Stap overslaan') }}
 					</NcButton>
 					<NcButton @click="openAddStepDialog">
-						{{ t('procest', 'Stap toevoegen') }}
+						{{ t('dossiq', 'Stap toevoegen') }}
 					</NcButton>
 				</div>
 			</CnDetailCard>
@@ -87,29 +87,29 @@
 			<!-- Resubmit for steller -->
 			<CnDetailCard
 				v-if="voorstel.status === 'teruggestuurd' && isSteller"
-				:title="t('procest', 'Returned')">
+				:title="t('dossiq', 'Returned')">
 				<p>
 					{{
 						t(
-							'procest',
+							'dossiq',
 							'This proposal has been returned. Adjust the document and resubmit it.',
 						)
 					}}
 				</p>
 				<NcButton type="primary" @click="resubmit">
-					{{ t('procest', 'Resubmit') }}
+					{{ t('dossiq', 'Resubmit') }}
 				</NcButton>
 			</CnDetailCard>
 
 			<!-- Voorstel Information -->
-			<CnDetailCard :title="t('procest', 'Proposal information')">
+			<CnDetailCard :title="t('dossiq', 'Proposal information')">
 				<div class="form-row">
 					<div class="form-group">
-						<label>{{ t('procest', 'Onderwerp') }}</label>
+						<label>{{ t('dossiq', 'Onderwerp') }}</label>
 						<span class="form-value">{{ voorstel.subject || '-' }}</span>
 					</div>
 					<div class="form-group">
-						<label>{{ t('procest', 'Type') }}</label>
+						<label>{{ t('dossiq', 'Type') }}</label>
 						<span class="form-value">{{
 							formatType(voorstel.type)
 						}}</span>
@@ -117,11 +117,11 @@
 				</div>
 				<div class="form-row">
 					<div class="form-group">
-						<label>{{ t('procest', 'Drafter') }}</label>
+						<label>{{ t('dossiq', 'Drafter') }}</label>
 						<span class="form-value">{{ voorstel.author || '-' }}</span>
 					</div>
 					<div class="form-group">
-						<label>{{ t('procest', 'Department') }}</label>
+						<label>{{ t('dossiq', 'Department') }}</label>
 						<span class="form-value">{{
 							voorstel.department || '-'
 						}}</span>
@@ -129,20 +129,20 @@
 				</div>
 				<div class="form-row">
 					<div class="form-group">
-						<label>{{ t('procest', 'Portfolio holder') }}</label>
+						<label>{{ t('dossiq', 'Portfolio holder') }}</label>
 						<span class="form-value">{{
 							voorstel.portfolioHolder || '-'
 						}}</span>
 					</div>
 					<div class="form-group">
-						<label>{{ t('procest', 'Case') }}</label>
+						<label>{{ t('dossiq', 'Case') }}</label>
 						<router-link
 							v-if="voorstel.case"
 							:to="{
 								name: 'CaseDetail',
 								params: { id: voorstel.case },
 							}">
-							{{ t('procest', 'View case') }}
+							{{ t('dossiq', 'View case') }}
 						</router-link>
 						<span v-else class="form-value">-</span>
 					</div>
@@ -150,21 +150,21 @@
 			</CnDetailCard>
 
 			<!-- Document -->
-			<CnDetailCard :title="t('procest', 'Document & Bijlagen')">
+			<CnDetailCard :title="t('dossiq', 'Document & Bijlagen')">
 				<div v-if="voorstel.document" class="voorstel-detail__document">
 					<p>
-						{{ t('procest', 'Proposal document') }}:
+						{{ t('dossiq', 'Proposal document') }}:
 						{{ voorstel.document }}
 					</p>
 				</div>
 				<div v-else>
-					<p>{{ t('procest', 'No document linked') }}</p>
+					<p>{{ t('dossiq', 'No document linked') }}</p>
 				</div>
 				<div
 					v-if="voorstel.attachments && voorstel.attachments.length > 0"
 					class="voorstel-detail__bijlagen">
 					<h4>
-						{{ t('procest', 'Attachments') }} ({{
+						{{ t('dossiq', 'Attachments') }} ({{
 							voorstel.attachments.length
 						}})
 					</h4>
@@ -179,7 +179,7 @@
 			</CnDetailCard>
 
 			<!-- Audit Trail -->
-			<CnDetailCard :title="t('procest', 'Endorsement history')">
+			<CnDetailCard :title="t('dossiq', 'Endorsement history')">
 				<AuditTrail :acties="acties" :loading="loadingActies" />
 			</CnDetailCard>
 		</CnDetailPage>
@@ -387,7 +387,7 @@ export default {
 		 * @spec openspec/specs/parafering-actions/spec.md
 		 */
 		formatType(type) {
-			return t('procest', TYPE_LABELS[type] || type || '-')
+			return t('dossiq', TYPE_LABELS[type] || type || '-')
 		},
 
 		/**
@@ -395,7 +395,7 @@ export default {
 		 * @spec openspec/specs/parafering-actions/spec.md
 		 */
 		formatStatus(status) {
-			return t('procest', STATUS_LABELS[status] || status || '-')
+			return t('dossiq', STATUS_LABELS[status] || status || '-')
 		},
 
 		/** @spec openspec/specs/parafering-actions/spec.md */

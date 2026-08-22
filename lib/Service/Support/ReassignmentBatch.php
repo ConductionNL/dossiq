@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest ReassignmentBatch value object.
+ * Dossiq ReassignmentBatch value object.
  *
  * The batch-wide invariants of a single bulk reassignment run: who the work
  * moves from, who it moves to, which coordinator ordered it, the shared batch
@@ -10,7 +10,7 @@
  * guarantees every item in a run is audited with the exact same batch header.
  *
  * @category Service
- * @package  OCA\Procest\Service\Support
+ * @package  OCA\Dossiq\Service\Support
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,7 +18,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -28,7 +28,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Support;
+namespace OCA\Dossiq\Service\Support;
 
 /**
  * Immutable batch header shared by every item of one bulk reassignment.

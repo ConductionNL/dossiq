@@ -1,10 +1,10 @@
 # Prometheus Metrics
 
-The Prometheus metrics feature exposes operational metrics for monitoring Procest in production environments.
+The Prometheus metrics feature exposes operational metrics for monitoring Dossiq in production environments.
 
 ## Overview
 
-For enterprise deployments, Procest can expose metrics in Prometheus format, enabling integration with standard monitoring stacks (Prometheus + Grafana).
+For enterprise deployments, Dossiq can expose metrics in Prometheus format, enabling integration with standard monitoring stacks (Prometheus + Grafana).
 
 ## Planned Metrics
 

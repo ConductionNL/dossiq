@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Route constants NAMED AFTER THE COMPONENT THAT RENDERS THEM.
@@ -35,7 +35,7 @@
  * an assumption.
  *
  * Routes are app-relative; the app is HISTORY-mode, so `navToRoute()` /
- * `page.goto()` prefix them with `/index.php/apps/procest`.
+ * `page.goto()` prefix them with `/index.php/apps/dossiq`.
  */
 
 /** `src/views/CasesOnMapView.vue` — the Cases map view (manifest page `CaseMap`). */
@@ -106,7 +106,7 @@ export const PublicFederatedTransferPage =
  * on length — and no consultation carries it, so
  * `consultationPublic#publicResponseGet` answers a uniform 404 and the page
  * lands in its `loadError` branch deterministically, with no fixture to seed.
- * Measured against a running instance (procest 0.3.9, 2026-08-17): a 44-char
+ * Measured against a running instance (dossiq 0.3.9, 2026-08-17): a 44-char
  * unknown token and a 5-char token both answer
  * `404 {"error":"Invalid or expired token"}`, while a token that a seeded
  * consultation really carries answers 200 with that consultation — see

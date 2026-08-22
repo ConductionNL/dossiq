@@ -3,7 +3,7 @@
 /**
  * Iv3TaakveldController Unit Tests
  *
- * Covers the one endpoint procest keeps from the retired IV3 surface: the
+ * Covers the one endpoint dossiq keeps from the retired IV3 surface: the
  * taakveld reference list that populates the case-type classification picker
  * (ADR-081 decision 2). Two things matter about it — that an unauthenticated
  * caller is refused, and that an ordinary authenticated user is NOT, because
@@ -11,7 +11,7 @@
  * has to work for every case-type editor.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,10 +25,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\Iv3TaakveldController;
-use OCA\Procest\Service\Iv3TaakveldList;
+use OCA\Dossiq\Controller\Iv3TaakveldController;
+use OCA\Dossiq\Service\Iv3TaakveldList;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -39,8 +39,8 @@ use PHPUnit\Framework\TestCase;
 /**
  * Unit tests for Iv3TaakveldController.
  *
- * @covers \OCA\Procest\Controller\Iv3TaakveldController
- * @uses   \OCA\Procest\Service\Iv3TaakveldList
+ * @covers \OCA\Dossiq\Controller\Iv3TaakveldController
+ * @uses   \OCA\Dossiq\Service\Iv3TaakveldList
  */
 class Iv3TaakveldControllerTest extends TestCase {
 	/**
@@ -61,7 +61,7 @@ class Iv3TaakveldControllerTest extends TestCase {
 		}
 
 		return new Iv3TaakveldController(
-			'procest',
+			'dossiq',
 			$this->createMock(IRequest::class),
 			new Iv3TaakveldList(),
 			$session

@@ -12,7 +12,7 @@
 -->
 <template>
 	<NcDialog
-		:name="t('procest', 'Bulk reassign workload')"
+		:name="t('dossiq', 'Bulk reassign workload')"
 		:open="true"
 		size="large"
 		@update:open="onDialogClose"
@@ -22,14 +22,14 @@
 				<div class="form-group">
 					<NcTextField
 						v-model="fromUser"
-						:label="t('procest', 'From handler (user id)')"
-						:placeholder="t('procest', 'Departing handler…')" />
+						:label="t('dossiq', 'From handler (user id)')"
+						:placeholder="t('dossiq', 'Departing handler…')" />
 				</div>
 				<div class="form-group">
 					<NcTextField
 						v-model="toUser"
-						:label="t('procest', 'To handler (user id)')"
-						:placeholder="t('procest', 'Receiving handler…')" />
+						:label="t('dossiq', 'To handler (user id)')"
+						:placeholder="t('dossiq', 'Receiving handler…')" />
 				</div>
 			</div>
 
@@ -37,8 +37,8 @@
 				<NcSelect
 					v-model="selectedCaseType"
 					:options="caseTypes"
-					:inputLabel="t('procest', 'Limit to case type (optional)')"
-					:aria-label-combobox="t('procest', 'Limit to case type')"
+					:inputLabel="t('dossiq', 'Limit to case type (optional)')"
+					:aria-label-combobox="t('dossiq', 'Limit to case type')"
 					label="title"
 					trackBy="id" />
 			</div>
@@ -50,7 +50,7 @@
 				<template v-if="loadingPreview" #icon>
 					<NcLoadingIcon :size="20" />
 				</template>
-				{{ t('procest', 'Preview affected work') }}
+				{{ t('dossiq', 'Preview affected work') }}
 			</NcButton>
 
 			<!-- Mandatory preview table -->
@@ -58,20 +58,18 @@
 				v-if="preview"
 				class="bulk-reassign__preview"
 				data-testid="reassign-preview">
-				<h4>
-					{{ t('procest', 'Affected open work') }} ({{ previewCount }})
-				</h4>
+				<h4>{{ t('dossiq', 'Affected open work') }} ({{ previewCount }})</h4>
 				<NcEmptyContent
 					v-if="previewCount === 0"
-					:name="t('procest', 'No open work to reassign')" />
+					:name="t('dossiq', 'No open work to reassign')" />
 				<table v-else class="bulk-reassign__table">
 					<thead>
 						<tr>
-							<th scope="col">{{ t('procest', 'Type') }}</th>
-							<th scope="col">{{ t('procest', 'Title') }}</th>
-							<th scope="col">{{ t('procest', 'Case type') }}</th>
-							<th scope="col">{{ t('procest', 'Status') }}</th>
-							<th scope="col">{{ t('procest', 'Next deadline') }}</th>
+							<th scope="col">{{ t('dossiq', 'Type') }}</th>
+							<th scope="col">{{ t('dossiq', 'Title') }}</th>
+							<th scope="col">{{ t('dossiq', 'Case type') }}</th>
+							<th scope="col">{{ t('dossiq', 'Status') }}</th>
+							<th scope="col">{{ t('dossiq', 'Next deadline') }}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -81,8 +79,8 @@
 							<td>
 								{{
 									row.type === 'case'
-										? t('procest', 'Case')
-										: t('procest', 'Task')
+										? t('dossiq', 'Case')
+										: t('dossiq', 'Task')
 								}}
 							</td>
 							<td>{{ row.title }}</td>
@@ -99,11 +97,11 @@
 				v-if="results"
 				class="bulk-reassign__results"
 				data-testid="reassign-results">
-				<h4>{{ t('procest', 'Reassignment result') }}</h4>
+				<h4>{{ t('dossiq', 'Reassignment result') }}</h4>
 				<p>
 					{{
 						t(
-							'procest',
+							'dossiq',
 							'{ok} succeeded, {fail} failed (batch {batch})',
 							{
 								ok: results.succeeded,
@@ -121,8 +119,8 @@
 						{{ r.title || r.id }} —
 						{{
 							r.success
-								? t('procest', 'reassigned')
-								: t('procest', 'failed')
+								? t('dossiq', 'reassigned')
+								: t('dossiq', 'failed')
 						}}
 					</li>
 				</ul>
@@ -135,13 +133,13 @@
 
 		<template #actions>
 			<NcButton type="tertiary" @click="$emit('close')">
-				{{ t('procest', 'Close') }}
+				{{ t('dossiq', 'Close') }}
 			</NcButton>
 			<NcButton type="primary" :disabled="!canExecute" @click="execute">
 				<template v-if="executing" #icon>
 					<NcLoadingIcon :size="20" />
 				</template>
-				{{ t('procest', 'Reassign all') }}
+				{{ t('dossiq', 'Reassign all') }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -275,7 +273,7 @@ export default {
 				this.serverError =
 					err?.response?.data?.error
 					|| err?.message
-					|| t('procest', 'Preview failed.')
+					|| t('dossiq', 'Preview failed.')
 			} finally {
 				this.loadingPreview = false
 			}
@@ -297,7 +295,7 @@ export default {
 				this.serverError =
 					err?.response?.data?.error
 					|| err?.message
-					|| t('procest', 'Reassignment failed.')
+					|| t('dossiq', 'Reassignment failed.')
 			} finally {
 				this.executing = false
 			}

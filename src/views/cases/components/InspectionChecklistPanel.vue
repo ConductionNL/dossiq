@@ -1,7 +1,7 @@
 <template>
 	<div class="inspection-checklist">
 		<h4 class="inspection-checklist__title">
-			{{ t('procest', 'Inspection Checklist') }}
+			{{ t('dossiq', 'Inspection Checklist') }}
 		</h4>
 
 		<!--
@@ -16,11 +16,11 @@
 			@spec openspec/changes/migrate-inspection-forms-to-forms-leaf/tasks.md#P2.4
 		-->
 		<NcEmptyContent
-			:name="t('procest', 'Capture inspections via the Forms tab')"
+			:name="t('dossiq', 'Capture inspections via the Forms tab')"
 			:description="
 				t(
-					'procest',
-					'Inspection checklist items are filled in through the Forms tab and photos are attached through the Photos tab. Procest validates the photo requirement and append-only rules against the captured data.',
+					'dossiq',
+					'Inspection checklist items are filled in through the Forms tab and photos are attached through the Photos tab. Dossiq validates the photo requirement and append-only rules against the captured data.',
 				)
 			">
 			<template #icon>
@@ -32,7 +32,7 @@
 			<li>
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Photo gate: required photos are checked against attachments in the Photos tab.',
 					)
 				}}
@@ -40,7 +40,7 @@
 			<li>
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'A submitted run is append-only and can no longer be edited.',
 					)
 				}}

@@ -12,7 +12,7 @@
  * present on the case record.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,33 +20,33 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-008
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\StatusTransitionService;
-use OCA\Procest\Service\Transitions\CaseStatusStore;
-use OCA\Procest\Service\Transitions\GuardRegistry;
-use OCA\Procest\Service\Transitions\SideEffectDispatcher;
-use OCA\Procest\Service\Transitions\TransitionAuthorizer;
-use OCA\Procest\Service\Transitions\TransitionSpecReader;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Transitions\CaseStatusStore;
+use OCA\Dossiq\Service\Transitions\GuardRegistry;
+use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
+use OCA\Dossiq\Service\Transitions\TransitionAuthorizer;
+use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\StatusTransitionService
+ * @covers \OCA\Dossiq\Service\StatusTransitionService
  *
- * @uses \OCA\Procest\Service\Transitions\CaseStatusStore
- * @uses \OCA\Procest\Service\Transitions\TransitionAuthorizer
- * @uses \OCA\Procest\Service\Transitions\TransitionSpecReader
+ * @uses \OCA\Dossiq\Service\Transitions\CaseStatusStore
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionAuthorizer
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionSpecReader
  */
 final class CmmnBpmnCoexistenceRegressionTest extends TestCase {
 
@@ -79,7 +79,7 @@ final class CmmnBpmnCoexistenceRegressionTest extends TestCase {
 			},
 		);
 
-		$templateLoader = $this->createMock(\OCA\Procest\Service\WorkflowTemplateLoader::class);
+		$templateLoader = $this->createMock(\OCA\Dossiq\Service\WorkflowTemplateLoader::class);
 		$templateLoader->method('getActiveTemplate')->with('ct-1')->willReturn(
 			[
 				'transitions' => [

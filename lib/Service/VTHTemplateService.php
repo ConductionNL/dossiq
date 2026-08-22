@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest VTH Template Service
+ * Dossiq VTH Template Service
  *
  * Loads VTH zaaktype templates from lib/Settings/templates/vth-*.json and
  * activates them as case type configurations in OpenRegister. Parallels the
  * WOO template-library pattern from TemplateLibraryService.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,9 +24,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -158,7 +158,7 @@ class VTHTemplateService {
 
 		$this->logger->info(
 			'VTH template activated: ' . $slug . ' (caseType=' . $caseTypeId . ')',
-			['app' => 'procest']
+			['app' => 'dossiq']
 		);
 
 		return ['caseTypeId' => $caseTypeId, 'template' => $slug, 'counts' => $counts];
@@ -205,7 +205,7 @@ class VTHTemplateService {
 		];
 
 		if ($config['register'] === '' || $config['caseTypeSchema'] === '') {
-			throw new RuntimeException('Procest register or case type schema not configured');
+			throw new RuntimeException('Dossiq register or case type schema not configured');
 		}
 
 		return $config;
@@ -385,7 +385,7 @@ class VTHTemplateService {
 			} catch (Throwable $e) {
 				$this->logger->warning(
 					'Failed to seed sub-object: ' . $e->getMessage(),
-					['app' => 'procest', 'schema' => $schema]
+					['app' => 'dossiq', 'schema' => $schema]
 				);
 			}
 		}//end foreach

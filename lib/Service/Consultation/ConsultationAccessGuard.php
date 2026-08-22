@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest ConsultationAccessGuard.
+ * Dossiq ConsultationAccessGuard.
  *
  * Authorization and request-decoding collaborator for the consultation
  * (adviesaanvraag) endpoints. Split out of ConsultationController so that
@@ -11,7 +11,7 @@
  * — live here and nowhere else.
  *
  * @category Service
- * @package  OCA\Procest\Service\Consultation
+ * @package  OCA\Dossiq\Service\Consultation
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,7 +19,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -29,9 +29,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Consultation;
+namespace OCA\Dossiq\Service\Consultation;
 
-use OCA\Procest\Service\ConsultationService;
+use OCA\Dossiq\Service\ConsultationService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;

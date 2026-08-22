@@ -2,8 +2,8 @@
 	<div class="address-search">
 		<NcTextField
 			:modelValue="query"
-			:label="t('procest', 'Search address...')"
-			:placeholder="t('procest', 'Street, postcode, or city')"
+			:label="t('dossiq', 'Search address...')"
+			:placeholder="t('dossiq', 'Street, postcode, or city')"
 			trailingButtonIcon="close"
 			:showTrailingButton="query.length > 0"
 			@update:value="onInput"
@@ -37,7 +37,7 @@
 		</ul>
 
 		<p v-if="loading" class="address-search__loading">
-			{{ t('procest', 'Searching...') }}
+			{{ t('dossiq', 'Searching...') }}
 		</p>
 	</div>
 </template>

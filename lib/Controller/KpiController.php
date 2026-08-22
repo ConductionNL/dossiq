@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest KPI Controller
+ * Dossiq KPI Controller
  *
  * Exposes pre-aggregated dashboard KPI data for the authenticated user.
  * Responses are cached per-user using a version-bump invalidation strategy
  * to ensure fresh data after any OpenRegister object mutation.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -19,16 +19,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
 use DateTime;
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\KpiAggregationService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\KpiAggregationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -57,7 +57,7 @@ class KpiController extends Controller {
 	/**
 	 * Cache prefix for KPI data keys.
 	 */
-	private const CACHE_PREFIX = 'procest_kpis_';
+	private const CACHE_PREFIX = 'dossiq_kpis_';
 
 	/**
 	 * Cache key suffix for the version counter.

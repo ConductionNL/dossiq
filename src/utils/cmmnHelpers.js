@@ -60,12 +60,12 @@ export function buildPlanTree(items) {
  */
 export function stateBadge(state) {
 	const labels = {
-		available: t('procest', 'Available'),
-		enabled: t('procest', 'Enabled'),
-		active: t('procest', 'In progress'),
-		completed: t('procest', 'Completed'),
-		terminated: t('procest', 'Terminated'),
-		disabled: t('procest', 'Disabled'),
+		available: t('dossiq', 'Available'),
+		enabled: t('dossiq', 'Enabled'),
+		active: t('dossiq', 'In progress'),
+		completed: t('dossiq', 'Completed'),
+		terminated: t('dossiq', 'Terminated'),
+		disabled: t('dossiq', 'Disabled'),
 	}
 
 	return {

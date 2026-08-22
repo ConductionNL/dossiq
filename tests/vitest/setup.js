@@ -1,9 +1,9 @@
 /**
- * SPDX-FileCopyrightText: 2026 Conduction / Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Conduction / Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Global setup for the Vitest unit suite. Stubs the Nextcloud `t`/`n`
- * globals so component renders that call them (bare `t('procest', ...)`,
+ * globals so component renders that call them (bare `t('dossiq', ...)`,
  * the convention used throughout `src/`) resolve without the real
  * `@nextcloud/webpack-vue-config` ProvidePlugin, which does not run under
  * Vitest.

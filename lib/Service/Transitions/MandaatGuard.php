@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest mandaatGuard guard evaluator.
+ * Dossiq mandaatGuard guard evaluator.
  *
  * Blocks the "Besluit genomen" transition of a mandaatbesluit until the signing
  * official's authority is confirmed against the mandaatregister. When the
@@ -13,7 +13,7 @@
  * Guard config shape: `{type: 'mandaatGuard'}`.
  *
  * @category Service
- * @package  OCA\Procest\Service\Transitions
+ * @package  OCA\Dossiq\Service\Transitions
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,16 +24,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Transitions;
+namespace OCA\Dossiq\Service\Transitions;
 
-use OCA\Procest\Service\MandaatValidationService;
+use OCA\Dossiq\Service\MandaatValidationService;
 
 /**
  * Guard: verifies signing-official mandate against the mandaatregister.

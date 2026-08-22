@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Beschikking State Machine Service.
+ * Dossiq Beschikking State Machine Service.
  *
  * Enforces the formal beschikking state-machine and produces immutable
  * stateMachineLog records for every transition. The machine is:
@@ -14,7 +14,7 @@
  * is immutable (enforced by BeschikkingService).
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,14 +25,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T16
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use Psr\Log\LoggerInterface;

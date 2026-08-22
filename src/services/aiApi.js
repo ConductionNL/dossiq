@@ -1,5 +1,5 @@
 /**
- * AI API service for Procest AI-assisted processing.
+ * AI API service for Dossiq AI-assisted processing.
  *
  * Provides methods for document classification, data extraction,
  * knowledge base Q&A, summarization, and decision support.
@@ -7,7 +7,7 @@
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-const baseUrl = generateUrl('/apps/procest/api/ai')
+const baseUrl = generateUrl('/apps/dossiq/api/ai')
 
 /**
  * Classify a document using AI.

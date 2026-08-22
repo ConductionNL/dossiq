@@ -6,7 +6,7 @@ Accepted (2026-07-09)
 
 ## Context
 
-Procest grew a set of top-level entities that are, on inspection, **not
+Dossiq grew a set of top-level entities that are, on inspection, **not
 independent objects** — each one already references a `case` and only exists in
 the context of one:
 
@@ -22,7 +22,7 @@ the context of one:
   `legesTariefTabel` / `legesTarief` / `legesVariant` / `legesKorting` /
   `legesRestitutie` set) implemented a bespoke municipal-fee engine — rate
   tables, per-case calculations, refunds, Shillinq hand-off — entirely inside
-  procest.
+  dossiq.
 
 This produced a wide surface (9 leges schemas, ~19 leges backend files, a dozen
 detail/index pages) modelling concepts that belong to a smaller, sharper core.
@@ -47,12 +47,12 @@ detail/index pages) modelling concepts that belong to a smaller, sharper core.
    conflated in the initial review — only the stateless handler hand-off is an
    "action", and it already is one.)
 
-3. **Fees are products, owned by Pipelinq.** Procest does **not** implement a
+3. **Fees are products, owned by Pipelinq.** Dossiq does **not** implement a
    fee engine. A municipal fee is a **product** in Pipelinq's product register
    (catalogue, pricing, financial hand-off all live there). A `caseType`
    declares which products/fees apply to it via its `productsOrServices`
    field, which references Pipelinq `product` objects. The charge that lands on
-   a concrete case is a Pipelinq financial transaction, not a procest
+   a concrete case is a Pipelinq financial transaction, not a dossiq
    `legesberekening`.
 
 4. **Cross-register references address Pipelinq objects by UUID.** OpenRegister
@@ -60,11 +60,11 @@ detail/index pages) modelling concepts that belong to a smaller, sharper core.
    Pipelinq `product` UUIDs. The property is declared as a relation
    (`items.$ref: "product"`) annotated with the owning register
    (`x-external-register: "pipelinq"`) so a picker can resolve options against
-   Pipelinq's register rather than procest's own.
+   Pipelinq's register rather than dossiq's own.
 
 ## Consequences
 
-- **Wave 1 (this change):** the entire leges subsystem is removed from procest —
+- **Wave 1 (this change):** the entire leges subsystem is removed from dossiq —
   9 schemas, ~19 backend classes (services, controllers, listeners, repair,
   seed), the leges routes, settings keys, frontend views/dialogs/API, and the
   four leges OpenSpec specs. `caseType.productsOrServices` becomes a
@@ -75,8 +75,8 @@ detail/index pages) modelling concepts that belong to a smaller, sharper core.
   objection subsystem (Wave 3) fold into the `case` model as case types. Each is
   its own change. (Handler reassignment is already an action and `casetransfer`
   cross-org handover stays — there is no transfer-deletion wave.)
-- Procest gains a soft dependency on Pipelinq's product register for the fee
-  relation. This is a reference, not a code dependency; procest degrades to an
+- Dossiq gains a soft dependency on Pipelinq's product register for the fee
+  relation. This is a reference, not a code dependency; dossiq degrades to an
   empty picker if Pipelinq is absent.
 
 ### Decisions governing the later waves (2026-07-09)
@@ -87,19 +87,19 @@ detail/index pages) modelling concepts that belong to a smaller, sharper core.
   model change.
 - **The whole decision-making / signing subsystem moves to Decidesk.**
   `voorstel` → `parafeerroute`/`parafeeractie` (signing) → `decision` is one
-  chain: procest's Besluitvorming subsystem, which produces municipal
+  chain: dossiq's Besluitvorming subsystem, which produces municipal
   college/raad besluiten, WOO decisions and contract decisions, delegating
   approval to OpenRegister. Signing belongs to Decidesk (motions, amendments,
   decisions), and the decision apparatus goes with it — not just the parafering
-  layer. Procest cases invoke Decidesk for signing/decisions (a cross-app
+  layer. Dossiq cases invoke Decidesk for signing/decisions (a cross-app
   action, analogous to the Pipelinq-product fee link). **This is a cross-app
-  migration, not a procest-internal deletion, and warrants its own ADR** (the
-  procest↔Decidesk decision boundary): the `decision` schema is a dependency
+  migration, not a dossiq-internal deletion, and warrants its own ADR** (the
+  dossiq↔Decidesk decision boundary): the `decision` schema is a dependency
   hub (`bezwaarDecision`, contract decisions, WOO decisions all reference it),
-  so it cannot be removed from procest until those dependents are resolved and
+  so it cannot be removed from dossiq until those dependents are resolved and
   Decidesk owns the capability. Sequencing is therefore: (a) design the
   boundary + confirm/build Decidesk's decision capability, (b) migrate
-  consumers, (c) retire procest's Besluitvorming last.
+  consumers, (c) retire dossiq's Besluitvorming last.
 - **The bezwaar dependents are removed, not retained.** `DwangsomBezwaarService`
   (penalty payments), `IngebrekestellingController` (notice of default) and the
   bezwaar-coupled deadline logic go with the objection subsystem in Wave 4.

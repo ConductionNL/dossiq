@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Medewerker Identity Resolver Interface.
+ * Dossiq Medewerker Identity Resolver Interface.
  *
  * Resolves the SERVER-SIDE identity of a case worker (medewerker) for the
  * belangenconflict check.
@@ -30,7 +30,7 @@
  *     defect class this change exists to close.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -38,7 +38,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -48,7 +48,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 /**
  * Resolves a case worker's identity for belangenconflict detection.

@@ -10,7 +10,7 @@
  * migrate-parafering-to-or-audit (ADR-022, consume-or-audit-trail-fleet-wide).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Listener
+ * @package  OCA\Dossiq\Tests\Unit\Listener
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,18 +18,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Listener;
+namespace OCA\Dossiq\Tests\Unit\Listener;
 
+use OCA\Dossiq\Event\ParafeerTransitionEvent;
+use OCA\Dossiq\Listener\ParaferingAuditListener;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\AuditTrailMapper;
 use OCA\OpenRegister\Db\ObjectEntity;
-use OCA\Procest\Event\ParafeerTransitionEvent;
-use OCA\Procest\Listener\ParaferingAuditListener;
-use OCA\Procest\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -37,9 +37,9 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for ParaferingAuditListener.
  *
- * @covers \OCA\Procest\Listener\ParaferingAuditListener
+ * @covers \OCA\Dossiq\Listener\ParaferingAuditListener
  *
- * @uses \OCA\Procest\Event\ParafeerTransitionEvent
+ * @uses \OCA\Dossiq\Event\ParafeerTransitionEvent
  */
 class ParaferingAuditListenerTest extends TestCase {
 	/**
@@ -50,7 +50,7 @@ class ParaferingAuditListenerTest extends TestCase {
 	private AuditTrailMapper $mapper;
 
 	/**
-	 * Mocked procest settings/OpenRegister bridge.
+	 * Mocked dossiq settings/OpenRegister bridge.
 	 *
 	 * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
 	 */

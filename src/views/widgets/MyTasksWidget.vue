@@ -5,14 +5,14 @@
 		:loading="loading"
 		hideHeader
 		borderless
-		:emptyText="t('procest', 'No tasks found')"
+		:emptyText="t('dossiq', 'No tasks found')"
 		@rowClick="onRowClick">
 		<template #footer>
 			<a
 				class="cn-data-table__view-all"
 				:href="viewAllUrl"
 				@click.prevent="onViewAll">
-				{{ t('procest', 'View all') }} →
+				{{ t('dossiq', 'View all') }} →
 			</a>
 		</template>
 	</CnDataTable>
@@ -61,20 +61,20 @@ export default {
 		 * @spec openspec/specs/signalering-widgets/spec.md
 		 */
 		viewAllUrl() {
-			return generateUrl('/apps/procest/tasks')
+			return generateUrl('/apps/dossiq/tasks')
 		},
 
 		/** @spec openspec/specs/signalering-widgets/spec.md */
 		items() {
 			return this.tasks.map((task) => ({
 				id: task.id,
-				mainText: task.title || t('procest', 'Unnamed task'),
+				mainText: task.title || t('dossiq', 'Unnamed task'),
 				subText: task.dueDate
-					? t('procest', 'Deadline: {date}', {
+					? t('dossiq', 'Deadline: {date}', {
 							date: task.dueDate.slice(0, 10),
 						})
-					: t('procest', 'No deadline'),
-				targetUrl: generateUrl(`/apps/procest/tasks/${task.id}`),
+					: t('dossiq', 'No deadline'),
+				targetUrl: generateUrl(`/apps/dossiq/tasks/${task.id}`),
 			}))
 		},
 	},
@@ -103,9 +103,11 @@ export default {
 		 * Navigate to the full tasks list.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/specs/my-work/spec.md#requirement-personal-workload-dashboard-widgets-mvp
 		 */
 		onViewAll() {
-			navigateTo(generateUrl('/apps/procest/tasks'))
+			navigateTo(generateUrl('/apps/dossiq/tasks'))
 		},
 
 		/**

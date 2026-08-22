@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest ConsultationAccess.
+ * Dossiq ConsultationAccess.
  *
  * The outcome of one consultation authorization attempt: either a ready-made
  * error response (401/404/403) or the resolved consultation the caller is
@@ -10,7 +10,7 @@
  * branch, instead of repeating three branches in every endpoint.
  *
  * @category Service
- * @package  OCA\Procest\Service\Consultation
+ * @package  OCA\Dossiq\Service\Consultation
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,7 +18,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -28,7 +28,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Consultation;
+namespace OCA\Dossiq\Service\Consultation;
 
 use OCP\AppFramework\Http\JSONResponse;
 

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest SubstitutionService.
+ * Dossiq SubstitutionService.
  *
  * Vervanging/waarneming (handler absence/substitution) domain logic on top of
  * OpenRegister RBAC. Substitution records describe who covers whom, when, and
@@ -16,7 +16,7 @@
  * service handles workload routing/visibility only.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,7 +24,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -34,12 +34,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\Substitution\SubstitutedWorkResolver;
-use OCA\Procest\Service\Substitution\SubstitutionValidator;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Substitution\SubstitutedWorkResolver;
+use OCA\Dossiq\Service\Substitution\SubstitutionValidator;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 

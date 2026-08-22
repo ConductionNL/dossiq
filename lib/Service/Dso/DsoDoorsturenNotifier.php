@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest DsoDoorsturenNotifier.
+ * Dossiq DsoDoorsturenNotifier.
  *
  * Dispatches the VergunningDoorgestuurd domain event when a DSO case is
  * forwarded to another bevoegd gezag. Split out of DsoController because
@@ -10,7 +10,7 @@
  * this collaborator owns the event contract that downstream listeners bind to.
  *
  * @category Service
- * @package  OCA\Procest\Service\Dso
+ * @package  OCA\Dossiq\Service\Dso
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,7 +18,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -28,7 +28,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Dso;
+namespace OCA\Dossiq\Service\Dso;
 
 use OCP\EventDispatcher\GenericEvent;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -44,7 +44,7 @@ class DsoDoorsturenNotifier {
 	 *
 	 * @var string
 	 */
-	private const EVENT_NAME = 'OCA\Procest\Event\VergunningDoorgestuurd';
+	private const EVENT_NAME = 'OCA\Dossiq\Event\VergunningDoorgestuurd';
 
 	/**
 	 * Constructor.

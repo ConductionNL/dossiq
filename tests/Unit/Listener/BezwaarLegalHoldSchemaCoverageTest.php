@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Procest BezwaarLegalHoldListener schema-coverage tests
+ * Dossiq BezwaarLegalHoldListener schema-coverage tests
  *
  * Guards the Awb proceeding schema lists on
- * {@see \OCA\Procest\Listener\BezwaarLegalHoldListener} against the drift that
+ * {@see \OCA\Dossiq\Listener\BezwaarLegalHoldListener} against the drift that
  * left `beroep` off the opening list: the release side (`appealDecision`) was
  * wired up while the place side was not, so a case under appeal carried no
  * legal hold and stayed destruction-eligible for the whole appeal.
@@ -13,26 +13,26 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  *
  * @category Test
- * @package  OCA\Procest\Tests\Unit\Listener
+ * @package  OCA\Dossiq\Tests\Unit\Listener
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://www.procest.app
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Listener;
+namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Procest\AppInfo\Registrar\BezwaarSubscriptionRegistrar;
-use OCA\Procest\Listener\BezwaarLegalHoldListener;
+use OCA\Dossiq\AppInfo\Registrar\BezwaarSubscriptionRegistrar;
+use OCA\Dossiq\Listener\BezwaarLegalHoldListener;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
 /**
- * @coversDefaultClass \OCA\Procest\Listener\BezwaarLegalHoldListener
+ * @coversDefaultClass \OCA\Dossiq\Listener\BezwaarLegalHoldListener
  */
 class BezwaarLegalHoldSchemaCoverageTest extends TestCase {
 	/**

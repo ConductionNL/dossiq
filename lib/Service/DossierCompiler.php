@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Dossier Compiler.
+ * Dossiq Dossier Compiler.
  *
  * Assembles a read-only, AWB-conventionally ordered view of the
  * documents that make up a bezwaar (or beroep) dossier. The compiler
@@ -20,7 +20,7 @@
  * of truth for the documents — the dossier is a projection, not a copy.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -31,12 +31,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use Psr\Log\LoggerInterface;
 use RuntimeException;

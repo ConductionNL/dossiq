@@ -11,7 +11,7 @@
 -->
 <template>
 	<NcDialog
-		:name="t('procest', 'Register substitution')"
+		:name="t('dossiq', 'Register substitution')"
 		:open="true"
 		size="normal"
 		@update:open="onDialogClose"
@@ -21,15 +21,15 @@
 			<div v-if="allowCoordinator" class="form-group">
 				<NcTextField
 					v-model="form.absentee"
-					:label="t('procest', 'Absent handler (user id)')"
-					:placeholder="t('procest', 'Handler being covered…')" />
+					:label="t('dossiq', 'Absent handler (user id)')"
+					:placeholder="t('dossiq', 'Handler being covered…')" />
 			</div>
 
 			<div class="form-group">
 				<NcTextField
 					v-model="form.substitute"
-					:label="t('procest', 'Substitute (user id)')"
-					:placeholder="t('procest', 'Waarnemer who covers the work…')"
+					:label="t('dossiq', 'Substitute (user id)')"
+					:placeholder="t('dossiq', 'Waarnemer who covers the work…')"
 					:error="!!errors.substitute" />
 				<p v-if="errors.substitute" class="form-error" role="alert">
 					{{ errors.substitute }}
@@ -38,7 +38,7 @@
 
 			<div class="form-row">
 				<div class="form-group">
-					<label for="sub-start">{{ t('procest', 'Start date') }} *</label>
+					<label for="sub-start">{{ t('dossiq', 'Start date') }} *</label>
 					<input
 						id="sub-start"
 						v-model="form.startDate"
@@ -46,7 +46,7 @@
 						class="substitution-form__date" />
 				</div>
 				<div class="form-group">
-					<label for="sub-end">{{ t('procest', 'End date') }} *</label>
+					<label for="sub-end">{{ t('dossiq', 'End date') }} *</label>
 					<input
 						id="sub-end"
 						v-model="form.endDate"
@@ -59,8 +59,8 @@
 				<NcSelect
 					v-model="selectedReason"
 					:options="reasonOptions"
-					:inputLabel="t('procest', 'Reason')"
-					:aria-label-combobox="t('procest', 'Reason')"
+					:inputLabel="t('dossiq', 'Reason')"
+					:aria-label-combobox="t('dossiq', 'Reason')"
 					label="label"
 					trackBy="value" />
 			</div>
@@ -69,8 +69,8 @@
 				<NcSelect
 					v-model="selectedScope"
 					:options="scopeOptions"
-					:inputLabel="t('procest', 'Scope')"
-					:aria-label-combobox="t('procest', 'Scope')"
+					:inputLabel="t('dossiq', 'Scope')"
+					:aria-label-combobox="t('dossiq', 'Scope')"
 					label="label"
 					trackBy="value" />
 			</div>
@@ -82,14 +82,14 @@
 					v-model="selectedCaseTypes"
 					:options="caseTypes"
 					:multiple="true"
-					:inputLabel="t('procest', 'Case types')"
-					:aria-label-combobox="t('procest', 'Case types')"
+					:inputLabel="t('dossiq', 'Case types')"
+					:aria-label-combobox="t('dossiq', 'Case types')"
 					label="title"
 					trackBy="id" />
 			</div>
 
 			<div class="form-group">
-				<label for="sub-comment">{{ t('procest', 'Comment') }}</label>
+				<label for="sub-comment">{{ t('dossiq', 'Comment') }}</label>
 				<textarea
 					id="sub-comment"
 					v-model="form.comment"
@@ -104,13 +104,13 @@
 
 		<template #actions>
 			<NcButton type="tertiary" @click="$emit('close')">
-				{{ t('procest', 'Cancel') }}
+				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 			<NcButton type="primary" :disabled="saving" @click="submit">
 				<template v-if="saving" #icon>
 					<NcLoadingIcon :size="20" />
 				</template>
-				{{ t('procest', 'Register substitution') }}
+				{{ t('dossiq', 'Register substitution') }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -156,8 +156,8 @@ export default {
 				comment: '',
 			},
 
-			selectedReason: { value: 'verlof', label: t('procest', 'Leave') },
-			selectedScope: { value: 'all', label: t('procest', 'All work') },
+			selectedReason: { value: 'verlof', label: t('dossiq', 'Leave') },
+			selectedScope: { value: 'all', label: t('dossiq', 'All work') },
 			selectedCaseTypes: [],
 			caseTypes: [],
 			errors: {},
@@ -175,17 +175,17 @@ export default {
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		reasonOptions() {
 			return [
-				{ value: 'verlof', label: t('procest', 'Leave') },
-				{ value: 'ziekte', label: t('procest', 'Illness') },
-				{ value: 'anders', label: t('procest', 'Other') },
+				{ value: 'verlof', label: t('dossiq', 'Leave') },
+				{ value: 'ziekte', label: t('dossiq', 'Illness') },
+				{ value: 'anders', label: t('dossiq', 'Other') },
 			]
 		},
 
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		scopeOptions() {
 			return [
-				{ value: 'all', label: t('procest', 'All work') },
-				{ value: 'caseTypes', label: t('procest', 'Specific case types') },
+				{ value: 'all', label: t('dossiq', 'All work') },
+				{ value: 'caseTypes', label: t('dossiq', 'Specific case types') },
 			]
 		},
 	},
@@ -211,7 +211,7 @@ export default {
 		validate() {
 			const errs = {}
 			if (!this.form.substitute || !this.form.substitute.trim()) {
-				errs.substitute = t('procest', 'A substitute is required')
+				errs.substitute = t('dossiq', 'A substitute is required')
 			}
 			this.errors = errs
 			return Object.keys(errs).length === 0
@@ -251,7 +251,7 @@ export default {
 				this.serverError =
 					err?.response?.data?.error
 					|| err?.message
-					|| t('procest', 'Failed to register substitution.')
+					|| t('dossiq', 'Failed to register substitution.')
 			} finally {
 				this.saving = false
 			}

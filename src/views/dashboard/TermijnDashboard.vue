@@ -5,19 +5,19 @@
 <template>
 	<div class="termijn-dashboard">
 		<div class="termijn-dashboard__header">
-			<h2>{{ t('procest', 'Deadline monitoring') }}</h2>
+			<h2>{{ t('dossiq', 'Deadline monitoring') }}</h2>
 			<div class="termijn-dashboard__controls">
 				<NcSelect
 					:modelValue="selectedZaaktype"
 					:options="zaaktypeOptions"
-					:inputLabel="t('procest', 'Filter by case type')"
-					:placeholder="t('procest', 'All case types')"
+					:inputLabel="t('dossiq', 'Filter by case type')"
+					:placeholder="t('dossiq', 'All case types')"
 					@update:modelValue="onZaaktypeChange" />
 				<NcButton type="secondary" @click="load">
 					<template #icon>
 						<Refresh :size="18" />
 					</template>
-					{{ t('procest', 'Refresh') }}
+					{{ t('dossiq', 'Refresh') }}
 				</NcButton>
 			</div>
 		</div>
@@ -31,7 +31,7 @@
 		<div v-if="!loading && kpi" class="termijn-dashboard__grid">
 			<div class="kpi-card kpi-card--neutral">
 				<div class="kpi-card__label">
-					{{ t('procest', 'Total cases (in period)') }}
+					{{ t('dossiq', 'Total cases (in period)') }}
 				</div>
 				<div class="kpi-card__value">
 					{{ kpi.totalZaken }}
@@ -39,7 +39,7 @@
 			</div>
 			<div class="kpi-card kpi-card--good">
 				<div class="kpi-card__label">
-					{{ t('procest', 'Within term') }}
+					{{ t('dossiq', 'Within term') }}
 				</div>
 				<div class="kpi-card__value">
 					{{ percent(kpi.withinTermijnPercent) }}
@@ -47,7 +47,7 @@
 			</div>
 			<div class="kpi-card kpi-card--neutral">
 				<div class="kpi-card__label">
-					{{ t('procest', 'Avg duration (days)') }}
+					{{ t('dossiq', 'Avg duration (days)') }}
 				</div>
 				<div class="kpi-card__value">
 					{{ kpi.avgDurationDays }}
@@ -55,7 +55,7 @@
 			</div>
 			<div class="kpi-card kpi-card--warn">
 				<div class="kpi-card__label">
-					{{ t('procest', 'Overruns') }}
+					{{ t('dossiq', 'Overruns') }}
 				</div>
 				<div class="kpi-card__value">
 					{{ kpi.overrunCount }}
@@ -63,7 +63,7 @@
 			</div>
 			<div class="kpi-card kpi-card--alert">
 				<div class="kpi-card__label">
-					{{ t('procest', 'Dwangsom total (€)') }}
+					{{ t('dossiq', 'Dwangsom total (€)') }}
 				</div>
 				<div class="kpi-card__value">
 					{{ euro(kpi.dwangsomTotal) }}
@@ -71,7 +71,7 @@
 			</div>
 			<div class="kpi-card kpi-card--meta">
 				<div class="kpi-card__label">
-					{{ t('procest', 'Last updated') }}
+					{{ t('dossiq', 'Last updated') }}
 				</div>
 				<div class="kpi-card__value kpi-card__value--small">
 					{{ kpi.lastUpdated || '—' }}
@@ -80,15 +80,15 @@
 		</div>
 
 		<div v-if="!loading" class="termijn-dashboard__section">
-			<h3>{{ t('procest', 'Quarterly report') }}</h3>
+			<h3>{{ t('dossiq', 'Quarterly report') }}</h3>
 			<div class="termijn-dashboard__report-controls">
 				<NcTextField
 					:modelValue="quarter"
-					:label="t('procest', 'Quarter (YYYY-Qn)')"
-					:placeholder="t('procest', 'e.g. 2026-Q2')"
+					:label="t('dossiq', 'Quarter (YYYY-Qn)')"
+					:placeholder="t('dossiq', 'e.g. 2026-Q2')"
 					@update:modelValue="(v) => (quarter = v)" />
 				<NcButton type="primary" @click="loadQuarterly">
-					{{ t('procest', 'Load report') }}
+					{{ t('dossiq', 'Load report') }}
 				</NcButton>
 				<NcButton
 					:disabled="!quarterly"
@@ -97,7 +97,7 @@
 					<template #icon>
 						<FileExport :size="18" />
 					</template>
-					{{ t('procest', 'Export CSV') }}
+					{{ t('dossiq', 'Export CSV') }}
 				</NcButton>
 			</div>
 
@@ -107,19 +107,19 @@
 				<table class="termijn-dashboard__table">
 					<thead>
 						<tr>
-							<th scope="col">{{ t('procest', 'Zaaktype') }}</th>
-							<th scope="col">{{ t('procest', 'Total') }}</th>
+							<th scope="col">{{ t('dossiq', 'Zaaktype') }}</th>
+							<th scope="col">{{ t('dossiq', 'Total') }}</th>
 							<th scope="col">
-								{{ t('procest', 'Within deadline') }}
+								{{ t('dossiq', 'Within deadline') }}
 							</th>
-							<th scope="col">{{ t('procest', 'Overruns') }}</th>
-							<th scope="col">{{ t('procest', 'Avg. duration') }}</th>
-							<th scope="col">{{ t('procest', 'Extensions') }}</th>
+							<th scope="col">{{ t('dossiq', 'Overruns') }}</th>
+							<th scope="col">{{ t('dossiq', 'Avg. duration') }}</th>
+							<th scope="col">{{ t('dossiq', 'Extensions') }}</th>
 							<th scope="col">
-								{{ t('procest', 'Notices of default') }}
+								{{ t('dossiq', 'Notices of default') }}
 							</th>
 							<th scope="col">
-								{{ t('procest', 'Total penalty payment') }}
+								{{ t('dossiq', 'Total penalty payment') }}
 							</th>
 						</tr>
 					</thead>
@@ -140,19 +140,19 @@
 		</div>
 
 		<div v-if="!loading" class="termijn-dashboard__section">
-			<h3>{{ t('procest', 'Annual dwangsom audit') }}</h3>
+			<h3>{{ t('dossiq', 'Annual dwangsom audit') }}</h3>
 			<div class="termijn-dashboard__report-controls">
 				<NcTextField
 					:modelValue="String(year)"
-					:label="t('procest', 'Year')"
+					:label="t('dossiq', 'Year')"
 					@update:modelValue="(v) => (year = Number(v) || year)" />
 				<NcButton type="primary" @click="loadAnnual">
-					{{ t('procest', 'Load audit') }}
+					{{ t('dossiq', 'Load audit') }}
 				</NcButton>
 			</div>
 			<div v-if="annual" class="termijn-dashboard__summary">
 				<strong>{{
-					t('procest', 'Total dwangsom in {y}:', { y: annual.jaar })
+					t('dossiq', 'Total dwangsom in {y}:', { y: annual.jaar })
 				}}</strong>
 				{{
 					euro(
@@ -162,13 +162,13 @@
 					)
 				}}
 				<span class="termijn-dashboard__pill">{{
-					t('procest', '{n} payments', { n: annual.summary?.count || 0 })
+					t('dossiq', '{n} payments', { n: annual.summary?.count || 0 })
 				}}</span>
 				<span
 					v-if="(annual.warnings || []).length > 0"
 					class="termijn-dashboard__pill termijn-dashboard__pill--warn">
 					{{
-						t('procest', '{n} data warnings', {
+						t('dossiq', '{n} data warnings', {
 							n: annual.warnings.length,
 						})
 					}}
@@ -277,7 +277,7 @@ export default {
 				const params = {}
 				if (this.zaaktypeFilter) params.case_type = this.zaaktypeFilter
 				const res = await axios.get(
-					generateUrl('/apps/procest/api/termijn/dashboard/kpi'),
+					generateUrl('/apps/dossiq/api/termijn/dashboard/kpi'),
 					{ params },
 				)
 				this.kpi = res.data || null
@@ -285,7 +285,7 @@ export default {
 				this.error =
 					e?.response?.data?.message
 					|| e.message
-					|| t('procest', 'Failed to load KPI')
+					|| t('dossiq', 'Failed to load KPI')
 			} finally {
 				this.loading = false
 			}
@@ -296,7 +296,7 @@ export default {
 			if (!this.quarter) return
 			try {
 				const res = await axios.get(
-					generateUrl('/apps/procest/api/termijn/reports/kwartaal'),
+					generateUrl('/apps/dossiq/api/termijn/reports/kwartaal'),
 					{ params: { periode: this.quarter } },
 				)
 				this.quarterly = res.data
@@ -310,7 +310,7 @@ export default {
 				this.error =
 					e?.response?.data?.message
 					|| e.message
-					|| t('procest', 'Failed to load quarterly report')
+					|| t('dossiq', 'Failed to load quarterly report')
 			}
 		},
 
@@ -318,7 +318,7 @@ export default {
 		async loadAnnual() {
 			try {
 				const res = await axios.get(
-					generateUrl('/apps/procest/api/termijn/reports/jaarrekening'),
+					generateUrl('/apps/dossiq/api/termijn/reports/jaarrekening'),
 					{ params: { jaar: this.year } },
 				)
 				this.annual = res.data
@@ -326,7 +326,7 @@ export default {
 				this.error =
 					e?.response?.data?.message
 					|| e.message
-					|| t('procest', 'Failed to load annual audit')
+					|| t('dossiq', 'Failed to load annual audit')
 			}
 		},
 

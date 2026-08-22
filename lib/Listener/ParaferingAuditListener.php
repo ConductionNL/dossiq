@@ -13,7 +13,7 @@
  * attach without modifying the routing services.
  *
  * @category Listener
- * @package  OCA\Procest\Listener
+ * @package  OCA\Dossiq\Listener
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,17 +24,17 @@
  *
  * @spec openspec/specs/parafering-audit-via-or/spec.md
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Listener;
+namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Event\ParafeerTransitionEvent;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\AuditTrailMapper;
 use OCA\OpenRegister\Db\ObjectEntity;
-use OCA\Procest\Event\ParafeerTransitionEvent;
-use OCA\Procest\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -50,7 +50,7 @@ class ParaferingAuditListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param AuditTrailMapper $auditTrailMapper OR audit-trail writer (hash-chained, immutable)
-	 * @param SettingsService $settingsService Procest settings bridge (resolves the voorstel ObjectEntity)
+	 * @param SettingsService $settingsService Dossiq settings bridge (resolves the voorstel ObjectEntity)
 	 * @param LoggerInterface $logger PSR-3 logger
 	 */
 	public function __construct(
@@ -64,7 +64,7 @@ class ParaferingAuditListener implements IEventListener {
 	 * Handle a ParafeerTransitionEvent.
 	 *
 	 * Resolves the voorstel ObjectEntity from OR and writes a namespaced
-	 * (`procest.parafering.{action}`) audit-trail entry carrying the transition
+	 * (`@@AUDIT@@{action}`) audit-trail entry carrying the transition
 	 * context in the `changed` JSON column. Audit-write failures are swallowed —
 	 * they MUST NOT propagate back to the routing service.
 	 *
@@ -83,12 +83,21 @@ class ParaferingAuditListener implements IEventListener {
 			$object = $this->resolveProposalEntity(proposalId: $event->getVoorstelId());
 			if ($object === null) {
 				$this->logger->warning(
-					'Procest: ParaferingAuditListener could not resolve voorstel ObjectEntity; audit entry skipped',
+					'Dossiq: ParaferingAuditListener could not resolve voorstel ObjectEntity; audit entry skipped',
 					['proposal' => $event->getVoorstelId()],
 				);
 				return;
 			}
 
+			// FROZEN PREFIX — deliberately still `procest.`, not `dossiq.`.
+			// This string is written into OpenRegister's append-only,
+			// hash-chained audit trail and every existing entry already carries
+			// it. `getAuditTrail()` filters by that exact prefix, so renaming it
+			// would SPLIT the legal approval trail in two: a reader would see
+			// only the entries written after the rename and would be shown a
+			// partial sign-off history as though it were complete. Nothing
+			// errors. Moving this requires a data migration over the existing
+			// audit rows, which OR's immutability rules do not permit.
 			$action = 'procest.parafering.' . $event->getAction();
 			$context = $this->buildContext(event: $event);
 
@@ -102,7 +111,7 @@ class ParaferingAuditListener implements IEventListener {
 			// routing service. Detectable via OR's audit-trail-immutable
 			// mutation log and this error log entry.
 			$this->logger->error(
-				'Procest: ParaferingAuditListener failed',
+				'Dossiq: ParaferingAuditListener failed',
 				[
 					'proposal' => $event->getVoorstelId(),
 					'action' => $event->getAction(),

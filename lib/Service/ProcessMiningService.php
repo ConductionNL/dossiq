@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Procest Process Mining Service
+ * Dossiq Process Mining Service
  *
  * Computes bottleneck-analysis metrics from the `statusRecord` chain that
  * {@see StatusTransitionService} already writes on every case transition
- * (ADR-Leaf-First: procest ships the data provider, nc-vue leaves render
+ * (ADR-Leaf-First: dossiq ships the data provider, nc-vue leaves render
  * it — no bespoke chart components here). Four metric families, all
  * derived from the same single read path via OpenRegister's ObjectService:
  *
@@ -27,7 +27,7 @@
  * truth.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -38,21 +38,21 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Procest\Service\ProcessMining\DwellTimeAnalyzer;
-use OCA\Procest\Service\ProcessMining\ProcessMiningDataLoader;
-use OCA\Procest\Service\ProcessMining\ThroughputTrendCalculator;
-use OCA\Procest\Service\ProcessMining\TransitionMatrixBuilder;
+use OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer;
+use OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader;
+use OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator;
+use OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder;
 
 /**
  * Computes process-mining bottleneck metrics from recorded status history.

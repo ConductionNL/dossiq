@@ -7,7 +7,7 @@
  * lookups, and unknown-code rejection.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,15 +23,15 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\Iv3TaakveldList;
+use OCA\Dossiq\Service\Iv3TaakveldList;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for Iv3TaakveldList.
  *
- * @covers \OCA\Procest\Service\Iv3TaakveldList
+ * @covers \OCA\Dossiq\Service\Iv3TaakveldList
  */
 class Iv3TaakveldListTest extends TestCase {
 	/**

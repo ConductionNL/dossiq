@@ -8,7 +8,7 @@
  * delete-cleanup of counterparts, and normalisation after direct writes.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,29 +19,29 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\CaseRelationService;
-use OCA\Procest\Service\Relation\CaseHierarchyOverlapGuard;
-use OCA\Procest\Service\Relation\CaseRelationCodec;
-use OCA\Procest\Service\Relation\CaseRelationStore;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\CaseRelationService;
+use OCA\Dossiq\Service\Relation\CaseHierarchyOverlapGuard;
+use OCA\Dossiq\Service\Relation\CaseRelationCodec;
+use OCA\Dossiq\Service\Relation\CaseRelationStore;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
  * Unit tests for CaseRelationService.
  *
- * @covers \OCA\Procest\Service\CaseRelationService
+ * @covers \OCA\Dossiq\Service\CaseRelationService
  *
- * @uses \OCA\Procest\Service\Relation\CaseHierarchyOverlapGuard
- * @uses \OCA\Procest\Service\Relation\CaseRelationCodec
- * @uses \OCA\Procest\Service\Relation\CaseRelationStore
+ * @uses \OCA\Dossiq\Service\Relation\CaseHierarchyOverlapGuard
+ * @uses \OCA\Dossiq\Service\Relation\CaseRelationCodec
+ * @uses \OCA\Dossiq\Service\Relation\CaseRelationStore
  */
 class CaseRelationServiceTest extends TestCase {
 

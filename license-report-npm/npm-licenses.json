@@ -1424,7 +1424,7 @@
     "ecosystem": "npm"
   },
   {
-    "package": "procest",
+    "package": "dossiq",
     "version": "0.1.0",
     "license": "EUPL-1.2",
     "status": "approved",

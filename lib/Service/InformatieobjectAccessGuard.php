@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Informatieobject Access Guard
+ * Dossiq Informatieobject Access Guard
  *
  * Service-layer enforcement of the ZGW DRC `vertrouwelijkheidaanduiding`
  * (confidentiality) hierarchy on every read, share, publish and download
@@ -16,7 +16,7 @@
  * (default `intern`).
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -32,7 +32,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use OCP\Files\NotPermittedException;
 use OCP\IGroupManager;
@@ -181,7 +181,7 @@ class InformatieobjectAccessGuard {
 	public function assertCanRead(IUser $user, array $informatieobject): void {
 		if ($this->canRead(user: $user, informatieobject: $informatieobject) === false) {
 			$this->logger->warning(
-				'Procest dossier: read denied on informatieobject for user ' . $user->getUID(),
+				'Dossiq dossier: read denied on informatieobject for user ' . $user->getUID(),
 				['classification' => ($informatieobject['vertrouwelijkheidaanduiding'] ?? 'unknown')],
 			);
 			throw new NotPermittedException('Insufficient clearance for this document');

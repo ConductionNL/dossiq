@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Consultation Service
+ * Dossiq Consultation Service
  *
  * Service for managing inter-departmental consultations (adviesaanvragen).
  * Consultations are first-class entities linked to parent cases with their
  * own lifecycle, document exchange, and structured responses per Awb 3:5-3:9.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,11 +24,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Consultation\ConsultationDependencyGraph;
-use OCA\Procest\Service\Consultation\ConsultationRepository;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Consultation\ConsultationDependencyGraph;
+use OCA\Dossiq\Service\Consultation\ConsultationRepository;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -537,7 +537,7 @@ class ConsultationService {
 			}
 		} catch (\RuntimeException $e) {
 			$this->logger->error(
-				'Procest: createConsultation: decidesk advice Decision raise failed — failing closed: ' . $e->getMessage(),
+				'Dossiq: createConsultation: decidesk advice Decision raise failed — failing closed: ' . $e->getMessage(),
 				['app' => Application::APP_ID],
 			);
 			// REQ-PDRD-002: fail closed; surface the error.

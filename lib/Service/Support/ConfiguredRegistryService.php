@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Procest configured-registry service.
+ * Dossiq configured-registry service.
  *
- * Generic list/save/delete over an OpenRegister schema named by a procest
- * config key. Procest keeps roughly two hundred schema ids in app config
+ * Generic list/save/delete over an OpenRegister schema named by a dossiq
+ * config key. Dossiq keeps roughly two hundred schema ids in app config
  * (`SettingsService::CONFIG_KEYS`), and several admin surfaces need nothing
  * more than "show me every row of schema X, and let an admin edit one".
  * Repeating the resolve-register-resolve-schema-guard-empty dance per surface
@@ -18,7 +18,7 @@
  * attempt at procest#784 shipped and had to be retracted.
  *
  * @category Service
- * @package  OCA\Procest\Service\Support
+ * @package  OCA\Dossiq\Service\Support
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,7 +26,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -36,9 +36,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Support;
+namespace OCA\Dossiq\Service\Support;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -83,7 +83,7 @@ class ConfiguredRegistryService {
 	 * List every object of a configured schema.
 	 *
 	 * Degrades to an empty array when OpenRegister or the schema is
-	 * unconfigured, matching the rest of procest's read paths.
+	 * unconfigured, matching the rest of dossiq's read paths.
 	 *
 	 * @param string $schemaConfigKey Config key naming the schema.
 	 * @param array<string, mixed> $filters Optional object-field filters.

@@ -27,13 +27,13 @@
  *    whether the citizen is billed.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -41,13 +41,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\SubsidieController;
-use OCA\Procest\Service\Subsidie\BeschikkingService;
-use OCA\Procest\Service\Subsidie\SubsidieService;
-use OCA\Procest\Service\Subsidie\TussenrapportageService;
-use OCA\Procest\Service\Subsidie\VaststellingService;
+use OCA\Dossiq\Controller\SubsidieController;
+use OCA\Dossiq\Service\Subsidie\BeschikkingService;
+use OCA\Dossiq\Service\Subsidie\SubsidieService;
+use OCA\Dossiq\Service\Subsidie\TussenrapportageService;
+use OCA\Dossiq\Service\Subsidie\VaststellingService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\IRequest;
@@ -59,7 +59,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Wire-contract tests for SubsidieController.
  *
- * @covers \OCA\Procest\Controller\SubsidieController
+ * @covers \OCA\Dossiq\Controller\SubsidieController
  */
 class SubsidieControllerContractTest extends TestCase {
 
@@ -224,7 +224,7 @@ class SubsidieControllerContractTest extends TestCase {
 		$this->withParamBag(
 			[
 				'id' => 'aanvraag-1',
-				'_route' => 'procest.subsidie.createBeschikking',
+				'_route' => 'dossiq.subsidie.createBeschikking',
 				'decisionId' => 'leaked-decision',
 				'reportId' => 'leaked-report',
 				'uitvoeringId' => 'leaked-uitvoering',

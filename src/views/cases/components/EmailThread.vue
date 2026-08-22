@@ -1,14 +1,14 @@
 <template>
 	<div class="email-thread">
 		<h4 class="email-thread__title">
-			{{ t('procest', 'Email Communication') }}
+			{{ t('dossiq', 'Email Communication') }}
 			<span v-if="messages.length > 0" class="email-thread__count">
 				({{ messages.length }})
 			</span>
 		</h4>
 
 		<div v-if="messages.length === 0" class="email-thread__empty">
-			{{ t('procest', 'No emails for this case.') }}
+			{{ t('dossiq', 'No emails for this case.') }}
 		</div>
 
 		<div v-else class="email-thread__messages">
@@ -21,8 +21,8 @@
 					<span class="email-thread__direction">
 						{{
 							msg.direction === 'outbound'
-								? t('procest', 'Sent')
-								: t('procest', 'Received')
+								? t('dossiq', 'Sent')
+								: t('dossiq', 'Received')
 						}}
 					</span>
 					<span class="email-thread__date">
@@ -32,10 +32,10 @@
 
 				<div class="email-thread__message-meta">
 					<span v-if="msg.direction === 'outbound'">
-						{{ t('procest', 'To: {email}', { email: msg.to }) }}
+						{{ t('dossiq', 'To: {email}', { email: msg.to }) }}
 					</span>
 					<span v-else>
-						{{ t('procest', 'From: {email}', { email: msg.from }) }}
+						{{ t('dossiq', 'From: {email}', { email: msg.from }) }}
 					</span>
 				</div>
 
@@ -53,8 +53,8 @@
 					@click="toggleExpand(msg.messageId || msg.id)">
 					{{
 						isExpanded(msg.messageId || msg.id)
-							? t('procest', 'Show less')
-							: t('procest', 'Show more')
+							? t('dossiq', 'Show less')
+							: t('dossiq', 'Show more')
 					}}
 				</NcButton>
 			</div>
@@ -62,7 +62,7 @@
 
 		<!-- Compose button -->
 		<NcButton v-if="!isReadOnly" @click="$emit('compose')">
-			{{ t('procest', 'Compose Email') }}
+			{{ t('dossiq', 'Compose Email') }}
 		</NcButton>
 	</div>
 </template>

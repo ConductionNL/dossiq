@@ -143,7 +143,7 @@ and download operation. Guards MUST be checked at the service layer, not only in
 - **THEN** `InformatieobjectAccessGuard.canPublish(informatieobject)` MUST return `false`
 - **AND** the share creation MUST be blocked with an appropriate error message
 
-@e2e exclude Public-share refusal (`canPublish`) is a service-layer guard asserted in tests/Unit/Service/InformatieobjectAccessGuardTest; share creation runs through Nextcloud's own sharing UI, outside the procest e2e surface.
+@e2e exclude Public-share refusal (`canPublish`) is a service-layer guard asserted in tests/Unit/Service/InformatieobjectAccessGuardTest; share creation runs through Nextcloud's own sharing UI, outside the dossiq e2e surface.
 
 #### Scenario: REQ-ZAK-003d Default vertrouwelijkheidaanduiding from informatieobjecttype
 

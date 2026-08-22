@@ -3,12 +3,12 @@
 <template>
 	<div class="dossier-version-panel">
 		<h4 class="dossier-version-panel__title">
-			{{ t('procest', 'Version history') }}
+			{{ t('dossiq', 'Version history') }}
 		</h4>
 
 		<NcEmptyContent
 			v-if="!loading && versions.length === 0"
-			:name="t('procest', 'No previous versions')">
+			:name="t('dossiq', 'No previous versions')">
 			<template #icon>
 				<History :size="20" />
 			</template>
@@ -23,29 +23,29 @@
 				class="dossier-version-panel__item">
 				<div class="dossier-version-panel__info">
 					<span class="dossier-version-panel__number"
-						>{{ t('procest', 'Version') }} {{ version.number }}</span
+						>{{ t('dossiq', 'Version') }} {{ version.number }}</span
 					>
 					<span class="dossier-version-panel__meta">
 						{{ formatDate(version.timestamp) }} ·
-						{{ version.author || t('procest', 'Unknown') }}
+						{{ version.author || t('dossiq', 'Unknown') }}
 					</span>
 				</div>
 				<div class="dossier-version-panel__actions">
 					<NcButton
 						type="tertiary"
 						@click="$emit('download-version', version)">
-						{{ t('procest', 'Download') }}
+						{{ t('dossiq', 'Download') }}
 					</NcButton>
 					<NcButton
 						type="tertiary"
 						:disabled="restoreDisabled"
 						:title="
 							restoreDisabled
-								? t('procest', 'Final documents cannot be modified')
+								? t('dossiq', 'Final documents cannot be modified')
 								: ''
 						"
 						@click="$emit('restore-version', version)">
-						{{ t('procest', 'Restore') }}
+						{{ t('dossiq', 'Restore') }}
 					</NcButton>
 				</div>
 			</li>

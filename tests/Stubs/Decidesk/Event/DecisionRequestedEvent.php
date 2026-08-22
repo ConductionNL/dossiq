@@ -3,7 +3,7 @@
 /**
  * Decidesk DecisionRequestedEvent test stub.
  *
- * Mirrors decidesk's merged event contract so procest's delegation services can
+ * Mirrors decidesk's merged event contract so dossiq's delegation services can
  * be unit-tested without the decidesk app installed. The real class ships in
  * decidesk (`OCA\Decidesk\Event\DecisionRequestedEvent`); this stub is loaded
  * by tests/bootstrap.php only when the real class is absent.

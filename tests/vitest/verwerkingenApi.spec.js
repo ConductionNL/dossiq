@@ -4,7 +4,7 @@
  *
  * Unit tests for the verwerkingen API wrapper (avg-verwerkingenlogging,
  * thin consumer): every call targets OPENREGISTER's /api/avg endpoints
- * (never a procest route), and the response envelopes unwrap correctly.
+ * (never a dossiq route), and the response envelopes unwrap correctly.
  *
  * @spec openspec/specs/avg-verwerkingenlogging/spec.md
  */
@@ -36,7 +36,7 @@ describe('verwerkingenApi (thin consumer of OR)', () => {
 		expect(FALLBACK_ACTIVITY_CODE).toBe('niet-geclassificeerde-verwerking')
 	})
 
-	it('lists the catalogue from OpenRegister, never a procest route', async () => {
+	it('lists the catalogue from OpenRegister, never a dossiq route', async () => {
 		axiosGet.mockResolvedValue({
 			data: { results: [{ code: 'zaakafhandeling', status: 'draft' }] },
 		})

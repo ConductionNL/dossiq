@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Procest NoticeOfDefaultController.
+ * Dossiq NoticeOfDefaultController.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,18 +15,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\NoticeOfDefaultService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\NoticeOfDefaultService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

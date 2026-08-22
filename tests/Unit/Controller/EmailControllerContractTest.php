@@ -22,21 +22,21 @@
  * than as nulls.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\EmailController;
-use OCA\Procest\Service\CaseEmailService;
+use OCA\Dossiq\Controller\EmailController;
+use OCA\Dossiq\Service\CaseEmailService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -47,7 +47,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Wire-contract tests for EmailController.
  *
- * @covers \OCA\Procest\Controller\EmailController
+ * @covers \OCA\Dossiq\Controller\EmailController
  */
 class EmailControllerContractTest extends TestCase {
 
@@ -92,7 +92,7 @@ class EmailControllerContractTest extends TestCase {
 		$this->userSession = $this->createMock(IUserSession::class);
 
 		$this->controller = new EmailController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			emailService: $this->emailService,
 			userSession: $this->userSession,

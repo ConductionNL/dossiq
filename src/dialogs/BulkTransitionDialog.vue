@@ -14,7 +14,7 @@
 <template>
 	<NcDialog
 		:name="
-			t('procest', 'Change status for {count} cases', {
+			t('dossiq', 'Change status for {count} cases', {
 				count: caseIds.length,
 			})
 		"
@@ -31,8 +31,8 @@
 					<NcSelect
 						v-model="selectedTransition"
 						:options="transitionOptions"
-						:placeholder="t('procest', 'Select a status transition')"
-						:inputLabel="t('procest', 'New status')"
+						:placeholder="t('dossiq', 'Select a status transition')"
+						:inputLabel="t('dossiq', 'New status')"
 						:disabled="executed"
 						label="label"
 						trackBy="id" />
@@ -40,7 +40,7 @@
 					<NcTextArea
 						v-model="comment"
 						:label="
-							t('procest', 'Comment (optional, applied to every case)')
+							t('dossiq', 'Comment (optional, applied to every case)')
 						"
 						:disabled="executed" />
 
@@ -55,7 +55,7 @@
 						<p>
 							{{
 								t(
-									'procest',
+									'dossiq',
 									'{ready} of {total} cases are ready to transition.',
 									{
 										ready: previewSummary.counts.ready || 0,
@@ -85,7 +85,7 @@
 						<p>
 							{{
 								t(
-									'procest',
+									'dossiq',
 									'{succeeded} of {total} cases were transitioned.',
 									{
 										succeeded:
@@ -111,7 +111,7 @@
 							v-if="!executed"
 							:disabled="!canExecute"
 							@click="onExecute">
-							{{ t('procest', 'Execute') }}
+							{{ t('dossiq', 'Execute') }}
 						</NcButton>
 						<NcButton
 							type="secondary"
@@ -119,8 +119,8 @@
 							@click="onClose">
 							{{
 								executed
-									? t('procest', 'Close')
-									: t('procest', 'Cancel')
+									? t('dossiq', 'Close')
+									: t('dossiq', 'Cancel')
 							}}
 						</NcButton>
 					</div>
@@ -228,13 +228,15 @@ export default {
 		 * populate the transition picker (the column's available transitions).
 		 *
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/case-bulk-status-transition/spec.md#requirement-column-scoped-selection-on-the-workflow-board
 		 */
 		async loadTransitions() {
 			this.loadingTransitions = true
 			this.transitionsError = null
 			const caseId = this.caseIds[0]
 			if (!caseId) {
-				this.transitionsError = this.t('procest', 'No cases selected.')
+				this.transitionsError = this.t('dossiq', 'No cases selected.')
 				this.loadingTransitions = false
 				return
 			}
@@ -242,7 +244,7 @@ export default {
 			try {
 				const { data } = await axios.get(
 					generateUrl(
-						'/apps/procest/api/case/'
+						'/apps/dossiq/api/case/'
 							+ encodeURIComponent(caseId)
 							+ '/available-transitions',
 					),
@@ -259,6 +261,8 @@ export default {
 		 * Run a read-only bulk preview for the currently selected transition.
 		 *
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/case-bulk-status-transition/spec.md#requirement-preview-before-execute
 		 */
 		async runPreview() {
 			this.previewLoading = true
@@ -269,7 +273,7 @@ export default {
 					this.selectedTransition.id,
 				)
 				const { data } = await axios.post(
-					generateUrl('/apps/procest/api/cases/bulk-transition/preview'),
+					generateUrl('/apps/dossiq/api/cases/bulk-transition/preview'),
 					payload,
 				)
 				this.previewSummary = summarizeResults(data?.results || {})
@@ -284,6 +288,8 @@ export default {
 		 * Execute the bulk transition and render per-case results.
 		 *
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/case-bulk-status-transition/spec.md#requirement-bulk-transitions-go-through-the-engine
 		 */
 		async onExecute() {
 			if (!this.selectedTransition) return
@@ -296,7 +302,7 @@ export default {
 					this.comment,
 				)
 				const { data } = await axios.post(
-					generateUrl('/apps/procest/api/cases/bulk-transition/execute'),
+					generateUrl('/apps/dossiq/api/cases/bulk-transition/execute'),
 					payload,
 				)
 				this.executeSummary = summarizeResults(data?.results || {})

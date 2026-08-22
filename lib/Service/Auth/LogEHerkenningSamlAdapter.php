@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest eHerkenning SAML Adapter — dormant logging implementation.
+ * Dossiq eHerkenning SAML Adapter — dormant logging implementation.
  *
  * Ships as the default DI binding for
  * {@see EHerkenningSamlAdapterInterface}. Logs every call at warning level
@@ -15,7 +15,7 @@
  * and swapping the DI binding to the active implementation.
  *
  * @category Service
- * @package  OCA\Procest\Service\Auth
+ * @package  OCA\Dossiq\Service\Auth
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,14 +26,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/leverancier-zaakportaal-02-eherkenning-auth/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Auth;
+namespace OCA\Dossiq\Service\Auth;
 
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
@@ -46,7 +46,7 @@ final class LogEHerkenningSamlAdapter implements EHerkenningSamlAdapterInterface
 	/**
 	 * App id for IAppConfig look-ups.
 	 */
-	public const APP_ID = 'procest';
+	public const APP_ID = 'dossiq';
 
 	/**
 	 * Feature-flag key.
@@ -74,6 +74,8 @@ final class LogEHerkenningSamlAdapter implements EHerkenningSamlAdapterInterface
 	 * @return BrokerAssertionResult
 	 *
 	 * @throws RuntimeException Always.
+	 *
+	 * @spec openspec/specs/zaakportaal-mijngemeente/spec.md#requirement-digid-and-eherkenning-authentication-with-wdo-mandated-trust-levels
 	 */
 	public function decodeAssertion(string $samlResponse, string $relayState): BrokerAssertionResult {
 		$this->logger->warning(
@@ -85,7 +87,7 @@ final class LogEHerkenningSamlAdapter implements EHerkenningSamlAdapterInterface
 				'response_len' => strlen($samlResponse),
 				'relay_state' => $relayState,
 				'activation' => 'configure openconnector eHerkenning broker + private key + cert; '
-					. 'occ config:app:set procest eherkenning.feature_flag --value 1; '
+					. 'occ config:app:set dossiq eherkenning.feature_flag --value 1; '
 					. 'swap DI binding to the active SamlAdapter implementation.',
 			]
 		);

@@ -8,20 +8,20 @@
 		@keydown.space.self.prevent="$emit('cancel')">
 		<div class="location-picker">
 			<div class="location-picker__header">
-				<h3>{{ t('procest', 'Select location') }}</h3>
+				<h3>{{ t('dossiq', 'Select location') }}</h3>
 				<div class="location-picker__tools">
 					<NcButton
 						:type="mode === 'point' ? 'primary' : 'secondary'"
 						@click="setMode('point')">
-						{{ t('procest', 'Point') }}
+						{{ t('dossiq', 'Point') }}
 					</NcButton>
 					<NcButton
 						:type="mode === 'polygon' ? 'primary' : 'secondary'"
 						@click="setMode('polygon')">
-						{{ t('procest', 'Draw area') }}
+						{{ t('dossiq', 'Draw area') }}
 					</NcButton>
 					<NcButton @click="useCurrentLocation">
-						{{ t('procest', 'My location') }}
+						{{ t('dossiq', 'My location') }}
 					</NcButton>
 				</div>
 			</div>
@@ -35,20 +35,20 @@
 			<div class="location-picker__info">
 				<template v-if="selectedGeometry">
 					<p v-if="selectedGeometry.type === 'Point'">
-						{{ t('procest', 'Coordinates') }}:
+						{{ t('dossiq', 'Coordinates') }}:
 						{{ selectedGeometry.coordinates[1].toFixed(6) }},
 						{{ selectedGeometry.coordinates[0].toFixed(6) }}
 					</p>
 					<p v-if="selectedGeometry.type === 'Polygon' && area > 0">
-						{{ t('procest', 'Area') }}: {{ formatArea(area) }}
+						{{ t('dossiq', 'Area') }}: {{ formatArea(area) }}
 					</p>
 				</template>
 				<p v-else class="location-picker__hint">
 					{{
 						mode === 'point'
-							? t('procest', 'Click on the map to place a marker')
+							? t('dossiq', 'Click on the map to place a marker')
 							: t(
-									'procest',
+									'dossiq',
 									'Click points to draw a polygon, double-click to finish',
 								)
 					}}
@@ -57,10 +57,10 @@
 
 			<div class="location-picker__actions">
 				<NcButton @click="$emit('cancel')">
-					{{ t('procest', 'Cancel') }}
+					{{ t('dossiq', 'Cancel') }}
 				</NcButton>
 				<NcButton type="primary" :disabled="!selectedGeometry" @click="save">
-					{{ t('procest', 'Save') }}
+					{{ t('dossiq', 'Save') }}
 				</NcButton>
 			</div>
 		</div>

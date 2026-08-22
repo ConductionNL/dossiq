@@ -4,7 +4,7 @@
  * Tests for the pure decisions behind the schema-slug migration.
  *
  * @category  Test
- * @package   OCA\Procest\Tests\Unit\Repair
+ * @package   OCA\Dossiq\Tests\Unit\Repair
  * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
@@ -16,15 +16,15 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Repair;
+namespace OCA\Dossiq\Tests\Unit\Repair;
 
-use OCA\Procest\Repair\RenameDutchSchemaSlugDecisions;
-use OCA\Procest\Repair\RenameDutchSchemaSlugs;
+use OCA\Dossiq\Repair\RenameDutchSchemaSlugDecisions;
+use OCA\Dossiq\Repair\RenameDutchSchemaSlugs;
 use OCP\DB\IResult;
 use OCP\IDBConnection;
 use OCP\Migration\IOutput;
-use Psr\Log\LoggerInterface;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 /**
  * The slug migration's decisions, exercised without a database.
@@ -34,8 +34,8 @@ use PHPUnit\Framework\TestCase;
  *
  * phpcs:disable CustomSniffs.Functions.NamedParameters
  *
- * @covers \OCA\Procest\Repair\RenameDutchSchemaSlugDecisions
- * @covers \OCA\Procest\Repair\RenameDutchSchemaSlugs
+ * @covers \OCA\Dossiq\Repair\RenameDutchSchemaSlugDecisions
+ * @covers \OCA\Dossiq\Repair\RenameDutchSchemaSlugs
  *
  * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
  *  migration. Pointing this at an existing spec would report conformance to a
@@ -158,7 +158,6 @@ final class RenameDutchSchemaSlugDecisionsTest extends TestCase {
 		self::assertSame([34, 35, 40], $ids, 'deduplicated, numeric only, no fatal');
 
 	}//end testSchemaIdsFromToleratesMalformedRows()
-
 
 	/**
 	 * Every target in the shipped map is English and distinct.

@@ -12,7 +12,7 @@
  * hitting the EXISTING ZgwDocumentService, not a new path.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Beschikking
+ * @package  OCA\Dossiq\Tests\Unit\Service\Beschikking
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,7 +20,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -30,11 +30,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Beschikking;
+namespace OCA\Dossiq\Tests\Unit\Service\Beschikking;
 
-use OCA\Procest\Service\Beschikking\LibresignApiClient;
-use OCA\Procest\Service\Beschikking\LibresignSigningAdapter;
-use OCA\Procest\Service\ZgwDocumentService;
+use OCA\Dossiq\Service\Beschikking\LibresignApiClient;
+use OCA\Dossiq\Service\Beschikking\LibresignSigningAdapter;
+use OCA\Dossiq\Service\ZgwDocumentService;
 use OCP\App\IAppManager;
 use OCP\Files\File;
 use OCP\Files\Folder;
@@ -47,10 +47,10 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * @covers \OCA\Procest\Service\Beschikking\LibresignSigningAdapter
+ * @covers \OCA\Dossiq\Service\Beschikking\LibresignSigningAdapter
  *
- * @uses \OCA\Procest\Service\Beschikking\LibresignResultAssembler
- * @uses \OCA\Procest\Service\Beschikking\LibresignStatusMapper
+ * @uses \OCA\Dossiq\Service\Beschikking\LibresignResultAssembler
+ * @uses \OCA\Dossiq\Service\Beschikking\LibresignStatusMapper
  */
 class LibresignSigningAdapterTest extends TestCase {
 	/**

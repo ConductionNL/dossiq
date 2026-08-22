@@ -22,23 +22,23 @@
  *    above, so a client can tell "not allowed" from "store unavailable".
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\ZaakdossierController;
-use OCA\Procest\Service\Zaakdossier\DossierUploadHandler;
-use OCA\Procest\Service\Zaakdossier\InformatieobjectReader;
-use OCA\Procest\Service\ZaakdossierService;
+use OCA\Dossiq\Controller\ZaakdossierController;
+use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
+use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
+use OCA\Dossiq\Service\ZaakdossierService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -50,7 +50,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Wire-contract tests for ZaakdossierController.
  *
- * @covers \OCA\Procest\Controller\ZaakdossierController
+ * @covers \OCA\Dossiq\Controller\ZaakdossierController
  */
 class ZaakdossierControllerContractTest extends TestCase {
 
@@ -111,7 +111,7 @@ class ZaakdossierControllerContractTest extends TestCase {
 		$this->userSession = $this->createMock(IUserSession::class);
 
 		$this->controller = new ZaakdossierController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			fileService: $this->fileService,
 			reader: $this->reader,

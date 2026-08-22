@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest CaseReassignmentController.
+ * Dossiq CaseReassignmentController.
  *
  * REST API for coordinator bulk reassignment of cases from one handler to
  * another, with a dry-run preview ahead of execution.
@@ -15,7 +15,7 @@
  * (ADR-005 Rule 3).
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,7 +23,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -33,9 +33,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\CaseReassignmentService;
+use OCA\Dossiq\Service\CaseReassignmentService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;

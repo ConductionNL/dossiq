@@ -8,7 +8,7 @@
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-const base = (path) => generateUrl('/apps/procest' + path)
+const base = (path) => generateUrl('/apps/dossiq' + path)
 
 /**
  * List the configured StUF-ZKN/BG outbound endpoints with their circuit-breaker health.

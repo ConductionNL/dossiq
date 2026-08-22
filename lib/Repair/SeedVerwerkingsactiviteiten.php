@@ -1,18 +1,18 @@
 <?php
 
 /**
- * Procest Verwerkingsactiviteiten Catalogue Seed Repair Step
+ * Dossiq Verwerkingsactiviteiten Catalogue Seed Repair Step
  *
- * Seeds procest's zaakgericht-werken processing-activity catalogue
+ * Seeds dossiq's zaakgericht-werken processing-activity catalogue
  * (lib/Settings/verwerkingsactiviteiten.json) into OpenRegister's
  * AVG verwerkingsregister as drafts (status `concept`) for FG review.
  *
  * Upsert-by-code semantics: a missing activity is inserted as a draft;
  * an existing activity has its descriptive fields refreshed but its
  * lifecycle `status` is NEVER touched, so an FG activation (published)
- * or archival in OpenRegister is preserved across procest upgrades.
+ * or archival in OpenRegister is preserved across dossiq upgrades.
  *
- * Procest ships no processing-log, retention, export, or steward
+ * Dossiq ships no processing-log, retention, export, or steward
  * machinery of its own — those are OpenRegister's (OR-PA-1..9); this
  * step only contributes the domain catalogue content. Note: OR has no
  * declarative activity import from register annotations yet, so this
@@ -20,7 +20,7 @@
  * seeding ships upstream.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -33,18 +33,18 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\Verwerkingsactiviteit;
 use OCA\OpenRegister\Db\VerwerkingsactiviteitMapper;
-use OCA\Procest\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * Seeds the procest verwerkingsactiviteiten catalogue into OpenRegister (draft, upsert-by-code).
+ * Seeds the dossiq verwerkingsactiviteiten catalogue into OpenRegister (draft, upsert-by-code).
  *
  * @spec openspec/specs/avg-verwerkingenlogging/spec.md
  */
@@ -80,7 +80,7 @@ class SeedVerwerkingsactiviteiten implements IRepairStep {
 	 * @spec openspec/specs/avg-verwerkingenlogging/spec.md
 	 */
 	public function getName(): string {
-		return 'Seed procest verwerkingsactiviteiten catalogue into OpenRegister (draft, upsert-by-code)';
+		return 'Seed dossiq verwerkingsactiviteiten catalogue into OpenRegister (draft, upsert-by-code)';
 	}//end getName()
 
 	/**
@@ -95,13 +95,13 @@ class SeedVerwerkingsactiviteiten implements IRepairStep {
 	public function run(IOutput $output): void {
 		if ($this->settingsService->isOpenRegisterAvailable() === false) {
 			$output->warning('OpenRegister is not installed or enabled. Skipping verwerkingsactiviteiten seed.');
-			$this->logger->warning('Procest: OpenRegister not available, skipping verwerkingsactiviteiten seed');
+			$this->logger->warning('Dossiq: OpenRegister not available, skipping verwerkingsactiviteiten seed');
 			return;
 		}
 
 		$activities = $this->loadCatalogue();
 		if ($activities === []) {
-			$output->warning('Procest verwerkingsactiviteiten catalogue is empty or unreadable; nothing seeded.');
+			$output->warning('Dossiq verwerkingsactiviteiten catalogue is empty or unreadable; nothing seeded.');
 			return;
 		}
 
@@ -112,7 +112,7 @@ class SeedVerwerkingsactiviteiten implements IRepairStep {
 			// gracefully — the seed re-runs on the next upgrade.
 			$output->warning('OpenRegister verwerkingsregister not available (OR < 0.2.16?); skipping seed.');
 			$this->logger->warning(
-				'Procest: VerwerkingsactiviteitMapper unavailable, skipping catalogue seed',
+				'Dossiq: VerwerkingsactiviteitMapper unavailable, skipping catalogue seed',
 				['exception' => $e->getMessage()]
 			);
 			return;
@@ -139,13 +139,13 @@ class SeedVerwerkingsactiviteiten implements IRepairStep {
 				}
 
 				// Refresh descriptive fields; NEVER touch lifecycle status —
-				// FG activation in OpenRegister survives procest upgrades.
+				// FG activation in OpenRegister survives dossiq upgrades.
 				$this->hydrate(entity: $existing, definition: $definition);
 				$mapper->update(entity: $existing);
 				$updated++;
 			} catch (\Throwable $e) {
 				$this->logger->error(
-					'Procest: failed to seed verwerkingsactiviteit',
+					'Dossiq: failed to seed verwerkingsactiviteit',
 					['code' => $code, 'exception' => $e->getMessage()]
 				);
 			}//end try

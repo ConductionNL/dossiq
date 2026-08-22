@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Seed Termijnbewaking Data Repair Step.
+ * Dossiq Seed Termijnbewaking Data Repair Step.
  *
  * Seeds the three demo `TermijnDefinitie` rows
  * (Omgevingsvergunning-regulier, Wmo-aanvraag, Woo-verzoek) into
@@ -9,7 +9,7 @@
  * Idempotent: existing definitions are skipped.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,17 +20,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-01-schemas-and-seed/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
-use OCA\Procest\Service\DeadlineMonitoringSeedDataService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\DeadlineMonitoringSeedDataService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -63,7 +63,7 @@ class SeedDeadlineMonitoringData implements IRepairStep {
 	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function getName(): string {
-		return 'Seed demo TermijnDefinities for Procest termijnbewaking';
+		return 'Seed demo TermijnDefinities for Dossiq termijnbewaking';
 	}//end getName()
 
 	/**
@@ -97,7 +97,7 @@ class SeedDeadlineMonitoringData implements IRepairStep {
 			$output->warning('Termijnbewaking seed issue: ' . ((string)($result['message'] ?? 'unknown error')));
 		} catch (\Throwable $e) {
 			$output->warning('Could not seed termijnbewaking data: ' . $e->getMessage());
-			$this->logger->error('Procest termijnbewaking seed failed', ['exception' => $e->getMessage()]);
+			$this->logger->error('Dossiq termijnbewaking seed failed', ['exception' => $e->getMessage()]);
 		}
 	}//end run()
 }//end class

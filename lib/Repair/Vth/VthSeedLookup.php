@@ -1,19 +1,19 @@
 <?php
 
 /**
- * Procest VTH seed lookup.
+ * Dossiq VTH seed lookup.
  *
  * Every OpenRegister read the VTH workflow-template seed needs: resolving a
  * caseType slug to its UUID, the idempotency probe for an already-seeded
  * template, and the statusType name → UUID map. Also owns the system-principal
  * elevation the whole seed runs inside.
  *
- * Split out of {@see \OCA\Procest\Repair\SeedVthWorkflowTemplates} so the repair
+ * Split out of {@see \OCA\Dossiq\Repair\SeedVthWorkflowTemplates} so the repair
  * step reads as orchestration only and every OpenRegister query — each of which
  * must soft-fail rather than abort the seed — lives behind one seam.
  *
  * @category Repair
- * @package  OCA\Procest\Repair\Vth
+ * @package  OCA\Dossiq\Repair\Vth
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,7 +21,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -31,11 +31,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair\Vth;
+namespace OCA\Dossiq\Repair\Vth;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 
@@ -98,7 +98,7 @@ class VthSeedLookup {
 
 	/**
 	 * Resolve a caseType by its slug — uses the `identifier` field on the
-	 * caseType schema (the canonical slug-like field across procest seed
+	 * caseType schema (the canonical slug-like field across dossiq seed
 	 * data). Returns the empty string when not found.
 	 *
 	 * @param string $slug The caseType slug / identifier
@@ -114,7 +114,7 @@ class VthSeedLookup {
 			$rows = $this->query(
 				schemaKey: 'case_type_schema',
 				filters: [$field => $slug, '_limit' => 5],
-				failureMessage: 'Procest: VTH workflow template — caseType lookup failed',
+				failureMessage: 'Dossiq: VTH workflow template — caseType lookup failed',
 				failureContext: ['field' => $field, 'slug' => $slug],
 			);
 
@@ -146,7 +146,7 @@ class VthSeedLookup {
 				'title' => $title,
 				'_limit' => 1,
 			],
-			failureMessage: 'Procest: VTH workflow template — idempotency lookup failed',
+			failureMessage: 'Dossiq: VTH workflow template — idempotency lookup failed',
 			failureContext: ['caseType' => $caseTypeId, 'title' => $title],
 		);
 
@@ -167,7 +167,7 @@ class VthSeedLookup {
 		$rows = $this->query(
 			schemaKey: 'status_type_schema',
 			filters: ['caseType' => $caseTypeId, '_limit' => 500],
-			failureMessage: 'Procest: VTH workflow template — statusType listing failed',
+			failureMessage: 'Dossiq: VTH workflow template — statusType listing failed',
 			failureContext: ['caseType' => $caseTypeId],
 			failureLevel: LogLevel::ERROR,
 		);

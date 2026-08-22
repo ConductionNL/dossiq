@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Daily Termijn Scan Job.
+ * Dossiq Daily Termijn Scan Job.
  *
  * Daily background job that drives the AWB termijnbewaking sweep:
  * computes days-to-deadline for every active TermijnInstance, flips
@@ -9,7 +9,7 @@
  * dispatches threshold escalation via {@see DeadlineEscalationService}.
  *
  * @category BackgroundJob
- * @package  OCA\Procest\BackgroundJob
+ * @package  OCA\Dossiq\BackgroundJob
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,16 +20,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\BackgroundJob;
+namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Procest\Service\DeadlineDailyScanService;
+use OCA\Dossiq\Service\DeadlineDailyScanService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -79,9 +79,9 @@ class DailyDeadlineScanJob extends TimedJob {
 
 		try {
 			$counts = $this->scan->run();
-			$this->logger->info('Procest daily termijn scan finished', $counts);
+			$this->logger->info('Dossiq daily termijn scan finished', $counts);
 		} catch (\Throwable $e) {
-			$this->logger->error('Procest daily termijn scan failed', ['error' => $e->getMessage()]);
+			$this->logger->error('Dossiq daily termijn scan failed', ['error' => $e->getMessage()]);
 		}
 	}//end run()
 }//end class

@@ -3,14 +3,14 @@
 		<NcNoteCard type="info">
 			{{
 				t(
-					'procest',
+					'dossiq',
 					'Configure the shared functional mailbox (e.g. zaken@gemeente.nl) that the inbound poller ingests and auto-links to cases by [ZAAK-YYYY-NNNNNN] subject tag. Outbound mail and per-user accounts are owned by Nextcloud Mail — they are not configured here.',
 				)
 			}}
 		</NcNoteCard>
 
 		<div class="setting-row">
-			<label for="email_imap_host">{{ t('procest', 'IMAP host') }}</label>
+			<label for="email_imap_host">{{ t('dossiq', 'IMAP host') }}</label>
 			<NcInputField
 				id="email_imap_host"
 				v-model="form.email_imap_host"
@@ -19,7 +19,7 @@
 		</div>
 
 		<div class="setting-row">
-			<label for="email_imap_port">{{ t('procest', 'IMAP port') }}</label>
+			<label for="email_imap_port">{{ t('dossiq', 'IMAP port') }}</label>
 			<NcInputField
 				id="email_imap_port"
 				v-model="form.email_imap_port"
@@ -31,14 +31,14 @@
 		<div class="setting-row">
 			<NcSelect
 				v-model="encryptionOption"
-				:inputLabel="t('procest', 'Encryption')"
+				:inputLabel="t('dossiq', 'Encryption')"
 				:options="encryptionOptions"
 				:disabled="!writable || loading"
 				:clearable="false" />
 		</div>
 
 		<div class="setting-row">
-			<label for="email_imap_username">{{ t('procest', 'Username') }}</label>
+			<label for="email_imap_username">{{ t('dossiq', 'Username') }}</label>
 			<NcInputField
 				id="email_imap_username"
 				v-model="form.email_imap_username"
@@ -47,7 +47,7 @@
 		</div>
 
 		<div class="setting-row">
-			<label for="email_imap_password">{{ t('procest', 'Password') }}</label>
+			<label for="email_imap_password">{{ t('dossiq', 'Password') }}</label>
 			<NcInputField
 				id="email_imap_password"
 				v-model="form.email_imap_password"
@@ -57,7 +57,7 @@
 			<p class="setting-help">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Stored securely (masked in the API and occ config). Leave as *** to keep the saved password.',
 					)
 				}}
@@ -66,7 +66,7 @@
 
 		<div class="setting-row">
 			<label for="email_imap_folder">{{
-				t('procest', 'Mailbox folder')
+				t('dossiq', 'Mailbox folder')
 			}}</label>
 			<NcInputField
 				id="email_imap_folder"
@@ -77,19 +77,19 @@
 
 		<div class="setting-row">
 			<label for="email_transport">{{
-				t('procest', 'Transport / source mailbox account')
+				t('dossiq', 'Transport / source mailbox account')
 			}}</label>
 			<NcInputField
 				id="email_transport"
 				v-model="form.email_transport"
 				:disabled="!writable || loading"
 				:placeholder="
-					t('procest', 'Nextcloud Mail account or functional mailbox id')
+					t('dossiq', 'Nextcloud Mail account or functional mailbox id')
 				" />
 			<p class="setting-help">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Which Nextcloud Mail account or functional mailbox is the case-correspondence source. No per-user SMTP send credentials are configured here.',
 					)
 				}}
@@ -98,7 +98,7 @@
 
 		<div class="setting-row">
 			<label for="email_poll_interval">{{
-				t('procest', 'Poll interval (seconds)')
+				t('dossiq', 'Poll interval (seconds)')
 			}}</label>
 			<NcInputField
 				id="email_poll_interval"
@@ -110,7 +110,7 @@
 
 		<div class="setting-row">
 			<label for="email_poll_batch_size">{{
-				t('procest', 'Messages per run')
+				t('dossiq', 'Messages per run')
 			}}</label>
 			<NcInputField
 				id="email_poll_batch_size"
@@ -130,8 +130,8 @@
 				</template>
 				{{
 					saving
-						? t('procest', 'Saving...')
-						: t('procest', 'Save mailbox settings')
+						? t('dossiq', 'Saving...')
+						: t('dossiq', 'Save mailbox settings')
 				}}
 			</NcButton>
 
@@ -142,7 +142,7 @@
 				<template #icon>
 					<NcLoadingIcon v-if="testing" :size="20" />
 				</template>
-				{{ t('procest', 'Test connection') }}
+				{{ t('dossiq', 'Test connection') }}
 			</NcButton>
 		</div>
 
@@ -196,7 +196,7 @@ export default {
 			encryptionOptions: [
 				{ id: 'ssl', label: 'SSL/TLS' },
 				{ id: 'tls', label: 'STARTTLS' },
-				{ id: 'none', label: t('procest', 'None') },
+				{ id: 'none', label: t('dossiq', 'None') },
 			],
 		}
 	},
@@ -220,8 +220,8 @@ export default {
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		passwordPlaceholder() {
 			return this.form.email_imap_password === '***'
-				? t('procest', 'Saved (masked)')
-				: t('procest', 'Enter password')
+				? t('dossiq', 'Saved (masked)')
+				: t('dossiq', 'Enter password')
 		},
 	},
 
@@ -235,7 +235,7 @@ export default {
 			this.loading = true
 			try {
 				const response = await fetch(
-					generateUrl('/apps/procest/api/settings/email'),
+					generateUrl('/apps/dossiq/api/settings/email'),
 					{
 						headers: { requesttoken: OC.requestToken },
 					},
@@ -266,7 +266,7 @@ export default {
 					delete payload.email_imap_password
 				}
 				const response = await fetch(
-					generateUrl('/apps/procest/api/settings/email'),
+					generateUrl('/apps/dossiq/api/settings/email'),
 					{
 						method: 'PUT',
 						headers: {
@@ -279,13 +279,13 @@ export default {
 				if (response.ok) {
 					this.testResult = {
 						type: 'success',
-						message: t('procest', 'Mailbox settings saved.'),
+						message: t('dossiq', 'Mailbox settings saved.'),
 					}
 					await this.load()
 				} else {
 					this.testResult = {
 						type: 'error',
-						message: t('procest', 'Could not save mailbox settings.'),
+						message: t('dossiq', 'Could not save mailbox settings.'),
 					}
 				}
 			} catch (error) {
@@ -293,7 +293,7 @@ export default {
 					type: 'error',
 					message:
 						error.message
-						|| t('procest', 'Could not save mailbox settings.'),
+						|| t('dossiq', 'Could not save mailbox settings.'),
 				}
 			} finally {
 				this.saving = false
@@ -306,7 +306,7 @@ export default {
 			this.testResult = null
 			try {
 				const response = await fetch(
-					generateUrl('/apps/procest/api/settings/email/test-imap'),
+					generateUrl('/apps/dossiq/api/settings/email/test-imap'),
 					{
 						method: 'POST',
 						headers: {
@@ -319,16 +319,16 @@ export default {
 				if (data && data.ok === true) {
 					this.testResult = {
 						type: 'success',
-						message: t('procest', 'Connection successful.'),
+						message: t('dossiq', 'Connection successful.'),
 					}
 				} else {
 					const detail =
 						data && (data.detail || data.error)
 							? data.detail || data.error
-							: t('procest', 'unknown error')
+							: t('dossiq', 'unknown error')
 					this.testResult = {
 						type: 'error',
-						message: t('procest', 'Connection failed: {detail}', {
+						message: t('dossiq', 'Connection failed: {detail}', {
 							detail,
 						}),
 					}
@@ -336,7 +336,7 @@ export default {
 			} catch (error) {
 				this.testResult = {
 					type: 'error',
-					message: error.message || t('procest', 'Connection failed.'),
+					message: error.message || t('dossiq', 'Connection failed.'),
 				}
 			} finally {
 				this.testing = false

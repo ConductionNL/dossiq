@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest DsoStatusChangeNotifier.
+ * Dossiq DsoStatusChangeNotifier.
  *
  * Dispatches the VergunningStatusChangedEvent when a DSO vergunningzaak
  * changes status. Split out of DsoCaseService alongside the existing
@@ -11,7 +11,7 @@
  * (ADR-022).
  *
  * @category Service
- * @package  OCA\Procest\Service\Dso
+ * @package  OCA\Dossiq\Service\Dso
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,7 +19,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -29,9 +29,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Dso;
+namespace OCA\Dossiq\Service\Dso;
 
-use OCA\Procest\Event\VergunningStatusChangedEvent;
+use OCA\Dossiq\Event\VergunningStatusChangedEvent;
 use OCP\EventDispatcher\IEventDispatcher;
 
 /**

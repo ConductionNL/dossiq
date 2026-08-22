@@ -7,7 +7,7 @@
  * case types into OpenRegister during app installation or upgrade.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Repair
+ * @package  OCA\Dossiq\Tests\Unit\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -15,16 +15,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Repair;
+namespace OCA\Dossiq\Tests\Unit\Repair;
 
-use OCA\Procest\Repair\SeedBezwaarBeroepData;
-use OCA\Procest\Service\SeedDataService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Repair\SeedBezwaarBeroepData;
+use OCA\Dossiq\Service\SeedDataService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -32,7 +32,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for the SeedBezwaarBeroepData repair step.
  *
- * @covers \OCA\Procest\Repair\SeedBezwaarBeroepData
+ * @covers \OCA\Dossiq\Repair\SeedBezwaarBeroepData
  */
 class SeedBezwaarBeroepDataTest extends TestCase {
 

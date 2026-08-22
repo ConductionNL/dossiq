@@ -32,23 +32,23 @@
  *  - and one TRIPWIRE (see its docblock) on the absent scope check.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\DrcController;
-use OCA\Procest\Service\ZgwDocumentService;
-use OCA\Procest\Service\ZgwMappingService;
-use OCA\Procest\Service\ZgwService;
+use OCA\Dossiq\Controller\DrcController;
+use OCA\Dossiq\Service\ZgwDocumentService;
+use OCA\Dossiq\Service\ZgwMappingService;
+use OCA\Dossiq\Service\ZgwService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -103,15 +103,15 @@ interface DrcDownloadLockObjectServiceStub {
 /**
  * Wire-contract tests for DrcController::download() and ::lock().
  *
- * @covers \OCA\Procest\Controller\DrcController
+ * @covers \OCA\Dossiq\Controller\DrcController
  *
  * DrcController extends ZgwController, which composes NormalisesObjectRows, so
  * exercising it necessarily runs code declared on both. CI runs phpunit.xml
  * with beStrictAboutCoverageMetadata="true" and failOnRisky="true", which marks
  * executed-but-unlisted code risky and fails the run.
  *
- * @uses \OCA\Procest\Controller\ZgwController
- * @uses \OCA\Procest\Support\NormalisesObjectRows
+ * @uses \OCA\Dossiq\Controller\ZgwController
+ * @uses \OCA\Dossiq\Support\NormalisesObjectRows
  */
 class DrcDownloadLockContractTest extends TestCase {
 
@@ -158,7 +158,7 @@ class DrcDownloadLockContractTest extends TestCase {
 		$this->zgwService->method('getLogger')->willReturn($this->createMock(LoggerInterface::class));
 
 		$this->controller = new DrcController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			zgwService: $this->zgwService,
 			l10n: $this->l10n,

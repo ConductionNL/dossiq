@@ -1,5 +1,5 @@
 {
-  "_format": "procest-workflow-v1",
+  "_format": "dossiq-workflow-v1",
   "title": "Toezichtzaak Bouw",
   "description": "Workflow voor bouwtoezicht met drie inspectiefases: fundering, ruwbouw en oplevering. Elke fase heeft een checklist-guard en ondersteuning voor herinspectie bij non-conformiteit.",
   "version": 1,
@@ -23,7 +23,10 @@
       "isFinal": false,
       "assigneeRole": "Inspecteur",
       "description": "Inspectie van de fundering",
-      "checklist": ["Fundering-checklist ingevuld", "Inspectierapport opgesteld"],
+      "checklist": [
+        "Fundering-checklist ingevuld",
+        "Inspectierapport opgesteld"
+      ],
       "actions": []
     },
     {
@@ -34,7 +37,10 @@
       "isFinal": false,
       "assigneeRole": "Inspecteur",
       "description": "Inspectie van de ruwbouw",
-      "checklist": ["Ruwbouw-checklist ingevuld", "Inspectierapport opgesteld"],
+      "checklist": [
+        "Ruwbouw-checklist ingevuld",
+        "Inspectierapport opgesteld"
+      ],
       "actions": []
     },
     {
@@ -45,7 +51,10 @@
       "isFinal": false,
       "assigneeRole": "Inspecteur",
       "description": "Inspectie bij oplevering",
-      "checklist": ["Oplevering-checklist ingevuld", "Inspectierapport opgesteld"],
+      "checklist": [
+        "Oplevering-checklist ingevuld",
+        "Inspectierapport opgesteld"
+      ],
       "actions": []
     },
     {
@@ -67,7 +76,10 @@
       "isFinal": false,
       "assigneeRole": "Inspecteur",
       "description": "Opvolging van geconstateerde afwijkingen",
-      "checklist": ["Hercontrole uitgevoerd", "Afwijkingen opgelost"],
+      "checklist": [
+        "Hercontrole uitgevoerd",
+        "Afwijkingen opgelost"
+      ],
       "actions": []
     },
     {
@@ -83,29 +95,202 @@
     }
   ],
   "transitions": [
-    {"id": "tr-1", "label": "Start fase 1", "fromStatus": "Gepland", "toStatus": "Inspectie fase 1", "allowedRoles": ["Inspecteur"], "guards": [], "actions": []},
-    {"id": "tr-2", "label": "Fase 1 afgerond", "fromStatus": "Inspectie fase 1", "toStatus": "Inspectie fase 2", "allowedRoles": ["Inspecteur"], "guards": [{"type": "checklist", "config": {"message": "Fundering-checklist moet zijn ingevuld"}}], "actions": []},
-    {"id": "tr-2b", "label": "Herinspectie fase 1", "fromStatus": "Inspectie fase 1", "toStatus": "Inspectie fase 1", "allowedRoles": ["Inspecteur"], "guards": [], "actions": []},
-    {"id": "tr-3", "label": "Fase 2 afgerond", "fromStatus": "Inspectie fase 2", "toStatus": "Inspectie fase 3", "allowedRoles": ["Inspecteur"], "guards": [{"type": "checklist", "config": {"message": "Ruwbouw-checklist moet zijn ingevuld"}}], "actions": []},
-    {"id": "tr-3b", "label": "Herinspectie fase 2", "fromStatus": "Inspectie fase 2", "toStatus": "Inspectie fase 2", "allowedRoles": ["Inspecteur"], "guards": [], "actions": []},
-    {"id": "tr-4", "label": "Fase 3 afgerond", "fromStatus": "Inspectie fase 3", "toStatus": "Rapport", "allowedRoles": ["Inspecteur"], "guards": [{"type": "checklist", "config": {"message": "Oplevering-checklist moet zijn ingevuld"}}], "actions": []},
-    {"id": "tr-4b", "label": "Herinspectie fase 3", "fromStatus": "Inspectie fase 3", "toStatus": "Inspectie fase 3", "allowedRoles": ["Inspecteur"], "guards": [], "actions": []},
-    {"id": "tr-5", "label": "Opvolging vereist", "fromStatus": "Rapport", "toStatus": "Opvolging", "allowedRoles": ["Inspecteur"], "guards": [], "actions": [{"type": "notification", "config": {"message": "Opvolging vereist — afwijkingen geconstateerd", "targetRole": "Contactpersoon"}}]},
-    {"id": "tr-6", "label": "Zaak afsluiten", "fromStatus": "Rapport", "toStatus": "Afgehandeld", "allowedRoles": ["Inspecteur"], "guards": [], "actions": []},
-    {"id": "tr-7", "label": "Opvolging afgerond", "fromStatus": "Opvolging", "toStatus": "Afgehandeld", "allowedRoles": ["Inspecteur"], "guards": [{"type": "checklist", "config": {"message": "Afwijkingen moeten zijn opgelost"}}], "actions": []}
+    {
+      "id": "tr-1",
+      "label": "Start fase 1",
+      "fromStatus": "Gepland",
+      "toStatus": "Inspectie fase 1",
+      "allowedRoles": [
+        "Inspecteur"
+      ],
+      "guards": [],
+      "actions": []
+    },
+    {
+      "id": "tr-2",
+      "label": "Fase 1 afgerond",
+      "fromStatus": "Inspectie fase 1",
+      "toStatus": "Inspectie fase 2",
+      "allowedRoles": [
+        "Inspecteur"
+      ],
+      "guards": [
+        {
+          "type": "checklist",
+          "config": {
+            "message": "Fundering-checklist moet zijn ingevuld"
+          }
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "tr-2b",
+      "label": "Herinspectie fase 1",
+      "fromStatus": "Inspectie fase 1",
+      "toStatus": "Inspectie fase 1",
+      "allowedRoles": [
+        "Inspecteur"
+      ],
+      "guards": [],
+      "actions": []
+    },
+    {
+      "id": "tr-3",
+      "label": "Fase 2 afgerond",
+      "fromStatus": "Inspectie fase 2",
+      "toStatus": "Inspectie fase 3",
+      "allowedRoles": [
+        "Inspecteur"
+      ],
+      "guards": [
+        {
+          "type": "checklist",
+          "config": {
+            "message": "Ruwbouw-checklist moet zijn ingevuld"
+          }
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "tr-3b",
+      "label": "Herinspectie fase 2",
+      "fromStatus": "Inspectie fase 2",
+      "toStatus": "Inspectie fase 2",
+      "allowedRoles": [
+        "Inspecteur"
+      ],
+      "guards": [],
+      "actions": []
+    },
+    {
+      "id": "tr-4",
+      "label": "Fase 3 afgerond",
+      "fromStatus": "Inspectie fase 3",
+      "toStatus": "Rapport",
+      "allowedRoles": [
+        "Inspecteur"
+      ],
+      "guards": [
+        {
+          "type": "checklist",
+          "config": {
+            "message": "Oplevering-checklist moet zijn ingevuld"
+          }
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "tr-4b",
+      "label": "Herinspectie fase 3",
+      "fromStatus": "Inspectie fase 3",
+      "toStatus": "Inspectie fase 3",
+      "allowedRoles": [
+        "Inspecteur"
+      ],
+      "guards": [],
+      "actions": []
+    },
+    {
+      "id": "tr-5",
+      "label": "Opvolging vereist",
+      "fromStatus": "Rapport",
+      "toStatus": "Opvolging",
+      "allowedRoles": [
+        "Inspecteur"
+      ],
+      "guards": [],
+      "actions": [
+        {
+          "type": "notification",
+          "config": {
+            "message": "Opvolging vereist — afwijkingen geconstateerd",
+            "targetRole": "Contactpersoon"
+          }
+        }
+      ]
+    },
+    {
+      "id": "tr-6",
+      "label": "Zaak afsluiten",
+      "fromStatus": "Rapport",
+      "toStatus": "Afgehandeld",
+      "allowedRoles": [
+        "Inspecteur"
+      ],
+      "guards": [],
+      "actions": []
+    },
+    {
+      "id": "tr-7",
+      "label": "Opvolging afgerond",
+      "fromStatus": "Opvolging",
+      "toStatus": "Afgehandeld",
+      "allowedRoles": [
+        "Inspecteur"
+      ],
+      "guards": [
+        {
+          "type": "checklist",
+          "config": {
+            "message": "Afwijkingen moeten zijn opgelost"
+          }
+        }
+      ],
+      "actions": []
+    }
   ],
   "nodePositions": {
-    "step-gepland": {"x": 100, "y": 200},
-    "step-fase1": {"x": 300, "y": 200},
-    "step-fase2": {"x": 500, "y": 200},
-    "step-fase3": {"x": 700, "y": 200},
-    "step-rapport": {"x": 900, "y": 200},
-    "step-opvolging": {"x": 900, "y": 50},
-    "step-afgehandeld": {"x": 1100, "y": 200}
+    "step-gepland": {
+      "x": 100,
+      "y": 200
+    },
+    "step-fase1": {
+      "x": 300,
+      "y": 200
+    },
+    "step-fase2": {
+      "x": 500,
+      "y": 200
+    },
+    "step-fase3": {
+      "x": 700,
+      "y": 200
+    },
+    "step-rapport": {
+      "x": 900,
+      "y": 200
+    },
+    "step-opvolging": {
+      "x": 900,
+      "y": 50
+    },
+    "step-afgehandeld": {
+      "x": 1100,
+      "y": 200
+    }
   },
   "manifest": {
-    "statusTypes": ["Gepland", "Inspectie fase 1", "Inspectie fase 2", "Inspectie fase 3", "Rapport", "Opvolging", "Afgehandeld"],
-    "roleTypes": ["Inspecteur", "Contactpersoon", "Opdrachtgever"],
-    "documentTypes": ["Constateringsrapport", "Inspectieapport", "Foto's"]
+    "statusTypes": [
+      "Gepland",
+      "Inspectie fase 1",
+      "Inspectie fase 2",
+      "Inspectie fase 3",
+      "Rapport",
+      "Opvolging",
+      "Afgehandeld"
+    ],
+    "roleTypes": [
+      "Inspecteur",
+      "Contactpersoon",
+      "Opdrachtgever"
+    ],
+    "documentTypes": [
+      "Constateringsrapport",
+      "Inspectieapport",
+      "Foto's"
+    ]
   }
 }

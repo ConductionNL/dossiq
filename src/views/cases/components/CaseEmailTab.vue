@@ -6,7 +6,7 @@
   correspondence linked to the case via the OpenRegister
   integration-email leaf (ADR-022 leaf-first).
 
-  Compose is intentionally NOT built in procest — the "New email"
+  Compose is intentionally NOT built in dossiq — the "New email"
   action opens an NC Mail draft via the case-email backend's
   prefillDraft endpoint. The display is delegated to the existing
   EmailThread component which already wires the leaf link-table.
@@ -23,11 +23,11 @@
 
 		<NcEmptyContent
 			v-else-if="mailNotInstalled"
-			:name="t('procest', 'Email integration unavailable')"
+			:name="t('dossiq', 'Email integration unavailable')"
 			:description="
 				t(
-					'procest',
-					'Install Nextcloud Mail to enable case email linking. Procest does not maintain its own email engine.',
+					'dossiq',
+					'Install Nextcloud Mail to enable case email linking. Dossiq does not maintain its own email engine.',
 				)
 			">
 			<template #icon>
@@ -42,11 +42,11 @@
 					v-if="templates.length"
 					v-model="selectedTemplate"
 					:options="templates"
-					:aria-label-combobox="t('procest', 'Email template')"
-					:inputLabel="t('procest', 'Email template')"
+					:aria-label-combobox="t('dossiq', 'Email template')"
+					:inputLabel="t('dossiq', 'Email template')"
 					label="name"
 					trackBy="id"
-					:placeholder="t('procest', 'Select a template (optional)…')"
+					:placeholder="t('dossiq', 'Select a template (optional)…')"
 					:clearable="true" />
 
 				<NcButton
@@ -54,7 +54,7 @@
 					:disabled="isFinal || drafting"
 					:title="
 						isFinal
-							? t('procest', 'Case is closed; email cannot be sent.')
+							? t('dossiq', 'Case is closed; email cannot be sent.')
 							: ''
 					"
 					@click="composeDraft">
@@ -69,7 +69,7 @@
 			<NcNoteCard
 				v-if="error"
 				type="error"
-				:heading="t('procest', 'Could not open draft')"
+				:heading="t('dossiq', 'Could not open draft')"
 				role="alert">
 				{{ error }}
 			</NcNoteCard>
@@ -81,7 +81,7 @@
 				<p>
 					{{
 						t(
-							'procest',
+							'dossiq',
 							'Unresolved template variables — the draft contains raw placeholders that you must fill manually:',
 						)
 					}}
@@ -165,10 +165,17 @@ export default {
 			return this.caseId || this.$route?.params?.id || null
 		},
 
+		/**
+		 * Label for the "compose draft" button.
+		 *
+		 * @return {string} The translated button label.
+		 *
+		 * @spec openspec/specs/case-email-integration/spec.md#requirement-the-system-shall-prefill-an-nc-mail-draft-from-a-template-it-shall-not-send-mail-itself
+		 */
 		draftButtonLabel() {
 			return this.selectedTemplate
-				? t('procest', 'Open draft from template')
-				: t('procest', 'Open empty draft')
+				? t('dossiq', 'Open draft from template')
+				: t('dossiq', 'Open empty draft')
 		},
 	},
 
@@ -241,10 +248,17 @@ export default {
 			this.isFinal = !!(inner.endDate || inner['@self']?.endDate)
 		},
 
+		/**
+		 * Load the email templates available for this case's zaaktype.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/case-email-integration/spec.md#requirement-the-system-shall-provide-per-zaaktype-email-templates-as-a-leaf-extension
+		 */
 		async loadTemplates() {
 			try {
 				const url = generateUrl(
-					`/apps/procest/api/casetypes/${encodeURIComponent(this.caseTypeId)}/email-templates`,
+					`/apps/dossiq/api/casetypes/${encodeURIComponent(this.caseTypeId)}/email-templates`,
 				)
 				const { data } = await axios.get(url)
 				this.templates = Array.isArray(data?.results)
@@ -262,15 +276,17 @@ export default {
 		/**
 		 * Compose action.
 		 *
-		 * Procest never sends mail — we call /api/cases/:id/email-templates/:tid/draft
+		 * Dossiq never sends mail — we call /api/cases/:id/email-templates/:tid/draft
 		 * which the backend (EmailTemplateService::prefillDraft) translates into
 		 * an NC Mail draft via the configured Mail account. The response carries
 		 * unresolved placeholders + the URL to the new NC Mail draft.
+		 *
+		 * @spec openspec/specs/case-email-integration/spec.md#requirement-the-system-shall-prefill-an-nc-mail-draft-from-a-template-it-shall-not-send-mail-itself
 		 */
 		async composeDraft() {
 			if (this.isFinal) {
 				this.error = t(
-					'procest',
+					'dossiq',
 					'Case is closed; new emails cannot be drafted.',
 				)
 				return
@@ -281,7 +297,7 @@ export default {
 			try {
 				const templateId = this.selectedTemplate?.id || 'blank'
 				const url = generateUrl(
-					`/apps/procest/api/cases/${encodeURIComponent(this.resolvedCaseId)}/email-templates/${encodeURIComponent(templateId)}/draft`,
+					`/apps/dossiq/api/cases/${encodeURIComponent(this.resolvedCaseId)}/email-templates/${encodeURIComponent(templateId)}/draft`,
 				)
 				const { data } = await axios.post(url, {})
 				this.unresolvedVariables = Array.isArray(data?.unresolved)
@@ -300,7 +316,7 @@ export default {
 				this.error =
 					err?.response?.data?.message
 					|| err?.message
-					|| t('procest', 'Failed to open the draft.')
+					|| t('dossiq', 'Failed to open the draft.')
 			} finally {
 				this.drafting = false
 			}

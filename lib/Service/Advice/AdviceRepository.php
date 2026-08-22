@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Advice Repository.
+ * Dossiq Advice Repository.
  *
  * Every OpenRegister read and write against the `adviesAanvraag` schema.
  * Split out of AdviceService so that service keeps only the workflow
@@ -19,7 +19,7 @@
  * invisible.
  *
  * @category Service
- * @package  OCA\Procest\Service\Advice
+ * @package  OCA\Dossiq\Service\Advice
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,7 +27,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -37,11 +37,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Advice;
+namespace OCA\Dossiq\Service\Advice;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -95,7 +95,7 @@ class AdviceRepository {
 			$advice = $objectService->find($adviceId, register: $register, schema: $schema);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to load advice: ' . $e->getMessage(),
+				'Dossiq: failed to load advice: ' . $e->getMessage(),
 				['app' => Application::APP_ID]
 			);
 			return null;
@@ -135,7 +135,7 @@ class AdviceRepository {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to fetch advice for case: ' . $e->getMessage(),
+				'Dossiq: failed to fetch advice for case: ' . $e->getMessage(),
 				['app' => Application::APP_ID]
 			);
 			return [];
@@ -171,7 +171,7 @@ class AdviceRepository {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to load open advice: ' . $e->getMessage(),
+				'Dossiq: failed to load open advice: ' . $e->getMessage(),
 				['app' => Application::APP_ID]
 			);
 			return [];
@@ -212,7 +212,7 @@ class AdviceRepository {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to transition advice status: ' . $e->getMessage(),
+				'Dossiq: failed to transition advice status: ' . $e->getMessage(),
 				['app' => Application::APP_ID]
 			);
 			throw new RuntimeException('Could not update advice request');

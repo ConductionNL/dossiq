@@ -9,7 +9,7 @@
  * class instead of being discarded as a `@uses` collaborator.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\ProcessMining
+ * @package  OCA\Dossiq\Tests\Unit\Service\ProcessMining
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,21 +20,21 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T04
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\ProcessMining;
+namespace OCA\Dossiq\Tests\Unit\Service\ProcessMining;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\ProcessMining\ThroughputTrendCalculator;
+use OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Procest\Service\ProcessMining\ThroughputTrendCalculator
+ * @covers \OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator
  */
 class ThroughputTrendCalculatorTest extends TestCase {
 

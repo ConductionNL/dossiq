@@ -8,7 +8,7 @@
 			<!-- Template list -->
 			<div class="email-template-admin__list">
 				<div class="email-template-admin__list-header">
-					<h4>{{ t('procest', 'Templates') }}</h4>
+					<h4>{{ t('dossiq', 'Templates') }}</h4>
 					<NcButton
 						type="primary"
 						:disabled="!caseTypeId"
@@ -16,7 +16,7 @@
 						<template #icon>
 							<Plus :size="20" />
 						</template>
-						{{ t('procest', 'New') }}
+						{{ t('dossiq', 'New') }}
 					</NcButton>
 				</div>
 
@@ -44,19 +44,19 @@
 					</li>
 				</ul>
 				<p v-else class="email-template-admin__empty">
-					{{ t('procest', 'No templates yet for this case type.') }}
+					{{ t('dossiq', 'No templates yet for this case type.') }}
 				</p>
 			</div>
 
 			<!-- Editor -->
 			<div v-if="editing" class="email-template-admin__editor">
 				<div class="setting-row">
-					<label for="etpl-name">{{ t('procest', 'Name') }}</label>
+					<label for="etpl-name">{{ t('dossiq', 'Name') }}</label>
 					<NcInputField id="etpl-name" v-model="draft.name" />
 				</div>
 
 				<div class="setting-row">
-					<label for="etpl-subject">{{ t('procest', 'Subject') }}</label>
+					<label for="etpl-subject">{{ t('dossiq', 'Subject') }}</label>
 					<NcInputField
 						id="etpl-subject"
 						ref="subjectField"
@@ -65,7 +65,7 @@
 				</div>
 
 				<div class="setting-row">
-					<label for="etpl-body">{{ t('procest', 'Body') }}</label>
+					<label for="etpl-body">{{ t('dossiq', 'Body') }}</label>
 					<NcTextArea
 						id="etpl-body"
 						ref="bodyField"
@@ -76,7 +76,7 @@
 
 				<!-- Live preview -->
 				<div class="setting-row">
-					<label>{{ t('procest', 'Preview') }}</label>
+					<label>{{ t('dossiq', 'Preview') }}</label>
 					<div
 						class="email-template-admin__preview"
 						v-html="previewHtml" />
@@ -84,7 +84,7 @@
 						v-if="unresolved.length > 0"
 						class="email-template-admin__warning">
 						{{
-							t('procest', 'Unresolved variables: {names}', {
+							t('dossiq', 'Unresolved variables: {names}', {
 								names: unresolved.join(', '),
 							})
 						}}
@@ -99,16 +99,16 @@
 						{{ saveLabel }}
 					</NcButton>
 					<NcButton type="tertiary" @click="cancelEdit">
-						{{ t('procest', 'Cancel') }}
+						{{ t('dossiq', 'Cancel') }}
 					</NcButton>
 				</div>
 			</div>
 
 			<!-- Variable sidebar -->
 			<div v-if="editing" class="email-template-admin__variables">
-				<h4>{{ t('procest', 'Variables') }}</h4>
+				<h4>{{ t('dossiq', 'Variables') }}</h4>
 				<p class="email-template-admin__hint">
-					{{ t('procest', 'Click to insert into the focused field') }}
+					{{ t('dossiq', 'Click to insert into the focused field') }}
 				</p>
 				<div
 					v-for="(names, group) in variables"
@@ -186,8 +186,8 @@ export default {
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		introText() {
 			return t(
-				'procest',
-				'Per-case-type email templates with placeholder variables. Editing a template creates a new version — old versions are retained. Templates prefill a Nextcloud Mail draft; Procest never sends mail itself.',
+				'dossiq',
+				'Per-case-type email templates with placeholder variables. Editing a template creates a new version — old versions are retained. Templates prefill a Nextcloud Mail draft; Dossiq never sends mail itself.',
 			)
 		},
 
@@ -211,10 +211,10 @@ export default {
 
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		saveLabel() {
-			if (this.saving) return t('procest', 'Saving...')
+			if (this.saving) return t('dossiq', 'Saving...')
 			return this.draft.id
-				? t('procest', 'Save as new version')
-				: t('procest', 'Create template')
+				? t('dossiq', 'Save as new version')
+				: t('dossiq', 'Create template')
 		},
 	},
 
@@ -244,9 +244,9 @@ export default {
 		 */
 		groupLabel(group) {
 			const labels = {
-				case: t('procest', 'Case'),
-				contact: t('procest', 'Contact'),
-				caseType: t('procest', 'Case type'),
+				case: t('dossiq', 'Case'),
+				contact: t('dossiq', 'Contact'),
+				caseType: t('dossiq', 'Case type'),
 			}
 			return labels[group] || group
 		},
@@ -262,7 +262,7 @@ export default {
 				const [tplRes, varRes] = await Promise.all([
 					fetch(
 						generateUrl(
-							`/apps/procest/api/casetypes/${encodeURIComponent(this.caseTypeId)}/email-templates`,
+							`/apps/dossiq/api/casetypes/${encodeURIComponent(this.caseTypeId)}/email-templates`,
 						),
 						{
 							headers: { requesttoken: OC.requestToken },
@@ -270,7 +270,7 @@ export default {
 					),
 					fetch(
 						generateUrl(
-							`/apps/procest/api/casetypes/${encodeURIComponent(this.caseTypeId)}/email-templates/variables`,
+							`/apps/dossiq/api/casetypes/${encodeURIComponent(this.caseTypeId)}/email-templates/variables`,
 						),
 						{
 							headers: { requesttoken: OC.requestToken },
@@ -339,10 +339,10 @@ export default {
 				const isUpdate = !!this.draft.id
 				const url = isUpdate
 					? generateUrl(
-							`/apps/procest/api/email-templates/${encodeURIComponent(this.draft.id)}`,
+							`/apps/dossiq/api/email-templates/${encodeURIComponent(this.draft.id)}`,
 						)
 					: generateUrl(
-							`/apps/procest/api/casetypes/${encodeURIComponent(this.caseTypeId)}/email-templates`,
+							`/apps/dossiq/api/casetypes/${encodeURIComponent(this.caseTypeId)}/email-templates`,
 						)
 				await fetch(url, {
 					method: isUpdate ? 'PUT' : 'POST',

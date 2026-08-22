@@ -70,7 +70,7 @@ The system SHALL automatically create tasks for case handlers based on the workf
 
 ### REQ-001: StepConfigValidator SHALL validate every workflow step's `config` block at publish time
 
-`OCA\Procest\Service\StepConfigValidator::validate(array $step, array $caseTypeSchema = [], array $actionCatalog = self::DEFAULT_ACTION_CATALOG, int $stepIndex = 0): array` SHALL return an empty array on success, or an array of `{path: string, code: string, message: string}` errors on failure. The validator SHALL be invoked once per entry in the `steps[]` array of a `workflowTemplate` during the publish transition and SHALL enforce:
+`OCA\Dossiq\Service\StepConfigValidator::validate(array $step, array $caseTypeSchema = [], array $actionCatalog = self::DEFAULT_ACTION_CATALOG, int $stepIndex = 0): array` SHALL return an empty array on success, or an array of `{path: string, code: string, message: string}` errors on failure. The validator SHALL be invoked once per entry in the `steps[]` array of a `workflowTemplate` during the publish transition and SHALL enforce:
 
 - **`config.sla`** (via `validateSla`):
   - `sla.unit` SHALL be one of `SLA_UNITS = ['hours', 'businessDays', 'calendarDays']`

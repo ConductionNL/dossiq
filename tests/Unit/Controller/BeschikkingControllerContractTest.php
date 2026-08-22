@@ -17,21 +17,21 @@
  *    one that keeps an under-mandated official out of the audit trail.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\BeschikkingController;
-use OCA\Procest\Service\BeschikkingService;
+use OCA\Dossiq\Controller\BeschikkingController;
+use OCA\Dossiq\Service\BeschikkingService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -44,7 +44,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Wire-contract tests for BeschikkingController::auditPakket().
  *
- * @covers \OCA\Procest\Controller\BeschikkingController
+ * @covers \OCA\Dossiq\Controller\BeschikkingController
  */
 class BeschikkingControllerContractTest extends TestCase {
 
@@ -97,7 +97,7 @@ class BeschikkingControllerContractTest extends TestCase {
 		$this->logger = $this->createMock(LoggerInterface::class);
 
 		$this->controller = new BeschikkingController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			decisionService: $this->decisionService,
 			userSession: $this->userSession,
@@ -140,7 +140,7 @@ class BeschikkingControllerContractTest extends TestCase {
 	 * `DataDownloadResponse` cannot be constructed in this unit-test
 	 * environment: `OCP\AppFramework\Http\DownloadResponse::__construct()`
 	 * calls `Symfony\Component\HttpFoundation\HeaderUtils`, and
-	 * `symfony/http-foundation` is not in procest's vendor tree (it is supplied
+	 * `symfony/http-foundation` is not in dossiq's vendor tree (it is supplied
 	 * by the Nextcloud server at runtime). Constructing one raises an `Error`
 	 * that this controller's `catch (\Throwable)` converts into a 500, so any
 	 * assertion on the download headers here would be asserting the

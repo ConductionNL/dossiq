@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Case Definition Export Service
+ * Dossiq Case Definition Export Service
  *
  * Service for exporting complete case type definitions as portable ZIP archives
  * for DTAP (Development, Test, Acceptance, Production) pipeline deployment.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -18,20 +18,20 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-3
+ * @spec openspec/changes/archive/retrofit-2026-05-24-annotate-procest/tasks.md#task-3
  * @spec openspec/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use DateTimeInterface;
 use InvalidArgumentException;
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -119,7 +119,7 @@ class CaseDefinitionExportService {
 		$manifest = $this->buildManifest(caseTypeId: $caseTypeId, components: $components);
 
 		// Create temporary ZIP file.
-		$tempPath = tempnam(sys_get_temp_dir(), 'procest_export_');
+		$tempPath = tempnam(sys_get_temp_dir(), 'dossiq_export_');
 		if ($tempPath === false) {
 			throw new RuntimeException('Failed to create temporary file for export');
 		}
@@ -240,8 +240,8 @@ class CaseDefinitionExportService {
 				'environment_name',
 				'unknown'
 			),
-			'generator' => 'procest/' . $this->appConfig->getValueString(
-				'procest',
+			'generator' => 'dossiq/' . $this->appConfig->getValueString(
+				'dossiq',
 				'installed_version',
 				'unknown'
 			),

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest DwangsomCalculationService.
+ * Dossiq DwangsomCalculationService.
  *
  * Daily-accruing dwangsom calculator per AWB 4:17:
  *   - Tier 1: days 1-14 at EUR23/day  (2300 cents)
@@ -16,7 +16,7 @@
  * Money values: integer EUR cents throughout (ADR-031).
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,14 +27,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-06-dwangsom-calculation/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use Psr\Log\LoggerInterface;
 

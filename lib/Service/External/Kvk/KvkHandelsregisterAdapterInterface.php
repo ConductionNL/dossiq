@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Procest KvK Handelsregister lookup port.
+ * Dossiq KvK Handelsregister lookup port.
  *
  * The Kamer van Koophandel Handelsregister-API is the canonical
- * source-of-truth for Dutch legal entities. Procest consumes it on
+ * source-of-truth for Dutch legal entities. Dossiq consumes it on
  * three case-management lifecycles:
  *  1. Leverancier-zaakportaal supplier onboarding — the eHerkenning
  *     SAML assertion carries a `kvkNummer`; the adapter resolves it
@@ -29,13 +29,13 @@
  * observable in test + staging environments.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Kvk
+ * @package  OCA\Dossiq\Service\External\Kvk
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://developers.kvk.nl/apis/handelsregister
  *
  * @spec openspec/changes/leverancier-zaakportaal-02-eherkenning-auth/tasks.md
@@ -47,7 +47,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Kvk;
+namespace OCA\Dossiq\Service\External\Kvk;
 
 /**
  * KvK Handelsregister lookup port.

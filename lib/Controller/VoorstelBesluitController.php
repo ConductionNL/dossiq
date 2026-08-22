@@ -1,18 +1,18 @@
 <?php
 
 /**
- * Procest Voorstel Besluit Controller
+ * Dossiq Voorstel Besluit Controller
  *
  * Exposes the voorstel→besluit registration node. Instead of authoring a
- * procest-local `decision` object, registering a besluit on a voorstel raises a
+ * dossiq-local `decision` object, registering a besluit on a voorstel raises a
  * decidesk `report-adoption` Decision via the ADR-019 integration registry
- * (procest-delegate-remaining-decisions-to-decidesk, REQ-PDRD-001). procest
+ * (dossiq-delegate-remaining-decisions-to-decidesk, REQ-PDRD-001). dossiq
  * keeps the parafeerroute untouched and records the ZGW `Besluit` as a
  * projection of the decidesk outcome. FAILS CLOSED when decidesk is unavailable
- * (REQ-PDRD-002): no procest-local besluit is authored as a fallback.
+ * (REQ-PDRD-002): no dossiq-local besluit is authored as a fallback.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,18 +21,18 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/remaining-decision-delegation/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\AdviceDelegationService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\AdviceDelegationService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -120,9 +120,9 @@ class VoorstelBesluitController extends Controller {
 			);
 		} catch (RuntimeException $e) {
 			// REQ-PDRD-002: fail closed — surface the unavailable error, do NOT
-			// author a procest-local besluit as a fallback.
+			// author a dossiq-local besluit as a fallback.
 			$this->logger->error(
-				'Procest: voorstel besluit-registration failed closed: ' . $e->getMessage(),
+				'Dossiq: voorstel besluit-registration failed closed: ' . $e->getMessage(),
 				['app' => Application::APP_ID]
 			);
 			return new JSONResponse(
@@ -160,7 +160,7 @@ class VoorstelBesluitController extends Controller {
 			$proposal = $objectService->find($proposalId, register: $register, schema: $proposalSchema);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest: voorstel lookup failed during IDOR gate: ' . $e->getMessage(),
+				'Dossiq: voorstel lookup failed during IDOR gate: ' . $e->getMessage(),
 				['app' => Application::APP_ID]
 			);
 			return null;

@@ -1,16 +1,16 @@
 <?php
 
 /**
- * Procest Workflow Step Authorization Resolver.
+ * Dossiq Workflow Step Authorization Resolver.
  *
- * Bridges procest's role-routing definitions to OpenRegister's declarative
+ * Bridges dossiq's role-routing definitions to OpenRegister's declarative
  * per-transition authorization gate (OR PR #153, ADR-022). For a workflow
  * step or transition it reads the assignee/allowed `roleType` UUID references,
  * loads each `roleType` object, and returns the literal Nextcloud group ids
  * from their `ncGroupId` field. `WorkflowDefinitionService::publish()` writes
  * the resolved group ids into each transition's `authorization` list so OR
  * enforces "only members of group X may perform this transition" server-side —
- * replacing procest's bespoke in-app role lookup with the canonical OR RBAC
+ * replacing dossiq's bespoke in-app role lookup with the canonical OR RBAC
  * group identifier.
  *
  * A roleType with a null/empty `ncGroupId` resolves to no group id (open to
@@ -18,7 +18,7 @@
  * unmapped roles.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -29,12 +29,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use Psr\Log\LoggerInterface;
 use Throwable;

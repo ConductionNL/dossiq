@@ -24,11 +24,11 @@
 		</div>
 
 		<div v-else class="public-federated-transfer-page__content">
-			<h2>{{ t('procest', 'Case transfer request') }}</h2>
+			<h2>{{ t('dossiq', 'Case transfer request') }}</h2>
 			<p class="public-federated-transfer-page__description">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Another organisation has requested to transfer custody of a case to your organisation. Review the request with your case handler before accepting.',
 					)
 				}}
@@ -36,17 +36,14 @@
 
 			<div class="form-group">
 				<label for="public-federated-transfer-reason">{{
-					t('procest', 'Reason (required to reject)')
+					t('dossiq', 'Reason (required to reject)')
 				}}</label>
 				<textarea
 					id="public-federated-transfer-reason"
 					v-model="reason"
 					rows="3"
 					:placeholder="
-						t(
-							'procest',
-							'Explain why this transfer is being rejected...',
-						)
+						t('dossiq', 'Explain why this transfer is being rejected...')
 					" />
 			</div>
 
@@ -55,13 +52,13 @@
 					type="error"
 					:disabled="submitting"
 					@click="respond('reject')">
-					{{ t('procest', 'Reject') }}
+					{{ t('dossiq', 'Reject') }}
 				</NcButton>
 				<NcButton
 					type="primary"
 					:disabled="submitting"
 					@click="respond('accept')">
-					{{ t('procest', 'Accept') }}
+					{{ t('dossiq', 'Accept') }}
 				</NcButton>
 			</div>
 		</div>
@@ -116,11 +113,11 @@ export default {
 						message:
 							action === 'accept'
 								? t(
-										'procest',
+										'dossiq',
 										'You have accepted this case transfer.',
 									)
 								: t(
-										'procest',
+										'dossiq',
 										'You have rejected this case transfer.',
 									),
 					}
@@ -129,7 +126,7 @@ export default {
 						success: false,
 						message:
 							response.data?.error
-							|| t('procest', 'Could not process this transfer.'),
+							|| t('dossiq', 'Could not process this transfer.'),
 					}
 				}
 			} catch (e) {
@@ -138,7 +135,7 @@ export default {
 					message:
 						e.response?.data?.error
 						|| t(
-							'procest',
+							'dossiq',
 							'This transfer link is invalid, expired or already resolved.',
 						),
 				}

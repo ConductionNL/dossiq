@@ -6,7 +6,7 @@
  * Tests for the public Atom feed endpoints for ORI entity types.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,10 +19,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\RaadsinformatieFeedController;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Controller\RaadsinformatieFeedController;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Http\DataDisplayResponse;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -59,7 +59,7 @@ interface FeedObjectServiceStub {
 /**
  * Unit tests for RaadsinformatieFeedController.
  *
- * @covers \OCA\Procest\Controller\RaadsinformatieFeedController
+ * @covers \OCA\Dossiq\Controller\RaadsinformatieFeedController
  */
 class RaadsinformatieFeedControllerTest extends TestCase {
 

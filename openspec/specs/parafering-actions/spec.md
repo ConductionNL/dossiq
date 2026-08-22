@@ -1,6 +1,6 @@
 ---
 status: retired
-retired_in: procest-adopt-or-abstractions
+retired_in: dossiq-adopt-or-abstractions
 canonical_home: case-management/spec.md
 retrofit_extensions:
   - REQ-101
@@ -27,7 +27,7 @@ retrofit_extensions:
 
 ### Requirement: Parafeeractie Schema Registration
 
-The system SHALL register a `parafeeractie` schema in the Procest OpenRegister configuration with properties: voorstel (reference), step (integer), actor (string, user UID), actorType (enum: user, delegate), onBehalfOf (string, optional user UID), action (enum: parafered, returned, advised, skipped), comment (string, optional), advice (string, optional for advisory steps), timestamp (datetime), mandate (string, optional mandate reference).
+The system SHALL register a `parafeeractie` schema in the Dossiq OpenRegister configuration with properties: voorstel (reference), step (integer), actor (string, user UID), actorType (enum: user, delegate), onBehalfOf (string, optional user UID), action (enum: parafered, returned, advised, skipped), comment (string, optional), advice (string, optional for advisory steps), timestamp (datetime), mandate (string, optional mandate reference).
 
 **Feature tier**: V1
 **Schema.org type**: `schema:Action`
@@ -36,8 +36,8 @@ The system SHALL register a `parafeeractie` schema in the Procest OpenRegister c
 
 #### Scenario: Schema is available after app install
 
-- **WHEN** the Procest app is installed or updated
-- **THEN** the `parafeeractie` schema SHALL be registered in the Procest register via the repair step
+- **WHEN** the Dossiq app is installed or updated
+- **THEN** the `parafeeractie` schema SHALL be registered in the Dossiq register via the repair step
 - **AND** the schema SHALL enforce required properties: voorstel, step, actor, action, timestamp
 
 ### Requirement: Paraferen Action (Approve)
@@ -148,7 +148,7 @@ The system SHALL support registering a formal besluit (decision) when the colleg
 
 ### Requirement: ParaferingController SHALL expose voorstel CRUD + per-action endpoints + audit trail
 
-`OCA\Procest\Controller\ParaferingController` SHALL provide HTTP endpoints for: `createVoorstel()`, `startParafering($id)`, `paraferen($id)`, `terugsturen($id)`, `adviseren($id)`, and `auditTrail($id)`. The controller SHALL delegate all state mutation to `ParaferingService` and SHALL enforce that the calling user holds the role required by the current parafering step before executing an action.
+`OCA\Dossiq\Controller\ParaferingController` SHALL provide HTTP endpoints for: `createVoorstel()`, `startParafering($id)`, `paraferen($id)`, `terugsturen($id)`, `adviseren($id)`, and `auditTrail($id)`. The controller SHALL delegate all state mutation to `ParaferingService` and SHALL enforce that the calling user holds the role required by the current parafering step before executing an action.
 
 #### Scenario: Adviseren by a user lacking the adviseur role
 - **GIVEN** a voorstel in step `advies-juridisch` requiring role `adviseur`
@@ -157,7 +157,7 @@ The system SHALL support registering a formal besluit (decision) when the colleg
 
 ### Requirement: ParaferingService SHALL implement voorstel lifecycle + action execution + step resolution
 
-`OCA\Procest\Service\ParaferingService` SHALL provide the canonical lifecycle: `createVoorstel(...)`, `startParafering(...)`, `executeAction(...)`, `getCurrentStep(...)`, `getAuditTrail(...)`, and `overrideRoute(...)`. The service SHALL persist every action as an audit-trail entry attached to the voorstel and SHALL advance the parafering route after each successful action — except `terugsturen`, which SHALL rewind to the previous handler.
+`OCA\Dossiq\Service\ParaferingService` SHALL provide the canonical lifecycle: `createVoorstel(...)`, `startParafering(...)`, `executeAction(...)`, `getCurrentStep(...)`, `getAuditTrail(...)`, and `overrideRoute(...)`. The service SHALL persist every action as an audit-trail entry attached to the voorstel and SHALL advance the parafering route after each successful action — except `terugsturen`, which SHALL rewind to the previous handler.
 
 #### Scenario: Successful paraferen advances to next step
 - **GIVEN** a voorstel at step S1 with successor S2
@@ -171,7 +171,7 @@ The system SHALL support registering a formal besluit (decision) when the colleg
 
 ### Requirement: ParaferingNotificationService SHALL emit step + reminder + completion notifications
 
-`OCA\Procest\Service\ParaferingNotificationService` SHALL emit Nextcloud notifications: `notifyStepActivated()` when a new step's assigned handlers become responsible, `notifyVoorstelReturned()` when an upstream handler returns the voorstel for rework, and `notifyParaferingReminder()` on the BackgroundJob cadence for steps approaching their deadline. Notifications SHALL be deduplicated per (voorstel, step, type) so handlers do not see repeat noise within the same step.
+`OCA\Dossiq\Service\ParaferingNotificationService` SHALL emit Nextcloud notifications: `notifyStepActivated()` when a new step's assigned handlers become responsible, `notifyVoorstelReturned()` when an upstream handler returns the voorstel for rework, and `notifyParaferingReminder()` on the BackgroundJob cadence for steps approaching their deadline. Notifications SHALL be deduplicated per (voorstel, step, type) so handlers do not see repeat noise within the same step.
 
 #### Scenario: Reminder is sent once per step
 - **GIVEN** a step approaching its deadline with no prior reminder

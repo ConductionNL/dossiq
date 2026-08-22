@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest NormalisesObjectRows support trait.
+ * Dossiq NormalisesObjectRows support trait.
  *
  * OpenRegister's `find()` / `searchObjectsPaginated()` return either a plain
  * associative array or an `ObjectEntity` depending on the call path and the
@@ -22,7 +22,7 @@
  * `jsonSerialize()` (the old inline branch fatalled on those) and with null.
  *
  * @category Support
- * @package  OCA\Procest\Support
+ * @package  OCA\Dossiq\Support
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -33,12 +33,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Support;
+namespace OCA\Dossiq\Support;
 
 /**
  * Normalise a single OpenRegister result row to an associative array.
@@ -48,7 +48,7 @@ trait NormalisesObjectRows {
 	 * Flatten one OpenRegister result row into an associative array.
 	 *
 	 * Declared `protected` rather than `private`: the trait is composed into
-	 * the abstract {@see \OCA\Procest\Controller\ZgwController} and the call
+	 * the abstract {@see \OCA\Dossiq\Controller\ZgwController} and the call
 	 * sites live in its concrete subclasses (Drc/Zrc/Ztc/BrcController). A
 	 * private trait method composed into a parent is not visible to a child.
 	 *

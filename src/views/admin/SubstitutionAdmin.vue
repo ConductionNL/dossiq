@@ -13,19 +13,19 @@
 <template>
 	<div class="substitution-admin">
 		<div class="substitution-admin__header">
-			<h2>{{ t('procest', 'Substitutions & reassignment') }}</h2>
+			<h2>{{ t('dossiq', 'Substitutions & reassignment') }}</h2>
 			<div class="substitution-admin__actions">
 				<NcButton type="secondary" @click="showReassign = true">
 					<template #icon>
 						<AccountArrowRight :size="20" />
 					</template>
-					{{ t('procest', 'Bulk reassign') }}
+					{{ t('dossiq', 'Bulk reassign') }}
 				</NcButton>
 				<NcButton type="primary" @click="showForm = true">
 					<template #icon>
 						<AccountSwitch :size="20" />
 					</template>
-					{{ t('procest', 'Register for handler') }}
+					{{ t('dossiq', 'Register for handler') }}
 				</NcButton>
 			</div>
 		</div>
@@ -35,24 +35,24 @@
 				v-model="filterText"
 				type="search"
 				class="substitution-admin__search"
-				:aria-label="t('procest', 'Filter by handler…')"
-				:placeholder="t('procest', 'Filter by handler…')" />
+				:aria-label="t('dossiq', 'Filter by handler…')"
+				:placeholder="t('dossiq', 'Filter by handler…')" />
 		</div>
 
 		<NcLoadingIcon v-if="loading" :size="32" />
 
 		<NcEmptyContent
 			v-else-if="filtered.length === 0"
-			:name="t('procest', 'No substitutions')" />
+			:name="t('dossiq', 'No substitutions')" />
 
 		<table v-else class="substitution-admin__table">
 			<thead>
 				<tr>
-					<th scope="col">{{ t('procest', 'Absentee') }}</th>
-					<th scope="col">{{ t('procest', 'Substitute') }}</th>
-					<th scope="col">{{ t('procest', 'Period') }}</th>
-					<th scope="col">{{ t('procest', 'Scope') }}</th>
-					<th scope="col">{{ t('procest', 'Status') }}</th>
+					<th scope="col">{{ t('dossiq', 'Absentee') }}</th>
+					<th scope="col">{{ t('dossiq', 'Substitute') }}</th>
+					<th scope="col">{{ t('dossiq', 'Period') }}</th>
+					<th scope="col">{{ t('dossiq', 'Scope') }}</th>
+					<th scope="col">{{ t('dossiq', 'Status') }}</th>
 					<th />
 				</tr>
 			</thead>
@@ -69,13 +69,13 @@
 					</td>
 					<td class="substitution-admin__row-actions">
 						<NcButton type="tertiary" @click="openActions(sub)">
-							{{ t('procest', 'Actions') }}
+							{{ t('dossiq', 'Actions') }}
 						</NcButton>
 						<NcButton
 							v-if="sub.status === 'active'"
 							type="tertiary"
 							@click="revoke(sub.id)">
-							{{ t('procest', 'Revoke') }}
+							{{ t('dossiq', 'Revoke') }}
 						</NcButton>
 					</td>
 				</tr>
@@ -87,15 +87,15 @@
 			v-if="selectedSub"
 			class="substitution-admin__detail"
 			data-testid="substitution-actions">
-			<h3>{{ t('procest', 'Actions performed under this substitution') }}</h3>
+			<h3>{{ t('dossiq', 'Actions performed under this substitution') }}</h3>
 			<NcEmptyContent
 				v-if="actions.length === 0"
-				:name="t('procest', 'No actions recorded yet')" />
+				:name="t('dossiq', 'No actions recorded yet')" />
 			<ul v-else>
 				<li v-for="(a, idx) in actions" :key="idx">
 					{{ a.timestamp }} — {{ a.caseTitle || a.caseId }} —
 					{{ a.action }} ({{
-						t('procest', 'on behalf of {who}', {
+						t('dossiq', 'on behalf of {who}', {
 							who: a.actedOnBehalfOf,
 						})
 					}})

@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # burger-notifications Specification
 
 ## Purpose
-Sends proactive, Dutch-language notifications to the burger at key lifecycle moments of a case: receipt confirmation with the statutory deadline, ingebrekestelling receipt explaining the dwangsom tariff, and payment confirmation. Each notification is rendered from a template and delivered via the procest notification-router (Nextcloud, email, and portal), queued asynchronously so an SMTP failure never blocks the underlying lifecycle operation.
+Sends proactive, Dutch-language notifications to the burger at key lifecycle moments of a case: receipt confirmation with the statutory deadline, ingebrekestelling receipt explaining the dwangsom tariff, and payment confirmation. Each notification is rendered from a template and delivered via the dossiq notification-router (Nextcloud, email, and portal), queued asynchronously so an SMTP failure never blocks the underlying lifecycle operation.
 ## Requirements
 ### Requirement: Burger-notificatie van termijn-events (REQ-TERM-008)
 
@@ -33,6 +33,6 @@ The system SHALL send proactive, Dutch-language notifications to the burger at k
 
 - **GIVEN** the lifecycle triggers emitted by termijn creation, extension, ingebrekestelling, and payment
 - **WHEN** each trigger is consumed
-- **THEN** the matching template SHALL be rendered and delivered via the procest notification-router (Nextcloud + email + portal)
+- **THEN** the matching template SHALL be rendered and delivered via the dossiq notification-router (Nextcloud + email + portal)
 - **AND** delivery SHALL be queued asynchronously so an SMTP failure does not block the lifecycle operation
 

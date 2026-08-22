@@ -9,7 +9,7 @@ retrofit: true
 
 @e2e exclude Backend MCP tool provider; invoked by AI orchestrator, not via browser UI.
 
-Provide the procest-side `IMcpToolProvider` implementation that the openregister AI orchestrator (per ADR-034 / ADR-035) discovers and invokes during an AI Chat Companion turn. The MVP exposes two read-only tools (`procest.listProcesses`, `procest.getProcessDetails`) with bounded result sets, per-object authorisation enforced inside `invokeTool`, and structured error envelopes — so that an LLM can ask "what cases am I working on?" and "what's the current step on case X?" without being able to mutate anything or read cases the caller isn't entitled to see.
+Provide the dossiq-side `IMcpToolProvider` implementation that the openregister AI orchestrator (per ADR-034 / ADR-035) discovers and invokes during an AI Chat Companion turn. The MVP exposes two read-only tools (`dossiq.listProcesses`, `dossiq.getProcessDetails`) with bounded result sets, per-object authorisation enforced inside `invokeTool`, and structured error envelopes — so that an LLM can ask "what cases am I working on?" and "what's the current step on case X?" without being able to mutate anything or read cases the caller isn't entitled to see.
 
 The full per-app MCP tool set (startProcess, advanceStep, listMyTasks, getTaskDetails — tracked in procest#416) is intentionally out of scope here.
 
@@ -17,17 +17,17 @@ The full per-app MCP tool set (startProcess, advanceStep, listMyTasks, getTaskDe
 
 ### REQ-001: Implement IMcpToolProvider with stable app id and hardcoded tool catalogue
 
-The system SHALL implement `OCA\OpenRegister\Mcp\IMcpToolProvider` with `getAppId()` returning the procest app id and `getTools()` returning a hardcoded catalogue of exactly two read-only tools — `procest.listProcesses` and `procest.getProcessDetails` — with their `id`, `name`, `description`, and `inputSchema` (JSON Schema shape) so the orchestrator can advertise them to the LLM verbatim.
+The system SHALL implement `OCA\OpenRegister\Mcp\IMcpToolProvider` with `getAppId()` returning the dossiq app id and `getTools()` returning a hardcoded catalogue of exactly two read-only tools — `dossiq.listProcesses` and `dossiq.getProcessDetails` — with their `id`, `name`, `description`, and `inputSchema` (JSON Schema shape) so the orchestrator can advertise them to the LLM verbatim.
 
 #### Scenario: getAppId stability
 
 - WHEN the orchestrator queries the provider's app id
-- THEN `getAppId()` SHALL return the procest application id (`OCA\Procest\AppInfo\Application::APP_ID`)
+- THEN `getAppId()` SHALL return the dossiq application id (`OCA\Dossiq\AppInfo\Application::APP_ID`)
 
 #### Scenario: getTools returns 2 descriptors
 
 - WHEN the orchestrator queries `getTools()`
-- THEN the result SHALL be exactly the two-tool MVP catalogue with stable `id` strings prefixed `procest.`
+- THEN the result SHALL be exactly the two-tool MVP catalogue with stable `id` strings prefixed `dossiq.`
 
 #### Notes
 
@@ -35,7 +35,7 @@ The system SHALL implement `OCA\OpenRegister\Mcp\IMcpToolProvider` with `getAppI
 
 ### REQ-002: listProcesses tool with bounded limit and optional status filter
 
-The system SHALL implement `procest.listProcesses(limit?, status?)` returning up to `LIMIT_MAX=50` (default `20`) running process instances the caller is entitled to read, optionally filtered to a single status type id, formatted as MCP source descriptors.
+The system SHALL implement `dossiq.listProcesses(limit?, status?)` returning up to `LIMIT_MAX=50` (default `20`) running process instances the caller is entitled to read, optionally filtered to a single status type id, formatted as MCP source descriptors.
 
 #### Scenario: Limit parsing
 
@@ -54,7 +54,7 @@ The system SHALL implement `procest.listProcesses(limit?, status?)` returning up
 
 ### REQ-003: getProcessDetails tool returning case + history
 
-The system SHALL implement `procest.getProcessDetails(caseId)` returning a single case with its current step plus the case's history, packaged as MCP source descriptors that the LLM can quote in its response.
+The system SHALL implement `dossiq.getProcessDetails(caseId)` returning a single case with its current step plus the case's history, packaged as MCP source descriptors that the LLM can quote in its response.
 
 #### Scenario: caseId argument parsing
 

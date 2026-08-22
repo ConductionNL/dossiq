@@ -3,11 +3,11 @@
 /**
  * KpiController Unit Tests
  *
- * Tests for the Procest KpiController that exposes pre-aggregated
+ * Tests for the Dossiq KpiController that exposes pre-aggregated
  * dashboard KPI data via a cached JSON endpoint.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -15,15 +15,15 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\KpiController;
-use OCA\Procest\Service\KpiAggregationService;
+use OCA\Dossiq\Controller\KpiController;
+use OCA\Dossiq\Service\KpiAggregationService;
 use OCP\ICache;
 use OCP\ICacheFactory;
 use OCP\IRequest;
@@ -36,7 +36,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for the KpiController class.
  *
- * @covers \OCA\Procest\Controller\KpiController
+ * @covers \OCA\Dossiq\Controller\KpiController
  */
 class KpiControllerTest extends TestCase {
 

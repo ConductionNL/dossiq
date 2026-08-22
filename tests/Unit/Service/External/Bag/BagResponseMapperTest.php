@@ -9,7 +9,7 @@
  * with hand-built fragments, no HTTP mocking required.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\External\Bag
+ * @package  OCA\Dossiq\Tests\Unit\Service\External\Bag
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,13 +20,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\External\Bag;
+namespace OCA\Dossiq\Tests\Unit\Service\External\Bag;
 
-use OCA\Procest\Service\External\Bag\BagResponseMapper;
+use OCA\Dossiq\Service\External\Bag\BagResponseMapper;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Procest\Service\External\Bag\BagResponseMapper
+ * @covers \OCA\Dossiq\Service\External\Bag\BagResponseMapper
  */
 class BagResponseMapperTest extends TestCase {
 	/**

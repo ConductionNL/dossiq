@@ -4,7 +4,7 @@
  * SettingsController write-path unit tests.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -12,7 +12,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -20,10 +20,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\SettingsController;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Controller\SettingsController;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\IGroupManager;
 use OCP\IL10N;
@@ -45,7 +45,7 @@ use Psr\Container\ContainerInterface;
  * checked for a 200, or only that the response was a JSONResponse, would pass
  * against a controller that silently wrote nothing.
  *
- * @covers \OCA\Procest\Controller\SettingsController
+ * @covers \OCA\Dossiq\Controller\SettingsController
  */
 class SettingsControllerWriteTest extends TestCase {
 
@@ -121,7 +121,7 @@ class SettingsControllerWriteTest extends TestCase {
 	/**
 	 * POST /api/settings is a legacy alias and must write identically.
 	 *
-	 * Three procest views still POST to this route, so the alias staying a
+	 * Three dossiq views still POST to this route, so the alias staying a
 	 * real write — not an empty success — is load-bearing.
 	 *
 	 * @return void

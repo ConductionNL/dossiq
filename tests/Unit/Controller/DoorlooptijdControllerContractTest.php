@@ -18,21 +18,21 @@
  *    would filter the dashboard down to zero cases while still rendering.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\DoorlooptijdController;
-use OCA\Procest\Service\DoorlooptijdService;
+use OCA\Dossiq\Controller\DoorlooptijdController;
+use OCA\Dossiq\Service\DoorlooptijdService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -43,7 +43,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Wire-contract tests for DoorlooptijdController::metrics().
  *
- * @covers \OCA\Procest\Controller\DoorlooptijdController
+ * @covers \OCA\Dossiq\Controller\DoorlooptijdController
  */
 class DoorlooptijdControllerContractTest extends TestCase {
 

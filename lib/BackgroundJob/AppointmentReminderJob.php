@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Appointment Reminder Job.
+ * Dossiq Appointment Reminder Job.
  *
  * Daily timed background job that sends reminders for scheduled appointments
  * that are due tomorrow and have not yet had a reminder dispatched.
  *
  * @category BackgroundJob
- * @package  OCA\Procest\BackgroundJob
+ * @package  OCA\Dossiq\BackgroundJob
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,17 +15,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/appointment-booking/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\BackgroundJob;
+namespace OCA\Dossiq\BackgroundJob;
 
 use DateTime;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -74,7 +74,7 @@ class AppointmentReminderJob extends TimedJob {
 			return;
 		}
 
-		$this->logger->info('Procest: Running appointment reminder job');
+		$this->logger->info('Dossiq: Running appointment reminder job');
 
 		try {
 			$objectService = $this->container->get('OCA\OpenRegister\Service\ObjectService');
@@ -103,7 +103,7 @@ class AppointmentReminderJob extends TimedJob {
 					$data['reminderSent'] = true;
 					$objectService->saveObject(object: $data, register: (int)$register, schema: (int)$schema);
 					$this->logger->info(
-						'Procest: Reminder sent for appointment',
+						'Dossiq: Reminder sent for appointment',
 						[
 							'appointmentId' => $data['uuid'] ?? $data['id'] ?? '',
 						]
@@ -111,7 +111,7 @@ class AppointmentReminderJob extends TimedJob {
 				}
 			}
 		} catch (\Exception $e) {
-			$this->logger->error('Procest: Reminder job error: ' . $e->getMessage());
+			$this->logger->error('Dossiq: Reminder job error: ' . $e->getMessage());
 		}//end try
 	}//end run()
 }//end class

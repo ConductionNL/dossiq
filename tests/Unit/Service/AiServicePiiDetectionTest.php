@@ -8,7 +8,7 @@
  * beyond trivial construction.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,27 +24,27 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\Ai\AiAuditLog;
-use OCA\Procest\Service\Ai\AiEndpointGuard;
-use OCA\Procest\Service\Ai\AiModelIdentity;
-use OCA\Procest\Service\Ai\AiPiiRedactor;
-use OCA\Procest\Service\Ai\AiPromptFactory;
-use OCA\Procest\Service\AiService;
+use OCA\Dossiq\Service\Ai\AiAuditLog;
+use OCA\Dossiq\Service\Ai\AiEndpointGuard;
+use OCA\Dossiq\Service\Ai\AiModelIdentity;
+use OCA\Dossiq\Service\Ai\AiPiiRedactor;
+use OCA\Dossiq\Service\Ai\AiPromptFactory;
+use OCA\Dossiq\Service\AiService;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\AiService::detectDeterministicPiiSpans
+ * @covers \OCA\Dossiq\Service\AiService::detectDeterministicPiiSpans
  *
- * @uses \OCA\Procest\Service\Ai\AiAuditLog
- * @uses \OCA\Procest\Service\Ai\AiEndpointGuard
- * @uses \OCA\Procest\Service\Ai\AiModelIdentity
- * @uses \OCA\Procest\Service\Ai\AiPiiRedactor
- * @uses \OCA\Procest\Service\AiService
+ * @uses \OCA\Dossiq\Service\Ai\AiAuditLog
+ * @uses \OCA\Dossiq\Service\Ai\AiEndpointGuard
+ * @uses \OCA\Dossiq\Service\Ai\AiModelIdentity
+ * @uses \OCA\Dossiq\Service\Ai\AiPiiRedactor
+ * @uses \OCA\Dossiq\Service\AiService
  */
 class AiServicePiiDetectionTest extends TestCase {
 	/**

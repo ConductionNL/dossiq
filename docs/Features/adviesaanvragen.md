@@ -3,7 +3,7 @@
 > **n8n workflows:** see [`docs/n8n-consultation-workflows.md`](../n8n-consultation-workflows.md) for the webhook contracts and installation guide.
 > **Note:** [`consultation-management.md`](consultation-management.md) covers public participation / inspraak. This page covers **inter-departmental and external advisory consultations** delivered by `consultation-management` change.
 
-Structured inter-departmental and external advisory consultations (adviesaanvragen) as a first-class entity in Procest. Replaces email-based informal advice exchange with tracked, auditable departmental coordination per Awb articles 3:5-3:9.
+Structured inter-departmental and external advisory consultations (adviesaanvragen) as a first-class entity in Dossiq. Replaces email-based informal advice exchange with tracked, auditable departmental coordination per Awb articles 3:5-3:9.
 
 ## Specs
 

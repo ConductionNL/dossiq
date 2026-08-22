@@ -76,7 +76,7 @@ The system SHALL handle action execution failures gracefully without rolling bac
 
 ### REQ-001: Action handlers SHALL implement a common contract
 
-Every automatic-action handler SHALL implement `OCA\Procest\Service\Actions\ActionHandlerInterface`, exposing a `type(): string` discriminator (matching the `actionConfig.type` value in the workflow definition) and a `handle(array $actionConfig, array $case, array $transitionContext): ActionResult` method. The handler SHALL be stateless across invocations — all per-invocation state is passed via the three method arguments — and SHALL return a `ActionResult` value object containing success flag, output payload, and optional error message via `toArray()`.
+Every automatic-action handler SHALL implement `OCA\Dossiq\Service\Actions\ActionHandlerInterface`, exposing a `type(): string` discriminator (matching the `actionConfig.type` value in the workflow definition) and a `handle(array $actionConfig, array $case, array $transitionContext): ActionResult` method. The handler SHALL be stateless across invocations — all per-invocation state is passed via the three method arguments — and SHALL return a `ActionResult` value object containing success flag, output payload, and optional error message via `toArray()`.
 
 #### Scenario: Handler routed by type
 - **GIVEN** a workflow defines an action with `type: "sendEmail"`
@@ -85,7 +85,7 @@ Every automatic-action handler SHALL implement `OCA\Procest\Service\Actions\Acti
 
 ### REQ-002: ActionRegistry SHALL provide handler lookup and listing for admin UI
 
-`OCA\Procest\Service\Actions\ActionRegistry` SHALL accept all 7 built-in handler implementations via constructor injection, expose a `get(string $type): ActionHandlerInterface` lookup that throws when no handler matches the discriminator, and expose a `list()` method returning the available handler types for the admin Automatic-Actions settings page (`/settings/automatic-actions`). The registry SHALL be read-only — handler set is fixed at boot.
+`OCA\Dossiq\Service\Actions\ActionRegistry` SHALL accept all 7 built-in handler implementations via constructor injection, expose a `get(string $type): ActionHandlerInterface` lookup that throws when no handler matches the discriminator, and expose a `list()` method returning the available handler types for the admin Automatic-Actions settings page (`/settings/automatic-actions`). The registry SHALL be read-only — handler set is fixed at boot.
 
 #### Scenario: Unknown action type
 - **WHEN** `ActionRegistry::get('unknown-type')` is called

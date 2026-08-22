@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Raadsinformatie Feed Controller
+ * Dossiq Raadsinformatie Feed Controller
  *
  * Provides Atom RSS feeds for ORI (Open Raadsinformatie) entity types so that
  * citizens, journalists, and open-data aggregators can subscribe to council-
  * information updates without authentication.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,11 +24,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -42,9 +42,9 @@ use Psr\Log\LoggerInterface;
  * Serves publicly-accessible Atom feeds for ORI entity types.
  *
  * Endpoints:
- *   GET /apps/procest/feed/ori/vergaderingen.rss
- *   GET /apps/procest/feed/ori/agendapunten.rss
- *   GET /apps/procest/feed/ori/documenten.rss
+ *   GET /apps/dossiq/feed/ori/vergaderingen.rss
+ *   GET /apps/dossiq/feed/ori/agendapunten.rss
+ *   GET /apps/dossiq/feed/ori/documenten.rss
  *
  * All endpoints are accessible without authentication (PublicPage) and return
  * valid Atom 1.0 XML per RFC 4287.
@@ -202,7 +202,7 @@ class RaadsinformatieFeedController extends Controller {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
-				'Procest: could not fetch ORI objects for feed',
+				'Dossiq: could not fetch ORI objects for feed',
 				['schema' => $schema, 'exception' => $e->getMessage(), 'app' => Application::APP_ID]
 			);
 			return [];
@@ -221,7 +221,7 @@ class RaadsinformatieFeedController extends Controller {
 	 * @return string Atom XML string
 	 */
 	private function renderAtom(string $type, string $schema, array $objects, string $organisation): string {
-		$feedId = 'urn:procest:ori:feed:' . $type;
+		$feedId = 'urn:dossiq:ori:feed:' . $type;
 		$feedTitle = $this->feedTitle(type: $type, organisation: $organisation);
 		$feedUpdated = gmdate('Y-m-d\TH:i:s\Z');
 
@@ -230,7 +230,7 @@ class RaadsinformatieFeedController extends Controller {
 		$xml .= '  <id>' . htmlspecialchars(string: $feedId, flags: ENT_XML1) . '</id>' . "\n";
 		$xml .= '  <title>' . htmlspecialchars(string: $feedTitle, flags: ENT_XML1) . '</title>' . "\n";
 		$xml .= '  <updated>' . $feedUpdated . '</updated>' . "\n";
-		$xml .= '  <author><name>Procest - Open Raadsinformatie</name></author>' . "\n";
+		$xml .= '  <author><name>Dossiq - Open Raadsinformatie</name></author>' . "\n";
 
 		foreach ($objects as $object) {
 			$xml .= $this->renderEntry(schema: $schema, object: $object);
@@ -251,7 +251,7 @@ class RaadsinformatieFeedController extends Controller {
 	 */
 	private function renderEntry(string $schema, array $object): string {
 		$slug = (string)($object['@self']['slug'] ?? ($object['id'] ?? ''));
-		$entryId = 'urn:procest:ori:' . $schema . ':' . $slug;
+		$entryId = 'urn:dossiq:ori:' . $schema . ':' . $slug;
 
 		$title = $this->extractTitle(schema: $schema, object: $object);
 		$updated = (string)($object['updated'] ?? ($object['created'] ?? gmdate('Y-m-d\TH:i:s\Z')));

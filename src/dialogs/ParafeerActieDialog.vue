@@ -2,7 +2,7 @@
 <!-- SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl> -->
 <!--
   Step-type-aware action dialog for parafering: advies, parafering, accordering,
-  and terugsturen. Submits via the procest /api/parafeer-actie backend endpoint
+  and terugsturen. Submits via the dossiq /api/parafeer-actie backend endpoint
   (which enforces per-step actor authorization server-side).
 
   @spec openspec/changes/parafering-actions/tasks.md#T07
@@ -17,7 +17,7 @@
 		<div class="parafeer-actie-dialog">
 			<div class="parafeer-actie-dialog__step">
 				<strong
-					>{{ t('procest', 'Step') }} {{ step.order }} —
+					>{{ t('dossiq', 'Step') }} {{ step.order }} —
 					{{ stepLabel }}</strong
 				>
 				<span v-if="step.actor" class="parafeer-actie-dialog__actor">
@@ -30,13 +30,13 @@
 				v-if="isAdviesStep && !showReturnForm"
 				class="parafeer-actie-dialog__field">
 				<label for="parafeer-actie-advice"
-					>{{ t('procest', 'Advice') }} *</label
+					>{{ t('dossiq', 'Advice') }} *</label
 				>
 				<textarea
 					id="parafeer-actie-advice"
 					v-model="advice"
 					rows="4"
-					:placeholder="t('procest', 'Advice')"
+					:placeholder="t('dossiq', 'Advice')"
 					:disabled="submitting" />
 			</div>
 
@@ -45,26 +45,26 @@
 				v-if="!isAdviesStep && !showReturnForm"
 				class="parafeer-actie-dialog__field">
 				<label for="parafeer-actie-comment">{{
-					t('procest', 'Optional comment')
+					t('dossiq', 'Optional comment')
 				}}</label>
 				<textarea
 					id="parafeer-actie-comment"
 					v-model="comment"
 					rows="3"
-					:placeholder="t('procest', 'Optional comment')"
+					:placeholder="t('dossiq', 'Optional comment')"
 					:disabled="submitting" />
 			</div>
 
 			<!-- Return reason form (toggled by Terugsturen click). -->
 			<div v-if="showReturnForm" class="parafeer-actie-dialog__field">
 				<label for="parafeer-actie-return-reason"
-					>{{ t('procest', 'Reason for returning') }} *</label
+					>{{ t('dossiq', 'Reason for returning') }} *</label
 				>
 				<textarea
 					id="parafeer-actie-return-reason"
 					v-model="returnReason"
 					rows="4"
-					:placeholder="t('procest', 'Reason for returning')"
+					:placeholder="t('dossiq', 'Reason for returning')"
 					:disabled="submitting" />
 				<p v-if="validationError" class="parafeer-actie-dialog__error">
 					{{ validationError }}
@@ -96,7 +96,7 @@
 					type="error"
 					:disabled="submitting"
 					@click="showReturnForm = true">
-					{{ t('procest', 'Return') }}
+					{{ t('dossiq', 'Return') }}
 				</NcButton>
 			</template>
 			<template v-else>
@@ -104,10 +104,10 @@
 					type="error"
 					:disabled="submitting || returnReason.trim() === ''"
 					@click="submitReturn">
-					{{ t('procest', 'Return') }}
+					{{ t('dossiq', 'Return') }}
 				</NcButton>
 				<NcButton :disabled="submitting" @click="showReturnForm = false">
-					{{ t('procest', 'Cancel') }}
+					{{ t('dossiq', 'Cancel') }}
 				</NcButton>
 			</template>
 		</template>
@@ -184,15 +184,15 @@ export default {
 
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		dialogTitle() {
-			return this.t('procest', 'Take action')
+			return this.t('dossiq', 'Take action')
 		},
 
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		primaryActionLabel() {
-			if (this.step?.type === 'advice') return this.t('procest', 'Advise')
+			if (this.step?.type === 'advice') return this.t('dossiq', 'Advise')
 			if (this.step?.type === 'parafering')
-				return this.t('procest', 'Approve (paraferen)')
-			if (this.step?.type === 'accordering') return this.t('procest', 'Accord')
+				return this.t('dossiq', 'Approve (paraferen)')
+			if (this.step?.type === 'accordering') return this.t('dossiq', 'Accord')
 			return ''
 		},
 
@@ -212,9 +212,9 @@ export default {
 		 */
 		formatStepType(type) {
 			const labels = {
-				advice: this.t('procest', 'Advise'),
-				parafering: this.t('procest', 'Approve (paraferen)'),
-				accordering: this.t('procest', 'Accord'),
+				advice: this.t('dossiq', 'Advise'),
+				parafering: this.t('dossiq', 'Approve (paraferen)'),
+				accordering: this.t('dossiq', 'Accord'),
 			}
 			return labels[type] || type || ''
 		},
@@ -264,7 +264,7 @@ export default {
 			if (stepType === 'accordering') action = 'accorded'
 			if (!action) {
 				this.errorMessage = this.t(
-					'procest',
+					'dossiq',
 					'Invalid action for this step type',
 				)
 				return
@@ -275,7 +275,7 @@ export default {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async submitReturn() {
 			if (this.returnReason.trim() === '') {
-				this.validationError = this.t('procest', 'Return reason is required')
+				this.validationError = this.t('dossiq', 'Return reason is required')
 				return
 			}
 			this.validationError = ''
@@ -302,7 +302,7 @@ export default {
 			} catch (error) {
 				const serverMessage = error?.response?.data?.message
 				this.errorMessage =
-					serverMessage || this.t('procest', 'Operation failed')
+					serverMessage || this.t('dossiq', 'Operation failed')
 			} finally {
 				this.submitting = false
 			}

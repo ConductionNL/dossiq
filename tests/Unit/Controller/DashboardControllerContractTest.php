@@ -16,7 +16,7 @@
  *    silently becomes admin-only — the SPA would 403 for every ordinary user
  *    while every unit test still passed;
  *  - neither may be `#[PublicPage]`: the shell must require a Nextcloud
- *    session. Adding `#[PublicPage]` here would serve the whole procest SPA
+ *    session. Adding `#[PublicPage]` here would serve the whole dossiq SPA
  *    chrome anonymously;
  *  - `catchAll` must render the SAME template as `page` and render it AS A USER
  *    (`RENDER_AS_USER`) with a 200 — a deep link that answered 404, redirected,
@@ -24,20 +24,20 @@
  *    the app.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\DashboardController;
+use OCA\Dossiq\Controller\DashboardController;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -50,7 +50,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Wire-contract tests for DashboardController's SPA shell endpoints.
  *
- * @covers \OCA\Procest\Controller\DashboardController
+ * @covers \OCA\Dossiq\Controller\DashboardController
  */
 class DashboardControllerContractTest extends TestCase {
 
@@ -99,19 +99,19 @@ class DashboardControllerContractTest extends TestCase {
 	}//end attributeNamesOf()
 
 	/**
-	 * `page` renders the procest `index` template as a signed-in user, with 200.
+	 * `page` renders the dossiq `index` template as a signed-in user, with 200.
 	 *
 	 * @return void
 	 */
-	public function testPageRendersTheProcestIndexTemplateAsAUser(): void {
+	public function testPageRendersTheDossiqIndexTemplateAsAUser(): void {
 		$response = $this->controller->page();
 
 		$this->assertInstanceOf(TemplateResponse::class, $response);
-		$this->assertSame('procest', $response->getApp());
+		$this->assertSame('dossiq', $response->getApp());
 		$this->assertSame('index', $response->getTemplateName());
 		$this->assertSame(TemplateResponse::RENDER_AS_USER, $response->getRenderAs());
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-	}//end testPageRendersTheProcestIndexTemplateAsAUser()
+	}//end testPageRendersTheDossiqIndexTemplateAsAUser()
 
 	/**
 	 * `catchAll` serves the SAME shell as `page` — a deep link must reach the
@@ -158,7 +158,7 @@ class DashboardControllerContractTest extends TestCase {
 	}//end testBothShellEndpointsKeepTheirDeclaredAuthPosture()
 
 	/**
-	 * Neither shell endpoint may be public: the procest SPA requires a session.
+	 * Neither shell endpoint may be public: the dossiq SPA requires a session.
 	 *
 	 * @return void
 	 */

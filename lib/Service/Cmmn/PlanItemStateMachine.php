@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest CMMN plan-item state machine.
+ * Dossiq CMMN plan-item state machine.
  *
  * Applies ONE validated plan-item transition and everything that structurally
  * follows from it. Every state change in the CMMN engine — worker-driven,
@@ -21,7 +21,7 @@
  * separable from "which transitions the cascade decides to make".
  *
  * @category Service
- * @package  OCA\Procest\Service\Cmmn
+ * @package  OCA\Dossiq\Service\Cmmn
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -29,7 +29,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -39,7 +39,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Cmmn;
+namespace OCA\Dossiq\Service\Cmmn;
 
 use DateTimeImmutable;
 

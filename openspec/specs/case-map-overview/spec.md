@@ -8,7 +8,7 @@ status: done
 
 Provide an overview map showing all cases (or filtered subsets) plotted on a map with marker clustering, status-based coloring, and filtering. This enables case handlers and managers to get a geographic overview of their workload and identify spatial patterns (e.g., clusters of meldingen in a neighborhood, VTH cases near a construction site).
 
-The overview is rendered from OpenRegister's page-level **maps-overview** integration surface (ADR-022, openregister PR #154): procest declares a `cases-on-map` overview and fetches RBAC-scoped marker points (`GET /apps/openregister/api/integrations/maps/overviews/{register}/{schema}/points`), which render through `@conduction/nextcloud-vue`'s declarative `CnMapWidget`. OR owns the geometry extraction, RBAC scoping (fail-closed), and the declarative base-layer config (PDOK WMTS default). Procest ships no bespoke Leaflet / WMS / WFS stack and no bespoke geo-query endpoint (issue #112, change `migrate-cases-on-map-to-maps-overview-leaf`).
+The overview is rendered from OpenRegister's page-level **maps-overview** integration surface (ADR-022, openregister PR #154): dossiq declares a `cases-on-map` overview and fetches RBAC-scoped marker points (`GET /apps/openregister/api/integrations/maps/overviews/{register}/{schema}/points`), which render through `@conduction/nextcloud-vue`'s declarative `CnMapWidget`. OR owns the geometry extraction, RBAC scoping (fail-closed), and the declarative base-layer config (PDOK WMTS default). Dossiq ships no bespoke Leaflet / WMS / WFS stack and no bespoke geo-query endpoint (issue #112, change `migrate-cases-on-map-to-maps-overview-leaf`).
 
 **Standards**: GeoJSON (RFC 7946), PDOK tile services (via OR base-layer config)
 **Feature tier**: V1
@@ -26,7 +26,7 @@ The system MUST provide a map overview of all cases with geometry, accessible fr
 #### Scenario OVERVIEW-01a: Display all cases on map
 
 - GIVEN 150 active cases with geometry data
-- WHEN the user navigates to "Kaart" in the Procest navigation
+- WHEN the user navigates to "Kaart" in the Dossiq navigation
 - THEN a full-width map MUST be displayed showing all case locations
 - AND cases MUST be rendered as markers or polygons depending on geometry type
 - AND marker clustering MUST be active at low zoom levels
@@ -120,7 +120,7 @@ The overview map MUST support selecting cases by geographic area.
 
 ### REQ-OVERVIEW-04: Dashboard Map Widget
 
-The Procest dashboard MUST support an optional map widget showing case locations.
+The Dossiq dashboard MUST support an optional map widget showing case locations.
 
 **Feature tier**: V1
 

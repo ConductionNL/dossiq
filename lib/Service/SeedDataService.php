@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Seed Data Service
+ * Dossiq Seed Data Service
  *
  * Service for seeding pre-defined case types, status types, role types,
  * and workflow templates into OpenRegister.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -15,16 +15,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
- * @spec openspec/specs/procest-app-scaffold/spec.md
+ * @spec openspec/specs/dossiq-app-scaffold/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -66,7 +66,7 @@ class SeedDataService {
 	public function seedBezwaarBeroepData(): array {
 		$seedPath = __DIR__ . '/../Settings/bezwaar_seed_data.json';
 		if (file_exists($seedPath) === false) {
-			$this->logger->error('Procest: Seed data file not found at ' . $seedPath);
+			$this->logger->error('Dossiq: Seed data file not found at ' . $seedPath);
 			return ['success' => false, 'message' => 'Seed data file not found'];
 		}
 
@@ -74,7 +74,7 @@ class SeedDataService {
 		$seedData = json_decode($seedContent, true);
 
 		if (json_last_error() !== JSON_ERROR_NONE) {
-			$this->logger->error('Procest: Invalid JSON in seed data file');
+			$this->logger->error('Dossiq: Invalid JSON in seed data file');
 			return ['success' => false, 'message' => 'Invalid JSON in seed data file'];
 		}
 
@@ -90,7 +90,7 @@ class SeedDataService {
 		$workflowSchema = $this->getConfigValue(key: 'workflow_template_schema');
 
 		if ($registerId === '' || $caseTypeSchema === '') {
-			$this->logger->warning('Procest: Register or case type schema not configured, skipping seed');
+			$this->logger->warning('Dossiq: Register or case type schema not configured, skipping seed');
 			return ['success' => false, 'message' => 'Register or schemas not configured'];
 		}
 
@@ -121,7 +121,7 @@ class SeedDataService {
 			$summary['skipped'] += $result['skipped'];
 		}
 
-		$this->logger->info('Procest: Seed data complete', $summary);
+		$this->logger->info('Dossiq: Seed data complete', $summary);
 
 		return $summary;
 	}//end seedBezwaarBeroepData()
@@ -268,7 +268,7 @@ class SeedDataService {
 		}
 
 		$this->logger->info(
-			'Procest: Case type already exists, skipping seed',
+			'Dossiq: Case type already exists, skipping seed',
 			['identifier' => $identifier]
 		);
 
@@ -308,7 +308,7 @@ class SeedDataService {
 
 		if ($caseType === null) {
 			$this->logger->error(
-				'Procest: Failed to create case type',
+				'Dossiq: Failed to create case type',
 				['identifier' => $identifier]
 			);
 			return null;
@@ -320,7 +320,7 @@ class SeedDataService {
 		}
 
 		$this->logger->info(
-			'Procest: Created case type',
+			'Dossiq: Created case type',
 			['identifier' => $identifier, 'id' => $caseTypeId]
 		);
 
@@ -526,7 +526,7 @@ class SeedDataService {
 			);
 		} catch (\Exception $e) {
 			$this->logger->error(
-				'Procest: Failed to create seed object',
+				'Dossiq: Failed to create seed object',
 				[
 					'schema' => $schemaId,
 					'exception' => $e->getMessage(),
@@ -575,7 +575,7 @@ class SeedDataService {
 			return null;
 		} catch (\Exception $e) {
 			$this->logger->debug(
-				'Procest: Could not search for existing object',
+				'Dossiq: Could not search for existing object',
 				['exception' => $e->getMessage()]
 			);
 			return null;
@@ -592,7 +592,7 @@ class SeedDataService {
 			return $this->container->get('OCA\OpenRegister\Service\ObjectService');
 		} catch (\Exception $e) {
 			$this->logger->error(
-				'Procest: Could not access ObjectService',
+				'Dossiq: Could not access ObjectService',
 				['exception' => $e->getMessage()]
 			);
 			return null;

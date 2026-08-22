@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Dormant default Procest ZTC / Catalogi-API adapter.
+ * Dormant default Dossiq ZTC / Catalogi-API adapter.
  *
  * Records the would-be ZTC resolve / import to the structured logger
  * and returns a synthetic LOOKUP_DEFERRED / IMPORT_DEFERRED result
@@ -10,16 +10,16 @@
  * stays observable until an openconnector-backed binding to the
  * receiving Catalogi-API is wired in via `Application::register()`.
  * Mirrors the `LogZgwExternalAdapter` dormant-default pattern used
- * across the Procest external surface.
+ * across the Dossiq external surface.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Ztc
+ * @package  OCA\Dossiq\Service\External\Ztc
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  *
@@ -29,12 +29,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Ztc;
+namespace OCA\Dossiq\Service\External\Ztc;
 
 use Psr\Log\LoggerInterface;
 
 /**
- * Dormant log-backed Procest ZTC / Catalogi-API adapter.
+ * Dormant log-backed Dossiq ZTC / Catalogi-API adapter.
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
@@ -57,10 +57,12 @@ class LogZtcCatalogiAdapter implements ZtcCatalogiAdapterInterface {
 	 * @param array<string,mixed> $context Lookup context.
 	 *
 	 * @return ZtcResult The dispatch outcome.
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md#requirement-ztc-catalogi-api-resources-must-be-fully-mappable
 	 */
 	public function resolveZaakType(string $caseTypeId, string $receiverSourceSlug, array $context = []): ZtcResult {
 		$this->logger->info(
-			'Procest ZTC resolveZaakType deferred (no outbound connector bound)',
+			'Dossiq ZTC resolveZaakType deferred (no outbound connector bound)',
 			[
 				'zaaktypeIdentificatie' => $caseTypeId,
 				'receiverSourceSlug' => $receiverSourceSlug,
@@ -88,10 +90,12 @@ class LogZtcCatalogiAdapter implements ZtcCatalogiAdapterInterface {
 	 * @param array<string,mixed> $context Import context.
 	 *
 	 * @return ZtcResult The dispatch outcome.
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md#requirement-ztc-catalogi-api-resources-must-be-fully-mappable
 	 */
 	public function importZaakType(string $caseTypeUrl, array $context = []): ZtcResult {
 		$this->logger->info(
-			'Procest ZTC importZaakType deferred (no outbound connector bound)',
+			'Dossiq ZTC importZaakType deferred (no outbound connector bound)',
 			[
 				'zaaktypeUrl' => $caseTypeUrl,
 				'context' => $context,

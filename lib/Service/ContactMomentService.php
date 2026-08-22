@@ -1,15 +1,15 @@
 <?php
 
 /**
- * Procest Contactmoment Service.
+ * Dossiq Contactmoment Service.
  *
  * Logs every inbound/outbound KCC contact as a contactmoment object, records
  * immutable activity entries on the related case, and links a contactmoment to
  * an identified burger reference. Wraps the OpenRegister ObjectService through
- * SettingsService following the established Procest service convention.
+ * SettingsService following the established Dossiq service convention.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,17 +20,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -112,7 +112,7 @@ class ContactMomentService {
 			$created = $objectService->saveObject($register, $schema, $record);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to create contactmoment: ' . $e->getMessage(),
+				'Dossiq: failed to create contactmoment: ' . $e->getMessage(),
 				['app' => Application::APP_ID],
 			);
 			throw new RuntimeException('Could not create contactmoment');
@@ -197,7 +197,7 @@ class ContactMomentService {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to list contactmomenten: ' . $e->getMessage(),
+				'Dossiq: failed to list contactmomenten: ' . $e->getMessage(),
 				['app' => Application::APP_ID],
 			);
 			return [];
@@ -273,7 +273,7 @@ class ContactMomentService {
 			return true;
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to record case activity: ' . $e->getMessage(),
+				'Dossiq: failed to record case activity: ' . $e->getMessage(),
 				['app' => Application::APP_ID],
 			);
 			return false;
@@ -315,7 +315,7 @@ class ContactMomentService {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to link contactmoment: ' . $e->getMessage(),
+				'Dossiq: failed to link contactmoment: ' . $e->getMessage(),
 				['app' => Application::APP_ID],
 			);
 			throw new RuntimeException('Could not link contactmoment');

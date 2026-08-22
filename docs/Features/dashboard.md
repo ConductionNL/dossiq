@@ -1,6 +1,6 @@
 # Dashboard
 
-The Procest dashboard is the landing page of the application, providing a high-level overview of the current user's case management workload.
+The Dossiq dashboard is the landing page of the application, providing a high-level overview of the current user's case management workload.
 
 ![Dashboard](/screenshots/dashboard.png)
 

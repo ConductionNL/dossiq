@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest MandaatController
+ * Dossiq MandaatController
  *
  * REST API controller for validating mandates in the besluitvorming workflow.
  * Delegates mandate validation to MandaatValidationService.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,9 +20,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\MandaatValidationService;
+use OCA\Dossiq\Service\MandaatValidationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -63,7 +63,7 @@ class MandaatController extends Controller {
 	/**
 	 * Check whether the signing user holds a valid mandate for a case.
 	 *
-	 * NOTE: As of procest-delegate-contract-decision, the mandate/route-stage
+	 * NOTE: As of dossiq-delegate-contract-decision, the mandate/route-stage
 	 * assignee model is now owned by decidesk (Person|GovernanceBody assignee,
 	 * ambtelijk↔politiek route seeds). This endpoint still validates local
 	 * mandaat constraints but new mandate-decision flows should be raised via
@@ -78,7 +78,7 @@ class MandaatController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function mandaatCheck(string $id): JSONResponse {
-		// Mandate validation: local Awb constraints remain owned by procest;
+		// Mandate validation: local Awb constraints remain owned by dossiq;
 		// route-stage assignee decisions are delegated to decidesk (ADR-019).
 		try {
 			$this->authorizeMandateAccess(caseId: $id, user: $this->userSession->getUser());

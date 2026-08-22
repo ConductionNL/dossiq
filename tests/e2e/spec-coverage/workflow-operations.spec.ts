@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Behavioural UI coverage for the operational views that sit alongside the
@@ -11,7 +11,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { navTo, navToRoute, trackProcestErrors } from '../helpers/nav'
+import { navTo, navToRoute, trackDossiqErrors } from '../helpers/nav'
 // Routes named after the component that renders them, so this spec states
 // WHICH screen it covers in executable code rather than in a comment.
 import { CasesOnMapView, WorkflowBoard } from '../helpers/page-components'
@@ -47,14 +47,14 @@ test.describe('Workflow Board page', () => {
 	// (src/store/store.js), but the registration used to be skipped when the
 	// app-config schema id (case_type_schema / status_type_schema) was blank —
 	// which it is on a fresh OR register — leaving the types unregistered and
-	// logging two procest-origin "Object type is not registered" console errors
+	// logging two dossiq-origin "Object type is not registered" console errors
 	// per load while the kanban columns stayed empty. The same defect hit the
 	// Doorlooptijd analytics view (caseType). store.js now falls back to the
 	// canonical schema slug ('caseType' / 'statusType') when the config id is
 	// empty, so the types are always registered and this contract holds.
 	// @e2e openspec/specs/workflow-board/spec.md#workflow-board-loads-without-console-errors
-	test('workflow board loads without procest console errors', async ({ page }) => {
-		const errors = trackProcestErrors(page)
+	test('workflow board loads without dossiq console errors', async ({ page }) => {
+		const errors = trackDossiqErrors(page)
 		// The nav label is "Workflow board" (lower-case b) and it sits inside
 		// the collapsed "Work queue" group — navigate by route instead.
 		await navToRoute(page, WorkflowBoard)
@@ -71,7 +71,7 @@ test.describe('Case Map page', () => {
 	test('case map renders its heading and an interactive map surface', async ({
 		page,
 	}) => {
-		const errors = trackProcestErrors(page)
+		const errors = trackDossiqErrors(page)
 		// Case Map has no top-level sidebar leaf after the nav-dedup pass; its
 		// /map page route stays reachable, so navigate to it client-side.
 		await navToRoute(page, CasesOnMapView)
@@ -105,7 +105,7 @@ test.describe('Subsidies intake page', () => {
 	test.fixme('subsidies index renders the subsidy intake list shell', async ({
 		page,
 	}) => {
-		const errors = trackProcestErrors(page)
+		const errors = trackDossiqErrors(page)
 		// "Subsidies" is a group header with no label in the subsidie manifest
 		// fragment, so it renders no clickable nav entry — navigate by route.
 		await navToRoute(page, '/subsidies')
@@ -126,7 +126,7 @@ test.describe('Subsidies intake page', () => {
 test.describe('Grant schemes page', () => {
 	// @e2e openspec/specs/subsidy-intake/spec.md#grant-schemes-index-renders-list-shell
 	test('grant schemes index renders its list shell', async ({ page }) => {
-		const errors = trackProcestErrors(page)
+		const errors = trackDossiqErrors(page)
 		// The nav label is "Subsidy schemes"; navigate by route so the test does
 		// not depend on the current translation of that menu string.
 		await navToRoute(page, '/subsidieregelingen')
@@ -147,7 +147,7 @@ test.describe('Features & roadmap page', () => {
 	test('features & roadmap renders heading and its action controls', async ({
 		page,
 	}) => {
-		const errors = trackProcestErrors(page)
+		const errors = trackDossiqErrors(page)
 		await navToRoute(page, '/features-roadmap')
 		await expect(
 			page.getByRole('heading', { name: 'Features' }).first(),

@@ -1,7 +1,7 @@
 <template>
 	<div class="advice-request">
 		<h4 class="advice-request__title">
-			{{ t('procest', 'Advice Requests') }}
+			{{ t('dossiq', 'Advice Requests') }}
 		</h4>
 
 		<!-- Existing requests -->
@@ -26,13 +26,13 @@
 				</p>
 				<div class="advice-request__meta">
 					<span>{{
-						t('procest', 'Deadline: {date}', {
+						t('dossiq', 'Deadline: {date}', {
 							date: formatDate(req.deadline),
 						})
 					}}</span>
 					<span v-if="req.response">
 						{{
-							t('procest', 'Response: {type}', {
+							t('dossiq', 'Response: {type}', {
 								type: getResponseLabel(req.response),
 							})
 						}}
@@ -42,26 +42,24 @@
 		</div>
 
 		<div v-else class="advice-request__empty">
-			{{ t('procest', 'No advice requests yet.') }}
+			{{ t('dossiq', 'No advice requests yet.') }}
 		</div>
 
 		<!-- New request form -->
 		<div v-if="showForm" class="advice-request__form">
 			<div class="form-group">
 				<label for="advice-request-department"
-					>{{ t('procest', 'Department / Organization') }} *</label
+					>{{ t('dossiq', 'Department / Organization') }} *</label
 				>
 				<NcTextField
 					id="advice-request-department"
 					:modelValue="form.department"
-					:placeholder="
-						t('procest', 'e.g., Brandweer, Welstandscommissie')
-					"
+					:placeholder="t('dossiq', 'e.g., Brandweer, Welstandscommissie')"
 					@update:modelValue="(v) => (form.department = v)" />
 			</div>
 			<div class="form-group">
 				<label for="advice-request-subject"
-					>{{ t('procest', 'Subject') }} *</label
+					>{{ t('dossiq', 'Subject') }} *</label
 				>
 				<NcTextField
 					id="advice-request-subject"
@@ -70,7 +68,7 @@
 			</div>
 			<div class="form-group">
 				<label for="advice-request-question">{{
-					t('procest', 'Question')
+					t('dossiq', 'Question')
 				}}</label>
 				<textarea
 					id="advice-request-question"
@@ -79,7 +77,7 @@
 			</div>
 			<div class="form-group">
 				<label for="advice-request-deadline"
-					>{{ t('procest', 'Deadline') }} *</label
+					>{{ t('dossiq', 'Deadline') }} *</label
 				>
 				<NcTextField
 					id="advice-request-deadline"
@@ -89,19 +87,19 @@
 			</div>
 			<div class="advice-request__form-actions">
 				<NcButton @click="showForm = false">
-					{{ t('procest', 'Cancel') }}
+					{{ t('dossiq', 'Cancel') }}
 				</NcButton>
 				<NcButton
 					type="primary"
 					:disabled="!isFormValid"
 					@click="submitRequest">
-					{{ t('procest', 'Send Request') }}
+					{{ t('dossiq', 'Send Request') }}
 				</NcButton>
 			</div>
 		</div>
 
 		<NcButton v-if="!showForm && !isReadOnly" @click="showForm = true">
-			{{ t('procest', 'Request Advice') }}
+			{{ t('dossiq', 'Request Advice') }}
 		</NcButton>
 	</div>
 </template>
@@ -163,10 +161,10 @@ export default {
 		 */
 		getStatusLabel(status) {
 			const labels = {
-				open: this.t('procest', 'Open'),
-				in_handling: this.t('procest', 'In progress'),
-				advice_uitgebracht: this.t('procest', 'Advice received'),
-				closed: this.t('procest', 'Closed'),
+				open: this.t('dossiq', 'Open'),
+				in_handling: this.t('dossiq', 'In progress'),
+				advice_uitgebracht: this.t('dossiq', 'Advice received'),
+				closed: this.t('dossiq', 'Closed'),
 			}
 			return labels[status] || status
 		},
@@ -177,11 +175,11 @@ export default {
 		 */
 		getResponseLabel(response) {
 			const labels = {
-				positive: this.t('procest', 'Positive'),
-				positief_with_terms: this.t('procest', 'Positive with conditions'),
+				positive: this.t('dossiq', 'Positive'),
+				positief_with_terms: this.t('dossiq', 'Positive with conditions'),
 
-				negative: this.t('procest', 'Negative'),
-				non_from_application: this.t('procest', 'Not applicable'),
+				negative: this.t('dossiq', 'Negative'),
+				non_from_application: this.t('dossiq', 'Not applicable'),
 			}
 			return labels[response] || response
 		},

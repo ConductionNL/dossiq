@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest OpenRegister gateway for the case-transfer surface.
+ * Dossiq OpenRegister gateway for the case-transfer surface.
  *
  * The single place the transfer surface reaches into OpenRegister. Each
  * resolution checks that the app is installed and — for the federation
  * collaborators — that the resolved service actually exposes the method the
- * caller will invoke, because procest runs against OpenRegister builds that
+ * caller will invoke, because dossiq runs against OpenRegister builds that
  * predate the federation leaf. Every failure resolves to null; nothing throws.
  *
  * Split out of CaseTransferService so the leaf-availability question is
@@ -19,7 +19,7 @@
  * be unenforceable and would TypeError the moment a test passed a double.
  *
  * @category Service
- * @package  OCA\Procest\Service\Transfer
+ * @package  OCA\Dossiq\Service\Transfer
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,7 +27,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -37,7 +37,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Transfer;
+namespace OCA\Dossiq\Service\Transfer;
 
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -81,7 +81,7 @@ class TransferRegisterGateway {
 			return $this->container->get('OCA\OpenRegister\Service\ObjectService');
 		} catch (\Exception $e) {
 			$this->logger->error(
-				'Procest: Could not get ObjectService',
+				'Dossiq: Could not get ObjectService',
 				['exception' => $e->getMessage()]
 			);
 			return null;
@@ -110,7 +110,7 @@ class TransferRegisterGateway {
 			return $service;
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: Could not get OR FederationShareService',
+				'Dossiq: Could not get OR FederationShareService',
 				['exception' => $e->getMessage()]
 			);
 			return null;
@@ -140,7 +140,7 @@ class TransferRegisterGateway {
 			return $mapper;
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: Could not get OR FederatedShareMapper',
+				'Dossiq: Could not get OR FederatedShareMapper',
 				['exception' => $e->getMessage()]
 			);
 			return null;

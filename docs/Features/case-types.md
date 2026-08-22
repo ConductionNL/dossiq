@@ -10,14 +10,14 @@ The page is divided into several sections:
 
 ### Version Information
 Displays application metadata:
-- **Application Name**: Procest
+- **Application Name**: Dossiq
 - **Version**: Current installed version
 - **Up to date**: Status indicator for configuration currency
 - **Re-import configuration**: Button to re-import default case type configurations
 - **Support**: Contact information for support (support@conduction.nl) and SLA inquiries (sales@conduction.nl)
 
 ### Configuration
-Register and schema settings that link Procest to OpenRegister:
+Register and schema settings that link Dossiq to OpenRegister:
 - **Register** -- The OpenRegister register ID used for case data.
 - **Case schema** -- Schema ID for case objects.
 - **Task schema** -- Schema ID for task objects.

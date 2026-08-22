@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Tenant Claim Validation Middleware
+ * Dossiq Tenant Claim Validation Middleware
  *
  * Validates that the `tenant_id` claim in the bearer JWT matches the
  * tenant resolved from the request (header / URL parameter). Mismatch
@@ -11,7 +11,7 @@
  * tenant is already bound.
  *
  * @category Middleware
- * @package  OCA\Procest\Middleware
+ * @package  OCA\Dossiq\Middleware
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,18 +20,18 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-05-auth-jwt-tenant-claim/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Middleware;
+namespace OCA\Dossiq\Middleware;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\TenantContext;
-use OCA\Procest\Service\TenantJwtService;
+use OCA\Dossiq\Service\TenantContext;
+use OCA\Dossiq\Service\TenantJwtService;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Middleware;
 use OCP\ICache;
@@ -57,7 +57,7 @@ class TenantClaimValidationMiddleware extends Middleware {
 	/**
 	 * Cache namespace.
 	 */
-	private const CACHE_NS = 'procest_tenant_claim_failures';
+	private const CACHE_NS = 'dossiq_tenant_claim_failures';
 
 	/**
 	 * Backing cache (factory-resolved).
@@ -168,7 +168,7 @@ class TenantClaimValidationMiddleware extends Middleware {
 	 */
 	private function logSecurityIncident(string $attempted, string $requested, array $claims): void {
 		$this->logger->warning(
-			'Procest SECURITY: cross-tenant JWT claim mismatch',
+			'Dossiq SECURITY: cross-tenant JWT claim mismatch',
 			[
 				'ip' => $this->request->getRemoteAddress(),
 				'timestamp' => (new DateTimeImmutable('now'))->format(DATE_ATOM),
@@ -193,7 +193,7 @@ class TenantClaimValidationMiddleware extends Middleware {
 			$this->cache->set($key, $count, self::WINDOW_SECONDS);
 			if ($count >= self::FAIL_THRESHOLD) {
 				$this->logger->alert(
-					'Procest SECURITY: cross-tenant JWT threshold breached',
+					'Dossiq SECURITY: cross-tenant JWT threshold breached',
 					['ip' => $ipAddress, 'count' => $count]
 				);
 			}

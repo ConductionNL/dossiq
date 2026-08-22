@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Bezwaar Creation Hook.
+ * Dossiq Bezwaar Creation Hook.
  *
  * Targeted extension that runs when a bezwaar case is created. It wires
  * the bezwaar case to the primair besluit it contests:
@@ -21,7 +21,7 @@
  * caller cannot impersonate another actor.
  *
  * @category Service
- * @package  OCA\Procest\Service\Bezwaar
+ * @package  OCA\Dossiq\Service\Bezwaar
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -32,14 +32,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Bezwaar;
+namespace OCA\Dossiq\Service\Bezwaar;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;

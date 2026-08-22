@@ -1,12 +1,12 @@
 // @ts-check
 
 /**
- * Procest documentation site.
+ * Dossiq documentation site.
  *
  * Built on @conduction/docusaurus-preset for brand defaults (tokens,
  * theme swizzles for Navbar / Footer, four-locale i18n scaffolding,
  * KvK / BTW copyright). Site-specific overrides (locales, sidebar
- * path, mermaid theme, custom prism themes, procest-only navbar items)
+ * path, mermaid theme, custom prism themes, dossiq-only navbar items)
  * are passed through createConfig() opts.
  */
 
@@ -19,13 +19,13 @@ const { createConfig, baseFooterLinks } = require('@conduction/docusaurus-preset
 const BRAND_THEME = require.resolve('@conduction/docusaurus-preset/theme');
 
 const config = createConfig({
-  title: 'Procest',
+  title: 'Dossiq',
   tagline: 'Case management for Nextcloud',
   url: 'https://procest.conduction.nl',
   baseUrl: '/',
 
   organizationName: 'ConductionNL',
-  projectName: 'procest',
+  projectName: 'dossiq',
 
   i18n: {
     defaultLocale: 'en',
@@ -36,10 +36,10 @@ const config = createConfig({
     },
   },
 
-  /* The procest docs source lives at the repo root of `docs/` rather
+  /* The dossiq docs source lives at the repo root of `docs/` rather
      than under a `docs/` subfolder, so we override the preset's default
      `presets:` block to point `docs.path` at './' and disable the blog
-     plugin. customCss carries procest-specific CSS only: brand tokens
+     plugin. customCss carries dossiq-specific CSS only: brand tokens
      and the theme swizzles are auto-loaded by the brand theme entry in
      `themes:` below. */
   presets: [
@@ -57,7 +57,7 @@ const config = createConfig({
              bucket. */
           exclude: ['**/node_modules/**', 'src/**'],
           sidebarPath: require.resolve('./sidebars.js'),
-          editUrl: 'https://github.com/ConductionNL/procest/tree/main/docs/',
+          editUrl: 'https://github.com/ConductionNL/dossiq/tree/main/docs/',
           /* Compute a "Last updated on …" timestamp per doc from the
              git commit history. This populates the docs plugin's
              lastUpdatedAt metadata which the sitemap plugin reads
@@ -86,7 +86,7 @@ const config = createConfig({
       {
         specs: [
           {
-            spec: 'static/oas/procest.json',
+            spec: 'static/oas/dossiq.json',
             route: '/api/',
           },
         ],
@@ -97,8 +97,8 @@ const config = createConfig({
   themes: [BRAND_THEME, '@docusaurus/theme-mermaid'],
 
   /* Brand navbar provides locale dropdown + GitHub by default; we
-     replace items[] with procest's own (Documentation sidebar link,
-     procest GitHub link, locale dropdown). Object.assign in
+     replace items[] with dossiq's own (Documentation sidebar link,
+     dossiq GitHub link, locale dropdown). Object.assign in
      createConfig is shallow, so items: replaces wholesale. */
   navbar: {
     items: [
@@ -114,7 +114,7 @@ const config = createConfig({
         position: 'left',
       },
       {
-        href: 'https://github.com/ConductionNL/procest',
+        href: 'https://github.com/ConductionNL/dossiq',
         label: 'GitHub',
         position: 'right',
       },
@@ -141,7 +141,7 @@ const config = createConfig({
   /* themeConfig is shallow-merged into the preset's defaults
      (colorMode + navbar + footer). prism + mermaid land alongside. */
   themeConfig: {
-    image: 'img/og-procest.png',
+    image: 'img/og-dossiq.png',
     prism: {
       theme: require('prism-react-renderer/themes/github'),
       darkTheme: require('prism-react-renderer/themes/dracula'),

@@ -1,16 +1,16 @@
 <?php
 
 /**
- * Result value-object returned by a Procest BAG adapter call.
+ * Result value-object returned by a Dossiq BAG adapter call.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Bag
+ * @package  OCA\Dossiq\Service\External\Bag
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/bag-register-adapter/proposal.md
  *
@@ -20,7 +20,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Bag;
+namespace OCA\Dossiq\Service\External\Bag;
 
 /**
  * Result of a BAG lookup attempt.

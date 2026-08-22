@@ -15,7 +15,7 @@
  * network access required.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\External\Woz
+ * @package  OCA\Dossiq\Tests\Unit\Service\External\Woz
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,11 +26,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\External\Woz;
+namespace OCA\Dossiq\Tests\Unit\Service\External\Woz;
 
-use OCA\Procest\Service\External\IntegrationMode;
-use OCA\Procest\Service\External\Woz\WozApiAdapter;
-use OCA\Procest\Service\External\Woz\WozResponseMapper;
+use OCA\Dossiq\Service\External\IntegrationMode;
+use OCA\Dossiq\Service\External\Woz\WozApiAdapter;
+use OCA\Dossiq\Service\External\Woz\WozResponseMapper;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
@@ -39,11 +39,11 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\External\Woz\WozApiAdapter
- * @covers \OCA\Procest\Service\External\Woz\WozResponseMapper
+ * @covers \OCA\Dossiq\Service\External\Woz\WozApiAdapter
+ * @covers \OCA\Dossiq\Service\External\Woz\WozResponseMapper
  *
- * @uses \OCA\Procest\Service\External\IntegrationMode
- * @uses \OCA\Procest\Service\External\Woz\WozLookupResult
+ * @uses \OCA\Dossiq\Service\External\IntegrationMode
+ * @uses \OCA\Dossiq\Service\External\Woz\WozLookupResult
  */
 class WozContractTest extends TestCase {
 	private const FIXTURES = __DIR__ . '/../../../../fixtures/contracts/woz';

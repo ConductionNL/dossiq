@@ -11,7 +11,7 @@
 <template>
 	<div class="woo-panel">
 		<h3 class="woo-panel__title">
-			{{ t('procest', 'Woo Deadlines') }}
+			{{ t('dossiq', 'Woo Deadlines') }}
 		</h3>
 
 		<template v-if="loading">
@@ -24,14 +24,14 @@
 			<div class="woo-panel__error">
 				<p>{{ error }}</p>
 				<NcButton type="tertiary" @click="$emit('retry')">
-					{{ t('procest', 'Retry') }}
+					{{ t('dossiq', 'Retry') }}
 				</NcButton>
 			</div>
 		</template>
 
 		<template v-else-if="cases.length === 0">
 			<p class="woo-panel__empty">
-				{{ t('procest', 'No open Woo requests') }}
+				{{ t('dossiq', 'No open Woo requests') }}
 			</p>
 		</template>
 
@@ -63,7 +63,7 @@
 
 			<div class="woo-panel__footer">
 				<a href="#" @click.prevent="$emit('view-all')">
-					{{ t('procest', 'View all Woo cases') }} &rarr;
+					{{ t('dossiq', 'View all Woo cases') }} &rarr;
 				</a>
 			</div>
 		</template>
@@ -95,17 +95,19 @@ export default {
 		 *
 		 * @param {string} severity One of overdue|critical|warning|ok
 		 * @return {string}
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-004-woo-deadline-tracking-panel-v1
 		 */
 		severityLabel(severity) {
 			switch (severity) {
 				case 'overdue':
-					return this.t('procest', 'Overdue')
+					return this.t('dossiq', 'Overdue')
 				case 'critical':
-					return this.t('procest', 'Critical')
+					return this.t('dossiq', 'Critical')
 				case 'warning':
-					return this.t('procest', 'At risk')
+					return this.t('dossiq', 'At risk')
 				default:
-					return this.t('procest', 'On track')
+					return this.t('dossiq', 'On track')
 			}
 		},
 
@@ -114,16 +116,18 @@ export default {
 		 *
 		 * @param {object} item Woo row
 		 * @return {string}
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-004-woo-deadline-tracking-panel-v1
 		 */
 		countdownLabel(item) {
 			if (item.isOverdue) {
 				const days = Math.abs(item.daysRemaining)
-				return this.t('procest', '{days} days overdue', { days })
+				return this.t('dossiq', '{days} days overdue', { days })
 			}
 			if (item.daysRemaining === 0) {
-				return this.t('procest', 'Due today')
+				return this.t('dossiq', 'Due today')
 			}
-			return this.t('procest', '{days} days remaining', {
+			return this.t('dossiq', '{days} days remaining', {
 				days: item.daysRemaining,
 			})
 		},

@@ -15,12 +15,12 @@ By the end you will have created a new case type, defined its status lifecycle, 
 ## Prerequisites
 
 - Administrator role on the Nextcloud instance.
-- The Procest register imported (see [Manage Procest settings](./03-admin-settings.md)).
+- The Dossiq register imported (see [Manage Dossiq settings](./03-admin-settings.md)).
 - A clear idea of the statuses your workflow needs.
 
 ## Steps
 
-1. From the Procest navigation, scroll to the configuration block and click **Case Types**. The list view opens with the *Cards / Table* toggle and an **Add Item** button. (Case types are also reachable from **Administration settings → Procest** under *Case Type Management*.)
+1. From the Dossiq navigation, scroll to the configuration block and click **Case Types**. The list view opens with the *Cards / Table* toggle and an **Add Item** button. (Case types are also reachable from **Administration settings → Dossiq** under *Case Type Management*.)
 
    ![Case Types list](/screenshots/tutorials/admin/01-configure-case-types-01.png)
 
@@ -48,7 +48,7 @@ You have configured the case type correctly when: it appears in the **Case Types
 
 | Symptom | Fix |
 |---|---|
-| **Add Item** opens a dialog with no form fields | The Case-type schema is not mapped: re-import configuration via [Manage Procest settings](./03-admin-settings.md). |
+| **Add Item** opens a dialog with no form fields | The Case-type schema is not mapped: re-import configuration via [Manage Dossiq settings](./03-admin-settings.md). |
 | Status transitions on a new case do not match what you configured | The status mapping on the case-type may have been saved before the status schema was created; reopen and save again. |
 | Deadline never warns | The warning threshold is larger than the duration, or the case-type field is not mapped to the Case schema. |
 | Document checklist on the case is always empty | Document types live in a separate register; confirm the *informatieobjecttype* mapping under **ZGW API Mapping** is configured. |

@@ -3,11 +3,11 @@
 /**
  * ParaferingNotificationService Unit Tests
  *
- * Tests for the Procest ParaferingNotificationService that sends Nextcloud
+ * Tests for the Dossiq ParaferingNotificationService that sends Nextcloud
  * notifications for the B&W parafering workflow.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -15,15 +15,15 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\ParaferingNotificationService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\ParaferingNotificationService;
 use OCP\Notification\IManager;
 use OCP\Notification\INotification;
 use PHPUnit\Framework\TestCase;
@@ -32,7 +32,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for the ParaferingNotificationService class.
  *
- * @covers \OCA\Procest\Service\ParaferingNotificationService
+ * @covers \OCA\Dossiq\Service\ParaferingNotificationService
  */
 class ParaferingNotificationServiceTest extends TestCase {
 

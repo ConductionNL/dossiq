@@ -4,7 +4,7 @@
  * EvidenceMetadataService Unit Tests.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,22 +15,22 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\EvidenceMetadataService;
+use OCA\Dossiq\Service\EvidenceMetadataService;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for EvidenceMetadataService.
  *
- * @covers \OCA\Procest\Service\EvidenceMetadataService
+ * @covers \OCA\Dossiq\Service\EvidenceMetadataService
  */
 class EvidenceMetadataServiceTest extends TestCase {
 

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest DwangsomBezwaarService.
+ * Dossiq DwangsomBezwaarService.
  *
  * Handles bezwaar (AWB 7:1) against a DwangsomBerekening:
  *   - registerBezwaar freezes the berekening (status=bezwaar-bevroren),
@@ -12,7 +12,7 @@
  *     dwangsom-bezwaar-resolved.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,16 +23,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 

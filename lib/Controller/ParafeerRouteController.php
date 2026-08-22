@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest ParafeerRoute Controller
+ * Dossiq ParafeerRoute Controller
  *
  * REST endpoints for voorstel-level parafering engine operations
  * (start, complete step, skip step, ad-hoc step). Generic CRUD on
@@ -10,7 +10,7 @@
  * hosts the workflow engine that has business logic beyond storage.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -21,15 +21,15 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\ParafeerRouteService;
-use OCA\Procest\Settings\AdminSettings;
+use OCA\Dossiq\Service\ParafeerRouteService;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -96,7 +96,7 @@ class ParafeerRouteController extends Controller {
 			return new JSONResponse($this->routeService->startParafering($proposalId));
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to start parafering: ' . $e->getMessage(),
+				'Dossiq: failed to start parafering: ' . $e->getMessage(),
 			);
 			return new JSONResponse(
 				['error' => 'Starten van parafering mislukt'],
@@ -131,7 +131,7 @@ class ParafeerRouteController extends Controller {
 			return new JSONResponse($this->routeService->completeStep($proposalId, $data));
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to complete parafering step: ' . $e->getMessage(),
+				'Dossiq: failed to complete parafering step: ' . $e->getMessage(),
 			);
 			return new JSONResponse(
 				['error' => 'Stap kon niet worden voltooid'],
@@ -182,7 +182,7 @@ class ParafeerRouteController extends Controller {
 			return new JSONResponse($this->routeService->skipStep($proposalId, $step, $reason));
 		} catch (RuntimeException $e) {
 			$this->logger->warning(
-				'Procest: parafering skip blocked: ' . $e->getMessage(),
+				'Dossiq: parafering skip blocked: ' . $e->getMessage(),
 			);
 			return new JSONResponse(
 				['error' => 'Deze stap kan niet worden overgeslagen'],
@@ -190,7 +190,7 @@ class ParafeerRouteController extends Controller {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to skip parafering step: ' . $e->getMessage(),
+				'Dossiq: failed to skip parafering step: ' . $e->getMessage(),
 			);
 			return new JSONResponse(
 				['error' => 'Stap overslaan mislukt'],
@@ -233,7 +233,7 @@ class ParafeerRouteController extends Controller {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to add ad-hoc parafering step: ' . $e->getMessage(),
+				'Dossiq: failed to add ad-hoc parafering step: ' . $e->getMessage(),
 			);
 			return new JSONResponse(
 				['error' => 'Stap toevoegen mislukt'],

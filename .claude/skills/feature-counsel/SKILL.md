@@ -46,7 +46,7 @@ Available projects:
 - opencatalogi
 - openregister
 - pipelinq
-- procest
+- dossiq
 ```
 
 Store the chosen project as `{PROJECT}`.

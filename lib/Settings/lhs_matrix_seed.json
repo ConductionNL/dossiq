@@ -1,5 +1,5 @@
 {
-  "description": "LHS 4x4 matrix seed data for procest vth-module (Gedrag A-D x Gevolg 1-4)",
+  "description": "LHS 4x4 matrix seed data for dossiq vth-module (Gedrag A-D x Gevolg 1-4)",
   "version": "1.0",
   "cells": [
     {"behaviourRow": "A", "consequenceColumn": "1", "interventionStep": "Aanspreken / informeren", "description": "Informeer de overtreder over de regels en geef gelegenheid tot herstel."},

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest CMMN Illegal Plan-Item Transition Exception.
+ * Dossiq CMMN Illegal Plan-Item Transition Exception.
  *
  * Thrown whenever `PlanItemTransitions::assertLegal()` is asked to validate a
  * transition that is not present in the exhaustive legal-transition table for
@@ -9,7 +9,7 @@
  * every illegal request surfaces as this exception.
  *
  * @category Exception
- * @package  OCA\Procest\Service\Cmmn
+ * @package  OCA\Dossiq\Service\Cmmn
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,14 +20,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-002
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Cmmn;
+namespace OCA\Dossiq\Service\Cmmn;
 
 use RuntimeException;
 

@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest map Content-Security-Policy registrar (boot-time).
+ * Dossiq map Content-Security-Policy registrar (boot-time).
  *
- * Allowlists the map hosts procest's location widget needs. Split out of
+ * Allowlists the map hosts dossiq's location widget needs. Split out of
  * Application so the tile-host list sits in one small, obviously-reviewable
  * class next to the reason it exists.
  *
  * @category AppInfo
- * @package  OCA\Procest\AppInfo\Registrar
+ * @package  OCA\Dossiq\AppInfo\Registrar
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -16,7 +16,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -26,7 +26,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\AppInfo\Registrar;
+namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCP\AppFramework\Http\ContentSecurityPolicy;
 use OCP\Security\IContentSecurityPolicyManager;
@@ -51,7 +51,7 @@ class MapCspRegistrar {
 	 * silently render blank (CSP blocks the request outright, so nothing even
 	 * shows up in the network log — look in the console).
 	 *
-	 * Procest declares these itself rather than relying on another app: the OSM
+	 * Dossiq declares these itself rather than relying on another app: the OSM
 	 * host happened to be allowed only because the (optional) Nextcloud `maps` app
 	 * pushes a default policy, so the map broke on any instance without it.
 	 *

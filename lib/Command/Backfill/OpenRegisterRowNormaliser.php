@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest OpenRegister row normaliser.
+ * Dossiq OpenRegister row normaliser.
  *
  * Turns one `ObjectService::findAll()` result row into a uuid + payload pair,
  * whatever shape the row arrives in. Split out of BackfillLegalHoldsCommand
@@ -13,7 +13,7 @@
  * original dead-listener bug invisible.
  *
  * @category Command
- * @package  OCA\Procest\Command\Backfill
+ * @package  OCA\Dossiq\Command\Backfill
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,7 +21,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -31,7 +31,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Command\Backfill;
+namespace OCA\Dossiq\Command\Backfill;
 
 /**
  * Normalises OpenRegister findAll() rows into uuid + payload pairs.

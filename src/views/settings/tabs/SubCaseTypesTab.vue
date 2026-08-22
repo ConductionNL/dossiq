@@ -10,7 +10,7 @@
 			<p>
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Save the case type first before configuring sub-case types.',
 					)
 				}}
@@ -25,7 +25,7 @@
 					<p>
 						{{
 							t(
-								'procest',
+								'dossiq',
 								'Select which case types can be created as sub-cases (deelzaken) under this case type. Existing sub-cases are unaffected by changes here.',
 							)
 						}}
@@ -38,7 +38,7 @@
 					<p>
 						{{
 							t(
-								'procest',
+								'dossiq',
 								'No other case types available to use as sub-case types.',
 							)
 						}}
@@ -72,15 +72,15 @@
 						@click="save">
 						{{
 							saving
-								? t('procest', 'Saving...')
-								: t('procest', 'Save sub-case types')
+								? t('dossiq', 'Saving...')
+								: t('dossiq', 'Save sub-case types')
 						}}
 					</NcButton>
 					<span
 						v-if="saveSuccess"
 						class="sub-case-types-tab__success"
 						role="status">
-						{{ t('procest', 'Saved.') }}
+						{{ t('dossiq', 'Saved.') }}
 					</span>
 					<span
 						v-if="saveError"
@@ -175,7 +175,7 @@ export default {
 				this.initialSelected = [...existing]
 			} catch (err) {
 				this.saveError =
-					err?.message || t('procest', 'Failed to load case types.')
+					err?.message || t('dossiq', 'Failed to load case types.')
 			}
 			this.loading = false
 		},
@@ -210,7 +210,7 @@ export default {
 				this.saveSuccess = true
 			} catch (err) {
 				this.saveError =
-					err?.message || t('procest', 'Failed to save sub-case types.')
+					err?.message || t('dossiq', 'Failed to save sub-case types.')
 			}
 			this.saving = false
 		},

@@ -9,24 +9,25 @@
  * authorization for samenwerkverzoek mutations.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T05
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use Exception;
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCP\EventDispatcher\GenericEvent;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
@@ -34,7 +35,6 @@ use OCP\IUser;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-use OCA\OpenRegister\Contract\ObjectServiceInterface;
 
 /**
  * Service for samenwerkverzoek lifecycle management.
@@ -147,12 +147,12 @@ class SamenwerkverzoekService {
 			]
 		);
 		$this->eventDispatcher->dispatch(
-			eventName: 'OCA\Procest\Event\SamenwerkverzoekInitiated',
+			eventName: 'OCA\Dossiq\Event\SamenwerkverzoekInitiated',
 			event: $event
 		);
 
 		$this->logger->info(
-			'Procest SamenwerkverzoekService: samenwerking initiated',
+			'Dossiq SamenwerkverzoekService: samenwerking initiated',
 			[
 				'app' => Application::APP_ID,
 				'caseId' => $caseId,
@@ -228,7 +228,7 @@ class SamenwerkverzoekService {
 		)->jsonSerialize();
 
 		$this->logger->info(
-			'Procest SamenwerkverzoekService: samenwerking responded',
+			'Dossiq SamenwerkverzoekService: samenwerking responded',
 			[
 				'app' => Application::APP_ID,
 				'samenwerkId' => $samenwerkId,
@@ -264,7 +264,7 @@ class SamenwerkverzoekService {
 			}
 		} catch (\Throwable $e) {
 			$this->logger->warning(
-				'Procest SamenwerkverzoekService: could not resolve IGroupManager: ' . $e->getMessage(),
+				'Dossiq SamenwerkverzoekService: could not resolve IGroupManager: ' . $e->getMessage(),
 				['app' => Application::APP_ID]
 			);
 		}

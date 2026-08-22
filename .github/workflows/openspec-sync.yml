@@ -10,6 +10,6 @@ jobs:
   sync:
     uses: ConductionNL/.github/.github/workflows/openspec-sync.yml@main
     with:
-      app-name: procest
+      app-name: dossiq
     secrets:
       PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}

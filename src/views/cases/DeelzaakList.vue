@@ -20,14 +20,14 @@
 			<div class="deelzaak-list__title">
 				<NcButton
 					type="tertiary"
-					:aria-label="t('procest', 'Back to parent case')"
+					:aria-label="t('dossiq', 'Back to parent case')"
 					@click="goToParent">
 					<template #icon>
 						<ArrowLeft :size="20" />
 					</template>
 				</NcButton>
 				<div>
-					<h2>{{ t('procest', 'Sub-cases') }}</h2>
+					<h2>{{ t('dossiq', 'Sub-cases') }}</h2>
 					<p v-if="parent" class="deelzaak-list__subtitle">
 						<router-link :to="parentRoute">
 							{{ parent.title || parent.identifier }}
@@ -42,22 +42,22 @@
 				<NcButton
 					v-if="canCreate"
 					type="primary"
-					:aria-label="t('procest', 'Create sub-case')"
+					:aria-label="t('dossiq', 'Create sub-case')"
 					@click="showCreate = true">
 					<template #icon>
 						<Plus :size="20" />
 					</template>
-					{{ t('procest', 'Create sub-case') }}
+					{{ t('dossiq', 'Create sub-case') }}
 				</NcButton>
 				<NcButton
 					v-if="parent"
 					type="error"
-					:aria-label="t('procest', 'Delete parent case')"
+					:aria-label="t('dossiq', 'Delete parent case')"
 					@click="onDeleteParent">
 					<template #icon>
 						<Delete :size="20" />
 					</template>
-					{{ t('procest', 'Delete case') }}
+					{{ t('dossiq', 'Delete case') }}
 				</NcButton>
 			</div>
 		</div>
@@ -66,14 +66,14 @@
 
 		<NcEmptyContent
 			v-else-if="subCases.length === 0"
-			:name="t('procest', 'No sub-cases yet')"
+			:name="t('dossiq', 'No sub-cases yet')"
 			:description="emptyDescription">
 			<template #icon>
 				<FolderMultipleOutline :size="48" />
 			</template>
 			<template #action>
 				<NcButton v-if="canCreate" type="primary" @click="showCreate = true">
-					{{ t('procest', 'Create first sub-case') }}
+					{{ t('dossiq', 'Create first sub-case') }}
 				</NcButton>
 			</template>
 		</NcEmptyContent>
@@ -82,12 +82,12 @@
 			<table class="viewTable">
 				<thead>
 					<tr>
-						<th scope="col">{{ t('procest', 'Identifier') }}</th>
-						<th scope="col">{{ t('procest', 'Title') }}</th>
-						<th scope="col">{{ t('procest', 'Status') }}</th>
-						<th scope="col">{{ t('procest', 'Assignee') }}</th>
-						<th scope="col">{{ t('procest', 'Deadline') }}</th>
-						<th scope="col">{{ t('procest', 'Completed') }}</th>
+						<th scope="col">{{ t('dossiq', 'Identifier') }}</th>
+						<th scope="col">{{ t('dossiq', 'Title') }}</th>
+						<th scope="col">{{ t('dossiq', 'Status') }}</th>
+						<th scope="col">{{ t('dossiq', 'Assignee') }}</th>
+						<th scope="col">{{ t('dossiq', 'Deadline') }}</th>
+						<th scope="col">{{ t('dossiq', 'Completed') }}</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -132,10 +132,10 @@
 		<CnConfirmDialog
 			v-if="showDeleteConfirm"
 			ref="deleteConfirmDialog"
-			:dialogTitle="t('procest', 'Delete case')"
-			:message="t('procest', 'Are you sure you want to delete this case?')"
+			:dialogTitle="t('dossiq', 'Delete case')"
+			:message="t('dossiq', 'Are you sure you want to delete this case?')"
 			variant="error"
-			:confirmLabel="t('procest', 'Delete')"
+			:confirmLabel="t('dossiq', 'Delete')"
 			@confirm="onConfirmDeleteParent"
 			@close="showDeleteConfirm = false" />
 	</div>
@@ -234,8 +234,15 @@ export default {
 			return this.subCases.length
 		},
 
+		/**
+		 * Progress roll-up summary across the parent case's sub-cases.
+		 *
+		 * @return {string} The translated roll-up text.
+		 *
+		 * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-progress-roll-up-on-parent-case
+		 */
 		rollUpText() {
-			return t('procest', '({completed}/{total} completed)', {
+			return t('dossiq', '({completed}/{total} completed)', {
 				completed: this.completedCount,
 				total: this.totalCount,
 			})
@@ -256,23 +263,30 @@ export default {
 			return Array.isArray(allowed) && allowed.length > 0
 		},
 
+		/**
+		 * Empty-state copy for the sub-cases section.
+		 *
+		 * @return {string} The translated description.
+		 *
+		 * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-cases-section-on-parent-case-detail
+		 */
 		emptyDescription() {
 			if (this.canCreate) {
 				return t(
-					'procest',
+					'dossiq',
 					'This case has no sub-cases yet. Use the button above to create the first one.',
 				)
 			}
 			if (this.parent?.parentCase) {
-				return t('procest', 'Sub-cases cannot themselves have sub-cases.')
+				return t('dossiq', 'Sub-cases cannot themselves have sub-cases.')
 			}
 			if (this.parent?.endDate) {
 				return t(
-					'procest',
+					'dossiq',
 					'This case is closed; sub-cases can no longer be added.',
 				)
 			}
-			return t('procest', 'The parent case type does not allow any sub-cases.')
+			return t('dossiq', 'The parent case type does not allow any sub-cases.')
 		},
 
 		parentRoute() {
@@ -409,7 +423,7 @@ export default {
 				console.error('[DeelzaakList] parent delete failed', err)
 				this.$refs.deleteConfirmDialog.setResult({
 					error: t(
-						'procest',
+						'dossiq',
 						'The case could not be deleted. Please try again.',
 					),
 				})

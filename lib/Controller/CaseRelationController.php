@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Case Relation (peer / relevanteAndereZaken) Controller
+ * Dossiq Case Relation (peer / relevanteAndereZaken) Controller
  *
  * Thin REST surface in front of {@see CaseRelationService}. Used by the case
  * detail view's "Gerelateerde zaken" section to list, create and remove typed
@@ -14,7 +14,7 @@
  * is therefore no IDOR: a user can only act on cases they can already read.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,18 +25,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/related-case-linking/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\CaseRelationService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\CaseRelationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -92,7 +92,7 @@ class CaseRelationController extends Controller {
 	 * refusal in `CaseRelationService` is correctly shaped but INERT: it keys
 	 * off `find()` returning null, and OpenRegister's `PermissionHandler`
 	 * returns `true` for a schema with no `authorization` block
-	 * (`enforce_default_closed` defaults false) — and none of procest's 85
+	 * (`enforce_default_closed` defaults false) — and none of dossiq's 85
 	 * schemas declares one. `find()` therefore never returned null for an
 	 * existing case, so `access_denied` was unreachable. See
 	 * ConductionNL/.github#372.

@@ -1,19 +1,19 @@
 <?php
 
 /**
- * Procest Tenant Isolation Middleware
+ * Dossiq Tenant Isolation Middleware
  *
  * Sets the Postgres `search_path` for the current request to
  * `public,<tenant_schema>` so any unqualified table reference resolves
  * inside the tenant's schema first. Reads the schema name from the
  * `TenantContext` populated by `TenantContextMiddleware`.
  *
- * Runs LAST in the procest middleware pipeline (Authenticate → Tenant
+ * Runs LAST in the dossiq middleware pipeline (Authenticate → Tenant
  * → TenantContext → TenantIsolation) so the search_path is in place
  * before any controller-level query.
  *
  * @category Middleware
- * @package  OCA\Procest\Middleware
+ * @package  OCA\Dossiq\Middleware
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,18 +22,18 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Middleware;
+namespace OCA\Dossiq\Middleware;
 
 use InvalidArgumentException;
-use OCA\Procest\Service\TenantContext;
-use OCA\Procest\Service\TenantSchemaProvisioner;
+use OCA\Dossiq\Service\TenantContext;
+use OCA\Dossiq\Service\TenantSchemaProvisioner;
 use OCP\AppFramework\Middleware;
 use OCP\IDBConnection;
 use Psr\Log\LoggerInterface;
@@ -136,7 +136,7 @@ class TenantIsolationMiddleware extends Middleware {
 			$this->provisioner->assertSafeIdentifier($schemaName);
 		} catch (InvalidArgumentException $e) {
 			$this->logger->error(
-				'Procest: refusing to apply unsafe search_path',
+				'Dossiq: refusing to apply unsafe search_path',
 				['schemaName' => $schemaName, 'exception' => $e->getMessage()]
 			);
 			return;
@@ -148,7 +148,7 @@ class TenantIsolationMiddleware extends Middleware {
 			$this->db->executeStatement($sql);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to set search_path',
+				'Dossiq: failed to set search_path',
 				['schemaName' => $schemaName, 'exception' => $e->getMessage()]
 			);
 		}
@@ -163,7 +163,7 @@ class TenantIsolationMiddleware extends Middleware {
 		try {
 			$this->db->executeStatement('SET search_path TO public');
 		} catch (Throwable $e) {
-			$this->logger->info('Procest: failed to reset search_path', ['exception' => $e->getMessage()]);
+			$this->logger->info('Dossiq: failed to reset search_path', ['exception' => $e->getMessage()]);
 		}
 	}//end resetSearchPath()
 }//end class

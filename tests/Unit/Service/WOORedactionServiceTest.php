@@ -4,7 +4,7 @@
  * WOORedactionService Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,9 +20,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\WOORedactionService;
+use OCA\Dossiq\Service\WOORedactionService;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -30,7 +30,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for WOORedactionService.
  *
- * @covers \OCA\Procest\Service\WOORedactionService
+ * @covers \OCA\Dossiq\Service\WOORedactionService
  */
 class WOORedactionServiceTest extends TestCase {
 

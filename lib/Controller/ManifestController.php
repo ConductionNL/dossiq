@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Procest Manifest Controller
+ * Dossiq Manifest Controller
  *
  * Serves the backend `/api/manifest` delta consumed by the frontend's
- * `useAppManifest('procest', bundled, { mergeStrategy: 'delta' })`. It resolves
+ * `useAppManifest('dossiq', bundled, { mergeStrategy: 'delta' })`. It resolves
  * the live `caseType` OpenRegister objects the current user may see and returns
  * one navigation child per case type, keyed for a delta-merge into the existing
  * "Cases" menu group (ADR-036 keyed `children[]` merge). This is the sanctioned
@@ -13,7 +13,7 @@
  * baked into the static bundled manifest.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,10 +26,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;

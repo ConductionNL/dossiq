@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest deelzaak case-object reader.
+ * Dossiq deelzaak case-object reader.
  *
  * Single-object OpenRegister lookups for the parent/child (deelzaak) relation:
  * fetching a case or a caseType by id, normalising whatever ObjectService
@@ -13,7 +13,7 @@
  * lives here and nowhere else.
  *
  * @category Service
- * @package  OCA\Procest\Service\Deelzaak
+ * @package  OCA\Dossiq\Service\Deelzaak
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,7 +21,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -31,9 +31,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Deelzaak;
+namespace OCA\Dossiq\Service\Deelzaak;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
 /**

@@ -1,18 +1,18 @@
 <template>
 	<NcDialog
-		:name="t('procest', 'Register decision')"
+		:name="t('dossiq', 'Register decision')"
 		size="normal"
 		@closing="$emit('close')">
 		<div class="besluit-registration">
 			<div class="form-group">
 				<label for="besluit-registration-title"
-					>{{ t('procest', 'Title') }} *</label
+					>{{ t('dossiq', 'Title') }} *</label
 				>
 				<NcTextField
 					id="besluit-registration-title"
 					:modelValue="form.title"
 					:error="!!errors.title"
-					:placeholder="t('procest', 'Title of the decision...')"
+					:placeholder="t('dossiq', 'Title of the decision...')"
 					@update:modelValue="
 						(v) => {
 							form.title = v
@@ -26,7 +26,7 @@
 
 			<div class="form-group">
 				<label for="besluit-registration-effective-date">{{
-					t('procest', 'Effective date')
+					t('dossiq', 'Effective date')
 				}}</label>
 				<NcTextField
 					id="besluit-registration-effective-date"
@@ -36,48 +36,48 @@
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Decision type') }}</label>
+				<label>{{ t('dossiq', 'Decision type') }}</label>
 				<NcSelect
 					v-model="selectedDecisionType"
 					:options="decisionTypes"
-					:aria-label-combobox="t('procest', 'Decision type')"
+					:aria-label-combobox="t('dossiq', 'Decision type')"
 					label="name"
 					trackBy="id"
-					:placeholder="t('procest', 'Select decision type...')" />
+					:placeholder="t('dossiq', 'Select decision type...')" />
 			</div>
 
 			<div class="form-group">
 				<label for="besluit-registration-explanation">{{
-					t('procest', 'Explanation')
+					t('dossiq', 'Explanation')
 				}}</label>
 				<textarea
 					id="besluit-registration-explanation"
 					v-model="form.explanation"
-					:placeholder="t('procest', 'Explanation of the decision...')"
+					:placeholder="t('dossiq', 'Explanation of the decision...')"
 					rows="3" />
 			</div>
 
 			<div class="form-group">
 				<label for="besluit-registration-governing-body">{{
-					t('procest', 'Administrative body')
+					t('dossiq', 'Administrative body')
 				}}</label>
 				<NcTextField
 					id="besluit-registration-governing-body"
 					:modelValue="form.governingBody"
-					:placeholder="t('procest', 'College van B&W')"
+					:placeholder="t('dossiq', 'College van B&W')"
 					@update:modelValue="(v) => (form.governingBody = v)" />
 			</div>
 		</div>
 
 		<template #actions>
 			<NcButton @click="$emit('close')">
-				{{ t('procest', 'Annuleren') }}
+				{{ t('dossiq', 'Annuleren') }}
 			</NcButton>
 			<NcButton type="primary" :disabled="saving" @click="register">
 				<template v-if="saving">
 					<NcLoadingIcon :size="20" />
 				</template>
-				{{ t('procest', 'Register') }}
+				{{ t('dossiq', 'Register') }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -152,7 +152,7 @@ export default {
 		/**
 		 * Register a besluit on the voorstel.
 		 *
-		 * The besluit is no longer authored locally as a procest `decision`
+		 * The besluit is no longer authored locally as a dossiq `decision`
 		 * object. It is raised as a decidesk `report-adoption` Decision via the
 		 * ADR-019 integration registry (procest-delegate-remaining-decisions-to-decidesk,
 		 * REQ-PDRD-001); the ZGW Besluit becomes a projection of the decidesk
@@ -165,14 +165,14 @@ export default {
 		async register() {
 			this.errors = {}
 			if (!this.form.title.trim()) {
-				this.errors.title = t('procest', 'Title is required')
+				this.errors.title = t('dossiq', 'Title is required')
 				return
 			}
 
 			this.saving = true
 			try {
 				// Raise a decidesk report-adoption Decision for this voorstel.
-				// procest keeps the parafeerroute untouched; only the besluit
+				// dossiq keeps the parafeerroute untouched; only the besluit
 				// decision is delegated, and the besluit is materialised from
 				// the decidesk outcome.
 				await registerBesluit(this.proposal.id || this.proposal._self?.id, {
@@ -198,7 +198,7 @@ export default {
 				this.errors.title =
 					error.response?.data?.error
 					|| error.message
-					|| t('procest', 'Registration failed')
+					|| t('dossiq', 'Registration failed')
 			} finally {
 				this.saving = false
 			}

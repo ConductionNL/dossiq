@@ -4,7 +4,7 @@
  * VTHTemplateController Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,10 +22,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\VTHTemplateController;
-use OCA\Procest\Service\VTHTemplateService;
+use OCA\Dossiq\Controller\VTHTemplateController;
+use OCA\Dossiq\Service\VTHTemplateService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -35,7 +35,7 @@ use RuntimeException;
 /**
  * Unit tests for VTHTemplateController.
  *
- * @covers \OCA\Procest\Controller\VTHTemplateController
+ * @covers \OCA\Dossiq\Controller\VTHTemplateController
  */
 class VTHTemplateControllerTest extends TestCase {
 
@@ -70,7 +70,7 @@ class VTHTemplateControllerTest extends TestCase {
 		$this->logger = $this->createMock(LoggerInterface::class);
 
 		$this->controller = new VTHTemplateController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			vthTemplateService: $this->vthTemplateService,
 			logger: $this->logger,

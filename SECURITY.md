@@ -46,16 +46,16 @@ For every app `<app>` under [ConductionNL](https://github.com/ConductionNL), two
 | **Always-latest released SBOM** (auto-redirects to newest release) | `https://github.com/ConductionNL/<app>/releases/latest/download/sbom.cdx.json` |
 | **Specific release SBOM** (pinned, for compliance archives)        | `https://github.com/ConductionNL/<app>/releases/download/<tag>/sbom.cdx.json`  |
 
-Example — fetch the latest procest SBOM:
+Example — fetch the latest dossiq SBOM:
 
 ```bash
-curl -sL https://github.com/ConductionNL/procest/releases/latest/download/sbom.cdx.json | jq .
+curl -sL https://github.com/ConductionNL/dossiq/releases/latest/download/sbom.cdx.json | jq .
 ```
 
 Example — fetch the SBOM for a specific historical release:
 
 ```bash
-curl -sL https://github.com/ConductionNL/procest/releases/download/v1.0.0/sbom.cdx.json | jq .
+curl -sL https://github.com/ConductionNL/dossiq/releases/download/v1.0.0/sbom.cdx.json | jq .
 ```
 
 ### Update cadence

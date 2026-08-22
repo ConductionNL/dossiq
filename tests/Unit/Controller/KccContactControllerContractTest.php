@@ -24,22 +24,22 @@
  * here would leak the existence of another agent's callback.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\KccContactController;
-use OCA\Procest\Service\Kcc\CallbackService;
-use OCA\Procest\Service\Kcc\ContactMomentService;
+use OCA\Dossiq\Controller\KccContactController;
+use OCA\Dossiq\Service\Kcc\CallbackService;
+use OCA\Dossiq\Service\Kcc\ContactMomentService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\IGroupManager;
@@ -52,7 +52,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Wire-contract tests for the KccContactController callback endpoints.
  *
- * @covers \OCA\Procest\Controller\KccContactController
+ * @covers \OCA\Dossiq\Controller\KccContactController
  */
 class KccContactControllerContractTest extends TestCase {
 
@@ -191,7 +191,7 @@ class KccContactControllerContractTest extends TestCase {
 		$this->request->method('getParams')->willReturn(
 			[
 				'id' => 'cb-smuggled',
-				'_route' => 'procest.kcccontact.scheduleCallback',
+				'_route' => 'dossiq.kcccontact.scheduleCallback',
 				'telefoonnummer' => '0612345678',
 			]
 		);

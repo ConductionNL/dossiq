@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest setField action handler.
+ * Dossiq setField action handler.
  *
  * Action config shape: `{type: 'setField', field: 'endDate', value: '<value-or-now>'}`.
  * Writes the named field on the case via OpenRegister ObjectService. Special
  * `value` macros: `__now__` becomes the current ISO-8601 timestamp.
  *
  * @category Service
- * @package  OCA\Procest\Service\Transitions
+ * @package  OCA\Dossiq\Service\Transitions
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,15 +19,15 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Transitions;
+namespace OCA\Dossiq\Service\Transitions;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
 /**

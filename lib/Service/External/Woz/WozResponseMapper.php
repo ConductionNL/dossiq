@@ -5,7 +5,7 @@
  *
  * Contains zero I/O — takes an already-decoded JSON fragment (one
  * `wozObjecten[]` entry, or a single `wozobject` resource) and returns the
- * stable Procest-internal DTO shape. All HTTP concerns (request building,
+ * stable Dossiq-internal DTO shape. All HTTP concerns (request building,
  * headers, retries, error mapping) live exclusively in `WozApiAdapter`,
  * mirroring `BagResponseMapper` / `BrkResponseMapper` in spirit but scoped
  * to the WOZ payload shape.
@@ -13,19 +13,19 @@
  * A WOZ object carries one established value PER waardepeildatum
  * (valuation date) — `vastgesteldeWaarden[]`. This mapper surfaces the
  * MOST RECENT entry (by `waardepeildatum`, descending) as the flat
- * `waarde`/`waardepeildatum` fields, since Procest's VTH/tax callers need
+ * `waarde`/`waardepeildatum` fields, since Dossiq's VTH/tax callers need
  * "the current WOZ value", not the full valuation history; the full list
  * is still available via `extras.matches` on the adapter's search results
  * for a caller that needs history.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Woz
+ * @package  OCA\Dossiq\Service\External\Woz
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://kadaster.github.io/WOZ-bevragen/
  *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
@@ -36,11 +36,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Woz;
+namespace OCA\Dossiq\Service\External\Woz;
 
 /**
  * Normalizes Kadaster WOZ Bevragen wozobject fragments into the
- * Procest-internal DTO shape.
+ * Dossiq-internal DTO shape.
  *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */

@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Procest BRP / Haal Centraal lookup port.
+ * Dossiq BRP / Haal Centraal lookup port.
  *
  * The Basisregistratie Personen (BRP) — accessed via the
  * Logius/RvIG Haal Centraal Personen-API — is the canonical
- * source-of-truth for Dutch natural persons. Procest consumes it
+ * source-of-truth for Dutch natural persons. Dossiq consumes it
  * on three case-management lifecycles:
  *  1. Citizen zaak intake — a DigiD-authenticated burger lands on
  *     the `zaakportaal-mijngemeente` intake flow; the adapter
@@ -36,13 +36,13 @@
  * lifecycle stays observable in test + staging environments.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Brp
+ * @package  OCA\Dossiq\Service\External\Brp
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://www.rvig.nl/brp/haal-centraal
  *
  * @spec openspec/changes/brp-kvk-register-sets/proposal.md
@@ -53,7 +53,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Brp;
+namespace OCA\Dossiq\Service\External\Brp;
 
 /**
  * BRP / Haal Centraal lookup port.

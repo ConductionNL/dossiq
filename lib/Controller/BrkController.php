@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest BRK Controller
+ * Dossiq BRK Controller
  *
  * HTTP surface for the BRK (Basisregistratie Kadaster) authoritative
  * parcel lookup seam (brk-woz-register-adapters):
@@ -15,7 +15,7 @@
  * configured" / "not found" rather than surfacing those as HTTP errors.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,17 +24,17 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\External\Brk\BrkAdapterInterface;
-use OCA\Procest\Service\External\Brk\BrkLookupResult;
+use OCA\Dossiq\Service\External\Brk\BrkAdapterInterface;
+use OCA\Dossiq\Service\External\Brk\BrkLookupResult;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -117,7 +117,7 @@ class BrkController extends Controller {
 				appartementsrechtSequenceNumber: $sequenceNumber,
 			);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest BRK parcel lookup failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq BRK parcel lookup failed: ' . $e->getMessage());
 			return new JSONResponse(
 				['error' => 'BRK parcel lookup failed'],
 				Http::STATUS_INTERNAL_SERVER_ERROR,
@@ -156,7 +156,7 @@ class BrkController extends Controller {
 		try {
 			$result = $this->brkAdapter->lookupObject(id: $id);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest BRK object lookup failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq BRK object lookup failed: ' . $e->getMessage());
 			return new JSONResponse(
 				['error' => 'BRK object lookup failed'],
 				Http::STATUS_INTERNAL_SERVER_ERROR,

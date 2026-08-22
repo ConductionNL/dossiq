@@ -1,7 +1,7 @@
 /**
  * AVG verwerkingenlogging API wrapper (avg-verwerkingenlogging, thin consumer).
  *
- * Thin axios client over OPENREGISTER's AVG endpoints — procest ships no
+ * Thin axios client over OPENREGISTER's AVG endpoints — dossiq ships no
  * processing-log endpoints of its own (ADR-022 / OR-PA-9). OpenRegister
  * enforces all authorisation (admin or delegated FG group, fail-closed) and
  * tenant scoping server-side; this client only shapes requests and unwraps
@@ -37,7 +37,7 @@ export async function listVerwerkingsactiviteiten() {
 
 /**
  * Count processing-log entries attributed to an activity, scoped to a
- * procest register (OR filters + tenant scoping are server-side).
+ * dossiq register (OR filters + tenant scoping are server-side).
  *
  * @param {object} options Filter options.
  * @param {string} options.activity Activity uuid to filter on.

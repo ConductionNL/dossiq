@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Tenant Provisioning Service
+ * Dossiq Tenant Provisioning Service
  *
  * Orchestrates the schema-per-tenant provisioning flow for the SaaS chain.
  *
@@ -12,7 +12,7 @@
  * email → rollback on failure.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,14 +21,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-03-schema-provisioning/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
@@ -86,6 +86,8 @@ class TenantProvisioningService {
 	 *
 	 * @throws InvalidArgumentException When the tenant is not found or wrong status.
 	 * @throws RuntimeException On provisioning failure (after rollback).
+	 *
+	 * @spec openspec/specs/tenant-provisioning/spec.md#requirement-schema-per-tenant-provisioning-req-001-b
 	 */
 	public function provision(string $tenantId): array {
 		$tenant = $this->tenantSaasService->getById($tenantId);
@@ -128,7 +130,7 @@ class TenantProvisioningService {
 			$steps[] = 'sendWelcomeEmail';
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: tenant provisioning failed; rolling back',
+				'Dossiq: tenant provisioning failed; rolling back',
 				['tenantId' => $tenantId, 'schemaName' => $schemaName, 'steps' => $steps, 'exception' => $e->getMessage()]
 			);
 
@@ -195,6 +197,8 @@ class TenantProvisioningService {
 	 * @param array<int, string> $steps Steps performed (used to decide what to undo).
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/specs/tenant-provisioning/spec.md#requirement-schema-per-tenant-provisioning-req-001-b
 	 */
 	public function rollback(string $schemaName, array $steps): void {
 		if (in_array('createSchema', $steps, true) === false) {
@@ -204,12 +208,12 @@ class TenantProvisioningService {
 		try {
 			$this->schemaProvisioner->dropSchema($schemaName);
 			$this->logger->info(
-				'Procest: rolled back tenant schema after provisioning failure',
+				'Dossiq: rolled back tenant schema after provisioning failure',
 				['schemaName' => $schemaName]
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: rollback drop-schema failed — manual cleanup required',
+				'Dossiq: rollback drop-schema failed — manual cleanup required',
 				['schemaName' => $schemaName, 'exception' => $e->getMessage()]
 			);
 		}

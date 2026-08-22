@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest SubstitutionValidator.
+ * Dossiq SubstitutionValidator.
  *
  * Input validation and conflict detection for vervanging/waarneming
  * (handler absence/substitution) records. Split out of SubstitutionService so
@@ -11,7 +11,7 @@
  * substitutions for one absentee" invariant — live here and nowhere else.
  *
  * @category Service
- * @package  OCA\Procest\Service\Substitution
+ * @package  OCA\Dossiq\Service\Substitution
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,7 +19,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -29,12 +29,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Substitution;
+namespace OCA\Dossiq\Service\Substitution;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
  * Validates substitution input and rejects conflicting full-scope overlaps.

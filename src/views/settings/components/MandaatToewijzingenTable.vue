@@ -12,7 +12,7 @@
 				<template #icon>
 					<Plus :size="18" />
 				</template>
-				{{ t('procest', 'Add assignment') }}
+				{{ t('dossiq', 'Add assignment') }}
 			</NcButton>
 		</div>
 
@@ -20,10 +20,10 @@
 
 		<NcEmptyContent
 			v-if="!loading && assignments.length === 0"
-			:name="t('procest', 'No role assignments')"
+			:name="t('dossiq', 'No role assignments')"
 			:description="
 				t(
-					'procest',
+					'dossiq',
 					'Assign roles to employees to enable mandate-driven authorisation.',
 				)
 			">
@@ -37,12 +37,12 @@
 			class="toewijzingen-table__table">
 			<thead>
 				<tr>
-					<th scope="col">{{ t('procest', 'Person') }}</th>
-					<th scope="col">{{ t('procest', 'Role') }}</th>
-					<th scope="col">{{ t('procest', 'Type') }}</th>
-					<th scope="col">{{ t('procest', 'From') }}</th>
-					<th scope="col">{{ t('procest', 'Up to and including') }}</th>
-					<th scope="col">{{ t('procest', 'Acties') }}</th>
+					<th scope="col">{{ t('dossiq', 'Person') }}</th>
+					<th scope="col">{{ t('dossiq', 'Role') }}</th>
+					<th scope="col">{{ t('dossiq', 'Type') }}</th>
+					<th scope="col">{{ t('dossiq', 'From') }}</th>
+					<th scope="col">{{ t('dossiq', 'Up to and including') }}</th>
+					<th scope="col">{{ t('dossiq', 'Acties') }}</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -73,7 +73,7 @@
 					<td>{{ a.totEnMet || a.geldigTotEnMet || '—' }}</td>
 					<td>
 						<NcButton size="small" @click="openEnd(a)">
-							{{ t('procest', 'End') }}
+							{{ t('dossiq', 'End') }}
 						</NcButton>
 					</td>
 				</tr>
@@ -175,7 +175,7 @@ export default {
 		async onAdd(payload) {
 			try {
 				await axios.post(
-					generateUrl('/apps/procest/api/mandate/toewijzingen'),
+					generateUrl('/apps/dossiq/api/mandate/toewijzingen'),
 					payload,
 				)
 				this.addOpen = false
@@ -207,7 +207,7 @@ export default {
 			try {
 				await axios.patch(
 					generateUrl(
-						'/apps/procest/api/mandate/toewijzingen/'
+						'/apps/dossiq/api/mandate/toewijzingen/'
 							+ encodeURIComponent(this.ending.id),
 					),
 					{ ...this.ending, validUntil: endDate },

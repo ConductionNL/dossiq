@@ -32,15 +32,15 @@
  * and `tests/vitest/workflowGraphValidation.spec.js` (every validation
  * rule + a serialization round-trip).
  *
- * Note: Use /apps/procest/<route> (not /index.php/...) so the Vue
+ * Note: Use /apps/dossiq/<route> (not /index.php/...) so the Vue
  * history-mode router resolves the route. The case-type admin surface
- * lives under Nextcloud's own /settings/admin/procest page.
+ * lives under Nextcloud's own /settings/admin/dossiq page.
  */
 
 import { test, expect } from '@playwright/test'
 import { becomesVisible } from '../helpers/becomes-visible.js'
 
-const ADMIN_SETTINGS_URL = '/settings/admin/procest'
+const ADMIN_SETTINGS_URL = '/settings/admin/dossiq'
 
 /**
  * Open the first case type's detail page and its Workflow tab, or skip

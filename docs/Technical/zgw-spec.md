@@ -1,6 +1,6 @@
 # ZGW Implementation Knowledge Base
 
-Shared knowledge file for sub-agents working on Procest's ZGW API implementation.
+Shared knowledge file for sub-agents working on Dossiq's ZGW API implementation.
 **Read this file before starting work. Append new learnings at the bottom.**
 
 ## Architecture
@@ -43,7 +43,7 @@ All controllers depend on `ZgwService` (`lib/Service/ZgwService.php`). Key metho
 **OpenRegister access:**
 - `getObjectService()`: OpenRegister ObjectService (find, saveObject, deleteObject, buildSearchQuery, searchObjectsPaginated)
 - `getConsumerMapper()`: OpenRegister ConsumerMapper (for AC)
-- `getZgwMappingService()`: Procest's ZgwMappingService (IAppConfig storage)
+- `getZgwMappingService()`: Dossiq's ZgwMappingService (IAppConfig storage)
 - `getBusinessRulesService()`: ZgwBusinessRulesService
 - `getDocumentService()`: ZgwDocumentService (file storage)
 - `getLogger()`: PSR LoggerInterface
@@ -58,7 +58,7 @@ All controllers depend on `ZgwService` (`lib/Service/ZgwService.php`). Key metho
 - `ZgwBusinessRulesService`: validates VNG business rules before save. Call via `zgwService->getBusinessRulesService()->validate(...)`
 - `ZgwMappingService`: stores/retrieves Twig mapping configs from IAppConfig
 - `ZgwPaginationHelper`: wraps results in ZGW HAL-style `{count, next, previous, results}`
-- `ZgwDocumentService`: stores binary files in Nextcloud filesystem at `/admin/files/procest/documenten/{uuid}/{filename}`
+- `ZgwDocumentService`: stores binary files in Nextcloud filesystem at `/admin/files/dossiq/documenten/{uuid}/{filename}`
 - `NotificatieService`: delivers notifications to NRC subscribers via HTTP POST
 
 ## Business Rules by Register
@@ -145,14 +145,14 @@ preg_match('/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i', 
 ### Per-register test commands
 ```bash
 # Run inside container or let the script delegate
-bash procest/tests/zgw/run-zgw-tests.sh --oas-only --folder setUp   # Initialize test data
-bash procest/tests/zgw/run-zgw-tests.sh --oas-only --folder ZRC
-bash procest/tests/zgw/run-zgw-tests.sh --oas-only --folder ZTC
-bash procest/tests/zgw/run-zgw-tests.sh --oas-only --folder DRC
-bash procest/tests/zgw/run-zgw-tests.sh --oas-only --folder BRC
-bash procest/tests/zgw/run-zgw-tests.sh --oas-only --folder NRC
-bash procest/tests/zgw/run-zgw-tests.sh --oas-only --folder AC
-bash procest/tests/zgw/run-zgw-tests.sh --business-only --folder ztc  # Business rules
+bash dossiq/tests/zgw/run-zgw-tests.sh --oas-only --folder setUp   # Initialize test data
+bash dossiq/tests/zgw/run-zgw-tests.sh --oas-only --folder ZRC
+bash dossiq/tests/zgw/run-zgw-tests.sh --oas-only --folder ZTC
+bash dossiq/tests/zgw/run-zgw-tests.sh --oas-only --folder DRC
+bash dossiq/tests/zgw/run-zgw-tests.sh --oas-only --folder BRC
+bash dossiq/tests/zgw/run-zgw-tests.sh --oas-only --folder NRC
+bash dossiq/tests/zgw/run-zgw-tests.sh --oas-only --folder AC
+bash dossiq/tests/zgw/run-zgw-tests.sh --business-only --folder ztc  # Business rules
 ```
 
 ### After making changes
@@ -287,7 +287,7 @@ VNG tests may send ZIOT `informatieobjecttype` as an omschrijving string that ha
 
 **brc-009c/d/e (cascade delete)**: Deleting a besluit must cascade delete BIOs and OIOs. The key challenge was that OpenRegister's `ObjectService::deleteObject()` performs a soft delete via `ObjectEntityMapper::update()`, but the update method checks `shouldUseMagicMapper` which reads the register's `configuration` JSON. If the register has no magic mapping configuration, the update falls through to the blob table path, leaving the magic table row unchanged.
 
-**Fix**: Register 7 (Procest) needed explicit magic mapping configuration (`{"schemas": {"<slug>": {"magicMapping": true}}}`) set on its `configuration` column. Without this, `isMagicMappingEnabledForSchema()` returns false and soft deletes in magic tables silently fail.
+**Fix**: Register 7 (Dossiq) needed explicit magic mapping configuration (`{"schemas": {"<slug>": {"magicMapping": true}}}`) set on its `configuration` column. Without this, `isMagicMappingEnabledForSchema()` returns false and soft deletes in magic tables silently fail.
 
 **Important**: When calling `deleteObject()` during cascade operations (where we're deleting related objects, not the primary resource), pass `_rbac: false, _multitenancy: false` to avoid permission issues with related objects in other schemas.
 

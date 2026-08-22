@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Automatic Action Registry
+ * Dossiq Automatic Action Registry
  *
  * Per-tenant slug-based lookup for `automaticAction` objects. Mirrors the
  * status-transition-engine guard registry pattern: handlers register via DI
@@ -10,7 +10,7 @@
  * handler.
  *
  * @category Service
- * @package  OCA\Procest\Service\Actions
+ * @package  OCA\Dossiq\Service\Actions
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -21,16 +21,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/automatic-actions/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Actions;
+namespace OCA\Dossiq\Service\Actions;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -46,7 +46,7 @@ use Psr\Log\LoggerInterface;
  *  - A per-request in-memory cache avoids re-querying OpenRegister for the
  *    same `(tenantId, slug)` pair within a single transition dispatch.
  *
- * Action storage lives in OpenRegister under the procest register. CRUD is
+ * Action storage lives in OpenRegister under the dossiq register. CRUD is
  * delegated entirely to the OpenRegister manifest renderer
  * (`/settings/automatic-actions`) — this class is read-only.
  */
@@ -72,7 +72,7 @@ class ActionRegistry {
 	 *                                      ObjectService and to
 	 *                                      discover handler
 	 *                                      implementations.
-	 * @param IAppConfig $appConfig Procest app config —
+	 * @param IAppConfig $appConfig Dossiq app config —
 	 *                              provides the `register` and
 	 *                              `automatic_action_schema`
 	 *                              keys.

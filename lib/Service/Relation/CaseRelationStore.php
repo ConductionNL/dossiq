@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest case-relation OpenRegister store.
+ * Dossiq case-relation OpenRegister store.
  *
  * The only place case objects are read and written on behalf of the peer
  * relation surface. Reads resolve through the session's ObjectService, so
@@ -18,7 +18,7 @@
  * that triggered it.
  *
  * @category Service
- * @package  OCA\Procest\Service\Relation
+ * @package  OCA\Dossiq\Service\Relation
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,7 +26,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -36,9 +36,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Relation;
+namespace OCA\Dossiq\Service\Relation;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
 /**

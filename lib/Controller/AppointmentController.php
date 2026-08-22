@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Appointment Controller.
+ * Dossiq Appointment Controller.
  *
  * REST endpoints for citizen appointment scheduling flows (list, create,
  * cancel, mark no-show, query timeslots).
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,18 +15,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/appointment-booking/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\AppointmentService;
-use OCA\Procest\Service\CaseAccessGuard;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\AppointmentService;
+use OCA\Dossiq\Service\CaseAccessGuard;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

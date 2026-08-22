@@ -1,6 +1,6 @@
 # GIS-integratie
 
-Geografische functionaliteit in Procest: locaties op zaken, kaartlagen, een geo-viewer en een externe WFS-bron voor zaaklocaties. Deze pagina beschrijft het gebruik vanuit het perspectief van behandelaar, beheerder en manager, en sluit af met een externe-integratie- en troubleshooting-paragraaf.
+Geografische functionaliteit in Dossiq: locaties op zaken, kaartlagen, een geo-viewer en een externe WFS-bron voor zaaklocaties. Deze pagina beschrijft het gebruik vanuit het perspectief van behandelaar, beheerder en manager, en sluit af met een externe-integratie- en troubleshooting-paragraaf.
 
 > **Specs:** `openspec/changes/gis-integration/proposal.md`, `openspec/changes/gis-integration/design.md`
 > **Schema's:** `case.geometry`, `mapLayer` (zie [ADR-000](../openspec/architecture/adr-000-data-model.md))
@@ -8,14 +8,14 @@ Geografische functionaliteit in Procest: locaties op zaken, kaartlagen, een geo-
 
 ## Overzicht
 
-Procest biedt vier GIS-bouwstenen:
+Dossiq biedt vier GIS-bouwstenen:
 
 1. **Locatie op een zaak** — koppel een punt of polygoon aan elke zaak via adres, perceel of kaartklik.
 2. **Geo-viewer** — ingebouwde kaart in het zaakdetail met configureerbare achtergrondlagen (luchtfoto, kadaster, bestemmingsplan).
 3. **Zaken op de kaart** — overzichtskaart met alle zaken, filterbaar op zaaktype en status.
 4. **Zaken als WFS-bron** — `/wfs/cases` endpoint zodat externe GIS-applicaties (QGIS, ArcGIS) zaaklocaties als laag kunnen tonen.
 
-Alle achtergrondlagen worden via de standaard PDOK-services (Locatieserver, BAG, BRK, WMS/WFS) opgehaald. Procest hoeft daarvoor geen externe credentials te beheren.
+Alle achtergrondlagen worden via de standaard PDOK-services (Locatieserver, BAG, BRK, WMS/WFS) opgehaald. Dossiq hoeft daarvoor geen externe credentials te beheren.
 
 ## Gebruikersgids — Een locatie zetten op een zaak
 
@@ -30,12 +30,12 @@ Op het zaakdetail vind je het paneel **Locatie**. Daar zijn vier manieren om een
 ### Perceel selecteren
 
 1. Klik op de tab **Perceel** in het locatiepaneel.
-2. Voer een kadastraal perceelnummer in (bv. `UTR00A12345`) of klik op een perceel in de kaart. Procest haalt de perceelgrens op via PDOK/BRK en slaat de polygoon op `case.geometry` op.
+2. Voer een kadastraal perceelnummer in (bv. `UTR00A12345`) of klik op een perceel in de kaart. Dossiq haalt de perceelgrens op via PDOK/BRK en slaat de polygoon op `case.geometry` op.
 
 ### Op de kaart prikken
 
 1. Klik op **Prikken op de kaart**.
-2. Sleep en zoom de kaart naar de juiste positie en klik. Procest slaat de coördinaten (EPSG:4326) op en — indien beschikbaar — voert een reverse geocode uit om het dichtstbijzijnde adres erbij te zetten.
+2. Sleep en zoom de kaart naar de juiste positie en klik. Dossiq slaat de coördinaten (EPSG:4326) op en — indien beschikbaar — voert een reverse geocode uit om het dichtstbijzijnde adres erbij te zetten.
 
 ### Vrije locatie
 
@@ -48,11 +48,11 @@ Voor locaties zonder BAG-adres (veldwegen, sloten, evenementterreinen) is er **V
 
 ## Beheerdersgids — Kaartlagen configureren
 
-Procest kan willekeurige WMS-, WFS-, tile- en GeoJSON-lagen tonen. Beheerders configureren deze lagen onder **Instellingen → Procest → Kaartlagen**.
+Dossiq kan willekeurige WMS-, WFS-, tile- en GeoJSON-lagen tonen. Beheerders configureren deze lagen onder **Instellingen → Dossiq → Kaartlagen**.
 
 ### Een laag toevoegen
 
-1. Open **Instellingen → Procest → Kaartlagen**.
+1. Open **Instellingen → Dossiq → Kaartlagen**.
 2. Klik **Laag toevoegen** en kies een type:
     - **Tile** — XYZ-tegels (bijvoorbeeld OpenStreetMap, PDOK luchtfoto).
     - **WMS** — Web Map Service (kadasterkaarten, bestemmingsplan).
@@ -95,19 +95,19 @@ De filters zijn deelbaar via URL-parameters (`?type=omgevingsvergunning&status=i
 
 ## Externe integratie — WFS-endpoint
 
-Externe GIS-applicaties kunnen zaken consumeren via `https://<procest-host>/index.php/apps/procest/wfs/cases`.
+Externe GIS-applicaties kunnen zaken consumeren via `https://<dossiq-host>/index.php/apps/dossiq/wfs/cases`.
 
 - **Protocol:** OGC WFS 2.0 (`GetCapabilities`, `DescribeFeatureType`, `GetFeature`).
-- **Authenticatie:** Bearer-token (procest user/app password) of `Basic` auth. Anonieme toegang is uitgeschakeld om PII-lekkage te voorkomen.
+- **Authenticatie:** Bearer-token (dossiq user/app password) of `Basic` auth. Anonieme toegang is uitgeschakeld om PII-lekkage te voorkomen.
 - **Velden in `GetFeature`:** `id`, `caseNumber`, `title`, `caseType`, `status`, `geometry`, `createdAt`.
-- **CORS:** standaard alleen same-origin. Voor externe consumptie moet de beheerder de toegestane origin toevoegen in **Instellingen → Procest → WFS toegang**.
+- **CORS:** standaard alleen same-origin. Voor externe consumptie moet de beheerder de toegestane origin toevoegen in **Instellingen → Dossiq → WFS toegang**.
 
 Voorbeeld QGIS-toevoeging:
 
 1. Layer → Add Layer → Add WFS Layer → New connection.
-2. URL: `https://<procest-host>/index.php/apps/procest/wfs/cases`.
-3. Authentication: Basic, met procest-gebruiker + app password.
-4. Connect, kies feature type `procest:cases`, klik Add.
+2. URL: `https://<dossiq-host>/index.php/apps/dossiq/wfs/cases`.
+3. Authentication: Basic, met dossiq-gebruiker + app password.
+4. Connect, kies feature type `dossiq:cases`, klik Add.
 
 ## Troubleshooting
 
@@ -117,7 +117,7 @@ Voorbeeld QGIS-toevoeging:
 | Kaartlaag laadt grijs/leeg | Verkeerde URL of `layer`-naam | Test het endpoint in een browser (`?REQUEST=GetCapabilities`) en vergelijk de `Layer`-namen met de configuratie. |
 | Perceel verschijnt niet | BRK-laag heeft alleen perceelgrenzen vanaf bepaald zoomniveau | Zoom verder in (≥ niveau 15) of zoek het perceel via nummer. |
 | WFS-export werkt niet vanuit QGIS | CORS of auth | Controleer dat de origin in **WFS toegang** staat en dat de bearer-token niet verlopen is. |
-| Geo-viewer toont oude locatie | Browser-cache | Hard refresh (Ctrl-F5). Procest stuurt `Cache-Control: no-store` op zaakdetails, maar bundle-caches kunnen blijven hangen. |
+| Geo-viewer toont oude locatie | Browser-cache | Hard refresh (Ctrl-F5). Dossiq stuurt `Cache-Control: no-store` op zaakdetails, maar bundle-caches kunnen blijven hangen. |
 
 ## Privacy en BIO
 

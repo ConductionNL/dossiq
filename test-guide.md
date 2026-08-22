@@ -1,11 +1,11 @@
-# Procest — Test Guide
+# Dossiq — Test Guide
 
 > **Agentic testing (experimental)**: This guide is used by automated browser testing agents. Results are approximate and should be verified manually for critical findings.
 
 ## App Access
 
-- **App URL**: `http://localhost:8080/index.php/apps/procest`
-- **Admin Settings**: `http://localhost:8080/settings/admin/procest`
+- **App URL**: `http://localhost:8080/index.php/apps/dossiq`
+- **Admin Settings**: `http://localhost:8080/settings/admin/dossiq`
 - **Login**: admin / admin
 
 ## What to Test
@@ -25,7 +25,7 @@ Read the feature documentation for the complete feature map:
 | Task Management | [task-management.md](docs/features/task-management.md) | `/#/tasks` — list, detail view, linked cases |
 | Case Types | [case-types.md](docs/features/case-types.md) | Admin settings — create/edit case types with statuses |
 | Roles & Decisions | [roles-decisions.md](docs/features/roles-decisions.md) | Case detail — participants, results, decisions sections |
-| Administration | [administration.md](docs/features/administration.md) | `/settings/admin/procest` — schema config, case type mgmt |
+| Administration | [administration.md](docs/features/administration.md) | `/settings/admin/dossiq` — schema config, case type mgmt |
 
 ### Navigation Structure
 
@@ -34,7 +34,7 @@ The app uses hash-based routing. The sidebar has these menu items:
 2. **My Work** → `/#/my-work`
 3. **Cases** → `/#/cases` (detail: `/#/cases/{id}`)
 4. **Tasks** → `/#/tasks` (detail: `/#/tasks/{id}`)
-5. **Documentation** → opens external link (procest.app)
+5. **Documentation** → opens external link (conduction.nl)
 
 ### Key Interactions to Test
 

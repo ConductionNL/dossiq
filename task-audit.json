@@ -1,7 +1,7 @@
 {
   "spec": "openspec/changes/complaint-management",
   "verified": [
-    {"task": "TASK-CM-01", "file": "lib/Settings/procest_register.json", "ok": true},
+    {"task": "TASK-CM-01", "file": "lib/Settings/dossiq_register.json", "ok": true},
     {"task": "TASK-CM-01", "file": "lib/Service/SettingsService.php", "ok": true},
     {"task": "TASK-CM-02", "file": "lib/Service/ComplaintService.php", "ok": true},
     {"task": "TASK-CM-02", "file": "tests/Unit/Service/ComplaintServiceTest.php", "ok": true},

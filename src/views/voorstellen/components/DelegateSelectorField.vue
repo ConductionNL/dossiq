@@ -10,7 +10,7 @@
 <template>
 	<div v-if="mandates && mandates.length > 0" class="delegate-selector-field">
 		<label class="delegate-selector-field__label" for="parafering-delegate">
-			{{ t('procest', 'On behalf of') }}
+			{{ t('dossiq', 'On behalf of') }}
 		</label>
 		<select
 			id="parafering-delegate"
@@ -18,7 +18,7 @@
 			:value="selected"
 			@change="onChange">
 			<option value="">
-				{{ t('procest', 'Self (no mandate)') }}
+				{{ t('dossiq', 'Self (no mandate)') }}
 			</option>
 			<option
 				v-for="entry in mandates"
@@ -58,7 +58,7 @@ export default {
 		 */
 		formatOption(entry) {
 			const name = entry.principalDisplayName || entry.principalUid
-			return this.t('procest', 'On behalf of {name} (mandate {ref})', {
+			return this.t('dossiq', 'On behalf of {name} (mandate {ref})', {
 				name,
 				ref: entry.mandateReference,
 			})

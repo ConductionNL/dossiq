@@ -1,18 +1,18 @@
 <?php
 
 /**
- * Procest schema slug map.
+ * Dossiq schema slug map.
  *
  * The two declarative tables the schema reconcilers drive from: which
- * OpenRegister schema slug backs which procest appconfig key, and which
- * `x-openregister-*` annotation blocks procest owns on a schema's configuration.
+ * OpenRegister schema slug backs which dossiq appconfig key, and which
+ * `x-openregister-*` annotation blocks dossiq owns on a schema's configuration.
  *
- * Split out of {@see \OCA\Procest\Service\SettingsService} — these are data, not
+ * Split out of {@see \OCA\Dossiq\Service\SettingsService} — these are data, not
  * behaviour, and both reconcilers plus the post-import auto-configure step read
  * from them.
  *
  * @category Service
- * @package  OCA\Procest\Service\Settings
+ * @package  OCA\Dossiq\Service\Settings
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,7 +20,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -30,7 +30,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Settings;
+namespace OCA\Dossiq\Service\Settings;
 
 /**
  * Schema slug to appconfig key mapping, plus the owned annotation block names.
@@ -41,7 +41,7 @@ namespace OCA\Procest\Service\Settings;
  */
 class SchemaSlugMap {
 	/**
-	 * Mapping of schema slugs (from procest_register.json) to app config keys.
+	 * Mapping of schema slugs (from dossiq_register.json) to app config keys.
 	 *
 	 * @var array<string, string>
 	 */
@@ -190,7 +190,7 @@ class SchemaSlugMap {
 
 	/**
 	 * Declarative `x-openregister-*` annotation blocks (declared inside a
-	 * schema's `configuration` in procest_register.json) that Procest
+	 * schema's `configuration` in dossiq_register.json) that Dossiq
 	 * reconciles directly onto the live OpenRegister schema configuration.
 	 *
 	 * OpenRegister's app-config import does not reliably round-trip these

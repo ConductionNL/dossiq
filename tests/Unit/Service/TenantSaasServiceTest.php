@@ -9,24 +9,24 @@
  * adds the integration tests.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-02-tenant-crud-lifecycle/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
 use InvalidArgumentException;
-use OCA\Procest\Service\TenantAuditTrailService;
-use OCA\Procest\Service\TenantSaasService;
+use OCA\Dossiq\Service\TenantAuditTrailService;
+use OCA\Dossiq\Service\TenantSaasService;
 use OCP\App\IAppManager;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -35,9 +35,9 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\TenantSaasService
+ * @covers \OCA\Dossiq\Service\TenantSaasService
  *
- * @uses \OCA\Procest\Service\TenantAuditTrailService
+ * @uses \OCA\Dossiq\Service\TenantAuditTrailService
  */
 class TenantSaasServiceTest extends TestCase {
 	private TenantSaasService $service;
@@ -107,7 +107,7 @@ class TenantSaasServiceTest extends TestCase {
 		$auditLogger->expects($this->once())
 			->method('info')
 			->with(
-				'Procest AUDIT',
+				'Dossiq AUDIT',
 				$this->callback(static fn (array $e): bool => $e['action'] === 'tenant.provisioned' && $e['actor'] === 'admin')
 			);
 
@@ -141,7 +141,7 @@ class TenantSaasServiceTest extends TestCase {
 		$auditLogger->expects($this->once())
 			->method('info')
 			->with(
-				'Procest AUDIT',
+				'Dossiq AUDIT',
 				$this->callback(static fn (array $e): bool => $e['action'] === 'tenant.status_changed' && $e['actor'] === 'system')
 			);
 

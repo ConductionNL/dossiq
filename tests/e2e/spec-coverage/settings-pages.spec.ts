@@ -1,20 +1,20 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Behavioural UI coverage for the procest administrative settings pages.
+ * Behavioural UI coverage for the dossiq administrative settings pages.
  * Each renders an OpenRegister-backed index with a view-specific primary
  * create control. Every test navigates to the page's route and asserts that
  * it renders its OWN distinct create control — proving the route resolves to
  * the right view, not a stale one — while guarding against a 5xx render and
- * procest-origin console errors.
+ * dossiq-origin console errors.
  *
  * See the note above SETTINGS_PAGES for why these navigate by route rather
  * than by clicking a nav label.
  */
 
 import { test, expect } from '@playwright/test'
-import { navToRoute, trackProcestErrors } from '../helpers/nav'
+import { navToRoute, trackDossiqErrors } from '../helpers/nav'
 
 // name (for the test title), the ROUTE the settings page lives at, and the
 // view-specific create control it must render.
@@ -43,9 +43,9 @@ const SETTINGS_PAGES: Array<{ name: string; route: string; addBtn: string }> = [
 	// CaseType settings form (Save control) — the /settings root.
 	{ name: 'Case Types', route: '/settings', addBtn: 'Save' },
 	// Leges (the municipal-fee engine — verordeningen, articles, calculations)
-	// was retired from Procest in Wave 1 of the case-model consolidation
+	// was retired from Dossiq in Wave 1 of the case-model consolidation
 	// (ADR-003). Fees are now Pipelinq products referenced from a case type's
-	// productsOrServices; Procest owns no fee settings entries.
+	// productsOrServices; Dossiq owns no fee settings entries.
 	{
 		name: 'Approval routes',
 		route: '/settings/parafeerroutes',
@@ -98,7 +98,7 @@ for (const { name, route, addBtn } of SETTINGS_PAGES) {
 		test(`${name} settings page renders its own "${addBtn}" control`, async ({
 			page,
 		}) => {
-			const errors = trackProcestErrors(page)
+			const errors = trackDossiqErrors(page)
 			await navToRoute(page, route)
 			await expect(
 				page.getByRole('button', { name: addBtn, exact: true }).first(),

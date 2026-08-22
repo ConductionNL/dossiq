@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Iv3TaakveldList
+ * Dossiq Iv3TaakveldList
  *
  * The single testable source of truth for valid IV3/BBV taakveld codes and
  * labels. Loads and caches `lib/Settings/iv3_taakvelden.json` (9 main BBV
@@ -11,7 +11,7 @@
  * instead of re-encoding the list.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,14 +20,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/archive/2026-07-13-iv3-case-cost-reporting/specs/iv3-case-cost-reporting/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use RuntimeException;
 

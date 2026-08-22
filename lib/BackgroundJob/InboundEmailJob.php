@@ -1,16 +1,16 @@
 <?php
 
 /**
- * Procest Inbound Email Job
+ * Dossiq Inbound Email Job
  *
  * Polls the configured SHARED/functional IMAP mailbox, auto-links unread
  * messages to cases via the subject-tag pattern `[ZAAK-YYYY-NNNNNN]`, and
  * triggers archival through {@see EmailArchivalService}. Per the ADR-002
- * exception (case-email-integration), this is the ONLY procest-side mail
+ * exception (case-email-integration), this is the ONLY dossiq-side mail
  * dispatch — manual per-user mail is owned by NC Mail.
  *
  * @category BackgroundJob
- * @package  OCA\Procest\BackgroundJob
+ * @package  OCA\Dossiq\BackgroundJob
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,19 +21,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/case-email-integration/tasks.md#T08
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\BackgroundJob;
+namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\EmailArchivalService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Support\SuppressesWarnings;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\EmailArchivalService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Support\SuppressesWarnings;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;

@@ -6,7 +6,7 @@
  * Validates JWT tokens and enforces scopes on all ZGW API endpoints.
  *
  * @category Middleware
- * @package  OCA\Procest\Middleware
+ * @package  OCA\Dossiq\Middleware
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -17,17 +17,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Middleware;
+namespace OCA\Dossiq\Middleware;
 
-use OCA\Procest\Controller\ZgwController;
-use OCA\Procest\Service\ZgwJwtValidator;
+use OCA\Dossiq\Controller\ZgwController;
+use OCA\Dossiq\Service\ZgwJwtValidator;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Middleware;
@@ -164,7 +164,7 @@ class ZgwAuthMiddleware extends Middleware {
 	 *
 	 * @return void
 	 *
-	 * @throws \OCA\Procest\Middleware\ZgwAuthException If authorization fails.
+	 * @throws \OCA\Dossiq\Middleware\ZgwAuthException If authorization fails.
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $methodName required by Middleware interface
 	 */
@@ -192,7 +192,7 @@ class ZgwAuthMiddleware extends Middleware {
 			);
 		}
 
-		// Validate JWT signature via the procest-owned ZgwJwtValidator.
+		// Validate JWT signature via the dossiq-owned ZgwJwtValidator.
 		// M3: Log detailed message server-side; surface only a generic message to caller.
 		// Catch \Throwable: a misconfigured dependency raises \Error (not \Exception),
 		// which previously escaped as a 500 instead of a clean 403.
@@ -271,7 +271,7 @@ class ZgwAuthMiddleware extends Middleware {
 	 *
 	 * The ZGW component is derived from the request URL path, which always
 	 * contains the API group name as the third path segment after "/api/zgw/".
-	 * For example: /index.php/apps/procest/api/zgw/zaken/v1/zaken → "zaken".
+	 * For example: /index.php/apps/dossiq/api/zgw/zaken/v1/zaken → "zaken".
 	 * This replaces the dead `getParam('zgwApi')` lookup: no route in
 	 * appinfo/routes.php declares a {zgwApi} placeholder, so that call always
 	 * returned '' and the middleware short-circuited to 403 for every non-
@@ -364,8 +364,8 @@ class ZgwAuthMiddleware extends Middleware {
 	/**
 	 * Derive the ZGW component code from the request URL path.
 	 *
-	 * Procest ZGW routes all follow the pattern:
-	 *   /apps/procest/api/zgw/{apiGroup}/v1/...
+	 * Dossiq ZGW routes all follow the pattern:
+	 *   /apps/dossiq/api/zgw/{apiGroup}/v1/...
 	 * (or with index.php prefix in some NC configurations)
 	 *
 	 * The API group name ("zaken", "catalogi", "besluiten", etc.) is extracted

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * DEEP, data-dependent coverage — complaint-family workflow items (bezwaren).
@@ -104,7 +104,7 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 		// and strands on the Dashboard — reach the list by a BARE deep-link instead
 		// (a /index.php-prefixed one resets the history-mode router to the
 		// Dashboard; the bare path resolves the /bezwaren route directly).
-		await page.goto('/index.php/apps/procest/bezwaren')
+		await page.goto('/index.php/apps/dossiq/bezwaren')
 		await dismissSupportDialog(page)
 		await expect(page.locator('tbody tr').first()).toBeVisible({
 			timeout: 15000,

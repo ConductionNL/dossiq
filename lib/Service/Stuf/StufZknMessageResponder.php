@@ -1,19 +1,19 @@
 <?php
 
 /**
- * Procest StUF-ZKN/BG inbound message responder.
+ * Dossiq StUF-ZKN/BG inbound message responder.
  *
  * Owns one thing: given the StUF message element lifted out of an inbound SOAP
  * envelope, produce the SOAP response for it — a Bv01 bevestiging for the
  * kennisgevingen (zakLk01, edcLk01), an empty La01 antwoord for the vragen
  * (zakLv01, npsLv01), and a Fo01 foutbericht for anything else.
  *
- * Split out of {@see \OCA\Procest\Controller\StufController}, which carried the
+ * Split out of {@see \OCA\Dossiq\Controller\StufController}, which carried the
  * whole inbound path — envelope parsing, message location, per-type handling and
  * the outbound admin REST surface — in one class of complexity 81.
  *
  * @category Service
- * @package  OCA\Procest\Service\Stuf
+ * @package  OCA\Dossiq\Service\Stuf
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,7 +21,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -31,10 +31,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Stuf;
+namespace OCA\Dossiq\Service\Stuf;
 
-use OCA\Procest\Service\StufFieldMappingService;
-use OCA\Procest\Service\StufMessageBuilder;
+use OCA\Dossiq\Service\StufFieldMappingService;
+use OCA\Dossiq\Service\StufMessageBuilder;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDisplayResponse;
 use Psr\Log\LoggerInterface;
@@ -48,7 +48,7 @@ use Psr\Log\LoggerInterface;
  */
 class StufZknMessageResponder {
 	/**
-	 * Default stuurgegevens for this Procest instance (zender).
+	 * Default stuurgegevens for this Dossiq instance (zender).
 	 *
 	 * @var array<string, string>
 	 */
@@ -56,8 +56,8 @@ class StufZknMessageResponder {
 	// `<stuf:organisatie>` and reads this array by key, so the English key is
 	// correct here and renaming it would empty the element.
 	private const DEFAULT_ZENDER = [
-		'organisation' => 'Procest',
-		'applicatie' => 'Procest',
+		'organisation' => 'Dossiq',
+		'applicatie' => 'Dossiq',
 	];
 
 	/**

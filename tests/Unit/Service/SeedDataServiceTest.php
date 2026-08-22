@@ -3,11 +3,11 @@
 /**
  * SeedDataService Unit Tests
  *
- * Tests for the Procest SeedDataService that seeds bezwaar/beroep case types
+ * Tests for the Dossiq SeedDataService that seeds bezwaar/beroep case types
  * into OpenRegister.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -15,14 +15,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\SeedDataService;
+use OCA\Dossiq\Service\SeedDataService;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -46,7 +46,7 @@ interface SeedObjectServiceStub {
 /**
  * Unit tests for SeedDataService.
  *
- * @covers \OCA\Procest\Service\SeedDataService
+ * @covers \OCA\Dossiq\Service\SeedDataService
  */
 class SeedDataServiceTest extends TestCase {
 

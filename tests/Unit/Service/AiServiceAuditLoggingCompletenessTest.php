@@ -14,7 +14,7 @@
  * coupling the test to the AI model wire format.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -30,14 +30,14 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\Ai\AiAuditLog;
-use OCA\Procest\Service\Ai\AiEndpointGuard;
-use OCA\Procest\Service\Ai\AiModelIdentity;
-use OCA\Procest\Service\Ai\AiPiiRedactor;
-use OCA\Procest\Service\Ai\AiPromptFactory;
-use OCA\Procest\Service\AiService;
+use OCA\Dossiq\Service\Ai\AiAuditLog;
+use OCA\Dossiq\Service\Ai\AiEndpointGuard;
+use OCA\Dossiq\Service\Ai\AiModelIdentity;
+use OCA\Dossiq\Service\Ai\AiPiiRedactor;
+use OCA\Dossiq\Service\Ai\AiPromptFactory;
+use OCA\Dossiq\Service\AiService;
 use OCP\IAppConfig;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -85,12 +85,12 @@ class StubbedAiService extends AiService {
 /**
  * Unit tests proving suggestion-time audit logging completeness.
  *
- * @covers \OCA\Procest\Service\AiService
+ * @covers \OCA\Dossiq\Service\AiService
  *
- * @uses \OCA\Procest\Service\Ai\AiAuditLog
- * @uses \OCA\Procest\Service\Ai\AiEndpointGuard
- * @uses \OCA\Procest\Service\Ai\AiModelIdentity
- * @uses \OCA\Procest\Service\Ai\AiPromptFactory
+ * @uses \OCA\Dossiq\Service\Ai\AiAuditLog
+ * @uses \OCA\Dossiq\Service\Ai\AiEndpointGuard
+ * @uses \OCA\Dossiq\Service\Ai\AiModelIdentity
+ * @uses \OCA\Dossiq\Service\Ai\AiPromptFactory
  */
 class AiServiceAuditLoggingCompletenessTest extends TestCase {
 

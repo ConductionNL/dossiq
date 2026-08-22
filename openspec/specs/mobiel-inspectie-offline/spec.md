@@ -152,7 +152,7 @@ The system SHALL capture photos using the device camera, compress them client-si
 
 ### Requirement: Voice Memo Recording and Transcription Queueing
 
-The system SHALL allow inspectors to record voice memos (audio notes) during inspections, store them locally, and queue transcription via the Procest LLM endpoint when connectivity returns.
+The system SHALL allow inspectors to record voice memos (audio notes) during inspections, store them locally, and queue transcription via the Dossiq LLM endpoint when connectivity returns.
 
 #### Scenario: Record voice memo offline
 
@@ -174,7 +174,7 @@ The system SHALL allow inspectors to record voice memos (audio notes) during ins
 - **WHEN** the device reconnects and sync begins
 - **THEN** the system SHALL:
   - Queue a "transcribe" operation in SyncQueue targeting the voice-memo FieldEvidence record
-  - Send the audio blob to the Procest qwen-3.5 LLM endpoint (or equivalent)
+  - Send the audio blob to the Dossiq qwen-3.5 LLM endpoint (or equivalent)
   - Store the returned transcription text in the FieldEvidence record's `transcription` field
   - Set `transcriptionStatus: "synced"` when complete
 - **AND** keep the original audio blob available for playback alongside the text
