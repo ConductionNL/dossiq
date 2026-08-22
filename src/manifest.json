@@ -316,15 +316,6 @@
 			"order": 97
 		},
 		{
-			"id": "LocationsMenu",
-			"label": "Case locations",
-			"icon": "MapMarkerOutline",
-			"route": "Locations",
-			"section": "settings",
-			"order": 98,
-			"permission": "admin"
-		},
-		{
 			"id": "BezwaarCommitteesMenu",
 			"label": "Objection advisory committees",
 			"icon": "FileAlertOutline",
@@ -1473,11 +1464,6 @@
 									"label": "Source"
 								}
 							],
-							"rowRoute": "LocationDetail",
-							"viewAllRoute": "Locations",
-							"viewAllQuery": {
-								"case": "@objectId"
-							},
 							"emptyText": "No locations linked to this case yet"
 						}
 					},
@@ -3899,57 +3885,6 @@
 			}
 		},
 		{
-			"id": "Locations",
-			"route": "/settings/locations",
-			"type": "index",
-			"title": "Case locations",
-			"config": {
-				"register": "procest",
-				"schema": "location",
-				"columns": [
-					{
-						"key": "label"
-					},
-					{
-						"key": "case"
-					},
-					{
-						"key": "formattedAddress"
-					},
-					{
-						"key": "addressDesignationId"
-					},
-					{
-						"key": "parcelId"
-					},
-					{
-						"key": "source"
-					},
-					{
-						"key": "accuracyRadius"
-					}
-				],
-				"showViewAction": false,
-				"actions": [
-					{
-						"id": "view",
-						"label": "View",
-						"icon": "EyeOutline",
-						"handler": "navigate",
-						"route": "LocationDetail",
-						"type": "handler"
-					},
-					"edit",
-					"delete"
-				],
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true
-				},
-				"documentationUrl": "https://procest.conduction.nl"
-			}
-		},
-		{
 			"id": "LhsMatrixDetail",
 			"route": "/settings/lhs-matrices/:id",
 			"type": "detail",
@@ -4130,76 +4065,6 @@
 						"gridY": 5,
 						"gridWidth": 12,
 						"gridHeight": 4
-					}
-				],
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true,
-					"tabs": [
-						{
-							"id": "audit",
-							"label": "History",
-							"icon": "History",
-							"widgets": [
-								{
-									"type": "audit"
-								}
-							]
-						},
-						{
-							"id": "version-history",
-							"label": "Version history",
-							"icon": "FileCompare",
-							"component": "VersionHistoryLeafTab"
-						}
-					]
-				}
-			}
-		},
-		{
-			"id": "LocationDetail",
-			"route": "/settings/locations/:id",
-			"type": "detail",
-			"title": "Location",
-			"config": {
-				"register": "procest",
-				"schema": "location",
-				"_note": "GEO-RECORD archetype (a case location / BAG anchor). Deliberately lean: the Data widget shows address + coordinates + BAG identifiers (label, formattedAddress, latitude, longitude, nummeraanduidingId, parcelId, accuracyRadius, source) and a Related panel links the parent case. NO maps leaf here — the location schema does NOT declare a maps linkedType (only the case schema does; the interactive per-case map lives on CaseDetail and the /map overview). No comms/documents, no status lifecycle. Audit history (geocoding corrections) is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
-				"widgets": [
-					{
-						"id": "location-data",
-						"type": "data",
-						"title": "Location",
-						"icon": "MapMarker",
-						"content": {
-							"columns": 2
-						}
-					},
-					{
-						"id": "location-related",
-						"type": "related",
-						"title": "Case",
-						"icon": "LinkVariant"
-					}
-				],
-				"layout": [
-					{
-						"id": "1",
-						"widgetId": "location-data",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 8,
-						"gridHeight": 5,
-						"showTitle": false
-					},
-					{
-						"id": "2",
-						"widgetId": "location-related",
-						"gridX": 8,
-						"gridY": 0,
-						"gridWidth": 4,
-						"gridHeight": 5
 					}
 				],
 				"sidebar": {
