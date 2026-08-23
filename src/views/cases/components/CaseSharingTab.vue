@@ -173,6 +173,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/specs/case-share-via-shares-leaf/spec.md */
 		async loadPartners() {
 			try {
 				const response = await axios.get(
@@ -186,6 +187,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/specs/case-share-via-shares-leaf/spec.md */
 		async loadCaseDocuments() {
 			if (!this.objectId) {
 				return

@@ -201,6 +201,7 @@ export default {
 	},
 
 	methods: {
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		async reload() {
 			if (!this.resolvedCaseId) {
 				this.loading = false
