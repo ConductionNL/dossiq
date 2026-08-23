@@ -241,14 +241,6 @@
 			"order": 90
 		},
 		{
-			"id": "CaseTypesMenu",
-			"label": "Case types",
-			"icon": "FolderCogOutline",
-			"route": "DossiqConfiguration",
-			"section": "settings",
-			"order": 95
-		},
-		{
 			"id": "PartnersMenu",
 			"label": "Partner organisations",
 			"icon": "OfficeBuildingOutline",
@@ -270,14 +262,6 @@
 			"label": "Approval routes",
 			"icon": "SitemapOutline",
 			"route": "Parafeerroutes",
-			"section": "settings",
-			"order": 96
-		},
-		{
-			"id": "AiOversightMenu",
-			"label": "AI oversight",
-			"icon": "ChartLine",
-			"route": "AiOversight",
 			"section": "settings",
 			"order": 96
 		},
@@ -324,15 +308,6 @@
 			"order": 97
 		},
 		{
-			"id": "LocationsMenu",
-			"label": "Case locations",
-			"icon": "MapMarkerOutline",
-			"route": "Locations",
-			"section": "settings",
-			"order": 98,
-			"permission": "admin"
-		},
-		{
 			"id": "BezwaarCommitteesMenu",
 			"label": "Objection advisory committees",
 			"icon": "FileAlertOutline",
@@ -347,22 +322,6 @@
 			"order": 71
 		},
 		{
-			"id": "TenantOnboardingMenu",
-			"label": "Organisation onboarding",
-			"icon": "AccountPlusOutline",
-			"route": "TenantOnboardingDashboard",
-			"section": "settings",
-			"order": 92
-		},
-		{
-			"id": "SubstitutionMenu",
-			"label": "Substitution",
-			"icon": "AccountSwitchOutline",
-			"route": "SubstitutionSettings",
-			"section": "settings",
-			"order": 93
-		},
-		{
 			"id": "SubstitutionAdminMenu",
 			"label": "Substitutions & reassignment",
 			"icon": "AccountSwitchOutline",
@@ -372,29 +331,36 @@
 			"permission": "admin"
 		},
 		{
-			"id": "VerwerkingenOverviewMenu",
-			"label": "Processing activities (AVG)",
-			"icon": "ShieldLockOutline",
-			"route": "VerwerkingenOverview",
-			"section": "settings",
-			"order": 95,
-			"permission": "admin"
-		},
-		{
-			"id": "SettingsMenu",
-			"label": "Configuration",
-			"icon": "CogOutline",
-			"route": "DossiqConfiguration",
-			"section": "settings",
-			"order": 99
-		},
-		{
 			"id": "FeaturesRoadmapMenu",
 			"label": "Features & roadmap",
 			"icon": "MapMarkerPath",
 			"route": "FeaturesRoadmap",
 			"section": "footer",
 			"order": 100
+		},
+		{
+			"id": "AdminSettingsLink",
+			"label": "Configuration",
+			"icon": "CogOutline",
+			"href": "/settings/admin/procest",
+			"section": "settings",
+			"order": 99
+		},
+		{
+			"id": "AvgRegisterLink",
+			"label": "Processing activities (AVG)",
+			"icon": "ShieldLockOutline",
+			"href": "/apps/openregister/#/avg",
+			"section": "settings",
+			"order": 95
+		},
+		{
+			"id": "AiOversightLink",
+			"label": "AI oversight",
+			"icon": "ShieldCheckOutline",
+			"href": "/apps/hermiq/ai-oversight",
+			"section": "settings",
+			"order": 96
 		}
 	],
 	"pages": [
@@ -1177,7 +1143,11 @@
 								"handoffSource",
 								"intakeChannel"
 							],
-							"overrides": { "status": { "editable": false } }
+							"overrides": {
+								"status": {
+									"editable": false
+								}
+							}
 						}
 					},
 					{
@@ -1493,11 +1463,6 @@
 									"label": "Source"
 								}
 							],
-							"rowRoute": "LocationDetail",
-							"viewAllRoute": "Locations",
-							"viewAllQuery": {
-								"case": "@objectId"
-							},
 							"emptyText": "No locations linked to this case yet"
 						}
 					},
@@ -1870,7 +1835,11 @@
 								"receiptDate",
 								"decisionDeadline"
 							],
-							"overrides": { "status": { "editable": false } }
+							"overrides": {
+								"status": {
+									"editable": false
+								}
+							}
 						}
 					},
 					{
@@ -2122,7 +2091,11 @@
 								"legalCostsCompensation",
 								"status"
 							],
-							"overrides": { "status": { "editable": false } }
+							"overrides": {
+								"status": {
+									"editable": false
+								}
+							}
 						}
 					},
 					{
@@ -2142,7 +2115,11 @@
 								"publishedAt",
 								"notifiedRecipients"
 							],
-							"overrides": { "publishedAt": { "editable": false } }
+							"overrides": {
+								"publishedAt": {
+									"editable": false
+								}
+							}
 						}
 					},
 					{
@@ -2608,38 +2585,226 @@
 			"id": "Doorlooptijd",
 			"route": "/doorlooptijd",
 			"type": "dashboard",
-			"title": "Doorlooptijd",
+			"title": "Processing time",
+			"_note": "SLA / processing-time analytics. Was nominally type:dashboard but its config was ONE 12x12 widget whose slot rendered a complete second dashboard with its own <h2> — the dashboard-in-dashboard antipattern (hydra#316). Now five widgets over one shared store (src/store/modules/doorlooptijd.js). The presentational sub-components in views/doorlooptijd/components/ are unchanged; only their host moved.",
 			"config": {
+				"description": "SLA adherence and processing time analysis",
+				"headerActions": [
+					{
+						"id": "back-to-dashboard",
+						"label": "Dashboard",
+						"type": "navigate",
+						"route": "Dashboard",
+						"icon": "ViewDashboardOutline"
+					}
+				],
+				"pageFilters": [
+					{
+						"key": "period",
+						"label": "Period",
+						"default": "12m",
+						"options": [
+							{
+								"value": "3m",
+								"label": "Last 3 months"
+							},
+							{
+								"value": "6m",
+								"label": "Last 6 months"
+							},
+							{
+								"value": "12m",
+								"label": "Last 12 months"
+							},
+							{
+								"value": "year",
+								"label": "This year"
+							},
+							{
+								"value": "all",
+								"label": "All time"
+							}
+						]
+					}
+				],
 				"widgets": [
 					{
-						"id": "doorlooptijd",
-						"title": "Doorlooptijd",
+						"id": "dt-kpis",
+						"title": "Overview",
+						"type": "custom"
+					},
+					{
+						"id": "dt-charts",
+						"title": "Compliance",
+						"type": "custom"
+					},
+					{
+						"id": "dt-woo",
+						"title": "Woo statutory deadlines",
+						"type": "custom"
+					},
+					{
+						"id": "dt-atrisk",
+						"title": "Cases at risk",
+						"type": "custom"
+					},
+					{
+						"id": "dt-breakdown",
+						"title": "Performance by case type",
 						"type": "custom"
 					}
 				],
 				"layout": [
 					{
 						"id": 1,
-						"widgetId": "doorlooptijd",
+						"widgetId": "dt-kpis",
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
-						"gridHeight": 12
+						"gridHeight": 3
+					},
+					{
+						"id": 2,
+						"widgetId": "dt-charts",
+						"gridX": 0,
+						"gridY": 3,
+						"gridWidth": 12,
+						"gridHeight": 8
+					},
+					{
+						"id": 3,
+						"widgetId": "dt-woo",
+						"gridX": 0,
+						"gridY": 11,
+						"gridWidth": 12,
+						"gridHeight": 5
+					},
+					{
+						"id": 4,
+						"widgetId": "dt-atrisk",
+						"gridX": 0,
+						"gridY": 16,
+						"gridWidth": 6,
+						"gridHeight": 6
+					},
+					{
+						"id": 5,
+						"widgetId": "dt-breakdown",
+						"gridX": 6,
+						"gridY": 16,
+						"gridWidth": 6,
+						"gridHeight": 6
 					}
 				],
 				"documentationUrl": "https://procest.conduction.nl"
 			},
 			"slots": {
-				"widget-doorlooptijd": "DoorlooptijdView"
+				"header-actions": "DtCaseTypeFilter",
+				"widget-dt-kpis": "DtKpiWidget",
+				"widget-dt-charts": "DtChartsWidget",
+				"widget-dt-woo": "DtWooWidget",
+				"widget-dt-atrisk": "DtAtRiskWidget",
+				"widget-dt-breakdown": "DtBreakdownWidget"
 			}
 		},
 		{
 			"id": "ProcessMiningDashboard",
 			"route": "/process-mining",
-			"type": "custom",
+			"type": "dashboard",
 			"title": "Process mining",
-			"component": "ProcessMiningDashboard",
-			"_note": "Bottleneck analysis over the case statusRecord history: a period + case-type picker drives a server-computed ProcessMiningService aggregation (per-status dwell time, bottleneck ranking, transition matrix + rework-loop detection, weekly throughput trend). The figures come from a dedicated aggregation endpoint, not a register query, so the standard dashboard/object-stats type can't supply or shape this data."
+			"_note": "Bottleneck analysis over the case statusRecord history. The figures come from a dedicated ProcessMiningService aggregation endpoint, not a register query, so the widgets are type:custom and read one shared store (src/store/modules/processMining.js) rather than a register/schema binding. The page owns the heading, the period presets and the case-type filter; each widget renders content only — a widget that drew its own page heading would be the dashboard-in-dashboard antipattern (hydra#316).",
+			"config": {
+				"description": "Bottleneck analysis from recorded case status history",
+				"pageFilters": [
+					{
+						"key": "period",
+						"label": "Period",
+						"default": "12m",
+						"options": [
+							{
+								"value": "3m",
+								"label": "Last 3 months"
+							},
+							{
+								"value": "6m",
+								"label": "Last 6 months"
+							},
+							{
+								"value": "12m",
+								"label": "Last 12 months"
+							},
+							{
+								"value": "all",
+								"label": "All time"
+							}
+						]
+					}
+				],
+				"widgets": [
+					{
+						"id": "pm-kpis",
+						"title": "Overview",
+						"type": "custom"
+					},
+					{
+						"id": "pm-dwell",
+						"title": "Dwell time by status (median hours)",
+						"type": "custom"
+					},
+					{
+						"id": "pm-throughput",
+						"title": "Throughput (cases closed per week)",
+						"type": "custom"
+					},
+					{
+						"id": "pm-bottlenecks",
+						"title": "Bottleneck ranking",
+						"type": "custom"
+					}
+				],
+				"layout": [
+					{
+						"id": 1,
+						"widgetId": "pm-kpis",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 3
+					},
+					{
+						"id": 2,
+						"widgetId": "pm-dwell",
+						"gridX": 0,
+						"gridY": 3,
+						"gridWidth": 6,
+						"gridHeight": 6
+					},
+					{
+						"id": 3,
+						"widgetId": "pm-throughput",
+						"gridX": 6,
+						"gridY": 3,
+						"gridWidth": 6,
+						"gridHeight": 6
+					},
+					{
+						"id": 4,
+						"widgetId": "pm-bottlenecks",
+						"gridX": 0,
+						"gridY": 9,
+						"gridWidth": 12,
+						"gridHeight": 6
+					}
+				],
+				"documentationUrl": "https://procest.conduction.nl"
+			},
+			"slots": {
+				"header-actions": "PmCaseTypeFilter",
+				"widget-pm-kpis": "PmKpiWidget",
+				"widget-pm-dwell": "PmDwellChartWidget",
+				"widget-pm-throughput": "PmThroughputChartWidget",
+				"widget-pm-bottlenecks": "PmBottleneckTableWidget"
+			}
 		},
 		{
 			"id": "WorkflowBoard",
@@ -2650,23 +2815,6 @@
 			"_note": "Bespoke Kanban board (one column per non-final status type, drag-to-transition) rendered by a host-app SFC; no standard page type offers the drag-between-status-columns workflow surface. Mounted directly (not wrapped in a dashboard widget) so its own header is the single page title.",
 			"config": {
 				"register": "dossiq"
-			}
-		},
-		{
-			"id": "DossiqConfiguration",
-			"route": "/settings",
-			"type": "settings",
-			"title": "Configuration",
-			"config": {
-				"sections": [
-					{
-						"id": "admin",
-						"title": "Configuration"
-					}
-				]
-			},
-			"slots": {
-				"section-admin": "AdminRootView"
 			}
 		},
 		{
@@ -2750,49 +2898,6 @@
 					},
 					{
 						"key": "delete",
-						"type": "handler"
-					}
-				],
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true
-				},
-				"documentationUrl": "https://procest.conduction.nl"
-			}
-		},
-		{
-			"id": "AiOversight",
-			"route": "/settings/ai-oversight",
-			"type": "index",
-			"title": "AI oversight",
-			"config": {
-				"register": "dossiq",
-				"schema": "aiAuditEntry",
-				"columns": [
-					{
-						"key": "type"
-					},
-					{
-						"key": "action"
-					},
-					{
-						"key": "model"
-					},
-					{
-						"key": "userAction"
-					},
-					{
-						"key": "userId"
-					}
-				],
-				"showViewAction": false,
-				"actions": [
-					{
-						"id": "view",
-						"label": "View",
-						"icon": "EyeOutline",
-						"handler": "navigate",
-						"route": "AiOversightDetail",
 						"type": "handler"
 					}
 				],
@@ -3026,62 +3131,6 @@
 						"gridY": 0,
 						"gridWidth": 12,
 						"gridHeight": 4,
-						"showTitle": false
-					}
-				],
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true,
-					"tabs": [
-						{
-							"id": "audit",
-							"label": "History",
-							"icon": "History",
-							"widgets": [
-								{
-									"type": "audit"
-								}
-							]
-						},
-						{
-							"id": "version-history",
-							"label": "Version history",
-							"icon": "FileCompare",
-							"component": "VersionHistoryLeafTab"
-						}
-					]
-				}
-			}
-		},
-		{
-			"id": "AiOversightDetail",
-			"route": "/settings/ai-oversight/:id",
-			"type": "detail",
-			"title": "AI audit entry",
-			"config": {
-				"register": "dossiq",
-				"schema": "aiAuditEntry",
-				"_note": "IMMUTABLE AUDIT-LOG archetype (one frozen AI suggestion + human decision, EU AI Act Art. 14 human-oversight evidence). No comms/documents, no lifecycleActions, no edit/delete — a log entry is a frozen fact, not a mutable object. The single Data widget carries the full record (type, action, caseId, documentId, model, prompt, suggestion, confidence, userAction, actualValue, reason, userId, timestamp, responseTimeMs). No content leaves, no object-lists. Register-level audit history is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
-				"widgets": [
-					{
-						"id": "ai-audit-data",
-						"type": "data",
-						"title": "AI audit entry",
-						"icon": "ShieldCheckOutline",
-						"content": {
-							"columns": 2
-						}
-					}
-				],
-				"layout": [
-					{
-						"id": "1",
-						"widgetId": "ai-audit-data",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 8,
 						"showTitle": false
 					}
 				],
@@ -3745,57 +3794,6 @@
 			}
 		},
 		{
-			"id": "Locations",
-			"route": "/settings/locations",
-			"type": "index",
-			"title": "Case locations",
-			"config": {
-				"register": "dossiq",
-				"schema": "location",
-				"columns": [
-					{
-						"key": "label"
-					},
-					{
-						"key": "case"
-					},
-					{
-						"key": "formattedAddress"
-					},
-					{
-						"key": "addressDesignationId"
-					},
-					{
-						"key": "parcelId"
-					},
-					{
-						"key": "source"
-					},
-					{
-						"key": "accuracyRadius"
-					}
-				],
-				"showViewAction": false,
-				"actions": [
-					{
-						"id": "view",
-						"label": "View",
-						"icon": "EyeOutline",
-						"handler": "navigate",
-						"route": "LocationDetail",
-						"type": "handler"
-					},
-					"edit",
-					"delete"
-				],
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true
-				},
-				"documentationUrl": "https://procest.conduction.nl"
-			}
-		},
-		{
 			"id": "LhsMatrixDetail",
 			"route": "/settings/lhs-matrices/:id",
 			"type": "detail",
@@ -3916,7 +3914,11 @@
 								"recommendedIntervention",
 								"recommendedBy"
 							],
-							"overrides": { "recommendedBy": { "editable": false } }
+							"overrides": {
+								"recommendedBy": {
+									"editable": false
+								}
+							}
 						}
 					},
 					{
@@ -3933,7 +3935,11 @@
 								"overrideBy",
 								"overrideAuthority"
 							],
-							"overrides": { "overrideBy": { "editable": false } }
+							"overrides": {
+								"overrideBy": {
+									"editable": false
+								}
+							}
 						}
 					},
 					{
@@ -3968,76 +3974,6 @@
 						"gridY": 5,
 						"gridWidth": 12,
 						"gridHeight": 4
-					}
-				],
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true,
-					"tabs": [
-						{
-							"id": "audit",
-							"label": "History",
-							"icon": "History",
-							"widgets": [
-								{
-									"type": "audit"
-								}
-							]
-						},
-						{
-							"id": "version-history",
-							"label": "Version history",
-							"icon": "FileCompare",
-							"component": "VersionHistoryLeafTab"
-						}
-					]
-				}
-			}
-		},
-		{
-			"id": "LocationDetail",
-			"route": "/settings/locations/:id",
-			"type": "detail",
-			"title": "Location",
-			"config": {
-				"register": "dossiq",
-				"schema": "location",
-				"_note": "GEO-RECORD archetype (a case location / BAG anchor). Deliberately lean: the Data widget shows address + coordinates + BAG identifiers (label, formattedAddress, latitude, longitude, nummeraanduidingId, parcelId, accuracyRadius, source) and a Related panel links the parent case. NO maps leaf here — the location schema does NOT declare a maps linkedType (only the case schema does; the interactive per-case map lives on CaseDetail and the /map overview). No comms/documents, no status lifecycle. Audit history (geocoding corrections) is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
-				"widgets": [
-					{
-						"id": "location-data",
-						"type": "data",
-						"title": "Location",
-						"icon": "MapMarker",
-						"content": {
-							"columns": 2
-						}
-					},
-					{
-						"id": "location-related",
-						"type": "related",
-						"title": "Case",
-						"icon": "LinkVariant"
-					}
-				],
-				"layout": [
-					{
-						"id": "1",
-						"widgetId": "location-data",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 8,
-						"gridHeight": 5,
-						"showTitle": false
-					},
-					{
-						"id": "2",
-						"widgetId": "location-related",
-						"gridX": 8,
-						"gridY": 0,
-						"gridWidth": 4,
-						"gridHeight": 5
 					}
 				],
 				"sidebar": {
@@ -4318,7 +4254,14 @@
 								"assignedAt",
 								"deadline"
 							],
-							"overrides": { "status": { "editable": false }, "assignedAt": { "editable": false } }
+							"overrides": {
+								"status": {
+									"editable": false
+								},
+								"assignedAt": {
+									"editable": false
+								}
+							}
 						}
 					},
 					{
@@ -4338,7 +4281,11 @@
 								"signatureEvidence",
 								"hearingReportRef"
 							],
-							"overrides": { "adviceIssuedAt": { "editable": false } }
+							"overrides": {
+								"adviceIssuedAt": {
+									"editable": false
+								}
+							}
 						}
 					},
 					{
@@ -4563,26 +4510,62 @@
 		{
 			"id": "TermijnDashboard",
 			"route": "/termijn-dashboard",
-			"type": "custom",
-			"title": "Termijn dashboard",
-			"component": "TermijnDashboard",
-			"_note": "AWB termijnbewaking (statutory-deadline) monitor: a zaaktype filter drives a server-computed KPI bundle (total cases in period, within-term %, breached, at-risk) rendered as colour-coded compliance cards. The figures come from a dedicated deadline-aggregation endpoint, not a register query, so the standard dashboard/object-stats type can't supply or shape this data."
-		},
-		{
-			"id": "TenantOnboardingDashboard",
-			"route": "/tenant-onboarding",
-			"type": "custom",
-			"title": "Tenant onboarding",
-			"component": "TenantOnboardingDashboard",
-			"_note": "Tenant onboarding wizard view: a per-tenant 7-step progress bar plus a go-live readiness check and an activate-tenant action, rendering TenantOnboardingService progress and validateGoLive() output. This is a stateful procedure/checklist surface driven by a service, not an object listing, so no standard page type can express the step progress and go-live gating."
-		},
-		{
-			"id": "SubstitutionSettings",
-			"route": "/substitution",
-			"type": "custom",
-			"title": "Substitution",
-			"component": "SubstitutionSettingsView",
-			"_note": "Self-service vervanging (substitution) page: an explanatory intro about scope/permissions, a register-substitution action opening the isolated SubstitutionFormModal, and a table of the current user's own active/past substitutions filtered to where they are the absentee (enforced server-side). The standard list type can't carry the explanatory framing or the self-scoped register/revoke flow."
+			"type": "dashboard",
+			"title": "Deadline monitoring",
+			"_note": "Deadline-monitoring KPIs plus the quarterly report and annual dwangsom audit. The figures come from /api/termijn/* aggregation endpoints, not a register query, so the widgets are type:custom over one shared store (src/store/modules/termijnDashboard.js). The page owns the heading and the case-type filter; the quarter and year inputs stay inside their own widgets because they scope THAT report, not the page.",
+			"config": {
+				"description": "Deadline compliance, quarterly reporting and the annual dwangsom audit",
+				"widgets": [
+					{
+						"id": "td-kpis",
+						"title": "Overview",
+						"type": "custom"
+					},
+					{
+						"id": "td-quarterly",
+						"title": "Quarterly report",
+						"type": "custom"
+					},
+					{
+						"id": "td-annual",
+						"title": "Annual dwangsom audit",
+						"type": "custom"
+					}
+				],
+				"layout": [
+					{
+						"id": 1,
+						"widgetId": "td-kpis",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					{
+						"id": 2,
+						"widgetId": "td-quarterly",
+						"gridX": 0,
+						"gridY": 4,
+						"gridWidth": 12,
+						"gridHeight": 7
+					},
+					{
+						"id": 3,
+						"widgetId": "td-annual",
+						"gridX": 0,
+						"gridY": 11,
+						"gridWidth": 12,
+						"gridHeight": 4
+					}
+				],
+				"documentationUrl": "https://procest.conduction.nl"
+			},
+			"slots": {
+				"header-actions": "TdCaseTypeFilter",
+				"widget-td-kpis": "TdKpiWidget",
+				"widget-td-quarterly": "TdQuarterlyWidget",
+				"widget-td-annual": "TdAnnualWidget"
+			}
 		},
 		{
 			"id": "SubstitutionAdmin",
@@ -4591,14 +4574,6 @@
 			"title": "Substitutions & reassignment",
 			"component": "SubstitutionAdminView",
 			"_note": "Coordinator substitution console: a filterable list of all substitutions plus register-on-behalf, revoke, inspect-capacity-stamped-actions, and bulk-reassignment actions (the latter two open dedicated modals). Coordinator role is enforced server-side. The standard list type cannot host the on-behalf-of register flow, the action-list inspection, or the bulk-reassign operation over the listed objects."
-		},
-		{
-			"id": "VerwerkingenOverview",
-			"route": "/verwerkingen",
-			"type": "custom",
-			"title": "Processing activities (AVG)",
-			"component": "VerwerkingenOverviewView",
-			"_note": "FG/admin window on OpenRegister's processing-activity register scoped to dossiq (avg-verwerkingenlogging thin consumer): catalogue review status, unclassified-processing counter (OR-PA-4 fallback), and the per-betrokkene inzageverzoek export entry point (OR-PA-7 via InzageExportModal). All data comes from OR's /api/avg endpoints; OR denies non-FG/non-admin callers fail-closed (OR-PA-8). No standard list type applies — the data source is OR's AVG API, not a dossiq register schema."
 		}
 	],
 	"observability": {

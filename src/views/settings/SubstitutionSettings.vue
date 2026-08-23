@@ -12,7 +12,6 @@
 <template>
 	<div class="substitution-settings">
 		<div class="substitution-settings__header">
-			<h2>{{ t('dossiq', 'Substitution (vervanging)') }}</h2>
 			<NcButton type="primary" @click="showModal = true">
 				<template #icon>
 					<AccountSwitch :size="20" />
@@ -24,7 +23,7 @@
 		<p class="substitution-settings__intro">
 			{{
 				t(
-					'dossiq',
+					'procest',
 					'Register a colleague to handle your cases and tasks while you are away. They will see your work in their My Work and receive your deadline signals for the period. Substitution does not grant any extra permissions — your colleague only sees what they are already allowed to access.',
 				)
 			}}

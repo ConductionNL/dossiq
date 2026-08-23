@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Ai;
 use OCA\Dossiq\Service\Ai\AiAuditLog;
 use OCA\Dossiq\Service\Ai\AiAuditService;
 use OCA\Dossiq\Service\Ai\AiModelIdentity;
+use OCA\Dossiq\Service\Ai\AiOversightDelegationService;
 use OCP\IAppConfig;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -96,6 +97,7 @@ class AiAuditServiceListTest extends TestCase {
 		$this->service = new AiAuditService(
 			audit: new AiAuditLog($this->appConfig, $this->container, $this->logger),
 			modelIdentity: new AiModelIdentity($this->appConfig),
+			oversight: $this->createMock(AiOversightDelegationService::class),
 		);
 	}//end setUp()
 

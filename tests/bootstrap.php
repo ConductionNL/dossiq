@@ -276,6 +276,28 @@ if (class_exists('\\OCA\\Decidesk\\Event\\DecisionConcludedEvent') === false) {
 	include_once __DIR__ . '/Stubs/Decidesk/Event/DecisionConcludedEvent.php';
 }
 
+// Hermiq's oversight contract. procest resolves it by name so it stays
+// installable without hermiq, which means the contract is only exercised in
+// tests if something supplies the class.
+if (class_exists('\\OCA\\Hermiq\\Event\\AiOversightRecordedEvent') === false) {
+	include_once __DIR__ . '/Stubs/Hermiq/Event/AiOversightRecordedEvent.php';
+}
+
+// OpenRegister's flow-node contract. procest's six action nodes implement it,
+// so without the stub they cannot even be loaded in a unit test on an instance
+// where OpenRegister is absent.
+if (interface_exists('\\OCA\\OpenRegister\\Service\\Flow\\IFlowNode') === false) {
+	include_once __DIR__ . '/Stubs/Flow/IFlowNode.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\RegisterFlowNodesEvent') === false) {
+	include_once __DIR__ . '/Stubs/Flow/RegisterFlowNodesEvent.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowNodeRegistry') === false) {
+	include_once __DIR__ . '/Stubs/Flow/FlowNodeRegistry.php';
+}
+
 // bag-location-save-validation: pre-persist OpenRegister event stubs —
 // loaded when the openregister runtime is absent so
 // LocationBagValidationListenerTest can exercise handle() against real

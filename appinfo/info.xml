@@ -184,6 +184,20 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\MigrateRegisterSlug</step>
             <!--
+                The OTHER half of the same problem, on a different column.
+                MigrateRegisterSlug moves `openregister_registers.slug`; this
+                moves `openregister_schemas.application`, which nothing else
+                touches. Schemas are matched by findByApplicationAndSlug() — the
+                PAIR — and their `application` comes from the importing app's own
+                Application::APP_ID, so every schema on an instance that predates
+                the procest -> dossiq app rename still says `procest` and is
+                invisible to the lookup. The import then forks a second, empty
+                set of SCHEMAS exactly as it would fork a second register.
+                Delegates to OpenRegister's SchemaApplicationMigrator
+                (openregister#2811).
+            -->
+            <step>OCA\Dossiq\Repair\MigrateRegisterApplicationId</step>
+            <!--
                 MUST stay first among the SCHEMA steps. OpenRegister's import matches a schema to an
                 existing row by SLUG, so a renamed slug in the register JSON
                 renames nothing: the import finds no match, creates a SECOND
@@ -257,6 +271,19 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 exists to perform.
             -->
             <step>OCA\Dossiq\Repair\RenameDutchValues</step>
+            <!--
+                Hermiq owns the EU AI Act Art. 14 oversight record now, and
+                dossiq's own oversight page is retired. This replays the
+                DECISIONS already in dossiq's audit log through the same event
+                every new decision travels, so old evidence takes the identical
+                path as new evidence and hermiq never reads dossiq's register.
+                Idempotent (stable externalRef per source entry) and non-fatal
+                (a missing hermiq logs and continues) — an upgrade must not fail
+                because an audit projection could not complete, and the local
+                copies remain to replay from. POST-MIGRATION only: a fresh
+                install has no history to move.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateAiOversightToHermiq</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
@@ -307,6 +334,8 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 below forks a second, empty register.
             -->
             <step>OCA\Dossiq\Repair\MigrateRegisterSlug</step>
+            <!-- Schema half of the same rename; see the post-migration block. -->
+            <step>OCA\Dossiq\Repair\MigrateRegisterApplicationId</step>
             <step>OCA\Dossiq\Repair\InitializeSettings</step>
             <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
@@ -333,6 +362,8 @@ Vrij en open source onder de EUPL-1.2-licentie.
         <admin>OCA\Dossiq\Settings\AdminSettings</admin>
         <admin>OCA\Dossiq\Settings\EmailSettings</admin>
         <admin-section>OCA\Dossiq\Sections\SettingsSection</admin-section>
+        <personal>OCA\Dossiq\Settings\PersonalSettings</personal>
+        <personal-section>OCA\Dossiq\Sections\PersonalSection</personal-section>
     </settings>
 
     <navigations>

@@ -59,5 +59,20 @@ class ListenerRegistrar {
 		(new ImmutabilityListenerRegistrar())->register(context: $context);
 		(new BezwaarListenerRegistrar())->register(context: $context);
 		(new WorkflowListenerRegistrar())->register(context: $context);
+
+		// ADR-065: OpenRegister owns the flow engine; procest contributes the six
+		// things a case can DO, because every one of OpenRegister's own nineteen
+		// nodes is control-flow or data and none of them acts outward.
+		//
+		// Guarded on the event class, the same way hermiq guards its node
+		// listener: `::class` is a compile-time string and does not autoload, so
+		// an instance without OpenRegister still boots — it simply offers no
+		// nodes rather than failing at registration.
+		if (class_exists(\OCA\OpenRegister\Service\Flow\RegisterFlowNodesEvent::class) === true) {
+			$context->registerEventListener(
+				\OCA\OpenRegister\Service\Flow\RegisterFlowNodesEvent::class,
+				\OCA\Dossiq\Flow\ProcestFlowNodeListener::class
+			);
+		}
 	}//end register()
 }//end class

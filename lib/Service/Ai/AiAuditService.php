@@ -48,12 +48,14 @@ class AiAuditService {
 	 *
 	 * @param AiAuditLog $audit The oversight audit trail storage.
 	 * @param AiModelIdentity $modelIdentity The configured model identifier.
+	 * @param AiOversightDelegationService $oversight Sends the decision to hermiq.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private AiAuditLog $audit,
 		private AiModelIdentity $modelIdentity,
+		private AiOversightDelegationService $oversight,
 	) {
 	}//end __construct()
 
@@ -81,22 +83,30 @@ class AiAuditService {
 		?string $reason,
 		string $userId,
 	): array {
-		$this->recordAuditEntry(
-			entry: [
-				'type' => $type,
-				'action' => $userAction,
-				'caseId' => $caseId,
-				'model' => $this->modelIdentity->identifier(),
-				'suggestion' => $suggestion,
-				'userAction' => $userAction,
-				'actualValue' => ($actualValue ?? []),
-				'reason' => ($reason ?? ''),
-				'userId' => $userId,
-				'timestamp' => date('c'),
-			]
-		);
+		$entry = [
+			'type' => $type,
+			'action' => $userAction,
+			'caseId' => $caseId,
+			'model' => $this->modelIdentity->identifier(),
+			'suggestion' => $suggestion,
+			'userAction' => $userAction,
+			'actualValue' => ($actualValue ?? []),
+			'reason' => ($reason ?? ''),
+			'userId' => $userId,
+			'timestamp' => date('c'),
+		];
 
-		return ['success' => true];
+		$this->recordAuditEntry(entry: $entry);
+
+		// Hermiq owns AI oversight (EU AI Act Art. 14); this is the moment the
+		// human decided, so it goes there too. The local write above STAYS: on an
+		// instance without hermiq it is the only copy, and dropping it would make
+		// the presence of an oversight trail depend on which apps are installed.
+		// Delegation never throws — the handler has already acted and the case has
+		// already moved on, so an audit outage must not become a functional one.
+		$delegated = $this->oversight->delegate($entry);
+
+		return ['success' => true, 'delegated' => $delegated];
 	}//end recordUserAction()
 
 	/**

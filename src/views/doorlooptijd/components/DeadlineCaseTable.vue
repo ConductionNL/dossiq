@@ -15,7 +15,6 @@
 -->
 <template>
 	<div v-if="cases.length > 0" class="at-risk-panel">
-		<h3>{{ t('dossiq', 'At-Risk Cases') }}</h3>
 		<div class="at-risk-list">
 			<div
 				v-for="c in cases"
