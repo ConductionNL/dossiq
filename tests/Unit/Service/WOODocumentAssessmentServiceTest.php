@@ -261,7 +261,7 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
 		$this->settingsService->method('getConfigValue')->willReturnMap([
-			['register', '', 'procest-register'],
+			['register', '', 'dossiq-register'],
 			['woo_assessment_schema', '', 'woo-assessment'],
 		]);
 
@@ -300,7 +300,7 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
 		$this->settingsService->method('getConfigValue')->willReturnMap([
-			['register', '', 'procest-register'],
+			['register', '', 'dossiq-register'],
 			['woo_assessment_schema', '', 'woo-assessment'],
 		]);
 
@@ -339,7 +339,7 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
 		$this->settingsService->method('getConfigValue')->willReturnMap([
-			['register', '', 'procest-register'],
+			['register', '', 'dossiq-register'],
 			['woo_assessment_schema', '', 'woo-assessment'],
 		]);
 

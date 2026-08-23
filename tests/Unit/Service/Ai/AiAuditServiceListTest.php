@@ -39,7 +39,7 @@ use Psr\Log\LoggerInterface;
 /**
  * ObjectService stub matching the named-arg signatures used by the
  * SearchesObjects trait's slug path (register/schema config values in
- * procest are slugs, e.g. "procest" / "aiAuditEntry").
+ * dossiq are slugs, e.g. "dossiq" / "aiAuditEntry").
  */
 interface AiAuditObjectServiceStub {
 
@@ -110,7 +110,7 @@ class AiAuditServiceListTest extends TestCase {
 		$this->appConfig->method('getValueString')
 			->willReturnCallback(function (string $app, string $key, string $default) {
 				if ($key === 'register') {
-					return 'procest';
+					return 'dossiq';
 				}
 
 				if ($key === 'ai_audit_entry_schema') {
@@ -138,7 +138,7 @@ class AiAuditServiceListTest extends TestCase {
 		$objectService->expects($this->once())
 			->method('searchObjectsBySlug')
 			->with(
-				'procest',
+				'dossiq',
 				'aiAuditEntry',
 				$this->callback(function (array $filters) {
 					return ($filters['caseId'] ?? null) === 'case-a'
@@ -174,7 +174,7 @@ class AiAuditServiceListTest extends TestCase {
 		$objectService = $this->createMock(AiAuditObjectServiceStub::class);
 		$objectService->method('searchObjectsBySlug')
 			->with(
-				'procest',
+				'dossiq',
 				'aiAuditEntry',
 				$this->callback(fn (array $filters) => ($filters['_limit'] ?? null) === 200)
 			)
@@ -198,7 +198,7 @@ class AiAuditServiceListTest extends TestCase {
 		$objectService = $this->createMock(AiAuditObjectServiceStub::class);
 		$objectService->method('searchObjectsBySlug')
 			->with(
-				'procest',
+				'dossiq',
 				'aiAuditEntry',
 				$this->callback(fn (array $filters) => ($filters['_limit'] ?? null) === 50)
 			)

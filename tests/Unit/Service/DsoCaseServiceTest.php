@@ -310,7 +310,7 @@ class DsoCaseServiceTest extends TestCase {
 				function (string $app, string $key, string $default = '') {
 					$map = [
 						'dso_vergunningaanvraag_schema' => 'vergunningaanvraag-schema-id',
-						'register' => 'procest-register-id',
+						'register' => 'dossiq-register-id',
 						'case_schema' => 'case-schema-id',
 					];
 					return $map[$key] ?? $default;

@@ -30,7 +30,7 @@ requiring manual setup.
 #### Scenario: Seed data imported on first install
 - GIVEN a fresh Dossiq installation running the repair step for the first time
 - WHEN `ConfigurationService::importFromApp('dossiq', data, version, false)` is called
-- THEN the following case types MUST exist in the `procest` register:
+- THEN the following case types MUST exist in the `dossiq` register:
   - "Omgevingsvergunning" (processingDeadline: P56D, isDraft: false)
   - "Subsidieaanvraag" (processingDeadline: P13W, isDraft: false)
   - "Klachtbehandeling" (processingDeadline: P6W, isDraft: false)

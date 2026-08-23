@@ -131,7 +131,7 @@ class AiServiceAuditLoggingCompletenessTest extends TestCase {
 				}
 
 				if ($key === 'register') {
-					return 'procest';
+					return 'dossiq';
 				}
 
 				if ($key === 'ai_audit_entry_schema') {
@@ -176,7 +176,7 @@ class AiServiceAuditLoggingCompletenessTest extends TestCase {
 		$this->objectService->expects($this->once())
 			->method('saveObject')
 			->with(
-				'procest',
+				'dossiq',
 				'aiAuditEntry',
 				$this->callback(fn (array $entry) => $entry['type'] === 'classification'
 					&& $entry['action'] === 'suggestion'
@@ -198,7 +198,7 @@ class AiServiceAuditLoggingCompletenessTest extends TestCase {
 		$this->objectService->expects($this->once())
 			->method('saveObject')
 			->with(
-				'procest',
+				'dossiq',
 				'aiAuditEntry',
 				$this->callback(fn (array $entry) => $entry['type'] === 'extraction'
 					&& $entry['action'] === 'suggestion')
@@ -217,7 +217,7 @@ class AiServiceAuditLoggingCompletenessTest extends TestCase {
 		$this->objectService->expects($this->once())
 			->method('saveObject')
 			->with(
-				'procest',
+				'dossiq',
 				'aiAuditEntry',
 				$this->callback(fn (array $entry) => $entry['type'] === 'qa'
 					&& $entry['action'] === 'suggestion')
@@ -236,7 +236,7 @@ class AiServiceAuditLoggingCompletenessTest extends TestCase {
 		$this->objectService->expects($this->once())
 			->method('saveObject')
 			->with(
-				'procest',
+				'dossiq',
 				'aiAuditEntry',
 				$this->callback(fn (array $entry) => $entry['type'] === 'summary'
 					&& $entry['action'] === 'suggestion')
@@ -257,7 +257,7 @@ class AiServiceAuditLoggingCompletenessTest extends TestCase {
 		$this->objectService->expects($this->once())
 			->method('saveObject')
 			->with(
-				'procest',
+				'dossiq',
 				'aiAuditEntry',
 				$this->callback(fn (array $entry) => $entry['type'] === 'routing'
 					&& $entry['action'] === 'suggestion')
@@ -278,7 +278,7 @@ class AiServiceAuditLoggingCompletenessTest extends TestCase {
 		$this->objectService->expects($this->once())
 			->method('saveObject')
 			->with(
-				'procest',
+				'dossiq',
 				'aiAuditEntry',
 				$this->callback(fn (array $entry) => $entry['type'] === 'decision_support'
 					&& $entry['action'] === 'suggestion')

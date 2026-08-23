@@ -164,7 +164,7 @@ class VergaderingCaseServiceTest extends TestCase {
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
 		$this->settingsService->method('getConfigValue')
 			->willReturnMap([
-				['register', '', 'procest-register'],
+				['register', '', 'dossiq-register'],
 				['case_schema', '', 'case-schema-id'],
 			]);
 
@@ -212,7 +212,7 @@ class VergaderingCaseServiceTest extends TestCase {
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
 		$this->settingsService->method('getConfigValue')
 			->willReturnMap([
-				['register', '', 'procest-register'],
+				['register', '', 'dossiq-register'],
 				['case_schema', '', 'case-schema-id'],
 			]);
 

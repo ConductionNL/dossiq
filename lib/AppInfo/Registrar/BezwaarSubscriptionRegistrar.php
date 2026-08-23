@@ -79,15 +79,16 @@ class BezwaarSubscriptionRegistrar {
 	/**
 	 * The register slugs both narrowed listeners react to.
 	 *
-	 * DELIBERATELY STILL `procest` after the procest -> dossiq app-id rename.
-	 * This is the OpenRegister register SLUG, not this app's id; OpenRegister
-	 * tags its object events with the slug, so a renamed value here would match
-	 * no event at all and both bezwaar listeners would simply stop firing —
-	 * silently, because an event nobody subscribes to is not an error.
+	 * The OpenRegister register SLUG, not this app's id. OpenRegister tags its
+	 * object events with the slug, so this value and the register row must say
+	 * the same thing or both bezwaar listeners stop firing — silently, because
+	 * an event nobody subscribes to is not an error. `MigrateRegisterSlug`
+	 * renames the row from `procest` to `dossiq` ahead of every register step,
+	 * which is what lets this move with it.
 	 *
 	 * @var array<int,string>
 	 */
-	private const REGISTERS = ['procest'];
+	private const REGISTERS = ['dossiq'];
 
 	/**
 	 * Subscribe the bezwaar listeners that declare a register/schema interest.

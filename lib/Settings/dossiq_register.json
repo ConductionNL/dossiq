@@ -7,7 +7,7 @@
     },
     "x-openregister": {
         "type": "application",
-        "app": "procest",
+        "app": "dossiq",
         "openregister": "^v0.2.10",
         "description": "Case management (zaakgericht werken) for Nextcloud"
     },
@@ -9220,8 +9220,8 @@
             }
         },
         "registers": {
-            "procest": {
-                "slug": "procest",
+            "dossiq": {
+                "slug": "dossiq",
                 "title": "Dossiq",
                 "version": "1.0.0",
                 "description": "Case management (zaakgericht werken) register for Dossiq — manages case types, status types, cases, tasks, roles, results, and decisions.",
@@ -9301,7 +9301,7 @@
                 "type": "index",
                 "title": "Parafering audit trail",
                 "schema": "paraferingAuditEntry",
-                "register": "procest",
+                "register": "dossiq",
                 "path": "/voorstellen/:voorstelId/audit-trail",
                 "description": "Append-only audit trail of every parafeerroute transition on a voorstel. Visible to auditors, secretariaat, and beheerders.",
                 "listing": {
@@ -9359,7 +9359,7 @@
                 "slug": "leverancier-dashboard",
                 "type": "custom",
                 "title": "Leveranciersportaal",
-                "register": "procest",
+                "register": "dossiq",
                 "path": "/leverancier",
                 "component": "LeverancierDashboard",
                 "description": "Supplier portal operator-side dashboard shell — 4 cards (tenders, invoices, contracts, KPI) bound to SupplierDashboardService::buildSummary(). Each card is a router-link into its feature view. Chain member 15."
@@ -9368,7 +9368,7 @@
                 "slug": "leverancier-tenders",
                 "type": "custom",
                 "title": "Aanbestedingen",
-                "register": "procest",
+                "register": "dossiq",
                 "path": "/leverancier/tenders",
                 "component": "TenderList",
                 "description": "Supplier tender list — sortable/filterable, status badge from TenderViewModelService. Chain member 06 frontend."
@@ -9377,7 +9377,7 @@
                 "slug": "leverancier-tender-detail",
                 "type": "custom",
                 "title": "Aanbesteding",
-                "register": "procest",
+                "register": "dossiq",
                 "path": "/leverancier/tenders/:id",
                 "component": "TenderDetail",
                 "description": "Supplier tender detail — conditional award/rejection/withdrawal sections from visibilityFlags(). Chain member 06 frontend."
@@ -9386,7 +9386,7 @@
                 "slug": "leverancier-invoices",
                 "type": "custom",
                 "title": "Facturen",
-                "register": "procest",
+                "register": "dossiq",
                 "path": "/leverancier/facturen",
                 "component": "InvoiceList",
                 "description": "Supplier invoice list — overdue90Plus flag + status badge from LeverancierViewModelService. Chain member 08 frontend."
@@ -9395,7 +9395,7 @@
                 "slug": "leverancier-contracts",
                 "type": "custom",
                 "title": "Contracten",
-                "register": "procest",
+                "register": "dossiq",
                 "path": "/leverancier/contracten",
                 "component": "ContractList",
                 "description": "Supplier contract list — expiring-soon highlighting from ContractRenewalService. Chain member 10 frontend."
@@ -9404,7 +9404,7 @@
                 "slug": "leverancier-kpi",
                 "type": "custom",
                 "title": "KPI",
-                "register": "procest",
+                "register": "dossiq",
                 "path": "/leverancier/kpi",
                 "component": "KpiView",
                 "description": "Supplier KPI summary — payment days, on-time pct, dispute rate, compliance score. Chain member 14 frontend."
@@ -9413,7 +9413,7 @@
                 "slug": "leverancier-profile",
                 "type": "custom",
                 "title": "Mijn gegevens",
-                "register": "procest",
+                "register": "dossiq",
                 "path": "/leverancier/profiel",
                 "component": "ProfileForm",
                 "description": "Supplier profile form — address + contact (immediate) + IBAN-change (4-eyes via Dossiq case). Chain member 12."
@@ -9422,7 +9422,7 @@
                 "slug": "leverancier-messages",
                 "type": "custom",
                 "title": "Berichten",
-                "register": "procest",
+                "register": "dossiq",
                 "path": "/leverancier/berichten",
                 "component": "MessageThread",
                 "description": "Per-case supplier message thread with composer. Chain member 11 messaging."
@@ -9431,7 +9431,7 @@
         "objects": [
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "parafeerroute",
                     "slug": "route-collegeadvies-omgevingsvergunning"
                 },
@@ -9472,7 +9472,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "parafeerroute",
                     "slug": "route-collegeadvies-bestemmingsplan"
                 },
@@ -9520,7 +9520,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "parafeerroute",
                     "slug": "route-dt-advies-standaard"
                 },
@@ -9547,7 +9547,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "parafeerroute",
                     "slug": "route-raadsvoorstel-groot-project"
                 },
@@ -9602,7 +9602,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "caseType",
                     "slug": "omgevingsvergunning"
                 },
@@ -9624,7 +9624,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "caseType",
                     "slug": "subsidieaanvraag"
                 },
@@ -9646,7 +9646,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "caseType",
                     "slug": "klacht-behandeling"
                 },
@@ -9668,7 +9668,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "caseType",
                     "slug": "melding-openbare-ruimte"
                 },
@@ -9689,7 +9689,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "statusType",
                     "slug": "omgevingsvergunning-ontvangen"
                 },
@@ -9701,7 +9701,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "statusType",
                     "slug": "omgevingsvergunning-in-behandeling"
                 },
@@ -9713,7 +9713,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "statusType",
                     "slug": "omgevingsvergunning-besluitvorming"
                 },
@@ -9725,7 +9725,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "statusType",
                     "slug": "omgevingsvergunning-afgehandeld"
                 },
@@ -9737,7 +9737,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "statusType",
                     "slug": "subsidieaanvraag-ontvangen"
                 },
@@ -9749,7 +9749,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "statusType",
                     "slug": "subsidieaanvraag-beoordeling"
                 },
@@ -9761,7 +9761,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "statusType",
                     "slug": "subsidieaanvraag-besluitvorming"
                 },
@@ -9773,7 +9773,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "statusType",
                     "slug": "subsidieaanvraag-afgehandeld"
                 },
@@ -9785,7 +9785,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "statusType",
                     "slug": "klacht-ontvangen"
                 },
@@ -9797,7 +9797,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "statusType",
                     "slug": "klacht-onderzoek"
                 },
@@ -9809,7 +9809,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "statusType",
                     "slug": "klacht-afgehandeld"
                 },
@@ -9821,7 +9821,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "statusType",
                     "slug": "melding-ontvangen"
                 },
@@ -9833,7 +9833,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "statusType",
                     "slug": "melding-in-behandeling"
                 },
@@ -9845,7 +9845,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "statusType",
                     "slug": "melding-afgehandeld"
                 },
@@ -9857,7 +9857,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "roleType",
                     "slug": "rol-behandelaar"
                 },
@@ -9866,7 +9866,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "roleType",
                     "slug": "rol-aanvrager"
                 },
@@ -9875,7 +9875,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "roleType",
                     "slug": "rol-gemachtigde"
                 },
@@ -9884,7 +9884,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "roleType",
                     "slug": "rol-technisch-adviseur"
                 },
@@ -9893,7 +9893,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "resultType",
                     "slug": "omgevingsvergunning-verleend"
                 },
@@ -9905,7 +9905,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "resultType",
                     "slug": "omgevingsvergunning-geweigerd"
                 },
@@ -9917,7 +9917,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "resultType",
                     "slug": "omgevingsvergunning-ingetrokken"
                 },
@@ -9929,7 +9929,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "resultType",
                     "slug": "subsidie-toegekend"
                 },
@@ -9941,7 +9941,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "resultType",
                     "slug": "subsidie-afgewezen"
                 },
@@ -9953,7 +9953,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "resultType",
                     "slug": "klacht-gegrond"
                 },
@@ -9965,7 +9965,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "resultType",
                     "slug": "klacht-ongegrond"
                 },
@@ -9977,7 +9977,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "resultType",
                     "slug": "melding-afgehandeld-result"
                 },
@@ -9989,7 +9989,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "adviesAanvraag",
                     "slug": "advies-welstand-2026-0042"
                 },
@@ -10004,7 +10004,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "adviesAanvraag",
                     "slug": "advies-veiligheidsregio-2026-0038"
                 },
@@ -10019,7 +10019,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "adviesAanvraag",
                     "slug": "advies-rud-2026-0031"
                 },
@@ -10034,7 +10034,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "adviesAanvraag",
                     "slug": "advies-juridisch-2026-0055"
                 },
@@ -10050,7 +10050,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "adviesAanvraag",
                     "slug": "advies-brandweer-2026-0047"
                 },
@@ -10065,7 +10065,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "complaintCategory",
                     "slug": "klachtcategorie-dienstverlening"
                 },
@@ -10077,7 +10077,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "complaintCategory",
                     "slug": "klachtcategorie-bejegening"
                 },
@@ -10089,7 +10089,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "complaintCategory",
                     "slug": "klachtcategorie-wachttijd"
                 },
@@ -10101,7 +10101,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "complaintCategory",
                     "slug": "klachtcategorie-informatievoorziening"
                 },
@@ -10113,7 +10113,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "complaintCategory",
                     "slug": "klachtcategorie-procedures"
                 },
@@ -10125,7 +10125,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "tenantQuota",
                     "slug": "tier-template-basic-cases-per-month"
                 },
@@ -10138,7 +10138,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "tenantQuota",
                     "slug": "tier-template-basic-storage-gb"
                 },
@@ -10151,7 +10151,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "tenantQuota",
                     "slug": "tier-template-basic-active-users"
                 },
@@ -10164,7 +10164,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "tenantQuota",
                     "slug": "tier-template-basic-api-calls-per-hour"
                 },
@@ -10177,7 +10177,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "tenantQuota",
                     "slug": "tier-template-standard-cases-per-month"
                 },
@@ -10190,7 +10190,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "tenantQuota",
                     "slug": "tier-template-standard-storage-gb"
                 },
@@ -10203,7 +10203,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "tenantQuota",
                     "slug": "tier-template-standard-active-users"
                 },
@@ -10216,7 +10216,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "tenantQuota",
                     "slug": "tier-template-standard-api-calls-per-hour"
                 },
@@ -10229,7 +10229,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "tenantQuota",
                     "slug": "tier-template-enterprise-cases-per-month"
                 },
@@ -10242,7 +10242,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "tenantQuota",
                     "slug": "tier-template-enterprise-storage-gb"
                 },
@@ -10255,7 +10255,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "tenantQuota",
                     "slug": "tier-template-enterprise-active-users"
                 },
@@ -10268,7 +10268,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "tenantQuota",
                     "slug": "tier-template-enterprise-api-calls-per-hour"
                 },
@@ -10281,7 +10281,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "tenantOnboardingTask",
                     "slug": "default-onboarding-contract"
                 },
@@ -10291,7 +10291,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "tenantOnboardingTask",
                     "slug": "default-onboarding-mandate-import"
                 },
@@ -10301,7 +10301,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "tenantOnboardingTask",
                     "slug": "default-onboarding-sso-setup"
                 },
@@ -10311,7 +10311,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "tenantOnboardingTask",
                     "slug": "default-onboarding-branding"
                 },
@@ -10321,7 +10321,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "tenantOnboardingTask",
                     "slug": "default-onboarding-zaaktype-selection"
                 },
@@ -10331,7 +10331,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "tenantOnboardingTask",
                     "slug": "default-onboarding-first-user"
                 },
@@ -10341,7 +10341,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "tenantOnboardingTask",
                     "slug": "default-onboarding-go-live"
                 },
@@ -10351,7 +10351,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "caseType",
                     "slug": "leverancier-contractverlenging-verzoek"
                 },
@@ -10361,7 +10361,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "caseType",
                     "slug": "leverancier-iban-wijziging"
                 },
@@ -10371,7 +10371,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "caseType",
                     "slug": "leverancier-accreditatie-verificatie"
                 },
@@ -10381,7 +10381,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "caseType",
                     "slug": "leverancier-mutatie"
                 },
@@ -10391,7 +10391,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplier",
                     "slug": "supplier-acme-bouw-bv"
                 },
@@ -10402,7 +10402,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplier",
                     "slug": "supplier-orange-it-bv"
                 },
@@ -10413,7 +10413,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplier",
                     "slug": "supplier-blokker-schoonmaak"
                 },
@@ -10424,7 +10424,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplierUser",
                     "slug": "supplier-user-acme-admin"
                 },
@@ -10436,7 +10436,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplierUser",
                     "slug": "supplier-user-acme-finance"
                 },
@@ -10448,7 +10448,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplierUser",
                     "slug": "supplier-user-orange-contracts"
                 },
@@ -10460,7 +10460,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplierUser",
                     "slug": "supplier-user-orange-sales"
                 },
@@ -10472,7 +10472,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplierUser",
                     "slug": "supplier-user-blokker-readonly"
                 },
@@ -10484,7 +10484,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplierTender",
                     "slug": "tender-acme-onderhoud-2026"
                 },
@@ -10496,7 +10496,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplierTender",
                     "slug": "tender-orange-software-eval"
                 },
@@ -10508,7 +10508,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplierTender",
                     "slug": "tender-acme-awarded"
                 },
@@ -10521,7 +10521,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplierTender",
                     "slug": "tender-blokker-rejected"
                 },
@@ -10535,7 +10535,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplierTender",
                     "slug": "tender-orange-withdrawn"
                 },
@@ -10547,7 +10547,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplierContract",
                     "slug": "contract-acme-renovatie"
                 },
@@ -10562,7 +10562,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplierContract",
                     "slug": "contract-orange-licenties"
                 },
@@ -10578,7 +10578,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplierContract",
                     "slug": "contract-orange-cloud"
                 },
@@ -10593,7 +10593,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplierContract",
                     "slug": "contract-blokker-historie"
                 },
@@ -10608,7 +10608,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplierInvoice",
                     "slug": "inv-acme-001"
                 },
@@ -10622,7 +10622,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplierInvoice",
                     "slug": "inv-acme-002"
                 },
@@ -10636,7 +10636,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplierInvoice",
                     "slug": "inv-orange-001"
                 },
@@ -10651,7 +10651,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplierInvoice",
                     "slug": "inv-orange-disputed"
                 },
@@ -10666,7 +10666,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplierInvoice",
                     "slug": "inv-blokker-overdue"
                 },
@@ -10680,7 +10680,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplierMessage",
                     "slug": "msg-acme-welcome"
                 },
@@ -10693,7 +10693,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "supplierMessage",
                     "slug": "msg-acme-question"
                 },

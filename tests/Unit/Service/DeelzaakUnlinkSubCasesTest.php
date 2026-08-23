@@ -88,7 +88,7 @@ class DeelzaakUnlinkSubCasesTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturnCallback(
 			static function (string $key, string $default = ''): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'case_schema' => 'case',
 					default => $default,
 				};

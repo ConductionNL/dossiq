@@ -47,7 +47,7 @@ Additional case type configuration tabs:
 
 ### OpenRegister Integration (MVP)
 
-Dossiq owns no database tables: all data is stored as OpenRegister objects in the `procest` register with 12 schemas:
+Dossiq owns no database tables: all data is stored as OpenRegister objects in the `dossiq` register with 12 schemas:
 
 **Configuration schemas (admin-managed):**
 - `caseType`: Case behavior configuration

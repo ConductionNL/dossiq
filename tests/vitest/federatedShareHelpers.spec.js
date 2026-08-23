@@ -48,7 +48,7 @@ describe('FEDERATION_ALLOWED_FIELDS', () => {
 describe('endpoint builders', () => {
 	it('builds the local federated-shares list endpoint', () => {
 		expect(federatedSharesListEndpoint()).toBe(
-			'/apps/openregister/api/objects/procest/caseFederatedShare',
+			'/apps/openregister/api/objects/dossiq/caseFederatedShare',
 		)
 	})
 

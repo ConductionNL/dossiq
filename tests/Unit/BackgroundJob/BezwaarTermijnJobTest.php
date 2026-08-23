@@ -95,7 +95,7 @@ class BezwaarTermijnJobTest extends TestCase {
 		$this->settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'bezwaar_trigger_schema' => 'bezwaarTrigger',
 					default => '',
 				};
@@ -131,7 +131,7 @@ class BezwaarTermijnJobTest extends TestCase {
 		$this->appManager->method('getInstalledApps')->willReturn(['openregister']);
 
 		$yesterday = (new \DateTimeImmutable('-1 day'))->format('Y-m-d');
-		$this->objects->saveObject('procest', 'bezwaarTrigger', [
+		$this->objects->saveObject('dossiq', 'bezwaarTrigger', [
 			'id' => 'trig-1',
 			'decisionId' => 'besch-1',
 			'objectionReceived' => false,
@@ -146,7 +146,7 @@ class BezwaarTermijnJobTest extends TestCase {
 
 		$this->runJob();
 
-		$trigger = $this->objects->find('trig-1', 'procest', 'bezwaarTrigger');
+		$trigger = $this->objects->find('trig-1', 'dossiq', 'bezwaarTrigger');
 		$this->assertFalse($trigger['archiveTriggerActive']);
 	}//end testLapsedTriggerArchives()
 
@@ -159,7 +159,7 @@ class BezwaarTermijnJobTest extends TestCase {
 		$this->appManager->method('getInstalledApps')->willReturn(['openregister']);
 
 		$yesterday = (new \DateTimeImmutable('-1 day'))->format('Y-m-d');
-		$this->objects->saveObject('procest', 'bezwaarTrigger', [
+		$this->objects->saveObject('dossiq', 'bezwaarTrigger', [
 			'id' => 'trig-2',
 			'decisionId' => 'besch-2',
 			'objectionReceived' => true,
@@ -171,7 +171,7 @@ class BezwaarTermijnJobTest extends TestCase {
 
 		$this->runJob();
 
-		$trigger = $this->objects->find('trig-2', 'procest', 'bezwaarTrigger');
+		$trigger = $this->objects->find('trig-2', 'dossiq', 'bezwaarTrigger');
 		$this->assertFalse($trigger['archiveTriggerActive']);
 	}//end testBezwaarReceivedSkipsArchival()
 
@@ -184,7 +184,7 @@ class BezwaarTermijnJobTest extends TestCase {
 		$this->appManager->method('getInstalledApps')->willReturn(['openregister']);
 
 		$tomorrow = (new \DateTimeImmutable('+10 days'))->format('Y-m-d');
-		$this->objects->saveObject('procest', 'bezwaarTrigger', [
+		$this->objects->saveObject('dossiq', 'bezwaarTrigger', [
 			'id' => 'trig-3',
 			'decisionId' => 'besch-3',
 			'objectionReceived' => false,
@@ -196,7 +196,7 @@ class BezwaarTermijnJobTest extends TestCase {
 
 		$this->runJob();
 
-		$trigger = $this->objects->find('trig-3', 'procest', 'bezwaarTrigger');
+		$trigger = $this->objects->find('trig-3', 'dossiq', 'bezwaarTrigger');
 		$this->assertTrue($trigger['archiveTriggerActive']);
 	}//end testFutureTriggerUntouched()
 

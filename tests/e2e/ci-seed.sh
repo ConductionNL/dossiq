@@ -31,7 +31,7 @@
 # Either way the app enables cleanly, the SPA boots, and the register simply is
 # not there. The e2e suite's failure mode in that state is every
 # `helpers/fixtures.ts` call failing its `expect(res.ok())` on a 404 from
-# `/apps/openregister/api/objects/procest/<schema>`, plus every UI spec timing
+# `/apps/openregister/api/objects/dossiq/<schema>`, plus every UI spec timing
 # out on an empty case list — messages that accuse the fixtures and the
 # selectors, not the missing import.
 #
@@ -175,10 +175,10 @@ fi
 # An import reporting success is not the same as the register existing. Verify
 # against OpenRegister directly, using the same slugs the e2e fixtures resolve
 # by (helpers/fixtures.ts builds every object URL as
-# /apps/openregister/api/objects/procest/<schema>).
+# /apps/openregister/api/objects/dossiq/<schema>).
 #
 # ⚠️ The required slugs below are READ OUT of lib/Settings/dossiq_register.json
-# (`components.registers.procest.slug` and `components.schemas.<k>.slug`), NOT
+# (`components.registers.dossiq.slug` and `components.schemas.<k>.slug`), NOT
 # derived by kebab-casing a display name. OpenRegister resolves a schema segment
 # with `LOWER(slug)`, so `caseType` is correct and `case-type` is not — the
 # mismatch would be structural, not a casing difference.
@@ -193,8 +193,8 @@ verify() {
 import json, sys
 path, kind, code = sys.argv[1], sys.argv[2], sys.argv[3]
 required = {
-    # components.registers.procest.slug
-    'registers': ['procest'],
+    # components.registers.dossiq.slug
+    'registers': ['dossiq'],
     # components.schemas.<key>.slug — every one of these is exercised by
     # tests/e2e/helpers/fixtures.ts (createObject / seedCase / seedStateMachine
     # / ensureCaseType / cleanupRunObjects).
@@ -247,10 +247,10 @@ verify "$SCH_BODY" schemas "$SCH_CODE"
 for schema in case caseType statusType; do
 	OBJ_CODE="$(curl -sS -o /dev/null -w '%{http_code}' \
 		-u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' \
-		"${BASE}/index.php/apps/openregister/api/objects/procest/${schema}?_limit=1" || echo 000)"
-	echo "[ci-seed] objects/procest/${schema} probe -> ${OBJ_CODE}"
+		"${BASE}/index.php/apps/openregister/api/objects/dossiq/${schema}?_limit=1" || echo 000)"
+	echo "[ci-seed] objects/dossiq/${schema} probe -> ${OBJ_CODE}"
 	if [ "$OBJ_CODE" -ge 400 ] 2>/dev/null; then
-		echo "::error::The procest ${schema} collection is not readable (HTTP ${OBJ_CODE})."
+		echo "::error::The dossiq ${schema} collection is not readable (HTTP ${OBJ_CODE})."
 		echo "::error::tests/e2e/helpers/fixtures.ts asserts res.ok() on this URL; every seeding spec would fail here."
 		exit 1
 	fi

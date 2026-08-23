@@ -4,7 +4,7 @@
  * KCC Register Fragment Unit Tests
  *
  * Verifies that the register.d/30-kcc.json fragment unions its schemas,
- * register membership and seed objects onto the procest monolith via the
+ * register membership and seed objects onto the dossiq monolith via the
  * ADR-037 deep-merge loader, and that the contactMoment (customerContact)
  * schema is extended rather than duplicated.
  *
@@ -96,12 +96,12 @@ class KccFragmentTest extends TestCase {
 	}//end testContactMomentReusesCustomerContact()
 
 	/**
-	 * The procest register lists the new KCC schemas (list concatenation).
+	 * The dossiq register lists the new KCC schemas (list concatenation).
 	 *
 	 * @return void
 	 */
 	public function testRegisterMembershipUnioned(): void {
-		$schemas = $this->merged['components']['registers']['procest']['schemas'];
+		$schemas = $this->merged['components']['registers']['dossiq']['schemas'];
 		$this->assertContains('routingRule', $schemas);
 		$this->assertContains('kccAgent', $schemas);
 		$this->assertContains('callbackRequest', $schemas);

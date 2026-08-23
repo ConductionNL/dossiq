@@ -150,7 +150,7 @@ The system MUST support creating, reading, updating, and deleting case types. Ca
   - Responsible unit: "Afdeling Vergunningen, Gemeente Amsterdam"
   - Valid from: "2026-01-01"
 - AND submits the form
-- THEN the system MUST create an OpenRegister object in the `procest` register with the `caseType` schema
+- THEN the system MUST create an OpenRegister object in the `dossiq` register with the `caseType` schema
 - AND `isDraft` MUST default to `true`
 - AND a unique `identifier` MUST be auto-generated
 
@@ -878,7 +878,7 @@ The system MUST handle error scenarios gracefully for case type operations.
 ## Dependencies
 
 - **Case Management spec** (`../case-management/spec.md`): Cases reference case types for behavioral controls (statuses, deadlines, confidentiality, document requirements, property requirements, result types, role types).
-- **OpenRegister**: All case type data is stored as OpenRegister objects in the `procest` register under the respective schemas (caseType, statusType, resultType, roleType, propertyDefinition, documentType, decisionType).
+- **OpenRegister**: All case type data is stored as OpenRegister objects in the `dossiq` register under the respective schemas (caseType, statusType, resultType, roleType, propertyDefinition, documentType, decisionType).
 - **Nextcloud Admin Settings**: Case type management is exposed via the Nextcloud admin settings panel (`OCA\Dossiq\Settings\AdminSettings`).
 
 ### Current Implementation Status
@@ -886,7 +886,7 @@ The system MUST handle error scenarios gracefully for case type operations.
 **Substantially implemented (MVP).** Core case type CRUD and status type management are functional.
 
 **Implemented:**
-- Case type CRUD via OpenRegister object store -- create, read, update, delete case types as OpenRegister objects in the `procest` register with the `caseType` schema.
+- Case type CRUD via OpenRegister object store -- create, read, update, delete case types as OpenRegister objects in the `dossiq` register with the `caseType` schema.
 - Case type list display (`src/views/settings/CaseTypeList.vue`) with title, isDraft badge (Draft/Published), processing deadline (formatted via `durationHelpers.js`), validity period, default star icon, delete action, set-as-default action (published only).
 - Case type detail/edit with tabbed interface (`src/views/settings/CaseTypeDetail.vue`) -- General and Statuses tabs implemented. Publish/unpublish buttons with validation error display.
 - General tab (`src/views/settings/tabs/GeneralTab.vue`) with all core fields: title, description, purpose, trigger, subject, processing deadline, service target, extension allowed/period, suspension allowed, origin, confidentiality, publication required/text, valid from, valid until.

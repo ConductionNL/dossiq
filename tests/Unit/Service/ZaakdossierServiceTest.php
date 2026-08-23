@@ -145,7 +145,7 @@ class ZaakdossierServiceTest extends TestCase {
 		$this->settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key, string $default = '') {
 				$map = [
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'dossier_informatieobject_schema' => 'informatieobject',
 					'dossier_zaakinformatieobject_schema' => 'zaakinformatieobject',
 					'dossier_besluitinformatieobject_schema' => 'besluitinformatieobject',

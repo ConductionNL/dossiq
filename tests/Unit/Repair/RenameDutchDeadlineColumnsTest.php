@@ -156,10 +156,10 @@ class RenameDutchDeadlineColumnsTest extends TestCase {
 	}//end testIgnoresUnrelatedTables()
 
 	/**
-	 * Both procest registers are covered, not just the exact-slug one.
+	 * Both dossiq registers are covered, not just the exact-slug one.
 	 *
-	 * The reference install carries `procest` (1051 rows) AND
-	 * `procest-default` (107). Resolving a single exact slug leaves the second
+	 * The reference install carries `dossiq` (1051 rows) AND
+	 * `dossiq-default` (107). Resolving a single exact slug leaves the second
 	 * behind and still reports success.
 	 *
 	 * @return void

@@ -173,7 +173,7 @@ class BeschikkingServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'beschikking_schema' => 'beschikking',
 					'state_machine_log_schema' => 'stateMachineLog',
 					'bezwaar_trigger_schema' => 'bezwaarTrigger',
@@ -203,7 +203,7 @@ class BeschikkingServiceTest extends TestCase {
 
 		// Seed a WMO mandaatregeling covering the afdelingsmanager level.
 		$this->objects->saveObject(
-			'procest',
+			'dossiq',
 			'mandaatRegeling',
 			[
 				'id' => 'mr-2024-007-wmo',
@@ -274,7 +274,7 @@ class BeschikkingServiceTest extends TestCase {
 		$this->assertNotEmpty($afterSend['objectionTermEndDate']);
 
 		// A BezwaarTrigger was created with a 6-week termijn. [V08]
-		$triggers = $this->objects->searchObjectsBySlug('procest', 'bezwaarTrigger', ['decisionId' => $id]);
+		$triggers = $this->objects->searchObjectsBySlug('dossiq', 'bezwaarTrigger', ['decisionId' => $id]);
 		$this->assertCount(1, $triggers);
 		$this->assertTrue($triggers[0]['archiveTriggerActive']);
 
@@ -284,7 +284,7 @@ class BeschikkingServiceTest extends TestCase {
 		$this->assertNotEmpty($afterArchive['archive']['destructionDate']);
 
 		// Every transition was logged. [V05 logging]
-		$logs = $this->objects->searchObjectsBySlug('procest', 'stateMachineLog', ['decisionId' => $id]);
+		$logs = $this->objects->searchObjectsBySlug('dossiq', 'stateMachineLog', ['decisionId' => $id]);
 		$this->assertGreaterThanOrEqual(4, count($logs));
 	}//end testFullLifecycle()
 

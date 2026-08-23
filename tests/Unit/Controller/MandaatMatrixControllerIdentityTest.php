@@ -86,7 +86,7 @@ class MandaatMatrixControllerIdentityTest extends TestCase {
 		$settings->method('getObjectService')->willReturn($objectService);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
-				return ['register' => 'procest', 'case_schema' => 'case'][$key] ?? '';
+				return ['register' => 'dossiq', 'case_schema' => 'case'][$key] ?? '';
 			}
 		);
 

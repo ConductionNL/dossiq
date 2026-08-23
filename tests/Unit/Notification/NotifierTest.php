@@ -140,7 +140,7 @@ class NotifierTest extends TestCase {
 			[
 				'actorUserId' => 'alice',
 				'actorDisplayName' => 'Alice',
-				'register' => 'procest',
+				'register' => 'dossiq',
 				'schema' => 'case',
 				'objectId' => 'case-1',
 				'noteId' => 'note-9',

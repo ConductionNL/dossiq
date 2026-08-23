@@ -50,7 +50,7 @@ class AwbProceedingScanner {
 	// FROZEN: OpenRegister register SLUG, not this app's id. Unchanged by the
 	// procest -> dossiq rename — a renamed value resolves no register and the
 	// scanner would list zero objects while reporting success.
-	private const REGISTER = 'procest';
+	private const REGISTER = 'dossiq';
 
 	/**
 	 * Proceeding schemas whose existence opens an Awb proceeding.
@@ -211,7 +211,7 @@ class AwbProceedingScanner {
 	}//end terminatedProceedingIds()
 
 	/**
-	 * List every object of a schema in the procest register.
+	 * List every object of a schema in the dossiq register.
 	 *
 	 * Returns an empty array when the schema does not exist on this instance,
 	 * so an instance that never installed a given Awb schema is a no-op rather

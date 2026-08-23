@@ -96,20 +96,30 @@ Vrij en open source onder de EUPL-1.2-licentie.
         openconnector (35).
         -->
         <nextcloud min-version="32" max-version="34"/>
-        <!-- THE OPENREGISTER REGISTER SLUG IS DELIBERATELY STILL `procest`.
-             OpenRegister resolves a register by slug (derived from
-             `x-openregister.app` in lib/Settings/dossiq_register.json and
-             lib/Settings/ori_register.json), so renaming the slug alongside
-             `<id>` would not move the register — the importer would find no
-             match, create a SECOND, empty register, and orphan every stored
-             case, task, bezwaar, voorstel and vergadering. Nothing errors; the
-             app just looks empty. The same freeze applies to the register
-             `folder` (`Open Registers/Procest`), to the `oc_openregister_table_procest_`
-             prefix TenantSchemaProvisioner clones per tenant, to the
-             `procest-default` sibling register, and to every `register:` /
-             `registerSlug:` value in src/manifest*.json. The FILE was renamed
-             (procest_register.json -> dossiq_register.json) because a filename
-             is app-owned; the slug inside it is not. -->
+        <!-- THE OPENREGISTER REGISTER SLUG NOW MOVES: `procest` -> `dossiq`
+             (and the `procest-default` sibling -> `dossiq-default`), together
+             with `x-openregister.app`, which for a `type: application`
+             configuration IS a register slug rather than an attribution label
+             (ImportHandler::autoCreateRegisterIfApplication reads
+             `$xOpenregister['app'] ?? $appId` as the slug).
+
+             It moves SAFELY because the rename is a one-column UPDATE on one
+             row. Measured, not assumed: an object is bound to its register by
+             NUMERIC id — every shard table's `_register` column holds the id,
+             and the tables are named
+             `oc_openregister_table_<registerId>_<schemaId>` — so no object,
+             table, schema link or folder is addressed by the slug and none of
+             them has to move. The one thing that must happen first is renaming
+             the ROW, because OpenRegister resolves a register by slug and its
+             not-found branch CREATES a second, empty register rather than
+             failing. `MigrateRegisterSlug` does that, ahead of every step that
+             resolves a register, in both blocks below.
+
+             Still frozen, and for the reason the slug is not: the register
+             `folder` (`Open Registers/Procest`) is a Files path already on
+             disk, and the `procest.parafering.*` / `procest.tenant.*` audit
+             action prefixes are already written into OpenRegister's
+             append-only audit trail. -->
         <!-- App dependency (not expressible in app-info.xsd): OpenRegister >= 0.2.16
              (MDM engine: x-openregister-quality / x-openregister-dedup schema support and
              on-save qualityScore/qualityStatus materialisation, ADR-045 / OR change
@@ -162,7 +172,33 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\MigrateAppConfigKeys</step>
             <step>OCA\Dossiq\Repair\MigrateUserPreferences</step>
             <!--
-                MUST stay first among the register steps. OpenRegister's import matches a schema to an
+                MUST run before every step below that resolves a register by
+                slug, and before the import InitializeSettings triggers. It
+                renames the register ROW (`procest` -> `dossiq`,
+                `procest-default` -> `dossiq-default`); the import that follows
+                then recognises the register and UPDATES it, instead of taking
+                its not-found branch and creating a second, empty one.
+
+                It moves no data. An object is bound to its register by numeric
+                id, not by slug, so the rename is one column on one row.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateRegisterSlug</step>
+            <!--
+                The OTHER half of the same problem, on a different column.
+                MigrateRegisterSlug moves `openregister_registers.slug`; this
+                moves `openregister_schemas.application`, which nothing else
+                touches. Schemas are matched by findByApplicationAndSlug() — the
+                PAIR — and their `application` comes from the importing app's own
+                Application::APP_ID, so every schema on an instance that predates
+                the procest -> dossiq app rename still says `procest` and is
+                invisible to the lookup. The import then forks a second, empty
+                set of SCHEMAS exactly as it would fork a second register.
+                Delegates to OpenRegister's SchemaApplicationMigrator
+                (openregister#2811).
+            -->
+            <step>OCA\Dossiq\Repair\MigrateRegisterApplicationId</step>
+            <!--
+                MUST stay first among the SCHEMA steps. OpenRegister's import matches a schema to an
                 existing row by SLUG, so a renamed slug in the register JSON
                 renames nothing: the import finds no match, creates a SECOND
                 schema, and every stored object keeps pointing at the old one —
@@ -187,10 +223,11 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <!--
                 Must run AFTER the register sync that adds the English columns, so it
                 can tell the rename case from the back-fill case. Matches BOTH the
-                procest and procest-default registers, which each hold live rows.
-                Those two slugs are DELIBERATELY unchanged by the procest ->
-                dossiq app-id rename — see the <dependencies> note above.
-                Idempotent, non-destructive, and refuses ambiguous renames.
+                dossiq and dossiq-default registers, which each hold live rows —
+                which is why MigrateRegisterSlug renames both siblings and not
+                just the first: this step resolves them by slug PREFIX, and a
+                half-renamed pair would migrate half the install and say so as
+                success. Idempotent, non-destructive, and refuses ambiguous renames.
             -->
             <step>OCA\Dossiq\Repair\RenameDutchDeadlineColumns</step>
             <!--
@@ -288,6 +325,17 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\MigrateAppConfigKeys</step>
             <step>OCA\Dossiq\Repair\MigrateUserPreferences</step>
+            <!--
+                Same reason as in the post-migration block, and the same
+                duplication: enabling `dossiq` is a FRESH install as far as
+                Nextcloud is concerned, so this is the block that actually runs.
+                The register row it renames was created by the previous app id
+                and is still there — the rename has to happen here or the import
+                below forks a second, empty register.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateRegisterSlug</step>
+            <!-- Schema half of the same rename; see the post-migration block. -->
+            <step>OCA\Dossiq\Repair\MigrateRegisterApplicationId</step>
             <step>OCA\Dossiq\Repair\InitializeSettings</step>
             <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>

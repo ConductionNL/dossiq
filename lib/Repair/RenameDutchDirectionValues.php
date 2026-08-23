@@ -30,7 +30,7 @@
  * the install.
  *
  * WHY IT MATCHES TWO REGISTERS, NOT ONE. Measured on this install: BOTH
- * `procest` (id 17) and `procest-default` (id 2424) carry the three schemas
+ * `dossiq` (id 17) and `dossiq-default` (id 2424) carry the three schemas
  * that declare a `direction` property — customerContact (106), portaalBericht
  * (651) and supplierMessage (928). Resolving a single exact slug would migrate
  * half the rows and report success, so the register set is resolved by slug
@@ -40,7 +40,7 @@
  * this install have a `direction` column, across pipelinq, decidesk, shillinq,
  * scholiq and openconnector registers. Their vocabularies are their own —
  * portaalBericht's own values here are `citizen_to_handler`, not a direction at
- * all. A procest repair step that rewrote them would be editing another app's
+ * all. A dossiq repair step that rewrote them would be editing another app's
  * data.
  *
  * SAFETY. Non-destructive and idempotent:
@@ -76,7 +76,7 @@ use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
 
 /**
- * Rewrite procest's Dutch `direction` values to their English equivalents.
+ * Rewrite dossiq's Dutch `direction` values to their English equivalents.
  *
  * @spec openspec/specs/stuf-zkn-outbound/spec.md
  */
@@ -85,14 +85,20 @@ class RenameDutchDirectionValues implements IRepairStep {
 	/**
 	 * Slug prefix of the registers in scope.
 	 *
-	 * Matches `procest` and `procest-default`; both hold live rows.
+	 * Matches `dossiq` and `dossiq-default`; both hold live rows.
 	 *
 	 * @var string
 	 */
-	// FROZEN: OpenRegister register SLUG, unchanged by the procest -> dossiq
-	// app-id rename. Prefix-matches `procest` and `procest-default`; a renamed
-	// value matches neither and the rewrite silently becomes a no-op.
-	private const REGISTER_SLUG_PREFIX = 'procest';
+	// The OpenRegister register SLUG. It MOVES with the app id: the
+	// `MigrateRegisterSlug` step renames `procest` -> `dossiq` (and
+	// `dossiq-default` -> `dossiq-default`) on the existing register rows and
+	// is registered ahead of this step in both info.xml blocks. Renaming a
+	// register strands nothing, because objects are bound to it by NUMERIC id:
+	// every shard table's `_register` column holds that id, and the tables are
+	// named `oc_openregister_table_<registerId>_<schemaId>`. What the ordering
+	// buys is that this step still resolves a register at all — run before
+	// MigrateRegisterSlug it would match none and migrate nothing, silently.
+	private const REGISTER_SLUG_PREFIX = 'dossiq';
 
 	/**
 	 * The only column whose values this step touches.
@@ -135,7 +141,7 @@ class RenameDutchDirectionValues implements IRepairStep {
 	}//end getName()
 
 	/**
-	 * Rewrite the direction values across every procest shard table.
+	 * Rewrite the direction values across every dossiq shard table.
 	 *
 	 * @param IOutput $output Repair output.
 	 *
@@ -146,7 +152,7 @@ class RenameDutchDirectionValues implements IRepairStep {
 	public function run(IOutput $output): void {
 		$tables = $this->shardTables();
 		if ($tables === []) {
-			$output->info('RenameDutchDirectionValues: no procest shard tables on this install; nothing to do.');
+			$output->info('RenameDutchDirectionValues: no dossiq shard tables on this install; nothing to do.');
 			return;
 		}
 
@@ -236,7 +242,7 @@ class RenameDutchDirectionValues implements IRepairStep {
 			)->fetchAll(\PDO::FETCH_COLUMN);
 		} catch (Exception $e) {
 			$this->logger->warning(
-				'RenameDutchDirectionValues: could not resolve the procest registers; skipping.',
+				'RenameDutchDirectionValues: could not resolve the dossiq registers; skipping.',
 				['exception' => $e->getMessage()]
 			);
 			return [];

@@ -32,12 +32,12 @@ import {
 	CASE_EXPORT_ENDPOINT,
 } from '../../src/utils/caseExportHelpers.js'
 
-const EXPECTED_BASE = '/index.php/apps/openregister/api/objects/procest/case/export'
+const EXPECTED_BASE = '/index.php/apps/openregister/api/objects/dossiq/case/export'
 
 describe('CASE_EXPORT_ENDPOINT', () => {
-	it('points at the (procest, case) OpenRegister export leaf', () => {
+	it('points at the (dossiq, case) OpenRegister export leaf', () => {
 		expect(CASE_EXPORT_ENDPOINT).toBe(
-			'/apps/openregister/api/objects/procest/case/export',
+			'/apps/openregister/api/objects/dossiq/case/export',
 		)
 	})
 })

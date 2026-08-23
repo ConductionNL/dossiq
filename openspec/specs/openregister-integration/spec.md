@@ -8,7 +8,7 @@ status: done
 
 @e2e exclude Pure data-layer plumbing spec; store/register/schema setup is covered by PHPUnit repair-step tests.
 
-Dossiq owns **no database tables**. All data is stored as OpenRegister objects in a dedicated `procest` register containing schemas for all entity types. This spec defines how the register and schemas are configured, how the repair step initializes the data model, how the frontend interacts with the OpenRegister API, the Pinia store patterns, cross-entity reference semantics, error handling, pagination, RBAC, cascade behaviors, and performance considerations.
+Dossiq owns **no database tables**. All data is stored as OpenRegister objects in a dedicated `dossiq` register containing schemas for all entity types. This spec defines how the register and schemas are configured, how the repair step initializes the data model, how the frontend interacts with the OpenRegister API, the Pinia store patterns, cross-entity reference semantics, error handling, pagination, RBAC, cascade behaviors, and performance considerations.
 
 OpenRegister integration is the foundational layer upon which all other Dossiq features are built.
 
@@ -54,8 +54,8 @@ OpenRegister integration is the foundational layer upon which all other Dossiq f
 
 | Field | Value |
 |-------|-------|
-| Name | `procest` |
-| Slug | `procest` |
+| Name | `dossiq` |
+| Slug | `dossiq` |
 | Description | Case management register for Dossiq |
 
 ### Schema Inventory
@@ -121,7 +121,7 @@ The system MUST define its register and all schemas in a JSON configuration file
 - THEN the file `lib/Settings/dossiq_register.json` MUST exist
 - AND it MUST be valid JSON
 - AND it MUST conform to OpenAPI 3.0.0 format
-- AND it MUST define a register with app `procest`
+- AND it MUST define a register with app `dossiq`
 - AND it MUST define all schemas as listed in the schema inventory
 
 #### Scenario: Schema defines required properties for case
@@ -171,7 +171,7 @@ The system MUST import the register configuration during app installation and up
 - WHEN the repair step `InitializeSettings::run()` executes
 - THEN it MUST call `SettingsService::loadConfiguration(force: true)`
 - AND `loadConfiguration` MUST call `ConfigurationService::importFromApp()` with the parsed `dossiq_register.json` content
-- AND the `procest` register MUST be created in OpenRegister
+- AND the `dossiq` register MUST be created in OpenRegister
 - AND all schemas MUST be created with their property definitions
 - AND `autoConfigureAfterImport()` MUST persist all register and schema IDs to `IAppConfig`
 
@@ -218,8 +218,8 @@ The frontend MUST interact with OpenRegister's REST API for all CRUD operations.
 #### Scenario: Base URL pattern
 
 - GIVEN the Dossiq frontend needs to access OpenRegister
-- THEN all API calls MUST use the base URL pattern: `/index.php/apps/openregister/api/objects/procest/{schema}`
-- AND for single objects: `/index.php/apps/openregister/api/objects/procest/{schema}/{uuid}`
+- THEN all API calls MUST use the base URL pattern: `/index.php/apps/openregister/api/objects/dossiq/{schema}`
+- AND for single objects: `/index.php/apps/openregister/api/objects/dossiq/{schema}/{uuid}`
 
 #### Scenario: Create a new case (POST)
 
@@ -228,7 +228,7 @@ The frontend MUST interact with OpenRegister's REST API for all CRUD operations.
   - caseType: "casetype-uuid-omgevings"
   - startDate: "2026-03-01"
 - WHEN the user submits the form
-- THEN the frontend MUST call `POST /index.php/apps/openregister/api/objects/procest/case`
+- THEN the frontend MUST call `POST /index.php/apps/openregister/api/objects/dossiq/case`
 - AND the request body MUST contain the case properties as JSON
 - AND the response MUST include the created object with its generated UUID
 
@@ -236,7 +236,7 @@ The frontend MUST interact with OpenRegister's REST API for all CRUD operations.
 
 - GIVEN an existing case with UUID "abc-123-def"
 - WHEN the user updates the description
-- THEN the frontend MUST call `PUT /index.php/apps/openregister/api/objects/procest/case/abc-123-def`
+- THEN the frontend MUST call `PUT /index.php/apps/openregister/api/objects/dossiq/case/abc-123-def`
 - AND the request body MUST contain the full updated object
 - AND the response MUST include the updated object
 
@@ -244,7 +244,7 @@ The frontend MUST interact with OpenRegister's REST API for all CRUD operations.
 
 - GIVEN an existing case with UUID "abc-123-def"
 - WHEN the user deletes the case
-- THEN the frontend MUST call `DELETE /index.php/apps/openregister/api/objects/procest/case/abc-123-def`
+- THEN the frontend MUST call `DELETE /index.php/apps/openregister/api/objects/dossiq/case/abc-123-def`
 - AND the response MUST confirm deletion (HTTP 200 or 204)
 
 #### Scenario: API call with authentication
@@ -266,7 +266,7 @@ The frontend MUST support paginated access to object lists and use OpenRegister 
 
 - GIVEN 24 cases exist in the register
 - WHEN the frontend requests page 2 with limit 10
-- THEN it MUST call `GET /index.php/apps/openregister/api/objects/procest/case?_page=2&_limit=10`
+- THEN it MUST call `GET /index.php/apps/openregister/api/objects/dossiq/case?_page=2&_limit=10`
 - AND the response MUST contain cases 11-20
 - AND the pagination metadata MUST show: `total: 24`, `page: 2`, `limit: 10`, `pages: 3`
 
@@ -274,7 +274,7 @@ The frontend MUST support paginated access to object lists and use OpenRegister 
 
 - GIVEN 23 tasks across 8 cases
 - WHEN the frontend requests tasks for case #2024-042 (UUID: "case-uuid-042")
-- THEN it MUST call `GET /index.php/apps/openregister/api/objects/procest/task?case=case-uuid-042`
+- THEN it MUST call `GET /index.php/apps/openregister/api/objects/dossiq/task?case=case-uuid-042`
 - AND only tasks linked to that case MUST be returned
 
 #### Scenario: Combined filters with sort
@@ -682,7 +682,7 @@ Base URL: `/index.php/apps/openregister/api/objects`
 **Core architecture implemented; individual patterns differ from spec in store approach.**
 
 **Implemented (with file paths):**
-- **Configuration file**: `lib/Settings/dossiq_register.json` exists, is valid JSON, conforms to OpenAPI 3.0.0, defines a register with app `procest`. Defines all schemas with `x-schema-org` and `x-zgw-equivalent` annotations (REQ-OREG-001).
+- **Configuration file**: `lib/Settings/dossiq_register.json` exists, is valid JSON, conforms to OpenAPI 3.0.0, defines a register with app `dossiq`. Defines all schemas with `x-schema-org` and `x-zgw-equivalent` annotations (REQ-OREG-001).
 - **Repair step**: `lib/Repair/InitializeSettings.php` calls `SettingsService::loadConfiguration()` which uses `ConfigurationService::importFromApp('dossiq')` from OpenRegister. Handles missing OpenRegister gracefully with warning. Is idempotent (REQ-OREG-002).
 - **Settings service**: `lib/Service/SettingsService.php` with `loadConfiguration()`, `getSettings()`, `updateSettings()`, `autoConfigureAfterImport()`. Maps schema slugs to config keys via `SLUG_TO_CONFIG_KEY` constant (REQ-OREG-002).
 - **Settings controller**: `lib/Controller/SettingsController.php` with routes `GET /api/settings` and `POST /api/settings` (REQ-OREG-003).

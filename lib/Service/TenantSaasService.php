@@ -57,7 +57,7 @@ class TenantSaasService {
 	 */
 	// FROZEN: OpenRegister register SLUG, not this app's id, and unchanged by
 	// the procest -> dossiq rename.
-	public const REGISTER = 'procest';
+	public const REGISTER = 'dossiq';
 
 	/**
 	 * Tenant schema slug.

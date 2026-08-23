@@ -232,14 +232,14 @@ class RoutingControllerContractTest extends TestCase {
 		$objectService = $this->createMock(RoutingControllerContractObjectService::class);
 		$objectService->expects($this->once())
 			->method('find')
-			->with('zaak-1', 'procest', 'zaak')
+			->with('zaak-1', 'dossiq', 'zaak')
 			->willReturn(['id' => 'zaak-1', 'workflowTemplate' => '']);
 
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
 		$this->settingsService->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'case_schema' => 'zaak',
 					'workflow_template_schema' => 'workflowtemplate',
 					default => '',

@@ -1,7 +1,7 @@
 {
   "components": {
     "registers": {
-      "procest": {
+      "dossiq": {
         "schemas": [
           "deadlineDefinition",
           "deadlineInstance",

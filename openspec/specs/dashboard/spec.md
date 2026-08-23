@@ -18,7 +18,7 @@ The dashboard is the landing page of the Dossiq app. It provides an at-a-glance 
 
 ## Data Sources
 
-All dashboard data comes from OpenRegister queries against the `procest` register:
+All dashboard data comes from OpenRegister queries against the `dossiq` register:
 - **Cases**: schema `case` — filtered by non-final status for "open", by `deadline < today` for "overdue", by `endDate` within current month for "completed this month"
 - **Tasks**: schema `task` — filtered by `assignee == currentUser` and status `available` or `active`
 - **Activity**: Nextcloud Activity API (`OCP\Activity\IManager`) — filtered by app `dossiq`, last 10 events

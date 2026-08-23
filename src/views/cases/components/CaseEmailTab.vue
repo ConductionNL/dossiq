@@ -201,6 +201,7 @@ export default {
 	},
 
 	methods: {
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		async reload() {
 			if (!this.resolvedCaseId) {
 				this.loading = false
@@ -221,7 +222,7 @@ export default {
 					// OR per-object endpoint needs both register and schema
 					// slugs: /objects/{register}/{schema}/{id}.
 					const url = generateUrl(
-						`/apps/openregister/api/objects/procest/case/${encodeURIComponent(this.resolvedCaseId)}`,
+						`/apps/openregister/api/objects/dossiq/case/${encodeURIComponent(this.resolvedCaseId)}`,
 					)
 					const { data } = await axios
 						.get(url)

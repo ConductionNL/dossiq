@@ -232,7 +232,7 @@ class DsoDeadlineJobTest extends TestCase {
 			->willReturnCallback(
 				function (string $app, string $key, string $default = '') {
 					$map = [
-						'register' => 'procest-register',
+						'register' => 'dossiq-register',
 						'case_schema' => 'case-schema-id',
 						'dso_deadline_warning_weeks_warning' => '14',
 						'dso_deadline_warning_weeks_critical' => '5',

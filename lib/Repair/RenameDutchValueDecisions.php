@@ -496,7 +496,7 @@ class RenameDutchValueDecisions {
 	 * @spec exclude Operator-facing text of the vocabulary migration.
 	 */
 	public function nothingToDoMessage(): string {
-		return 'RenameDutchValues: no procest shard tables on this install; nothing to do.';
+		return 'RenameDutchValues: no dossiq shard tables on this install; nothing to do.';
 	}//end nothingToDoMessage()
 
 	/**

@@ -3,7 +3,7 @@
     "objects": [
       {
         "@self": {
-          "register": "procest",
+          "register": "dossiq",
           "schema": "emailTemplate",
           "slug": "email-template-ontvangstbevestiging"
         },
@@ -16,7 +16,7 @@
       },
       {
         "@self": {
-          "register": "procest",
+          "register": "dossiq",
           "schema": "emailTemplate",
           "slug": "email-template-informatieverzoek"
         },
@@ -29,7 +29,7 @@
       },
       {
         "@self": {
-          "register": "procest",
+          "register": "dossiq",
           "schema": "emailTemplate",
           "slug": "email-template-besluit"
         },

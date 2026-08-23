@@ -49,19 +49,35 @@ class TenantSchemaProvisioner {
 	public const PG_IDENTIFIER_MAX_LENGTH = 63;
 
 	/**
-	 * Application table prefixes whose structure is cloned per tenant.
+	 * Register slugs whose per-schema shard tables are cloned per tenant.
+	 *
+	 * MEASURED, not assumed: OpenRegister does NOT name a shard table after the
+	 * register slug. Every call site composes `openregister_table_` .
+	 * $register->getId() . '_' . $schema->getId() — numeric ids — and
+	 * RegisterSchemaLinkageRepairService rejects anything that does not match
+	 * `^[A-Za-z0-9]+_openregister_table_[0-9]+_[0-9]+$`. On this install the
+	 * tables are `oc_openregister_table_11_34`, `oc_openregister_table_17_*`
+	 * and so on; there is no `oc_openregister_table_procest_*`, and there never
+	 * was one to freeze.
+	 *
+	 * The constant this replaces hard-coded that slug-shaped prefix, so
+	 * listApplicationTables() matched ZERO tables and every tenant came up with
+	 * an empty schema — reported as success. Exactly the failure its own
+	 * comment warned a rename would cause, already happening. The slug is now
+	 * resolved to its numeric register id at run time, and the match anchors on
+	 * the `openregister_table_` MARKER rather than on a computed `oc_` prefix,
+	 * which is configurable per install.
 	 *
 	 * @var array<int, string>
 	 */
-	private const APPLICATION_TABLE_PREFIXES = [
-		// FROZEN. OpenRegister derives this physical table prefix from the
-		// register SLUG, which stays `procest` across the app-id rename. The
-		// tables on disk are named `oc_openregister_table_procest_*`; a renamed
-		// prefix here matches nothing, so per-tenant provisioning would clone
-		// ZERO application tables and report success — every new tenant would
-		// come up with an empty schema.
-		'oc_openregister_table_procest_',
-	];
+	private const REGISTER_SLUGS = ['dossiq', 'dossiq-default'];
+
+	/**
+	 * The marker every OpenRegister shard-table name carries.
+	 *
+	 * @var string
+	 */
+	private const TABLE_MARKER = 'openregister_table_';
 
 	/**
 	 * Shared tables that MUST stay in the public schema.
@@ -245,11 +261,20 @@ class TenantSchemaProvisioner {
 			$rows = $result->fetchAll(\PDO::FETCH_ASSOC);
 			$result->closeCursor();
 
+			$markers = $this->shardTableMarkers();
+			if ($markers === []) {
+				$this->logger->warning(
+					'Dossiq: no register resolved for tenant provisioning; cloning no application tables.',
+					['slugs' => self::REGISTER_SLUGS]
+				);
+				return [];
+			}
+
 			$tables = [];
 			foreach ($rows as $row) {
 				$name = (string)($row['table_name'] ?? '');
-				foreach (self::APPLICATION_TABLE_PREFIXES as $prefix) {
-					if (str_starts_with($name, $prefix) === true) {
+				foreach ($markers as $marker) {
+					if (str_contains($name, $marker) === true) {
 						$tables[] = $name;
 						break;
 					}
@@ -262,6 +287,41 @@ class TenantSchemaProvisioner {
 			return [];
 		}//end try
 	}//end listApplicationTables()
+
+	/**
+	 * Resolve this app's registers to the shard-table markers they own.
+	 *
+	 * A register's shard tables are named
+	 * `<prefix>openregister_table_<registerId>_<schemaId>`, so the marker is
+	 * `openregister_table_<registerId>_`. Deriving it from the slug at run time
+	 * is what keeps this correct across a slug rename: the numeric id does not
+	 * move, and an empty result is logged rather than silently cloning nothing.
+	 *
+	 * @return array<int, string> Markers; empty when no register resolves.
+	 */
+	private function shardTableMarkers(): array {
+		$placeholders = implode(', ', array_fill(0, count(self::REGISTER_SLUGS), '?'));
+
+		try {
+			$rows = $this->db->executeQuery(
+				'SELECT id FROM `*PREFIX*openregister_registers` WHERE slug IN (' . $placeholders . ')',
+				self::REGISTER_SLUGS
+			)->fetchAll();
+		} catch (Throwable $e) {
+			$this->logger->info('Dossiq: could not resolve register ids', ['exception' => $e->getMessage()]);
+			return [];
+		}
+
+		$markers = [];
+		foreach ($rows as $row) {
+			$id = (int)($row['id'] ?? 0);
+			if ($id > 0) {
+				$markers[] = self::TABLE_MARKER . $id . '_';
+			}
+		}
+
+		return $markers;
+	}//end shardTableMarkers()
 
 	/**
 	 * Detect shared tables — they remain in the public schema.

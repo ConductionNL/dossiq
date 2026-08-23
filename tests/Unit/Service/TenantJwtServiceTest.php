@@ -72,6 +72,8 @@ class TenantJwtServiceTest extends TestCase {
 		$this->assertSame('tenant-uuid-1', $claims['tenant_id']);
 		$this->assertSame('amsterdam', $claims['tenant_slug']);
 		$this->assertSame(['tenant_admin'], $claims['roles']);
+		// The `iss` claim comes from the EXTERNAL broker that mints the token;
+		// the fixture above signs it as `procest` and this app does not own it.
 		$this->assertSame('procest', $claims['iss']);
 	}
 

@@ -17,7 +17,7 @@ The admin settings page provides a Nextcloud admin panel for configuring Dossiq.
 
 ## Data Sources
 
-All admin settings data is stored as OpenRegister objects in the `procest` register:
+All admin settings data is stored as OpenRegister objects in the `dossiq` register:
 - **Case types**: schema `caseType`
 - **Status types**: schema `statusType` (linked to caseType via `caseType` reference)
 - **Result types**: schema `resultType` (linked to caseType via `caseType` reference)

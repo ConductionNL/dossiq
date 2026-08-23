@@ -18,12 +18,12 @@
 import { generateUrl } from '@nextcloud/router'
 
 /**
- * The (procest, case) OpenRegister export-leaf endpoint.
+ * The (dossiq, case) OpenRegister export-leaf endpoint.
  *
  * @type {string}
  */
 export const CASE_EXPORT_ENDPOINT =
-	'/apps/openregister/api/objects/procest/case/export'
+	'/apps/openregister/api/objects/dossiq/case/export'
 
 /**
  * Build the OpenRegister export-leaf URL for the case list.

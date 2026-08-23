@@ -97,7 +97,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 		$this->settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key, string $default = ''): string {
 				return match ($key) {
-					'register' => 'procest-register',
+					'register' => 'dossiq-register',
 					'bezwaar_schema' => 'objectionProceeding',
 					'bezwaar_decision_schema' => 'bezwaardecision',
 					default => $default,
@@ -258,7 +258,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 		);
 		$this->assertSame(
 			[
-				'register' => 'procest-register',
+				'register' => 'dossiq-register',
 				'schema' => 'bezwaardecision',
 				'objectionProceeding' => 'bezwaar-1',
 			],

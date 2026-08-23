@@ -58,7 +58,7 @@ class TenantAuditTrailService {
 	// registers by slug, so renaming it with the app id would address a
 	// register that does not exist and every durable audit row would fail to
 	// be written — a compliance surface going quiet, not erroring.
-	private const REGISTER = 'procest';
+	private const REGISTER = 'dossiq';
 
 	/**
 	 * Schema slug for tenant objects.

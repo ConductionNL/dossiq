@@ -33,7 +33,7 @@ object; both fields are facetable in list views.
 
 1. Open **OpenRegister** and navigate to the governance views (Data Quality, Duplicate
    Candidates, Master entities) — see OpenRegister's own documentation for the exact navigation.
-2. Scope the view to the **procest** register.
+2. Scope the view to the **dossiq** register.
 3. Review duplicate-candidate pairs (e.g. two cases sharing a `vergunningaanvraagRef`, two
    suppliers sharing a `kvkNumber`). Dossiq never blocks or auto-merges — candidates are
    surfaced for human review.

@@ -564,8 +564,8 @@ $conversation = $broker->createConversation('Case: ' . $caseTitle, $participantI
 
 | Field | Value |
 |-------|-------|
-| Name | `procest` |
-| Slug | `procest` |
+| Name | `dossiq` |
+| Slug | `dossiq` |
 | Description | Case management register |
 
 ### Schema Definitions
@@ -625,7 +625,7 @@ and the ADR-006 200/503 contract are unchanged.
 - **Metrics**: `dossiq_cases_total{status,case_type}`, `dossiq_cases_overdue_total`,
   `dossiq_cases_created_today`, `dossiq_tasks_total{status}`,
   `dossiq_tasks_overdue_total` — all declared as portable `objectCount`
-  descriptors on register `procest`, schemas `case` / `task`. The implicit
+  descriptors on register `dossiq`, schemas `case` / `task`. The implicit
   `dossiq_info` / `dossiq_up` gauges are emitted by the engine. Per-metric
   `cacheTtl` (30s / 60s) via the distributed cache replaces the previous
   controller-local APCu cache (same TTLs, now shared across PHP workers).

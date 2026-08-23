@@ -48,14 +48,14 @@ class TermijnNotificationServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'termijn_instance_schema' => 'deadlineInstance',
 					default => '',
 				};
 			},
 		);
 
-		$objects->saveObject('procest', 'deadlineInstance', [
+		$objects->saveObject('dossiq', 'deadlineInstance', [
 			'id' => 'ti-1',
 			'case' => 'Z/2026/300',
 			'endDateCurrent' => '2026-07-27',

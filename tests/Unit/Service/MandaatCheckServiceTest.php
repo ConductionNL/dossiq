@@ -44,7 +44,7 @@ class MandaatCheckServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'mandaat_schema' => 'mandate',
 					'medewerker_rol_toewijzing_schema' => 'medewerkerRolToewijzing',
 					default => '',
@@ -67,7 +67,7 @@ class MandaatCheckServiceTest extends TestCase {
 		//   - m-consulent: rol=consulent, decisionType=wmo-toekenning, plafond €5000
 		//   - m-manager:   rol=afdelingsmanager, decisionType=wmo-toekenning, plafond €25000, subdelegatie=true
 		//   - m-bestuurder: rol=bestuurder, decisionType=omgevingsvergunning, plafond=infinity
-		$this->objects->saveObject('procest', 'mandate', [
+		$this->objects->saveObject('dossiq', 'mandate', [
 			'id' => 'm-consulent',
 			'mandaatNummer' => 'WMO-1',
 			'mandateeRole' => 'rol-consulent',
@@ -78,7 +78,7 @@ class MandaatCheckServiceTest extends TestCase {
 			'validFrom' => '2026-01-01',
 			'status' => 'active',
 		]);
-		$this->objects->saveObject('procest', 'mandate', [
+		$this->objects->saveObject('dossiq', 'mandate', [
 			'id' => 'm-manager',
 			'mandaatNummer' => 'WMO-2',
 			'mandateeRole' => 'rol-afdelingsmanager',
@@ -92,20 +92,20 @@ class MandaatCheckServiceTest extends TestCase {
 		]);
 
 		// Seed users: alice = consulent (primair), bob = consulent (waarnemer), eve = nobody.
-		$this->objects->saveObject('procest', 'medewerkerRolToewijzing', [
+		$this->objects->saveObject('dossiq', 'medewerkerRolToewijzing', [
 			'userId' => 'alice',
 			'roleId' => 'rol-consulent',
 			'allocationType' => 'primair',
 			'validFrom' => '2026-01-01',
 		]);
-		$this->objects->saveObject('procest', 'medewerkerRolToewijzing', [
+		$this->objects->saveObject('dossiq', 'medewerkerRolToewijzing', [
 			'userId' => 'bob',
 			'roleId' => 'rol-consulent',
 			'allocationType' => 'observer',
 			'validFrom' => '2026-01-01',
 			'observerFor' => 'alice',
 		]);
-		$this->objects->saveObject('procest', 'medewerkerRolToewijzing', [
+		$this->objects->saveObject('dossiq', 'medewerkerRolToewijzing', [
 			'userId' => 'carol',
 			'roleId' => 'rol-afdelingsmanager',
 			'allocationType' => 'primair',
@@ -199,7 +199,7 @@ class MandaatCheckServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'mandaat_schema' => 'mandate',
 					'medewerker_rol_toewijzing_schema' => 'medewerkerRolToewijzing',
 					default => '',

@@ -387,7 +387,7 @@ class VoorstelBesluitControllerContractTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'voorstel_schema' => 'voorstel',
 					default => '',
 				};

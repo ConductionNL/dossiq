@@ -2,7 +2,7 @@
 	"info": {
 		"name": "Procest Leges API",
 		"_postman_id": "b1e7c2a0-1f3d-4c4a-9c0e-procestleges01",
-		"description": "API/contract coverage for the leges-heffingen feature (#67). Exercises the LegesController calculation endpoints and the LegesAdminController verordening-management endpoints against a live procest instance (localhost:8080, admin:admin). Happy paths plus 400 negative cases. Companion UI coverage lives in tests/e2e/leges-heffingen.spec.ts (Playwright). Auth is HTTP Basic + OCS-APIRequest at the collection level.",
+		"description": "API/contract coverage for the leges-heffingen feature (#67). Exercises the LegesController calculation endpoints and the LegesAdminController verordening-management endpoints against a live dossiq instance (localhost:8080, admin:admin). Happy paths plus 400 negative cases. Companion UI coverage lives in tests/e2e/leges-heffingen.spec.ts (Playwright). Auth is HTTP Basic + OCS-APIRequest at the collection level.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"auth": {

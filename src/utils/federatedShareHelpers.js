@@ -31,9 +31,11 @@ export const FEDERATION_ALLOWED_FIELDS = [
  * Build the local (session-authenticated) federated-shares list endpoint.
  *
  * @return {string} the endpoint path.
+ *
+ * @spec openspec/specs/federated-case-collaboration/spec.md
  */
 export function federatedSharesListEndpoint() {
-	return '/apps/openregister/api/objects/procest/caseFederatedShare'
+	return '/apps/openregister/api/objects/dossiq/caseFederatedShare'
 }
 
 /**

@@ -271,7 +271,7 @@ class MigrateUserPreferences implements IRepairStep {
 			return $this->config->getUserKeys($userId, self::OLD_APP_ID);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Dossiq: could not enumerate procest preference keys for a user; skipping that user',
+				'Dossiq: could not enumerate dossiq preference keys for a user; skipping that user',
 				['exception' => $e->getMessage()]
 			);
 			return [];

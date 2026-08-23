@@ -80,7 +80,7 @@ class RenameDutchDirectionValuesTest extends TestCase {
 	}//end call()
 
 	/**
-	 * THE BEHAVIOURAL ARM — a procest shard table with a `direction` column is
+	 * THE BEHAVIOURAL ARM — a dossiq shard table with a `direction` column is
 	 * updated once per Dutch value, and only ever on that column.
 	 *
 	 * Everything else in this file inspects constants. This one drives run()
@@ -163,7 +163,7 @@ class RenameDutchDirectionValuesTest extends TestCase {
 	}//end testItNamesItself()
 
 	/**
-	 * An install with no procest register does nothing and SAYS so.
+	 * An install with no dossiq register does nothing and SAYS so.
 	 *
 	 * A repair step that prints nothing on a clean install is indistinguishable
 	 * from one that never ran.
@@ -294,13 +294,13 @@ class RenameDutchDirectionValuesTest extends TestCase {
 	}//end testTheStatutoryConfidentialityValuesAreNotRewritten()
 
 	/**
-	 * Both procest registers are in scope — resolving one slug would migrate
+	 * Both dossiq registers are in scope — resolving one slug would migrate
 	 * half the rows and report success.
 	 *
 	 * @return void
 	 */
 	public function testBothDossiqRegistersAreInScope(): void {
-		$this->assertSame('procest', $this->constant('REGISTER_SLUG_PREFIX'));
+		$this->assertSame('dossiq', $this->constant('REGISTER_SLUG_PREFIX'));
 
 		$markers = ['openregister_table_17_', 'openregister_table_2424_'];
 

@@ -195,7 +195,7 @@ class OriDataQualityCheckTest extends TestCase {
 		$objectService->method('saveObject')->willReturn([]);
 
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
-		$this->settingsService->method('getConfigValue')->willReturn('procest-register');
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq-register');
 
 		$this->logger
 			->expects($this->atLeastOnce())

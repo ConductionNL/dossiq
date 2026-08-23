@@ -48,7 +48,7 @@ class BrpKvkRegisterSetsTest extends TestCase {
 	}//end setUp()
 
 	/**
-	 * Both schemas exist, are attached to the procest register, and use
+	 * Both schemas exist, are attached to the dossiq register, and use
 	 * the official API field naming.
 	 *
 	 * @return void
@@ -57,8 +57,8 @@ class BrpKvkRegisterSetsTest extends TestCase {
 		$schemas = $this->fragment['components']['schemas'];
 		$this->assertArrayHasKey('brpPerson', $schemas);
 		$this->assertArrayHasKey('kvkCompany', $schemas);
-		$this->assertContains('brpPerson', $this->fragment['components']['registers']['procest']['schemas']);
-		$this->assertContains('kvkCompany', $this->fragment['components']['registers']['procest']['schemas']);
+		$this->assertContains('brpPerson', $this->fragment['components']['registers']['dossiq']['schemas']);
+		$this->assertContains('kvkCompany', $this->fragment['components']['registers']['dossiq']['schemas']);
 
 		$person = $schemas['brpPerson']['properties'];
 		// 'bsn' is not a registered OpenRegister string format (see the field's
@@ -121,7 +121,7 @@ class BrpKvkRegisterSetsTest extends TestCase {
 			$this->assertNotEmpty($person['name']['surname']);
 			$this->assertNotEmpty($person['birth']['date']);
 			$this->assertNotEmpty($person['displayName']);
-			$this->assertSame('procest', $person['@self']['register']);
+			$this->assertSame('dossiq', $person['@self']['register']);
 		}
 
 		$bsns = array_column($persons, 'citizenServiceNumber');

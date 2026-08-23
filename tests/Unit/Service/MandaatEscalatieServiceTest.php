@@ -44,7 +44,7 @@ class MandaatEscalatieServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'mandaat_schema' => 'mandate',
 					'medewerker_rol_toewijzing_schema' => 'medewerkerRolToewijzing',
 					'mandaat_escalatie_schema' => 'mandaatEscalatie',
@@ -56,7 +56,7 @@ class MandaatEscalatieServiceTest extends TestCase {
 
 		// Seed mandates + assignments.
 		$this->objects->saveObject(
-			'procest',
+			'dossiq',
 			'mandate',
 			[
 				'id' => 'm-low',
@@ -66,7 +66,7 @@ class MandaatEscalatieServiceTest extends TestCase {
 			]
 		);
 		$this->objects->saveObject(
-			'procest',
+			'dossiq',
 			'mandate',
 			[
 				'id' => 'm-high',
@@ -76,7 +76,7 @@ class MandaatEscalatieServiceTest extends TestCase {
 			]
 		);
 		$this->objects->saveObject(
-			'procest',
+			'dossiq',
 			'medewerkerRolToewijzing',
 			[
 				'userId' => 'carol',

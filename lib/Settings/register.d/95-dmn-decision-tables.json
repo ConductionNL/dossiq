@@ -125,7 +125,7 @@
             }
         },
         "registers": {
-            "procest": {
+            "dossiq": {
                 "schemas": ["decisionTable"]
             }
         }

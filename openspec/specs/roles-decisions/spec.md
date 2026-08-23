@@ -19,7 +19,7 @@ Together, these three entities govern participation, outcomes, and formal decisi
 
 ### Role Entity
 
-Stored as an OpenRegister object in the `procest` register under the `role` schema.
+Stored as an OpenRegister object in the `dossiq` register under the `role` schema.
 
 | Property | Type | Schema.org/ZGW | Required | Default |
 |----------|------|----------------|----------|---------|
@@ -31,7 +31,7 @@ Stored as an OpenRegister object in the `procest` register under the `role` sche
 
 ### Role Type Entity
 
-Stored as an OpenRegister object in the `procest` register under the `roleType` schema.
+Stored as an OpenRegister object in the `dossiq` register under the `roleType` schema.
 
 | Property | Type | ZGW Mapping | Required |
 |----------|------|-------------|----------|
@@ -56,7 +56,7 @@ These are the fixed set of generic role categories, derived from ZGW but interna
 
 ### Result Entity
 
-Stored as an OpenRegister object in the `procest` register under the `result` schema.
+Stored as an OpenRegister object in the `dossiq` register under the `result` schema.
 
 | Property | Type | Source | Required |
 |----------|------|--------|----------|
@@ -67,7 +67,7 @@ Stored as an OpenRegister object in the `procest` register under the `result` sc
 
 ### Result Type Entity
 
-Stored as an OpenRegister object in the `procest` register under the `resultType` schema.
+Stored as an OpenRegister object in the `dossiq` register under the `resultType` schema.
 
 | Property | Type | ZGW Mapping | Required |
 |----------|------|-------------|----------|
@@ -80,7 +80,7 @@ Stored as an OpenRegister object in the `procest` register under the `resultType
 
 ### Decision Entity
 
-Stored as an OpenRegister object in the `procest` register under the `decision` schema.
+Stored as an OpenRegister object in the `dossiq` register under the `decision` schema.
 
 | Property | Type | Schema.org/ZGW | Required | Default |
 |----------|------|----------------|----------|---------|
@@ -95,7 +95,7 @@ Stored as an OpenRegister object in the `procest` register under the `decision` 
 
 ### Decision Type Entity
 
-Stored as an OpenRegister object in the `procest` register under the `decisionType` schema.
+Stored as an OpenRegister object in the `dossiq` register under the `decisionType` schema.
 
 | Property | Type | ZGW Mapping | Required |
 |----------|------|-------------|----------|

@@ -104,7 +104,7 @@ class SubstitutionServiceTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturnCallback(
 			static function (string $key, string $default = ''): string {
 				$map = [
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'substitution_schema' => 'substitution',
 					'case_schema' => 'case',
 					'task_schema' => 'task',

@@ -55,7 +55,7 @@ class WorkQueueServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'case_schema' => 'case',
 					'task_schema' => 'task',
 					'termijn_instance_schema' => 'deadlineInstance',

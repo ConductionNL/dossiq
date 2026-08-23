@@ -116,7 +116,7 @@ class TenantSaasRegisterSchemasTest extends TestCase {
 	 * @return void
 	 */
 	public function testRegisterIncludesAllTenantSchemas(): void {
-		$listed = $this->register['components']['registers']['procest']['schemas'] ?? [];
+		$listed = $this->register['components']['registers']['dossiq']['schemas'] ?? [];
 		foreach (['tenant', 'tenantConfiguration', 'tenantQuota', 'tenantUser', 'tenantMandate', 'tenantBillingEvent', 'tenantOnboardingTask'] as $slug) {
 			$this->assertContains(
 				$slug,

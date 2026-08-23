@@ -140,7 +140,7 @@ class DispositionServiceTest extends TestCase {
 		$this->settingsService
 			->method('getConfigValue')
 			->willReturnMap([
-				['register', '', 'procest'],
+				['register', '', 'dossiq'],
 				['complaint_disposition_schema', '', 'complaintDisposition'],
 			]);
 
@@ -159,7 +159,7 @@ class DispositionServiceTest extends TestCase {
 	public function testSubmitDispositionSetsApprovalStatusWhenRequired(): void {
 		$objectServiceMock = $this->createMock(DispositionObjectServiceStub::class);
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-		$this->settingsService->method('getConfigValue')->willReturn('procest');
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
 
 		$objectServiceMock
 			->method('saveObject')
@@ -186,7 +186,7 @@ class DispositionServiceTest extends TestCase {
 	public function testApproveDispositionSetsStatusToGoedgekeurd(): void {
 		$objectServiceMock = $this->createMock(DispositionObjectServiceStub::class);
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-		$this->settingsService->method('getConfigValue')->willReturn('procest');
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
 
 		$objectServiceMock
 			->method('saveObject')

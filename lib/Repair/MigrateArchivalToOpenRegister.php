@@ -3,10 +3,10 @@
 /**
  * Dossiq Migrate-Archival-to-OpenRegister Repair Step.
  *
- * One-shot, idempotent, fail-closed migration from procest's retired app-local
+ * One-shot, idempotent, fail-closed migration from dossiq's retired app-local
  * archival/e-Depot chain onto OpenRegister's archival abstractions (ADR-022 /
  * migrate-archival-to-or). It:
- *   1. enables TMLO auto-population on the procest register (Register
+ *   1. enables TMLO auto-population on the dossiq register (Register
  *      configuration `tmloEnabled`) so OR's TmloService populates the schema's
  *      `tmloDefaults`;
  *   2. re-nominates in-flight suspended transfers by placing an OpenRegister
@@ -166,7 +166,7 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 	}//end run()
 
 	/**
-	 * Enable TMLO auto-population on the procest register (idempotent).
+	 * Enable TMLO auto-population on the dossiq register (idempotent).
 	 *
 	 * @param string $register Register slug or id.
 	 * @param IOutput $output Output.
@@ -200,7 +200,7 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 			$config['tmloEnabled'] = true;
 			$entity->setConfiguration($config);
 			$mapper->update($entity);
-			$output->info('TMLO auto-population enabled on the procest register.');
+			$output->info('TMLO auto-population enabled on the dossiq register.');
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Archival migration: could not enable TMLO on register',

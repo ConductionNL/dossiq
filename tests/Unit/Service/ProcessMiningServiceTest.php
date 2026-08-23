@@ -61,7 +61,7 @@ class ProcessMiningServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'case_schema' => 'case',
 					'case_type_schema' => 'caseType',
 					'status_type_schema' => 'statusType',
@@ -331,21 +331,21 @@ class ProcessMiningServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testGetReportOrchestratesFullPayload(): void {
-		$this->objects->saveObject('procest', 'caseType', ['id' => 'ct-1', 'title' => 'Omgevingsvergunning']);
-		$this->objects->saveObject('procest', 'statusType', ['id' => 'st-intake', 'name' => 'Intake']);
-		$this->objects->saveObject('procest', 'statusType', ['id' => 'st-review', 'name' => 'Review']);
+		$this->objects->saveObject('dossiq', 'caseType', ['id' => 'ct-1', 'title' => 'Omgevingsvergunning']);
+		$this->objects->saveObject('dossiq', 'statusType', ['id' => 'st-intake', 'name' => 'Intake']);
+		$this->objects->saveObject('dossiq', 'statusType', ['id' => 'st-review', 'name' => 'Review']);
 
-		$this->objects->saveObject('procest', 'case', [
+		$this->objects->saveObject('dossiq', 'case', [
 			'id' => 'case-1',
 			'caseType' => 'ct-1',
 			'startDate' => '2026-06-01',
 			'endDate' => '2026-06-05',
 		]);
 
-		$this->objects->saveObject('procest', 'statusRecord', [
+		$this->objects->saveObject('dossiq', 'statusRecord', [
 			'id' => 'sr-1', 'case' => 'case-1', 'statusType' => 'st-intake', 'createdAt' => '2026-06-01T09:00:00+00:00',
 		]);
-		$this->objects->saveObject('procest', 'statusRecord', [
+		$this->objects->saveObject('dossiq', 'statusRecord', [
 			'id' => 'sr-2', 'case' => 'case-1', 'statusType' => 'st-review', 'createdAt' => '2026-06-02T09:00:00+00:00',
 		]);
 
@@ -366,10 +366,10 @@ class ProcessMiningServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testGetReportFiltersByCaseType(): void {
-		$this->objects->saveObject('procest', 'caseType', ['id' => 'ct-1', 'title' => 'Type A']);
-		$this->objects->saveObject('procest', 'caseType', ['id' => 'ct-2', 'title' => 'Type B']);
-		$this->objects->saveObject('procest', 'case', ['id' => 'case-1', 'caseType' => 'ct-1', 'endDate' => null]);
-		$this->objects->saveObject('procest', 'case', ['id' => 'case-2', 'caseType' => 'ct-2', 'endDate' => null]);
+		$this->objects->saveObject('dossiq', 'caseType', ['id' => 'ct-1', 'title' => 'Type A']);
+		$this->objects->saveObject('dossiq', 'caseType', ['id' => 'ct-2', 'title' => 'Type B']);
+		$this->objects->saveObject('dossiq', 'case', ['id' => 'case-1', 'caseType' => 'ct-1', 'endDate' => null]);
+		$this->objects->saveObject('dossiq', 'case', ['id' => 'case-2', 'caseType' => 'ct-2', 'endDate' => null]);
 
 		$report = $this->service->getReport(['caseType' => 'ct-1']);
 

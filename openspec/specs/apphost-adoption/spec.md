@@ -23,7 +23,7 @@ Dossiq SHALL serve `GET /apps/dossiq/api/health` through the AppHost engine from
 
 ### Requirement: Declarative Metrics Endpoint
 
-Dossiq SHALL serve `GET /apps/dossiq/api/metrics` (admin-only, Prometheus text 0.0.4) through the AppHost engine: `cases_total{status,case_type}`, `cases_overdue_total`, `cases_created_today`, `tasks_total{status}`, `tasks_overdue_total` as `objectCount` descriptors on register `procest` schemas `case`/`task`, plus implicit `dossiq_info`/`dossiq_up`. Metric names, types, HELP texts, and label sets MUST be identical to the pre-adoption output; per-metric `cacheTtl` (30s/60s) replaces the controller-local APCu cache.
+Dossiq SHALL serve `GET /apps/dossiq/api/metrics` (admin-only, Prometheus text 0.0.4) through the AppHost engine: `cases_total{status,case_type}`, `cases_overdue_total`, `cases_created_today`, `tasks_total{status}`, `tasks_overdue_total` as `objectCount` descriptors on register `dossiq` schemas `case`/`task`, plus implicit `dossiq_info`/`dossiq_up`. Metric names, types, HELP texts, and label sets MUST be identical to the pre-adoption output; per-metric `cacheTtl` (30s/60s) replaces the controller-local APCu cache.
 
 #### Scenario: Metrics exposition parity
 

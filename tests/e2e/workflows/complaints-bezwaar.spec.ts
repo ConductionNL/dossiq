@@ -5,7 +5,7 @@
  * DEEP, data-dependent coverage — complaint-family workflow items (bezwaren).
  *
  * The prompt asks for "Complaints (klachten) or WorkflowBoard if drivable".
- * The `complaint` (klacht) schema exists in the procest register but has NO
+ * The `complaint` (klacht) schema exists in the dossiq register but has NO
  * manifest UI page, so it cannot be driven honestly through the rendered app.
  * The drivable, status-bearing complaint-family workflow that IS exposed is
  * Bezwaren (objections) — manifest page `Bezwaren` (`type:"index"`, schema

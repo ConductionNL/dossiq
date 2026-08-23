@@ -46,7 +46,7 @@ class KccWerkplekSeedDataServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'kcc_quick_action_schema' => 'kccQuickAction',
 					'belplan_schema' => 'belplan',
 					default => '',

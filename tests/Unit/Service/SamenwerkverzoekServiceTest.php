@@ -174,7 +174,7 @@ class SamenwerkverzoekServiceTest extends TestCase {
 					}
 				),
 				$this->anything(),
-				$this->equalTo('procest-register'),
+				$this->equalTo('dossiq-register'),
 				$this->equalTo('samenwerk-schema-id')
 			)
 			->willReturn($this->entity($expectedSamenwerkverzoek));
@@ -193,7 +193,7 @@ class SamenwerkverzoekServiceTest extends TestCase {
 			->willReturnCallback(
 				function (string $app, string $key, string $default = '') {
 					$map = [
-						'register' => 'procest-register',
+						'register' => 'dossiq-register',
 						'case_schema' => 'case-schema-id',
 						'dso_samenwerkverzoek_schema' => 'samenwerk-schema-id',
 					];
