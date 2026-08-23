@@ -53,6 +53,12 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Move the register and its schemas onto the `dossiq` application id.
+ *
+ * @spec exclude No canonical spec covers the procest-to-dossiq application
+ *  migration — it is a one-shot consequence of the app-id rename, not a
+ *  capability. Pointing this at an existing spec would report conformance to a
+ *  requirement that says nothing about it, which is the same reasoning the
+ *  sibling RenameDutchSchemaSlugs records for the slug half of the problem.
  */
 class MigrateRegisterApplicationId implements IRepairStep {
 	/**
@@ -86,6 +92,8 @@ class MigrateRegisterApplicationId implements IRepairStep {
 	 *
 	 * @param ContainerInterface $container The server container.
 	 * @param LoggerInterface    $logger    The logger.
+	 *
+	 * @spec exclude One-shot app-id rename migration; see the class docblock.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
@@ -99,6 +107,8 @@ class MigrateRegisterApplicationId implements IRepairStep {
 	 * Step name.
 	 *
 	 * @return string The human-readable step name.
+	 *
+	 * @spec exclude One-shot app-id rename migration; see the class docblock.
 	 */
 	public function getName(): string {
 		return 'Move the Dossiq register and schemas onto the dossiq application id';
@@ -116,6 +126,8 @@ class MigrateRegisterApplicationId implements IRepairStep {
 	 * @param IOutput $output The migration output.
 	 *
 	 * @return void
+	 *
+	 * @spec exclude One-shot app-id rename migration; see the class docblock.
 	 */
 	public function run(IOutput $output): void {
 		if (class_exists(self::MIGRATOR) === false) {
