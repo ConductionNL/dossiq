@@ -2,14 +2,17 @@
   SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
   SPDX-License-Identifier: EUPL-1.2
 
-  Tenant Onboarding Dashboard — 7-step progress, go-live readiness check,
-  activate-tenant action. Renders the TenantOnboardingService progress and
-  validateGoLive() output (chain member 07).
+  Tenant onboarding — 7-step progress, go-live readiness check, activate-tenant
+  action. Renders the TenantOnboardingService progress and validateGoLive()
+  output (chain member 07).
+
+  A settings SECTION, not a page: onboarding a tenant is one-time setup, and it
+  sat in the daily operational navigation as a top-level entry. The section
+  frame supplies the heading; this component renders its controls and body only.
 -->
 <template>
 	<div class="tenant-onboarding">
 		<div class="tenant-onboarding__header">
-			<h2>{{ t('dossiq', 'Tenant onboarding') }}</h2>
 			<div class="tenant-onboarding__controls">
 				<NcSelect
 					:modelValue="selectedTenant"
@@ -17,7 +20,7 @@
 					:inputLabel="t('dossiq', 'Tenant')"
 					:placeholder="t('dossiq', 'Pick a tenant')"
 					@update:modelValue="onTenantChange" />
-				<NcButton type="secondary" @click="loadProgress">
+				<NcButton variant="secondary" @click="loadProgress">
 					<template #icon>
 						<Refresh :size="18" />
 					</template>
@@ -83,7 +86,7 @@
 					<NcButton
 						v-if="step.status !== 'complete'"
 						size="small"
-						type="primary"
+						variant="primary"
 						:disabled="markingStep === step.step"
 						@click="markComplete(step.step)">
 						<template #icon>
@@ -101,7 +104,7 @@
 				<h3>{{ t('dossiq', 'Go-live readiness') }}</h3>
 				<NcButton
 					:disabled="checkingGoLive"
-					type="secondary"
+					variant="secondary"
 					@click="checkGoLive">
 					<template #icon>
 						<NcLoadingIcon v-if="checkingGoLive" :size="18" />
@@ -116,7 +119,7 @@
 						<CheckCircle :size="24" />
 						<span>{{ t('dossiq', 'Tenant is ready to go live.') }}</span>
 						<NcButton
-							type="primary"
+							variant="primary"
 							:disabled="activating"
 							@click="activate">
 							<template #icon>
@@ -174,7 +177,7 @@ const STEP_LABELS = {
 }
 
 export default {
-	name: 'TenantOnboardingDashboard',
+	name: 'TenantOnboardingTab',
 	components: {
 		NcButton,
 		NcEmptyContent,
@@ -241,7 +244,10 @@ export default {
 	methods: {
 		t,
 		/**
-		 * @param step
+		 * Human-readable label for an onboarding step.
+		 *
+		 * @param {string} step The step key.
+		 * @return {string} The translated label, falling back to the key.
 		 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 		 */
 		stepLabel(step) {
@@ -249,7 +255,10 @@ export default {
 		},
 
 		/**
-		 * @param opt
+		 * Switch the section to another tenant and reload its progress.
+		 *
+		 * @param {object|null} opt The selected tenant option, or null to clear.
+		 * @return {void}
 		 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 		 */
 		onTenantChange(opt) {
@@ -339,7 +348,10 @@ export default {
 		},
 
 		/**
-		 * @param step
+		 * Mark one onboarding step complete for the selected tenant.
+		 *
+		 * @param {string} step The step key to complete.
+		 * @return {Promise<void>}
 		 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 		 */
 		async markComplete(step) {

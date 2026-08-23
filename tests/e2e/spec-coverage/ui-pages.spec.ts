@@ -123,7 +123,10 @@ test.describe('Doorlooptijd page render', () => {
 		await navToRoute(page, '/doorlooptijd')
 		await expect(
 			page.getByRole('heading', {
-				name: 'Processing Time Analytics',
+				// page-topology-cleanup (A3): the heading is the dashboard
+				// page's title now. The old wording lives on as the subtitle,
+				// asserted separately below where this spec checks it.
+				name: 'Processing time',
 				level: 2,
 			}),
 		).toBeVisible({ timeout: 15000 })

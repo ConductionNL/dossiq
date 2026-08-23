@@ -52,6 +52,19 @@ class VthWorkflowGraphResolver {
 	private const NS_UUID = '6ba7b811-9dad-11d1-80b4-00c04fd430c8';
 
 	/**
+	 * Catalog-only action types this resolver rewrites before anything is stored.
+	 *
+	 * These are legal in a catalog file and ILLEGAL in stored data: nothing at
+	 * run time answers to them. They are public so the shipped-vocabulary test
+	 * can derive its exemptions from here instead of restating them — a second
+	 * copy of this list is how `spawnCase` survived unrewritten in the first
+	 * place.
+	 *
+	 * @var array<int, string>
+	 */
+	public const NORMALISED_TYPES = ['spawnCase'];
+
+	/**
 	 * Constructor for VthWorkflowGraphResolver.
 	 *
 	 * @param LoggerInterface $logger Logger.
@@ -72,12 +85,13 @@ class VthWorkflowGraphResolver {
 	 * @param array<string, mixed> $data The decoded catalog entry.
 	 * @param string $slug The template slug.
 	 * @param array<string, string> $statusMap Status name → UUID map.
+	 * @param array<string, string> $spawnTargets Template slug → caseType UUID, for spawnCase.
 	 *
 	 * @return array<string, mixed>|null {steps, transitions}, or null when unresolved
 	 *
 	 * @spec openspec/specs/vth-workflow-templates/spec.md
 	 */
-	public function resolve(array $data, string $slug, array $statusMap): ?array {
+	public function resolve(array $data, string $slug, array $statusMap, array $spawnTargets = []): ?array {
 		$resolvedSteps = $this->resolveSteps(
 			slug: $slug,
 			rawSteps: ($data['steps'] ?? []),
@@ -95,6 +109,7 @@ class VthWorkflowGraphResolver {
 			slug: $slug,
 			rawTransitions: ($data['transitions'] ?? []),
 			statusMap: $statusMap,
+			spawnTargets: $spawnTargets,
 		);
 		if ($resolvedTransitions === null) {
 			$this->logger->warning(
@@ -167,10 +182,11 @@ class VthWorkflowGraphResolver {
 	 * @param string $slug The template slug (for UUID5 ids)
 	 * @param array<int, mixed> $rawTransitions Transitions from the catalog file
 	 * @param array<string, string> $statusMap Name → UUID map
+	 * @param array<string, string> $spawnTargets Template slug → caseType UUID
 	 *
 	 * @return array<int, array<string, mixed>>|null Resolved transitions, or null
 	 */
-	private function resolveTransitions(string $slug, array $rawTransitions, array $statusMap): ?array {
+	private function resolveTransitions(string $slug, array $rawTransitions, array $statusMap, array $spawnTargets): ?array {
 		$resolved = [];
 		foreach ($rawTransitions as $transition) {
 			if (is_array($transition) === false) {
@@ -199,13 +215,104 @@ class VthWorkflowGraphResolver {
 				'toStatusName' => $toName,
 				'allowedRoles' => ($transition['allowedRoles'] ?? []),
 				'guards' => ($transition['guards'] ?? []),
-				'automaticActions' => ($transition['automaticActions'] ?? []),
+				'automaticActions' => $this->normaliseActions(
+					slug: $slug,
+					transitionSlug: $transitionSlug,
+					rawActions: ($transition['automaticActions'] ?? []),
+					spawnTargets: $spawnTargets,
+				),
 				'deadline' => ($transition['deadline'] ?? null),
 			];
 		}//end foreach
 
 		return $resolved;
 	}//end resolveTransitions()
+
+	/**
+	 * Normalise a transition's automaticActions[] to the executable vocabulary.
+	 *
+	 * The catalog is hand-written JSON and nothing validated its action types
+	 * against the nine the dispatcher can actually run. `spawnCase` was written
+	 * into `toezichtbezoek` and no handler, node or registry has ever answered
+	 * to that name: the transition reported `ok` and spawned nothing. The type
+	 * the engine implements is `createSubCase`, and its config key is a caseType
+	 * UUID — which a catalog file cannot carry, hence the resolved map.
+	 *
+	 * An action that cannot be normalised is DROPPED, not passed through. A
+	 * dropped action is visible in the log; a passed-through one becomes a
+	 * silent no-op stored in every seeded workflow, which is the bug this fixes.
+	 *
+	 * @param string $slug The template slug
+	 * @param string $transitionSlug The transition slug (for the log)
+	 * @param array<int, mixed> $rawActions Actions from the catalog file
+	 * @param array<string, string> $spawnTargets Template slug → caseType UUID
+	 *
+	 * @return array<int, array<string, mixed>> The executable actions
+	 */
+	private function normaliseActions(string $slug, string $transitionSlug, array $rawActions, array $spawnTargets): array {
+		$normalised = [];
+		foreach ($rawActions as $action) {
+			if (is_array($action) === false) {
+				continue;
+			}
+
+			if ((string)($action['type'] ?? '') !== 'spawnCase') {
+				$normalised[] = $action;
+				continue;
+			}
+
+			$spawn = $this->normaliseSpawnCase(action: $action, spawnTargets: $spawnTargets);
+			if ($spawn === null) {
+				$this->logger->warning(
+					'Procest: VTH workflow template — spawnCase target unresolved, action dropped',
+					[
+						'app' => Application::APP_ID,
+						'slug' => $slug,
+						'transition' => $transitionSlug,
+						'targetWorkflowSlug' => ($action['config']['targetWorkflowSlug'] ?? null),
+					]
+				);
+				continue;
+			}
+
+			$normalised[] = $spawn;
+		}//end foreach
+
+		return $normalised;
+	}//end normaliseActions()
+
+	/**
+	 * Rewrite one `spawnCase` entry to the executable `createSubCase` shape.
+	 *
+	 * The catalog's `condition` key is NOT carried over: no guard, handler or
+	 * node evaluates a per-action condition, so keeping it would restate the
+	 * same silent-no-op promise in a new place. The action therefore fires
+	 * whenever its transition is taken. That is a real behaviour change from
+	 * what the catalog intended (spawn only on an aanzienlijk/ernstig finding)
+	 * and it is deliberate: the transition it hangs on is `rapport-naar-
+	 * opvolging`, which an inspector only takes to open follow-up.
+	 *
+	 * @param array<string, mixed> $action The raw spawnCase action
+	 * @param array<string, string> $spawnTargets Template slug → caseType UUID
+	 *
+	 * @return array<string, mixed>|null The createSubCase action, or null when unresolvable
+	 */
+	private function normaliseSpawnCase(array $action, array $spawnTargets): ?array {
+		$config = (array)($action['config'] ?? []);
+		$target = (string)($config['targetWorkflowSlug'] ?? '');
+		$caseTypeId = (string)($spawnTargets[$target] ?? '');
+		if ($target === '' || $caseTypeId === '') {
+			return null;
+		}
+
+		return [
+			'type' => 'createSubCase',
+			'config' => [
+				'caseType' => $caseTypeId,
+				'title' => (string)($config['title'] ?? ''),
+			],
+		];
+	}//end normaliseSpawnCase()
 
 	/**
 	 * Resolve one transition's fromStatus name to a UUID.

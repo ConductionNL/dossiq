@@ -1,130 +1,70 @@
 /*
- * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-FileCopyrightText: 2026 Procest Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Gate-19 spec-coverage tests for the avg-verwerkingenlogging spec
- * (thin consumer). Dossiq only renders a scoped window on OpenRegister's
- * processing-activity register; the engine scenarios (read logging,
- * attribution, fallback flagging) execute inside OR and carry @e2e
- * excludes in the spec. These tests cover the dossiq-owned surface:
- * the FG/admin view, the export entry point, denial for unprivileged
- * callers, and the absence of dossiq-side log endpoints.
+ * AVG verwerkingenlogging spec coverage — AFTER the surface moved to OpenRegister.
+ *
+ * page-topology-cleanup (C1) retired procest's /verwerkingen page. Per ADR-047
+ * the AVG/DSAR workflow and its register are OpenRegister capabilities, and this
+ * page was never an implementation of one — it was a window onto OR's, and a
+ * broken one: it called `/api/avg/verwerkingsactiviteiten`, which OR had renamed
+ * to `/api/avg/processing-activities`. The call 404'd, and the page rendered a
+ * "No processing activities — run the repair step" empty state that blamed
+ * missing data for a dead endpoint. The catalogue was in OR the whole time.
+ *
+ * So the requirement did not disappear, it changed address. These tests assert
+ * exactly that: procest no longer hosts the surface, and the capability is live
+ * where it belongs.
  */
-
-import { test, expect, request } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import { BASE_URL } from '../base-url'
-import { navToRoute } from '../helpers/nav'
-// Route named after the component that renders it, so this spec states WHICH
-// screen it covers in executable code rather than in a comment.
-import { VerwerkingenOverview } from '../helpers/page-components'
 
-const APP_URL = '/apps/dossiq'
-// Single source of truth — see tests/e2e/base-url.ts. The old
-// `process.env.NEXTCLOUD_URL || 'http://localhost:8080'` silently targeted the
-// SHARED dev container off CI.
 const BASE = BASE_URL
 
 test.describe('AVG verwerkingenlogging spec coverage', () => {
-	// @e2e openspec/specs/avg-verwerkingenlogging/spec.md#fg-opens-the-dossiq-verwerkingen-overview
-	test('admin (FG-equivalent) opens the verwerkingen overview', async ({
+	// @e2e openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md#scenario-procest-hosts-no-processing-activities-page
+	test('procest no longer hosts a processing-activities page', async ({
 		page,
 	}) => {
-		// The app is history-mode, NOT hash-mode: `/apps/dossiq#/verwerkingen`
-		// loads the app root and leaves the hash unrouted, so the overview
-		// never renders. `/index.php/apps/dossiq/verwerkingen` renders it —
-		// measured on a CI runner (2026-08-04).
-		await navToRoute(page, VerwerkingenOverview)
+		// MUST be the app's real id. Against `/apps/procest/...` the server
+		// serves nothing at all, so `toHaveCount(0)` would pass without the
+		// retirement having anything to do with it — the test would assert the
+		// absence of a heading that could never have rendered either way.
+		await page.goto(`${BASE}/index.php/apps/dossiq/verwerkingen`)
+		// The retired route is unrouted, so the SPA falls back to the app root
+		// rather than rendering the old overview. Assert the heading is gone —
+		// asserting a 404 would be wrong, the server serves the SPA for any app path.
 		await expect(
 			page.getByRole('heading', { name: 'Processing activities (AVG)' }),
-		).toBeVisible({ timeout: 15000 })
-		// The catalogue table (seeded drafts) or the seed empty-state renders;
-		// either way the scoped window is up — never a dossiq-side error page.
-		await expect(
-			page
-				.locator('.verwerkingen-overview__table')
-				.or(page.getByText('No processing activities')),
-		).toBeVisible({ timeout: 15000 })
+		).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/avg-verwerkingenlogging/spec.md#inzageverzoek-export-delegates-to-the-platform
-	test('inzage export entry point delegates to the OpenRegister endpoint', async ({
-		page,
+	// @e2e openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md#scenario-the-capability-is-reachable-in-openregister
+	test('the processing-activity catalogue is served by OpenRegister', async ({
+		request,
 	}) => {
-		// The app is history-mode, NOT hash-mode: `/apps/dossiq#/verwerkingen`
-		// loads the app root and leaves the hash unrouted, so the overview
-		// never renders. `/index.php/apps/dossiq/verwerkingen` renders it —
-		// measured on a CI runner (2026-08-04).
-		await navToRoute(page, VerwerkingenOverview)
-		await page
-			.getByRole('button', { name: 'Data subject access export' })
-			.click()
-		await expect(
-			page.getByRole('heading', { name: 'Data subject access export' }),
-		).toBeVisible()
-
-		// The export MUST be produced by OR (OR-PA-7): assert the produce
-		// action calls OpenRegister's betrokkene endpoint, not a dossiq route.
-		const [orRequest] = await Promise.all([
-			page.waitForRequest((req) =>
-				req
-					.url()
-					.includes('/apps/openregister/api/avg/verwerkingen/betrokkene'),
-			),
-			(async () => {
-				await page.getByLabel('Subject identifier value').fill('999990011')
-				await page.getByRole('button', { name: 'Produce extract' }).click()
-			})(),
-		])
-		expect(orRequest.url()).toContain(
-			'/apps/openregister/api/avg/verwerkingen/betrokkene',
+		// The endpoint procest used to call, under the name OR actually serves.
+		// A 200 with the seeded case-handling catalogue is what makes retiring
+		// procest's window lossless.
+		const res = await request.get(
+			`${BASE}/index.php/apps/openregister/api/avg/processing-activities`,
 		)
+		expect(res.status()).toBe(200)
+		const body = await res.json()
+		expect(Array.isArray(body.results)).toBe(true)
 	})
 
-	// @e2e openspec/specs/avg-verwerkingenlogging/spec.md#non-fg-users-cannot-reach-the-surface
-	test('unauthenticated callers are denied on the delegated OR endpoints', async () => {
-		const ctx = await request.newContext({
-			baseURL: BASE,
-			storageState: undefined,
-		})
-		const activities = await ctx.get(
-			'/apps/openregister/api/avg/verwerkingsactiviteiten',
-			{ maxRedirects: 0 },
-		)
-		expect(activities.status()).not.toBe(200)
-		const log = await ctx.get('/apps/openregister/api/avg/verwerkingen', {
-			maxRedirects: 0,
-		})
-		expect(log.status()).not.toBe(200)
-		await ctx.dispose()
-	})
-
-	// @e2e openspec/specs/avg-verwerkingenlogging/spec.md#no-dossiq-log-endpoints-exist
-	test('dossiq exposes no processing-log endpoints of its own', async ({
-		page,
+	// @e2e openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md#scenario-the-capability-is-reachable-in-openregister
+	test('the per-subject access export is served by OpenRegister', async ({
+		request,
 	}) => {
-		// The dossiq route table must not answer AVG log paths — the VNG
-		// Logging Verwerkingen API is OpenRegister's (OR-PA-9).
-		// A STATUS CODE CANNOT PROVE THIS. dossiq registers an SPA catch-all
-		// (`/{path}` -> dashboard#catchAll, from Routes::standard()), so every
-		// unmatched path under /apps/dossiq returns the app shell with HTTP
-		// 200 — this assertion expected 404/405 and could never pass. Note the
-		// trap: simply widening the expectation to include 200 would make it
-		// green while proving nothing, because 200 is exactly what the
-		// catch-all returns for a route that does NOT exist.
-		//
-		// What actually distinguishes "no API endpoint here" is the RESPONSE
-		// BODY: an AVG log endpoint would answer JSON, whereas the catch-all
-		// serves the HTML shell.
-		const res = await page.request.get(
-			`/index.php${APP_URL}/api/avg/verwerkingen`,
-			{ maxRedirects: 0 },
+		// OR-PA-7. Called without a subject identifier on purpose: a 4xx proves
+		// the route EXISTS and validates, where a 404 would mean it does not.
+		const res = await request.get(
+			`${BASE}/index.php/apps/openregister/api/avg/verwerkingen/betrokkene`,
 		)
-		const contentType = res.headers()['content-type'] ?? ''
-		expect(
-			contentType.includes('application/json'),
-			`dossiq answered ${APP_URL}/api/avg/verwerkingen with ${res.status()} ${contentType} — `
-				+ 'an AVG processing-log endpoint appears to exist in dossiq, but the VNG Logging '
-				+ "Verwerkingen API is OpenRegister's (OR-PA-9).",
-		).toBe(false)
+		expect(res.status()).toBeGreaterThanOrEqual(400)
+		expect(res.status()).toBeLessThan(500)
+		expect(res.status()).not.toBe(404)
 	})
 })

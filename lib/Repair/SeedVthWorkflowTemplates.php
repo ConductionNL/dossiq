@@ -64,6 +64,17 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 	private const CATALOG_DIR = __DIR__ . '/../Settings/seed/vth-workflow-templates';
 
 	/**
+	 * Memoised template slug → caseType UUID map, built once per run.
+	 *
+	 * A `spawnCase` action names its target by TEMPLATE slug, while the engine's
+	 * `createSubCase` needs a caseType UUID — which is instance-specific and so
+	 * cannot live in the catalog JSON. This map is the bridge.
+	 *
+	 * @var array<string, string>|null
+	 */
+	private ?array $spawnTargets = null;
+
+	/**
 	 * Constructor for SeedVthWorkflowTemplates.
 	 *
 	 * @param SettingsService $settingsService Settings service for OR access
@@ -172,6 +183,53 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 	}//end catalogFiles()
 
 	/**
+	 * Build (once per run) the template slug → caseType UUID map for spawnCase.
+	 *
+	 * Every catalog entry is read, including cross-link ones: a cross-link entry
+	 * seeds no workflow of its own but its caseType is still a legitimate spawn
+	 * target. A slug whose caseType does not resolve is simply absent from the
+	 * map, and the resolver drops the action rather than storing a dead one.
+	 *
+	 * @return array<string, string> Template slug → caseType UUID
+	 *
+	 * @spec openspec/specs/vth-workflow-templates/spec.md
+	 */
+	private function spawnTargets(): array {
+		if ($this->spawnTargets !== null) {
+			return $this->spawnTargets;
+		}
+
+		$files = glob(self::CATALOG_DIR . '/*.json');
+		if ($files === false) {
+			$files = [];
+		}
+
+		$map = [];
+		foreach ($files as $file) {
+			$data = $this->loadCatalogEntry(file: $file);
+			if ($data === null) {
+				continue;
+			}
+
+			$caseTypeSlug = (string)($data['caseTypeSlug'] ?? '');
+			if ($caseTypeSlug === '') {
+				continue;
+			}
+
+			$caseTypeId = $this->lookup->resolveCaseTypeId(slug: $caseTypeSlug);
+			if ($caseTypeId === '') {
+				continue;
+			}
+
+			$map[(string)$data['slug']] = $caseTypeId;
+		}
+
+		$this->spawnTargets = $map;
+
+		return $map;
+	}//end spawnTargets()
+
+	/**
 	 * Process one catalog file, converting any throw into a `failed` tally.
 	 *
 	 * One unusable catalog file must never abort the rest of the catalog.
@@ -245,6 +303,7 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 			data: $data,
 			slug: $slug,
 			statusMap: (array)$context['statusMap'],
+			spawnTargets: $this->spawnTargets(),
 		);
 		if ($graph === null) {
 			return 'skipped';

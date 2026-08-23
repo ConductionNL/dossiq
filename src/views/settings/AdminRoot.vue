@@ -154,6 +154,18 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			:name="t('dossiq', 'Tenant onboarding')"
+			:description="
+				t(
+					'dossiq',
+					'Track a tenant through the seven onboarding steps, run the go-live readiness check and activate the tenant. One-time setup, so it belongs here rather than in the daily navigation.',
+				)
+			"
+			:loading="!storesReady">
+			<TenantOnboardingTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			:name="t('dossiq', 'StUF-ZKN Audit Log')"
 			:description="
 				t(
@@ -182,6 +194,7 @@ import DecisionTablesTab from './tabs/DecisionTablesTab.vue'
 import FinancialIntegrationTab from './tabs/FinancialIntegrationTab.vue'
 import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
 import MandaatMatrixTab from './tabs/MandaatMatrixTab.vue'
+import TenantOnboardingTab from './tabs/TenantOnboardingTab.vue'
 import TermijnDefinitiesTab from './tabs/TermijnDefinitiesTab.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import { initializeStores } from '../../store/store.js'
@@ -189,6 +202,7 @@ import { initializeStores } from '../../store/store.js'
 export default {
 	name: 'AdminRoot',
 	components: {
+		TenantOnboardingTab,
 		CnAdminSettingsShell,
 		CnSettingsSection,
 		Settings,
