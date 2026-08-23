@@ -57,7 +57,7 @@
 					"enabled": true,
 					"showMetadata": true
 				},
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
@@ -69,7 +69,7 @@
 				"register": "dossiq",
 				"schema": "subsidieAanvraag",
 				"_note": "SUBSIDY-APPLICATION archetype (subsidieAanvraag). Per ADR-044 the common workflow/status lives on a unified `case` (caseType=subsidie) shown by CaseDetail; subsidieAanvraag is the linked schema holding subsidy-specific data reached by deep link. It declares NO comms linkedTypes, so no files/notes/contacts/calendar leaves — those live on the parent case. The Data widget carries the application and its budget/applicant fields (aanvraagnummer, subsidieregeling, aangevraagdBedrag, begroting, cofinancieringList, projectStartdatum/Einddatum, aanvragerKvkRef, aanvragerBsnRef, behandelaar) and a Related panel links the parent case, the scheme and the handler. Its genuine children — assessments (subsidieBeoordeling), decisions (subsidieBeschikking) and executions (subsidieUitvoering), all keyed subsidieaanvraag=@objectId — are FK-scoped object-lists (these were previously mis-modelled as case-scoped tabs that never matched a subsidieAanvraag id). ADR-062 round 2: the deprecated header summaryAggregates moved into an in-grid stats-block top-right (decision/execution counts), stacked over the Related panel to close the lead row against the 12-field data widget (8x6 = 4x3+4x3); child lists carry tailored emptyText. lifecycleActions drive the status (ontvangen → … → verleend/afgewezen). Audit history is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
+				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{ "id": "subsidie-data", "type": "data", "title": "Subsidieaanvraag", "icon": "CashMultiple", "content": { "columns": 2 } },
 					{ "id": "subsidie-kpis", "type": "stats-block", "title": "Key figures", "icon": "Gauge", "content": { "entries": [

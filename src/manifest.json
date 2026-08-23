@@ -236,7 +236,7 @@
 			"id": "Documentation",
 			"label": "Documentation",
 			"icon": "BookOpenVariantOutline",
-			"href": "https://procest.conduction.nl",
+			"href": "https://dossiq.conduction.nl",
 			"section": "footer",
 			"order": 90
 		},
@@ -1023,7 +1023,7 @@
 						"showTitle": true
 					}
 				],
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
@@ -1123,7 +1123,7 @@
 					"filterField": "caseType",
 					"allLabel": "All cases"
 				},
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
@@ -1135,7 +1135,7 @@
 				"register": "dossiq",
 				"schema": "case",
 				"_note": "CASE archetype (unified zaak) — the flagship record and the ADR-062 reference page (the cell is the budget: every widget fills its gridHeight exactly, no inner scrollbars, no reserved voids). The lead row pairs the field-scoped 'Core case data' widget (include: identity/ownership fields) with a right column of KPI stats-block (open tasks / documents / decisions / sub-cases, replacing the deprecated header summaryAggregates) over the Related panel. Row two pairs the 'Process' data widget (include: status/procedure/workflow fields) with Initiator, Contacts and Notes sized to their small content. FK-scoped child collections (task.case, caseDocument.case, decision.case, voorstel.case, location.case) fit their rows to their cells with View-all/+N-more footers. Files and Calendar leaves close the page. lifecycleActions drive status transitions; audit history stays the single sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
+				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
 						"id": "case-core",
@@ -1841,7 +1841,7 @@
 					"enabled": true,
 					"showMetadata": true
 				},
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
@@ -1853,7 +1853,7 @@
 				"register": "dossiq",
 				"schema": "objectionProceeding",
 				"_note": "OBJECTION-CASE archetype (AWB bezwaar), ADR-062 round 2. `bezwaar` is a supporting schema on a unified case (bezwaar.case) and declares NO comms linkedTypes — so NO files/notes/contacts/calendar leaves here; those live on the parent CaseDetail. The lead row pairs the field-scoped 'Objection' core widget (case/objection/status/awbReference/ontvangstdatum/decisionDeadline) with an in-grid KPI stats-block (advice-request and decision counts, replacing the deprecated header summaryAggregates). The AWB statutory-clock fields (verdaging/opschorting/hearing waiver/ingebrekestelling/dwangsom) are a genuinely distinct group and get their own 'Statutory clock & suspension' data widget. The two real child collections follow as FK-scoped object-lists side by side: committee advice requests (bacAdviceRequest.bezwaar) and decisions on the objection (bezwaarDecision.bezwaar), each deep-linking to its own detail page. lifecycleActions drive the bezwaar status (Ontvangen → … → Afgehandeld). Audit history stays a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
+				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
 						"id": "bezwaar-core",
@@ -2103,7 +2103,7 @@
 				"register": "dossiq",
 				"schema": "bezwaarDecision",
 				"_note": "DECISION-RECORD archetype (beslissing op bezwaar, AWB art. 7:11), ADR-062 round 2. No comms linkedTypes and no child schemas point at it. The 17-field schema splits into two genuinely distinct groups: 'Disposition & reasoning' (the legal substance — dispositionType, reasoning, legalBasis, advisoryOpinion, followsAdvice, deviationRationale, proceskostenvergoeding, status) paired with the Related panel (parent bezwaar and case), and 'Publication & documents' (the formal paper trail — replacementDecision, appealNotice, dates, decisionMaker, decisionDocument, publishedAt, notifiedRecipients) full-width below. lifecycleActions drive the status (draft → published). No files/notes leaves: document references are plain fields, not a files-leaf. Audit history is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
+				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
 						"id": "bezwaardecision-data",
@@ -2237,7 +2237,7 @@
 					"enabled": true,
 					"showMetadata": true
 				},
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
@@ -2249,7 +2249,7 @@
 				"register": "dossiq",
 				"schema": "task",
 				"_note": "CREATE-FORM archetype — the task creation form (route /tasks/new, usually pre-seeded with ?caseId=). A not-yet-persisted task has no id, so no children, history, aggregates or content leaves apply: it is just the Data form. No audit sidebar tab either — there is no object to have a history. All richness lives on TaskDetail once the task exists.",
-				"documentationUrl": "https://procest.conduction.nl",
+				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
 						"id": "tasknew-data",
@@ -2287,7 +2287,7 @@
 				"register": "dossiq",
 				"schema": "task",
 				"_note": "ACTION-ITEM archetype — a work item on a case (task.case) with assignee/dueDate/priority/status and an inline checklist[]. The schema declares NO comms linkedTypes and has NO child schemas pointing at it, so it stays deliberately lean: the Data widget carries the who/when/status and the checklist, and lifecycleActions drive the status machine (available → active → completed / terminated). No files/notes/contacts/calendar leaves — a task carries none of that content; those live on the parent case. Audit history (status transitions) is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
+				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
 						"id": "task-data",
@@ -2453,7 +2453,7 @@
 					"enabled": true,
 					"showMetadata": true
 				},
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
@@ -2490,7 +2490,7 @@
 						}
 					]
 				},
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			},
 			"slots": {
 				"default": "VoorstelDetailView"
@@ -2528,7 +2528,7 @@
 					"enabled": true,
 					"showMetadata": true
 				},
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
@@ -2540,7 +2540,7 @@
 				"register": "dossiq",
 				"schema": "adviesAanvraag",
 				"_note": "ADVICE-REQUEST archetype (adviesAanvraag on a case). No comms linkedTypes and no child schemas point at it, so it stays lean: the Data widget carries the request and its clock (case, adviseur, type, onderwerp, deadline, requestedAt, receivedAt, the questions[] and the returned adviesDocument), a Related panel exposes the parent case and adviser links, and lifecycleActions drive the status (aangevraagd → ontvangen / verlopen) — deadline-vs-received being the primary at-a-glance signal. No files/notes/contacts/calendar leaves: the advice document is a plain field and comms live on the parent case. Audit history is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
+				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
 						"id": "advice-data",
@@ -2627,7 +2627,7 @@
 						"gridHeight": 12
 					}
 				],
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			},
 			"slots": {
 				"widget-doorlooptijd": "DoorlooptijdView"
@@ -2709,7 +2709,7 @@
 					"enabled": true,
 					"showMetadata": true
 				},
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
@@ -2757,7 +2757,7 @@
 					"enabled": true,
 					"showMetadata": true
 				},
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
@@ -2800,7 +2800,7 @@
 					"enabled": true,
 					"showMetadata": true
 				},
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
@@ -2859,7 +2859,7 @@
 					"enabled": true,
 					"showMetadata": true
 				},
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
@@ -2872,7 +2872,7 @@
 				"register": "dossiq",
 				"schema": "wmsLayer",
 				"_note": "CONFIG/TECHNICAL archetype (WMS/WFS map-layer definition). Admin-only, no comms, no child schemas and no status lifecycle — so deliberately lean. The single Data widget holds the full endpoint config (url, layerName, srs, opacity, queryable, format, version, isDefault, active). No object-lists (nothing is a child of a layer), no content leaves (a layer carries no files/notes/calendar), no lifecycleActions (active is a plain boolean). Audit history (config edits) is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
+				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
 						"id": "wmslayer-data",
@@ -2947,7 +2947,7 @@
 						"type": "handler"
 					}
 				],
-				"documentationUrl": "https://procest.conduction.nl",
+				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
 						"id": "tenant-data",
@@ -3006,7 +3006,7 @@
 				"register": "dossiq",
 				"schema": "parafeerroute",
 				"_note": "CONFIG/TECHNICAL archetype (initialling/approval route template consumed by voorstel records). No comms, no status lifecycle, no child schemas. The single Data widget carries the binding + defaults (name, caseType, voorstelType, isDefault, description) and the ordered steps[] (actor/actorType/mandatory/label per stage) — the routing definition. No object-lists, no content leaves, no lifecycleActions. Audit history (template edits) is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
+				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
 						"id": "parafeerroute-data",
@@ -3062,7 +3062,7 @@
 				"register": "dossiq",
 				"schema": "aiAuditEntry",
 				"_note": "IMMUTABLE AUDIT-LOG archetype (one frozen AI suggestion + human decision, EU AI Act Art. 14 human-oversight evidence). No comms/documents, no lifecycleActions, no edit/delete — a log entry is a frozen fact, not a mutable object. The single Data widget carries the full record (type, action, caseId, documentId, model, prompt, suggestion, confidence, userAction, actualValue, reason, userId, timestamp, responseTimeMs). No content leaves, no object-lists. Register-level audit history is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
+				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
 						"id": "ai-audit-data",
@@ -3132,7 +3132,7 @@
 					"enabled": true,
 					"showMetadata": true
 				},
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
@@ -3167,7 +3167,7 @@
 					"enabled": true,
 					"showMetadata": true
 				},
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
@@ -3179,7 +3179,7 @@
 				"register": "dossiq",
 				"schema": "partnerOrganization",
 				"_note": "ORG-CONFIG archetype (partner organisation for cross-org case sharing), ADR-062 round 2. The schema is intentionally thin (name, slug, oin, contactEmail, defaultPermissionLevel, groupId, isActive, qualityScore/qualityStatus) — one coherent config group, no include-split. The lead row pairs the Data widget with an in-grid single-stat KPI card (share count, replacing the deprecated header summaryAggregates; deep-links to the CaseShares index). The one relationship that matters operationally — which cases are shared with this partner — is a full-width caseShare object-list (caseShare.partnerId=@objectId) showing label/type/permission/expiry; allowCreate:false because shares are minted by the share flow (token/password/audit), never hand-created from a list. No comms leaves (contactEmail is a plain field, not a mail-leaf) and no status lifecycle (isActive is a boolean). Audit history (activation/permission changes) is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
+				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
 						"id": "partner-data",
@@ -3319,7 +3319,7 @@
 				"register": "dossiq",
 				"schema": "casetransfer",
 				"_note": "WORKFLOW-RECORD archetype (inter-organisation case handover). No comms/documents and no child schemas — a transfer is a small state machine, not a dossier. The single Data widget carries the request and its resolution (caseId, sourceOrganization, targetOrganization, reason, requestedDate, rejectionReason, completedAt), and lifecycleActions drive the status (pending → accepted / rejected). No object-lists (nothing is a child of a transfer), no content leaves. Audit history (the pending→accepted/rejected transition) is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
+				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
 						"id": "transfer-data",
@@ -3402,7 +3402,7 @@
 					"enabled": true,
 					"showMetadata": true
 				},
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
@@ -3414,7 +3414,7 @@
 				"register": "dossiq",
 				"schema": "automaticAction",
 				"_note": "CONFIG/TECHNICAL archetype (workflow automation handler definition — a rule consumed by the workflow engine). No comms, no child schemas, no status enum (isPublished/active are booleans). The single Data widget carries identity + the handler-specific config[] payload (slug, type, title, description, tenantId, version, isPublished, active, config). No object-lists, no content leaves, no lifecycleActions. Audit history (publish/activation changes) is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
+				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
 						"id": "automaticaction-data",
@@ -3519,7 +3519,7 @@
 					"enabled": true,
 					"showMetadata": true
 				},
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
@@ -3558,7 +3558,7 @@
 						"type": "handler"
 					}
 				],
-				"documentationUrl": "https://procest.conduction.nl",
+				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
 						"id": "workflowdef-data",
@@ -3649,7 +3649,7 @@
 				"register": "dossiq",
 				"schema": "statusRecord",
 				"_note": "TRANSITION-RECORD archetype (an immutable entry for one case status transition). No comms/documents and it is itself a history entry, so it stays lean. The Data widget shows the transition and its side-effects (case, fromStatus→statusType, transitionLabel, noWorkflowTemplate, the evaluatedGuards[] that were checked and the dispatchedActions[] that fired); a Related panel links the parent case. No lifecycleActions — a status record is a frozen fact, not a mutable object. No content leaves. Audit history is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
+				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
 						"id": "statusrecord-data",
@@ -3741,7 +3741,7 @@
 					"enabled": true,
 					"showMetadata": true
 				},
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
@@ -3792,7 +3792,7 @@
 					"enabled": true,
 					"showMetadata": true
 				},
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
@@ -3805,7 +3805,7 @@
 				"register": "dossiq",
 				"schema": "lhsMatrix",
 				"_note": "CONFIG/TECHNICAL archetype (Landelijke Handhavingsstrategie intervention matrix — versioned, immutable enforcement policy). Admin-only, no comms/documents. The Data widget carries header + axes + substance in one form (name, version, active, ernstAxis, gedragAxis, actorTypeAxis, createdAt, the cells[] grid ernst×gedrag×actorType→interventie, and the domain auditTrail[] of per-version actor/notes). lhsRecommendation records reference this matrix by version, not a FK, so no object-list is scoped here. No content leaves, no status lifecycle (active is a boolean). Register-level audit history is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
+				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
 						"id": "lhsmatrix-data",
@@ -3885,7 +3885,7 @@
 					"enabled": true,
 					"showMetadata": true
 				},
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
@@ -3897,7 +3897,7 @@
 				"register": "dossiq",
 				"schema": "lhsRecommendation",
 				"_note": "ASSESSMENT-RECORD archetype (a per-case LHS intervention recommendation derived from an lhsMatrix), ADR-062 round 2. No comms/documents, no child schemas. The 13-field schema splits into two genuinely distinct groups: 'Recommendation' (the matrix inputs and outcome — case, inspection, ernst, gedrag, actorType, matrixVersion, recommendedInterventie, recommendedBy) paired with the Related panel (parent case and inspection), and 'Override & final' (the accountability-bearing deviation fields — finalIntervention, override, overrideJustification, overrideBy, overrideAuthority) full-width below. No status lifecycle field and no content leaves. Audit history is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
+				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
 						"id": "lhsrecommendation-data",
@@ -4003,7 +4003,7 @@
 				"register": "dossiq",
 				"schema": "location",
 				"_note": "GEO-RECORD archetype (a case location / BAG anchor). Deliberately lean: the Data widget shows address + coordinates + BAG identifiers (label, formattedAddress, latitude, longitude, nummeraanduidingId, parcelId, accuracyRadius, source) and a Related panel links the parent case. NO maps leaf here — the location schema does NOT declare a maps linkedType (only the case schema does; the interactive per-case map lives on CaseDetail and the /map overview). No comms/documents, no status lifecycle. Audit history (geocoding corrections) is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
+				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
 						"id": "location-data",
@@ -4095,7 +4095,7 @@
 					"enabled": true,
 					"showMetadata": true
 				},
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
@@ -4107,7 +4107,7 @@
 				"register": "dossiq",
 				"schema": "bezwaaradviescommissie",
 				"_note": "COMMITTEE archetype (bezwaaradviescommissie / BAC), ADR-062 round 2. No comms leaves on the schema. A committee is defined by its constitution and its caseload; the schema splits into two genuinely distinct groups: 'Committee' (name, type, domain, jurisdiction, quorum, active — the constitution) and 'Roster & term' (chair, secretary, members[], termStartsOn, termEndsOn, created — who sits and until when). The lead row pairs the constitution widget with an in-grid KPI stats-block (total assignments + in-deliberation workload via bacAdviceRequest.status, replacing the deprecated header summaryAggregates). Below: the roster widget full-width, then the advice-assignment object-list (bacAdviceRequest.commissie=@objectId). No status lifecycle (active is a boolean). Audit history (composition/term changes) is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
+				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
 						"id": "bezwaarcommittee-data",
@@ -4301,7 +4301,7 @@
 				"register": "dossiq",
 				"schema": "bacAdviceRequest",
 				"_note": "ADVICE-ASSIGNMENT archetype (a committee advice request on a bezwaar), ADR-062 round 2. No comms leaves and no child schemas. The 15-field schema splits into two genuinely distinct groups: 'Assignment' (who/when — bezwaar, commissie, panel, status, assignedAt, deadline) paired with the Related panel (parent bezwaar and committee), and 'Advice & outcome' (the substantive opinion, dissent and evidence — advice, recommendation, conclusion, adviceIssuedAt, dissentingOpinions[], adviceDocuments, signatureEvidence, hearingReportRef) full-width below. lifecycleActions drive the status (assigned → in-deliberation → advice-issued / niet-ontvankelijk). Document references are plain fields, not a files-leaf. Audit history is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
+				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
 						"id": "bacadvicerequest-data",
@@ -4440,7 +4440,7 @@
 					"enabled": true,
 					"showMetadata": true
 				},
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
@@ -4452,7 +4452,7 @@
 				"register": "dossiq",
 				"schema": "beroep",
 				"_note": "APPEAL-CASE archetype (AWB beroep at the rechtbank), ADR-062 round 2. `beroep` is a supporting schema on a unified case (beroep.case) and declares NO comms linkedTypes, so no files/notes/contacts/calendar here — those live on the parent CaseDetail. The 17-field schema splits into two genuinely distinct groups: 'Appeal' (the court header — case, sourceBezwaar, contestedDecision, courtReference, responsibleChamber, competentCourt) paired with the Related panel (parent case and source bezwaar), and 'Filing & judgment' (the clock, sub-process and outcome — appellantFilingDate/NotifiedDate, filingDeadline, voorzieningRequested, latefilingNotice, fileInspectionRequests[], judgmentOutcome/Date/Document, cascadeAction/cascadeBezwaarCase) full-width below. No status enum on this schema, so no lifecycleActions. Audit history is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
+				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
 						"id": "beroep-data",
@@ -4557,7 +4557,7 @@
 			"type": "roadmap",
 			"title": "Features & roadmap",
 			"config": {
-				"documentationUrl": "https://procest.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
