@@ -45,6 +45,12 @@ use Throwable;
  *
  * @template-implements IEventListener<RegisterFlowNodesEvent>
  *
+ * @psalm-suppress InvalidTemplateParam RegisterFlowNodesEvent is OpenRegister's,
+ *     loaded at runtime and suppressed as an undefined class in psalm.xml, so
+ *     psalm cannot see that it extends OCP\EventDispatcher\Event and cannot
+ *     check the template argument. The annotation is still correct and is what
+ *     the engine actually dispatches; only the proof is unavailable here.
+ *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
 class ProcestFlowNodeListener implements IEventListener {
@@ -55,6 +61,14 @@ class ProcestFlowNodeListener implements IEventListener {
      * The live transition vocabulary first — it is the one that runs.
      *
      * @var class-string<IFlowNode>[]
+     *
+     * @psalm-suppress InvalidConstantAssignmentValue Every class listed here
+     *     does implement IFlowNode, but IFlowNode is OpenRegister's and is
+     *     suppressed as undefined (psalm.xml), so psalm cannot verify the
+     *     implements-relationship and rejects the narrowing. The declared type
+     *     is the contract this list must satisfy and is kept deliberately —
+     *     widening it to plain class-string would silence the error by giving
+     *     up the only statement of intent this constant carries.
      */
     private const NODES = [
         // Live: fired by SideEffectDispatcher on every status change.

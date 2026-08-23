@@ -80,9 +80,22 @@ class SideEffectDispatcher {
 			// parallel implementation. The local-handler path is the fallback for
 			// an instance without OpenRegister, so a transition never silently
 			// skips its side effects because a neighbouring app is absent.
-			$results[] = ($nodes !== null)
-				? $this->viaNode(nodes: $nodes, type: $type, action: $action, case: $case, transitionContext: $transitionContext)
-				: $this->viaHandler(type: $type, action: $action, case: $case, transitionContext: $transitionContext);
+			if ($nodes !== null) {
+				$results[] = $this->viaNode(
+					nodes: $nodes,
+					type: $type,
+					action: $action,
+					case: $case,
+					transitionContext: $transitionContext
+				);
+			} else {
+				$results[] = $this->viaHandler(
+					type: $type,
+					action: $action,
+					case: $case,
+					transitionContext: $transitionContext
+				);
+			}//end if
 		}//end foreach
 
 		return $results;
@@ -159,7 +172,15 @@ class SideEffectDispatcher {
 		try {
 			$node->execute(items: [['json' => $case]], config: $action, context: $transitionContext);
 		} catch (Throwable $e) {
-			return ['type' => $type, 'ok' => false, 'error' => ($e->getMessage() ?: 'action_failed')];
+			// An exception with an empty message still has to report SOMETHING —
+			// 'ok' => false with a blank error reads downstream as "failed, cause
+			// unknown", which is indistinguishable from a bug in this handler.
+			$message = $e->getMessage();
+			if ($message === '') {
+				$message = 'action_failed';
+			}
+
+			return ['type' => $type, 'ok' => false, 'error' => $message];
 		}
 
 		return ['type' => $type, 'ok' => true];

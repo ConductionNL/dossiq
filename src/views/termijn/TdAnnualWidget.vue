@@ -28,9 +28,7 @@
 			<span
 				v-if="(annual.warnings || []).length > 0"
 				class="td-annual-widget__pill td-annual-widget__pill--warn">
-				{{
-					t('dossiq', '{n} data warnings', { n: annual.warnings.length })
-				}}
+				{{ t('dossiq', '{n} data warnings', { n: annual.warnings.length }) }}
 			</span>
 		</div>
 		<p v-else class="td-annual-widget__empty">
