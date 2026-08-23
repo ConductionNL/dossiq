@@ -172,6 +172,20 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 Ahead of the import trigger, InitializeSettings.
             -->
             <step>OCA\Dossiq\Repair\RenameDutchSchemaSlugs</step>
+            <!--
+                Same ordering argument as the slug rename above, one field over.
+                The descriptor now declares x-openregister.app = dossiq, but the
+                existing schemas still carry application = procest, and
+                ImportHandler matches a schema on the PAIR
+                (findByApplicationAndSlug, lower(slug)). Left alone, the import
+                would miss every one of them, take its "not found, will create
+                new one" branch, and fork a second EMPTY set under dossiq while
+                the originals and their objects stay behind — again presenting
+                as an app with no records rather than as an error. Re-pointing
+                the application id first makes the import recognise them.
+                Ahead of the import trigger, InitializeSettings.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateRegisterApplicationId</step>
             <step>OCA\Dossiq\Repair\InitializeSettings</step>
             <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
@@ -275,6 +289,16 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\MigrateAppConfigKeys</step>
             <step>OCA\Dossiq\Repair\MigrateUserPreferences</step>
+            <!--
+                Declared here for exactly the reason the block comment above
+                gives, and this step depends on it more than most: the instances
+                that need the procest -> dossiq application migration are
+                precisely the ones where Nextcloud sees `dossiq` as a NEW app
+                and fires <install> only. Declared solely in post-migration it
+                would never run where it matters. Idempotent, so the duplicate
+                declaration is free.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateRegisterApplicationId</step>
             <step>OCA\Dossiq\Repair\InitializeSettings</step>
             <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
