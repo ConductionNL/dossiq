@@ -6,18 +6,18 @@
  * WHY A REPAIR STEP AT ALL. OpenRegister's ImportHandler resolves a register by
  * SLUG and by nothing else — `registerMapper->find(id: strtolower($data['slug']))`
  * — and the `DoesNotExistException` branch is not an error path, it is the
- * "create a new one" path. So shipping a renamed slug in dossiq_register.json
+ * "create a new one" path. So shipping a renamed slug in the register JSON
  * without renaming the row first does not rename anything: the import finds no
  * match, CREATES A SECOND, EMPTY REGISTER, and the app addresses that one from
- * then on. Every stored case, task, besluit and vergadering stays behind on the
- * old row, reachable by nothing. Nothing errors. The app simply looks new.
+ * then on. Every stored object stays behind on the old row, reachable by
+ * nothing. Nothing errors. The app simply looks new.
  *
  * WHY IT DOES NOT TOUCH A SINGLE OBJECT. Measured against a live install rather
  * than assumed: an object is bound to its register by NUMERIC ID, not by slug.
- * Every shard table's `_register` column holds the id (`11`, `17`, …), and the
- * tables themselves are named `oc_openregister_table_<registerId>_<schemaId>` —
- * OpenRegister composes that name from `$register->getId()` at every call site,
- * and RegisterSchemaLinkageRepairService rejects anything that is not
+ * Every shard table's `_register` column holds the id, and the tables themselves
+ * are named `oc_openregister_table_<registerId>_<schemaId>` — OpenRegister
+ * composes that name from `$register->getId()` at every call site, and
+ * RegisterSchemaLinkageRepairService rejects anything that is not
  * `^[A-Za-z0-9]+_openregister_table_[0-9]+_[0-9]+$`. There is no slug anywhere
  * in the physical layout. Renaming a slug therefore re-points nothing and can
  * strand nothing: it is a one-column UPDATE on one row, and every object,
@@ -30,10 +30,9 @@
  * empty twice. The two values move together or not at all.
  *
  * ORDERING IS LOAD-BEARING. This runs FIRST among the register steps, ahead of
- * RenameDutchSchemaSlugs (which resolves its schemas through these slugs) and
- * ahead of InitializeSettings (which triggers the import). It runs after the two
- * app-id steps, which move `oc_appconfig` / `oc_preferences` rows and have
- * nothing to do with registers.
+ * everything that resolves a register by slug and ahead of the register import.
+ * It runs after the app-id steps, which move `oc_appconfig` / `oc_preferences`
+ * rows and have nothing to do with registers.
  *
  * NON-DESTRUCTIVE AND IDEMPOTENT. It renames only when the old slug is present
  * and the new one is not; a second run finds nothing to do and says so. It
@@ -57,7 +56,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\AppInfo\Application;
 use OCP\DB\Exception;
+use OCP\IAppConfig;
 use OCP\IDBConnection;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -66,21 +67,21 @@ use Psr\Log\LoggerInterface;
 /**
  * Renames the register rows the import will match against.
  *
- * @spec exclude No canonical spec covers the `procest` -> `dossiq` register-slug
- *  migration. Pointing this at an existing spec would report conformance to a
- *  requirement that says nothing about it.
+ * @spec exclude No canonical spec covers the `procest` -> `dossiq`
+ *  register-slug migration. Pointing this at an existing spec would report
+ *  conformance to a requirement that says nothing about it.
  */
 class MigrateRegisterSlug implements IRepairStep {
 
 	/**
 	 * Old register slug => new register slug.
 	 *
-	 * `procest-default` is in the map because this install carries it as a
-	 * sibling of `procest` with live rows of its own — the residue of an
-	 * earlier import that fell into exactly the create-a-second-register branch
-	 * this step exists to prevent. The steps downstream resolve their registers
-	 * by slug PREFIX precisely so both are covered; renaming only one of the two
-	 * would break that prefix and migrate half the install.
+	 * The sibling entries (`procest-default` -> `dossiq-default`) are in the map because this install
+	 * carries them with live rows of their own — the residue of an earlier
+	 * import that already took the fork-a-second-register branch this step
+	 * exists to prevent. Steps downstream resolve their registers by slug
+	 * PREFIX, so renaming only one sibling would migrate half the install
+	 * and report success.
 	 *
 	 * @var array<string, string>
 	 */
@@ -90,9 +91,30 @@ class MigrateRegisterSlug implements IRepairStep {
 	];
 
 	/**
+	 * App-config keys that may hold a register SLUG rather than a numeric id.
+	 *
+	 * Renaming the register row is not enough on its own. This app resolves its
+	 * register through `IAppConfig`, and a stored value still saying the old
+	 * slug sends every reader to a register that no longer answers to that name
+	 * — which OpenRegister resolves by CREATING an empty one. Same silent
+	 * failure as the row rename exists to prevent, one layer up.
+	 *
+	 * The migration is guarded on the value: it rewrites a key ONLY when what is
+	 * stored is exactly an old slug from the map above. An app that stores the
+	 * numeric register id here (dossiq does) never matches, so the guard makes
+	 * this safe to carry everywhere rather than something to remember per app.
+	 *
+	 * @var array<int, string>
+	 */
+	public const APPCONFIG_KEYS = [
+		'register',
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IDBConnection $db Database connection.
+	 * @param IAppConfig $appConfig App configuration.
 	 * @param LoggerInterface $logger Logger.
 	 * @param MigrateRegisterSlugDecisions $decisions The pure predicates.
 	 *
@@ -102,6 +124,7 @@ class MigrateRegisterSlug implements IRepairStep {
 	 */
 	public function __construct(
 		private readonly IDBConnection $db,
+		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 		private readonly MigrateRegisterSlugDecisions $decisions = new MigrateRegisterSlugDecisions(),
 	) {
@@ -149,14 +172,61 @@ class MigrateRegisterSlug implements IRepairStep {
 			}
 		}
 
+		$rekeyed = $this->migrateStoredSlugValues();
+
 		$output->info(
 			sprintf(
-				'MigrateRegisterSlug: %d register slug(s) renamed, %d refused.',
+				'MigrateRegisterSlug: %d register slug(s) renamed, %d refused, %d config value(s) re-pointed.',
 				$renamed,
-				count($plan['refused'])
+				count($plan['refused']),
+				$rekeyed
 			)
 		);
 	}//end run()
+
+	/**
+	 * Re-point app-config values that still name an old register slug.
+	 *
+	 * Runs unconditionally rather than only alongside a rename: on the install
+	 * hook the row may already carry the new slug (a previous run, or a fresh
+	 * install) while a stored config value copied over from the old app id still
+	 * says the old one. Guarded on the VALUE, so a key holding anything else —
+	 * a numeric register id, an admin's deliberate override — is left alone.
+	 *
+	 * @return int Number of values rewritten.
+	 */
+	private function migrateStoredSlugValues(): int {
+		$rekeyed = 0;
+
+		foreach (self::APPCONFIG_KEYS as $key) {
+			try {
+				$current = $this->appConfig->getValueString(Application::APP_ID, $key, '');
+			} catch (\Throwable $e) {
+				$this->logger->warning(
+					'MigrateRegisterSlug: could not read app config; leaving it alone.',
+					['key' => $key, 'exception' => $e->getMessage()]
+				);
+				continue;
+			}
+
+			$new = self::SLUG_MAP[$current] ?? null;
+			if ($new === null) {
+				continue;
+			}
+
+			try {
+				$this->appConfig->setValueString(Application::APP_ID, $key, $new);
+				$rekeyed++;
+			} catch (\Throwable $e) {
+				$this->logger->warning(
+					'MigrateRegisterSlug: could not re-point app config.',
+					['key' => $key, 'old' => $current, 'new' => $new, 'exception' => $e->getMessage()]
+				);
+			}
+		}
+
+		return $rekeyed;
+	}//end migrateStoredSlugValues()
 
 	/**
 	 * Read the slugs currently held by the registers on both sides of the map.

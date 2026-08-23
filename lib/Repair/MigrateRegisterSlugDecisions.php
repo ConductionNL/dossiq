@@ -26,9 +26,9 @@ namespace OCA\Dossiq\Repair;
 /**
  * Pure predicates for the register-slug migration.
  *
- * @spec exclude No canonical spec covers the `procest` -> `dossiq` register-slug
- *  migration. Pointing this at an existing spec would report conformance to a
- *  requirement that says nothing about it.
+ * @spec exclude No canonical spec covers the `procest` -> `dossiq`
+ *  register-slug migration. Pointing this at an existing spec would report
+ *  conformance to a requirement that says nothing about it.
  */
 class MigrateRegisterSlugDecisions {
 
