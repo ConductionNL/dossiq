@@ -45,7 +45,7 @@ class PersonalSectionTest extends TestCase {
         $l->method('t')->willReturnCallback(static fn (string $s): string => $s);
 
         $urls = $this->createMock(IURLGenerator::class);
-        $urls->method('imagePath')->willReturn('/apps/procest/img/app-dark.svg');
+        $urls->method('imagePath')->willReturn('/apps/dossiq/img/app-dark.svg');
 
         return new PersonalSection($l, $urls);
 
@@ -89,7 +89,7 @@ class PersonalSectionTest extends TestCase {
      * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
      */
     public function testNameIsTranslated(): void {
-        $this->assertSame('Procest', $this->section()->getName());
+        $this->assertSame('Dossiq', $this->section()->getName());
 
     }//end testNameIsTranslated()
 
@@ -118,6 +118,36 @@ class PersonalSectionTest extends TestCase {
         $this->assertStringContainsString('app-dark.svg', $this->section()->getIcon());
 
     }//end testIconComesFromTheUrlGenerator()
+
+
+    /**
+     * The icon is requested for the LIVE app id.
+     *
+     * This asserts the argument, not the return value, and that distinction is
+     * the whole point: the test above stubs imagePath() with a canned string,
+     * so it passes no matter which app is asked for. A stale id shipped behind
+     * it and was not a cosmetic defect — imagePath() throws for an app that
+     * does not exist, and Nextcloud calls getIcon() on every section while
+     * assembling the settings navigation, so it returned 500 for every
+     * /settings/* page while the app's own pages kept working.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
+     */
+    public function testIconIsRequestedForTheCurrentAppId(): void {
+        $l = $this->createMock(IL10N::class);
+        $l->method('t')->willReturnCallback(static fn (string $s): string => $s);
+
+        $urls = $this->createMock(IURLGenerator::class);
+        $urls->expects($this->once())
+            ->method('imagePath')
+            ->with('dossiq', 'app-dark.svg')
+            ->willReturn('/apps/dossiq/img/app-dark.svg');
+
+        (new PersonalSection($l, $urls))->getIcon();
+
+    }//end testIconIsRequestedForTheCurrentAppId()
 
 
 }//end class

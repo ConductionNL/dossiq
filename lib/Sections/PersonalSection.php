@@ -66,7 +66,7 @@ class PersonalSection implements IIconSection {
      * @return string The translated section name.
      */
     public function getName(): string {
-        return $this->l->t('Procest');
+        return $this->l->t('Dossiq');
 
     }//end getName()
 
@@ -88,7 +88,13 @@ class PersonalSection implements IIconSection {
      * @return string The icon path.
      */
     public function getIcon(): string {
-        return $this->urlGenerator->imagePath(appName: 'procest', file: 'app-dark.svg');
+        // MUST be the live app id. imagePath() throws when the app does not
+        // exist, and Nextcloud calls getIcon() on every section while building
+        // the settings navigation — so a stale id here does not degrade to a
+        // missing icon, it returns 500 for EVERY /settings/* page, admin
+        // included. The app pages keep working, which is what made this look
+        // like a frontend fault.
+        return $this->urlGenerator->imagePath(appName: 'dossiq', file: 'app-dark.svg');
 
     }//end getIcon()
 

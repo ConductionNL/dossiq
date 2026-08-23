@@ -80,6 +80,10 @@ class SideEffectDispatcher {
 			// parallel implementation. The local-handler path is the fallback for
 			// an instance without OpenRegister, so a transition never silently
 			// skips its side effects because a neighbouring app is absent.
+			// Early-continue rather than if/else: phpcs rejects the inline
+			// ternary this started as, and phpmd's ElseExpression rejects the
+			// else that replaced it. Guard-and-continue satisfies both without
+			// pretending either rule is wrong.
 			if ($nodes !== null) {
 				$results[] = $this->viaNode(
 					nodes: $nodes,
@@ -88,14 +92,15 @@ class SideEffectDispatcher {
 					case: $case,
 					transitionContext: $transitionContext
 				);
-			} else {
-				$results[] = $this->viaHandler(
-					type: $type,
-					action: $action,
-					case: $case,
-					transitionContext: $transitionContext
-				);
-			}//end if
+				continue;
+			}
+
+			$results[] = $this->viaHandler(
+				type: $type,
+				action: $action,
+				case: $case,
+				transitionContext: $transitionContext
+			);
 		}//end foreach
 
 		return $results;

@@ -123,7 +123,7 @@ abstract class ProcestFlowNodeBase implements IFlowNode {
      * @return string The icon path.
      */
     public function getIcon(): string {
-        return $this->urls->imagePath('procest', 'app-dark.svg');
+        return $this->urls->imagePath('dossiq', 'app-dark.svg');
 
     }//end getIcon()
 
