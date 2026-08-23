@@ -4,7 +4,7 @@
  * Unit tests for StufMessageParser.
  *
  * @category Test
- * @package  OCA\Procest\Tests\Unit\Service\Stuf
+ * @package  OCA\Dossiq\Tests\Unit\Service\Stuf
  *
  * @author    Conduction <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -12,16 +12,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
- * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-response-parsing
+ * @spec openspec/changes/archive/2026-06-23-procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-response-parsing
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Stuf;
+namespace OCA\Dossiq\Tests\Unit\Service\Stuf;
 
-use OCA\Procest\Service\Stuf\StufMessageParser;
+use OCA\Dossiq\Service\Stuf\StufMessageParser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 

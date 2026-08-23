@@ -8,7 +8,7 @@
  * and `type` keys on each doc entry.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Transitions
+ * @package  OCA\Dossiq\Tests\Unit\Service\Transitions
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -17,22 +17,22 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/workflow-engine-enhancement/tasks.md#W-19
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Transitions;
+namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
-use OCA\Procest\Service\Transitions\RequiredDocumentGuard;
+use OCA\Dossiq\Service\Transitions\RequiredDocumentGuard;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Procest\Service\Transitions\RequiredDocumentGuard
+ * @covers \OCA\Dossiq\Service\Transitions\RequiredDocumentGuard
  *
- * @uses \OCA\Procest\Service\Transitions\GuardResult
+ * @uses \OCA\Dossiq\Service\Transitions\GuardResult
  */
 class RequiredDocumentGuardTest extends TestCase {
 	/**

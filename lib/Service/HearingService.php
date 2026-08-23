@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Hearing Service
+ * Dossiq Hearing Service
  *
  * Service for managing hoorgesprekken (hearings) linked to complaints.
  * Handles scheduling, Calendar invitations via OCP\Calendar\IManager,
  * and Talk room creation via OCP\Talk\IBroker for videogesprek hearings.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,10 +21,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 

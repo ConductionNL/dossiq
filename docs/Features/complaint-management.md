@@ -4,7 +4,7 @@ The complaint management feature handles the registration, processing, and resol
 
 ## Overview
 
-Complaint management is a specialized case type within Procest that follows the formal complaint handling procedure (klachtenprocedure) as defined in the Dutch General Administrative Law Act (Awb).
+Complaint management is a specialized case type within Dossiq that follows the formal complaint handling procedure (klachtenprocedure) as defined in the Dutch General Administrative Law Act (Awb).
 
 ## Planned Features
 

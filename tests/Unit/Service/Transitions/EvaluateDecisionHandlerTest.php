@@ -10,7 +10,7 @@
  * workflow engine and NOT an orphaned capability.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Transitions
+ * @package  OCA\Dossiq\Tests\Unit\Service\Transitions
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,29 +19,29 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Transitions;
+namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
-use OCA\Procest\Service\Dmn\DecisionEngine;
-use OCA\Procest\Service\Dmn\DecisionTableService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Transitions\EvaluateDecisionHandler;
+use OCA\Dossiq\Service\Dmn\DecisionEngine;
+use OCA\Dossiq\Service\Dmn\DecisionTableService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Transitions\EvaluateDecisionHandler;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
 /**
- * @covers \OCA\Procest\Service\Transitions\EvaluateDecisionHandler
+ * @covers \OCA\Dossiq\Service\Transitions\EvaluateDecisionHandler
  *
- * @uses \OCA\Procest\Service\Dmn\DecisionEngine
- * @uses \OCA\Procest\Service\Dmn\DecisionEvaluationException
- * @uses \OCA\Procest\Service\Dmn\ExpressionEvaluator
- * @uses \OCA\Procest\Service\Transitions\ActionResult
+ * @uses \OCA\Dossiq\Service\Dmn\DecisionEngine
+ * @uses \OCA\Dossiq\Service\Dmn\DecisionEvaluationException
+ * @uses \OCA\Dossiq\Service\Dmn\ExpressionEvaluator
+ * @uses \OCA\Dossiq\Service\Transitions\ActionResult
  */
 class EvaluateDecisionHandlerTest extends TestCase {
 

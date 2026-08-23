@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest WOZ Controller
+ * Dossiq WOZ Controller
  *
  * HTTP surface for the WOZ (Waardering Onroerende Zaken) authoritative
  * property-valuation lookup seam (brk-woz-register-adapters):
@@ -16,7 +16,7 @@
  * those as HTTP errors.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,17 +25,17 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\External\Woz\WozAdapterInterface;
-use OCA\Procest\Service\External\Woz\WozLookupResult;
+use OCA\Dossiq\Service\External\Woz\WozAdapterInterface;
+use OCA\Dossiq\Service\External\Woz\WozLookupResult;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -124,7 +124,7 @@ class WozController extends Controller {
 		try {
 			$result = $this->wozAdapter->lookupByNummeraanduiding(addressDesignationId: $addressDesignationId);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest WOZ nummeraanduiding lookup failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq WOZ nummeraanduiding lookup failed: ' . $e->getMessage());
 			return new JSONResponse(['error' => 'WOZ lookup failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
@@ -152,7 +152,7 @@ class WozController extends Controller {
 				toevoeging: $toevoeging,
 			);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest WOZ address lookup failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq WOZ address lookup failed: ' . $e->getMessage());
 			return new JSONResponse(['error' => 'WOZ lookup failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
@@ -201,7 +201,7 @@ class WozController extends Controller {
 		try {
 			$result = $this->wozAdapter->lookupByWozObjectNummer(wozobjectnummer: $wozobjectnummer);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest WOZ object lookup failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq WOZ object lookup failed: ' . $e->getMessage());
 			return new JSONResponse(['error' => 'WOZ object lookup failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 

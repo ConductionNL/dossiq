@@ -9,7 +9,7 @@ retrofit: true
 
 @e2e exclude Pure health-check endpoint covered by integration tests; no Playwright UI surface.
 
-Expose a single health-check endpoint that container orchestrators (k8s, docker-compose `healthcheck`) and external monitoring (Prometheus blackbox-exporter, uptime checks) can probe to determine whether procest is serving correctly. The endpoint reports an aggregate `status`, the running `version`, and per-component sub-checks (database, OpenRegister hard-dep, filesystem) so that a failing probe gives operators enough context to triage without needing a separate logs query.
+Expose a single health-check endpoint that container orchestrators (k8s, docker-compose `healthcheck`) and external monitoring (Prometheus blackbox-exporter, uptime checks) can probe to determine whether dossiq is serving correctly. The endpoint reports an aggregate `status`, the running `version`, and per-component sub-checks (database, OpenRegister hard-dep, filesystem) so that a failing probe gives operators enough context to triage without needing a separate logs query.
 
 ## Requirements
 
@@ -33,7 +33,7 @@ The system SHALL expose `HealthController::index` as a `@NoCSRFRequired` JSON en
 
 ### REQ-002: Three sub-checks (database, OpenRegister hard-dep, filesystem) with severity tiering
 
-The system SHALL run three sub-checks on every probe — `database` (executes `SELECT 1`), `openregister` (verifies the app is enabled — hard dependency), and `filesystem` (writes + deletes a temp file at `sys_get_temp_dir()/procest_health_<pid>`). Each sub-check returns `'ok'` or `'failed: <reason>'`. Severity tiers: database OR openregister fail → aggregate `status='error'`; only filesystem fails → aggregate `status='degraded'`.
+The system SHALL run three sub-checks on every probe — `database` (executes `SELECT 1`), `openregister` (verifies the app is enabled — hard dependency), and `filesystem` (writes + deletes a temp file at `sys_get_temp_dir()/dossiq_health_<pid>`). Each sub-check returns `'ok'` or `'failed: <reason>'`. Severity tiers: database OR openregister fail → aggregate `status='error'`; only filesystem fails → aggregate `status='degraded'`.
 
 #### Scenario: Database check
 
@@ -48,7 +48,7 @@ The system SHALL run three sub-checks on every probe — `database` (executes `S
 #### Scenario: Filesystem check
 
 - WHEN the filesystem sub-check runs
-- THEN it SHALL write `'health'` to `sys_get_temp_dir() . '/procest_health_' . getmypid()`, unlink it, and return `'ok'` on success or `'failed: <reason>'` on failure
+- THEN it SHALL write `'health'` to `sys_get_temp_dir() . '/dossiq_health_' . getmypid()`, unlink it, and return `'ok'` on success or `'failed: <reason>'` on failure
 
 #### Scenario: Severity tiering
 

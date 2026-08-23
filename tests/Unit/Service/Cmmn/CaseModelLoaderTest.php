@@ -4,7 +4,7 @@
  * CaseModelLoader active-model-resolution tests.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Cmmn
+ * @package  OCA\Dossiq\Tests\Unit\Service\Cmmn
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -12,23 +12,23 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-001
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Cmmn;
+namespace OCA\Dossiq\Tests\Unit\Service\Cmmn;
 
-use OCA\Procest\Service\Cmmn\CaseModelLoader;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Tests\Unit\Service\FakeTermijnStore;
+use OCA\Dossiq\Service\Cmmn\CaseModelLoader;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\Cmmn\CaseModelLoader
+ * @covers \OCA\Dossiq\Service\Cmmn\CaseModelLoader
  */
 final class CaseModelLoaderTest extends TestCase {
 

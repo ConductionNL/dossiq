@@ -25,22 +25,22 @@
  * than sending an empty one.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\AppointmentController;
-use OCA\Procest\Service\AppointmentService;
-use OCA\Procest\Service\CaseAccessGuard;
+use OCA\Dossiq\Controller\AppointmentController;
+use OCA\Dossiq\Service\AppointmentService;
+use OCA\Dossiq\Service\CaseAccessGuard;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -51,7 +51,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Wire-contract tests for AppointmentController.
  *
- * @covers \OCA\Procest\Controller\AppointmentController
+ * @covers \OCA\Dossiq\Controller\AppointmentController
  */
 class AppointmentControllerContractTest extends TestCase {
 

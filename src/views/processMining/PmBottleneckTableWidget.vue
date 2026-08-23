@@ -24,11 +24,11 @@
 			<table class="pm-bottleneck-widget__table">
 				<thead>
 					<tr>
-						<th scope="col">{{ t('procest', 'Case type') }}</th>
-						<th scope="col">{{ t('procest', 'Status') }}</th>
-						<th scope="col">{{ t('procest', 'Median hours') }}</th>
-						<th scope="col">{{ t('procest', 'Visits') }}</th>
-						<th scope="col">{{ t('procest', 'Score') }}</th>
+						<th scope="col">{{ t('dossiq', 'Case type') }}</th>
+						<th scope="col">{{ t('dossiq', 'Status') }}</th>
+						<th scope="col">{{ t('dossiq', 'Median hours') }}</th>
+						<th scope="col">{{ t('dossiq', 'Visits') }}</th>
+						<th scope="col">{{ t('dossiq', 'Score') }}</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -43,7 +43,7 @@
 			</table>
 		</div>
 		<p v-else class="pm-bottleneck-widget__empty">
-			{{ t('procest', 'No bottleneck data for the selected period.') }}
+			{{ t('dossiq', 'No bottleneck data for the selected period.') }}
 		</p>
 	</div>
 </template>

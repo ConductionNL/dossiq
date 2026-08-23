@@ -6,7 +6,7 @@
  * Tests for the ZGW pagination wrapping logic.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -14,20 +14,20 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\ZgwPaginationHelper;
+use OCA\Dossiq\Service\ZgwPaginationHelper;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for the ZgwPaginationHelper class.
  *
- * @covers \OCA\Procest\Service\ZgwPaginationHelper
+ * @covers \OCA\Dossiq\Service\ZgwPaginationHelper
  */
 class ZgwPaginationHelperTest extends TestCase {
 
@@ -151,7 +151,7 @@ class ZgwPaginationHelperTest extends TestCase {
 			baseUrl: 'http://example.com/api/zaken',
 			queryParams: [
 				'status' => 'open',
-				'_route' => 'procest.zrc.index',
+				'_route' => 'dossiq.zrc.index',
 				'zgwApi' => 'zaken',
 				'resource' => 'zaken',
 			]

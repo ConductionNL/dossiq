@@ -28,7 +28,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use JsonSerializable;
  * Stub of OpenRegister's ObjectEntityInterface for unit tests.
  *
  * ⚠️ `extends JsonSerializable` is NOT decoration — the real interface extends
- * it, and procest's own tests mock `jsonSerialize()`. I wrote this stub with
+ * it, and dossiq's own tests mock `jsonSerialize()`. I wrote this stub with
  * the six accessors and without the parent, and four tests immediately failed
  * with "Trying to configure method jsonSerialize which ... does not exist".
  * That is this file's own warning coming true within minutes: a stub narrower

@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @category  Test
- * @package   OCA\Procest\Tests\Unit\Service\Transitions
+ * @package   OCA\Dossiq\Tests\Unit\Service\Transitions
  * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2
@@ -14,14 +14,14 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Transitions;
+namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
 use OCA\OpenRegister\Service\Flow\FlowNodeRegistry;
 use OCA\OpenRegister\Service\Flow\IFlowNode;
-use OCA\Procest\Service\Transitions\ActionHandlerInterface;
-use OCA\Procest\Service\Transitions\ActionHandlerRegistry;
-use OCA\Procest\Service\Transitions\ActionResult;
-use OCA\Procest\Service\Transitions\SideEffectDispatcher;
+use OCA\Dossiq\Service\Transitions\ActionHandlerInterface;
+use OCA\Dossiq\Service\Transitions\ActionHandlerRegistry;
+use OCA\Dossiq\Service\Transitions\ActionResult;
+use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;

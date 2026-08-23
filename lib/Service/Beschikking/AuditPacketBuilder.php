@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest AuditPacketBuilder.
+ * Dossiq AuditPacketBuilder.
  *
  * Assembles the verifiable audit-pakket for a beschikking: the (BSN-masked)
  * beschikking itself, its immutable stateMachineLog trail, the TSP
@@ -15,7 +15,7 @@
  * digest stands in rather than the signature being omitted.
  *
  * @category Service
- * @package  OCA\Procest\Service\Beschikking
+ * @package  OCA\Dossiq\Service\Beschikking
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,7 +23,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -33,11 +33,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Beschikking;
+namespace OCA\Dossiq\Service\Beschikking;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use ZipArchive;

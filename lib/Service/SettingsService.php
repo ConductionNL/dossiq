@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest Settings Service
+ * Dossiq Settings Service
  *
- * Service for managing Procest application configuration and settings.
+ * Service for managing Dossiq application configuration and settings.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -14,7 +14,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/admin-settings/spec.md
  *
@@ -24,20 +24,20 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Settings\RegisterFragmentMerger;
-use OCA\Procest\Service\Settings\SchemaAnnotationReconciler;
-use OCA\Procest\Service\Settings\SchemaKeyReconciler;
-use OCA\Procest\Service\Settings\SchemaSlugMap;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
+use OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler;
+use OCA\Dossiq\Service\Settings\SchemaKeyReconciler;
+use OCA\Dossiq\Service\Settings\SchemaSlugMap;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * Service for managing Procest application configuration and settings.
+ * Service for managing Dossiq application configuration and settings.
  *
  * @spec openspec/specs/admin-settings/spec.md
  */
@@ -387,7 +387,7 @@ class SettingsService {
 	 * The three collaborators are constructed here rather than injected so the
 	 * container-facing signature stays `(appConfig, appManager, container,
 	 * logger)` — the shape the bespoke factory in
-	 * {@see \OCA\Procest\AppInfo\Registrar\BespokeServiceRegistrar} and ~180
+	 * {@see \OCA\Dossiq\AppInfo\Registrar\BespokeServiceRegistrar} and ~180
 	 * injection sites already use.
 	 *
 	 * @param IAppConfig $appConfig The app configuration service
@@ -461,7 +461,7 @@ class SettingsService {
 			return $this->container->get('OCA\OpenRegister\Service\ObjectService');
 		} catch (\Exception $e) {
 			$this->logger->error(
-				'Procest: Could not access OpenRegister ObjectService',
+				'Dossiq: Could not access OpenRegister ObjectService',
 				['exception' => $e->getMessage()]
 			);
 			return null;
@@ -501,7 +501,7 @@ class SettingsService {
 			return $this->container->get('OCA\OpenRegister\Service\FileService');
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: Could not access OpenRegister FileService',
+				'Dossiq: Could not access OpenRegister FileService',
 				['exception' => $e->getMessage()]
 			);
 			return null;
@@ -536,7 +536,7 @@ class SettingsService {
 			return $this->container->get('OCA\OpenRegister\Service\ApprovalService');
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: Could not access OpenRegister ApprovalService',
+				'Dossiq: Could not access OpenRegister ApprovalService',
 				['exception' => $e->getMessage()]
 			);
 			return null;
@@ -568,7 +568,7 @@ class SettingsService {
 			return $this->container->get($class);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: Could not access OpenRegister class',
+				'Dossiq: Could not access OpenRegister class',
 				['class' => $class, 'exception' => $e->getMessage()]
 			);
 			return null;
@@ -576,7 +576,7 @@ class SettingsService {
 	}//end getOpenRegisterClass()
 
 	/**
-	 * Load the register configuration from procest_register.json via ConfigurationService.
+	 * Load the register configuration from dossiq_register.json via ConfigurationService.
 	 *
 	 * @param bool $force Whether to force re-import regardless of version
 	 *
@@ -600,7 +600,7 @@ class SettingsService {
 			);
 		} catch (\Exception $e) {
 			$this->logger->error(
-				'Procest: Could not access ConfigurationService',
+				'Dossiq: Could not access ConfigurationService',
 				['exception' => $e->getMessage()]
 			);
 			return [
@@ -629,7 +629,7 @@ class SettingsService {
 			$this->reconcileSchemaConfig();
 
 			$this->logger->info(
-				'Procest: Configuration imported and reconciled',
+				'Dossiq: Configuration imported and reconciled',
 				['version' => $configVersion, 'configured' => $configuredCount]
 			);
 
@@ -642,7 +642,7 @@ class SettingsService {
 			];
 		} catch (\Exception $e) {
 			$this->logger->error(
-				'Procest: Configuration import failed',
+				'Dossiq: Configuration import failed',
 				['exception' => $e->getMessage()]
 			);
 			return [
@@ -653,7 +653,7 @@ class SettingsService {
 	}//end loadConfiguration()
 
 	/**
-	 * Read procest_register.json and deep-merge the ADR-037 register fragments
+	 * Read dossiq_register.json and deep-merge the ADR-037 register fragments
 	 * on top of it, producing the effective register configuration to import.
 	 *
 	 * Returns either `['data' => array]` on success or `['error' => array]`
@@ -665,10 +665,10 @@ class SettingsService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function readEffectiveConfiguration(): array {
-		$configPath = __DIR__ . '/../Settings/procest_register.json';
+		$configPath = __DIR__ . '/../Settings/dossiq_register.json';
 		if (file_exists($configPath) === false) {
 			$this->logger->error(
-				'Procest: Configuration file not found at ' . $configPath
+				'Dossiq: Configuration file not found at ' . $configPath
 			);
 			return [
 				'error' => [
@@ -682,7 +682,7 @@ class SettingsService {
 		$configData = json_decode($configContent, true);
 
 		if (json_last_error() !== JSON_ERROR_NONE) {
-			$this->logger->error('Procest: Invalid JSON in configuration file');
+			$this->logger->error('Dossiq: Invalid JSON in configuration file');
 			return [
 				'error' => [
 					'success' => false,
@@ -694,7 +694,7 @@ class SettingsService {
 		// ADR-037: deep-merge any modular register fragments from
 		// lib/Settings/register.d/*.json on top of the monolith. This lets
 		// concurrent same-app builds add registers/schemas via isolated
-		// fragment files instead of all editing procest_register.json and
+		// fragment files instead of all editing dossiq_register.json and
 		// conflicting. Fragments are applied in sorted filename order.
 		// The merge also returns a hash of the fragment set. It is deliberately
 		// not captured: it used to be folded into the version so that adding or
@@ -771,7 +771,7 @@ class SettingsService {
 			}
 		}
 
-		$this->logger->info('Procest settings updated', ['keys' => array_keys($data)]);
+		$this->logger->info('Dossiq settings updated', ['keys' => array_keys($data)]);
 
 		return $this->getSettings();
 	}//end updateSettings()
@@ -862,7 +862,7 @@ class SettingsService {
 	 * workflow_template_schema, …) were never written — the status-name lookup
 	 * and the WorkflowBoard then silently broke on a fresh deploy.
 	 *
-	 * This method closes that gap: for each schema slug Procest knows about it
+	 * This method closes that gap: for each schema slug Dossiq knows about it
 	 * resolves the LIVE schema ID via OpenRegister's SchemaMapper (slug-aware
 	 * `find()`) and writes the matching appconfig key. It is fully idempotent —
 	 * a key that already holds the correct ID is left untouched — so it is safe
@@ -882,7 +882,7 @@ class SettingsService {
 
 	/**
 	 * Reconcile each schema's declarative `x-openregister-*` annotation blocks
-	 * (calculations, references, lifecycle, …) from procest_register.json onto
+	 * (calculations, references, lifecycle, …) from dossiq_register.json onto
 	 * the LIVE OpenRegister schema's `configuration` column.
 	 *
 	 * OpenRegister's app-config import maps a schema's `properties` but does not

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest case-email OpenRegister repository.
+ * Dossiq case-email OpenRegister repository.
  *
  * Owns every OpenRegister read and write that case-integrated email performs:
  * loading templates, flattening a case into template variables, resolving a
@@ -15,12 +15,12 @@
  * is shaped, lives here.
  *
  * A missing ObjectService or an unconfigured register/schema is a
- * pass-through, not an error: procest runs against instances where the email
+ * pass-through, not an error: dossiq runs against instances where the email
  * registers are simply not provisioned, and callers treat the empty/null
  * return as "nothing recorded".
  *
  * @category Service
- * @package  OCA\Procest\Service\Email
+ * @package  OCA\Dossiq\Service\Email
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -28,7 +28,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -38,10 +38,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Email;
+namespace OCA\Dossiq\Service\Email;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
  * OpenRegister persistence and lookup for case-integrated email.

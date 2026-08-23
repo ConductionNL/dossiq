@@ -3,11 +3,11 @@
 /**
  * KpiCacheInvalidationListener Unit Tests
  *
- * Tests for the Procest KpiCacheInvalidationListener that increments
+ * Tests for the Dossiq KpiCacheInvalidationListener that increments
  * the per-user KPI cache version counter on OpenRegister object events.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Listener
+ * @package  OCA\Dossiq\Tests\Unit\Listener
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -15,14 +15,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Listener;
+namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Procest\Listener\KpiCacheInvalidationListener;
+use OCA\Dossiq\Listener\KpiCacheInvalidationListener;
 use OCP\EventDispatcher\Event;
 use OCP\ICache;
 use OCP\ICacheFactory;
@@ -35,7 +35,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for KpiCacheInvalidationListener.
  *
- * @covers \OCA\Procest\Listener\KpiCacheInvalidationListener
+ * @covers \OCA\Dossiq\Listener\KpiCacheInvalidationListener
  */
 class KpiCacheInvalidationListenerTest extends TestCase {
 
@@ -208,11 +208,11 @@ class KpiCacheInvalidationListenerTest extends TestCase {
 	 */
 	public function testCacheKeyPatternIsConsistentWithController(): void {
 		$userId = 'alice';
-		$prefix = 'procest_kpis_';
+		$prefix = 'dossiq_kpis_';
 		$suffix = '_ver';
 		$versionKey = $prefix . $userId . $suffix;
 
-		$this->assertSame('procest_kpis_alice_ver', $versionKey);
+		$this->assertSame('dossiq_kpis_alice_ver', $versionKey);
 	}//end testCacheKeyPatternIsConsistentWithController()
 
 	/**
@@ -227,7 +227,7 @@ class KpiCacheInvalidationListenerTest extends TestCase {
 		$factory = $this->createMock(ICacheFactory::class);
 		$factory->expects($this->once())
 			->method('createLocal')
-			->with('procest')
+			->with('dossiq')
 			->willReturn($cache);
 
 		$listener = new KpiCacheInvalidationListener(

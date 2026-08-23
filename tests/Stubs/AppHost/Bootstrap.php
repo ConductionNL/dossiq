@@ -12,7 +12,7 @@
  * PHPCS.
  *
  * @category Test
- * @package  OCA\Procest\Tests\Stubs\AppHost
+ * @package  OCA\Dossiq\Tests\Stubs\AppHost
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.

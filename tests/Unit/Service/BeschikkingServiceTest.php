@@ -9,7 +9,7 @@
  * immutability, BezwaarTrigger creation, and a verifiable audit-pakket.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -17,7 +17,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -25,19 +25,19 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\BerichtenboxRoutingService;
-use OCA\Procest\Service\Beschikking\AuditPacketBuilder;
-use OCA\Procest\Service\Beschikking\BeschikkingRepository;
-use OCA\Procest\Service\Beschikking\BezwaarTermijnScheduler;
-use OCA\Procest\Service\Beschikking\MandaatVerifier;
-use OCA\Procest\Service\Beschikking\MockSigningAdapter;
-use OCA\Procest\Service\Beschikking\MockTemplateEngineAdapter;
-use OCA\Procest\Service\Beschikking\OpenRegisterArchivalAdapter;
-use OCA\Procest\Service\BeschikkingService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\StateMachineService;
+use OCA\Dossiq\Service\BerichtenboxRoutingService;
+use OCA\Dossiq\Service\Beschikking\AuditPacketBuilder;
+use OCA\Dossiq\Service\Beschikking\BeschikkingRepository;
+use OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler;
+use OCA\Dossiq\Service\Beschikking\MandaatVerifier;
+use OCA\Dossiq\Service\Beschikking\MockSigningAdapter;
+use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
+use OCA\Dossiq\Service\Beschikking\OpenRegisterArchivalAdapter;
+use OCA\Dossiq\Service\BeschikkingService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\StateMachineService;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -131,18 +131,18 @@ class FakeObjectService {
 /**
  * Unit tests for BeschikkingService.
  *
- * @covers \OCA\Procest\Service\BeschikkingService
+ * @covers \OCA\Dossiq\Service\BeschikkingService
  *
- * @uses \OCA\Procest\Service\BerichtenboxRoutingService
- * @uses \OCA\Procest\Service\Beschikking\AuditPacketBuilder
- * @uses \OCA\Procest\Service\Beschikking\BeschikkingRepository
- * @uses \OCA\Procest\Service\Beschikking\BezwaarTermijnScheduler
- * @uses \OCA\Procest\Service\Beschikking\MandaatVerifier
- * @uses \OCA\Procest\Service\Beschikking\MockSigningAdapter
- * @uses \OCA\Procest\Service\Beschikking\MockTemplateEngineAdapter
- * @uses \OCA\Procest\Service\Beschikking\OpenRegisterArchivalAdapter
- * @uses \OCA\Procest\Service\StateMachineService
- * @uses \OCA\Procest\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\BerichtenboxRoutingService
+ * @uses \OCA\Dossiq\Service\Beschikking\AuditPacketBuilder
+ * @uses \OCA\Dossiq\Service\Beschikking\BeschikkingRepository
+ * @uses \OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler
+ * @uses \OCA\Dossiq\Service\Beschikking\MandaatVerifier
+ * @uses \OCA\Dossiq\Service\Beschikking\MockSigningAdapter
+ * @uses \OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter
+ * @uses \OCA\Dossiq\Service\Beschikking\OpenRegisterArchivalAdapter
+ * @uses \OCA\Dossiq\Service\StateMachineService
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class BeschikkingServiceTest extends TestCase {
 

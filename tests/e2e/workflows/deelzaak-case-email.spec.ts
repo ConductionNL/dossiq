@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * DEEP e2e for this week's new UI: DEELZAAK (sub-case) support + CASE-EMAIL
@@ -10,13 +10,13 @@
  *   1. The CaseDetail page (route /cases/:id, history-mode) mounts and renders
  *      the seeded case's data — the surface the Sub-cases + Email tabs hang off.
  *   2. DEELZAAK PERSISTENCE: a child case linked via `parentCase` round-trips —
- *      it is returned by GET /apps/procest/api/deelzaken/{parent}/children, the
+ *      it is returned by GET /apps/dossiq/api/deelzaken/{parent}/children, the
  *      exact endpoint DeelzaakList.vue consumes, and the parent-of lookup
  *      resolves back. The sub-case COUNT endpoint (used by the case list badge)
  *      reflects the new child. Cleanup removes both cases.
  *   3. CASE-EMAIL: the case-email backend that CaseEmailTab.vue drives is
  *      reachable and degrades correctly when Nextcloud Mail is not installed
- *      (leaf-first per ADR-022 — procest ships no email engine of its own).
+ *      (leaf-first per ADR-022 — dossiq ships no email engine of its own).
  *
  * RESOLVED (nc-vue slot-render gap — fixed in @conduction/nextcloud-vue):
  *   The DeelzaakList / CaseEmailTab components are registered in
@@ -32,7 +32,7 @@
  *   path) was a *different* gap — CnDetailPage.resolvedSidebar ignoring
  *   `config.sidebarTabs` + CnAppRoot shadowing the host objectSidebarState
  *   holder — also fixed in @conduction/nextcloud-vue (2026-06-12) with
- *   procest's App.vue now hosting the CnObjectSidebar in CnAppRoot's #sidebar
+ *   dossiq's App.vue now hosting the CnObjectSidebar in CnAppRoot's #sidebar
  *   slot. It is now LIVE + green too.
  */
 import {
@@ -60,18 +60,18 @@ let caseTypeId: string
 let caseTypeSeeded = false
 
 /**
- * Call a procest deelzaken endpoint with the run's CSRF token.
+ * Call a dossiq deelzaken endpoint with the run's CSRF token.
  * @param path
  */
 async function deelzaken(path: string): Promise<{ status: number; body: any }> {
-	const res = await api.get(`/index.php/apps/procest/api/deelzaken${path}`, {
+	const res = await api.get(`/index.php/apps/dossiq/api/deelzaken${path}`, {
 		headers: { requesttoken: token, 'OCS-APIRequest': 'true' },
 	})
 	const body = await res.json().catch(() => ({}))
 	return { status: res.status(), body }
 }
 
-test.describe('Procest — deelzaak (sub-case) + case-email', () => {
+test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 	test.describe.configure({ mode: 'serial' })
 
 	test.beforeAll(async ({ baseURL }) => {
@@ -113,13 +113,13 @@ test.describe('Procest — deelzaak (sub-case) + case-email', () => {
 			description: 'Parent of a sub-case.',
 		})
 		const parentId = objectId(parent)
-		// procest assigns the zaaknummer itself and ignores the supplied identifier,
+		// dossiq assigns the zaaknummer itself and ignores the supplied identifier,
 		// so assert the ASSIGNED value the create returned, not the seed input.
 		const assignedIdentifier = String(
 			(parent as Record<string, unknown>).identifier ?? identifier,
 		)
 
-		await page.goto(`/index.php/apps/procest/cases/${parentId}`, {
+		await page.goto(`/index.php/apps/dossiq/cases/${parentId}`, {
 			waitUntil: 'domcontentloaded',
 		})
 		await dismissSupportDialog(page)
@@ -206,7 +206,7 @@ test.describe('Procest — deelzaak (sub-case) + case-email', () => {
 		// (this dev instance has no Mail) — leaf-first per ADR-022. Assert the
 		// templates endpoint the tab calls answers cleanly rather than 5xx-ing.
 		const probe = await api.get(
-			`/index.php/apps/procest/api/email/templates/${encodeURIComponent(caseTypeId)}`,
+			`/index.php/apps/dossiq/api/email/templates/${encodeURIComponent(caseTypeId)}`,
 			{
 				headers: { requesttoken: token, 'OCS-APIRequest': 'true' },
 			},
@@ -234,7 +234,7 @@ test.describe('Procest — deelzaak (sub-case) + case-email', () => {
 			identifier: `${RUN_PREFIX}-TAB`,
 		})
 		const parentId = objectId(parent)
-		await page.goto(`/index.php/apps/procest/cases/${parentId}/deelzaken`)
+		await page.goto(`/index.php/apps/dossiq/cases/${parentId}/deelzaken`)
 		await dismissSupportDialog(page)
 		await expect(page.locator('.deelzaak-list')).toBeVisible({ timeout: 15_000 })
 		await expect(page.getByRole('heading', { name: 'Sub-cases' })).toBeVisible()
@@ -247,7 +247,7 @@ test.describe('Procest — deelzaak (sub-case) + case-email', () => {
 	// `config.sidebarTabs` was present (so syncSidebarState never published
 	// the strip), AND CnAppRoot shadowed the host App's objectSidebarState
 	// holder with its own, so the deep CnDetailPage wrote into a holder the
-	// host #sidebar slot never read. Both fixed in the lib; procest's App.vue
+	// host #sidebar slot never read. Both fixed in the lib; dossiq's App.vue
 	// now mounts the host CnObjectSidebar in CnAppRoot's #sidebar slot
 	// (decidesk pattern). The Email tab → CaseEmailTab render is asserted here.
 	test('Email tab renders CaseEmailTab in the sidebar strip', async ({
@@ -261,7 +261,7 @@ test.describe('Procest — deelzaak (sub-case) + case-email', () => {
 			identifier: `${RUN_PREFIX}-EML`,
 		})
 		const parentId = objectId(parent)
-		await page.goto(`/index.php/apps/procest/cases/${parentId}`)
+		await page.goto(`/index.php/apps/dossiq/cases/${parentId}`)
 		await dismissSupportDialog(page)
 		await expect(
 			page.getByText(`${RUN_PREFIX} Email parent`, { exact: false }).first(),

@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Procest BAG (Basisregistratie Adressen en Gebouwen) lookup port.
+ * Dossiq BAG (Basisregistratie Adressen en Gebouwen) lookup port.
  *
  * The Kadaster BAG API Individuele Bevragingen v2 is the authoritative
  * source-of-truth for Dutch addresses, pand (building) and verblijfsobject
- * (residential/usage object) records. Procest consumes it on VTH
+ * (residential/usage object) records. Dossiq consumes it on VTH
  * (Vergunningen, Toezicht en Handhaving) and other spatial case lifecycles
  * that need a provably authoritative lookup — e.g. confirming a
  * `gebruiksdoel` (use purpose) or `oorspronkelijkBouwjaar` (original
@@ -28,13 +28,13 @@
  * `KvkHandelsregisterAdapterInterface` dormant-default pattern exactly.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Bag
+ * @package  OCA\Dossiq\Service\External\Bag
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://lvbag.github.io/BAG-API/Technische%20specificatie/
  *
  * @spec openspec/changes/bag-register-adapter/proposal.md
@@ -45,7 +45,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Bag;
+namespace OCA\Dossiq\Service\External\Bag;
 
 /**
  * BAG (Basisregistratie Adressen en Gebouwen) lookup port.

@@ -12,16 +12,16 @@
         {"task": "V04", "reason": "Performance benchmark scope follow-up"}
       ],
       "services": [
-        "OCA\\Procest\\Service\\RoleResolverService",
-        "OCA\\Procest\\Service\\Routing\\StrategyRegistry",
-        "OCA\\Procest\\Service\\Routing\\Strategy\\SingleRoleStrategy",
-        "OCA\\Procest\\Service\\Routing\\Strategy\\OrSetStrategy",
-        "OCA\\Procest\\Service\\Routing\\Strategy\\HierarchicalStrategy",
-        "OCA\\Procest\\Service\\Routing\\Strategy\\RoundRobinStrategy",
-        "OCA\\Procest\\Service\\Routing\\Strategy\\LeastLoadedStrategy"
+        "OCA\\Dossiq\\Service\\RoleResolverService",
+        "OCA\\Dossiq\\Service\\Routing\\StrategyRegistry",
+        "OCA\\Dossiq\\Service\\Routing\\Strategy\\SingleRoleStrategy",
+        "OCA\\Dossiq\\Service\\Routing\\Strategy\\OrSetStrategy",
+        "OCA\\Dossiq\\Service\\Routing\\Strategy\\HierarchicalStrategy",
+        "OCA\\Dossiq\\Service\\Routing\\Strategy\\RoundRobinStrategy",
+        "OCA\\Dossiq\\Service\\Routing\\Strategy\\LeastLoadedStrategy"
       ],
-      "listeners": ["OCA\\Procest\\Listener\\RoleMutationListener"],
-      "controllers": ["OCA\\Procest\\Controller\\RoutingController"],
+      "listeners": ["OCA\\Dossiq\\Listener\\RoleMutationListener"],
+      "controllers": ["OCA\\Dossiq\\Controller\\RoutingController"],
       "endpoints": [{"verb": "POST", "url": "/api/cases/{id}/reroute", "name": "routing#reroute"}],
       "schemaChanges": {
         "role": ["delegate", "delegateFrom", "delegateUntil"],
@@ -42,14 +42,14 @@
       ],
       "schemas": ["paraferingAuditEntry"],
       "services": [
-        "OCA\\Procest\\Service\\Parafering\\AuditTrailService"
+        "OCA\\Dossiq\\Service\\Parafering\\AuditTrailService"
       ],
-      "events": ["OCA\\Procest\\Event\\ParafeerTransitionEvent"],
+      "events": ["OCA\\Dossiq\\Event\\ParafeerTransitionEvent"],
       "listeners": [
-        "OCA\\Procest\\Listener\\ParaferingAuditListener",
-        "OCA\\Procest\\Validator\\ParaferingAuditAppendOnlyValidator"
+        "OCA\\Dossiq\\Listener\\ParaferingAuditListener",
+        "OCA\\Dossiq\\Validator\\ParaferingAuditAppendOnlyValidator"
       ],
-      "controllers": ["OCA\\Procest\\Controller\\ParaferingAuditExportController"],
+      "controllers": ["OCA\\Dossiq\\Controller\\ParaferingAuditExportController"],
       "endpoints": [
         {"verb": "GET", "url": "/api/voorstellen/{id}/audit-trail/export", "name": "parafering_audit_export#export"}
       ],
@@ -85,10 +85,10 @@
         "BezwaarCommitteesMenu"
       ],
       "services": [
-        "OCA\\Procest\\Service\\Bezwaar\\AdvisoryCommitteeService"
+        "OCA\\Dossiq\\Service\\Bezwaar\\AdvisoryCommitteeService"
       ],
       "listeners": [
-        "OCA\\Procest\\Listener\\BezwaarAdviceRequestedListener"
+        "OCA\\Dossiq\\Listener\\BezwaarAdviceRequestedListener"
       ],
       "controllers": [],
       "endpoints": [],
@@ -113,8 +113,8 @@
       "schemas": ["hearingSession"],
       "manifestPages": ["BezwaarHearings", "BezwaarHearingDetail"],
       "menuEntries": ["BezwaarHearings"],
-      "services": ["OCA\\Procest\\Service\\Bezwaar\\HearingService"],
-      "listeners": ["OCA\\Procest\\Listener\\BezwaarHearingScheduledListener"],
+      "services": ["OCA\\Dossiq\\Service\\Bezwaar\\HearingService"],
+      "listeners": ["OCA\\Dossiq\\Listener\\BezwaarHearingScheduledListener"],
       "controllers": [],
       "endpoints": [],
       "configKeys": ["hearing_session_schema", "bezwaar_schema", "register"],

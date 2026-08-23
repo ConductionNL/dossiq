@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @category  Test
- * @package   OCA\Procest\Tests\Unit\Repair
+ * @package   OCA\Dossiq\Tests\Unit\Repair
  * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2
@@ -14,11 +14,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Repair;
+namespace OCA\Dossiq\Tests\Unit\Repair;
 
-use OCA\Procest\Repair\MigrateAiOversightToHermiq;
-use OCA\Procest\Service\Ai\AiAuditLog;
-use OCA\Procest\Service\Ai\AiOversightDelegationService;
+use OCA\Dossiq\Repair\MigrateAiOversightToHermiq;
+use OCA\Dossiq\Service\Ai\AiAuditLog;
+use OCA\Dossiq\Service\Ai\AiOversightDelegationService;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 

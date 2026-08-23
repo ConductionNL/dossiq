@@ -9,11 +9,11 @@ retrofit_extensions:
 
 ## Purpose
 
-The admin settings page provides a Nextcloud admin panel for configuring Procest. Administrators manage case types and all their related type definitions: statuses, results, roles, properties, documents, and decisions. The case type system is the behavioral engine of Procest -- every aspect of how a case behaves (allowed statuses, deadlines, required fields, archival rules) is defined here. The admin settings UI follows a list-detail pattern: a case type list on the main page, and a tabbed detail/edit view per case type.
+The admin settings page provides a Nextcloud admin panel for configuring Dossiq. Administrators manage case types and all their related type definitions: statuses, results, roles, properties, documents, and decisions. The case type system is the behavioral engine of Dossiq -- every aspect of how a case behaves (allowed statuses, deadlines, required fields, archival rules) is defined here. The admin settings UI follows a list-detail pattern: a case type list on the main page, and a tabbed detail/edit view per case type.
 
 **Feature tiers**: MVP (admin page registration, access control, case type list, case type CRUD, status type CRUD with reorder, default case type, publish action, general tab); V1 (results tab, roles tab, properties tab, documents tab, decisions tab, case type versioning, import/export)
 
-**Competitive context**: Dimpact ZAC provides per-zaaktype configuration with parameters, mail templates, reference tables, and an inrichtingscheck validation system. xxllnc Zaken supports case type versioning with draft/active states and template-based folder hierarchies. Flowable provides visual CMMN/BPMN modelers for case type design. Procest takes a simpler, form-based approach that is more accessible to non-technical administrators while maintaining ZGW-compliant data structures.
+**Competitive context**: Dimpact ZAC provides per-zaaktype configuration with parameters, mail templates, reference tables, and an inrichtingscheck validation system. xxllnc Zaken supports case type versioning with draft/active states and template-based folder hierarchies. Flowable provides visual CMMN/BPMN modelers for case type design. Dossiq takes a simpler, form-based approach that is more accessible to non-technical administrators while maintaining ZGW-compliant data structures.
 
 ## Data Sources
 
@@ -35,15 +35,15 @@ The system MUST register a settings page in the Nextcloud admin panel under the 
 #### Scenario: Admin settings page is accessible
 - GIVEN a Nextcloud admin user
 - WHEN they navigate to Administration settings
-- THEN a "Procest" entry MUST appear in the admin settings navigation
-- AND clicking "Procest" MUST display the Procest admin settings page
+- THEN a "Dossiq" entry MUST appear in the admin settings navigation
+- AND clicking "Dossiq" MUST display the Dossiq admin settings page
 - AND the page MUST render the `AdminRoot.vue` component with case type management and ZGW API mapping sections
 
 #### Scenario: Regular users cannot access admin settings
 - GIVEN a regular (non-admin) Nextcloud user
-- WHEN they attempt to navigate to Administration > Procest
+- WHEN they attempt to navigate to Administration > Dossiq
 - THEN the system MUST deny access
-- AND the "Procest" entry MUST NOT appear in the regular user's settings navigation
+- AND the "Dossiq" entry MUST NOT appear in the regular user's settings navigation
 - AND direct URL access to the admin settings endpoint MUST return HTTP 403
 
 #### Scenario: Group admin access
@@ -51,7 +51,7 @@ The system MUST register a settings page in the Nextcloud admin panel under the 
 @e2e exclude Requires creating a group-admin user and verifying settings section visibility; setup complexity exceeds headless Playwright test scope.
 
 - GIVEN a Nextcloud group admin (not full admin)
-- WHEN they attempt to access Procest admin settings
+- WHEN they attempt to access Dossiq admin settings
 - THEN the system MUST deny access (only full Nextcloud admins may configure case types)
 
 #### Scenario: Admin settings page loads with OpenRegister unavailable
@@ -59,7 +59,7 @@ The system MUST register a settings page in the Nextcloud admin panel under the 
 @e2e exclude Requires disabling the OpenRegister app; cannot be safely tested in shared CI environment.
 
 - GIVEN the OpenRegister app is not installed or disabled
-- WHEN the admin navigates to Procest admin settings
+- WHEN the admin navigates to Dossiq admin settings
 - THEN the page MUST display a clear warning indicating OpenRegister is required
 - AND the case type list MUST show an appropriate error state rather than an empty list
 - AND all form controls MUST be disabled until OpenRegister is available
@@ -74,7 +74,7 @@ can configure the app from within the SPA. This is a browser-verifiable UI surfa
 distinct from the Nextcloud admin-settings panel (REQ-ADMIN-001).
 
 #### Scenario: In-app settings page renders configuration sections
-- **GIVEN** an authenticated admin user on the Procest app
+- **GIVEN** an authenticated admin user on the Dossiq app
 - **WHEN** they navigate to the in-app Settings page
 - **THEN** the page MUST render a "Version Information" section heading
 - **AND** a "Configuration" section heading
@@ -204,7 +204,7 @@ The case type detail view MUST use a tabbed interface for organizing the various
 
 #### Scenario: Back navigation with unsaved changes
 - GIVEN the admin is on the case type detail view with unsaved changes
-- WHEN they click the breadcrumb link "Procest" to return to the case type list
+- WHEN they click the breadcrumb link "Dossiq" to return to the case type list
 - THEN the system SHOULD prompt: "You have unsaved changes. Discard?"
 - AND confirming MUST navigate back without saving
 - AND canceling MUST keep the admin on the detail view
@@ -652,7 +652,7 @@ The admin settings MUST handle error conditions gracefully, preserving user data
 ### Current Implementation Status
 
 **Implemented:**
-- Admin panel registration via `OCA\Procest\Settings\AdminSettings` (`lib/Settings/AdminSettings.php`) and `OCA\Procest\Sections\SettingsSection` (`lib/Sections/SettingsSection.php`) -- registers the "Procest" section in Nextcloud admin settings with icon support.
+- Admin panel registration via `OCA\Dossiq\Settings\AdminSettings` (`lib/Settings/AdminSettings.php`) and `OCA\Dossiq\Sections\SettingsSection` (`lib/Sections/SettingsSection.php`) -- registers the "Dossiq" section in Nextcloud admin settings with icon support.
 - Admin settings Vue root component (`src/views/settings/AdminRoot.vue`) renders the full admin page with two sections: Case Type Management and ZGW API Mapping.
 - Case type list view (`src/views/settings/CaseTypeList.vue`) using `CnIndexPage` -- displays title, isDraft badge (Draft/Published), processing deadline, validity period. Supports set-as-default (star icon, published-only) and delete actions.
 - Case type detail/edit view (`src/views/settings/CaseTypeDetail.vue`) with tabbed interface: General and Statuses tabs are implemented. Publish/unpublish buttons with validation errors. Save button in header.
@@ -661,7 +661,7 @@ The admin settings MUST handle error conditions gracefully, preserving user data
 - Case type CRUD via OpenRegister object store (`src/store/modules/object.js` using `createObjectStore` from `@conduction/nextcloud-vue`).
 - Default case type selection persisted via `SettingsService` (`lib/Service/SettingsService.php`, config key `default_case_type`).
 - Settings controller (`lib/Controller/SettingsController.php`) with index/create/load endpoints.
-- Register configuration auto-import from `procest_register.json` (`lib/Service/SettingsService.php::loadConfiguration`).
+- Register configuration auto-import from `dossiq_register.json` (`lib/Service/SettingsService.php::loadConfiguration`).
 - Case type admin orchestrator component (`src/views/settings/CaseTypeAdmin.vue`) managing list/detail view switching.
 - Duration formatting helpers (`src/utils/durationHelpers.js`).
 - Case type validation utilities (`src/utils/caseTypeValidation.js`).
@@ -711,14 +711,14 @@ This spec is highly specific and implementation-ready. Requirements are well-str
 
 @e2e exclude Backend PHP controller spec; covered by PHPUnit controller tests.
 
-`OCA\Procest\Controller\SettingsController` SHALL expose three action endpoints:
+`OCA\Dossiq\Controller\SettingsController` SHALL expose three action endpoints:
 - `index()` — `#[NoAdminRequired]`. SHALL return `{success: true, openRegisters: <bool>, isAdmin: <bool>, config: <SettingsService::getSettings()>}` so the admin Vue app can render itself for both admins and non-admins (read-only view).
 - `create()` — admin-only (no `#[NoAdminRequired]`). SHALL take the raw request params, delegate to `SettingsService::updateSettings($data)`, and return `{success: true, config: <updated>}`.
-- `load()` — admin-only. SHALL force a fresh re-import of the procest register from `procest_register.json` via `SettingsService::loadConfiguration(force: true)` and return the raw result envelope from that service.
+- `load()` — admin-only. SHALL force a fresh re-import of the dossiq register from `dossiq_register.json` via `SettingsService::loadConfiguration(force: true)` and return the raw result envelope from that service.
 
 #### Scenario: index reports admin status correctly
 - **GIVEN** a logged-in user `alice` who is a member of the `admin` group
-- **WHEN** `GET /apps/procest/api/settings` (index) is invoked
+- **WHEN** `GET /apps/dossiq/api/settings` (index) is invoked
 - **THEN** the response SHALL contain `"isAdmin": true`
 - **AND** SHALL contain `"openRegisters": true` if the `openregister` app is installed
 
@@ -733,16 +733,16 @@ This spec is highly specific and implementation-ready. Requirements are well-str
 - **THEN** the controller SHALL call `SettingsService::loadConfiguration(force: true)`
 - **AND** SHALL return the result envelope unchanged (no `success: true` wrapper)
 
-### Requirement: SettingsService SHALL be the single resolver for OpenRegister wiring and SHALL persist all Procest config as IAppConfig key/value pairs
+### Requirement: SettingsService SHALL be the single resolver for OpenRegister wiring and SHALL persist all Dossiq config as IAppConfig key/value pairs
 
 @e2e exclude Backend PHP service spec; covered by PHPUnit service tests.
 
-`OCA\Procest\Service\SettingsService` SHALL provide the central OpenRegister resolver and IAppConfig persistence layer for Procest. The service SHALL expose:
+`OCA\Dossiq\Service\SettingsService` SHALL provide the central OpenRegister resolver and IAppConfig persistence layer for Dossiq. The service SHALL expose:
 - `isOpenRegisterAvailable(): bool` — returns true iff the `openregister` app is installed AND the `OCA\OpenRegister\Service\ObjectService` class can be resolved from the DI container.
-- `getObjectService(): ?object` — returns the resolved `ObjectService`, or `null` (NOT throw) when OpenRegister is unavailable. Per ADR-022, every Procest data-access call SHALL obtain its `ObjectService` through this single resolver.
-- `loadConfiguration(bool $force = false): array` — idempotent register import. SHALL read `procest_register.json`, import it via the OpenRegister `ConfigurationService`, auto-configure every schema and register ID returned, and persist them via `setConfigValue()`. When `$force` is true, SHALL re-import unconditionally; otherwise SHALL skip when the persisted version matches the manifest version.
-- `getSettings(): array` / `updateSettings(array $data): array` — bulk read/write of the Procest config namespace.
-- `getConfigValue(string $key, string $default = ''): string` / `setConfigValue(string $key, string $value): void` — single-key accessors backed by `IAppConfig` under the `procest` app namespace.
+- `getObjectService(): ?object` — returns the resolved `ObjectService`, or `null` (NOT throw) when OpenRegister is unavailable. Per ADR-022, every Dossiq data-access call SHALL obtain its `ObjectService` through this single resolver.
+- `loadConfiguration(bool $force = false): array` — idempotent register import. SHALL read `dossiq_register.json`, import it via the OpenRegister `ConfigurationService`, auto-configure every schema and register ID returned, and persist them via `setConfigValue()`. When `$force` is true, SHALL re-import unconditionally; otherwise SHALL skip when the persisted version matches the manifest version.
+- `getSettings(): array` / `updateSettings(array $data): array` — bulk read/write of the Dossiq config namespace.
+- `getConfigValue(string $key, string $default = ''): string` / `setConfigValue(string $key, string $value): void` — single-key accessors backed by `IAppConfig` under the `dossiq` app namespace.
 
 #### Scenario: getObjectService returns null when OpenRegister is uninstalled
 - **GIVEN** the `openregister` app is not installed
@@ -751,7 +751,7 @@ This spec is highly specific and implementation-ready. Requirements are well-str
 - **AND** `isOpenRegisterAvailable()` SHALL return `false`
 
 #### Scenario: loadConfiguration is idempotent without --force
-- **GIVEN** the persisted `procest_register_version` equals the version in `procest_register.json`
+- **GIVEN** the persisted `dossiq_register_version` equals the version in `dossiq_register.json`
 - **WHEN** `loadConfiguration()` is called with default `$force = false`
 - **THEN** the service SHALL skip the re-import and return the cached configuration envelope
 
@@ -762,26 +762,26 @@ This spec is highly specific and implementation-ready. Requirements are well-str
 - **AND** SHALL refresh every persisted schema/register ID from the import result
 
 #### Scenario: config keys survive process restart
-- **WHEN** `setConfigValue('register', 'procest')` is called
+- **WHEN** `setConfigValue('register', 'dossiq')` is called
 - **AND** a new request hits the process pool
-- **THEN** `getConfigValue('register')` SHALL return `'procest'`
+- **THEN** `getConfigValue('register')` SHALL return `'dossiq'`
 
 #### Notes
-- Both `getObjectService()` and `getConfigurationService()` look up services from the DI container at call time (NOT injection-time) — this is deliberate so Procest can boot even when `openregister` is not yet installed.
-- ADR-022 calls out that every register-aware service in Procest MUST go through `SettingsService::getObjectService()` rather than wiring its own ObjectService injection.
+- Both `getObjectService()` and `getConfigurationService()` look up services from the DI container at call time (NOT injection-time) — this is deliberate so Dossiq can boot even when `openregister` is not yet installed.
+- ADR-022 calls out that every register-aware service in Dossiq MUST go through `SettingsService::getObjectService()` rather than wiring its own ObjectService injection.
 
 ### Requirement: SettingsController SHALL expose `index`, `create`, and `load` JSON endpoints for the admin UI runtime
 
 @e2e exclude Backend PHP controller spec; covered by PHPUnit controller tests.
 
-`OCA\Procest\Controller\SettingsController` SHALL expose three action endpoints:
+`OCA\Dossiq\Controller\SettingsController` SHALL expose three action endpoints:
 - `index()` — `#[NoAdminRequired]`. SHALL return `{success: true, openRegisters: <bool>, isAdmin: <bool>, config: <SettingsService::getSettings()>}` so the admin Vue app can render itself for both admins and non-admins (read-only view).
 - `create()` — admin-only (no `#[NoAdminRequired]`). SHALL take the raw request params, delegate to `SettingsService::updateSettings($data)`, and return `{success: true, config: <updated>}`.
-- `load()` — admin-only. SHALL force a fresh re-import of the procest register from `procest_register.json` via `SettingsService::loadConfiguration(force: true)` and return the raw result envelope from that service.
+- `load()` — admin-only. SHALL force a fresh re-import of the dossiq register from `dossiq_register.json` via `SettingsService::loadConfiguration(force: true)` and return the raw result envelope from that service.
 
 #### Scenario: index reports admin status correctly
 - **GIVEN** a logged-in user `alice` who is a member of the `admin` group
-- **WHEN** `GET /apps/procest/api/settings` (index) is invoked
+- **WHEN** `GET /apps/dossiq/api/settings` (index) is invoked
 - **THEN** the response SHALL contain `"isAdmin": true`
 - **AND** SHALL contain `"openRegisters": true` if the `openregister` app is installed
 
@@ -796,16 +796,16 @@ This spec is highly specific and implementation-ready. Requirements are well-str
 - **THEN** the controller SHALL call `SettingsService::loadConfiguration(force: true)`
 - **AND** SHALL return the result envelope unchanged (no `success: true` wrapper)
 
-### Requirement: SettingsService SHALL be the single resolver for OpenRegister wiring and SHALL persist all Procest config as IAppConfig key/value pairs
+### Requirement: SettingsService SHALL be the single resolver for OpenRegister wiring and SHALL persist all Dossiq config as IAppConfig key/value pairs
 
 @e2e exclude Backend PHP service spec; covered by PHPUnit service tests.
 
-`OCA\Procest\Service\SettingsService` SHALL provide the central OpenRegister resolver and IAppConfig persistence layer for Procest. The service SHALL expose:
+`OCA\Dossiq\Service\SettingsService` SHALL provide the central OpenRegister resolver and IAppConfig persistence layer for Dossiq. The service SHALL expose:
 - `isOpenRegisterAvailable(): bool` — returns true iff the `openregister` app is installed AND the `OCA\OpenRegister\Service\ObjectService` class can be resolved from the DI container.
-- `getObjectService(): ?object` — returns the resolved `ObjectService`, or `null` (NOT throw) when OpenRegister is unavailable. Per ADR-022, every Procest data-access call SHALL obtain its `ObjectService` through this single resolver.
-- `loadConfiguration(bool $force = false): array` — idempotent register import. SHALL read `procest_register.json`, import it via the OpenRegister `ConfigurationService`, auto-configure every schema and register ID returned, and persist them via `setConfigValue()`. When `$force` is true, SHALL re-import unconditionally; otherwise SHALL skip when the persisted version matches the manifest version.
-- `getSettings(): array` / `updateSettings(array $data): array` — bulk read/write of the Procest config namespace.
-- `getConfigValue(string $key, string $default = ''): string` / `setConfigValue(string $key, string $value): void` — single-key accessors backed by `IAppConfig` under the `procest` app namespace.
+- `getObjectService(): ?object` — returns the resolved `ObjectService`, or `null` (NOT throw) when OpenRegister is unavailable. Per ADR-022, every Dossiq data-access call SHALL obtain its `ObjectService` through this single resolver.
+- `loadConfiguration(bool $force = false): array` — idempotent register import. SHALL read `dossiq_register.json`, import it via the OpenRegister `ConfigurationService`, auto-configure every schema and register ID returned, and persist them via `setConfigValue()`. When `$force` is true, SHALL re-import unconditionally; otherwise SHALL skip when the persisted version matches the manifest version.
+- `getSettings(): array` / `updateSettings(array $data): array` — bulk read/write of the Dossiq config namespace.
+- `getConfigValue(string $key, string $default = ''): string` / `setConfigValue(string $key, string $value): void` — single-key accessors backed by `IAppConfig` under the `dossiq` app namespace.
 
 #### Scenario: getObjectService returns null when OpenRegister is uninstalled
 - **GIVEN** the `openregister` app is not installed
@@ -814,7 +814,7 @@ This spec is highly specific and implementation-ready. Requirements are well-str
 - **AND** `isOpenRegisterAvailable()` SHALL return `false`
 
 #### Scenario: loadConfiguration is idempotent without --force
-- **GIVEN** the persisted `procest_register_version` equals the version in `procest_register.json`
+- **GIVEN** the persisted `dossiq_register_version` equals the version in `dossiq_register.json`
 - **WHEN** `loadConfiguration()` is called with default `$force = false`
 - **THEN** the service SHALL skip the re-import and return the cached configuration envelope
 
@@ -825,10 +825,10 @@ This spec is highly specific and implementation-ready. Requirements are well-str
 - **AND** SHALL refresh every persisted schema/register ID from the import result
 
 #### Scenario: config keys survive process restart
-- **WHEN** `setConfigValue('register', 'procest')` is called
+- **WHEN** `setConfigValue('register', 'dossiq')` is called
 - **AND** a new request hits the process pool
-- **THEN** `getConfigValue('register')` SHALL return `'procest'`
+- **THEN** `getConfigValue('register')` SHALL return `'dossiq'`
 
 #### Notes
-- Both `getObjectService()` and `getConfigurationService()` look up services from the DI container at call time (NOT injection-time) — this is deliberate so Procest can boot even when `openregister` is not yet installed.
-- ADR-022 calls out that every register-aware service in Procest MUST go through `SettingsService::getObjectService()` rather than wiring its own ObjectService injection.
+- Both `getObjectService()` and `getConfigurationService()` look up services from the DI container at call time (NOT injection-time) — this is deliberate so Dossiq can boot even when `openregister` is not yet installed.
+- ADR-022 calls out that every register-aware service in Dossiq MUST go through `SettingsService::getObjectService()` rather than wiring its own ObjectService injection.

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Inspection Checklist Run Immutability Listener
+ * Dossiq Inspection Checklist Run Immutability Listener
  *
  * Enforces REQ-IC-8: once a `inspectionChecklistRun` reaches
  * status = ingediend (or gearchiveerd), the object becomes append-only.
@@ -24,7 +24,7 @@
  * `ObjectListenerRegistrar`, meant REQ-IC-8 was not enforced at all.
  *
  * @category Listener
- * @package  OCA\Procest\Listener
+ * @package  OCA\Dossiq\Listener
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -35,15 +35,15 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Listener;
+namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Procest\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -97,7 +97,7 @@ class ChecklistRunImmutabilityListener implements IEventListener {
 			}
 		} catch (Throwable $e) {
 			$this->logger->debug(
-				'Procest: checklist immutability listener swallowed exception: ' . $e->getMessage(),
+				'Dossiq: checklist immutability listener swallowed exception: ' . $e->getMessage(),
 			);
 			return;
 		}//end try

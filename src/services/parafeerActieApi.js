@@ -3,7 +3,7 @@
 /**
  * Parafeer Actie API service.
  *
- * Wraps the procest /api/parafeer-actie endpoints. All HTTP traffic uses
+ * Wraps the dossiq /api/parafeer-actie endpoints. All HTTP traffic uses
  * @nextcloud/axios for CSRF + auth interop. Never use raw fetch().
  *
  * @spec openspec/changes/parafering-actions/tasks.md#T06
@@ -11,7 +11,7 @@
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-const ENDPOINT = generateUrl('/apps/procest/api/parafeer-actie')
+const ENDPOINT = generateUrl('/apps/dossiq/api/parafeer-actie')
 
 /**
  * Record a parafering action for a voorstel's current step.

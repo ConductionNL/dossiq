@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest CMMN Case-Model Loader.
+ * Dossiq CMMN Case-Model Loader.
  *
  * Loads the single active (`lifecycleStatus: published`) `caseModel` for a
  * given `caseType` from OpenRegister, decodes `caseFileItems[]`/`planItems[]`
@@ -10,7 +10,7 @@
  * CMMN definition schema (`design.md` §2).
  *
  * @category Service
- * @package  OCA\Procest\Service\Cmmn
+ * @package  OCA\Dossiq\Service\Cmmn
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,16 +21,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-001
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Cmmn;
+namespace OCA\Dossiq\Service\Cmmn;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
 /**

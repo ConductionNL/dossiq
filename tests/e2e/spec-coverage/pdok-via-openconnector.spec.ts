@@ -1,10 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  *
  * Gate-19 spec-coverage tests for the pdok-consumer capability.
  *
- * These drive the real, bundled pdokService shim inside the loaded procest
+ * These drive the real, bundled pdokService shim inside the loaded dossiq
  * app context and assert — by intercepting network traffic — that every PDOK
  * call leaves the browser at the openconnector endpoint
  * (`/index.php/apps/openconnector/api/pdok/*`) and NEVER at api.pdok.nl, and
@@ -13,8 +13,8 @@
  * green without a live PDOK source or the openconnector adapter installed.
  *
  * ⚠️ THESE SPECS ALSO GUARD THE SERVICE WORKER, ON PURPOSE.
- * `public/service-worker.js` is registered at the procest app-root scope and
- * sees every fetch a procest page makes. It shipped with a tile-cache rule that
+ * `public/service-worker.js` is registered at the dossiq app-root scope and
+ * sees every fetch a dossiq page makes. It shipped with a tile-cache rule that
  * substring-matched `pdok` against `url.host + url.pathname`, so it claimed
  * this app's OWN address lookups at `/apps/openconnector/api/pdok/*` and
  * answered them out of the map-tile cache. A worker-claimed request never
@@ -47,10 +47,10 @@ import { STORAGE_STATE } from '../helpers/auth'
 const OC_PREFIX = '/apps/openconnector/api/pdok'
 
 /** Marker header put on every fulfilled response, so a REAL server answer with the same status cannot impersonate the mock. */
-const FULFILLED_BY = 'x-procest-e2e-fulfilled'
+const FULFILLED_BY = 'x-dossiq-e2e-fulfilled'
 
 /**
- * Resolve the scope of procest's active service worker.
+ * Resolve the scope of dossiq's active service worker.
  *
  * @param page    The page under test.
  * @param timeout How long to wait for the worker to reach `activated`.
@@ -72,21 +72,21 @@ async function activeWorkerScope(
 		await page.waitForTimeout(250)
 	}
 	throw new Error(
-		`procest registered no ACTIVE service worker within ${timeout}ms. `
-			+ "src/main.js registers generateUrl('/apps/procest/service-worker.js') on window load; "
+		`dossiq registered no ACTIVE service worker within ${timeout}ms. `
+			+ "src/main.js registers generateUrl('/apps/dossiq/service-worker.js') on window load; "
 			+ 'if that registration is gone these specs no longer exercise the worker at all.',
 	)
 }
 
 /**
- * Load the procest app so the webpack bundle (and the pdokService shim within
+ * Load the dossiq app so the webpack bundle (and the pdokService shim within
  * it) is available in the page's module graph for evaluate-driven calls, WITH
  * the app's service worker in control of the document.
  *
  * Control is not automatic. A document is only controlled when its own URL is
  * inside the worker's scope, and the scope depends on the instance:
  * `generateUrl()` keeps the `/index.php` prefix unless `front_controller_active`
- * is set, so `/index.php/apps/procest/dashboard` is inside the scope on a plain
+ * is set, so `/index.php/apps/dossiq/dashboard` is inside the scope on a plain
  * `php -S` CI instance and OUTSIDE it on a docker image that sets the flag.
  * That single difference is why a worker which swallowed every PDOK call was
  * red on CI and green on every developer's machine. Navigating to the worker's
@@ -94,8 +94,8 @@ async function activeWorkerScope(
  *
  * @param page The page under test.
  */
-async function openProcest(page: import('@playwright/test').Page): Promise<void> {
-	await page.goto('/index.php/apps/procest/dashboard')
+async function openDossiq(page: import('@playwright/test').Page): Promise<void> {
+	await page.goto('/index.php/apps/dossiq/dashboard')
 	await expect(page).not.toHaveURL(/login/, { timeout: 15000 })
 
 	const scope = await activeWorkerScope(page)
@@ -113,7 +113,7 @@ test.describe('PDOK via openconnector — shim routing', () => {
 	test('suggest reaches the openconnector endpoint, never api.pdok.nl', async ({
 		page,
 	}) => {
-		await openProcest(page)
+		await openDossiq(page)
 
 		const seen: string[] = []
 		// Capture every outbound request the page makes during the call.
@@ -148,7 +148,7 @@ test.describe('PDOK via openconnector — shim routing', () => {
 				const body = await res.json()
 				return {
 					docs: body?.docs ?? [],
-					fulfilledBy: res.headers.get('x-procest-e2e-fulfilled'),
+					fulfilledBy: res.headers.get('x-dossiq-e2e-fulfilled'),
 				}
 			} catch (e) {
 				return { threw: String(e) }
@@ -185,7 +185,7 @@ test.describe('PDOK via openconnector — shim routing', () => {
 	test('503 from openconnector degrades gracefully without throwing', async ({
 		page,
 	}) => {
-		await openProcest(page)
+		await openDossiq(page)
 		await page.route(`**${OC_PREFIX}/lookup**`, (route) =>
 			route.fulfill({
 				status: 503,
@@ -210,7 +210,7 @@ test.describe('PDOK via openconnector — shim routing', () => {
 				return {
 					status: res.status,
 					messageKey: body?.message_key ?? null,
-					fulfilledBy: res.headers.get('x-procest-e2e-fulfilled'),
+					fulfilledBy: res.headers.get('x-dossiq-e2e-fulfilled'),
 				}
 			} catch (e) {
 				return { threw: String(e) }
@@ -230,7 +230,7 @@ test.describe('PDOK via openconnector — shim routing', () => {
 
 	// @e2e openspec/specs/pdok-consumer/spec.md#scenario-openconnector-absent-surfaces-warning-without-blocking-form
 	test('404 (openconnector absent) does not block the page', async ({ page }) => {
-		await openProcest(page)
+		await openDossiq(page)
 		await page.route(`**${OC_PREFIX}/suggest**`, (route) =>
 			route.fulfill({
 				status: 404,
@@ -249,7 +249,7 @@ test.describe('PDOK via openconnector — shim routing', () => {
 				)
 				return {
 					status: res.status,
-					fulfilledBy: res.headers.get('x-procest-e2e-fulfilled'),
+					fulfilledBy: res.headers.get('x-dossiq-e2e-fulfilled'),
 				}
 			} catch (e) {
 				return { threw: String(e) }

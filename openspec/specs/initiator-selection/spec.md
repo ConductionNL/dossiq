@@ -29,7 +29,7 @@ initiator SHALL be optional at creation time (existing flows keep working unchan
 
 The initiator picker SHALL search, per selected type: `brpPerson` register objects (Person) and
 `kvkCompany` register objects (Company) via the OpenRegister objects API (frontend store — thin
-client, no procest backend CRUD wrapper), and Nextcloud Contacts (Contact) via the Contacts API.
+client, no dossiq backend CRUD wrapper), and Nextcloud Contacts (Contact) via the Contacts API.
 Results SHALL be presented uniformly (display name + identifying number/detail). When the Contacts
 app is unavailable, the Contact source SHALL degrade to an explicit empty state, never an error.
 The register → live BRP/KvK fallback is owned by `external-integrations-test-environments` and is

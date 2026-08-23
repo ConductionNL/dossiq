@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest RenameDutchDeadlineColumns Repair Step
+ * Dossiq RenameDutchDeadlineColumns Repair Step
  *
  * Moves stored data from the Dutch column names to the English ones the
  * procest register declares.
@@ -50,7 +50,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -58,14 +58,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
 use OCP\DB\Exception;
 use OCP\IDBConnection;
@@ -86,6 +86,10 @@ class RenameDutchDeadlineColumns implements IRepairStep {
 	 *
 	 * @var string
 	 */
+	// FROZEN: OpenRegister register SLUG, unchanged by the procest -> dossiq
+	// app-id rename. It prefix-matches both `procest` and `procest-default`,
+	// which each hold live rows; a renamed value matches neither, and the step
+	// would silently migrate nothing.
 	private const REGISTER_SLUG_PREFIX = 'procest';
 
 	/**

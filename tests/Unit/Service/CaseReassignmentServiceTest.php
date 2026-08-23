@@ -8,7 +8,7 @@
  * reporting.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,11 +21,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
 use InvalidArgumentException;
-use OCA\Procest\Service\CaseReassignmentService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\CaseReassignmentService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\Notification\IManager;
 use OCP\Notification\INotification;
 use PHPUnit\Framework\TestCase;
@@ -56,9 +56,9 @@ if (interface_exists(SubstitutionObjectServiceStub::class) === false) {
 /**
  * Unit tests for CaseReassignmentService.
  *
- * @covers \OCA\Procest\Service\CaseReassignmentService
+ * @covers \OCA\Dossiq\Service\CaseReassignmentService
  *
- * @uses \OCA\Procest\Service\Support\ReassignmentBatch
+ * @uses \OCA\Dossiq\Service\Support\ReassignmentBatch
  */
 class CaseReassignmentServiceTest extends TestCase {
 

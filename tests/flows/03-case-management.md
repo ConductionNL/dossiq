@@ -1,7 +1,7 @@
 # Test Flow: Case Management Journey
 
-**App:** Procest
-**Pages:** `/apps/procest/cases`, `/apps/procest/cases/new`, `/apps/procest/cases/:id`, `/apps/procest/my-work`
+**App:** Dossiq
+**Pages:** `/apps/dossiq/cases`, `/apps/dossiq/cases/new`, `/apps/dossiq/cases/:id`, `/apps/dossiq/my-work`
 **Priority:** High
 **Tags:** crud, cases, status, workflow
 **Personas:** zaakbehandelaar, teamleider
@@ -9,13 +9,13 @@
 
 ## Preconditions
 - Logged in as admin
-- Procest and OpenRegister apps enabled
+- Dossiq and OpenRegister apps enabled
 - Case type schemas registered (e.g. "Omgevingsvergunning")
 
 ## Journey: Create and manage a case
 
 ### 1. View case list
-**Navigate to** `/apps/procest/cases`
+**Navigate to** `/apps/dossiq/cases`
 
 **Verify:**
 - [ ] Cards/Table toggle visible (Table selected by default)
@@ -27,7 +27,7 @@
 ### 2. Create a new case
 **Click "Add Item"**
 
-**Verify form at `/apps/procest/cases/new`:**
+**Verify form at `/apps/dossiq/cases/new`:**
 - [ ] Form appears with case type selection
 - [ ] Required fields for case creation
 - [ ] Save/Create button (disabled until required fields filled)
@@ -67,7 +67,7 @@
 - [ ] Status timeline/progress indicator updates
 
 ### 5. Case appears in My Work
-**Navigate to** `/apps/procest/my-work`
+**Navigate to** `/apps/dossiq/my-work`
 
 **Verify:**
 - [ ] Heading "My Work" (h2)

@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest KPI Aggregation Service
+ * Dossiq KPI Aggregation Service
  *
  * Computes dashboard KPI metrics via direct DB-side aggregation queries
  * on the OpenRegister objects table. All counts use COUNT(*) with
  * JSON_EXTRACT predicates — no PHP-side array iteration.
  *
  * Workflow invariant relied on by this service: a case is considered "open"
- * if and only if its `endDate` JSON field is NULL or empty. The Procest
+ * if and only if its `endDate` JSON field is NULL or empty. The Dossiq
  * workflow engine MUST set `endDate` whenever a case transitions to a final
  * status (i.e. any status whose `statusType.isFinal` is `true`). If a case
  * has `endDate IS NULL` but a `currentStatus` with `statusType.isFinal = true`,
@@ -17,7 +17,7 @@
  * operational check procedure.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -28,12 +28,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTime;
 use OCP\IDBConnection;

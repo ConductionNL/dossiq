@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest LHS Lookup Service
+ * Dossiq LHS Lookup Service
  *
  * Pure lookup on the Landelijke Handhavingsstrategie 4×4 matrix
  * (Beoordeling gedrag × Mogelijke gevolgen) returning the recommended
  * interventieladder step from `lhsMatrixCell` objects in OpenRegister.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,10 +24,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -169,8 +169,8 @@ class LhsLookupService {
 			);
 
 			// The outer is_array() is always true ($results is typed array); the inner
-		// one on $results[0] is NOT redundant and stays.
-		if (isset($results[0]) === true && is_array($results[0]) === true) {
+			// one on $results[0] is NOT redundant and stays.
+			if (isset($results[0]) === true && is_array($results[0]) === true) {
 				return array_merge($results[0], ['source' => 'register']);
 			}
 

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Complaint Disposition Controller
+ * Dossiq Complaint Disposition Controller
  *
  * REST API for the afdoening (disposition) step of complaint handling per Awb
  * chapter 9: reading a complaint's disposition, submitting one (optionally for
@@ -15,7 +15,7 @@
  * injected.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,7 +23,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -33,12 +33,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\Complaint\ComplaintAccessGuard;
-use OCA\Procest\Service\ComplaintService;
-use OCA\Procest\Service\DispositionService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
+use OCA\Dossiq\Service\ComplaintService;
+use OCA\Dossiq\Service\DispositionService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

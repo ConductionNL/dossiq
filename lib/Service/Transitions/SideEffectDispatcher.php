@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Side-Effect Dispatcher.
+ * Dossiq Side-Effect Dispatcher.
  *
  * Iterates `automaticActions[]` in declaration order, invokes the registered
  * handler for each action type, and collects the per-action result. Failed
@@ -10,7 +10,7 @@
  * with `error: 'unknown_action_type'`.
  *
  * @category Service
- * @package  OCA\Procest\Service\Transitions
+ * @package  OCA\Dossiq\Service\Transitions
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,12 +21,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Transitions;
+namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\OpenRegister\Service\Flow\FlowNodeRegistry;
 use Psr\Container\ContainerInterface;

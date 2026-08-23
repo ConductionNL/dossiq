@@ -8,7 +8,7 @@
  * the caller went on to delete the parent.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,11 +26,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\Deelzaak\CaseObjectReader;
-use OCA\Procest\Service\DeelzaakService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
+use OCA\Dossiq\Service\DeelzaakService;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -56,9 +56,9 @@ use RuntimeException;
  * coverage metadata reports every case as risky even with the collaborators
  * declared.
  *
- * @covers \OCA\Procest\Service\DeelzaakService
- * @uses   \OCA\Procest\Service\Support\SearchesObjects
- * @uses   \OCA\Procest\Service\Deelzaak\CaseObjectReader
+ * @covers \OCA\Dossiq\Service\DeelzaakService
+ * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses   \OCA\Dossiq\Service\Deelzaak\CaseObjectReader
  */
 class DeelzaakUnlinkSubCasesTest extends TestCase {
 

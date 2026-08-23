@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Process Mining Controller
+ * Dossiq Process Mining Controller
  *
  * REST surface for the process-mining bottleneck report:
  * `GET /api/reports/process-mining`. Same gate shape as
@@ -11,7 +11,7 @@
  * Defers all logic to {@see ProcessMiningService} (ADR-022).
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,16 +22,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\ProcessMiningService;
+use OCA\Dossiq\Service\ProcessMiningService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -108,7 +108,7 @@ class ProcessMiningController extends Controller {
 		try {
 			return new JSONResponse($this->processMiningService->getReport(params: $params));
 		} catch (Throwable $e) {
-			$this->logger->error('Procest: process-mining report generation failed', ['exception' => $e->getMessage()]);
+			$this->logger->error('Dossiq: process-mining report generation failed', ['exception' => $e->getMessage()]);
 			return new JSONResponse(['message' => 'Report generation failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}//end report()

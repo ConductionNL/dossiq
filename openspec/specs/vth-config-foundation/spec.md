@@ -31,7 +31,7 @@ The system SHALL seed the complete 16-cell LHSO matrix (Gedrag A–D × Gevolgen
 
 #### Scenario: Sixteen LHSO cells loaded on install
 
-- **WHEN** the Procest app is installed or upgraded
+- **WHEN** the Dossiq app is installed or upgraded
 - **THEN** all 16 LHSO matrix cells SHALL be queryable, each with a suggested intervention (e.g. Advies, Bestuurlijke waarschuwing, Aanzegging, Dwangsom)
 
 #### Scenario: LHSO seed is idempotent

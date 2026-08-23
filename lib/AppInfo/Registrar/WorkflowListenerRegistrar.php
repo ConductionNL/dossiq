@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest workflow listener registrar.
+ * Dossiq workflow listener registrar.
  *
  * The two delegation-boundary listeners: the AWB termijn binding that runs on
  * case creation, and the decidesk decision-outcome listener that materialises a
  * ZGW Besluit from a concluded decision. Both are pure observers (ADR-022).
  *
  * @category AppInfo
- * @package  OCA\Procest\AppInfo\Registrar
+ * @package  OCA\Dossiq\AppInfo\Registrar
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -16,7 +16,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -26,11 +26,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\AppInfo\Registrar;
+namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
+use OCA\Dossiq\Listener\DecisionConcludedListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
-use OCA\Procest\Listener\DeadlineCaseCreatedListener;
-use OCA\Procest\Listener\DecisionConcludedListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
@@ -61,7 +61,7 @@ class WorkflowListenerRegistrar {
 	 * On case creation, an AWB TermijnInstance is automatically bound to
 	 * the case using the active TermijnDefinitie for the zaaktype. The
 	 * listener is a pure observer (ADR-022); all logic lives in
-	 * {@see \OCA\Procest\Service\TermijnService}.
+	 * {@see \OCA\Dossiq\Service\TermijnService}.
 	 *
 	 * @param IRegistrationContext $context The registration context.
 	 *
@@ -79,19 +79,19 @@ class WorkflowListenerRegistrar {
 	/**
 	 * Register the decidesk decision-outcome listener.
 	 *
-	 * Procest delegates contract / besluit / bezwaar / advice DECISIONS to
+	 * Dossiq delegates contract / besluit / bezwaar / advice DECISIONS to
 	 * decidesk by dispatching `DecisionRequestedEvent`; the terminal outcome
 	 * arrives back as decidesk's `DecisionConcludedEvent`. This listener
 	 * materialises the ZGW `Besluit` from that outcome (filtered to this app via
 	 * `getSourceApp()`). The event class is registered by FQN string and only
-	 * when decidesk is installed, so procest carries no hard compile-time
+	 * when decidesk is installed, so dossiq carries no hard compile-time
 	 * dependency on the optional decidesk app.
 	 *
 	 * @param IRegistrationContext $context The registration context.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
 	private function registerDecisionListeners(IRegistrationContext $context): void {
 		if (class_exists('\\OCA\\Decidesk\\Event\\DecisionConcludedEvent') === false) {

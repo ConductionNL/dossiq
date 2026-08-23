@@ -1,4 +1,4 @@
-# Tasks — Beta surface alignment (Procest)
+# Tasks — Beta surface alignment (Dossiq)
 
 - [x] Read `appinfo/info.xml`, `src/manifest.json` nav, and `lib/Controller/` to build the
       canonical shipped-feature vocabulary.
@@ -13,12 +13,12 @@
   - [x] CMMN 1.1 / ZGW API standards claims
 - [x] Update `appinfo/info.xml` EN + NL descriptions: add VTH/bezwaar-beroep/WOO/dwangsom/map/
       appointments/kanban to the feature list; correct the CMMN/ZGW standards line.
-- [x] Update `conduction-website/src/pages/apps/procest.mdx`: version/status, FeatureList,
+- [x] Update `conduction-website/src/pages/apps/dossiq.mdx`: version/status, FeatureList,
       WidgetShelf widget names, RotatingCards wording, Showcase (n8n only, real AI feature),
       PairCard wording.
-- [x] Update `conduction-website/i18n/nl/docusaurus-plugin-content-pages/apps/procest.mdx` with the
+- [x] Update `conduction-website/i18n/nl/docusaurus-plugin-content-pages/apps/dossiq.mdx` with the
       equivalent Dutch changes.
-- [x] Review `procest/docs/` (index.md, Features/README.md, ai-assisted-processing.md,
+- [x] Review `dossiq/docs/` (index.md, Features/README.md, ai-assisted-processing.md,
       Technical/architecture.md) for the same fabricated claims — found already honestly labelled
       (Implemented/Partial/Planned); no changes required.
 - [x] Confirm `img/app.svg` matches the app-icon convention (white fill, 24×24 viewBox) — no

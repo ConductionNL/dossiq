@@ -1,16 +1,16 @@
 <?php
 
 /**
- * Procest LibreSign Status Mapper.
+ * Dossiq LibreSign Status Mapper.
  *
  * Pure mapping of LibreSign's signature-request status vocabulary (both the
- * `statusText` string and the legacy numeric `status` code) onto procest's
+ * `statusText` string and the legacy numeric `status` code) onto dossiq's
  * own internal pending/signed/declined/unknown vocabulary used by
  * LibresignSigningAdapter. Deliberately has no I/O so it can be exhaustively
  * unit tested without mocking HTTP.
  *
  * @category Service
- * @package  OCA\Procest\Service\Beschikking
+ * @package  OCA\Dossiq\Service\Beschikking
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,17 +21,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/libresign-besluit-signing/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Beschikking;
+namespace OCA\Dossiq\Service\Beschikking;
 
 /**
- * Maps LibreSign status values onto procest's internal signing vocabulary.
+ * Maps LibreSign status values onto dossiq's internal signing vocabulary.
  *
  * @spec openspec/specs/libresign-besluit-signing/spec.md
  */

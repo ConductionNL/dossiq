@@ -3,10 +3,10 @@
 /**
  * SettingsService Unit Tests
  *
- * Tests for the Procest SettingsService configuration management.
+ * Tests for the Dossiq SettingsService configuration management.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -14,14 +14,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
@@ -31,11 +31,11 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for the SettingsService class.
  *
- * @covers \OCA\Procest\Service\SettingsService
+ * @covers \OCA\Dossiq\Service\SettingsService
  *
- * @uses \OCA\Procest\Service\Settings\RegisterFragmentMerger
- * @uses \OCA\Procest\Service\Settings\SchemaAnnotationReconciler
- * @uses \OCA\Procest\Service\Settings\SchemaKeyReconciler
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler
+ * @uses \OCA\Dossiq\Service\Settings\SchemaKeyReconciler
  */
 class SettingsServiceTest extends TestCase {
 
@@ -246,7 +246,7 @@ class SettingsServiceTest extends TestCase {
 			->method('setValueString')
 			->willReturnCallback(
 				function (string $app, string $key, string $value): bool {
-					$this->assertSame('procest', $app);
+					$this->assertSame('dossiq', $app);
 					$this->assertContains(
 						$key,
 						['register', 'case_schema']
@@ -273,7 +273,7 @@ class SettingsServiceTest extends TestCase {
 		$this->appConfig
 			->expects($this->once())
 			->method('getValueString')
-			->with('procest', 'register', 'fallback')
+			->with('dossiq', 'register', 'fallback')
 			->willReturn('123');
 
 		$result = $this->service->getConfigValue('register', 'fallback');
@@ -291,7 +291,7 @@ class SettingsServiceTest extends TestCase {
 		$this->appConfig
 			->expects($this->once())
 			->method('setValueString')
-			->with('procest', 'task_schema', '555');
+			->with('dossiq', 'task_schema', '555');
 
 		$this->service->setConfigValue('task_schema', '555');
 
@@ -315,7 +315,7 @@ class SettingsServiceTest extends TestCase {
 	}//end testLoadConfigurationFailsWithoutOpenRegister()
 
 	/**
-	 * loadConfiguration() reads procest_register.json, deep-merges the ADR-037
+	 * loadConfiguration() reads dossiq_register.json, deep-merges the ADR-037
 	 * register.d fragments on top of it, and hands the RESULT to
 	 * ConfigurationService::importFromApp() under the file's own version.
 	 *
@@ -330,7 +330,7 @@ class SettingsServiceTest extends TestCase {
 		$this->appManager->method('isEnabledForUser')->willReturn(true);
 		$this->appManager->method('isInstalled')->willReturn(true);
 
-		$configurationService = $this->createMock(ProcestConfigurationServiceStub::class);
+		$configurationService = $this->createMock(DossiqConfigurationServiceStub::class);
 
 		$captured = [];
 		$configurationService->expects($this->once())
@@ -361,12 +361,12 @@ class SettingsServiceTest extends TestCase {
 
 		// The on-disk configuration is what must have been read and merged.
 		$onDisk = json_decode(
-			file_get_contents(__DIR__ . '/../../../lib/Settings/procest_register.json'),
+			file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'),
 			true
 		);
 
 		$this->assertTrue($result['success']);
-		$this->assertSame('procest', $captured['appId']);
+		$this->assertSame('dossiq', $captured['appId']);
 		$this->assertFalse($captured['force']);
 		$this->assertSame($onDisk['info']['version'], $captured['version']);
 		$this->assertSame($onDisk['info']['version'], $result['version']);
@@ -389,7 +389,7 @@ class SettingsServiceTest extends TestCase {
  * Stub matching the named-arg signature of OpenRegister's ConfigurationService
  * as loadConfiguration() calls it.
  */
-interface ProcestConfigurationServiceStub {
+interface DossiqConfigurationServiceStub {
 
 	/**
 	 * Import a register configuration on behalf of an app.

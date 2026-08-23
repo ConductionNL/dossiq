@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest Appointment Backend Interface.
+ * Dossiq Appointment Backend Interface.
  *
- * Contract for pluggable appointment scheduling backends used by Procest.
+ * Contract for pluggable appointment scheduling backends used by Dossiq.
  *
  * @category Interface
- * @package  OCA\Procest\Service\AppointmentBackend
+ * @package  OCA\Dossiq\Service\AppointmentBackend
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -14,14 +14,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/appointment-booking/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\AppointmentBackend;
+namespace OCA\Dossiq\Service\AppointmentBackend;
 
 /**
  * Interface for appointment scheduling backends.

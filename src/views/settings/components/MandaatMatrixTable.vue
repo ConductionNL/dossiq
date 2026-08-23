@@ -9,13 +9,13 @@
 				<template #icon>
 					<Plus :size="18" />
 				</template>
-				{{ t('procest', 'New mandaat') }}
+				{{ t('dossiq', 'New mandaat') }}
 			</NcButton>
 			<NcButton type="secondary" @click="$emit('import')">
 				<template #icon>
 					<Import :size="18" />
 				</template>
-				{{ t('procest', 'Import from Decidesk') }}
+				{{ t('dossiq', 'Import from Decidesk') }}
 			</NcButton>
 		</div>
 
@@ -23,10 +23,10 @@
 
 		<NcEmptyContent
 			v-if="!loading && matrices.length === 0"
-			:name="t('procest', 'No mandate decisions')"
+			:name="t('dossiq', 'No mandate decisions')"
 			:description="
 				t(
-					'procest',
+					'dossiq',
 					'No MandateringsBesluit entries yet. Create one or import an export.',
 				)
 			">
@@ -40,12 +40,12 @@
 			class="mandaat-matrix-table__table">
 			<thead>
 				<tr>
-					<th scope="col">{{ t('procest', '#') }}</th>
-					<th scope="col">{{ t('procest', 'Naam') }}</th>
-					<th scope="col">{{ t('procest', 'Status') }}</th>
-					<th scope="col">{{ t('procest', 'In werkingtreding') }}</th>
-					<th scope="col">{{ t('procest', 'Expiry date') }}</th>
-					<th scope="col">{{ t('procest', 'Acties') }}</th>
+					<th scope="col">{{ t('dossiq', '#') }}</th>
+					<th scope="col">{{ t('dossiq', 'Naam') }}</th>
+					<th scope="col">{{ t('dossiq', 'Status') }}</th>
+					<th scope="col">{{ t('dossiq', 'In werkingtreding') }}</th>
+					<th scope="col">{{ t('dossiq', 'Expiry date') }}</th>
+					<th scope="col">{{ t('dossiq', 'Acties') }}</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -63,7 +63,7 @@
 					<td>{{ b.vervaldatum || '—' }}</td>
 					<td>
 						<NcButton size="small" @click="$emit('edit', b)">
-							{{ t('procest', 'Edit') }}
+							{{ t('dossiq', 'Edit') }}
 						</NcButton>
 					</td>
 				</tr>

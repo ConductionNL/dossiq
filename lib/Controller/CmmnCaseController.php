@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest CMMN Case-Plan Controller.
+ * Dossiq CMMN Case-Plan Controller.
  *
  * REST surface for the CMMN adaptive-case engine (`CaseModelEngine`), the
  * counterpart to `StatusTransitionController` for CMMN-managed caseTypes:
@@ -15,7 +15,7 @@
  * Error responses use static messages — `$e->getMessage()` is NEVER returned.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,18 +26,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-007
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\Cmmn\CaseModelEngine;
-use OCA\Procest\Service\Cmmn\IllegalPlanItemTransitionException;
-use OCA\Procest\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Cmmn\CaseModelEngine;
+use OCA\Dossiq\Service\Cmmn\IllegalPlanItemTransitionException;
+use OCA\Dossiq\Service\StatusTransitionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -294,7 +294,7 @@ class CmmnCaseController extends Controller {
 	}//end isAuthorizedForItem()
 
 	/**
-	 * Check membership in the procest admin group or the global admin group.
+	 * Check membership in the dossiq admin group or the global admin group.
 	 *
 	 * @param string $userId UID.
 	 *

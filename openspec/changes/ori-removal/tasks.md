@@ -32,13 +32,13 @@ release carrying `ori-adoption` (schema deltas, `occ decidesk:import-ori`,
   in `appinfo/info.xml`; delete
   `lib/Controller/RaadsinformatieFeedController.php` and the three
   `/feed/ori/*.rss` route entries in `appinfo/routes.php`. Delete or repoint
-  their tests. Document the feed URL move (procest `/apps/procest/feed/ori/*`
+  their tests. Document the feed URL move (dossiq `/apps/dossiq/feed/ori/*`
   → decidesk `/apps/decidesk/feed/ori/*`) in the release notes — no proxy, no
   redirect.
 
 - [ ] **T4**: Cross-app meeting link — add the additive optional
   `case.meetingRef` property (decidesk Meeting uuid) to
-  `lib/Settings/procest_register.json` (bump register version so the import is
+  `lib/Settings/dossiq_register.json` (bump register version so the import is
   not a no-op); rework `src/views/besluitvorming/VergaderingDetailView.vue` to
   render case data + "Open meeting in decidesk" deep link / ADR-019 leaf, with
   the quiet unavailable fallback when decidesk is absent or `meetingRef` is

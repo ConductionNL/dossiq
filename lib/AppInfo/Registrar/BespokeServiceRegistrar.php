@@ -1,15 +1,15 @@
 <?php
 
 /**
- * Procest bespoke-plumbing registrar.
+ * Dossiq bespoke-plumbing registrar.
  *
- * Re-asserts the six procest-specific plumbing classes that the AppHost engine
+ * Re-asserts the six dossiq-specific plumbing classes that the AppHost engine
  * has just aliased to its generics. Split out of Application so the explicit
  * factories — and the concrete Settings / Dashboard class references they need
  * — stay together in one place.
  *
  * @category AppInfo
- * @package  OCA\Procest\AppInfo\Registrar
+ * @package  OCA\Dossiq\AppInfo\Registrar
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -17,7 +17,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -27,19 +27,19 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\AppInfo\Registrar;
+namespace OCA\Dossiq\AppInfo\Registrar;
 
-use OCA\Procest\Controller\DashboardController;
-use OCA\Procest\Controller\SettingsController;
-use OCA\Procest\Repair\InitializeSettings;
-use OCA\Procest\Sections\SettingsSection;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Settings\AdminSettings;
+use OCA\Dossiq\Controller\DashboardController;
+use OCA\Dossiq\Controller\SettingsController;
+use OCA\Dossiq\Repair\InitializeSettings;
+use OCA\Dossiq\Sections\SettingsSection;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use Psr\Container\ContainerInterface;
 
 /**
- * Re-registers the procest-bespoke plumbing the AppHost engine aliased to generics.
+ * Re-registers the dossiq-bespoke plumbing the AppHost engine aliased to generics.
  *
  * @psalm-suppress UnusedClass
  *
@@ -47,11 +47,11 @@ use Psr\Container\ContainerInterface;
  */
 class BespokeServiceRegistrar {
 	/**
-	 * Re-register the procest-bespoke plumbing classes.
+	 * Re-register the dossiq-bespoke plumbing classes.
 	 *
 	 * A concrete-to-self alias (registerServiceAlias(X, X)) infinitely recurses
 	 * on NC's container (the alias resolves itself), so each bespoke class is
-	 * re-registered with an explicit factory that constructs the REAL procest
+	 * re-registered with an explicit factory that constructs the REAL dossiq
 	 * class — overriding the Bootstrap generic factory for the same key.
 	 *
 	 * @param IRegistrationContext $context The registration context.
@@ -109,7 +109,7 @@ class BespokeServiceRegistrar {
 				return new AdminSettings(
 					appManager: $c->get('OCP\\App\\IAppManager'),
 					initialState: $c->get('OCP\\AppFramework\\Services\\IInitialState'),
-					settingsService: $c->get('OCA\\Procest\\Service\\SettingsService')
+					settingsService: $c->get('OCA\\Dossiq\\Service\\SettingsService')
 				);
 			}
 		);

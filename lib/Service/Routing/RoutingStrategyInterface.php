@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Routing Strategy Interface
+ * Dossiq Routing Strategy Interface
  *
  * Contract implemented by every routing strategy class. Each strategy receives
  * a routing rule plus the case context and returns an ordered array of
@@ -9,7 +9,7 @@
  * strategy keyed by `rule.strategy` via the StrategyRegistry.
  *
  * @category Service
- * @package  OCA\Procest\Service\Routing
+ * @package  OCA\Dossiq\Service\Routing
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -20,12 +20,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Routing;
+namespace OCA\Dossiq\Service\Routing;
 
 /**
  * Common contract for routing strategies.

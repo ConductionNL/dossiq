@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @category  Flow
- * @package   OCA\Procest\Flow
+ * @package   OCA\Dossiq\Flow
  * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2
@@ -14,7 +14,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Flow;
+namespace OCA\Dossiq\Flow;
 
 use OCA\OpenRegister\Service\Flow\IFlowNode;
 use OCA\OpenRegister\Service\Flow\RegisterFlowNodesEvent;

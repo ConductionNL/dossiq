@@ -10,7 +10,7 @@ retrofit_extensions:
 
 ## Purpose
 
-The signalering (alerting) widgets provide proactive deadline awareness on the Procest dashboard. They surface time-sensitive alerts so case handlers can act before deadlines pass: cases approaching their processing deadline, tasks approaching their due date, and cases that have gone stagnant with no recent activity.
+The signalering (alerting) widgets provide proactive deadline awareness on the Dossiq dashboard. They surface time-sensitive alerts so case handlers can act before deadlines pass: cases approaching their processing deadline, tasks approaching their due date, and cases that have gone stagnant with no recent activity.
 
 **Feature tier**: V1
 
@@ -135,13 +135,13 @@ The system SHALL register Nextcloud-native dashboard widgets (IWidget) for the s
 - **WHEN** the user views the main Nextcloud dashboard widget picker
 - **THEN** a "Deadline Alerts" widget MUST be available for selection
 - **THEN** the widget MUST show the top 5 at-risk and overdue cases with title, days remaining/overdue, and severity indicator
-- **THEN** clicking the widget header MUST navigate to the Procest dashboard
+- **THEN** clicking the widget header MUST navigate to the Dossiq dashboard
 
 #### Scenario: Task Reminders Nextcloud widget available
 - **WHEN** the user views the main Nextcloud dashboard widget picker
 - **THEN** a "Task Reminders" widget MUST be available for selection
 - **THEN** the widget MUST show the top 5 urgent tasks with title, due date info, and parent case
-- **THEN** clicking a task MUST navigate to the task detail in Procest
+- **THEN** clicking a task MUST navigate to the task detail in Dossiq
 
 #### Scenario: Stalled Cases Nextcloud widget available
 - **WHEN** the user views the main Nextcloud dashboard widget picker
@@ -196,11 +196,11 @@ Each signalering widget SHALL implement Nextcloud IWidget with id/title/order/ic
 
 @e2e exclude PHP IWidget getId() method return value; widget metadata is covered by PHPUnit, not Playwright.
 
-Each of `DeadlineAlertsWidget`, `OverdueCasesWidget`, `StalledCasesWidget`, and `TaskRemindersWidget` SHALL implement `OCP\Dashboard\IWidget` and expose the canonical metadata via `getId()`, `getTitle()`, `getOrder()`, `getIconClass()`, and `getUrl()`. The widget id SHALL be a stable kebab-case identifier (`procest-deadline-alerts`, `procest-overdue-cases`, `procest-stalled-cases`, `procest-task-reminders`) used by both the Nextcloud dashboard registry and the in-app `widgetDefs` map. The title SHALL be returned through `IL10N::t()` so it follows the user locale.
+Each of `DeadlineAlertsWidget`, `OverdueCasesWidget`, `StalledCasesWidget`, and `TaskRemindersWidget` SHALL implement `OCP\Dashboard\IWidget` and expose the canonical metadata via `getId()`, `getTitle()`, `getOrder()`, `getIconClass()`, and `getUrl()`. The widget id SHALL be a stable kebab-case identifier (`dossiq-deadline-alerts`, `dossiq-overdue-cases`, `dossiq-stalled-cases`, `dossiq-task-reminders`) used by both the Nextcloud dashboard registry and the in-app `widgetDefs` map. The title SHALL be returned through `IL10N::t()` so it follows the user locale.
 
 #### Scenario: Widget id is stable for layout persistence
 - **WHEN** `DeadlineAlertsWidget::getId()` is called
-- **THEN** it SHALL return `'procest-deadline-alerts'` (verbatim, not derived from class name)
+- **THEN** it SHALL return `'dossiq-deadline-alerts'` (verbatim, not derived from class name)
 - **AND** the same id SHALL be used in `DEFAULT_LAYOUT` row 3 so saved user layouts stay valid across deployments
 
 ### REQ-002: Each signalering widget SHALL register its frontend bundle via load()
@@ -209,7 +209,7 @@ Each signalering widget SHALL register its frontend bundle via `load()`.
 
 @e2e exclude PHP IWidget::load() bundle registration; covered by PHPUnit and smoke test verifying script tags, not Playwright.
 
-`IWidget::load()` SHALL call `Util::addScript('procest', '<widget>-main')` and `Util::addStyle('procest', '<widget>-main')` for the widget's compiled Vue bundle. The widget SHALL NOT compute its data payload server-side in PHP — the Vue component fetches data via the Procest API after mounting. The PHP class exists solely to register the widget with Nextcloud's dashboard system and load the frontend bundle.
+`IWidget::load()` SHALL call `Util::addScript('dossiq', '<widget>-main')` and `Util::addStyle('dossiq', '<widget>-main')` for the widget's compiled Vue bundle. The widget SHALL NOT compute its data payload server-side in PHP — the Vue component fetches data via the Dossiq API after mounting. The PHP class exists solely to register the widget with Nextcloud's dashboard system and load the frontend bundle.
 
 #### Scenario: Widget bundle is loaded when dashboard is opened
 - **WHEN** a user opens the Nextcloud Dashboard with the Deadline Alerts widget in their layout
@@ -221,7 +221,7 @@ All four signalering widgets SHALL be registered at app boot via `Application`.
 
 @e2e exclude NC Application::register() PHP bootstrap; widget picker registration covered by PHPUnit.
 
-`OCA\Procest\AppInfo\Application::register()` SHALL register all four signalering widgets with the Nextcloud dashboard container so they appear in the dashboard widget picker. Registration order in `Application` SHALL match the canonical `getOrder()` return values to avoid layout drift between dashboard picker and saved user layouts.
+`OCA\Dossiq\AppInfo\Application::register()` SHALL register all four signalering widgets with the Nextcloud dashboard container so they appear in the dashboard widget picker. Registration order in `Application` SHALL match the canonical `getOrder()` return values to avoid layout drift between dashboard picker and saved user layouts.
 
 #### Scenario: Widgets appear in the dashboard picker
 - **WHEN** an authenticated user opens the dashboard widget picker
@@ -243,7 +243,7 @@ scenarios above; this scenario asserts only the browser-verifiable rendered shel
 and filter controls.
 
 #### Scenario: Work Queue page renders KPI strip and filters
-- **GIVEN** an authenticated user on the Procest app
+- **GIVEN** an authenticated user on the Dossiq app
 - **WHEN** they navigate to the Work Queue page
 - **THEN** the main content MUST show a level-2 "Work Queue" heading
 - **AND** the KPI strip MUST show "Open Cases", "Overdue", "Completed This Week" and "Unassigned" labels
@@ -253,7 +253,7 @@ and filter controls.
 
 - **Performance**: Signalering computation adds O(n) iteration over already-loaded cases/tasks. No additional API calls required.
 - **Accessibility**: All widget rows MUST be keyboard-navigable. Severity indicators MUST use both color and text for colorblind accessibility.
-- **Localization**: All labels MUST support English and Dutch using `t('procest', ...)`.
+- **Localization**: All labels MUST support English and Dutch using `t('dossiq', ...)`.
 - **Thresholds**: Default warning threshold is 3 days (deadline alerts, task reminders) and 7 days (stalled cases). Defined as named constants for future configurability.
 
 ### Current Implementation Status

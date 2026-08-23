@@ -12,14 +12,14 @@ retrofit_extensions:
 
 ## Purpose
 
-Case management is the core capability of Procest. A case represents a coherent body of work with a defined lifecycle, initiation, and result. Cases are governed by configurable **case types** that control behavior: allowed statuses, required fields, processing deadlines, retention rules, and more. Cases follow CMMN 1.1 concepts (CasePlanModel) and are semantically typed as `schema:Project`.
+Case management is the core capability of Dossiq. A case represents a coherent body of work with a defined lifecycle, initiation, and result. Cases are governed by configurable **case types** that control behavior: allowed statuses, required fields, processing deadlines, retention rules, and more. Cases follow CMMN 1.1 concepts (CasePlanModel) and are semantically typed as `schema:Project`.
 
 **Standards**: CMMN 1.1 (CasePlanModel), Schema.org (`Project`), ZGW (`Zaak`)
 **Feature tier**: MVP (core case CRUD, list, detail, status, deadline), V1 (sub-cases, confidentiality, result types, document checklist, suspension)
 
-## Consolidated Lifecycle (procest-adopt-or-abstractions)
+## Consolidated Lifecycle (dossiq-adopt-or-abstractions)
 
-Procest case lifecycle is expressed as an OR `x-openregister-lifecycle`
+Dossiq case lifecycle is expressed as an OR `x-openregister-lifecycle`
 annotation on the case schema. **This spec is the canonical home;
 previously sibling specs (`parafering-actions`, `parafering-audit-trail`,
 `parafeerroute-engine`, `voorstel-management`) are retired and their
@@ -27,7 +27,7 @@ requirements live here.**
 
 ### OR Capabilities Consumed
 
-Per ADR-022 and the `procest-adopt-or-abstractions` change, this spec
+Per ADR-022 and the `dossiq-adopt-or-abstractions` change, this spec
 consumes:
 
 - `object-lifecycle` — six lifecycle states (`concept`,
@@ -80,10 +80,10 @@ ZGW protocol notifications flow through `NotificatieService`.
 
 ### Manifest (ADR-024)
 
-Procest declares itself **Tier 2** (ramps to 3 once full lifecycle
+Dossiq declares itself **Tier 2** (ramps to 3 once full lifecycle
 adoption code change lands) with
 `dependencies: ["openregister", "openconnector"]`. See follow-up code
-change `procest-implement-or-lifecycle`.
+change `dossiq-implement-or-lifecycle`.
 
 ### Follow-up code changes
 
@@ -968,11 +968,11 @@ The system MUST maintain a complete audit trail for all case modifications. The 
 
 ## Sharing, Transfer, Email & Public Access (retrofit)
 
-### REQ-101: Procest SHALL expose case-sharing endpoints via CaseSharingController
+### REQ-101: Dossiq SHALL expose case-sharing endpoints via CaseSharingController
 
 @e2e exclude Backend PHP controller spec; case sharing endpoints covered by PHPUnit.
 
-`OCA\Procest\Controller\CaseSharingController` SHALL provide REST endpoints to create, revoke, list and inspect case shares — both token-based (anonymous URL with secret) and partner-based (named Nextcloud user/group). Endpoints SHALL delegate state changes to `CaseSharingService` and SHALL enforce that the calling user has write authority on the case being shared.
+`OCA\Dossiq\Controller\CaseSharingController` SHALL provide REST endpoints to create, revoke, list and inspect case shares — both token-based (anonymous URL with secret) and partner-based (named Nextcloud user/group). Endpoints SHALL delegate state changes to `CaseSharingService` and SHALL enforce that the calling user has write authority on the case being shared.
 
 #### Scenario: Create token-based share
 - **WHEN** a behandelaar POSTs `/api/case-shares` with `{caseId, type: 'token', permissions: ['read', 'comment'], expiresAt}`
@@ -983,7 +983,7 @@ The system MUST maintain a complete audit trail for all case modifications. The 
 
 @e2e exclude Backend PHP service spec; transfer workflow covered by PHPUnit.
 
-`OCA\Procest\Service\CaseTransferService` SHALL manage the explicit case-handover workflow: a behandelaar initiates a transfer to another user, the target user accepts or rejects, and on accept the case ownership is reassigned. Rejected transfers SHALL preserve the original owner and SHALL be recorded in the case audit trail with the rejection reason.
+`OCA\Dossiq\Service\CaseTransferService` SHALL manage the explicit case-handover workflow: a behandelaar initiates a transfer to another user, the target user accepts or rejects, and on accept the case ownership is reassigned. Rejected transfers SHALL preserve the original owner and SHALL be recorded in the case audit trail with the rejection reason.
 
 #### Scenario: Target user accepts a transfer
 - **GIVEN** behandelaar A has called `initiateTransfer($caseId, userB, 'Going on leave')` creating transfer T
@@ -994,13 +994,13 @@ The system MUST maintain a complete audit trail for all case modifications. The 
 - **WHEN** user B calls `rejectTransfer(T.id, 'Out of scope')`
 - **THEN** the case behandelaar SHALL remain userA and the transfer record SHALL store the rejection reason
 
-### REQ-103: Procest SHALL render and dispatch case emails via CaseEmailService
+### REQ-103: Dossiq SHALL render and dispatch case emails via CaseEmailService
 
 @e2e exclude Backend email service spec; email rendering and dispatch covered by PHPUnit.
 
-`OCA\Procest\Service\CaseEmailService` SHALL be the single entry point for sending case-context emails. It SHALL accept either a raw subject+body pair or a template id (resolving via the templates register), substitute case-payload variables via `resolveVariables()`, render the result, and dispatch via the underlying mail subsystem. Sent emails SHALL be persisted as an email record attached to the case so they appear in the case timeline.
+`OCA\Dossiq\Service\CaseEmailService` SHALL be the single entry point for sending case-context emails. It SHALL accept either a raw subject+body pair or a template id (resolving via the templates register), substitute case-payload variables via `resolveVariables()`, render the result, and dispatch via the underlying mail subsystem. Sent emails SHALL be persisted as an email record attached to the case so they appear in the case timeline.
 
-The `OCA\Procest\Controller\EmailController` SHALL expose the HTTP surface: `POST /api/cases/{id}/email/send`, `POST /api/cases/{id}/email/sendFromTemplate`, and `GET /api/cases/{id}/email/preview` (which renders without sending so the user can review).
+The `OCA\Dossiq\Controller\EmailController` SHALL expose the HTTP surface: `POST /api/cases/{id}/email/send`, `POST /api/cases/{id}/email/sendFromTemplate`, and `GET /api/cases/{id}/email/preview` (which renders without sending so the user can review).
 
 #### Scenario: Preview before send
 - **WHEN** a behandelaar calls `EmailController::preview($caseId)` with `{templateId, recipient}`
@@ -1010,7 +1010,7 @@ The `OCA\Procest\Controller\EmailController` SHALL expose the HTTP surface: `POS
 
 @e2e exclude Backend public share controller spec; token-scoped access covered by PHPUnit.
 
-`OCA\Procest\Controller\PublicShareController` SHALL serve unauthenticated callers identifying themselves by share-token only. Each endpoint SHALL: (a) resolve the token via `CaseSharingService`, (b) reject if the share is expired or revoked, (c) restrict the operation to the permissions encoded on the share record (`read`, `comment`, `viewStatus`), and (d) NOT expose any case data outside the configured permissions.
+`OCA\Dossiq\Controller\PublicShareController` SHALL serve unauthenticated callers identifying themselves by share-token only. Each endpoint SHALL: (a) resolve the token via `CaseSharingService`, (b) reject if the share is expired or revoked, (c) restrict the operation to the permissions encoded on the share record (`read`, `comment`, `viewStatus`), and (d) NOT expose any case data outside the configured permissions.
 
 #### Scenario: Read-only share cannot add a comment
 - **GIVEN** an active share with permissions `['read']`
@@ -1026,7 +1026,7 @@ The `OCA\Procest\Controller\EmailController` SHALL expose the HTTP surface: `POS
 
 @e2e exclude Background job spec; job execution covered by PHPUnit, not Playwright.
 
-`OCA\Procest\BackgroundJob\ShareMaintenanceJob` SHALL run on the Nextcloud BackgroundJob schedule and: (a) mark token shares whose `expiresAt` is past as expired, (b) hard-delete shares older than the configured retention window, (c) close transfer records that have been pending past the configured timeout, returning the case ownership to the original behandelaar. The job SHALL be idempotent — re-running over a clean dataset SHALL be a no-op.
+`OCA\Dossiq\BackgroundJob\ShareMaintenanceJob` SHALL run on the Nextcloud BackgroundJob schedule and: (a) mark token shares whose `expiresAt` is past as expired, (b) hard-delete shares older than the configured retention window, (c) close transfer records that have been pending past the configured timeout, returning the case ownership to the original behandelaar. The job SHALL be idempotent — re-running over a clean dataset SHALL be a no-op.
 
 #### Scenario: Expire a token share
 - **GIVEN** a Share with `expiresAt = now() - 1 hour` and status `active`
@@ -1048,7 +1048,7 @@ in REQ-CM-04) remain covered by their own scenarios; this scenario asserts only
 the browser-verifiable rendered shell.
 
 #### Scenario: Cases index page renders list shell
-- **GIVEN** an authenticated user on the Procest app
+- **GIVEN** an authenticated user on the Dossiq app
 - **WHEN** they navigate to the Cases page
 - **THEN** the Cards/Table view-mode toggle MUST be visible
 - **AND** an "Add" create button MUST be visible
@@ -1065,7 +1065,7 @@ case lifecycle scenarios; this scenario asserts only the browser-verifiable
 rendered shell.
 
 #### Scenario: Voorstellen page renders heading and create control
-- **GIVEN** an authenticated user on the Procest app
+- **GIVEN** an authenticated user on the Dossiq app
 - **WHEN** they navigate to the Voorstellen page
 - **THEN** the main content MUST render a page heading
 - **AND** a create / "Nieuw voorstel" entry point MUST be present
@@ -1154,7 +1154,7 @@ This is the most detailed spec in the set -- highly implementation-ready with co
 
 ## Purpose
 
-Case management is the core capability of Procest. A case represents a coherent body of work with a defined lifecycle, initiation, and result. Cases are governed by configurable **case types** that control behavior: allowed statuses, required fields, processing deadlines, retention rules, and more. Cases follow CMMN 1.1 concepts (CasePlanModel) and are semantically typed as `schema:Project`.
+Case management is the core capability of Dossiq. A case represents a coherent body of work with a defined lifecycle, initiation, and result. Cases are governed by configurable **case types** that control behavior: allowed statuses, required fields, processing deadlines, retention rules, and more. Cases follow CMMN 1.1 concepts (CasePlanModel) and are semantically typed as `schema:Project`.
 
 **Standards**: CMMN 1.1 (CasePlanModel), Schema.org (`Project`), ZGW (`Zaak`)
 **Feature tier**: MVP (core case CRUD, list, detail, status, deadline), V1 (sub-cases, confidentiality, result types, document checklist, suspension)

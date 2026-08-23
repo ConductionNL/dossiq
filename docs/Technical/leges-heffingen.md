@@ -5,9 +5,9 @@ cases, grounded in Gemeentewet art. 229 and the VNG Modelverordening leges.
 
 ## Entity model
 
-All leges data is stored as OpenRegister objects in the Procest register. The
+All leges data is stored as OpenRegister objects in the Dossiq register. The
 schemas are declared in the modular fragment `lib/Settings/register.d/30-leges.json`
-(ADR-037 — the monolith `procest_register.json` is never edited).
+(ADR-037 — the monolith `dossiq_register.json` is never edited).
 
 ```
 legesTariefTabel  (verordening version per fiscal year)

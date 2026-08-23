@@ -3,14 +3,14 @@
 /**
  * ApprovalStepNotificationListener Unit Tests
  *
- * Verifies that procest parafering notifications are driven by OpenRegister's
+ * Verifies that dossiq parafering notifications are driven by OpenRegister's
  * approval-workflow step events: an approval that advances a next step notifies
  * the next role group's members; a rejection notifies the voorstel steller. The
  * listener resolves the voorstel via ObjectService and extracts the
  * human-readable text from the metadata-in-comment payload.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Listener
+ * @package  OCA\Dossiq\Tests\Unit\Listener
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,20 +21,20 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Listener;
+namespace OCA\Dossiq\Tests\Unit\Listener;
 
+use OCA\Dossiq\Listener\ApprovalStepNotificationListener;
+use OCA\Dossiq\Service\ParaferingNotificationService;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\ApprovalChain;
 use OCA\OpenRegister\Db\ApprovalStep;
 use OCA\OpenRegister\Event\ApprovalStepApprovedEvent;
 use OCA\OpenRegister\Event\ApprovalStepRejectedEvent;
-use OCA\Procest\Listener\ApprovalStepNotificationListener;
-use OCA\Procest\Service\ParaferingNotificationService;
-use OCA\Procest\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\IGroup;
 use OCP\IGroupManager;
@@ -45,7 +45,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for ApprovalStepNotificationListener.
  *
- * @covers \OCA\Procest\Listener\ApprovalStepNotificationListener
+ * @covers \OCA\Dossiq\Listener\ApprovalStepNotificationListener
  */
 class ApprovalStepNotificationListenerTest extends TestCase {
 	/**

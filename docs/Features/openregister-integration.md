@@ -1,14 +1,14 @@
 # OpenRegister Integration
 
-The OpenRegister integration is the foundational data layer for Procest, storing all case management data in OpenRegister's flexible register/schema/object model.
+The OpenRegister integration is the foundational data layer for Dossiq, storing all case management data in OpenRegister's flexible register/schema/object model.
 
 ## Overview
 
-Procest uses OpenRegister as its data backend rather than maintaining its own database tables. This provides flexibility, auditability, and interoperability with other OpenRegister-based applications.
+Dossiq uses OpenRegister as its data backend rather than maintaining its own database tables. This provides flexibility, auditability, and interoperability with other OpenRegister-based applications.
 
 ## Architecture
 
-- **Register** -- A single OpenRegister register holds all Procest data.
+- **Register** -- A single OpenRegister register holds all Dossiq data.
 - **Schemas** -- Separate schemas define the structure for cases, tasks, roles, decisions, results, case types, and status types.
 - **Objects** -- Individual cases, tasks, and other entities are stored as OpenRegister objects.
 
@@ -29,4 +29,4 @@ The integration is configured through the Settings > Configuration page:
 
 ## Status
 
-This feature is implemented and actively used as the core data layer for Procest.
+This feature is implemented and actively used as the core data layer for Dossiq.

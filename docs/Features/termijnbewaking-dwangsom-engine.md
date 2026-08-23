@@ -1,6 +1,6 @@
 # Termijnbewaking & Dwangsom Engine
 
-Procest bewaakt wettelijke beslistermijnen onder de Algemene wet bestuursrecht
+Dossiq bewaakt wettelijke beslistermijnen onder de Algemene wet bestuursrecht
 (AWB) en het Wabo regime. Bij overschrijding kan een burger een
 ingebrekestelling indienen die — na 14 dagen grace — een dwangsom doet
 oplopen. Deze module modelleert die volledige levenscyclus.
@@ -52,7 +52,7 @@ oplopen. Deze module modelleert die volledige levenscyclus.
 | GET    | `/api/termijn/dashboard/kpi`                           | Dashboard KPI                       |
 | GET    | `/api/termijn/reports/kwartaal`                        | Kwartaalrapport                     |
 | GET    | `/api/termijn/reports/jaarrekening`                    | Jaarlijks dwangsom-rapport          |
-| POST   | `/api/procest/openconnector/dwangsom-payment-callback` | Webhook van openconnector (publiek) |
+| POST   | `/api/dossiq/openconnector/dwangsom-payment-callback` | Webhook van openconnector (publiek) |
 
 ## Configuratie
 
@@ -77,7 +77,7 @@ App-config-sleutels:
   `TermijnDefinitie` is met `zaaktype` exact gelijk aan de zaaktype-slug en
   een `validFrom` ≤ vandaag. De listener logt op `debug` als er geen match is.
 - **Daily scan slaat een rij over**: per-instance failures worden gelogd maar
-  stoppen de batch niet. Zoek in `data/nextcloud.log` op `tag:procest-termijn`.
+  stoppen de batch niet. Zoek in `data/nextcloud.log` op `tag:dossiq-termijn`.
 - **Dwangsom blijft op €0**: de berekening start pas 14 dagen ná de
   ontvangstdatum van de geldige ingebrekestelling (AWB 4:17 grace).
 - **Webhook-callback geeft 401**: verifieer `dwangsom_callback_secret` matcht

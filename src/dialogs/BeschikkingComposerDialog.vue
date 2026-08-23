@@ -3,7 +3,7 @@
 <template>
 	<NcDialog
 		v-if="open"
-		:name="t('procest', 'Beschikking opstellen')"
+		:name="t('dossiq', 'Beschikking opstellen')"
 		size="large"
 		:canClose="!submitting"
 		@closing="onClose">
@@ -13,21 +13,21 @@
 					<NcSelect
 						v-model="templateId"
 						:options="templateOptions"
-						:inputLabel="t('procest', 'Sjabloon')"
+						:inputLabel="t('dossiq', 'Sjabloon')"
 						label="label"
 						:reduce="(opt) => opt.value"
-						:placeholder="t('procest', 'Select a template')" />
+						:placeholder="t('dossiq', 'Select a template')" />
 				</div>
 				<div class="beschikking-composer__field">
 					<NcTextField
 						:modelValue="geadresseerdeNaam"
-						:label="t('procest', 'Geadresseerde')"
+						:label="t('dossiq', 'Geadresseerde')"
 						@update:modelValue="(v) => (geadresseerdeNaam = v)" />
 				</div>
 				<div class="beschikking-composer__field">
 					<NcTextArea
 						:modelValue="rationale"
-						:label="t('procest', 'Motivering')"
+						:label="t('dossiq', 'Motivering')"
 						@update:modelValue="(v) => (motivering = v)" />
 				</div>
 				<NcNoteCard v-if="error" type="error">
@@ -37,20 +37,20 @@
 
 			<div v-else class="beschikking-composer__preview">
 				<NcNoteCard type="success">
-					{{ t('procest', 'The decision has been composed as a draft.') }}
+					{{ t('dossiq', 'The decision has been composed as a draft.') }}
 				</NcNoteCard>
 				<dl class="beschikking-composer__meta">
-					<dt>{{ t('procest', 'Kenmerk') }}</dt>
+					<dt>{{ t('dossiq', 'Kenmerk') }}</dt>
 					<dd>{{ composed.reference || '—' }}</dd>
-					<dt>{{ t('procest', 'Sjabloon') }}</dt>
+					<dt>{{ t('dossiq', 'Sjabloon') }}</dt>
 					<dd>{{ composed.templateId }}</dd>
-					<dt>{{ t('procest', 'Status') }}</dt>
+					<dt>{{ t('dossiq', 'Status') }}</dt>
 					<dd>{{ composed.currentStatus }}</dd>
 				</dl>
 				<NcNoteCard v-if="composed.motivering_required" type="warning">
 					{{
 						t(
-							'procest',
+							'dossiq',
 							'The rationale is still missing and is required.',
 						)
 					}}
@@ -58,7 +58,7 @@
 				<NcNoteCard v-if="composed.geadresseerde_required" type="warning">
 					{{
 						t(
-							'procest',
+							'dossiq',
 							'The addressee is still missing and is required.',
 						)
 					}}
@@ -68,17 +68,17 @@
 
 		<template #actions>
 			<NcButton :disabled="submitting" @click="onClose">
-				{{ t('procest', 'Annuleren') }}
+				{{ t('dossiq', 'Annuleren') }}
 			</NcButton>
 			<NcButton
 				v-if="!composed"
 				type="primary"
 				:disabled="submitting"
 				@click="onCompose">
-				{{ t('procest', 'Opstellen') }}
+				{{ t('dossiq', 'Opstellen') }}
 			</NcButton>
 			<NcButton v-else type="primary" @click="onDone">
-				{{ t('procest', 'Klaar') }}
+				{{ t('dossiq', 'Klaar') }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -136,6 +136,13 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Compose a concept beschikking from the case data plus overrides.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/beschikking-generatie/spec.md#requirement-conceptbeschikking-vanuit-zaakgegevens-samenstellen-req-bes-001
+		 */
 		async onCompose() {
 			this.submitting = true
 			this.error = ''
@@ -154,7 +161,7 @@ export default {
 				)
 				this.$emit('composed', this.composed)
 			} catch (e) {
-				this.error = t('procest', 'The decision could not be drafted.')
+				this.error = t('dossiq', 'The decision could not be drafted.')
 			} finally {
 				this.submitting = false
 			}

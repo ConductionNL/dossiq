@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Beschikking Service.
+ * Dossiq Beschikking Service.
  *
  * Orchestrates the full beschikking lifecycle: composition (via the Docudesk
  * template-engine adapter), mandaat-verificatie at the akkoord step, eIDAS-TSP
@@ -18,7 +18,7 @@
  * Special-category identifiers (BSN) are never logged raw; only masked.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -29,23 +29,23 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T14
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\Beschikking\ArchivalAdapterInterface;
-use OCA\Procest\Service\Beschikking\AuditPacketBuilder;
-use OCA\Procest\Service\Beschikking\BeschikkingRepository;
-use OCA\Procest\Service\Beschikking\BezwaarTermijnScheduler;
-use OCA\Procest\Service\Beschikking\MandaatVerifier;
-use OCA\Procest\Service\Beschikking\SigningAdapterInterface;
-use OCA\Procest\Service\Beschikking\TemplateEngineAdapterInterface;
+use OCA\Dossiq\Service\Beschikking\ArchivalAdapterInterface;
+use OCA\Dossiq\Service\Beschikking\AuditPacketBuilder;
+use OCA\Dossiq\Service\Beschikking\BeschikkingRepository;
+use OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler;
+use OCA\Dossiq\Service\Beschikking\MandaatVerifier;
+use OCA\Dossiq\Service\Beschikking\SigningAdapterInterface;
+use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
 use RuntimeException;
 
 /**

@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @category  Test
- * @package   OCA\Procest\Tests\Unit\Settings
+ * @package   OCA\Dossiq\Tests\Unit\Settings
  * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2
@@ -14,10 +14,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Settings;
+namespace OCA\Dossiq\Tests\Unit\Settings;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Settings\PersonalSettings;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Settings\PersonalSettings;
 use OCP\Settings\ISettings;
 use PHPUnit\Framework\TestCase;
 
@@ -70,7 +70,7 @@ class PersonalSettingsTest extends TestCase {
      * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
      */
     public function testSectionIsProcest(): void {
-        $this->assertSame('procest', (new PersonalSettings())->getSection());
+        $this->assertSame('dossiq', (new PersonalSettings())->getSection());
 
     }//end testSectionIsProcest()
 

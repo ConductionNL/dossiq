@@ -8,7 +8,7 @@
  * and the two-sided list/create/destroy delegation.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -16,18 +16,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/related-case-linking/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\CaseRelationController;
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\CaseRelationService;
+use OCA\Dossiq\Controller\CaseRelationController;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\CaseRelationService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -37,7 +37,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Unit tests for CaseRelationController.
  *
- * @covers \OCA\Procest\Controller\CaseRelationController
+ * @covers \OCA\Dossiq\Controller\CaseRelationController
  */
 class CaseRelationControllerTest extends TestCase {
 

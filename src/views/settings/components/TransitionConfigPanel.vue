@@ -1,10 +1,10 @@
 <template>
 	<div class="transition-config-panel">
 		<div class="transition-config-panel__header">
-			<h4>{{ t('procest', 'Transition Configuration') }}</h4>
+			<h4>{{ t('dossiq', 'Transition Configuration') }}</h4>
 			<NcButton
 				type="tertiary"
-				:aria-label="t('procest', 'Close transition configuration')"
+				:aria-label="t('dossiq', 'Close transition configuration')"
 				@click="$emit('close')">
 				<template #icon>
 					<CloseIcon :size="20" />
@@ -16,22 +16,20 @@
 			<!-- Label -->
 			<div class="transition-config-panel__field">
 				<label for="transition-config-panel-label">{{
-					t('procest', 'Label')
+					t('dossiq', 'Label')
 				}}</label>
 				<input
 					id="transition-config-panel-label"
 					v-model="localTransition.label"
 					type="text"
 					class="transition-config-panel__input"
-					:placeholder="t('procest', 'e.g. Goedkeuren, Afwijzen')"
+					:placeholder="t('dossiq', 'e.g. Goedkeuren, Afwijzen')"
 					@input="emitUpdate" />
 			</div>
 
 			<!-- Allowed Roles -->
 			<div class="transition-config-panel__field">
-				<label>{{
-					t('procest', 'Allowed roles (empty = all roles)')
-				}}</label>
+				<label>{{ t('dossiq', 'Allowed roles (empty = all roles)') }}</label>
 				<div
 					v-for="role in roleTypes"
 					:key="role.id"
@@ -47,7 +45,7 @@
 
 			<!-- Guards -->
 			<div class="transition-config-panel__section">
-				<h5>{{ t('procest', 'Pre-conditions (guards)') }}</h5>
+				<h5>{{ t('dossiq', 'Pre-conditions (guards)') }}</h5>
 				<div
 					v-for="(guard, index) in localGuards"
 					:key="index"
@@ -57,16 +55,16 @@
 						class="transition-config-panel__select"
 						@change="emitUpdate">
 						<option value="checklist">
-							{{ t('procest', 'Checklist complete') }}
+							{{ t('dossiq', 'Checklist complete') }}
 						</option>
 						<option value="requiredField">
-							{{ t('procest', 'Required field') }}
+							{{ t('dossiq', 'Required field') }}
 						</option>
 						<option value="requiredDocument">
-							{{ t('procest', 'Required document') }}
+							{{ t('dossiq', 'Required document') }}
 						</option>
 						<option value="roleGuard">
-							{{ t('procest', 'Role check') }}
+							{{ t('dossiq', 'Role check') }}
 						</option>
 					</select>
 
@@ -75,8 +73,8 @@
 						v-if="guard.type === 'requiredField'"
 						v-model="guard.fieldName"
 						type="text"
-						:aria-label="t('procest', 'Field name (e.g. result)')"
-						:placeholder="t('procest', 'Field name (e.g. result)')"
+						:aria-label="t('dossiq', 'Field name (e.g. result)')"
+						:placeholder="t('dossiq', 'Field name (e.g. result)')"
 						class="transition-config-panel__input"
 						@input="emitUpdate" />
 
@@ -87,7 +85,7 @@
 						class="transition-config-panel__select"
 						@change="emitUpdate">
 						<option value="">
-							{{ t('procest', 'Select document type') }}
+							{{ t('dossiq', 'Select document type') }}
 						</option>
 						<option
 							v-for="docType in documentTypes"
@@ -104,7 +102,7 @@
 						class="transition-config-panel__select"
 						@change="emitUpdate">
 						<option value="">
-							{{ t('procest', 'Select role') }}
+							{{ t('dossiq', 'Select role') }}
 						</option>
 						<option
 							v-for="role in roleTypes"
@@ -116,7 +114,7 @@
 
 					<NcButton
 						type="tertiary"
-						:aria-label="t('procest', 'Remove guard')"
+						:aria-label="t('dossiq', 'Remove guard')"
 						@click="removeGuard(index)">
 						<template #icon>
 							<CloseIcon :size="16" />
@@ -124,13 +122,13 @@
 					</NcButton>
 				</div>
 				<NcButton type="secondary" @click="addGuard">
-					{{ t('procest', 'Add guard') }}
+					{{ t('dossiq', 'Add guard') }}
 				</NcButton>
 			</div>
 
 			<!-- Automatic Actions -->
 			<div class="transition-config-panel__section">
-				<h5>{{ t('procest', 'Automatic actions') }}</h5>
+				<h5>{{ t('dossiq', 'Automatic actions') }}</h5>
 				<div
 					v-for="(action, index) in localActions"
 					:key="index"
@@ -140,22 +138,22 @@
 						class="transition-config-panel__select"
 						@change="emitUpdate">
 						<option value="sendEmail">
-							{{ t('procest', 'Send email') }}
+							{{ t('dossiq', 'Send email') }}
 						</option>
 						<option value="createTask">
-							{{ t('procest', 'Create task') }}
+							{{ t('dossiq', 'Create task') }}
 						</option>
 						<option value="createSubCase">
-							{{ t('procest', 'Create sub-case') }}
+							{{ t('dossiq', 'Create sub-case') }}
 						</option>
 						<option value="webhook">
-							{{ t('procest', 'Call webhook') }}
+							{{ t('dossiq', 'Call webhook') }}
 						</option>
 						<option value="setField">
-							{{ t('procest', 'Set field value') }}
+							{{ t('dossiq', 'Set field value') }}
 						</option>
 						<option value="notify">
-							{{ t('procest', 'Send notification') }}
+							{{ t('dossiq', 'Send notification') }}
 						</option>
 					</select>
 
@@ -165,31 +163,31 @@
 							v-model="action.recipient"
 							type="text"
 							:aria-label="
-								t('procest', 'Recipient (role name or email)')
+								t('dossiq', 'Recipient (role name or email)')
 							"
 							:placeholder="
-								t('procest', 'Recipient (role name or email)')
+								t('dossiq', 'Recipient (role name or email)')
 							"
 							class="transition-config-panel__input"
 							@input="emitUpdate" />
 						<input
 							v-model="action.subject"
 							type="text"
-							:aria-label="t('procest', 'Subject template')"
-							:placeholder="t('procest', 'Subject template')"
+							:aria-label="t('dossiq', 'Subject template')"
+							:placeholder="t('dossiq', 'Subject template')"
 							class="transition-config-panel__input"
 							@input="emitUpdate" />
 						<textarea
 							v-model="action.template"
 							:aria-label="
 								t(
-									'procest',
+									'dossiq',
 									'Email template (use {{case.title}}, {{transition.label}})',
 								)
 							"
 							:placeholder="
 								t(
-									'procest',
+									'dossiq',
 									'Email template (use {{case.title}}, {{transition.label}})',
 								)
 							"
@@ -203,15 +201,15 @@
 						<input
 							v-model="action.title"
 							type="text"
-							:aria-label="t('procest', 'Task title')"
-							:placeholder="t('procest', 'Task title')"
+							:aria-label="t('dossiq', 'Task title')"
+							:placeholder="t('dossiq', 'Task title')"
 							class="transition-config-panel__input"
 							@input="emitUpdate" />
 						<input
 							v-model="action.description"
 							type="text"
-							:aria-label="t('procest', 'Task description')"
-							:placeholder="t('procest', 'Task description')"
+							:aria-label="t('dossiq', 'Task description')"
+							:placeholder="t('dossiq', 'Task description')"
 							class="transition-config-panel__input"
 							@input="emitUpdate" />
 					</template>
@@ -221,8 +219,8 @@
 						<input
 							v-model="action.url"
 							type="url"
-							:aria-label="t('procest', 'Webhook URL')"
-							:placeholder="t('procest', 'Webhook URL')"
+							:aria-label="t('dossiq', 'Webhook URL')"
+							:placeholder="t('dossiq', 'Webhook URL')"
 							class="transition-config-panel__input"
 							@input="emitUpdate" />
 					</template>
@@ -232,15 +230,15 @@
 						<input
 							v-model="action.fieldName"
 							type="text"
-							:aria-label="t('procest', 'Field name')"
-							:placeholder="t('procest', 'Field name')"
+							:aria-label="t('dossiq', 'Field name')"
+							:placeholder="t('dossiq', 'Field name')"
 							class="transition-config-panel__input"
 							@input="emitUpdate" />
 						<input
 							v-model="action.value"
 							type="text"
-							:aria-label="t('procest', 'Value')"
-							:placeholder="t('procest', 'Value')"
+							:aria-label="t('dossiq', 'Value')"
+							:placeholder="t('dossiq', 'Value')"
 							class="transition-config-panel__input"
 							@input="emitUpdate" />
 					</template>
@@ -250,15 +248,15 @@
 						<input
 							v-model="action.message"
 							type="text"
-							:aria-label="t('procest', 'Notification message')"
-							:placeholder="t('procest', 'Notification message')"
+							:aria-label="t('dossiq', 'Notification message')"
+							:placeholder="t('dossiq', 'Notification message')"
 							class="transition-config-panel__input"
 							@input="emitUpdate" />
 					</template>
 
 					<NcButton
 						type="tertiary"
-						:aria-label="t('procest', 'Remove action')"
+						:aria-label="t('dossiq', 'Remove action')"
 						@click="removeAction(index)">
 						<template #icon>
 							<CloseIcon :size="16" />
@@ -266,14 +264,14 @@
 					</NcButton>
 				</div>
 				<NcButton type="secondary" @click="addAction">
-					{{ t('procest', 'Add action') }}
+					{{ t('dossiq', 'Add action') }}
 				</NcButton>
 			</div>
 
 			<!-- Delete transition -->
 			<div class="transition-config-panel__danger">
 				<NcButton type="error" @click="onDelete">
-					{{ t('procest', 'Delete transition') }}
+					{{ t('dossiq', 'Delete transition') }}
 				</NcButton>
 			</div>
 		</div>
@@ -426,7 +424,7 @@ export default {
 		onDelete() {
 			if (
 				confirm(
-					t('procest', 'Are you sure you want to delete this transition?'),
+					t('dossiq', 'Are you sure you want to delete this transition?'),
 				)
 			) {
 				this.$emit('delete', this.transition.id)

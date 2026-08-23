@@ -1,16 +1,16 @@
 <?php
 
 /**
- * Procest AppHost engine registrar.
+ * Dossiq AppHost engine registrar.
  *
  * Owns the single call into OpenRegister's published AppHost entry point
- * (ADR-040) and the manifest of what procest hands to it: the seven dashboard
+ * (ADR-040) and the manifest of what dossiq hands to it: the seven dashboard
  * widgets and the MCP tool provider. Split out of Application so the widget and
  * provider class references — nine of them — live next to the one call that
  * consumes them instead of inflating the bootstrap class's coupling.
  *
  * @category AppInfo
- * @package  OCA\Procest\AppInfo\Registrar
+ * @package  OCA\Dossiq\AppInfo\Registrar
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,7 +18,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -28,23 +28,23 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\AppInfo\Registrar;
+namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\AppInfo\OpenRegisterAutoloader;
+use OCA\Dossiq\Dashboard\CasesOverviewWidget;
+use OCA\Dossiq\Dashboard\DeadlineAlertsWidget;
+use OCA\Dossiq\Dashboard\MyTasksWidget;
+use OCA\Dossiq\Dashboard\OverdueCasesWidget;
+use OCA\Dossiq\Dashboard\StalledCasesWidget;
+use OCA\Dossiq\Dashboard\StartCaseWidget;
+use OCA\Dossiq\Dashboard\TaskRemindersWidget;
+use OCA\Dossiq\Mcp\DossiqToolProvider;
 use OCA\OpenRegister\AppHost\Bootstrap;
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\AppInfo\OpenRegisterAutoloader;
-use OCA\Procest\Dashboard\CasesOverviewWidget;
-use OCA\Procest\Dashboard\DeadlineAlertsWidget;
-use OCA\Procest\Dashboard\MyTasksWidget;
-use OCA\Procest\Dashboard\OverdueCasesWidget;
-use OCA\Procest\Dashboard\StalledCasesWidget;
-use OCA\Procest\Dashboard\StartCaseWidget;
-use OCA\Procest\Dashboard\TaskRemindersWidget;
-use OCA\Procest\Mcp\ProcestToolProvider;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
- * Registers the OpenRegister AppHost engine for procest.
+ * Registers the OpenRegister AppHost engine for dossiq.
  *
  * @psalm-suppress UnusedClass
  *
@@ -60,10 +60,10 @@ class AppHostRegistrar {
 	 * provider are passed through here so they no longer need bespoke
 	 * registration.
 	 *
-	 * NOTE: procest's Settings stack (SettingsController + SettingsService +
+	 * NOTE: dossiq's Settings stack (SettingsController + SettingsService +
 	 * AdminSettings + SettingsSection + InitializeSettings) and the PWA
 	 * DashboardController are KEPT bespoke and re-aliased back to the concrete
-	 * procest classes by {@see BespokeServiceRegistrar} — they are entangled
+	 * dossiq classes by {@see BespokeServiceRegistrar} — they are entangled
 	 * with the frontend `/api/settings` contract (`{config, openRegisters,
 	 * isAdmin}`, ~180 SettingsService injection sites, the register.d fragment
 	 * merge, secret redaction, KCC defaults and the schema-config reconcile
@@ -77,15 +77,15 @@ class AppHostRegistrar {
 	 * collaborator would have to make the very same static call — moving the
 	 * finding instead of removing it.
 	 *
-	 * ⚠️ The call is behind a `class_exists()` guard. This runs inside procest's
+	 * ⚠️ The call is behind a `class_exists()` guard. This runs inside dossiq's
 	 * `Application::register()`, which Nextcloud executes on EVERY request, so
 	 * an unguarded static call to a class in another app fatals the whole
-	 * instance-wide request — not merely this app's AppHost features. Procest
+	 * instance-wide request — not merely this app's AppHost features. Dossiq
 	 * does not declare `<app>openregister</app>`, so an admin can create exactly
 	 * that configuration. `Bootstrap::class` on the imported name is resolved by
 	 * the compiler to a plain string and never autoloads, so the guard itself is
 	 * safe. When openregister is absent the engine registrations are simply
-	 * skipped: procest still boots and still routes, and the AppHost-backed
+	 * skipped: dossiq still boots and still routes, and the AppHost-backed
 	 * endpoints degrade individually. See decidesk#377 / #388.
 	 *
 	 * @param IRegistrationContext $context The registration context.
@@ -101,7 +101,7 @@ class AppHostRegistrar {
 		// list and Coordinator::registerApps() walks THAT sorted list calling
 		// OC_App::registerAutoloading($appId) and then $app->register() one app
 		// at a time, so an app registers before the PSR-4 prefix of every
-		// alphabetically-LATER app exists. `procest` sorts after `openregister`
+		// alphabetically-LATER app exists. `dossiq` sorts after `openregister`
 		// so this happens to hold today — by alphabet, not by design — and the
 		// guard below cannot tell "OpenRegister absent" from "OpenRegister's
 		// prefix not registered yet": both answer FALSE and both silently skip
@@ -120,8 +120,8 @@ class AppHostRegistrar {
 			$context,
 			Application::APP_ID,
 			[
-				'namespace' => 'OCA\\Procest',
-				'sectionName' => 'Procest',
+				'namespace' => 'OCA\\Dossiq',
+				'sectionName' => 'Dossiq',
 				'dashboardWidgets' => [
 					CasesOverviewWidget::class,
 					MyTasksWidget::class,
@@ -131,7 +131,7 @@ class AppHostRegistrar {
 					StalledCasesWidget::class,
 					StartCaseWidget::class,
 				],
-				'mcpProvider' => ProcestToolProvider::class,
+				'mcpProvider' => DossiqToolProvider::class,
 			]
 		);
 	}//end register()

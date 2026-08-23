@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest Parafering Notification Service
+ * Dossiq Parafering Notification Service
  *
  * Handles Nextcloud notifications for the B&W parafering workflow.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -14,17 +14,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/parafering-actions/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTime;
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\Notification\IManager;
 use Psr\Log\LoggerInterface;
 

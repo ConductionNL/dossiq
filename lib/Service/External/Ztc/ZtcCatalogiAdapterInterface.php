@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest ZTC / Catalogi-API client port.
+ * Dossiq ZTC / Catalogi-API client port.
  *
  * The Zaaktypecatalogus (ZTC) is the VNG Realisatie reference
  * Catalogi-API: it stores per-tenant `ZaakType`, `BesluitType`,
  * `InformatieObjectType`, `RolType` and `StatusType` definitions
- * with cross-references. Procest is itself ZTC-capable but on two
+ * with cross-references. Dossiq is itself ZTC-capable but on two
  * lifecycles it acts as a *client* of a neighbouring municipality's
  * Catalogi-API:
  *  1. Cross-municipality hand-off — the receiver-side Zaken-API
@@ -32,13 +32,13 @@
  * lifecycle stays observable in test + staging environments.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Ztc
+ * @package  OCA\Dossiq\Service\External\Ztc
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
@@ -50,7 +50,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Ztc;
+namespace OCA\Dossiq\Service\External\Ztc;
 
 /**
  * ZTC / Catalogi-API client port.

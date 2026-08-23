@@ -1,11 +1,11 @@
 /**
- * Procest voorstel besluit-registration API client.
+ * Dossiq voorstel besluit-registration API client.
  *
  * Thin wrapper around @nextcloud/axios for the voorstel→besluit delegation
  * endpoint. Registering a besluit on a voorstel raises a decidesk
  * `report-adoption` Decision via the ADR-019 integration registry
  * (procest-delegate-remaining-decisions-to-decidesk); the besluit becomes a
- * projection of the decidesk outcome rather than a procest-authored decision
+ * projection of the decidesk outcome rather than a dossiq-authored decision
  * object. Fails CLOSED server-side when decidesk is unavailable.
  *
  * SPDX-License-Identifier: EUPL-1.2
@@ -26,7 +26,7 @@ import { generateUrl } from '@nextcloud/router'
  */
 export async function registerBesluit(voorstelId, payload) {
 	const url = generateUrl(
-		'/apps/procest/api/voorstellen/{voorstelId}/register-besluit',
+		'/apps/dossiq/api/voorstellen/{voorstelId}/register-besluit',
 		{ voorstelId },
 	)
 	const response = await axios.post(url, payload)

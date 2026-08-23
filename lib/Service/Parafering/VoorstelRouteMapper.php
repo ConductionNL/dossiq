@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest voorstel route mapper.
+ * Dossiq voorstel route mapper.
  *
  * Pure shaping of the two voorstel fields the parafering route engine reads
  * and writes as loosely-typed data: `routeSnapshot`, which may arrive as a
@@ -15,7 +15,7 @@
  * stored value can never make the engine throw mid-transition.
  *
  * @category Service
- * @package  OCA\Procest\Service\Parafering
+ * @package  OCA\Dossiq\Service\Parafering
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,7 +23,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -33,7 +33,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Parafering;
+namespace OCA\Dossiq\Service\Parafering;
 
 /**
  * Normalises route snapshots and appends audit-trail entries.

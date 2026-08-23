@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Besluitvorming Template Service
+ * Dossiq Besluitvorming Template Service
  *
  * Seeds the pre-configured bestuurlijke-besluitvorming zaaktype bundles
  * (College-besluit, Raadsbesluit, Mandaatbesluit) into OpenRegister. Each
@@ -17,7 +17,7 @@
  * a bundle's workflow payload in {@see WorkflowReferenceResolver}.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -28,18 +28,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Besluitvorming\TemplateBundleSeeder;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Besluitvorming\TemplateBundleSeeder;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -92,7 +92,7 @@ class BesluitvormingTemplateService {
 				$summary[$slug] = $this->activate(slug: $slug);
 			} catch (\Throwable $e) {
 				$this->logger->error(
-					'Procest: failed to activate besluitvorming template',
+					'Dossiq: failed to activate besluitvorming template',
 					['slug' => $slug, 'exception' => $e->getMessage(), 'app' => Application::APP_ID],
 				);
 				$summary[$slug] = ['success' => false, 'message' => 'activation_failed'];
@@ -158,7 +158,7 @@ class BesluitvormingTemplateService {
 				);
 				if ($existing !== null) {
 					$this->logger->info(
-						'Procest: besluitvorming template already active, skipping',
+						'Dossiq: besluitvorming template already active, skipping',
 						['slug' => $slug, 'identifier' => $identifier],
 					);
 					return ['success' => true, 'skipped' => true, 'slug' => $slug];

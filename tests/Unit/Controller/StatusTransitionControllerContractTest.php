@@ -22,23 +22,23 @@
  *  - none of the domain codes leak into the response body.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\StatusTransitionController;
-use OCA\Procest\Service\BulkStatusTransitionService;
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\StatusTransitionService;
+use OCA\Dossiq\Controller\StatusTransitionController;
+use OCA\Dossiq\Service\BulkStatusTransitionService;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\StatusTransitionService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -50,7 +50,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Wire-contract tests for StatusTransitionController::freeform().
  *
- * @covers \OCA\Procest\Controller\StatusTransitionController
+ * @covers \OCA\Dossiq\Controller\StatusTransitionController
  */
 class StatusTransitionControllerContractTest extends TestCase {
 
@@ -119,7 +119,7 @@ class StatusTransitionControllerContractTest extends TestCase {
 		$this->caseAccessGuard = $this->createMock(CaseAccessGuard::class);
 
 		$this->controller = new StatusTransitionController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			transitionEngine: $this->transitionEngine,
 			bulkEngine: $this->bulkEngine,

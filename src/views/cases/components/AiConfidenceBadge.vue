@@ -43,11 +43,11 @@ export default {
 		ariaLabel() {
 			const levelLabel =
 				this.level === 'high'
-					? t('procest', 'high')
+					? t('dossiq', 'high')
 					: this.level === 'medium'
-						? t('procest', 'medium')
-						: t('procest', 'low')
-			return t('procest', 'Confidence: {percentage} ({level})', {
+						? t('dossiq', 'medium')
+						: t('dossiq', 'low')
+			return t('dossiq', 'Confidence: {percentage} ({level})', {
 				percentage: this.label,
 				level: levelLabel,
 			})

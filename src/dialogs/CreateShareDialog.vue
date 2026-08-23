@@ -1,7 +1,7 @@
 <template>
 	<NcDialog
 		:open="open"
-		:name="t('procest', 'Share case with partner')"
+		:name="t('dossiq', 'Share case with partner')"
 		size="normal"
 		@update:open="$emit('update:open', $event)">
 		<div class="create-share-dialog">
@@ -14,22 +14,22 @@
 			-->
 			<div class="create-share-dialog__form">
 				<div class="form-group">
-					<label>{{ t('procest', 'Partner organization') }}</label>
+					<label>{{ t('dossiq', 'Partner organization') }}</label>
 					<NcSelect
 						v-model="form.partnerId"
 						:options="partners"
-						:aria-label-combobox="t('procest', 'Partner organization')"
+						:aria-label-combobox="t('dossiq', 'Partner organization')"
 						label="name"
 						trackBy="id"
-						:placeholder="t('procest', 'Select partner...')" />
+						:placeholder="t('dossiq', 'Select partner...')" />
 				</div>
 
 				<div class="form-group">
-					<label>{{ t('procest', 'Permission level') }}</label>
+					<label>{{ t('dossiq', 'Permission level') }}</label>
 					<NcSelect
 						v-model="form.permissionLevel"
 						:options="permissionOptions"
-						:aria-label-combobox="t('procest', 'Permission level')"
+						:aria-label-combobox="t('dossiq', 'Permission level')"
 						label="label"
 						trackBy="value" />
 				</div>
@@ -38,13 +38,11 @@
 
 		<template #actions>
 			<NcButton @click="$emit('update:open', false)">
-				{{ t('procest', 'Cancel') }}
+				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 			<NcButton type="primary" :disabled="saving" @click="createShare">
 				{{
-					saving
-						? t('procest', 'Creating...')
-						: t('procest', 'Create share')
+					saving ? t('dossiq', 'Creating...') : t('dossiq', 'Create share')
 				}}
 			</NcButton>
 		</template>
@@ -86,21 +84,21 @@ export default {
 			form: {
 				permissionLevel: {
 					value: 'bekijken',
-					label: t('procest', 'View only'),
+					label: t('dossiq', 'View only'),
 				},
 
 				partnerId: null,
 			},
 
 			permissionOptions: [
-				{ value: 'bekijken', label: t('procest', 'View only') },
+				{ value: 'bekijken', label: t('dossiq', 'View only') },
 				{
 					value: 'bekijken_reageren',
-					label: t('procest', 'View + Comment'),
+					label: t('dossiq', 'View + Comment'),
 				},
 				{
 					value: 'bekijken_bijdragen',
-					label: t('procest', 'View + Contribute'),
+					label: t('dossiq', 'View + Contribute'),
 				},
 			],
 		}

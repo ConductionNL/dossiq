@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest mandaat CSV parser.
+ * Dossiq mandaat CSV parser.
  *
  * Turns a Decidesk CSV export into data rows and parses the individual cell
  * dialects it uses: `1/true/ja/yes/y` for a boolean and a semicolon-separated
@@ -15,7 +15,7 @@
  * produce mandaten with empty fields.
  *
  * @category Service
- * @package  OCA\Procest\Service\Mandaat
+ * @package  OCA\Dossiq\Service\Mandaat
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,7 +23,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -33,7 +33,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Mandaat;
+namespace OCA\Dossiq\Service\Mandaat;
 
 use RuntimeException;
 

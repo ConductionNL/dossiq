@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest BAG registrar.
+ * Dossiq BAG registrar.
  *
  * One base register, one registrar: binds the BAG (Basisregistratie Adressen en
  * Gebouwen) seam to the Kadaster API adapter or to the dormant log-only adapter,
@@ -10,7 +10,7 @@
  * auditable on its own.
  *
  * @category AppInfo
- * @package  OCA\Procest\AppInfo\Registrar
+ * @package  OCA\Dossiq\AppInfo\Registrar
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,7 +18,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -28,13 +28,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\AppInfo\Registrar;
+namespace OCA\Dossiq\AppInfo\Registrar;
 
-use OCA\Procest\Service\External\Bag\BagAdapterInterface;
-use OCA\Procest\Service\External\Bag\BagApiAdapter;
-use OCA\Procest\Service\External\Bag\BagResponseMapper;
-use OCA\Procest\Service\External\Bag\LogBagAdapter;
-use OCA\Procest\Service\External\IntegrationMode;
+use OCA\Dossiq\Service\External\Bag\BagAdapterInterface;
+use OCA\Dossiq\Service\External\Bag\BagApiAdapter;
+use OCA\Dossiq\Service\External\Bag\BagResponseMapper;
+use OCA\Dossiq\Service\External\Bag\LogBagAdapter;
+use OCA\Dossiq\Service\External\IntegrationMode;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use Psr\Container\ContainerInterface;
 

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Checklist Guard evaluator.
+ * Dossiq Checklist Guard evaluator.
  *
  * Guard config shape: `{type: 'checklist', taskId: <uuid>, requiredItems?: [<itemLabel>, ...]}`.
  * Loads the referenced task and verifies that every required checklist item
@@ -9,7 +9,7 @@
  * task must be checked.
  *
  * @category Service
- * @package  OCA\Procest\Service\Transitions
+ * @package  OCA\Dossiq\Service\Transitions
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,14 +20,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Transitions;
+namespace OCA\Dossiq\Service\Transitions;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
 /**

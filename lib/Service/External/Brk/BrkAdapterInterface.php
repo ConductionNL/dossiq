@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest BRK (Basisregistratie Kadaster) lookup port.
+ * Dossiq BRK (Basisregistratie Kadaster) lookup port.
  *
  * The Kadaster Haal Centraal BRK Bevragen API v2 is the authoritative
  * source-of-truth for Dutch cadastral real-estate objects (percelen) —
  * kadastrale aanduiding, oppervlakte, and zakelijk-gerechtigdheid (title)
- * references. Procest ships authoritative BRP (`HaalCentraalBrpAdapter`),
+ * references. Dossiq ships authoritative BRP (`HaalCentraalBrpAdapter`),
  * KvK (`KvkApiAdapter`) and BAG (`BagApiAdapter`) lookup seams already;
  * this port fills the parcel/ownership gap for VTH (Vergunningen, Toezicht
  * en Handhaving) and spatial/tax case lifecycles that need a provably
@@ -26,13 +26,13 @@
  * dormant-default pattern exactly.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Brk
+ * @package  OCA\Dossiq\Service\External\Brk
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://kadaster.github.io/BRK-bevragen/
  *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
@@ -43,7 +43,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Brk;
+namespace OCA\Dossiq\Service\External\Brk;
 
 /**
  * BRK (Basisregistratie Kadaster) parcel/ownership lookup port.
@@ -76,7 +76,7 @@ interface BrkAdapterInterface {
 	 * @param string $section Sectie (1-2 uppercase letters).
 	 * @param string $perceelnummer Perceelnummer (1-5 digits).
 	 * @param string|null $appartementsrechtSequenceNumber Optional appartementsrecht
-	 *                                                 volgnummer (`A` + 1-4 digits).
+	 *                                                     volgnummer (`A` + 1-4 digits).
 	 * @param array<string,mixed> $context Optional context —
 	 *                                     caseId, lookupReason,
 	 *                                     correlationId.

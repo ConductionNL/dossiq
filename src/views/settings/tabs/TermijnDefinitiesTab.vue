@@ -5,11 +5,11 @@
 <template>
 	<div class="termijn-definities-tab">
 		<div class="termijn-definities-tab__header">
-			<h3>{{ t('procest', 'AWB Term definitions') }}</h3>
+			<h3>{{ t('dossiq', 'AWB Term definitions') }}</h3>
 			<p class="termijn-definities-tab__description">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Configure statutory term definitions per zaaktype (legal basis, duration, validity). Saving a new version automatically sets validFrom=tomorrow on the new version and validUntil=today on the prior version. New cases use the latest version; running cases keep the version they were bound to.',
 					)
 				}}
@@ -18,7 +18,7 @@
 				<template #icon>
 					<Plus :size="18" />
 				</template>
-				{{ t('procest', 'New term definition') }}
+				{{ t('dossiq', 'New term definition') }}
 			</NcButton>
 		</div>
 
@@ -32,10 +32,10 @@
 			v-if="!loading && definitions.length === 0"
 			class="termijn-definities-tab__empty">
 			<NcEmptyContent
-				:name="t('procest', 'No term definitions')"
+				:name="t('dossiq', 'No term definitions')"
 				:description="
 					t(
-						'procest',
+						'dossiq',
 						'No AWB term definitions configured yet. Create one to enable termijnbewaking for a zaaktype.',
 					)
 				">
@@ -58,7 +58,7 @@
 						{{ def.case_type }}
 					</strong>
 					<span class="termijn-definities-tab__pill">
-						{{ def.basis || t('procest', '(no grondslag)') }}
+						{{ def.basis || t('dossiq', '(no grondslag)') }}
 					</span>
 					<span
 						class="termijn-definities-tab__pill termijn-definities-tab__pill--alt">
@@ -80,14 +80,14 @@
 						">
 						{{
 							isActive(def)
-								? t('procest', 'Active')
-								: t('procest', 'Inactive')
+								? t('dossiq', 'Active')
+								: t('dossiq', 'Inactive')
 						}}
 					</span>
 				</div>
 				<div class="termijn-definities-tab__row-actions">
 					<NcButton size="small" @click="openEdit(def)">
-						{{ t('procest', 'New version') }}
+						{{ t('dossiq', 'New version') }}
 					</NcButton>
 				</div>
 			</div>
@@ -162,7 +162,7 @@ export default {
 			this.error = null
 			try {
 				const res = await axios.get(
-					generateUrl('/apps/procest/api/termijn/definities'),
+					generateUrl('/apps/dossiq/api/termijn/definities'),
 				)
 				this.definitions = Array.isArray(res.data)
 					? res.data
@@ -171,7 +171,7 @@ export default {
 				this.error =
 					e?.response?.data?.message
 					|| e.message
-					|| t('procest', 'Failed to load term definitions')
+					|| t('dossiq', 'Failed to load term definitions')
 			} finally {
 				this.loading = false
 			}
@@ -194,7 +194,7 @@ export default {
 		 */
 		formatDuur(def) {
 			const v = def.duurDagen || def.duur || 0
-			return v ? t('procest', '{n} days', { n: v }) : '—'
+			return v ? t('dossiq', '{n} days', { n: v }) : '—'
 		},
 
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
@@ -243,14 +243,14 @@ export default {
 				if (this.editingDefinition) {
 					await axios.patch(
 						generateUrl(
-							'/apps/procest/api/termijn/definities/'
+							'/apps/dossiq/api/termijn/definities/'
 								+ encodeURIComponent(this.editingDefinition.id),
 						),
 						{ validUntil: isoToday },
 					)
 				}
 				await axios.post(
-					generateUrl('/apps/procest/api/termijn/definities'),
+					generateUrl('/apps/dossiq/api/termijn/definities'),
 					next,
 				)
 				this.closeEditor()
@@ -259,7 +259,7 @@ export default {
 				this.error =
 					e?.response?.data?.message
 					|| e.message
-					|| t('procest', 'Failed to save')
+					|| t('dossiq', 'Failed to save')
 			}
 		},
 	},

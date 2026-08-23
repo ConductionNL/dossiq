@@ -23,23 +23,23 @@
  *    zaaksysteem parses.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\StufController;
-use OCA\Procest\Service\Stuf\StufEnvelopeInspector;
-use OCA\Procest\Service\Stuf\StufServices;
-use OCA\Procest\Service\Stuf\StufSoapRequestDispatcher;
+use OCA\Dossiq\Controller\StufController;
+use OCA\Dossiq\Service\Stuf\StufEnvelopeInspector;
+use OCA\Dossiq\Service\Stuf\StufServices;
+use OCA\Dossiq\Service\Stuf\StufSoapRequestDispatcher;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDisplayResponse;
 use OCP\IL10N;
@@ -51,7 +51,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Wire-contract tests for StufController::cases() and ::persons().
  *
- * @covers \OCA\Procest\Controller\StufController
+ * @covers \OCA\Dossiq\Controller\StufController
  */
 class StufControllerContractTest extends TestCase {
 
@@ -88,7 +88,7 @@ class StufControllerContractTest extends TestCase {
 		$this->dispatcher = $this->createMock(StufSoapRequestDispatcher::class);
 
 		$this->controller = new StufController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->createMock(IRequest::class),
 			stuf: $this->createMock(StufServices::class),
 			dispatcher: $this->dispatcher,

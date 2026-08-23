@@ -5,7 +5,7 @@
 		<NcCheckboxRadioSwitch
 			:modelValue="selected"
 			:aria-label="
-				t('procest', 'Select document {title}', { title: document.title })
+				t('dossiq', 'Select document {title}', { title: document.title })
 			"
 			class="dossier-document-row__select"
 			@update:modelValue="$emit('toggle-select', document)" />
@@ -21,7 +21,7 @@
 			<span class="dossier-document-row__title">{{ document.title }}</span>
 			<span class="dossier-document-row__meta">
 				{{ formatDate(document.creatiedatum) }} ·
-				{{ document.auteur || t('procest', 'Unknown') }} ·
+				{{ document.auteur || t('dossiq', 'Unknown') }} ·
 				{{ formatSize(document.bestandsomvang) }}
 			</span>
 		</div>
@@ -42,19 +42,19 @@
 				<template #icon>
 					<OpenInNew :size="20" />
 				</template>
-				{{ t('procest', 'Open in Files') }}
+				{{ t('dossiq', 'Open in Files') }}
 			</NcActionButton>
 			<NcActionButton @click="$emit('version-history', document)">
 				<template #icon>
 					<History :size="20" />
 				</template>
-				{{ t('procest', 'Version history') }}
+				{{ t('dossiq', 'Version history') }}
 			</NcActionButton>
 			<NcActionButton :disabled="!canShare" @click="$emit('share', document)">
 				<template #icon>
 					<ShareVariant :size="20" />
 				</template>
-				{{ t('procest', 'Share') }}
+				{{ t('dossiq', 'Share') }}
 			</NcActionButton>
 			<NcActionButton
 				v-if="document.status === 'draft'"
@@ -62,7 +62,7 @@
 				<template #icon>
 					<Delete :size="20" />
 				</template>
-				{{ t('procest', 'Delete') }}
+				{{ t('dossiq', 'Delete') }}
 			</NcActionButton>
 		</NcActions>
 	</div>
@@ -143,9 +143,9 @@ export default {
 		 */
 		statusLabel() {
 			const labels = {
-				draft: this.t('procest', 'Draft'),
-				final: this.t('procest', 'Final'),
-				archived: this.t('procest', 'Archived'),
+				draft: this.t('dossiq', 'Draft'),
+				final: this.t('dossiq', 'Final'),
+				archived: this.t('dossiq', 'Archived'),
 			}
 			return labels[this.document.status] || this.document.status
 		},
@@ -158,14 +158,14 @@ export default {
 		 */
 		confidentialityLabel() {
 			const labels = {
-				openbaar: this.t('procest', 'Public'),
-				beperkt_openbaar: this.t('procest', 'Limited public'),
-				intern: this.t('procest', 'Internal'),
-				zaakvertrouwelijk: this.t('procest', 'Case-confidential'),
-				vertrouwelijk: this.t('procest', 'Confidential'),
-				confidentieel: this.t('procest', 'Restricted'),
-				geheim: this.t('procest', 'Secret'),
-				zeer_geheim: this.t('procest', 'Top secret'),
+				openbaar: this.t('dossiq', 'Public'),
+				beperkt_openbaar: this.t('dossiq', 'Limited public'),
+				intern: this.t('dossiq', 'Internal'),
+				zaakvertrouwelijk: this.t('dossiq', 'Case-confidential'),
+				vertrouwelijk: this.t('dossiq', 'Confidential'),
+				confidentieel: this.t('dossiq', 'Restricted'),
+				geheim: this.t('dossiq', 'Secret'),
+				zeer_geheim: this.t('dossiq', 'Top secret'),
 			}
 			return (
 				labels[this.document.vertrouwelijkheidaanduiding]

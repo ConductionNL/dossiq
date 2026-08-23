@@ -1,8 +1,8 @@
 /**
- * Doorlooptijd (throughput-time) API service for Procest.
+ * Doorlooptijd (throughput-time) API service for Dossiq.
  *
  * Wraps the single backend endpoint:
- *   GET /apps/procest/api/doorlooptijd/metrics
+ *   GET /apps/dossiq/api/doorlooptijd/metrics
  *
  * The dashboard consumes the full payload; this service exposes one
  * function so the Vue layer never duplicates query-param wiring.
@@ -15,7 +15,7 @@
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-const METRICS_URL = generateUrl('/apps/procest/api/doorlooptijd/metrics')
+const METRICS_URL = generateUrl('/apps/dossiq/api/doorlooptijd/metrics')
 
 /**
  * Fetch throughput-time metrics.

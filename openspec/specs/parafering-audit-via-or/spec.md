@@ -5,7 +5,7 @@ status: done
 # parafering-audit-via-or Specification
 
 ## Purpose
-Routes every parafering (sign-off route) transition through OpenRegister's immutable audit trail instead of a dedicated procest audit schema. Each transition emits an OR audit entry tagged `procest.parafering.{transition}` carrying full route, actor, state-change, and delegation context, so the complete approval history is discoverable and hash-chain-verifiable via the OR audit API. Existing legacy records remain readable, and OR's native immutability removes the need for an app-specific append-only validator.
+Routes every parafering (sign-off route) transition through OpenRegister's immutable audit trail instead of a dedicated dossiq audit schema. Each transition emits an OR audit entry tagged `procest.parafering.{transition}` carrying full route, actor, state-change, and delegation context, so the complete approval history is discoverable and hash-chain-verifiable via the OR audit API. Existing legacy records remain readable, and OR's native immutability removes the need for an app-specific append-only validator.
 ## Requirements
 ### Requirement: Parafeer Transition Emits OR Audit Event
 
@@ -76,7 +76,7 @@ The `ParaferingAuditListener` MUST route all new events through OR's audit trail
 
 Until the sunset date documented in `proposal.md`, existing `paraferingAuditEntry` rows MUST
 remain queryable via the deprecated schema endpoint. The sunset date is defined as one major
-procest release after this spec's acceptance.
+dossiq release after this spec's acceptance.
 
 #### Scenario: Historical audit records readable after migration
 
@@ -126,5 +126,5 @@ validator is needed.
 - GIVEN an OR audit trail entry for a parafering transition
 - WHEN an API call attempts `PUT /api/audit-trails/{id}` with modified data
 - THEN OR SHALL return HTTP 405 Method Not Allowed
-- AND no procest-specific validator SHALL be required to enforce this
+- AND no dossiq-specific validator SHALL be required to enforce this
 

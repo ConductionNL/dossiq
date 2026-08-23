@@ -18,7 +18,7 @@
 				:options="options" />
 		</div>
 		<p v-else class="pm-chart-widget__empty">
-			{{ t('procest', 'No dwell-time data available') }}
+			{{ t('dossiq', 'No dwell-time data available') }}
 		</p>
 	</div>
 </template>
@@ -42,7 +42,7 @@ export default {
 		series() {
 			return buildDwellSeries(
 				this.pmPrimaryCaseType?.dwellTime,
-				t('procest', 'Median hours'),
+				t('dossiq', 'Median hours'),
 			)
 		},
 
@@ -61,8 +61,8 @@ export default {
 		options() {
 			return {
 				plotOptions: { bar: { borderRadius: 4, columnWidth: '60%' } },
-				xaxis: { title: { text: t('procest', 'Status') } },
-				yaxis: { title: { text: t('procest', 'Median hours') } },
+				xaxis: { title: { text: t('dossiq', 'Status') } },
+				yaxis: { title: { text: t('dossiq', 'Median hours') } },
 				colors: ['var(--color-warning)'],
 			}
 		},

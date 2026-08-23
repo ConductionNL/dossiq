@@ -29,8 +29,8 @@ The system MUST expose a Prometheus-compatible metrics endpoint that can be scra
 
 #### Scenario PROM-001a: Metrics endpoint returns valid Prometheus format
 
-- GIVEN the Procest app is installed and running
-- WHEN a Prometheus scraper sends `GET /index.php/apps/procest/api/metrics`
+- GIVEN the Dossiq app is installed and running
+- WHEN a Prometheus scraper sends `GET /index.php/apps/dossiq/api/metrics`
 - THEN the response MUST have status code 200
 - AND the response MUST have `Content-Type: text/plain; version=0.0.4; charset=utf-8`
 - AND every metric MUST have a `# HELP` line, a `# TYPE` line, and one or more value lines
@@ -39,14 +39,14 @@ The system MUST expose a Prometheus-compatible metrics endpoint that can be scra
 #### Scenario PROM-001b: Metrics endpoint requires admin authentication
 
 - GIVEN a non-admin user "medewerker1" authenticated via Nextcloud
-- WHEN the user sends `GET /index.php/apps/procest/api/metrics`
+- WHEN the user sends `GET /index.php/apps/dossiq/api/metrics`
 - THEN the response MUST have status code 403 (Forbidden)
 - AND no metric data MUST be exposed
 
 #### Scenario PROM-001c: Metrics endpoint supports basic auth for scraping
 
 - GIVEN a Prometheus scraper configured with Basic Auth credentials (admin:admin)
-- WHEN the scraper sends `GET /index.php/apps/procest/api/metrics` with the `Authorization: Basic` header
+- WHEN the scraper sends `GET /index.php/apps/dossiq/api/metrics` with the `Authorization: Basic` header
 - THEN the response MUST have status code 200
 - AND the full metrics payload MUST be returned
 
@@ -75,13 +75,13 @@ The system MUST expose standard application metrics following the RED method (Ra
 
 #### Scenario PROM-002a: App info gauge
 
-- GIVEN the Procest app version is "1.2.3" running on PHP 8.2.15 and Nextcloud 30.0.0
+- GIVEN the Dossiq app version is "1.2.3" running on PHP 8.2.15 and Nextcloud 30.0.0
 - WHEN the metrics endpoint is scraped
 - THEN the response MUST include:
   ```
-  # HELP procest_info Application information
-  # TYPE procest_info gauge
-  procest_info{version="1.2.3",php_version="8.2.15",nextcloud_version="30.0.0"} 1
+  # HELP dossiq_info Application information
+  # TYPE dossiq_info gauge
+  dossiq_info{version="1.2.3",php_version="8.2.15",nextcloud_version="30.0.0"} 1
   ```
 
 #### Scenario PROM-002b: App up gauge reflects health status
@@ -90,11 +90,11 @@ The system MUST expose standard application metrics following the RED method (Ra
 - WHEN the metrics endpoint is scraped
 - THEN the response MUST include:
   ```
-  # HELP procest_up Whether the application is healthy
-  # TYPE procest_up gauge
-  procest_up 1
+  # HELP dossiq_up Whether the application is healthy
+  # TYPE dossiq_up gauge
+  dossiq_up 1
   ```
-- AND when the database is unreachable, `procest_up` MUST be `0`
+- AND when the database is unreachable, `dossiq_up` MUST be `0`
 
 #### Scenario PROM-002c: HTTP request counter
 
@@ -102,10 +102,10 @@ The system MUST expose standard application metrics following the RED method (Ra
 - WHEN the metrics endpoint is scraped
 - THEN the response MUST include:
   ```
-  # HELP procest_requests_total Total HTTP requests
-  # TYPE procest_requests_total counter
-  procest_requests_total{method="GET",endpoint="/api/v1/zaken",status="200"} 1500
-  procest_requests_total{method="GET",endpoint="/api/v1/zaken",status="500"} 23
+  # HELP dossiq_requests_total Total HTTP requests
+  # TYPE dossiq_requests_total counter
+  dossiq_requests_total{method="GET",endpoint="/api/v1/zaken",status="200"} 1500
+  dossiq_requests_total{method="GET",endpoint="/api/v1/zaken",status="500"} 23
   ```
 
 #### Scenario PROM-002d: HTTP request duration histogram
@@ -114,16 +114,16 @@ The system MUST expose standard application metrics following the RED method (Ra
 - WHEN the metrics endpoint is scraped
 - THEN the response MUST include a histogram with buckets:
   ```
-  # HELP procest_request_duration_seconds HTTP request duration in seconds
-  # TYPE procest_request_duration_seconds histogram
-  procest_request_duration_seconds_bucket{method="GET",endpoint="/api/v1/zaken",le="0.01"} 450
-  procest_request_duration_seconds_bucket{method="GET",endpoint="/api/v1/zaken",le="0.05"} 1100
-  procest_request_duration_seconds_bucket{method="GET",endpoint="/api/v1/zaken",le="0.1"} 1350
-  procest_request_duration_seconds_bucket{method="GET",endpoint="/api/v1/zaken",le="0.5"} 1490
-  procest_request_duration_seconds_bucket{method="GET",endpoint="/api/v1/zaken",le="1.0"} 1520
-  procest_request_duration_seconds_bucket{method="GET",endpoint="/api/v1/zaken",le="+Inf"} 1523
-  procest_request_duration_seconds_sum{method="GET",endpoint="/api/v1/zaken"} 87.432
-  procest_request_duration_seconds_count{method="GET",endpoint="/api/v1/zaken"} 1523
+  # HELP dossiq_request_duration_seconds HTTP request duration in seconds
+  # TYPE dossiq_request_duration_seconds histogram
+  dossiq_request_duration_seconds_bucket{method="GET",endpoint="/api/v1/zaken",le="0.01"} 450
+  dossiq_request_duration_seconds_bucket{method="GET",endpoint="/api/v1/zaken",le="0.05"} 1100
+  dossiq_request_duration_seconds_bucket{method="GET",endpoint="/api/v1/zaken",le="0.1"} 1350
+  dossiq_request_duration_seconds_bucket{method="GET",endpoint="/api/v1/zaken",le="0.5"} 1490
+  dossiq_request_duration_seconds_bucket{method="GET",endpoint="/api/v1/zaken",le="1.0"} 1520
+  dossiq_request_duration_seconds_bucket{method="GET",endpoint="/api/v1/zaken",le="+Inf"} 1523
+  dossiq_request_duration_seconds_sum{method="GET",endpoint="/api/v1/zaken"} 87.432
+  dossiq_request_duration_seconds_count{method="GET",endpoint="/api/v1/zaken"} 1523
   ```
 
 #### Scenario PROM-002e: Error counter by type
@@ -132,11 +132,11 @@ The system MUST expose standard application metrics following the RED method (Ra
 - WHEN the metrics endpoint is scraped
 - THEN the response MUST include:
   ```
-  # HELP procest_errors_total Total errors by type
-  # TYPE procest_errors_total counter
-  procest_errors_total{type="validation"} 5
-  procest_errors_total{type="database"} 2
-  procest_errors_total{type="timeout"} 1
+  # HELP dossiq_errors_total Total errors by type
+  # TYPE dossiq_errors_total counter
+  dossiq_errors_total{type="validation"} 5
+  dossiq_errors_total{type="database"} 2
+  dossiq_errors_total{type="timeout"} 1
   ```
 
 ---
@@ -157,11 +157,11 @@ The system MUST expose case management specific metrics reflecting the current s
 - WHEN the metrics endpoint is scraped
 - THEN the response MUST include:
   ```
-  # HELP procest_cases_total Total cases by status and case_type
-  # TYPE procest_cases_total gauge
-  procest_cases_total{status="In behandeling",case_type="Omgevingsvergunning"} 45
-  procest_cases_total{status="Afgerond",case_type="Omgevingsvergunning"} 12
-  procest_cases_total{status="Ontvangen",case_type="Bezwaar"} 8
+  # HELP dossiq_cases_total Total cases by status and case_type
+  # TYPE dossiq_cases_total gauge
+  dossiq_cases_total{status="In behandeling",case_type="Omgevingsvergunning"} 45
+  dossiq_cases_total{status="Afgerond",case_type="Omgevingsvergunning"} 12
+  dossiq_cases_total{status="Ontvangen",case_type="Bezwaar"} 8
   ```
 
 #### Scenario PROM-003b: Overdue cases total
@@ -170,9 +170,9 @@ The system MUST expose case management specific metrics reflecting the current s
 - WHEN the metrics endpoint is scraped
 - THEN the response MUST include:
   ```
-  # HELP procest_cases_overdue_total Cases past their deadline
-  # TYPE procest_cases_overdue_total gauge
-  procest_cases_overdue_total 7
+  # HELP dossiq_cases_overdue_total Cases past their deadline
+  # TYPE dossiq_cases_overdue_total gauge
+  dossiq_cases_overdue_total 7
   ```
 
 #### Scenario PROM-003c: Tasks total by status
@@ -181,11 +181,11 @@ The system MUST expose case management specific metrics reflecting the current s
 - WHEN the metrics endpoint is scraped
 - THEN the response MUST include:
   ```
-  # HELP procest_tasks_total Total tasks by status
-  # TYPE procest_tasks_total gauge
-  procest_tasks_total{status="open"} 30
-  procest_tasks_total{status="in_progress"} 15
-  procest_tasks_total{status="completed"} 85
+  # HELP dossiq_tasks_total Total tasks by status
+  # TYPE dossiq_tasks_total gauge
+  dossiq_tasks_total{status="open"} 30
+  dossiq_tasks_total{status="in_progress"} 15
+  dossiq_tasks_total{status="completed"} 85
   ```
 
 #### Scenario PROM-003d: Overdue tasks total
@@ -194,9 +194,9 @@ The system MUST expose case management specific metrics reflecting the current s
 - WHEN the metrics endpoint is scraped
 - THEN the response MUST include:
   ```
-  # HELP procest_tasks_overdue_total Tasks past their deadline
-  # TYPE procest_tasks_overdue_total gauge
-  procest_tasks_overdue_total 4
+  # HELP dossiq_tasks_overdue_total Tasks past their deadline
+  # TYPE dossiq_tasks_overdue_total gauge
+  dossiq_tasks_overdue_total 4
   ```
 
 #### Scenario PROM-003e: Cases created today counter
@@ -205,9 +205,9 @@ The system MUST expose case management specific metrics reflecting the current s
 - WHEN the metrics endpoint is scraped
 - THEN the response MUST include:
   ```
-  # HELP procest_cases_created_today Cases created today
-  # TYPE procest_cases_created_today gauge
-  procest_cases_created_today 12
+  # HELP dossiq_cases_created_today Cases created today
+  # TYPE dossiq_cases_created_today gauge
+  dossiq_cases_created_today 12
   ```
 
 ---
@@ -222,7 +222,7 @@ The system MUST expose a health check endpoint for container orchestration (Kube
 #### Scenario PROM-004a: Healthy system response
 
 - GIVEN the database is reachable and filesystem is writable
-- WHEN a probe sends `GET /index.php/apps/procest/api/health`
+- WHEN a probe sends `GET /index.php/apps/dossiq/api/health`
 - THEN the response MUST have status code 200
 - AND the response body MUST be:
   ```json
@@ -239,7 +239,7 @@ The system MUST expose a health check endpoint for container orchestration (Kube
 #### Scenario PROM-004b: Degraded system response
 
 - GIVEN the database is reachable but the filesystem temp directory is not writable
-- WHEN a probe sends `GET /index.php/apps/procest/api/health`
+- WHEN a probe sends `GET /index.php/apps/dossiq/api/health`
 - THEN the response MUST have status code 503 (Service Unavailable)
 - AND the response body MUST be:
   ```json
@@ -256,7 +256,7 @@ The system MUST expose a health check endpoint for container orchestration (Kube
 #### Scenario PROM-004c: Error system response
 
 - GIVEN the database is unreachable
-- WHEN a probe sends `GET /index.php/apps/procest/api/health`
+- WHEN a probe sends `GET /index.php/apps/dossiq/api/health`
 - THEN the response MUST have status code 503
 - AND `status` MUST be "error"
 - AND `checks.database` MUST contain the error message
@@ -264,7 +264,7 @@ The system MUST expose a health check endpoint for container orchestration (Kube
 #### Scenario PROM-004d: OpenRegister dependency check
 
 - GIVEN the OpenRegister app is disabled or not installed
-- WHEN a probe sends `GET /index.php/apps/procest/api/health`
+- WHEN a probe sends `GET /index.php/apps/dossiq/api/health`
 - THEN `checks` MUST include `"openregister": "failed: app not enabled"`
 - AND the overall status MUST be "error" (OpenRegister is a hard dependency)
 
@@ -290,13 +290,13 @@ The system MUST expose metrics for ZGW API operations, enabling monitoring of th
 - WHEN the metrics endpoint is scraped
 - THEN the response MUST include:
   ```
-  # HELP procest_zgw_requests_total ZGW API requests
-  # TYPE procest_zgw_requests_total counter
-  procest_zgw_requests_total{api="zrc",method="POST",status="201"} 150
-  procest_zgw_requests_total{api="zrc",method="GET",status="200"} 2340
-  procest_zgw_requests_total{api="ztc",method="GET",status="200"} 890
-  procest_zgw_requests_total{api="drc",method="POST",status="201"} 67
-  procest_zgw_requests_total{api="brc",method="POST",status="201"} 23
+  # HELP dossiq_zgw_requests_total ZGW API requests
+  # TYPE dossiq_zgw_requests_total counter
+  dossiq_zgw_requests_total{api="zrc",method="POST",status="201"} 150
+  dossiq_zgw_requests_total{api="zrc",method="GET",status="200"} 2340
+  dossiq_zgw_requests_total{api="ztc",method="GET",status="200"} 890
+  dossiq_zgw_requests_total{api="drc",method="POST",status="201"} 67
+  dossiq_zgw_requests_total{api="brc",method="POST",status="201"} 23
   ```
 
 #### Scenario PROM-005b: ZGW API latency histogram
@@ -305,8 +305,8 @@ The system MUST expose metrics for ZGW API operations, enabling monitoring of th
 - WHEN the metrics endpoint is scraped
 - THEN the response MUST include histogram metrics for each API:
   ```
-  # HELP procest_zgw_request_duration_seconds ZGW API request duration
-  # TYPE procest_zgw_request_duration_seconds histogram
+  # HELP dossiq_zgw_request_duration_seconds ZGW API request duration
+  # TYPE dossiq_zgw_request_duration_seconds histogram
   ```
 - AND buckets MUST be: 0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, +Inf
 
@@ -316,11 +316,11 @@ The system MUST expose metrics for ZGW API operations, enabling monitoring of th
 - WHEN the metrics endpoint is scraped
 - THEN the response MUST include:
   ```
-  # HELP procest_zgw_validation_errors_total ZGW validation errors by rule
-  # TYPE procest_zgw_validation_errors_total counter
-  procest_zgw_validation_errors_total{api="zrc",rule="missing_required_field"} 8
-  procest_zgw_validation_errors_total{api="zrc",rule="invalid_status_transition"} 5
-  procest_zgw_validation_errors_total{api="zrc",rule="case_closed"} 2
+  # HELP dossiq_zgw_validation_errors_total ZGW validation errors by rule
+  # TYPE dossiq_zgw_validation_errors_total counter
+  dossiq_zgw_validation_errors_total{api="zrc",rule="missing_required_field"} 8
+  dossiq_zgw_validation_errors_total{api="zrc",rule="invalid_status_transition"} 5
+  dossiq_zgw_validation_errors_total{api="zrc",rule="case_closed"} 2
   ```
 
 ---
@@ -339,9 +339,9 @@ The system MUST expose SLA compliance metrics for management dashboards and tend
 - WHEN the metrics endpoint is scraped
 - THEN the response MUST include:
   ```
-  # HELP procest_sla_compliance_ratio SLA compliance ratio by case_type (0.0-1.0)
-  # TYPE procest_sla_compliance_ratio gauge
-  procest_sla_compliance_ratio{case_type="Omgevingsvergunning"} 0.889
+  # HELP dossiq_sla_compliance_ratio SLA compliance ratio by case_type (0.0-1.0)
+  # TYPE dossiq_sla_compliance_ratio gauge
+  dossiq_sla_compliance_ratio{case_type="Omgevingsvergunning"} 0.889
   ```
 
 #### Scenario PROM-006b: Average case processing time
@@ -351,9 +351,9 @@ The system MUST expose SLA compliance metrics for management dashboards and tend
 - WHEN the metrics endpoint is scraped
 - THEN the response MUST include:
   ```
-  # HELP procest_case_processing_days Average case processing time in days
-  # TYPE procest_case_processing_days gauge
-  procest_case_processing_days{case_type="Omgevingsvergunning"} 32.5
+  # HELP dossiq_case_processing_days Average case processing time in days
+  # TYPE dossiq_case_processing_days gauge
+  dossiq_case_processing_days{case_type="Omgevingsvergunning"} 32.5
   ```
 
 #### Scenario PROM-006c: Cases approaching deadline
@@ -362,9 +362,9 @@ The system MUST expose SLA compliance metrics for management dashboards and tend
 - WHEN the metrics endpoint is scraped
 - THEN the response MUST include:
   ```
-  # HELP procest_cases_approaching_deadline Cases with deadline within 7 days
-  # TYPE procest_cases_approaching_deadline gauge
-  procest_cases_approaching_deadline 3
+  # HELP dossiq_cases_approaching_deadline Cases with deadline within 7 days
+  # TYPE dossiq_cases_approaching_deadline gauge
+  dossiq_cases_approaching_deadline 3
   ```
 
 #### Scenario PROM-006d: Case volume trend (created vs closed)
@@ -373,12 +373,12 @@ The system MUST expose SLA compliance metrics for management dashboards and tend
 - WHEN the metrics endpoint is scraped
 - THEN the response MUST include:
   ```
-  # HELP procest_cases_created_total Total cases created (cumulative counter)
-  # TYPE procest_cases_created_total counter
-  procest_cases_created_total 1234
-  # HELP procest_cases_closed_total Total cases closed (cumulative counter)
-  # TYPE procest_cases_closed_total counter
-  procest_cases_closed_total 1180
+  # HELP dossiq_cases_created_total Total cases created (cumulative counter)
+  # TYPE dossiq_cases_created_total counter
+  dossiq_cases_created_total 1234
+  # HELP dossiq_cases_closed_total Total cases closed (cumulative counter)
+  # TYPE dossiq_cases_closed_total counter
+  dossiq_cases_closed_total 1180
   ```
 
 ---
@@ -427,23 +427,23 @@ The system SHALL provide a Grafana dashboard definition (JSON) that visualizes t
 
 - GIVEN all Prometheus metrics are exposed
 - WHEN an admin exports the Grafana dashboard definition
-- THEN a JSON file MUST be provided in `procest/docs/monitoring/grafana-dashboard.json`
+- THEN a JSON file MUST be provided in `dossiq/docs/monitoring/grafana-dashboard.json`
 - AND the dashboard MUST include panels for: case volume over time, SLA compliance gauge, overdue cases alert, ZGW API latency, error rate, system health
 
 #### Scenario PROM-008b: Alert rules definition
 
 - GIVEN Prometheus Alertmanager is configured
 - WHEN alert rules are loaded
-- THEN a rules file MUST be provided in `procest/docs/monitoring/prometheus-alerts.yml`
+- THEN a rules file MUST be provided in `dossiq/docs/monitoring/prometheus-alerts.yml`
 - AND the rules MUST include alerts for:
-  - `ProcestDown` (procest_up == 0 for >1 minute)
-  - `ProcestHighErrorRate` (error rate >5% for >5 minutes)
-  - `ProcestSlaBreachRisk` (cases_approaching_deadline > 10)
-  - `ProcestHighLatency` (p95 request duration >2s for >5 minutes)
+  - `DossiqDown` (dossiq_up == 0 for >1 minute)
+  - `DossiqHighErrorRate` (error rate >5% for >5 minutes)
+  - `DossiqSlaBreachRisk` (cases_approaching_deadline > 10)
+  - `DossiqHighLatency` (p95 request duration >2s for >5 minutes)
 
 #### Scenario PROM-008c: Dashboard supports multi-instance
 
-- GIVEN a municipality running 3 Procest instances (production, staging, test)
+- GIVEN a municipality running 3 Dossiq instances (production, staging, test)
 - WHEN the Grafana dashboard is loaded
 - THEN the dashboard MUST support an `instance` variable selector
 - AND all panels MUST filter by the selected instance
@@ -463,7 +463,7 @@ The system MUST ensure that metric collection does not degrade application perfo
 - GIVEN the `getCaseCounts()` method queries OpenRegister objects with JSON extraction
 - WHEN the metrics endpoint is scraped twice within 30 seconds
 - THEN the second scrape MUST use cached results from APCu
-- AND the cache key MUST be `procest_metrics_case_counts`
+- AND the cache key MUST be `dossiq_metrics_case_counts`
 - AND the cache TTL MUST be 30 seconds
 
 #### Scenario PROM-009b: Overdue case count caching
@@ -496,12 +496,12 @@ When StUF support is implemented (see `../stuf-support/spec.md`), the system MUS
 - WHEN the metrics endpoint is scraped
 - THEN the response MUST include:
   ```
-  # HELP procest_stuf_messages_total StUF messages processed
-  # TYPE procest_stuf_messages_total counter
-  procest_stuf_messages_total{direction="inbound",type="zakLk01",result="success"} 45
-  procest_stuf_messages_total{direction="inbound",type="zakLv01",result="success"} 120
-  procest_stuf_messages_total{direction="outbound",type="npsLv01",result="success"} 89
-  procest_stuf_messages_total{direction="outbound",type="npsLv01",result="fault"} 3
+  # HELP dossiq_stuf_messages_total StUF messages processed
+  # TYPE dossiq_stuf_messages_total counter
+  dossiq_stuf_messages_total{direction="inbound",type="zakLk01",result="success"} 45
+  dossiq_stuf_messages_total{direction="inbound",type="zakLv01",result="success"} 120
+  dossiq_stuf_messages_total{direction="outbound",type="npsLv01",result="success"} 89
+  dossiq_stuf_messages_total{direction="outbound",type="npsLv01",result="fault"} 3
   ```
 
 #### Scenario PROM-010b: StUF latency histogram
@@ -510,8 +510,8 @@ When StUF support is implemented (see `../stuf-support/spec.md`), the system MUS
 - WHEN the metrics endpoint is scraped
 - THEN the response MUST include a histogram for StUF call duration:
   ```
-  # HELP procest_stuf_duration_seconds StUF message processing duration
-  # TYPE procest_stuf_duration_seconds histogram
+  # HELP dossiq_stuf_duration_seconds StUF message processing duration
+  # TYPE dossiq_stuf_duration_seconds histogram
   ```
 - AND buckets MUST be: 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, +Inf
 
@@ -521,11 +521,11 @@ When StUF support is implemented (see `../stuf-support/spec.md`), the system MUS
 - WHEN the health check runs
 - THEN the response MUST include StUF endpoint status:
   ```
-  # HELP procest_stuf_endpoint_up StUF endpoint availability
-  # TYPE procest_stuf_endpoint_up gauge
-  procest_stuf_endpoint_up{endpoint="brp",type="stuf-bg"} 1
-  procest_stuf_endpoint_up{endpoint="legacy-zaak",type="stuf-zkn"} 1
-  procest_stuf_endpoint_up{endpoint="dms",type="stuf-zkn"} 0
+  # HELP dossiq_stuf_endpoint_up StUF endpoint availability
+  # TYPE dossiq_stuf_endpoint_up gauge
+  dossiq_stuf_endpoint_up{endpoint="brp",type="stuf-bg"} 1
+  dossiq_stuf_endpoint_up{endpoint="legacy-zaak",type="stuf-zkn"} 1
+  dossiq_stuf_endpoint_up{endpoint="dms",type="stuf-zkn"} 0
   ```
 
 ---
@@ -544,9 +544,9 @@ When StUF support is implemented (see `../stuf-support/spec.md`), the system MUS
 
 **Partially implemented.** `MetricsController` and `HealthController` exist with basic functionality:
 
-- `MetricsController.index()` returns Prometheus-formatted text with: `procest_info`, `procest_up`, `procest_cases_total` (by status and case_type), `procest_cases_overdue_total`, `procest_tasks_total` (by status), `procest_tasks_overdue_total`.
+- `MetricsController.index()` returns Prometheus-formatted text with: `dossiq_info`, `dossiq_up`, `dossiq_cases_total` (by status and case_type), `dossiq_cases_overdue_total`, `dossiq_tasks_total` (by status), `dossiq_tasks_overdue_total`.
 - `HealthController.index()` returns JSON with database and filesystem checks.
-- **NOT implemented**: Request counters (`procest_requests_total`), request duration histograms, error counters, ZGW-specific metrics, SLA compliance metrics, StUF metrics, caching, middleware instrumentation, Grafana dashboard, alert rules, OpenRegister dependency check.
+- **NOT implemented**: Request counters (`dossiq_requests_total`), request duration histograms, error counters, ZGW-specific metrics, SLA compliance metrics, StUF metrics, caching, middleware instrumentation, Grafana dashboard, alert rules, OpenRegister dependency check.
 
 ## Standards & References
 
@@ -565,26 +565,26 @@ When StUF support is implemented (see `../stuf-support/spec.md`), the system MUS
 
 The spec defines 10 requirements with 3-5 scenarios each, covering the full monitoring lifecycle from basic metrics through SLA dashboards. The existing `MetricsController` and `HealthController` provide a foundation.
 
-**Competitive context**: Dimpact ZAC uses OpenTelemetry with Prometheus, Grafana, and Tempo for observability. Flowable exposes JMX and REST metrics. Procest's native Prometheus endpoint provides equivalent monitoring capability without requiring a separate APM agent.
+**Competitive context**: Dimpact ZAC uses OpenTelemetry with Prometheus, Grafana, and Tempo for observability. Flowable exposes JMX and REST metrics. Dossiq's native Prometheus endpoint provides equivalent monitoring capability without requiring a separate APM agent.
 
 ---
 
 ### REQ-PROM-011: MetricsController::index SHALL be the single Prometheus exposition surface and SHALL honor the observed cache + header contract
 
-`OCA\Procest\Controller\MetricsController` SHALL expose a single action method `index()` that returns a `TextPlainResponse` containing the full metric set defined in REQ-PROM-001..010. The controller SHALL:
+`OCA\Dossiq\Controller\MetricsController` SHALL expose a single action method `index()` that returns a `TextPlainResponse` containing the full metric set defined in REQ-PROM-001..010. The controller SHALL:
 - Be annotated `#[NoCSRFRequired]` so Prometheus scrape jobs can poll without a CSRF token.
 - Emit `Content-Type: text/plain; version=0.0.4; charset=utf-8` exactly (the Prometheus 0.0.4 text exposition version is part of the wire contract — scrapers reject anything else).
 - Cache individual metric queries with `CACHE_TTL_DEFAULT = 30` seconds for most series and `CACHE_TTL_OVERDUE = 60` seconds for the overdue-case series (which change less often and are expensive to compute).
 - Delegate metric collection to a private `collectMetrics(): string` helper that concatenates app-info / case-management / ZGW / SLA / StUF sections into the canonical exposition format.
 
 #### Scenario: Response Content-Type carries the 0.0.4 version
-- **WHEN** a Prometheus scraper hits `/apps/procest/metrics`
+- **WHEN** a Prometheus scraper hits `/apps/dossiq/metrics`
 - **THEN** the response SHALL have status 200
 - **AND** the `Content-Type` header SHALL be `text/plain; version=0.0.4; charset=utf-8`
 
 #### Scenario: Endpoint is reachable without CSRF token
 - **GIVEN** a Prometheus scrape job with no CSRF token
-- **WHEN** it requests `/apps/procest/metrics`
+- **WHEN** it requests `/apps/dossiq/metrics`
 - **THEN** the request SHALL succeed (Nextcloud CSRF middleware is bypassed via `#[NoCSRFRequired]`)
 
 #### Scenario: Overdue-case metric uses longer cache TTL

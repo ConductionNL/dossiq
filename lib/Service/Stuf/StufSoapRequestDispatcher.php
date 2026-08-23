@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest inbound StUF SOAP request dispatcher.
+ * Dossiq inbound StUF SOAP request dispatcher.
  *
  * Turns a raw inbound request body into a SOAP response: enforces the size
  * ceiling, parses the envelope with XXE/DTD protections, locates the StUF
@@ -10,11 +10,11 @@
  * a SOAP Fault rather than an HTTP error page, because the caller is a
  * zaaksysteem that only speaks SOAP.
  *
- * Split out of {@see \OCA\Procest\Controller\StufController} so the controller
+ * Split out of {@see \OCA\Dossiq\Controller\StufController} so the controller
  * keeps only its HTTP surface.
  *
  * @category Service
- * @package  OCA\Procest\Service\Stuf
+ * @package  OCA\Dossiq\Service\Stuf
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,7 +22,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -32,10 +32,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Stuf;
+namespace OCA\Dossiq\Service\Stuf;
 
 use DOMDocument;
-use OCA\Procest\Service\StufMessageBuilder;
+use OCA\Dossiq\Service\StufMessageBuilder;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDisplayResponse;
 use Psr\Log\LoggerInterface;
@@ -80,7 +80,7 @@ class StufSoapRequestDispatcher {
 	 * @param StufResponseBuilder $responses The inbound response builder.
 	 * @param StufZknMessageResponder $responder The per-message-type responder.
 	 * @param StufEnvelopeInspector $inspector Resolves the sending endpoint and
-	 *                                        verifies its WSSE UsernameToken.
+	 *                                         verifies its WSSE UsernameToken.
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void

@@ -20,7 +20,7 @@
 				<span
 					v-if="node.discretionary"
 					class="cmmn-plan-item__discretionary-tag">
-					{{ t('procest', 'optional') }}
+					{{ t('dossiq', 'optional') }}
 				</span>
 			</span>
 
@@ -31,7 +31,7 @@
 			<span
 				v-if="node.type === 'milestone' && achieved"
 				class="cmmn-plan-item__achieved">
-				{{ t('procest', 'Achieved') }}
+				{{ t('dossiq', 'Achieved') }}
 			</span>
 
 			<span class="cmmn-plan-item__actions">
@@ -39,25 +39,25 @@
 					v-if="enableable"
 					type="secondary"
 					:disabled="busy === node.id"
-					:aria-label="t('procest', 'Enable this optional task')"
+					:aria-label="t('dossiq', 'Enable this optional task')"
 					@click="$emit('enable', node.id)">
-					{{ t('procest', 'Enable') }}
+					{{ t('dossiq', 'Enable') }}
 				</NcButton>
 				<NcButton
 					v-if="completable"
 					type="primary"
 					:disabled="busy === node.id"
-					:aria-label="t('procest', 'Complete this task')"
+					:aria-label="t('dossiq', 'Complete this task')"
 					@click="$emit('complete', node.id)">
-					{{ t('procest', 'Complete') }}
+					{{ t('dossiq', 'Complete') }}
 				</NcButton>
 				<NcButton
 					v-if="terminable"
 					type="tertiary"
 					:disabled="busy === node.id"
-					:aria-label="t('procest', 'Terminate this task')"
+					:aria-label="t('dossiq', 'Terminate this task')"
 					@click="$emit('terminate', node.id)">
-					{{ t('procest', 'Terminate') }}
+					{{ t('dossiq', 'Terminate') }}
 				</NcButton>
 			</span>
 		</div>

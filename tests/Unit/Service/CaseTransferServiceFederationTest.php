@@ -8,10 +8,10 @@
  * (direction/status/permissions/objectUri checks), the accept/reject state
  * machine's idempotency + loud-refusal-on-ambiguity, custody audit trail
  * accumulation, and the pre-existing `handleTransfer` authorization gap fix
- * (via {@see \OCA\Procest\Service\CaseTransferService::getCaseIdForTransfer()}).
+ * (via {@see \OCA\Dossiq\Service\CaseTransferService::getCaseIdForTransfer()}).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,20 +20,20 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/federated-case-collaboration/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\CaseTransferService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\TenantAuditTrailService;
-use OCA\Procest\Service\Transfer\TransferRegisterGateway;
-use OCA\Procest\Service\Transfer\TransferShareBroker;
+use OCA\Dossiq\Service\CaseTransferService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TenantAuditTrailService;
+use OCA\Dossiq\Service\Transfer\TransferRegisterGateway;
+use OCA\Dossiq\Service\Transfer\TransferShareBroker;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -161,7 +161,7 @@ final class CtfFakeFederatedShare {
 
 /**
  * Fake FederatedShare "row" as returned by findByToken() — carries every
- * getter {@see \OCA\Procest\Service\CaseTransferService::resolveFederatedTransferShare()} reads.
+ * getter {@see \OCA\Dossiq\Service\CaseTransferService::resolveFederatedTransferShare()} reads.
  */
 final class CtfFakeFederatedShareRow {
 	public function __construct(
@@ -216,10 +216,10 @@ final class CtfFakeFederatedShareMapper {
 }//end class
 
 /**
- * @covers \OCA\Procest\Service\CaseTransferService
+ * @covers \OCA\Dossiq\Service\CaseTransferService
  *
- * @uses \OCA\Procest\Service\Transfer\TransferRegisterGateway
- * @uses \OCA\Procest\Service\Transfer\TransferShareBroker
+ * @uses \OCA\Dossiq\Service\Transfer\TransferRegisterGateway
+ * @uses \OCA\Dossiq\Service\Transfer\TransferShareBroker
  */
 class CaseTransferServiceFederationTest extends TestCase {
 	private CtfFakeObjectService $objects;

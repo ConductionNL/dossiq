@@ -1,4 +1,4 @@
-# Feature Counsel Report: Procest
+# Feature Counsel Report: Dossiq
 
 **Date:** 2026-02-25
 **Method:** 8-persona feature advisory analysis against OpenSpec specifications
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-Procest has a strong foundation as an internal case management tool for municipal case handlers, with solid data modeling (CMMN 1.1, Schema.org) and a clean architectural separation via OpenRegister. However, across all 8 personas, the most striking gap is the complete absence of a citizen-facing interface -- 4 of 8 personas independently flagged this as their top priority. The system is built entirely for ambtenaren (civil servants) while ignoring the citizens and businesses whose cases are being managed. Beyond this fundamental gap, three cross-cutting themes emerged: (1) the API layer lacks standards compliance (no OpenAPI spec, no ZGW endpoints, no NLGov API Design Rules adherence), blocking municipal adoption and third-party integration; (2) accessibility and plain language requirements are underspecified despite WCAG AA claims -- no minimum font sizes, touch targets, B1 language level, or dark mode; and (3) security/compliance features are decorative rather than enforceable -- confidentiality levels do not restrict access, retention periods are not enforced, and audit logs cannot be exported.
+Dossiq has a strong foundation as an internal case management tool for municipal case handlers, with solid data modeling (CMMN 1.1, Schema.org) and a clean architectural separation via OpenRegister. However, across all 8 personas, the most striking gap is the complete absence of a citizen-facing interface -- 4 of 8 personas independently flagged this as their top priority. The system is built entirely for ambtenaren (civil servants) while ignoring the citizens and businesses whose cases are being managed. Beyond this fundamental gap, three cross-cutting themes emerged: (1) the API layer lacks standards compliance (no OpenAPI spec, no ZGW endpoints, no NLGov API Design Rules adherence), blocking municipal adoption and third-party integration; (2) accessibility and plain language requirements are underspecified despite WCAG AA claims -- no minimum font sizes, touch targets, B1 language level, or dark mode; and (3) security/compliance features are decorative rather than enforceable -- confidentiality levels do not restrict access, retention periods are not enforced, and audit logs cannot be exported.
 
 ---
 
@@ -54,7 +54,7 @@ Procest has a strong foundation as an internal case management tool for municipa
 ### Annemarie de Vries (VNG Standards Architect, 38)
 - **Top need**: ZGW API endpoints and publiccode.yml for GEMMA Softwarecatalogus listing
 - **Key missing feature**: Pre-built case type templates for small municipalities
-- **Quote**: "Without ZGW endpoints and publiccode.yml, I cannot recommend Procest to any municipality."
+- **Quote**: "Without ZGW endpoints and publiccode.yml, I cannot recommend Dossiq to any municipality."
 
 ### Mark Visser (MKB Software Vendor, 48)
 - **Top need**: CSV/Excel export on every list view for business reporting
@@ -179,7 +179,7 @@ Procest has a strong foundation as an internal case management tool for municipa
 
 2. **Publish OpenAPI 3.0 specification and adopt NLGov API Design Rules v2** — Without a machine-readable API contract, no developer can build integrations without reading source code. Without NLGov compliance (RFC 7807 errors, standard pagination, versioning), the API fails procurement evaluation at every municipality. This is table stakes for Dutch government APIs.
 
-3. **Implement ZGW API compatibility layer** — The specs claim ZGW mapping but no actual ZGW endpoint exists. At minimum, provide read-only Zaken, Catalogi, and Besluiten API endpoints. Without this, Procest cannot participate in the municipal zaaksysteem-keten and Annemarie cannot recommend it.
+3. **Implement ZGW API compatibility layer** — The specs claim ZGW mapping but no actual ZGW endpoint exists. At minimum, provide read-only Zaken, Catalogi, and Besluiten API endpoints. Without this, Dossiq cannot participate in the municipal zaaksysteem-keten and Annemarie cannot recommend it.
 
 4. **Add publiccode.yml** — Required for GEMMA Softwarecatalogus listing, developer.overheid.nl, and Standard for Public Code compliance. A 30-minute task with massive visibility impact.
 

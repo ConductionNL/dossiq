@@ -1,22 +1,22 @@
 <?php
 
 /**
- * Procest Bezwaar/Beroep Legal-Hold Listener.
+ * Dossiq Bezwaar/Beroep Legal-Hold Listener.
  *
  * Places an OpenRegister legal hold on a case when an Awb bezwaar/beroep
  * proceeding is registered against it, and releases the hold when the
  * proceeding reaches its final outcome. This replaces the retired
  * ArchivalTriggerService `opgeschort-juridische-procedure` trigger status:
- * procest owns only the Awb domain signal (a proceeding opened/closed); the
+ * dossiq owns only the Awb domain signal (a proceeding opened/closed); the
  * hold storage and its enforcement (OR's retention evaluator and destruction
  * jobs skip held objects) belong to OpenRegister per ADR-022.
  *
  * The OpenRegister LegalHoldService and object mapper are resolved lazily by
- * FQN so procest carries no compile-time dependency on the optional
+ * FQN so dossiq carries no compile-time dependency on the optional
  * OpenRegister app; when they are absent the listener is a safe no-op.
  *
  * @category Listener
- * @package  OCA\Procest\Listener
+ * @package  OCA\Dossiq\Listener
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,18 +27,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Listener;
+namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\ObjectSchemaSlugResolver;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Container\ContainerInterface;
@@ -172,7 +172,7 @@ class BezwaarLegalHoldListener implements IEventListener {
 			// This early return used to be completely silent, which is how a dead
 			// compliance control went unnoticed: no hold, no error, no log line.
 			$this->logger->warning(
-				'Procest legal-hold: NOT applied, collaborator or case unresolved',
+				'Dossiq legal-hold: NOT applied, collaborator or case unresolved',
 				[
 					'app' => Application::APP_ID,
 					'caseId' => $caseId,
@@ -193,7 +193,7 @@ class BezwaarLegalHoldListener implements IEventListener {
 			}
 		} catch (\Throwable $e) {
 			$this->logger->warning(
-				'Procest legal-hold: could not apply hold',
+				'Dossiq legal-hold: could not apply hold',
 				[
 					'app' => Application::APP_ID,
 					'caseId' => $caseId,
@@ -238,7 +238,7 @@ class BezwaarLegalHoldListener implements IEventListener {
 			// A legal hold is an archiving-law control: failing to resolve the case
 			// means the hold is NOT applied, so it must never be silent again.
 			$this->logger->warning(
-				'Procest legal-hold: could not resolve case object',
+				'Dossiq legal-hold: could not resolve case object',
 				[
 					'app' => Application::APP_ID,
 					'caseId' => $caseId,
@@ -330,7 +330,7 @@ class BezwaarLegalHoldListener implements IEventListener {
 			return (string)($data['case'] ?? '');
 		} catch (\Throwable $e) {
 			$this->logger->warning(
-				'Procest legal-hold: could not resolve objection for case linkage',
+				'Dossiq legal-hold: could not resolve objection for case linkage',
 				[
 					'app' => Application::APP_ID,
 					'bezwaarId' => $objectionId,

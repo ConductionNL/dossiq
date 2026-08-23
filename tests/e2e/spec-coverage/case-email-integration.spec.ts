@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Gate-19 spec-coverage tests for the case-email-integration spec.
  *
- * Scope here is strictly the procest-authored UI surfaces this change ships:
+ * Scope here is strictly the dossiq-authored UI surfaces this change ships:
  * the shared-mailbox admin settings panel (EmailSettings.vue, rendered inside
- * Nextcloud's admin settings at /settings/admin/procest) and the absence of
+ * Nextcloud's admin settings at /settings/admin/dossiq) and the absence of
  * any per-user SMTP-send credential fields on it. Leaf display/linking,
  * IMAP ingest, Docudesk PDF archival and NC Mail draft-open are backend /
  * cross-app concerns covered by PHPUnit + Newman + the email leaf, and are
@@ -20,10 +20,10 @@
 import { test, expect } from '@playwright/test'
 import { loadAllAdminSections } from '../helpers/nav'
 
-const ADMIN_SETTINGS_URL = '/settings/admin/procest'
+const ADMIN_SETTINGS_URL = '/settings/admin/dossiq'
 
 test.describe('case-email-integration spec coverage', () => {
-	// The procest admin settings page is very heavy (1.9MB DOM, 20+ sections)
+	// The dossiq admin settings page is very heavy (1.9MB DOM, 20+ sections)
 	// and renders sections progressively, so triple the per-test budget — the
 	// default 30s is not enough to load + scroll it.
 	test.slow()
@@ -68,7 +68,7 @@ test.describe('case-email-integration spec coverage', () => {
 	// FIXME(#719): the "Test connection" button exists in EmailSettings.vue
 	// but does not render on the admin page even after every section has been
 	// scrolled in. The sibling test above loads the same page successfully.
-	// @e2e openspec/specs/case-email-integration/spec.md#composer-is-the-leaf-nc-mail-not-a-procest-component
+	// @e2e openspec/specs/case-email-integration/spec.md#composer-is-the-leaf-nc-mail-not-a-dossiq-component
 	test.fixme('settings expose a Test connection control, not an outbound composer', async ({
 		page,
 	}) => {
@@ -86,7 +86,7 @@ test.describe('case-email-integration spec coverage', () => {
 		await expect(heading.first()).toBeVisible({ timeout: 15000 })
 
 		// The shared-mailbox panel offers a Test-connection action (IMAP smoke
-		// test) — procest never ships a send/compose control here. The actions
+		// test) — dossiq never ships a send/compose control here. The actions
 		// sit below the section heading, so scroll them into view before
 		// asserting on the heavy admin page.
 		const testConn = page.getByRole('button', { name: 'Test connection' })

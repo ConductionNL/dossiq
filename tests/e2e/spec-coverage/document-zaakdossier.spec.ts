@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Gate-19 spec-coverage tests for the document-zaakdossier spec.
@@ -21,7 +21,7 @@
  * number rather than skipped — a skip that is unconditional reads as an
  * environment condition while being permanent.
  *
- * Note: Use /apps/procest/<route> (not /index.php/apps/procest/<route>) so the
+ * Note: Use /apps/dossiq/<route> (not /index.php/apps/dossiq/<route>) so the
  * Vue history-mode router can resolve the route correctly.
  */
 
@@ -34,10 +34,10 @@ test.describe('document-zaakdossier spec coverage', () => {
 		page,
 	}) => {
 		const response = await page
-			.goto('/index.php/apps/procest/cases')
+			.goto('/index.php/apps/dossiq/cases')
 			.catch(() => null)
 		if (!response) {
-			test.skip(true, 'Procest dev container not reachable')
+			test.skip(true, 'Dossiq dev container not reachable')
 			return
 		}
 		await expect(page.locator('body')).not.toContainText(
@@ -59,10 +59,10 @@ test.describe('document-zaakdossier spec coverage', () => {
 		page,
 	}) => {
 		const response = await page
-			.goto('/index.php/apps/procest/cases')
+			.goto('/index.php/apps/dossiq/cases')
 			.catch(() => null)
 		if (!response) {
-			test.skip(true, 'Procest dev container not reachable')
+			test.skip(true, 'Dossiq dev container not reachable')
 			return
 		}
 		const bodyText = await page
@@ -80,10 +80,10 @@ test.describe('document-zaakdossier spec coverage', () => {
 		page,
 	}) => {
 		const response = await page
-			.goto('/index.php/apps/procest/cases')
+			.goto('/index.php/apps/dossiq/cases')
 			.catch(() => null)
 		if (!response) {
-			test.skip(true, 'Procest dev container not reachable')
+			test.skip(true, 'Dossiq dev container not reachable')
 			return
 		}
 		await expect(page.locator('body')).not.toContainText(
@@ -100,10 +100,10 @@ test.describe('document-zaakdossier spec coverage', () => {
 		page,
 	}) => {
 		const response = await page
-			.goto('/index.php/apps/procest/cases')
+			.goto('/index.php/apps/dossiq/cases')
 			.catch(() => null)
 		if (!response) {
-			test.skip(true, 'Procest dev container not reachable')
+			test.skip(true, 'Dossiq dev container not reachable')
 			return
 		}
 		await expect(page.locator('body')).not.toContainText(

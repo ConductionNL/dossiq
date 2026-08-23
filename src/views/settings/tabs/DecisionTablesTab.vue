@@ -14,13 +14,13 @@
 						<span
 							v-if="item.enabled === false"
 							class="sub-entity-row__meta">
-							{{ t('procest', 'Disabled') }}
+							{{ t('dossiq', 'Disabled') }}
 						</span>
 						<div class="sub-entity-row__actions">
 							<NcButton
 								type="tertiary"
 								:aria-label="
-									t('procest', 'Edit {name}', { name: item.name })
+									t('dossiq', 'Edit {name}', { name: item.name })
 								"
 								@click="startEdit(item)">
 								<template #icon>
@@ -30,7 +30,7 @@
 							<NcButton
 								type="tertiary"
 								:aria-label="
-									t('procest', 'Delete {name}', {
+									t('dossiq', 'Delete {name}', {
 										name: item.name,
 									})
 								"
@@ -47,7 +47,7 @@
 							<div class="edit-row">
 								<NcTextField
 									:modelValue="editForm.name"
-									:label="t('procest', 'Name')"
+									:label="t('dossiq', 'Name')"
 									:error="!!editError"
 									class="edit-field"
 									@update:modelValue="
@@ -57,7 +57,7 @@
 									:modelValue="editForm.key"
 									:label="
 										t(
-											'procest',
+											'dossiq',
 											'Key (used to invoke the decision)',
 										)
 									"
@@ -67,7 +67,7 @@
 							<div class="edit-row">
 								<NcTextField
 									:modelValue="editForm.description"
-									:label="t('procest', 'Description')"
+									:label="t('dossiq', 'Description')"
 									class="edit-field edit-field--full"
 									@update:modelValue="
 										(v) => (editForm.description = v)
@@ -77,15 +77,15 @@
 								<NcSelect
 									v-model="editForm.hitPolicy"
 									:options="hitPolicies"
-									:inputLabel="t('procest', 'Hit policy')"
-									:placeholder="t('procest', 'Hit policy')"
+									:inputLabel="t('dossiq', 'Hit policy')"
+									:placeholder="t('dossiq', 'Hit policy')"
 									class="edit-field" />
 								<NcCheckboxRadioSwitch
 									:modelValue="editForm.enabled"
 									@update:modelValue="
 										(v) => (editForm.enabled = v)
 									">
-									{{ t('procest', 'Enabled') }}
+									{{ t('dossiq', 'Enabled') }}
 								</NcCheckboxRadioSwitch>
 							</div>
 							<div class="edit-row">
@@ -93,13 +93,13 @@
 									:modelValue="editForm.definitionJson"
 									:label="
 										t(
-											'procest',
+											'dossiq',
 											'Inputs, outputs and rules (JSON)',
 										)
 									"
 									:helperText="
 										t(
-											'procest',
+											'dossiq',
 											'A JSON object with inputs[], outputs[] and rules[]. Each rule row aligns positionally to the inputs and outputs.',
 										)
 									"
@@ -121,10 +121,10 @@
 							</ul>
 							<div class="edit-actions">
 								<NcButton type="primary" @click="saveEdit">
-									{{ t('procest', 'Save') }}
+									{{ t('dossiq', 'Save') }}
 								</NcButton>
 								<NcButton @click="cancelEdit">
-									{{ t('procest', 'Cancel') }}
+									{{ t('dossiq', 'Cancel') }}
 								</NcButton>
 							</div>
 						</div>
@@ -132,11 +132,11 @@
 				</div>
 			</div>
 			<p v-else class="sub-entity-tab__empty">
-				{{ t('procest', 'No decision tables configured yet.') }}
+				{{ t('dossiq', 'No decision tables configured yet.') }}
 			</p>
 
 			<NcButton v-if="editingId === null" @click="startAdd">
-				{{ t('procest', 'Add Decision Table') }}
+				{{ t('dossiq', 'Add Decision Table') }}
 			</NcButton>
 		</template>
 	</div>
@@ -329,11 +329,11 @@ export default {
 			this.structuralErrors = []
 
 			if (!this.editForm.name.trim()) {
-				this.editError = t('procest', 'Name is required')
+				this.editError = t('dossiq', 'Name is required')
 				return
 			}
 			if (!this.editForm.key.trim()) {
-				this.editError = t('procest', 'Key is required')
+				this.editError = t('dossiq', 'Key is required')
 				return
 			}
 
@@ -347,7 +347,7 @@ export default {
 			if (!structure.valid) {
 				this.structuralErrors = structure.errors
 				this.editError = t(
-					'procest',
+					'dossiq',
 					'The decision definition has structural errors.',
 				)
 				return
@@ -373,7 +373,7 @@ export default {
 			} catch (e) {
 				this.editError =
 					e?.response?.data?.error
-					|| t('procest', 'Could not save the decision table.')
+					|| t('dossiq', 'Could not save the decision table.')
 				return
 			}
 
@@ -391,7 +391,7 @@ export default {
 		async deleteItem(item) {
 			if (
 				!confirm(
-					t('procest', 'Delete decision table "{name}"?', {
+					t('dossiq', 'Delete decision table "{name}"?', {
 						name: item.name,
 					}),
 				)

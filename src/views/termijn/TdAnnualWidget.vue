@@ -11,30 +11,30 @@
 		<div class="td-annual-widget__controls">
 			<NcTextField
 				:modelValue="String(year)"
-				:label="t('procest', 'Year')"
+				:label="t('dossiq', 'Year')"
 				@update:modelValue="onYear" />
 			<NcButton variant="primary" @click="load">
-				{{ t('procest', 'Load audit') }}
+				{{ t('dossiq', 'Load audit') }}
 			</NcButton>
 		</div>
 		<div v-if="annual" class="td-annual-widget__summary">
 			<strong>{{
-				t('procest', 'Total dwangsom in {y}:', { y: annual.jaar })
+				t('dossiq', 'Total dwangsom in {y}:', { y: annual.jaar })
 			}}</strong>
 			{{ euro(totalEuros) }}
 			<span class="td-annual-widget__pill">
-				{{ t('procest', '{n} payments', { n: annual.summary?.count || 0 }) }}
+				{{ t('dossiq', '{n} payments', { n: annual.summary?.count || 0 }) }}
 			</span>
 			<span
 				v-if="(annual.warnings || []).length > 0"
 				class="td-annual-widget__pill td-annual-widget__pill--warn">
 				{{
-					t('procest', '{n} data warnings', { n: annual.warnings.length })
+					t('dossiq', '{n} data warnings', { n: annual.warnings.length })
 				}}
 			</span>
 		</div>
 		<p v-else class="td-annual-widget__empty">
-			{{ t('procest', 'Choose a year and load the audit.') }}
+			{{ t('dossiq', 'Choose a year and load the audit.') }}
 		</p>
 	</div>
 </template>

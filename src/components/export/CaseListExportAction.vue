@@ -13,21 +13,21 @@
   unavailable (e.g. if ever mounted outside a router context). Clicking an
   entry builds the OpenRegister export-leaf URL (see caseExportHelpers.js)
   and navigates the browser to it — openregister serialises the CSV/Excel
-  and enforces access as the current user (ADR-022: no procest-side
+  and enforces access as the current user (ADR-022: no dossiq-side
   serialization).
 
   @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
 -->
 <template>
-	<NcActions :aria-label="t('procest', 'Export')">
+	<NcActions :aria-label="t('dossiq', 'Export')">
 		<template #icon>
 			<TrayArrowDown :size="20" />
 		</template>
 		<NcActionButton @click="exportAs('csv')">
-			{{ t('procest', 'Export as CSV') }}
+			{{ t('dossiq', 'Export as CSV') }}
 		</NcActionButton>
 		<NcActionButton @click="exportAs('excel')">
-			{{ t('procest', 'Export as Excel') }}
+			{{ t('dossiq', 'Export as Excel') }}
 		</NcActionButton>
 	</NcActions>
 </template>

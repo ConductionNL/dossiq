@@ -14,7 +14,7 @@
  * running instance with two accounts (finding PROC-IDOR-01).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -30,15 +30,15 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\ContactMomentController;
-use OCA\Procest\Service\BurgerIdentificationService;
-use OCA\Procest\Service\CaseVoorbladService;
-use OCA\Procest\Service\CitizenLookupGuard;
-use OCA\Procest\Service\ContactMomentService;
-use OCA\Procest\Service\DoorverbindingService;
-use OCA\Procest\Service\QuickActionService;
+use OCA\Dossiq\Controller\ContactMomentController;
+use OCA\Dossiq\Service\BurgerIdentificationService;
+use OCA\Dossiq\Service\CaseVoorbladService;
+use OCA\Dossiq\Service\CitizenLookupGuard;
+use OCA\Dossiq\Service\ContactMomentService;
+use OCA\Dossiq\Service\DoorverbindingService;
+use OCA\Dossiq\Service\QuickActionService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -48,7 +48,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Unit tests for the citizen-lookup guard on ContactMomentController.
  *
- * @covers \OCA\Procest\Controller\ContactMomentController
+ * @covers \OCA\Dossiq\Controller\ContactMomentController
  */
 class ContactMomentControllerAuthorizationTest extends TestCase {
 
@@ -98,7 +98,7 @@ class ContactMomentControllerAuthorizationTest extends TestCase {
 		$guard->method('isCitizenLookupAllowed')->willReturn($allowed);
 
 		return new ContactMomentController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			contactMomentService: $this->contactMomentService,
 			caseVoorbladService: $this->caseVoorbladService,

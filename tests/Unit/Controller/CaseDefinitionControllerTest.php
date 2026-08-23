@@ -8,7 +8,7 @@
  * (not_found => 404, published => 409) and the happy paths.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,19 +19,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/zaaktype-copy/tasks.md#T14
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\CaseDefinitionController;
-use OCA\Procest\Service\CaseDefinitionExportService;
-use OCA\Procest\Service\CaseDefinitionImportService;
-use OCA\Procest\Service\CaseTypeCopyService;
+use OCA\Dossiq\Controller\CaseDefinitionController;
+use OCA\Dossiq\Service\CaseDefinitionExportService;
+use OCA\Dossiq\Service\CaseDefinitionImportService;
+use OCA\Dossiq\Service\CaseTypeCopyService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -40,7 +40,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for CaseDefinitionController::copy() and ::delete().
  *
- * @covers \OCA\Procest\Controller\CaseDefinitionController
+ * @covers \OCA\Dossiq\Controller\CaseDefinitionController
  */
 class CaseDefinitionControllerTest extends TestCase {
 
@@ -69,7 +69,7 @@ class CaseDefinitionControllerTest extends TestCase {
 		$logger = $this->createMock(LoggerInterface::class);
 
 		$this->controller = new CaseDefinitionController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $request,
 			exportService: $exportService,
 			importService: $importService,

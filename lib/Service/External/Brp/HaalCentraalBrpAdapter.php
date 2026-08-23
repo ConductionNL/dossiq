@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Live Procest BRP / Haal Centraal Personen adapter (external-integrations-test-environments).
+ * Live Dossiq BRP / Haal Centraal Personen adapter (external-integrations-test-environments).
  *
  * Calls the Haal Centraal BRP Personen bevragen API — the same
  * koppelvlak served offline by `ghcr.io/brp-api/personen-mock` (port
@@ -15,13 +15,13 @@
  * mirroring the dormant Log adapter's fail-soft contract.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Brp
+ * @package  OCA\Dossiq\Service\External\Brp
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://github.com/BRP-API/Haal-Centraal-BRP-bevragen
  *
  * @spec openspec/specs/external-integration-test-wiring/spec.md
@@ -32,9 +32,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Brp;
+namespace OCA\Dossiq\Service\External\Brp;
 
-use OCA\Procest\Service\External\IntegrationMode;
+use OCA\Dossiq\Service\External\IntegrationMode;
 use OCP\Http\Client\IClientService;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -129,7 +129,7 @@ class HaalCentraalBrpAdapter implements BrpHaalCentraalAdapterInterface {
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest BRP / Haal Centraal lookup failed',
+				'Dossiq BRP / Haal Centraal lookup failed',
 				[
 					'bsn' => '[REDACTED]',
 					'error' => $e->getMessage(),

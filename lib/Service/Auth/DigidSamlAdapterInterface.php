@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest DigiD SAML Adapter Interface.
+ * Dossiq DigiD SAML Adapter Interface.
  *
  * Dormant external API adapter contract for the DigiD broker. The
  * zaakportaal session flow obtains a `BrokerAssertionResult` carrying
@@ -20,7 +20,7 @@
  *     `BrokerAssertionResult::forDigid(...)`.
  *
  * @category Service
- * @package  OCA\Procest\Service\Auth
+ * @package  OCA\Dossiq\Service\Auth
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -31,14 +31,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/zaakportaal-mijngemeente/spec.md#requirement-digid-and-eherkenning-authentication-with-wdo-mandated-trust-levels
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Auth;
+namespace OCA\Dossiq\Service\Auth;
 
 use RuntimeException;
 
@@ -48,7 +48,7 @@ use RuntimeException;
  * Activation requirements (documented for the operator):
  *  1. openconnector DigiD broker entry configured (entryPoint URL +
  *     broker EntityID + IdP metadata XML).
- *  2. Procest signing private key + X.509 certificate (PEM) loaded into
+ *  2. Dossiq signing private key + X.509 certificate (PEM) loaded into
  *     app-config under `digid.sp.private_key` and `digid.sp.certificate`.
  *  3. `digid.feature_flag` app-config key flipped from `0` to `1`.
  *  4. DI binding for `DigidSamlAdapterInterface` swapped from

@@ -20,7 +20,7 @@ By the end you will have created an automatic action that fires on a specific st
 
 ## Steps
 
-1. From the Procest navigation, click **Automatische acties** (in the configuration block). The list opens with the standard Cards/Table toggle and an **Add Item** button.
+1. From the Dossiq navigation, click **Automatische acties** (in the configuration block). The list opens with the standard Cards/Table toggle and an **Add Item** button.
 
    ![Automatic actions list](/screenshots/tutorials/admin/02-automatic-actions-01.png)
 

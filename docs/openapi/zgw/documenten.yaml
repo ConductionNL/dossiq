@@ -1,14 +1,14 @@
 openapi: 3.0.3
 info:
-  title: Procest ZGW Documenten API (DRC)
+  title: Dossiq ZGW Documenten API (DRC)
   description: |
-    Machine-readable description of the routed surface of Procest's ZGW
+    Machine-readable description of the routed surface of Dossiq's ZGW
     Documenten Registratie Component (DRC) API, generated from the app's
     route table (appinfo/routes.php). It documents paths, verbs and
     parameters only — payload semantics (request/response bodies, business
     rules) follow the VNG ZGW 1.x standard. See
     https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/index
-    for the authoritative resource schemas. Procest tracks the ZGW 1.x
+    for the authoritative resource schemas. Dossiq tracks the ZGW 1.x
     standard line.
 
     The `enkelvoudiginformatieobjecten/{uuid}/download` GET path is also
@@ -17,8 +17,8 @@ info:
     reachable through the same route.
   version: '1.0.0'
 servers:
-  - url: /apps/procest
-    description: Procest app base path
+  - url: /apps/dossiq
+    description: Dossiq app base path
 components:
   securitySchemes:
     ZGWToken:

@@ -1,6 +1,6 @@
 # Modular manifest fragments (ADR-037)
 
-Drop `*.json` fragment files in this directory to extend the Procest frontend
+Drop `*.json` fragment files in this directory to extend the Dossiq frontend
 manifest **without editing the monolithic `../manifest.json`**.
 
 ## Why

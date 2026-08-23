@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Berichtenbox Routing Service.
+ * Dossiq Berichtenbox Routing Service.
  *
  * Routes a verzonden beschikking to the correct Berichtenbox channel:
  * MijnOverheid (burgers, via BSN), eHerkenning OIN (bedrijven), or print-post
@@ -12,7 +12,7 @@
  * normalises the verzending record.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,14 +23,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T15
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use Psr\Log\LoggerInterface;

@@ -114,7 +114,7 @@ The system MUST support displaying relevant BAG (building registry) information 
 
 ### Requirement: PdokBagService SHALL be the single server-side ingress for PDOK BAG WFS v2_0 lookups, with normalization and 24h caching
 
-`OCA\Procest\Service\Pdok\PdokBagService` SHALL expose `getNummeraanduiding(string $id)`, `getVerblijfsobject(string $id)`, and `getPand(string $id)`. Every method SHALL hit the PDOK BAG WFS v2_0 endpoint (default `https://service.pdok.nl/lv/bag/wfs/v2_0`, overridable via the `pdok_bag_endpoint` IAppConfig key) and SHALL normalize the response into a Procest-internal shape — snake_case → camelCase, `bouwjaar` cast to integer, `oppervlakte` cast to integer square metres, `gebruiksdoel` always an array. Responses SHALL be cached in the distributed cache keyed by BAG identifier for 24 hours (`DEFAULT_TTL = 86400`); cache hits bypass the rate guard. When `pdok_bag_source` is non-empty, outbound HTTP SHALL be dispatched through the configured OpenConnector source slug; otherwise the service SHALL call PDOK directly.
+`OCA\Dossiq\Service\Pdok\PdokBagService` SHALL expose `getNummeraanduiding(string $id)`, `getVerblijfsobject(string $id)`, and `getPand(string $id)`. Every method SHALL hit the PDOK BAG WFS v2_0 endpoint (default `https://service.pdok.nl/lv/bag/wfs/v2_0`, overridable via the `pdok_bag_endpoint` IAppConfig key) and SHALL normalize the response into a Dossiq-internal shape — snake_case → camelCase, `bouwjaar` cast to integer, `oppervlakte` cast to integer square metres, `gebruiksdoel` always an array. Responses SHALL be cached in the distributed cache keyed by BAG identifier for 24 hours (`DEFAULT_TTL = 86400`); cache hits bypass the rate guard. When `pdok_bag_source` is non-empty, outbound HTTP SHALL be dispatched through the configured OpenConnector source slug; otherwise the service SHALL call PDOK directly.
 
 #### Scenario: getVerblijfsobject normalizes BAG fields
 - **GIVEN** a BAG verblijfsobject identifier `0363010012345678`
@@ -138,7 +138,7 @@ The system MUST support displaying relevant BAG (building registry) information 
 
 ### Requirement: PdokLocatieserverService SHALL expose suggest/free/lookup/reverse/health for PDOK address search
 
-`OCA\Procest\Service\Pdok\PdokLocatieserverService` SHALL expose five public methods backing the Locatieserver API:
+`OCA\Dossiq\Service\Pdok\PdokLocatieserverService` SHALL expose five public methods backing the Locatieserver API:
 - `suggest(string $query, array $fq = [], int $rows = 10)` — type-ahead suggestions
 - `free(string $query, array $fq = [])` — free-text address search
 - `lookup(string $id)` — full record lookup by Locatieserver identifier
@@ -168,6 +168,6 @@ The service SHALL respect optional OpenConnector routing (analogous to `PdokBagS
 - **AND** `LocationService` SHALL be free to fall back to free-text search (REQ-CL-3)
 
 #### Notes
-- The five methods deliberately mirror Locatieserver's documented endpoints — call signatures are not Procest-domain shapes.
+- The five methods deliberately mirror Locatieserver's documented endpoints — call signatures are not Dossiq-domain shapes.
 - Cache TTL: 24h for `lookup`/`reverse`, 5 min for `suggest` (rationale: address autocomplete invalidates faster than full-record lookups).
 - Outage handling: 3 consecutive 5xx responses within 60 s flip the service into a 5 min "degraded" state during which `suggest()` short-circuits to an empty array.

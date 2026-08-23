@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest AI audit service.
+ * Dossiq AI audit service.
  *
  * The oversight surface of the AI feature set: recording what a human did with
  * an AI suggestion (accept / reject / modify), recording a conversational
  * assistant exchange, and reading the Algoritmeregister trail back for the
  * oversight page and the CSV export.
  *
- * Split out of {@see \OCA\Procest\Service\AiService} so that model
+ * Split out of {@see \OCA\Dossiq\Service\AiService} so that model
  * orchestration (deciding whether a feature is on, building a prompt, making
  * the one outbound model call) and oversight (what was suggested, what a human
  * did with it, and who can read that back) are separate responsibilities.
@@ -16,7 +16,7 @@
  * controllers and assistant services consume.
  *
  * @category Service
- * @package  OCA\Procest\Service\Ai
+ * @package  OCA\Dossiq\Service\Ai
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,7 +24,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -35,7 +35,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Ai;
+namespace OCA\Dossiq\Service\Ai;
 
 /**
  * Records and reads the AI oversight audit trail.

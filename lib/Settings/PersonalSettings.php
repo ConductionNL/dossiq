@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @category  Settings
- * @package   OCA\Procest\Settings
+ * @package   OCA\Dossiq\Settings
  * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2
@@ -14,9 +14,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Settings;
+namespace OCA\Dossiq\Settings;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\Settings\ISettings;
 
@@ -66,7 +66,7 @@ class PersonalSettings implements ISettings {
      * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
      */
     public function getSection(): string {
-        return 'procest';
+        return 'dossiq';
 
     }//end getSection()
 

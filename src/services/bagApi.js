@@ -1,11 +1,11 @@
 /**
  * BAG (Basisregistratie Adressen en Gebouwen) lookup shim.
  *
- * Thin fetch wrapper over procest's own `bag#*` routes
+ * Thin fetch wrapper over dossiq's own `bag#*` routes
  * (`/api/external/bag/{address,pand/{id},verblijfsobject/{id}}`), backed
  * by the authoritative Kadaster BAG API Individuele Bevragingen v2 adapter
  * (`BagApiAdapter`) — dormant by default until `integration.bag.mode` is
- * configured. Unlike `pdokService.js`, these routes are procest's own
+ * configured. Unlike `pdokService.js`, these routes are dossiq's own
  * (not proxied through openconnector), because the BRP/KvK adapters this
  * change mirrors also call their upstream directly via
  * `OCP\Http\Client\IClientService`.
@@ -27,7 +27,7 @@
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-const BASE_URL = generateUrl('/apps/procest/api/external/bag')
+const BASE_URL = generateUrl('/apps/dossiq/api/external/bag')
 
 /**
  * Look up address record(s) by postcode + huisnummer.

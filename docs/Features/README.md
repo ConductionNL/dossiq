@@ -1,6 +1,6 @@
-# Procest: Feature Overview
+# Dossiq: Feature Overview
 
-Procest is a Nextcloud case management app (zaaksysteem) for Dutch municipalities, covering general case handling (zaakgericht werken), VTH permits/supervision/enforcement, objection and appeal workflows, B&W decision-making, and workflow automation. All data is stored in OpenRegister: Procest owns no database tables.
+Dossiq is a Nextcloud case management app (zaaksysteem) for Dutch municipalities, covering general case handling (zaakgericht werken), VTH permits/supervision/enforcement, objection and appeal workflows, B&W decision-making, and workflow automation. All data is stored in OpenRegister: Dossiq owns no database tables.
 
 ## Standards Compliance
 
@@ -39,7 +39,7 @@ Procest is a Nextcloud case management app (zaaksysteem) for Dutch municipalitie
 |---------|---------|-----------|--------|------|
 | Case Management | Create, track, and close cases with configurable types, statuses, and deadlines | GEMMA Zaakafhandel, ZGW ZRC, CMMN 1.1 | Implemented | [case-management.md](case-management.md) |
 | Case Types | ZGW-compatible case type catalogue with status types, role types, and property definitions | GEMMA ZTC, ZGW Catalogi API | Implemented | [case-types.md](case-types.md) |
-| Zaaktype Configuratie | Field mapping between Procest's internal model and Dutch ZGW resource types | ZGW ZRC/ZTC/BRC/DRC | Implemented | [zaaktype-configuratie.md](zaaktype-configuratie.md) |
+| Zaaktype Configuratie | Field mapping between Dossiq's internal model and Dutch ZGW resource types | ZGW ZRC/ZTC/BRC/DRC | Implemented | [zaaktype-configuratie.md](zaaktype-configuratie.md) |
 | Task Management | Task work items linked to cases, with assignees, due dates, and status lifecycle | TEC BPM 5.1, CMMN HumanTask | Implemented | [task-management.md](task-management.md) |
 | Roles & Decisions | Case participant role assignment (behandelaar, initiator, adviseur) and formal decision recording | GEMMA Zaakafhandel, ZGW BRC, ZGW ZRC Rol | Partial | [roles-decisions.md](roles-decisions.md) |
 | Dashboard | Landing page with KPI cards (open, overdue, completed, my tasks), status chart, and work list | TEC BPM 5.3, 6.3 | Implemented | [dashboard.md](dashboard.md) |
@@ -47,7 +47,7 @@ Procest is a Nextcloud case management app (zaaksysteem) for Dutch municipalitie
 | Werkvoorraad | Team-level queue of unassigned cases available for claiming | TEC BPM 5.1, GEMMA Zaakafhandel | Planned | [werkvoorraad.md](werkvoorraad.md) |
 | Administration | Nextcloud admin panel for schema configuration, ZGW mapping, and seed data import | Nextcloud OCP | Implemented | [administration.md](administration.md) |
 | Admin Settings | Configuration page for register/schema UUID mappings and version information | Nextcloud OCP | Implemented | [admin-settings.md](admin-settings.md) |
-| OpenRegister Integration | All data stored as OpenRegister objects: Procest owns no database tables | OpenRegister API | Implemented | [openregister-integration.md](openregister-integration.md) |
+| OpenRegister Integration | All data stored as OpenRegister objects: Dossiq owns no database tables | OpenRegister API | Implemented | [openregister-integration.md](openregister-integration.md) |
 | Base Register Seed Data | Pre-configured case types (Bezwaar, Vergunning, Melding, VTH) imported on install | GEMMA | Implemented | [base-register-seed-data.md](base-register-seed-data.md) |
 | Workflow Engine | Zero-code visual workflow builder with status nodes, guards, and automatic actions | TEC BPM 1.1–1.6, BPMN 2.0 | Implemented | [workflow-engine-enhancement.md](workflow-engine-enhancement.md) |
 | VTH Module | Permits, supervision, and enforcement case types and domain schemas | GEMMA VTH, DSO Omgevingsloket | Partial | [vth-module.md](vth-module.md) |
@@ -70,7 +70,7 @@ Procest is a Nextcloud case management app (zaaksysteem) for Dutch municipalitie
 | Case Email Integration | Link email communication to cases and create cases from incoming email | ZGW, Nextcloud Mail | Planned | [case-email-integration.md](case-email-integration.md) |
 | Appointment Scheduling | Schedule hearings, consultations, and inspections linked to cases | Nextcloud Calendar | Planned | [appointment-scheduling.md](appointment-scheduling.md) |
 | Case Sharing & Collaboration | Cross-department and federated case sharing with role-based access | Nextcloud Federation | Planned | [case-sharing-collaboration.md](case-sharing-collaboration.md) |
-| Case Definition Portability | Export and import case type definitions between Procest instances | OpenCatalogi | Planned | [case-definition-portability.md](case-definition-portability.md) |
+| Case Definition Portability | Export and import case type definitions between Dossiq instances | OpenCatalogi | Planned | [case-definition-portability.md](case-definition-portability.md) |
 | MijnOverheid Integration | Publish case status and notifications to the national citizen portal | Logius Berichtenbox, DigiD | Planned | [mijn-overheid-integration.md](mijn-overheid-integration.md) |
 | Mobiel Inspectie | Mobile-optimized inspection interface with checklists, photo capture, GPS, and offline sync | GEMMA Mobiel toezicht | Planned | [mobiel-inspectie.md](mobiel-inspectie.md) |
 | StUF Support | Legacy StUF-ZKN/BG SOAP/XML bridge for connecting to older government systems | StUF-ZKN, StUF-BG | Planned | [stuf-support.md](stuf-support.md) |
@@ -93,7 +93,7 @@ Coverage against the [TEC BPM RFP Template](https://www.tec-consulting.de/) zaak
 | 1.4 | Task Allocation | Task Management, Roles & Decisions |
 | 1.5 | Business Rules | ZGW Business Rules Compliance |
 | 1.6 | Business Controls | Workflow Guards (role-check, field-value, date-range) |
-| 1.7 | Data Modeling | OpenRegister Integration (procest_register.json) |
+| 1.7 | Data Modeling | OpenRegister Integration (dossiq_register.json) |
 | 1.8 | Process Variable Binding | Workflow Engine (field-update actions) |
 | 1.9 | Manual or User-Initiated Tasks | Task Management, Zaak Intake Flow |
 | 1.10 | Due Dates | Case Deadlines, Milestone Tracking, Doorlooptijd |
@@ -176,9 +176,9 @@ zgw-documenten-api    → zgw-apis.md
 zgw-notificaties-api  → zgw-apis.md
 zgw-newman-test-suite → zgw-apis.md
 zgw-business-rules-compliance → zgw-apis.md
-create-procest-app    → app-scaffold.md
-procest-app-scaffold  → app-scaffold.md
-procest-object-store  → app-scaffold.md
-procest-case-management → case-management.md
+create-dossiq-app    → app-scaffold.md
+dossiq-app-scaffold  → app-scaffold.md
+dossiq-object-store  → app-scaffold.md
+dossiq-case-management → case-management.md
 start-case-widget     → start-case-widget.md
 ```

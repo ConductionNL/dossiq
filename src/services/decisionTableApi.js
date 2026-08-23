@@ -4,7 +4,7 @@
  *
  * Decision-table API service (dmn-decision-tables).
  *
- * Thin axios wrapper for procest's DMN decision-table endpoints: admin-gated
+ * Thin axios wrapper for dossiq's DMN decision-table endpoints: admin-gated
  * CRUD plus the open-to-any-authenticated-user evaluate endpoint. Evaluation
  * itself is performed by the pure backend DecisionEngine; this module only
  * moves JSON over the wire.
@@ -12,7 +12,7 @@
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-const baseUrl = generateUrl('/apps/procest/api/decisions')
+const baseUrl = generateUrl('/apps/dossiq/api/decisions')
 
 /**
  * List all decision tables.

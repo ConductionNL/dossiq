@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Beschikking Archival Adapter Interface.
+ * Dossiq Beschikking Archival Adapter Interface.
  *
  * Contract for recording a beschikking in durable archival storage. The
  * OpenRegisterArchivalAdapter implementation records the beschikking on
@@ -10,7 +10,7 @@
  * declared bewaartermijn (migrate-archival-to-or, ADR-022).
  *
  * @category Interface
- * @package  OCA\Procest\Service\Beschikking
+ * @package  OCA\Dossiq\Service\Beschikking
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,14 +21,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T25
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Beschikking;
+namespace OCA\Dossiq\Service\Beschikking;
 
 /**
  * Ingests a beschikking into durable archival storage (OpenRegister).

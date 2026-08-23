@@ -16,7 +16,7 @@ The `Cases` index page SHALL render an "Export" actions menu (via `actionsCompon
 
 ### Requirement: Export delegates to the OR export leaf
 
-Choosing an export format SHALL navigate the browser to the OpenRegister export endpoint `/apps/openregister/api/objects/procest/case/export` with `format=csv` or `format=excel`, passing the current route query through as filter parameters. Procest SHALL NOT serialize CSV/Excel itself.
+Choosing an export format SHALL navigate the browser to the OpenRegister export endpoint `/apps/openregister/api/objects/procest/case/export` with `format=csv` or `format=excel`, passing the current route query through as filter parameters. Dossiq SHALL NOT serialize CSV/Excel itself.
 
 #### Scenario: CSV export URL
 

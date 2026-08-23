@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * The token-addressed external consultation-response surface:
@@ -26,7 +26,7 @@
  * an unfiltered query would answer both A and B with the SAME object and still
  * satisfy every single-token assertion; only asking for two different tokens
  * and getting two different consultations shows the filter is real. Both were
- * measured against a running instance (procest 0.3.9 + OpenRegister
+ * measured against a running instance (dossiq 0.3.9 + OpenRegister
  * 0.2.17-unstable.38, 2026-08-17) before this spec was written.
  *
  * The response body is also checked to carry no `secureToken`: the controller
@@ -80,7 +80,7 @@ import { navToRoute } from '../helpers/nav'
 import { ExternalConsultationResponsePage } from '../helpers/page-components'
 
 /** The app-relative public endpoint the page reads on mount. */
-const PUBLIC_CONSULTATION_API = '/index.php/apps/procest/api/public/consultations'
+const PUBLIC_CONSULTATION_API = '/index.php/apps/dossiq/api/public/consultations'
 
 /**
  * Tokens for the two seeded consultations. 48 hex characters each, matching

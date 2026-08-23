@@ -24,23 +24,23 @@
  * back over the real credential.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\EmailTemplateController;
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\EmailTemplateService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Controller\EmailTemplateController;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\EmailTemplateService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Http;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
@@ -53,7 +53,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Wire-contract tests for EmailTemplateController.
  *
- * @covers \OCA\Procest\Controller\EmailTemplateController
+ * @covers \OCA\Dossiq\Controller\EmailTemplateController
  */
 class EmailTemplateControllerContractTest extends TestCase {
 
@@ -378,11 +378,11 @@ class EmailTemplateControllerContractTest extends TestCase {
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame(['saved' => true], $response->getData());
 		$this->assertSame(
-			['app' => 'procest', 'value' => 'imap.gemeente.test', 'sensitive' => false],
+			['app' => 'dossiq', 'value' => 'imap.gemeente.test', 'sensitive' => false],
 			$written['email_imap_host']
 		);
 		$this->assertSame(
-			['app' => 'procest', 'value' => 'hunter2', 'sensitive' => true],
+			['app' => 'dossiq', 'value' => 'hunter2', 'sensitive' => true],
 			$written['email_imap_password'],
 			'the shared-mailbox password must be stored with the sensitive flag'
 		);

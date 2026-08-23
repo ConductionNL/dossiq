@@ -12,7 +12,7 @@ Adds a zero-code visual workflow builder that allows administrators to define pr
 
 ### Backend
 
-- **Schema:** `workflowTemplate` added to `lib/Settings/procest_register.json`
+- **Schema:** `workflowTemplate` added to `lib/Settings/dossiq_register.json`
   - Fields: `title`, `description`, `caseTypeId`, `version`, `isActive`, `isDraft`, `steps` (JSON array), `transitions` (JSON array), `guards` (JSON array), `automaticActions` (JSON array)
 
 ### Frontend
@@ -58,6 +58,6 @@ Adds a zero-code visual workflow builder that allows administrators to define pr
 ## Testing
 
 Unit tests are in `tests/Unit/Settings/WorkflowEngineSchemaTest.php`. They verify:
-- `procest_register.json` is valid JSON and follows OpenAPI structure
+- `dossiq_register.json` is valid JSON and follows OpenAPI structure
 - `workflowTemplate` schema is registered with required properties (`steps`, `transitions`)
 - All core case management schemas remain present after the migration

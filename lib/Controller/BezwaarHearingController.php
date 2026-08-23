@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Bezwaar Hearing Controller
+ * Dossiq Bezwaar Hearing Controller
  *
  * REST API for the bezwaar hoorzitting (Awb art. 7:2) operations that the
  * manifest-driven CRUD path cannot express. The `hearingSession` schema has
@@ -12,12 +12,12 @@
  * and write no audit entry, so this operation needs a domain endpoint.
  *
  * Scoped deliberately to the one domain operation on
- * {@see \OCA\Procest\Service\Bezwaar\HearingService} that has no other way
+ * {@see \OCA\Dossiq\Service\Bezwaar\HearingService} that has no other way
  * in — scheduling, waiver and minutes are reached through the bezwaar
  * lifecycle listener and are not re-exposed here.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,7 +25,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -35,10 +35,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\Bezwaar\HearingService;
-use OCA\Procest\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Bezwaar\HearingService;
+use OCA\Dossiq\Service\CaseAccessGuard;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

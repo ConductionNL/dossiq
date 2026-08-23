@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest KCC Routing Engine
+ * Dossiq KCC Routing Engine
  *
  * Evaluates KCC routing rules against a contact moment to determine the
  * destination domain/team, and ranks candidate agents by workload, skill
@@ -9,7 +9,7 @@
  * deterministic so it can be exercised by unit tests without OpenRegister.
  *
  * @category Service
- * @package  OCA\Procest\Service\Kcc
+ * @package  OCA\Dossiq\Service\Kcc
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,14 +20,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Kcc;
+namespace OCA\Dossiq\Service\Kcc;
 
 use DateTimeImmutable;
 

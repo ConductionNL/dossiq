@@ -15,19 +15,19 @@
 		<template v-else>
 			<CnKpiGrid :columns="4">
 				<CnStatsBlock
-					:title="t('procest', 'Cases analysed')"
+					:title="t('dossiq', 'Cases analysed')"
 					:count="kpiSummary.totalCases"
 					:showZeroCount="true"
-					:countLabel="t('procest', 'cases')"
+					:countLabel="t('dossiq', 'cases')"
 					variant="primary" />
 				<CnStatsBlock
-					:title="t('procest', 'Case types')"
+					:title="t('dossiq', 'Case types')"
 					:count="kpiSummary.caseTypeCount"
 					:showZeroCount="true"
-					:countLabel="t('procest', 'case types')"
+					:countLabel="t('dossiq', 'case types')"
 					variant="default" />
 				<CnStatsBlock
-					:title="t('procest', 'Overall rework rate')"
+					:title="t('dossiq', 'Overall rework rate')"
 					countLabel=""
 					variant="warning">
 					<template #value>
@@ -35,7 +35,7 @@
 					</template>
 				</CnStatsBlock>
 				<CnStatsBlock
-					:title="t('procest', 'Top bottleneck')"
+					:title="t('dossiq', 'Top bottleneck')"
 					countLabel=""
 					variant="error">
 					<template #value>

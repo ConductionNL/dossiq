@@ -10,7 +10,7 @@
  * fragments, no HTTP mocking required.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\External\Brk
+ * @package  OCA\Dossiq\Tests\Unit\Service\External\Brk
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,13 +21,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\External\Brk;
+namespace OCA\Dossiq\Tests\Unit\Service\External\Brk;
 
-use OCA\Procest\Service\External\Brk\BrkResponseMapper;
+use OCA\Dossiq\Service\External\Brk\BrkResponseMapper;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Procest\Service\External\Brk\BrkResponseMapper
+ * @covers \OCA\Dossiq\Service\External\Brk\BrkResponseMapper
  */
 class BrkResponseMapperTest extends TestCase {
 	/**

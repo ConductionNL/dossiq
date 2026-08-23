@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Template Library Service
+ * Dossiq Template Library Service
  *
  * Service for loading and activating zaaktype templates.
  * Templates are JSON files shipped with the app that define complete
  * case type configurations (statuses, properties, document types, etc.).
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -16,7 +16,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/template-library/spec.md
  * @spec openspec/specs/template-library/spec.md
@@ -25,9 +25,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -176,7 +176,7 @@ class TemplateLibraryService {
 
 		$register = $this->settingsService->getConfigValue('register');
 		if (empty($register) === true) {
-			throw new RuntimeException('Procest register not configured');
+			throw new RuntimeException('Dossiq register not configured');
 		}
 
 		// Create the case type.
@@ -219,7 +219,7 @@ class TemplateLibraryService {
 	 * freshly-created caseType id.
 	 *
 	 * @param object $objectService The OpenRegister object service
-	 * @param string $register The Procest register slug
+	 * @param string $register The Dossiq register slug
 	 * @param array<string, mixed> $template The loaded template definition
 	 * @param string $caseTypeId UUID of the caseType just created
 	 *

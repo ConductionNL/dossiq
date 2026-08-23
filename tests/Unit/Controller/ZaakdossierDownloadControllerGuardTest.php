@@ -13,7 +13,7 @@
  * whether the caller belongs to this case.
  *
  * @category Test
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,19 +21,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/document-zaakdossier/tasks.md#T05
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\ZaakdossierDownloadController;
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\Zaakdossier\DossierZipExporter;
-use OCA\Procest\Service\Zaakdossier\InformatieobjectReader;
+use OCA\Dossiq\Controller\ZaakdossierDownloadController;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Zaakdossier\DossierZipExporter;
+use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
@@ -47,7 +47,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Tests that a caller unrelated to the case cannot download its dossier.
  *
- * @covers \OCA\Procest\Controller\ZaakdossierDownloadController
+ * @covers \OCA\Dossiq\Controller\ZaakdossierDownloadController
  */
 class ZaakdossierDownloadControllerGuardTest extends TestCase {
 	/**
@@ -95,7 +95,7 @@ class ZaakdossierDownloadControllerGuardTest extends TestCase {
 		);
 
 		return new ZaakdossierDownloadController(
-			'procest',
+			'dossiq',
 			$request,
 			$this->createMock(InformatieobjectReader::class),
 			$this->zipExporter,

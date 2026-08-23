@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Bezwaar Audit Trail.
+ * Dossiq Bezwaar Audit Trail.
  *
  * The single append-only `auditTrail` writer for every bezwaar domain
  * record. HearingService and AdvisoryCommitteeService each carried their
@@ -20,7 +20,7 @@
  * of the contract because consumers compare whole entries.
  *
  * @category Service
- * @package  OCA\Procest\Service\Bezwaar
+ * @package  OCA\Dossiq\Service\Bezwaar
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -28,7 +28,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -38,7 +38,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Bezwaar;
+namespace OCA\Dossiq\Service\Bezwaar;
 
 use DateTimeImmutable;
 use DateTimeInterface;

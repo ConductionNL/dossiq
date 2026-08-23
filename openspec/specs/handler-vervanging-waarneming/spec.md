@@ -37,7 +37,7 @@ The system SHALL store vervanging/waarneming registrations as objects of a dedic
 
 #### Scenario: Coordinator registers a substitution on behalf of an absent handler
 
-- **GIVEN** handler Jan is unexpectedly ill and a user with the procest coordinator role opens the substitution admin view
+- **GIVEN** handler Jan is unexpectedly ill and a user with the dossiq coordinator role opens the substitution admin view
 - **WHEN** the coordinator registers Marieke as Jan's waarnemer starting today with reason `ziekte`
 - **THEN** the substitution MUST be created with `createdBy` set to the coordinator's user id
 - **AND** both Jan and Marieke MUST be notified of the registration
@@ -82,7 +82,7 @@ While a substitution is active (status `active` and today within the period), th
 
 #### Scenario: Deadline signals fan out to the waarnemer
 
-@e2e exclude notification dispatch — deferred cross-app to the OR notification-engine (notification-leaf follow-up); not a procest UI surface
+@e2e exclude notification dispatch — deferred cross-app to the OR notification-engine (notification-leaf follow-up); not a dossiq UI surface
 - **GIVEN** an active substitution where Marieke covers Jan
 - **WHEN** a deadline warning (streef- or fatale termijn) fires for one of Jan's substituted cases
 - **THEN** the notification MUST be delivered to Marieke in addition to Jan
@@ -144,14 +144,14 @@ Substitution SHALL grant no permissions. Resolved substituted work items SHALL b
 
 #### Scenario: Substitution confers no write elevation
 
-@e2e exclude OR RBAC boundary — the write rejection is enforced by OpenRegister RBAC (substitution never elevates); covered by reasoning + Newman/integration, not a procest Playwright surface
+@e2e exclude OR RBAC boundary — the write rejection is enforced by OpenRegister RBAC (substitution never elevates); covered by reasoning + Newman/integration, not a dossiq Playwright surface
 - **GIVEN** an active substitution where Marieke covers Jan, and Marieke has read-only OR RBAC access to a substituted case
 - **WHEN** Marieke attempts to update that case
 - **THEN** the update MUST be rejected by OR RBAC
 
 ### Requirement: Coordinators MUST be able to bulk-reassign a handler's open work
 
-A user with the procest coordinator role SHALL be able to permanently transfer all open cases and tasks of one handler to another in a single operation, with a mandatory preview, optional case-type filter, per-item audit entries sharing a batch id, and a single digest notification to the receiving handler.
+A user with the dossiq coordinator role SHALL be able to permanently transfer all open cases and tasks of one handler to another in a single operation, with a mandatory preview, optional case-type filter, per-item audit entries sharing a batch id, and a single digest notification to the receiving handler.
 
 #### Scenario: Preview before execution
 
@@ -179,7 +179,7 @@ A user with the procest coordinator role SHALL be able to permanently transfer a
 
 #### Scenario: Bulk reassignment is coordinator-only
 
-- **GIVEN** a user without the procest coordinator role
+- **GIVEN** a user without the dossiq coordinator role
 - **WHEN** they attempt to invoke the reassignment preview or execute endpoint
 - **THEN** the request MUST be denied
 

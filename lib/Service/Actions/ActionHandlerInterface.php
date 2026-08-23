@@ -1,15 +1,15 @@
 <?php
 
 /**
- * Procest Automatic Action Handler Interface
+ * Dossiq Automatic Action Handler Interface
  *
  * Strategy interface for every built-in or third-party automatic-action
  * handler. Implementations are registered via the
- * `procest.transition_side_effect_handler` DI tag and resolved by
+ * `dossiq.transition_side_effect_handler` DI tag and resolved by
  * SideEffectDispatcher.
  *
  * @category Service
- * @package  OCA\Procest\Service\Actions
+ * @package  OCA\Dossiq\Service\Actions
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -20,14 +20,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/automatic-actions/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Actions;
+namespace OCA\Dossiq\Service\Actions;
 
 /**
  * Contract for an automatic-action handler.

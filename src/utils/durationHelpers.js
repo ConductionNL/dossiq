@@ -60,27 +60,27 @@ export function formatDuration(iso) {
 	const parts = []
 
 	if (parsed.years === 1) {
-		parts.push(t('procest', '1 year'))
+		parts.push(t('dossiq', '1 year'))
 	} else if (parsed.years > 1) {
-		parts.push(t('procest', '{n} years', { n: parsed.years }))
+		parts.push(t('dossiq', '{n} years', { n: parsed.years }))
 	}
 
 	if (parsed.months === 1) {
-		parts.push(t('procest', '1 month'))
+		parts.push(t('dossiq', '1 month'))
 	} else if (parsed.months > 1) {
-		parts.push(t('procest', '{n} months', { n: parsed.months }))
+		parts.push(t('dossiq', '{n} months', { n: parsed.months }))
 	}
 
 	if (parsed.weeks === 1) {
-		parts.push(t('procest', '1 week'))
+		parts.push(t('dossiq', '1 week'))
 	} else if (parsed.weeks > 1) {
-		parts.push(t('procest', '{n} weeks', { n: parsed.weeks }))
+		parts.push(t('dossiq', '{n} weeks', { n: parsed.weeks }))
 	}
 
 	if (parsed.days === 1) {
-		parts.push(t('procest', '1 day'))
+		parts.push(t('dossiq', '1 day'))
 	} else if (parsed.days > 1) {
-		parts.push(t('procest', '{n} days', { n: parsed.days }))
+		parts.push(t('dossiq', '{n} days', { n: parsed.days }))
 	}
 
 	return parts.length > 0 ? parts.join(', ') : iso
@@ -100,7 +100,7 @@ export function getDurationError(value) {
 	if (!value) return ''
 	if (!isValidDuration(value)) {
 		return t(
-			'procest',
+			'dossiq',
 			'Must be a valid ISO 8601 duration (e.g., P56D for 56 days, P8W for 8 weeks, P2M for 2 months)',
 		)
 	}

@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @category  Test
- * @package   OCA\Procest\Tests\Unit\Flow
+ * @package   OCA\Dossiq\Tests\Unit\Flow
  * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2
@@ -14,11 +14,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Flow;
+namespace OCA\Dossiq\Tests\Unit\Flow;
 
-use OCA\Procest\Flow\ProcestSendEmailNode;
-use OCA\Procest\Service\Actions\ActionResult;
-use OCA\Procest\Service\Actions\SendEmailHandler;
+use OCA\Dossiq\Flow\ProcestSendEmailNode;
+use OCA\Dossiq\Service\Actions\ActionResult;
+use OCA\Dossiq\Service\Actions\SendEmailHandler;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;

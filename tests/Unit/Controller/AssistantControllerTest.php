@@ -4,7 +4,7 @@
  * AssistantController Unit Tests.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -12,7 +12,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -22,13 +22,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use Exception;
-use OCA\Procest\Controller\AssistantController;
-use OCA\Procest\Service\Assistant\CaseAssistantService;
-use OCA\Procest\Service\Assistant\HermiqAssistantClient;
-use OCA\Procest\Service\Assistant\HermiqAssistantException;
+use OCA\Dossiq\Controller\AssistantController;
+use OCA\Dossiq\Service\Assistant\CaseAssistantService;
+use OCA\Dossiq\Service\Assistant\HermiqAssistantClient;
+use OCA\Dossiq\Service\Assistant\HermiqAssistantException;
 use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
@@ -38,9 +38,9 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Controller\AssistantController
+ * @covers \OCA\Dossiq\Controller\AssistantController
  *
- * @uses \OCA\Procest\Service\Assistant\HermiqAssistantException
+ * @uses \OCA\Dossiq\Service\Assistant\HermiqAssistantException
  */
 class AssistantControllerTest extends TestCase {
 	/**
@@ -98,7 +98,7 @@ class AssistantControllerTest extends TestCase {
 		$l10n->method('t')->willReturnCallback(static fn (string $text): string => $text);
 
 		return new AssistantController(
-			'procest',
+			'dossiq',
 			$this->request,
 			$this->caseAssistantService,
 			$this->hermiqClient,

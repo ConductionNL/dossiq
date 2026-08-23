@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * DEEP, data-dependent coverage — case-lifecycle STATE MACHINE.
@@ -95,7 +95,7 @@ test.describe('Case lifecycle — state machine', () => {
 		// top-level sidebar link — navTo('Workflow Board') matches nothing and
 		// strands on the Dashboard. Reach it by a bare deep-link (bare paths
 		// resolve; /index.php-prefixed ones reset to the Dashboard).
-		await page.goto('/index.php/apps/procest/workflow-board')
+		await page.goto('/index.php/apps/dossiq/workflow-board')
 		await dismissSupportDialog(page)
 		await expect(
 			page.getByRole('heading', { name: 'Workflow Board' }).first(),

@@ -9,11 +9,11 @@ Declares the six OpenRegister schemas for the termijn/dwangsom engine — Termij
 ## Requirements
 ### Requirement: Termijn and dwangsom register schemas (REQ-TERM-SCHEMA-001)
 
-The system SHALL declare six OpenRegister schemas — `TermijnDefinitie`, `TermijnInstance`, `TermijnGebeurtenis`, `Ingebrekestelling`, `DwangsomBerekening`, and `DwangsomUitbetaling` — with the documented properties, enums, and relations, registered through the procest register template so every consumer reads the same canonical shape.
+The system SHALL declare six OpenRegister schemas — `TermijnDefinitie`, `TermijnInstance`, `TermijnGebeurtenis`, `Ingebrekestelling`, `DwangsomBerekening`, and `DwangsomUitbetaling` — with the documented properties, enums, and relations, registered through the dossiq register template so every consumer reads the same canonical shape.
 
 #### Scenario: Schemas materialise with documented properties
 
-- **GIVEN** the procest register template is imported into OpenRegister
+- **GIVEN** the dossiq register template is imported into OpenRegister
 - **WHEN** the six termijn/dwangsom schemas are materialised
 - **THEN** each schema SHALL expose its documented required properties (e.g. `TermijnInstance` SHALL expose `zaak`, `termijnDefinitie`, `startDatum`, `einddatumBerekend`, `einddatumActueel`, and a `status` enum of {lopend, gepauzeerd, verlengd, voltooid, overschreden, ingetrokken})
 - **AND** `TermijnGebeurtenis` SHALL be modelled as an append-only audit schema with a `type` enum of {start, pauze, hervat, verleng, voltooi, overschreden, ingebrekestelling-ontvangen, dwangsom-gestart}
@@ -31,7 +31,7 @@ The system SHALL seed three `TermijnDefinitie` rows — Omgevingsvergunning-regu
 
 #### Scenario: Seed definitions load via repair step
 
-- **GIVEN** the procest app is enabled and the register repair step runs
+- **GIVEN** the dossiq app is enabled and the register repair step runs
 - **WHEN** the seed import completes
 - **THEN** the three `TermijnDefinitie` rows SHALL be queryable via the OpenRegister REST API
 - **AND** the Woo-verzoek definition SHALL carry `afwijkendDwangsomRegime` describing the €15/day, max €500 regime

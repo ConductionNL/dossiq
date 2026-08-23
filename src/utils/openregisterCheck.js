@@ -2,7 +2,7 @@
  * OpenRegister availability check utility.
  *
  * Provides functions to verify that OpenRegister is available
- * and that the Procest register is properly configured.
+ * and that the Dossiq register is properly configured.
  */
 
 /**
@@ -13,7 +13,7 @@
 /** @spec openspec/specs/openregister-integration/spec.md */
 export async function checkOpenRegisterStatus() {
 	try {
-		const response = await fetch('/apps/procest/api/settings', {
+		const response = await fetch('/apps/dossiq/api/settings', {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
@@ -53,20 +53,20 @@ export async function checkOpenRegisterStatus() {
  */
 export function getStatusMessage(status) {
 	if (status.error) {
-		return t('procest', 'Could not check OpenRegister status: {error}', {
+		return t('dossiq', 'Could not check OpenRegister status: {error}', {
 			error: status.error,
 		})
 	}
 	if (!status.available) {
 		return t(
-			'procest',
+			'dossiq',
 			'OpenRegister is not installed or enabled. Please install OpenRegister from the App Store.',
 		)
 	}
 	if (!status.configured) {
 		return t(
-			'procest',
-			'OpenRegister is available but the Procest register is not configured. Go to Administration Settings > Procest to import the configuration.',
+			'dossiq',
+			'OpenRegister is available but the Dossiq register is not configured. Go to Administration Settings > Dossiq to import the configuration.',
 		)
 	}
 	return ''

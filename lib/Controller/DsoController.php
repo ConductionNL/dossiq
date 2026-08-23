@@ -17,26 +17,26 @@
  * authorization guards (ADR-005 Rule 3) to prevent IDOR.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\BeschikkingGenerationService;
-use OCA\Procest\Service\Dso\DsoDoorsturenNotifier;
-use OCA\Procest\Service\Dso\DsoObjectRepository;
-use OCA\Procest\Service\DsoCaseService;
-use OCA\Procest\Service\SamenwerkverzoekService;
+use OCA\Dossiq\Service\BeschikkingGenerationService;
+use OCA\Dossiq\Service\Dso\DsoDoorsturenNotifier;
+use OCA\Dossiq\Service\Dso\DsoObjectRepository;
+use OCA\Dossiq\Service\DsoCaseService;
+use OCA\Dossiq\Service\SamenwerkverzoekService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -127,7 +127,7 @@ class DsoController extends Controller {
 
 			return new JSONResponse(['results' => $outcome['results'], 'count' => count($outcome['results'])]);
 		} catch (\Throwable $e) {
-			$this->logger->error('Procest DsoController::dashboard failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq DsoController::dashboard failed: ' . $e->getMessage());
 			return new JSONResponse(['error' => 'Could not load dashboard'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}//end try
 	}//end dashboard()
@@ -434,7 +434,7 @@ class DsoController extends Controller {
 			return new JSONResponse(['error' => 'Forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$this->logger->error('Procest DsoController::' . $action . ' failed: ' . $exception->getMessage());
+		$this->logger->error('Dossiq DsoController::' . $action . ' failed: ' . $exception->getMessage());
 		return new JSONResponse(['error' => $message], Http::STATUS_INTERNAL_SERVER_ERROR);
 	}//end failure()
 

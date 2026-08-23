@@ -7,29 +7,29 @@
  * constructor injection and all getter methods.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Event
+ * @package  OCA\Dossiq\Tests\Unit\Event
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Event;
+namespace OCA\Dossiq\Tests\Unit\Event;
 
-use OCA\Procest\Event\VergunningStatusChangedEvent;
+use OCA\Dossiq\Event\VergunningStatusChangedEvent;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for VergunningStatusChangedEvent.
  *
- * @covers \OCA\Procest\Event\VergunningStatusChangedEvent
+ * @covers \OCA\Dossiq\Event\VergunningStatusChangedEvent
  */
 class VergunningStatusChangedEventTest extends TestCase {
 	/**

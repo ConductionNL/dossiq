@@ -1,5 +1,5 @@
 <!--
-  Procest VTH Checklist Admin Tab
+  Dossiq VTH Checklist Admin Tab
   SPDX-License-Identifier: EUPL-1.2
   SPDX-FileCopyrightText: 2026 Conduction B.V.
   @spec openspec/changes/vth-module/tasks.md#task-5
@@ -7,9 +7,9 @@
 <template>
 	<div class="checklists-tab">
 		<div class="checklists-tab__header">
-			<h3>{{ t('procest', 'VTH Inspection Checklists') }}</h3>
+			<h3>{{ t('dossiq', 'VTH Inspection Checklists') }}</h3>
 			<NcButton type="primary" @click="openEditor(null)">
-				{{ t('procest', 'New checklist') }}
+				{{ t('dossiq', 'New checklist') }}
 			</NcButton>
 		</div>
 
@@ -17,9 +17,9 @@
 
 		<NcEmptyContent
 			v-if="!loading && checklists.length === 0 && !editing"
-			:name="t('procest', 'No checklists')"
+			:name="t('dossiq', 'No checklists')"
 			:description="
-				t('procest', 'Create an inspection checklist to get started.')
+				t('dossiq', 'Create an inspection checklist to get started.')
 			">
 			<template #icon>
 				<NcIconSvgWrapper :svg="clipboardIcon" />
@@ -42,22 +42,22 @@
 						">
 						{{
 							checklist.active
-								? t('procest', 'Active')
-								: t('procest', 'Inactive')
+								? t('dossiq', 'Active')
+								: t('dossiq', 'Inactive')
 						}}
 					</span>
 					<span class="checklists-tab__meta"
 						>v{{ checklist.version || 1 }} &bull;
 						{{ (checklist.items || []).length }}
-						{{ t('procest', 'items') }}</span
+						{{ t('dossiq', 'items') }}</span
 					>
 				</div>
 				<div class="checklists-tab__item-actions">
 					<NcButton @click="openEditor(checklist)">
-						{{ t('procest', 'Edit') }}
+						{{ t('dossiq', 'Edit') }}
 					</NcButton>
 					<NcButton type="error" @click="confirmDelete(checklist)">
-						{{ t('procest', 'Delete') }}
+						{{ t('dossiq', 'Delete') }}
 					</NcButton>
 				</div>
 			</div>
@@ -73,14 +73,14 @@
 		<CnConfirmDialog
 			v-if="showDeleteConfirm"
 			ref="deleteConfirmDialog"
-			:dialogTitle="t('procest', 'Delete checklist')"
+			:dialogTitle="t('dossiq', 'Delete checklist')"
 			:message="
-				t('procest', 'Delete checklist “{name}”?', {
+				t('dossiq', 'Delete checklist “{name}”?', {
 					name: pendingDeleteChecklist && pendingDeleteChecklist.name,
 				})
 			"
 			variant="error"
-			:confirmLabel="t('procest', 'Delete')"
+			:confirmLabel="t('dossiq', 'Delete')"
 			@confirm="onConfirmDelete"
 			@close="showDeleteConfirm = false" />
 	</div>
@@ -100,7 +100,7 @@ import {
 import InspectionChecklistEditor from '../../../components/InspectionChecklistEditor.vue'
 
 /**
- * Checklist CRUD for the admin surface goes through procest's OWN controller.
+ * Checklist CRUD for the admin surface goes through dossiq's OWN controller.
  *
  * `InspectionChecklistController` already serves exactly the four verbs this tab
  * uses — `GET/POST /api/vth/checklists` and `PUT/DELETE /api/vth/checklists/{id}`
@@ -110,18 +110,18 @@ import InspectionChecklistEditor from '../../../components/InspectionChecklistEd
  * through `InspectionChecklistService`, which owns checklist versioning and
  * `caseTypeRef` filtering.
  *
- * The old URL, `/apps/procest/api/objects/inspectionChecklist`, matched NO route:
- * procest's auto-exposed `/api/objects/<register>/<schema>` endpoints were deleted
+ * The old URL, `/apps/dossiq/api/objects/inspectionChecklist`, matched NO route:
+ * dossiq's auto-exposed `/api/objects/<register>/<schema>` endpoints were deleted
  * (appinfo/routes.php, "only engine routes remain"). Nextcloud answers an
  * unmatched app URL with its own HTML page under **HTTP 200**, so axios never
  * threw and the body was a 45,031-character string — see `asChecklistArray`.
  *
  * Addressing OpenRegister's generic object route instead would also have worked
  * mechanically, and was this fix's first attempt. It is the wrong choice: it
- * bypasses procest's admin-setting authorization, bypasses the service that owns
+ * bypasses dossiq's admin-setting authorization, bypasses the service that owns
  * versioning, and adds a second write path for a resource that already has one.
  */
-const COLLECTION_URL = '/apps/procest/api/vth/checklists'
+const COLLECTION_URL = '/apps/dossiq/api/vth/checklists'
 
 /**
  * Coerce an API response into the checklist array the template iterates.
@@ -191,7 +191,7 @@ export default {
 				const response = await axios.get(generateUrl(COLLECTION_URL))
 				this.checklists = asChecklistArray(response.data)
 			} catch (e) {
-				showError(t('procest', 'Failed to load checklists'))
+				showError(t('dossiq', 'Failed to load checklists'))
 			} finally {
 				this.loading = false
 			}
@@ -243,11 +243,11 @@ export default {
 					: generateUrl(COLLECTION_URL)
 				const method = checklist.id ? 'put' : 'post'
 				await axios[method](url, checklist)
-				showSuccess(t('procest', 'Checklist saved'))
+				showSuccess(t('dossiq', 'Checklist saved'))
 				this.closeEditor()
 				await this.loadChecklists()
 			} catch (e) {
-				showError(t('procest', 'Failed to save checklist'))
+				showError(t('dossiq', 'Failed to save checklist'))
 			} finally {
 				this.saving = false
 			}
@@ -280,13 +280,13 @@ export default {
 					COLLECTION_URL + '/' + encodeURIComponent(checklist.id),
 				)
 				await axios.delete(url)
-				showSuccess(t('procest', 'Checklist deleted'))
+				showSuccess(t('dossiq', 'Checklist deleted'))
 				this.showDeleteConfirm = false
 				await this.loadChecklists()
 			} catch (e) {
-				showError(t('procest', 'Failed to delete checklist'))
+				showError(t('dossiq', 'Failed to delete checklist'))
 				this.$refs.deleteConfirmDialog.setResult({
-					error: t('procest', 'Failed to delete checklist'),
+					error: t('dossiq', 'Failed to delete checklist'),
 				})
 			}
 		},

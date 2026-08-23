@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest parafering step activator.
+ * Dossiq parafering step activator.
  *
  * Activates one step of a parafeerroute: locates the step in the route
  * snapshot, resolves its abstract actor into the concrete set of users that
@@ -17,7 +17,7 @@
  * resolvable actor would silently strand the voorstel.
  *
  * @category Service
- * @package  OCA\Procest\Service\Parafering
+ * @package  OCA\Dossiq\Service\Parafering
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,7 +25,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -35,11 +35,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Parafering;
+namespace OCA\Dossiq\Service\Parafering;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\RoleResolverService;
-use OCA\Procest\Service\Routing\RoutingStrategyMissingException;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\RoleResolverService;
+use OCA\Dossiq\Service\Routing\RoutingStrategyMissingException;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -93,7 +93,7 @@ class ParaferingStepActivator {
 		$resolvedActors = $this->resolveStepActors(stepInfo: $stepInfo, proposal: $proposal);
 
 		$this->logger->info(
-			'Procest: activated parafering step {step} of voorstel {voorstelId} for actor {actor}',
+			'Dossiq: activated parafering step {step} of voorstel {voorstelId} for actor {actor}',
 			[
 				'step' => $step,
 				'voorstelId' => $proposal['id'] ?? $proposal['uuid'] ?? '',
@@ -149,12 +149,12 @@ class ParaferingStepActivator {
 			return $this->roleResolver->resolve($rule, $case);
 		} catch (RoutingStrategyMissingException $e) {
 			$this->logger->warning(
-				'Procest: parafering step references unknown routing strategy: ' . $e->getMessage(),
+				'Dossiq: parafering step references unknown routing strategy: ' . $e->getMessage(),
 			);
 			return [$actor];
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest: failed to resolve parafering step actors: ' . $e->getMessage(),
+				'Dossiq: failed to resolve parafering step actors: ' . $e->getMessage(),
 			);
 			return [$actor];
 		}

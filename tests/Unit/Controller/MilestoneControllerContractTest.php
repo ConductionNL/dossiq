@@ -25,22 +25,22 @@
  *    they document the gap in the meantime.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\MilestoneController;
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\MilestoneService;
+use OCA\Dossiq\Controller\MilestoneController;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\MilestoneService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -51,7 +51,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Wire-contract tests for MilestoneController.
  *
- * @covers \OCA\Procest\Controller\MilestoneController
+ * @covers \OCA\Dossiq\Controller\MilestoneController
  */
 class MilestoneControllerContractTest extends TestCase {
 
@@ -104,7 +104,7 @@ class MilestoneControllerContractTest extends TestCase {
 		$this->caseAccessGuard = $this->createMock(CaseAccessGuard::class);
 
 		$this->controller = new MilestoneController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			milestoneService: $this->milestoneService,
 			userSession: $this->userSession,

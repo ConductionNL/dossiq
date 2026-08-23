@@ -3,11 +3,11 @@
 /**
  * WorkQueueController Unit Tests
  *
- * Tests for the Procest WorkQueueController exposing the intelligent
+ * Tests for the Dossiq WorkQueueController exposing the intelligent
  * work-queue endpoints (personal queue + coordinator workload).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,17 +18,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/werkvoorraad-intelligent-queue/specs/werkvoorraad-intelligent-queue/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\WorkQueueController;
-use OCA\Procest\Service\WorkQueueService;
+use OCA\Dossiq\Controller\WorkQueueController;
+use OCA\Dossiq\Service\WorkQueueService;
 use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUser;
@@ -38,7 +38,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Controller\WorkQueueController
+ * @covers \OCA\Dossiq\Controller\WorkQueueController
  */
 class WorkQueueControllerTest extends TestCase {
 

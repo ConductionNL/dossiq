@@ -1,7 +1,7 @@
 /**
  * Substitution + bulk-reassignment API wrapper (handler-vervanging-waarneming).
  *
- * Thin axios client over the procest substitution endpoints. The backend
+ * Thin axios client over the dossiq substitution endpoints. The backend
  * enforces all authorisation (own-record / coordinator) and OR RBAC; this
  * client only shapes requests and unwraps responses.
  *
@@ -11,7 +11,7 @@
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-const base = (suffix = '') => generateUrl(`/apps/procest${suffix}`)
+const base = (suffix = '') => generateUrl(`/apps/dossiq${suffix}`)
 
 /**
  * List substitutions visible to the current user (coordinators see all).

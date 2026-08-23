@@ -3,14 +3,14 @@
 /**
  * ParaferingApprovalBridge Unit Tests
  *
- * Verifies that the procest -> OpenRegister approval-workflow bridge maps route
+ * Verifies that the dossiq -> OpenRegister approval-workflow bridge maps route
  * steps to OpenRegister ApprovalChain steps, routes approve/reject through
  * OpenRegister's ApprovalService against the pending step, encodes app-specific
  * metadata into the comment field, and degrades gracefully when OpenRegister's
  * approval-workflow backend is unavailable.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,15 +18,15 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\ParaferingApprovalBridge;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\ParaferingApprovalBridge;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -34,11 +34,11 @@ use RuntimeException;
 /**
  * Unit tests for ParaferingApprovalBridge.
  *
- * @covers \OCA\Procest\Service\ParaferingApprovalBridge
+ * @covers \OCA\Dossiq\Service\ParaferingApprovalBridge
  */
 class ParaferingApprovalBridgeTest extends TestCase {
 	/**
-	 * Mocked procest settings/OpenRegister bridge.
+	 * Mocked dossiq settings/OpenRegister bridge.
 	 *
 	 * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
 	 */

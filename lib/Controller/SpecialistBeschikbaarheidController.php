@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Specialist Beschikbaarheid Controller.
+ * Dossiq Specialist Beschikbaarheid Controller.
  *
  * Read-only real-time availability endpoint consumed by the KCC-werkplek UI.
  * Availability records are written by the background refresh job, never by this
  * controller.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,16 +19,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T13
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\BelplanRoutingService;
+use OCA\Dossiq\Service\BelplanRoutingService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

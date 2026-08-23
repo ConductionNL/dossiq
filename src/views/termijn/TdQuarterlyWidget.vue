@@ -13,11 +13,11 @@
 		<div class="td-report-widget__controls">
 			<NcTextField
 				:modelValue="quarter"
-				:label="t('procest', 'Quarter (YYYY-Qn)')"
-				:placeholder="t('procest', 'e.g. 2026-Q2')"
+				:label="t('dossiq', 'Quarter (YYYY-Qn)')"
+				:placeholder="t('dossiq', 'e.g. 2026-Q2')"
 				@update:modelValue="(v) => (quarter = v)" />
 			<NcButton variant="primary" @click="load">
-				{{ t('procest', 'Load report') }}
+				{{ t('dossiq', 'Load report') }}
 			</NcButton>
 			<NcButton
 				:disabled="!quarterly"
@@ -26,7 +26,7 @@
 				<template #icon>
 					<FileExport :size="18" />
 				</template>
-				{{ t('procest', 'Export CSV') }}
+				{{ t('dossiq', 'Export CSV') }}
 			</NcButton>
 		</div>
 
@@ -34,15 +34,15 @@
 			<table class="td-report-widget__table">
 				<thead>
 					<tr>
-						<th scope="col">{{ t('procest', 'Zaaktype') }}</th>
-						<th scope="col">{{ t('procest', 'Total') }}</th>
-						<th scope="col">{{ t('procest', 'Within deadline') }}</th>
-						<th scope="col">{{ t('procest', 'Overruns') }}</th>
-						<th scope="col">{{ t('procest', 'Avg. duration') }}</th>
-						<th scope="col">{{ t('procest', 'Extensions') }}</th>
-						<th scope="col">{{ t('procest', 'Notices of default') }}</th>
+						<th scope="col">{{ t('dossiq', 'Zaaktype') }}</th>
+						<th scope="col">{{ t('dossiq', 'Total') }}</th>
+						<th scope="col">{{ t('dossiq', 'Within deadline') }}</th>
+						<th scope="col">{{ t('dossiq', 'Overruns') }}</th>
+						<th scope="col">{{ t('dossiq', 'Avg. duration') }}</th>
+						<th scope="col">{{ t('dossiq', 'Extensions') }}</th>
+						<th scope="col">{{ t('dossiq', 'Notices of default') }}</th>
 						<th scope="col">
-							{{ t('procest', 'Total penalty payment') }}
+							{{ t('dossiq', 'Total penalty payment') }}
 						</th>
 					</tr>
 				</thead>
@@ -61,7 +61,7 @@
 			</table>
 		</div>
 		<p v-else class="td-report-widget__empty">
-			{{ t('procest', 'Choose a quarter and load the report.') }}
+			{{ t('dossiq', 'Choose a quarter and load the report.') }}
 		</p>
 	</div>
 </template>

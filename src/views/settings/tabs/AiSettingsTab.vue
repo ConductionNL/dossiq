@@ -1,23 +1,23 @@
 <template>
 	<div class="ai-settings-tab">
-		<h2>{{ t('procest', 'AI-Assisted Processing') }}</h2>
+		<h2>{{ t('dossiq', 'AI-Assisted Processing') }}</h2>
 
 		<!-- Global toggle -->
 		<div class="ai-settings-tab__section">
 			<NcCheckboxRadioSwitch
 				:modelValue="settings.ai_enabled"
 				@update:modelValue="(v) => updateSetting('ai_enabled', v)">
-				{{ t('procest', 'Enable AI-assisted processing') }}
+				{{ t('dossiq', 'Enable AI-assisted processing') }}
 			</NcCheckboxRadioSwitch>
 		</div>
 
 		<template v-if="settings.ai_enabled">
 			<!-- Model configuration -->
 			<div class="ai-settings-tab__section">
-				<h3>{{ t('procest', 'Model Configuration') }}</h3>
+				<h3>{{ t('dossiq', 'Model Configuration') }}</h3>
 
 				<div class="form-group">
-					<label>{{ t('procest', 'Model type') }}</label>
+					<label>{{ t('dossiq', 'Model type') }}</label>
 					<NcCheckboxRadioSwitch
 						:modelValue="settings.ai_model_type === 'local'"
 						type="radio"
@@ -25,7 +25,7 @@
 						@update:modelValue="
 							() => updateSetting('ai_model_type', 'local')
 						">
-						{{ t('procest', 'Local (Ollama)') }}
+						{{ t('dossiq', 'Local (Ollama)') }}
 					</NcCheckboxRadioSwitch>
 					<NcCheckboxRadioSwitch
 						:modelValue="settings.ai_model_type === 'cloud'"
@@ -34,14 +34,14 @@
 						@update:modelValue="
 							() => updateSetting('ai_model_type', 'cloud')
 						">
-						{{ t('procest', 'Cloud') }}
+						{{ t('dossiq', 'Cloud') }}
 					</NcCheckboxRadioSwitch>
 				</div>
 
 				<NcNoteCard v-if="settings.ai_model_type === 'cloud'" type="warning">
 					{{
 						t(
-							'procest',
+							'dossiq',
 							'Warning: Case data will be sent to an external service. Ensure this complies with your data processing agreements.',
 						)
 					}}
@@ -50,7 +50,7 @@
 				<div class="form-group">
 					<NcTextField
 						:modelValue="settings.ai_model_url"
-						:label="t('procest', 'Model endpoint URL')"
+						:label="t('dossiq', 'Model endpoint URL')"
 						@update:modelValue="
 							(v) => updateSetting('ai_model_url', v)
 						" />
@@ -59,7 +59,7 @@
 				<div class="form-group">
 					<NcTextField
 						:modelValue="settings.ai_model_name"
-						:label="t('procest', 'Model name')"
+						:label="t('dossiq', 'Model name')"
 						placeholder="llama3.1"
 						@update:modelValue="
 							(v) => updateSetting('ai_model_name', v)
@@ -69,14 +69,14 @@
 				<div v-if="settings.ai_model_type === 'cloud'" class="form-group">
 					<NcPasswordField
 						:modelValue="settings.ai_api_key"
-						:label="t('procest', 'API Key')"
+						:label="t('dossiq', 'API Key')"
 						@update:modelValue="(v) => updateSetting('ai_api_key', v)" />
 				</div>
 			</div>
 
 			<!-- Feature toggles -->
 			<div class="ai-settings-tab__section">
-				<h3>{{ t('procest', 'Features') }}</h3>
+				<h3>{{ t('dossiq', 'Features') }}</h3>
 				<NcCheckboxRadioSwitch
 					v-for="feature in featureToggles"
 					:key="feature.key"
@@ -88,13 +88,13 @@
 
 			<!-- Privacy -->
 			<div class="ai-settings-tab__section">
-				<h3>{{ t('procest', 'Privacy & Compliance') }}</h3>
+				<h3>{{ t('dossiq', 'Privacy & Compliance') }}</h3>
 				<NcCheckboxRadioSwitch
 					:modelValue="settings.ai_pii_stripping"
 					@update:modelValue="(v) => updateSetting('ai_pii_stripping', v)">
 					{{
 						t(
-							'procest',
+							'dossiq',
 							'Strip PII (BSN, financial data) from AI prompts',
 						)
 					}}
@@ -106,7 +106,7 @@
 					">
 					{{
 						t(
-							'procest',
+							'dossiq',
 							'DPIA (Data Protection Impact Assessment) has been completed',
 						)
 					}}
@@ -114,7 +114,7 @@
 				<NcNoteCard v-if="!settings.ai_dpia_acknowledged" type="warning">
 					{{
 						t(
-							'procest',
+							'dossiq',
 							'A DPIA is required before using AI features with personal data. This must be acknowledged before AI features can be activated.',
 						)
 					}}
@@ -123,9 +123,9 @@
 
 			<!-- Health check -->
 			<div class="ai-settings-tab__section">
-				<h3>{{ t('procest', 'Connection Test') }}</h3>
+				<h3>{{ t('dossiq', 'Connection Test') }}</h3>
 				<NcButton :disabled="healthLoading" @click="testHealth">
-					{{ t('procest', 'Test connection') }}
+					{{ t('dossiq', 'Test connection') }}
 				</NcButton>
 				<NcLoadingIcon v-if="healthLoading" :size="20" />
 				<NcNoteCard
@@ -197,24 +197,24 @@ export default {
 			return [
 				{
 					key: 'ai_feature_classification',
-					label: t('procest', 'Document classification'),
+					label: t('dossiq', 'Document classification'),
 				},
 				{
 					key: 'ai_feature_extraction',
-					label: t('procest', 'Data extraction'),
+					label: t('dossiq', 'Data extraction'),
 				},
-				{ key: 'ai_feature_qa', label: t('procest', 'Knowledge base Q&A') },
+				{ key: 'ai_feature_qa', label: t('dossiq', 'Knowledge base Q&A') },
 				{
 					key: 'ai_feature_summary',
-					label: t('procest', 'Auto-summarization'),
+					label: t('dossiq', 'Auto-summarization'),
 				},
 				{
 					key: 'ai_feature_routing',
-					label: t('procest', 'Routing suggestions'),
+					label: t('dossiq', 'Routing suggestions'),
 				},
 				{
 					key: 'ai_feature_decision_support',
-					label: t('procest', 'Decision support'),
+					label: t('dossiq', 'Decision support'),
 				},
 			]
 		},
@@ -256,7 +256,7 @@ export default {
 				this.healthResult = {
 					healthy: false,
 					message:
-						e.response?.data?.error || t('procest', 'Connection failed'),
+						e.response?.data?.error || t('dossiq', 'Connection failed'),
 				}
 			} finally {
 				this.healthLoading = false

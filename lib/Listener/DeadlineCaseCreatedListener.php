@@ -1,16 +1,16 @@
 <?php
 
 /**
- * Procest Termijn Case Created Listener.
+ * Dossiq Termijn Case Created Listener.
  *
- * Observes OpenRegister ObjectCreatedEvent on the procest case schema and
+ * Observes OpenRegister ObjectCreatedEvent on the dossiq case schema and
  * binds an AWB termijn (TermijnInstance) to the case using the active
  * TermijnDefinitie for the case zaaktype. Defers all work to
  * {@see TermijnService} (ADR-022). A missing definition is logged at debug
  * level but never blocks case creation.
  *
  * @category Listener
- * @package  OCA\Procest\Listener
+ * @package  OCA\Dossiq\Listener
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,24 +21,24 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Listener;
+namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
+use OCA\Dossiq\Service\TermijnService;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
-use OCA\Procest\Service\ObjectSchemaSlugResolver;
-use OCA\Procest\Service\TermijnService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
 
 /**
- * Binds a TermijnInstance to a freshly-created procest case.
+ * Binds a TermijnInstance to a freshly-created dossiq case.
  *
  * @template-implements IEventListener<Event>
  */
@@ -91,7 +91,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 		} catch (\Throwable $e) {
 			// A case without a coupled definition is permissible — debug log only.
 			$this->logger->debug(
-				'Procest termijn: no automatic binding for case ' . $caseId . ': ' . $e->getMessage()
+				'Dossiq termijn: no automatic binding for case ' . $caseId . ': ' . $e->getMessage()
 			);
 		}
 	}//end handle()

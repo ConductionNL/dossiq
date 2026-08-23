@@ -7,7 +7,7 @@
  * (Open Raadsinformatie) register on install/upgrade.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Repair
+ * @package  OCA\Dossiq\Tests\Unit\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,10 +20,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Repair;
+namespace OCA\Dossiq\Tests\Unit\Repair;
 
-use OCA\Procest\Repair\RegisterOriRegister;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Repair\RegisterOriRegister;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -53,7 +53,7 @@ interface OriConfigurationServiceStub {
 /**
  * Unit tests for the RegisterOriRegister repair step.
  *
- * @covers \OCA\Procest\Repair\RegisterOriRegister
+ * @covers \OCA\Dossiq\Repair\RegisterOriRegister
  */
 class RegisterOriRegisterTest extends TestCase {
 

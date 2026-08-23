@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Consultation Controller
+ * Dossiq Consultation Controller
  *
  * REST API for inter-departmental consultation management. Provides CRUD,
  * lifecycle transitions and deadline extension for adviesaanvragen.
@@ -13,7 +13,7 @@
  * guard outcome or a service result onto a response.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -29,10 +29,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\Consultation\ConsultationAccessGuard;
-use OCA\Procest\Service\ConsultationService;
+use OCA\Dossiq\Service\Consultation\ConsultationAccessGuard;
+use OCA\Dossiq\Service\ConsultationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

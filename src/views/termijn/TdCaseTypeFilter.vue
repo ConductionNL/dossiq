@@ -19,8 +19,8 @@
 		class="td-case-type-filter"
 		:modelValue="selected"
 		:options="options"
-		:inputLabel="t('procest', 'Filter by case type')"
-		:placeholder="t('procest', 'All case types')"
+		:inputLabel="t('dossiq', 'Filter by case type')"
+		:placeholder="t('dossiq', 'All case types')"
 		@update:modelValue="onChange" />
 </template>
 

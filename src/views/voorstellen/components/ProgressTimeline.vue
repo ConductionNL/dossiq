@@ -2,7 +2,7 @@
 	<div
 		class="progress-timeline"
 		role="list"
-		:aria-label="t('procest', 'Parafering voortgang')">
+		:aria-label="t('dossiq', 'Parafering voortgang')">
 		<div
 			v-for="step in steps"
 			:key="step.order"
@@ -19,7 +19,7 @@
 					{{
 						step.label
 						|| step.actor
-						|| t('procest', 'Step {n}', { n: step.order })
+						|| t('dossiq', 'Step {n}', { n: step.order })
 					}}
 				</div>
 				<div class="progress-timeline__type">
@@ -31,7 +31,7 @@
 				<div
 					v-else-if="isCurrent(step)"
 					class="progress-timeline__meta progress-timeline__meta--waiting">
-					{{ t('procest', 'Waiting') }}
+					{{ t('dossiq', 'Waiting') }}
 				</div>
 			</div>
 		</div>
@@ -98,7 +98,7 @@ export default {
 		 * @spec openspec/specs/parafering-actions/spec.md
 		 */
 		formatStepType(type) {
-			return t('procest', STEP_TYPE_LABELS[type] || type || '')
+			return t('dossiq', STEP_TYPE_LABELS[type] || type || '')
 		},
 
 		/**
@@ -112,11 +112,11 @@ export default {
 			const formatted = date ? new Date(date).toLocaleDateString('nl-NL') : ''
 			const action =
 				actie.action === 'parafered'
-					? t('procest', 'Endorsed')
+					? t('dossiq', 'Endorsed')
 					: actie.action === 'advised'
-						? t('procest', 'Advised')
+						? t('dossiq', 'Advised')
 						: actie.action === 'skipped'
-							? t('procest', 'Skipped')
+							? t('dossiq', 'Skipped')
 							: actie.action
 			return `${action} door ${actie.actor} — ${formatted}`
 		},

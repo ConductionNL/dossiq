@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Advice Deadline Job.
+ * Dossiq Advice Deadline Job.
  *
  * Daily background job that processes advice request deadlines:
  * sends reminders 3 days before deadline and transitions overdue
  * advice requests to status `verlopen`.
  *
  * @category BackgroundJob
- * @package  OCA\Procest\BackgroundJob
+ * @package  OCA\Dossiq\BackgroundJob
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,19 +19,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/advice-management/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\BackgroundJob;
+namespace OCA\Dossiq\BackgroundJob;
 
 use DateTimeImmutable;
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\AdviceService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\AdviceService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -88,7 +88,7 @@ class AdviceDeadlineJob extends TimedJob {
 		$todayStr = $today->format('Y-m-d');
 
 		$this->logger->info(
-			'Procest: running advice deadline job (today=' . $todayStr . ', reminderOn=' . $reminderOn . ')',
+			'Dossiq: running advice deadline job (today=' . $todayStr . ', reminderOn=' . $reminderOn . ')',
 			['app' => Application::APP_ID],
 		);
 
@@ -109,7 +109,7 @@ class AdviceDeadlineJob extends TimedJob {
 			if ($deadlineDate < $todayStr) {
 				$this->adviceService->expireAdvice($adviceId);
 				$this->logger->info(
-					'Procest: advice request expired',
+					'Dossiq: advice request expired',
 					[
 						'app' => Application::APP_ID,
 						'adviceId' => $adviceId,
@@ -121,7 +121,7 @@ class AdviceDeadlineJob extends TimedJob {
 			if ($deadlineDate === $reminderOn) {
 				$this->adviceService->dispatchReminder($adviceId);
 				$this->logger->info(
-					'Procest: advice reminder dispatched',
+					'Dossiq: advice reminder dispatched',
 					[
 						'app' => Application::APP_ID,
 						'adviceId' => $adviceId,

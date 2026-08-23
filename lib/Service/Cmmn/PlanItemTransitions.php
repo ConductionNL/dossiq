@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest CMMN Plan-Item Transition Table.
+ * Dossiq CMMN Plan-Item Transition Table.
  *
  * The single source of truth for which plan-item state transitions are
  * legal, per the CMMN 1.1 state model documented in
@@ -11,7 +11,7 @@
  * rather than called statically.
  *
  * @category Service
- * @package  OCA\Procest\Service\Cmmn
+ * @package  OCA\Dossiq\Service\Cmmn
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,14 +22,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-002
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Cmmn;
+namespace OCA\Dossiq\Service\Cmmn;
 
 /**
  * Legal plan-item states and the transition table between them.

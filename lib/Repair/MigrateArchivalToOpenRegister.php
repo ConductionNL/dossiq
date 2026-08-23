@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Migrate-Archival-to-OpenRegister Repair Step.
+ * Dossiq Migrate-Archival-to-OpenRegister Repair Step.
  *
  * One-shot, idempotent, fail-closed migration from procest's retired app-local
  * archival/e-Depot chain onto OpenRegister's archival abstractions (ADR-022 /
@@ -23,7 +23,7 @@
  * register-import fragment (the underlying objects are preserved by OR).
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -34,17 +34,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -64,7 +64,11 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 	 *
 	 * @var string
 	 */
-	private const APP_ID = 'procest';
+	// This one DOES move: it is the IAppConfig namespace (used only for the
+	// completion marker below), not the register slug. Repair\MigrateAppConfigKeys
+	// copies the existing marker across the procest -> dossiq rename, so a
+	// migration already completed under the old id is not re-run.
+	private const APP_ID = 'dossiq';
 
 	/**
 	 * App-config key recording that the migration completed (idempotency guard).
@@ -118,7 +122,7 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 	 * @spec openspec/specs/archief-edepot-handover/spec.md
 	 */
 	public function getName(): string {
-		return 'Migrate Procest archival/e-Depot state to OpenRegister';
+		return 'Migrate Dossiq archival/e-Depot state to OpenRegister';
 	}//end getName()
 
 	/**
@@ -146,7 +150,7 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 
 		$register = (string)$this->settings->getConfigValue('register');
 		if ($register === '') {
-			$output->warning('Procest register not configured — archival migration deferred.');
+			$output->warning('Dossiq register not configured — archival migration deferred.');
 			return;
 		}
 

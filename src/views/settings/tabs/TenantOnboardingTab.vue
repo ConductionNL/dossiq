@@ -17,14 +17,14 @@
 				<NcSelect
 					:modelValue="selectedTenant"
 					:options="tenantOptions"
-					:inputLabel="t('procest', 'Tenant')"
-					:placeholder="t('procest', 'Pick a tenant')"
+					:inputLabel="t('dossiq', 'Tenant')"
+					:placeholder="t('dossiq', 'Pick a tenant')"
 					@update:modelValue="onTenantChange" />
 				<NcButton variant="secondary" @click="loadProgress">
 					<template #icon>
 						<Refresh :size="18" />
 					</template>
-					{{ t('procest', 'Refresh') }}
+					{{ t('dossiq', 'Refresh') }}
 				</NcButton>
 			</div>
 		</div>
@@ -39,7 +39,7 @@
 				<AccountTie :size="48" />
 			</template>
 			<template #default>
-				{{ t('procest', 'Select a tenant to view onboarding progress.') }}
+				{{ t('dossiq', 'Select a tenant to view onboarding progress.') }}
 			</template>
 		</NcEmptyContent>
 
@@ -52,7 +52,7 @@
 				</div>
 				<span class="tenant-onboarding__progress-label">
 					{{ completedSteps }} / {{ totalSteps }}
-					{{ t('procest', 'steps complete') }} ({{ progressPercent }}%)
+					{{ t('dossiq', 'steps complete') }} ({{ progressPercent }}%)
 				</span>
 			</div>
 
@@ -76,7 +76,7 @@
 							v-if="step.completedAt"
 							class="tenant-onboarding__step-meta">
 							{{
-								t('procest', 'Completed {at} by {who}', {
+								t('dossiq', 'Completed {at} by {who}', {
 									at: step.completedAt,
 									who: step.completedBy || '—',
 								})
@@ -95,13 +95,13 @@
 								:size="16" />
 							<Check v-else :size="16" />
 						</template>
-						{{ t('procest', 'Mark complete') }}
+						{{ t('dossiq', 'Mark complete') }}
 					</NcButton>
 				</li>
 			</ul>
 
 			<div class="tenant-onboarding__go-live">
-				<h3>{{ t('procest', 'Go-live readiness') }}</h3>
+				<h3>{{ t('dossiq', 'Go-live readiness') }}</h3>
 				<NcButton
 					:disabled="checkingGoLive"
 					variant="secondary"
@@ -110,16 +110,14 @@
 						<NcLoadingIcon v-if="checkingGoLive" :size="18" />
 						<RocketLaunch v-else :size="18" />
 					</template>
-					{{ t('procest', 'Check readiness') }}
+					{{ t('dossiq', 'Check readiness') }}
 				</NcButton>
 				<div v-if="goLiveResult" class="tenant-onboarding__go-live-result">
 					<div
 						v-if="goLiveResult.ready"
 						class="tenant-onboarding__go-live-ready">
 						<CheckCircle :size="24" />
-						<span>{{
-							t('procest', 'Tenant is ready to go live.')
-						}}</span>
+						<span>{{ t('dossiq', 'Tenant is ready to go live.') }}</span>
 						<NcButton
 							variant="primary"
 							:disabled="activating"
@@ -128,15 +126,13 @@
 								<NcLoadingIcon v-if="activating" :size="18" />
 								<Power v-else :size="18" />
 							</template>
-							{{ t('procest', 'Activate tenant') }}
+							{{ t('dossiq', 'Activate tenant') }}
 						</NcButton>
 					</div>
 					<div v-else class="tenant-onboarding__go-live-blocked">
 						<AlertCircle :size="24" />
 						<div>
-							<strong>{{
-								t('procest', 'Not ready. Missing:')
-							}}</strong>
+							<strong>{{ t('dossiq', 'Not ready. Missing:') }}</strong>
 							<ul class="tenant-onboarding__missing">
 								<li v-for="m in goLiveResult.missing || []" :key="m">
 									{{ m }}
@@ -255,7 +251,7 @@ export default {
 		 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
 		 */
 		stepLabel(step) {
-			return t('procest', STEP_LABELS[step] || step)
+			return t('dossiq', STEP_LABELS[step] || step)
 		},
 
 		/**
@@ -277,7 +273,7 @@ export default {
 			this.loading = true
 			try {
 				const res = await axios.get(
-					generateUrl('/apps/procest/api/saas/tenants'),
+					generateUrl('/apps/dossiq/api/saas/tenants'),
 				)
 				const list = Array.isArray(res.data)
 					? res.data
@@ -290,7 +286,7 @@ export default {
 				this.error =
 					e?.response?.data?.message
 					|| e.message
-					|| t('procest', 'Failed to load tenants')
+					|| t('dossiq', 'Failed to load tenants')
 			} finally {
 				this.loading = false
 			}
@@ -304,7 +300,7 @@ export default {
 			try {
 				const res = await axios.get(
 					generateUrl(
-						'/apps/procest/api/saas/tenants/'
+						'/apps/dossiq/api/saas/tenants/'
 							+ encodeURIComponent(this.tenantId)
 							+ '/onboarding/progress',
 					),
@@ -318,7 +314,7 @@ export default {
 					this.error =
 						e?.response?.data?.message
 						|| e.message
-						|| t('procest', 'Failed to load progress')
+						|| t('dossiq', 'Failed to load progress')
 				}
 			} finally {
 				this.loading = false
@@ -330,14 +326,14 @@ export default {
 			try {
 				await axios.post(
 					generateUrl(
-						'/apps/procest/api/saas/tenants/'
+						'/apps/dossiq/api/saas/tenants/'
 							+ encodeURIComponent(this.tenantId)
 							+ '/onboarding/initialise',
 					),
 				)
 				const res = await axios.get(
 					generateUrl(
-						'/apps/procest/api/saas/tenants/'
+						'/apps/dossiq/api/saas/tenants/'
 							+ encodeURIComponent(this.tenantId)
 							+ '/onboarding/progress',
 					),
@@ -347,7 +343,7 @@ export default {
 				this.error =
 					e?.response?.data?.message
 					|| e.message
-					|| t('procest', 'Failed to initialise')
+					|| t('dossiq', 'Failed to initialise')
 			}
 		},
 
@@ -363,7 +359,7 @@ export default {
 			try {
 				await axios.post(
 					generateUrl(
-						'/apps/procest/api/saas/tenants/'
+						'/apps/dossiq/api/saas/tenants/'
 							+ encodeURIComponent(this.tenantId)
 							+ '/onboarding/'
 							+ encodeURIComponent(step)
@@ -375,7 +371,7 @@ export default {
 				this.error =
 					e?.response?.data?.message
 					|| e.message
-					|| t('procest', 'Failed to mark step complete')
+					|| t('dossiq', 'Failed to mark step complete')
 			} finally {
 				this.markingStep = ''
 			}
@@ -387,7 +383,7 @@ export default {
 			try {
 				const res = await axios.get(
 					generateUrl(
-						'/apps/procest/api/saas/tenants/'
+						'/apps/dossiq/api/saas/tenants/'
 							+ encodeURIComponent(this.tenantId)
 							+ '/onboarding/progress',
 					),
@@ -401,14 +397,14 @@ export default {
 						missing:
 							this.completedSteps === this.totalSteps
 								? []
-								: [t('procest', 'Open onboarding steps')],
+								: [t('dossiq', 'Open onboarding steps')],
 					}
 				}
 			} catch (e) {
 				this.error =
 					e?.response?.data?.message
 					|| e.message
-					|| t('procest', 'Go-live check failed')
+					|| t('dossiq', 'Go-live check failed')
 			} finally {
 				this.checkingGoLive = false
 			}
@@ -420,7 +416,7 @@ export default {
 			try {
 				await axios.post(
 					generateUrl(
-						'/apps/procest/api/saas/tenants/'
+						'/apps/dossiq/api/saas/tenants/'
 							+ encodeURIComponent(this.tenantId)
 							+ '/onboarding/activate',
 					),
@@ -431,7 +427,7 @@ export default {
 				this.error =
 					e?.response?.data?.message
 					|| e.message
-					|| t('procest', 'Activate failed')
+					|| t('dossiq', 'Activate failed')
 			} finally {
 				this.activating = false
 			}

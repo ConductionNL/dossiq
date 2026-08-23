@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest KCC ContactMoment Service
+ * Dossiq KCC ContactMoment Service
  *
  * CRUD and query operations for KCC contact moments. A contact moment reuses
  * the existing `customerContact` (KlantContact) schema, extended with KCC
@@ -9,7 +9,7 @@
  * OpenRegister ObjectService (real API: find/findAll/saveObject).
  *
  * @category Service
- * @package  OCA\Procest\Service\Kcc
+ * @package  OCA\Dossiq\Service\Kcc
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,18 +20,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Kcc;
+namespace OCA\Dossiq\Service\Kcc;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
 
@@ -193,6 +193,8 @@ class ContactMomentService {
 	 * @return array<string, mixed> The saved contact moment.
 	 *
 	 * @throws OCSBadRequestException When validation fails or storage is unavailable.
+	 *
+	 * @spec openspec/specs/kcc-klantcontact-integratie/spec.md#requirement-contactmoment-records-capture-full-interaction-context
 	 */
 	public function create(array $data, string $agentId): array {
 		$payload = $this->buildPayload(data: $data, agentId: $agentId);
@@ -202,7 +204,7 @@ class ContactMomentService {
 		$saved = $objectService->saveObject(object: $payload, register: $register, schema: $schema);
 
 		$this->logger->info(
-			'Procest KCC: contact moment created',
+			'Dossiq KCC: contact moment created',
 			['channel' => $payload['channel'], 'agent' => $agentId]
 		);
 

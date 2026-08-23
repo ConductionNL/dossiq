@@ -26,7 +26,11 @@ test.describe('AVG verwerkingenlogging spec coverage', () => {
 	test('procest no longer hosts a processing-activities page', async ({
 		page,
 	}) => {
-		await page.goto(`${BASE}/index.php/apps/procest/verwerkingen`)
+		// MUST be the app's real id. Against `/apps/procest/...` the server
+		// serves nothing at all, so `toHaveCount(0)` would pass without the
+		// retirement having anything to do with it — the test would assert the
+		// absence of a heading that could never have rendered either way.
+		await page.goto(`${BASE}/index.php/apps/dossiq/verwerkingen`)
 		// The retired route is unrouted, so the SPA falls back to the app root
 		// rather than rendering the old overview. Assert the heading is gone —
 		// asserting a 404 would be wrong, the server serves the SPA for any app path.

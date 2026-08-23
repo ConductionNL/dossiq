@@ -3,10 +3,10 @@
 /**
  * Signalering Widgets Unit Tests
  *
- * Tests for the Procest signalering (alerting) dashboard widgets.
+ * Tests for the Dossiq signalering (alerting) dashboard widgets.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Dashboard
+ * @package  OCA\Dossiq\Tests\Unit\Dashboard
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -14,19 +14,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Dashboard;
+namespace OCA\Dossiq\Tests\Unit\Dashboard;
 
-use OCA\Procest\Dashboard\CasesOverviewWidget;
-use OCA\Procest\Dashboard\DeadlineAlertsWidget;
-use OCA\Procest\Dashboard\MyTasksWidget;
-use OCA\Procest\Dashboard\OverdueCasesWidget;
-use OCA\Procest\Dashboard\StalledCasesWidget;
-use OCA\Procest\Dashboard\TaskRemindersWidget;
+use OCA\Dossiq\Dashboard\CasesOverviewWidget;
+use OCA\Dossiq\Dashboard\DeadlineAlertsWidget;
+use OCA\Dossiq\Dashboard\MyTasksWidget;
+use OCA\Dossiq\Dashboard\OverdueCasesWidget;
+use OCA\Dossiq\Dashboard\StalledCasesWidget;
+use OCA\Dossiq\Dashboard\TaskRemindersWidget;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
@@ -34,12 +34,12 @@ use PHPUnit\Framework\TestCase;
 /**
  * Unit tests for the signalering dashboard widgets.
  *
- * @covers \OCA\Procest\Dashboard\CasesOverviewWidget
- * @covers \OCA\Procest\Dashboard\DeadlineAlertsWidget
- * @covers \OCA\Procest\Dashboard\OverdueCasesWidget
- * @covers \OCA\Procest\Dashboard\StalledCasesWidget
- * @covers \OCA\Procest\Dashboard\MyTasksWidget
- * @covers \OCA\Procest\Dashboard\TaskRemindersWidget
+ * @covers \OCA\Dossiq\Dashboard\CasesOverviewWidget
+ * @covers \OCA\Dossiq\Dashboard\DeadlineAlertsWidget
+ * @covers \OCA\Dossiq\Dashboard\OverdueCasesWidget
+ * @covers \OCA\Dossiq\Dashboard\StalledCasesWidget
+ * @covers \OCA\Dossiq\Dashboard\MyTasksWidget
+ * @covers \OCA\Dossiq\Dashboard\TaskRemindersWidget
  */
 class SignaleringWidgetsTest extends TestCase {
 
@@ -67,7 +67,7 @@ class SignaleringWidgetsTest extends TestCase {
 		$this->url = $this->createMock(IURLGenerator::class);
 
 		$this->l10n->method('t')->willReturnArgument(0);
-		$this->url->method('linkToRouteAbsolute')->willReturn('https://example.com/apps/procest/dashboard');
+		$this->url->method('linkToRouteAbsolute')->willReturn('https://example.com/apps/dossiq/dashboard');
 
 	}//end setUp()
 
@@ -102,7 +102,7 @@ class SignaleringWidgetsTest extends TestCase {
 		$widget = new CasesOverviewWidget($this->l10n, $this->url);
 		$url = $widget->getUrl();
 		$this->assertNotNull($url);
-		$this->assertStringContainsString('procest', $url);
+		$this->assertStringContainsString('dossiq', $url);
 
 	}//end testCasesOverviewWidgetUrl()
 

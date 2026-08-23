@@ -4,10 +4,10 @@
  * VergaderingCaseService Unit Tests
  *
  * Tests for the VergaderingCaseService that wraps ORI vergaderingen as
- * Procest cases with lifecycle and deadline tracking.
+ * Dossiq cases with lifecycle and deadline tracking.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,10 +20,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\VergaderingCaseService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\VergaderingCaseService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -72,7 +72,7 @@ interface VergaderingObjectServiceStub {
 /**
  * Unit tests for VergaderingCaseService.
  *
- * @covers \OCA\Procest\Service\VergaderingCaseService
+ * @covers \OCA\Dossiq\Service\VergaderingCaseService
  */
 class VergaderingCaseServiceTest extends TestCase {
 

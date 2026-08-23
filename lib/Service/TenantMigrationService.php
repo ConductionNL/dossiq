@@ -5,7 +5,7 @@
  *
  * One-time, idempotent migration of legacy procest `tenant` schema objects onto
  * OpenRegister's Organisation entity per `migrate-tenant-to-or-tenant` (ADR-022,
- * consume-or-tenant-fleet-wide). Procest no longer writes its private `tenant`
+ * consume-or-tenant-fleet-wide). Dossiq no longer writes its private `tenant`
  * schema — tenant identity, lifecycle status, and quotas live on OR's
  * Organisation. This service reads any pre-existing `tenant` rows and projects
  * each onto an Organisation, preserving the row UUID so stored `_tenantId`
@@ -15,7 +15,7 @@
  * migration is safe to re-run.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,15 +26,15 @@
  *
  * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Db\Organisation;
-use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -52,6 +52,9 @@ class TenantMigrationService {
 	/**
 	 * Register slug holding the procest schemas.
 	 */
+	// FROZEN: OpenRegister register SLUG, not this app's id, and unchanged by
+	// the procest -> dossiq rename — a renamed value resolves no register and
+	// the migration would find zero legacy tenants and report success.
 	private const REGISTER_SLUG = 'procest';
 
 	/**
@@ -77,7 +80,7 @@ class TenantMigrationService {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Procest settings/OR bridge (provides ObjectService).
+	 * @param SettingsService $settingsService Dossiq settings/OR bridge (provides ObjectService).
 	 * @param ContainerInterface $container DI container (resolves OR's OrganisationMapper).
 	 * @param IAppManager $appManager Detects whether OpenRegister is installed.
 	 * @param LoggerInterface $logger PSR-3 logger.
@@ -112,7 +115,7 @@ class TenantMigrationService {
 		$objectService = $this->settingsService->getObjectService();
 		$mapper = $this->getOrganisationMapper();
 		if ($objectService === null || $mapper === null) {
-			$this->logger->warning('Procest: tenant migration skipped — OpenRegister tenant services unavailable');
+			$this->logger->warning('Dossiq: tenant migration skipped — OpenRegister tenant services unavailable');
 			return $summary;
 		}
 
@@ -125,7 +128,7 @@ class TenantMigrationService {
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest: tenant migration found no legacy tenant rows (schema absent or empty)',
+				'Dossiq: tenant migration found no legacy tenant rows (schema absent or empty)',
 				['exception' => $e->getMessage()],
 			);
 			return $summary;
@@ -153,7 +156,7 @@ class TenantMigrationService {
 		}
 
 		$this->logger->info(
-			'Procest: tenant migration complete',
+			'Dossiq: tenant migration complete',
 			[
 				'total' => $summary['total'],
 				'migrated' => $summary['migrated'],
@@ -178,7 +181,7 @@ class TenantMigrationService {
 		$tenantUuid = (string)($row['id'] ?? ($row['uuid'] ?? ''));
 		$slug = (string)($row['slug'] ?? '');
 		if ($slug === '') {
-			$this->logger->warning('Procest: tenant migration skipped a row with no slug', ['tenantUuid' => $tenantUuid]);
+			$this->logger->warning('Dossiq: tenant migration skipped a row with no slug', ['tenantUuid' => $tenantUuid]);
 			return null;
 		}
 
@@ -197,7 +200,7 @@ class TenantMigrationService {
 			$saved = $mapper->insert($organisation);
 
 			$this->logger->info(
-				'Procest: migrated tenant to OR Organisation',
+				'Dossiq: migrated tenant to OR Organisation',
 				['tenant' => $tenantUuid, 'organisation' => (string)$saved->getUuid(), 'slug' => $slug],
 			);
 
@@ -208,7 +211,7 @@ class TenantMigrationService {
 			];
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: tenant migration failed for one row',
+				'Dossiq: tenant migration failed for one row',
 				['tenant' => $tenantUuid, 'slug' => $slug, 'exception' => $e->getMessage()],
 			);
 			return null;
@@ -325,7 +328,7 @@ class TenantMigrationService {
 			return $this->container->get('OCA\\OpenRegister\\Db\\OrganisationMapper');
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: Could not get OrganisationMapper for tenant migration',
+				'Dossiq: Could not get OrganisationMapper for tenant migration',
 				['exception' => $e->getMessage()],
 			);
 			return null;

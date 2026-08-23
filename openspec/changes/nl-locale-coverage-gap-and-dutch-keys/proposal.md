@@ -20,7 +20,7 @@ $ node -e "const en=require('./l10n/en.json').translations, nl=require('./l10n/n
 **1. Dutch text used directly as the i18n key (~40+ confirmed), violating the project's own
    "i18n keys = ENGLISH source" rule:**
 
-- `src/views/leverancier/TenderList.vue:16`: `{{ t('procest', 'Aanbestedingen') }}` — and the
+- `src/views/leverancier/TenderList.vue:16`: `{{ t('dossiq', 'Aanbestedingen') }}` — and the
   same literal Dutch key appears again in `LeverancierDashboard.vue:53`, `ContractList.vue:48`
   (`'Actie'`), `ConsultationDashboard.vue:154/260` (`'Afgesloten'`), `ConsultationDashboard.vue:35`
   (`'Alle statussen'`).

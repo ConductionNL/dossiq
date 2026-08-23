@@ -1,8 +1,8 @@
-# Procest Leverancier Zaakportaal — Deployment Guide
+# Dossiq Leverancier Zaakportaal — Deployment Guide
 
 This guide covers the supplier-portal (`leverancier-zaakportaal-*`) chain
-shipped in the Procest app. The portal layers on top of the existing
-Procest case-management surface and reuses the OpenRegister schemas
+shipped in the Dossiq app. The portal layers on top of the existing
+Dossiq case-management surface and reuses the OpenRegister schemas
 declared in chain member 01.
 
 ## Prerequisites
@@ -18,8 +18,8 @@ declared in chain member 01.
 ## Repair-step bootstrap
 
 The 7 supplier schemas + 4 supplier case types ship as seed objects in
-`lib/Settings/procest_register.json`. They land via the existing
-`Procest\Repair\InitializeSettings` repair step on app enable /
+`lib/Settings/dossiq_register.json`. They land via the existing
+`Dossiq\Repair\InitializeSettings` repair step on app enable /
 upgrade — no separate migration needed.
 
 ```bash
@@ -29,7 +29,7 @@ occ maintenance:repair
 
 ## App-config keys
 
-Set these via `occ config:app:set procest <key> --value '<value>'`:
+Set these via `occ config:app:set dossiq <key> --value '<value>'`:
 
 | Key                            | Default | Description                                                                                  |
 |--------------------------------|---------|----------------------------------------------------------------------------------------------|
@@ -46,7 +46,7 @@ Set these via `occ config:app:set procest <key> --value '<value>'`:
 The supplier-portal endpoints are declared in
 `docs/openapi/leverancier-zaakportaal.yaml`. The wiring shape is:
 
-- All endpoints are admin-route under `/index.php/apps/procest/...`
+- All endpoints are admin-route under `/index.php/apps/dossiq/...`
 - `SupplierAuthMiddleware` (chain member 04) gates every supplier
   controller — it requires a bearer JWT issued by
   `SupplierAuthService::issueSessionToken()` and enforces a 100
@@ -76,7 +76,7 @@ URL) are configured.
   req/min/IP rate-limit + IP-bucket fail counter on 5+ failures)
 - `SupplierScopeService` masks IBAN / email / phone in audit logs
 - `supplierMessage` schema is write-once (`x-insert-only:true`)
-- IBAN changes go through a 4-eyes Procest case
+- IBAN changes go through a 4-eyes Dossiq case
   (`leverancier-iban-wijziging`) — the supplier row is never directly
   mutated by the supplier user
 - `TenantAuditTrailService::emit()` is called on every mutating
@@ -92,6 +92,6 @@ URL) are configured.
   shard traffic.
 - **HTTP 401 on dashboard** — bearer JWT expired (2-hour TTL);
   call `POST /auth/refresh` or re-login.
-- **"Procest TENANT_SCHEMA_DELETED" log line** — emitted by
+- **"Dossiq TENANT_SCHEMA_DELETED" log line** — emitted by
   `TenantLifecycleControlService::archiveAndDelete()` after a
   tenant is fully terminated.

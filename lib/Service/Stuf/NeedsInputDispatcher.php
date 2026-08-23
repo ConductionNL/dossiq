@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest NeedsInputDispatcher (StUF).
+ * Dossiq NeedsInputDispatcher (StUF).
  *
  * Centralises the "needs input from beheerder" signal raised by the adapter
  * when it cannot proceed (circuit open, permanent error, timeout). The
@@ -15,13 +15,13 @@
  *    the originating workflow.
  *
  * This is the StUF-adapter admin-alert surface. It deliberately uses NC's
- * native INotificationManager (admin group) rather than procest's
+ * native INotificationManager (admin group) rather than dossiq's
  * NotificatieService, because NotificatieService is the ZGW NRC callback
  * publisher (kanaal/hoofdObject/resourceUrl semantics) — a different concern
  * from "alert the operator that an outbound StUF endpoint degraded".
  *
  * @category Service
- * @package  OCA\Procest\Service\Stuf
+ * @package  OCA\Dossiq\Service\Stuf
  *
  * @author    Conduction <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -32,17 +32,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-needs-input-escalation
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Stuf;
+namespace OCA\Dossiq\Service\Stuf;
 
 use DateTime;
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\IGroupManager;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
@@ -112,7 +112,7 @@ class NeedsInputDispatcher {
 				->setDateTime(dateTime: new DateTime())
 				->setObject(type: 'stuf_needs_input', id: ($context['endpointId'] ?? $type))
 				->setSubject(subject: $type, parameters: ['endpointId' => (string)($context['endpointId'] ?? '')])
-				->setMessage(message: 'procest_stuf_needs_input', parameters: $context);
+				->setMessage(message: 'dossiq_stuf_needs_input', parameters: $context);
 			$this->notificationManager->notify(notification: $notification);
 		}
 	}//end notifyAdmins()

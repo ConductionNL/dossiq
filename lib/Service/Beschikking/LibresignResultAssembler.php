@@ -1,15 +1,15 @@
 <?php
 
 /**
- * Procest LibreSign result assembler.
+ * Dossiq LibreSign result assembler.
  *
- * Turns LibreSign's raw API responses into the two contracts procest actually
+ * Turns LibreSign's raw API responses into the two contracts dossiq actually
  * publishes: the `sign()` result (which requires materialising the signed PDF
  * and persisting it through the EXISTING ZgwDocumentService binary storage
  * path) and the validatierapport. Split out of LibresignSigningAdapter so that
  * adapter keeps the LibreSign *conversation* — availability, signer identity,
  * request, poll loop — while reading LibreSign's status vocabulary and shaping
- * what procest hands back, plus the file plumbing behind it, live here.
+ * what dossiq hands back, plus the file plumbing behind it, live here.
  *
  * Status interpretation lives with result assembly on purpose: the internal
  * status value is itself part of the validatierapport, so a single owner keeps
@@ -21,7 +21,7 @@
  * before the split.
  *
  * @category Service
- * @package  OCA\Procest\Service\Beschikking
+ * @package  OCA\Dossiq\Service\Beschikking
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -29,7 +29,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -39,17 +39,17 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Beschikking;
+namespace OCA\Dossiq\Service\Beschikking;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\ZgwDocumentService;
+use OCA\Dossiq\Service\ZgwDocumentService;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
 use RuntimeException;
 use Throwable;
 
 /**
- * Builds procest's signed-result and validatierapport contracts.
+ * Builds dossiq's signed-result and validatierapport contracts.
  *
  * @psalm-suppress UnusedClass
  *

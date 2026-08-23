@@ -1,49 +1,46 @@
 <template>
 	<NcDialog
 		:open="open"
-		:name="t('procest', 'Transfer case')"
+		:name="t('dossiq', 'Transfer case')"
 		size="normal"
 		@update:open="$emit('update:open', $event)">
 		<div class="case-transfer-dialog">
 			<p class="case-transfer-dialog__description">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Transfer ownership of this case to another organization. The target organization must accept the transfer before it takes effect.',
 					)
 				}}
 			</p>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Target organization') }}</label>
+				<label>{{ t('dossiq', 'Target organization') }}</label>
 				<NcSelect
 					v-model="form.targetOrganization"
 					:options="partners"
-					:aria-label-combobox="t('procest', 'Target organization')"
+					:aria-label-combobox="t('dossiq', 'Target organization')"
 					label="name"
 					trackBy="id"
-					:placeholder="t('procest', 'Select organization...')" />
+					:placeholder="t('dossiq', 'Select organization...')" />
 			</div>
 
 			<div class="form-group">
 				<label for="case-transfer-reason">{{
-					t('procest', 'Reason for transfer')
+					t('dossiq', 'Reason for transfer')
 				}}</label>
 				<textarea
 					id="case-transfer-reason"
 					v-model="form.reason"
 					class="case-transfer-dialog__textarea"
 					:placeholder="
-						t(
-							'procest',
-							'Explain why this case should be transferred...',
-						)
+						t('dossiq', 'Explain why this case should be transferred...')
 					"
 					rows="3" />
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Requested transfer date') }}</label>
+				<label>{{ t('dossiq', 'Requested transfer date') }}</label>
 				<NcDateTimePicker v-model="form.requestedDate" type="date" />
 			</div>
 
@@ -56,7 +53,7 @@
 			<div class="form-group">
 				<label for="case-transfer-remote-cloud-id">{{
 					t(
-						'procest',
+						'dossiq',
 						'Remote cloud ID (optional, for cross-instance transfer)',
 					)
 				}}</label>
@@ -65,14 +62,14 @@
 					v-model="form.remoteCloudId"
 					type="text"
 					:placeholder="
-						t('procest', 'e.g. partner-org@partner.example.com')
+						t('dossiq', 'e.g. partner-org@partner.example.com')
 					" />
 			</div>
 		</div>
 
 		<template #actions>
 			<NcButton @click="$emit('update:open', false)">
-				{{ t('procest', 'Cancel') }}
+				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 			<NcButton
 				type="primary"
@@ -80,8 +77,8 @@
 				@click="submitTransfer">
 				{{
 					saving
-						? t('procest', 'Submitting...')
-						: t('procest', 'Submit transfer request')
+						? t('dossiq', 'Submitting...')
+						: t('dossiq', 'Submit transfer request')
 				}}
 			</NcButton>
 		</template>

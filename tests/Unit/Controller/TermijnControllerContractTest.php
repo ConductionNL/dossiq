@@ -12,7 +12,7 @@
  *
  *  - all four refuse a session-less caller with **403**. That is what the
  *    controller's own `ensureAuthenticated()` returns; it is NOT the 401 the
- *    rest of procest uses, and the asymmetry is asserted explicitly so a
+ *    rest of dossiq uses, and the asymmetry is asserted explicitly so a
  *    "consistency" edit cannot change the wire contract unnoticed. The
  *    refusal is checked with `never()` on all three services, so no clock
  *    moves;
@@ -34,23 +34,23 @@
  * documented defaults, which is precisely the path an empty-body POST takes.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\TermijnController;
-use OCA\Procest\Service\DeadlineExtensionService;
-use OCA\Procest\Service\DeadlinePauseService;
-use OCA\Procest\Service\TermijnService;
+use OCA\Dossiq\Controller\TermijnController;
+use OCA\Dossiq\Service\DeadlineExtensionService;
+use OCA\Dossiq\Service\DeadlinePauseService;
+use OCA\Dossiq\Service\TermijnService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -62,7 +62,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Wire-contract tests for TermijnController's four lifecycle actions.
  *
- * @covers \OCA\Procest\Controller\TermijnController
+ * @covers \OCA\Dossiq\Controller\TermijnController
  */
 class TermijnControllerContractTest extends TestCase {
 
@@ -131,7 +131,7 @@ class TermijnControllerContractTest extends TestCase {
 		$this->logger = $this->createMock(LoggerInterface::class);
 
 		$this->controller = new TermijnController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			term: $this->term,
 			pause: $this->pause,

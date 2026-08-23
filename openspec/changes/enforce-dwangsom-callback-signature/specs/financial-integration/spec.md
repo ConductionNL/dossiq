@@ -11,7 +11,7 @@ The system SHALL prepare an ERP-ready payment signal with all required metadata 
 and SHALL process the ERP payment-confirmation callback. The callback endpoint MUST be
 configured with a shared secret and MUST reject every request with HTTP 401 when that secret is
 not configured — an unconfigured secret MUST NEVER be treated as an implicit pass. The secret
-MUST be configurable via the procest admin settings UI.
+MUST be configurable via the dossiq admin settings UI.
 
 **Feature tier**: MVP
 
@@ -45,7 +45,7 @@ MUST be configurable via the procest admin settings UI.
 
 #### Scenario: Admin can configure the secret (NEW)
 
-- **GIVEN** an admin opens the procest admin settings page with the financial-integration
+- **GIVEN** an admin opens the dossiq admin settings page with the financial-integration
   capability enabled
 - **WHEN** they view the dwangsom callback section
 - **THEN** they SHALL see a field to set `dwangsom_callback_secret` (masked input) and a

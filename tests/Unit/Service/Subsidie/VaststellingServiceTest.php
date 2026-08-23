@@ -8,7 +8,7 @@
  * terugvordering trigger boundary.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Subsidie
+ * @package  OCA\Dossiq\Tests\Unit\Service\Subsidie
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,16 +19,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Subsidie;
+namespace OCA\Dossiq\Tests\Unit\Service\Subsidie;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Subsidie\TerugvorderingService;
-use OCA\Procest\Service\Subsidie\VaststellingService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Subsidie\TerugvorderingService;
+use OCA\Dossiq\Service\Subsidie\VaststellingService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -82,9 +82,9 @@ class VaststellingFakeObjectService {
 }//end class
 
 /**
- * @covers \OCA\Procest\Service\Subsidie\VaststellingService
+ * @covers \OCA\Dossiq\Service\Subsidie\VaststellingService
  *
- * @uses \OCA\Procest\Service\Subsidie\TerugvorderingService
+ * @uses \OCA\Dossiq\Service\Subsidie\TerugvorderingService
  *
  * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-20
  * @spec openspec/changes/subsidie-settlement-case-costs/specs/subsidie-settlement-case-costs/spec.md

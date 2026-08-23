@@ -8,17 +8,17 @@ The complaint feature uses **three** n8n workflows. Two run on a schedule
 (intake polling, daily deadline scan); one is webhook-triggered (incoming-email
 attachment matcher).
 
-All workflows authenticate to procest's REST API using HTTP Basic auth
+All workflows authenticate to dossiq's REST API using HTTP Basic auth
 (credentials are stored as an n8n credential of type "HTTP Basic Auth", referenced
 as `genericAuthType: httpBasicAuth`). The HTTP request nodes assume a service
-account with the `procest-system` group. `OCS-APIRequest: true` is sent on every
+account with the `dossiq-system` group. `OCS-APIRequest: true` is sent on every
 call so the Nextcloud framework does not redirect to the login page.
 
 ## 1. `complaint-email-intake.json`
 
 - **Trigger.** `n8n-nodes-base.scheduleTrigger`, every 5 minutes.
 - **Steps.**
-  1. `GET {{PROCEST_BASE_URL}}/index.php/apps/procest/api/integration/mail/poll` — returns `{messages: [...]}` from the configured klachten@ inbox adapter.
+  1. `GET {{DOSSIQ_BASE_URL}}/index.php/apps/dossiq/api/integration/mail/poll` — returns `{messages: [...]}` from the configured klachten@ inbox adapter.
   2. Code node classifies each message as either NEW (no `KLA-YYYY-NNNN` in subject) or FOLLOW-UP (subject matches the pattern).
   3. NEW branch: `POST /api/complaints` with `ontvangstkanaal: "email"` and the parsed sender / body.
   4. FOLLOW-UP branch: `POST /api/complaints/{klachtNummer}/attachments`.
@@ -37,7 +37,7 @@ call so the Nextcloud framework does not redirect to the login page.
 
 ## 3. `complaint-attachment-matcher.json`
 
-- **Trigger.** Webhook at `POST /webhook/procest/complaint-attachment-incoming`.
+- **Trigger.** Webhook at `POST /webhook/dossiq/complaint-attachment-incoming`.
 - **Expected payload.** `{from, subject, body, messageId, attachments: [...]}`
   (delivered by the mail adapter when a message has attachments).
 - **Match strategy** (in order):
@@ -48,7 +48,7 @@ call so the Nextcloud framework does not redirect to the login page.
   3. Otherwise: `POST /api/complaints/intake-review` with
      `reason: "attachment-could-not-be-matched"` and `candidateCount` so a
      handler picks it up.
-- **Audit.** The procest `/attachments` endpoint records `source: email-followup`
+- **Audit.** The dossiq `/attachments` endpoint records `source: email-followup`
   and the source `messageId` on the complaint's activity timeline.
 
 ## Configuration
@@ -57,13 +57,13 @@ The workflows read two environment variables on the n8n side:
 
 | Variable | Purpose | Default |
 | --- | --- | --- |
-| `PROCEST_BASE_URL` | Base URL of the procest Nextcloud instance | `http://nextcloud` |
-| `PROCEST_FROM_EMAIL` | From-address for outbound mail | `consultations@gemeente.nl` |
+| `DOSSIQ_BASE_URL` | Base URL of the dossiq Nextcloud instance | `http://nextcloud` |
+| `DOSSIQ_FROM_EMAIL` | From-address for outbound mail | `consultations@gemeente.nl` |
 
 The HTTP Basic credential MUST grant the configured service account permission to:
 
-- Read & write under `/index.php/apps/procest/api/complaints/*`.
-- POST to `/index.php/apps/procest/api/notifications/send`.
+- Read & write under `/index.php/apps/dossiq/api/complaints/*`.
+- POST to `/index.php/apps/dossiq/api/notifications/send`.
 
 ## Verifying the workflows locally
 

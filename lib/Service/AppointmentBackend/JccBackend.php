@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest JCC Afspraken Backend.
+ * Dossiq JCC Afspraken Backend.
  *
  * Integration with the JCC Afspraken REST API used by many Dutch
  * municipalities for balie appointment management.
  *
  * @category Service
- * @package  OCA\Procest\Service\AppointmentBackend
+ * @package  OCA\Dossiq\Service\AppointmentBackend
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,14 +15,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/appointment-booking/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\AppointmentBackend;
+namespace OCA\Dossiq\Service\AppointmentBackend;
 
 use OCP\Http\Client\IClientService;
 use Psr\Log\LoggerInterface;

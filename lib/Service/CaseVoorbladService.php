@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Case-Voorblad Service.
+ * Dossiq Case-Voorblad Service.
  *
  * Aggregates the KCC case-voorblad for an identified burger: open zaken (capped),
  * recent contactmomenten (capped), and a suggested dialogue topic derived from
@@ -9,7 +9,7 @@
  * a KCC-medewerker can never pull another burger's data through this service.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,17 +20,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T10
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -116,7 +116,7 @@ class CaseVoorbladService {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to fetch zaken for voorblad: ' . $e->getMessage(),
+				'Dossiq: failed to fetch zaken for voorblad: ' . $e->getMessage(),
 				['app' => Application::APP_ID],
 			);
 			return [];

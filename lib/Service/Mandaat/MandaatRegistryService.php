@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest mandaat registry service.
+ * Dossiq mandaat registry service.
  *
  * The administrator's read/write surface over the four mandate-matrix
  * registries the admin settings panel edits: MandateringsBesluiten, Mandaten,
  * OrganisatieRollen and MedewerkerRolToewijzingen.
  *
- * This exists because the shipped admin panel called four procest URLs that
+ * This exists because the shipped admin panel called four dossiq URLs that
  * `appinfo/routes.php` never declared (procest#794). Nextcloud answers an
  * unmatched app URL with its own HTML page under HTTP 200, so the tabs failed
  * silently: the callers use the correct `Array.isArray(x) ? x : (x?.results ||
@@ -22,7 +22,7 @@
  * `ConfiguredRegistryService`.
  *
  * @category Service
- * @package  OCA\Procest\Service\Mandaat
+ * @package  OCA\Dossiq\Service\Mandaat
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -30,7 +30,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -40,9 +40,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Mandaat;
+namespace OCA\Dossiq\Service\Mandaat;
 
-use OCA\Procest\Service\Support\ConfiguredRegistryService;
+use OCA\Dossiq\Service\Support\ConfiguredRegistryService;
 use RuntimeException;
 
 /**

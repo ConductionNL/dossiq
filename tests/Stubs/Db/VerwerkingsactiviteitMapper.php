@@ -3,7 +3,7 @@
 /**
  * Test stub for OpenRegister's VerwerkingsactiviteitMapper.
  *
- * Minimal surface needed by procest unit tests: the catalogue seed repair
+ * Minimal surface needed by dossiq unit tests: the catalogue seed repair
  * step calls findByCode / insert / update. The stub keeps an in-memory
  * code-indexed store so upsert-by-code and status-preservation semantics
  * are assertable. The real OR mapper persists to
@@ -19,7 +19,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);

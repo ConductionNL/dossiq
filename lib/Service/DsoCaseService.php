@@ -9,37 +9,37 @@
  * event dispatch) are routed through this service to keep the controller layer thin.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use Exception;
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Dso\DsoStatusChangeNotifier;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Dso\DsoStatusChangeNotifier;
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCP\IAppConfig;
 use OCP\IUser;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-use OCA\OpenRegister\Contract\ObjectServiceInterface;
 
 /**
  * Service for DSO Omgevingsloket case management.
  *
- * Creates Procest zaken from DSO vergunningaanvragen, transitions statuses,
+ * Creates Dossiq zaken from DSO vergunningaanvragen, transitions statuses,
  * and computes statutory deadlines in working days (excluding weekends and
  * Dutch national holidays).
  *
@@ -104,11 +104,11 @@ class DsoCaseService {
 	}//end __construct()
 
 	/**
-	 * Create a Procest zaak from a DSO vergunningaanvraag.
+	 * Create a Dossiq zaak from a DSO vergunningaanvraag.
 	 *
 	 * Looks up the vergunningaanvraag object, determines the procedure type
 	 * from the activiteiten list, computes the statutory deadline, and
-	 * persists a new zaak in the Procest register.
+	 * persists a new zaak in the Dossiq register.
 	 *
 	 * @param string $permitApplicationId The UUID of the vergunningaanvraag object
 	 *
@@ -187,7 +187,7 @@ class DsoCaseService {
 		) ?? [];
 
 		$this->logger->info(
-			'Procest DsoCaseService: zaak created',
+			'Dossiq DsoCaseService: zaak created',
 			[
 				'app' => Application::APP_ID,
 				'vergunningaanvraagId' => $permitApplicationId,
@@ -373,7 +373,7 @@ class DsoCaseService {
 			}
 		} catch (\Throwable $e) {
 			$this->logger->warning(
-				'Procest DsoCaseService: could not resolve IGroupManager for auth check: ' . $e->getMessage(),
+				'Dossiq DsoCaseService: could not resolve IGroupManager for auth check: ' . $e->getMessage(),
 				['app' => Application::APP_ID]
 			);
 		}
@@ -551,7 +551,7 @@ class DsoCaseService {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
-				'Procest DsoCaseService: could not sync vergunningaanvraag status: ' . $e->getMessage(),
+				'Dossiq DsoCaseService: could not sync vergunningaanvraag status: ' . $e->getMessage(),
 				[
 					'app' => Application::APP_ID,
 					'permitApplicationRef' => $requestRef,

@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Email PDF Retry Job
+ * Dossiq Email PDF Retry Job
  *
  * Periodic retry of `pdfStatus: failed` archival rows. Backs off
  * exponentially via the `pdfAttempts` field maintained by the
  * archival service; gives up after 3 attempts.
  *
  * @category BackgroundJob
- * @package  OCA\Procest\BackgroundJob
+ * @package  OCA\Dossiq\BackgroundJob
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,17 +19,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/case-email-integration/tasks.md#T09
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\BackgroundJob;
+namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\EmailArchivalService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\EmailArchivalService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Dormant default Procest BAG adapter.
+ * Dormant default Dossiq BAG adapter.
  *
  * Records the would-be Kadaster BAG API Individuele Bevragingen v2 lookup
  * to the structured logger and returns a synthetic LOOKUP_DEFERRED result
@@ -9,16 +9,16 @@
  * stays observable until a live binding is configured via
  * `integration.bag.mode` (resolved through `Application::register()`).
  * Mirrors the `LogBrpHaalCentraalAdapter` / `LogKvkHandelsregisterAdapter`
- * dormant-default pattern used across the Procest external surface.
+ * dormant-default pattern used across the Dossiq external surface.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Bag
+ * @package  OCA\Dossiq\Service\External\Bag
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/bag-register-adapter/proposal.md
  *
@@ -28,12 +28,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Bag;
+namespace OCA\Dossiq\Service\External\Bag;
 
 use Psr\Log\LoggerInterface;
 
 /**
- * Dormant log-backed Procest BAG adapter.
+ * Dormant log-backed Dossiq BAG adapter.
  *
  * @spec openspec/changes/bag-register-adapter/proposal.md
  */
@@ -75,7 +75,7 @@ class LogBagAdapter implements BagAdapterInterface {
 		array $context = [],
 	): BagLookupResult {
 		$this->logger->info(
-			'Procest BAG lookup deferred (no outbound connector bound)',
+			'Dossiq BAG lookup deferred (no outbound connector bound)',
 			[
 				'postcode' => $postcode,
 				'houseNumber' => $houseNumber,
@@ -102,7 +102,7 @@ class LogBagAdapter implements BagAdapterInterface {
 	 */
 	public function lookupObject(string $objectType, string $id, array $context = []): BagLookupResult {
 		$this->logger->info(
-			'Procest BAG lookup deferred (no outbound connector bound)',
+			'Dossiq BAG lookup deferred (no outbound connector bound)',
 			[
 				'objectType' => $objectType,
 				'id' => $id,

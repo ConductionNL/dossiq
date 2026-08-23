@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Procest Bezwaar Decision Service.
+ * Dossiq Bezwaar Decision Service.
  *
  * Domain service for the bezwaar-decision capability — the formal
- * beslissing op bezwaar under Awb art. 7:11/7:12. Procest owns the
+ * beslissing op bezwaar under Awb art. 7:11/7:12. Dossiq owns the
  * decision record, the structured rechtsmiddelenclausule, the
  * proceskostenvergoeding bookkeeping, and the publication + notification
  * flow. This service composes those operations and delegates every
@@ -36,7 +36,7 @@
  * bubble to controllers.
  *
  * @category Service
- * @package  OCA\Procest\Service\Bezwaar
+ * @package  OCA\Dossiq\Service\Bezwaar
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -47,16 +47,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Bezwaar;
+namespace OCA\Dossiq\Service\Bezwaar;
 
-use OCA\Procest\Service\BezwaarDecisionDelegationService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\StatusTransitionService;
+use OCA\Dossiq\Service\BezwaarDecisionDelegationService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\StatusTransitionService;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -177,7 +177,7 @@ class DecisionService {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest bezwaar-decision: failed to draft: ' . $e->getMessage()
+				'Dossiq bezwaar-decision: failed to draft: ' . $e->getMessage()
 			);
 			throw new RuntimeException('Could not draft bezwaarDecision');
 		}
@@ -187,13 +187,13 @@ class DecisionService {
 	 * Publish a draft bezwaarDecision by delegating the *deciding* to decidesk.
 	 *
 	 * Runs the full Awb validity matrix (REQ-BD-3, REQ-BD-5, REQ-BD-6,
-	 * REQ-BD-7) as procest domain validation (REQ-PDRD-004), then raises a
+	 * REQ-BD-7) as dossiq domain validation (REQ-PDRD-004), then raises a
 	 * decidesk `bezwaar-decision` Decision by dispatching a `DecisionRequestedEvent`
 	 * (REQ-PDRD-001) and persists the returned `decisionRef` on the record.
-	 * procest no longer authors the besluit locally: there is no
+	 * dossiq no longer authors the besluit locally: there is no
 	 * `status:'published'` local decision state — the besluit is materialised
 	 * from the decidesk `DecisionConcludedEvent` by
-	 * {@see \OCA\Procest\Listener\DecisionConcludedListener} (REQ-PDRD-003,
+	 * {@see \OCA\Dossiq\Listener\DecisionConcludedListener} (REQ-PDRD-003,
 	 * REQ-PDRD-007). FAILS CLOSED when decidesk is unavailable (REQ-PDRD-002):
 	 * no local decided state is set as a fallback.
 	 *
@@ -206,7 +206,7 @@ class DecisionService {
 	 *
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
-	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-procest
+	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-dossiq
 	 */
 	public function publish(string $decisionId): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -230,7 +230,7 @@ class DecisionService {
 		}
 
 		// REQ-PDRD-004: the Awb validity matrix (7:11 disposition set, 7:12
-		// motivering, proceskosten, replacement/appeal guards) stays in procest
+		// motivering, proceskosten, replacement/appeal guards) stays in dossiq
 		// and runs BEFORE the Decision is raised, so no Decision can ever be
 		// raised on an Awb-invalid payload.
 		$this->validator->assertPublishable(decision: $current);
@@ -264,7 +264,7 @@ class DecisionService {
 			// REQ-PDRD-002: surface the fail-closed error; do NOT set any local
 			// decided state as a fallback.
 			$this->logger->error(
-				'Procest bezwaar-decision: decidesk Decision raise failed — failing closed: '
+				'Dossiq bezwaar-decision: decidesk Decision raise failed — failing closed: '
 				. $e->getMessage()
 			);
 			throw new RuntimeException('Decision service unavailable: ' . $e->getMessage(), 0, $e);
@@ -294,7 +294,7 @@ class DecisionService {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest bezwaar-decision: failed to persist decisionRef: '
+				'Dossiq bezwaar-decision: failed to persist decisionRef: '
 				. $e->getMessage()
 			);
 			throw new RuntimeException('Could not record bezwaarDecision delegation');
@@ -307,8 +307,8 @@ class DecisionService {
 	 * Apply the bezwaar status transition once decidesk has concluded.
 	 *
 	 * The ZGW `Besluit` is materialised from the decidesk outcome by
-	 * {@see \OCA\Procest\Listener\DecisionConcludedListener} when decidesk
-	 * dispatches a `DecisionConcludedEvent` — there is no procest-local poll of
+	 * {@see \OCA\Dossiq\Listener\DecisionConcludedListener} when decidesk
+	 * dispatches a `DecisionConcludedEvent` — there is no dossiq-local poll of
 	 * the decidesk outcome here. This method only triggers the configured
 	 * status transition on the linked bezwaar; the status engine still owns
 	 * guards + side effects, and the besluit is never authored locally.
@@ -318,7 +318,7 @@ class DecisionService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
 	public function applyToBezwaar(string $objectionId, string $decisionId): void {
 		$objectService = $this->settingsService->getObjectService();
@@ -350,7 +350,7 @@ class DecisionService {
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest bezwaar-decision: transition to '
+				'Dossiq bezwaar-decision: transition to '
 				. self::TARGET_BEZWAAR_STATUS . ' failed: ' . $e->getMessage()
 			);
 		}

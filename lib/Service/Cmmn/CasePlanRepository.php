@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest CMMN case-plan repository.
+ * Dossiq CMMN case-plan repository.
  *
  * Everything the CMMN engine needs from storage: loading the case, asserting
  * its caseType is CMMN-managed, loading and validating the active caseModel's
@@ -26,7 +26,7 @@
  *     `children` list cannot desync runtime behaviour from what drives it.
  *
  * @category Service
- * @package  OCA\Procest\Service\Cmmn
+ * @package  OCA\Dossiq\Service\Cmmn
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -34,7 +34,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -44,9 +44,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Cmmn;
+namespace OCA\Dossiq\Service\Cmmn;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;

@@ -1,5 +1,5 @@
 {
-  "_format": "procest-vth-workflow-template-v1",
+  "_format": "dossiq-vth-workflow-template-v1",
   "slug": "aanvraag-omgevingsvergunning",
   "title": "Aanvraag omgevingsvergunning",
   "description": "Workflow voor reguliere aanvraag omgevingsvergunning onder de Omgevingswet. 8 weken beslistermijn (Awb art. 4:13), verlengbaar met 6 weken (Awb art. 4:14).",

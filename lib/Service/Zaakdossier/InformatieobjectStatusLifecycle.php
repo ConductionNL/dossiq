@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest informatieobject status lifecycle.
+ * Dossiq informatieobject status lifecycle.
  *
  * Owns the ZGW DRC `concept -> definitief -> gearchiveerd` lifecycle for a
  * single informatieobject: which transitions are legal, what a legal
@@ -15,7 +15,7 @@
  * so a document can never be silently un-locked by replaying its own status.
  *
  * @category Service
- * @package  OCA\Procest\Service\Zaakdossier
+ * @package  OCA\Dossiq\Service\Zaakdossier
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,7 +23,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -33,12 +33,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Zaakdossier;
+namespace OCA\Dossiq\Service\Zaakdossier;
 
 use InvalidArgumentException;
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -154,7 +154,7 @@ class InformatieobjectStatusLifecycle {
 		$objectService->saveObject(object: $updateData, register: $register, schema: $infoSchema, uuid: $infoObjectId);
 
 		$this->logger->info(
-			'Procest dossier: informatieobject ' . $infoObjectId . ' transitioned ' . $currentStatus . ' -> ' . $newStatus,
+			'Dossiq dossier: informatieobject ' . $infoObjectId . ' transitioned ' . $currentStatus . ' -> ' . $newStatus,
 			['app' => Application::APP_ID],
 		);
 

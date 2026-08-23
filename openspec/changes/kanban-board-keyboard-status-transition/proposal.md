@@ -9,7 +9,7 @@ keyboard operability.
 `src/views/workflow-board/WorkflowBoard.vue` is a Kanban board where **the only way to change a
 case's workflow status is dragging its card from one column to another**:
 
-- The board's own subtitle states this in plain language: `{{ t('procest', 'Drag cases between
+- The board's own subtitle states this in plain language: `{{ t('dossiq', 'Drag cases between
   statuses to advance their workflow') }}` (`WorkflowBoard.vue` line 16) and its header comment:
   "a Kanban board with ... drag-to-advance status transitions" (line 4-7).
 - `CaseCard.vue` (lines 10-20) is `draggable="true"` with a `@dragstart` handler that starts the

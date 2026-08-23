@@ -9,15 +9,15 @@
 
 			<div class="form-group">
 				<label class="required" for="td-zaaktype">{{
-					t('procest', 'Zaaktype')
+					t('dossiq', 'Zaaktype')
 				}}</label>
 				<NcSelect
 					id="td-zaaktype"
 					:modelValue="selectedZaaktype"
 					:options="zaaktypeOptions"
 					:taggable="true"
-					:inputLabel="t('procest', 'Zaaktype')"
-					:placeholder="t('procest', 'Select or type a zaaktype slug')"
+					:inputLabel="t('dossiq', 'Zaaktype')"
+					:placeholder="t('dossiq', 'Select or type a zaaktype slug')"
 					@update:modelValue="
 						(v) => (form.case_type = v ? v.id || v.label || v : '')
 					" />
@@ -28,12 +28,12 @@
 
 			<div class="form-group">
 				<label class="required" for="td-grondslag">{{
-					t('procest', 'Legal basis')
+					t('dossiq', 'Legal basis')
 				}}</label>
 				<NcTextField
 					id="td-grondslag"
 					:modelValue="form.basis"
-					:placeholder="t('procest', 'e.g. AWB art. 4:13 lid 2')"
+					:placeholder="t('dossiq', 'e.g. AWB art. 4:13 lid 2')"
 					@update:modelValue="(v) => (form.basis = v)" />
 				<span v-if="errors.basis" class="field-error">{{
 					errors.basis
@@ -42,7 +42,7 @@
 
 			<div class="form-group">
 				<label class="required" for="td-duur">{{
-					t('procest', 'Duration (days)')
+					t('dossiq', 'Duration (days)')
 				}}</label>
 				<NcTextField
 					id="td-duur"
@@ -55,29 +55,29 @@
 			</div>
 
 			<div class="form-group">
-				<label for="td-categorie">{{ t('procest', 'Category') }}</label>
+				<label for="td-categorie">{{ t('dossiq', 'Category') }}</label>
 				<NcSelect
 					id="td-categorie"
 					:modelValue="selectedCategorie"
 					:options="categorieOptions"
-					:inputLabel="t('procest', 'Category')"
+					:inputLabel="t('dossiq', 'Category')"
 					@update:modelValue="(v) => (form.category = v ? v.id : '')" />
 			</div>
 
 			<div class="form-group">
 				<label for="td-extendable">{{
-					t('procest', 'Extension allowed')
+					t('dossiq', 'Extension allowed')
 				}}</label>
 				<NcCheckboxRadioSwitch
 					:modelValue="form.extendable"
 					@update:modelValue="(v) => (form.extendable = v)">
-					{{ t('procest', 'Tenant may grant an extension on this term') }}
+					{{ t('dossiq', 'Tenant may grant an extension on this term') }}
 				</NcCheckboxRadioSwitch>
 			</div>
 
 			<div v-if="form.extendable" class="form-group">
 				<label for="td-ext-dagen">{{
-					t('procest', 'Max extension (days)')
+					t('dossiq', 'Max extension (days)')
 				}}</label>
 				<NcTextField
 					id="td-ext-dagen"
@@ -92,7 +92,7 @@
 				<p class="termijn-editor__note">
 					{{
 						t(
-							'procest',
+							'dossiq',
 							'Saving creates a new version effective tomorrow; the prior version stays valid until end-of-day today. Cases in flight keep the version they started with.',
 						)
 					}}
@@ -101,7 +101,7 @@
 
 			<div class="termijn-definitie-editor__actions">
 				<NcButton @click="$emit('close')">
-					{{ t('procest', 'Cancel') }}
+					{{ t('dossiq', 'Cancel') }}
 				</NcButton>
 				<NcButton type="primary" :disabled="saving" @click="save">
 					<template #icon>
@@ -110,8 +110,8 @@
 					</template>
 					{{
 						saving
-							? t('procest', 'Saving…')
-							: t('procest', 'Save new version')
+							? t('dossiq', 'Saving…')
+							: t('dossiq', 'Save new version')
 					}}
 				</NcButton>
 			</div>
@@ -175,10 +175,10 @@ export default {
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		title() {
 			return this.definition
-				? t('procest', 'New version of {z}', {
+				? t('dossiq', 'New version of {z}', {
 						z: this.definition.case_type,
 					})
-				: t('procest', 'New term definition')
+				: t('dossiq', 'New term definition')
 		},
 
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
@@ -193,13 +193,13 @@ export default {
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		categorieOptions() {
 			return [
-				{ id: 'beslis', label: t('procest', 'Decision deadline') },
-				{ id: 'herstel', label: t('procest', 'Remediation period') },
+				{ id: 'beslis', label: t('dossiq', 'Decision deadline') },
+				{ id: 'herstel', label: t('dossiq', 'Remediation period') },
 				{
 					id: 'objectionProceeding',
-					label: t('procest', 'Objection period'),
+					label: t('dossiq', 'Objection period'),
 				},
-				{ id: 'beroep', label: t('procest', 'Appeal period') },
+				{ id: 'beroep', label: t('dossiq', 'Appeal period') },
 			]
 		},
 
@@ -218,11 +218,11 @@ export default {
 		validate() {
 			const errs = {}
 			if (!this.form.case_type)
-				errs.case_type = t('procest', 'Zaaktype is required')
+				errs.case_type = t('dossiq', 'Zaaktype is required')
 			if (!this.form.basis)
-				errs.basis = t('procest', 'Wettelijke grondslag is required')
+				errs.basis = t('dossiq', 'Wettelijke grondslag is required')
 			if (!this.form.duurDagen || this.form.duurDagen < 1) {
-				errs.duurDagen = t('procest', 'Duration must be at least 1 day')
+				errs.duurDagen = t('dossiq', 'Duration must be at least 1 day')
 			}
 			this.errors = errs
 			return Object.keys(errs).length === 0

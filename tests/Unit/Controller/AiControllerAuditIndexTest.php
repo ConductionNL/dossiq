@@ -11,7 +11,7 @@
  * every AI decision record on the instance.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,12 +27,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\AiController;
-use OCA\Procest\Service\Ai\AiAuditService;
-use OCA\Procest\Service\AiService;
-use OCA\Procest\Service\CaseAccessGuard;
+use OCA\Dossiq\Controller\AiController;
+use OCA\Dossiq\Service\Ai\AiAuditService;
+use OCA\Dossiq\Service\AiService;
+use OCA\Dossiq\Service\CaseAccessGuard;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -43,7 +43,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for AiController::auditIndex().
  *
- * @covers \OCA\Procest\Controller\AiController
+ * @covers \OCA\Dossiq\Controller\AiController
  */
 class AiControllerAuditIndexTest extends TestCase {
 
@@ -83,7 +83,7 @@ class AiControllerAuditIndexTest extends TestCase {
 		$this->userSession->method('getUser')->willReturn($user);
 
 		$this->controller = new AiController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			aiService: $this->aiService,
 			auditService: $this->auditService,
@@ -171,7 +171,7 @@ class AiControllerAuditIndexTest extends TestCase {
 		$userSession->method('getUser')->willReturn(null);
 
 		$controller = new AiController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			aiService: $this->aiService,
 			auditService: $this->auditService,
@@ -213,7 +213,7 @@ class AiControllerAuditIndexTest extends TestCase {
 			->willReturn(false);
 
 		$controller = new AiController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			aiService: $this->aiService,
 			auditService: $this->auditService,

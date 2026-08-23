@@ -21,7 +21,7 @@ the codebase.
 
 #### Scenario: Open workflow editor for a case type
 
-- **WHEN** an administrator navigates to Procest Admin > Case types >
+- **WHEN** an administrator navigates to Dossiq Admin > Case types >
   "Omgevingsvergunning" > Workflow tab
 - **THEN** the system SHALL display a canvas showing all configured status
   nodes and their transitions

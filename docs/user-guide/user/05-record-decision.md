@@ -6,7 +6,7 @@ description: Capture an advisory (advies) or a formal decision (besluit) on a ca
 
 # Record advice or a decision on a case
 
-A decision is the formal outcome of a case: granted, refused, partially granted, withdrawn. Advice is the non-binding recommendation that often precedes it. Both are first-class objects in Procest and live in their own lists.
+A decision is the formal outcome of a case: granted, refused, partially granted, withdrawn. Advice is the non-binding recommendation that often precedes it. Both are first-class objects in Dossiq and live in their own lists.
 
 ## Goal
 
@@ -16,7 +16,7 @@ By the end you will have added a piece of advice to a case, recorded a formal de
 
 - Completed [Open and read a case](./03-view-case.md).
 - A case at a status that allows advice or a decision (the case-type configuration controls this).
-- The Advice / Decision schemas mapped on the register (see [Manage Procest settings](../admin/03-admin-settings.md)).
+- The Advice / Decision schemas mapped on the register (see [Manage Dossiq settings](../admin/03-admin-settings.md)).
 
 ## Steps
 
@@ -49,7 +49,7 @@ You have recorded the decision correctly when: the case header shows the new out
 | Symptom | Fix |
 |---|---|
 | **Add advice** / **Record decision** is missing from the Actions menu | The current status does not permit it; transition the case to an "advisory" or "decision-ready" status first (see [Move a case through its workflow](./04-advance-case.md)). |
-| Dialog opens but fields are empty / unmapped | The Advice or Decision schema is not mapped: re-import the register configuration (see [Manage Procest settings](../admin/03-admin-settings.md)). |
+| Dialog opens but fields are empty / unmapped | The Advice or Decision schema is not mapped: re-import the register configuration (see [Manage Dossiq settings](../admin/03-admin-settings.md)). |
 | Outcome dropdown is empty | The Result schema has no seed values; an admin populates them via the **Result** schema in OpenRegister. |
 
 ## Reference

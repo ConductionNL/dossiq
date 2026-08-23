@@ -1,5 +1,5 @@
 {
-    "name": "conductionnl/procest",
+    "name": "conductionnl/dossiq",
     "description": "Case management for Nextcloud powered by OpenRegister",
     "license": "EUPL-1.2",
     "authors": [
@@ -11,7 +11,7 @@
     ],
     "autoload": {
         "psr-4": {
-            "OCA\\Procest\\": "lib/"
+            "OCA\\Dossiq\\": "lib/"
         }
     },
     "autoload-dev": {

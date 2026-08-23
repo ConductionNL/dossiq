@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Bezwaar Advisory Committee Service.
+ * Dossiq Bezwaar Advisory Committee Service.
  *
  * Domain service for the bezwaaradviescommissie (BAC) capability under
  * Awb Art. 7:13. Owns the legitimate domain operations that cannot be
@@ -22,7 +22,7 @@
  * only — exception details never bubble to controllers.
  *
  * @category Service
- * @package  OCA\Procest\Service\Bezwaar
+ * @package  OCA\Dossiq\Service\Bezwaar
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -33,18 +33,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Bezwaar;
+namespace OCA\Dossiq\Service\Bezwaar;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Procest\Service\AdviceDelegationService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Transitions\GuardFailedException;
+use OCA\Dossiq\Service\AdviceDelegationService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -197,7 +197,7 @@ class AdvisoryCommitteeService {
 			return $objectService->saveObject(object: $record, register: $register, schema: $requestSchema);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest BAC: failed to create advice request: ' . $e->getMessage()
+				'Dossiq BAC: failed to create advice request: ' . $e->getMessage()
 			);
 			throw new RuntimeException('Could not create advice request');
 		}
@@ -220,7 +220,7 @@ class AdvisoryCommitteeService {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md
-	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-procest
+	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-dossiq
 	 */
 	public function transitionAdviceStatus(
 		string $requestId,
@@ -293,7 +293,7 @@ class AdvisoryCommitteeService {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest BAC: failed to transition advice request '
+				'Dossiq BAC: failed to transition advice request '
 				. $requestId . ': ' . $e->getMessage()
 			);
 			throw new RuntimeException('Could not transition advice request');
@@ -319,7 +319,7 @@ class AdvisoryCommitteeService {
 		);
 		if ($defaultId === '') {
 			$this->logger->info(
-				'Procest BAC: no default committee configured; '
+				'Dossiq BAC: no default committee configured; '
 				. 'skipping auto-assignment for bezwaar ' . $objectionId
 			);
 			return null;
@@ -332,7 +332,7 @@ class AdvisoryCommitteeService {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest BAC: auto-assignment failed for bezwaar '
+				'Dossiq BAC: auto-assignment failed for bezwaar '
 				. $objectionId . ': ' . $e->getMessage()
 			);
 			return null;
@@ -390,7 +390,7 @@ class AdvisoryCommitteeService {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest BAC: failed to record council deviation: '
+				'Dossiq BAC: failed to record council deviation: '
 				. $e->getMessage()
 			);
 		}//end try
@@ -475,7 +475,7 @@ class AdvisoryCommitteeService {
 			);
 		} catch (\Throwable $auditError) {
 			$this->logger->error(
-				'Procest BAC: failed to write audit on '
+				'Dossiq BAC: failed to write audit on '
 				. 'independence failure: '
 				. $auditError->getMessage()
 			);
@@ -536,7 +536,7 @@ class AdvisoryCommitteeService {
 			);
 		} catch (RuntimeException $e) {
 			$this->logger->error(
-				'Procest BAC: decidesk advice Decision raise failed — failing closed: '
+				'Dossiq BAC: decidesk advice Decision raise failed — failing closed: '
 				. $e->getMessage()
 			);
 			throw new RuntimeException('Decision service unavailable: ' . $e->getMessage(), 0, $e);

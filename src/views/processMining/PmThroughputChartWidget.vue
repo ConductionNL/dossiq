@@ -17,7 +17,7 @@
 				:options="options" />
 		</div>
 		<p v-else class="pm-chart-widget__empty">
-			{{ t('procest', 'No completed cases in the selected range') }}
+			{{ t('dossiq', 'No completed cases in the selected range') }}
 		</p>
 	</div>
 </template>
@@ -44,7 +44,7 @@ export default {
 		series() {
 			return buildThroughputSeries(
 				this.pmStore.throughputTrend,
-				t('procest', 'Cases closed'),
+				t('dossiq', 'Cases closed'),
 			)
 		},
 

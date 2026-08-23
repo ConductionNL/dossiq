@@ -1,25 +1,25 @@
 <p align="center">
-  <img src="img/app-store.svg" alt="Procest logo" width="80" height="80">
+  <img src="img/app-store.svg" alt="Dossiq logo" width="80" height="80">
 </p>
 
-<h1 align="center">Procest</h1>
+<h1 align="center">Dossiq</h1>
 
 <p align="center">
   <strong>Case management for Nextcloud — configurable workflows, deadlines, and formal decisions</strong>
 </p>
 
 <p align="center">
-  <a href="https://github.com/ConductionNL/procest/releases"><img src="https://img.shields.io/github/v/release/ConductionNL/procest" alt="Latest release"></a>
-  <a href="https://github.com/ConductionNL/procest/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-EUPL--1.2-blue" alt="License"></a>
-  <a href="https://github.com/ConductionNL/procest/actions"><img src="https://img.shields.io/github/actions/workflow/status/ConductionNL/procest/code-quality.yml?label=quality" alt="Code quality"></a>
-  <a href="https://procest.app"><img src="https://img.shields.io/badge/docs-procest.app-green" alt="Documentation"></a>
+  <a href="https://github.com/ConductionNL/dossiq/releases"><img src="https://img.shields.io/github/v/release/ConductionNL/dossiq" alt="Latest release"></a>
+  <a href="https://github.com/ConductionNL/dossiq/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-EUPL--1.2-blue" alt="License"></a>
+  <a href="https://github.com/ConductionNL/dossiq/actions"><img src="https://img.shields.io/github/actions/workflow/status/ConductionNL/dossiq/code-quality.yml?label=quality" alt="Code quality"></a>
+  <a href="https://conduction.nl"><img src="https://img.shields.io/badge/docs-conduction.nl-green" alt="Documentation"></a>
 </p>
 
 ---
 
-Procest brings structured case management (*zaakgericht werken*) natively into Nextcloud. Define case types with custom status lifecycles, track progress and deadlines, assign roles, and record formal decisions — all within a clean, intuitive interface that integrates naturally with the rest of your Nextcloud workspace.
+Dossiq brings structured case management (*zaakgericht werken*) natively into Nextcloud. Define case types with custom status lifecycles, track progress and deadlines, assign roles, and record formal decisions — all within a clean, intuitive interface that integrates naturally with the rest of your Nextcloud workspace.
 
-It pairs with [Pipelinq](https://github.com/ConductionNL/pipelinq) to form a complete intake-to-resolution workflow: Pipelinq handles the customer-facing CRM side, Procest handles the internal case processing.
+It pairs with [Pipelinq](https://github.com/ConductionNL/pipelinq) to form a complete intake-to-resolution workflow: Pipelinq handles the customer-facing CRM side, Dossiq handles the internal case processing.
 
 > **Requires:** [OpenRegister](https://github.com/ConductionNL/openregister) — all data is stored as OpenRegister objects (no own database tables).
 
@@ -64,8 +64,8 @@ It pairs with [Pipelinq](https://github.com/ConductionNL/pipelinq) to form a com
 - **Activity Timeline** — Complete history of every change made to a case, with timestamps and responsible party
 
 ### Integrations
-- **Unified Search** — Cases and tasks appear in Nextcloud's global search, provided centrally via OpenRegister (procest ships no own search provider)
-- **Pipelinq Bridge** — Receive requests handed off from Pipelinq CRM as new cases, via OpenRegister's semantic object handoff (procest implements the `ns#Case` kind; requests map onto cases with navigable provenance)
+- **Unified Search** — Cases and tasks appear in Nextcloud's global search, provided centrally via OpenRegister (dossiq ships no own search provider)
+- **Pipelinq Bridge** — Receive requests handed off from Pipelinq CRM as new cases, via OpenRegister's semantic object handoff (dossiq implements the `ns#Case` kind; requests map onto cases with navigable provenance)
 - **Sub-cases** — Break complex cases into parent-child hierarchies for structured processing
 
 ## Architecture
@@ -96,7 +96,7 @@ graph TD
 ### Directory Structure
 
 ```
-procest/
+dossiq/
 ├── appinfo/           # Nextcloud app manifest, routes, navigation
 ├── lib/               # PHP backend — controllers, services
 ├── src/               # Vue 2 frontend — components, Pinia stores, views
@@ -108,14 +108,14 @@ procest/
 │   └── Technical/     # Architecture and development guides
 ├── img/               # App icons and screenshots
 ├── l10n/              # Translations (en, nl)
-└── docusaurus/        # Product documentation site (procest.app)
+└── docusaurus/        # Product documentation site (conduction.nl)
 ```
 
 ## KCC-werkplek Integration
 
 The `kcc-werkplek-zaaksysteem-bridge` capability surfaces real-time zaaksysteem
 context inside the pipelinq KCC-werkplek. Pipelinq owns the contact-center UI;
-Procest exposes a read/write API plus background jobs.
+Dossiq exposes a read/write API plus background jobs.
 
 **Schemas** (modular `lib/Settings/register.d/40-kcc-werkplek.json`, ADR-037 — the
 monolith is never edited): `contactmoment`, `kccQuickAction`, `belplan`,
@@ -167,7 +167,7 @@ silent specialist.
 ### From the Nextcloud App Store
 
 1. Go to **Apps** in your Nextcloud instance
-2. Search for **Procest**
+2. Search for **Dossiq**
 3. Click **Download and enable**
 
 > OpenRegister must be installed first. [Install OpenRegister →](https://apps.nextcloud.com/apps/openregister)
@@ -176,11 +176,11 @@ silent specialist.
 
 ```bash
 cd /var/www/html/custom_apps
-git clone https://github.com/ConductionNL/procest.git
-cd procest
+git clone https://github.com/ConductionNL/dossiq.git
+cd dossiq
 npm install
 npm run build
-php occ app:enable procest
+php occ app:enable dossiq
 ```
 
 ## Development
@@ -194,7 +194,7 @@ docker compose -f openregister/docker-compose.yml up -d
 ### Frontend development
 
 ```bash
-cd procest
+cd dossiq
 npm install
 npm run dev        # Watch mode
 npm run build      # Production build
@@ -242,7 +242,7 @@ Do not reintroduce `phpstan-baseline.neon`.
 
 ## Documentation
 
-Full documentation is available at **[procest.app](https://procest.app)**
+Full documentation is available at **[conduction.nl](https://conduction.nl)**
 
 | Page | Description |
 |------|-------------|
@@ -262,7 +262,7 @@ Full documentation is available at **[procest.app](https://procest.app)**
 
 ## Related Apps
 
-- **[Pipelinq](https://github.com/ConductionNL/pipelinq)** — CRM intake; hands off requests to Procest as new cases
+- **[Pipelinq](https://github.com/ConductionNL/pipelinq)** — CRM intake; hands off requests to Dossiq as new cases
 - **[OpenRegister](https://github.com/ConductionNL/openregister)** — Object storage layer (required dependency)
 - **[OpenCatalogi](https://github.com/ConductionNL/opencatalogi)** — Application catalogue
 

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest DeadlinePauseService.
+ * Dossiq DeadlinePauseService.
  *
  * AWB 4:5 / 4:15 hersteltermijn pause + resume on a TermijnInstance.
  * Pausing extends einddatumActueel by the requested duration in days and
@@ -10,7 +10,7 @@
  * pause days only.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,14 +21,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use RuntimeException;

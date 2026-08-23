@@ -1,5 +1,5 @@
 OC.L10N.register(
-    "procest",
+    "dossiq",
     {
     "Add step" : "Schrëtt derbäisetzen",
     "Address" : "Adress",
@@ -388,8 +388,8 @@ OC.L10N.register(
     "Voorstel heeft geen actieve stap" : "De voorstel huet keen aktive Schrëtt",
     "Wanneer is deze route van toepassing?" : "Wéini ass dës Route gülteg?",
     "Weet u zeker dat u de route \"{name}\" wilt verwijderen?" : "Sidd Dir sécher, datt Dir d'Route „{name}“ läsche wëllt?",
-    "Welcome to Procest! Get started by creating your first case or task using the buttons above." : "Wëllkomm bei Procest! Fänkt un, andeems Dir Äre éischte Fall oder Är éischt Aufgab mat de Knäpp uewen erstellt.",
-    "Welcome to Procest! Get started by creating your first case type in Settings." : "Wëllkomm bei Procest! Fänkt un, andeems Dir Äre éischte Falltyp an den Astellungen erstellt.",
+    "Welcome to Dossiq! Get started by creating your first case or task using the buttons above." : "Wëllkomm bei Dossiq! Fänkt un, andeems Dir Äre éischte Fall oder Är éischt Aufgab mat de Knäpp uewen erstellt.",
+    "Welcome to Dossiq! Get started by creating your first case type in Settings." : "Wëllkomm bei Dossiq! Fänkt un, andeems Dir Äre éischte Falltyp an den Astellungen erstellt.",
     "When heeftAlleAutorisaties is false, autorisaties must be specified." : "Wann heeftAlleAutorisaties false ass, muss autorisaties uginn ginn.",
     "When heeftAlleAutorisaties is true, autorisaties must not be specified. When heeftAlleAutorisaties is false, autorisaties must be specified." : "Wann heeftAlleAutorisaties true ass, däerf autorisaties net uginn ginn. Wann heeftAlleAutorisaties false ass, muss autorisaties uginn ginn.",
     "Why is an extension needed?" : "Firwat ass eng Verlängerung néideg?",

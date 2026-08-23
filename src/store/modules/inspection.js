@@ -1,5 +1,5 @@
 /**
- * Inspection store module for Procest VTH.
+ * Inspection store module for Dossiq VTH.
  *
  * Manages inspection checklists, inspection reports, photo uploads,
  * and follow-up task creation for VTH supervision cases.

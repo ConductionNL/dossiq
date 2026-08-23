@@ -17,7 +17,7 @@ webpackConfig.stats = {
 	modules: false,
 }
 
-const appId = 'procest'
+const appId = 'dossiq'
 webpackConfig.entry = {
 	main: {
 		import: path.join(__dirname, 'src', 'main.js'),
@@ -107,7 +107,7 @@ if (useLocalLib) {
 	if (!satisfied) {
 		// eslint-disable-next-line no-console
 		console.warn(
-			`[procest] IGNORING sibling @conduction/nextcloud-vue@${localVersion} — `
+			`[dossiq] IGNORING sibling @conduction/nextcloud-vue@${localVersion} — `
 				+ "it does not satisfy this app's declared range. Building against the npm dist.",
 		)
 		useLocalLib = false
@@ -132,9 +132,9 @@ webpackConfig.resolve = {
 		// (MODE 2) so the un-migrated Vue-2 template syntax stays correct during
 		// the straddle. vue-loader still finds the real compiler via vue/compiler-sfc.
 		// PURE VUE 3 (ADR-066 task 6.1 — @vue/compat removed): point at the real
-		// Vue 3 runtime, one ABSOLUTE file so procest + the aliased lib source share
+		// Vue 3 runtime, one ABSOLUTE file so dossiq + the aliased lib source share
 		// one copy (dual-copy = two currentRenderingInstance states → CnAppRoot null
-		// crash). The lib + procest source are now compat-construct-free, so no
+		// crash). The lib + dossiq source are now compat-construct-free, so no
 		// @vue/compat runtime/compiler is needed.
 		vue$: path.resolve(
 			__dirname,

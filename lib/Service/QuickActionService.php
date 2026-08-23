@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest KCC Quick-Action Service.
+ * Dossiq KCC Quick-Action Service.
  *
  * Executes the standard KCC handelingen in one step: status terugkoppelen
  * (render a status text for medewerker confirmation), nieuwe zaak (create a
@@ -10,7 +10,7 @@
  * delegated to DoorverbindingService.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,17 +21,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -124,7 +124,7 @@ class QuickActionService {
 			$created = $this->toArray(result: $objectService->saveObject($register, $caseSchema, $record));
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to create case via quick-action: ' . $e->getMessage(),
+				'Dossiq: failed to create case via quick-action: ' . $e->getMessage(),
 				['app' => Application::APP_ID],
 			);
 			throw new RuntimeException('Could not create case');
@@ -173,7 +173,7 @@ class QuickActionService {
 			$created = $this->toArray(result: $objectService->saveObject($register, $caseSchema, $record));
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to register klacht: ' . $e->getMessage(),
+				'Dossiq: failed to register klacht: ' . $e->getMessage(),
 				['app' => Application::APP_ID],
 			);
 			throw new RuntimeException('Could not register klacht');
@@ -206,7 +206,7 @@ class QuickActionService {
 	 */
 	public function executeBelTerug(string $burgerId, string $window): array {
 		$this->logger->info(
-			'Procest: callback scheduled',
+			'Dossiq: callback scheduled',
 			[
 				'app' => Application::APP_ID,
 				'burgerId' => $burgerId,

@@ -120,7 +120,7 @@ export function aggregateByStatus(openCases, statusTypes) {
 		// mirrors aggregateByType's resolution. Only resolved ids feed statusIds,
 		// so an "Unknown" bar click never deep-links on a junk/absent id.
 		const resolvedName = statusIdToName.get(c.status)
-		const name = resolvedName || t('procest', 'Unknown')
+		const name = resolvedName || t('dossiq', 'Unknown')
 		statusMap.set(name, (statusMap.get(name) || 0) + 1)
 		if (resolvedName) {
 			if (!idsMap.has(name)) idsMap.set(name, new Set())
@@ -154,7 +154,7 @@ export function aggregateByStatus(openCases, statusTypes) {
 export function getOverdueCases(openCases, caseTypes) {
 	const typeMap = new Map()
 	for (const ct of caseTypes) {
-		typeMap.set(ct.id, ct.title || ct.name || t('procest', 'Unknown'))
+		typeMap.set(ct.id, ct.title || ct.name || t('dossiq', 'Unknown'))
 	}
 
 	return openCases
@@ -163,7 +163,7 @@ export function getOverdueCases(openCases, caseTypes) {
 			id: c.id,
 			identifier: c.identifier || '—',
 			title: c.title || '—',
-			caseTypeName: typeMap.get(c.caseType) || t('procest', 'Unknown'),
+			caseTypeName: typeMap.get(c.caseType) || t('dossiq', 'Unknown'),
 			daysOverdue: Math.abs(getDaysRemaining(c.deadline)),
 			handler: c.assignee || '—',
 		}))
@@ -244,14 +244,14 @@ export function getMyWorkItems(cases, tasks, limit = 5) {
 			if (daysLeft < 0) {
 				daysText =
 					Math.abs(daysLeft) === 1
-						? t('procest', '1 day overdue')
-						: t('procest', '{days} days overdue', {
+						? t('dossiq', '1 day overdue')
+						: t('dossiq', '{days} days overdue', {
 								days: Math.abs(daysLeft),
 							})
 			} else if (daysLeft === 0) {
-				daysText = t('procest', 'Due today')
+				daysText = t('dossiq', 'Due today')
 			} else {
-				daysText = t('procest', '{days} days', { days: daysLeft })
+				daysText = t('dossiq', '{days} days', { days: daysLeft })
 			}
 		}
 
@@ -425,7 +425,7 @@ export function getDeadlineAlerts(
 ) {
 	const typeMap = new Map()
 	for (const ct of caseTypes) {
-		typeMap.set(ct.id, ct.title || ct.name || t('procest', 'Unknown'))
+		typeMap.set(ct.id, ct.title || ct.name || t('dossiq', 'Unknown'))
 	}
 
 	const today = new Date()
@@ -445,7 +445,7 @@ export function getDeadlineAlerts(
 			id: c.id,
 			title: c.title || '\u2014',
 			identifier: c.identifier || '\u2014',
-			caseTypeName: typeMap.get(c.caseType) || t('procest', 'Unknown'),
+			caseTypeName: typeMap.get(c.caseType) || t('dossiq', 'Unknown'),
 			handler: c.assignee || '\u2014',
 		}
 
@@ -534,7 +534,7 @@ export function getStalledCases(
 ) {
 	const typeMap = new Map()
 	for (const ct of caseTypes) {
-		typeMap.set(ct.id, ct.title || ct.name || t('procest', 'Unknown'))
+		typeMap.set(ct.id, ct.title || ct.name || t('dossiq', 'Unknown'))
 	}
 
 	const today = new Date()
@@ -557,7 +557,7 @@ export function getStalledCases(
 				id: c.id,
 				title: c.title || '\u2014',
 				identifier: c.identifier || '\u2014',
-				caseTypeName: typeMap.get(c.caseType) || t('procest', 'Unknown'),
+				caseTypeName: typeMap.get(c.caseType) || t('dossiq', 'Unknown'),
 				daysSinceActivity,
 				handler: c.assignee || '\u2014',
 			})
@@ -587,12 +587,11 @@ export function formatRelativeTime(dateString) {
 	const diffHours = Math.floor(diffMs / 3600000)
 	const diffDays = Math.floor(diffMs / 86400000)
 
-	if (diffMin < 1) return t('procest', 'just now')
-	if (diffMin < 60) return t('procest', '{min} min ago', { min: diffMin })
-	if (diffHours < 24)
-		return t('procest', '{hours} hours ago', { hours: diffHours })
-	if (diffDays === 1) return t('procest', 'yesterday')
-	if (diffDays < 7) return t('procest', '{days} days ago', { days: diffDays })
+	if (diffMin < 1) return t('dossiq', 'just now')
+	if (diffMin < 60) return t('dossiq', '{min} min ago', { min: diffMin })
+	if (diffHours < 24) return t('dossiq', '{hours} hours ago', { hours: diffHours })
+	if (diffDays === 1) return t('dossiq', 'yesterday')
+	if (diffDays < 7) return t('dossiq', '{days} days ago', { days: diffDays })
 	return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
@@ -613,7 +612,7 @@ export function formatRelativeTime(dateString) {
 export function aggregateByType(openCases, caseTypes) {
 	const labelMap = new Map()
 	for (const ct of caseTypes) {
-		labelMap.set(ct.id, ct.title || ct.name || t('procest', 'Unknown'))
+		labelMap.set(ct.id, ct.title || ct.name || t('dossiq', 'Unknown'))
 	}
 
 	const counts = new Map()
@@ -625,7 +624,7 @@ export function aggregateByType(openCases, caseTypes) {
 	return Array.from(counts.entries())
 		.map(([type, count]) => ({
 			type,
-			label: labelMap.get(type) || t('procest', 'Unknown'),
+			label: labelMap.get(type) || t('dossiq', 'Unknown'),
 			count,
 		}))
 		.sort((a, b) => b.count - a.count)

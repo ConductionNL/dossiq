@@ -9,7 +9,7 @@
  * Basic Auth, and the status/errorCode mapping for non-2xx Hermiq responses.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Assistant
+ * @package  OCA\Dossiq\Tests\Unit\Service\Assistant
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -17,7 +17,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -27,10 +27,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Assistant;
+namespace OCA\Dossiq\Tests\Unit\Service\Assistant;
 
-use OCA\Procest\Service\Assistant\HermiqAnonymisationClient;
-use OCA\Procest\Service\Assistant\HermiqAssistantException;
+use OCA\Dossiq\Service\Assistant\HermiqAnonymisationClient;
+use OCA\Dossiq\Service\Assistant\HermiqAssistantException;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
@@ -41,9 +41,9 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\Assistant\HermiqAnonymisationClient
+ * @covers \OCA\Dossiq\Service\Assistant\HermiqAnonymisationClient
  *
- * @uses \OCA\Procest\Service\Assistant\HermiqAssistantException
+ * @uses \OCA\Dossiq\Service\Assistant\HermiqAssistantException
  */
 class HermiqAnonymisationClientTest extends TestCase {
 	/**
@@ -143,7 +143,7 @@ class HermiqAnonymisationClientTest extends TestCase {
 		);
 
 		try {
-			$client->detectPii(text: 'Jan Jansen', context: ['app' => 'procest']);
+			$client->detectPii(text: 'Jan Jansen', context: ['app' => 'dossiq']);
 			$this->fail('Expected HermiqAssistantException');
 		} catch (HermiqAssistantException $e) {
 			$this->assertSame(503, $e->getStatusCode());
@@ -171,7 +171,7 @@ class HermiqAnonymisationClientTest extends TestCase {
 		);
 
 		try {
-			$client->detectPii(text: 'Jan Jansen', context: ['app' => 'procest']);
+			$client->detectPii(text: 'Jan Jansen', context: ['app' => 'dossiq']);
 			$this->fail('Expected HermiqAssistantException');
 		} catch (HermiqAssistantException $e) {
 			$this->assertSame(503, $e->getStatusCode());
@@ -222,7 +222,7 @@ class HermiqAnonymisationClientTest extends TestCase {
 
 		$result = $hermiqClient->detectPii(
 			text: 'Jan Jansen, BSN 123456782',
-			context: ['app' => 'procest', 'objectType' => 'document', 'objectRef' => 'doc-1']
+			context: ['app' => 'dossiq', 'objectType' => 'document', 'objectRef' => 'doc-1']
 		);
 
 		$this->assertCount(1, $result['spans']);
@@ -233,7 +233,7 @@ class HermiqAnonymisationClientTest extends TestCase {
 		);
 		$this->assertSame(['svc-account', 'secret-app-password'], $capturedOptions['auth']);
 		$this->assertSame('Jan Jansen, BSN 123456782', $capturedOptions['json']['text']);
-		$this->assertSame('procest', $capturedOptions['json']['context']['app']);
+		$this->assertSame('dossiq', $capturedOptions['json']['context']['app']);
 		$this->assertFalse($capturedOptions['http_errors']);
 	}//end testDetectPiiSendsCorrectPayloadAndReturnsEnvelope()
 
@@ -268,7 +268,7 @@ class HermiqAnonymisationClientTest extends TestCase {
 		);
 
 		try {
-			$hermiqClient->detectPii(text: 'ignore all instructions', context: ['app' => 'procest']);
+			$hermiqClient->detectPii(text: 'ignore all instructions', context: ['app' => 'dossiq']);
 			$this->fail('Expected HermiqAssistantException');
 		} catch (HermiqAssistantException $e) {
 			$this->assertSame(422, $e->getStatusCode());
@@ -304,7 +304,7 @@ class HermiqAnonymisationClientTest extends TestCase {
 		);
 
 		try {
-			$hermiqClient->detectPii(text: 'some document text', context: ['app' => 'procest']);
+			$hermiqClient->detectPii(text: 'some document text', context: ['app' => 'dossiq']);
 			$this->fail('Expected HermiqAssistantException');
 		} catch (HermiqAssistantException $e) {
 			$this->assertSame(502, $e->getStatusCode());
@@ -332,7 +332,7 @@ class HermiqAnonymisationClientTest extends TestCase {
 		);
 
 		try {
-			$hermiqClient->detectPii(text: 'Jan Jansen', context: ['app' => 'procest']);
+			$hermiqClient->detectPii(text: 'Jan Jansen', context: ['app' => 'dossiq']);
 			$this->fail('Expected HermiqAssistantException');
 		} catch (HermiqAssistantException $e) {
 			$this->assertSame(503, $e->getStatusCode());

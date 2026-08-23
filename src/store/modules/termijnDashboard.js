@@ -66,7 +66,7 @@ export const useTermijnDashboardStore = defineStore('termijnDashboard', {
 				this.error =
 					e?.response?.data?.message
 					|| e.message
-					|| t('procest', 'Failed to load KPI')
+					|| t('dossiq', 'Failed to load KPI')
 			} finally {
 				this.loading = false
 			}
@@ -102,7 +102,7 @@ export const useTermijnDashboardStore = defineStore('termijnDashboard', {
 				this.error =
 					e?.response?.data?.message
 					|| e.message
-					|| t('procest', 'Failed to load quarterly report')
+					|| t('dossiq', 'Failed to load quarterly report')
 			}
 		},
 
@@ -125,7 +125,7 @@ export const useTermijnDashboardStore = defineStore('termijnDashboard', {
 				this.error =
 					e?.response?.data?.message
 					|| e.message
-					|| t('procest', 'Failed to load annual audit')
+					|| t('dossiq', 'Failed to load annual audit')
 			}
 		},
 

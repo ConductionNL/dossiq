@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest Initialize Settings Repair Step
+ * Dossiq Initialize Settings Repair Step
  *
- * Repair step that initializes Procest register and schemas on install/upgrade.
+ * Repair step that initializes Dossiq register and schemas on install/upgrade.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -17,22 +17,22 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
- * @spec openspec/specs/procest-app-scaffold/spec.md
+ * @spec openspec/specs/dossiq-app-scaffold/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
 
 /**
- * Repair step that initializes Procest configuration via ConfigurationService.
+ * Repair step that initializes Dossiq configuration via ConfigurationService.
  *
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
@@ -59,11 +59,11 @@ class InitializeSettings implements IRepairStep {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getName(): string {
-		return 'Initialize Procest register and schemas via ConfigurationService';
+		return 'Initialize Dossiq register and schemas via ConfigurationService';
 	}//end getName()
 
 	/**
-	 * Run the repair step to initialize Procest configuration.
+	 * Run the repair step to initialize Dossiq configuration.
 	 *
 	 * @param IOutput $output The output interface for progress reporting
 	 *
@@ -72,14 +72,14 @@ class InitializeSettings implements IRepairStep {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function run(IOutput $output): void {
-		$output->info('Initializing Procest configuration...');
+		$output->info('Initializing Dossiq configuration...');
 
 		if ($this->settingsService->isOpenRegisterAvailable() === false) {
 			$output->warning(
 				'OpenRegister is not installed or enabled. Skipping auto-configuration.'
 			);
 			$this->logger->warning(
-				'Procest: OpenRegister not available, skipping register initialization'
+				'Dossiq: OpenRegister not available, skipping register initialization'
 			);
 			return;
 		}
@@ -105,7 +105,7 @@ class InitializeSettings implements IRepairStep {
 			// guarantees the keys are provisioned even when the import is a
 			// no-op (or partially succeeds).
 			$reconciled = $this->settingsService->reconcileSchemaConfig();
-			$output->info('Procest schema config keys reconciled (' . $reconciled . ' written)');
+			$output->info('Dossiq schema config keys reconciled (' . $reconciled . ' written)');
 
 			// Reconcile the declarative `x-openregister-*` annotation blocks
 			// (calculations / references / lifecycle) onto the live schema
@@ -115,25 +115,25 @@ class InitializeSettings implements IRepairStep {
 			// auto-deadline / auto-identifier / initial-status on create.
 			$reconciledCount = $this->settingsService->reconcileSchemaDeclarativeConfig();
 			$output->info(
-				'Procest declarative schema configuration reconciled (' . $reconciledCount . ' written)'
+				'Dossiq declarative schema configuration reconciled (' . $reconciledCount . ' written)'
 			);
 
 			if ($result['success'] === true) {
 				$version = ($result['version'] ?? 'unknown');
 				$output->info(
-					'Procest configuration imported successfully (version: ' . $version . ')'
+					'Dossiq configuration imported successfully (version: ' . $version . ')'
 				);
 				return;
 			}
 
 			$message = ($result['message'] ?? 'unknown error');
 			$output->warning(
-				'Procest configuration import issue: ' . $message
+				'Dossiq configuration import issue: ' . $message
 			);
 		} catch (\Throwable $e) {
-			$output->warning('Could not auto-configure Procest: ' . $e->getMessage());
+			$output->warning('Could not auto-configure Dossiq: ' . $e->getMessage());
 			$this->logger->error(
-				'Procest initialization failed',
+				'Dossiq initialization failed',
 				['exception' => $e->getMessage()]
 			);
 		}//end try

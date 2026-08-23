@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest LHS Controller
+ * Dossiq LHS Controller
  *
  * Action endpoint for the LHS recommendation engine. CRUD over the
  * `lhsMatrix` and `lhsRecommendation` schemas is served by the OpenRegister
@@ -10,7 +10,7 @@
  *   - POST /api/lhs/recommendations/{id}/override (apply inspector override)
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -21,16 +21,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\LhsLookupService;
-use OCA\Procest\Service\Vth\LhsRecommendationService;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\LhsLookupService;
+use OCA\Dossiq\Service\Vth\LhsRecommendationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -151,7 +151,7 @@ class LhsController extends Controller {
 				Http::STATUS_UNPROCESSABLE_ENTITY,
 			);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest LHS recommend failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq LHS recommend failed: ' . $e->getMessage());
 			return new JSONResponse(
 				['error' => 'LHS-aanbeveling mislukt'],
 				Http::STATUS_INTERNAL_SERVER_ERROR,
@@ -223,7 +223,7 @@ class LhsController extends Controller {
 
 			return new JSONResponse(['error' => $message], $status);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest LHS override failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq LHS override failed: ' . $e->getMessage());
 			return new JSONResponse(
 				['error' => 'LHS-override mislukt'],
 				Http::STATUS_INTERNAL_SERVER_ERROR,
@@ -275,7 +275,7 @@ class LhsController extends Controller {
 				Http::STATUS_BAD_REQUEST,
 			);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest LHS lookup failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq LHS lookup failed: ' . $e->getMessage());
 			return new JSONResponse(
 				['error' => 'LHS opzoeken mislukt'],
 				Http::STATUS_INTERNAL_SERVER_ERROR,

@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @category  Test
- * @package   OCA\Procest\Tests\Unit\Flow
+ * @package   OCA\Dossiq\Tests\Unit\Flow
  * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2
@@ -14,26 +14,26 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Flow;
+namespace OCA\Dossiq\Tests\Unit\Flow;
 
 use OCA\OpenRegister\Service\Flow\IFlowNode;
 use OCA\OpenRegister\Service\Flow\RegisterFlowNodesEvent;
-use OCA\Procest\Flow\ProcestCallWebhookNode;
-use OCA\Procest\Flow\ProcestCreateDocumentNode;
-use OCA\Procest\Flow\ProcestFlowNodeListener;
-use OCA\Procest\Flow\ProcestMergeTemplateNode;
-use OCA\Procest\Flow\ProcestNotifyRoleNode;
-use OCA\Procest\Flow\ProcestScheduleReminderNode;
-use OCA\Procest\Flow\ProcestSendEmailNode;
-use OCA\Procest\Flow\ProcestTxSendEmailNode;
-use OCA\Procest\Flow\ProcestTxCreateTaskNode;
-use OCA\Procest\Flow\ProcestTxCreateSubCaseNode;
-use OCA\Procest\Flow\ProcestTxWebhookNode;
-use OCA\Procest\Flow\ProcestTxSetFieldNode;
-use OCA\Procest\Flow\ProcestTxNotifyNode;
-use OCA\Procest\Flow\ProcestTxBesluitvormingActivateNode;
-use OCA\Procest\Flow\ProcestTxBesluitvormingPublishNode;
-use OCA\Procest\Flow\ProcestTxEvaluateDecisionNode;
+use OCA\Dossiq\Flow\ProcestCallWebhookNode;
+use OCA\Dossiq\Flow\ProcestCreateDocumentNode;
+use OCA\Dossiq\Flow\ProcestFlowNodeListener;
+use OCA\Dossiq\Flow\ProcestMergeTemplateNode;
+use OCA\Dossiq\Flow\ProcestNotifyRoleNode;
+use OCA\Dossiq\Flow\ProcestScheduleReminderNode;
+use OCA\Dossiq\Flow\ProcestSendEmailNode;
+use OCA\Dossiq\Flow\ProcestTxSendEmailNode;
+use OCA\Dossiq\Flow\ProcestTxCreateTaskNode;
+use OCA\Dossiq\Flow\ProcestTxCreateSubCaseNode;
+use OCA\Dossiq\Flow\ProcestTxWebhookNode;
+use OCA\Dossiq\Flow\ProcestTxSetFieldNode;
+use OCA\Dossiq\Flow\ProcestTxNotifyNode;
+use OCA\Dossiq\Flow\ProcestTxBesluitvormingActivateNode;
+use OCA\Dossiq\Flow\ProcestTxBesluitvormingPublishNode;
+use OCA\Dossiq\Flow\ProcestTxEvaluateDecisionNode;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;

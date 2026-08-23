@@ -5,17 +5,17 @@
  *
  * Verifies that the bezwaar AWB state machine is now declared on the schema
  * via x-openregister-lifecycle (consumed by OpenRegister's transition-guard
- * engine) and that the procest-supplied guard classes enforce the AWB
+ * engine) and that the dossiq-supplied guard classes enforce the AWB
  * preconditions OR delegates back to the app via `requires`.
  *
  * The OR engine itself (illegal-transition rejection on saveObject) is unit
  * tested in OpenRegister; here we assert (a) the declarative transition table
- * procest ships is internally consistent — a valid sequential AWB step is
+ * dossiq ships is internally consistent — a valid sequential AWB step is
  * declared and an out-of-sequence jump is NOT — and (b) the guard seams
  * behave per AWB art. 7:3 / 7:10.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Lifecycle
+ * @package  OCA\Dossiq\Tests\Unit\Lifecycle
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,15 +23,15 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Lifecycle;
+namespace OCA\Dossiq\Tests\Unit\Lifecycle;
 
-use OCA\Procest\Lifecycle\BezwaarDeadlineGuard;
-use OCA\Procest\Lifecycle\HoorzittingAfzienGuard;
+use OCA\Dossiq\Lifecycle\BezwaarDeadlineGuard;
+use OCA\Dossiq\Lifecycle\HoorzittingAfzienGuard;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -54,7 +54,7 @@ final class BezwaarLifecycleTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$registerPath = __DIR__ . '/../../../lib/Settings/procest_register.json';
+		$registerPath = __DIR__ . '/../../../lib/Settings/dossiq_register.json';
 		$register = json_decode((string)file_get_contents($registerPath), true);
 		$objection = $register['components']['schemas']['objectionProceeding'] ?? [];
 		$this->lifecycle = ($objection['configuration']['x-openregister-lifecycle'] ?? []);
@@ -144,11 +144,11 @@ final class BezwaarLifecycleTest extends TestCase {
 	public function testGuardedTransitionsDeclareRequires(): void {
 		$transitions = ($this->lifecycle['transitions'] ?? []);
 		$this->assertSame(
-			'OCA\\Procest\\Lifecycle\\HoorzittingAfzienGuard',
+			'OCA\\Dossiq\\Lifecycle\\HoorzittingAfzienGuard',
 			($transitions['hoorzitting_overslaan']['requires'] ?? null)
 		);
 		$this->assertSame(
-			'OCA\\Procest\\Lifecycle\\BezwaarDeadlineGuard',
+			'OCA\\Dossiq\\Lifecycle\\BezwaarDeadlineGuard',
 			($transitions['beslissen']['requires'] ?? null)
 		);
 	}//end testGuardedTransitionsDeclareRequires()

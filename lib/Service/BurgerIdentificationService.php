@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Burger Identification Service.
+ * Dossiq Burger Identification Service.
  *
  * Resolves the calling burger for a KCC contact, either from a DigiD assertion
  * (via openconnector) or from progressive identificatievragen with a weighted
@@ -11,7 +11,7 @@
  * derived from the matched contact.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,16 +22,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\Contacts\IManager as IContactsManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -141,7 +141,7 @@ class BurgerIdentificationService {
 		}
 
 		$this->logger->info(
-			'Procest: DigiD identification processed (BSN masked)',
+			'Dossiq: DigiD identification processed (BSN masked)',
 			[
 				'app' => Application::APP_ID,
 				'bsn' => $this->maskBsn(bsn: $bsn),
@@ -183,7 +183,7 @@ class BurgerIdentificationService {
 			$matches = $manager->search($identifier, [$field]);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
-				'Procest: contacts lookup failed: ' . $e->getMessage(),
+				'Dossiq: contacts lookup failed: ' . $e->getMessage(),
 				['app' => Application::APP_ID],
 			);
 			return '';
@@ -226,7 +226,7 @@ class BurgerIdentificationService {
 	 * @return string A pseudonymous burger reference.
 	 */
 	private function pseudonymize(string $bsn): string {
-		return 'burger:' . substr(hash('sha256', 'procest-kcc:' . $bsn), 0, 24);
+		return 'burger:' . substr(hash('sha256', 'dossiq-kcc:' . $bsn), 0, 24);
 	}//end pseudonymize()
 
 	/**

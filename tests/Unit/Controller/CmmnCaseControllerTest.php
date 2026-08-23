@@ -9,7 +9,7 @@
  * mapping.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -17,18 +17,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-007
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\CmmnCaseController;
-use OCA\Procest\Service\Cmmn\CaseModelEngine;
-use OCA\Procest\Service\Cmmn\IllegalPlanItemTransitionException;
+use OCA\Dossiq\Controller\CmmnCaseController;
+use OCA\Dossiq\Service\Cmmn\CaseModelEngine;
+use OCA\Dossiq\Service\Cmmn\IllegalPlanItemTransitionException;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -40,9 +40,9 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * @covers \OCA\Procest\Controller\CmmnCaseController
+ * @covers \OCA\Dossiq\Controller\CmmnCaseController
  *
- * @uses \OCA\Procest\Service\Cmmn\IllegalPlanItemTransitionException
+ * @uses \OCA\Dossiq\Service\Cmmn\IllegalPlanItemTransitionException
  */
 final class CmmnCaseControllerTest extends TestCase {
 
@@ -94,7 +94,7 @@ final class CmmnCaseControllerTest extends TestCase {
 		// needs group membership configures `isInGroup()` itself.
 
 		$this->controller = new CmmnCaseController(
-			'procest',
+			'dossiq',
 			$this->request,
 			$this->engine,
 			$this->userSession,
@@ -113,7 +113,7 @@ final class CmmnCaseControllerTest extends TestCase {
 		$session->method('getUser')->willReturn(null);
 
 		return new CmmnCaseController(
-			'procest',
+			'dossiq',
 			$this->request,
 			$this->engine,
 			$session,

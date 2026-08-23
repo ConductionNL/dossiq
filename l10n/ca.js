@@ -1,5 +1,5 @@
 OC.L10N.register(
-    "procest",
+    "dossiq",
     {
     "Add step" : "Afegeix un pas",
     "Address" : "Adreça",
@@ -388,8 +388,8 @@ OC.L10N.register(
     "Voorstel heeft geen actieve stap" : "La proposta no té cap pas actiu",
     "Wanneer is deze route van toepassing?" : "Quan s'aplica aquesta ruta?",
     "Weet u zeker dat u de route \"{name}\" wilt verwijderen?" : "Esteu segur que voleu suprimir la ruta «{name}»?",
-    "Welcome to Procest! Get started by creating your first case or task using the buttons above." : "Us donem la benvinguda a Procest! Comenceu creant el vostre primer expedient o tasca amb els botons de dalt.",
-    "Welcome to Procest! Get started by creating your first case type in Settings." : "Us donem la benvinguda a Procest! Comenceu creant el vostre primer tipus d'expedient a Configuració.",
+    "Welcome to Dossiq! Get started by creating your first case or task using the buttons above." : "Us donem la benvinguda a Dossiq! Comenceu creant el vostre primer expedient o tasca amb els botons de dalt.",
+    "Welcome to Dossiq! Get started by creating your first case type in Settings." : "Us donem la benvinguda a Dossiq! Comenceu creant el vostre primer tipus d'expedient a Configuració.",
     "When heeftAlleAutorisaties is false, autorisaties must be specified." : "Quan heeftAlleAutorisaties és false, s'han d'especificar autorisaties.",
     "When heeftAlleAutorisaties is true, autorisaties must not be specified. When heeftAlleAutorisaties is false, autorisaties must be specified." : "Quan heeftAlleAutorisaties és true, no s'han d'especificar autorisaties. Quan heeftAlleAutorisaties és false, s'han d'especificar autorisaties.",
     "Why is an extension needed?" : "Per què cal una ampliació?",

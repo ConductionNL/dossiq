@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Berichtenbox Read Status Job.
+ * Dossiq Berichtenbox Read Status Job.
  *
  * Daily timed background job that polls Mijn Overheid Berichtenbox for the
  * read status of previously sent citizen messages.
  *
  * @category BackgroundJob
- * @package  OCA\Procest\BackgroundJob
+ * @package  OCA\Dossiq\BackgroundJob
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,17 +15,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/berichtenbox-integration/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\BackgroundJob;
+namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\BerichtenboxService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\BerichtenboxService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -78,7 +78,7 @@ class BerichtenboxReadStatusJob extends TimedJob {
 		$count = count($messages);
 
 		$this->logger->info(
-			'Procest: Starting Berichtenbox read-status poll',
+			'Dossiq: Starting Berichtenbox read-status poll',
 			['app' => Application::APP_ID, 'pendingMessages' => $count],
 		);
 
@@ -92,7 +92,7 @@ class BerichtenboxReadStatusJob extends TimedJob {
 		}//end foreach
 
 		$this->logger->info(
-			'Procest: Berichtenbox read-status poll completed',
+			'Dossiq: Berichtenbox read-status poll completed',
 			['app' => Application::APP_ID, 'polled' => $count],
 		);
 	}//end run()

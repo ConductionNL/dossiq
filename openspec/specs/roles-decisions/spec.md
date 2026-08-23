@@ -770,8 +770,8 @@ All roles and decisions interfaces MUST comply with WCAG AA:
 - **AddParticipantDialog**: `src/views/cases/components/AddParticipantDialog.vue` -- dialog for adding participants with role type selection and user picker. Supports pre-selecting handler role type (REQ-ROLE-003).
 - **Handler reassignment**: `ParticipantsSection.vue` includes inline reassign UI with NcSelect user picker. Updates both the role object's `participant` and the case's `assignee` field (REQ-ROLE-003).
 - **Role removal**: Supported via delete button with confirmation dialog.
-- **Role schema**: Defined in `lib/Settings/procest_register.json` with properties: `name`, `description`, `roleType`, `case`, `participant` (REQ matching the data model).
-- **RoleType schema**: Defined in `procest_register.json` with `name`, `caseType`, `genericRole` properties. The `genericRole` enum includes: `initiator`, `handler`, `advisor`, `decision_maker`, `stakeholder`, `coordinator`, `contact`, `co_initiator`.
+- **Role schema**: Defined in `lib/Settings/dossiq_register.json` with properties: `name`, `description`, `roleType`, `case`, `participant` (REQ matching the data model).
+- **RoleType schema**: Defined in `dossiq_register.json` with `name`, `caseType`, `genericRole` properties. The `genericRole` enum includes: `initiator`, `handler`, `advisor`, `decision_maker`, `stakeholder`, `coordinator`, `contact`, `co_initiator`.
 - **Data fetching**: Roles fetched via `objectStore.fetchCollection('role', { '_filters[case]': caseId })`. Role types fetched in parallel.
 - **Display name resolution**: `resolveDisplayNames()` method fetches Nextcloud user info per participant UID.
 - **User picker**: `fetchUsers()` fetches available users from `/ocs/v2.php/cloud/users/details`.
@@ -785,20 +785,20 @@ All roles and decisions interfaces MUST comply with WCAG AA:
 
 **Results -- Partially implemented:**
 - **ResultSection**: `src/views/cases/components/ResultSection.vue` -- displays a single result with name, description, and result type. Resolves result type name from the `resultTypes` array.
-- **Result schema**: Defined in `procest_register.json` with `name`, `description`, `case`, `resultType` properties.
-- **ResultType schema**: Defined in `procest_register.json` with `name`, `description`, `caseType`, `archiveAction`, `retentionPeriod`, `retentionDateSource` properties.
+- **Result schema**: Defined in `dossiq_register.json` with `name`, `description`, `case`, `resultType` properties.
+- **ResultType schema**: Defined in `dossiq_register.json` with `name`, `description`, `caseType`, `archiveAction`, `retentionPeriod`, `retentionDateSource` properties.
 - **Not implemented**: Result creation UI (selecting from predefined result types during case closure), archival metadata display, result type management in admin settings (REQ-RESULT-002), enforcement of one-result-per-case.
 
 **Decisions -- Not implemented:**
-- **Decision schema**: Defined in `procest_register.json` with `title`, `description`, `case`, `decisionType`, `decidedBy`, `decidedAt`, `effectiveDate`, `expiryDate` properties.
-- **DecisionType schema**: Defined in `procest_register.json` with `name`, `description`, `category`, `objectionPeriod`, `publicationRequired`, `publicationPeriod` properties.
+- **Decision schema**: Defined in `dossiq_register.json` with `title`, `description`, `case`, `decisionType`, `decidedBy`, `decidedAt`, `effectiveDate`, `expiryDate` properties.
+- **DecisionType schema**: Defined in `dossiq_register.json` with `name`, `description`, `category`, `objectionPeriod`, `publicationRequired`, `publicationPeriod` properties.
 - **No UI exists** for creating, viewing, editing, or deleting decisions on cases. No Decisions section on the case detail page. No validity period tracking or expiry indicators.
 - The ZGW BRC (Besluiten) controller (`lib/Controller/BrcController.php`) provides ZGW-compliant decision API endpoints, but no frontend consumes them.
 
 ### Standards & References
 
 - **ZGW APIs (VNG Realisatie)**: Roles map to ZGW `Rol` with `omschrijvingGeneriek` for generic role categories. Results map to `Resultaat` with `archiefnominatie` and `archiefactietermijn`. Decisions map to `Besluit` with `ingangsdatum`, `vervaldatum`, `publicatie_indicatie`. ZGW BRC controller fully implemented.
-- **Schema.org**: Roles typed as `schema:Role`, decisions as `schema:ChooseAction` in `procest_register.json`.
+- **Schema.org**: Roles typed as `schema:Role`, decisions as `schema:ChooseAction` in `dossiq_register.json`.
 - **CMMN 1.1**: Role assignments follow CMMN case participant patterns.
 - **Archivering**: Result types include `archiveAction` (retain/destroy) and `retentionPeriod` (ISO 8601 duration) per Dutch archival standards (Archiefwet).
 - **WCAG 2.1 AA**: ParticipantsSection uses sufficient contrast and text labels. Decision validity indicators (not yet implemented) must not rely solely on color.
@@ -808,7 +808,7 @@ All roles and decisions interfaces MUST comply with WCAG AA:
 
 - **Roles**: Well-specified and mostly implemented. The MVP scenarios are clear and actionable.
 - **Results**: Well-specified but implementation is incomplete. The result creation flow during case closure needs UI work.
-- **Decisions**: Well-specified but entirely unimplemented in the frontend. The data model exists in the register config, and the ZGW API layer exists, but no Procest-native UI exists.
+- **Decisions**: Well-specified but entirely unimplemented in the frontend. The data model exists in the register config, and the ZGW API layer exists, but no Dossiq-native UI exists.
 - **Open questions:**
   - Should role type enforcement be strict (reject) or advisory (warn)?
   - How should external contacts (non-Nextcloud users) be represented as participants?

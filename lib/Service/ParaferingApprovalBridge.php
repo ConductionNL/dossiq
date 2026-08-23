@@ -1,24 +1,24 @@
 <?php
 
 /**
- * Procest Parafering Approval Bridge
+ * Dossiq Parafering Approval Bridge
  *
- * Translates procest parafeerroute concepts into OpenRegister's
+ * Translates dossiq parafeerroute concepts into OpenRegister's
  * `approval-workflow` abstraction (ApprovalChain / ApprovalStep) and routes
  * all step decisions (paraferen, terugsturen, adviseren, overslaan, delegeren)
  * through OpenRegister's ApprovalService.
  *
- * Per ADR-022 (apps consume OpenRegister abstractions), procest no longer owns
+ * Per ADR-022 (apps consume OpenRegister abstractions), dossiq no longer owns
  * a bespoke approval-chain state machine: chain-state, role enforcement,
  * advance-on-approval and decision history are delegated to OpenRegister. This
- * bridge is the single seam between procest's voorstel/parafeerroute model and
+ * bridge is the single seam between dossiq's voorstel/parafeerroute model and
  * OpenRegister's approval store. App-specific parafering semantics (actorType,
  * onBehalfOf mandate, advisory text, skip reason) are encoded in the step
  * `comment` field as a JSON object `{"text": "...", "_meta": {...}}` — the
  * metadata-in-comment pattern from the umbrella design.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -29,21 +29,21 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/parafering-via-or-approval/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
 
 /**
- * Bridge between procest parafering and OpenRegister approval-workflow.
+ * Bridge between dossiq parafering and OpenRegister approval-workflow.
  *
  * Every method degrades gracefully when OpenRegister's ApprovalService is
  * unavailable (fresh install / OR disabled): the bridge reports its
@@ -70,7 +70,7 @@ class ParaferingApprovalBridge {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The procest settings bridge to OpenRegister.
+	 * @param SettingsService $settingsService The dossiq settings bridge to OpenRegister.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
@@ -100,7 +100,7 @@ class ParaferingApprovalBridge {
 	 * created chain is initialised against the voorstel UUID so OpenRegister
 	 * sets step 1 to `pending` and dispatches ApprovalStepInitiatedEvent.
 	 *
-	 * No procest-local `Parafeerroute` row is created here — the chain lives in
+	 * No dossiq-local `Parafeerroute` row is created here — the chain lives in
 	 * OpenRegister's approval store.
 	 *
 	 * @param string $voorstelUuid The voorstel UUID.
@@ -140,14 +140,14 @@ class ParaferingApprovalBridge {
 
 			$chainUuid = (string)($chain->getUuid() ?? '');
 			$this->logger->info(
-				'Procest: parafering ApprovalChain created in OpenRegister',
+				'Dossiq: parafering ApprovalChain created in OpenRegister',
 				['proposal' => $voorstelUuid, 'chain' => $chainUuid, 'steps' => count($chainSteps)]
 			);
 
 			return $chainUuid;
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to create parafering ApprovalChain',
+				'Dossiq: failed to create parafering ApprovalChain',
 				['proposal' => $voorstelUuid, 'exception' => $e->getMessage()]
 			);
 			throw new RuntimeException('Approval chain creation failed');
@@ -189,7 +189,7 @@ class ParaferingApprovalBridge {
 			return $approvalService->approveStep($stepId, $userId, $this->encodeComment(text: $text, meta: $meta));
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: ApprovalService::approveStep failed',
+				'Dossiq: ApprovalService::approveStep failed',
 				['proposal' => $voorstelUuid, 'step' => $stepId, 'exception' => $e->getMessage()]
 			);
 			throw new RuntimeException('Approval step transition failed');
@@ -225,7 +225,7 @@ class ParaferingApprovalBridge {
 			return $approvalService->rejectStep($stepId, $userId, $this->encodeComment(text: $text, meta: $meta));
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: ApprovalService::rejectStep failed',
+				'Dossiq: ApprovalService::rejectStep failed',
 				['proposal' => $voorstelUuid, 'step' => $stepId, 'exception' => $e->getMessage()]
 			);
 			throw new RuntimeException('Rejection step transition failed');
@@ -233,14 +233,14 @@ class ParaferingApprovalBridge {
 	}//end rejectCurrentStep()
 
 	/**
-	 * Map procest route steps to OpenRegister ApprovalChain step definitions.
+	 * Map dossiq route steps to OpenRegister ApprovalChain step definitions.
 	 *
 	 * The OpenRegister step `role` is the Nextcloud group ID bound to the
-	 * procest step actor. Role-typed actors use the actor as the role group;
+	 * dossiq step actor. Role-typed actors use the actor as the role group;
 	 * user-typed actors fall back to the actor UID as the role token (the OR
 	 * group check then governs membership).
 	 *
-	 * @param array<int, array<string, mixed>> $steps The procest route steps.
+	 * @param array<int, array<string, mixed>> $steps The dossiq route steps.
 	 *
 	 * @return array<int, array<string, mixed>> The OpenRegister step definitions.
 	 */
@@ -287,7 +287,7 @@ class ParaferingApprovalBridge {
 			}
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest: could not resolve pending approval step',
+				'Dossiq: could not resolve pending approval step',
 				['proposal' => $voorstelUuid, 'exception' => $e->getMessage()]
 			);
 		}

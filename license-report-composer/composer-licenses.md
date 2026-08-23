@@ -1,7 +1,7 @@
 # composer License Report
 
 **Generated:** 2026-03-14 17:59 UTC
-**Repository:** ConductionNL/procest
+**Repository:** ConductionNL/dossiq
 **Ref:** 56c418e2199b64f9354cbcdbe8cbc8c6626c50dd
 
 ## Summary

@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Action Result value object.
+ * Dossiq Action Result value object.
  *
  * Carries the outcome of a dispatched automatic action: success flag,
  * optional static error message (never leak exception detail), and
  * action-specific result data.
  *
  * @category Service
- * @package  OCA\Procest\Service\Transitions
+ * @package  OCA\Dossiq\Service\Transitions
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,12 +19,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Transitions;
+namespace OCA\Dossiq\Service\Transitions;
 
 /**
  * Immutable value object returned by every ActionHandler.

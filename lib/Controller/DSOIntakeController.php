@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest DSO Intake Controller
+ * Dossiq DSO Intake Controller
  *
  * Receives STAM 2.0 vergunningaanvraag payloads from the Digitaal Stelsel
  * Omgevingswet (DSO/Omgevingsloket) via OpenConnector and creates cases.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,10 +23,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\DsoIntakeService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\DsoIntakeService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;

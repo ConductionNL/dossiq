@@ -11,7 +11,7 @@
  * It is NOT scanned by PHPCS.
  *
  * @category Test
- * @package  OCA\Procest\Tests\Stubs\Mcp
+ * @package  OCA\Dossiq\Tests\Stubs\Mcp
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,7 +27,7 @@ if (interface_exists(IMcpToolProvider::class) === false) {
 	 * Stub interface for IMcpToolProvider — used only in standalone unit tests.
 	 *
 	 * Deferred until openregister PR #1466 (ai-chat-companion-orchestrator) ships
-	 * the real interface. Procest implements this stub in production; the stub is
+	 * the real interface. Dossiq implements this stub in production; the stub is
 	 * replaced by the real interface when the openregister app is installed.
 	 */
 	interface IMcpToolProvider {
@@ -35,7 +35,7 @@ if (interface_exists(IMcpToolProvider::class) === false) {
 		/**
 		 * Returns the app ID that namespaces every tool id this provider exposes.
 		 *
-		 * @return string The app slug (e.g. "procest")
+		 * @return string The app slug (e.g. "dossiq")
 		 */
 		public function getAppId(): string;
 
@@ -55,7 +55,7 @@ if (interface_exists(IMcpToolProvider::class) === false) {
 		 * Returns a success payload or a structured error envelope.
 		 * MUST NOT throw — all failure paths return an array.
 		 *
-		 * @param string $toolId The tool id (e.g. "procest.listProcesses")
+		 * @param string $toolId The tool id (e.g. "dossiq.listProcesses")
 		 * @param array<string, mixed> $arguments Tool arguments from the LLM call
 		 *
 		 * @return array<string, mixed>

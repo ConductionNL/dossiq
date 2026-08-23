@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Vaststelling Service.
+ * Dossiq Vaststelling Service.
  *
  * Final-settlement (vaststelling) handling under AWB 4:46. Owns the
  * settlement-form math: comparing werkelijke kosten against the granted
@@ -11,13 +11,13 @@
  * delegates clawback-case creation to TerugvorderingService.
  *
  * It no longer copies the settled amount onto the linked case's `kosten`
- * array. That denormalisation existed to feed procest's own IV3 report, and
+ * array. That denormalisation existed to feed dossiq's own IV3 report, and
  * both are gone under ADR-081 — a domain app MUST NOT hold a ledger-shaped
  * array, and Shillinq is the fleet's only general ledger. The amount stays
  * authoritative where it always was, on the vaststelling itself.
  *
  * @category Service
- * @package  OCA\Procest\Service\Subsidie
+ * @package  OCA\Dossiq\Service\Subsidie
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -28,14 +28,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Subsidie;
+namespace OCA\Dossiq\Service\Subsidie;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -172,7 +172,7 @@ class VaststellingService {
 		} catch (OCSBadRequestException $e) {
 			throw $e;
 		} catch (Throwable $e) {
-			$this->logger->error('Procest subsidie: vaststelling finalize failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq subsidie: vaststelling finalize failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon vaststelling niet vaststellen');
 		}
 
@@ -183,7 +183,7 @@ class VaststellingService {
 		}
 
 		// The settled amount used to be appended to the linked case's `kosten`
-		// array, which fed procest's own IV3 report. Both are gone under
+		// array, which fed dossiq's own IV3 report. Both are gone under
 		// ADR-081: a domain app MUST NOT hold a ledger-shaped array, and
 		// Shillinq is the only general ledger. A disbursed grant is real
 		// municipal expenditure and still belongs in the books — it reaches

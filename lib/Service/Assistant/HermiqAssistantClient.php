@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Hermiq Assistant Client.
+ * Dossiq Hermiq Assistant Client.
  *
  * The single thin HTTP boundary for every outbound call this app makes to
  * Hermiq's case-assistant surface (`POST /api/assistant/converse`). Hermiq is
@@ -13,12 +13,12 @@
  * FLEET RULE: AI functionality lives in Hermiq. This client carries NO
  * prompt-building, model selection, or LLM-calling logic of its own — it only
  * forwards an already-authorized message + context to Hermiq's endpoint and
- * relays the result. Procest's own `AiService` (classify/extract/ask/
+ * relays the result. Dossiq's own `AiService` (classify/extract/ask/
  * summarize) is a separate, pre-existing discrete-operation surface and is
  * unaffected by this change.
  *
  * @category Service
- * @package  OCA\Procest\Service\Assistant
+ * @package  OCA\Dossiq\Service\Assistant
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -29,16 +29,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/case-assistant-via-hermiq/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Assistant;
+namespace OCA\Dossiq\Service\Assistant;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;

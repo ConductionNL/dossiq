@@ -7,7 +7,7 @@
  * Hydra umbrella `shared-pdok-via-openconnector` (ADR-022).
  *
  * Exports six functions with the same signatures as the original
- * pdokService.js so existing procest callers do not need to change:
+ * pdokService.js so existing dossiq callers do not need to change:
  *   suggest(query), lookup(id), free(query, rows), reverse(lat, lng),
  *   extractCoordinates(result), formatAddress(result).
  *

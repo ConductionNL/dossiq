@@ -8,7 +8,7 @@
  * non-existent `findObjects()` method, and orders the history chronologically.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -16,21 +16,21 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\StatusTransitionService;
-use OCA\Procest\Service\Transitions\CaseStatusStore;
-use OCA\Procest\Service\Transitions\GuardRegistry;
-use OCA\Procest\Service\Transitions\SideEffectDispatcher;
-use OCA\Procest\Service\Transitions\TransitionAuthorizer;
-use OCA\Procest\Service\Transitions\TransitionSpecReader;
-use OCA\Procest\Service\WorkflowTemplateLoader;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Transitions\CaseStatusStore;
+use OCA\Dossiq\Service\Transitions\GuardRegistry;
+use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
+use OCA\Dossiq\Service\Transitions\TransitionAuthorizer;
+use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
+use OCA\Dossiq\Service\WorkflowTemplateLoader;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -50,10 +50,10 @@ interface ReplayObjectServiceStub {
 /**
  * Regression tests for StatusTransitionService::replay().
  *
- * @covers \OCA\Procest\Service\StatusTransitionService
+ * @covers \OCA\Dossiq\Service\StatusTransitionService
  *
- * @uses \OCA\Procest\Service\Transitions\CaseStatusStore
- * @uses \OCA\Procest\Service\Transitions\TransitionAuthorizer
+ * @uses \OCA\Dossiq\Service\Transitions\CaseStatusStore
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionAuthorizer
  */
 class StatusTransitionServiceReplayRegressionTest extends TestCase {
 

@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @category  Flow
- * @package   OCA\Procest\Flow
+ * @package   OCA\Dossiq\Flow
  * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2
@@ -14,11 +14,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Flow;
+namespace OCA\Dossiq\Flow;
 
-use OCA\Procest\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
-use OCA\Procest\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
-use OCA\Procest\Service\Actions\NotifyRoleHandler;
+use OCA\Dossiq\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
+use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
+use OCA\Dossiq\Service\Actions\NotifyRoleHandler;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 

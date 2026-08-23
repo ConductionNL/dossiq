@@ -10,16 +10,16 @@ retrofit_extensions:
 
 # ZGW API Mapping
 
-**Owned by**: Procest (ZGW API layer for case management)
+**Owned by**: Dossiq (ZGW API layer for case management)
 
 ## Purpose
 
 @e2e exclude Pure REST API spec covered by Newman/PHPUnit; no Playwright UI surface.
 
-Expose Procest's ZGW (Zaakgericht Werken) compliant API endpoints, translating case management data stored in English-language OpenRegister schemas through bidirectional property and value mapping powered by the Twig-based mapping engine. This is Procest's primary integration layer for Dutch government interoperability. The mapping engine -- implemented in OpenRegister as `MappingService`, `MappingExtension`, `MappingRuntime`, and the `Mapping` entity -- provides the core transformation layer; this spec defines how Procest wires that engine to ZGW-specific API routes, pagination, URL references, query parameter translation, error responses, and per-API compliance for all five VNG ZGW API standards (ZRC, ZTC, DRC, BRC, NRC). Procest owns the ZGW Mapping and Endpoint configurations, while OpenRegister owns the generic mapping infrastructure. See also Procest's existing ZGW controllers for reference.
+Expose Dossiq's ZGW (Zaakgericht Werken) compliant API endpoints, translating case management data stored in English-language OpenRegister schemas through bidirectional property and value mapping powered by the Twig-based mapping engine. This is Dossiq's primary integration layer for Dutch government interoperability. The mapping engine -- implemented in OpenRegister as `MappingService`, `MappingExtension`, `MappingRuntime`, and the `Mapping` entity -- provides the core transformation layer; this spec defines how Dossiq wires that engine to ZGW-specific API routes, pagination, URL references, query parameter translation, error responses, and per-API compliance for all five VNG ZGW API standards (ZRC, ZTC, DRC, BRC, NRC). Dossiq owns the ZGW Mapping and Endpoint configurations, while OpenRegister owns the generic mapping infrastructure. See also Dossiq's existing ZGW controllers for reference.
 
 ## Context
-Procest stores case management data in OpenRegister using English property names (e.g., `case`, `status`, `deadline`). Dutch municipalities require ZGW-compliant APIs with Dutch property names and values (e.g., `zaak`, `status`, `uiterlijkeEinddatumAfdoening`). Rather than maintaining dual schemas, the mapping engine translates on-the-fly -- outbound (English to Dutch) for API responses, and inbound (Dutch to English) for incoming POST/PUT/PATCH requests.
+Dossiq stores case management data in OpenRegister using English property names (e.g., `case`, `status`, `deadline`). Dutch municipalities require ZGW-compliant APIs with Dutch property names and values (e.g., `zaak`, `status`, `uiterlijkeEinddatumAfdoening`). Rather than maintaining dual schemas, the mapping engine translates on-the-fly -- outbound (English to Dutch) for API responses, and inbound (Dutch to English) for incoming POST/PUT/PATCH requests.
 
 The mapping engine (Twig-based property mapping, value casting, dot-notation) already lives in OpenRegister as a core capability:
 - `lib/Service/MappingService.php` -- `executeMapping()`, dot-notation via `Adbar\Dot`, SHA-256 keyed template cache, distributed cache (APCu/Redis) for Mapping entity lookups with 300s TTL
@@ -36,7 +36,7 @@ The ZGW standard defines 5 APIs:
 - **BRC - Besluiten API** (Decisions) -- v1.1.0
 - **NRC - Notificaties API** (Notifications) -- v1.0.0
 
-All API endpoints are served by OpenRegister. Procest stores the mapping configuration and ZGW-specific metadata. The Endpoint entity's `inputMapping`/`outputMapping` fields provide the bridge between ZGW routes and Mapping entities.
+All API endpoints are served by OpenRegister. Dossiq stores the mapping configuration and ZGW-specific metadata. The Endpoint entity's `inputMapping`/`outputMapping` fields provide the bridge between ZGW routes and Mapping entities.
 ## Requirements
 ### Requirement: Mapping engine MUST support ZGW-specific Twig filters and functions
 The existing `MappingExtension` and `MappingRuntime` classes MUST provide all Twig filters and functions needed for ZGW field transformation, including enum translation (outbound and inbound), URL-to-UUID extraction, and URL construction.
@@ -181,7 +181,7 @@ The Zaken API MUST support all primary resources: Zaak, Status, Resultaat, Rol, 
 
 #### Scenario: Rol resource mapping
 - **GIVEN** the ZRC defines Rol with fields `url`, `uuid`, `zaak`, `betrokkene`, `betrokkeneType`, `roltype`, `omschrijving`, `omschrijvingGeneriek`, `roltoelichting`
-- **WHEN** a rol is mapped outbound from the `role` schema (see cross-reference: roles-decisions spec in Procest)
+- **WHEN** a rol is mapped outbound from the `role` schema (see cross-reference: roles-decisions spec in Dossiq)
 - **THEN** the Mapping MUST translate `participant` to `betrokkene`, `roleType` to `roltype` URL reference, and `case` to `zaak` URL reference
 - **AND** the `omschrijvingGeneriek` enum values MUST use `zgw_enum` (e.g., `initiator` to `initiator`, `handler` to `behandelaar`, `advisor` to `adviseur`)
 
@@ -196,7 +196,7 @@ The Catalogi API MUST support resources: ZaakType, StatusType, ResultaatType, Ro
 
 #### Scenario: BesluitType outbound mapping
 - **GIVEN** the ZTC BesluitType resource requires fields: `url`, `catalogus`, `omschrijving`, `omschrijvingGeneriek`, `besluitcategorie`, `reactietermijn`, `publicatieIndicatie`, `zaaktypen`
-- **WHEN** a decisionType from the Procest `decisionType` schema is mapped outbound (see cross-reference: besluiten-management)
+- **WHEN** a decisionType from the Dossiq `decisionType` schema is mapped outbound (see cross-reference: besluiten-management)
 - **THEN** `zaaktypen` MUST be an array of full URL references to related ZaakTypen
 
 #### Scenario: Catalogus as container resource
@@ -444,12 +444,12 @@ ZGW filter parameters use Dutch names and URL references as values; these MUST b
 - **THEN** OpenRegister MUST apply all filters as AND conditions
 
 ### Requirement: ZGW resource mapping table MUST define the complete translation between ZGW and OpenRegister schemas
-Every ZGW resource type MUST have a defined mapping to a Procest/OpenRegister schema.
+Every ZGW resource type MUST have a defined mapping to a Dossiq/OpenRegister schema.
 
 #### Scenario: Complete resource mapping table
 - **GIVEN** the following mapping table:
 
-| ZGW Resource | ZGW API (Standard) | Procest Schema | OpenRegister Schema | Endpoint Pattern |
+| ZGW Resource | ZGW API (Standard) | Dossiq Schema | OpenRegister Schema | Endpoint Pattern |
 |---|---|---|---|---|
 | Zaak | ZRC (Zaken) | case | case | `/api/zgw/zaken/v1/zaken/{uuid?}` |
 | Status | ZRC (Zaken) | (inline on case) | status on case | `/api/zgw/zaken/v1/statussen/{uuid?}` |
@@ -578,11 +578,11 @@ ZGW API responses MUST comply with the HAL (Hypertext Application Language) JSON
 - **WHEN** any ZGW endpoint returns a response
 - **THEN** the response MUST include `API-version: 1.x.x` matching the supported ZGW API version for that specific API (e.g., `1.5.1` for ZRC, `1.3.1` for ZTC)
 
-### Requirement: Default ZGW mappings MUST be shipped with Procest
-Procest MUST provide default Mapping and Endpoint entities for all ZGW resources so that ZGW APIs work out of the box after installation.
+### Requirement: Default ZGW mappings MUST be shipped with Dossiq
+Dossiq MUST provide default Mapping and Endpoint entities for all ZGW resources so that ZGW APIs work out of the box after installation.
 
-#### Scenario: Fresh Procest installation
-- **GIVEN** Procest is installed and its schemas are initialized via ConfigurationService
+#### Scenario: Fresh Dossiq installation
+- **GIVEN** Dossiq is installed and its schemas are initialized via ConfigurationService
 - **WHEN** the default configuration JSON is loaded
 - **THEN** all ZGW resources in the mapping table MUST have pre-configured Mapping entities (both inbound and outbound)
 - **AND** all ZGW Endpoint entities MUST be created with correct `inputMapping`/`outputMapping` references
@@ -592,7 +592,7 @@ Procest MUST provide default Mapping and Endpoint entities for all ZGW resources
 - **GIVEN** a municipality uses a custom `case` schema with additional fields not in the default mapping
 - **WHEN** the admin edits the ZGW Zaak outbound Mapping via the OpenRegister Mappings API
 - **THEN** the custom mapping MUST take effect immediately (cache invalidation via `MappingMapper::invalidateCache()`)
-- **AND** the default mapping MUST be restorable by re-importing from the Procest configuration JSON
+- **AND** the default mapping MUST be restorable by re-importing from the Dossiq configuration JSON
 
 #### Scenario: Mapping administration in OpenRegister
 - **GIVEN** all Mapping entities are stored in OpenRegister's `openregister_mappings` table
@@ -610,7 +610,7 @@ The ZGW mapping layer MUST be built on OpenRegister's generic Mapping + Endpoint
 - **AND** FHIR-specific Twig filters could be added to `MappingExtension` alongside the `zgw_*` filters
 
 #### Scenario: StUF-ZKN mapping profile
-- **GIVEN** some municipalities still require StUF-ZKN XML format (see cross-reference: stuf-support in Procest)
+- **GIVEN** some municipalities still require StUF-ZKN XML format (see cross-reference: stuf-support in Dossiq)
 - **WHEN** StUF-specific Mapping entities are configured with XML output templates
 - **THEN** the Twig-based mapping engine MUST be capable of producing XML output via Twig's template rendering
 - **AND** Endpoint entities MUST support `Content-Type: application/xml` responses
@@ -623,9 +623,9 @@ The ZGW mapping layer MUST be built on OpenRegister's generic Mapping + Endpoint
 
 <!-- BEGIN retrofit-2026-05-24-zgw-api-mapping -->
 
-### REQ-001: Procest SHALL expose ZGW Zaakregistratiecomponent (ZRC) endpoints via ZrcController
+### REQ-001: Dossiq SHALL expose ZGW Zaakregistratiecomponent (ZRC) endpoints via ZrcController
 
-`OCA\Procest\Controller\ZrcController` SHALL serve the ZGW Zaken API resources (zaken, statussen, resultaten, rollen, zaakeigenschappen, zaakinformatieobjecten, zaakobjecten, klantcontacten) using the shared `ZgwService` for inbound/outbound translation against English-language OpenRegister schemas. The controller SHALL handle list/show/create/update/patch/destroy plus the nested `zaakeigenschappen*` and `zaakbesluiten` sub-resources, expose `/zoek` search, and serve audit-trail lookup endpoints.
+`OCA\Dossiq\Controller\ZrcController` SHALL serve the ZGW Zaken API resources (zaken, statussen, resultaten, rollen, zaakeigenschappen, zaakinformatieobjecten, zaakobjecten, klantcontacten) using the shared `ZgwService` for inbound/outbound translation against English-language OpenRegister schemas. The controller SHALL handle list/show/create/update/patch/destroy plus the nested `zaakeigenschappen*` and `zaakbesluiten` sub-resources, expose `/zoek` search, and serve audit-trail lookup endpoints.
 
 #### Scenario: List zaken with outbound mapping
 - **WHEN** a client calls `GET /api/zgw/zaken/v1/zaken/`
@@ -640,9 +640,9 @@ The ZGW mapping layer MUST be built on OpenRegister's generic Mapping + Endpoint
 Notes
 - ZRC currently delegates shared CRUD to `ZgwService`; ZRC-specific logic (closed-zaak resolution, vertrouwelijkheid filtering, OIO sync) lives inline in this controller and is partially exercised by `zrc-005`/`zrc-006` integration-test fixtures.
 
-### REQ-002: Procest SHALL expose ZTC, DRC, BRC and NRC endpoints via dedicated controllers
+### REQ-002: Dossiq SHALL expose ZTC, DRC, BRC and NRC endpoints via dedicated controllers
 
-`OCA\Procest\Controller\ZtcController` (Catalogi API), `DrcController` (Documenten API), `BrcController` (Besluiten API) and `NrcController` (Notificaties API) SHALL each serve the canonical ZGW resources for their API per the VNG ZGW standard versions tracked in this spec (ZTC v1.3.1, DRC v1.4.3, BRC v1.1.0, NRC v1.0.0). Each controller SHALL reuse `ZgwService` for shared mapping execution, pagination, and ZGW response shaping while implementing API-specific resource paths.
+`OCA\Dossiq\Controller\ZtcController` (Catalogi API), `DrcController` (Documenten API), `BrcController` (Besluiten API) and `NrcController` (Notificaties API) SHALL each serve the canonical ZGW resources for their API per the VNG ZGW standard versions tracked in this spec (ZTC v1.3.1, DRC v1.4.3, BRC v1.1.0, NRC v1.0.0). Each controller SHALL reuse `ZgwService` for shared mapping execution, pagination, and ZGW response shaping while implementing API-specific resource paths.
 
 #### Scenario: List catalogi via ZTC
 - **WHEN** a client calls `GET /api/zgw/catalogi/v1/catalogussen/`
@@ -657,7 +657,7 @@ Notes
 
 ### REQ-003: ZgwService SHALL provide a shared ZGW mapping/runtime surface to all five controllers
 
-`OCA\Procest\Service\ZgwService` SHALL centralise the cross-controller ZGW pipeline: mapping configuration loading, outbound and inbound mapping construction, query-parameter translation, pagination, ZGW error shape construction, and access to the helper services (`ZgwMappingService`, `ZgwDocumentService`, `ZgwPaginationHelper`, `NotificatieService`, `ZgwBusinessRulesService`). Controllers SHALL NOT inline mapping engine calls — every translation SHALL go through `ZgwService::loadMappingConfig()`, `createOutboundMapping()`, `createInboundMapping()`, or one of the wrapper helpers.
+`OCA\Dossiq\Service\ZgwService` SHALL centralise the cross-controller ZGW pipeline: mapping configuration loading, outbound and inbound mapping construction, query-parameter translation, pagination, ZGW error shape construction, and access to the helper services (`ZgwMappingService`, `ZgwDocumentService`, `ZgwPaginationHelper`, `NotificatieService`, `ZgwBusinessRulesService`). Controllers SHALL NOT inline mapping engine calls — every translation SHALL go through `ZgwService::loadMappingConfig()`, `createOutboundMapping()`, `createInboundMapping()`, or one of the wrapper helpers.
 
 #### Scenario: Translate ZGW query parameter names to schema property names
 - **GIVEN** an incoming request with query parameter `zaaktype=https://example.com/api/zgw/catalogi/v1/zaaktypen/abc-def`
@@ -670,7 +670,7 @@ Notes
 
 ### REQ-004: ZGW endpoints SHALL be gated by bearer-token authentication with vertrouwelijkheid filtering
 
-`OCA\Procest\Middleware\ZgwAuthMiddleware` SHALL run before every ZGW controller method, validate the inbound `Authorization: Bearer …` JWT, resolve the client's autorisaties (scope + max-vertrouwelijkheidaanduiding), and reject the request with the ZGW `403` error shape when the client's authorizations do not cover the requested resource. Confidentiality filtering SHALL use the ordered `VERTROUWELIJKHEID_LEVELS` table (openbaar=1 … zeer_geheim=8) such that a client whose maximum is `intern` (level 3) cannot read records flagged `zaakvertrouwelijk` (level 4) or higher.
+`OCA\Dossiq\Middleware\ZgwAuthMiddleware` SHALL run before every ZGW controller method, validate the inbound `Authorization: Bearer …` JWT, resolve the client's autorisaties (scope + max-vertrouwelijkheidaanduiding), and reject the request with the ZGW `403` error shape when the client's authorizations do not cover the requested resource. Confidentiality filtering SHALL use the ordered `VERTROUWELIJKHEID_LEVELS` table (openbaar=1 … zeer_geheim=8) such that a client whose maximum is `intern` (level 3) cannot read records flagged `zaakvertrouwelijk` (level 4) or higher.
 
 #### Scenario: Bearer token missing or invalid
 - **WHEN** a request reaches a ZGW controller without a valid `Authorization: Bearer` JWT
@@ -680,12 +680,12 @@ Notes
 - **WHEN** `ZgwAuthMiddleware::isConfidentialityAllowed('vertrouwelijk', 'intern')` is evaluated
 - **THEN** it SHALL return `false` and the surrounding filter SHALL exclude the record from the response
 
-### REQ-005: Procest SHALL ship default ZGW mappings via a repair step on app install
+### REQ-005: Dossiq SHALL ship default ZGW mappings via a repair step on app install
 
-`OCA\Procest\Repair\LoadDefaultZgwMappings` SHALL run as a Nextcloud repair step on app install/upgrade and create one default Mapping record per ZGW resource (ZRC zaak, status, resultaat, rol, zaakeigenschap, zaakinformatieobject, zaakobject, klantcontact; ZTC catalogus, zaaktype, statustype, resultaattype, roltype, eigenschap, besluittype, informatieobjecttype; DRC enkelvoudiginformatieobject, gebruiksrechten, objectinformatieobject; BRC besluit, besluitinformatieobject; NRC kanaal, abonnement) using `LoadDefaultZgwMappings::create…Mapping()` private methods. Existing mappings (matched by slug/reference) SHALL be left untouched — the repair step SHALL be idempotent.
+`OCA\Dossiq\Repair\LoadDefaultZgwMappings` SHALL run as a Nextcloud repair step on app install/upgrade and create one default Mapping record per ZGW resource (ZRC zaak, status, resultaat, rol, zaakeigenschap, zaakinformatieobject, zaakobject, klantcontact; ZTC catalogus, zaaktype, statustype, resultaattype, roltype, eigenschap, besluittype, informatieobjecttype; DRC enkelvoudiginformatieobject, gebruiksrechten, objectinformatieobject; BRC besluit, besluitinformatieobject; NRC kanaal, abonnement) using `LoadDefaultZgwMappings::create…Mapping()` private methods. Existing mappings (matched by slug/reference) SHALL be left untouched — the repair step SHALL be idempotent.
 
 #### Scenario: Fresh install seeds the default mapping set
-- **WHEN** procest is installed for the first time and `LoadDefaultZgwMappings::run()` executes
+- **WHEN** dossiq is installed for the first time and `LoadDefaultZgwMappings::run()` executes
 - **THEN** the ZGW Mapping entities for every default resource SHALL exist in the configured register
 - **AND** the seeder SHALL be safe to re-run after upgrade — pre-existing custom mappings with the same slug SHALL NOT be overwritten
 
@@ -705,7 +705,7 @@ The ZGW mapping layer SHALL translate `case.relatedCases` to the ZRC Zaak field 
 - **GIVEN** a case whose `relatedCases` contains `{caseId: <uuid-B>, aardRelatie: onderwerp}`
 - **WHEN** a ZGW consumer retrieves the zaak via `GET /api/zgw/zaken/v1/zaken/{uuid}`
 - **THEN** the response MUST contain `relevanteAndereZaken: [{url: <absolute zaak URL for uuid-B>, aardRelatie: "onderwerp"}]`
-- **AND** the procest-local `toelichting` MUST NOT appear in the ZGW shape
+- **AND** the dossiq-local `toelichting` MUST NOT appear in the ZGW shape
 
 #### Scenario: Inbound relevanteAndereZaken is resolved and guarded
 
@@ -739,14 +739,14 @@ The ZGW mapping layer SHALL translate `case.relatedCases` to the ZRC Zaak field 
 - **OpenRegister MappingMapper** (`lib/Db/MappingMapper.php`) -- CRUD with multi-tenancy, RBAC, cache invalidation
 - **OpenRegister Endpoint entity** (`lib/Db/Endpoint.php`) -- `inputMapping`/`outputMapping` references, endpoint path matching with regex
 - **OpenRegister MappingsController** (`lib/Controller/MappingsController.php`) -- CRUD API plus `test()` endpoint for mapping preview
-- **Procest schemas** -- 12+ ZGW-mapped schemas (case, caseType, statusType, resultType, roleType, role, result, decision, decisionType, documentType, propertyDefinition, etc.)
-- **Procest configuration JSON** -- default Mapping and Endpoint definitions shipped with Procest
+- **Dossiq schemas** -- 12+ ZGW-mapped schemas (case, caseType, statusType, resultType, roleType, role, result, decision, decisionType, documentType, propertyDefinition, etc.)
+- **Dossiq configuration JSON** -- default Mapping and Endpoint definitions shipped with Dossiq
 
 ## Cross-References
 - **besluiten-management** (`openregister/openspec/specs/besluiten-management/spec.md`) -- BRC Besluiten API data model, decision types, appeal period tracking
 - **document-zaakdossier** (`openregister/openspec/specs/document-zaakdossier/spec.md`) -- DRC Documenten API integration, file storage in Nextcloud Files
 - **webhook-payload-mapping** (`openregister/openspec/specs/webhook-payload-mapping/spec.md`) -- NRC-compatible notifications via webhook Mapping transformation
-- **roles-decisions** (`procest/openspec/specs/roles-decisions/spec.md`) -- ZRC Rol and Resultaat data models, generic role enum mapping
+- **roles-decisions** (`dossiq/openspec/specs/roles-decisions/spec.md`) -- ZRC Rol and Resultaat data models, generic role enum mapping
 - **notificatie-engine** (`openregister/openspec/specs/notificatie-engine/spec.md`) -- VNG Notificaties API compliance layer
 - **openapi-generation** (`openregister/openspec/specs/openapi-generation/spec.md`) -- auto-generated OpenAPI specs for ZGW endpoints
 
@@ -771,8 +771,8 @@ The ZGW mapping layer SHALL translate `case.relatedCases` to the ZRC Zaak field 
 - ZGW query parameter mapping (Dutch filter names to English, URL value extraction)
 - ZGW error response format (VNG-standard `type`, `code`, `title`, `status`, `detail`, `instance`)
 - ZGW response headers (`API-version`, `Content-Crs`)
-- Default ZGW Mapping entities shipped with Procest configuration JSON
-- Default ZGW Endpoint entities shipped with Procest configuration JSON
+- Default ZGW Mapping entities shipped with Dossiq configuration JSON
+- Default ZGW Endpoint entities shipped with Dossiq configuration JSON
 - Virtual Catalogus resource derived from register metadata
 - NRC (Notificaties API) kanaal and abonnement endpoints
 - DRC document content download endpoint and base64 content handling
@@ -830,4 +830,4 @@ The ZGW mapping layer SHALL translate `case.relatedCases` to the ZRC Zaak field 
 - `Endpoint` entity -- configurable API endpoints with input/output mapping references, already implemented.
 - `ObjectService` -- standard CRUD and filtering for register objects.
 - `SchemaService` / `RegisterService` -- schema and register lookups for route-to-data resolution.
-- Procest app -- stores ZGW mapping configuration and default mappings for the ZGW resource types.
+- Dossiq app -- stores ZGW mapping configuration and default mappings for the ZGW resource types.

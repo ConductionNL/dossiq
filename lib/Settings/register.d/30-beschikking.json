@@ -28,7 +28,7 @@
           "caseId": {
             "type": "string",
             "title": "Case ID",
-            "description": "Back-reference to the procest case this beschikking belongs to",
+            "description": "Back-reference to the dossiq case this beschikking belongs to",
             "facetable": true
           },
           "caseType": {

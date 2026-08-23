@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Mandate Validation Middleware
+ * Dossiq Mandate Validation Middleware
  *
  * Blocks mandate-requiring requests (edit, status_update, delete, create)
  * when the user's mandate-matrix entry does not authorise the action.
  *
  * @category Middleware
- * @package  OCA\Procest\Middleware
+ * @package  OCA\Dossiq\Middleware
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -16,17 +16,17 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Middleware;
+namespace OCA\Dossiq\Middleware;
 
-use OCA\Procest\Service\TenantAuthenticationService;
-use OCA\Procest\Service\TenantContext;
+use OCA\Dossiq\Service\TenantAuthenticationService;
+use OCA\Dossiq\Service\TenantContext;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Middleware;
 use OCP\IRequest;
@@ -179,7 +179,7 @@ class MandateValidationMiddleware extends Middleware {
 	 */
 	private function logDecision(string $tenantId, string $userId, string $action, array $decision): void {
 		$this->logger->info(
-			'Procest mandate decision',
+			'Dossiq mandate decision',
 			[
 				'tenantId' => $tenantId,
 				'userId' => $userId,

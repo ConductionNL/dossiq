@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest RenameDutchDirectionValues Repair Step
+ * Dossiq RenameDutchDirectionValues Repair Step
  *
  * Rewrites the stored VALUES of the `direction` property from Dutch to English
  * so rows written before the vocabulary change stay readable afterwards.
@@ -52,7 +52,7 @@
  *     row must not come back with a direction the schema no longer allows.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -60,14 +60,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/stuf-zkn-outbound/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
 use OCP\DB\Exception;
 use OCP\IDBConnection;
@@ -89,6 +89,9 @@ class RenameDutchDirectionValues implements IRepairStep {
 	 *
 	 * @var string
 	 */
+	// FROZEN: OpenRegister register SLUG, unchanged by the procest -> dossiq
+	// app-id rename. Prefix-matches `procest` and `procest-default`; a renamed
+	// value matches neither and the rewrite silently becomes a no-op.
 	private const REGISTER_SLUG_PREFIX = 'procest';
 
 	/**
@@ -106,14 +109,13 @@ class RenameDutchDirectionValues implements IRepairStep {
 	private const VALUE_MAP = [
 		'inkomend' => 'inbound',
 		'uitgaand' => 'outbound',
-		'intern'   => 'internal',
+		'intern' => 'internal',
 	];
-
 
 	/**
 	 * Constructor.
 	 *
-	 * @param IDBConnection   $db     Database connection.
+	 * @param IDBConnection $db Database connection.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
@@ -123,17 +125,14 @@ class RenameDutchDirectionValues implements IRepairStep {
 
 	}//end __construct()
 
-
 	/**
 	 * Step name shown by `occ maintenance:repair`.
 	 *
 	 * @return string
 	 */
 	public function getName(): string {
-		return 'Procest: rewrite Dutch direction values (inkomend/uitgaand/intern) to English';
-
+		return 'Dossiq: rewrite Dutch direction values (inkomend/uitgaand/intern) to English';
 	}//end getName()
-
 
 	/**
 	 * Rewrite the direction values across every procest shard table.
@@ -197,7 +196,6 @@ class RenameDutchDirectionValues implements IRepairStep {
 
 	}//end run()
 
-
 	/**
 	 * Whether a shard table carries a `direction` column.
 	 *
@@ -223,9 +221,7 @@ class RenameDutchDirectionValues implements IRepairStep {
 		}
 
 		return $stmt->fetch(\PDO::FETCH_ASSOC) !== false;
-
 	}//end hasDirectionColumn()
-
 
 	/**
 	 * Resolve the shard tables of every register whose slug starts with the prefix.
@@ -285,9 +281,7 @@ class RenameDutchDirectionValues implements IRepairStep {
 		}
 
 		return $tables;
-
 	}//end shardTables()
-
 
 	/**
 	 * Whether a table name belongs to one of the in-scope registers.
@@ -295,7 +289,7 @@ class RenameDutchDirectionValues implements IRepairStep {
 	 * Matched on the `openregister_table_<id>_` MARKER rather than a computed
 	 * prefix, so an instance-specific table prefix cannot make the match fail.
 	 *
-	 * @param string             $table   The table name.
+	 * @param string $table The table name.
 	 * @param array<int, string> $markers The in-scope markers.
 	 *
 	 * @return bool
@@ -308,9 +302,7 @@ class RenameDutchDirectionValues implements IRepairStep {
 		}
 
 		return false;
-
 	}//end isShardOf()
-
 
 	/**
 	 * Quote an identifier for the active platform.
@@ -325,8 +317,6 @@ class RenameDutchDirectionValues implements IRepairStep {
 	 */
 	private function quote(string $identifier): string {
 		return $this->db->getDatabasePlatform()->quoteSingleIdentifier($identifier);
-
 	}//end quote()
-
 
 }//end class

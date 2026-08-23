@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @category  Test
- * @package   OCA\Procest\Tests\Unit\Sections
+ * @package   OCA\Dossiq\Tests\Unit\Sections
  * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2
@@ -14,9 +14,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Sections;
+namespace OCA\Dossiq\Tests\Unit\Sections;
 
-use OCA\Procest\Sections\PersonalSection;
+use OCA\Dossiq\Sections\PersonalSection;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCP\Settings\IIconSection;
@@ -76,7 +76,7 @@ class PersonalSectionTest extends TestCase {
      * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
      */
     public function testIdMatchesTheSettingsSection(): void {
-        $this->assertSame('procest', $this->section()->getID());
+        $this->assertSame('dossiq', $this->section()->getID());
 
     }//end testIdMatchesTheSettingsSection()
 

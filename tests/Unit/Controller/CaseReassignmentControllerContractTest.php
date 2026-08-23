@@ -27,21 +27,21 @@
  *    can distinguish "your request was wrong" from "we broke".
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\CaseReassignmentController;
-use OCA\Procest\Service\CaseReassignmentService;
+use OCA\Dossiq\Controller\CaseReassignmentController;
+use OCA\Dossiq\Service\CaseReassignmentService;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -54,7 +54,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Wire-contract tests for CaseReassignmentController.
  *
- * @covers \OCA\Procest\Controller\CaseReassignmentController
+ * @covers \OCA\Dossiq\Controller\CaseReassignmentController
  */
 class CaseReassignmentControllerContractTest extends TestCase {
 
@@ -115,7 +115,7 @@ class CaseReassignmentControllerContractTest extends TestCase {
 		$this->logger = $this->createMock(LoggerInterface::class);
 
 		$this->controller = new CaseReassignmentController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			reassignmentService: $this->reassignmentService,
 			userSession: $this->userSession,

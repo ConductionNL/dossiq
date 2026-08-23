@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest Admin Settings
+ * Dossiq Admin Settings
  *
- * Provides the admin settings form for the Procest application.
+ * Provides the admin settings form for the Dossiq application.
  *
  * @category Settings
- * @package  OCA\Procest\Settings
+ * @package  OCA\Dossiq\Settings
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -17,26 +17,26 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Settings;
+namespace OCA\Dossiq\Settings;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\Settings\IDelegatedSettings;
 
 /**
- * Provides the admin settings form for the Procest application.
+ * Provides the admin settings form for the Dossiq application.
  *
  * Implements IDelegatedSettings so the form can be guarded by
  * #[AuthorizedAdminSetting(settings: AdminSettings::class)] on the
- * controllers that mutate Procest configuration.
+ * controllers that mutate Dossiq configuration.
  */
 class AdminSettings implements IDelegatedSettings {
 	/**
@@ -144,7 +144,7 @@ class AdminSettings implements IDelegatedSettings {
 	 * @return string
 	 */
 	public function getSection(): string {
-		return 'procest';
+		return 'dossiq';
 	}//end getSection()
 
 	/**
@@ -168,7 +168,7 @@ class AdminSettings implements IDelegatedSettings {
 	/**
 	 * App config keys an authorized (delegated) admin may manage.
 	 *
-	 * Returned as a map of appId => list of allowed config keys. Procest
+	 * Returned as a map of appId => list of allowed config keys. Dossiq
 	 * exposes no delegatable sub-keys yet, so this is intentionally empty;
 	 * the attribute still scopes the endpoint to full admins.
 	 *

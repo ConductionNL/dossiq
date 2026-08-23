@@ -4,7 +4,7 @@ const sidebarNav = (page: Page) => page.locator('[id^="app-navigation"]').first(
 
 test.describe('Sidebar Navigation', () => {
 	test('shows all navigation items', async ({ page }) => {
-		await page.goto('/index.php/apps/procest')
+		await page.goto('/index.php/apps/dossiq')
 		const nav = sidebarNav(page)
 
 		// Main route entries that render as visible app-navigation links.
@@ -47,18 +47,18 @@ test.describe('Sidebar Navigation', () => {
 	})
 
 	test('sidebar links point to correct URLs', async ({ page }) => {
-		await page.goto('/index.php/apps/procest')
+		await page.goto('/index.php/apps/dossiq')
 		const nav = sidebarNav(page)
 
 		// Hrefs measured on a CI runner (2026-08-04). Note the rendered hrefs
-		// carry the `/index.php` prefix — the bare `/apps/procest/...` values
+		// carry the `/index.php` prefix — the bare `/apps/dossiq/...` values
 		// this spec used to assert never matched what the nav actually emits.
 		// "Tasks" is not a top-level nav entry; its /tasks route stays
 		// deep-linkable and is covered by pages.spec.ts.
 		// "Cases" is a visible top-level leaf, so it can be matched by role.
 		await expect(
 			nav.getByRole('link', { name: 'Cases', exact: true }),
-		).toHaveAttribute('href', '/index.php/apps/procest/cases')
+		).toHaveAttribute('href', '/index.php/apps/dossiq/cases')
 
 		// The rest live in collapsed groups and are therefore absent from the
 		// accessibility tree — assert their href wiring via the DOM, checking
@@ -68,12 +68,12 @@ test.describe('Sidebar Navigation', () => {
 			await expect(link).toHaveCount(1)
 			await expect(link).toHaveText(new RegExp(label))
 		}
-		await byHref('/index.php/apps/procest/my-work', 'My work')
-		await byHref('/index.php/apps/procest/workflow-board', 'Workflow board')
+		await byHref('/index.php/apps/dossiq/my-work', 'My work')
+		await byHref('/index.php/apps/dossiq/workflow-board', 'Workflow board')
 	})
 
 	test('settings button is visible', async ({ page }) => {
-		await page.goto('/index.php/apps/procest')
+		await page.goto('/index.php/apps/dossiq')
 		// Settings button at the bottom of the app sidebar — the platform gear
 		// foldout, which legitimately says "Settings".
 		//
@@ -89,9 +89,9 @@ test.describe('Sidebar Navigation', () => {
 	})
 
 	test('clicking nav item navigates', async ({ page }) => {
-		await page.goto('/index.php/apps/procest')
+		await page.goto('/index.php/apps/dossiq')
 
-		// A "Support Procest" dialog can auto-open over the app and intercept
+		// A "Support Dossiq" dialog can auto-open over the app and intercept
 		// pointer events on the navigation. Dismiss it if present.
 		const supportDialog = page.locator('[data-testid-modal="cn-support-dialog"]')
 		if (await supportDialog.isVisible().catch(() => false)) {

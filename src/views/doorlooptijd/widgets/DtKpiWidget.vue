@@ -19,7 +19,7 @@
 		<NcEmptyContent
 			v-else-if="noCases"
 			:name="
-				t('procest', 'No case data available for processing time analysis.')
+				t('dossiq', 'No case data available for processing time analysis.')
 			" />
 
 		<div v-else-if="noSla" class="dt-kpi-widget__guidance">
@@ -32,13 +32,13 @@
 				}}
 			</p>
 			<NcButton variant="primary" @click="goToSettings">
-				{{ t('procest', 'Go to Settings') }}
+				{{ t('dossiq', 'Go to Settings') }}
 			</NcButton>
 		</div>
 
 		<NcEmptyContent
 			v-else-if="noDataInRange"
-			:name="t('procest', 'No completed cases in the selected date range.')" />
+			:name="t('dossiq', 'No completed cases in the selected date range.')" />
 
 		<DeadlineKpiRow
 			v-else

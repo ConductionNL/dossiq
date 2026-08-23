@@ -1,20 +1,20 @@
 <?php
 
 /**
- * Procest VTH workflow graph resolver.
+ * Dossiq VTH workflow graph resolver.
  *
  * Turns the `steps[]` and `transitions[]` blocks of a VTH workflow-template
  * catalog entry into the resolved graph the workflowTemplate schema expects,
  * binding every status NAME to the statusType UUID it refers to.
  *
- * Split out of {@see \OCA\Procest\Repair\SeedVthWorkflowTemplates}: the seed
+ * Split out of {@see \OCA\Dossiq\Repair\SeedVthWorkflowTemplates}: the seed
  * step's job is orchestration (read catalog, resolve context, create + publish),
  * while translating one catalog entry's graph is a self-contained, purely
  * computational concern with its own all-or-nothing rule — an unresolvable
  * status name fails the WHOLE template rather than seeding a partial graph.
  *
  * @category Repair
- * @package  OCA\Procest\Repair\Vth
+ * @package  OCA\Dossiq\Repair\Vth
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,7 +22,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -32,9 +32,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair\Vth;
+namespace OCA\Dossiq\Repair\Vth;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -99,7 +99,7 @@ class VthWorkflowGraphResolver {
 		);
 		if ($resolvedSteps === null) {
 			$this->logger->warning(
-				'Procest: VTH workflow template — unresolved status in steps, skipping',
+				'Dossiq: VTH workflow template — unresolved status in steps, skipping',
 				['app' => Application::APP_ID, 'slug' => $slug]
 			);
 			return null;
@@ -113,7 +113,7 @@ class VthWorkflowGraphResolver {
 		);
 		if ($resolvedTransitions === null) {
 			$this->logger->warning(
-				'Procest: VTH workflow template — unresolved status in transitions, skipping',
+				'Dossiq: VTH workflow template — unresolved status in transitions, skipping',
 				['app' => Application::APP_ID, 'slug' => $slug]
 			);
 			return null;

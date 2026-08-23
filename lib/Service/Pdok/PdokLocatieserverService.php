@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Procest PDOK Locatieserver Service
+ * Dossiq PDOK Locatieserver Service
  *
- * Shared, server-side ingress for every Procest call against the PDOK
+ * Shared, server-side ingress for every Dossiq call against the PDOK
  * Locatieserver v3_1 API (suggest, free, lookup, reverse). Other code MUST
  * NOT instantiate its own HTTP client targeting `api.pdok.nl/bzk/locatieserver`
  * — case-location, case-map-overview, and the map component all consume this
@@ -21,7 +21,7 @@
  * free-text (REQ-CL-3 graceful degradation).
  *
  * @category Service
- * @package  OCA\Procest\Service\Pdok
+ * @package  OCA\Dossiq\Service\Pdok
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -29,16 +29,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/pdok-integration/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Pdok;
+namespace OCA\Dossiq\Service\Pdok;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;
 use OCP\ICache;
@@ -109,7 +109,7 @@ class PdokLocatieserverService {
 		private LoggerInterface $logger,
 		private IClientService $clientService,
 	) {
-		$this->cache = $cacheFactory->createDistributed('procest_pdok_locatieserver');
+		$this->cache = $cacheFactory->createDistributed('dossiq_pdok_locatieserver');
 	}//end __construct()
 
 	/**
@@ -255,7 +255,7 @@ class PdokLocatieserverService {
 		$cached = $this->cache->get($cacheKey);
 		if ($cached !== null) {
 			$this->logger->debug(
-				'Procest PDOK Locatieserver cache hit',
+				'Dossiq PDOK Locatieserver cache hit',
 				['method' => $method, 'key' => $cacheKey]
 			);
 			return $cached;
@@ -287,7 +287,7 @@ class PdokLocatieserverService {
 		} catch (RuntimeException $e) {
 			$this->recordFailure(statusCode: $e->getCode());
 			$this->logger->warning(
-				'Procest PDOK Locatieserver call failed',
+				'Dossiq PDOK Locatieserver call failed',
 				[
 					'method' => $method,
 					'error' => $e->getMessage(),
@@ -306,7 +306,7 @@ class PdokLocatieserverService {
 
 		$elapsedMs = (int)((microtime(as_float: true) - $started) * 1000);
 		$this->logger->info(
-			'Procest PDOK Locatieserver call',
+			'Dossiq PDOK Locatieserver call',
 			[
 				'method' => $method,
 				'cache' => 'miss',
@@ -403,7 +403,7 @@ class PdokLocatieserverService {
 	 *
 	 * OpenConnector is an optional runtime dependency; the source slug carries
 	 * its own credentials inside OpenConnector's vault, so no auth material is
-	 * ever stored in Procest config. If OpenConnector is not installed the
+	 * ever stored in Dossiq config. If OpenConnector is not installed the
 	 * call falls back to a direct HTTP call against the configured endpoint.
 	 *
 	 * @param string $sourceSlug OpenConnector source slug.
@@ -419,7 +419,7 @@ class PdokLocatieserverService {
 			$callService = $this->container->get('OCA\OpenConnector\Service\CallService');
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest PDOK Locatieserver: OpenConnector not available, falling back to direct HTTP',
+				'Dossiq PDOK Locatieserver: OpenConnector not available, falling back to direct HTTP',
 				['sourceSlug' => $sourceSlug, 'error' => $e->getMessage()]
 			);
 			$endpoint = $this->appConfig->getValueString(
@@ -432,7 +432,7 @@ class PdokLocatieserverService {
 
 		// We intentionally call CallService dynamically; the signature has
 		// varied across OpenConnector versions and we keep this loose to
-		// avoid coupling Procest to a specific contract. The minimum
+		// avoid coupling Dossiq to a specific contract. The minimum
 		// contract is `call(string $sourceSlug, string $endpoint, string
 		// $method, array $config): array` returning a body string under
 		// `['body']` or `['response']['body']`.
@@ -513,7 +513,7 @@ class PdokLocatieserverService {
 			$this->cache->set('degraded_until', ($now + self::DEGRADED_TTL), self::DEGRADED_TTL);
 			$this->cache->remove('failures');
 			$this->logger->warning(
-				'Procest PDOK Locatieserver: degraded state engaged',
+				'Dossiq PDOK Locatieserver: degraded state engaged',
 				['failureCount' => count(value: $failures), 'cooldownSec' => self::DEGRADED_TTL]
 			);
 			return;

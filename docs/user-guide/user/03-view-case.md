@@ -14,12 +14,12 @@ By the end you will have opened the Cases list, located a case by search or filt
 
 ## Prerequisites
 
-- Completed [Open Procest for the first time](./01-first-launch.md).
+- Completed [Open Dossiq for the first time](./01-first-launch.md).
 - At least one case in the register: otherwise the list shows *No items found*.
 
 ## Steps
 
-1. From the Procest navigation, click **Cases**. The list view opens with a *Cards / Table* toggle.
+1. From the Dossiq navigation, click **Cases**. The list view opens with a *Cards / Table* toggle.
 
    ![Cases list view](/screenshots/tutorials/user/03-view-case-01.png)
 
@@ -43,7 +43,7 @@ You are reading the case correctly when: the header shows a non-empty status pil
 
 | Symptom | Fix |
 |---|---|
-| Detail view opens but body is empty | The case schema fields are not mapped: see [Manage Procest settings](../admin/03-admin-settings.md) and re-import the configuration. |
+| Detail view opens but body is empty | The case schema fields are not mapped: see [Manage Dossiq settings](../admin/03-admin-settings.md) and re-import the configuration. |
 | Status pill is blank | The case has no current status; open the **History** tab to confirm a starting status was set, or transition it via [Move a case through its workflow](./04-advance-case.md). |
 | Search field returns nothing | Search is case-sensitive by default; clear filters with the *X* in the search row. |
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Render-shell coverage for six manifest pages that no other spec drove.
@@ -14,7 +14,7 @@
  * throwing.
  *
  * That is a real question with three distinguishable answers, measured on a
- * live instance (procest 0.3.9) before these tests were written:
+ * live instance (dossiq 0.3.9) before these tests were written:
  *
  *   route resolves, component registered   → the page's own heading
  *   route resolves, component NOT registered → the manifest renderer's

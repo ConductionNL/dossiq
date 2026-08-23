@@ -1,14 +1,14 @@
 <template>
 	<NcDialog
 		:open="open"
-		:name="t('procest', 'Share case with a remote organisation')"
+		:name="t('dossiq', 'Share case with a remote organisation')"
 		size="normal"
 		@update:open="$emit('update:open', $event)">
 		<div class="create-federated-share-dialog">
 			<p class="create-federated-share-dialog__description">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Only the fields you select below are shared — never the whole case. The remote organisation gets read-only access to a snapshot; it can collaborate via the activity stream but cannot change the case.',
 					)
 				}}
@@ -16,19 +16,19 @@
 
 			<div class="form-group">
 				<label for="federated-share-remote-cloud-id">{{
-					t('procest', 'Remote cloud ID')
+					t('dossiq', 'Remote cloud ID')
 				}}</label>
 				<input
 					id="federated-share-remote-cloud-id"
 					v-model="form.remoteCloudId"
 					type="text"
 					:placeholder="
-						t('procest', 'e.g. partner-org@partner.example.com')
+						t('dossiq', 'e.g. partner-org@partner.example.com')
 					" />
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Fields to share') }}</label>
+				<label>{{ t('dossiq', 'Fields to share') }}</label>
 				<ul class="create-federated-share-dialog__fields">
 					<li v-for="field in allowedFields" :key="field.value">
 						<label class="create-federated-share-dialog__checkbox">
@@ -43,7 +43,7 @@
 			</div>
 
 			<div v-if="documents.length > 0" class="form-group">
-				<label>{{ t('procest', 'Documents to share') }}</label>
+				<label>{{ t('dossiq', 'Documents to share') }}</label>
 				<ul class="create-federated-share-dialog__fields">
 					<li v-for="doc in documents" :key="doc.id">
 						<label class="create-federated-share-dialog__checkbox">
@@ -60,13 +60,13 @@
 
 		<template #actions>
 			<NcButton @click="$emit('update:open', false)">
-				{{ t('procest', 'Cancel') }}
+				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 			<NcButton
 				type="primary"
 				:disabled="!isValid || saving"
 				@click="createFederatedShare">
-				{{ saving ? t('procest', 'Sharing...') : t('procest', 'Share') }}
+				{{ saving ? t('dossiq', 'Sharing...') : t('dossiq', 'Share') }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -137,16 +137,18 @@ export default {
 		/**
 		 * @param {string} value the field name.
 		 * @return {string} a human-readable label.
+		 *
+		 * @spec openspec/specs/federated-case-collaboration/spec.md#requirement-federated-case-share-is-a-redacted-snapshot-never-the-live-case
 		 */
 		fieldLabel(value) {
 			const labels = {
-				title: t('procest', 'Title'),
-				description: t('procest', 'Description'),
-				status: t('procest', 'Status'),
-				caseType: t('procest', 'Case type'),
-				priority: t('procest', 'Priority'),
-				dueDate: t('procest', 'Due date'),
-				requestedDate: t('procest', 'Requested date'),
+				title: t('dossiq', 'Title'),
+				description: t('dossiq', 'Description'),
+				status: t('dossiq', 'Status'),
+				caseType: t('dossiq', 'Case type'),
+				priority: t('dossiq', 'Priority'),
+				dueDate: t('dossiq', 'Due date'),
+				requestedDate: t('dossiq', 'Requested date'),
 			}
 			return labels[value] || value
 		},

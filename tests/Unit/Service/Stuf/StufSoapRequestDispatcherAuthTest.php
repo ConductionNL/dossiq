@@ -14,7 +14,7 @@
  * guard that refused everything would fail too.
  *
  * @category Test
- * @package  OCA\Procest\Tests\Unit\Service\Stuf
+ * @package  OCA\Dossiq\Tests\Unit\Service\Stuf
  *
  * @author    Conduction <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,19 +22,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/stuf-integration/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Stuf;
+namespace OCA\Dossiq\Tests\Unit\Service\Stuf;
 
-use OCA\Procest\Service\Stuf\StufEnvelopeInspector;
-use OCA\Procest\Service\Stuf\StufResponseBuilder;
-use OCA\Procest\Service\Stuf\StufSoapRequestDispatcher;
-use OCA\Procest\Service\Stuf\StufZknMessageResponder;
+use OCA\Dossiq\Service\Stuf\StufEnvelopeInspector;
+use OCA\Dossiq\Service\Stuf\StufResponseBuilder;
+use OCA\Dossiq\Service\Stuf\StufSoapRequestDispatcher;
+use OCA\Dossiq\Service\Stuf\StufZknMessageResponder;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDisplayResponse;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -45,7 +45,7 @@ use Psr\Log\LoggerInterface;
  * Tests that an inbound StUF envelope is authenticated before it is
  * interpreted.
  *
- * @covers \OCA\Procest\Service\Stuf\StufSoapRequestDispatcher
+ * @covers \OCA\Dossiq\Service\Stuf\StufSoapRequestDispatcher
  */
 class StufSoapRequestDispatcherAuthTest extends TestCase {
 	/**

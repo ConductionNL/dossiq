@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Tenant Context
+ * Dossiq Tenant Context
  *
  * Request-scoped holder of the resolved tenant — UUID, slug, schema name,
  * full tenant row. Populated by `TenantContextMiddleware` early in the
@@ -9,7 +9,7 @@
  * need to know which tenant they are operating on.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,14 +18,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use RuntimeException;
 

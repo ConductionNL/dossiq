@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Case Email Service
+ * Dossiq Case Email Service
  *
  * Service for sending and receiving email within case context.
  * Supports template variable resolution, email-to-PDF conversion,
  * and automatic linking of inbound email to cases.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -19,19 +19,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Email\CaseContactDirectory;
-use OCA\Procest\Service\Email\CaseEmailAttachmentResolver;
-use OCA\Procest\Service\Email\CaseEmailRepository;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Email\CaseContactDirectory;
+use OCA\Dossiq\Service\Email\CaseEmailAttachmentResolver;
+use OCA\Dossiq\Service\Email\CaseEmailRepository;
 use OCP\IAppConfig;
 use OCP\Mail\IMailer;
 use OCP\Mail\IMessage;
@@ -107,7 +107,7 @@ class CaseEmailService {
 		$fromName = $this->appConfig->getValueString(
 			Application::APP_ID,
 			'email_from_name',
-			'Procest',
+			'Dossiq',
 		);
 
 		// C4 IDOR: Load the case via OR with RBAC enabled to verify the current user

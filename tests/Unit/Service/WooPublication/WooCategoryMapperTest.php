@@ -4,7 +4,7 @@
  * WooCategoryMapper Unit Tests.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\WooPublication
+ * @package  OCA\Dossiq\Tests\Unit\Service\WooPublication
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,13 +18,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\WooPublication;
+namespace OCA\Dossiq\Tests\Unit\Service\WooPublication;
 
-use OCA\Procest\Service\WooPublication\WooCategoryMapper;
+use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Procest\Service\WooPublication\WooCategoryMapper
+ * @covers \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
  */
 class WooCategoryMapperTest extends TestCase {
 

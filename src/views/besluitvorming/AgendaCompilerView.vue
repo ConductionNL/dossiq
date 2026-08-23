@@ -5,10 +5,10 @@
 <template>
 	<div class="agenda-compiler">
 		<CnDetailPage
-			:title="t('procest', 'Agenda samenstellen')"
+			:title="t('dossiq', 'Agenda samenstellen')"
 			:subtitle="
 				t(
-					'procest',
+					'dossiq',
 					'Compile the meeting agenda from decisions ready for scheduling',
 				)
 			"
@@ -19,42 +19,42 @@
 					type="secondary"
 					:disabled="agenda.length === 0"
 					@click="onGenerate">
-					{{ t('procest', 'Agenda genereren') }}
+					{{ t('dossiq', 'Agenda genereren') }}
 				</NcButton>
 				<NcButton
 					type="primary"
 					:disabled="agenda.length === 0 || !meetingDate"
 					@click="onConfirm">
-					{{ t('procest', 'Agenda bevestigen') }}
+					{{ t('dossiq', 'Agenda bevestigen') }}
 				</NcButton>
 			</template>
 
-			<CnDetailCard :title="t('procest', 'Vergadering')">
+			<CnDetailCard :title="t('dossiq', 'Vergadering')">
 				<div class="agenda-compiler__controls">
 					<label for="bvw-gremium">{{
-						t('procest', 'Vergadergremium')
+						t('dossiq', 'Vergadergremium')
 					}}</label>
 					<NcSelect
 						v-model="gremium"
 						inputId="bvw-gremium"
-						:inputLabel="t('procest', 'Vergadergremium')"
+						:inputLabel="t('dossiq', 'Vergadergremium')"
 						:options="gremiumOptions"
 						@update:modelValue="loadReadyItems" />
-					<label for="bvw-date">{{ t('procest', 'Vergaderdatum') }}</label>
+					<label for="bvw-date">{{ t('dossiq', 'Vergaderdatum') }}</label>
 					<input id="bvw-date" v-model="meetingDate" type="date" />
 				</div>
 			</CnDetailCard>
 
 			<div class="agenda-compiler__panels">
 				<CnDetailCard
-					:title="t('procest', 'Available for scheduling')"
+					:title="t('dossiq', 'Available for scheduling')"
 					class="agenda-compiler__panel">
 					<NcEmptyContent
 						v-if="available.length === 0"
-						:name="t('procest', 'No available items')"
+						:name="t('dossiq', 'No available items')"
 						:description="
 							t(
-								'procest',
+								'dossiq',
 								'No decisions are ready for scheduling for this body.',
 							)
 						" />
@@ -63,10 +63,10 @@
 						:key="item.id"
 						class="agenda-compiler__available-item">
 						<span>{{
-							item.title || t('procest', 'Onbenoemd voorstel')
+							item.title || t('dossiq', 'Onbenoemd voorstel')
 						}}</span>
 						<NcButton type="tertiary" @click="addItem(item)">
-							{{ t('procest', 'Toevoegen') }}
+							{{ t('dossiq', 'Toevoegen') }}
 						</NcButton>
 					</div>
 				</CnDetailCard>
@@ -74,9 +74,9 @@
 				<CnDetailCard :title="agendaTitle" class="agenda-compiler__panel">
 					<NcEmptyContent
 						v-if="agenda.length === 0"
-						:name="t('procest', 'Lege agenda')"
+						:name="t('dossiq', 'Lege agenda')"
 						:description="
-							t('procest', 'Add items from the list on the left.')
+							t('dossiq', 'Add items from the list on the left.')
 						" />
 					<AgendaItem
 						v-for="item in agenda"
@@ -128,9 +128,16 @@ export default {
 			return useObjectStore()
 		},
 
+		/**
+		 * Heading for the agenda currently being compiled.
+		 *
+		 * @return {string} The agenda title.
+		 *
+		 * @spec openspec/specs/besluitvorming-workflow/spec.md#requirement-req-bvw-004-agenda-compiler-must-support-hamerstukken-and-bespreekstukken-with-configurable-ordering
+		 */
 		agendaTitle() {
 			const label = this.meetingDate ? ' ' + this.meetingDate : ''
-			return this.t('procest', 'Agenda') + label
+			return this.t('dossiq', 'Agenda') + label
 		},
 	},
 

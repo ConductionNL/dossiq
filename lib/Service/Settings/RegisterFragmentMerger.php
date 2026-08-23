@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Procest register fragment merger (ADR-037).
+ * Dossiq register fragment merger (ADR-037).
  *
  * Deep-merges the modular register fragments in `lib/Settings/register.d/*.json`
- * onto the `procest_register.json` monolith, so concurrent same-app builds can
+ * onto the `dossiq_register.json` monolith, so concurrent same-app builds can
  * add registers and schemas via isolated fragment files instead of all editing
  * one file and conflicting.
  *
@@ -12,12 +12,12 @@
  * fragment changes the import version — which is OpenRegister's idempotency key,
  * and therefore the only thing that forces a re-import.
  *
- * Split out of {@see \OCA\Procest\Service\SettingsService}: merging is a pure
+ * Split out of {@see \OCA\Dossiq\Service\SettingsService}: merging is a pure
  * data transformation with no config, no container and no logging, and both of
  * its callers only need the merged result.
  *
  * @category Service
- * @package  OCA\Procest\Service\Settings
+ * @package  OCA\Dossiq\Service\Settings
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,7 +25,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -35,7 +35,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Settings;
+namespace OCA\Dossiq\Service\Settings;
 
 /**
  * Deep-merges modular register fragments onto the base register configuration.

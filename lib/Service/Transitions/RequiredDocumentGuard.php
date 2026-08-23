@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Required Document Guard evaluator.
+ * Dossiq Required Document Guard evaluator.
  *
  * Guard config shape: `{type: 'requiredDocument', documentType: 'Besluit'}`.
  * Passes when at least one document linked to the case has the matching
@@ -9,7 +9,7 @@
  * `case.relations` (whichever the case schema exposes for attachments).
  *
  * @category Service
- * @package  OCA\Procest\Service\Transitions
+ * @package  OCA\Dossiq\Service\Transitions
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,12 +20,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Transitions;
+namespace OCA\Dossiq\Service\Transitions;
 
 /**
  * Guard: verifies the case has at least one document of the required type.

@@ -1,11 +1,11 @@
-# Procest — Conduction PHPStan config.
+# Dossiq — Conduction PHPStan config.
 #
 # The shared base is the single source of truth. Everything here is either the
 # app's own tracked debt or an ignore naming a symbol that exists in no other
 # fleet app. Anything you are tempted to add that another app would also need
 # belongs in the base, not here.
 #
-# No baseline. Procest carries zero suppressed PHPStan errors: `phpstan-baseline.neon`
+# No baseline. Dossiq carries zero suppressed PHPStan errors: `phpstan-baseline.neon`
 # was deleted once its last 10 live entries (injected-but-unused constructor
 # dependencies) were fixed at source. Do NOT reintroduce it — a baseline makes the
 # `phpstan` leg of `composer check:strict` exit 0 while real errors remain, which is
@@ -53,7 +53,7 @@ parameters:
         #
         # It compares get_class($event) against
         # 'OCA\OpenRegister\Event\ApprovalStepApprovedEvent' / ...RejectedEvent,
-        # held as string constants precisely so Procest carries no hard dependency
+        # held as string constants precisely so Dossiq carries no hard dependency
         # on OpenRegister. Those classes therefore do not exist in this app's
         # vendor tree, so the analyser types get_class($event) as
         # class-string<Event>, decides neither comparison can ever match, and

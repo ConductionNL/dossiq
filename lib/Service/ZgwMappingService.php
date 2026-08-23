@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest ZGW Mapping Service
+ * Dossiq ZGW Mapping Service
  *
  * Service for managing ZGW API mapping configuration stored in IAppConfig.
  * Each mapping defines how English OpenRegister properties translate to/from
  * Dutch ZGW API properties using Twig templates.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -16,16 +16,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 

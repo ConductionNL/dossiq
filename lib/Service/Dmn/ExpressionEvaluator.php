@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest DMN Expression Evaluator
+ * Dossiq DMN Expression Evaluator
  *
  * A pure, closed, bounded evaluator for DMN-style "input entry" cell
  * expressions — comparisons, ranges, set membership, and bare-literal
@@ -19,7 +19,7 @@
  *   'literal'            bare-literal equality
  *
  * @category Service
- * @package  OCA\Procest\Service\Dmn
+ * @package  OCA\Dossiq\Service\Dmn
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -30,14 +30,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Dmn;
+namespace OCA\Dossiq\Service\Dmn;
 
 use DateTimeImmutable;
 use Throwable;

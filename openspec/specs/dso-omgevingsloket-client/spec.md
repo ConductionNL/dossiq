@@ -9,19 +9,19 @@ retrofit: true
 
 @e2e exclude Backend intake adapter invoked by openconnector; no Playwright UI surface.
 
-Convert an inbound DSO Omgevingsloket `vergunningaanvraag` message — delivered to procest by openconnector's DSO adapter (which owns the DSO-LV koppelvlak, mTLS, PKIoverheid, status pushback per its own spec) — into a procest `zaak` of type "Omgevingsvergunning" with the right deadline, title, and DSO-specific side records. Procest does NOT own the DSO protocol or the back-channel; this spec is deliberately scoped to the intake-adapter slice.
+Convert an inbound DSO Omgevingsloket `vergunningaanvraag` message — delivered to dossiq by openconnector's DSO adapter (which owns the DSO-LV koppelvlak, mTLS, PKIoverheid, status pushback per its own spec) — into a dossiq `zaak` of type "Omgevingsvergunning" with the right deadline, title, and DSO-specific side records. Dossiq does NOT own the DSO protocol or the back-channel; this spec is deliberately scoped to the intake-adapter slice.
 
 ## Requirements
 
-### REQ-001: DSO vergunningaanvraag intake creates procest zaak
+### REQ-001: DSO vergunningaanvraag intake creates dossiq zaak
 
-The system SHALL accept a `dsoMessage` array, extract `activiteiten`, `locatie`, `aanvrager`, `bouwkosten`, `procedureType`, `zaaknummer`, and `bijlagen`, build a human-readable title from the activity names, and persist a new procest case via OpenRegister with `priority: 'normal'` and `startDate: today`. The result SHALL be `{caseId, dsoZaaknummer, activiteiten, procedureType, deadline}`.
+The system SHALL accept a `dsoMessage` array, extract `activiteiten`, `locatie`, `aanvrager`, `bouwkosten`, `procedureType`, `zaaknummer`, and `bijlagen`, build a human-readable title from the activity names, and persist a new dossiq case via OpenRegister with `priority: 'normal'` and `startDate: today`. The result SHALL be `{caseId, dsoZaaknummer, activiteiten, procedureType, deadline}`.
 
 #### Scenario: OpenRegister or register guards
 
 - WHEN OpenRegister is unavailable
 - THEN `processAanvraag` SHALL throw `\RuntimeException('OpenRegister is not available')`
-- AND when the procest register is unconfigured it SHALL throw `\RuntimeException('Procest register not configured')`
+- AND when the dossiq register is unconfigured it SHALL throw `\RuntimeException('Dossiq register not configured')`
 
 #### Scenario: Title composition
 
@@ -83,4 +83,4 @@ The system SHALL expose `getDeadlineDuration(procedureType)` returning the ISO 8
 
 #### Notes
 
-- The two values mirror the Omgevingswet deadlines: reguliere procedure 8 weken (P56D), uitgebreide procedure 26 weken (P182D). The actual deadline-event creation (when the 8/26-week timer starts ticking and how procest reminds casehandlers as the deadline approaches) is observed-but-stubbed in `DsoIntakeService` — the case is persisted with `startDate = today` but no explicit deadline timer object. The in-flight `openspec/changes/dso-omgevingsloket/` change will spec that side.
+- The two values mirror the Omgevingswet deadlines: reguliere procedure 8 weken (P56D), uitgebreide procedure 26 weken (P182D). The actual deadline-event creation (when the 8/26-week timer starts ticking and how dossiq reminds casehandlers as the deadline approaches) is observed-but-stubbed in `DsoIntakeService` — the case is persisted with `startDate = today` but no explicit deadline timer object. The in-flight `openspec/changes/dso-omgevingsloket/` change will spec that side.

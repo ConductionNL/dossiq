@@ -302,7 +302,7 @@ The system SHALL provide dashboard KPIs for consultations, giving coordinators a
 
 #### Scenario: My pending consultations widget
 - **GIVEN** a Brandweer user has 3 open consultations assigned to their department
-- **WHEN** they view the Procest dashboard
+- **WHEN** they view the Dossiq dashboard
 - **THEN** a "Openstaande adviesaanvragen" widget MUST show: count of open consultations, count of overdue consultations, and the 3 nearest deadlines
 - **AND** clicking the widget MUST navigate to the filtered consultation inbox
 

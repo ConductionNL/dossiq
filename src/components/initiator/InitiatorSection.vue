@@ -54,7 +54,7 @@
 			data-testid="handoff-provenance">
 			<TransitConnectionVariant :size="18" class="initiator-section__icon" />
 			<span class="initiator-section__handoff-label">{{
-				t('procest', 'Received via handoff')
+				t('dossiq', 'Received via handoff')
 			}}</span>
 			<span v-if="handoffReceivedAt" class="initiator-section__type">{{
 				handoffReceivedAt
@@ -64,7 +64,7 @@
 				:href="handoffSourceLink"
 				target="_blank"
 				rel="noopener noreferrer">
-				{{ t('procest', 'Open source object') }}
+				{{ t('dossiq', 'Open source object') }}
 			</a>
 		</div>
 	</div>
@@ -114,11 +114,11 @@ export default {
 		typeLabel() {
 			switch (this.caseObject.initiatorType) {
 				case 'company':
-					return t('procest', 'Company')
+					return t('dossiq', 'Company')
 				case 'contact':
-					return t('procest', 'Contact')
+					return t('dossiq', 'Contact')
 				default:
-					return t('procest', 'Person')
+					return t('dossiq', 'Person')
 			}
 		},
 

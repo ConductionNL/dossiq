@@ -32,10 +32,10 @@
 					<span
 						v-if="c.isOverdue"
 						class="at-risk-badge at-risk-badge--overdue">
-						{{ t('procest', 'Overdue') }}
+						{{ t('dossiq', 'Overdue') }}
 					</span>
 					<span v-else class="at-risk-badge at-risk-badge--warning">
-						{{ t('procest', 'At risk') }}
+						{{ t('dossiq', 'At risk') }}
 					</span>
 				</div>
 				<div class="at-risk-item__meta">
@@ -44,10 +44,10 @@
 					<span :class="{ 'text-error': c.isOverdue }">
 						{{
 							c.remainingDays >= 0
-								? t('procest', '{days} days remaining', {
+								? t('dossiq', '{days} days remaining', {
 										days: c.remainingDays,
 									})
-								: t('procest', '{days} days overdue', {
+								: t('dossiq', '{days} days overdue', {
 										days: Math.abs(c.remainingDays),
 									})
 						}}

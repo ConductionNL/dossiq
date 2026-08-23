@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest WOO Deadline Service
+ * Dossiq WOO Deadline Service
  *
  * Service for WOO (Wet open overheid) deadline calculation and extension.
  * Enforces the 4-week response deadline with a single optional 2-week
  * extension per WOO Art. 4.4 and emits T-7 warning notifications.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,13 +24,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTime;
 use DateTimeImmutable;
 use InvalidArgumentException;
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
 use RuntimeException;

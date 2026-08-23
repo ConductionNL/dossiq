@@ -4,7 +4,7 @@
  * WOODeadlineCheckJob Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\BackgroundJob
+ * @package  OCA\Dossiq\Tests\Unit\BackgroundJob
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,11 +20,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\BackgroundJob;
+namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
-use OCA\Procest\BackgroundJob\WOODeadlineCheckJob;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\WOODeadlineService;
+use OCA\Dossiq\BackgroundJob\WOODeadlineCheckJob;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\WOODeadlineService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
@@ -33,7 +33,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for WOODeadlineCheckJob.
  *
- * @covers \OCA\Procest\BackgroundJob\WOODeadlineCheckJob
+ * @covers \OCA\Dossiq\BackgroundJob\WOODeadlineCheckJob
  */
 class WOODeadlineCheckJobTest extends TestCase {
 
@@ -103,7 +103,7 @@ class WOODeadlineCheckJobTest extends TestCase {
 	 * @return void
 	 */
 	public function testJobSkipsWhenOpenRegisterNotInstalled(): void {
-		$this->appManager->method('getInstalledApps')->willReturn(['procest']);
+		$this->appManager->method('getInstalledApps')->willReturn(['dossiq']);
 
 		// DeadlineService::checkAndWarn should NOT be called.
 		$this->deadlineService->expects($this->never())->method('checkAndWarn');
@@ -120,7 +120,7 @@ class WOODeadlineCheckJobTest extends TestCase {
 	 * @return void
 	 */
 	public function testJobSkipsWhenObjectServiceUnavailable(): void {
-		$this->appManager->method('getInstalledApps')->willReturn(['openregister', 'procest']);
+		$this->appManager->method('getInstalledApps')->willReturn(['openregister', 'dossiq']);
 		$this->settingsService->method('getObjectService')->willReturn(null);
 
 		$this->deadlineService->expects($this->never())->method('checkAndWarn');

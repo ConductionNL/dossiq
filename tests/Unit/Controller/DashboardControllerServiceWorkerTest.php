@@ -14,7 +14,7 @@
  * serve one. Nothing in the app reports that; only this assertion does.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -28,17 +28,17 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\DashboardController;
+use OCA\Dossiq\Controller\DashboardController;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Tests for the PWA asset endpoints on the procest dashboard controller.
+ * Tests for the PWA asset endpoints on the dossiq dashboard controller.
  *
- * @covers \OCA\Procest\Controller\DashboardController
+ * @covers \OCA\Dossiq\Controller\DashboardController
  */
 class DashboardControllerServiceWorkerTest extends TestCase {
 

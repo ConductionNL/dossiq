@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Appointment Service.
+ * Dossiq Appointment Service.
  *
  * Orchestrates citizen appointments against EXTERNAL municipal scheduling
  * systems (JCC Afspraken, Qmatic Orchestra) and persists the resulting
@@ -14,7 +14,7 @@
  * host (see docs/adr/0001-external-appointment-backends-exception.md).
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,19 +22,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/appointment-booking/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\Service\AppointmentBackend\AppointmentBackendInterface;
-use OCA\Procest\Service\AppointmentBackend\JccBackend;
-use OCA\Procest\Service\AppointmentBackend\QmaticBackend;
-use OCA\Procest\Service\Support\OwningCaseResolver;
+use OCA\Dossiq\Service\AppointmentBackend\AppointmentBackendInterface;
+use OCA\Dossiq\Service\AppointmentBackend\JccBackend;
+use OCA\Dossiq\Service\AppointmentBackend\QmaticBackend;
+use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClientService;
 use Psr\Container\ContainerInterface;
@@ -123,7 +123,7 @@ class AppointmentService {
 		);
 
 		$this->logger->info(
-			'Procest: Appointment booked',
+			'Dossiq: Appointment booked',
 			[
 				'caseId' => $caseId,
 				'appointmentId' => $result->getUuid(),
@@ -324,7 +324,7 @@ class AppointmentService {
 		try {
 			return $this->container->get('OCA\OpenRegister\Service\ObjectService');
 		} catch (\Exception $e) {
-			$this->logger->error('Procest: Could not get ObjectService', ['exception' => $e->getMessage()]);
+			$this->logger->error('Dossiq: Could not get ObjectService', ['exception' => $e->getMessage()]);
 			return null;
 		}
 	}//end getObjectService()

@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @category  Service
- * @package   OCA\Procest\Service\Ai
+ * @package   OCA\Dossiq\Service\Ai
  * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2
@@ -14,7 +14,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Ai;
+namespace OCA\Dossiq\Service\Ai;
 
 use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;

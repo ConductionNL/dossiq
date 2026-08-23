@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest Milestone Controller
+ * Dossiq Milestone Controller
  *
  * REST API for milestone progress tracking.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -17,17 +17,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/milestone-tracking/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\MilestoneService;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\MilestoneService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

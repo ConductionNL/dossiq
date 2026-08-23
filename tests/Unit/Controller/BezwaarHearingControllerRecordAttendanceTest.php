@@ -9,7 +9,7 @@
  * mapping to 400 (a late correction without a correctionReason).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -17,7 +17,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/bezwaar-hearing/spec.md
  *
@@ -27,11 +27,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\BezwaarHearingController;
-use OCA\Procest\Service\Bezwaar\HearingService;
-use OCA\Procest\Service\CaseAccessGuard;
+use OCA\Dossiq\Controller\BezwaarHearingController;
+use OCA\Dossiq\Service\Bezwaar\HearingService;
+use OCA\Dossiq\Service\CaseAccessGuard;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -42,7 +42,7 @@ use RuntimeException;
 /**
  * Unit tests for BezwaarHearingController::recordAttendance().
  *
- * @covers \OCA\Procest\Controller\BezwaarHearingController
+ * @covers \OCA\Dossiq\Controller\BezwaarHearingController
  */
 final class BezwaarHearingControllerRecordAttendanceTest extends TestCase {
 
@@ -98,7 +98,7 @@ final class BezwaarHearingControllerRecordAttendanceTest extends TestCase {
 		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
 
 		$this->controller = new BezwaarHearingController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			hearingService: $this->hearingService,
 			userSession: $this->userSession,
@@ -123,7 +123,7 @@ final class BezwaarHearingControllerRecordAttendanceTest extends TestCase {
 		$guard->method('hasCaseMutationAccess')->willReturn($mayMutate);
 
 		return new BezwaarHearingController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			hearingService: $hearingService,
 			userSession: $this->userSession,

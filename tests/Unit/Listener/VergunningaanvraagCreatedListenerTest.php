@@ -8,24 +8,24 @@
  * matching, non-matching schema pass-through, and wrong event type handling.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Listener
+ * @package  OCA\Dossiq\Tests\Unit\Listener
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Listener;
+namespace OCA\Dossiq\Tests\Unit\Listener;
 
+use OCA\Dossiq\Listener\VergunningaanvraagCreatedListener;
+use OCA\Dossiq\Service\DsoCaseService;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
-use OCA\Procest\Listener\VergunningaanvraagCreatedListener;
-use OCA\Procest\Service\DsoCaseService;
 use OCP\EventDispatcher\Event;
 use OCP\IAppConfig;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -35,7 +35,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for VergunningaanvraagCreatedListener.
  *
- * @covers \OCA\Procest\Listener\VergunningaanvraagCreatedListener
+ * @covers \OCA\Dossiq\Listener\VergunningaanvraagCreatedListener
  */
 class VergunningaanvraagCreatedListenerTest extends TestCase {
 
@@ -162,7 +162,7 @@ class VergunningaanvraagCreatedListenerTest extends TestCase {
 		$this->appConfig
 			->method('getValueString')
 			->with(
-				$this->equalTo('procest'),
+				$this->equalTo('dossiq'),
 				$this->equalTo('dso_vergunningaanvraag_schema'),
 				$this->anything()
 			)

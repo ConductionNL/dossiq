@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Automatic Action Template Trait
+ * Dossiq Automatic Action Template Trait
  *
  * Lightweight Mustache-flavoured `{{path.to.field}}` template renderer
  * shared by every built-in action handler. Deliberately minimal — no
@@ -10,7 +10,7 @@
  * exactly matches the live execution output.
  *
  * @category Service
- * @package  OCA\Procest\Service\Actions
+ * @package  OCA\Dossiq\Service\Actions
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -21,14 +21,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/automatic-actions/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Actions;
+namespace OCA\Dossiq\Service\Actions;
 
 /**
  * Shared template + recipient resolution helpers.

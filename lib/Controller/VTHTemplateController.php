@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest VTH Template Controller
+ * Dossiq VTH Template Controller
  *
  * Admin endpoints for listing and activating VTH zaaktype templates.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,11 +22,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\VTHTemplateService;
-use OCA\Procest\Settings\AdminSettings;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\VTHTemplateService;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -70,7 +70,7 @@ class VTHTemplateController extends Controller {
 	 *
 	 * @return JSONResponse List of template metadata
 	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
 	 * @spec openspec/changes/vth-module/tasks.md#task-2
 	 */
@@ -90,7 +90,7 @@ class VTHTemplateController extends Controller {
 	 *
 	 * @return JSONResponse Activation result or error
 	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
 	 * @spec openspec/changes/vth-module/tasks.md#task-2
 	 */

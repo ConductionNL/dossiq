@@ -22,13 +22,13 @@ Enable administrators to configure external WMS (Web Map Service) and WFS (Web F
 
 ### REQ-LAYER-01: Admin Layer Configuration
 
-Administrators MUST be able to configure WMS and WFS layers in the Procest admin settings.
+Administrators MUST be able to configure WMS and WFS layers in the Dossiq admin settings.
 
 **Feature tier**: V1
 
 #### Scenario LAYER-01a: Add WMS layer
 
-- GIVEN the admin navigates to Procest > Instellingen > Kaartlagen
+- GIVEN the admin navigates to Dossiq > Instellingen > Kaartlagen
 - WHEN the admin clicks "Kaartlaag toevoegen"
 - THEN a form MUST appear with fields: title, type (WMS/WFS/tile/GeoJSON), URL, layer name(s), format, attribution, default visibility, base layer toggle, opacity, min/max zoom
 - AND saving MUST create a MapLayer object in OpenRegister
@@ -157,7 +157,7 @@ The system MUST parse WMS/WFS GetCapabilities responses to assist administrators
 
 ### REQ-001: WmsWfsController SHALL expose a per-layer WMS/WFS proxy action endpoint
 
-`OCA\Procest\Controller\WmsWfsController::proxy()` SHALL accept a `layerId` query parameter, resolve the corresponding `wmsLayer` object via `WmsWfsService::getLayerById()`, and forward all other request parameters to `WmsWfsService::proxyRequest()`. The endpoint SHALL be authenticated (`#[NoAdminRequired]`) and SHALL return JSON error envelopes for missing parameters (HTTP 400), unknown layers (HTTP 404), and upstream failures (HTTP 4xx/5xx, defaulting to 502 when the upstream exception code is out of range).
+`OCA\Dossiq\Controller\WmsWfsController::proxy()` SHALL accept a `layerId` query parameter, resolve the corresponding `wmsLayer` object via `WmsWfsService::getLayerById()`, and forward all other request parameters to `WmsWfsService::proxyRequest()`. The endpoint SHALL be authenticated (`#[NoAdminRequired]`) and SHALL return JSON error envelopes for missing parameters (HTTP 400), unknown layers (HTTP 404), and upstream failures (HTTP 4xx/5xx, defaulting to 502 when the upstream exception code is out of range).
 
 #### Scenario: Missing layerId returns 400
 - **WHEN** a caller invokes the proxy action without a `layerId` parameter
@@ -175,7 +175,7 @@ The system MUST parse WMS/WFS GetCapabilities responses to assist administrators
 
 ### REQ-002: WmsWfsService SHALL resolve, validate, and proxy layers without direct outbound HTTP
 
-`OCA\Procest\Service\WmsWfsService` SHALL provide `getLayersForCaseType()`, `validateLayer()`, `proxyRequest()`, `buildGetMapUrl()`, `buildGetFeatureUrl()`, and `getLayerById()`. The service SHALL NEVER issue direct outbound HTTP — every external request SHALL be delegated to `GisProxyService::proxyRequest()` so the GIS proxy allowlist (REQ-LAYER-03c) and rate limiting (REQ-LAYER-03d) remain authoritative. Layer resolution per case type SHALL include all `wmsLayer` UUIDs listed in `caseType.layerIds` plus all layers with `isDefault: true`, with `active: false` layers filtered out. GetMap tile dimensions SHALL be capped at 512 pixels.
+`OCA\Dossiq\Service\WmsWfsService` SHALL provide `getLayersForCaseType()`, `validateLayer()`, `proxyRequest()`, `buildGetMapUrl()`, `buildGetFeatureUrl()`, and `getLayerById()`. The service SHALL NEVER issue direct outbound HTTP — every external request SHALL be delegated to `GisProxyService::proxyRequest()` so the GIS proxy allowlist (REQ-LAYER-03c) and rate limiting (REQ-LAYER-03d) remain authoritative. Layer resolution per case type SHALL include all `wmsLayer` UUIDs listed in `caseType.layerIds` plus all layers with `isDefault: true`, with `active: false` layers filtered out. GetMap tile dimensions SHALL be capped at 512 pixels.
 
 #### Scenario: Layer resolution merges subscribed + default layers
 - **GIVEN** a case type with `layerIds: ["uuid-a"]` and three configured layers — uuid-a (active), uuid-b (active, isDefault=true), uuid-c (inactive, isDefault=true)

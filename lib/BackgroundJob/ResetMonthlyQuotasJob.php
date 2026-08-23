@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Reset Monthly Quotas Job.
+ * Dossiq Reset Monthly Quotas Job.
  *
  * Daily background job that scans tenant quotas and resets those whose
  * `resetAt` window has elapsed.
  *
  * @category BackgroundJob
- * @package  OCA\Procest\BackgroundJob
+ * @package  OCA\Dossiq\BackgroundJob
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -16,17 +16,17 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\BackgroundJob;
+namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Procest\Service\TenantQuotaService;
-use OCA\Procest\Service\TenantSaasService;
+use OCA\Dossiq\Service\TenantQuotaService;
+use OCA\Dossiq\Service\TenantSaasService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -87,7 +87,7 @@ class ResetMonthlyQuotasJob extends TimedJob {
 		try {
 			$objectService = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
 		} catch (Throwable $e) {
-			$this->logger->info('Procest: ResetMonthlyQuotasJob — OR ObjectService unavailable');
+			$this->logger->info('Dossiq: ResetMonthlyQuotasJob — OR ObjectService unavailable');
 			return;
 		}
 
@@ -108,7 +108,7 @@ class ResetMonthlyQuotasJob extends TimedJob {
 				]
 			);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest: ResetMonthlyQuotasJob fetch failed', ['exception' => $e->getMessage()]);
+			$this->logger->error('Dossiq: ResetMonthlyQuotasJob fetch failed', ['exception' => $e->getMessage()]);
 			return;
 		}
 
@@ -126,7 +126,7 @@ class ResetMonthlyQuotasJob extends TimedJob {
 		}
 
 		if ($resetCount > 0) {
-			$this->logger->info('Procest: ResetMonthlyQuotasJob reset ' . $resetCount . ' quotas');
+			$this->logger->info('Dossiq: ResetMonthlyQuotasJob reset ' . $resetCount . ' quotas');
 		}
 	}//end run()
 }//end class

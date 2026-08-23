@@ -1,17 +1,17 @@
 <?php
 
 /**
- * Procest Advice Delegation Service
+ * Dossiq Advice Delegation Service
  *
  * Delegates advice/consultation decisions to decidesk via the decidesk
- * `DecisionRequestedEvent` (IEventDispatcher). Reused by three procest advice surfaces — the
+ * `DecisionRequestedEvent` (IEventDispatcher). Reused by three dossiq advice surfaces — the
  * BAC (bezwaarschriftencommissie) advice, the general adviesAanvraag, and the
  * consultatie/zienswijze — each of which maps to a decidesk `advice`
  * decisionType (ADR-005). It also exposes the voorstel→besluit
- * `report-adoption` raise. procest keeps its domain rules (BAC
+ * `report-adoption` raise. dossiq keeps its domain rules (BAC
  * panel-independence, advice IDOR gate) and receives the outcome as a
  * projection via decidesk's `DecisionConcludedEvent` (consumed by
- * {@see \OCA\Procest\Listener\DecisionConcludedListener}); decidesk owns the
+ * {@see \OCA\Dossiq\Listener\DecisionConcludedListener}); decidesk owns the
  * *making* of the advice.
  *
  * This is a thin sibling of ContractDecisionDelegationService — it reuses that
@@ -21,7 +21,7 @@
  * FAILS CLOSED when the decidesk leaf is unavailable (never auto-advises).
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -30,14 +30,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/remaining-decision-delegation/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 /**
  * Raises and consumes decidesk `advice` / `report-adoption` Decisions.
@@ -58,11 +58,11 @@ class AdviceDelegationService {
 	/**
 	 * Raise a decidesk `advice` Decision for a BAC / adviesAanvraag / consultatie request.
 	 *
-	 * The caller MUST have run its procest domain rule (BAC panel-independence,
+	 * The caller MUST have run its dossiq domain rule (BAC panel-independence,
 	 * the advice IDOR gate) BEFORE invoking this. FAILS CLOSED when the
 	 * decidesk leaf is unavailable.
 	 *
-	 * @param string $subjectSchema The procest subject schema (bacAdviceRequest, adviesAanvraag, consultation).
+	 * @param string $subjectSchema The dossiq subject schema (bacAdviceRequest, adviesAanvraag, consultation).
 	 * @param string $subjectId The subject object UUID.
 	 * @param array<string,mixed> $payload Advice context + provenance: subjectRegister,
 	 *                                     subjectLabel, externalReference, question,

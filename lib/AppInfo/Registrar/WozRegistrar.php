@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest WOZ registrar.
+ * Dossiq WOZ registrar.
  *
  * One base register, one registrar: binds the WOZ (Waardering Onroerende Zaken)
  * seam to the Haal Centraal WOZ Bevragen adapter or to the dormant log-only
@@ -10,7 +10,7 @@
  * call — is auditable on its own.
  *
  * @category AppInfo
- * @package  OCA\Procest\AppInfo\Registrar
+ * @package  OCA\Dossiq\AppInfo\Registrar
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,7 +18,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -28,13 +28,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\AppInfo\Registrar;
+namespace OCA\Dossiq\AppInfo\Registrar;
 
-use OCA\Procest\Service\External\IntegrationMode;
-use OCA\Procest\Service\External\Woz\LogWozAdapter;
-use OCA\Procest\Service\External\Woz\WozAdapterInterface;
-use OCA\Procest\Service\External\Woz\WozApiAdapter;
-use OCA\Procest\Service\External\Woz\WozResponseMapper;
+use OCA\Dossiq\Service\External\IntegrationMode;
+use OCA\Dossiq\Service\External\Woz\LogWozAdapter;
+use OCA\Dossiq\Service\External\Woz\WozAdapterInterface;
+use OCA\Dossiq\Service\External\Woz\WozApiAdapter;
+use OCA\Dossiq\Service\External\Woz\WozResponseMapper;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use Psr\Container\ContainerInterface;
 

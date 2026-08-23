@@ -20,7 +20,7 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 
 			try {
 				const response = await fetch(
-					generateUrl('/apps/procest/api/zgw-mappings'),
+					generateUrl('/apps/dossiq/api/zgw-mappings'),
 					{
 						method: 'GET',
 						headers: {
@@ -60,7 +60,7 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 
 			try {
 				const response = await fetch(
-					generateUrl(`/apps/procest/api/zgw-mappings/${resourceKey}`),
+					generateUrl(`/apps/dossiq/api/zgw-mappings/${resourceKey}`),
 					{
 						method: 'PUT',
 						headers: {
@@ -101,7 +101,7 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 			try {
 				const response = await fetch(
 					generateUrl(
-						`/apps/procest/api/zgw-mappings/${resourceKey}/reset`,
+						`/apps/dossiq/api/zgw-mappings/${resourceKey}/reset`,
 					),
 					{
 						method: 'POST',

@@ -1,5 +1,5 @@
 {
-  "_format": "procest-vth-workflow-template-v1",
+  "_format": "dossiq-vth-workflow-template-v1",
   "slug": "toezichtbezoek",
   "title": "Toezichtbezoek",
   "description": "Workflow voor een toezichtbezoek (inspectie ter plaatse). Geen wettelijke beslistermijn. Bij constatering van een overtreding wordt een handhavingstraject gespawned via automaticAction.",

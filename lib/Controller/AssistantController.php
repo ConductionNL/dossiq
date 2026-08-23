@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Assistant Controller (case-assistant-via-hermiq).
+ * Dossiq Assistant Controller (case-assistant-via-hermiq).
  *
  * The thin consumer surface: enriches an incoming case-assistant message
  * with a bounded, authorization-scoped case-context summary and forwards it
@@ -9,7 +9,7 @@
  * see `CaseAssistantService`'s docblock for the fleet rule this follows.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,19 +20,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/case-assistant-via-hermiq/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
 use Exception;
-use OCA\Procest\Service\Assistant\CaseAssistantService;
-use OCA\Procest\Service\Assistant\HermiqAssistantClient;
-use OCA\Procest\Service\Assistant\HermiqAssistantException;
+use OCA\Dossiq\Service\Assistant\CaseAssistantService;
+use OCA\Dossiq\Service\Assistant\HermiqAssistantClient;
+use OCA\Dossiq\Service\Assistant\HermiqAssistantException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

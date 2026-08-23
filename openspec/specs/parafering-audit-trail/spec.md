@@ -9,7 +9,7 @@ canonical_home: case-management/spec.md
 > Delegation tracking (`actorType`, `onBehalfOf`) is recorded as audit
 > context on lifecycle transitions in the consolidated case-management
 > annotation. Immutability is provided by OR's `audit-trail-immutable`
-> capability, not a procest-specific custom service. See ADR-022.
+> capability, not a dossiq-specific custom service. See ADR-022.
 >
 > Per `migrate-parafering-to-or-audit` the audit trail is now discoverable via
 > OR's audit-trail-immutable API

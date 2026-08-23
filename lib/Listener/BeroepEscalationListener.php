@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Beroep Escalation Listener.
+ * Dossiq Beroep Escalation Listener.
  *
  * Observes OpenRegister object events on the `beroep` schema and derives
  * the read-only `dwingendStatus` marker on the linked source bezwaar when
@@ -16,7 +16,7 @@
  * beroep persistence is never blocked by a failed marker derivation.
  *
  * @category Listener
- * @package  OCA\Procest\Listener
+ * @package  OCA\Dossiq\Listener
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,17 +27,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Listener;
+namespace OCA\Dossiq\Listener;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
-use OCA\Procest\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -113,7 +113,7 @@ class BeroepEscalationListener implements IEventListener {
 			$this->deriveDwingendStatus(event: $event);
 		} catch (Throwable $e) {
 			$this->logger->debug(
-				'Procest beroep: dwingendStatus derivation swallowed '
+				'Dossiq beroep: dwingendStatus derivation swallowed '
 				. 'exception: ' . $e->getMessage(),
 			);
 		}//end try

@@ -1,16 +1,16 @@
 <?php
 
 /**
- * Result value-object returned by a Procest BRK adapter call.
+ * Result value-object returned by a Dossiq BRK adapter call.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Brk
+ * @package  OCA\Dossiq\Service\External\Brk
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  *
@@ -20,7 +20,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Brk;
+namespace OCA\Dossiq\Service\External\Brk;
 
 /**
  * Result of a BRK lookup attempt.

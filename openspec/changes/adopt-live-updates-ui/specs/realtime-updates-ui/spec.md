@@ -4,7 +4,7 @@
 
 ### Requirement: Store-rendered views MUST subscribe to live updates for their scope
 
-Views that render from Procest's `createObjectStore`-based object store MUST subscribe to
+Views that render from Dossiq's `createObjectStore`-based object store MUST subscribe to
 live updates for the data they display: collection-scoped views subscribe to
 `or-collection-{register-slug}-{schema-slug}` per rendered object type, object-scoped views
 subscribe to `or-object-{uuid}`. Subscriptions MUST be re-scoped when the viewed scope

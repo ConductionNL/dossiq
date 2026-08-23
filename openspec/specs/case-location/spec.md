@@ -19,7 +19,7 @@ Enable location display and editing on cases. Cases already have a `geometry` fi
 ## OR Capability Citations
 
 This spec consumes the following OpenRegister capabilities (per
-ADR-022, procest-adopt-or-abstractions):
+ADR-022, dossiq-adopt-or-abstractions):
 
 - `geo-metadata-kaart` — geo metadata is annotation-driven on the case
   schema, not a custom location service. See
@@ -154,7 +154,7 @@ The case creation form MUST allow optional location selection.
 
 ### REQ-LOC-05: LocationService SHALL validate every location payload against the per-source rule matrix and the universal anchor rule
 
-`OCA\Procest\Service\LocationService::validate(array $payload): array` SHALL return an array of error codes (empty = valid) and SHALL enforce the following rules:
+`OCA\Dossiq\Service\LocationService::validate(array $payload): array` SHALL return an array of error codes (empty = valid) and SHALL enforce the following rules:
 - `source` SHALL be present and SHALL be one of `bag` / `pdok-reverse` / `gps` / `free` (else `source.required` / `source.invalid`).
 - `case` SHALL be present (else `case.required`).
 - `source=bag` requires `nummeraanduidingId` (else `nummeraanduidingId.required`).
@@ -187,7 +187,7 @@ The case creation form MUST allow optional location selection.
 
 ### REQ-LOC-06: LocationService::attachToCase SHALL persist a validated location to OpenRegister and SHALL surface failure modes as explicit exceptions or null
 
-`OCA\Procest\Service\LocationService::attachToCase(string $caseId, array $location): ?array` SHALL:
+`OCA\Dossiq\Service\LocationService::attachToCase(string $caseId, array $location): ?array` SHALL:
 - Throw `\RuntimeException('caseId is required')` when `$caseId === ''`.
 - Inject the caseId into the payload, call `validate()`, and throw `\RuntimeException('Location payload failed validation: <codes>')` if any errors are returned.
 - Resolve the ObjectService via `SettingsService::getObjectService()`; if null, throw `\RuntimeException('OpenRegister is not available')`.

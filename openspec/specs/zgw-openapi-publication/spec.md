@@ -22,22 +22,22 @@ The repo SHALL contain `docs/openapi/zgw/<api>.yaml` (OpenAPI 3.0) for each of `
 
 #### Scenario: Index lists six APIs
 
-- **GIVEN** a running procest instance
-- **WHEN** a client requests `GET /apps/procest/api/zgw/openapi`
+- **GIVEN** a running dossiq instance
+- **WHEN** a client requests `GET /apps/dossiq/api/zgw/openapi`
 - **THEN** the JSON response lists the six APIs with resolvable spec URLs
 
 @e2e exclude Controller behaviour covered by PHPUnit unit tests (index content, YAML serving, 404); no UI.
 
 #### Scenario: Spec served as YAML
 
-- **WHEN** a client requests `GET /apps/procest/api/zgw/zaken/openapi.yaml`
+- **WHEN** a client requests `GET /apps/dossiq/api/zgw/zaken/openapi.yaml`
 - **THEN** the response is the zaken OpenAPI document with an `application/yaml` content type
 
 @e2e exclude Same rationale.
 
 #### Scenario: Unknown API 404s
 
-- **WHEN** a client requests `GET /apps/procest/api/zgw/bogus/openapi.yaml`
+- **WHEN** a client requests `GET /apps/dossiq/api/zgw/bogus/openapi.yaml`
 - **THEN** the response status is 404
 
 @e2e exclude Same rationale.

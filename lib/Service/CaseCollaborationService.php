@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Case Federated Collaboration Service
+ * Dossiq Case Federated Collaboration Service
  *
  * Async, append-only collaboration activity stream scoped to one federated
  * case share, postable by both the owning org (local session) and the
@@ -9,7 +9,7 @@
  * explicitly out of scope — see design.md §6.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,14 +18,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/federated-case-collaboration/spec.md#shared-activity-stream-is-async-append-only-scoped-to-one-federated-share
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTime;
 use OCP\App\IAppManager;

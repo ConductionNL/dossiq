@@ -66,7 +66,7 @@ NEVER include a document assessed as `niet_openbaar` at all.
 ### Requirement: Publish a WOO decision to OpenCatalogi
 The system MUST create a publication (and its disclosable documents) in
 OpenCatalogi's publication register when a case worker triggers publication
-of an assembled WOO decision, and record the result on the procest decision
+of an assembled WOO decision, and record the result on the dossiq decision
 object through a single write.
 
 #### Scenario: Successful publish creates the publication and records the result
@@ -78,7 +78,7 @@ object through a single write.
 - **AND** create a `document` object for each disclosable document, linked to
   the publication
 - **AND** write `wooPublication.publicationId`, `.publicationUrl`, `.status`
-  ("published"), `.category`, and `.publishedAt` onto the procest decision
+  ("published"), `.category`, and `.publishedAt` onto the dossiq decision
   object via exactly one `ObjectService::saveObject()` call
 - **AND** return the publication id and url in the response
 
@@ -119,7 +119,7 @@ installed or not enabled, and MUST surface an actionable admin hint instead.
 
 ### Requirement: Withdraw a published WOO decision
 The system MUST support withdrawing (depublishing) a previously published WOO
-decision, marking it withdrawn both in OpenCatalogi and on the procest
+decision, marking it withdrawn both in OpenCatalogi and on the dossiq
 decision object.
 
 #### Scenario: Withdraw a published decision
@@ -129,7 +129,7 @@ decision object.
 - **THEN** the system MUST set the OpenCatalogi publication's depublication
   date to now
 - **AND** update `wooPublication.status` to "withdrawn" and set
-  `wooPublication.withdrawnAt` on the procest decision object via one
+  `wooPublication.withdrawnAt` on the dossiq decision object via one
   `ObjectService::saveObject()` call
 
 #### Scenario: Withdraw without a prior publish is rejected

@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Procest PDOK BAG Service
+ * Dossiq PDOK BAG Service
  *
- * Shared, server-side ingress for every Procest call against the PDOK BAG
- * WFS v2_0 API. Exposes a small, stable Procest-internal shape on top of the
+ * Shared, server-side ingress for every Dossiq call against the PDOK BAG
+ * WFS v2_0 API. Exposes a small, stable Dossiq-internal shape on top of the
  * BAG payload — snake_case → camelCase, `bouwjaar` always integer,
  * `oppervlakte` always integer m2, `gebruiksdoel` always array — so consumer
  * code never has to defend against the raw WFS quirks.
@@ -16,7 +16,7 @@
  * Cache strategy: 24 h on every method, keyed on the BAG identifier.
  *
  * @category Service
- * @package  OCA\Procest\Service\Pdok
+ * @package  OCA\Dossiq\Service\Pdok
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,17 +24,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/pdok-integration/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Pdok;
+namespace OCA\Dossiq\Service\Pdok;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Support\SuppressesWarnings;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Support\SuppressesWarnings;
 use OCP\IAppConfig;
 use OCP\ICache;
 use OCP\ICacheFactory;
@@ -82,7 +82,7 @@ class PdokBagService {
 		private ContainerInterface $container,
 		private LoggerInterface $logger,
 	) {
-		$this->cache = $cacheFactory->createDistributed('procest_pdok_bag');
+		$this->cache = $cacheFactory->createDistributed('dossiq_pdok_bag');
 	}//end __construct()
 
 	/**
@@ -90,7 +90,7 @@ class PdokBagService {
 	 *
 	 * @param string $id BAG nummeraanduiding identificatie (16 digits).
 	 *
-	 * @return array Normalised Procest-internal shape.
+	 * @return array Normalised Dossiq-internal shape.
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
@@ -107,7 +107,7 @@ class PdokBagService {
 	 *
 	 * @param string $id BAG verblijfsobject identificatie.
 	 *
-	 * @return array Normalised Procest-internal shape.
+	 * @return array Normalised Dossiq-internal shape.
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
@@ -124,7 +124,7 @@ class PdokBagService {
 	 *
 	 * @param string $id BAG pand identificatie.
 	 *
-	 * @return array Normalised Procest-internal shape.
+	 * @return array Normalised Dossiq-internal shape.
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
@@ -150,7 +150,7 @@ class PdokBagService {
 		$cached = $this->cache->get($cacheKey);
 		if ($cached !== null) {
 			$this->logger->debug(
-				'Procest PDOK BAG cache hit',
+				'Dossiq PDOK BAG cache hit',
 				['typeName' => $typeName, 'key' => $cacheKey]
 			);
 			return $cached;
@@ -192,7 +192,7 @@ class PdokBagService {
 			}
 		} catch (RuntimeException $e) {
 			$this->logger->warning(
-				'Procest PDOK BAG call failed',
+				'Dossiq PDOK BAG call failed',
 				[
 					'typeName' => $typeName,
 					'error' => $e->getMessage(),
@@ -219,7 +219,7 @@ class PdokBagService {
 
 		$elapsedMs = (int)((microtime(as_float: true) - $started) * 1000);
 		$this->logger->info(
-			'Procest PDOK BAG call',
+			'Dossiq PDOK BAG call',
 			[
 				'typeName' => $typeName,
 				'cache' => 'miss',
@@ -355,7 +355,7 @@ class PdokBagService {
 			$callService = $this->container->get('OCA\OpenConnector\Service\CallService');
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest PDOK BAG: OpenConnector not available, falling back to direct HTTP',
+				'Dossiq PDOK BAG: OpenConnector not available, falling back to direct HTTP',
 				['sourceSlug' => $sourceSlug, 'error' => $e->getMessage()]
 			);
 			$endpoint = $this->appConfig->getValueString(
@@ -397,7 +397,7 @@ class PdokBagService {
 	}//end callViaOpenConnector()
 
 	/**
-	 * Normalise a single WFS feature into the Procest-internal shape.
+	 * Normalise a single WFS feature into the Dossiq-internal shape.
 	 *
 	 * Rules:
 	 * - snake_case keys → camelCase

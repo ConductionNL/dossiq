@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest SendEmailHandler
+ * Dossiq SendEmailHandler
  *
  * Renders subject + body templates against the case and (in live mode)
  * dispatches the email via NotificatieService. In dry-run mode it returns
  * the rendered preview without contacting the mail subsystem.
  *
  * @category Service
- * @package  OCA\Procest\Service\Actions
+ * @package  OCA\Dossiq\Service\Actions
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -19,16 +19,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/automatic-actions/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Actions;
+namespace OCA\Dossiq\Service\Actions;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -136,7 +136,7 @@ class SendEmailHandler implements ActionHandlerInterface {
 	 */
 	private function resolveNotificationService(): ?object {
 		try {
-			return $this->container->get('OCA\Procest\Service\NotificatieService');
+			return $this->container->get('OCA\Dossiq\Service\NotificatieService');
 		} catch (\Throwable $e) {
 			return null;
 		}

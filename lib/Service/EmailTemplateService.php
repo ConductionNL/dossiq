@@ -1,15 +1,15 @@
 <?php
 
 /**
- * Procest Email Template Service
+ * Dossiq Email Template Service
  *
  * Owns the per-zaaktype emailTemplate registry: list / create / version-bump
  * update / variable catalog / draft prefill. Per ADR-022 / case-email-integration
- * design.md this is the ONLY net-new mail logic in procest — sending and
+ * design.md this is the ONLY net-new mail logic in dossiq — sending and
  * threading are owned by NC Mail via the `email` integration leaf.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,16 +20,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/case-email-integration/tasks.md#T04
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\Service\Email\EmailTemplateRepository;
+use OCA\Dossiq\Service\Email\EmailTemplateRepository;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 

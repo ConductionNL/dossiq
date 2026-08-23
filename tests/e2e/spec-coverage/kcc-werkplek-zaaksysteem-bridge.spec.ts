@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Gate-19 spec-coverage tests for the kcc-werkplek-zaaksysteem-bridge spec.
  *
- * Scope here is strictly the procest-authored UI surface this change ships:
+ * Scope here is strictly the dossiq-authored UI surface this change ships:
  * the KCC-werkplek integration admin settings panel (KccIntegrationSettings.vue,
- * rendered inside Nextcloud's admin settings at /settings/admin/procest), which
+ * rendered inside Nextcloud's admin settings at /settings/admin/dossiq), which
  * configures burger identification method/threshold, case-voorblad limits,
  * sentiment trigger words and belplan overflow thresholds.
  *
@@ -15,7 +15,7 @@
  * + Newman. DigiD authentication (OpenConnector), the telephony SIP transfer
  * and the contact-center screen-pop UI are delivered by OpenConnector and
  * pipelinq respectively — those scenarios are @e2e-excluded at the spec level
- * as cross-app, not exercisable from the procest UI.
+ * as cross-app, not exercisable from the dossiq UI.
  *
  * Tests are defensive: the admin settings SPA is data-independent chrome, so
  * they assert the KCC fields render, guarding against a 5xx render.
@@ -24,10 +24,10 @@
 import { test, expect } from '@playwright/test'
 import { loadAllAdminSections } from '../helpers/nav'
 
-const ADMIN_SETTINGS_URL = '/settings/admin/procest'
+const ADMIN_SETTINGS_URL = '/settings/admin/dossiq'
 
 test.describe('kcc-werkplek-zaaksysteem-bridge spec coverage', () => {
-	// The procest admin settings page is very heavy (1.9MB DOM, 20+ sections
+	// The dossiq admin settings page is very heavy (1.9MB DOM, 20+ sections
 	// with maps + forms) and renders sections progressively, so triple the
 	// per-test budget — the default 30s is not enough to load + scroll it.
 	test.slow()
@@ -36,7 +36,7 @@ test.describe('kcc-werkplek-zaaksysteem-bridge spec coverage', () => {
 	test('KCC integration settings render the identification + sentiment controls', async ({
 		page,
 	}) => {
-		// The procest admin settings page mounts many heavy sections (ZGW, VTH,
+		// The dossiq admin settings page mounts many heavy sections (ZGW, VTH,
 		// Map Layers, AI, …); waiting for the full `load` event races past the
 		// 30s test timeout and leaves page.url() empty. `domcontentloaded` is
 		// enough — the KCC fields are asserted explicitly below.
@@ -66,7 +66,7 @@ test.describe('kcc-werkplek-zaaksysteem-bridge spec coverage', () => {
 	test('KCC integration settings expose belplan overflow + voorblad-limit controls', async ({
 		page,
 	}) => {
-		// The procest admin settings page mounts many heavy sections (ZGW, VTH,
+		// The dossiq admin settings page mounts many heavy sections (ZGW, VTH,
 		// Map Layers, AI, …); waiting for the full `load` event races past the
 		// 30s test timeout and leaves page.url() empty. `domcontentloaded` is
 		// enough — the KCC fields are asserted explicitly below.

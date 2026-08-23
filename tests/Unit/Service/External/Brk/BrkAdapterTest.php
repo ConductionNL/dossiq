@@ -9,7 +9,7 @@
  * mapping (404 vs 5xx vs network failure — never throws into the caller).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\External\Brk
+ * @package  OCA\Dossiq\Tests\Unit\Service\External\Brk
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,12 +20,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\External\Brk;
+namespace OCA\Dossiq\Tests\Unit\Service\External\Brk;
 
-use OCA\Procest\Service\External\Brk\BrkApiAdapter;
-use OCA\Procest\Service\External\Brk\BrkResponseMapper;
-use OCA\Procest\Service\External\Brk\LogBrkAdapter;
-use OCA\Procest\Service\External\IntegrationMode;
+use OCA\Dossiq\Service\External\Brk\BrkApiAdapter;
+use OCA\Dossiq\Service\External\Brk\BrkResponseMapper;
+use OCA\Dossiq\Service\External\Brk\LogBrkAdapter;
+use OCA\Dossiq\Service\External\IntegrationMode;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
@@ -34,12 +34,12 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\External\Brk\BrkApiAdapter
- * @covers \OCA\Procest\Service\External\Brk\LogBrkAdapter
+ * @covers \OCA\Dossiq\Service\External\Brk\BrkApiAdapter
+ * @covers \OCA\Dossiq\Service\External\Brk\LogBrkAdapter
  *
- * @uses \OCA\Procest\Service\External\Brk\BrkLookupResult
- * @uses \OCA\Procest\Service\External\Brk\BrkResponseMapper
- * @uses \OCA\Procest\Service\External\IntegrationMode
+ * @uses \OCA\Dossiq\Service\External\Brk\BrkLookupResult
+ * @uses \OCA\Dossiq\Service\External\Brk\BrkResponseMapper
+ * @uses \OCA\Dossiq\Service\External\IntegrationMode
  */
 class BrkAdapterTest extends TestCase {
 	/**

@@ -22,28 +22,27 @@
  *  - the action list is wrapped under `results`.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\SubstitutionController;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Substitution\SubstitutionAccessGuard;
-use OCA\Procest\Service\SubstitutionAuditService;
-use OCA\Procest\Service\SubstitutionService;
+use OCA\Dossiq\Controller\SubstitutionController;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Substitution\SubstitutionAccessGuard;
+use OCA\Dossiq\Service\SubstitutionAuditService;
+use OCA\Dossiq\Service\SubstitutionService;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
 use OCP\IRequest;
-use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -52,9 +51,9 @@ use Psr\Log\LoggerInterface;
 /**
  * Wire-contract tests for SubstitutionController.
  *
- * @covers \OCA\Procest\Controller\SubstitutionController
+ * @covers \OCA\Dossiq\Controller\SubstitutionController
  *
- * @uses \OCA\Procest\Service\Substitution\SubstitutionAccessGuard
+ * @uses \OCA\Dossiq\Service\Substitution\SubstitutionAccessGuard
  */
 class SubstitutionControllerContractTest extends TestCase {
 
@@ -109,7 +108,7 @@ class SubstitutionControllerContractTest extends TestCase {
 	 */
 	private function controller(SubstitutionAccessGuard $accessGuard): SubstitutionController {
 		return new SubstitutionController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			substitutionService: $this->substitutionService,
 			auditService: $this->auditService,

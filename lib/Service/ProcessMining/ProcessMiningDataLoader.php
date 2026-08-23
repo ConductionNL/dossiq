@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest ProcessMiningDataLoader.
+ * Dossiq ProcessMiningDataLoader.
  *
  * The single OpenRegister read path behind the process-mining report. Split
  * out of ProcessMiningService so that service keeps only the orchestration:
  * every register this report touches — cases, caseTypes, statusTypes and the
- * `statusRecord` chain {@see \OCA\Procest\Service\StatusTransitionService}
+ * `statusRecord` chain {@see \OCA\Dossiq\Service\StatusTransitionService}
  * writes — is fetched here and nowhere else, together with the two lookup
  * indexes the metric calculators need to turn a UUID back into a label.
  *
@@ -15,7 +15,7 @@
  * a partially configured instance still renders an (empty) dashboard.
  *
  * @category Service
- * @package  OCA\Procest\Service\ProcessMining
+ * @package  OCA\Dossiq\Service\ProcessMining
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,7 +23,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -33,10 +33,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\ProcessMining;
+namespace OCA\Dossiq\Service\ProcessMining;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
  * Loads and indexes every register the process-mining report reads.
@@ -147,7 +147,7 @@ class ProcessMiningDataLoader {
 	}//end loadStatusTypes()
 
 	/**
-	 * Load statusRecord rows — the same register {@see \OCA\Procest\Service\StatusTransitionService}
+	 * Load statusRecord rows — the same register {@see \OCA\Dossiq\Service\StatusTransitionService}
 	 * writes on every transition. No `case` filter: process mining reads
 	 * across the whole case population, then groups in-memory (mirrors
 	 * that service's single-case read, scaled up).
@@ -199,7 +199,7 @@ class ProcessMiningDataLoader {
 
 	/**
 	 * Index a list of rows by both `id` and `slug`, mirroring
-	 * {@see \OCA\Procest\Service\DoorlooptijdService::enrichCases()}'s caseType
+	 * {@see \OCA\Dossiq\Service\DoorlooptijdService::enrichCases()}'s caseType
 	 * lookup so a case's `caseType` field resolves whether it stores the UUID
 	 * or the slug.
 	 *

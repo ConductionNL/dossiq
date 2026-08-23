@@ -8,7 +8,7 @@
  * one-dwangsom guard semantics.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -16,7 +16,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -24,19 +24,19 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\NoticeOfDefaultService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\TermijnService;
+use OCA\Dossiq\Service\NoticeOfDefaultService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TermijnService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\NoticeOfDefaultService
+ * @covers \OCA\Dossiq\Service\NoticeOfDefaultService
  *
- * @uses \OCA\Procest\Service\TermijnService
+ * @uses \OCA\Dossiq\Service\TermijnService
  */
 class NoticeOfDefaultServiceTest extends TestCase {
 	private FakeTermijnStore $objects;

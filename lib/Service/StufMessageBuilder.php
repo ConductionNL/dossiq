@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Procest StUF Message Builder
+ * Dossiq StUF Message Builder
  *
  * Service for constructing the OUTBOUND StUF-ZKN kennisgevingen and vragen
- * procest sends toward a legacy zaaksysteem: buildLk01CreeerZaak /
+ * dossiq sends toward a legacy zaaksysteem: buildLk01CreeerZaak /
  * buildLk02ActualiseerZaak / buildLv01GeefDetails / buildDu01GenereerZaakId /
  * buildDu01VrijBericht — string-concatenated, `zkn:`-namespaced StUF 0310
  * envelopes wrapped with a WSSE UsernameToken header. The WSSE password is
@@ -12,8 +12,8 @@
  * Folded in from the pipelinq StufEnvelopeBuilder during the StUF-ZKN
  * outbound-gateway migration.
  *
- * The INBOUND direction — the responses procest returns as a StUF receiver —
- * lives in {@see \OCA\Procest\Service\Stuf\StufResponseBuilder}. One builder
+ * The INBOUND direction — the responses dossiq returns as a StUF receiver —
+ * lives in {@see \OCA\Dossiq\Service\Stuf\StufResponseBuilder}. One builder
  * owning both directions exposed fourteen public methods with two disjoint
  * caller sets and two different XML styles.
  *
@@ -21,7 +21,7 @@
  * StufMessageParser, StufResponseBuilder and StufController all read from.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -32,7 +32,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/stuf-integration/spec.md
  * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-envelope-construction
@@ -40,14 +40,14 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Procest\Service\Stuf\PayloadTooLargeException;
-use OCA\Procest\Service\Stuf\StufVaultService;
-use OCA\Procest\Service\Stuf\VrijBerichtNotRegisteredException;
-use OCA\Procest\Service\Stuf\ZaaktypeNotMappedException;
+use OCA\Dossiq\Service\Stuf\PayloadTooLargeException;
+use OCA\Dossiq\Service\Stuf\StufVaultService;
+use OCA\Dossiq\Service\Stuf\VrijBerichtNotRegisteredException;
+use OCA\Dossiq\Service\Stuf\ZaaktypeNotMappedException;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -123,7 +123,7 @@ class StufMessageBuilder {
 	/**
 	 * Build an Lk01 creeerZaak envelope from a case and the target endpoint (outbound).
 	 *
-	 * @param array $case The procest case as a plain array (id, type, omschrijving,
+	 * @param array $case The dossiq case as a plain array (id, type, omschrijving,
 	 *                    startdatum, einddatum, betrokkenen[], documenten[]).
 	 * @param array $endpoint The StufEndpoint object (array).
 	 * @param string|null $caseId Optional pre-allocated zaak identificatie.
@@ -198,7 +198,7 @@ class StufMessageBuilder {
 	/**
 	 * Build an Lk02 actualiseerZaak envelope (outbound).
 	 *
-	 * @param array $case The procest case (updated fields).
+	 * @param array $case The dossiq case (updated fields).
 	 * @param array $mapping The existing ZaaksysteemMapping.
 	 * @param array $endpoint The StufEndpoint.
 	 *

@@ -1,8 +1,8 @@
 /**
- * SPDX-FileCopyrightText: 2026 Conduction / Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Conduction / Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Vitest configuration for Procest frontend unit tests.
+ * Vitest configuration for Dossiq frontend unit tests.
  *
  * The bulk of the suite targets PURE calc/util logic under `src/utils/**`
  * (SLA compliance, processing-time distribution, ISO 8601 duration parsing,
@@ -48,7 +48,7 @@ const vue = require('@vitejs/plugin-vue')
  * tests can mount components without ever loading a stylesheet.
  */
 const cssNoop = {
-	name: 'procest-css-noop',
+	name: 'dossiq-css-noop',
 	enforce: 'pre',
 	resolveId(id) {
 		if (typeof id === 'string' && /\.css(\?.*)?$/.test(id)) {

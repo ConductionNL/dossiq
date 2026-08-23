@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest VTH Seed Data Repair Step.
+ * Dossiq VTH Seed Data Repair Step.
  *
  * Idempotent loader for `lib/Settings/vth_seed_data.json`. Seeds the
  * VTH (Vergunningen, Toezicht, Handhaving) case-type catalogue and the
@@ -23,7 +23,7 @@
  * dedicated repair step seeds.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -34,17 +34,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/vth-workflow-configuration-01-config-foundation/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -85,7 +85,7 @@ class VthSeedDataRepairStep implements IRepairStep {
 	 * @return string
 	 */
 	public function getName(): string {
-		return 'Seed VTH case types and inspection-checklist templates for Procest';
+		return 'Seed VTH case types and inspection-checklist templates for Dossiq';
 	}//end getName()
 
 	/**
@@ -249,7 +249,7 @@ class VthSeedDataRepairStep implements IRepairStep {
 			} catch (Throwable $e) {
 				$output->warning('VTH case-type seed failed for ' . $slug . ': ' . $e->getMessage());
 				$this->logger->warning(
-					'Procest VTH case-type seed failed',
+					'Dossiq VTH case-type seed failed',
 					['slug' => $slug, 'exception' => $e->getMessage()]
 				);
 			}
@@ -318,7 +318,7 @@ class VthSeedDataRepairStep implements IRepairStep {
 			} catch (Throwable $e) {
 				$output->warning('VTH checklist seed failed for ' . $slug . ': ' . $e->getMessage());
 				$this->logger->warning(
-					'Procest VTH checklist seed failed',
+					'Dossiq VTH checklist seed failed',
 					['slug' => $slug, 'exception' => $e->getMessage()]
 				);
 			}

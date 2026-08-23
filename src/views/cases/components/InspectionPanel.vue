@@ -1,12 +1,12 @@
 <template>
 	<div class="inspection-panel">
 		<div class="inspection-panel__header">
-			<h3>{{ t('procest', 'Inspections') }}</h3>
+			<h3>{{ t('dossiq', 'Inspections') }}</h3>
 			<NcButton
 				v-if="canInspect"
 				type="primary"
 				@click="showChecklistForm = true">
-				{{ t('procest', 'New inspection') }}
+				{{ t('dossiq', 'New inspection') }}
 			</NcButton>
 		</div>
 
@@ -21,7 +21,7 @@
 			</div>
 			<span class="inspection-panel__progress-label">
 				{{
-					t('procest', 'Inspection {completed}/{total} completed', {
+					t('dossiq', 'Inspection {completed}/{total} completed', {
 						completed: completedPhases,
 						total: totalPhases,
 					})
@@ -56,7 +56,7 @@
 						v-if="report.failedItems > 0"
 						class="inspection-panel__failed-count">
 						{{
-							t('procest', '{count} failed', {
+							t('dossiq', '{count} failed', {
 								count: report.failedItems,
 							})
 						}}
@@ -101,7 +101,7 @@
 							v-if="item.photos && item.photos.length > 0"
 							class="inspection-panel__check-photos">
 							{{
-								t('procest', '{count} photos', {
+								t('dossiq', '{count} photos', {
 									count: item.photos.length,
 								})
 							}}
@@ -114,20 +114,20 @@
 			</div>
 
 			<p v-if="reports.length === 0" class="inspection-panel__empty">
-				{{ t('procest', 'No inspections completed yet.') }}
+				{{ t('dossiq', 'No inspections completed yet.') }}
 			</p>
 		</div>
 
 		<!-- Checklist completion form (modal/dialog) -->
 		<div v-if="showChecklistForm" class="inspection-panel__form-overlay">
 			<div class="inspection-panel__form">
-				<h4>{{ t('procest', 'Complete inspection checklist') }}</h4>
+				<h4>{{ t('dossiq', 'Complete inspection checklist') }}</h4>
 
 				<!-- Checklist selector -->
 				<div
 					v-if="!selectedChecklist"
 					class="inspection-panel__checklist-selector">
-					<p>{{ t('procest', 'Select a checklist:') }}</p>
+					<p>{{ t('dossiq', 'Select a checklist:') }}</p>
 					<div
 						v-for="cl in activeChecklists"
 						:key="cl.id"
@@ -139,7 +139,7 @@
 						@keydown.space.prevent="selectedChecklist = cl">
 						<strong>{{ cl.name }}</strong>
 						<small>{{
-							t('procest', '{count} items', {
+							t('dossiq', '{count} items', {
 								count: (cl.items || []).length,
 							})
 						}}</small>
@@ -181,21 +181,21 @@
 									v-model="formResults[index].result"
 									type="radio"
 									value="pass" />
-								{{ t('procest', 'Yes') }}
+								{{ t('dossiq', 'Yes') }}
 							</label>
 							<label>
 								<input
 									v-model="formResults[index].result"
 									type="radio"
 									value="fail" />
-								{{ t('procest', 'No') }}
+								{{ t('dossiq', 'No') }}
 							</label>
 							<label>
 								<input
 									v-model="formResults[index].result"
 									type="radio"
 									value="nvt" />
-								{{ t('procest', 'N/A') }}
+								{{ t('dossiq', 'N/A') }}
 							</label>
 						</div>
 
@@ -206,7 +206,7 @@
 							v-model.number="formResults[index].measurement"
 							type="number"
 							class="inspection-panel__input"
-							:placeholder="t('procest', 'Measurement value')" />
+							:placeholder="t('dossiq', 'Measurement value')" />
 
 						<!-- Text -->
 						<input
@@ -215,7 +215,7 @@
 							v-model="formResults[index].comment"
 							type="text"
 							class="inspection-panel__input"
-							:placeholder="t('procest', 'Enter text')" />
+							:placeholder="t('dossiq', 'Enter text')" />
 
 						<!-- Comment for all types -->
 						<input
@@ -223,8 +223,8 @@
 							v-model="formResults[index].comment"
 							type="text"
 							class="inspection-panel__input inspection-panel__input--comment"
-							:aria-label="t('procest', 'Comment (optional)')"
-							:placeholder="t('procest', 'Comment (optional)')" />
+							:aria-label="t('dossiq', 'Comment (optional)')"
+							:placeholder="t('dossiq', 'Comment (optional)')" />
 
 						<!-- Photo upload warning -->
 						<p
@@ -233,7 +233,7 @@
 								&& formResults[index].result === 'fail'
 							"
 							class="inspection-panel__photo-warning">
-							{{ t('procest', 'Photo required for failed items') }}
+							{{ t('dossiq', 'Photo required for failed items') }}
 						</p>
 					</div>
 
@@ -244,12 +244,12 @@
 							@click="submitReport">
 							{{
 								submitting
-									? t('procest', 'Submitting...')
-									: t('procest', 'Submit report')
+									? t('dossiq', 'Submitting...')
+									: t('dossiq', 'Submit report')
 							}}
 						</NcButton>
 						<NcButton @click="closeForm">
-							{{ t('procest', 'Cancel') }}
+							{{ t('dossiq', 'Cancel') }}
 						</NcButton>
 					</div>
 				</div>
@@ -396,9 +396,9 @@ export default {
 		 */
 		resultLabel(result) {
 			const labels = {
-				conform: t('procest', 'Compliant'),
-				non_conform: t('procest', 'Non-conform'),
-				partly_conform: t('procest', 'Partially conform'),
+				conform: t('dossiq', 'Compliant'),
+				non_conform: t('dossiq', 'Non-conform'),
+				partly_conform: t('dossiq', 'Partially conform'),
 			}
 			return labels[result] || result
 		},

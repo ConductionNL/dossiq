@@ -4,7 +4,7 @@ import { createApp, h } from 'vue'
 import EmailSettings from './views/settings/EmailSettings.vue'
 import pinia from './pinia.js'
 
-const appVersion = loadState('procest', 'version', 'Unknown')
+const appVersion = loadState('dossiq', 'version', 'Unknown')
 
 // Vue 3: props pass FLAT in h(); component children (arrays) become the default slot.
 const app = createApp({
@@ -12,12 +12,12 @@ const app = createApp({
 		h(
 			CnVersionInfoCard,
 			{
-				appName: 'Procest',
+				appName: 'Dossiq',
 				appVersion,
 				isUpToDate: true,
-				title: t('procest', 'Case email — shared mailbox'),
+				title: t('dossiq', 'Case email — shared mailbox'),
 				description: t(
-					'procest',
+					'dossiq',
 					'Shared functional mailbox ingest and template settings',
 				),
 			},
@@ -25,9 +25,9 @@ const app = createApp({
 				h(
 					CnSettingsSection,
 					{
-						name: t('procest', 'Shared mailbox (IMAP)'),
+						name: t('dossiq', 'Shared mailbox (IMAP)'),
 						description: t(
-							'procest',
+							'dossiq',
 							'Inbound poller connection and case-correspondence transport',
 						),
 					},
@@ -39,4 +39,4 @@ const app = createApp({
 app.use(pinia)
 app.config.globalProperties.t = t
 app.config.globalProperties.n = n
-app.mount('#procest-email-settings')
+app.mount('#dossiq-email-settings')

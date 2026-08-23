@@ -8,7 +8,7 @@
  * level, and unique entry naming for duplicate filenames.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,12 +24,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\InformatieobjectAccessGuard;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\ZgwDocumentService;
-use OCA\Procest\Service\ZipManifestBuilder;
+use OCA\Dossiq\Service\InformatieobjectAccessGuard;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\ZgwDocumentService;
+use OCA\Dossiq\Service\ZipManifestBuilder;
 use OCP\IGroupManager;
 use OCP\IUser;
 use PHPUnit\Framework\TestCase;
@@ -38,9 +38,9 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for ZipManifestBuilder.
  *
- * @covers \OCA\Procest\Service\ZipManifestBuilder
+ * @covers \OCA\Dossiq\Service\ZipManifestBuilder
  *
- * @uses \OCA\Procest\Service\InformatieobjectAccessGuard
+ * @uses \OCA\Dossiq\Service\InformatieobjectAccessGuard
  */
 class ZipManifestBuilderTest extends TestCase {
 

@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @category  Test
- * @package   OCA\Procest\Tests\Unit\Service\Ai
+ * @package   OCA\Dossiq\Tests\Unit\Service\Ai
  * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2
@@ -14,10 +14,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Ai;
+namespace OCA\Dossiq\Tests\Unit\Service\Ai;
 
 use OCA\Hermiq\Event\AiOversightRecordedEvent;
-use OCA\Procest\Service\Ai\AiOversightDelegationService;
+use OCA\Dossiq\Service\Ai\AiOversightDelegationService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
 use PHPUnit\Framework\TestCase;

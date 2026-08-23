@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Gate-19 spec-coverage tests for my-work spec.
@@ -8,7 +8,7 @@
  * user (assignee = current uid), not the legacy 4-tab case+task board.
  * Each test is tagged with the scenario it covers.
  *
- * Note: Use /apps/procest/<route> (not /index.php/apps/procest/<route>)
+ * Note: Use /apps/dossiq/<route> (not /index.php/apps/dossiq/<route>)
  * so the Vue history-mode router can resolve the route correctly.
  */
 
@@ -23,7 +23,7 @@ test.describe('My Work spec coverage', () => {
 	test("shows the current user's assigned cases as a card list", async ({
 		page,
 	}) => {
-		await page.goto(`/index.php/apps/procest${MyWorkCards}`)
+		await page.goto(`/index.php/apps/dossiq${MyWorkCards}`)
 		await dismissSupportDialog(page)
 		// The My Work route renders NO page heading — measured on a CI runner
 		// (2026-08-04) it exposes zero `heading` roles. Identify the view by
@@ -40,7 +40,7 @@ test.describe('My Work spec coverage', () => {
 
 	// @e2e openspec/specs/my-work/spec.md#personal-workload-view
 	test('view mode can be switched between cards and table', async ({ page }) => {
-		await page.goto(`/index.php/apps/procest${MyWorkCards}`)
+		await page.goto(`/index.php/apps/dossiq${MyWorkCards}`)
 		await dismissSupportDialog(page)
 		const tableToggle = page.getByRole('button', { name: /Table/ }).first()
 		await expect(tableToggle).toBeVisible({ timeout: 10000 })

@@ -1,5 +1,5 @@
 /**
- * Advice store module for Procest VTH.
+ * Advice store module for Dossiq VTH.
  *
  * Manages advice requests (adviesAanvragen) with internal/external
  * advice lifecycle, deadline tracking, and escalation.

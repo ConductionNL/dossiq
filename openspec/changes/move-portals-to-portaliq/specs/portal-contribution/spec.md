@@ -1,28 +1,28 @@
 # Portal contribution — multi-audience move to Portaliq
 
-@e2e exclude The portal contribution is a dependency-free declarative provider class (`OCA\Procest\Portal\PortalContributionProvider`) read by the SEPARATE Portaliq app; it renders in Portaliq's shell, not in any procest browser surface, so there is no procest-only Playwright surface that drives it. Its behaviour (three audiences, per-audience collections/actions, fields projection, null for unserved audiences) + the register-drift pin on every scopeField/projected-field are proven by the PHPUnit `PortalContributionProviderTest`. The subject-scoped read/verify/projection path is owned and e2e-covered by Portaliq (contract v2.2 `PortalObjectReader`). The retirement half (deleted views/nav/routes) removes procest surfaces, so it has no positive browser assertion of its own.
+@e2e exclude The portal contribution is a dependency-free declarative provider class (`OCA\Dossiq\Portal\PortalContributionProvider`) read by the SEPARATE Portaliq app; it renders in Portaliq's shell, not in any dossiq browser surface, so there is no dossiq-only Playwright surface that drives it. Its behaviour (three audiences, per-audience collections/actions, fields projection, null for unserved audiences) + the register-drift pin on every scopeField/projected-field are proven by the PHPUnit `PortalContributionProviderTest`. The subject-scoped read/verify/projection path is owned and e2e-covered by Portaliq (contract v2.2 `PortalObjectReader`). The retirement half (deleted views/nav/routes) removes dossiq surfaces, so it has no positive browser assertion of its own.
 
 ## ADDED Requirements
 
 ### Requirement: REQ-PORTAL-001 — The provider MUST declare three portal audiences (supplier, citizen, inspector)
 
-`OCA\Procest\Portal\PortalContributionProvider` MUST expose
+`OCA\Dossiq\Portal\PortalContributionProvider` MUST expose
 `getAudiences()` returning exactly `['supplier','citizen','inspector']` and keep
 `getAudience()` returning `'supplier'` as the contract-v1 fallback. It MUST remain
 a plain class — no Portaliq import, no `implements`, no info.xml dependency, no
 constructor dependencies — so it is inert when Portaliq is absent.
 `getContribution($subject)` MUST branch on `$subject['audience']` and MUST return
-`null` for any audience procest does not serve (fail-closed, ADR-005).
+`null` for any audience dossiq does not serve (fail-closed, ADR-005).
 
 #### Scenario: Provider advertises all three audiences
 
-- GIVEN the Portaliq registry probes the procest provider
+- GIVEN the Portaliq registry probes the dossiq provider
 - WHEN it calls `getAudiences()`
 - THEN it receives `['supplier','citizen','inspector']` and `getAudience()` returns `'supplier'`
 
 #### Scenario: Unserved audience contributes nothing
 
-- GIVEN a resolved subject whose `audience` is not one procest serves
+- GIVEN a resolved subject whose `audience` is not one dossiq serves
 - WHEN `getContribution($subject)` is called
 - THEN it returns `null`
 
@@ -45,7 +45,7 @@ NOT be declared (deferred write-IDOR, portaliq#16).
 
 #### Scenario: Every citizen scopeField and projected field exists on its schema
 
-- GIVEN the citizen collections' schemas in `procest_register.json`
+- GIVEN the citizen collections' schemas in `dossiq_register.json`
 - WHEN each collection's `scopeField` and each `fields` entry is checked against the schema properties
 - THEN every one exists (register-drift pin)
 
@@ -68,14 +68,14 @@ data. No create action is declared (deferred run-submit, portaliq#16).
 
 The in-app supplier portal (`/leverancier`), citizen portal (`/portaal/*`) and
 field-inspection nav page (`/inspecties`) Vue views, their manifest fragments,
-their `PortaalGroup` nav group and their routes MUST be removed from the procest
+their `PortaalGroup` nav group and their routes MUST be removed from the dossiq
 frontend. The backend controllers/services and their `/api/leverancier-portaal/*`,
 `/api/portaal/*` and `/api/inspections/*` endpoints, and the OpenRegister schemas,
 MUST remain unchanged (Portaliq reads OpenRegister directly).
 
 #### Scenario: Retired portal nav entries no longer render
 
-- GIVEN the procest app navigation is built from the manifest fragments + menu-layout
+- GIVEN the dossiq app navigation is built from the manifest fragments + menu-layout
 - WHEN the sidebar renders
 - THEN no `LeverancierDashboard`, `MijnZaken`, `MijnNotificaties` or `Inspecties` menu entry and no `PortaalGroup` group appears
 

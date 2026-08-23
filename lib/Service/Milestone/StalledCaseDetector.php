@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest stalled-case detector.
+ * Dossiq stalled-case detector.
  *
  * Owns the "which cases are waiting too long?" question: it scans the open
  * cases, finds each one's earliest unreached milestone, projects that
@@ -17,7 +17,7 @@
  * this report exists to carry.
  *
  * @category Service
- * @package  OCA\Procest\Service\Milestone
+ * @package  OCA\Dossiq\Service\Milestone
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,7 +25,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -35,11 +35,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Milestone;
+namespace OCA\Dossiq\Service\Milestone;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
  * Reports the cases that have run past their earliest unreached milestone.

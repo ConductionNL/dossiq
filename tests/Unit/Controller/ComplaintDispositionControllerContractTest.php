@@ -23,24 +23,24 @@
  *    with the disposition's own id, not the complaint id.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\ComplaintDispositionController;
-use OCA\Procest\Service\Complaint\ComplaintAccessGuard;
-use OCA\Procest\Service\ComplaintService;
-use OCA\Procest\Service\DispositionService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Controller\ComplaintDispositionController;
+use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
+use OCA\Dossiq\Service\ComplaintService;
+use OCA\Dossiq\Service\DispositionService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IGroupManager;
@@ -53,9 +53,9 @@ use PHPUnit\Framework\TestCase;
 /**
  * Wire-contract tests for ComplaintDispositionController::generateLetter().
  *
- * @covers \OCA\Procest\Controller\ComplaintDispositionController
+ * @covers \OCA\Dossiq\Controller\ComplaintDispositionController
  *
- * @uses \OCA\Procest\Service\Complaint\ComplaintAccessGuard
+ * @uses \OCA\Dossiq\Service\Complaint\ComplaintAccessGuard
  */
 class ComplaintDispositionControllerContractTest extends TestCase {
 
@@ -110,7 +110,7 @@ class ComplaintDispositionControllerContractTest extends TestCase {
 	 */
 	private function controller(ComplaintAccessGuard $accessGuard): ComplaintDispositionController {
 		return new ComplaintDispositionController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			complaintService: $this->complaintService,
 			dispositionService: $this->dispositionService,

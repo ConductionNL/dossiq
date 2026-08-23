@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest CallWebhookHandler
+ * Dossiq CallWebhookHandler
  *
  * Issues an outbound HTTP POST to a tenant-scoped URL (resolved via slug
  * indirection — `urlSlug` is looked up in the tenant secret store, never
@@ -9,7 +9,7 @@
  * rendered payload without contacting the remote host.
  *
  * @category Service
- * @package  OCA\Procest\Service\Actions
+ * @package  OCA\Dossiq\Service\Actions
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -20,16 +20,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/automatic-actions/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Actions;
+namespace OCA\Dossiq\Service\Actions;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\Http\Client\IClientService;
 use Psr\Log\LoggerInterface;
 

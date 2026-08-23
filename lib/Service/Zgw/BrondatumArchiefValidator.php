@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest brondatumArchiefprocedure validator.
+ * Dossiq brondatumArchiefprocedure validator.
  *
  * The cross-field constraints on a resultaattype's nested
  * `brondatumArchiefprocedure` value object (ztc-003 to ztc-008). Which of
@@ -13,7 +13,7 @@
  * that happen to invoke it.
  *
  * @category Service
- * @package  OCA\Procest\Service\Zgw
+ * @package  OCA\Dossiq\Service\Zgw
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,7 +21,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/
  *
  * SPDX-License-Identifier: EUPL-1.2
@@ -32,9 +32,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Zgw;
+namespace OCA\Dossiq\Service\Zgw;
 
-use OCA\Procest\Service\ZgwRulesBase;
+use OCA\Dossiq\Service\ZgwRulesBase;
 
 /**
  * Validates brondatumArchiefprocedure cross-field constraints (ztc-003 to ztc-008).

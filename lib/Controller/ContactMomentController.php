@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Contactmoment Controller.
+ * Dossiq Contactmoment Controller.
  *
  * Authenticated KCC-medewerker API for logging contactmomenten, fetching the
  * case-voorblad, executing quick-actions, and answering doorverbindingen. Every
@@ -9,7 +9,7 @@
  * actions are additionally scoped server-side.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,21 +20,21 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\BurgerIdentificationService;
-use OCA\Procest\Service\CaseVoorbladService;
-use OCA\Procest\Service\CitizenLookupGuard;
-use OCA\Procest\Service\ContactMomentService;
-use OCA\Procest\Service\DoorverbindingService;
-use OCA\Procest\Service\QuickActionService;
+use OCA\Dossiq\Service\BurgerIdentificationService;
+use OCA\Dossiq\Service\CaseVoorbladService;
+use OCA\Dossiq\Service\CitizenLookupGuard;
+use OCA\Dossiq\Service\ContactMomentService;
+use OCA\Dossiq\Service\DoorverbindingService;
+use OCA\Dossiq\Service\QuickActionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

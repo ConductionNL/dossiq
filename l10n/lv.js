@@ -1,5 +1,5 @@
 OC.L10N.register(
-    "procest",
+    "dossiq",
     {
     "Add step" : "Pievienot soli",
     "Address" : "Adrese",
@@ -388,8 +388,8 @@ OC.L10N.register(
     "Voorstel heeft geen actieve stap" : "Voorstel nav aktīva soļa",
     "Wanneer is deze route van toepassing?" : "Kad šis maršruts ir piemērojams?",
     "Weet u zeker dat u de route \"{name}\" wilt verwijderen?" : "Vai tiešām vēlaties dzēst maršrutu \"{name}\"?",
-    "Welcome to Procest! Get started by creating your first case or task using the buttons above." : "Laipni lūdzam Procest! Sāciet, izveidojot savu pirmo lietu vai uzdevumu, izmantojot iepriekš redzamās pogas.",
-    "Welcome to Procest! Get started by creating your first case type in Settings." : "Laipni lūdzam Procest! Sāciet, izveidojot savu pirmo lietas veidu iestatījumos.",
+    "Welcome to Dossiq! Get started by creating your first case or task using the buttons above." : "Laipni lūdzam Dossiq! Sāciet, izveidojot savu pirmo lietu vai uzdevumu, izmantojot iepriekš redzamās pogas.",
+    "Welcome to Dossiq! Get started by creating your first case type in Settings." : "Laipni lūdzam Dossiq! Sāciet, izveidojot savu pirmo lietas veidu iestatījumos.",
     "When heeftAlleAutorisaties is false, autorisaties must be specified." : "Ja heeftAlleAutorisaties ir false, jānorāda autorisaties.",
     "When heeftAlleAutorisaties is true, autorisaties must not be specified. When heeftAlleAutorisaties is false, autorisaties must be specified." : "Ja heeftAlleAutorisaties ir true, autorisaties nedrīkst norādīt. Ja heeftAlleAutorisaties ir false, jānorāda autorisaties.",
     "Why is an extension needed?" : "Kāpēc nepieciešams pagarinājums?",

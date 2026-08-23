@@ -7,7 +7,7 @@
  * and duplicate-suppression scenarios against an in-memory store.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,7 +15,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -23,23 +23,23 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\DeadlineDailyScanService;
-use OCA\Procest\Service\DeadlineEscalationService;
-use OCA\Procest\Service\DwangsomCalculationService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\TermijnService;
+use OCA\Dossiq\Service\DeadlineDailyScanService;
+use OCA\Dossiq\Service\DeadlineEscalationService;
+use OCA\Dossiq\Service\DwangsomCalculationService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TermijnService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\DeadlineDailyScanService
- * @covers \OCA\Procest\Service\DeadlineEscalationService
+ * @covers \OCA\Dossiq\Service\DeadlineDailyScanService
+ * @covers \OCA\Dossiq\Service\DeadlineEscalationService
  *
- * @uses \OCA\Procest\Service\DwangsomCalculationService
- * @uses \OCA\Procest\Service\TermijnService
+ * @uses \OCA\Dossiq\Service\DwangsomCalculationService
+ * @uses \OCA\Dossiq\Service\TermijnService
  */
 class DeadlineDailyScanServiceTest extends TestCase {
 	private FakeTermijnStore $objects;

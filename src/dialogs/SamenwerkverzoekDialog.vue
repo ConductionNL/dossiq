@@ -4,7 +4,7 @@
 -->
 <template>
 	<NcDialog
-		:name="t('procest', 'Initiate Samenwerkverzoek')"
+		:name="t('dossiq', 'Initiate Samenwerkverzoek')"
 		:canClose="true"
 		@close="$emit('close')">
 		<template #default>
@@ -12,7 +12,7 @@
 				<p class="samenwerk-dialog__intro">
 					{{
 						t(
-							'procest',
+							'dossiq',
 							'Request collaboration from another bevoegd gezag for this vergunningaanvraag.',
 						)
 					}}
@@ -20,10 +20,10 @@
 
 				<NcTextField
 					v-model="requestedCompetentAuthority"
-					:label="t('procest', 'Aangezocht bevoegd gezag (OIN or name)')"
+					:label="t('dossiq', 'Aangezocht bevoegd gezag (OIN or name)')"
 					:required="true"
 					:placeholder="
-						t('procest', 'e.g. Waterschap Amstel, Gooi en Vecht')
+						t('dossiq', 'e.g. Waterschap Amstel, Gooi en Vecht')
 					" />
 
 				<div class="samenwerk-dialog__suggestions">
@@ -38,9 +38,9 @@
 
 				<NcTextArea
 					v-model="rationale"
-					:label="t('procest', 'Rationale')"
+					:label="t('dossiq', 'Rationale')"
 					:placeholder="
-						t('procest', 'Explain why collaboration is needed...')
+						t('dossiq', 'Explain why collaboration is needed...')
 					"
 					rows="4" />
 
@@ -52,13 +52,13 @@
 
 		<template #actions>
 			<NcButton type="tertiary" @click="$emit('close')">
-				{{ t('procest', 'Cancel') }}
+				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 			<NcButton
 				type="primary"
 				:disabled="!aangezochtBevoegdGezag || submitting"
 				@click="submit">
-				{{ t('procest', 'Initiate') }}
+				{{ t('dossiq', 'Initiate') }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -100,6 +100,13 @@ export default {
 
 	methods: {
 		t,
+		/**
+		 * Send a samenwerkverzoek to the requested competent authority.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/dso-omgevingsloket/spec.md#requirement-req-dso-011-multi-tenancy-and-bevoegd-gezag-isolation
+		 */
 		async submit() {
 			if (!this.requestedCompetentAuthority) {
 				return
@@ -110,7 +117,7 @@ export default {
 			try {
 				const { data } = await axios.post(
 					generateUrl(
-						'/apps/procest/api/dso/cases/'
+						'/apps/dossiq/api/dso/cases/'
 							+ encodeURIComponent(this.caseId)
 							+ '/samenwerking',
 					),
@@ -123,7 +130,7 @@ export default {
 				this.$emit('initiated', data)
 			} catch (e) {
 				this.error = t(
-					'procest',
+					'dossiq',
 					'Could not initiate samenwerkverzoek. Please try again.',
 				)
 			} finally {

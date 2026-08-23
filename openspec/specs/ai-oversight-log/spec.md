@@ -44,7 +44,7 @@ TBD - created by archiving change ai-oversight-log. Update Purpose after archive
 
 ### Requirement: Oversight surface
 
-The manifest SHALL declare an "AI oversight" `index` page at `/settings/ai-oversight` over `(procest, aiAuditEntry)` with a detail page showing the full entry (prompt, suggestion, human decision), following the existing settings index-page pattern.
+The manifest SHALL declare an "AI oversight" `index` page at `/settings/ai-oversight` over `(dossiq, aiAuditEntry)` with a detail page showing the full entry (prompt, suggestion, human decision), following the existing settings index-page pattern.
 
 #### Scenario: Oversight page lists AI activity
 

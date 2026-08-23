@@ -1,6 +1,6 @@
 # Archief & e-Depot — ontwikkelaarsgids
 
-Architectuur, uitbreidingspunten en referentie voor ontwikkelaars die werken aan de archief-pijplijn van Procest. Doelgroep: backend-ontwikkelaars en integrators.
+Architectuur, uitbreidingspunten en referentie voor ontwikkelaars die werken aan de archief-pijplijn van Dossiq. Doelgroep: backend-ontwikkelaars en integrators.
 
 > **Specs:** `openspec/changes/archief-edepot-handover-01-schema-config` t/m `archief-edepot-handover-08-admin-ui-docs`
 
@@ -72,7 +72,7 @@ case                 1 ---- *  OverdrachtTrigger  (via zaakId)
 `OverdrachtTriggerDaemon` selecteert triggers via geregistreerde `RetentionTriggerStrategy`-implementaties.
 
 ```php
-namespace OCA\Procest\Archief\TriggerStrategy;
+namespace OCA\Dossiq\Archief\TriggerStrategy;
 
 interface RetentionTriggerStrategy
 {
@@ -95,7 +95,7 @@ Daemon kiest automatisch alle geregistreerde strategieën.
 Standaard wordt openconnector gebruikt. Voor een proprietary e-Depot kan een adapter geregistreerd worden:
 
 ```php
-namespace OCA\Procest\Archief\EDepot;
+namespace OCA\Dossiq\Archief\EDepot;
 
 interface EDepotAdapter
 {
@@ -120,7 +120,7 @@ Validatie tegen het XSD gebeurt vóór bundle-pakketten via `DOMDocument::schema
 
 ## 4. REST API
 
-Alle endpoints zitten onder `/index.php/apps/procest/api/archief/...`.
+Alle endpoints zitten onder `/index.php/apps/dossiq/api/archief/...`.
 
 | Methode | Path | Auth | Beschrijving |
 |---------|------|------|--------------|
@@ -149,20 +149,20 @@ Auth posture per controller methode is `#[NoAdminRequired]` of `#[AuthorizedAdmi
 Draaien:
 
 ```bash
-docker exec nextcloud php -d memory_limit=512M /var/www/html/custom_apps/procest/vendor/bin/phpunit \
-    -c /var/www/html/custom_apps/procest/phpunit.xml \
+docker exec nextcloud php -d memory_limit=512M /var/www/html/custom_apps/dossiq/vendor/bin/phpunit \
+    -c /var/www/html/custom_apps/dossiq/phpunit.xml \
     --testsuite=archief
 ```
 
 ## 6. Loggen en metrics
 
-- **Prometheus** — counters: `procest_archief_triggers_total`, `procest_archief_sips_built_total`, `procest_archief_submissions_total{status=...}`. Histograms: `procest_archief_sip_size_bytes`, `procest_archief_submit_duration_seconds`. Zie spec `prometheus-metrics`.
+- **Prometheus** — counters: `dossiq_archief_triggers_total`, `dossiq_archief_sips_built_total`, `dossiq_archief_submissions_total{status=...}`. Histograms: `dossiq_archief_sip_size_bytes`, `dossiq_archief_submit_duration_seconds`. Zie spec `prometheus-metrics`.
 - **Audit log** — alle gebeurtenissen in `OverdrachtAuditLog` (zie sectie 1).
 - **Nextcloud log** — alleen fouten en waarschuwingen via `LoggerInterface`. Geen PII; refereer altijd via `triggerId`/`txId`.
 
 ## 7. Configuratie
 
-Per-app instellingen via `OCA\Procest\Settings\ArchiefAdmin` (server-rendered admin section per ADR-004) + initial-state naar de Vue admin paneel:
+Per-app instellingen via `OCA\Dossiq\Settings\ArchiefAdmin` (server-rendered admin section per ADR-004) + initial-state naar de Vue admin paneel:
 
 | Key | Default | Beschrijving |
 |-----|---------|--------------|
@@ -178,7 +178,7 @@ Per-app instellingen via `OCA\Procest\Settings\ArchiefAdmin` (server-rendered ad
 - **Authentication:** alle endpoints zijn geauthenticeerd. Het rollback-endpoint vereist een `motivation`-veld in de body, dat geaudit wordt.
 - **IDOR:** `RequireDivRole` middleware controleert per `triggerId`/`txId` of de gebruiker de archief-rol heeft.
 - **Integriteit:** SHA-256 checksum berekend bij bundle-creatie, opgeslagen in `SipBundel.checksumSha256` en geverifieerd vóór submission én bij elke `ArchiefBewijs.verify()`.
-- **Geheimen:** credentials voor het e-Depot komen uit openconnector; nooit gehard-coded in procest.
+- **Geheimen:** credentials voor het e-Depot komen uit openconnector; nooit gehard-coded in dossiq.
 - **Logging:** structured JSON, geen documentinhoud, alleen identifiers + payload-hash.
 
 ## 9. Klassendiagram (vereenvoudigd)

@@ -3,7 +3,7 @@
 /**
  * Approval Step Notification Listener
  *
- * Bridges OpenRegister's approval-workflow events to procest's parafering
+ * Bridges OpenRegister's approval-workflow events to dossiq's parafering
  * notifications. Subscribes to OpenRegister's ApprovalStepApprovedEvent and
  * ApprovalStepRejectedEvent (dispatched by OpenRegister's ApprovalService after
  * each step state change) and emits the corresponding Nextcloud notification:
@@ -18,7 +18,7 @@
  * advance; OpenRegister's approval events are the single source of truth.
  *
  * @category Listener
- * @package  OCA\Procest\Listener
+ * @package  OCA\Dossiq\Listener
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -29,17 +29,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/parafering-via-or-approval/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Listener;
+namespace OCA\Dossiq\Listener;
 
-use OCA\Procest\Service\ParaferingNotificationService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\ParaferingNotificationService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\IGroupManager;
@@ -47,7 +47,7 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Listener that translates OpenRegister approval-step events into procest
+ * Listener that translates OpenRegister approval-step events into dossiq
  * parafering notifications.
  *
  * The OpenRegister event classes are referenced by fully-qualified name and
@@ -74,8 +74,8 @@ class ApprovalStepNotificationListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param ParaferingNotificationService $notificationService The procest notification service.
-	 * @param SettingsService $settingsService Procest settings bridge (voorstel lookup).
+	 * @param ParaferingNotificationService $notificationService The dossiq notification service.
+	 * @param SettingsService $settingsService Dossiq settings bridge (voorstel lookup).
 	 * @param IGroupManager $groupManager Group manager (resolve role members).
 	 * @param LoggerInterface $logger PSR-3 logger.
 	 */
@@ -109,7 +109,7 @@ class ApprovalStepNotificationListener implements IEventListener {
 			}
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest: approval-step notification listener failed',
+				'Dossiq: approval-step notification listener failed',
 				['event' => get_class($event), 'exception' => $e->getMessage()]
 			);
 		}
@@ -222,7 +222,7 @@ class ApprovalStepNotificationListener implements IEventListener {
 			return $this->normalizeToArray(value: $proposal);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest: could not load voorstel for approval notification',
+				'Dossiq: could not load voorstel for approval notification',
 				['proposal' => $objectUuid, 'exception' => $e->getMessage()]
 			);
 		}

@@ -1,12 +1,12 @@
 /**
- * SPDX-FileCopyrightText: 2026 Conduction / Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Conduction / Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Unit tests for the BRK lookup shim in src/services/brkApi.js.
  *
  * These assert the consumer contract from the brk-woz-register-adapters
- * change: every export delegates to procest's own
- * `/apps/procest/api/external/brk/*` routes, forwards the optional
+ * change: every export delegates to dossiq's own
+ * `/apps/dossiq/api/external/brk/*` routes, forwards the optional
  * appartementsrechtVolgnummer only when present, and returns the
  * adapter's raw envelope (`{lookupStatus, parcel, dormant, extras}`)
  * unmodified — callers branch on `lookupStatus`, not on HTTP status.
@@ -18,7 +18,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import axios from '@nextcloud/axios'
 import { lookupParcel, lookupParcelById } from '../../src/services/brkApi.js'
 
-const BASE = '/index.php/apps/procest/api/external/brk'
+const BASE = '/index.php/apps/dossiq/api/external/brk'
 
 /**
  * Build an axios-style success response.
@@ -34,7 +34,7 @@ describe('brkApi shim — endpoint routing', () => {
 		axios.get.mockReset()
 	})
 
-	it('lookupParcel delegates to the procest parcel route with kadastrale-aanduiding params', async () => {
+	it('lookupParcel delegates to the dossiq parcel route with kadastrale-aanduiding params', async () => {
 		const envelope = {
 			lookupStatus: 'FOUND',
 			parcel: { sectie: 'A' },
@@ -95,7 +95,7 @@ describe('brkApi shim — endpoint routing', () => {
 		expect(config.params).not.toHaveProperty('appartementsrechtVolgnummer')
 	})
 
-	it('lookupParcelById delegates to the procest parcel-by-id route with an encoded id', async () => {
+	it('lookupParcelById delegates to the dossiq parcel-by-id route with an encoded id', async () => {
 		const envelope = {
 			lookupStatus: 'FOUND',
 			parcel: { oppervlakte: 350 },

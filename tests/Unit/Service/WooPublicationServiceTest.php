@@ -4,7 +4,7 @@
  * WooPublicationService Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,12 +20,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\WooPublication\OpenCatalogiApiClient;
-use OCA\Procest\Service\WooPublication\WooCategoryMapper;
-use OCA\Procest\Service\WooPublicationService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
+use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
+use OCA\Dossiq\Service\WooPublicationService;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -75,9 +75,9 @@ interface WooPublicationObjectServiceStub {
 /**
  * Unit tests for WooPublicationService.
  *
- * @covers \OCA\Procest\Service\WooPublicationService
+ * @covers \OCA\Dossiq\Service\WooPublicationService
  *
- * @uses \OCA\Procest\Service\WooPublication\WooCategoryMapper
+ * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
  */
 class WooPublicationServiceTest extends TestCase {
 

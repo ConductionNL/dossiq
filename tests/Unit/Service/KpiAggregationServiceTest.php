@@ -3,11 +3,11 @@
 /**
  * KpiAggregationService Unit Tests
  *
- * Tests for the Procest KpiAggregationService that computes dashboard
+ * Tests for the Dossiq KpiAggregationService that computes dashboard
  * KPI metrics via DB-side aggregation queries.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -15,14 +15,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\KpiAggregationService;
+use OCA\Dossiq\Service\KpiAggregationService;
 use OCP\DB\IResult;
 use OCP\DB\QueryBuilder\ICompositeExpression;
 use OCP\DB\QueryBuilder\IExpressionBuilder;
@@ -40,7 +40,7 @@ use Psr\Log\LoggerInterface;
  * Depends on the Doctrine DBAL stubs loaded in tests/bootstrap.php to allow
  * mocking of OCP\IDBConnection and OCP\DB\QueryBuilder\IQueryBuilder.
  *
- * @covers \OCA\Procest\Service\KpiAggregationService
+ * @covers \OCA\Dossiq\Service\KpiAggregationService
  */
 class KpiAggregationServiceTest extends TestCase {
 

@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @category  Sections
- * @package   OCA\Procest\Sections
+ * @package   OCA\Dossiq\Sections
  * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2
@@ -14,7 +14,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Sections;
+namespace OCA\Dossiq\Sections;
 
 use OCP\IL10N;
 use OCP\IURLGenerator;
@@ -55,7 +55,7 @@ class PersonalSection implements IIconSection {
      * @return string The section id.
      */
     public function getID(): string {
-        return 'procest';
+        return 'dossiq';
 
     }//end getID()
 

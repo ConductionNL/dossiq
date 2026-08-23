@@ -4,31 +4,31 @@
  * TenantOnboardingService Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
 use InvalidArgumentException;
-use OCA\Procest\Service\TenantOnboardingService;
-use OCA\Procest\Service\TenantSaasService;
+use OCA\Dossiq\Service\TenantOnboardingService;
+use OCA\Dossiq\Service\TenantSaasService;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\TenantOnboardingService
+ * @covers \OCA\Dossiq\Service\TenantOnboardingService
  */
 class TenantOnboardingServiceTest extends TestCase {
 	private TenantOnboardingService $svc;
@@ -40,7 +40,7 @@ class TenantOnboardingServiceTest extends TestCase {
 			appManager: $this->createMock(IAppManager::class),
 			container: $this->createMock(ContainerInterface::class),
 			logger: $this->createMock(LoggerInterface::class),
-			billingService: $this->createMock(\OCA\Procest\Service\TenantBillingService::class),
+			billingService: $this->createMock(\OCA\Dossiq\Service\TenantBillingService::class),
 		);
 	}
 

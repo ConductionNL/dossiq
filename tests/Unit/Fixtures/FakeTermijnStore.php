@@ -14,7 +14,7 @@
  * other test file fataled with "Class FakeTermijnStore not found".
  *
  * @category Tests
- * @package  OCA\Procest\Tests
+ * @package  OCA\Dossiq\Tests
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,12 +25,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
 if (class_exists(FakeTermijnStore::class, false) === true) {
 	return;
@@ -41,7 +41,7 @@ if (class_exists(FakeTermijnStore::class, false) === true) {
  * archief-edepot unit tests.
  *
  * Originally lived at the bottom of TermijnServiceTest.php inside the
- * `OCA\Procest\Tests\Unit\Service` namespace. Extracted to this fixture
+ * `OCA\Dossiq\Tests\Unit\Service` namespace. Extracted to this fixture
  * file so every test file referencing `new FakeTermijnStore()` resolves
  * standalone — the namespace pin keeps the existing 10 call sites
  * compiling without import changes.

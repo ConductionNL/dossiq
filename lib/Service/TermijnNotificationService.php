@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest TermijnNotificationService.
+ * Dossiq TermijnNotificationService.
  *
  * Renders + routes the four AWB notification templates (ontvangstbevestiging,
  * extension, ingebrekestelling-receipt, dwangsom-payment) using the
@@ -10,7 +10,7 @@
  * rendered payload when no router is wired).
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,17 +21,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
-use OCA\Procest\BackgroundJob\DeadlineNotificationDispatchJob;
+use OCA\Dossiq\BackgroundJob\DeadlineNotificationDispatchJob;
 use OCP\BackgroundJob\IJobList;
 use Psr\Log\LoggerInterface;
 
@@ -50,7 +50,7 @@ class TermijnNotificationService {
 	 * Constructor.
 	 *
 	 * @param TermijnService $termService Termijn service.
-	 * @param BerichtenboxRoutingService $router Router (procest notification-router).
+	 * @param BerichtenboxRoutingService $router Router (dossiq notification-router).
 	 * @param LoggerInterface $logger Logger.
 	 * @param IJobList|null $jobList Optional job list for async dispatch.
 	 */
@@ -138,7 +138,7 @@ class TermijnNotificationService {
 		$payload['deadlineInstance'] = $termInstanceId;
 		$payload['template'] = $type;
 
-		// Route the rendered notification through the procest notification
+		// Route the rendered notification through the dossiq notification
 		// router so the burger actually receives it; the returned delivery
 		// record (kanaal / berichtId / verzondenOp) is attached to the payload
 		// and is what the caller persists as proof of dispatch.

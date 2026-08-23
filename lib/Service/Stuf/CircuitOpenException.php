@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest CircuitOpenException.
+ * Dossiq CircuitOpenException.
  *
  * Raised when the circuit breaker for the target endpoint is currently open
  * and the cooldown has not yet elapsed.
  *
  * @category Exception
- * @package  OCA\Procest\Service\Stuf
+ * @package  OCA\Dossiq\Service\Stuf
  *
  * @author    Conduction <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,14 +18,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/stuf-zkn-outbound/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Stuf;
+namespace OCA\Dossiq\Service\Stuf;
 
 /**
  * Short-circuited: circuit breaker is open for the endpoint.

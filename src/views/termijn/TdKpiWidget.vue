@@ -18,13 +18,13 @@
 		</NcNoteCard>
 		<CnKpiGrid v-else-if="kpi" :columns="3">
 			<CnStatsBlock
-				:title="t('procest', 'Total cases (in period)')"
+				:title="t('dossiq', 'Total cases (in period)')"
 				:count="kpi.totalZaken"
 				:showZeroCount="true"
-				:countLabel="t('procest', 'cases')"
+				:countLabel="t('dossiq', 'cases')"
 				variant="default" />
 			<CnStatsBlock
-				:title="t('procest', 'Within term')"
+				:title="t('dossiq', 'Within term')"
 				countLabel=""
 				variant="success">
 				<template #value>
@@ -32,19 +32,19 @@
 				</template>
 			</CnStatsBlock>
 			<CnStatsBlock
-				:title="t('procest', 'Avg duration (days)')"
+				:title="t('dossiq', 'Avg duration (days)')"
 				:count="kpi.avgDurationDays"
 				:showZeroCount="true"
-				:countLabel="t('procest', 'days')"
+				:countLabel="t('dossiq', 'days')"
 				variant="default" />
 			<CnStatsBlock
-				:title="t('procest', 'Overruns')"
+				:title="t('dossiq', 'Overruns')"
 				:count="kpi.overrunCount"
 				:showZeroCount="true"
-				:countLabel="t('procest', 'cases')"
+				:countLabel="t('dossiq', 'cases')"
 				variant="warning" />
 			<CnStatsBlock
-				:title="t('procest', 'Dwangsom total (€)')"
+				:title="t('dossiq', 'Dwangsom total (€)')"
 				countLabel=""
 				variant="error">
 				<template #value>
@@ -52,7 +52,7 @@
 				</template>
 			</CnStatsBlock>
 			<CnStatsBlock
-				:title="t('procest', 'Last updated')"
+				:title="t('dossiq', 'Last updated')"
 				countLabel=""
 				variant="default">
 				<template #value>

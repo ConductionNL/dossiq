@@ -4,7 +4,7 @@
  * ChecklistService (REQ-003) Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,10 +22,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\ChecklistService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\ChecklistService;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -47,8 +46,8 @@ use RuntimeException;
  * still passing. Same family as the fleet's gate-19/gate-26 prose-parsing
  * defect — an explanatory comment is not inert.
  *
- * @covers \OCA\Procest\Service\ChecklistService
- * @uses   \OCA\Procest\Service\Support\ChecklistPayloadReader
+ * @covers \OCA\Dossiq\Service\ChecklistService
+ * @uses   \OCA\Dossiq\Service\Support\ChecklistPayloadReader
  */
 class ChecklistServiceTest extends TestCase {
 
@@ -65,8 +64,8 @@ class ChecklistServiceTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		// OCA\Procest\Service\ChecklistService takes NO constructor arguments.
-		// The three that were here belong to OCA\Procest\Service\Inspection\
+		// OCA\Dossiq\Service\ChecklistService takes NO constructor arguments.
+		// The three that were here belong to OCA\Dossiq\Service\Inspection\
 		// ChecklistService — a different class with the same file name, which an
 		// earlier fixer keyed constructors by.
 		$this->service = new ChecklistService();

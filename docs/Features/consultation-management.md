@@ -1,6 +1,6 @@
 # Consultation Management (Adviesaanvraag)
 
-Structured inter-departmental consultation (adviesaanvraag) as a first-class entity in Procest, implementing the legal framework from Awb articles 3:5-3:9.
+Structured inter-departmental consultation (adviesaanvraag) as a first-class entity in Dossiq, implementing the legal framework from Awb articles 3:5-3:9.
 
 ## Overview
 
@@ -55,7 +55,7 @@ Three n8n workflows support this feature:
 2. **External Body Email Fanout** — triggered on consultation creation; sends secure response link to external bodies
 3. **Bottleneck Detection** — weekly cron; alerts coordinators when a body's overdue rate exceeds 20%
 
-Webhook contract for the email fanout (called by Procest on consultation create for external body):
+Webhook contract for the email fanout (called by Dossiq on consultation create for external body):
 
 ```json
 {
@@ -64,7 +64,7 @@ Webhook contract for the email fanout (called by Procest on consultation create 
   "onderwerp": "Brandveiligheidsadvies",
   "vraagstelling": "Is het gebouw brandveilig?",
   "uiterlijkeReactiedatum": "2026-07-01",
-  "secureResponseUrl": "https://gemeente.nl/apps/procest/api/public/consultations/{token}",
+  "secureResponseUrl": "https://gemeente.nl/apps/dossiq/api/public/consultations/{token}",
   "advisoryBodyEmail": "ggd@regioutrecht.nl"
 }
 ```

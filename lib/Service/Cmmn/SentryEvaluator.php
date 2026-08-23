@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest CMMN Sentry Evaluator.
+ * Dossiq CMMN Sentry Evaluator.
  *
  * Pure evaluation of a single CMMN sentry (`{onPart?, ifPart?}`) or an array
  * of sentries (OR across the array) against a plain evaluation context — no
@@ -23,7 +23,7 @@
  * sets for the single signal call currently being evaluated.
  *
  * @category Service
- * @package  OCA\Procest\Service\Cmmn
+ * @package  OCA\Dossiq\Service\Cmmn
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -34,14 +34,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-003
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Cmmn;
+namespace OCA\Dossiq\Service\Cmmn;
 
 /**
  * Pure sentry-firing logic.

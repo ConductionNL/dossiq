@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @category  Test
- * @package   OCA\Procest\Tests\Unit\Repair\Vth
+ * @package   OCA\Dossiq\Tests\Unit\Repair\Vth
  * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2
@@ -14,9 +14,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Repair\Vth;
+namespace OCA\Dossiq\Tests\Unit\Repair\Vth;
 
-use OCA\Procest\Repair\Vth\VthWorkflowGraphResolver;
+use OCA\Dossiq\Repair\Vth\VthWorkflowGraphResolver;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 

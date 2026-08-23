@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Bewijsstuk Immutability Listener.
+ * Dossiq Bewijsstuk Immutability Listener.
  *
  * Enforces the REQ-SUB-007 rule that a bewijsstuk becomes immutable once it is
  * linked to a vaststelling. `BewijsstukService::assertMutable()` implemented
@@ -24,7 +24,7 @@
  * document and walk straight through the guard.
  *
  * @category Listener
- * @package  OCA\Procest\Listener
+ * @package  OCA\Dossiq\Listener
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -35,20 +35,20 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/subsidieverlening-keten/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Listener;
+namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Subsidie\BewijsstukService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Subsidie\BewijsstukService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -121,7 +121,7 @@ class BewijsstukImmutabilityListener implements IEventListener {
 			$payload = $stored->jsonSerialize();
 		} catch (Throwable $e) {
 			$this->logger->debug(
-				'Procest: bewijsstuk immutability listener could not read the stored payload: ' . $e->getMessage()
+				'Dossiq: bewijsstuk immutability listener could not read the stored payload: ' . $e->getMessage()
 			);
 			return;
 		}
@@ -141,7 +141,7 @@ class BewijsstukImmutabilityListener implements IEventListener {
 			);
 			$event->stopPropagation();
 			$this->logger->info(
-				'Procest: rejected a mutation on an immutable bewijsstuk (REQ-SUB-007)',
+				'Dossiq: rejected a mutation on an immutable bewijsstuk (REQ-SUB-007)',
 				['uuid' => (string)$stored->getUuid()]
 			);
 		}

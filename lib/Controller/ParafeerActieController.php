@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest ParafeerActie Controller
+ * Dossiq ParafeerActie Controller
  *
  * REST endpoints for recording and listing parafering actions on a voorstel.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -17,16 +17,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/parafering-actions/tasks.md#T03
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\ParafeerActieService;
+use OCA\Dossiq\Service\ParafeerActieService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;

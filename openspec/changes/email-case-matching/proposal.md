@@ -7,7 +7,7 @@ records through OpenRegister's email leaf).
 
 ## Summary
 
-When a procest case number appears in the subject or body of an email in a user's Nextcloud Mail
+When a dossiq case number appears in the subject or body of an email in a user's Nextcloud Mail
 account, that email is automatically attached to the case through OpenRegister's email leaf
 (`OCA\OpenRegister\Service\EmailLinkService`), idempotently, on a 5-minute `TimedJob`. The `case`
 schema's `configuration.linkedTypes` already contains `"mail"`, so the Mail sidebar can link messages
@@ -21,16 +21,16 @@ unconfigured — mirroring pipelinq's guard exactly.
 ## Why
 
 A case handler's correspondence about `2026-0042` lands in their NC Mail inbox and never reaches the
-case file unless they remember to link it by hand in the Mail sidebar. Procest's only automatic
+case file unless they remember to link it by hand in the Mail sidebar. Dossiq's only automatic
 inbound-mail path today is `InboundEmailJob`, which polls one **shared functional IMAP mailbox** and
 only recognises bracketed subject tags — personal mailboxes and untagged replies are invisible to the
-case. Pipelinq has already proven the NC-Mail-tables + email-leaf pattern in production; procest needs
+case. Pipelinq has already proven the NC-Mail-tables + email-leaf pattern in production; dossiq needs
 the same mechanism with a different recognizer: case-number tokens in text instead of correspondent
 addresses.
 
 ## What
 
-1. `CaseEmailMatchService` — reads `mail_messages` / `mail_mailboxes` (and nothing procest-local) for
+1. `CaseEmailMatchService` — reads `mail_messages` / `mail_mailboxes` (and nothing dossiq-local) for
    new messages per configured account, extracts case-number candidates from the subject (then the
    body text available from the Mail store when the subject has none), resolves each candidate against
    the `case` schema's `identifier` property via OpenRegister, and calls
@@ -58,12 +58,12 @@ addresses.
 
 ## Affected Projects
 
-- **procest** — new service, job, settings keys, per-user settings surface.
+- **dossiq** — new service, job, settings keys, per-user settings surface.
 - **openregister** — no change required (the email leaf is generic and already consumed by pipelinq).
   Recommended follow-up, not part of this change: lift the generic matcher core (message iteration,
   cursor, idempotent leaf linking, per-user settings) from pipelinq's `EmailMatchService` into the
   email leaf, leaving each app only its recognizer — pipelinq contributes the correspondent-address
-  recognizer, procest the case-number recognizer. Recorded as the design direction in design.md D6.
+  recognizer, dossiq the case-number recognizer. Recorded as the design direction in design.md D6.
 - **pipelinq** — untouched; its `EmailMatchService` is prior art and the donor for the future shared
   core.
 

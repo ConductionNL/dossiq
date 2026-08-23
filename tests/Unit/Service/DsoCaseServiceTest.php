@@ -8,25 +8,25 @@
  * and status transition logic.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T02
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Dso\DsoStatusChangeNotifier;
+use OCA\Dossiq\Service\DsoCaseService;
 use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
-use OCA\Procest\Service\Dso\DsoStatusChangeNotifier;
-use OCA\Procest\Service\DsoCaseService;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -37,9 +37,9 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for DsoCaseService.
  *
- * @covers \OCA\Procest\Service\DsoCaseService
+ * @covers \OCA\Dossiq\Service\DsoCaseService
  *
- * @uses \OCA\Procest\Service\Dso\DsoStatusChangeNotifier
+ * @uses \OCA\Dossiq\Service\Dso\DsoStatusChangeNotifier
  */
 class DsoCaseServiceTest extends TestCase {
 

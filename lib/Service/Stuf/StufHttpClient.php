@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest StufHttpClient.
+ * Dossiq StufHttpClient.
  *
  * Transports a built StUF envelope to the configured endpoint over HTTPS.
  *
@@ -17,7 +17,7 @@
  *     to persist verbatim into the audit log.
  *
  * @category Service
- * @package  OCA\Procest\Service\Stuf
+ * @package  OCA\Dossiq\Service\Stuf
  *
  * @author    Conduction <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -28,14 +28,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-secure-transport
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Stuf;
+namespace OCA\Dossiq\Service\Stuf;
 
 use OCP\Http\Client\IClientService;
 use Psr\Log\LoggerInterface;
@@ -106,7 +106,7 @@ class StufHttpClient {
 		$headers = [
 			'Content-Type' => 'text/xml; charset=UTF-8',
 			'SOAPAction' => '"' . $soapActionFunc . '"',
-			'User-Agent' => 'Procest-StUF/1.0',
+			'User-Agent' => 'Dossiq-StUF/1.0',
 		];
 
 		$options = [

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Bezwaar Panel Independence Checker.
+ * Dossiq Bezwaar Panel Independence Checker.
  *
  * The Awb Art. 7:13 lid 3 independence check for a bezwaaradviescommissie
  * panel. Split out of AdvisoryCommitteeService so that service keeps only
@@ -12,7 +12,7 @@
  *
  * Resolution chain:
  *   bacAdviceRequest.bezwaar -> bezwaar (lifecycle record) -> bezwaar.case
- *   (procest case) -> objection (filed on that case) ->
+ *   (dossiq case) -> objection (filed on that case) ->
  *   objection.contestedDecision -> decision owner / createdBy / steller.
  *
  * The check FAILS OPEN on infrastructure errors by design: a missing
@@ -20,7 +20,7 @@
  * deliberating. Every fail-open path is logged.
  *
  * @category Service
- * @package  OCA\Procest\Service\Bezwaar
+ * @package  OCA\Dossiq\Service\Bezwaar
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -28,7 +28,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -38,10 +38,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Bezwaar;
+namespace OCA\Dossiq\Service\Bezwaar;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -111,7 +111,7 @@ class PanelIndependenceChecker {
 		if (in_array('', [$objectionSchema, $decisionSchema], true) === true) {
 			// Unable to resolve; do not block the transition, but log.
 			$this->logger->info(
-				'Procest BAC: objection/decision schemas not configured; '
+				'Dossiq BAC: objection/decision schemas not configured; '
 				. 'skipping independence check'
 			);
 			return $clear;
@@ -144,7 +144,7 @@ class PanelIndependenceChecker {
 			}
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest BAC: independence check error: ' . $e->getMessage()
+				'Dossiq BAC: independence check error: ' . $e->getMessage()
 			);
 			// Fail-open here is intentional: do not block on infra issues.
 		}//end try
@@ -154,7 +154,7 @@ class PanelIndependenceChecker {
 
 	/**
 	 * Resolve the steller (author) of the primair besluit contested by the
-	 * objection filed on the bezwaar's underlying procest case.
+	 * objection filed on the bezwaar's underlying dossiq case.
 	 *
 	 * @param object $objectService OpenRegister object service.
 	 * @param string $objectionId The bezwaar (lifecycle) UUID.
@@ -175,7 +175,7 @@ class PanelIndependenceChecker {
 		string $objectionSchema,
 		string $decisionSchema,
 	): string {
-		// Resolve the underlying procest case via the bezwaar entity
+		// Resolve the underlying dossiq case via the bezwaar entity
 		// when the bezwaar_schema is registered. When unavailable
 		// (e.g. legacy callers passing a case UUID directly), fall back
 		// to treating the input as the case id.

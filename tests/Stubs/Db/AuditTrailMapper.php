@@ -3,7 +3,7 @@
 /**
  * Test stub for OpenRegister's AuditTrailMapper.
  *
- * Minimal surface needed by procest unit tests: the parafering audit listener
+ * Minimal surface needed by dossiq unit tests: the parafering audit listener
  * calls createAuditTrailEntry(ObjectEntity, string, array). The stub records
  * the arguments so the test can assert on them. The real OR implementation
  * persists a hash-chained, append-only audit-trail row.
@@ -18,7 +18,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
