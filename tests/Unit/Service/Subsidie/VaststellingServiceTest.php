@@ -112,7 +112,7 @@ class VaststellingServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			function (string $key, string $default = ''): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'subsidie_vaststelling_schema' => 'subsidieVaststelling',
 					'subsidie_uitvoering_schema' => 'subsidieUitvoering',
 					'subsidie_aanvraag_schema' => 'subsidieAanvraag',

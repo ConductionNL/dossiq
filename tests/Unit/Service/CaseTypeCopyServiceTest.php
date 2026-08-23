@@ -67,7 +67,7 @@ class CaseTypeCopyServiceTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturnCallback(
 			static function (string $key, string $default = ''): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'case_type_schema' => 'caseType',
 					'status_type_schema' => 'statusType',
 					'result_type_schema' => 'resultType',

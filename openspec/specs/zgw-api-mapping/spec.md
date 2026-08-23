@@ -335,7 +335,7 @@ Each ZGW API resource MUST be wired to OpenRegister through an Endpoint entity t
 - **AND** PATCH endpoints MUST use Mapping entities with `passThrough: true` to preserve unmapped fields
 
 #### Scenario: Endpoint conditions for filtering
-- **GIVEN** an Endpoint entity has `conditions: {"register": "procest", "schema": "case"}`
+- **GIVEN** an Endpoint entity has `conditions: {"register": "dossiq", "schema": "case"}`
 - **WHEN** the endpoint is matched
 - **THEN** queries MUST be scoped to only the specified register and schema
 - **AND** objects from other registers/schemas MUST NOT be returned

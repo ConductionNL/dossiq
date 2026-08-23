@@ -108,7 +108,7 @@ test.describe('Workflow Board keyboard status transition', () => {
 		// child-first cleanup deletes them out from under a case that is still
 		// live — leaving a DANGLING reference. Observed in CI run
 		// 31964165472: the dashboard's grouped aggregations
-		// (`aggregations/procest/case/grouped?groupBy=status|caseType`) still
+		// (`aggregations/dossiq/case/grouped?groupBy=status|caseType`) still
 		// return the orphaned case's group keys, the chart widget resolves each
 		// key by id, and two of those lookups 404. That reddened
 		// `spec-coverage/ui-pages.spec.ts:55` ("dashboard mounts without

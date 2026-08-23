@@ -90,7 +90,7 @@ export default {
 		/** OpenRegister register slug holding the cases. @type {string} */
 		register: {
 			type: String,
-			default: 'procest',
+			default: 'dossiq',
 		},
 
 		/** OpenRegister schema slug for the case objects. @type {string} */

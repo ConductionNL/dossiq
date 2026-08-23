@@ -163,7 +163,7 @@ The system MUST support creating new cases. Each case MUST be linked to a publis
 - WHEN the user opens the "New Case" form and selects case type "Omgevingsvergunning"
 - AND enters title "Bouwvergunning Keizersgracht 100"
 - AND submits the form
-- THEN the system MUST create an OpenRegister object in the `procest` register with the `case` schema
+- THEN the system MUST create an OpenRegister object in the `dossiq` register with the `case` schema
 - AND the `identifier` MUST be auto-generated (format: `YYYY-NNN`, e.g., "2026-042")
 - AND the `startDate` MUST default to the current date
 - AND the `deadline` MUST be auto-calculated as `startDate + P56D` (e.g., 2026-01-15 + 56 days = 2026-03-12)
@@ -1083,7 +1083,7 @@ rendered shell.
 ## Dependencies
 
 - **Case Types spec** (`../case-types/spec.md`): Case type MUST be published and valid to create cases. Case type controls statuses, deadlines, confidentiality defaults, document types, property definitions, result types, and role types.
-- **OpenRegister**: All case data is stored as OpenRegister objects in the `procest` register under the `case` schema.
+- **OpenRegister**: All case data is stored as OpenRegister objects in the `dossiq` register under the `case` schema.
 - **Nextcloud Activity**: Audit trail events are published via `OCP\Activity\IManager`.
 - **Nextcloud Comments**: Case notes use `OCP\Comments\ICommentsManager`.
 - **Nextcloud Files**: Document uploads reference Nextcloud file IDs via `OCP\Files\IRootFolder`.
@@ -1222,7 +1222,7 @@ The system MUST support creating new cases. Each case MUST be linked to a publis
 - WHEN the user opens the "New Case" form and selects case type "Omgevingsvergunning"
 - AND enters title "Bouwvergunning Keizersgracht 100"
 - AND submits the form
-- THEN the system MUST create an OpenRegister object in the `procest` register with the `case` schema
+- THEN the system MUST create an OpenRegister object in the `dossiq` register with the `case` schema
 - AND the `identifier` MUST be auto-generated (format: `YYYY-NNN`, e.g., "2026-042")
 - AND the `startDate` MUST default to the current date
 - AND the `deadline` MUST be auto-calculated as `startDate + P56D` (e.g., 2026-01-15 + 56 days = 2026-03-12)
@@ -2148,7 +2148,7 @@ The system MUST provide full-text search across cases matching against title, de
 ## Dependencies
 
 - **Case Types spec** (`../case-types/spec.md`): Case type MUST be published and valid to create cases. Case type controls statuses, deadlines, confidentiality defaults, document types, property definitions, result types, and role types.
-- **OpenRegister**: All case data is stored as OpenRegister objects in the `procest` register under the `case` schema.
+- **OpenRegister**: All case data is stored as OpenRegister objects in the `dossiq` register under the `case` schema.
 - **Nextcloud Activity**: Audit trail events are published via `OCP\Activity\IManager`.
 - **Nextcloud Comments**: Case notes use `OCP\Comments\ICommentsManager`.
 - **Nextcloud Files**: Document uploads reference Nextcloud file IDs via `OCP\Files\IRootFolder`.

@@ -45,7 +45,7 @@ class DwangsomBezwaarServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'termijn_definitie_schema' => 'deadlineDefinition',
 					'termijn_instance_schema' => 'deadlineInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
@@ -64,13 +64,13 @@ class DwangsomBezwaarServiceTest extends TestCase {
 		);
 
 		// Seed berekening + uitbetaling.
-		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
+		$this->objects->saveObject('dossiq', 'penaltyPaymentCalculation', [
 			'id' => 'b-1',
 			'deadlineInstance' => 'ti-1',
 			'status' => 'gestopt-wegens-decision',
 			'definitiveAmount' => 50000,
 		]);
-		$this->objects->saveObject('procest', 'dwangsomUitbetaling', [
+		$this->objects->saveObject('dossiq', 'dwangsomUitbetaling', [
 			'id' => 'u-1',
 			'penaltyPaymentCalculation' => 'b-1',
 			'amount' => 50000,

@@ -145,7 +145,7 @@ class WOODeadlineServiceTest extends TestCase {
 
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
 		$this->settingsService->method('getConfigValue')->willReturnMap([
-			['register', '', 'procest'],
+			['register', '', 'dossiq'],
 			['case_schema', '', 'case'],
 		]);
 
@@ -195,7 +195,7 @@ class WOODeadlineServiceTest extends TestCase {
 
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
 		$this->settingsService->method('getConfigValue')->willReturnMap([
-			['register', '', 'procest'],
+			['register', '', 'dossiq'],
 			['case_schema', '', 'case'],
 		]);
 

@@ -4,7 +4,7 @@
  * Dossiq RenameDutchDeadlineColumns Repair Step
  *
  * Moves stored data from the Dutch column names to the English ones the
- * procest register declares.
+ * dossiq register declares.
  *
  * WHY THIS IS NEEDED AT ALL. OpenRegister does not store an object as a JSON
  * blob keyed by property name — each schema property is a real, snake_cased
@@ -19,8 +19,8 @@
  * no data loss, and invisible to the suites, which assert against fixtures
  * rather than migrated rows.
  *
- * WHY IT MATCHES TWO REGISTERS, NOT ONE. This install carries BOTH `procest`
- * (1051 rows) and `procest-default` (107 rows). The sibling step in decidesk
+ * WHY IT MATCHES TWO REGISTERS, NOT ONE. This install carries BOTH `dossiq`
+ * (1051 rows) and `dossiq-default` (107 rows). The sibling step in decidesk
  * resolves a single exact slug; doing that here would silently skip 107 rows
  * and report success. The register set is therefore resolved by slug prefix and
  * every match is migrated.
@@ -74,7 +74,7 @@ use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
 
 /**
- * Rename procest's Dutch deadline columns to their English equivalents.
+ * Rename dossiq's Dutch deadline columns to their English equivalents.
  *
  * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
@@ -82,15 +82,20 @@ class RenameDutchDeadlineColumns implements IRepairStep {
 	/**
 	 * Slug prefix of the registers in scope.
 	 *
-	 * Matches `procest` and `procest-default`; both hold live rows.
+	 * Matches `dossiq` and `dossiq-default`; both hold live rows.
 	 *
 	 * @var string
 	 */
-	// FROZEN: OpenRegister register SLUG, unchanged by the procest -> dossiq
-	// app-id rename. It prefix-matches both `procest` and `procest-default`,
-	// which each hold live rows; a renamed value matches neither, and the step
-	// would silently migrate nothing.
-	private const REGISTER_SLUG_PREFIX = 'procest';
+	// The OpenRegister register SLUG. It MOVES with the app id: the
+	// `MigrateRegisterSlug` step renames `procest` -> `dossiq` (and
+	// `dossiq-default` -> `dossiq-default`) on the existing register rows and
+	// is registered ahead of this step in both info.xml blocks. Renaming a
+	// register strands nothing, because objects are bound to it by NUMERIC id:
+	// every shard table's `_register` column holds that id, and the tables are
+	// named `oc_openregister_table_<registerId>_<schemaId>`. What the ordering
+	// buys is that this step still resolves a register at all — run before
+	// MigrateRegisterSlug it would match none and migrate nothing, silently.
+	private const REGISTER_SLUG_PREFIX = 'dossiq';
 
 	/**
 	 * Old snake_case column name => new snake_case column name.
@@ -122,7 +127,7 @@ class RenameDutchDeadlineColumns implements IRepairStep {
 		//
 		// Each of these was verified to be owned by EXACTLY ONE schema before
 		// being added. That check is not optional: this map is applied to every
-		// shard table in the procest registers, so a column name shared with a
+		// shard table in the dossiq registers, so a column name shared with a
 		// schema that still declares the Dutch spelling would have its data
 		// migrated out from under its own declaration.
 		//
@@ -142,7 +147,7 @@ class RenameDutchDeadlineColumns implements IRepairStep {
 
 		// Mandaat -> mandate. All four owning schemas (mandaat, mandaatGebruik,
 		// mandaatEscalatie, mandaatRegeling) are renamed in this same change and
-		// all four live in the `procest` register, so this map's scope covers
+		// all four live in the `dossiq` register, so this map's scope covers
 		// every owner — no declaration is left pointing at a Dutch column.
 		//
 		// Ownership was checked per property first: each of these is declared by
@@ -184,11 +189,11 @@ class RenameDutchDeadlineColumns implements IRepairStep {
 	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function getName(): string {
-		return 'Move procest data from the Dutch columns to the English ones';
+		return 'Move dossiq data from the Dutch columns to the English ones';
 	}//end getName()
 
 	/**
-	 * Run the column migration across every procest shard table.
+	 * Run the column migration across every dossiq shard table.
 	 *
 	 * @param IOutput $output Repair output.
 	 *
@@ -199,7 +204,7 @@ class RenameDutchDeadlineColumns implements IRepairStep {
 	public function run(IOutput $output): void {
 		$tables = $this->shardTables();
 		if ($tables === []) {
-			$output->info('RenameDutchDeadlineColumns: no procest shard tables on this install; nothing to do.');
+			$output->info('RenameDutchDeadlineColumns: no dossiq shard tables on this install; nothing to do.');
 			return;
 		}
 
@@ -247,7 +252,7 @@ class RenameDutchDeadlineColumns implements IRepairStep {
 		$output->info(
 			'RenameDutchDeadlineColumns: ' . $renamed . ' column(s) renamed, '
 			. $copied . ' back-filled, ' . $refused . ' refused for ambiguity, across '
-			. count($tables) . ' procest shard table(s).'
+			. count($tables) . ' dossiq shard table(s).'
 		);
 
 	}//end run()
@@ -294,7 +299,7 @@ class RenameDutchDeadlineColumns implements IRepairStep {
 			)->fetchAll(\PDO::FETCH_COLUMN);
 		} catch (Exception $e) {
 			$this->logger->warning(
-				'RenameDutchDeadlineColumns: could not resolve the procest registers; skipping.',
+				'RenameDutchDeadlineColumns: could not resolve the dossiq registers; skipping.',
 				['exception' => $e->getMessage()]
 			);
 			return [];

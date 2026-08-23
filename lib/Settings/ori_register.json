@@ -7,7 +7,7 @@
   },
   "x-openregister": {
     "type": "application",
-    "app": "procest",
+    "app": "dossiq",
     "$comment": "`app` IS DELIBERATELY STILL `procest` AFTER THE procest -> dossiq APP-ID RENAME. OpenRegister derives the register SLUG from this field and resolves registers by slug, so moving it with the app id would not rename the register — the importer would find no match, create a SECOND, empty register, and every stored vergadering, agendapunt and stemming would keep pointing at the old one. That presents as an app with no council data rather than as an error. Same reason lib/Settings/dossiq_register.json keeps `\"app\": \"procest\"` and `\"folder\": \"Open Registers/Procest\"`.",
     "openregister": "^v0.2.10",
     "description": "ORI (Open Raadsinformatie) register providing council information management for Dossiq"

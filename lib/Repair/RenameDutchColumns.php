@@ -3,7 +3,7 @@
 /**
  * Dossiq RenameDutchColumns Repair Step
  *
- * Moves stored data from the Dutch columns to the English ones the procest
+ * Moves stored data from the Dutch columns to the English ones the dossiq
  * register now declares. Covers every vocabulary cluster migrated so far, not
  * only amounts — the class was renamed from RenameDutchAmountColumns when the
  * second cluster landed, because one register-scoped step must carry them all.
@@ -60,7 +60,7 @@ use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
 
 /**
- * Rename procest's Dutch amount columns to their English equivalents.
+ * Rename dossiq's Dutch amount columns to their English equivalents.
  *
  * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
  *  migration. Pointing this at an existing spec would report conformance to a
@@ -72,13 +72,16 @@ class RenameDutchColumns implements IRepairStep {
 	 *
 	 * @var string
 	 */
-	// FROZEN: the OpenRegister register SLUG, not this app's id, and unchanged
-	// by the procest -> dossiq rename. The physical shard tables on disk are
-	// named from this prefix; a renamed value matches zero tables, so the step
-	// would migrate NOTHING and report "nothing to do" — success, with the
-	// Dutch columns left in place. Every lowercase `procest` in this file's
-	// prose names that register too, and stays for the same reason.
-	private const REGISTER_SLUG_PREFIX = 'procest';
+	// The OpenRegister register SLUG. It MOVES with the app id: the
+	// `MigrateRegisterSlug` step renames `procest` -> `dossiq` (and
+	// `dossiq-default` -> `dossiq-default`) on the existing register rows and
+	// is registered ahead of this step in both info.xml blocks. Renaming a
+	// register strands nothing, because objects are bound to it by NUMERIC id:
+	// every shard table's `_register` column holds that id, and the tables are
+	// named `oc_openregister_table_<registerId>_<schemaId>`. What the ordering
+	// buys is that this step still resolves a register at all — run before
+	// MigrateRegisterSlug it would match none and migrate nothing, silently.
+	private const REGISTER_SLUG_PREFIX = 'dossiq';
 
 	/**
 	 * Old snake_case column name => new snake_case column name.
@@ -577,11 +580,11 @@ class RenameDutchColumns implements IRepairStep {
 	 *  requirement that says nothing about it.
 	 */
 	public function getName(): string {
-		return 'Move procest data from the Dutch columns to the English ones';
+		return 'Move dossiq data from the Dutch columns to the English ones';
 	}//end getName()
 
 	/**
-	 * Run the column migration across every procest shard table.
+	 * Run the column migration across every dossiq shard table.
 	 *
 	 * @param IOutput $output Repair output.
 	 *
@@ -594,7 +597,7 @@ class RenameDutchColumns implements IRepairStep {
 	public function run(IOutput $output): void {
 		$tables = $this->shardTables();
 		if ($tables === []) {
-			$output->info('RenameDutchColumns: no procest shard tables on this install; nothing to do.');
+			$output->info('RenameDutchColumns: no dossiq shard tables on this install; nothing to do.');
 			return;
 		}
 

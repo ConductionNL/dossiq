@@ -1,7 +1,7 @@
 {
     "components": {
         "registers": {
-            "procest": {
+            "dossiq": {
                 "schemas": [
                     "contactmoment",
                     "kccQuickAction",
@@ -151,13 +151,13 @@
             }
         },
         "objects": [
-            {"@self": {"schema": "kccQuickAction", "register": "procest"}, "name": "Status terugkoppelen", "actionType": "status_geven", "requirementContext": ["is_geidentificeerd", "has_open_case"], "permissies": ["kcc_medewerker"], "sortOrder": 1, "isActive": true},
-            {"@self": {"schema": "kccQuickAction", "register": "procest"}, "name": "Nieuwe zaak", "actionType": "new_case", "requirementContext": ["is_geidentificeerd"], "permissies": ["kcc_medewerker"], "sortOrder": 2, "isActive": true},
-            {"@self": {"schema": "kccQuickAction", "register": "procest"}, "name": "Klacht registreren", "actionType": "complaint_registreren", "requirementContext": [], "permissies": ["kcc_medewerker", "klachtenfunctionaris"], "sortOrder": 3, "isActive": true},
-            {"@self": {"schema": "kccQuickAction", "register": "procest"}, "name": "Doorverbinden", "actionType": "doorverbinden", "requirementContext": [], "permissies": ["kcc_medewerker"], "sortOrder": 4, "isActive": true},
-            {"@self": {"schema": "kccQuickAction", "register": "procest"}, "name": "Bel terug inplannen", "actionType": "bel_terug_inplannen", "requirementContext": [], "permissies": ["kcc_medewerker"], "sortOrder": 5, "isActive": true},
-            {"@self": {"schema": "belplan", "register": "procest"}, "name": "Algemeen gemeentenummer", "triggerNumber": ["14000"], "routingSteps": [{"type": "keuzemenu", "options": ["Omgevingsvergunningen", "Bouwtoezicht", "Infocentrum"]}, {"type": "vaardigheid_match", "zaaktype_to_vaardigheid": {"omgevingsvergunning": "omgevingsvergunningen", "bouwtoezicht": "bouwtoezicht"}}, {"type": "wachtrij_overflow", "threshold_wachttijd_sec": 180, "fallback_rol": "generalist"}], "openingHours": "Mo-Fr 08:00-17:00", "fallbackAction": "voicemail", "priority": 10, "isActive": true},
-            {"@self": {"schema": "belplan", "register": "procest"}, "name": "Vaknummer Vergunningen", "triggerNumber": ["140001"], "routingSteps": [{"type": "vaardigheid_match", "zaaktype_to_vaardigheid": {"omgevingsvergunning": "omgevingsvergunningen"}}, {"type": "wachtrij_overflow", "threshold_wachttijd_sec": 240, "fallback_rol": "generalist"}], "openingHours": "Mo-Fr 09:00-12:00", "fallbackAction": "sms_callback", "priority": 20, "isActive": true}
+            {"@self": {"schema": "kccQuickAction", "register": "dossiq"}, "name": "Status terugkoppelen", "actionType": "status_geven", "requirementContext": ["is_geidentificeerd", "has_open_case"], "permissies": ["kcc_medewerker"], "sortOrder": 1, "isActive": true},
+            {"@self": {"schema": "kccQuickAction", "register": "dossiq"}, "name": "Nieuwe zaak", "actionType": "new_case", "requirementContext": ["is_geidentificeerd"], "permissies": ["kcc_medewerker"], "sortOrder": 2, "isActive": true},
+            {"@self": {"schema": "kccQuickAction", "register": "dossiq"}, "name": "Klacht registreren", "actionType": "complaint_registreren", "requirementContext": [], "permissies": ["kcc_medewerker", "klachtenfunctionaris"], "sortOrder": 3, "isActive": true},
+            {"@self": {"schema": "kccQuickAction", "register": "dossiq"}, "name": "Doorverbinden", "actionType": "doorverbinden", "requirementContext": [], "permissies": ["kcc_medewerker"], "sortOrder": 4, "isActive": true},
+            {"@self": {"schema": "kccQuickAction", "register": "dossiq"}, "name": "Bel terug inplannen", "actionType": "bel_terug_inplannen", "requirementContext": [], "permissies": ["kcc_medewerker"], "sortOrder": 5, "isActive": true},
+            {"@self": {"schema": "belplan", "register": "dossiq"}, "name": "Algemeen gemeentenummer", "triggerNumber": ["14000"], "routingSteps": [{"type": "keuzemenu", "options": ["Omgevingsvergunningen", "Bouwtoezicht", "Infocentrum"]}, {"type": "vaardigheid_match", "zaaktype_to_vaardigheid": {"omgevingsvergunning": "omgevingsvergunningen", "bouwtoezicht": "bouwtoezicht"}}, {"type": "wachtrij_overflow", "threshold_wachttijd_sec": 180, "fallback_rol": "generalist"}], "openingHours": "Mo-Fr 08:00-17:00", "fallbackAction": "voicemail", "priority": 10, "isActive": true},
+            {"@self": {"schema": "belplan", "register": "dossiq"}, "name": "Vaknummer Vergunningen", "triggerNumber": ["140001"], "routingSteps": [{"type": "vaardigheid_match", "zaaktype_to_vaardigheid": {"omgevingsvergunning": "omgevingsvergunningen"}}, {"type": "wachtrij_overflow", "threshold_wachttijd_sec": 240, "fallback_rol": "generalist"}], "openingHours": "Mo-Fr 09:00-12:00", "fallbackAction": "sms_callback", "priority": 20, "isActive": true}
         ]
     }
 }

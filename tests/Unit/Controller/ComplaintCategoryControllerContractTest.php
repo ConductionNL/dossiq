@@ -173,7 +173,7 @@ class ComplaintCategoryControllerContractTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturnCallback(
 			static function (string $key, string $default = ''): string {
 				return match ($key) {
-					'register' => 'procest-register',
+					'register' => 'dossiq-register',
 					'complaint_category_schema' => 'klachtcategorie',
 					default => $default,
 				};
@@ -270,7 +270,7 @@ class ComplaintCategoryControllerContractTest extends TestCase {
 		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
 		$this->assertSame(['id' => 'cat-1', 'name' => 'Bejegening'], $response->getData());
 		$this->assertSame(['name' => 'Bejegening'], $captured['object']);
-		$this->assertSame('procest-register', $captured['register']);
+		$this->assertSame('dossiq-register', $captured['register']);
 		$this->assertSame('klachtcategorie', $captured['schema']);
 		$this->assertNull($captured['uuid'], 'a create must not address an existing uuid');
 	}//end testCreateCategoryReturns201AndWritesWithoutAUuid()

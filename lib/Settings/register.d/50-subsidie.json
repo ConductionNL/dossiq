@@ -210,7 +210,7 @@
             }
         },
         "registers": {
-            "procest": {
+            "dossiq": {
                 "schemas": [
                     "subsidieRegeling",
                     "subsidieAanvraag",
@@ -227,7 +227,7 @@
         "objects": [
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "subsidieRegeling",
                     "slug": "regeling-innovatiefonds-2026"
                 },
@@ -245,7 +245,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "subsidieRegeling",
                     "slug": "regeling-cultuur-subsidie-2026"
                 },

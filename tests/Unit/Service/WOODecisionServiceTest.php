@@ -184,7 +184,7 @@ class WOODecisionServiceTest extends TestCase {
 
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
 		$this->settingsService->method('getConfigValue')->willReturnMap([
-			['register', '', 'procest'],
+			['register', '', 'dossiq'],
 			['decision_schema', '', 'decision'],
 			['woo_assessment_schema', '', 'wooAssessment'],
 		]);

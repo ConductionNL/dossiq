@@ -164,7 +164,7 @@ class NotesControllerTest extends TestCase {
 		$this->withBody(
 			[
 				'objectId' => 'case-1',
-				'register' => 'procest',
+				'register' => 'dossiq',
 				'schema' => 'case',
 				'noteId' => 'note-9',
 				'mentionedUserIds' => ['bob', 'carol'],
@@ -177,7 +177,7 @@ class NotesControllerTest extends TestCase {
 				actorUserId: 'alice',
 				actorDisplayName: 'Alice',
 				objectId: 'case-1',
-				register: 'procest',
+				register: 'dossiq',
 				schema: 'case',
 				noteId: 'note-9',
 				mentionedUserIds: ['bob', 'carol'],

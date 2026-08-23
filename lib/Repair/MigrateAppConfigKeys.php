@@ -51,9 +51,10 @@
  * running them first would leave those keys already present under `dossiq` and
  * this step would skip them as "already present", stranding the old values.
  *
- * NOTHING HERE TOUCHES THE REGISTER SLUG. The OpenRegister register slug stays
- * `procest` across this rename (see the note in `appinfo/info.xml`); this step
- * moves the app's own configuration namespace only.
+ * NOTHING HERE TOUCHES THE REGISTER SLUG. That slug moves too — `procest` ->
+ * `dossiq` — but it is a row in OpenRegister, not a Nextcloud app namespace, and
+ * `MigrateRegisterSlug` owns it. This step moves the app's own configuration
+ * namespace only.
  *
  * SAFETY. Idempotent and non-destructive:
  *   - a key is copied only when the old value is non-empty AND the new
@@ -241,7 +242,7 @@ class MigrateAppConfigKeys implements IRepairStep {
 			return $this->appConfig->getKeys(self::OLD_APP_ID);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Dossiq: could not enumerate procest app config keys; skipping the migration',
+				'Dossiq: could not enumerate dossiq app config keys; skipping the migration',
 				['exception' => $e->getMessage()]
 			);
 			return [];

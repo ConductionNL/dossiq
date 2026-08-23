@@ -147,8 +147,8 @@ describe('ChecklistsTab — response-shape handling (procest#784)', () => {
 	})
 
 	it('renders ZERO rows for an object body that is not a collection envelope', async () => {
-		// e.g. OpenRegister's `{"message":"Register not found: 'procest'"}`.
-		const wrapper = await mountWith({ message: "Register not found: 'procest'" })
+		// e.g. OpenRegister's `{"message":"Register not found: 'dossiq'"}`.
+		const wrapper = await mountWith({ message: "Register not found: 'dossiq'" })
 
 		expect(wrapper.findAll('.checklists-tab__item')).toHaveLength(0)
 	})

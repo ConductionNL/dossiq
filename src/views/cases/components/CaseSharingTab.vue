@@ -135,7 +135,7 @@ export default {
 			this.loading = true
 			try {
 				const response = await axios.get(
-					generateUrl('/apps/openregister/api/objects/procest/caseShare'),
+					generateUrl('/apps/openregister/api/objects/dossiq/caseShare'),
 					{
 						params: { caseId: this.objectId, shareType: 'partner' },
 					},
@@ -177,7 +177,7 @@ export default {
 			try {
 				const response = await axios.get(
 					generateUrl(
-						'/apps/openregister/api/objects/procest/partnerOrganization',
+						'/apps/openregister/api/objects/dossiq/partnerOrganization',
 					),
 				)
 				this.partners = response.data?.results || []
@@ -193,7 +193,7 @@ export default {
 			try {
 				const response = await axios.get(
 					generateUrl(
-						`/apps/openregister/api/objects/procest/case/${encodeURIComponent(this.objectId)}`,
+						`/apps/openregister/api/objects/dossiq/case/${encodeURIComponent(this.objectId)}`,
 					),
 				)
 				const docs = response.data?.documents || []

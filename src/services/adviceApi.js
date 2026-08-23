@@ -2,11 +2,11 @@
  * Advice API service for Dossiq.
  *
  * CRUD lives on OpenRegister (manifest renderer pattern):
- *   GET    /apps/openregister/api/objects/procest/adviesAanvraag
- *   POST   /apps/openregister/api/objects/procest/adviesAanvraag
- *   GET    /apps/openregister/api/objects/procest/adviesAanvraag/{id}
- *   PUT    /apps/openregister/api/objects/procest/adviesAanvraag/{id}
- *   DELETE /apps/openregister/api/objects/procest/adviesAanvraag/{id}
+ *   GET    /apps/openregister/api/objects/dossiq/adviesAanvraag
+ *   POST   /apps/openregister/api/objects/dossiq/adviesAanvraag
+ *   GET    /apps/openregister/api/objects/dossiq/adviesAanvraag/{id}
+ *   PUT    /apps/openregister/api/objects/dossiq/adviesAanvraag/{id}
+ *   DELETE /apps/openregister/api/objects/dossiq/adviesAanvraag/{id}
  *
  * Workflow actions stay on the Dossiq controller:
  *   POST   /apps/dossiq/api/advice/{id}/transition  — fires notification
@@ -20,7 +20,7 @@
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-const REGISTER = 'procest'
+const REGISTER = 'dossiq'
 const SCHEMA = 'adviesAanvraag'
 const OR_BASE = `apps/openregister/api/objects/${REGISTER}/${SCHEMA}`
 const ACTION_BASE = 'apps/dossiq/api/advice'

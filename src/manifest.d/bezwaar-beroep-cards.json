@@ -19,7 +19,7 @@
 			"_note": "Bespoke objections & appeals cards-landing (ADR-044) — a card grid over the four former leaf routes; kept routable as a deep link though removed from the menu (objections/appeals are case types under Cases).",
 			"component": "BezwaarBeroepOverview",
 			"config": {
-				"register": "procest"
+				"register": "dossiq"
 			}
 		}
 	]

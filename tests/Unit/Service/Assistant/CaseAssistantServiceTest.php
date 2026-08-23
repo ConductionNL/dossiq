@@ -118,7 +118,7 @@ class CaseAssistantServiceTest extends TestCase {
 		$this->settingsService = $this->createMock(SettingsService::class);
 		$this->settingsService->method('getConfigValue')->willReturnCallback(
 			static fn (string $key): string => match ($key) {
-				'register' => 'procest',
+				'register' => 'dossiq',
 				'case_schema' => 'case',
 				default => '',
 			}

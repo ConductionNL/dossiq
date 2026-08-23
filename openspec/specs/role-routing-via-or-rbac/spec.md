@@ -89,7 +89,7 @@ be limited to keying the per-user KPI cache version.
 #### Scenario: Listener fires without an access check
 
 - GIVEN `KpiCacheInvalidationListener` registered on OR object events
-- WHEN any procest-register object is mutated
+- WHEN any dossiq-register object is mutated
 - THEN the listener invalidates the KPI cache
 - AND its body MUST NOT call `$groupManager->isInGroup()` or write a permission store
 

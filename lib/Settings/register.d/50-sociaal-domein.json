@@ -988,7 +988,7 @@
             }
         },
         "registers": {
-            "procest": {
+            "dossiq": {
                 "schemas": [
                     "wmoZaak",
                     "indicatiestelling",
@@ -1007,7 +1007,7 @@
         "objects": [
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "wmoZaak",
                     "slug": "zaak-2026-wmo-04832"
                 },
@@ -1036,7 +1036,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "wmoZaak",
                     "slug": "zaak-2026-wmo-07415"
                 },
@@ -1066,7 +1066,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "wmoZaak",
                     "slug": "zaak-2026-wmo-05921"
                 },
@@ -1096,7 +1096,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "jeugdwetZaak",
                     "slug": "zaak-2026-jeugd-00921"
                 },
@@ -1125,7 +1125,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "jeugdwetZaak",
                     "slug": "zaak-2026-jeugd-01847"
                 },
@@ -1154,7 +1154,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "jeugdwetZaak",
                     "slug": "zaak-2026-jeugd-02456"
                 },
@@ -1183,7 +1183,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "participatiewetZaak",
                     "slug": "zaak-2026-pw-01278"
                 },
@@ -1213,7 +1213,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "participatiewetZaak",
                     "slug": "zaak-2026-pw-02641"
                 },
@@ -1243,7 +1243,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "participatiewetZaak",
                     "slug": "zaak-2026-pw-03502"
                 },

@@ -106,7 +106,7 @@ eigen vernietigings-UI meer; gebruik OpenRegister's archivist-surface.
 Bij de upgrade draait `MigrateArchivalToOpenRegister` (post-migration,
 idempotent, fail-closed):
 
-1. Zet `tmloEnabled` op de procest-register.
+1. Zet `tmloEnabled` op de dossiq-register.
 2. Plaatst een legal hold op elke zaak waarvan de `OverdrachtTrigger` op
    `opgeschort-juridische-procedure` stond.
 3. Exporteert elk afgerond `ArchiefBewijs` als onveranderlijk zaakdossier-

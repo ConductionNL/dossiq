@@ -5,17 +5,17 @@
  * Seeded-fixture helper for the DEEP, data-dependent dossiq e2e layer.
  *
  * Cases (zaken), caseTypes, statusTypes, statusRecords and complaints are
- * all OpenRegister objects in the `procest` register (the manifest pages
- * `Cases`/`CaseDetail` declare `register: "procest", schema: "case"`, and
+ * all OpenRegister objects in the `dossiq` register (the manifest pages
+ * `Cases`/`CaseDetail` declare `register: "dossiq", schema: "case"`, and
  * the front-end uses the shared `createObjectStore('object')`). This helper
  * creates and tears down those objects directly through the OpenRegister
  * object CRUD API so the UI-driving specs start from known data:
  *
- *   GET    /apps/openregister/api/objects/procest/{schema}
- *   POST   /apps/openregister/api/objects/procest/{schema}
- *   GET    /apps/openregister/api/objects/procest/{schema}/{id}
- *   PUT    /apps/openregister/api/objects/procest/{schema}/{id}
- *   DELETE /apps/openregister/api/objects/procest/{schema}/{id}
+ *   GET    /apps/openregister/api/objects/dossiq/{schema}
+ *   POST   /apps/openregister/api/objects/dossiq/{schema}
+ *   GET    /apps/openregister/api/objects/dossiq/{schema}/{id}
+ *   PUT    /apps/openregister/api/objects/dossiq/{schema}/{id}
+ *   DELETE /apps/openregister/api/objects/dossiq/{schema}/{id}
  *
  * Playwright = UI only for assertions: this helper is *fixture setup/teardown*
  * (allowed — the prompt and ADR permit API/occ for seeding). The behavioural
@@ -29,8 +29,8 @@
 
 import { APIRequestContext, expect } from '@playwright/test'
 
-/** OpenRegister register slug that owns every procest object. */
-export const REGISTER = 'procest'
+/** OpenRegister register slug that owns every dossiq object. */
+export const REGISTER = 'dossiq'
 
 /**
  * Unique-per-process prefix. Every seeded object embeds this in a visible
@@ -101,7 +101,7 @@ export function objectId(obj: any): string {
 }
 
 /**
- * Create one object of `schema` in the procest register.
+ * Create one object of `schema` in the dossiq register.
  * @param api    Authenticated request context.
  * @param token  CSRF request-token.
  * @param schema Schema slug (e.g. "case", "caseType", "statusType").

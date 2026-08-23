@@ -62,7 +62,7 @@ become a real nested parent rather than a flat `section` foldout.
 
 ## 5. Bezwaren/Beroepen as case types — ✅ DONE
 Re-modelled Bezwaar & Beroep as first-class **caseTypes** and re-pointed the
-"Bezwaren"/"Beroepen" nav to filtered **Cases** views (register `procest`,
+"Bezwaren"/"Beroepen" nav to filtered **Cases** views (register `dossiq`,
 schema `case`, `filter: { caseType: <fixed-uuid> }`, action → CaseDetail). The
 `bezwaar` (116) / `beroep` (122) schemas stay as the AWB lifecycle detail
 records linked to a case (BezwaarDetail/BeroepDetail pages kept).

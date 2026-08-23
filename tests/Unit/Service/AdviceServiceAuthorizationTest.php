@@ -151,7 +151,7 @@ class AdviceServiceAuthorizationTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return [
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'advies_aanvraag_schema' => 'adviesAanvraag',
 					'case_schema' => 'case',
 				][$key] ?? '';

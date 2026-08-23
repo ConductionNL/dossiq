@@ -1,6 +1,6 @@
 {
     "registers": {
-        "procest": {
+        "dossiq": {
             "schemas": [
                 "stufEndpoint",
                 "stufMessage",
@@ -463,7 +463,7 @@
     "objects": [
         {
             "@self": {
-                "register": "procest",
+                "register": "dossiq",
                 "schema": "stufEndpoint",
                 "slug": "amersfoort-key2zaken"
             },

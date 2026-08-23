@@ -241,14 +241,14 @@ class ConfiguredRegistryServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testSlugIdsUseTheSlugBridge(): void {
-		$this->withConfig('procest', 'organisatieRol');
+		$this->withConfig('dossiq', 'organisatieRol');
 		$stub = $this->objectService([['id' => 'a']]);
 		$service = $this->subject($stub);
 
 		$rows = $service->list('organisatie_rol_schema');
 
 		$this->assertCount(1, $rows);
-		$this->assertSame(['search', 'procest', 'organisatieRol'], array_slice($stub->calls[0], 0, 3));
+		$this->assertSame(['search', 'dossiq', 'organisatieRol'], array_slice($stub->calls[0], 0, 3));
 	}//end testSlugIdsUseTheSlugBridge()
 
 	/**

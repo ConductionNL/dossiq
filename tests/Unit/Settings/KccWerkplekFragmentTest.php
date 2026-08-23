@@ -136,7 +136,7 @@ class KccWerkplekFragmentTest extends TestCase {
 
 		$merged = $reflection->invokeArgs(new RegisterFragmentMerger(), [$this->base, $this->fragment]);
 
-		$registerSchemas = $merged['components']['registers']['procest']['schemas'];
+		$registerSchemas = $merged['components']['registers']['dossiq']['schemas'];
 		foreach ($this->kccSchemas as $slug) {
 			$this->assertContains(needle: $slug, haystack: $registerSchemas, message: "Merged register must include '{$slug}'");
 		}

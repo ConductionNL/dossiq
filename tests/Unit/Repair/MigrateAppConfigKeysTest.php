@@ -336,7 +336,7 @@ final class MigrateAppConfigKeysTest extends TestCase {
 		$logger = $this->createMock(LoggerInterface::class);
 		$logger->expects($this->once())
 			->method('warning')
-			->with($this->stringContains('could not enumerate procest app config keys'));
+			->with($this->stringContains('could not enumerate dossiq app config keys'));
 
 		$step = new MigrateAppConfigKeys($appConfig, $logger);
 		$step->run($this->createMock(IOutput::class));

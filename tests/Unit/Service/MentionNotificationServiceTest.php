@@ -106,7 +106,7 @@ class MentionNotificationServiceTest extends TestCase {
 			actorUserId: 'alice',
 			actorDisplayName: 'Alice',
 			objectId: 'case-1',
-			register: 'procest',
+			register: 'dossiq',
 			schema: 'case',
 			noteId: 'note-9',
 			mentionedUserIds: ['bob', 'carol'],
@@ -129,7 +129,7 @@ class MentionNotificationServiceTest extends TestCase {
 			actorUserId: 'alice',
 			actorDisplayName: 'Alice',
 			objectId: 'case-1',
-			register: 'procest',
+			register: 'dossiq',
 			schema: 'case',
 			noteId: 'note-9',
 			mentionedUserIds: ['alice', 'bob'],
@@ -152,7 +152,7 @@ class MentionNotificationServiceTest extends TestCase {
 			actorUserId: 'alice',
 			actorDisplayName: 'Alice',
 			objectId: 'case-1',
-			register: 'procest',
+			register: 'dossiq',
 			schema: 'case',
 			noteId: 'note-9',
 			mentionedUserIds: ['bob', 'bob'],
@@ -195,7 +195,7 @@ class MentionNotificationServiceTest extends TestCase {
 					function (array $params): bool {
 						return $params['actorUserId'] === 'alice'
 							&& $params['actorDisplayName'] === 'Alice'
-							&& $params['register'] === 'procest'
+							&& $params['register'] === 'dossiq'
 							&& $params['schema'] === 'case'
 							&& $params['objectId'] === 'case-1'
 							&& $params['noteId'] === 'note-9';
@@ -208,7 +208,7 @@ class MentionNotificationServiceTest extends TestCase {
 			actorUserId: 'alice',
 			actorDisplayName: 'Alice',
 			objectId: 'case-1',
-			register: 'procest',
+			register: 'dossiq',
 			schema: 'case',
 			noteId: 'note-9',
 			mentionedUserIds: ['bob'],
@@ -269,7 +269,7 @@ class MentionNotificationServiceTest extends TestCase {
 			actorUserId: 'alice',
 			actorDisplayName: 'Alice',
 			objectId: 'case-1',
-			register: 'procest',
+			register: 'dossiq',
 			schema: 'case',
 			noteId: 'note-9',
 			mentionedUserIds: ['bob', 'carol'],

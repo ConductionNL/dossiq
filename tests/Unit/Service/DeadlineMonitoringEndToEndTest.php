@@ -68,7 +68,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'termijn_definitie_schema' => 'deadlineDefinition',
 					'termijn_instance_schema' => 'deadlineInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
@@ -103,7 +103,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		);
 
 		// Seed AWB-default Wmo definition.
-		$this->objects->saveObject('procest', 'deadlineDefinition', [
+		$this->objects->saveObject('dossiq', 'deadlineDefinition', [
 			'id' => 'td-ov',
 			'caseType' => 'omgevingsvergunning-regulier',
 			'wettelijkeGrondslag' => 'Wabo 3.9 lid 1',
@@ -192,7 +192,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 	 */
 	public function testScenario4OverschrijdingAndDwangsom(): void {
 		// Seed overdue instance directly to simulate elapsed time without sleeping.
-		$instance = $this->objects->saveObject('procest', 'deadlineInstance', [
+		$instance = $this->objects->saveObject('dossiq', 'deadlineInstance', [
 			'case' => 'Z/2026/S4',
 			'deadlineDefinition' => 'td-ov',
 			'startDate' => '2026-01-01T10:00:00+00:00',
@@ -254,13 +254,13 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 	 */
 	public function testScenario5Bezwaar(): void {
 		// Stand up a stopped berekening + linked uitbetaling.
-		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
+		$this->objects->saveObject('dossiq', 'penaltyPaymentCalculation', [
 			'id' => 'b-s5',
 			'deadlineInstance' => 'ti-s5',
 			'status' => 'gestopt-wegens-decision',
 			'definitiveAmount' => 50000,
 		]);
-		$this->objects->saveObject('procest', 'dwangsomUitbetaling', [
+		$this->objects->saveObject('dossiq', 'dwangsomUitbetaling', [
 			'id' => 'u-s5',
 			'penaltyPaymentCalculation' => 'b-s5',
 			'amount' => 50000,

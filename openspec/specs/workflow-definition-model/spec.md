@@ -14,7 +14,7 @@ retrofit_extensions:
 
 ### Requirement: Workflow Template Data Model
 
-The system SHALL store workflow definitions as OpenRegister objects in the `procest` register under a `workflowTemplate` schema. A workflow template defines the ordered process steps, status transitions, guards, and automatic actions for a specific zaaktype. The model aligns with CMMN 1.1 CasePlanModel concepts and maps to ZGW Catalogi StatusType sequences.
+The system SHALL store workflow definitions as OpenRegister objects in the `dossiq` register under a `workflowTemplate` schema. A workflow template defines the ordered process steps, status transitions, guards, and automatic actions for a specific zaaktype. The model aligns with CMMN 1.1 CasePlanModel concepts and maps to ZGW Catalogi StatusType sequences.
 
 **Feature tier**: V1
 

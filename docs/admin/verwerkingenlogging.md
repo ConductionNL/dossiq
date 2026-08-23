@@ -44,7 +44,7 @@ Point audit tooling at **OpenRegister's** API, scoped to dossiq's register:
 
 | Endpoint | Purpose |
 |----------|---------|
-| `GET /apps/openregister/api/avg/verwerkingen?register={procest-register-id}` | Filtered processing-log inquiry (also: `schema`, `activity`, `actor`, `action`, `from`, `to`) |
+| `GET /apps/openregister/api/avg/verwerkingen?register={dossiq-register-id}` | Filtered processing-log inquiry (also: `schema`, `activity`, `actor`, `action`, `from`, `to`) |
 | `GET /apps/openregister/api/avg/verwerkingen/betrokkene?subjectIdType=BSN&subjectIdValue=…` | Per-subject inzage extract (art. 15) |
 | `GET /apps/openregister/api/avg/verwerkingsactiviteiten` | The activity catalogue (art. 30 register) |
 | `GET /apps/openregister/api/avg/verantwoording` | Verantwoordingsdocument |

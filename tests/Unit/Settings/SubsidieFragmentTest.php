@@ -4,7 +4,7 @@
  * Subsidie Register Fragment Unit Tests
  *
  * Verifies that the register.d/50-subsidie.json fragment unions its nine
- * schemas, register membership and seed objects onto the procest monolith via
+ * schemas, register membership and seed objects onto the dossiq monolith via
  * the ADR-037 deep-merge loader, without disturbing the base configuration.
  *
  * @category Tests
@@ -118,14 +118,14 @@ class SubsidieFragmentTest extends TestCase {
 	}//end testNoApplicantSchemaInvented()
 
 	/**
-	 * The procest register lists the new subsidie schemas (list concatenation).
+	 * The dossiq register lists the new subsidie schemas (list concatenation).
 	 *
 	 * @return void
 	 */
 	public function testRegisterMembershipUnioned(): void {
-		$schemas = $this->merged['components']['registers']['procest']['schemas'];
+		$schemas = $this->merged['components']['registers']['dossiq']['schemas'];
 		foreach (self::SCHEMA_SLUGS as $slug) {
-			$this->assertContains($slug, $schemas, $slug . ' must be a member of the procest register');
+			$this->assertContains($slug, $schemas, $slug . ' must be a member of the dossiq register');
 		}
 
 		// Existing membership preserved.

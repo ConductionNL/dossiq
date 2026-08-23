@@ -20,7 +20,7 @@ This guide covers installing and configuring Dossiq in a Nextcloud environment.
 2. Open **Apps** from the top-right menu (or navigate to `/index.php/settings/apps`).
 3. Search for **Dossiq** in the Apps catalog.
 4. Click **Download and enable**.
-5. Nextcloud installs the app and runs the initial repair step automatically. This repair step creates the `procest` register and imports the 12 base schemas (case, task, caseType, statusType, resultType, roleType, etc.) into OpenRegister.
+5. Nextcloud installs the app and runs the initial repair step automatically. This repair step creates the `dossiq` register and imports the 12 base schemas (case, task, caseType, statusType, resultType, roleType, etc.) into OpenRegister.
 
 ## Post-Install Configuration
 
@@ -29,7 +29,7 @@ This guide covers installing and configuring Dossiq in a Nextcloud environment.
 After installation, confirm the register was created:
 
 1. Navigate to **OpenRegister** in the left sidebar.
-2. Under **Registers**, verify a register named `procest` exists with 12 schemas.
+2. Under **Registers**, verify a register named `dossiq` exists with 12 schemas.
 3. If the register is missing, re-run the repair step: go to **Admin settings** > **Dossiq** > click **Re-import configuration**.
 
 ### Case Type Configuration

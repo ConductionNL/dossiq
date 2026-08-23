@@ -83,7 +83,7 @@ class PortalContributionProvider {
 	// the procest -> dossiq rename. The `claims.procest.*` claim names in the
 	// docblock above are frozen for a different reason — they are a contract
 	// the portal reads, so renaming them here would not rename them there.
-	private const REGISTER = 'procest';
+	private const REGISTER = 'dossiq';
 
 	/**
 	 * The audiences this provider contributes to (contract v2, preferred).

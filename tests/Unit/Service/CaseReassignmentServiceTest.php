@@ -100,7 +100,7 @@ class CaseReassignmentServiceTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturnCallback(
 			static function (string $key, string $default = ''): string {
 				$map = [
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'case_schema' => 'case',
 					'task_schema' => 'task',
 					'status_type_schema' => 'statusType',

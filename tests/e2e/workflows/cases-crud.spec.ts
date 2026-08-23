@@ -15,7 +15,7 @@
  *   - deleting the case is REFLECTED in the list (the row disappears).
  *
  * Cases are OpenRegister objects (manifest `Cases`/`CaseDetail` pages declare
- * `register:"procest", schema:"case"`). Fixtures seed/clean those objects via
+ * `register:"dossiq", schema:"case"`). Fixtures seed/clean those objects via
  * the OR object API (helpers/fixtures.ts) — allowed setup. Every assertion
  * runs against the rendered DOM (Playwright = UI only).
  *
@@ -84,7 +84,7 @@ test.describe('Cases — full CRUD with persistence', () => {
 		await expect(
 			page.getByRole('button', { name: /^Add (Item|Case|Task)$/ }),
 		).toBeVisible({ timeout: 15000 })
-		// The CnIndexPage fires GET …/objects/procest/case on mount; give the
+		// The CnIndexPage fires GET …/objects/dossiq/case on mount; give the
 		// table a moment to render the fetched rows before asserting.
 		await expect(page.locator('tbody tr').first()).toBeVisible({
 			timeout: 15000,

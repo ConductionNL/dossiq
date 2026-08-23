@@ -16,10 +16,10 @@
  * touches, so the rows move with the schema untouched.
  *
  * ORDERING: this MUST run before `InitializeSettings`, which triggers the
- * procest register import. Registered first in info.xml's post-migration block.
+ * dossiq register import. Registered first in info.xml's post-migration block.
  *
  * `bezwaar` is now IN, as `objectionProceeding`. It was held back because
- * procest declares BOTH `bezwaar` and `objection` and an earlier attempt renamed
+ * dossiq declares BOTH `bezwaar` and `objection` and an earlier attempt renamed
  * the first onto the second — a DUPLICATE JSON KEY, which is legal, parses, and
  * silently kept only the last block, dropping one schema's lifecycle and
  * calculations. They are two entities, not a duplicate: `objection` is the
@@ -70,7 +70,7 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	 * owns the canonical Popolo-shaped schemas — Person, Membership, Post,
 	 * Meeting, Vote, VotingRound, AgendaItem, GovernanceBody — extended with
 	 * schema.org, plus an OriController/OriSerializer that maps them onto ORI.
-	 * procest's `ori` register duplicates that and should be REMOVED rather than
+	 * dossiq's `ori` register duplicates that and should be REMOVED rather than
 	 * renamed: renaming would cement a structure that is going away, and mint
 	 * names that collide conceptually with decidesk's canonical ones.
 	 *
@@ -94,10 +94,16 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	 *
 	 * @var array<int, string>
 	 */
-	// FROZEN: OpenRegister register SLUG, unchanged by the procest -> dossiq
-	// app-id rename. This step exists precisely because OR matches by slug; a
-	// renamed value here would resolve no register and rename no schema.
-	private const REGISTER_SLUGS = ['procest'];
+	// The OpenRegister register SLUG. It MOVES with the app id: the
+	// `MigrateRegisterSlug` step renames `procest` -> `dossiq` (and
+	// `dossiq-default` -> `dossiq-default`) on the existing register rows and
+	// is registered ahead of this step in both info.xml blocks. Renaming a
+	// register strands nothing, because objects are bound to it by NUMERIC id:
+	// every shard table's `_register` column holds that id, and the tables are
+	// named `oc_openregister_table_<registerId>_<schemaId>`. What the ordering
+	// buys is that this step still resolves a register at all — run before
+	// MigrateRegisterSlug it would match none and migrate nothing, silently.
+	private const REGISTER_SLUGS = ['dossiq'];
 
 	/**
 	 * Constructor.

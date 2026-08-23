@@ -56,7 +56,7 @@ cap at 4 years unless justified.
 
 - **GIVEN** dossiq is installed and the `Contract` schema is loaded
 - **WHEN** an authenticated `contract-manager` POSTs a new contract to
-  `/index.php/apps/openregister/api/objects/procest/Contract`
+  `/index.php/apps/openregister/api/objects/dossiq/Contract`
 - **THEN** the save MUST succeed via OR's generic endpoint, with no
   dossiq-side controller in the call path.
 

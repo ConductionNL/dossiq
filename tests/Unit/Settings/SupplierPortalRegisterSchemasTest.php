@@ -58,7 +58,7 @@ class SupplierPortalRegisterSchemasTest extends TestCase {
 	}
 
 	public function testRegisterListsSupplierSchemas(): void {
-		$listed = $this->register['components']['registers']['procest']['schemas'] ?? [];
+		$listed = $this->register['components']['registers']['dossiq']['schemas'] ?? [];
 		foreach (['supplier', 'supplierUser', 'supplierTender', 'supplierContract', 'supplierInvoice', 'supplierMessage', 'supplierKpi'] as $slug) {
 			$this->assertContains($slug, $listed, "register must list {$slug}");
 		}

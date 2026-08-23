@@ -4,7 +4,7 @@
         "_objects_disabled": [
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "caseType",
                     "slug": "omgevingsvergunning-type"
                 },
@@ -25,7 +25,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "caseType",
                     "slug": "bouwtoezicht-type"
                 },
@@ -45,7 +45,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "caseType",
                     "slug": "milieu-type"
                 },
@@ -65,7 +65,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "case",
                     "slug": "hoofdzaak-omgverg-keizersgracht"
                 },
@@ -81,7 +81,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "case",
                     "slug": "deelzaak-bouwtoezicht-keizersgracht"
                 },
@@ -96,7 +96,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "case",
                     "slug": "deelzaak-milieu-keizersgracht"
                 },

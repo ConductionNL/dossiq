@@ -230,7 +230,7 @@ class ComplaintServiceTest extends TestCase {
 		$this->settingsService
 			->method('getConfigValue')
 			->willReturnMap([
-				['register', '', 'procest'],
+				['register', '', 'dossiq'],
 				['complaint_schema', '', 'complaint'],
 			]);
 
@@ -264,7 +264,7 @@ class ComplaintServiceTest extends TestCase {
 
 		$objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-		$this->settingsService->method('getConfigValue')->willReturn('procest');
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
 		$objectServiceMock->method('find')->willReturn($complaint);
 
 		$this->expectException(\RuntimeException::class);
@@ -283,7 +283,7 @@ class ComplaintServiceTest extends TestCase {
 
 		$objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-		$this->settingsService->method('getConfigValue')->willReturn('procest');
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
 		$objectServiceMock->method('find')->willReturn($complaint);
 
 		$this->expectException(\RuntimeException::class);
@@ -302,7 +302,7 @@ class ComplaintServiceTest extends TestCase {
 
 		$objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-		$this->settingsService->method('getConfigValue')->willReturn('procest');
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
 		$objectServiceMock->method('find')->willReturn($complaint);
 		$objectServiceMock->method('saveObject')->willReturn(['status' => 'receipt_confirmed']);
 
@@ -320,7 +320,7 @@ class ComplaintServiceTest extends TestCase {
 
 		$objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-		$this->settingsService->method('getConfigValue')->willReturn('procest');
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
 		$objectServiceMock->method('find')->willReturn($complaint);
 
 		$this->expectException(\RuntimeException::class);

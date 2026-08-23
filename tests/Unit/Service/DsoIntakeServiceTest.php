@@ -190,7 +190,7 @@ class DsoIntakeServiceTest extends TestCase {
 	 * @return DsoIntakeRecordingObjectService The recorder handed to the service.
 	 */
 	private function wireObjectService(
-		string $register = 'procest',
+		string $register = 'dossiq',
 		string $caseSchema = 'case',
 		string $propertySchema = 'zaakeigenschap',
 	): DsoIntakeRecordingObjectService {
@@ -277,7 +277,7 @@ class DsoIntakeServiceTest extends TestCase {
 					'priority' => 'normal',
 				],
 				'extend' => [],
-				'register' => 'procest',
+				'register' => 'dossiq',
 				'schema' => 'case',
 			],
 			$recorder->calls[0]
@@ -316,7 +316,7 @@ class DsoIntakeServiceTest extends TestCase {
 						'value' => $value,
 					],
 					'extend' => [],
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'schema' => 'zaakeigenschap',
 				],
 				$properties[$index],

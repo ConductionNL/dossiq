@@ -167,7 +167,7 @@ class DossiqCaseAuthorizerTest extends TestCase {
 		$this->settingsService->method('getObjectService')->willReturn(new \stdClass());
 		$this->settingsService->method('getConfigValue')->willReturnMap(
 			[
-				['register', '', 'procest'],
+				['register', '', 'dossiq'],
 				['role_schema', '', 'role'],
 			]
 		);

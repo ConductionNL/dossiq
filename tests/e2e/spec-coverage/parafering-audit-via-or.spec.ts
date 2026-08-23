@@ -27,12 +27,12 @@ const OR_API = '/index.php/apps/openregister/api'
 const REPO_ROOT = resolve(__dirname, '../../..')
 
 /**
- * Resolve the procest register + voorstel schema from the seeded register JSON.
+ * Resolve the dossiq register + voorstel schema from the seeded register JSON.
  * Falls back gracefully so the suite still asserts the structural contract
  * even when the dev instance has not seeded data.
  */
 function registerConfig(): { register: string; voorstelSchema: string } {
-	return { register: 'procest', voorstelSchema: 'proposal' }
+	return { register: 'dossiq', voorstelSchema: 'proposal' }
 }
 
 test.describe('Parafering audit via OR — spec coverage', () => {

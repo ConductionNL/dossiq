@@ -135,7 +135,7 @@ class ParaferingAuditListenerTest extends TestCase {
 		$this->settings->method('getObjectService')->willReturn($this->objectServiceReturning($entity));
 		$this->settings->method('getConfigValue')->willReturnMap(
 			[
-				['register', '', 'procest'],
+				['register', '', 'dossiq'],
 				['voorstel_schema', '', 'proposal'],
 			]
 		);
@@ -185,7 +185,7 @@ class ParaferingAuditListenerTest extends TestCase {
 		$this->settings->method('getObjectService')->willReturn($this->objectServiceReturning($entity));
 		$this->settings->method('getConfigValue')->willReturnMap(
 			[
-				['register', '', 'procest'],
+				['register', '', 'dossiq'],
 				['voorstel_schema', '', 'proposal'],
 			]
 		);
@@ -229,7 +229,7 @@ class ParaferingAuditListenerTest extends TestCase {
 		$this->settings->method('getObjectService')->willReturn($this->objectServiceReturning(null));
 		$this->settings->method('getConfigValue')->willReturnMap(
 			[
-				['register', '', 'procest'],
+				['register', '', 'dossiq'],
 				['voorstel_schema', '', 'proposal'],
 			]
 		);
@@ -261,7 +261,7 @@ class ParaferingAuditListenerTest extends TestCase {
 		$this->settings->method('getObjectService')->willReturn($this->objectServiceReturning($entity));
 		$this->settings->method('getConfigValue')->willReturnMap(
 			[
-				['register', '', 'procest'],
+				['register', '', 'dossiq'],
 				['voorstel_schema', '', 'proposal'],
 			]
 		);

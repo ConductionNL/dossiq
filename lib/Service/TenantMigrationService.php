@@ -50,12 +50,14 @@ class TenantMigrationService {
 	use SearchesObjects;
 
 	/**
-	 * Register slug holding the procest schemas.
+	 * Register slug holding this app's schemas.
 	 */
-	// FROZEN: OpenRegister register SLUG, not this app's id, and unchanged by
-	// the procest -> dossiq rename — a renamed value resolves no register and
-	// the migration would find zero legacy tenants and report success.
-	private const REGISTER_SLUG = 'procest';
+	// The OpenRegister register SLUG, not this app's id. It moves with the app
+	// id: `MigrateRegisterSlug` renames the register row `procest` -> `dossiq`
+	// ahead of every step that resolves a register, so this value and the row
+	// say the same thing. A mismatch resolves no register and the migration
+	// finds zero legacy tenants while reporting success.
+	private const REGISTER_SLUG = 'dossiq';
 
 	/**
 	 * Legacy tenant schema slug being migrated away from.

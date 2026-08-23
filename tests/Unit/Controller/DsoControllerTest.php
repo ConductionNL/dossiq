@@ -507,7 +507,7 @@ class DsoControllerTest extends TestCase {
 		$settingsServiceMock = $this->createMock(SettingsService::class);
 		$settingsServiceMock->method('getObjectService')->willReturn($mockObjectService);
 		// phpcs:disable CustomSn.Functions.NamedParameters
-		$settingsServiceMock->method('getConfigValue')->willReturn('procest-register');
+		$settingsServiceMock->method('getConfigValue')->willReturn('dossiq-register');
 		// phpcs:enable CustomSn.Functions.NamedParameters
 
 		$requestStub = new DsoControllerRequestStub(content: '{"newStatus":"in_handling"}');

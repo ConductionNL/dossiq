@@ -55,14 +55,14 @@ const OVERVIEWS_URL = generateUrl(
  * page still fetches points and degrades to its empty state.
  *
  * @param {object} [options] Overview options.
- * @param {string} [options.register] Register slug holding the cases (default `procest`).
+ * @param {string} [options.register] Register slug holding the cases (default `dossiq`).
  * @param {string} [options.schema] Schema slug for the case objects (default `case`).
  * @param {string} [options.title] Human-readable overview title.
  * @return {Promise<object|null>} The stored widget render contract, or null on failure.
  * @spec openspec/specs/case-map-overview/spec.md
  */
 export async function registerCasesOnMapOverview({
-	register = 'procest',
+	register = 'dossiq',
 	schema = 'case',
 	title = 'Cases on map',
 } = {}) {
@@ -92,14 +92,14 @@ export async function registerCasesOnMapOverview({
  * on any failure so the map renders blank rather than throwing.
  *
  * @param {object} [options] Query options.
- * @param {string} [options.register] Register slug (default `procest`).
+ * @param {string} [options.register] Register slug (default `dossiq`).
  * @param {string} [options.schema] Schema slug (default `case`).
  * @param {object} [options.filters] Extra object filters (property=value) forwarded to OR.
  * @return {Promise<Array<object>>} The RBAC-scoped point rows (possibly empty).
  * @spec openspec/specs/case-map-overview/spec.md
  */
 export async function fetchCasePoints({
-	register = 'procest',
+	register = 'dossiq',
 	schema = 'case',
 	filters = {},
 } = {}) {

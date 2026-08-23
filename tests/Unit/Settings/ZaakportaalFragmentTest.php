@@ -4,7 +4,7 @@
  * Zaakportaal Register Fragment Unit Tests
  *
  * Verifies that the register.d/50-zaakportaal.json fragment unions its citizen
- * portal schemas, register membership and seed objects onto the procest
+ * portal schemas, register membership and seed objects onto the dossiq
  * monolith via the ADR-037 deep-merge loader, without disturbing the existing
  * schemas (case, document, decision) the portal reads from.
  *
@@ -89,13 +89,13 @@ class ZaakportaalFragmentTest extends TestCase {
 	}//end testExistingReadSchemasUntouched()
 
 	/**
-	 * The portal schemas are unioned into the procest register membership,
+	 * The portal schemas are unioned into the dossiq register membership,
 	 * keeping the pre-existing membership intact.
 	 *
 	 * @return void
 	 */
 	public function testPortalSchemasJoinDossiqRegister(): void {
-		$schemas = $this->merged['components']['registers']['procest']['schemas'];
+		$schemas = $this->merged['components']['registers']['dossiq']['schemas'];
 		$this->assertContains('portaalBericht', $schemas);
 		$this->assertContains('portaalVerzoek', $schemas);
 		$this->assertContains('portaalNotificatieVoorkeur', $schemas);

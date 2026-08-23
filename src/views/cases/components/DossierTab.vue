@@ -264,7 +264,7 @@ export default {
 		async fetchTypes() {
 			try {
 				const url = generateUrl(
-					'/apps/openregister/api/objects/procest/informatieobjecttype?_limit=200',
+					'/apps/openregister/api/objects/dossiq/informatieobjecttype?_limit=200',
 				)
 				const { data } = await axios.get(url)
 				this.types = data.results || data.objects || data || []

@@ -51,7 +51,7 @@ suppliers to be qualifiable + auditable + excludable; the schema's
 
 - **GIVEN** dossiq is installed and the `Supplier` schema is loaded
 - **WHEN** an authenticated `procurement-officer` POSTs a new supplier
-  to `/index.php/apps/openregister/api/objects/procest/Supplier`
+  to `/index.php/apps/openregister/api/objects/dossiq/Supplier`
 - **THEN** the save MUST succeed via OR's generic endpoint, with no
   dossiq-side controller in the call path.
 

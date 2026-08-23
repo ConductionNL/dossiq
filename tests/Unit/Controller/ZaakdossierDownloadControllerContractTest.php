@@ -172,7 +172,7 @@ class ZaakdossierDownloadControllerContractTest extends TestCase {
 		$this->reader->expects($this->never())->method('contentFor');
 
 		$file = $this->controller->downloadFile(
-			register: 'procest',
+			register: 'dossiq',
 			schema: 'informatieobject',
 			objectId: 'io-1',
 			fileId: 42,
@@ -209,7 +209,7 @@ class ZaakdossierDownloadControllerContractTest extends TestCase {
 		$this->reader->expects($this->never())->method('contentFor');
 
 		$response = $this->controller->downloadFile(
-			register: 'procest',
+			register: 'dossiq',
 			schema: 'informatieobject',
 			objectId: 'io-vertrouwelijk',
 			fileId: 42,
@@ -237,7 +237,7 @@ class ZaakdossierDownloadControllerContractTest extends TestCase {
 			->willReturn(null);
 
 		$response = $this->controller->downloadFile(
-			register: 'procest',
+			register: 'dossiq',
 			schema: 'informatieobject',
 			objectId: 'io-1',
 			fileId: 42,

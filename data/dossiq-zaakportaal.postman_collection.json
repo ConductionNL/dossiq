@@ -2,7 +2,7 @@
 	"info": {
 		"name": "Procest Zaakportaal API",
 		"_postman_id": "c2f8d3b1-2a4e-4d5b-8a1f-procestportaal1",
-		"description": "API/contract coverage for the zaakportaal-mijngemeente feature (#68) — the citizen 'Mijn gemeente' portal. Exercises the ZaakportaalController endpoints against a live procest instance (localhost:8080, admin:admin): case overview, requests, messages, objection-deadline validation, objection/complaint filing, and notification preferences. Happy paths plus 400/404 negative cases. Companion UI coverage lives in tests/e2e/zaakportaal-mijngemeente.spec.ts (Playwright). Auth is HTTP Basic + OCS-APIRequest at the collection level.",
+		"description": "API/contract coverage for the zaakportaal-mijngemeente feature (#68) — the citizen 'Mijn gemeente' portal. Exercises the ZaakportaalController endpoints against a live dossiq instance (localhost:8080, admin:admin): case overview, requests, messages, objection-deadline validation, objection/complaint filing, and notification preferences. Happy paths plus 400/404 negative cases. Companion UI coverage lives in tests/e2e/zaakportaal-mijngemeente.spec.ts (Playwright). Auth is HTTP Basic + OCS-APIRequest at the collection level.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"auth": {

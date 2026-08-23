@@ -33,7 +33,7 @@ export const FEDERATION_ALLOWED_FIELDS = [
  * @return {string} the endpoint path.
  */
 export function federatedSharesListEndpoint() {
-	return '/apps/openregister/api/objects/procest/caseFederatedShare'
+	return '/apps/openregister/api/objects/dossiq/caseFederatedShare'
 }
 
 /**

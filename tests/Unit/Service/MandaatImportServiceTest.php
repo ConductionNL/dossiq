@@ -46,7 +46,7 @@ class MandaatImportServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					// Config KEY unchanged (it holds the stored schema id on
 					// existing installs); the resolved schema SLUG is renamed.
 					'mandaterings_besluit_schema' => 'mandateDecision',
@@ -64,8 +64,8 @@ class MandaatImportServiceTest extends TestCase {
 		);
 
 		// Seed roles.
-		$this->objects->saveObject('procest', 'organisatieRol', ['id' => 'rol-consulent', 'roleName' => 'Consulent']);
-		$this->objects->saveObject('procest', 'organisatieRol', ['id' => 'rol-manager', 'roleName' => 'Afdelingsmanager']);
+		$this->objects->saveObject('dossiq', 'organisatieRol', ['id' => 'rol-consulent', 'roleName' => 'Consulent']);
+		$this->objects->saveObject('dossiq', 'organisatieRol', ['id' => 'rol-manager', 'roleName' => 'Afdelingsmanager']);
 	}
 
 	/**

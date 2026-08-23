@@ -99,7 +99,7 @@ describe('fetchCasePoints — consumes the OR maps-overview points endpoint', ()
 		})
 
 		const points = await fetchCasePoints({
-			register: 'procest',
+			register: 'dossiq',
 			schema: 'case',
 			filters: { status: 'open' },
 		})
@@ -107,7 +107,7 @@ describe('fetchCasePoints — consumes the OR maps-overview points endpoint', ()
 		expect(axios.get).toHaveBeenCalledTimes(1)
 		const [url, options] = axios.get.mock.calls[0]
 		expect(url).toBe(
-			'/index.php/apps/openregister/api/integrations/maps/overviews/procest/case/points',
+			'/index.php/apps/openregister/api/integrations/maps/overviews/dossiq/case/points',
 		)
 		expect(options).toEqual({ params: { status: 'open' } })
 		expect(points).toEqual([{ id: 'c1', lat: 52, lng: 5 }])
@@ -140,7 +140,7 @@ describe('registerCasesOnMapOverview — declares the overview with OR', () => {
 			data: { id: 'maps-overview:' + CASES_ON_MAP_KEY },
 		})
 
-		await registerCasesOnMapOverview({ register: 'procest', schema: 'case' })
+		await registerCasesOnMapOverview({ register: 'dossiq', schema: 'case' })
 
 		expect(axios.post).toHaveBeenCalledTimes(1)
 		const [url, body] = axios.post.mock.calls[0]
@@ -148,7 +148,7 @@ describe('registerCasesOnMapOverview — declares the overview with OR', () => {
 			'/index.php/apps/openregister/api/integrations/maps/overviews',
 		)
 		expect(body.overviewKey).toBe(CASES_ON_MAP_KEY)
-		expect(body.register).toBe('procest')
+		expect(body.register).toBe('dossiq')
 		expect(body.schema).toBe('case')
 	})
 

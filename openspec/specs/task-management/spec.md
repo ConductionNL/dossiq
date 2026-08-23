@@ -20,7 +20,7 @@ Tasks represent work items within a case. They follow CMMN 1.1 HumanTask concept
 
 ### Task Entity
 
-Stored as an OpenRegister object in the `procest` register under the `task` schema.
+Stored as an OpenRegister object in the `dossiq` register under the `task` schema.
 
 | Property | Type | CMMN/Schema.org | Required | Default |
 |----------|------|----------------|----------|---------|
@@ -82,7 +82,7 @@ The system MUST support task create, read, update, and delete operations linked 
 
 @e2e exclude Task CRUD requires existing cases to link tasks to; data-dependent create/read/update/delete flows not testable without pre-seeded cases.
 
-The system MUST support creating, reading, updating, and deleting tasks linked to cases. All task objects are stored in OpenRegister under the `procest` register, `task` schema.
+The system MUST support creating, reading, updating, and deleting tasks linked to cases. All task objects are stored in OpenRegister under the `dossiq` register, `task` schema.
 
 **Tier**: MVP
 

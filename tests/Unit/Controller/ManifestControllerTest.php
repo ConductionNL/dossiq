@@ -122,7 +122,7 @@ class ManifestControllerTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'case_type_schema' => 'caseType',
 					default => '',
 				};

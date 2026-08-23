@@ -4,7 +4,7 @@
  * Email Template Register Fragment + Settings Unit Tests
  *
  * Verifies that the register.d/35-email-templates.json fragment appends its
- * three Dutch seed objects onto the procest monolith via the ADR-037
+ * three Dutch seed objects onto the dossiq monolith via the ADR-037
  * deep-merge loader, that the emailTemplate schema is the only new email
  * schema (no emailMessage/emailThread), and that EmailSettings scopes the
  * shared-mailbox config keys for delegated admins without leaking the
@@ -103,7 +103,7 @@ class EmailTemplateFragmentTest extends TestCase {
 	}//end testSeedObjectsAppended()
 
 	/**
-	 * Each seed targets the emailTemplate schema in the procest register, has
+	 * Each seed targets the emailTemplate schema in the dossiq register, has
 	 * a Dutch name, version 1, and is active.
 	 *
 	 * @return void
@@ -116,7 +116,7 @@ class EmailTemplateFragmentTest extends TestCase {
 				continue;
 			}
 
-			$this->assertSame('procest', $self['register'] ?? null);
+			$this->assertSame('dossiq', $self['register'] ?? null);
 			$this->assertSame(1, $object['version'] ?? null);
 			$this->assertTrue($object['isActive'] ?? false);
 			$this->assertNotEmpty($object['subject'] ?? '');

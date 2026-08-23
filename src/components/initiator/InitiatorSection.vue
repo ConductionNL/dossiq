@@ -152,7 +152,7 @@ export default {
 				return null
 			}
 			return generateUrl(
-				`/apps/openregister/#/objects/procest/${this.typeSchema}/${this.sourceObjectId}`,
+				`/apps/openregister/#/objects/dossiq/${this.typeSchema}/${this.sourceObjectId}`,
 			)
 		},
 

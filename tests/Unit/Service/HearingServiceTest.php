@@ -159,7 +159,7 @@ class HearingServiceTest extends TestCase {
 		$this->settingsService
 			->method('getConfigValue')
 			->willReturnMap([
-				['register', '', 'procest'],
+				['register', '', 'dossiq'],
 				['hearing_schema', '', 'hearing'],
 			]);
 
@@ -202,7 +202,7 @@ class HearingServiceTest extends TestCase {
 	public function testRecordOutcomeSucceedsWithVerslag(): void {
 		$objectServiceMock = $this->createMock(HearingObjectServiceStub::class);
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-		$this->settingsService->method('getConfigValue')->willReturn('procest');
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
 
 		$outcome = [
 			'minutes' => 'Klager heeft zijn standpunt toegelicht.',

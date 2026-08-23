@@ -2,7 +2,7 @@
   - SPDX-FileCopyrightText: 2026 Conduction B.V.
   - SPDX-License-Identifier: EUPL-1.2
   -
-  - NOTE ON `register="procest"` BELOW — it is deliberately NOT `dossiq`.
+  - NOTE ON `register="dossiq"` BELOW — it is deliberately NOT `dossiq`.
   - That value is the OpenRegister register SLUG, not this app's id. OpenRegister
   - resolves a register by slug, so renaming it alongside the procest -> dossiq
   - app-id rename would point this page at a register that does not exist and
@@ -13,7 +13,7 @@
 <template>
 	<CnIndexPage
 		:title="t('dossiq', 'My Work')"
-		register="procest"
+		register="dossiq"
 		schema="case"
 		:filter="filter"
 		viewMode="cards"
