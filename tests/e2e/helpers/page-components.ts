@@ -64,7 +64,10 @@ export const ProcessMiningDashboard = '/process-mining'
  * SaaS tenant onboarding. Retired as an app page by page-topology-cleanup (B3);
  * it is now a section inside the ADMIN settings surface.
  */
-export const TenantOnboardingAdminSettings = '/settings/admin/procest'
+// The Nextcloud admin-settings SECTION id, which follows the app id — not the
+// OpenRegister register slug, which is frozen at `procest` and must not move
+// with it (see REGISTER in fixtures.ts).
+export const TenantOnboardingAdminSettings = '/settings/admin/dossiq'
 
 /** Manifest `type: "dashboard"` page — AWB termijnbewaking KPIs + quarterly/annual reports; heading comes from the page title, widgets from `src/views/termijn/`. */
 export const TermijnDashboard = '/termijn-dashboard'

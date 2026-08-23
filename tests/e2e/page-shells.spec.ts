@@ -40,7 +40,7 @@
 
 import { test, expect } from '@playwright/test'
 
-import { navToRoute } from './helpers/nav'
+import { navToRoute, loadAllAdminSections } from './helpers/nav'
 import {
 	ProcessMiningDashboard,
 	PublicAppointmentPage,
@@ -81,6 +81,12 @@ test.describe('Dashboard page shells', () => {
 		page,
 	}) => {
 		await page.goto(`/index.php${TenantOnboardingAdminSettings}`)
+		// AdminRoot mounts its sections lazily as the viewport reaches them, and
+		// this one is 14th of 16 — well below the fold on first paint. Without
+		// scrolling them in, the assertion fails for position rather than for
+		// anything the test is about, which is what the other admin specs use
+		// this helper to avoid.
+		await loadAllAdminSections(page)
 		await expect(
 			page.getByRole('heading', { name: /Tenant.?onboarding/i }).first(),
 		).toBeVisible()
