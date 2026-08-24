@@ -1717,6 +1717,16 @@
 						"showTitle": true
 					},
 					{
+						"_note": "A widget declared in `widgets` but absent from `layout` never renders — this grid is explicit, not inferred. Adding case-sub-cases to `widgets` alone produced no section at all, and the e2e failed on exactly that. Appended below the last row (cmmn-case-plan ends at y=47) rather than placed beside the sub-case KPI: these coordinates are absolute, so a mid-page insert would mean re-flowing every widget beneath it — a layout change this requirement does not ask for.",
+						"id": "23",
+						"widgetId": "case-sub-cases",
+						"gridX": 0,
+						"gridY": 47,
+						"gridWidth": 12,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
 						"id": "22",
 						"widgetId": "case-kpis-hours",
 						"gridX": 0,
