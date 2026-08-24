@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkdossiq_docs=globalThis.webpackChunkdossiq_docs||[]).push([[4603],{66799(e){e.exports=JSON.parse('{"url":"redocusaurus/plugin-redoc-0.yaml","themeId":"theme-redoc","isSpecFile":true,"normalizeUrl":true,"spec":{"openapi":"3.0.0","info":{"title":"Dossiq","version":"0.0.0"},"paths":{},"components":{}}}')}}]);
