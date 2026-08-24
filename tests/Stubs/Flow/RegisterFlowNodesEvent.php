@@ -34,36 +34,32 @@ use OCP\EventDispatcher\Event;
  */
 class RegisterFlowNodesEvent extends Event {
 
-    /**
-     * The nodes registered on this event.
-     *
-     * @var IFlowNode[]
-     */
-    private array $nodes = [];
+	/**
+	 * The nodes registered on this event.
+	 *
+	 * @var IFlowNode[]
+	 */
+	private array $nodes = [];
 
+	/**
+	 * Register one node on the catalogue.
+	 *
+	 * @param IFlowNode $node The node to register.
+	 *
+	 * @return void
+	 */
+	public function registerNode(IFlowNode $node): void {
+		$this->nodes[] = $node;
 
-    /**
-     * Register one node on the catalogue.
-     *
-     * @param IFlowNode $node The node to register.
-     *
-     * @return void
-     */
-    public function registerNode(IFlowNode $node): void {
-        $this->nodes[] = $node;
+	}//end registerNode()
 
-    }//end registerNode()
-
-
-    /**
-     * The nodes registered so far. Stub-only accessor.
-     *
-     * @return IFlowNode[] The registered nodes.
-     */
-    public function getRegisteredNodes(): array {
-        return $this->nodes;
-
-    }//end getRegisteredNodes()
-
+	/**
+	 * The nodes registered so far. Stub-only accessor.
+	 *
+	 * @return IFlowNode[] The registered nodes.
+	 */
+	public function getRegisteredNodes(): array {
+		return $this->nodes;
+	}//end getRegisteredNodes()
 
 }//end class

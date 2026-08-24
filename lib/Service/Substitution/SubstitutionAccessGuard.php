@@ -49,8 +49,9 @@ class SubstitutionAccessGuard {
 
 	/**
 	 * Maximum number of substitution rows fetched per call, matching the
-	 * pagination pattern used elsewhere in this app (e.g.
-	 * RaadsinformatieFeedController::FEED_LIMIT).
+	 * pagination pattern used elsewhere in this app. (This used to cite
+	 * RaadsinformatieFeedController::FEED_LIMIT as the example; that controller
+	 * went with the ORI removal.)
 	 *
 	 * @var int
 	 */

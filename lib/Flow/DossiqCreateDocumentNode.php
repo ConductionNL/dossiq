@@ -17,8 +17,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
-use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
 use OCA\Dossiq\Service\Actions\CreateDocumentHandler;
+use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 
@@ -33,72 +33,62 @@ use OCP\IURLGenerator;
  */
 class DossiqCreateDocumentNode extends DossiqActionNode {
 
+	/**
+	 * Constructor.
+	 *
+	 * @param CreateDocumentHandler $handler The action handler this node runs.
+	 * @param IL10N $l10n The localisation service.
+	 * @param IURLGenerator $urls The URL generator.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly CreateDocumentHandler $handler,
+		IL10N $l10n,
+		IURLGenerator $urls,
+	) {
+		parent::__construct(l10n: $l10n, urls: $urls);
 
-    /**
-     * Constructor.
-     *
-     * @param CreateDocumentHandler $handler The action handler this node runs.
-     * @param IL10N              $l10n    The localisation service.
-     * @param IURLGenerator      $urls    The URL generator.
-     *
-     * @return void
-     */
-    public function __construct(
-        private readonly CreateDocumentHandler $handler,
-        IL10N $l10n,
-        IURLGenerator $urls,
-    ) {
-        parent::__construct(l10n: $l10n, urls: $urls);
+	}//end __construct()
 
-    }//end __construct()
+	/**
+	 * The handler this node runs.
+	 *
+	 * @return CatalogueActionHandler The action handler.
+	 */
+	protected function handler(): CatalogueActionHandler|TransitionActionHandler {
+		return $this->handler;
+	}//end handler()
 
+	/**
+	 * Config keys without which this action cannot run.
+	 *
+	 * @return string[] The required key names.
+	 */
+	protected function requiredConfigKeys(): array {
+		return ['templateSlug', 'outputName'];
+	}//end requiredConfigKeys()
 
-    /**
-     * The handler this node runs.
-     *
-     * @return CatalogueActionHandler The action handler.
-     */
-    protected function handler(): CatalogueActionHandler|TransitionActionHandler {
-        return $this->handler;
+	/**
+	 * The node's display name.
+	 *
+	 * @return string The translated name.
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
+	 */
+	public function getDisplayName(): string {
+		return $this->l10n->t('Create document');
+	}//end getDisplayName()
 
-    }//end handler()
-
-
-    /**
-     * Config keys without which this action cannot run.
-     *
-     * @return string[] The required key names.
-     */
-    protected function requiredConfigKeys(): array {
-        return ['templateSlug', 'outputName'];
-
-    }//end requiredConfigKeys()
-
-
-    /**
-     * The node's display name.
-     *
-     * @return string The translated name.
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
-     */
-    public function getDisplayName(): string {
-        return $this->l10n->t('Create document');
-
-    }//end getDisplayName()
-
-
-    /**
-     * What the node does.
-     *
-     * @return string The translated description.
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
-     */
-    public function getDescription(): string {
-        return $this->l10n->t('Render a document template into a new file on the case.');
-
-    }//end getDescription()
-
+	/**
+	 * What the node does.
+	 *
+	 * @return string The translated description.
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
+	 */
+	public function getDescription(): string {
+		return $this->l10n->t('Render a document template into a new file on the case.');
+	}//end getDescription()
 
 }//end class

@@ -48,7 +48,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.2.5-unstable.20260821052832</version>
+    <version>0.2.5-unstable.20260824155053</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -128,7 +128,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
     <background-jobs>
         <job>OCA\Dossiq\BackgroundJob\AdviceDeadlineJob</job>
-        <job>OCA\Dossiq\Cron\OriDataQualityCheck</job>
         <job>OCA\Dossiq\BackgroundJob\VergaderingDeadlineJob</job>
         <job>OCA\Dossiq\BackgroundJob\WOODeadlineCheckJob</job>
         <job>OCA\Dossiq\BackgroundJob\BezwaarTermijnJob</job>
@@ -184,6 +183,24 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\MigrateRegisterSlug</step>
             <!--
+                SIBLING OF MigrateRegisterSlug, AND NEITHER COVERS THE OTHER.
+                OpenRegister resolves the two halves by different keys: a
+                REGISTER by slug alone, a SCHEMA by the PAIR
+                (application, slug) via findByApplicationAndSlug(). This app
+                now passes `appId: Application::APP_ID` = `dossiq`, while every
+                schema it already owns still carries `application = procest` —
+                so the pair matches nothing and the import's not-found branch
+                builds a SECOND, EMPTY schema set while every stored object
+                stays bound to the old rows. Measured before this step existed:
+                180 schemas under `procest`, zero under `dossiq`.
+
+                Runs alongside MigrateRegisterSlug and before the import.
+                Refuses rather than merges where a slug already has a twin
+                under the new application id, never deletes a schema, and never
+                throws.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateSchemaApplicationId</step>
+            <!--
                 The OTHER half of the same problem, on a different column.
                 MigrateRegisterSlug moves `openregister_registers.slug`; this
                 moves `openregister_schemas.application`, which nothing else
@@ -214,7 +231,20 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\MigrateWorkflowDefinitions</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition</step>
             <step>OCA\Dossiq\Repair\SeedBesluitvormingTemplates</step>
-            <step>OCA\Dossiq\Repair\RegisterOriRegister</step>
+            <!--
+                REPLACES RegisterOriRegister. dossiq no longer declares an ORI
+                register (ADR-019/ADR-022: raadsinformatie is decidiq's domain,
+                and `ori` was a parallel Dutch-named duplicate of its Popolo
+                model). Dropping the declaration stops it being re-created; it
+                does nothing about the register already on an existing install,
+                which holds real objects — 115 on the reference instance.
+
+                So this step RETIRES the register only once it is empty, and
+                warns and keeps it otherwise. Removal never outruns migration.
+                Declared in post-migration only: a fresh install never had an
+                ORI register to retire.
+            -->
+            <step>OCA\Dossiq\Repair\RetireOriRegister</step>
             <step>OCA\Dossiq\Repair\SeedLhsMatrix</step>
             <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
             <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
@@ -343,6 +373,24 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 below forks a second, empty register.
             -->
             <step>OCA\Dossiq\Repair\MigrateRegisterSlug</step>
+            <!--
+                SIBLING OF MigrateRegisterSlug, AND NEITHER COVERS THE OTHER.
+                OpenRegister resolves the two halves by different keys: a
+                REGISTER by slug alone, a SCHEMA by the PAIR
+                (application, slug) via findByApplicationAndSlug(). This app
+                now passes `appId: Application::APP_ID` = `dossiq`, while every
+                schema it already owns still carries `application = procest` —
+                so the pair matches nothing and the import's not-found branch
+                builds a SECOND, EMPTY schema set while every stored object
+                stays bound to the old rows. Measured before this step existed:
+                180 schemas under `procest`, zero under `dossiq`.
+
+                Runs alongside MigrateRegisterSlug and before the import.
+                Refuses rather than merges where a slug already has a twin
+                under the new application id, never deletes a schema, and never
+                throws.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateSchemaApplicationId</step>
             <!-- Schema half of the same rename; see the post-migration block. -->
             <step>OCA\Dossiq\Repair\MigrateRegisterApplicationId</step>
             <step>OCA\Dossiq\Repair\InitializeSettings</step>
@@ -350,7 +398,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition</step>
             <step>OCA\Dossiq\Repair\SeedBesluitvormingTemplates</step>
-            <step>OCA\Dossiq\Repair\RegisterOriRegister</step>
             <step>OCA\Dossiq\Repair\SeedLhsMatrix</step>
             <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
             <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>

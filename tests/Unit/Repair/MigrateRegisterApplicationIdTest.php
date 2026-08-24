@@ -40,17 +40,16 @@ class MigrateRegisterApplicationIdTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		SchemaApplicationMigrator::$calledWith = [];
-		SchemaApplicationMigrator::$throws     = false;
-		SchemaApplicationMigrator::$outcome    = [
-			'ok'         => true,
-			'reason'     => 'migrated',
+		SchemaApplicationMigrator::$throws = false;
+		SchemaApplicationMigrator::$outcome = [
+			'ok' => true,
+			'reason' => 'migrated',
 			'collisions' => [],
-			'schemas'    => 0,
-			'registers'  => 0,
+			'schemas' => 0,
+			'registers' => 0,
 		];
 
 	}//end setUp()
-
 
 	/**
 	 * Build the step with a container that returns the stub migrator.
@@ -62,9 +61,7 @@ class MigrateRegisterApplicationIdTest extends TestCase {
 		$container->method('get')->willReturn(new SchemaApplicationMigrator());
 
 		return new MigrateRegisterApplicationId($container, $this->createMock(LoggerInterface::class));
-
 	}//end step()
-
 
 	/**
 	 * The migration is requested for procest -> dossiq, in that direction.
@@ -83,14 +80,13 @@ class MigrateRegisterApplicationIdTest extends TestCase {
 
 	}//end testMigratesFromProcestToDossiq()
 
-
 	/**
 	 * A successful move reports the counts.
 	 *
 	 * @return void
 	 */
 	public function testReportsWhatItMoved(): void {
-		SchemaApplicationMigrator::$outcome['schemas']   = 12;
+		SchemaApplicationMigrator::$outcome['schemas'] = 12;
 		SchemaApplicationMigrator::$outcome['registers'] = 1;
 
 		$output = $this->createMock(IOutput::class);
@@ -101,7 +97,6 @@ class MigrateRegisterApplicationIdTest extends TestCase {
 		$this->step()->run($output);
 
 	}//end testReportsWhatItMoved()
-
 
 	/**
 	 * A second run reports "already migrated" rather than a bare success.
@@ -121,7 +116,6 @@ class MigrateRegisterApplicationIdTest extends TestCase {
 
 	}//end testSecondRunSaysAlreadyMigrated()
 
-
 	/**
 	 * A refusal names the colliding slugs and the command that resolves them.
 	 *
@@ -129,11 +123,11 @@ class MigrateRegisterApplicationIdTest extends TestCase {
 	 */
 	public function testRefusalNamesTheCollidingSlugs(): void {
 		SchemaApplicationMigrator::$outcome = [
-			'ok'         => false,
-			'reason'     => 'collisions',
+			'ok' => false,
+			'reason' => 'collisions',
 			'collisions' => ['case', 'casetype'],
-			'schemas'    => 0,
-			'registers'  => 0,
+			'schemas' => 0,
+			'registers' => 0,
 		];
 
 		$output = $this->createMock(IOutput::class);
@@ -147,7 +141,6 @@ class MigrateRegisterApplicationIdTest extends TestCase {
 		$this->step()->run($output);
 
 	}//end testRefusalNamesTheCollidingSlugs()
-
 
 	/**
 	 * A throwing migrator warns instead of aborting the upgrade.
@@ -168,6 +161,5 @@ class MigrateRegisterApplicationIdTest extends TestCase {
 		$this->step()->run($output);
 
 	}//end testAThrowingMigratorDoesNotAbortTheUpgrade()
-
 
 }//end class

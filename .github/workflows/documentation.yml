@@ -1,18 +1,42 @@
 name: Documentation
 
 on:
+  # `development` is where the work lands. This used to trigger on a
+  # `documentation` branch that exists but nobody updates — so the workflow
+  # was green and idle while the live site aged. Measured today:
+  # procest.conduction.nl and dossiq.conduction.nl both still serve the
+  # pre-rename "Procest" title while docs/docusaurus.config.js says 'Dossiq'.
   push:
-    branches: [documentation]
+    branches: [development]
   pull_request:
-    branches: [documentation]
+    branches: [development]
 
 jobs:
   deploy:
     uses: ConductionNL/.github/.github/workflows/documentation.yml@main
     with:
-      # FROZEN: the docs subdomain is pinned to a live DNS record that moves in
-      # a separate pass. procest.conduction.nl resolves (HTTP 200);
-      # dossiq.conduction.nl does not exist yet, so renaming this here would
-      # publish the docs to a host nobody can reach. Must stay in step with
-      # docs/static/CNAME.
+      # FROZEN: docs/static/CNAME and docs/docusaurus.config.js `url:` both
+      # still say `procest.conduction.nl`. This moves together with those two,
+      # not before — the callee's live-site check fetches this host.
       cname: procest.conduction.nl
+
+      # EVERY host this site answers on, in FULL. This was MISSING, and that
+      # was not a cosmetic gap: `docs-hosts` defaults to `cname` alone, and
+      # wrangler reconciles the worker's triggers against what it is given —
+      # so the first successful deploy would have REMOVED
+      # `dossiq.conduction.nl` from the worker and taken it down. It was
+      # attached as a second custom domain on 2026-08-23 and answers 200.
+      docs-hosts: procest.conduction.nl,dossiq.conduction.nl
+
+      # The worker that holds both custom domains. It happens to match what
+      # the callee would derive from `cname` today, which is exactly why it is
+      # pinned here: the moment `cname` moves to `dossiq.conduction.nl` the
+      # derived name silently becomes `dossiq-docs`, a worker that does not
+      # exist, and the deploy forks off a second one while both custom domains
+      # keep routing to this one — green, and reaching nobody.
+      #
+      # `docs/wrangler.jsonc` used to claim exactly that wrong name. It has
+      # been removed: the callee GENERATES a wrangler.toml from these inputs,
+      # and wrangler prefers .jsonc over .toml, so the checked-in file would
+      # have won and both inputs above would have been decorative.
+      worker-name: procest-docs

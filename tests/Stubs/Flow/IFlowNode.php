@@ -27,61 +27,61 @@ namespace OCA\OpenRegister\Service\Flow;
  */
 interface IFlowNode {
 
-    /**
-     * The namespaced node id.
-     *
-     * @return string The id.
-     */
-    public function getId(): string;
+	/**
+	 * The namespaced node id.
+	 *
+	 * @return string The id.
+	 */
+	public function getId(): string;
 
-    /**
-     * The node's display name.
-     *
-     * @return string The name.
-     */
-    public function getDisplayName(): string;
+	/**
+	 * The node's display name.
+	 *
+	 * @return string The name.
+	 */
+	public function getDisplayName(): string;
 
-    /**
-     * What the node does.
-     *
-     * @return string The description.
-     */
-    public function getDescription(): string;
+	/**
+	 * What the node does.
+	 *
+	 * @return string The description.
+	 */
+	public function getDescription(): string;
 
-    /**
-     * The node icon path.
-     *
-     * @return string The path.
-     */
-    public function getIcon(): string;
+	/**
+	 * The node icon path.
+	 *
+	 * @return string The path.
+	 */
+	public function getIcon(): string;
 
-    /**
-     * Whether the node is offered in a scope.
-     *
-     * @param integer $scope The workflow scope.
-     *
-     * @return boolean True when available.
-     */
-    public function isAvailableForScope(int $scope): bool;
+	/**
+	 * Whether the node is offered in a scope.
+	 *
+	 * @param integer $scope The workflow scope.
+	 *
+	 * @return boolean True when available.
+	 */
+	public function isAvailableForScope(int $scope): bool;
 
-    /**
-     * Reject a config the node cannot act on.
-     *
-     * @param array<string, mixed> $config The step config.
-     *
-     * @return void
-     */
-    public function validateConfig(array $config): void;
+	/**
+	 * Reject a config the node cannot act on.
+	 *
+	 * @param array<string, mixed> $config The step config.
+	 *
+	 * @return void
+	 */
+	public function validateConfig(array $config): void;
 
-    /**
-     * Run the node over a batch of items.
-     *
-     * @param array<int, array<string, mixed>> $items   The items.
-     * @param array<string, mixed>             $config  The step config.
-     * @param array<string, mixed>             $context The run context.
-     *
-     * @return array<int, array<string, mixed>> The resulting items.
-     */
-    public function execute(array $items, array $config, array $context): array;
+	/**
+	 * Run the node over a batch of items.
+	 *
+	 * @param array<int, array<string, mixed>> $items The items.
+	 * @param array<string, mixed> $config The step config.
+	 * @param array<string, mixed> $context The run context.
+	 *
+	 * @return array<int, array<string, mixed>> The resulting items.
+	 */
+	public function execute(array $items, array $config, array $context): array;
 
 }//end interface
