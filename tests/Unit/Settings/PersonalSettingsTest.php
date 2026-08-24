@@ -32,60 +32,55 @@ use PHPUnit\Framework\TestCase;
  */
 class PersonalSettingsTest extends TestCase {
 
+	/**
+	 * It is a PERSONAL setting, not an admin one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
+	 */
+	public function testItIsAPersonalSetting(): void {
+		$this->assertInstanceOf(ISettings::class, new PersonalSettings());
 
-    /**
-     * It is a PERSONAL setting, not an admin one.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
-     */
-    public function testItIsAPersonalSetting(): void {
-        $this->assertInstanceOf(ISettings::class, new PersonalSettings());
+	}//end testItIsAPersonalSetting()
 
-    }//end testItIsAPersonalSetting()
+	/**
+	 * The form renders procest's personal-settings template.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
+	 */
+	public function testFormRendersThePersonalTemplate(): void {
+		$response = (new PersonalSettings())->getForm();
 
+		$this->assertSame(Application::APP_ID, $response->getApp());
+		$this->assertSame('settings/personal', $response->getTemplateName());
 
-    /**
-     * The form renders procest's personal-settings template.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
-     */
-    public function testFormRendersThePersonalTemplate(): void {
-        $response = (new PersonalSettings())->getForm();
+	}//end testFormRendersThePersonalTemplate()
 
-        $this->assertSame(Application::APP_ID, $response->getApp());
-        $this->assertSame('settings/personal', $response->getTemplateName());
+	/**
+	 * The form belongs to procest's own settings section.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
+	 */
+	public function testSectionIsProcest(): void {
+		$this->assertSame('dossiq', (new PersonalSettings())->getSection());
 
-    }//end testFormRendersThePersonalTemplate()
+	}//end testSectionIsProcest()
 
+	/**
+	 * The priority is a plain ordering integer.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
+	 */
+	public function testPriorityIsAnInteger(): void {
+		$this->assertSame(50, (new PersonalSettings())->getPriority());
 
-    /**
-     * The form belongs to procest's own settings section.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
-     */
-    public function testSectionIsProcest(): void {
-        $this->assertSame('dossiq', (new PersonalSettings())->getSection());
-
-    }//end testSectionIsProcest()
-
-
-    /**
-     * The priority is a plain ordering integer.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
-     */
-    public function testPriorityIsAnInteger(): void {
-        $this->assertSame(50, (new PersonalSettings())->getPriority());
-
-    }//end testPriorityIsAnInteger()
-
+	}//end testPriorityIsAnInteger()
 
 }//end class

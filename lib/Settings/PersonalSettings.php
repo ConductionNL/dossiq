@@ -41,47 +41,42 @@ use OCP\Settings\ISettings;
  */
 class PersonalSettings implements ISettings {
 
-    /**
-     * Get the settings form template.
-     *
-     * @return TemplateResponse The rendered personal-settings form.
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
-     */
-    public function getForm(): TemplateResponse {
-        return new TemplateResponse(
-            Application::APP_ID,
-            'settings/personal',
-            []
-        );
+	/**
+	 * Get the settings form template.
+	 *
+	 * @return TemplateResponse The rendered personal-settings form.
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
+	 */
+	public function getForm(): TemplateResponse {
+		return new TemplateResponse(
+			Application::APP_ID,
+			'settings/personal',
+			[]
+		);
 
-    }//end getForm()
+	}//end getForm()
 
+	/**
+	 * Get the section this form belongs to.
+	 *
+	 * @return string The personal-settings section id.
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
+	 */
+	public function getSection(): string {
+		return 'dossiq';
+	}//end getSection()
 
-    /**
-     * Get the section this form belongs to.
-     *
-     * @return string The personal-settings section id.
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
-     */
-    public function getSection(): string {
-        return 'dossiq';
-
-    }//end getSection()
-
-
-    /**
-     * Get the priority for ordering within the section.
-     *
-     * @return int The ordering priority.
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
-     */
-    public function getPriority(): int {
-        return 50;
-
-    }//end getPriority()
-
+	/**
+	 * Get the priority for ordering within the section.
+	 *
+	 * @return int The ordering priority.
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
+	 */
+	public function getPriority(): int {
+		return 50;
+	}//end getPriority()
 
 }//end class

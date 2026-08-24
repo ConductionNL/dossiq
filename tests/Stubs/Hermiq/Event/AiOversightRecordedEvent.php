@@ -32,79 +32,72 @@ use OCP\EventDispatcher\Event;
  */
 class AiOversightRecordedEvent extends Event {
 
-    /**
-     * The Approval id hermiq wrote.
-     *
-     * @var string|null
-     */
-    private ?string $approvalId = null;
+	/**
+	 * The Approval id hermiq wrote.
+	 *
+	 * @var string|null
+	 */
+	private ?string $approvalId = null;
 
-    /**
-     * Whether hermiq recorded the decision.
-     *
-     * @var boolean
-     */
-    private bool $handled = false;
+	/**
+	 * Whether hermiq recorded the decision.
+	 *
+	 * @var boolean
+	 */
+	private bool $handled = false;
 
+	/**
+	 * Construct the event.
+	 *
+	 * @param array<string, mixed> $record The decision record.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly array $record,
+	) {
+		parent::__construct();
 
-    /**
-     * Construct the event.
-     *
-     * @param array<string, mixed> $record The decision record.
-     *
-     * @return void
-     */
-    public function __construct(private readonly array $record) {
-        parent::__construct();
+	}//end __construct()
 
-    }//end __construct()
+	/**
+	 * Get the record.
+	 *
+	 * @return array<string, mixed> The record.
+	 */
+	public function getRecord(): array {
+		return $this->record;
+	}//end getRecord()
 
+	/**
+	 * Get the written Approval id.
+	 *
+	 * @return string|null The id, or null.
+	 */
+	public function getApprovalId(): ?string {
+		return $this->approvalId;
+	}//end getApprovalId()
 
-    /**
-     * Get the record.
-     *
-     * @return array<string, mixed> The record.
-     */
-    public function getRecord(): array {
-        return $this->record;
+	/**
+	 * Set the written Approval id.
+	 *
+	 * @param string $approvalId The id.
+	 *
+	 * @return void
+	 */
+	public function setApprovalId(string $approvalId): void {
+		$this->approvalId = $approvalId;
+		$this->handled = true;
 
-    }//end getRecord()
+	}//end setApprovalId()
 
-
-    /**
-     * Get the written Approval id.
-     *
-     * @return string|null The id, or null.
-     */
-    public function getApprovalId(): ?string {
-        return $this->approvalId;
-
-    }//end getApprovalId()
-
-
-    /**
-     * Set the written Approval id.
-     *
-     * @param string $approvalId The id.
-     *
-     * @return void
-     */
-    public function setApprovalId(string $approvalId): void {
-        $this->approvalId = $approvalId;
-        $this->handled    = true;
-
-    }//end setApprovalId()
-
-
-    /**
-     * Whether hermiq handled it.
-     *
-     * @return boolean True when recorded.
-     */
-    public function isHandled(): bool {
-        return $this->handled;
-
-    }//end isHandled()
-
+	/**
+	 * Whether hermiq handled it.
+	 *
+	 * @return boolean True when recorded.
+	 */
+	public function isHandled(): bool {
+		return $this->handled;
+	}//end isHandled()
 
 }//end class

@@ -31,11 +31,11 @@ if (class_exists('OCA\OpenRegister\Service\SchemaApplicationMigrator', false) ==
 		 * @var array<string, mixed>
 		 */
 		public static array $outcome = [
-			'ok'         => true,
-			'reason'     => 'migrated',
+			'ok' => true,
+			'reason' => 'migrated',
 			'collisions' => [],
-			'schemas'    => 0,
-			'registers'  => 0,
+			'schemas' => 0,
+			'registers' => 0,
 		];
 
 		/**
@@ -52,12 +52,11 @@ if (class_exists('OCA\OpenRegister\Service\SchemaApplicationMigrator', false) ==
 		 */
 		public static bool $throws = false;
 
-
 		/**
 		 * Record the call and return the canned outcome.
 		 *
 		 * @param string $from The current application id.
-		 * @param string $to   The new application id.
+		 * @param string $to The new application id.
 		 *
 		 * @return array<string, mixed> The canned outcome.
 		 */
@@ -69,9 +68,7 @@ if (class_exists('OCA\OpenRegister\Service\SchemaApplicationMigrator', false) ==
 			}
 
 			return self::$outcome;
-
 		}//end migrate()
-
 
 	}//end class
 }//end if

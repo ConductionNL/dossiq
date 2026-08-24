@@ -34,204 +34,194 @@ use UnexpectedValueException;
  */
 class ProcestActionNodeTest extends TestCase {
 
-    /**
-     * @var SendEmailHandler&\PHPUnit\Framework\MockObject\MockObject
-     */
-    private $handler;
+	/**
+	 * @var SendEmailHandler&\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private $handler;
 
-    /**
-     * @var ProcestSendEmailNode
-     */
-    private ProcestSendEmailNode $node;
+	/**
+	 * @var ProcestSendEmailNode
+	 */
+	private ProcestSendEmailNode $node;
 
+	/**
+	 * Set up the node over a mocked handler.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		parent::setUp();
+		$this->handler = $this->createMock(SendEmailHandler::class);
+		$this->handler->method('type')->willReturn('sendEmail');
 
-    /**
-     * Set up the node over a mocked handler.
-     *
-     * @return void
-     */
-    protected function setUp(): void {
-        parent::setUp();
-        $this->handler = $this->createMock(SendEmailHandler::class);
-        $this->handler->method('type')->willReturn('sendEmail');
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(
+			static function (string $text, array $params = []): string {
+				return vsprintf($text, $params);
+			}
+		);
+		$urls = $this->createMock(IURLGenerator::class);
+		$urls->method('imagePath')->willReturn('/apps/procest/img/app-dark.svg');
 
-        $l10n = $this->createMock(IL10N::class);
-        $l10n->method('t')->willReturnCallback(
-            static function (string $text, array $params=[]): string {
-                return vsprintf($text, $params);
-            }
-        );
-        $urls = $this->createMock(IURLGenerator::class);
-        $urls->method('imagePath')->willReturn('/apps/procest/img/app-dark.svg');
+		$this->node = new ProcestSendEmailNode($this->handler, $l10n, $urls);
 
-        $this->node = new ProcestSendEmailNode($this->handler, $l10n, $urls);
+	}//end setUp()
 
-    }//end setUp()
+	/**
+	 * A complete config for this node.
+	 *
+	 * @return array<string, mixed> The config.
+	 */
+	private function config(): array {
+		return [
+			'recipientRef' => 'behandelaar',
+			'subjectTemplate' => 'Zaak {{ title }}',
+			'bodyTemplate' => 'Uw zaak is bijgewerkt.',
+		];
 
+	}//end config()
 
-    /**
-     * A complete config for this node.
-     *
-     * @return array<string, mixed> The config.
-     */
-    private function config(): array {
-        return [
-            'recipientRef'    => 'behandelaar',
-            'subjectTemplate' => 'Zaak {{ title }}',
-            'bodyTemplate'    => 'Uw zaak is bijgewerkt.',
-        ];
+	/**
+	 * The node id is derived from the handler's own type slug.
+	 *
+	 * Deriving it is what stops a node id drifting from the handler it runs,
+	 * and gives the reference migration one rule instead of six.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
+	 */
+	public function testIdIsDerivedFromTheHandlerType(): void {
+		// `procest.action.*`, not `procest.*`: the LIVE transition vocabulary
+		// owns the plain names and both systems ship a sendEmail. An id
+		// collision here would have one handler silently shadow the other in
+		// the catalogue.
+		$this->assertSame('procest.action.sendEmail', $this->node->getId());
 
-    }//end config()
+	}//end testIdIsDerivedFromTheHandlerType()
 
+	/**
+	 * A successful action puts its data on the item.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
+	 */
+	public function testSuccessfulActionWritesItsResultOntoTheItem(): void {
+		$this->handler->method('handle')->willReturn(new ActionResult(true, null, ['sent' => 1]));
 
-    /**
-     * The node id is derived from the handler's own type slug.
-     *
-     * Deriving it is what stops a node id drifting from the handler it runs,
-     * and gives the reference migration one rule instead of six.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
-     */
-    public function testIdIsDerivedFromTheHandlerType(): void {
-        // `procest.action.*`, not `procest.*`: the LIVE transition vocabulary
-        // owns the plain names and both systems ship a sendEmail. An id
-        // collision here would have one handler silently shadow the other in
-        // the catalogue.
-        $this->assertSame('procest.action.sendEmail', $this->node->getId());
+		$out = $this->node->execute(
+			[['json' => ['id' => 'case-1', 'title' => 'Bezwaar']]],
+			$this->config(),
+			[]
+		);
 
-    }//end testIdIsDerivedFromTheHandlerType()
+		$this->assertCount(1, $out);
+		$this->assertSame(['sent' => 1], $out[0]['json']['actionResult']);
+		$this->assertSame('case-1', $out[0]['json']['id']);
 
+	}//end testSuccessfulActionWritesItsResultOntoTheItem()
 
-    /**
-     * A successful action puts its data on the item.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
-     */
-    public function testSuccessfulActionWritesItsResultOntoTheItem(): void {
-        $this->handler->method('handle')->willReturn(new ActionResult(true, null, ['sent' => 1]));
+	/**
+	 * The output key is configurable.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
+	 */
+	public function testOutputKeyIsConfigurable(): void {
+		$this->handler->method('handle')->willReturn(new ActionResult(true, null, ['sent' => 1]));
 
-        $out = $this->node->execute(
-            [['json' => ['id' => 'case-1', 'title' => 'Bezwaar']]],
-            $this->config(),
-            []
-        );
+		$out = $this->node->execute(
+			[['json' => []]],
+			array_merge($this->config(), ['output' => 'mailResult']),
+			[]
+		);
 
-        $this->assertCount(1, $out);
-        $this->assertSame(['sent' => 1], $out[0]['json']['actionResult']);
-        $this->assertSame('case-1', $out[0]['json']['id']);
+		$this->assertArrayHasKey('mailResult', $out[0]['json']);
 
-    }//end testSuccessfulActionWritesItsResultOntoTheItem()
+	}//end testOutputKeyIsConfigurable()
 
+	/**
+	 * A FAILED action throws instead of passing the item through.
+	 *
+	 * This is the one that matters. Returning the item unchanged would leave
+	 * the output key absent, and a downstream router would take its default
+	 * branch exactly as though the action had succeeded — the engine's onError
+	 * policy only ever sees failures that propagate out of execute().
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
+	 */
+	public function testFailedActionThrowsRatherThanPassingThrough(): void {
+		$this->handler->method('handle')->willReturn(new ActionResult(false, 'smtp_unavailable'));
 
-    /**
-     * The output key is configurable.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
-     */
-    public function testOutputKeyIsConfigurable(): void {
-        $this->handler->method('handle')->willReturn(new ActionResult(true, null, ['sent' => 1]));
+		$this->expectException(UnexpectedValueException::class);
+		$this->expectExceptionMessage('smtp_unavailable');
 
-        $out = $this->node->execute(
-            [['json' => []]],
-            array_merge($this->config(), ['output' => 'mailResult']),
-            []
-        );
+		$this->node->execute([['json' => []]], $this->config(), []);
 
-        $this->assertArrayHasKey('mailResult', $out[0]['json']);
+	}//end testFailedActionThrowsRatherThanPassingThrough()
 
-    }//end testOutputKeyIsConfigurable()
+	/**
+	 * A config missing a required key is rejected at EXECUTION, not only on save.
+	 *
+	 * validateConfig() runs when a flow is saved; a seeded or imported flow
+	 * reaches execute() without ever having been saved through the editor.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
+	 */
+	public function testUnvalidatedConfigIsRejectedAtExecution(): void {
+		$this->handler->expects($this->never())->method('handle');
 
+		$config = $this->config();
+		unset($config['recipientRef']);
 
-    /**
-     * A FAILED action throws instead of passing the item through.
-     *
-     * This is the one that matters. Returning the item unchanged would leave
-     * the output key absent, and a downstream router would take its default
-     * branch exactly as though the action had succeeded — the engine's onError
-     * policy only ever sees failures that propagate out of execute().
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
-     */
-    public function testFailedActionThrowsRatherThanPassingThrough(): void {
-        $this->handler->method('handle')->willReturn(new ActionResult(false, 'smtp_unavailable'));
+		$this->expectException(UnexpectedValueException::class);
+		$this->node->execute([['json' => []]], $config, []);
 
-        $this->expectException(UnexpectedValueException::class);
-        $this->expectExceptionMessage('smtp_unavailable');
+	}//end testUnvalidatedConfigIsRejectedAtExecution()
 
-        $this->node->execute([['json' => []]], $this->config(), []);
+	/**
+	 * validateConfig() names the key it is missing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
+	 */
+	public function testValidateConfigNamesTheMissingKey(): void {
+		$config = $this->config();
+		unset($config['bodyTemplate']);
 
-    }//end testFailedActionThrowsRatherThanPassingThrough()
+		$this->expectException(UnexpectedValueException::class);
+		$this->expectExceptionMessage('bodyTemplate');
 
+		$this->node->validateConfig($config);
 
-    /**
-     * A config missing a required key is rejected at EXECUTION, not only on save.
-     *
-     * validateConfig() runs when a flow is saved; a seeded or imported flow
-     * reaches execute() without ever having been saved through the editor.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
-     */
-    public function testUnvalidatedConfigIsRejectedAtExecution(): void {
-        $this->handler->expects($this->never())->method('handle');
+	}//end testValidateConfigNamesTheMissingKey()
 
-        $config = $this->config();
-        unset($config['recipientRef']);
+	/**
+	 * Every item in the batch is acted on.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
+	 */
+	public function testEveryItemInTheBatchIsActedOn(): void {
+		$this->handler->expects($this->exactly(3))->method('handle')
+			->willReturn(new ActionResult(true, null, []));
 
-        $this->expectException(UnexpectedValueException::class);
-        $this->node->execute([['json' => []]], $config, []);
+		$out = $this->node->execute(
+			[['json' => ['id' => 'a']], ['json' => ['id' => 'b']], ['json' => ['id' => 'c']]],
+			$this->config(),
+			[]
+		);
 
-    }//end testUnvalidatedConfigIsRejectedAtExecution()
+		$this->assertCount(3, $out);
 
-
-    /**
-     * validateConfig() names the key it is missing.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
-     */
-    public function testValidateConfigNamesTheMissingKey(): void {
-        $config = $this->config();
-        unset($config['bodyTemplate']);
-
-        $this->expectException(UnexpectedValueException::class);
-        $this->expectExceptionMessage('bodyTemplate');
-
-        $this->node->validateConfig($config);
-
-    }//end testValidateConfigNamesTheMissingKey()
-
-
-    /**
-     * Every item in the batch is acted on.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
-     */
-    public function testEveryItemInTheBatchIsActedOn(): void {
-        $this->handler->expects($this->exactly(3))->method('handle')
-            ->willReturn(new ActionResult(true, null, []));
-
-        $out = $this->node->execute(
-            [['json' => ['id' => 'a']], ['json' => ['id' => 'b']], ['json' => ['id' => 'c']]],
-            $this->config(),
-            []
-        );
-
-        $this->assertCount(3, $out);
-
-    }//end testEveryItemInTheBatchIsActedOn()
-
+	}//end testEveryItemInTheBatchIsActedOn()
 
 }//end class

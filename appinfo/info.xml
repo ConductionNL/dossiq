@@ -184,6 +184,24 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\MigrateRegisterSlug</step>
             <!--
+                SIBLING OF MigrateRegisterSlug, AND NEITHER COVERS THE OTHER.
+                OpenRegister resolves the two halves by different keys: a
+                REGISTER by slug alone, a SCHEMA by the PAIR
+                (application, slug) via findByApplicationAndSlug(). This app
+                now passes `appId: Application::APP_ID` = `dossiq`, while every
+                schema it already owns still carries `application = procest` —
+                so the pair matches nothing and the import's not-found branch
+                builds a SECOND, EMPTY schema set while every stored object
+                stays bound to the old rows. Measured before this step existed:
+                180 schemas under `procest`, zero under `dossiq`.
+
+                Runs alongside MigrateRegisterSlug and before the import.
+                Refuses rather than merges where a slug already has a twin
+                under the new application id, never deletes a schema, and never
+                throws.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateSchemaApplicationId</step>
+            <!--
                 The OTHER half of the same problem, on a different column.
                 MigrateRegisterSlug moves `openregister_registers.slug`; this
                 moves `openregister_schemas.application`, which nothing else
@@ -334,6 +352,24 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 below forks a second, empty register.
             -->
             <step>OCA\Dossiq\Repair\MigrateRegisterSlug</step>
+            <!--
+                SIBLING OF MigrateRegisterSlug, AND NEITHER COVERS THE OTHER.
+                OpenRegister resolves the two halves by different keys: a
+                REGISTER by slug alone, a SCHEMA by the PAIR
+                (application, slug) via findByApplicationAndSlug(). This app
+                now passes `appId: Application::APP_ID` = `dossiq`, while every
+                schema it already owns still carries `application = procest` —
+                so the pair matches nothing and the import's not-found branch
+                builds a SECOND, EMPTY schema set while every stored object
+                stays bound to the old rows. Measured before this step existed:
+                180 schemas under `procest`, zero under `dossiq`.
+
+                Runs alongside MigrateRegisterSlug and before the import.
+                Refuses rather than merges where a slug already has a twin
+                under the new application id, never deletes a schema, and never
+                throws.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateSchemaApplicationId</step>
             <!-- Schema half of the same rename; see the post-migration block. -->
             <step>OCA\Dossiq\Repair\MigrateRegisterApplicationId</step>
             <step>OCA\Dossiq\Repair\InitializeSettings</step>
