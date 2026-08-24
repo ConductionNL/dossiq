@@ -3237,7 +3237,7 @@
                 "version": "1.0.0",
                 "x-schema-org": "schema:Action",
                 "title": "Automatic Action",
-                "description": "Declarative automatic action attached to a status transition. The slug is referenced from transitions[].automaticActions[].ref and resolved at dispatch time by ActionRegistry. Six built-in handler types are supported; per-tenant scoped; unpublished actions are not resolvable.",
+                "description": "Declarative automatic action. HISTORICAL: this description used to say the slug was referenced from transitions[].automaticActions[].ref and resolved at dispatch time — it never was. SideEffectDispatcher runs a separate vocabulary keyed on an inline `type`, and nothing has ever read these objects at run time. They are migrated to OpenRegister flows by `occ dossiq:actions:migrate-to-flows`, where each becomes a flow around the matching dossiq.action.* node; the flow is what executes. Kept for the migration and for reading historical configuration.",
                 "type": "object",
                 "required": [
                     "slug",
@@ -3297,7 +3297,7 @@
                     "isPublished": {
                         "type": "boolean",
                         "default": false,
-                        "description": "Only published actions are dispatched by SideEffectDispatcher",
+                        "description": "Legacy publish flag. It never gated anything: SideEffectDispatcher does not read these objects at all. The migration to OpenRegister flows ignores it — enable or disable the resulting flow instead.",
                         "title": "Is Published"
                     },
                     "active": {
