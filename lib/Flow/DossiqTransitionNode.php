@@ -20,7 +20,7 @@ namespace OCA\Dossiq\Flow;
  * Base for the LIVE transition-action nodes.
  *
  * `lib/Service/Transitions/` — the nine actions SideEffectDispatcher fires on
- * every case status change. They take the plain `procest.*` id space because
+ * every case status change. They take the plain `dossiq.*` id space because
  * they are the vocabulary that actually runs.
  *
  * The subclass states its own id: these handlers carry no `type()` of their
@@ -29,6 +29,6 @@ namespace OCA\Dossiq\Flow;
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-abstract class ProcestTransitionNode extends ProcestFlowNodeBase {
+abstract class DossiqTransitionNode extends DossiqFlowNodeBase {
 
 }//end class

@@ -18,33 +18,33 @@ namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
-use OCA\Dossiq\Service\Actions\CallWebhookHandler;
+use OCA\Dossiq\Service\Actions\ScheduleReminderHandler;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 
 /**
- * Flow node for the `callWebhook` action.
+ * Flow node for the `scheduleReminder` action.
  *
- * A thin wrapper: CallWebhookHandler keeps the logic, this presents it to
- * OpenRegister's engine. See ProcestActionNode for why these are contributed
+ * A thin wrapper: ScheduleReminderHandler keeps the logic, this presents it to
+ * OpenRegister's engine. See DossiqActionNode for why these are contributed
  * nodes rather than a mapping onto OpenRegister's own.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-class ProcestCallWebhookNode extends ProcestActionNode {
+class DossiqScheduleReminderNode extends DossiqActionNode {
 
 
     /**
      * Constructor.
      *
-     * @param CallWebhookHandler $handler The action handler this node runs.
+     * @param ScheduleReminderHandler $handler The action handler this node runs.
      * @param IL10N              $l10n    The localisation service.
      * @param IURLGenerator      $urls    The URL generator.
      *
      * @return void
      */
     public function __construct(
-        private readonly CallWebhookHandler $handler,
+        private readonly ScheduleReminderHandler $handler,
         IL10N $l10n,
         IURLGenerator $urls,
     ) {
@@ -70,7 +70,7 @@ class ProcestCallWebhookNode extends ProcestActionNode {
      * @return string[] The required key names.
      */
     protected function requiredConfigKeys(): array {
-        return ['payloadTemplate'];
+        return ['recipientRef', 'messageTemplate'];
 
     }//end requiredConfigKeys()
 
@@ -83,7 +83,7 @@ class ProcestCallWebhookNode extends ProcestActionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDisplayName(): string {
-        return $this->l10n->t('Call webhook');
+        return $this->l10n->t('Schedule reminder');
 
     }//end getDisplayName()
 
@@ -96,7 +96,7 @@ class ProcestCallWebhookNode extends ProcestActionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDescription(): string {
-        return $this->l10n->t('POST a templated payload to a configured endpoint.');
+        return $this->l10n->t('Queue a reminder for a resolved recipient.');
 
     }//end getDescription()
 

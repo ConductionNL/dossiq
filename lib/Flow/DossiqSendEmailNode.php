@@ -18,34 +18,33 @@ namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
-use OCA\Dossiq\Service\Transitions\CreateSubCaseHandler;
+use OCA\Dossiq\Service\Actions\SendEmailHandler;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 
 /**
- * Flow node for the live `createSubCase` transition action.
+ * Flow node for the `sendEmail` action.
  *
- * A thin wrapper: CreateSubCaseHandler keeps the logic. This is the vocabulary
- * SideEffectDispatcher actually fires on every status change, which is why it
- * takes the plain `procest.createSubCase` id rather than the `procest.action.*`
- * prefix the configured-action catalogue uses.
+ * A thin wrapper: SendEmailHandler keeps the logic, this presents it to
+ * OpenRegister's engine. See DossiqActionNode for why these are contributed
+ * nodes rather than a mapping onto OpenRegister's own.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-class ProcestTxCreateSubCaseNode extends ProcestTransitionNode {
+class DossiqSendEmailNode extends DossiqActionNode {
 
 
     /**
      * Constructor.
      *
-     * @param CreateSubCaseHandler $handler The transition handler this node runs.
-     * @param IL10N         $l10n    The localisation service.
-     * @param IURLGenerator $urls    The URL generator.
+     * @param SendEmailHandler $handler The action handler this node runs.
+     * @param IL10N              $l10n    The localisation service.
+     * @param IURLGenerator      $urls    The URL generator.
      *
      * @return void
      */
     public function __construct(
-        private readonly CreateSubCaseHandler $handler,
+        private readonly SendEmailHandler $handler,
         IL10N $l10n,
         IURLGenerator $urls,
     ) {
@@ -57,7 +56,7 @@ class ProcestTxCreateSubCaseNode extends ProcestTransitionNode {
     /**
      * The handler this node runs.
      *
-     * @return CatalogueActionHandler|TransitionActionHandler The action handler.
+     * @return CatalogueActionHandler The action handler.
      */
     protected function handler(): CatalogueActionHandler|TransitionActionHandler {
         return $this->handler;
@@ -66,23 +65,12 @@ class ProcestTxCreateSubCaseNode extends ProcestTransitionNode {
 
 
     /**
-     * This node's id.
-     *
-     * @return string The namespaced node id.
-     */
-    protected function nodeId(): string {
-        return 'procest.createSubCase';
-
-    }//end nodeId()
-
-
-    /**
      * Config keys without which this action cannot run.
      *
      * @return string[] The required key names.
      */
     protected function requiredConfigKeys(): array {
-        return ['caseType'];
+        return ['recipientRef', 'subjectTemplate', 'bodyTemplate'];
 
     }//end requiredConfigKeys()
 
@@ -95,7 +83,7 @@ class ProcestTxCreateSubCaseNode extends ProcestTransitionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDisplayName(): string {
-        return $this->l10n->t('Create sub-case');
+        return $this->l10n->t('Send email');
 
     }//end getDisplayName()
 
@@ -108,7 +96,7 @@ class ProcestTxCreateSubCaseNode extends ProcestTransitionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDescription(): string {
-        return $this->l10n->t('Open a sub-case when the parent changes status.');
+        return $this->l10n->t('Send a templated email to a resolved recipient.');
 
     }//end getDescription()
 

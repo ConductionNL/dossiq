@@ -18,34 +18,34 @@ namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
-use OCA\Dossiq\Service\Transitions\NotifyHandler;
+use OCA\Dossiq\Service\Transitions\BesluitvormingPublishHandler;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 
 /**
- * Flow node for the live `notify` transition action.
+ * Flow node for the live `besluitvormingPublish` transition action.
  *
- * A thin wrapper: NotifyHandler keeps the logic. This is the vocabulary
+ * A thin wrapper: BesluitvormingPublishHandler keeps the logic. This is the vocabulary
  * SideEffectDispatcher actually fires on every status change, which is why it
- * takes the plain `procest.notify` id rather than the `procest.action.*`
+ * takes the plain `dossiq.besluitvormingPublish` id rather than the `dossiq.action.*`
  * prefix the configured-action catalogue uses.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-class ProcestTxNotifyNode extends ProcestTransitionNode {
+class DossiqTxBesluitvormingPublishNode extends DossiqTransitionNode {
 
 
     /**
      * Constructor.
      *
-     * @param NotifyHandler $handler The transition handler this node runs.
+     * @param BesluitvormingPublishHandler $handler The transition handler this node runs.
      * @param IL10N         $l10n    The localisation service.
      * @param IURLGenerator $urls    The URL generator.
      *
      * @return void
      */
     public function __construct(
-        private readonly NotifyHandler $handler,
+        private readonly BesluitvormingPublishHandler $handler,
         IL10N $l10n,
         IURLGenerator $urls,
     ) {
@@ -71,7 +71,7 @@ class ProcestTxNotifyNode extends ProcestTransitionNode {
      * @return string The namespaced node id.
      */
     protected function nodeId(): string {
-        return 'procest.notify';
+        return 'dossiq.besluitvormingPublish';
 
     }//end nodeId()
 
@@ -82,7 +82,7 @@ class ProcestTxNotifyNode extends ProcestTransitionNode {
      * @return string[] The required key names.
      */
     protected function requiredConfigKeys(): array {
-        return ['recipient'];
+        return [];
 
     }//end requiredConfigKeys()
 
@@ -95,7 +95,7 @@ class ProcestTxNotifyNode extends ProcestTransitionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDisplayName(): string {
-        return $this->l10n->t('Notify');
+        return $this->l10n->t('Publish decision');
 
     }//end getDisplayName()
 
@@ -108,7 +108,7 @@ class ProcestTxNotifyNode extends ProcestTransitionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDescription(): string {
-        return $this->l10n->t('Send a Nextcloud notification about the status change.');
+        return $this->l10n->t('Publish the decision to DROP/LVBB.');
 
     }//end getDescription()
 

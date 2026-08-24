@@ -18,33 +18,33 @@ namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
-use OCA\Dossiq\Service\Actions\SendEmailHandler;
+use OCA\Dossiq\Service\Actions\CallWebhookHandler;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 
 /**
- * Flow node for the `sendEmail` action.
+ * Flow node for the `callWebhook` action.
  *
- * A thin wrapper: SendEmailHandler keeps the logic, this presents it to
- * OpenRegister's engine. See ProcestActionNode for why these are contributed
+ * A thin wrapper: CallWebhookHandler keeps the logic, this presents it to
+ * OpenRegister's engine. See DossiqActionNode for why these are contributed
  * nodes rather than a mapping onto OpenRegister's own.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-class ProcestSendEmailNode extends ProcestActionNode {
+class DossiqCallWebhookNode extends DossiqActionNode {
 
 
     /**
      * Constructor.
      *
-     * @param SendEmailHandler $handler The action handler this node runs.
+     * @param CallWebhookHandler $handler The action handler this node runs.
      * @param IL10N              $l10n    The localisation service.
      * @param IURLGenerator      $urls    The URL generator.
      *
      * @return void
      */
     public function __construct(
-        private readonly SendEmailHandler $handler,
+        private readonly CallWebhookHandler $handler,
         IL10N $l10n,
         IURLGenerator $urls,
     ) {
@@ -70,7 +70,7 @@ class ProcestSendEmailNode extends ProcestActionNode {
      * @return string[] The required key names.
      */
     protected function requiredConfigKeys(): array {
-        return ['recipientRef', 'subjectTemplate', 'bodyTemplate'];
+        return ['payloadTemplate'];
 
     }//end requiredConfigKeys()
 
@@ -83,7 +83,7 @@ class ProcestSendEmailNode extends ProcestActionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDisplayName(): string {
-        return $this->l10n->t('Send email');
+        return $this->l10n->t('Call webhook');
 
     }//end getDisplayName()
 
@@ -96,7 +96,7 @@ class ProcestSendEmailNode extends ProcestActionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDescription(): string {
-        return $this->l10n->t('Send a templated email to a resolved recipient.');
+        return $this->l10n->t('POST a templated payload to a configured endpoint.');
 
     }//end getDescription()
 

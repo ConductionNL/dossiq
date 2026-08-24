@@ -18,34 +18,34 @@ namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
-use OCA\Dossiq\Service\Transitions\SetFieldHandler;
+use OCA\Dossiq\Service\Transitions\SendEmailHandler;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 
 /**
- * Flow node for the live `setField` transition action.
+ * Flow node for the live `sendEmail` transition action.
  *
- * A thin wrapper: SetFieldHandler keeps the logic. This is the vocabulary
+ * A thin wrapper: SendEmailHandler keeps the logic. This is the vocabulary
  * SideEffectDispatcher actually fires on every status change, which is why it
- * takes the plain `procest.setField` id rather than the `procest.action.*`
+ * takes the plain `dossiq.sendEmail` id rather than the `dossiq.action.*`
  * prefix the configured-action catalogue uses.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-class ProcestTxSetFieldNode extends ProcestTransitionNode {
+class DossiqTxSendEmailNode extends DossiqTransitionNode {
 
 
     /**
      * Constructor.
      *
-     * @param SetFieldHandler $handler The transition handler this node runs.
+     * @param SendEmailHandler $handler The transition handler this node runs.
      * @param IL10N         $l10n    The localisation service.
      * @param IURLGenerator $urls    The URL generator.
      *
      * @return void
      */
     public function __construct(
-        private readonly SetFieldHandler $handler,
+        private readonly SendEmailHandler $handler,
         IL10N $l10n,
         IURLGenerator $urls,
     ) {
@@ -71,7 +71,7 @@ class ProcestTxSetFieldNode extends ProcestTransitionNode {
      * @return string The namespaced node id.
      */
     protected function nodeId(): string {
-        return 'procest.setField';
+        return 'dossiq.sendEmail';
 
     }//end nodeId()
 
@@ -82,7 +82,7 @@ class ProcestTxSetFieldNode extends ProcestTransitionNode {
      * @return string[] The required key names.
      */
     protected function requiredConfigKeys(): array {
-        return ['field'];
+        return ['recipient'];
 
     }//end requiredConfigKeys()
 
@@ -95,7 +95,7 @@ class ProcestTxSetFieldNode extends ProcestTransitionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDisplayName(): string {
-        return $this->l10n->t('Set field');
+        return $this->l10n->t('Send email on transition');
 
     }//end getDisplayName()
 
@@ -108,7 +108,7 @@ class ProcestTxSetFieldNode extends ProcestTransitionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDescription(): string {
-        return $this->l10n->t('Write a value onto the case as part of the transition.');
+        return $this->l10n->t('Send a templated email when a case changes status.');
 
     }//end getDescription()
 

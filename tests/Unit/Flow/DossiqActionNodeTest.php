@@ -16,7 +16,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Flow;
 
-use OCA\Dossiq\Flow\ProcestSendEmailNode;
+use OCA\Dossiq\Flow\DossiqSendEmailNode;
 use OCA\Dossiq\Service\Actions\ActionResult;
 use OCA\Dossiq\Service\Actions\SendEmailHandler;
 use OCP\IL10N;
@@ -32,7 +32,7 @@ use UnexpectedValueException;
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-class ProcestActionNodeTest extends TestCase {
+class DossiqActionNodeTest extends TestCase {
 
     /**
      * @var SendEmailHandler&\PHPUnit\Framework\MockObject\MockObject
@@ -40,9 +40,9 @@ class ProcestActionNodeTest extends TestCase {
     private $handler;
 
     /**
-     * @var ProcestSendEmailNode
+     * @var DossiqSendEmailNode
      */
-    private ProcestSendEmailNode $node;
+    private DossiqSendEmailNode $node;
 
 
     /**
@@ -62,9 +62,9 @@ class ProcestActionNodeTest extends TestCase {
             }
         );
         $urls = $this->createMock(IURLGenerator::class);
-        $urls->method('imagePath')->willReturn('/apps/procest/img/app-dark.svg');
+        $urls->method('imagePath')->willReturn('/apps/dossiq/img/app-dark.svg');
 
-        $this->node = new ProcestSendEmailNode($this->handler, $l10n, $urls);
+        $this->node = new DossiqSendEmailNode($this->handler, $l10n, $urls);
 
     }//end setUp()
 
@@ -95,11 +95,11 @@ class ProcestActionNodeTest extends TestCase {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function testIdIsDerivedFromTheHandlerType(): void {
-        // `procest.action.*`, not `procest.*`: the LIVE transition vocabulary
+        // `dossiq.action.*`, not `dossiq.*`: the LIVE transition vocabulary
         // owns the plain names and both systems ship a sendEmail. An id
         // collision here would have one handler silently shadow the other in
         // the catalogue.
-        $this->assertSame('procest.action.sendEmail', $this->node->getId());
+        $this->assertSame('dossiq.action.sendEmail', $this->node->getId());
 
     }//end testIdIsDerivedFromTheHandlerType()
 

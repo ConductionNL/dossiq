@@ -18,34 +18,34 @@ namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
-use OCA\Dossiq\Service\Transitions\SendEmailHandler;
+use OCA\Dossiq\Service\Transitions\BesluitvormingActivateHandler;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 
 /**
- * Flow node for the live `sendEmail` transition action.
+ * Flow node for the live `besluitvormingActivate` transition action.
  *
- * A thin wrapper: SendEmailHandler keeps the logic. This is the vocabulary
+ * A thin wrapper: BesluitvormingActivateHandler keeps the logic. This is the vocabulary
  * SideEffectDispatcher actually fires on every status change, which is why it
- * takes the plain `procest.sendEmail` id rather than the `procest.action.*`
+ * takes the plain `dossiq.besluitvormingActivate` id rather than the `dossiq.action.*`
  * prefix the configured-action catalogue uses.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-class ProcestTxSendEmailNode extends ProcestTransitionNode {
+class DossiqTxBesluitvormingActivateNode extends DossiqTransitionNode {
 
 
     /**
      * Constructor.
      *
-     * @param SendEmailHandler $handler The transition handler this node runs.
+     * @param BesluitvormingActivateHandler $handler The transition handler this node runs.
      * @param IL10N         $l10n    The localisation service.
      * @param IURLGenerator $urls    The URL generator.
      *
      * @return void
      */
     public function __construct(
-        private readonly SendEmailHandler $handler,
+        private readonly BesluitvormingActivateHandler $handler,
         IL10N $l10n,
         IURLGenerator $urls,
     ) {
@@ -71,7 +71,7 @@ class ProcestTxSendEmailNode extends ProcestTransitionNode {
      * @return string The namespaced node id.
      */
     protected function nodeId(): string {
-        return 'procest.sendEmail';
+        return 'dossiq.besluitvormingActivate';
 
     }//end nodeId()
 
@@ -82,7 +82,7 @@ class ProcestTxSendEmailNode extends ProcestTransitionNode {
      * @return string[] The required key names.
      */
     protected function requiredConfigKeys(): array {
-        return ['recipient'];
+        return [];
 
     }//end requiredConfigKeys()
 
@@ -95,7 +95,7 @@ class ProcestTxSendEmailNode extends ProcestTransitionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDisplayName(): string {
-        return $this->l10n->t('Send email on transition');
+        return $this->l10n->t('Activate decision-making');
 
     }//end getDisplayName()
 
@@ -108,7 +108,7 @@ class ProcestTxSendEmailNode extends ProcestTransitionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDescription(): string {
-        return $this->l10n->t('Send a templated email when a case changes status.');
+        return $this->l10n->t('Raise the decision-making process for this case.');
 
     }//end getDescription()
 

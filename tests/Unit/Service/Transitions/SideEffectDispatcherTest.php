@@ -95,7 +95,7 @@ class SideEffectDispatcherTest extends TestCase {
      */
     public function testActionsRunThroughTheSharedNode(): void {
         $registry = new FlowNodeRegistry();
-        $registry->register($this->node('procest.sendEmail'));
+        $registry->register($this->node('dossiq.sendEmail'));
 
         $results = $this->dispatcher($registry)->dispatch(
             [['type' => 'sendEmail']],
@@ -111,7 +111,7 @@ class SideEffectDispatcherTest extends TestCase {
     /**
      * The dispatcher resolves the LIVE id space, not the catalogue's.
      *
-     * Both action systems ship a sendEmail. Resolving `procest.action.sendEmail`
+     * Both action systems ship a sendEmail. Resolving `dossiq.action.sendEmail`
      * here would run the configured-action handler for a transition — a
      * different class with different config keys.
      *
@@ -121,7 +121,7 @@ class SideEffectDispatcherTest extends TestCase {
      */
     public function testItResolvesTheLiveIdSpace(): void {
         $registry = new FlowNodeRegistry();
-        $registry->register($this->node('procest.action.sendEmail'));
+        $registry->register($this->node('dossiq.action.sendEmail'));
 
         $results = $this->dispatcher($registry)->dispatch([['type' => 'sendEmail']], [], []);
 
@@ -145,8 +145,8 @@ class SideEffectDispatcherTest extends TestCase {
      */
     public function testAFailedActionDoesNotAbortTheRest(): void {
         $registry = new FlowNodeRegistry();
-        $registry->register($this->node('procest.sendEmail', new RuntimeException('smtp down')));
-        $registry->register($this->node('procest.createTask'));
+        $registry->register($this->node('dossiq.sendEmail', new RuntimeException('smtp down')));
+        $registry->register($this->node('dossiq.createTask'));
 
         $results = $this->dispatcher($registry)->dispatch(
             [['type' => 'sendEmail'], ['type' => 'createTask']],

@@ -18,34 +18,33 @@ namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
-use OCA\Dossiq\Service\Transitions\EvaluateDecisionHandler;
+use OCA\Dossiq\Service\Actions\MergeTemplateHandler;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 
 /**
- * Flow node for the live `evaluateDecision` transition action.
+ * Flow node for the `mergeTemplate` action.
  *
- * A thin wrapper: EvaluateDecisionHandler keeps the logic. This is the vocabulary
- * SideEffectDispatcher actually fires on every status change, which is why it
- * takes the plain `procest.evaluateDecision` id rather than the `procest.action.*`
- * prefix the configured-action catalogue uses.
+ * A thin wrapper: MergeTemplateHandler keeps the logic, this presents it to
+ * OpenRegister's engine. See DossiqActionNode for why these are contributed
+ * nodes rather than a mapping onto OpenRegister's own.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-class ProcestTxEvaluateDecisionNode extends ProcestTransitionNode {
+class DossiqMergeTemplateNode extends DossiqActionNode {
 
 
     /**
      * Constructor.
      *
-     * @param EvaluateDecisionHandler $handler The transition handler this node runs.
-     * @param IL10N         $l10n    The localisation service.
-     * @param IURLGenerator $urls    The URL generator.
+     * @param MergeTemplateHandler $handler The action handler this node runs.
+     * @param IL10N              $l10n    The localisation service.
+     * @param IURLGenerator      $urls    The URL generator.
      *
      * @return void
      */
     public function __construct(
-        private readonly EvaluateDecisionHandler $handler,
+        private readonly MergeTemplateHandler $handler,
         IL10N $l10n,
         IURLGenerator $urls,
     ) {
@@ -57,7 +56,7 @@ class ProcestTxEvaluateDecisionNode extends ProcestTransitionNode {
     /**
      * The handler this node runs.
      *
-     * @return CatalogueActionHandler|TransitionActionHandler The action handler.
+     * @return CatalogueActionHandler The action handler.
      */
     protected function handler(): CatalogueActionHandler|TransitionActionHandler {
         return $this->handler;
@@ -66,23 +65,12 @@ class ProcestTxEvaluateDecisionNode extends ProcestTransitionNode {
 
 
     /**
-     * This node's id.
-     *
-     * @return string The namespaced node id.
-     */
-    protected function nodeId(): string {
-        return 'procest.evaluateDecision';
-
-    }//end nodeId()
-
-
-    /**
      * Config keys without which this action cannot run.
      *
      * @return string[] The required key names.
      */
     protected function requiredConfigKeys(): array {
-        return ['decisionKey'];
+        return ['templateSlug', 'targetField'];
 
     }//end requiredConfigKeys()
 
@@ -95,7 +83,7 @@ class ProcestTxEvaluateDecisionNode extends ProcestTransitionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDisplayName(): string {
-        return $this->l10n->t('Evaluate decision table');
+        return $this->l10n->t('Merge template');
 
     }//end getDisplayName()
 
@@ -108,7 +96,7 @@ class ProcestTxEvaluateDecisionNode extends ProcestTransitionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDescription(): string {
-        return $this->l10n->t('Evaluate a DMN decision table against the case.');
+        return $this->l10n->t('Render a template and write the result into a case field.');
 
     }//end getDescription()
 

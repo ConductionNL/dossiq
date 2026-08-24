@@ -18,34 +18,34 @@ namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
-use OCA\Dossiq\Service\Transitions\WebhookHandler;
+use OCA\Dossiq\Service\Transitions\CreateSubCaseHandler;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 
 /**
- * Flow node for the live `webhook` transition action.
+ * Flow node for the live `createSubCase` transition action.
  *
- * A thin wrapper: WebhookHandler keeps the logic. This is the vocabulary
+ * A thin wrapper: CreateSubCaseHandler keeps the logic. This is the vocabulary
  * SideEffectDispatcher actually fires on every status change, which is why it
- * takes the plain `procest.webhook` id rather than the `procest.action.*`
+ * takes the plain `dossiq.createSubCase` id rather than the `dossiq.action.*`
  * prefix the configured-action catalogue uses.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-class ProcestTxWebhookNode extends ProcestTransitionNode {
+class DossiqTxCreateSubCaseNode extends DossiqTransitionNode {
 
 
     /**
      * Constructor.
      *
-     * @param WebhookHandler $handler The transition handler this node runs.
+     * @param CreateSubCaseHandler $handler The transition handler this node runs.
      * @param IL10N         $l10n    The localisation service.
      * @param IURLGenerator $urls    The URL generator.
      *
      * @return void
      */
     public function __construct(
-        private readonly WebhookHandler $handler,
+        private readonly CreateSubCaseHandler $handler,
         IL10N $l10n,
         IURLGenerator $urls,
     ) {
@@ -71,7 +71,7 @@ class ProcestTxWebhookNode extends ProcestTransitionNode {
      * @return string The namespaced node id.
      */
     protected function nodeId(): string {
-        return 'procest.webhook';
+        return 'dossiq.createSubCase';
 
     }//end nodeId()
 
@@ -82,7 +82,7 @@ class ProcestTxWebhookNode extends ProcestTransitionNode {
      * @return string[] The required key names.
      */
     protected function requiredConfigKeys(): array {
-        return ['url'];
+        return ['caseType'];
 
     }//end requiredConfigKeys()
 
@@ -95,7 +95,7 @@ class ProcestTxWebhookNode extends ProcestTransitionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDisplayName(): string {
-        return $this->l10n->t('Call webhook on transition');
+        return $this->l10n->t('Create sub-case');
 
     }//end getDisplayName()
 
@@ -108,7 +108,7 @@ class ProcestTxWebhookNode extends ProcestTransitionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDescription(): string {
-        return $this->l10n->t('POST the case to a configured endpoint on a status change.');
+        return $this->l10n->t('Open a sub-case when the parent changes status.');
 
     }//end getDescription()
 

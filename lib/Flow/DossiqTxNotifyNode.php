@@ -18,33 +18,34 @@ namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
-use OCA\Dossiq\Service\Actions\ScheduleReminderHandler;
+use OCA\Dossiq\Service\Transitions\NotifyHandler;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 
 /**
- * Flow node for the `scheduleReminder` action.
+ * Flow node for the live `notify` transition action.
  *
- * A thin wrapper: ScheduleReminderHandler keeps the logic, this presents it to
- * OpenRegister's engine. See ProcestActionNode for why these are contributed
- * nodes rather than a mapping onto OpenRegister's own.
+ * A thin wrapper: NotifyHandler keeps the logic. This is the vocabulary
+ * SideEffectDispatcher actually fires on every status change, which is why it
+ * takes the plain `dossiq.notify` id rather than the `dossiq.action.*`
+ * prefix the configured-action catalogue uses.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-class ProcestScheduleReminderNode extends ProcestActionNode {
+class DossiqTxNotifyNode extends DossiqTransitionNode {
 
 
     /**
      * Constructor.
      *
-     * @param ScheduleReminderHandler $handler The action handler this node runs.
-     * @param IL10N              $l10n    The localisation service.
-     * @param IURLGenerator      $urls    The URL generator.
+     * @param NotifyHandler $handler The transition handler this node runs.
+     * @param IL10N         $l10n    The localisation service.
+     * @param IURLGenerator $urls    The URL generator.
      *
      * @return void
      */
     public function __construct(
-        private readonly ScheduleReminderHandler $handler,
+        private readonly NotifyHandler $handler,
         IL10N $l10n,
         IURLGenerator $urls,
     ) {
@@ -56,7 +57,7 @@ class ProcestScheduleReminderNode extends ProcestActionNode {
     /**
      * The handler this node runs.
      *
-     * @return CatalogueActionHandler The action handler.
+     * @return CatalogueActionHandler|TransitionActionHandler The action handler.
      */
     protected function handler(): CatalogueActionHandler|TransitionActionHandler {
         return $this->handler;
@@ -65,12 +66,23 @@ class ProcestScheduleReminderNode extends ProcestActionNode {
 
 
     /**
+     * This node's id.
+     *
+     * @return string The namespaced node id.
+     */
+    protected function nodeId(): string {
+        return 'dossiq.notify';
+
+    }//end nodeId()
+
+
+    /**
      * Config keys without which this action cannot run.
      *
      * @return string[] The required key names.
      */
     protected function requiredConfigKeys(): array {
-        return ['recipientRef', 'messageTemplate'];
+        return ['recipient'];
 
     }//end requiredConfigKeys()
 
@@ -83,7 +95,7 @@ class ProcestScheduleReminderNode extends ProcestActionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDisplayName(): string {
-        return $this->l10n->t('Schedule reminder');
+        return $this->l10n->t('Notify');
 
     }//end getDisplayName()
 
@@ -96,7 +108,7 @@ class ProcestScheduleReminderNode extends ProcestActionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDescription(): string {
-        return $this->l10n->t('Queue a reminder for a resolved recipient.');
+        return $this->l10n->t('Send a Nextcloud notification about the status change.');
 
     }//end getDescription()
 

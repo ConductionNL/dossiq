@@ -18,33 +18,33 @@ namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
-use OCA\Dossiq\Service\Actions\CreateDocumentHandler;
+use OCA\Dossiq\Service\Actions\NotifyRoleHandler;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 
 /**
- * Flow node for the `createDocument` action.
+ * Flow node for the `notifyRole` action.
  *
- * A thin wrapper: CreateDocumentHandler keeps the logic, this presents it to
- * OpenRegister's engine. See ProcestActionNode for why these are contributed
+ * A thin wrapper: NotifyRoleHandler keeps the logic, this presents it to
+ * OpenRegister's engine. See DossiqActionNode for why these are contributed
  * nodes rather than a mapping onto OpenRegister's own.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-class ProcestCreateDocumentNode extends ProcestActionNode {
+class DossiqNotifyRoleNode extends DossiqActionNode {
 
 
     /**
      * Constructor.
      *
-     * @param CreateDocumentHandler $handler The action handler this node runs.
+     * @param NotifyRoleHandler $handler The action handler this node runs.
      * @param IL10N              $l10n    The localisation service.
      * @param IURLGenerator      $urls    The URL generator.
      *
      * @return void
      */
     public function __construct(
-        private readonly CreateDocumentHandler $handler,
+        private readonly NotifyRoleHandler $handler,
         IL10N $l10n,
         IURLGenerator $urls,
     ) {
@@ -70,7 +70,7 @@ class ProcestCreateDocumentNode extends ProcestActionNode {
      * @return string[] The required key names.
      */
     protected function requiredConfigKeys(): array {
-        return ['templateSlug', 'outputName'];
+        return ['roleSlug', 'messageTemplate'];
 
     }//end requiredConfigKeys()
 
@@ -83,7 +83,7 @@ class ProcestCreateDocumentNode extends ProcestActionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDisplayName(): string {
-        return $this->l10n->t('Create document');
+        return $this->l10n->t('Notify role');
 
     }//end getDisplayName()
 
@@ -96,7 +96,7 @@ class ProcestCreateDocumentNode extends ProcestActionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDescription(): string {
-        return $this->l10n->t('Render a document template into a new file on the case.');
+        return $this->l10n->t('Send a Nextcloud notification to everyone holding a role on the case.');
 
     }//end getDescription()
 

@@ -18,34 +18,34 @@ namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
-use OCA\Dossiq\Service\Transitions\BesluitvormingActivateHandler;
+use OCA\Dossiq\Service\Transitions\EvaluateDecisionHandler;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 
 /**
- * Flow node for the live `besluitvormingActivate` transition action.
+ * Flow node for the live `evaluateDecision` transition action.
  *
- * A thin wrapper: BesluitvormingActivateHandler keeps the logic. This is the vocabulary
+ * A thin wrapper: EvaluateDecisionHandler keeps the logic. This is the vocabulary
  * SideEffectDispatcher actually fires on every status change, which is why it
- * takes the plain `procest.besluitvormingActivate` id rather than the `procest.action.*`
+ * takes the plain `dossiq.evaluateDecision` id rather than the `dossiq.action.*`
  * prefix the configured-action catalogue uses.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-class ProcestTxBesluitvormingActivateNode extends ProcestTransitionNode {
+class DossiqTxEvaluateDecisionNode extends DossiqTransitionNode {
 
 
     /**
      * Constructor.
      *
-     * @param BesluitvormingActivateHandler $handler The transition handler this node runs.
+     * @param EvaluateDecisionHandler $handler The transition handler this node runs.
      * @param IL10N         $l10n    The localisation service.
      * @param IURLGenerator $urls    The URL generator.
      *
      * @return void
      */
     public function __construct(
-        private readonly BesluitvormingActivateHandler $handler,
+        private readonly EvaluateDecisionHandler $handler,
         IL10N $l10n,
         IURLGenerator $urls,
     ) {
@@ -71,7 +71,7 @@ class ProcestTxBesluitvormingActivateNode extends ProcestTransitionNode {
      * @return string The namespaced node id.
      */
     protected function nodeId(): string {
-        return 'procest.besluitvormingActivate';
+        return 'dossiq.evaluateDecision';
 
     }//end nodeId()
 
@@ -82,7 +82,7 @@ class ProcestTxBesluitvormingActivateNode extends ProcestTransitionNode {
      * @return string[] The required key names.
      */
     protected function requiredConfigKeys(): array {
-        return [];
+        return ['decisionKey'];
 
     }//end requiredConfigKeys()
 
@@ -95,7 +95,7 @@ class ProcestTxBesluitvormingActivateNode extends ProcestTransitionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDisplayName(): string {
-        return $this->l10n->t('Activate decision-making');
+        return $this->l10n->t('Evaluate decision table');
 
     }//end getDisplayName()
 
@@ -108,7 +108,7 @@ class ProcestTxBesluitvormingActivateNode extends ProcestTransitionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDescription(): string {
-        return $this->l10n->t('Raise the decision-making process for this case.');
+        return $this->l10n->t('Evaluate a DMN decision table against the case.');
 
     }//end getDescription()
 

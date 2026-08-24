@@ -9,4 +9,4 @@ Util::addScript($appId, $appId . '-shared-vendor');
 Util::addScript($appId, $appId . '-shared-nc-vue');
 Util::addScript($appId, $appId . '-personal-settings');
 ?>
-<div id="procest-personal-settings"></div>
+<div id="dossiq-personal-settings"></div>

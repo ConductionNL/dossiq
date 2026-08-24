@@ -20,13 +20,13 @@ namespace OCA\Dossiq\Flow;
  * Base for the CONFIGURED-ACTION catalogue nodes.
  *
  * `lib/Service/Actions/` — the six reusable actions administered as
- * `automaticAction` objects. They take the `procest.action.*` id space, because
+ * `automaticAction` objects. They take the `dossiq.action.*` id space, because
  * the live transition vocabulary owns the plain names and both systems ship a
  * `sendEmail`.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-abstract class ProcestActionNode extends ProcestFlowNodeBase {
+abstract class DossiqActionNode extends DossiqFlowNodeBase {
 
 
     /**
@@ -40,7 +40,7 @@ abstract class ProcestActionNode extends ProcestFlowNodeBase {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     protected function nodeId(): string {
-        return 'procest.action.' . $this->handler()->type();
+        return 'dossiq.action.' . $this->handler()->type();
 
     }//end nodeId()
 

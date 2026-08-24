@@ -18,34 +18,34 @@ namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
-use OCA\Dossiq\Service\Transitions\BesluitvormingPublishHandler;
+use OCA\Dossiq\Service\Transitions\CreateTaskHandler;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 
 /**
- * Flow node for the live `besluitvormingPublish` transition action.
+ * Flow node for the live `createTask` transition action.
  *
- * A thin wrapper: BesluitvormingPublishHandler keeps the logic. This is the vocabulary
+ * A thin wrapper: CreateTaskHandler keeps the logic. This is the vocabulary
  * SideEffectDispatcher actually fires on every status change, which is why it
- * takes the plain `procest.besluitvormingPublish` id rather than the `procest.action.*`
+ * takes the plain `dossiq.createTask` id rather than the `dossiq.action.*`
  * prefix the configured-action catalogue uses.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-class ProcestTxBesluitvormingPublishNode extends ProcestTransitionNode {
+class DossiqTxCreateTaskNode extends DossiqTransitionNode {
 
 
     /**
      * Constructor.
      *
-     * @param BesluitvormingPublishHandler $handler The transition handler this node runs.
+     * @param CreateTaskHandler $handler The transition handler this node runs.
      * @param IL10N         $l10n    The localisation service.
      * @param IURLGenerator $urls    The URL generator.
      *
      * @return void
      */
     public function __construct(
-        private readonly BesluitvormingPublishHandler $handler,
+        private readonly CreateTaskHandler $handler,
         IL10N $l10n,
         IURLGenerator $urls,
     ) {
@@ -71,7 +71,7 @@ class ProcestTxBesluitvormingPublishNode extends ProcestTransitionNode {
      * @return string The namespaced node id.
      */
     protected function nodeId(): string {
-        return 'procest.besluitvormingPublish';
+        return 'dossiq.createTask';
 
     }//end nodeId()
 
@@ -82,7 +82,7 @@ class ProcestTxBesluitvormingPublishNode extends ProcestTransitionNode {
      * @return string[] The required key names.
      */
     protected function requiredConfigKeys(): array {
-        return [];
+        return ['title'];
 
     }//end requiredConfigKeys()
 
@@ -95,7 +95,7 @@ class ProcestTxBesluitvormingPublishNode extends ProcestTransitionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDisplayName(): string {
-        return $this->l10n->t('Publish decision');
+        return $this->l10n->t('Create task');
 
     }//end getDisplayName()
 
@@ -108,7 +108,7 @@ class ProcestTxBesluitvormingPublishNode extends ProcestTransitionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDescription(): string {
-        return $this->l10n->t('Publish the decision to DROP/LVBB.');
+        return $this->l10n->t('Create a task on the case when it changes status.');
 
     }//end getDescription()
 

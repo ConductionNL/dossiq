@@ -60,7 +60,7 @@ class ListenerRegistrar {
 		(new BezwaarListenerRegistrar())->register(context: $context);
 		(new WorkflowListenerRegistrar())->register(context: $context);
 
-		// ADR-065: OpenRegister owns the flow engine; procest contributes the six
+		// ADR-065: OpenRegister owns the flow engine; dossiq contributes the six
 		// things a case can DO, because every one of OpenRegister's own nineteen
 		// nodes is control-flow or data and none of them acts outward.
 		//
@@ -71,7 +71,7 @@ class ListenerRegistrar {
 		if (class_exists(\OCA\OpenRegister\Service\Flow\RegisterFlowNodesEvent::class) === true) {
 			$context->registerEventListener(
 				\OCA\OpenRegister\Service\Flow\RegisterFlowNodesEvent::class,
-				\OCA\Dossiq\Flow\ProcestFlowNodeListener::class
+				\OCA\Dossiq\Flow\DossiqFlowNodeListener::class
 			);
 		}
 	}//end register()

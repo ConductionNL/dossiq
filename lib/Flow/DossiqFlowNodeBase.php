@@ -25,11 +25,11 @@ use OCP\IURLGenerator;
 use UnexpectedValueException;
 
 /**
- * Presents one procest action handler to OpenRegister's flow engine.
+ * Presents one dossiq action handler to OpenRegister's flow engine.
  *
- * Two families extend this: ProcestActionNode for the configured-action
- * catalogue (`procest.action.*`) and ProcestTransitionNode for the live
- * transition vocabulary (`procest.*`). They are siblings rather than one base
+ * Two families extend this: DossiqActionNode for the configured-action
+ * catalogue (`dossiq.action.*`) and DossiqTransitionNode for the live
+ * transition vocabulary (`dossiq.*`). They are siblings rather than one base
  * with fifteen children because they ARE two systems — and phpmd flagged the
  * single hierarchy at exactly the point where that stopped being expressible.
  *
@@ -37,20 +37,20 @@ use UnexpectedValueException;
  * and every one of them is control-flow or data — await-signal, batch, filter,
  * iterate, map, merge, object-read, object-write, route, set-fields, sub-flow,
  * switch, the three triggers, wait. Not one does anything outward-facing. All
- * six procest actions DO: they send mail, call a webhook, render a document,
+ * six dossiq actions DO: they send mail, call a webhook, render a document,
  * notify a role. Mapping them onto existing nodes would mean inventing
- * behaviour OpenRegister deliberately does not own, so procest contributes them
+ * behaviour OpenRegister deliberately does not own, so dossiq contributes them
  * instead — which is what FlowNodeRegistry is built for ("apps present nodes
  * through OpenRegister"), and what hermiq already does with its agent nodes.
  *
  * THE HANDLERS KEEP THEIR LOGIC. This is a wrapper, not a port: each subclass
  * hands its existing ActionHandlerInterface the same `(actionConfig, case,
  * transitionContext)` it always got. What changes is who calls it — the flow
- * engine rather than procest's private registry.
+ * engine rather than dossiq's private registry.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-abstract class ProcestFlowNodeBase implements IFlowNode {
+abstract class DossiqFlowNodeBase implements IFlowNode {
 
 
     /**
@@ -72,7 +72,7 @@ abstract class ProcestFlowNodeBase implements IFlowNode {
     /**
      * The handler this node runs.
      *
-     * A UNION, because procest carries two action systems with two interfaces
+     * A UNION, because dossiq carries two action systems with two interfaces
      * of the same name in different namespaces. They declare an identical
      * `handle(array, array, array): ActionResult` and their ActionResults have
      * an identical shape (succeeded / error / data), so one node body serves
@@ -96,8 +96,8 @@ abstract class ProcestFlowNodeBase implements IFlowNode {
      *
      * Stated by the subclass rather than derived, because the two action
      * systems both ship a `sendEmail` and their ids would collide. The LIVE
-     * transition vocabulary takes the plain `procest.<type>` names; the
-     * configured-action catalogue takes `procest.action.<type>`.
+     * transition vocabulary takes the plain `dossiq.<type>` names; the
+     * configured-action catalogue takes `dossiq.action.<type>`.
      *
      * @return string The namespaced node id.
      */

@@ -6,10 +6,10 @@
  *
  * Test stub for OpenRegister's published flow-node contract.
  *
- * procest's nodes implement this interface, so without it the classes cannot be
+ * dossiq's nodes implement this interface, so without it the classes cannot be
  * loaded in a unit test on an instance where OpenRegister is absent. Mirrors
  * openregister lib/Service/Flow/IFlowNode.php — if that contract changes, this
- * stub is where procest finds out.
+ * stub is where dossiq finds out.
  *
  * @category Test
  * @package  OCA\OpenRegister\Service\Flow

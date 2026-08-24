@@ -25,16 +25,16 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Presents procest's case actions to OpenRegister's flow engine.
+ * Presents dossiq's case actions to OpenRegister's flow engine.
  *
  * ADR-065: OpenRegister owns the flow engine and no leaf app grows a second
- * one. procest does not keep one — it CONTRIBUTES what its cases can do, which
+ * one. dossiq does not keep one — it CONTRIBUTES what its cases can do, which
  * is what FlowNodeRegistry is built for and what hermiq already does.
  *
- * TWO VOCABULARIES, DELIBERATELY DISTINCT IDS. procest carries two action
+ * TWO VOCABULARIES, DELIBERATELY DISTINCT IDS. dossiq carries two action
  * systems and both ship a `sendEmail`. The LIVE transition vocabulary — what
  * SideEffectDispatcher fires on every status change — takes the plain
- * `procest.*` ids; the configured-action catalogue takes `procest.action.*`.
+ * `dossiq.*` ids; the configured-action catalogue takes `dossiq.action.*`.
  * Without that split one handler would silently shadow the other and a flow
  * builder picking "Send email" would get whichever registered last.
  *
@@ -53,10 +53,10 @@ use Throwable;
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-class ProcestFlowNodeListener implements IEventListener {
+class DossiqFlowNodeListener implements IEventListener {
 
     /**
-     * The nodes procest contributes, in catalogue order.
+     * The nodes dossiq contributes, in catalogue order.
      *
      * The live transition vocabulary first — it is the one that runs.
      *
@@ -72,22 +72,22 @@ class ProcestFlowNodeListener implements IEventListener {
      */
     private const NODES = [
         // Live: fired by SideEffectDispatcher on every status change.
-        ProcestTxSendEmailNode::class,
-        ProcestTxCreateTaskNode::class,
-        ProcestTxCreateSubCaseNode::class,
-        ProcestTxWebhookNode::class,
-        ProcestTxSetFieldNode::class,
-        ProcestTxNotifyNode::class,
-        ProcestTxBesluitvormingActivateNode::class,
-        ProcestTxBesluitvormingPublishNode::class,
-        ProcestTxEvaluateDecisionNode::class,
+        DossiqTxSendEmailNode::class,
+        DossiqTxCreateTaskNode::class,
+        DossiqTxCreateSubCaseNode::class,
+        DossiqTxWebhookNode::class,
+        DossiqTxSetFieldNode::class,
+        DossiqTxNotifyNode::class,
+        DossiqTxBesluitvormingActivateNode::class,
+        DossiqTxBesluitvormingPublishNode::class,
+        DossiqTxEvaluateDecisionNode::class,
         // The configured-action catalogue.
-        ProcestSendEmailNode::class,
-        ProcestNotifyRoleNode::class,
-        ProcestCallWebhookNode::class,
-        ProcestCreateDocumentNode::class,
-        ProcestMergeTemplateNode::class,
-        ProcestScheduleReminderNode::class,
+        DossiqSendEmailNode::class,
+        DossiqNotifyRoleNode::class,
+        DossiqCallWebhookNode::class,
+        DossiqCreateDocumentNode::class,
+        DossiqMergeTemplateNode::class,
+        DossiqScheduleReminderNode::class,
     ];
 
 
@@ -108,7 +108,7 @@ class ProcestFlowNodeListener implements IEventListener {
 
 
     /**
-     * Register procest's nodes on the catalogue.
+     * Register dossiq's nodes on the catalogue.
      *
      * A node that cannot be constructed is logged and SKIPPED rather than
      * aborting the loop: one unresolvable dependency must not cost the other
@@ -132,7 +132,7 @@ class ProcestFlowNodeListener implements IEventListener {
                 $node = $this->container->get($class);
             } catch (Throwable $e) {
                 $this->logger->warning(
-                    'ProcestFlowNodeListener: could not construct a flow node; it will not be offered',
+                    'DossiqFlowNodeListener: could not construct a flow node; it will not be offered',
                     ['node' => $class, 'error' => $e->getMessage()],
                 );
                 continue;

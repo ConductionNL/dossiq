@@ -18,34 +18,33 @@ namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
-use OCA\Dossiq\Service\Transitions\CreateTaskHandler;
+use OCA\Dossiq\Service\Actions\CreateDocumentHandler;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 
 /**
- * Flow node for the live `createTask` transition action.
+ * Flow node for the `createDocument` action.
  *
- * A thin wrapper: CreateTaskHandler keeps the logic. This is the vocabulary
- * SideEffectDispatcher actually fires on every status change, which is why it
- * takes the plain `procest.createTask` id rather than the `procest.action.*`
- * prefix the configured-action catalogue uses.
+ * A thin wrapper: CreateDocumentHandler keeps the logic, this presents it to
+ * OpenRegister's engine. See DossiqActionNode for why these are contributed
+ * nodes rather than a mapping onto OpenRegister's own.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-class ProcestTxCreateTaskNode extends ProcestTransitionNode {
+class DossiqCreateDocumentNode extends DossiqActionNode {
 
 
     /**
      * Constructor.
      *
-     * @param CreateTaskHandler $handler The transition handler this node runs.
-     * @param IL10N         $l10n    The localisation service.
-     * @param IURLGenerator $urls    The URL generator.
+     * @param CreateDocumentHandler $handler The action handler this node runs.
+     * @param IL10N              $l10n    The localisation service.
+     * @param IURLGenerator      $urls    The URL generator.
      *
      * @return void
      */
     public function __construct(
-        private readonly CreateTaskHandler $handler,
+        private readonly CreateDocumentHandler $handler,
         IL10N $l10n,
         IURLGenerator $urls,
     ) {
@@ -57,7 +56,7 @@ class ProcestTxCreateTaskNode extends ProcestTransitionNode {
     /**
      * The handler this node runs.
      *
-     * @return CatalogueActionHandler|TransitionActionHandler The action handler.
+     * @return CatalogueActionHandler The action handler.
      */
     protected function handler(): CatalogueActionHandler|TransitionActionHandler {
         return $this->handler;
@@ -66,23 +65,12 @@ class ProcestTxCreateTaskNode extends ProcestTransitionNode {
 
 
     /**
-     * This node's id.
-     *
-     * @return string The namespaced node id.
-     */
-    protected function nodeId(): string {
-        return 'procest.createTask';
-
-    }//end nodeId()
-
-
-    /**
      * Config keys without which this action cannot run.
      *
      * @return string[] The required key names.
      */
     protected function requiredConfigKeys(): array {
-        return ['title'];
+        return ['templateSlug', 'outputName'];
 
     }//end requiredConfigKeys()
 
@@ -95,7 +83,7 @@ class ProcestTxCreateTaskNode extends ProcestTransitionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDisplayName(): string {
-        return $this->l10n->t('Create task');
+        return $this->l10n->t('Create document');
 
     }//end getDisplayName()
 
@@ -108,7 +96,7 @@ class ProcestTxCreateTaskNode extends ProcestTransitionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDescription(): string {
-        return $this->l10n->t('Create a task on the case when it changes status.');
+        return $this->l10n->t('Render a document template into a new file on the case.');
 
     }//end getDescription()
 

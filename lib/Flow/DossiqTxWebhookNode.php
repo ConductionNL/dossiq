@@ -18,33 +18,34 @@ namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
-use OCA\Dossiq\Service\Actions\NotifyRoleHandler;
+use OCA\Dossiq\Service\Transitions\WebhookHandler;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 
 /**
- * Flow node for the `notifyRole` action.
+ * Flow node for the live `webhook` transition action.
  *
- * A thin wrapper: NotifyRoleHandler keeps the logic, this presents it to
- * OpenRegister's engine. See ProcestActionNode for why these are contributed
- * nodes rather than a mapping onto OpenRegister's own.
+ * A thin wrapper: WebhookHandler keeps the logic. This is the vocabulary
+ * SideEffectDispatcher actually fires on every status change, which is why it
+ * takes the plain `dossiq.webhook` id rather than the `dossiq.action.*`
+ * prefix the configured-action catalogue uses.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-class ProcestNotifyRoleNode extends ProcestActionNode {
+class DossiqTxWebhookNode extends DossiqTransitionNode {
 
 
     /**
      * Constructor.
      *
-     * @param NotifyRoleHandler $handler The action handler this node runs.
-     * @param IL10N              $l10n    The localisation service.
-     * @param IURLGenerator      $urls    The URL generator.
+     * @param WebhookHandler $handler The transition handler this node runs.
+     * @param IL10N         $l10n    The localisation service.
+     * @param IURLGenerator $urls    The URL generator.
      *
      * @return void
      */
     public function __construct(
-        private readonly NotifyRoleHandler $handler,
+        private readonly WebhookHandler $handler,
         IL10N $l10n,
         IURLGenerator $urls,
     ) {
@@ -56,7 +57,7 @@ class ProcestNotifyRoleNode extends ProcestActionNode {
     /**
      * The handler this node runs.
      *
-     * @return CatalogueActionHandler The action handler.
+     * @return CatalogueActionHandler|TransitionActionHandler The action handler.
      */
     protected function handler(): CatalogueActionHandler|TransitionActionHandler {
         return $this->handler;
@@ -65,12 +66,23 @@ class ProcestNotifyRoleNode extends ProcestActionNode {
 
 
     /**
+     * This node's id.
+     *
+     * @return string The namespaced node id.
+     */
+    protected function nodeId(): string {
+        return 'dossiq.webhook';
+
+    }//end nodeId()
+
+
+    /**
      * Config keys without which this action cannot run.
      *
      * @return string[] The required key names.
      */
     protected function requiredConfigKeys(): array {
-        return ['roleSlug', 'messageTemplate'];
+        return ['url'];
 
     }//end requiredConfigKeys()
 
@@ -83,7 +95,7 @@ class ProcestNotifyRoleNode extends ProcestActionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDisplayName(): string {
-        return $this->l10n->t('Notify role');
+        return $this->l10n->t('Call webhook on transition');
 
     }//end getDisplayName()
 
@@ -96,7 +108,7 @@ class ProcestNotifyRoleNode extends ProcestActionNode {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getDescription(): string {
-        return $this->l10n->t('Send a Nextcloud notification to everyone holding a role on the case.');
+        return $this->l10n->t('POST the case to a configured endpoint on a status change.');
 
     }//end getDescription()
 

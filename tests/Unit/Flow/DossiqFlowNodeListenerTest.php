@@ -18,22 +18,22 @@ namespace OCA\Dossiq\Tests\Unit\Flow;
 
 use OCA\OpenRegister\Service\Flow\IFlowNode;
 use OCA\OpenRegister\Service\Flow\RegisterFlowNodesEvent;
-use OCA\Dossiq\Flow\ProcestCallWebhookNode;
-use OCA\Dossiq\Flow\ProcestCreateDocumentNode;
-use OCA\Dossiq\Flow\ProcestFlowNodeListener;
-use OCA\Dossiq\Flow\ProcestMergeTemplateNode;
-use OCA\Dossiq\Flow\ProcestNotifyRoleNode;
-use OCA\Dossiq\Flow\ProcestScheduleReminderNode;
-use OCA\Dossiq\Flow\ProcestSendEmailNode;
-use OCA\Dossiq\Flow\ProcestTxSendEmailNode;
-use OCA\Dossiq\Flow\ProcestTxCreateTaskNode;
-use OCA\Dossiq\Flow\ProcestTxCreateSubCaseNode;
-use OCA\Dossiq\Flow\ProcestTxWebhookNode;
-use OCA\Dossiq\Flow\ProcestTxSetFieldNode;
-use OCA\Dossiq\Flow\ProcestTxNotifyNode;
-use OCA\Dossiq\Flow\ProcestTxBesluitvormingActivateNode;
-use OCA\Dossiq\Flow\ProcestTxBesluitvormingPublishNode;
-use OCA\Dossiq\Flow\ProcestTxEvaluateDecisionNode;
+use OCA\Dossiq\Flow\DossiqCallWebhookNode;
+use OCA\Dossiq\Flow\DossiqCreateDocumentNode;
+use OCA\Dossiq\Flow\DossiqFlowNodeListener;
+use OCA\Dossiq\Flow\DossiqMergeTemplateNode;
+use OCA\Dossiq\Flow\DossiqNotifyRoleNode;
+use OCA\Dossiq\Flow\DossiqScheduleReminderNode;
+use OCA\Dossiq\Flow\DossiqSendEmailNode;
+use OCA\Dossiq\Flow\DossiqTxSendEmailNode;
+use OCA\Dossiq\Flow\DossiqTxCreateTaskNode;
+use OCA\Dossiq\Flow\DossiqTxCreateSubCaseNode;
+use OCA\Dossiq\Flow\DossiqTxWebhookNode;
+use OCA\Dossiq\Flow\DossiqTxSetFieldNode;
+use OCA\Dossiq\Flow\DossiqTxNotifyNode;
+use OCA\Dossiq\Flow\DossiqTxBesluitvormingActivateNode;
+use OCA\Dossiq\Flow\DossiqTxBesluitvormingPublishNode;
+use OCA\Dossiq\Flow\DossiqTxEvaluateDecisionNode;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -41,7 +41,7 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * Proves procest actually contributes all six case actions.
+ * Proves dossiq actually contributes all six case actions.
  *
  * A node class that exists but is never registered is invisible to the flow
  * editor — and looks identical to one that works, right up until somebody tries
@@ -49,7 +49,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-class ProcestFlowNodeListenerTest extends TestCase {
+class DossiqFlowNodeListenerTest extends TestCase {
 
     /**
      * The id each node class reports, in the order the listener registers them.
@@ -57,21 +57,21 @@ class ProcestFlowNodeListenerTest extends TestCase {
      * @var array<class-string, string>
      */
     private const EXPECTED_IDS = [
-        ProcestTxSendEmailNode::class => 'procest.sendEmail',
-        ProcestTxCreateTaskNode::class => 'procest.createTask',
-        ProcestTxCreateSubCaseNode::class => 'procest.createSubCase',
-        ProcestTxWebhookNode::class => 'procest.webhook',
-        ProcestTxSetFieldNode::class => 'procest.setField',
-        ProcestTxNotifyNode::class => 'procest.notify',
-        ProcestTxBesluitvormingActivateNode::class => 'procest.besluitvormingActivate',
-        ProcestTxBesluitvormingPublishNode::class => 'procest.besluitvormingPublish',
-        ProcestTxEvaluateDecisionNode::class => 'procest.evaluateDecision',
-        ProcestSendEmailNode::class => 'procest.action.sendEmail',
-        ProcestNotifyRoleNode::class => 'procest.action.notifyRole',
-        ProcestCallWebhookNode::class => 'procest.action.callWebhook',
-        ProcestCreateDocumentNode::class => 'procest.action.createDocument',
-        ProcestMergeTemplateNode::class => 'procest.action.mergeTemplate',
-        ProcestScheduleReminderNode::class => 'procest.action.scheduleReminder',
+        DossiqTxSendEmailNode::class => 'dossiq.sendEmail',
+        DossiqTxCreateTaskNode::class => 'dossiq.createTask',
+        DossiqTxCreateSubCaseNode::class => 'dossiq.createSubCase',
+        DossiqTxWebhookNode::class => 'dossiq.webhook',
+        DossiqTxSetFieldNode::class => 'dossiq.setField',
+        DossiqTxNotifyNode::class => 'dossiq.notify',
+        DossiqTxBesluitvormingActivateNode::class => 'dossiq.besluitvormingActivate',
+        DossiqTxBesluitvormingPublishNode::class => 'dossiq.besluitvormingPublish',
+        DossiqTxEvaluateDecisionNode::class => 'dossiq.evaluateDecision',
+        DossiqSendEmailNode::class => 'dossiq.action.sendEmail',
+        DossiqNotifyRoleNode::class => 'dossiq.action.notifyRole',
+        DossiqCallWebhookNode::class => 'dossiq.action.callWebhook',
+        DossiqCreateDocumentNode::class => 'dossiq.action.createDocument',
+        DossiqMergeTemplateNode::class => 'dossiq.action.mergeTemplate',
+        DossiqScheduleReminderNode::class => 'dossiq.action.scheduleReminder',
     ];
 
 
@@ -87,9 +87,9 @@ class ProcestFlowNodeListenerTest extends TestCase {
      *
      * @param string[] $failing Class names the container should refuse to build.
      *
-     * @return ProcestFlowNodeListener The listener under test.
+     * @return DossiqFlowNodeListener The listener under test.
      */
-    private function listener(array $failing=[]): ProcestFlowNodeListener {
+    private function listener(array $failing=[]): DossiqFlowNodeListener {
         $container = $this->createMock(ContainerInterface::class);
         $container->method('get')->willReturnCallback(
             function (string $class) use ($failing): IFlowNode {
@@ -103,7 +103,7 @@ class ProcestFlowNodeListenerTest extends TestCase {
             }
         );
 
-        return new ProcestFlowNodeListener($container, $this->createMock(LoggerInterface::class));
+        return new DossiqFlowNodeListener($container, $this->createMock(LoggerInterface::class));
 
     }//end listener()
 
@@ -163,7 +163,7 @@ class ProcestFlowNodeListenerTest extends TestCase {
      */
     public function testOneUnbuildableNodeDoesNotCostTheRest(): void {
         $event = new RegisterFlowNodesEvent();
-        $this->listener(failing: [ProcestTxSetFieldNode::class])->handle($event);
+        $this->listener(failing: [DossiqTxSetFieldNode::class])->handle($event);
 
         $ids = array_map(
             static fn ($node): string => $node->getId(),
@@ -171,9 +171,9 @@ class ProcestFlowNodeListenerTest extends TestCase {
         );
 
         $this->assertCount(14, $ids);
-        $this->assertNotContains('procest.setField', $ids);
-        $this->assertContains('procest.sendEmail', $ids);
-        $this->assertContains('procest.action.sendEmail', $ids);
+        $this->assertNotContains('dossiq.setField', $ids);
+        $this->assertContains('dossiq.sendEmail', $ids);
+        $this->assertContains('dossiq.action.sendEmail', $ids);
 
     }//end testOneUnbuildableNodeDoesNotCostTheRest()
 
