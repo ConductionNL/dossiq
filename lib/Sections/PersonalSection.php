@@ -32,71 +32,61 @@ use OCP\Settings\IIconSection;
  */
 class PersonalSection implements IIconSection {
 
+	/**
+	 * Constructor.
+	 *
+	 * @param IL10N $l The localisation service.
+	 * @param IURLGenerator $urlGenerator The URL generator.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private IL10N $l,
+		private IURLGenerator $urlGenerator,
+	) {
 
-    /**
-     * Constructor.
-     *
-     * @param IL10N         $l            The localisation service.
-     * @param IURLGenerator $urlGenerator The URL generator.
-     *
-     * @return void
-     */
-    public function __construct(
-        private IL10N $l,
-        private IURLGenerator $urlGenerator,
-    ) {
+	}//end __construct()
 
-    }//end __construct()
+	/**
+	 * Get the section id.
+	 *
+	 * @return string The section id.
+	 */
+	public function getID(): string {
+		return 'dossiq';
+	}//end getID()
 
+	/**
+	 * Get the section display name.
+	 *
+	 * @return string The translated section name.
+	 */
+	public function getName(): string {
+		return $this->l->t('Dossiq');
+	}//end getName()
 
-    /**
-     * Get the section id.
-     *
-     * @return string The section id.
-     */
-    public function getID(): string {
-        return 'dossiq';
+	/**
+	 * Get the ordering priority.
+	 *
+	 * @return int The priority.
+	 */
+	public function getPriority(): int {
+		return 75;
+	}//end getPriority()
 
-    }//end getID()
-
-
-    /**
-     * Get the section display name.
-     *
-     * @return string The translated section name.
-     */
-    public function getName(): string {
-        return $this->l->t('Dossiq');
-
-    }//end getName()
-
-
-    /**
-     * Get the ordering priority.
-     *
-     * @return int The priority.
-     */
-    public function getPriority(): int {
-        return 75;
-
-    }//end getPriority()
-
-
-    /**
-     * Get the icon path for this section.
-     *
-     * @return string The icon path.
-     */
-    public function getIcon(): string {
-        // MUST be the live app id. imagePath() throws when the app does not
-        // exist, and Nextcloud calls getIcon() on every section while building
-        // the settings navigation — so a stale id here does not degrade to a
-        // missing icon, it returns 500 for EVERY /settings/* page, admin
-        // included. The app pages keep working, which is what made this look
-        // like a frontend fault.
-        return $this->urlGenerator->imagePath(appName: 'dossiq', file: 'app-dark.svg');
-
-    }//end getIcon()
-
+	/**
+	 * Get the icon path for this section.
+	 *
+	 * @return string The icon path.
+	 */
+	public function getIcon(): string {
+		// MUST be the live app id. imagePath() throws when the app does not
+		// exist, and Nextcloud calls getIcon() on every section while building
+		// the settings navigation — so a stale id here does not degrade to a
+		// missing icon, it returns 500 for EVERY /settings/* page, admin
+		// included. The app pages keep working, which is what made this look
+		// like a frontend fault.
+		return $this->urlGenerator->imagePath(appName: 'dossiq', file: 'app-dark.svg');
+	}//end getIcon()
 
 }//end class

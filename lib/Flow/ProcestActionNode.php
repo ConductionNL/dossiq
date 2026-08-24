@@ -28,21 +28,18 @@ namespace OCA\Dossiq\Flow;
  */
 abstract class ProcestActionNode extends ProcestFlowNodeBase {
 
-
-    /**
-     * This node's id.
-     *
-     * Derived from the handler's own type slug, so it cannot drift from the
-     * handler it runs.
-     *
-     * @return string The namespaced node id.
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
-     */
-    protected function nodeId(): string {
-        return 'procest.action.' . $this->handler()->type();
-
-    }//end nodeId()
-
+	/**
+	 * This node's id.
+	 *
+	 * Derived from the handler's own type slug, so it cannot drift from the
+	 * handler it runs.
+	 *
+	 * @return string The namespaced node id.
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
+	 */
+	protected function nodeId(): string {
+		return 'procest.action.' . $this->handler()->type();
+	}//end nodeId()
 
 }//end class

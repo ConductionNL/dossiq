@@ -34,188 +34,178 @@ use PHPUnit\Framework\TestCase;
  */
 class MigrateAiOversightToHermiqTest extends TestCase {
 
+	/**
+	 * Build the step over a stubbed audit log and delegation service.
+	 *
+	 * @param array<int, array<string, mixed>> $entries What the audit log returns.
+	 * @param boolean $delegates Whether delegation reports success.
+	 *
+	 * @return array{0: MigrateAiOversightToHermiq, 1: IOutput} The step and its output.
+	 */
+	private function step(array $entries, bool $delegates = true): array {
+		$audit = $this->createMock(AiAuditLog::class);
+		$audit->method('list')->willReturn(
+			['entries' => $entries, 'total' => null, 'limit' => 200, 'offset' => 0]
+		);
 
-    /**
-     * Build the step over a stubbed audit log and delegation service.
-     *
-     * @param array<int, array<string, mixed>> $entries   What the audit log returns.
-     * @param boolean                          $delegates Whether delegation reports success.
-     *
-     * @return array{0: MigrateAiOversightToHermiq, 1: IOutput} The step and its output.
-     */
-    private function step(array $entries, bool $delegates=true): array {
-        $audit = $this->createMock(AiAuditLog::class);
-        $audit->method('list')->willReturn(
-            ['entries' => $entries, 'total' => null, 'limit' => 200, 'offset' => 0]
-        );
+		$oversight = $this->createMock(AiOversightDelegationService::class);
+		$oversight->method('delegate')->willReturn($delegates);
 
-        $oversight = $this->createMock(AiOversightDelegationService::class);
-        $oversight->method('delegate')->willReturn($delegates);
+		return [new MigrateAiOversightToHermiq($audit, $oversight), $this->createMock(IOutput::class)];
+	}//end step()
 
-        return [new MigrateAiOversightToHermiq($audit, $oversight), $this->createMock(IOutput::class)];
+	/**
+	 * Entries are read from the key AiAuditLog actually returns.
+	 *
+	 * This is the regression: with the wrong key the step reports "nothing to
+	 * consider" and migrates nothing, on an instance that has plenty.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
+	 */
+	public function testEntriesAreReadFromTheEntriesKey(): void {
+		[$step, $output] = $this->step([['userAction' => 'accepted', 'caseId' => 'c-1']]);
 
-    }//end step()
+		$output->expects($this->once())->method('info')
+			->with($this->stringContains('1 decision(s) sent'));
 
+		$step->run($output);
 
-    /**
-     * Entries are read from the key AiAuditLog actually returns.
-     *
-     * This is the regression: with the wrong key the step reports "nothing to
-     * consider" and migrates nothing, on an instance that has plenty.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
-     */
-    public function testEntriesAreReadFromTheEntriesKey(): void {
-        [$step, $output] = $this->step([['userAction' => 'accepted', 'caseId' => 'c-1']]);
+	}//end testEntriesAreReadFromTheEntriesKey()
 
-        $output->expects($this->once())->method('info')
-            ->with($this->stringContains('1 decision(s) sent'));
+	/**
+	 * An empty log says so rather than claiming a migration happened.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
+	 */
+	public function testEmptyLogReportsNothingToConsider(): void {
+		[$step, $output] = $this->step([]);
 
-        $step->run($output);
+		$output->expects($this->once())->method('info')
+			->with($this->stringContains('no audit entries'));
 
-    }//end testEntriesAreReadFromTheEntriesKey()
+		$step->run($output);
 
+	}//end testEmptyLogReportsNothingToConsider()
 
-    /**
-     * An empty log says so rather than claiming a migration happened.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
-     */
-    public function testEmptyLogReportsNothingToConsider(): void {
-        [$step, $output] = $this->step([]);
+	/**
+	 * Entries hermiq declines are counted as skipped, not as sent.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
+	 */
+	public function testDeclinedEntriesAreCountedAsSkipped(): void {
+		[$step, $output] = $this->step(
+			[['userAction' => 'accepted', 'caseId' => 'c-1']],
+			delegates: false
+		);
 
-        $output->expects($this->once())->method('info')
-            ->with($this->stringContains('no audit entries'));
+		$output->expects($this->once())->method('info')
+			->with($this->stringContains('0 decision(s) sent to hermiq, 1 entry'));
 
-        $step->run($output);
+		$step->run($output);
 
-    }//end testEmptyLogReportsNothingToConsider()
+	}//end testDeclinedEntriesAreCountedAsSkipped()
 
+	/**
+	 * A malformed row is skipped rather than crashing the upgrade.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
+	 */
+	public function testMalformedRowDoesNotCrashTheUpgrade(): void {
+		[$step, $output] = $this->step([['userAction' => 'accepted', 'caseId' => 'c-1']]);
+		$step->run($output);
 
-    /**
-     * Entries hermiq declines are counted as skipped, not as sent.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
-     */
-    public function testDeclinedEntriesAreCountedAsSkipped(): void {
-        [$step, $output] = $this->step(
-            [['userAction' => 'accepted', 'caseId' => 'c-1']],
-            delegates: false
-        );
+		$this->addToAssertionCount(1);
 
-        $output->expects($this->once())->method('info')
-            ->with($this->stringContains('0 decision(s) sent to hermiq, 1 entry'));
+	}//end testMalformedRowDoesNotCrashTheUpgrade()
 
-        $step->run($output);
+	/**
+	 * The step names itself for the upgrade output.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
+	 */
+	public function testItHasAName(): void {
+		[$step] = $this->step([]);
 
-    }//end testDeclinedEntriesAreCountedAsSkipped()
+		$this->assertStringContainsString('hermiq', $step->getName());
 
+	}//end testItHasAName()
 
-    /**
-     * A malformed row is skipped rather than crashing the upgrade.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
-     */
-    public function testMalformedRowDoesNotCrashTheUpgrade(): void {
-        [$step, $output] = $this->step([['userAction' => 'accepted', 'caseId' => 'c-1']]);
-        $step->run($output);
+	/**
+	 * A row that is not an array is skipped, not fed to the delegator.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
+	 */
+	public function testNonArrayRowIsSkipped(): void {
+		$audit = $this->createMock(AiAuditLog::class);
+		$audit->method('list')->willReturn(
+			['entries' => ['not-an-array'], 'total' => null, 'limit' => 200, 'offset' => 0]
+		);
+		$oversight = $this->createMock(AiOversightDelegationService::class);
+		$oversight->expects($this->never())->method('delegate');
 
-        $this->addToAssertionCount(1);
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->once())->method('info')
+			->with($this->stringContains('0 decision(s) sent to hermiq, 1 entry'));
 
-    }//end testMalformedRowDoesNotCrashTheUpgrade()
+		(new MigrateAiOversightToHermiq($audit, $oversight))->run($output);
 
+	}//end testNonArrayRowIsSkipped()
 
-    /**
-     * The step names itself for the upgrade output.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
-     */
-    public function testItHasAName(): void {
-        [$step] = $this->step([]);
+	/**
+	 * An unreadable audit log warns and returns instead of failing the upgrade.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
+	 */
+	public function testUnreadableAuditLogWarnsAndReturns(): void {
+		$audit = $this->createMock(AiAuditLog::class);
+		$audit->method('list')->willThrowException(new \RuntimeException('register gone'));
 
-        $this->assertStringContainsString('hermiq', $step->getName());
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->once())->method('warning')
+			->with($this->stringContains('could not read the audit log'));
+		$output->expects($this->never())->method('info');
 
-    }//end testItHasAName()
+		(new MigrateAiOversightToHermiq($audit, $this->createMock(AiOversightDelegationService::class)))
+			->run($output);
 
-    /**
-     * A row that is not an array is skipped, not fed to the delegator.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
-     */
-    public function testNonArrayRowIsSkipped(): void {
-        $audit = $this->createMock(AiAuditLog::class);
-        $audit->method('list')->willReturn(
-            ['entries' => ['not-an-array'], 'total' => null, 'limit' => 200, 'offset' => 0]
-        );
-        $oversight = $this->createMock(AiOversightDelegationService::class);
-        $oversight->expects($this->never())->method('delegate');
+	}//end testUnreadableAuditLogWarnsAndReturns()
 
-        $output = $this->createMock(IOutput::class);
-        $output->expects($this->once())->method('info')
-            ->with($this->stringContains('0 decision(s) sent to hermiq, 1 entry'));
+	/**
+	 * A delegation that throws is contained per entry, not per upgrade.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
+	 */
+	public function testThrowingDelegationIsContained(): void {
+		$audit = $this->createMock(AiAuditLog::class);
+		$audit->method('list')->willReturn(
+			['entries' => [['userAction' => 'accepted', 'caseId' => 'c-1']],
+				'total' => null, 'limit' => 200, 'offset' => 0]
+		);
+		$oversight = $this->createMock(AiOversightDelegationService::class);
+		$oversight->method('delegate')->willThrowException(new \RuntimeException('boom'));
 
-        (new MigrateAiOversightToHermiq($audit, $oversight))->run($output);
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->once())->method('warning')
+			->with($this->stringContains('entry failed'));
 
-    }//end testNonArrayRowIsSkipped()
+		(new MigrateAiOversightToHermiq($audit, $oversight))->run($output);
 
-
-    /**
-     * An unreadable audit log warns and returns instead of failing the upgrade.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
-     */
-    public function testUnreadableAuditLogWarnsAndReturns(): void {
-        $audit = $this->createMock(AiAuditLog::class);
-        $audit->method('list')->willThrowException(new \RuntimeException('register gone'));
-
-        $output = $this->createMock(IOutput::class);
-        $output->expects($this->once())->method('warning')
-            ->with($this->stringContains('could not read the audit log'));
-        $output->expects($this->never())->method('info');
-
-        (new MigrateAiOversightToHermiq($audit, $this->createMock(AiOversightDelegationService::class)))
-            ->run($output);
-
-    }//end testUnreadableAuditLogWarnsAndReturns()
-
-
-    /**
-     * A delegation that throws is contained per entry, not per upgrade.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
-     */
-    public function testThrowingDelegationIsContained(): void {
-        $audit = $this->createMock(AiAuditLog::class);
-        $audit->method('list')->willReturn(
-            ['entries' => [['userAction' => 'accepted', 'caseId' => 'c-1']],
-             'total' => null, 'limit' => 200, 'offset' => 0]
-        );
-        $oversight = $this->createMock(AiOversightDelegationService::class);
-        $oversight->method('delegate')->willThrowException(new \RuntimeException('boom'));
-
-        $output = $this->createMock(IOutput::class);
-        $output->expects($this->once())->method('warning')
-            ->with($this->stringContains('entry failed'));
-
-        (new MigrateAiOversightToHermiq($audit, $oversight))->run($output);
-
-    }//end testThrowingDelegationIsContained()
-
+	}//end testThrowingDelegationIsContained()
 
 }//end class
