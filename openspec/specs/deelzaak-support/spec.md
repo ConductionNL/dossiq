@@ -6,7 +6,26 @@ status: done
 
 Provide deelzaak (sub-case) support in Dossiq: creating sub-cases from a parent case, listing them on the parent detail, parent breadcrumb navigation, progress roll-up, case-list count badges, and deletion protection. Maps to the ZGW `hoofdzaak` / `deelzaken` relations on the Zaak resource.
 
-The deelzaak UI panel, sub-case create flow, parent breadcrumb, count badge, and orphan-deletion protection are all built (manifest Sub-cases tab → DeelzaakList/DeelzaakDetail, the `subCaseCount` column formatter, and DeelzaakDeleteWarningModal). UI scenarios are exercised by `tests/e2e/spec-coverage/deelzaak-support.spec.ts`; the ZGW `hoofdzaak`/`deelzaken` API response shape is verified at the integration tier (Newman ZGW collection), not via Playwright.
+The deelzaak UI panel, sub-case create flow, parent breadcrumb, count badge, and orphan-deletion protection are all built: the `case-sub-cases` **object-list widget on `CaseDetail`** (the "Sub-cases section" the requirement below mandates), the parent-scoped `DeelzaakList` / `DeelzaakDetail` pages at `/cases/:id/deelzaken`, the `subCaseCount` column formatter, and `DeelzaakDeleteWarningModal`. UI scenarios are exercised by `tests/e2e/spec-coverage/deelzaak-support.spec.ts`; the ZGW `hoofdzaak`/`deelzaken` API response shape is verified at the integration tier (Newman ZGW collection), not via Playwright.
+
+> **Corrected 2026-08-24.** This paragraph previously read "manifest Sub-cases
+> **tab** → DeelzaakList/DeelzaakDetail". No such tab has ever existed: the
+> manifest declares `DeelzaakList` as a `type: "custom"` **page** bound to
+> `/cases/:id/deelzaken` (its `_note` explains why — a standard list type
+> cannot express the parent-route binding plus the parent-context header), and
+> `CaseDetail` carried only the `case-kpis-sub-cases` **count**, never a
+> listing. So the normative requirement below — "the case detail view SHALL
+> display a 'Sub-cases' section" — was **not implemented**, while this
+> paragraph asserted it was.
+>
+> The e2e suite inherited the error: `deelzaak-support.spec.ts` hunts for
+> `getByRole('tab', { name: /Sub-cases|Deelzaken/i })` and, on not finding one,
+> skipped all five of its tests with *"Sub-cases tab not present in the
+> deployed build (deploy mismatch)"* — a deployment excuse for a surface no
+> build ever had. Three artefacts, three different stories.
+>
+> Resolved by implementing the requirement (`case-sub-cases` on `CaseDetail`)
+> rather than by weakening it.
 
 ## Requirements
 
@@ -62,6 +81,21 @@ The case detail view SHALL display a "Sub-cases" section
 
 - **WHEN** user views a case whose case type has an empty `subCaseTypes` array
 - **THEN** the "Sub-cases" section MUST NOT be rendered
+
+> **NOT YET IMPLEMENTED, and recorded here rather than quietly dropped.** The
+> two scenarios above are satisfied by the `case-sub-cases` object-list widget
+> added to `CaseDetail`; this third one is not. A manifest widget has no
+> conditional-visibility key — there is no `visibleWhen` / `showWhen` /
+> `condition` anywhere in this app's manifest, and the renderer offers none —
+> so a declarative widget cannot hide itself based on the parent case type's
+> `subCaseTypes`. What a reader sees instead is the widget's empty state
+> ("No sub-cases yet") on a case type that can never have sub-cases.
+>
+> Closing this needs one of: a conditional-visibility capability in the shared
+> manifest renderer (the general fix, useful well beyond deelzaken), a bespoke
+> `type: "custom"` widget for this one section, or an amendment agreeing that
+> an empty state is acceptable here. That is a product call, not something to
+> settle by editing the requirement to match what shipped.
 
 ### Requirement: Parent case breadcrumb navigation
 

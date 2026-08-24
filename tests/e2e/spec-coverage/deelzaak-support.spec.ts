@@ -42,27 +42,48 @@ async function openCasesListOrSkip(page) {
 	return true
 }
 
-/** Open the first case detail and switch to its Sub-cases tab, or skip. */
-async function openSubCasesTabOrSkip(page) {
+/**
+ * Open the first case detail and reveal its Sub-cases SECTION, or skip.
+ *
+ * There is no Sub-cases TAB, and there never was. This helper used to look for
+ * `getByRole('tab', { name: /Sub-cases|Deelzaken/i })` and, on finding none,
+ * skip every test in this file with "Sub-cases tab not present in the deployed
+ * build (deploy mismatch)" — a deployment excuse for a surface no build has
+ * ever shipped. The manifest declares `DeelzaakList` as a `type: "custom"`
+ * PAGE at `/cases/:id/deelzaken`, and `CaseDetail` carried only the
+ * `case-kpis-sub-cases` COUNT.
+ *
+ * The spec is the authority and it says section, not tab:
+ *
+ *   "The case detail view SHALL display a 'Sub-cases' section ... listing all
+ *    cases whose parentCase references the current case. The section MUST show
+ *    each sub-case's title, status, assignee, and deadline."
+ *
+ * So the requirement was simply unimplemented. It is now implemented as the
+ * `case-sub-cases` object-list widget on `CaseDetail`, and this helper asserts
+ * that section on the detail page rather than clicking a tab.
+ */
+async function openSubCasesSectionOrSkip(page) {
 	const opened = await openCasesListOrSkip(page)
 	if (!opened) return false
 	const row = page
 		.locator('.viewTableRow, tr[role="row"], .list-item, table tbody tr')
 		.first()
 	await row.click().catch(() => {})
-	await page.waitForTimeout(1000)
-	const subCasesTab = page
-		.getByRole('tab', { name: /Sub-cases|Deelzaken/i })
+
+	// Retrying assertion rather than a fixed pause: the detail page mounts its
+	// widgets asynchronously, and a `waitForTimeout` either wastes time or
+	// races, depending on the runner's load.
+	const section = page
+		.locator('.cn-widget-wrapper, section, [class*="widget"]')
+		.filter({ hasText: /Sub-cases/i })
 		.first()
-	if ((await subCasesTab.count()) === 0) {
-		test.skip(
-			true,
-			'Sub-cases tab not present in the deployed build (deploy mismatch).',
-		)
-		return false
-	}
-	await subCasesTab.click()
-	await page.waitForTimeout(800)
+	await expect(
+		section,
+		'CaseDetail must render the "Sub-cases" section (deelzaak-support: '
+			+ '"Sub-cases section on parent case detail")',
+	).toBeVisible({ timeout: 15_000 })
+
 	await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	return true
 }
@@ -118,7 +139,7 @@ test.describe('Sub-case orphan deletion (deelzaak-support REQ — deletion prote
 	test('the sub-cases page delete control warns about orphans for a parent with sub-cases', async ({
 		page,
 	}) => {
-		const opened = await openSubCasesTabOrSkip(page)
+		const opened = await openSubCasesSectionOrSkip(page)
 		if (!opened) return
 
 		const deleteBtn = page
@@ -162,7 +183,7 @@ test.describe('Sub-cases list + create (deelzaak-support REQ — section / creat
 	test('the Sub-cases tab renders either a list or an empty state without error', async ({
 		page,
 	}) => {
-		const opened = await openSubCasesTabOrSkip(page)
+		const opened = await openSubCasesSectionOrSkip(page)
 		if (!opened) return
 
 		// Either the sub-cases table OR the "No sub-cases yet" empty state must
@@ -184,7 +205,7 @@ test.describe('Sub-cases list + create (deelzaak-support REQ — section / creat
 	test('the Create sub-case control opens a filtered dialog when allowed, and is hidden otherwise', async ({
 		page,
 	}) => {
-		const opened = await openSubCasesTabOrSkip(page)
+		const opened = await openSubCasesSectionOrSkip(page)
 		if (!opened) return
 
 		const createBtn = page
@@ -232,7 +253,7 @@ test.describe('Sub-case breadcrumb + roll-up (deelzaak-support REQ — navigatio
 	test('opening a sub-case shows the parent breadcrumb and the list shows a completion roll-up', async ({
 		page,
 	}) => {
-		const opened = await openSubCasesTabOrSkip(page)
+		const opened = await openSubCasesSectionOrSkip(page)
 		if (!opened) return
 
 		// The DeelzaakList header carries the "(X/Y completed)" roll-up when a
