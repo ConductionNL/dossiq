@@ -116,11 +116,12 @@
 						"id": "done",
 						"sinceVersion": "0.2.17",
 						"placement": "center",
-						"title": "You're all set",
-						"body": "Nicely done — your first case is on the board. Head back to the Dashboard to track progress, and reopen this tour anytime from the … menu.",
+						"title": "Your first case is on the board",
+						"body": "The Dashboard tracks progress as cases move through it. The documentation covers the rest.",
+						"task": "Open the documentation to keep going",
 						"target": {
-							"kind": "page",
-							"ref": "Dashboard"
+							"kind": "nav-item",
+							"ref": "Documentation"
 						},
 						"advanceOn": {
 							"type": "manual"
