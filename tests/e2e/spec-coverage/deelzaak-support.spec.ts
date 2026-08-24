@@ -23,21 +23,49 @@
 import { test, expect } from '@playwright/test'
 import { navTo, dismissSupportDialog } from '../helpers/nav'
 
+/** OpenRegister's object API for this app's own register. */
+const CASES_API = '/index.php/apps/openregister/api/objects/dossiq/case'
+
+/**
+ * Resolve the id of a case to work with, or skip when the register is empty.
+ *
+ * Asks the API rather than clicking a row. The previous approach —
+ * `.locator('.viewTableRow, tr[role="row"], .list-item, table tbody tr').first()`
+ * followed by `.click().catch(() => {})` — had two faults that cancelled each
+ * other out into a silent no-op: `tr[role="row"]` matches the table HEADER row,
+ * so `.first()` selected a header, and the swallowed catch meant a click that
+ * navigated nowhere looked exactly like a click that worked.
+ *
+ * The result was that every test carried on believing it was on a case detail
+ * while the snapshot shows `heading "Cases"` — the list page — and then failed
+ * on an assertion about a page it had never opened.
+ */
+async function firstCaseIdOrSkip(page): Promise<string | null> {
+	const resp = await page.request.get(`${CASES_API}?_limit=1`, {
+		headers: { Accept: 'application/json' },
+	})
+	if (!resp.ok()) {
+		test.skip(true, `cases API not reachable (HTTP ${resp.status()})`)
+		return null
+	}
+	const body = await resp.json()
+	const first = (body.results ?? body.items ?? [])[0]
+	if (!first) {
+		test.skip(
+			true,
+			'No cases in the seeded register — this suite is data-dependent.',
+		)
+		return null
+	}
+	return first.id ?? first['@self']?.id ?? null
+}
+
 /** Open the Cases list, or skip when it does not render. */
 async function openCasesListOrSkip(page) {
 	await navTo(page, 'Cases').catch(() => {})
 	await dismissSupportDialog(page).catch(() => {})
-	await page.waitForTimeout(1000)
-	const row = page
-		.locator('.viewTableRow, tr[role="row"], .list-item, table tbody tr')
-		.first()
-	if ((await row.count()) === 0) {
-		test.skip(
-			true,
-			'No cases in the deployed/seeded register — case list is data-dependent.',
-		)
-		return false
-	}
+	const caseId = await firstCaseIdOrSkip(page)
+	if (!caseId) return false
 	await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	return true
 }
@@ -64,12 +92,16 @@ async function openCasesListOrSkip(page) {
  * that section on the detail page rather than clicking a tab.
  */
 async function openSubCasesSectionOrSkip(page) {
-	const opened = await openCasesListOrSkip(page)
-	if (!opened) return false
-	const row = page
-		.locator('.viewTableRow, tr[role="row"], .list-item, table tbody tr')
-		.first()
-	await row.click().catch(() => {})
+	const caseId = await firstCaseIdOrSkip(page)
+	if (!caseId) return false
+
+	// Navigate by URL. dossiq is history-mode
+	// (`createWebHistory(generateUrl('/apps/dossiq'))`) and its detail route is
+	// `/cases/:id`, the same form the visual and workflow suites already drive.
+	await page.goto(`/index.php/apps/dossiq/cases/${caseId}`, {
+		waitUntil: 'domcontentloaded',
+	})
+	await dismissSupportDialog(page).catch(() => {})
 
 	// Retrying assertion rather than a fixed pause: the detail page mounts its
 	// widgets asynchronously, and a `waitForTimeout` either wastes time or
