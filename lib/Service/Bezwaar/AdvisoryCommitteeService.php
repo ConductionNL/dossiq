@@ -42,6 +42,7 @@ namespace OCA\Dossiq\Service\Bezwaar;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
@@ -175,7 +176,14 @@ class AdvisoryCommitteeService {
 			],
 			$payload,
 			[
-				'objectionProceeding' => $objectionId,
+				// `bezwaar` IS THE PROPERTY NAME. `objectionProceeding` is the
+				// SCHEMA it $refs — the two were confused, and every advice
+				// request written since has omitted a property the schema marks
+				// required while carrying an undeclared one instead. The visible
+				// cost: BezwaarDetail's advice-request stats and list filter on
+				// `bezwaar: @objectId` (src/manifest.json:1852, 1871, 1906), so a
+				// bezwaar showed NO advice requests, however many it had.
+				'bezwaar' => $objectionId,
 				'committee' => $commissieId,
 				'status' => 'assigned',
 				'assignedAt' => $now,
@@ -448,7 +456,7 @@ class AdvisoryCommitteeService {
 		}
 
 		$independence = $this->independence->check(
-			objectionId: (string)($current['objectionProceeding'] ?? ''),
+			objectionId: $this->objectionIdOf(request: $current),
 			panel: $panel,
 		);
 
@@ -528,7 +536,7 @@ class AdvisoryCommitteeService {
 				subjectId: (string)$requestId,
 				payload: [
 					'subjectRegister' => $register,
-					'externalReference' => (string)($current['objectionProceeding'] ?? $requestId),
+					'externalReference' => $this->externalReferenceFor(request: $current, requestId: (string)$requestId),
 					'subjectLabel' => (string)($merged['conclusion'] ?? 'BAC-advies'),
 					'adviceType' => (string)($merged['recommendation'] ?? ''),
 					'question' => (string)($merged['conclusion'] ?? ''),
@@ -587,4 +595,58 @@ class AdvisoryCommitteeService {
 
 		return $update;
 	}//end buildTransitionUpdate()
+
+	/**
+	 * The objection this advice request belongs to.
+	 *
+	 * `bezwaar` is the schema-declared property; `objectionProceeding` is the
+	 * schema it $refs, and was written into the object by mistake for as long as
+	 * this service has existed. Rows created before the fix carry only the wrong
+	 * key, so the legacy branch stays until `BackfillAdviceRequestObjection` has
+	 * run everywhere.
+	 *
+	 * The legacy branch LOGS. A silent fallback would make the repair step look
+	 * unnecessary — the reads would keep working, the manifest filters would keep
+	 * showing nothing, and the only symptom would stay invisible.
+	 *
+	 * @param array<string, mixed> $request The stored advice request.
+	 *
+	 * @return string The objection id, or '' when neither key is present.
+	 */
+	private function objectionIdOf(array $request): string {
+		$objectionId = (string)($request['bezwaar'] ?? '');
+		if ($objectionId !== '') {
+			return $objectionId;
+		}
+
+		$legacy = (string)($request['objectionProceeding'] ?? '');
+		if ($legacy !== '') {
+			$this->logger->warning(
+				'Dossiq BAC: advice request still carries the legacy objection key; run the backfill repair step',
+				['app' => Application::APP_ID, 'requestId' => ($request['id'] ?? null)]
+			);
+		}
+
+		return $legacy;
+	}//end objectionIdOf()
+
+	/**
+	 * The external reference a raised advice decision carries.
+	 *
+	 * Prefers the objection, falling back to the advice request's own id so the
+	 * decision is never raised with an empty reference.
+	 *
+	 * @param array<string, mixed> $request The stored advice request.
+	 * @param string $requestId The advice request's own id.
+	 *
+	 * @return string The reference.
+	 */
+	private function externalReferenceFor(array $request, string $requestId): string {
+		$objectionId = $this->objectionIdOf(request: $request);
+		if ($objectionId !== '') {
+			return $objectionId;
+		}
+
+		return $requestId;
+	}//end externalReferenceFor()
 }//end class
