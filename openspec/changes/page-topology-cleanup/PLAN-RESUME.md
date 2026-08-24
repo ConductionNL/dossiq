@@ -1,20 +1,42 @@
 # Resume plan — page-topology-cleanup
 
-> Written 2026-08-22 so the remaining work survives a context compaction.
-> **23 of 44 tasks done.** Blocks A, B, C1 and E1 are complete and in review;
-> C2 and D1–D4 were deferred on the flow-engine consolidation, which has now
-> landed, so they are unblocked.
+> Updated 2026-08-24. **Blocks A, B, C1, C2, D1 and E1 are done and on
+> `development` or in review.** D2 and D3 turned out not to be migrations at all
+> — both target models had to be BUILT in decidiq first — and that work is now
+> open as decidiq#874.
 
 ## Where things stand
 
 | Item | State |
 |---|---|
-| **A** — three dashboards converted | done · on `chore/page-topology-cleanup-specs` |
-| **B** — administration surface | done · same branch |
-| **C1** — verwerkingen retired | done · same branch |
-| **E1** — AI oversight → hermiq | done · hermiq#514 + #517 **merged**; dossiq#1328 **merged** into the branch |
-| **C2** — automatic actions → OR flows | **NOW UNBLOCKED** |
-| **D1–D4** — besluitvorming/committees/parafeerroutes → decidiq | **NOW UNBLOCKED**, but D1 still waits on `consume-decidesk-besluitvorming-leaf` |
+| **A** — three dashboards converted | ✅ merged (dossiq#1323) |
+| **B** — administration surface | ✅ merged (dossiq#1323) |
+| **C1** — verwerkingen retired | ✅ merged (dossiq#1323) |
+| **E1** — AI oversight → hermiq | ✅ merged (hermiq#514/#517 + dossiq#1323) |
+| **C2** — automatic actions → OR flows | ✅ in review (dossiq#1343) |
+| **D1** — agenda compiler retired | ✅ in review (dossiq#1343) |
+| **D2** — bezwaaradviescommissie | 🚧 decidiq side in review (decidiq#874); dossiq migration NOT started |
+| **D3** — parafeerroute | 🚧 decidiq side in review (decidiq#874); dossiq migration NOT started |
+| **D4** — case leaf render-and-read only | ⬜ not started |
+| **F/G** — e2e + final verification | ✅ retirement e2e added; blok G open |
+
+### 🔴 D2/D3 were mis-scoped, and the correction matters
+
+Both were planned as "move a schema to decidiq". Measured on 2026-08-24, neither
+target existed:
+
+- **`governance-body` could not represent a bezwaaradviescommissie.** Six
+  blocking gaps, the worst being no `active` flag — the ONE field dossiq's live
+  code reads and throws on. And decidiq's cross-app API was GET-only, so there
+  was no supported way to write a body at all.
+- **`DecisionStage` had no engine.** Zero writers across `lib/`, and a route tab
+  whose own header says read-only. `routedDocumentsJoin.js` is a red herring: it
+  routes documents onto a meeting AGENDA, not for sign-off.
+
+decidiq#874 builds both: the four committee fields + a scoped write path, and
+`ApprovalRoute` / `ApprovalAction` / `ApprovalRouteService` with a fail-closed
+engine. **The dossiq-side migrations remain to do, and cannot start until it
+merges.**
 
 ### Open PR
 
