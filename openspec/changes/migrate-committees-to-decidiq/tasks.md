@@ -1,15 +1,26 @@
 # Tasks: migrate-committees-to-decidiq
 
-> ⛔ BLOCKED on decidiq#874 merging and reaching `development`. The target fields
-> and the cross-app write path do not exist before it.
+> ⛔ BLOCKED on TWO things, not one.
+>
+> 1. decidiq#874 — MERGED. The schema half of the target now exists.
+> 2. A decidiq event/listener pair for creating a governance body — DOES NOT
+>    EXIST. Per ADR-041 a cross-app COMMAND travels as a typed event (ADR-066
+>    amended that only for collection, and gate-27 enforces it), so the REST
+>    write seam #874 added is the wrong door for an in-process migration. That
+>    prerequisite is a decidiq change nobody has written.
 
 ## Implementation Tasks
 
 ### Task 1: The migration repair step
 - **spec_ref**: `openspec/changes/migrate-committees-to-decidiq/specs/migrate-committees-to-decidiq/spec.md#requirement-req-mcd-001-committees-migrate-to-governance-bodies`
 - **files**: `lib/Repair/MigrateCommitteesToDecidiq.php`, `appinfo/info.xml`
+- **prerequisite**: a decidiq `GovernanceBodyRequestedEvent` + listener + a
+  created-event carrying the correlation back. Mirror
+  `ContractDecisionDelegationService`, which is this app's working example of
+  commanding decidiq by event and correlating the answer.
 - **acceptance_criteria**:
-  - GIVEN committees WHEN the step runs THEN each yields a GovernanceBody with the mapped fields and `bodyType: advisory-body`
+  - GIVEN committees WHEN the step runs THEN each DISPATCHES a typed event and, on the answer, a GovernanceBody exists with the mapped fields and `bodyType: advisory-body`
+  - GIVEN the step WHEN inspected THEN it makes NO HTTP call to this instance and writes NOTHING into decidiq's register — gate-27 forbids the registry as an RPC bus and ADR-022/066 forbid reaching into another app's register
   - GIVEN a second run THEN nothing is created
   - GIVEN no session THEN the writes still succeed (runAsSystem), and a failure to obtain one FAILS rather than warning
   - GIVEN the test fake THEN it implements `runAsSystem()`, so removing the wrapper breaks the suite

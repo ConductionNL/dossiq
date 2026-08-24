@@ -23,7 +23,15 @@ This was originally scoped as "move the schema" and could not be done that way. 
 
 ### In Scope
 
-1. **A migration** that, for each `bezwaaradviescommissie`, creates a decidiq `GovernanceBody` (via the cross-app write path) with `bodyType: advisory-body`, `statutoryBasis: Awb 7:13`, and the mapped fields, and records the resulting id on the dossiq side so the mapping is auditable and the migration idempotent.
+1. **A migration** that, for each `bezwaaradviescommissie`, causes a decidiq `GovernanceBody` to exist with `bodyType: advisory-body`, `statutoryBasis: Awb 7:13`, and the mapped fields, and records the resulting id on the dossiq side so the mapping is auditable and the migration idempotent.
+
+   **It commands decidiq with a TYPED EVENT, not by calling the REST seam and not by writing into decidiq's register.** ADR-041 is explicit that cross-app *commands* travel as typed `IEventDispatcher` events, and ADR-066 amended it only for *collection* — it left the command rule standing, with gate-27 (`no-phantom-cross-app-rpc`) enforcing it. "Create a governance body in decidiq" is a command.
+
+   ⚠️ **This corrects the first draft of this proposal**, which said the migration would go "via the cross-app write path" that decidiq#874 added. That seam is real and correct — for EXTERNAL callers. For an in-process app-to-app command it is the wrong door, and an in-process HTTP call to our own instance would also have no session to authenticate with.
+
+   The pattern already exists in this app: `ContractDecisionDelegationService` commands decidiq by dispatching `DecisionRequestedEvent` with an `externalReference` / `correlationId`, and the result returns as `DecisionConcludedEvent` carrying that correlation. The committee migration follows the same shape.
+
+   🔴 **This means decidiq needs work that #874 did NOT include**: a `GovernanceBodyRequestedEvent` (or equivalent), a listener that creates the body, and a "created" event carrying the correlation and the new id back. That is a decidiq-side change and a prerequisite for this one.
 2. **A fan-out for the roster.** `members[]` is a list of uids on one object; decidiq models it as `Person` + `Membership` rows. Each member becomes a Membership on the new body, with `role` from chair/secretary/member and `external` set for members outside the administrative organ.
 3. **A read path** — the eight call sites that read the local schema today (`AdvisoryCommitteeService`, `PanelIndependenceChecker`, `BezwaarAdviceRequestedListener`, `BezwaarAuditTrail`, `SettingsService`, `SchemaSlugMap`, and two more) resolve committees from decidiq, with the local schema as fallback until the migration has run everywhere.
 4. **Retirement** of the local schema once the fallback is no longer reachable.
@@ -42,4 +50,6 @@ This was originally scoped as "move the schema" and could not be done that way. 
 
 ## Status
 
-**BLOCKED** on decidiq#874 merging and being deployed. Written now so the shape is agreed; implementation starts when the target exists in `development`.
+**BLOCKED**, and on more than first thought. decidiq#874 is merged, so the SCHEMA half of the target exists. But the command seam does not: per ADR-041 this migration must dispatch a typed event, and decidiq has no event/listener pair for creating a governance body. That prerequisite is a decidiq change which does not yet exist.
+
+Written now so the shape is agreed — including the correction above, which was found by reading ADR-041/ADR-066 rather than by assuming the REST seam was the answer.
