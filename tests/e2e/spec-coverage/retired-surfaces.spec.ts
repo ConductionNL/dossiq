@@ -48,9 +48,7 @@ test.describe('Retired: automatic-actions settings page (C2)', () => {
 		await expect(
 			page.getByRole('button', { name: 'Add Automatic Action' }),
 		).toHaveCount(0)
-		await expect(page.locator('body')).not.toContainText(
-			'Internal Server Error',
-		)
+		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
 	test('the settings menu deeplinks to OpenRegister flows instead', async ({
@@ -84,9 +82,7 @@ test.describe('Retired: besluitvorming agenda pages (D1)', () => {
 		).toHaveCount(0)
 		// What DOES happen: the router falls through to the app root.
 		await expect(page).toHaveURL(/\/apps\/dossiq\/?$/)
-		await expect(page.locator('body')).not.toContainText(
-			'Internal Server Error',
-		)
+		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
 	test('the vergadering detail route no longer renders its view', async ({
@@ -95,9 +91,7 @@ test.describe('Retired: besluitvorming agenda pages (D1)', () => {
 		await navToRoute(page, '/besluitvorming/vergaderingen/does-not-exist')
 
 		await expect(page).toHaveURL(/\/apps\/dossiq\/?$/)
-		await expect(page.locator('body')).not.toContainText(
-			'Internal Server Error',
-		)
+		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
 	test('decidiq registers the decisions leaf that replaces them', async ({
@@ -112,7 +106,9 @@ test.describe('Retired: besluitvorming agenda pages (D1)', () => {
 		const leaf = await page.evaluate(() => {
 			const registry = (
 				window as unknown as {
-					OCA?: { OpenRegister?: { integrations?: { list?: () => unknown[] } } }
+					OCA?: {
+						OpenRegister?: { integrations?: { list?: () => unknown[] } }
+					}
 				}
 			).OCA?.OpenRegister?.integrations
 			if (!registry?.list) {

@@ -319,7 +319,6 @@ class ParafeerActieService {
 		$savedAction = $objectService->saveObject(object: $actionData, register: $register, schema: $actionSchema);
 
 		$this->propagateDecision(
-			proposal: $proposal,
 			proposalId: $proposalId,
 			input: $input,
 			stepOrder: $stepOrder,
@@ -371,7 +370,6 @@ class ParafeerActieService {
 	/**
 	 * Propagate the step decision to OpenRegister and emit the audit transition.
 	 *
-	 * @param array<string, mixed> $proposal The voorstel array (provides approvalChainUuid).
 	 * @param string $proposalId The voorstel UUID.
 	 * @param array<string, mixed> $input The parsed action inputs.
 	 * @param int $stepOrder The step order this action applies to.
@@ -380,7 +378,6 @@ class ParafeerActieService {
 	 * @return void
 	 */
 	private function propagateDecision(
-		array $proposal,
 		string $proposalId,
 		array $input,
 		int $stepOrder,

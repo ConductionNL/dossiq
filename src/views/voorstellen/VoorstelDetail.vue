@@ -80,7 +80,6 @@
 				@skipped="onOverrideCompleted"
 				@close="showSkipDialog = false" />
 
-
 			<!-- Resubmit for steller -->
 			<CnDetailCard
 				v-if="voorstel.status === 'teruggestuurd' && isSteller"
