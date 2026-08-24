@@ -65,6 +65,8 @@ class BackfillAdviceRequestObjection implements IRepairStep {
 	 * Get the name of this repair step.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/tasks.md
 	 */
 	public function getName(): string {
 		return 'Backfill bacAdviceRequest.bezwaar from the legacy objectionProceeding key';
@@ -80,6 +82,8 @@ class BackfillAdviceRequestObjection implements IRepairStep {
 	 * @param IOutput $output Progress reporting.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/tasks.md
 	 */
 	public function run(IOutput $output): void {
 		$objectService = $this->settingsService->getObjectService();

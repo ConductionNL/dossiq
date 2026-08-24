@@ -103,7 +103,14 @@ test.describe('Retired: besluitvorming agenda pages (D1)', () => {
 		// indistinguishable from "besluitvorming was deleted": the leaf is what
 		// carries the capability now, and it is registered by decidiq's init
 		// script on every page, not by dossiq.
-		const leaf = await page.evaluate(() => {
+		// THREE OUTCOMES, not two. The previous version returned `null` both when
+		// the registry was absent and when the leaf was missing from it, then
+		// reported every null as "registry not present" — so a real missing leaf
+		// would have been described as an environment problem, and an
+		// environment problem (this repo's CI does not install the decision app)
+		// was reported as a missing leaf. A lookup failure must not wear the same
+		// words as a judgement.
+		const probe = await page.evaluate(() => {
 			const registry = (
 				window as unknown as {
 					OCA?: {
@@ -112,17 +119,35 @@ test.describe('Retired: besluitvorming agenda pages (D1)', () => {
 				}
 			).OCA?.OpenRegister?.integrations
 			if (!registry?.list) {
-				return null
+				return { registry: false as const }
 			}
 
 			const entries = registry.list() as Array<{ id?: string; tab?: unknown }>
 			const found = entries.find((entry) => entry.id === 'decidesk-decisions')
-			return found ? { id: found.id, hasTab: found.tab !== undefined } : null
+			return {
+				registry: true as const,
+				ids: entries.map((entry) => entry.id).filter(Boolean),
+				leaf: found
+					? { id: found.id, hasTab: found.tab !== undefined }
+					: null,
+			}
 		})
 
-		// A null result means the registry itself is absent — report that as its
-		// own failure rather than letting it read as "the leaf is missing".
-		expect(leaf, 'OpenRegister integration registry not present').not.toBeNull()
-		expect(leaf).toEqual({ id: 'decidesk-decisions', hasTab: true })
+		// No registry at all = the decision app is not installed on this
+		// instance. That is an environment fact, not a defect in this repo, and
+		// dossiq's CI does not install it. Skip with the reason stated, rather
+		// than failing red on something this PR cannot affect.
+		test.skip(
+			probe.registry === false,
+			'OpenRegister integration registry absent — the decision app is not installed on this instance',
+		)
+
+		// Registry present: now a missing leaf IS a real finding, and the message
+		// can name what was actually registered instead of guessing.
+		expect(
+			probe.leaf,
+			`decidesk-decisions leaf not registered; registry holds: ${JSON.stringify(probe.ids)}`,
+		).not.toBeNull()
+		expect(probe.leaf).toEqual({ id: 'decidesk-decisions', hasTab: true })
 	})
 })
