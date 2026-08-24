@@ -6,12 +6,12 @@
  *
  * Test stub for OpenRegister's node-registration collect event.
  *
- * procest's ProcestFlowNodeListener is typed against it, so without this stub
+ * dossiq's DossiqFlowNodeListener is typed against it, so without this stub
  * the listener cannot be loaded — and phpstan cannot resolve the
  * `IEventListener<RegisterFlowNodesEvent>` generic bound either.
  *
  * DELIBERATELY NOT A FAITHFUL COPY OF THE CONSTRUCTOR. The real event takes
- * OpenRegister's FlowNodeRegistry and hands each node straight to it; procest
+ * OpenRegister's FlowNodeRegistry and hands each node straight to it; dossiq
  * has no such class and does not need one to prove it registers the right six.
  * This stub collects them instead, which is exactly what a consumer-side test
  * needs to assert.

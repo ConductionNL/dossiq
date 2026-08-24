@@ -208,12 +208,6 @@
 			"order": 60
 		},
 		{
-			"id": "BesluitvormingGroup",
-			"label": "Decision-making",
-			"icon": "Gavel",
-			"order": 70
-		},
-		{
 			"id": "Voorstellen",
 			"label": "Proposals",
 			"icon": "CommentOutline",
@@ -284,10 +278,10 @@
 			"order": 97
 		},
 		{
-			"id": "AutomaticActionsMenu",
+			"id": "FlowsLink",
 			"label": "Automatic actions",
 			"icon": "Sitemap",
-			"route": "AutomaticActions",
+			"href": "/apps/openregister/#/flows",
 			"section": "settings",
 			"order": 96
 		},
@@ -343,7 +337,7 @@
 			"id": "AdminSettingsLink",
 			"label": "Configuration",
 			"icon": "CogOutline",
-			"href": "/settings/admin/procest",
+			"href": "/settings/admin/dossiq",
 			"section": "settings",
 			"order": 99
 		},
@@ -3395,98 +3389,6 @@
 				"lifecycleActions": {
 					"field": "status"
 				},
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true,
-					"tabs": [
-						{
-							"id": "audit",
-							"label": "History",
-							"icon": "History",
-							"widgets": [
-								{
-									"type": "audit"
-								}
-							]
-						},
-						{
-							"id": "version-history",
-							"label": "Version history",
-							"icon": "FileCompare",
-							"component": "VersionHistoryLeafTab"
-						}
-					]
-				}
-			}
-		},
-		{
-			"id": "AutomaticActions",
-			"route": "/settings/automatic-actions",
-			"type": "index",
-			"title": "Automatische acties",
-			"config": {
-				"register": "dossiq",
-				"schema": "automaticAction",
-				"columns": [
-					"slug",
-					"type",
-					"title",
-					"isPublished",
-					"active"
-				],
-				"showViewAction": false,
-				"actions": [
-					"create",
-					"edit",
-					"delete",
-					{
-						"id": "view",
-						"label": "View",
-						"icon": "EyeOutline",
-						"handler": "navigate",
-						"route": "AutomaticActionDetail",
-						"type": "handler"
-					}
-				],
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true
-				},
-				"documentationUrl": "https://procest.conduction.nl"
-			}
-		},
-		{
-			"id": "AutomaticActionDetail",
-			"route": "/settings/automatic-actions/:id",
-			"type": "detail",
-			"title": "Automatische actie",
-			"config": {
-				"register": "dossiq",
-				"schema": "automaticAction",
-				"_note": "CONFIG/TECHNICAL archetype (workflow automation handler definition — a rule consumed by the workflow engine). No comms, no child schemas, no status enum (isPublished/active are booleans). The single Data widget carries identity + the handler-specific config[] payload (slug, type, title, description, tenantId, version, isPublished, active, config). No object-lists, no content leaves, no lifecycleActions. Audit history (publish/activation changes) is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
-				"widgets": [
-					{
-						"id": "automaticaction-data",
-						"type": "data",
-						"title": "Automatische actie",
-						"icon": "Cog",
-						"content": {
-							"columns": 2
-						}
-					}
-				],
-				"layout": [
-					{
-						"id": "1",
-						"widgetId": "automaticaction-data",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 5,
-						"showTitle": false
-					}
-				],
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true,

@@ -21,7 +21,7 @@ parameters:
         # Declaration-only stubs for OpenRegister / decidesk / hermiq contracts —
         # soft runtime dependencies, resolved only when those apps are installed.
         # SCANNED, never analysed and never autoloaded at runtime (PSR-4 maps only
-        # OCA\Procest\ -> lib/), so the real classes win whenever the owning app
+        # OCA\Dossiq\ -> lib/), so the real classes win whenever the owning app
         # is enabled.
         #
         # Needed rather than an ignoreErrors entry: phpstan REFUSES to ignore the
@@ -30,13 +30,24 @@ parameters:
         # case-action nodes implement — has to be resolvable.
         #
         # SCOPED TO Flow/, NOT the whole tests/Stubs tree. hermiq can scan all of
-        # its stubs because they are declaration-only for absent apps; procest's
+        # its stubs because they are declaration-only for absent apps; dossiq's
         # tree also holds stubs that SHADOW REAL CLASSES (HttpClientStubs.php
         # redeclares OCP\Http\Client shapes for tests). Scanning the parent made
         # phpstan prefer those narrower stubs over the real OCP classes and
         # reported 57 false errors against a clean baseline — e.g. "Call to an
         # undefined method OCP\Http\Client\IClient::delete()".
         - tests/Stubs/Flow
+        # The decision app's event contract, under BOTH namespaces it has
+        # shipped (OCA\Decidiq, formerly OCA\Decidesk). Scanned for the same
+        # reason as Flow/ and with the same scoping discipline: these are
+        # declaration-only stubs for an absent app, so they shadow nothing.
+        #
+        # Needed because the production code resolves whichever class EXISTS.
+        # With neither namespace on the analysis path, phpstan proved the
+        # class_exists() call always false and reported the resilient lookup as
+        # dead code — turning a fix for a real outage into a CI failure.
+        - tests/Stubs/Decidiq
+        - tests/Stubs/Decidesk
 
     typeAliases:
         # OCP declares `@psalm-type DataResponseType = ...` in the DataResponse

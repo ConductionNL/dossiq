@@ -314,6 +314,15 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 install has no history to move.
             -->
             <step>OCA\Dossiq\Repair\MigrateAiOversightToHermiq</step>
+            <!--
+                bacAdviceRequest carried the objection id under the name of the
+                SCHEMA it $refs (`objectionProceeding`) instead of the property
+                the schema declares (`bezwaar`) — so a required property was
+                never written, and BezwaarDetail's advice-request widgets, which
+                filter on `bezwaar`, showed nothing at all. Idempotent (rows that
+                already have `bezwaar` are skipped) and non-fatal.
+            -->
+            <step>OCA\Dossiq\Repair\BackfillAdviceRequestObjection</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
@@ -401,6 +410,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
     <commands>
         <command>OCA\Dossiq\Command\BackfillLegalHoldsCommand</command>
+        <command>OCA\Dossiq\Command\MigrateAutomaticActionsToFlowsCommand</command>
         <command>OCA\Dossiq\Command\MigrateTenantsCommand</command>
         <command>OCA\Dossiq\Command\SeedBezwaarBeroepCommand</command>
     </commands>

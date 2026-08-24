@@ -105,9 +105,13 @@ $extra = [
     ['name' => 'subsidie#create', 'url' => '/api/subsidies', 'verb' => 'POST'],
     ['name' => 'subsidie#createTussenrapportage', 'url' => '/api/subsidies/uitvoeringen/{uitvoeringId}/tussenrapportages', 'verb' => 'POST'],
     ['name' => 'subsidie#approveTussenrapportage', 'url' => '/api/subsidies/tussenrapportages/{reportId}/beoordelen', 'verb' => 'POST'],
-    ['name' => 'subsidie#finalizeVaststelling', 'url' => '/api/subsidies/vaststellingen/{vaststellingId}/vast', 'verb' => 'POST'],
-    ['name' => 'subsidie#signBeschikking', 'url' => '/api/subsidies/beschikkingen/{beschikkingId}/sign', 'verb' => 'POST'],
-    ['name' => 'subsidie#publishBeschikking', 'url' => '/api/subsidies/beschikkingen/{beschikkingId}/publish', 'verb' => 'POST'],
+        // The placeholder names bind BY NAME to the method parameters — see the
+        // note on the parafeer-route block below. These three were
+        // {vaststellingId}/{beschikkingId} against $determinationId/$decisionId
+        // and answered HTTP 400 on every call.
+    ['name' => 'subsidie#finalizeVaststelling', 'url' => '/api/subsidies/vaststellingen/{determinationId}/vast', 'verb' => 'POST'],
+    ['name' => 'subsidie#signBeschikking', 'url' => '/api/subsidies/beschikkingen/{decisionId}/sign', 'verb' => 'POST'],
+    ['name' => 'subsidie#publishBeschikking', 'url' => '/api/subsidies/beschikkingen/{decisionId}/publish', 'verb' => 'POST'],
     ['name' => 'subsidie#transition', 'url' => '/api/subsidies/{id}/transition', 'verb' => 'POST'],
     ['name' => 'subsidie#createBeschikking', 'url' => '/api/subsidies/{id}/beschikking', 'verb' => 'POST'],
 
@@ -258,15 +262,32 @@ $extra = [
         // ── Parafeerroute (B&W parafering engine) ───────────────────────
         // CRUD on parafeerroute objects is served by OpenRegister's auto-exposed
         // /api/objects/<register>/<schema> endpoints — only engine routes remain.
-    ['name' => 'parafeerRoute#start',        'url' => '/api/parafeer-route/voorstel/{voorstelId}/start',          'verb' => 'POST'],
-    ['name' => 'parafeerRoute#completeStep', 'url' => '/api/parafeer-route/voorstel/{voorstelId}/complete-step',  'verb' => 'POST'],
-    ['name' => 'parafeerRoute#skipStep',     'url' => '/api/parafeer-route/voorstel/{voorstelId}/skip-step',      'verb' => 'POST'],
-    ['name' => 'parafeerRoute#addStep',      'url' => '/api/parafeer-route/voorstel/{voorstelId}/add-step',       'verb' => 'POST'],
+        // ⚠️ THE PLACEHOLDER NAME IS LOAD-BEARING. Nextcloud's Dispatcher binds a
+        // controller argument by PARAMETER NAME (`$this->request->getParam($param)`),
+        // not by position. These four were `{voorstelId}` while every target method
+        // signs `string $proposalId` — so the argument resolved to null, the string
+        // typehint threw a TypeError, and the Dispatcher answered HTTP 400. Measured
+        // against the running instance before the fix: start, complete-step and
+        // register-besluit all returned 400 with an empty body, on every call, for
+        // any input.
+        //
+        // The Dutch→English vocabulary sweep renamed the method parameters and left
+        // the URLs behind. Nothing caught it: the route exists, the method exists,
+        // and gate-6 (route-reachability) checks that a route's target method is
+        // present — which it is. Only the NAMES disagree.
+        // The four parafeer-route engine routes were RETIRED. They were a second
+        // implementation of a flow /api/parafeer-actie already runs, and they had
+        // never served a request: the placeholder bound no argument, so every call
+        // answered 400. `start` is covered by the `besluitvormingActivate`
+        // transition action, `complete-step` and `skip-step` by parafeeractie's
+        // own `parafered`/`accorded`/`skipped` vocabulary, and `add-step` has no
+        // live equivalent — that button went with them.
 
         // Voorstel → besluit registration delegates to a decidesk report-adoption
         // Decision (dossiq-delegate-remaining-decisions-to-decidesk, ADR-019).
         // The parafeerroute above is untouched; only the besluit decision moves.
-    ['name' => 'voorstelBesluit#registerBesluit', 'url' => '/api/voorstellen/{voorstelId}/register-besluit',       'verb' => 'POST'],
+        // Same placeholder-name defect as the four routes above — see that note.
+    ['name' => 'voorstelBesluit#registerBesluit', 'url' => '/api/voorstellen/{proposalId}/register-besluit',       'verb' => 'POST'],
 
         // NOTE: ParaferingController + ParaferingService were superseded scaffolding
         // that operated entirely in-memory (no persistence, client-supplied state).
@@ -324,7 +345,8 @@ $extra = [
         // Related-case linking — typed peer relations (relevanteAndereZaken).
     ['name' => 'caseRelation#list',    'url' => '/api/cases/{caseId}/relations',                          'verb' => 'GET'],
     ['name' => 'caseRelation#create',  'url' => '/api/cases/{caseId}/relations',                          'verb' => 'POST'],
-    ['name' => 'caseRelation#destroy', 'url' => '/api/cases/{caseId}/relations/{targetId}/{aardRelatie}', 'verb' => 'DELETE'],
+        // {aardRelatie} bound nothing: the method signs $natureRelationship. HTTP 400.
+    ['name' => 'caseRelation#destroy', 'url' => '/api/cases/{caseId}/relations/{targetId}/{natureRelationship}', 'verb' => 'DELETE'],
         // Dashboard KPI aggregation endpoint.
     ['name' => 'kpi#index', 'url' => '/api/dashboard/kpis', 'verb' => 'GET'],
 
@@ -577,8 +599,11 @@ $extra = [
 
         // ── Besluitvorming workflow ──────────────────────────────────────
     ['name' => 'besluitvorming#activateTemplate', 'url' => '/api/besluitvorming/templates/{slug}/activate', 'verb' => 'POST'],
-    ['name' => 'agenda#addToAgenda',              'url' => '/api/besluitvorming/cases/{id}/agenda',         'verb' => 'POST'],
-    ['name' => 'agenda#updateAgendaItem',         'url' => '/api/besluitvorming/cases/{id}/agenda',         'verb' => 'PUT'],
+        // The two `agenda#` routes were removed with the agenda compiler: decidiq
+        // owns agenda-building and meetings, and it surfaces them here through the
+        // `decidesk-decisions` integration leaf. They served only the compiler view
+        // and became unreachable the moment it went, which is the dead-endpoint
+        // shape this programme already retired once on the AVG page.
     ['name' => 'publication#publish',             'url' => '/api/besluitvorming/cases/{id}/publish',        'verb' => 'POST'],
     ['name' => 'mandaat#mandaatCheck',            'url' => '/api/besluitvorming/cases/{id}/mandaat-check',  'verb' => 'GET'],
 

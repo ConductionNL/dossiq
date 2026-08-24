@@ -5,7 +5,7 @@
  * `lib/Controller/CaseRelationController.php`:
  *   GET    /apps/dossiq/api/cases/{caseId}/relations
  *   POST   /apps/dossiq/api/cases/{caseId}/relations
- *   DELETE /apps/dossiq/api/cases/{caseId}/relations/{targetId}/{aardRelatie}
+ *   DELETE /apps/dossiq/api/cases/{caseId}/relations/{targetId}/{natureRelationship}
  *
  * Relations are typed (`vervolg` | `onderwerp` | `bijdrage`), bidirectionally
  * consistent (written symmetrically server-side), and guarded.

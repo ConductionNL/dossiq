@@ -75,7 +75,7 @@ class SideEffectDispatcher {
 			}
 
 			// ADR-065: OpenRegister owns the engine, so a transition side effect
-			// runs the SAME node a flow would — procest contributes those nodes
+			// runs the SAME node a flow would — dossiq contributes those nodes
 			// (lib/Flow) and this is the second caller of identical code, not a
 			// parallel implementation. The local-handler path is the fallback for
 			// an instance without OpenRegister, so a transition never silently
@@ -109,7 +109,7 @@ class SideEffectDispatcher {
 	/**
 	 * OpenRegister's node catalogue, or null when OpenRegister is absent.
 	 *
-	 * Resolved lazily and BY NAME: procest declares no hard dependency on
+	 * Resolved lazily and BY NAME: dossiq declares no hard dependency on
 	 * OpenRegister, and an instance without it must still fire its side effects.
 	 *
 	 * @return FlowNodeRegistry|null The catalogue, or null.
@@ -165,7 +165,7 @@ class SideEffectDispatcher {
 		array $transitionContext,
 	): array {
 		try {
-			$node = $nodes->get(type: 'procest.' . $type);
+			$node = $nodes->get(type: 'dossiq.' . $type);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'SideEffectDispatcher: unknown action type',
@@ -192,7 +192,7 @@ class SideEffectDispatcher {
 	}//end viaNode()
 
 	/**
-	 * Run one action through procest's own handler registry.
+	 * Run one action through dossiq's own handler registry.
 	 *
 	 * The fallback for an instance without OpenRegister.
 	 *

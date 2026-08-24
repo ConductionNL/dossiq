@@ -17,4 +17,4 @@ const app = createApp(SubstitutionSettings)
 app.use(pinia)
 app.config.globalProperties.t = t
 app.config.globalProperties.n = n
-app.mount('#procest-personal-settings')
+app.mount('#dossiq-personal-settings')

@@ -22,7 +22,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Decidesk\Event\DecisionRequestedEvent;
+// The CURRENT namespace. The decision app renamed OCA\Decidesk -> OCA\Decidiq
+// with no alias, and the production resolver now prefers the current spelling —
+// so a test importing the OLD class asserts against an object the code no longer
+// builds. CrossAppEventNamesTest guards the ordering these follow.
+use OCA\Decidiq\Event\DecisionRequestedEvent;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\BezwaarDecisionDelegationService;
 use OCA\Dossiq\Service\ContractDecisionDelegationService;

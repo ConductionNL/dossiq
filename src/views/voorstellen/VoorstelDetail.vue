@@ -61,11 +61,14 @@
 				v-if="canOverrideRoute"
 				:title="t('dossiq', 'Route-aanpassing (manager)')">
 				<div class="voorstel-detail__override-actions">
+					<!--
+						"Stap toevoegen" was removed with the parafeer-route API it
+						called. Adding a step mid-route has no equivalent in the live
+						parafeeractie vocabulary, and the endpoint behind the button
+						answered 400 on every click, so it never added one.
+					-->
 					<NcButton :disabled="!currentStepInfo" @click="openSkipDialog">
 						{{ t('dossiq', 'Stap overslaan') }}
-					</NcButton>
-					<NcButton @click="openAddStepDialog">
-						{{ t('dossiq', 'Stap toevoegen') }}
 					</NcButton>
 				</div>
 			</CnDetailCard>
@@ -76,13 +79,6 @@
 				:step="currentStepInfo"
 				@skipped="onOverrideCompleted"
 				@close="showSkipDialog = false" />
-
-			<AddStepDialog
-				:open="showAddStepDialog"
-				:voorstelId="voorstel.id || voorstelId"
-				:routeSnapshot="steps"
-				@stepAdded="onOverrideCompleted"
-				@close="showAddStepDialog = false" />
 
 			<!-- Resubmit for steller -->
 			<CnDetailCard
@@ -196,7 +192,6 @@
 import { CnDetailCard, CnDetailPage } from '@conduction/nextcloud-vue'
 import { getCurrentUser } from '@nextcloud/auth'
 import { NcButton } from '@nextcloud/vue'
-import AddStepDialog from '../../dialogs/AddStepDialog.vue'
 import BesluitRegistration from '../../dialogs/BesluitRegistration.vue'
 import ParafeerActieDialog from '../../dialogs/ParafeerActieDialog.vue'
 import SkipStepDialog from '../../dialogs/SkipStepDialog.vue'
@@ -235,7 +230,6 @@ export default {
 		AuditTrail,
 		BesluitRegistration,
 		SkipStepDialog,
-		AddStepDialog,
 	},
 
 	props: {
@@ -255,7 +249,6 @@ export default {
 			actieDialogOpen: false,
 			mandates: [],
 			showSkipDialog: false,
-			showAddStepDialog: false,
 		}
 	},
 
@@ -414,14 +407,8 @@ export default {
 		},
 
 		/** @spec openspec/specs/parafering-actions/spec.md */
-		openAddStepDialog() {
-			this.showAddStepDialog = true
-		},
-
-		/** @spec openspec/specs/parafering-actions/spec.md */
 		async onOverrideCompleted() {
 			this.showSkipDialog = false
-			this.showAddStepDialog = false
 			await Promise.all([this.loadVoorstel(), this.loadActies()])
 		},
 
