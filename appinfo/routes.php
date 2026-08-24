@@ -275,10 +275,13 @@ $extra = [
         // the URLs behind. Nothing caught it: the route exists, the method exists,
         // and gate-6 (route-reachability) checks that a route's target method is
         // present — which it is. Only the NAMES disagree.
-    ['name' => 'parafeerRoute#start',        'url' => '/api/parafeer-route/voorstel/{proposalId}/start',          'verb' => 'POST'],
-    ['name' => 'parafeerRoute#completeStep', 'url' => '/api/parafeer-route/voorstel/{proposalId}/complete-step',  'verb' => 'POST'],
-    ['name' => 'parafeerRoute#skipStep',     'url' => '/api/parafeer-route/voorstel/{proposalId}/skip-step',      'verb' => 'POST'],
-    ['name' => 'parafeerRoute#addStep',      'url' => '/api/parafeer-route/voorstel/{proposalId}/add-step',       'verb' => 'POST'],
+        // The four parafeer-route engine routes were RETIRED. They were a second
+        // implementation of a flow /api/parafeer-actie already runs, and they had
+        // never served a request: the placeholder bound no argument, so every call
+        // answered 400. `start` is covered by the `besluitvormingActivate`
+        // transition action, `complete-step` and `skip-step` by parafeeractie's
+        // own `parafered`/`accorded`/`skipped` vocabulary, and `add-step` has no
+        // live equivalent — that button went with them.
 
         // Voorstel → besluit registration delegates to a decidesk report-adoption
         // Decision (dossiq-delegate-remaining-decisions-to-decidesk, ADR-019).

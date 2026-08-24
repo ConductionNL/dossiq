@@ -55,7 +55,7 @@
 
 <script>
 import { NcButton, NcDialog, NcNoteCard, NcTextArea } from '@nextcloud/vue'
-import parafeerRouteApi from '../services/parafeerRouteApi.js'
+import { recordAction } from '../services/parafeerActieApi.js'
 
 export default {
 	name: 'SkipStepDialog',
@@ -123,9 +123,18 @@ export default {
 			this.submitting = true
 			this.error = ''
 			try {
-				await parafeerRouteApi.skipStep(this.voorstelId, {
+				// Re-pointed at the LIVE parafeeractie endpoint. This dialog used
+				// to POST to /api/parafeer-route/.../skip-step, which answered 400
+				// on every call — so the button has never once skipped a step.
+				// `skipped` is in the parafeeractie action enum, so the live path
+				// expresses exactly this, and the route API it used has been
+				// retired. `reason` becomes `comment`, which is the field that
+				// endpoint requires for a skip.
+				await recordAction({
+					proposal: this.voorstelId,
 					step: this.step.order,
-					reason: this.reason.trim(),
+					action: 'skipped',
+					comment: this.reason.trim(),
 				})
 				this.$emit('skipped')
 			} catch (err) {
