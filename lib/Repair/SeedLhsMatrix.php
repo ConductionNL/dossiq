@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Repair;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -43,6 +44,8 @@ use Throwable;
  * @spec openspec/changes/enforcement-lhs/tasks.md#T02
  */
 class SeedLhsMatrix implements IRepairStep {
+	use RunsUnderSystemIdentity;
+
 	/**
 	 * Constructor.
 	 *
@@ -82,7 +85,16 @@ class SeedLhsMatrix implements IRepairStep {
 		}
 
 		try {
-			$this->seedMatrix(output: $output);
+			// Under a system identity: an upgrade has no session, and
+			// OpenRegister refuses `create` for 'Anonymous'. Without it this
+			// seed writes nothing and says so only in a warning, which does not
+			// fail an upgrade.
+			$this->withSystemIdentity(
+				objectService: $this->settingsService->getObjectService(),
+				work: function () use ($output): void {
+					$this->seedMatrix(output: $output);
+				}
+			);
 		} catch (Throwable $e) {
 			$output->warning('Could not seed LHS matrix: ' . $e->getMessage());
 			$this->logger->error(

@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\WorkflowDefinitionService;
@@ -45,6 +46,7 @@ use Psr\Log\LoggerInterface;
  */
 class SeedBezwaarWorkflowDefinition implements IRepairStep {
 
+	use RunsUnderSystemIdentity;
 	use SearchesObjects;
 
 	/**
@@ -102,6 +104,26 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep {
 			return;
 		}
 
+		// Under a system identity: an upgrade has no session, and OpenRegister
+		// refuses `create` for 'Anonymous'. Without it this seed writes nothing
+		// and says so only in a warning, which does not fail an upgrade.
+		$this->withSystemIdentity(
+			objectService: $objectService,
+			work: function () use ($objectService, $output): void {
+				$this->runInner(objectService: $objectService, output: $output);
+			}
+		);
+	}//end run()
+
+	/**
+	 * The seed itself.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param IOutput $output Progress reporting.
+	 *
+	 * @return void
+	 */
+	private function runInner(object $objectService, IOutput $output): void {
 		$register = $this->settingsService->getConfigValue('register');
 		$caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
 		$statusSchema = $this->settingsService->getConfigValue('status_type_schema');
@@ -180,7 +202,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep {
 			template: $template,
 			output: $output,
 		);
-	}//end run()
+	}//end runInner()
 
 	/**
 	 * Locate the bezwaar caseType that still needs a workflow definition.

@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\File;
@@ -47,6 +48,7 @@ use Psr\Log\LoggerInterface;
  * Repair step that back-fills informatieobject metadata for existing files.
  */
 class BackfillInformatieobjectMetadata implements IRepairStep {
+	use RunsUnderSystemIdentity;
 	use SearchesObjects;
 
 	/**
@@ -93,6 +95,29 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 			return;
 		}
 
+		// Under a system identity: an upgrade has no session, and OpenRegister
+		// refuses `create` for 'Anonymous'. Without it this backfill writes
+		// nothing and says so only in a warning, which does not fail an upgrade.
+		$this->withSystemIdentity(
+			objectService: $objectService,
+			work: function () use ($objectService, $output): void {
+				$this->runInner(objectService: $objectService, output: $output);
+			}
+		);
+	}//end run()
+
+	/**
+	 * The backfill itself.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param IOutput $output Progress reporting.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T09
+	 */
+	private function runInner(object $objectService, IOutput $output): void {
+
 		$register = $this->settingsService->getConfigValue('register');
 		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
 		if ($register === '' || $infoSchema === '') {
@@ -128,7 +153,7 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 		}//end foreach
 
 		$output->info('Dossiq backfill: created ' . $created . ' informatieobject(en), skipped ' . $skipped . ' existing.');
-	}//end run()
+	}//end runInner()
 
 	/**
 	 * Back-fill every not-yet-registered file inside one case folder.
