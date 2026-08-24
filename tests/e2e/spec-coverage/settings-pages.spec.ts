@@ -54,11 +54,13 @@ const SETTINGS_PAGES: Array<{ name: string; route: string; addBtn: string }> = [
 		route: '/settings/parafeerroutes',
 		addBtn: 'Add Endorsement Route',
 	},
-	{
-		name: 'Automatic actions',
-		route: '/settings/automatic-actions',
-		addBtn: 'Add Automatic Action',
-	},
+	// Automatic actions was retired by page-topology-cleanup (C2). The
+	// `automaticAction` objects it administered were never executed by anything
+	// — SideEffectDispatcher runs a separate vocabulary — so the page was a
+	// surface over a capability with no runtime. They migrate to OpenRegister
+	// flows via `occ dossiq:actions:migrate-to-flows`, and the settings menu now
+	// deeplinks to /apps/openregister/#/flows, which OpenRegister's own suite
+	// covers.
 	{
 		name: 'Enforcement strategy',
 		route: '/settings/lhs-matrices',

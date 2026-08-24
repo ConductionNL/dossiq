@@ -322,23 +322,15 @@ test.describe('docs: admin track', () => {
 		await shoot(page, 'admin', '01-configure-case-types-05.png')
 	})
 
-	test('A2 automatic-actions', async ({ page }) => {
-		// docs/tutorials/admin/02-automatic-actions.md
-		await go(page, '/settings/automatic-actions')
-		await shoot(page, 'admin', '02-automatic-actions-01.png')
-		const had = await captureCreateDialog(
-			page,
-			'admin',
-			'02-automatic-actions-02.png',
-		)
-		if (!had) {
-			await shoot(page, 'admin', '02-automatic-actions-02.png')
-		}
-		await go(page, '/settings/automatic-actions')
-		await shoot(page, 'admin', '02-automatic-actions-03.png')
-		await shoot(page, 'admin', '02-automatic-actions-04.png')
-		await shoot(page, 'admin', '02-automatic-actions-05.png')
-	})
+	// A2 automatic-actions was retired with the page it captured
+	// (page-topology-cleanup C2). Automatic actions are OpenRegister flows now,
+	// so docs/user-guide/admin/02-automatic-actions.md documents the migration
+	// command and the flow editor instead — neither of which is a Dossiq screen,
+	// and OpenRegister's own capture spec owns the Flows page.
+	//
+	// The five 02-automatic-actions-*.png screenshots this produced are stale in
+	// the same way the old page was: they show a create dialog for a record that
+	// nothing executed. The rewritten tutorial no longer references them.
 
 	test('A3 admin-settings', async ({ page }) => {
 		// docs/tutorials/admin/03-admin-settings.md — Dossiq's admin

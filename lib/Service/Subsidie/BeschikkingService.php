@@ -189,7 +189,19 @@ class BeschikkingService {
 	public function publish(string $decisionId): array {
 		[$objectService, $register, $schema] = $this->resolve();
 
-		$current = $objectService->find($decisionId, register: $register, schema: $schema);
+		// The lookup is INSIDE a try because OpenRegister's find() THROWS on a
+		// missing object rather than returning a non-array. Outside one, that
+		// throw escaped the controller as an HTML 500 — and the `is_array()`
+		// guard below could never fire, so 'Beschikking niet gevonden' was a
+		// message no caller could ever receive. sign(), directly below, has
+		// always wrapped its call and answers a clean 400; this now matches it.
+		try {
+			$current = $objectService->find($decisionId, register: $register, schema: $schema);
+		} catch (Throwable $e) {
+			$this->logger->error('Dossiq subsidie: publish beschikking lookup failed: ' . $e->getMessage());
+			throw new OCSBadRequestException('Beschikking niet gevonden');
+		}
+
 		if (is_array($current) === false) {
 			throw new OCSBadRequestException('Beschikking niet gevonden');
 		}
