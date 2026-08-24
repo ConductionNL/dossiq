@@ -577,8 +577,11 @@ $extra = [
 
         // ── Besluitvorming workflow ──────────────────────────────────────
     ['name' => 'besluitvorming#activateTemplate', 'url' => '/api/besluitvorming/templates/{slug}/activate', 'verb' => 'POST'],
-    ['name' => 'agenda#addToAgenda',              'url' => '/api/besluitvorming/cases/{id}/agenda',         'verb' => 'POST'],
-    ['name' => 'agenda#updateAgendaItem',         'url' => '/api/besluitvorming/cases/{id}/agenda',         'verb' => 'PUT'],
+        // The two `agenda#` routes were removed with the agenda compiler: decidiq
+        // owns agenda-building and meetings, and it surfaces them here through the
+        // `decidesk-decisions` integration leaf. They served only the compiler view
+        // and became unreachable the moment it went, which is the dead-endpoint
+        // shape this programme already retired once on the AVG page.
     ['name' => 'publication#publish',             'url' => '/api/besluitvorming/cases/{id}/publish',        'verb' => 'POST'],
     ['name' => 'mandaat#mandaatCheck',            'url' => '/api/besluitvorming/cases/{id}/mandaat-check',  'verb' => 'GET'],
 

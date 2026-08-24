@@ -44,8 +44,6 @@ import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
-import AgendaCompilerView from './views/besluitvorming/AgendaCompilerView.vue'
-import VergaderingDetailView from './views/besluitvorming/VergaderingDetailView.vue'
 // VTH-specific case detail panels
 import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
 import AdviesPanel from './views/cases/components/AdviesPanel.vue'
@@ -230,16 +228,9 @@ const registry = {
 	},
 
 	// --- Besluitvorming workflow views. ---
-	AgendaCompilerView: {
-		kind: 'page',
-		component: AgendaCompilerView,
-		_note: 'Agenda compiler: available vs agenda panels, hamerstuk/bespreekstuk toggle (besluitvorming-workflow).',
-	},
-	VergaderingDetailView: {
-		kind: 'page',
-		component: VergaderingDetailView,
-		_note: 'Decision recording per geagendeerd case: stemuitslag, attending members, aanhouden flow.',
-	},
+	// The agenda compiler and the vergadering detail view were retired: decidiq
+	// owns agenda-building and meetings, and surfaces them on a case through the
+	// `decidesk-decisions` integration leaf rather than through pages here.
 	BesluitPublicatiePanel: {
 		kind: 'page',
 		component: BesluitPublicatiePanel,
