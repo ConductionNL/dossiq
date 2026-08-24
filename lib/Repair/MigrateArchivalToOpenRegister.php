@@ -43,6 +43,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
@@ -57,6 +58,7 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 class MigrateArchivalToOpenRegister implements IRepairStep {
+	use RunsUnderSystemIdentity;
 	use SearchesObjects;
 
 	/**
@@ -154,6 +156,29 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 			return;
 		}
 
+		// Under a system identity: an upgrade has no session, and OpenRegister
+		// refuses the write for 'Anonymous'. Without it the holds and proofs are
+		// never written — AND the completion marker below would still be set,
+		// so the migration would mark itself done having moved nothing.
+		$this->withSystemIdentity(
+			objectService: $this->settings->getObjectService(),
+			work: function () use ($register, $output): void {
+				$this->runInner(register: $register, output: $output);
+			}
+		);
+	}//end run()
+
+	/**
+	 * The migration itself.
+	 *
+	 * @param string $register The register slug.
+	 * @param IOutput $output Progress reporting.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
+	 */
+	private function runInner(string $register, IOutput $output): void {
 		$this->enableTmlo(register: $register, output: $output);
 		$holds = $this->placeHoldsForSuspendedTriggers(register: $register);
 		$proofs = $this->exportProofRecords(register: $register);
@@ -163,7 +188,7 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 			'Archival migration complete: ' . $holds . ' legal hold(s) placed, '
 			. $proofs . ' proof-of-transfer record(s) exported to the zaakdossier.'
 		);
-	}//end run()
+	}//end runInner()
 
 	/**
 	 * Enable TMLO auto-population on the dossiq register (idempotent).
