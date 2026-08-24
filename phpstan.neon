@@ -37,6 +37,17 @@ parameters:
         # reported 57 false errors against a clean baseline — e.g. "Call to an
         # undefined method OCP\Http\Client\IClient::delete()".
         - tests/Stubs/Flow
+        # The decision app's event contract, under BOTH namespaces it has
+        # shipped (OCA\Decidiq, formerly OCA\Decidesk). Scanned for the same
+        # reason as Flow/ and with the same scoping discipline: these are
+        # declaration-only stubs for an absent app, so they shadow nothing.
+        #
+        # Needed because the production code resolves whichever class EXISTS.
+        # With neither namespace on the analysis path, phpstan proved the
+        # class_exists() call always false and reported the resilient lookup as
+        # dead code — turning a fix for a real outage into a CI failure.
+        - tests/Stubs/Decidiq
+        - tests/Stubs/Decidesk
 
     typeAliases:
         # OCP declares `@psalm-type DataResponseType = ...` in the DataResponse
@@ -67,20 +78,6 @@ parameters:
             message: '#Strict comparison using === between class-string#'
             path: lib/Listener/ApprovalStepNotificationListener.php
 
-        # ContractDecisionDelegationService::resolveRequestEventClass() returns the
-        # first decision-request event class that EXISTS, chosen from the two
-        # namespaces the decision app has shipped (OCA\Decidiq, formerly
-        # OCA\Decidesk). Neither is on this app's analysis path — that is the whole
-        # point of resolving them as strings — so PHPStan cannot prove
-        # class_exists() ever true and concludes the method can only return null.
-        #
-        # At runtime one of them is installed. The list exists BECAUSE pinning a
-        # single spelling is what broke this integration when the other app renamed
-        # without an alias: the guard threw "not installed" on an instance where it
-        # was. Scoped to the one method; CrossAppEventNamesTest asserts the list
-        # keeps naming both namespaces, newest first.
-        - message: '#Method .+ContractDecisionDelegationService::resolveRequestEventClass\(\) never returns string so it can be removed from the return type#'
-          path: lib/Service/ContractDecisionDelegationService.php
         # registerJob exists on server; not yet in nextcloud/ocp stub used for analysis
         - '#Call to an undefined method OCP\\AppFramework\\Bootstrap\\IRegistrationContext::registerJob#'
         # registerEventListener accepts the listener FQCN string at runtime; the

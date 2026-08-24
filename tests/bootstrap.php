@@ -264,16 +264,21 @@ if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
 	include_once __DIR__ . '/Stubs/Mcp/IMcpToolProvider.php';
 }
 
-// Decidesk decision-event stubs — loaded when the decidesk app is absent so the
-// dossiq delegation services + DecisionConcludedListener can be unit-tested
-// against the decidesk event contract. The real classes ship in decidesk
-// (OCA\Decidesk\Event\*); these stubs no-op when the real classes are present.
-if (class_exists('\\OCA\\Decidesk\\Event\\DecisionRequestedEvent') === false) {
-	include_once __DIR__ . '/Stubs/Decidesk/Event/DecisionRequestedEvent.php';
-}
-
-if (class_exists('\\OCA\\Decidesk\\Event\\DecisionConcludedEvent') === false) {
-	include_once __DIR__ . '/Stubs/Decidesk/Event/DecisionConcludedEvent.php';
+// Decision-event stubs — loaded when the decision app is absent so the dossiq
+// delegation services + DecisionConcludedListener can be unit-tested against its
+// event contract. These stubs no-op when the real classes are present.
+//
+// BOTH NAMESPACES are stubbed. The app renamed OCA\Decidesk -> OCA\Decidiq with
+// no alias, and the production code now resolves whichever exists. Stubbing only
+// the old one left the new spelling unknown to static analysis, which then
+// proved the class_exists() call always false — reporting the resilient lookup
+// as dead code. Both must be resolvable for the resolution to analyse as real.
+foreach (['Decidiq', 'Decidesk'] as $stubNamespace) {
+	foreach (['DecisionRequestedEvent', 'DecisionConcludedEvent'] as $stubEvent) {
+		if (class_exists('\\OCA\\' . $stubNamespace . '\\Event\\' . $stubEvent) === false) {
+			include_once __DIR__ . '/Stubs/' . $stubNamespace . '/Event/' . $stubEvent . '.php';
+		}
+	}
 }
 
 // Hermiq's oversight contract. procest resolves it by name so it stays
