@@ -55,97 +55,94 @@ use Throwable;
  */
 class ProcestFlowNodeListener implements IEventListener {
 
-    /**
-     * The nodes procest contributes, in catalogue order.
-     *
-     * The live transition vocabulary first — it is the one that runs.
-     *
-     * @var class-string<IFlowNode>[]
-     *
-     * @psalm-suppress InvalidConstantAssignmentValue Every class listed here
-     *     does implement IFlowNode, but IFlowNode is OpenRegister's and is
-     *     suppressed as undefined (psalm.xml), so psalm cannot verify the
-     *     implements-relationship and rejects the narrowing. The declared type
-     *     is the contract this list must satisfy and is kept deliberately —
-     *     widening it to plain class-string would silence the error by giving
-     *     up the only statement of intent this constant carries.
-     */
-    private const NODES = [
-        // Live: fired by SideEffectDispatcher on every status change.
-        ProcestTxSendEmailNode::class,
-        ProcestTxCreateTaskNode::class,
-        ProcestTxCreateSubCaseNode::class,
-        ProcestTxWebhookNode::class,
-        ProcestTxSetFieldNode::class,
-        ProcestTxNotifyNode::class,
-        ProcestTxBesluitvormingActivateNode::class,
-        ProcestTxBesluitvormingPublishNode::class,
-        ProcestTxEvaluateDecisionNode::class,
-        // The configured-action catalogue.
-        ProcestSendEmailNode::class,
-        ProcestNotifyRoleNode::class,
-        ProcestCallWebhookNode::class,
-        ProcestCreateDocumentNode::class,
-        ProcestMergeTemplateNode::class,
-        ProcestScheduleReminderNode::class,
-    ];
+	/**
+	 * The nodes procest contributes, in catalogue order.
+	 *
+	 * The live transition vocabulary first — it is the one that runs.
+	 *
+	 * @var class-string<IFlowNode>[]
+	 *
+	 * @psalm-suppress InvalidConstantAssignmentValue Every class listed here
+	 *     does implement IFlowNode, but IFlowNode is OpenRegister's and is
+	 *     suppressed as undefined (psalm.xml), so psalm cannot verify the
+	 *     implements-relationship and rejects the narrowing. The declared type
+	 *     is the contract this list must satisfy and is kept deliberately —
+	 *     widening it to plain class-string would silence the error by giving
+	 *     up the only statement of intent this constant carries.
+	 */
+	private const NODES = [
+		// Live: fired by SideEffectDispatcher on every status change.
+		ProcestTxSendEmailNode::class,
+		ProcestTxCreateTaskNode::class,
+		ProcestTxCreateSubCaseNode::class,
+		ProcestTxWebhookNode::class,
+		ProcestTxSetFieldNode::class,
+		ProcestTxNotifyNode::class,
+		ProcestTxBesluitvormingActivateNode::class,
+		ProcestTxBesluitvormingPublishNode::class,
+		ProcestTxEvaluateDecisionNode::class,
+		// The configured-action catalogue.
+		ProcestSendEmailNode::class,
+		ProcestNotifyRoleNode::class,
+		ProcestCallWebhookNode::class,
+		ProcestCreateDocumentNode::class,
+		ProcestMergeTemplateNode::class,
+		ProcestScheduleReminderNode::class,
+	];
 
+	/**
+	 * Constructor.
+	 *
+	 * @param ContainerInterface $container Resolves each node.
+	 * @param LoggerInterface $logger The logger.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly ContainerInterface $container,
+		private readonly LoggerInterface $logger,
+	) {
 
-    /**
-     * Constructor.
-     *
-     * @param ContainerInterface $container Resolves each node.
-     * @param LoggerInterface    $logger    The logger.
-     *
-     * @return void
-     */
-    public function __construct(
-        private readonly ContainerInterface $container,
-        private readonly LoggerInterface $logger,
-    ) {
+	}//end __construct()
 
-    }//end __construct()
+	/**
+	 * Register procest's nodes on the catalogue.
+	 *
+	 * A node that cannot be constructed is logged and SKIPPED rather than
+	 * aborting the loop: one unresolvable dependency must not cost the other
+	 * fourteen their place in the catalogue, and a missing node is visible
+	 * (the flow editor simply does not offer it) where a failed registration
+	 * would take everything down with it.
+	 *
+	 * @param Event $event The event to handle.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
+	 */
+	public function handle(Event $event): void {
+		if (($event instanceof RegisterFlowNodesEvent) === false) {
+			return;
+		}
 
+		foreach (self::NODES as $class) {
+			try {
+				$node = $this->container->get($class);
+			} catch (Throwable $e) {
+				$this->logger->warning(
+					'ProcestFlowNodeListener: could not construct a flow node; it will not be offered',
+					['node' => $class, 'error' => $e->getMessage()],
+				);
+				continue;
+			}
 
-    /**
-     * Register procest's nodes on the catalogue.
-     *
-     * A node that cannot be constructed is logged and SKIPPED rather than
-     * aborting the loop: one unresolvable dependency must not cost the other
-     * fourteen their place in the catalogue, and a missing node is visible
-     * (the flow editor simply does not offer it) where a failed registration
-     * would take everything down with it.
-     *
-     * @param Event $event The event to handle.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
-     */
-    public function handle(Event $event): void {
-        if (($event instanceof RegisterFlowNodesEvent) === false) {
-            return;
-        }
+			if (($node instanceof IFlowNode) === false) {
+				continue;
+			}
 
-        foreach (self::NODES as $class) {
-            try {
-                $node = $this->container->get($class);
-            } catch (Throwable $e) {
-                $this->logger->warning(
-                    'ProcestFlowNodeListener: could not construct a flow node; it will not be offered',
-                    ['node' => $class, 'error' => $e->getMessage()],
-                );
-                continue;
-            }
+			$event->registerNode(node: $node);
+		}//end foreach
 
-            if (($node instanceof IFlowNode) === false) {
-                continue;
-            }
-
-            $event->registerNode(node: $node);
-        }//end foreach
-
-    }//end handle()
-
+	}//end handle()
 
 }//end class

@@ -17,8 +17,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
-use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
 use OCA\Dossiq\Service\Actions\MergeTemplateHandler;
+use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 
@@ -33,72 +33,62 @@ use OCP\IURLGenerator;
  */
 class ProcestMergeTemplateNode extends ProcestActionNode {
 
+	/**
+	 * Constructor.
+	 *
+	 * @param MergeTemplateHandler $handler The action handler this node runs.
+	 * @param IL10N $l10n The localisation service.
+	 * @param IURLGenerator $urls The URL generator.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly MergeTemplateHandler $handler,
+		IL10N $l10n,
+		IURLGenerator $urls,
+	) {
+		parent::__construct(l10n: $l10n, urls: $urls);
 
-    /**
-     * Constructor.
-     *
-     * @param MergeTemplateHandler $handler The action handler this node runs.
-     * @param IL10N              $l10n    The localisation service.
-     * @param IURLGenerator      $urls    The URL generator.
-     *
-     * @return void
-     */
-    public function __construct(
-        private readonly MergeTemplateHandler $handler,
-        IL10N $l10n,
-        IURLGenerator $urls,
-    ) {
-        parent::__construct(l10n: $l10n, urls: $urls);
+	}//end __construct()
 
-    }//end __construct()
+	/**
+	 * The handler this node runs.
+	 *
+	 * @return CatalogueActionHandler The action handler.
+	 */
+	protected function handler(): CatalogueActionHandler|TransitionActionHandler {
+		return $this->handler;
+	}//end handler()
 
+	/**
+	 * Config keys without which this action cannot run.
+	 *
+	 * @return string[] The required key names.
+	 */
+	protected function requiredConfigKeys(): array {
+		return ['templateSlug', 'targetField'];
+	}//end requiredConfigKeys()
 
-    /**
-     * The handler this node runs.
-     *
-     * @return CatalogueActionHandler The action handler.
-     */
-    protected function handler(): CatalogueActionHandler|TransitionActionHandler {
-        return $this->handler;
+	/**
+	 * The node's display name.
+	 *
+	 * @return string The translated name.
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
+	 */
+	public function getDisplayName(): string {
+		return $this->l10n->t('Merge template');
+	}//end getDisplayName()
 
-    }//end handler()
-
-
-    /**
-     * Config keys without which this action cannot run.
-     *
-     * @return string[] The required key names.
-     */
-    protected function requiredConfigKeys(): array {
-        return ['templateSlug', 'targetField'];
-
-    }//end requiredConfigKeys()
-
-
-    /**
-     * The node's display name.
-     *
-     * @return string The translated name.
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
-     */
-    public function getDisplayName(): string {
-        return $this->l10n->t('Merge template');
-
-    }//end getDisplayName()
-
-
-    /**
-     * What the node does.
-     *
-     * @return string The translated description.
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
-     */
-    public function getDescription(): string {
-        return $this->l10n->t('Render a template and write the result into a case field.');
-
-    }//end getDescription()
-
+	/**
+	 * What the node does.
+	 *
+	 * @return string The translated description.
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
+	 */
+	public function getDescription(): string {
+		return $this->l10n->t('Render a template and write the result into a case field.');
+	}//end getDescription()
 
 }//end class

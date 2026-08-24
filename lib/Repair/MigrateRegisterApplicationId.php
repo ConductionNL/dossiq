@@ -86,12 +86,11 @@ class MigrateRegisterApplicationId implements IRepairStep {
 	 */
 	private const NEW_APP_ID = 'dossiq';
 
-
 	/**
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container The server container.
-	 * @param LoggerInterface    $logger    The logger.
+	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @spec exclude One-shot app-id rename migration; see the class docblock.
 	 */
@@ -102,7 +101,6 @@ class MigrateRegisterApplicationId implements IRepairStep {
 
 	}//end __construct()
 
-
 	/**
 	 * Step name.
 	 *
@@ -112,9 +110,7 @@ class MigrateRegisterApplicationId implements IRepairStep {
 	 */
 	public function getName(): string {
 		return 'Move the Dossiq register and schemas onto the dossiq application id';
-
 	}//end getName()
-
 
 	/**
 	 * Run the migration.
@@ -144,7 +140,7 @@ class MigrateRegisterApplicationId implements IRepairStep {
 
 		try {
 			$migrator = $this->container->get(self::MIGRATOR);
-			$result   = $migrator->migrate(self::OLD_APP_ID, self::NEW_APP_ID);
+			$result = $migrator->migrate(self::OLD_APP_ID, self::NEW_APP_ID);
 		} catch (\Throwable $e) {
 			$output->warning('Could not migrate the register application id: ' . $e->getMessage());
 			$this->logger->error(
@@ -173,7 +169,7 @@ class MigrateRegisterApplicationId implements IRepairStep {
 			return;
 		}
 
-		$schemas   = (int)($result['schemas'] ?? 0);
+		$schemas = (int)($result['schemas'] ?? 0);
 		$registers = (int)($result['registers'] ?? 0);
 
 		if (($schemas + $registers) === 0) {
@@ -187,6 +183,5 @@ class MigrateRegisterApplicationId implements IRepairStep {
 		);
 
 	}//end run()
-
 
 }//end class

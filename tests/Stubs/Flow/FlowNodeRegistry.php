@@ -28,44 +28,40 @@ use UnexpectedValueException;
  */
 class FlowNodeRegistry {
 
-    /**
-     * Registered nodes, keyed by id.
-     *
-     * @var array<string, IFlowNode>
-     */
-    private array $nodes = [];
+	/**
+	 * Registered nodes, keyed by id.
+	 *
+	 * @var array<string, IFlowNode>
+	 */
+	private array $nodes = [];
 
+	/**
+	 * Register a node.
+	 *
+	 * @param IFlowNode $node The node.
+	 *
+	 * @return void
+	 */
+	public function register(IFlowNode $node): void {
+		$this->nodes[$node->getId()] = $node;
 
-    /**
-     * Register a node.
-     *
-     * @param IFlowNode $node The node.
-     *
-     * @return void
-     */
-    public function register(IFlowNode $node): void {
-        $this->nodes[$node->getId()] = $node;
+	}//end register()
 
-    }//end register()
+	/**
+	 * Resolve a node by its type id.
+	 *
+	 * @param string $type The node id.
+	 *
+	 * @return IFlowNode The node.
+	 *
+	 * @throws UnexpectedValueException When no app provides that type.
+	 */
+	public function get(string $type): IFlowNode {
+		if (isset($this->nodes[$type]) === false) {
+			throw new UnexpectedValueException(sprintf('No node provides "%s".', $type));
+		}
 
-
-    /**
-     * Resolve a node by its type id.
-     *
-     * @param string $type The node id.
-     *
-     * @return IFlowNode The node.
-     *
-     * @throws UnexpectedValueException When no app provides that type.
-     */
-    public function get(string $type): IFlowNode {
-        if (isset($this->nodes[$type]) === false) {
-            throw new UnexpectedValueException(sprintf('No node provides "%s".', $type));
-        }
-
-        return $this->nodes[$type];
-
-    }//end get()
-
+		return $this->nodes[$type];
+	}//end get()
 
 }//end class

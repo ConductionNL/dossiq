@@ -747,10 +747,11 @@ $extra = [
     ['name' => 'zaakdossierDownload#downloadFile',         'url' => '/api/objects/{register}/{schema}/{objectId}/files/{fileId}/download', 'verb' => 'GET'],
     ['name' => 'zaakdossierDownload#downloadZgwDocumenten','url' => '/api/zgw/documenten/v1/enkelvoudiginformatieobjecten/{uuid}/download', 'verb' => 'GET'],
 
-        // ── ORI Atom Feeds (public, no auth required) ───────────────────
-    ['name' => 'raadsinformatieFeed#vergaderingen', 'url' => '/feed/ori/vergaderingen.rss', 'verb' => 'GET'],
-    ['name' => 'raadsinformatieFeed#agendapunten',  'url' => '/feed/ori/agendapunten.rss',  'verb' => 'GET'],
-    ['name' => 'raadsinformatieFeed#documenten',    'url' => '/feed/ori/documenten.rss',    'verb' => 'GET'],
+        // ORI Atom feeds REMOVED (ori-removal). Raadsinformatie is decidiq's
+        // domain; these three routes moved to /apps/decidiq/feed/ori/*.
+        // Deliberately no proxy and no redirect — a feed that silently answers
+        // from a different app is worse than one that stops, because a
+        // subscriber cannot tell it has moved.
 
         // NOTE: dashboard#page (`/`) and the SPA catch-all (`/{path}`,
         // dashboard#catchAll) are supplied by Routes::standard(); both resolve to

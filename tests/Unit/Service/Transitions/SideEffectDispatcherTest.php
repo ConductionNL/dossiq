@@ -16,12 +16,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
-use OCA\OpenRegister\Service\Flow\FlowNodeRegistry;
-use OCA\OpenRegister\Service\Flow\IFlowNode;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface;
 use OCA\Dossiq\Service\Transitions\ActionHandlerRegistry;
 use OCA\Dossiq\Service\Transitions\ActionResult;
 use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
+use OCA\OpenRegister\Service\Flow\FlowNodeRegistry;
+use OCA\OpenRegister\Service\Flow\IFlowNode;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -38,190 +38,180 @@ use RuntimeException;
  */
 class SideEffectDispatcherTest extends TestCase {
 
+	/**
+	 * A node that records nothing and either succeeds or throws.
+	 *
+	 * @param string $id The node id.
+	 * @param \Throwable|null $throws Optional failure to raise.
+	 *
+	 * @return IFlowNode The node.
+	 */
+	private function node(string $id, ?\Throwable $throws = null): IFlowNode {
+		$node = $this->createMock(IFlowNode::class);
+		$node->method('getId')->willReturn($id);
+		if ($throws !== null) {
+			$node->method('execute')->willThrowException($throws);
+		} else {
+			$node->method('execute')->willReturnArgument(0);
+		}
 
-    /**
-     * A node that records nothing and either succeeds or throws.
-     *
-     * @param string          $id     The node id.
-     * @param \Throwable|null $throws Optional failure to raise.
-     *
-     * @return IFlowNode The node.
-     */
-    private function node(string $id, ?\Throwable $throws=null): IFlowNode {
-        $node = $this->createMock(IFlowNode::class);
-        $node->method('getId')->willReturn($id);
-        if ($throws !== null) {
-            $node->method('execute')->willThrowException($throws);
-        } else {
-            $node->method('execute')->willReturnArgument(0);
-        }
+		return $node;
+	}//end node()
 
-        return $node;
+	/**
+	 * Build the dispatcher over an optional node catalogue.
+	 *
+	 * @param FlowNodeRegistry|null $nodes The catalogue, or null for the fallback path.
+	 * @param ActionHandlerRegistry|null $legacy The local registry.
+	 *
+	 * @return SideEffectDispatcher The dispatcher.
+	 */
+	private function dispatcher(?FlowNodeRegistry $nodes, ?ActionHandlerRegistry $legacy = null): SideEffectDispatcher {
+		$container = $this->createMock(ContainerInterface::class);
+		if ($nodes !== null) {
+			$container->method('get')->willReturn($nodes);
+		} else {
+			$container->method('get')->willThrowException(new RuntimeException('absent'));
+		}
 
-    }//end node()
+		return new SideEffectDispatcher(
+			$legacy ?? $this->createMock(ActionHandlerRegistry::class),
+			$container,
+			$this->createMock(LoggerInterface::class)
+		);
 
+	}//end dispatcher()
 
-    /**
-     * Build the dispatcher over an optional node catalogue.
-     *
-     * @param FlowNodeRegistry|null      $nodes  The catalogue, or null for the fallback path.
-     * @param ActionHandlerRegistry|null $legacy The local registry.
-     *
-     * @return SideEffectDispatcher The dispatcher.
-     */
-    private function dispatcher(?FlowNodeRegistry $nodes, ?ActionHandlerRegistry $legacy=null): SideEffectDispatcher {
-        $container = $this->createMock(ContainerInterface::class);
-        if ($nodes !== null) {
-            $container->method('get')->willReturn($nodes);
-        } else {
-            $container->method('get')->willThrowException(new RuntimeException('absent'));
-        }
+	/**
+	 * With OpenRegister present, a transition action runs the SHARED node.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
+	 */
+	public function testActionsRunThroughTheSharedNode(): void {
+		$registry = new FlowNodeRegistry();
+		$registry->register($this->node('procest.sendEmail'));
 
-        return new SideEffectDispatcher(
-            $legacy ?? $this->createMock(ActionHandlerRegistry::class),
-            $container,
-            $this->createMock(LoggerInterface::class)
-        );
+		$results = $this->dispatcher($registry)->dispatch(
+			[['type' => 'sendEmail']],
+			['id' => 'case-1'],
+			['transition' => 'submitted']
+		);
 
-    }//end dispatcher()
+		$this->assertSame([['type' => 'sendEmail', 'ok' => true]], $results);
 
+	}//end testActionsRunThroughTheSharedNode()
 
-    /**
-     * With OpenRegister present, a transition action runs the SHARED node.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
-     */
-    public function testActionsRunThroughTheSharedNode(): void {
-        $registry = new FlowNodeRegistry();
-        $registry->register($this->node('procest.sendEmail'));
+	/**
+	 * The dispatcher resolves the LIVE id space, not the catalogue's.
+	 *
+	 * Both action systems ship a sendEmail. Resolving `procest.action.sendEmail`
+	 * here would run the configured-action handler for a transition — a
+	 * different class with different config keys.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
+	 */
+	public function testItResolvesTheLiveIdSpace(): void {
+		$registry = new FlowNodeRegistry();
+		$registry->register($this->node('procest.action.sendEmail'));
 
-        $results = $this->dispatcher($registry)->dispatch(
-            [['type' => 'sendEmail']],
-            ['id' => 'case-1'],
-            ['transition' => 'submitted']
-        );
+		$results = $this->dispatcher($registry)->dispatch([['type' => 'sendEmail']], [], []);
 
-        $this->assertSame([['type' => 'sendEmail', 'ok' => true]], $results);
+		$this->assertFalse($results[0]['ok']);
+		$this->assertSame('unknown_action_type', $results[0]['error']);
 
-    }//end testActionsRunThroughTheSharedNode()
+	}//end testItResolvesTheLiveIdSpace()
 
+	/**
+	 * A node that throws becomes a failed row — it does NOT abort the loop.
+	 *
+	 * A node signals failure by throwing, because the flow engine's onError
+	 * policy only sees what propagates. This dispatcher's contract is the
+	 * opposite and predates it: a failed action must not stop the remaining
+	 * ones or roll back the status change.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
+	 */
+	public function testAFailedActionDoesNotAbortTheRest(): void {
+		$registry = new FlowNodeRegistry();
+		$registry->register($this->node('procest.sendEmail', new RuntimeException('smtp down')));
+		$registry->register($this->node('procest.createTask'));
 
-    /**
-     * The dispatcher resolves the LIVE id space, not the catalogue's.
-     *
-     * Both action systems ship a sendEmail. Resolving `procest.action.sendEmail`
-     * here would run the configured-action handler for a transition — a
-     * different class with different config keys.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
-     */
-    public function testItResolvesTheLiveIdSpace(): void {
-        $registry = new FlowNodeRegistry();
-        $registry->register($this->node('procest.action.sendEmail'));
+		$results = $this->dispatcher($registry)->dispatch(
+			[['type' => 'sendEmail'], ['type' => 'createTask']],
+			[],
+			[]
+		);
 
-        $results = $this->dispatcher($registry)->dispatch([['type' => 'sendEmail']], [], []);
+		$this->assertCount(2, $results);
+		$this->assertFalse($results[0]['ok']);
+		$this->assertSame('smtp down', $results[0]['error']);
+		$this->assertTrue($results[1]['ok']);
 
-        $this->assertFalse($results[0]['ok']);
-        $this->assertSame('unknown_action_type', $results[0]['error']);
+	}//end testAFailedActionDoesNotAbortTheRest()
 
-    }//end testItResolvesTheLiveIdSpace()
+	/**
+	 * An action type nothing provides is reported, not silently dropped.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
+	 */
+	public function testUnknownActionTypeIsReported(): void {
+		$results = $this->dispatcher(new FlowNodeRegistry())->dispatch(
+			[['type' => 'doesNotExist']],
+			[],
+			[]
+		);
 
+		$this->assertSame(
+			[['type' => 'doesNotExist', 'ok' => false, 'error' => 'unknown_action_type']],
+			$results
+		);
 
-    /**
-     * A node that throws becomes a failed row — it does NOT abort the loop.
-     *
-     * A node signals failure by throwing, because the flow engine's onError
-     * policy only sees what propagates. This dispatcher's contract is the
-     * opposite and predates it: a failed action must not stop the remaining
-     * ones or roll back the status change.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
-     */
-    public function testAFailedActionDoesNotAbortTheRest(): void {
-        $registry = new FlowNodeRegistry();
-        $registry->register($this->node('procest.sendEmail', new RuntimeException('smtp down')));
-        $registry->register($this->node('procest.createTask'));
+	}//end testUnknownActionTypeIsReported()
 
-        $results = $this->dispatcher($registry)->dispatch(
-            [['type' => 'sendEmail'], ['type' => 'createTask']],
-            [],
-            []
-        );
+	/**
+	 * Without OpenRegister the local handlers still fire.
+	 *
+	 * A transition must never silently skip its side effects because a
+	 * neighbouring app is not installed.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
+	 */
+	public function testFallsBackToTheLocalHandlersWithoutOpenRegister(): void {
+		$handler = $this->createMock(ActionHandlerInterface::class);
+		$handler->expects($this->once())->method('handle')->willReturn(new ActionResult(true));
 
-        $this->assertCount(2, $results);
-        $this->assertFalse($results[0]['ok']);
-        $this->assertSame('smtp down', $results[0]['error']);
-        $this->assertTrue($results[1]['ok']);
+		$legacy = $this->createMock(ActionHandlerRegistry::class);
+		$legacy->method('getHandler')->willReturn($handler);
 
-    }//end testAFailedActionDoesNotAbortTheRest()
+		$results = $this->dispatcher(null, $legacy)->dispatch([['type' => 'sendEmail']], [], []);
 
+		$this->assertSame([['type' => 'sendEmail', 'ok' => true]], $results);
 
-    /**
-     * An action type nothing provides is reported, not silently dropped.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
-     */
-    public function testUnknownActionTypeIsReported(): void {
-        $results = $this->dispatcher(new FlowNodeRegistry())->dispatch(
-            [['type' => 'doesNotExist']],
-            [],
-            []
-        );
+	}//end testFallsBackToTheLocalHandlersWithoutOpenRegister()
 
-        $this->assertSame(
-            [['type' => 'doesNotExist', 'ok' => false, 'error' => 'unknown_action_type']],
-            $results
-        );
+	/**
+	 * An action with no type is skipped rather than dispatched blind.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
+	 */
+	public function testTypelessActionIsSkipped(): void {
+		$this->assertSame(
+			[],
+			$this->dispatcher(new FlowNodeRegistry())->dispatch([['config' => 1]], [], [])
+		);
 
-    }//end testUnknownActionTypeIsReported()
-
-
-    /**
-     * Without OpenRegister the local handlers still fire.
-     *
-     * A transition must never silently skip its side effects because a
-     * neighbouring app is not installed.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
-     */
-    public function testFallsBackToTheLocalHandlersWithoutOpenRegister(): void {
-        $handler = $this->createMock(ActionHandlerInterface::class);
-        $handler->expects($this->once())->method('handle')->willReturn(new ActionResult(true));
-
-        $legacy = $this->createMock(ActionHandlerRegistry::class);
-        $legacy->method('getHandler')->willReturn($handler);
-
-        $results = $this->dispatcher(null, $legacy)->dispatch([['type' => 'sendEmail']], [], []);
-
-        $this->assertSame([['type' => 'sendEmail', 'ok' => true]], $results);
-
-    }//end testFallsBackToTheLocalHandlersWithoutOpenRegister()
-
-
-    /**
-     * An action with no type is skipped rather than dispatched blind.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
-     */
-    public function testTypelessActionIsSkipped(): void {
-        $this->assertSame(
-            [],
-            $this->dispatcher(new FlowNodeRegistry())->dispatch([['config' => 1]], [], [])
-        );
-
-    }//end testTypelessActionIsSkipped()
-
+	}//end testTypelessActionIsSkipped()
 
 }//end class

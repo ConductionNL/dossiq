@@ -50,173 +50,165 @@ use Throwable;
  */
 class MigrateAiOversightToHermiq implements IRepairStep {
 
-    /**
-     * How many entries to pull per page.
-     *
-     * @var integer
-     */
-    private const PAGE_SIZE = 200;
+	/**
+	 * How many entries to pull per page.
+	 *
+	 * @var integer
+	 */
+	private const PAGE_SIZE = 200;
 
-    /**
-     * Safety bound on pages walked, so a misbehaving backend cannot spin an
-     * upgrade forever.
-     *
-     * @var integer
-     */
-    private const MAX_PAGES = 200;
+	/**
+	 * Safety bound on pages walked, so a misbehaving backend cannot spin an
+	 * upgrade forever.
+	 *
+	 * @var integer
+	 */
+	private const MAX_PAGES = 200;
 
+	/**
+	 * Constructor.
+	 *
+	 * @param AiAuditLog $audit Reads procest's own oversight log.
+	 * @param AiOversightDelegationService $oversight Sends a decision to hermiq.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly AiAuditLog $audit,
+		private readonly AiOversightDelegationService $oversight,
+	) {
 
-    /**
-     * Constructor.
-     *
-     * @param AiAuditLog                   $audit     Reads procest's own oversight log.
-     * @param AiOversightDelegationService $oversight Sends a decision to hermiq.
-     *
-     * @return void
-     */
-    public function __construct(
-        private readonly AiAuditLog $audit,
-        private readonly AiOversightDelegationService $oversight,
-    ) {
+	}//end __construct()
 
-    }//end __construct()
+	/**
+	 * Get the repair step name.
+	 *
+	 * @return string The name shown during upgrade.
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
+	 */
+	public function getName(): string {
+		return 'Replay recorded AI oversight decisions into hermiq';
+	}//end getName()
 
+	/**
+	 * Run the replay.
+	 *
+	 * @param IOutput $output The upgrade output.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
+	 */
+	public function run(IOutput $output): void {
+		$sent = 0;
+		$skipped = 0;
+		$offset = 0;
 
-    /**
-     * Get the repair step name.
-     *
-     * @return string The name shown during upgrade.
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
-     */
-    public function getName(): string {
-        return 'Replay recorded AI oversight decisions into hermiq';
+		for ($page = 0; $page < self::MAX_PAGES; $page++) {
+			try {
+				$batch = $this->audit->list([], self::PAGE_SIZE, $offset);
+			} catch (Throwable $e) {
+				$output->warning('AI oversight replay: could not read the audit log — ' . $e->getMessage());
+				return;
+			}
 
-    }//end getName()
+			// `entries`, NOT `results`. AiAuditLog::list() returns
+			// {entries, total, limit, offset}; reading `results` here silently
+			// yielded [] on every page, so the replay would have reported
+			// "no audit entries to consider" on an instance full of them.
+			// phpstan caught it before it ever ran.
+			$entries = $batch['entries'];
+			if (empty($entries) === true) {
+				break;
+			}
 
+			[$pageSent, $pageSkipped] = $this->replayPage(output: $output, entries: $entries);
+			$sent += $pageSent;
+			$skipped += $pageSkipped;
 
-    /**
-     * Run the replay.
-     *
-     * @param IOutput $output The upgrade output.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
-     */
-    public function run(IOutput $output): void {
-        $sent    = 0;
-        $skipped = 0;
-        $offset  = 0;
+			if (count($entries) < self::PAGE_SIZE) {
+				break;
+			}
 
-        for ($page = 0; $page < self::MAX_PAGES; $page++) {
-            try {
-                $batch = $this->audit->list([], self::PAGE_SIZE, $offset);
-            } catch (Throwable $e) {
-                $output->warning('AI oversight replay: could not read the audit log — ' . $e->getMessage());
-                return;
-            }
+			$offset += self::PAGE_SIZE;
+		}//end for
 
-            // `entries`, NOT `results`. AiAuditLog::list() returns
-            // {entries, total, limit, offset}; reading `results` here silently
-            // yielded [] on every page, so the replay would have reported
-            // "no audit entries to consider" on an instance full of them.
-            // phpstan caught it before it ever ran.
-            $entries = $batch['entries'];
-            if (empty($entries) === true) {
-                break;
-            }
+		$this->report(output: $output, sent: $sent, skipped: $skipped);
 
-            [$pageSent, $pageSkipped] = $this->replayPage(output: $output, entries: $entries);
-            $sent    += $pageSent;
-            $skipped += $pageSkipped;
+	}//end run()
 
-            if (count($entries) < self::PAGE_SIZE) {
-                break;
-            }
+	/**
+	 * Delegate one page of audit entries.
+	 *
+	 * Split out of run() so the paging loop and the per-entry handling can each
+	 * be read on their own — phpmd flagged the combined method, and it was
+	 * right that two concerns were tangled.
+	 *
+	 * @param IOutput $output The upgrade output.
+	 * @param array<int, mixed> $entries The page of entries.
+	 *
+	 * @return array{0: int, 1: int} Sent and skipped counts for this page.
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
+	 */
+	private function replayPage(IOutput $output, array $entries): array {
+		$sent = 0;
+		$skipped = 0;
 
-            $offset += self::PAGE_SIZE;
-        }//end for
+		foreach ($entries as $entry) {
+			if (is_array($entry) === false) {
+				$skipped++;
+				continue;
+			}
 
-        $this->report(output: $output, sent: $sent, skipped: $skipped);
+			try {
+				$delegated = $this->oversight->delegate(entry: $entry);
+			} catch (Throwable $e) {
+				// Cannot happen by contract, but an upgrade is the wrong place
+				// to find out otherwise.
+				$output->warning('AI oversight replay: entry failed — ' . $e->getMessage());
+				$skipped++;
+				continue;
+			}
 
-    }//end run()
+			if ($delegated === true) {
+				$sent++;
+				continue;
+			}
 
+			$skipped++;
+		}//end foreach
 
-    /**
-     * Delegate one page of audit entries.
-     *
-     * Split out of run() so the paging loop and the per-entry handling can each
-     * be read on their own — phpmd flagged the combined method, and it was
-     * right that two concerns were tangled.
-     *
-     * @param IOutput            $output  The upgrade output.
-     * @param array<int, mixed>  $entries The page of entries.
-     *
-     * @return array{0: int, 1: int} Sent and skipped counts for this page.
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
-     */
-    private function replayPage(IOutput $output, array $entries): array {
-        $sent    = 0;
-        $skipped = 0;
+		return [$sent, $skipped];
+	}//end replayPage()
 
-        foreach ($entries as $entry) {
-            if (is_array($entry) === false) {
-                $skipped++;
-                continue;
-            }
+	/**
+	 * Report what the replay did.
+	 *
+	 * @param IOutput $output The upgrade output.
+	 * @param integer $sent Records delegated.
+	 * @param integer $skipped Records not delegated.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
+	 */
+	private function report(IOutput $output, int $sent, int $skipped): void {
+		if ($sent === 0 && $skipped === 0) {
+			$output->info('AI oversight replay: no audit entries to consider.');
+			return;
+		}
 
-            try {
-                $delegated = $this->oversight->delegate(entry: $entry);
-            } catch (Throwable $e) {
-                // Cannot happen by contract, but an upgrade is the wrong place
-                // to find out otherwise.
-                $output->warning('AI oversight replay: entry failed — ' . $e->getMessage());
-                $skipped++;
-                continue;
-            }
+		$output->info(
+			sprintf(
+				'AI oversight replay: %d decision(s) sent to hermiq, %d entry/entries skipped '
+				. '(suggestion-only records, entries without a subject, or hermiq not installed).',
+				$sent,
+				$skipped
+			)
+		);
 
-            if ($delegated === true) {
-                $sent++;
-                continue;
-            }
-
-            $skipped++;
-        }//end foreach
-
-        return [$sent, $skipped];
-
-    }//end replayPage()
-
-
-    /**
-     * Report what the replay did.
-     *
-     * @param IOutput $output  The upgrade output.
-     * @param integer $sent    Records delegated.
-     * @param integer $skipped Records not delegated.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md
-     */
-    private function report(IOutput $output, int $sent, int $skipped): void {
-        if ($sent === 0 && $skipped === 0) {
-            $output->info('AI oversight replay: no audit entries to consider.');
-            return;
-        }
-
-        $output->info(
-            sprintf(
-                'AI oversight replay: %d decision(s) sent to hermiq, %d entry/entries skipped '
-                . '(suggestion-only records, entries without a subject, or hermiq not installed).',
-                $sent,
-                $skipped
-            )
-        );
-
-    }//end report()
-
+	}//end report()
 
 }//end class

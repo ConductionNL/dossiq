@@ -128,7 +128,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
     <background-jobs>
         <job>OCA\Dossiq\BackgroundJob\AdviceDeadlineJob</job>
-        <job>OCA\Dossiq\Cron\OriDataQualityCheck</job>
         <job>OCA\Dossiq\BackgroundJob\VergaderingDeadlineJob</job>
         <job>OCA\Dossiq\BackgroundJob\WOODeadlineCheckJob</job>
         <job>OCA\Dossiq\BackgroundJob\BezwaarTermijnJob</job>
@@ -214,7 +213,20 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\MigrateWorkflowDefinitions</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition</step>
             <step>OCA\Dossiq\Repair\SeedBesluitvormingTemplates</step>
-            <step>OCA\Dossiq\Repair\RegisterOriRegister</step>
+            <!--
+                REPLACES RegisterOriRegister. dossiq no longer declares an ORI
+                register (ADR-019/ADR-022: raadsinformatie is decidiq's domain,
+                and `ori` was a parallel Dutch-named duplicate of its Popolo
+                model). Dropping the declaration stops it being re-created; it
+                does nothing about the register already on an existing install,
+                which holds real objects — 115 on the reference instance.
+
+                So this step RETIRES the register only once it is empty, and
+                warns and keeps it otherwise. Removal never outruns migration.
+                Declared in post-migration only: a fresh install never had an
+                ORI register to retire.
+            -->
+            <step>OCA\Dossiq\Repair\RetireOriRegister</step>
             <step>OCA\Dossiq\Repair\SeedLhsMatrix</step>
             <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
             <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
@@ -341,7 +353,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition</step>
             <step>OCA\Dossiq\Repair\SeedBesluitvormingTemplates</step>
-            <step>OCA\Dossiq\Repair\RegisterOriRegister</step>
             <step>OCA\Dossiq\Repair\SeedLhsMatrix</step>
             <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
             <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
