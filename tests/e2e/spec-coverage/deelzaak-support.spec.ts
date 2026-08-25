@@ -20,27 +20,42 @@
  * navigate there and skip cleanly when the surface is not present.
  */
 
-import { test, expect } from '@playwright/test'
+import { test, expect, request, type APIRequestContext } from '@playwright/test'
 import { navTo, dismissSupportDialog } from '../helpers/nav'
+import { STORAGE_STATE } from '../helpers/auth'
+import {
+	getRequestToken,
+	ensureCaseType,
+	seedCase,
+	objectId,
+} from '../helpers/fixtures'
 
 /** OpenRegister's object API for this app's own register. */
 const CASES_API = '/index.php/apps/openregister/api/objects/dossiq/case'
 
 /**
- * Resolve the id of a case to work with, or skip when the register is empty.
+ * Resolve a case to work with, seeding one when the register has none.
  *
- * Asks the API rather than clicking a row. The previous approach —
- * `.locator('.viewTableRow, tr[role="row"], .list-item, table tbody tr').first()`
- * followed by `.click().catch(() => {})` — had two faults that cancelled each
- * other out into a silent no-op: `tr[role="row"]` matches the table HEADER row,
- * so `.first()` selected a header, and the swallowed catch meant a click that
- * navigated nowhere looked exactly like a click that worked.
+ * TWO THINGS THIS REPLACED.
  *
- * The result was that every test carried on believing it was on a case detail
- * while the snapshot shows `heading "Cases"` — the list page — and then failed
- * on an assertion about a page it had never opened.
+ * 1. It asks the API instead of clicking a row. The previous approach —
+ *    `.locator('.viewTableRow, tr[role="row"], .list-item, table tbody tr')
+ *    .first()` followed by `.click().catch(() => {})` — had two faults that
+ *    cancelled into a silent no-op: `tr[role="row"]` matches the table HEADER,
+ *    so `.first()` selected a header, and the swallowed catch made a click that
+ *    navigated nowhere look exactly like one that worked. Every test then
+ *    asserted against the Cases LIST believing it was on a case detail.
+ *
+ * 2. It SEEDS rather than standing down. Asking the API first turned the old
+ *    false skip into an honest one — "No cases in the seeded register" — which
+ *    was true, and still left this requirement unverified in CI. dossiq's own
+ *    fixture helpers already seed a caseType and a case for the visual suite,
+ *    so the data this needs is one call away and there is no reason to skip for
+ *    the want of it.
+ *
+ * Only a genuinely unreachable API skips now, and it names its status code.
  */
-async function firstCaseIdOrSkip(page): Promise<string | null> {
+async function ensureCaseId(page): Promise<string | null> {
 	const resp = await page.request.get(`${CASES_API}?_limit=1`, {
 		headers: { Accept: 'application/json' },
 	})
@@ -50,21 +65,30 @@ async function firstCaseIdOrSkip(page): Promise<string | null> {
 	}
 	const body = await resp.json()
 	const first = (body.results ?? body.items ?? [])[0]
-	if (!first) {
-		test.skip(
-			true,
-			'No cases in the seeded register — this suite is data-dependent.',
-		)
-		return null
+	if (first) return first.id ?? first['@self']?.id ?? null
+
+	// Empty register — seed the minimum the schema requires (title + caseType).
+	let api: APIRequestContext | null = null
+	try {
+		api = await request.newContext({ storageState: STORAGE_STATE })
+		const token = await getRequestToken(api)
+		const caseType = await ensureCaseType(api, token)
+		const kase = await seedCase(api, token, {
+			title: 'E2E deelzaak parent case',
+			caseType: caseType.id,
+			description: 'Seeded by deelzaak-support.spec.ts.',
+		})
+		return objectId(kase)
+	} finally {
+		await api?.dispose()
 	}
-	return first.id ?? first['@self']?.id ?? null
 }
 
 /** Open the Cases list, or skip when it does not render. */
 async function openCasesListOrSkip(page) {
 	await navTo(page, 'Cases').catch(() => {})
 	await dismissSupportDialog(page).catch(() => {})
-	const caseId = await firstCaseIdOrSkip(page)
+	const caseId = await ensureCaseId(page)
 	if (!caseId) return false
 	await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	return true
@@ -92,7 +116,7 @@ async function openCasesListOrSkip(page) {
  * that section on the detail page rather than clicking a tab.
  */
 async function openSubCasesSectionOrSkip(page) {
-	const caseId = await firstCaseIdOrSkip(page)
+	const caseId = await ensureCaseId(page)
 	if (!caseId) return false
 
 	// Navigate by URL. dossiq is history-mode
