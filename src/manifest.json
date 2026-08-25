@@ -1263,6 +1263,45 @@
 						"_note": "Initiator (indiener) display — brp-kvk register sets. Resolved via page slots (widget-initiator -> InitiatorSection); self-fetches the case from the route id and renders nothing when no initiator is set."
 					},
 					{
+						"id": "case-sub-cases",
+						"type": "object-list",
+						"title": "Sub-cases",
+						"icon": "FileTreeOutline",
+						"_note": "deelzaak-support REQ 'Sub-cases section on parent case detail': 'The case detail view SHALL display a \"Sub-cases\" section ... listing all cases whose parentCase references the current case. The section MUST show each sub-case's title, status, assignee, and deadline.' Only the stats-block COUNT (case-kpis-sub-cases) existed; the listing lived on a separate route (/cases/:id/deelzaken, DeelzaakList), so the detail view had no such section and the requirement was unimplemented. The count widget already proves the filter shape works. Rows deep-link to CaseDetail because a sub-case IS a case.",
+						"content": {
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"parentCase": "@objectId"
+							},
+							"sort": {
+								"field": "deadline",
+								"dir": "asc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "title",
+									"label": "Title"
+								},
+								{
+									"key": "status",
+									"label": "Status"
+								},
+								{
+									"key": "assignee",
+									"label": "Assignee"
+								},
+								{
+									"key": "deadline",
+									"label": "Deadline"
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"emptyText": "No sub-cases yet"
+						}
+					},
+					{
 						"id": "case-tasks",
 						"type": "object-list",
 						"title": "Tasks",
@@ -1675,6 +1714,16 @@
 						"gridY": 41,
 						"gridWidth": 12,
 						"gridHeight": 6,
+						"showTitle": true
+					},
+					{
+						"_note": "A widget declared in `widgets` but absent from `layout` never renders — this grid is explicit, not inferred. Adding case-sub-cases to `widgets` alone produced no section at all, and the e2e failed on exactly that. Appended below the last row (cmmn-case-plan ends at y=47) rather than placed beside the sub-case KPI: these coordinates are absolute, so a mid-page insert would mean re-flowing every widget beneath it — a layout change this requirement does not ask for.",
+						"id": "23",
+						"widgetId": "case-sub-cases",
+						"gridX": 0,
+						"gridY": 47,
+						"gridWidth": 12,
+						"gridHeight": 4,
 						"showTitle": true
 					},
 					{
