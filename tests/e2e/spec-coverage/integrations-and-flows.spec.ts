@@ -27,8 +27,30 @@
 import { expect, test } from '@playwright/test'
 import { dismissSupportDialog, navToRoute, sidebarNav } from '../helpers/nav'
 
+// The nav helper expands the settings foldout and waits for the app shell, so
+// these run longer than the 30s default before their own assertion even starts.
+test.setTimeout(90000)
+
 /**
- * Every navigating link rendered in the sidebar, with its href.
+ * Every navigating link rendered in the sidebar, with its href — including the
+ * settings-foldout entries, which is where every link this spec cares about
+ * lives.
+ *
+ * TWO GUARDS, BOTH LEARNED THE HARD WAY (2026-08-26)
+ * --------------------------------------------------
+ * 1. The app must actually have loaded. An earlier version of this helper
+ *    asserted straight onto whatever rendered, and when dossiq happened to be
+ *    DISABLED in the test instance the app root served Nextcloud's "Page not
+ *    found". That page has no sidebar and therefore no foreign links, so
+ *    `no sidebar link points into another app` PASSED — on a page that never
+ *    contained the navigation it was grading. A test that cannot fail is worse
+ *    than no test, so the app root is asserted before anything is read.
+ *
+ * 2. The settings foldout must be OPEN. `NcAppNavigationSettings` does not
+ *    render its children while collapsed, so every settings entry — Flows,
+ *    Case types, and the Integrations relocation this spec exists to verify —
+ *    is simply absent from the DOM. Reading links without expanding it makes
+ *    the same assertion vacuous a second way.
  *
  * @param page The Playwright page.
  * @return The links.
@@ -36,6 +58,31 @@ import { dismissSupportDialog, navToRoute, sidebarNav } from '../helpers/nav'
 async function navLinks(page) {
 	await page.goto('/index.php/apps/dossiq')
 	await dismissSupportDialog(page)
+
+	// Guard 1: prove the app mounted. Its own navigation container is the
+	// tell — the 404 page renders a banner and a footer but no app nav.
+	await expect(
+		sidebarNav(page),
+		'The dossiq app did not render — every link assertion below would pass vacuously on an empty page',
+	).toBeVisible({ timeout: 15000 })
+
+	// Guard 2: expand the settings foldout so its entries enter the DOM.
+	// The toggle is NcAppNavigationSettings' own button, reachable by its
+	// accessible name — the foldout's `data-testid` sits on the wrapper and
+	// does not always contain a directly-matchable button element.
+	const settingsToggle = sidebarNav(page).getByRole('button', { name: 'Settings', exact: true }).first()
+	if (await settingsToggle.isVisible().catch(() => false)) {
+		await settingsToggle.click().catch(() => {})
+		// The foldout animates open; wait for a settings entry to appear rather
+		// than a fixed delay so this does not race on a slow instance. A second
+		// click would re-collapse it, so only ever click once.
+		await sidebarNav(page)
+			.getByRole('link', { name: 'Flows' })
+			.first()
+			.waitFor({ state: 'visible', timeout: 8000 })
+			.catch(() => {})
+	}
+
 	return await sidebarNav(page)
 		.locator('a')
 		.evaluateAll((els) =>
