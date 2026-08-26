@@ -3249,7 +3249,11 @@
         "case types": "case types",
         "Choose a quarter and load the report.": "Choose a quarter and load the report.",
         "Choose a year and load the audit.": "Choose a year and load the audit.",
-        "Track a tenant through the seven onboarding steps, run the go-live readiness check and activate the tenant. One-time setup, so it belongs here rather than in the daily navigation.": "Track a tenant through the seven onboarding steps, run the go-live readiness check and activate the tenant. One-time setup, so it belongs here rather than in the daily navigation."
+        "Track a tenant through the seven onboarding steps, run the go-live readiness check and activate the tenant. One-time setup, so it belongs here rather than in the daily navigation.": "Track a tenant through the seven onboarding steps, run the go-live readiness check and activate the tenant. One-time setup, so it belongs here rather than in the daily navigation.",
+        "A flow runs a series of steps when something happens — an object changes, a schedule fires, or you run it yourself.": "A flow runs a series of steps when something happens — an object changes, a schedule fires, or you run it yourself.",
+        "Enabled, but has no owner — it will not start": "Enabled, but has no owner — it will not start",
+        "Flows": "Flows",
+        "New flow": "New flow"
     },
     "plurals": ""
 }

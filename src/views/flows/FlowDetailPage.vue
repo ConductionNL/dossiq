@@ -14,11 +14,7 @@
   @spec openspec/specs/automatic-actions/spec.md
 -->
 <template>
-	<CnFlowDetail
-		:id="$route.params.id"
-		app="dossiq"
-		@save="onSave"
-		@run="onRun" />
+	<CnFlowDetail :id="$route.params.id" app="dossiq" @save="onSave" @run="onRun" />
 </template>
 
 <script>

@@ -70,7 +70,9 @@ async function navLinks(page) {
 	// The toggle is NcAppNavigationSettings' own button, reachable by its
 	// accessible name — the foldout's `data-testid` sits on the wrapper and
 	// does not always contain a directly-matchable button element.
-	const settingsToggle = sidebarNav(page).getByRole('button', { name: 'Settings', exact: true }).first()
+	const settingsToggle = sidebarNav(page)
+		.getByRole('button', { name: 'Settings', exact: true })
+		.first()
 	if (await settingsToggle.isVisible().catch(() => false)) {
 		await settingsToggle.click().catch(() => {})
 		// The foldout animates open; wait for a settings entry to appear rather
@@ -150,22 +152,22 @@ test.describe('ADR-110: Flows is an in-app page, not a deep link', () => {
 		const href = flows[0].href || ''
 		expect(
 			href,
-			'Flows must resolve to this app\'s own /flows route, not another app\'s list',
+			"Flows must resolve to this app's own /flows route, not another app's list",
 		).toContain('/apps/dossiq')
 		expect(href).toContain('/flows')
 	})
 
 	// @e2e openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md#scenario-flows-are-authored-in-the-app
-	test('/flows renders this app\'s own flow surface', async ({ page }) => {
+	test("/flows renders this app's own flow surface", async ({ page }) => {
 		await navToRoute(page, '/flows')
 
 		// The create control the page owns. Asserting on a control rather than a
 		// heading: a retired route falls through to the app root, and the root
 		// has headings of its own — so a heading assertion can pass on a page
 		// that never rendered.
-		await expect(
-			page.getByRole('button', { name: 'New flow' }),
-		).toBeVisible({ timeout: 15000 })
+		await expect(page.getByRole('button', { name: 'New flow' })).toBeVisible({
+			timeout: 15000,
+		})
 	})
 
 	// @e2e openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md#scenario-flows-are-authored-in-the-app
@@ -174,9 +176,9 @@ test.describe('ADR-110: Flows is an in-app page, not a deep link', () => {
 
 		// Save lives on CnFlowDetail's own toolbar, so its presence proves the
 		// shared canvas mounted rather than the router falling through.
-		await expect(
-			page.getByRole('button', { name: 'Save' }).first(),
-		).toBeVisible({ timeout: 15000 })
+		await expect(page.getByRole('button', { name: 'Save' }).first()).toBeVisible(
+			{ timeout: 15000 },
+		)
 	})
 })
 
@@ -190,7 +192,9 @@ test.describe('Case types are governed from the settings menu', () => {
 	//
 	// @e2e openspec/specs/case-types/spec.md
 	test('the settings menu has a Case types entry', async ({ page }) => {
-		const entries = (await navLinks(page)).filter((l) => l.label === 'Case types')
+		const entries = (await navLinks(page)).filter(
+			(l) => l.label === 'Case types',
+		)
 		expect(
 			entries.length,
 			'Case types must be reachable from the settings foldout',
@@ -198,9 +202,7 @@ test.describe('Case types are governed from the settings menu', () => {
 	})
 
 	// @e2e openspec/specs/case-types/spec.md
-	test('the case types index renders its own create control', async ({
-		page,
-	}) => {
+	test('the case types index renders its own create control', async ({ page }) => {
 		await navToRoute(page, '/settings/case-types')
 
 		// The page's OWN create control, not a heading: a route that fails to

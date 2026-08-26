@@ -3249,6 +3249,10 @@
         "Choose a quarter and load the report.": "Kies een kwartaal en laad het rapport.",
         "Choose a year and load the audit.": "Kies een jaar en laad de audit.",
         "Track a tenant through the seven onboarding steps, run the go-live readiness check and activate the tenant. One-time setup, so it belongs here rather than in the daily navigation.": "Volg een tenant door de zeven onboardingstappen, voer de go-live-gereedheidscontrole uit en activeer de tenant. Eenmalige inrichting, dus dit hoort hier en niet in de dagelijkse navigatie.",
-        "case types": "zaaktypen"
+        "case types": "zaaktypen",
+        "A flow runs a series of steps when something happens — an object changes, a schedule fires, or you run it yourself.": "Een flow voert een reeks stappen uit zodra er iets gebeurt — een object wijzigt, een planning gaat af, of je start hem zelf.",
+        "Enabled, but has no owner — it will not start": "Ingeschakeld, maar zonder eigenaar — hij start niet",
+        "Flows": "Flows",
+        "New flow": "Nieuwe flow"
     }
 }
