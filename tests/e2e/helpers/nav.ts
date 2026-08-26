@@ -15,14 +15,16 @@
  * click the sidebar nav entry (client-side) to reach the target view.
  */
 
-import { Page } from '@playwright/test'
+import type { Page } from '@playwright/test'
 
 /**
  * The app's sidebar navigation container.
  * @param page
+ * @return The navigation locator.
  */
-export const sidebarNav = (page: Page) =>
-	page.locator('[id^="app-navigation"]').first()
+export function sidebarNav(page: Page) {
+	return page.locator('[id^="app-navigation"]').first()
+}
 
 /**
  * Dismiss the "Support Dossiq" dialog if it is open. The dialog's
@@ -134,8 +136,32 @@ export async function navToRoute(page: Page, route: string): Promise<void> {
 	// `$router.push` dance existed only to work around a deep-link reset that
 	// does not actually happen, and it silently went nowhere whenever the
 	// router handle could not be reached (returning as if it had navigated).
-	await page.goto(`/index.php/apps/dossiq${route}`)
-	await dismissSupportDialog(page)
+	//
+	// THE `/index.php` PREFIX IS NOT SAFE TO HARD-CODE (measured 2026-08-26).
+	// The app's router base is `generateUrl('/apps/dossiq')`, which returns
+	// `/index.php/apps/dossiq` only where Nextcloud's front-controller URLs are
+	// in play; on an instance with pretty URLs (`htaccess.IgnoreFrontController`)
+	// it returns `/apps/dossiq`. Against such an instance every prefixed URL
+	// falls outside the router base, so vue-router matches its
+	// `/:pathMatch(.*)*` catch-all and REDIRECTS TO THE DASHBOARD — and the
+	// dashboard renders happily, so a spec asserting on generic content passes
+	// while never having visited the route it named. Measured: `/cases` and
+	// `/flows` both landed on "Dashboard" with the prefix and rendered
+	// correctly without it.
+	//
+	// Probing both forms and keeping whichever actually resolves makes the
+	// helper correct under either configuration rather than under the one the
+	// CI runner happened to have.
+	for (const url of [`/apps/dossiq${route}`, `/index.php/apps/dossiq${route}`]) {
+		await page.goto(url)
+		await dismissSupportDialog(page)
+		// The catch-all redirect drops the requested path entirely, so a URL
+		// that still carries it is the tell that the route resolved.
+		if (new URL(page.url()).pathname.endsWith(route)) return
+	}
+	// Neither form resolved. Leave the page where the last attempt landed and
+	// let the caller's own assertion report what is missing — throwing here
+	// would mask a genuinely retired route, which several specs assert on.
 }
 
 /**

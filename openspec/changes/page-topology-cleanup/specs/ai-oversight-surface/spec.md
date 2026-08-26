@@ -17,7 +17,16 @@ procest remains installable without hermiq.
 
 - **GIVEN** the procest manifest
 - **THEN** neither `/settings/ai-oversight` nor `/settings/ai-oversight/:id` exists
-- **AND** exactly one navigation entry links to hermiq's oversight surface
+- **AND** no NAVIGATION entry links to hermiq's oversight surface
+- **AND** exactly one `section: "integrations"` entry links to it, gated on `visibleIf.appInstalled: "hermiq"`
+
+> **Amended 2026-08-26 by ADR-110.** This scenario previously required *"exactly
+> one navigation entry links to hermiq's oversight surface"*. A link that leaves
+> this app for another one is not a page of this app — it can never be the active
+> route and carries no counter — so it renders in the Integrations section of the
+> per-user settings modal instead. The entry is relocated, never dropped, so
+> ADR-044 Decision 5 still holds. The `appInstalled` gate is new: without it the
+> section advertises a guaranteed 404 on an instance with no hermiq.
 
 #### Scenario: A human decision reaches hermiq
 
