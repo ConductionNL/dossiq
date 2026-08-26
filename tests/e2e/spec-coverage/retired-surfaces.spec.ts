@@ -70,9 +70,7 @@ test.describe('Retired: automatic-actions settings page (C2)', () => {
 			page.locator('a[href="/apps/openregister/#/flows"]'),
 		).toHaveCount(0)
 
-		await expect(
-			page.locator('a[href$="/apps/dossiq/flows"]'),
-		).toHaveCount(1)
+		await expect(page.locator('a[href$="/apps/dossiq/flows"]')).toHaveCount(1)
 	})
 })
 
