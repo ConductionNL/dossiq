@@ -53,7 +53,7 @@
 						"sinceVersion": "0.2.17",
 						"placement": "center",
 						"title": "Welcome to Dossiq",
-						"body": "Let's take a quick spin through case handling — we'll register a case together so you can see how the pieces fit. You'll add the record yourself.",
+						"body": "Let's take a quick spin through case handling. We'll register a case together so you can see how the pieces fit, and you'll add the record yourself.",
 						"target": {
 							"kind": "page",
 							"ref": "Dashboard"
@@ -82,7 +82,7 @@
 						"sinceVersion": "0.2.17",
 						"placement": "bottom",
 						"allowManualNext": true,
-						"body": "Register your first case — give it a title and pick a case type, then save. You can add tasks, decisions and documents later.",
+						"body": "Register your first case. Give it a title, pick a case type, then save. You can add tasks, decisions and documents later.",
 						"task": "Click New and save a case",
 						"target": {
 							"kind": "element",
