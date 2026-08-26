@@ -51,17 +51,28 @@ test.describe('Retired: automatic-actions settings page (C2)', () => {
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
-	test('the settings menu deeplinks to OpenRegister flows instead', async ({
+	test('flows are authored in this app, not behind a deep link', async ({
 		page,
 	}) => {
 		await navToRoute(page, '/')
 
-		// href, not a click: the target is another app, and following it would
-		// make this a test of OpenRegister's Flows page rather than of dossiq's
-		// menu. The hash is the part that matters — OpenRegister's router is
-		// hash-based, and a link written without it lands on the app root.
-		const link = page.locator('a[href="/apps/openregister/#/flows"]')
-		await expect(link).toHaveCount(1)
+		// UPDATED BY ADR-110. This test used to assert the opposite — that the
+		// settings menu carried `a[href="/apps/openregister/#/flows"]`, a link
+		// out to another app's list. That deep link is gone: a flow is
+		// app-specific (a dossiq flow operates on cases), so the authoring
+		// surface is now `/flows` and `/flows/:id` in this app, on the shared
+		// canvas over the same single engine (ADR-065).
+		//
+		// Asserting BOTH halves on purpose. The absence check alone would pass
+		// just as happily on a build where the capability vanished entirely,
+		// which is exactly what ADR-044 Decision 5 forbids.
+		await expect(
+			page.locator('a[href="/apps/openregister/#/flows"]'),
+		).toHaveCount(0)
+
+		await expect(
+			page.locator('a[href$="/apps/dossiq/flows"]'),
+		).toHaveCount(1)
 	})
 })
 
