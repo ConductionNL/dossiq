@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Advice Authorization Guard.
+ * Dossiq Advice Authorization Guard.
  *
  * The procest#17 / Wilco #6 per-object IDOR guard for advice-request
  * status transitions. Split out of AdviceService so that service keeps
@@ -27,7 +27,7 @@
  *   - default:     denied.
  *
  * @category Service
- * @package  OCA\Procest\Service\Advice
+ * @package  OCA\Dossiq\Service\Advice
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -35,7 +35,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -45,10 +45,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Advice;
+namespace OCA\Dossiq\Service\Advice;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use RuntimeException;

@@ -3,7 +3,7 @@
 		<NcNoteCard type="info">
 			{{
 				t(
-					'procest',
+					'dossiq',
 					'The mandate matrix (Awb art. 10:3) is being delivered in the mandaat-matrix chain. This panel will host role hierarchy, Decidesk imports and waarnemer assignments.',
 				)
 			}}
@@ -11,7 +11,7 @@
 
 		<div class="setting-row">
 			<label for="mandaat_decidesk_connection">
-				{{ t('procest', 'Decidesk connection (openconnector)') }}
+				{{ t('dossiq', 'Decidesk connection (openconnector)') }}
 			</label>
 			<NcInputField
 				id="mandaat_decidesk_connection"
@@ -21,7 +21,7 @@
 			<p class="setting-help">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Identifier of the openconnector connection used to fetch mandateringsbesluiten from Decidesk.',
 					)
 				}}
@@ -30,9 +30,7 @@
 
 		<div class="setting-row">
 			<label for="mandaat_default_extension_days">
-				{{
-					t('procest', 'Default extension days for waarnemer assignments')
-				}}
+				{{ t('dossiq', 'Default extension days for waarnemer assignments') }}
 			</label>
 			<NcInputField
 				id="mandaat_default_extension_days"
@@ -43,7 +41,7 @@
 			<p class="setting-help">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Used as a hint when a waarnemer assignment is created without an explicit end date.',
 					)
 				}}
@@ -52,10 +50,7 @@
 
 		<NcCheckboxRadioSwitch v-model="autoFinalizeApproved" :disabled="!writable">
 			{{
-				t(
-					'procest',
-					'Automatically activate a mandate import after approval',
-				)
+				t('dossiq', 'Automatically activate a mandate import after approval')
 			}}
 		</NcCheckboxRadioSwitch>
 
@@ -69,14 +64,14 @@
 			</template>
 			{{
 				saving
-					? t('procest', 'Saving...')
-					: t('procest', 'Save mandate matrix settings')
+					? t('dossiq', 'Saving...')
+					: t('dossiq', 'Save mandate matrix settings')
 			}}
 		</NcButton>
 
 		<p class="docs-link">
 			<a :href="adminDocsUrl" target="_blank" rel="noopener">
-				{{ t('procest', 'Read the mandate matrix administrator guide') }}
+				{{ t('dossiq', 'Read the mandate matrix administrator guide') }}
 			</a>
 		</p>
 	</div>
@@ -110,7 +105,7 @@ export default {
 	},
 
 	data() {
-		const initial = loadState('procest', 'mandaatSettings', {})
+		const initial = loadState('dossiq', 'mandaatSettings', {})
 		return {
 			decideskConnection: initial.decideskConnection ?? 'decidesk-default',
 			defaultExtensionDays: initial.defaultExtensionDays ?? 14,
@@ -133,8 +128,8 @@ export default {
 		/**
 		 * Persist the mandate matrix settings.
 		 *
-		 * ⚠️ This used to POST `/apps/procest/api/settings/mandaat`, a route
-		 * procest never declared. Nextcloud answers an unmatched app URL with its
+		 * ⚠️ This used to POST `/apps/dossiq/api/settings/mandaat`, a route
+		 * dossiq never declared. Nextcloud answers an unmatched app URL with its
 		 * own HTML page under HTTP 200, so `fetch` resolved, nothing threw, and
 		 * every save silently vanished (procest#794). It now uses the app's own
 		 * canonical settings write, which carries `#[AuthorizedAdminSetting]`.
@@ -148,7 +143,7 @@ export default {
 			this.saving = true
 			this.error = null
 			try {
-				const res = await fetch(generateUrl('/apps/procest/api/settings'), {
+				const res = await fetch(generateUrl('/apps/dossiq/api/settings'), {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
@@ -165,12 +160,12 @@ export default {
 					}),
 				})
 				if (!res.ok) {
-					this.error = t('procest', 'Saving failed ({status})', {
+					this.error = t('dossiq', 'Saving failed ({status})', {
 						status: res.status,
 					})
 				}
 			} catch (e) {
-				this.error = e.message || t('procest', 'Saving failed')
+				this.error = e.message || t('dossiq', 'Saving failed')
 			} finally {
 				this.saving = false
 			}

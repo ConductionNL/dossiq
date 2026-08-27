@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest KCC-Werkplek Seed Data Service.
+ * Dossiq KCC-Werkplek Seed Data Service.
  *
  * Seeds the default KCC quick-actions (status terugkoppelen, nieuwe zaak,
  * klacht registreren, doorverbinden, bel terug inplannen) and two example
@@ -11,7 +11,7 @@
  * id is skipped.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,16 +22,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/specs.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -70,7 +70,7 @@ class KccWerkplekSeedDataService {
 
 		$register = (string)$this->settingsService->getConfigValue('register');
 		if ($register === '') {
-			return ['success' => false, 'message' => 'Procest register not configured'];
+			return ['success' => false, 'message' => 'Dossiq register not configured'];
 		}
 
 		$quickActionSchema = (string)$this->settingsService->getConfigValue('kcc_quick_action_schema');
@@ -119,7 +119,7 @@ class KccWerkplekSeedDataService {
 			}
 		);
 
-		$this->logger->info('Procest KCC-werkplek: seed complete', $counts);
+		$this->logger->info('Dossiq KCC-werkplek: seed complete', $counts);
 
 		return array_merge(['success' => true], $counts);
 	}//end seed()
@@ -168,7 +168,7 @@ class KccWerkplekSeedDataService {
 				$counts[$counterKey]++;
 			} catch (Throwable $e) {
 				$this->logger->warning(
-					'Procest KCC-werkplek seed: row failed',
+					'Dossiq KCC-werkplek seed: row failed',
 					['id' => $rowId, 'schema' => $schema, 'error' => $e->getMessage()]
 				);
 			}//end try

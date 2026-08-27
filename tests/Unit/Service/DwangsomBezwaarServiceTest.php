@@ -4,7 +4,7 @@
  * Unit tests for DwangsomBezwaarService.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -12,7 +12,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -20,19 +20,19 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\DwangsomBezwaarService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\TermijnService;
+use OCA\Dossiq\Service\DwangsomBezwaarService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TermijnService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * @covers \OCA\Procest\Service\DwangsomBezwaarService
+ * @covers \OCA\Dossiq\Service\DwangsomBezwaarService
  *
- * @uses \OCA\Procest\Service\TermijnService
+ * @uses \OCA\Dossiq\Service\TermijnService
  */
 class DwangsomBezwaarServiceTest extends TestCase {
 	private FakeTermijnStore $objects;
@@ -45,7 +45,7 @@ class DwangsomBezwaarServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'termijn_definitie_schema' => 'deadlineDefinition',
 					'termijn_instance_schema' => 'deadlineInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
@@ -64,13 +64,13 @@ class DwangsomBezwaarServiceTest extends TestCase {
 		);
 
 		// Seed berekening + uitbetaling.
-		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
+		$this->objects->saveObject('dossiq', 'penaltyPaymentCalculation', [
 			'id' => 'b-1',
 			'deadlineInstance' => 'ti-1',
 			'status' => 'gestopt-wegens-decision',
 			'definitiveAmount' => 50000,
 		]);
-		$this->objects->saveObject('procest', 'dwangsomUitbetaling', [
+		$this->objects->saveObject('dossiq', 'dwangsomUitbetaling', [
 			'id' => 'u-1',
 			'penaltyPaymentCalculation' => 'b-1',
 			'amount' => 50000,

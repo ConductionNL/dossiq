@@ -27,8 +27,8 @@ control (list/apply/save) for those pages.
 
 ### Requirement: REQ-W2L-002 — Multi-Column Sort Rides The Library Unmodified
 
-Procest SHALL NOT implement or shadow any sort-handling logic of its own; multi-column
-sort (shift+click on a column header, persisted `_order`) SHALL work on every procest
+Dossiq SHALL NOT implement or shadow any sort-handling logic of its own; multi-column
+sort (shift+click on a column header, persisted `_order`) SHALL work on every dossiq
 index page purely because `CnIndexPage`/`CnDataTable` implement it in nc-vue.
 
 #### Scenario: Shift+click adds a secondary sort key on the Cases table
@@ -36,13 +36,13 @@ index page purely because `CnIndexPage`/`CnDataTable` implement it in nc-vue.
 - **GIVEN** a user is viewing the Cases table view, already sorted by one column
 - **WHEN** they shift+click a second column header
 - **THEN** `CnDataTable` SHALL append that column as a secondary sort key and emit a
-  `sort` event that `CnIndexPage` persists as `_order`, with no procest-side code
+  `sort` event that `CnIndexPage` persists as `_order`, with no dossiq-side code
   involved in the sort computation
 
 ### Requirement: REQ-W2L-003 — Note `@mention` Triggers A Real Nextcloud Notification
 
 The mentioned user(s) SHALL receive a real Nextcloud bell-menu notification when a user
-saves a note containing an `@mention` on a case's detail page, dispatched via procest's
+saves a note containing an `@mention` on a case's detail page, dispatched via dossiq's
 own `POST /api/notes/mention` endpoint and rendered by a registered `INotifier`.
 
 #### Scenario: Mentioning a colleague in a case note notifies them
@@ -79,7 +79,7 @@ own `POST /api/notes/mention` endpoint and rendered by a registered `INotifier`.
 
 ### Requirement: REQ-W2L-004 — Version History Sidebar Tab On Every Detail Page
 
-Every procest detail page SHALL surface a "Version history" sidebar tab, beside the
+Every dossiq detail page SHALL surface a "Version history" sidebar tab, beside the
 existing "History" (audit-trail) tab, rendering the library's `CnVersionHistory`
 field-by-field diff viewer.
 

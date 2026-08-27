@@ -8,7 +8,7 @@
 		:style="nodeStyle"
 		role="button"
 		tabindex="0"
-		:aria-label="t('procest', 'Status: {name}', { name: status.name })"
+		:aria-label="t('dossiq', 'Status: {name}', { name: status.name })"
 		@mousedown.stop="onMouseDown"
 		@click.stop="$emit('select')"
 		@keydown.enter="$emit('select')"
@@ -25,7 +25,7 @@
 				{{ steps.length }}
 			</span>
 			<span v-if="status.isFinal" class="workflow-node__final-badge">
-				{{ t('procest', 'Final') }}
+				{{ t('dossiq', 'Final') }}
 			</span>
 
 			<!-- Keyboard-operable actions menu — connect/disconnect/delete have
@@ -36,7 +36,7 @@
 				class="workflow-node__actions"
 				:inline="0"
 				:aria-label="
-					t('procest', 'Actions for status {name}', { name: status.name })
+					t('dossiq', 'Actions for status {name}', { name: status.name })
 				"
 				@click.stop
 				@keydown.stop>
@@ -44,23 +44,23 @@
 					v-for="target in connectableStatuses"
 					:key="'connect-' + target.id"
 					@click="$emit('keyboard-connect', target.id)">
-					{{ t('procest', 'Connect to {name}', { name: target.name }) }}
+					{{ t('dossiq', 'Connect to {name}', { name: target.name }) }}
 				</NcActionButton>
 				<NcActionButton
 					v-for="transition in outgoingTransitions"
 					:key="'disconnect-' + transition.id"
 					@click="$emit('keyboard-disconnect', transition.id)">
 					{{
-						t('procest', 'Disconnect from {name}', {
+						t('dossiq', 'Disconnect from {name}', {
 							name: targetName(transition.toStatus),
 						})
 					}}
 				</NcActionButton>
 				<NcActionButton @click="$emit('add-step')">
-					{{ t('procest', 'Add step') }}
+					{{ t('dossiq', 'Add step') }}
 				</NcActionButton>
 				<NcActionButton @click="$emit('delete-status')">
-					{{ t('procest', 'Delete status') }}
+					{{ t('dossiq', 'Delete status') }}
 				</NcActionButton>
 			</NcActions>
 		</div>
@@ -92,7 +92,7 @@
 
 		<!-- Add step button -->
 		<button class="workflow-node__add-step" @click.stop="$emit('add-step')">
-			+ {{ t('procest', 'Add step') }}
+			+ {{ t('dossiq', 'Add step') }}
 		</button>
 
 		<!-- Output port (bottom) -->

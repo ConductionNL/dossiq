@@ -4,7 +4,7 @@
  * TenantQuotaService Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,17 +15,17 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
 use InvalidArgumentException;
-use OCA\Procest\Service\TenantQuotaService;
+use OCA\Dossiq\Service\TenantQuotaService;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\TenantQuotaService
+ * @covers \OCA\Dossiq\Service\TenantQuotaService
  */
 class TenantQuotaServiceTest extends TestCase {
 	private TenantQuotaService $svc;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * DEEP, data-dependent UI coverage — Cases (zaken) full CRUD-with-persistence.
@@ -15,14 +15,14 @@
  *   - deleting the case is REFLECTED in the list (the row disappears).
  *
  * Cases are OpenRegister objects (manifest `Cases`/`CaseDetail` pages declare
- * `register:"procest", schema:"case"`). Fixtures seed/clean those objects via
+ * `register:"dossiq", schema:"case"`). Fixtures seed/clean those objects via
  * the OR object API (helpers/fixtures.ts) — allowed setup. Every assertion
  * runs against the rendered DOM (Playwright = UI only).
  *
- * Navigation: a deep-link `goto('/apps/procest/cases')` resets the
+ * Navigation: a deep-link `goto('/apps/dossiq/cases')` resets the
  * history-mode router to the Dashboard and the index never fetches its data,
  * so every test lands via `navTo(page, 'Cases')` (sidebar click). The
- * "Support Procest" dialog is dismissed before each interaction.
+ * "Support Dossiq" dialog is dismissed before each interaction.
  *
  * The CREATE-via-UI leg is split out into its own test guarded by the known
  * generic-dialog issue (#427) — see the inline note on that test.
@@ -84,7 +84,7 @@ test.describe('Cases — full CRUD with persistence', () => {
 		await expect(
 			page.getByRole('button', { name: /^Add (Item|Case|Task)$/ }),
 		).toBeVisible({ timeout: 15000 })
-		// The CnIndexPage fires GET …/objects/procest/case on mount; give the
+		// The CnIndexPage fires GET …/objects/dossiq/case on mount; give the
 		// table a moment to render the fetched rows before asserting.
 		await expect(page.locator('tbody tr').first()).toBeVisible({
 			timeout: 15000,
@@ -108,7 +108,7 @@ test.describe('Cases — full CRUD with persistence', () => {
 
 		await openCasesList(page)
 
-		// The seeded row's human fields render in the list. procest assigns the
+		// The seeded row's human fields render in the list. dossiq assigns the
 		// zaaknummer itself (schema `case` x-openregister-processing) and IGNORES
 		// any supplied identifier, so assert the ASSIGNED identifier the create
 		// returned — the seed input never reaches the row.
@@ -140,7 +140,7 @@ test.describe('Cases — full CRUD with persistence', () => {
 			identifier,
 			description: 'Detail-leg description.',
 		})
-		// procest assigns the zaaknummer and ignores the supplied identifier;
+		// dossiq assigns the zaaknummer and ignores the supplied identifier;
 		// assert the ASSIGNED value the create returned.
 		const assignedIdentifier = String(
 			(kase as Record<string, unknown>).identifier ?? identifier,
@@ -263,7 +263,7 @@ test.describe('Cases — full CRUD with persistence', () => {
 
 	// CREATE-via-UI. Known issue #427: in some environments the Cases "Add"
 	// control opens the generic CnFormDialog ("Create Item") with an empty body
-	// instead of procest's custom CaseCreateDialog (the `case` schema fields do
+	// instead of dossiq's custom CaseCreateDialog (the `case` schema fields do
 	// not resolve there), so the title field cannot be filled. This test drives
 	// the real create flow and asserts the new case persists + lists; it is
 	// guarded so the suite stays green where the generic-dialog regression is

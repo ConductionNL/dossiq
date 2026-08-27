@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Render-shell coverage for six manifest pages that no other spec drove.
@@ -14,7 +14,7 @@
  * throwing.
  *
  * That is a real question with three distinguishable answers, measured on a
- * live instance (procest 0.3.9) before these tests were written:
+ * live instance (dossiq 0.3.9) before these tests were written:
  *
  *   route resolves, component registered   → the page's own heading
  *   route resolves, component NOT registered → the manifest renderer's
@@ -40,13 +40,13 @@
 
 import { test, expect } from '@playwright/test'
 
-import { navToRoute } from './helpers/nav'
+import { navToRoute, loadAllAdminSections } from './helpers/nav'
 import {
 	ProcessMiningDashboard,
 	PublicAppointmentPage,
 	PublicFederatedTransferPage,
 	PublicStatusPage,
-	TenantOnboardingDashboard,
+	TenantOnboardingAdminSettings,
 	TermijnDashboard,
 } from './helpers/page-components'
 
@@ -71,11 +71,25 @@ test.describe('Dashboard page shells', () => {
 	test('process mining dashboard renders its bottleneck-analysis heading', async ({
 		page,
 	}) => {
-		await expectPageShell(page, ProcessMiningDashboard, 'Process Mining')
+		await expectPageShell(page, ProcessMiningDashboard, 'Process mining')
 	})
 
-	test('tenant onboarding dashboard renders its heading', async ({ page }) => {
-		await expectPageShell(page, TenantOnboardingDashboard, 'Tenant onboarding')
+	// Tenant onboarding was retired as an app page by page-topology-cleanup (B3)
+	// and is now a section inside the ADMIN settings surface — an absolute
+	// Nextcloud path, not an app route, so navToRoute does not apply.
+	test('tenant onboarding renders as an administration section', async ({
+		page,
+	}) => {
+		await page.goto(`/index.php${TenantOnboardingAdminSettings}`)
+		// AdminRoot mounts its sections lazily as the viewport reaches them, and
+		// this one is 14th of 16 — well below the fold on first paint. Without
+		// scrolling them in, the assertion fails for position rather than for
+		// anything the test is about, which is what the other admin specs use
+		// this helper to avoid.
+		await loadAllAdminSections(page)
+		await expect(
+			page.getByRole('heading', { name: /Tenant.?onboarding/i }).first(),
+		).toBeVisible()
 	})
 
 	test('termijn dashboard renders its deadline-monitoring heading', async ({

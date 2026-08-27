@@ -14,7 +14,7 @@
  * decision through `handle()`.
  *
  * @category Test
- * @package  OCA\Procest\Tests\Stubs\Event
+ * @package  OCA\Dossiq\Tests\Stubs\Event
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,7 +23,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);

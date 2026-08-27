@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Hermiq Assistant Exception.
+ * Dossiq Hermiq Assistant Exception.
  *
  * Signals a failure calling Hermiq's case-assistant surface, carrying the
  * HTTP status Hermiq responded with (or a locally-mapped one for transport/
@@ -10,7 +10,7 @@
  * without matching on message text.
  *
  * @category Service
- * @package  OCA\Procest\Service\Assistant
+ * @package  OCA\Dossiq\Service\Assistant
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,14 +21,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/case-assistant-via-hermiq/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Assistant;
+namespace OCA\Dossiq\Service\Assistant;
 
 use RuntimeException;
 use Throwable;

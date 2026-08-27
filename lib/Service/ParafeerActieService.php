@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest ParafeerActie Service
+ * Dossiq ParafeerActie Service
  *
  * Service for recording parafering actions (advies, paraferen, accorderen,
  * terugsturen) for a voorstel. Enforces per-step actor authorization,
@@ -9,7 +9,7 @@
  * signature annotation when an accordering step is completed.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -20,23 +20,23 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/parafering-actions/tasks.md#T02
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Procest\Event\ParafeerTransitionEvent;
-use OCA\Procest\Service\Parafeer\ParafeerStepGuard;
-use OCA\Procest\Service\Parafeer\ParafeerVoorstelRepository;
-use OCA\Procest\Service\Parafeer\ParaferingActionMapper;
-use OCA\Procest\Service\Support\ObjectArrayNormalizer;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Event\ParafeerTransitionEvent;
+use OCA\Dossiq\Service\Parafeer\ParafeerStepGuard;
+use OCA\Dossiq\Service\Parafeer\ParafeerVoorstelRepository;
+use OCA\Dossiq\Service\Parafeer\ParaferingActionMapper;
+use OCA\Dossiq\Service\Support\ObjectArrayNormalizer;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -149,7 +149,6 @@ class ParafeerActieService {
 	 * @param IRootFolder $rootFolder The Nextcloud root folder (for PDF signing).
 	 * @param LoggerInterface $logger The logger.
 	 * @param IEventDispatcher $eventDispatcher The event dispatcher (parafering transition events).
-	 * @param ParaferingApprovalBridge $approvalBridge Bridge to OpenRegister approval-workflow (ADR-022).
 	 * @param ParaferingActionMapper $actionMapper Pure shaping of action input, payload and route steps.
 	 * @param ParafeerStepGuard $stepGuard Current-step resolution + fail-closed authorisation.
 	 * @param ParafeerVoorstelRepository $proposalRepository Register/schema resolution + voorstel loads.
@@ -160,7 +159,6 @@ class ParafeerActieService {
 		private readonly IRootFolder $rootFolder,
 		private readonly LoggerInterface $logger,
 		private readonly IEventDispatcher $eventDispatcher,
-		private readonly ParaferingApprovalBridge $approvalBridge,
 		private readonly ParaferingActionMapper $actionMapper,
 		private readonly ParafeerStepGuard $stepGuard,
 		private readonly ParafeerVoorstelRepository $proposalRepository,
@@ -219,7 +217,7 @@ class ParafeerActieService {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
-				'Procest: ParafeerTransitionEvent dispatch failed',
+				'Dossiq: ParafeerTransitionEvent dispatch failed',
 				[
 					'proposal' => $proposalId,
 					'action' => $action,
@@ -321,7 +319,6 @@ class ParafeerActieService {
 		$savedAction = $objectService->saveObject(object: $actionData, register: $register, schema: $actionSchema);
 
 		$this->propagateDecision(
-			proposal: $proposal,
 			proposalId: $proposalId,
 			input: $input,
 			stepOrder: $stepOrder,
@@ -373,7 +370,6 @@ class ParafeerActieService {
 	/**
 	 * Propagate the step decision to OpenRegister and emit the audit transition.
 	 *
-	 * @param array<string, mixed> $proposal The voorstel array (provides approvalChainUuid).
 	 * @param string $proposalId The voorstel UUID.
 	 * @param array<string, mixed> $input The parsed action inputs.
 	 * @param int $stepOrder The step order this action applies to.
@@ -382,7 +378,6 @@ class ParafeerActieService {
 	 * @return void
 	 */
 	private function propagateDecision(
-		array $proposal,
 		string $proposalId,
 		array $input,
 		int $stepOrder,
@@ -391,23 +386,15 @@ class ParafeerActieService {
 		$action = (string)$input['action'];
 		$comment = (string)$input['comment'];
 
-		// Per ADR-022: delegate the step transition to OpenRegister's
-		// approval-workflow when this voorstel is backed by an OR
-		// ApprovalChain. OpenRegister enforces the step role, advances the
-		// next step, records the decision, and dispatches the approval
-		// events that ParaferingNotificationService observes. The legacy
-		// in-array currentStep/status update below remains the
-		// consumer-facing projection during the migration window.
-		$this->delegateToApprovalWorkflow(
-			proposal: $proposal,
-			proposalId: $proposalId,
-			action: $action,
-			comment: $comment,
-			advice: (string)$input['advice'],
-			onBehalfOf: $input['onBehalfOf'],
-			mandate: $input['mandate'],
-			currentUser: $currentUser,
-		);
+		// ADR-022's delegation to OpenRegister's approval-workflow was REMOVED
+		// here, and with it ParaferingApprovalBridge. It never ran: it required
+		// `proposal.approvalChainUuid`, a property the `proposal` schema does not
+		// declare and that was only ever written inside ParafeerRouteService::
+		// startParafering() — which was itself unreachable, because its route
+		// bound no argument and answered 400. So the bridge short-circuited on
+		// every single call, the "legacy in-array path" it called a migration
+		// window was the only path, and no approval event dossiq raised ever
+		// reached OpenRegister.
 
 		// Emit the parafering transition event for the audit listener.
 		[$transitionType, $actorRoleForAudit] = $this->transitionForAction(action: $action);
@@ -484,95 +471,6 @@ class ParafeerActieService {
 	}//end applyAccorderingEffects()
 
 	/**
-	 * Delegate a parafering step decision to OpenRegister's approval-workflow.
-	 *
-	 * Maps the procest action onto OR's approve/reject endpoints and encodes
-	 * app-specific semantics (actorType, onBehalfOf mandate, advisory text,
-	 * skip reason) into the OR step comment as JSON `_meta`. Only runs when the
-	 * voorstel carries an `approvalChainUuid` and OR's approval-workflow is
-	 * available; otherwise it is a no-op and the legacy in-array path governs.
-	 *
-	 * Best-effort: a failed OR transition is logged and does NOT abort the
-	 * consumer-facing action during the migration window.
-	 *
-	 * @param array<string, mixed> $proposal The voorstel array (provides approvalChainUuid).
-	 * @param string $proposalId The voorstel UUID.
-	 * @param string $action The procest action (parafered/advised/accorded/returned/skipped).
-	 * @param string $comment The human-readable comment/reden.
-	 * @param string $advice The advisory text (advies steps).
-	 * @param string|null $onBehalfOf The principal UID when acting as delegate.
-	 * @param string|null $mandate The mandate reference.
-	 * @param IUser $currentUser The authenticated actor.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P1.2
-	 */
-	private function delegateToApprovalWorkflow(
-		array $proposal,
-		string $proposalId,
-		string $action,
-		string $comment,
-		string $advice,
-		?string $onBehalfOf,
-		?string $mandate,
-		IUser $currentUser,
-	): void {
-		$chainUuid = (string)($proposal['approvalChainUuid'] ?? '');
-		if ($chainUuid === '' || $this->approvalBridge->isAvailable() === false) {
-			return;
-		}
-
-		// The OR object UUID for the step lookup is the voorstel UUID.
-		$objectUuid = (string)($proposal['id'] ?? $proposal['uuid'] ?? $proposalId);
-		$userId = $currentUser->getUID();
-
-		$actorType = 'user';
-		if ($onBehalfOf !== null) {
-			$actorType = 'delegate';
-		}
-
-		$meta = [
-			'action' => $action,
-			'actorType' => $actorType,
-			'onBehalfOf' => $onBehalfOf,
-			'mandate' => $mandate,
-		];
-
-		$text = $comment;
-		if ($action === self::ACTION_ADVISED) {
-			$meta['advice'] = $advice;
-			if ($text === '') {
-				$text = $advice;
-			}
-		}
-
-		try {
-			if ($action === self::ACTION_RETURNED) {
-				$this->approvalBridge->rejectCurrentStep(
-					voorstelUuid: $objectUuid,
-					userId: $userId,
-					text: $text,
-					meta: $meta,
-				);
-				return;
-			}
-
-			$this->approvalBridge->approveCurrentStep(
-				voorstelUuid: $objectUuid,
-				userId: $userId,
-				text: $text,
-				meta: $meta,
-			);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Procest: approval-workflow delegation failed; legacy path governs',
-				['proposal' => $proposalId, 'action' => $action, 'exception' => $e->getMessage()]
-			);
-		}//end try
-	}//end delegateToApprovalWorkflow()
-
-	/**
 	 * List all parafeeracties for a voorstel, sorted by createdAt ascending.
 	 *
 	 * @param string $proposalId The voorstel UUID.
@@ -597,10 +495,9 @@ class ParafeerActieService {
 			);
 
 			$rows = [];
-			if (is_array($results) === true) {
-				foreach ($results as $row) {
-					$rows[] = $this->normalizer->toArray(value: $row);
-				}
+			// No is_array() guard: $results is already typed as an array.
+			foreach ($results as $row) {
+				$rows[] = $this->normalizer->toArray(value: $row);
 			}
 
 			// Sort by createdAt ascending; fall back to created/_self.created.
@@ -666,10 +563,10 @@ class ParafeerActieService {
 				return;
 			}
 
-			$template = "\n%%%% Procest parafering signature %%%%\n"
-				. "Geaccordeerd via Procest parafeerroute\n"
+			$template = "\n%%%% Dossiq parafering signature %%%%\n"
+				. "Geaccordeerd via Dossiq parafeerroute\n"
 				. "Acteur: %s (%s)\nStap: %d\nTijdstip: %s\n"
-				. "%%%% End Procest signature %%%%\n";
+				. "%%%% End Dossiq signature %%%%\n";
 			$annotationText = sprintf(
 				$template,
 				$actor->getUID(),

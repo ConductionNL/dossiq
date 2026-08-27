@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# Procest ZGW Newman orchestrator.
+# Dossiq ZGW Newman orchestrator.
 #
 # Runs every *.postman_collection.json in this directory against a live
-# Nextcloud instance serving the procest app (openregister-style orchestrator;
+# Nextcloud instance serving the dossiq app (openregister-style orchestrator;
 # run it locally — CI newman wiring lives in .github/workflows/code-quality.yml
 # via the shared quality pipeline's `enable-newman` input, which this repo
 # currently leaves off). Each collection is self-seeding
@@ -24,16 +24,16 @@
 set -euo pipefail
 
 # Re-exec under an exclusive flock so parallel agents serialise.
-LOCK_FILE="/tmp/uiaudit-procest.lock"
-if [ "${PROCEST_NEWMAN_LOCKED:-}" != "1" ] && command -v flock >/dev/null 2>&1; then
-  export PROCEST_NEWMAN_LOCKED=1
+LOCK_FILE="/tmp/uiaudit-dossiq.lock"
+if [ "${DOSSIQ_NEWMAN_LOCKED:-}" != "1" ] && command -v flock >/dev/null 2>&1; then
+  export DOSSIQ_NEWMAN_LOCKED=1
   exec flock "${LOCK_FILE}" "$0" "$@"
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# The ZGW endpoints are served at /index.php/apps/procest by default.
-BASE_URL="${BASE_URL:-http://localhost:8080/index.php/apps/procest}"
+# The ZGW endpoints are served at /index.php/apps/dossiq by default.
+BASE_URL="${BASE_URL:-http://localhost:8080/index.php/apps/dossiq}"
 ADMIN_USER="${ADMIN_USER:-admin}"
 ADMIN_PASS="${ADMIN_PASS:-admin}"
 

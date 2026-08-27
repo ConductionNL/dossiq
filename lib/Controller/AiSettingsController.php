@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest AI Settings Controller
+ * Dossiq AI Settings Controller
  *
  * Administrative surface for the AI subsystem: reading and writing the AI
  * configuration and probing model connectivity. Split out of AiController so
@@ -11,7 +11,7 @@
  * different callers, different auth postures and no shared state.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,7 +19,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -29,11 +29,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\AiService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Settings\AdminSettings;
+use OCA\Dossiq\Service\AiService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;

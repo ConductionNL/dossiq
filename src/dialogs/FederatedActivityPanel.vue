@@ -1,14 +1,14 @@
 <template>
 	<NcDialog
 		:open="open"
-		:name="t('procest', 'Federated activity')"
+		:name="t('dossiq', 'Federated activity')"
 		size="normal"
 		@update:open="$emit('update:open', $event)">
 		<div class="federated-activity-panel">
 			<p class="federated-activity-panel__description">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Async collaboration on this shared case. Entries are append-only and visible to both organisations.',
 					)
 				}}
@@ -16,13 +16,13 @@
 
 			<div v-if="loading" class="federated-activity-panel__loading">
 				<NcLoadingIcon :size="20" />
-				{{ t('procest', 'Loading activity...') }}
+				{{ t('dossiq', 'Loading activity...') }}
 			</div>
 
 			<div
 				v-else-if="entries.length === 0"
 				class="federated-activity-panel__empty">
-				<p>{{ t('procest', 'No activity yet.') }}</p>
+				<p>{{ t('dossiq', 'No activity yet.') }}</p>
 			</div>
 
 			<ul v-else class="federated-activity-panel__list">
@@ -36,8 +36,8 @@
 							:class="`federated-activity-panel__actor-badge--${entry.actorType}`">
 							{{
 								entry.actorType === 'remote'
-									? t('procest', 'Remote')
-									: t('procest', 'Local')
+									? t('dossiq', 'Remote')
+									: t('dossiq', 'Local')
 							}}
 						</span>
 						<span class="federated-activity-panel__actor">{{
@@ -52,27 +52,27 @@
 
 			<div class="form-group">
 				<label for="federated-activity-message">{{
-					t('procest', 'Add a message')
+					t('dossiq', 'Add a message')
 				}}</label>
 				<textarea
 					id="federated-activity-message"
 					v-model="message"
 					rows="3"
 					:placeholder="
-						t('procest', 'Write a note visible to both organisations...')
+						t('dossiq', 'Write a note visible to both organisations...')
 					" />
 			</div>
 		</div>
 
 		<template #actions>
 			<NcButton @click="$emit('update:open', false)">
-				{{ t('procest', 'Close') }}
+				{{ t('dossiq', 'Close') }}
 			</NcButton>
 			<NcButton
 				type="primary"
 				:disabled="!message.trim() || posting"
 				@click="post">
-				{{ posting ? t('procest', 'Posting...') : t('procest', 'Post') }}
+				{{ posting ? t('dossiq', 'Posting...') : t('dossiq', 'Post') }}
 			</NcButton>
 		</template>
 	</NcDialog>

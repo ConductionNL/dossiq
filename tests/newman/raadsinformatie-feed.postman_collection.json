@@ -1,6 +1,6 @@
 {
 	"info": {
-		"name": "Procest — Open Raadsinformatie Feed (smoke)",
+		"name": "Dossiq — Open Raadsinformatie Feed (smoke)",
 		"description": "Smoke test for the public ORI feed endpoints (vergaderingen, agendapunten, documenten). Unauth read per open-raadsinformatie spec — see openspec/changes/open-raadsinformatie/tasks.md.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},

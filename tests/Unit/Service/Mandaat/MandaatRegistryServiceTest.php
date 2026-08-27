@@ -6,7 +6,7 @@
  * Covers the referential-integrity guard on OrganisatieRol deletion.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Mandaat
+ * @package  OCA\Dossiq\Tests\Unit\Service\Mandaat
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,17 +24,17 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Mandaat;
+namespace OCA\Dossiq\Tests\Unit\Service\Mandaat;
 
-use OCA\Procest\Service\Mandaat\MandaatRegistryService;
-use OCA\Procest\Service\Support\ConfiguredRegistryService;
+use OCA\Dossiq\Service\Mandaat\MandaatRegistryService;
+use OCA\Dossiq\Service\Support\ConfiguredRegistryService;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 /**
  * Unit tests for MandaatRegistryService.
  *
- * @covers \OCA\Procest\Service\Mandaat\MandaatRegistryService
+ * @covers \OCA\Dossiq\Service\Mandaat\MandaatRegistryService
  */
 class MandaatRegistryServiceTest extends TestCase {
 

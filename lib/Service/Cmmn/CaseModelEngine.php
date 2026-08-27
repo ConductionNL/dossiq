@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest CMMN Case-Model Runtime Engine.
+ * Dossiq CMMN Case-Model Runtime Engine.
  *
  * The adaptive counterpart to `StatusTransitionService`: a pure, deterministic
  * plan-item lifecycle evaluator for CMMN-managed cases (`caseType.handlingModel
@@ -29,7 +29,7 @@
  * settle within one request and reach storage in one write.
  *
  * @category Service
- * @package  OCA\Procest\Service\Cmmn
+ * @package  OCA\Dossiq\Service\Cmmn
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -40,14 +40,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/cmmn-adaptive-case/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Cmmn;
+namespace OCA\Dossiq\Service\Cmmn;
 
 use RuntimeException;
 

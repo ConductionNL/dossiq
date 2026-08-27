@@ -27,7 +27,7 @@ DigiD/eHerkenning broker.
 
 No `via` joins are used: every audience scopes on a scalar reference the record
 carries directly. (Portaliq's contract supports one-hop `via` joins and reverse
-`match: 'scopeField'` joins — see scholiq — but procest's data model does not need
+`match: 'scopeField'` joins — see scholiq — but dossiq's data model does not need
 them here.)
 
 ### Dropped (staff/internal) columns, by collection
@@ -46,7 +46,7 @@ them here.)
 Current scoping uses the DEFAULT subjectRef directly — the record already stores
 the pseudonymous subject reference in its scope field. The **stable claim
 contract** for the forward path, once Portaliq's `portalAccount` rows carry
-verified claims and procest scopes via `scopeClaim`, is:
+verified claims and dossiq scopes via `scopeClaim`, is:
 
 ```
 claims.procest.bsn          → the citizen's verified BSN-derived subject key
@@ -55,7 +55,7 @@ claims.procest.inspectorRef → the external inspector's verified subject key
 ```
 
 **Deviation note (verified against HEAD).** The brief suggested the citizen
-collections scope via `scopeClaim: 'bsn'` through a rol→zaak join. procest's actual
+collections scope via `scopeClaim: 'bsn'` through a rol→zaak join. dossiq's actual
 data model does NOT support that: cases carry no rol row that references a citizen
 by BSN + a zaak ref, and the in-app `PortalCaseService` already scopes cases by a
 single `case.portaalSubject == subjectRef` filter holding a *hashed* subject
@@ -66,7 +66,7 @@ forward indirection to adopt when verified claims land.
 
 ## Additive scope properties (Wave-3-style, noted)
 
-Three properties were added additively to `lib/Settings/procest_register.json`
+Three properties were added additively to `lib/Settings/dossiq_register.json`
 (no existing property removed; internal semantics untouched):
 
 - `case.portaalSubject` — pseudonymous citizen subject reference. Mirrors the

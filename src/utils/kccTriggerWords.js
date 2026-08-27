@@ -5,7 +5,7 @@
  * KCC-werkplek sentiment trigger-word (de)serialisation helpers.
  *
  * The sentiment trigger words are stored as a JSON-encoded string in the
- * Procest settings config (key `sentiment_trigger_words`) but edited as a
+ * Dossiq settings config (key `sentiment_trigger_words`) but edited as a
  * newline-separated textarea in the admin form. These pure helpers convert
  * between the two representations losslessly and defensively.
  *

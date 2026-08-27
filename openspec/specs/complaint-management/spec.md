@@ -11,7 +11,7 @@ Manages citizen complaints as first-class entities with their own schema, sequen
 The system SHALL treat complaints as first-class entities with their own OpenRegister schema and lifecycle, distinct from a regular zaak but sharing the case infrastructure.
 
 #### Scenario: Register a new complaint via intake form
-- **GIVEN** the Procest complaints module is enabled
+- **GIVEN** the Dossiq complaints module is enabled
 - **WHEN** a case worker registers a complaint received from a citizen
 - **THEN** a complaint object MUST be created in OpenRegister with:
   - `klachtnummer`: auto-generated (format: `KL-{year}-{sequence}`, e.g., `KL-2026-0042`)
@@ -136,7 +136,7 @@ The system SHALL support escalation of a complaint to a formal case (zaak) when 
 #### Scenario: Escalate complaint to formal case
 - **GIVEN** complaint `KL-2026-0042` reveals a systemic service failure in the building permits department
 - **WHEN** the handler clicks "Escaleren naar zaak" and selects zaaktype "Intern onderzoek"
-- **THEN** a new zaak MUST be created in Procest with the selected zaaktype
+- **THEN** a new zaak MUST be created in Dossiq with the selected zaaktype
 - **AND** the zaak MUST reference the originating complaint (`bronKlacht`: complaint ID)
 - **AND** the complaint MUST reference the created zaak (`geescaleerdeZaak`: case ID)
 - **AND** the complaint's documents and hearing records MUST be accessible from the zaak
@@ -244,7 +244,7 @@ The system SHALL support configurable complaint categories per tenant, allowing 
 - **AND** existing complaints with this category MUST retain their category value
 - **AND** the category MUST still appear in historical reports
 
-### Requirement: Complaint views MUST integrate with the Procest dashboard
+### Requirement: Complaint views MUST integrate with the Dossiq dashboard
 Complaints MUST be accessible through dedicated views and dashboard widgets.
 
 #### Scenario: Complaint list view
@@ -261,7 +261,7 @@ Complaints MUST be accessible through dedicated views and dashboard widgets.
 - **AND** the handler MUST be able to change status, schedule hearing, record disposition, and escalate to case from this view
 
 #### Scenario: Dashboard complaint widget
-- **GIVEN** the Procest dashboard (Dashboard.vue)
+- **GIVEN** the Dossiq dashboard (Dashboard.vue)
 - **WHEN** a complaint handler views their dashboard
 - **THEN** a "Mijn klachten" widget MUST show: open complaints count, overdue count, and upcoming deadlines (next 5 working days)
 - **AND** clicking the widget MUST navigate to the filtered complaint list

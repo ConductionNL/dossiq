@@ -7,7 +7,7 @@
  * TermijnDefinitieController — the three surfaces that close procest#794.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,13 +25,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\MandaatRegistryController;
-use OCA\Procest\Controller\OrganisatieRolController;
-use OCA\Procest\Controller\TermijnDefinitieController;
-use OCA\Procest\Service\Mandaat\MandaatRegistryService;
-use OCA\Procest\Service\Support\ConfiguredRegistryService;
+use OCA\Dossiq\Controller\MandaatRegistryController;
+use OCA\Dossiq\Controller\OrganisatieRolController;
+use OCA\Dossiq\Controller\TermijnDefinitieController;
+use OCA\Dossiq\Service\Mandaat\MandaatRegistryService;
+use OCA\Dossiq\Service\Support\ConfiguredRegistryService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -41,9 +41,9 @@ use RuntimeException;
 /**
  * Unit tests for the three procest#794 admin controllers.
  *
- * @covers \OCA\Procest\Controller\MandaatRegistryController
- * @covers \OCA\Procest\Controller\OrganisatieRolController
- * @covers \OCA\Procest\Controller\TermijnDefinitieController
+ * @covers \OCA\Dossiq\Controller\MandaatRegistryController
+ * @covers \OCA\Dossiq\Controller\OrganisatieRolController
+ * @covers \OCA\Dossiq\Controller\TermijnDefinitieController
  */
 class MandateRegistryControllersTest extends TestCase {
 
@@ -93,7 +93,7 @@ class MandateRegistryControllersTest extends TestCase {
 	 * @return MandaatRegistryController The controller.
 	 */
 	private function mandateController(): MandaatRegistryController {
-		return new MandaatRegistryController('procest', $this->request, $this->registry, $this->logger);
+		return new MandaatRegistryController('dossiq', $this->request, $this->registry, $this->logger);
 	}//end mandaatController()
 
 	/**
@@ -102,7 +102,7 @@ class MandateRegistryControllersTest extends TestCase {
 	 * @return OrganisatieRolController The controller.
 	 */
 	private function roleController(): OrganisatieRolController {
-		return new OrganisatieRolController('procest', $this->request, $this->registry, $this->logger);
+		return new OrganisatieRolController('dossiq', $this->request, $this->registry, $this->logger);
 	}//end rolController()
 
 	/**
@@ -111,7 +111,7 @@ class MandateRegistryControllersTest extends TestCase {
 	 * @return TermijnDefinitieController The controller.
 	 */
 	private function termController(): TermijnDefinitieController {
-		return new TermijnDefinitieController('procest', $this->request, $this->generic, $this->logger);
+		return new TermijnDefinitieController('dossiq', $this->request, $this->generic, $this->logger);
 	}//end termijnController()
 
 	/**
@@ -162,7 +162,7 @@ class MandateRegistryControllersTest extends TestCase {
 	 */
 	public function testCreateAnswers201AndStripsRoutingParams(): void {
 		$this->request->method('getParams')->willReturn(
-			['roleName' => 'Vergunningverlener', '_route' => 'procest.organisatieRol.rollenCreate', 'id' => 'spoofed']
+			['roleName' => 'Vergunningverlener', '_route' => 'dossiq.organisatieRol.rollenCreate', 'id' => 'spoofed']
 		);
 
 		$this->registry->expects($this->once())

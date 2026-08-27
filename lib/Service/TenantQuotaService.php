@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Tenant Quota Service
+ * Dossiq Tenant Quota Service
  *
  * Per-tenant quota enforcement: initialize from tier templates, check
  * limit, atomic increment, set limit. The actual `check + increment`
@@ -9,7 +9,7 @@
  * case creation.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,14 +18,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
@@ -95,6 +95,8 @@ class TenantQuotaService {
 	 * @return array<int, array<string,mixed>> Persisted quota rows.
 	 *
 	 * @throws InvalidArgumentException When tier is unknown.
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-tier-based-quota-initialisation-req-005-a-req-005-e
 	 */
 	public function initialize(string $tenantId, string $tier): array {
 		if (array_key_exists($tier, self::TIER_DEFAULTS) === false) {
@@ -127,7 +129,7 @@ class TenantQuotaService {
 					$rows[] = $row;
 				}
 			} catch (Throwable $e) {
-				$this->logger->error('Procest: quota initialise write failed', ['exception' => $e->getMessage()]);
+				$this->logger->error('Dossiq: quota initialise write failed', ['exception' => $e->getMessage()]);
 			}//end try
 		}//end foreach
 
@@ -330,7 +332,7 @@ class TenantQuotaService {
 				uuid: $uuidArg
 			);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest: persistQuota failed', ['exception' => $e->getMessage()]);
+			$this->logger->error('Dossiq: persistQuota failed', ['exception' => $e->getMessage()]);
 		}
 	}//end persistQuota()
 

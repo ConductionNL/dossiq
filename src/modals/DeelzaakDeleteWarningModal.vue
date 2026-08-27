@@ -20,7 +20,7 @@
 -->
 <template>
 	<NcDialog
-		:name="t('procest', 'Delete case with sub-cases')"
+		:name="t('dossiq', 'Delete case with sub-cases')"
 		:open="true"
 		size="normal"
 		@update:open="onDialogClose"
@@ -33,7 +33,7 @@
 			<p class="deelzaak-delete-warning__detail">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'The sub-cases will remain accessible as standalone cases after deletion.',
 					)
 				}}
@@ -46,13 +46,13 @@
 
 		<template #actions>
 			<NcButton :disabled="busy" @click="$emit('close')">
-				{{ t('procest', 'Cancel') }}
+				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 			<NcButton type="error" :disabled="busy" @click="confirmDelete">
 				<template v-if="busy" #icon>
 					<NcLoadingIcon :size="20" />
 				</template>
-				{{ t('procest', 'Delete') }}
+				{{ t('dossiq', 'Delete') }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -147,7 +147,7 @@ export default {
 				)
 				if (!result.complete) {
 					this.error = t(
-						'procest',
+						'dossiq',
 						'{failed} of {total} sub-cases could not be detached, so the case was not deleted. Detach them first, then try again.',
 						{ failed: result.failed, total: result.total },
 					)
@@ -158,7 +158,7 @@ export default {
 			} catch (err) {
 				console.error('[DeelzaakDeleteWarningModal] delete failed', err)
 				this.error = t(
-					'procest',
+					'dossiq',
 					'The case could not be deleted. Please try again.',
 				)
 			} finally {

@@ -28,23 +28,23 @@
  *    (`Verzwaring vereist managerrol` → 403).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\LhsController;
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\LhsLookupService;
-use OCA\Procest\Service\Vth\LhsRecommendationService;
+use OCA\Dossiq\Controller\LhsController;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\LhsLookupService;
+use OCA\Dossiq\Service\Vth\LhsRecommendationService;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -57,7 +57,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Wire-contract tests for LhsController.
  *
- * @covers \OCA\Procest\Controller\LhsController
+ * @covers \OCA\Dossiq\Controller\LhsController
  */
 class LhsControllerContractTest extends TestCase {
 
@@ -134,7 +134,7 @@ class LhsControllerContractTest extends TestCase {
 		$this->caseAccessGuard = $this->createMock(CaseAccessGuard::class);
 
 		$this->controller = new LhsController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			lhsService: $this->lhsService,
 			lhsLookupService: $this->lhsLookupService,

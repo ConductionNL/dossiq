@@ -9,7 +9,7 @@
  * described in enforce-dwangsom-callback-signature.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,17 +20,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/enforce-dwangsom-callback-signature/specs/financial-integration/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\DwangsomPaymentCallbackController;
-use OCA\Procest\Service\DwangsomUitbetalingService;
+use OCA\Dossiq\Controller\DwangsomPaymentCallbackController;
+use OCA\Dossiq\Service\DwangsomUitbetalingService;
 use OCP\IAppConfig;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -40,7 +40,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Signature-enforcement tests for DwangsomPaymentCallbackController.
  *
- * @covers \OCA\Procest\Controller\DwangsomPaymentCallbackController
+ * @covers \OCA\Dossiq\Controller\DwangsomPaymentCallbackController
  */
 class DwangsomPaymentCallbackControllerTest extends TestCase {
 
@@ -93,7 +93,7 @@ class DwangsomPaymentCallbackControllerTest extends TestCase {
 	 */
 	private function makeController(): DwangsomPaymentCallbackController {
 		return new DwangsomPaymentCallbackController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			service: $this->service,
 			appConfig: $this->appConfig,
@@ -108,7 +108,7 @@ class DwangsomPaymentCallbackControllerTest extends TestCase {
 	 */
 	public function testCallbackRejectsWhenSecretUnconfigured(): void {
 		$this->appConfig->method('getValueString')
-			->with('procest', 'dwangsom_callback_secret', '')
+			->with('dossiq', 'dwangsom_callback_secret', '')
 			->willReturn('');
 
 		$this->logger->expects($this->atLeastOnce())->method('warning');
@@ -126,7 +126,7 @@ class DwangsomPaymentCallbackControllerTest extends TestCase {
 	 */
 	public function testCallbackRejectsInvalidSignature(): void {
 		$this->appConfig->method('getValueString')
-			->with('procest', 'dwangsom_callback_secret', '')
+			->with('dossiq', 'dwangsom_callback_secret', '')
 			->willReturn('super-secret');
 
 		$this->request->method('getHeader')
@@ -153,7 +153,7 @@ class DwangsomPaymentCallbackControllerTest extends TestCase {
 		$rawBody = json_encode(['reference' => 'REF-123', 'status' => 'paid']);
 
 		$this->appConfig->method('getValueString')
-			->with('procest', 'dwangsom_callback_secret', '')
+			->with('dossiq', 'dwangsom_callback_secret', '')
 			->willReturn($secret);
 
 		$this->request->method('getHeader')

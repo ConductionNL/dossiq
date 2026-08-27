@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Seed Bezwaar/Beroep Data Repair Step
+ * Dossiq Seed Bezwaar/Beroep Data Repair Step
  *
  * Repair step that seeds pre-defined bezwaar and beroep case types
  * with status types, role types, and workflow templates.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -18,17 +18,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/bezwaar-lifecycle/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
-use OCA\Procest\Service\SeedDataService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SeedDataService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -59,7 +59,7 @@ class SeedBezwaarBeroepData implements IRepairStep {
 	 * @return string
 	 */
 	public function getName(): string {
-		return 'Seed Bezwaar, Beroep and Subsidie case types for Procest';
+		return 'Seed Bezwaar, Beroep and Subsidie case types for Dossiq';
 	}//end getName()
 
 	/**
@@ -103,7 +103,7 @@ class SeedBezwaarBeroepData implements IRepairStep {
 				'Could not seed bezwaar/beroep data: ' . $e->getMessage()
 			);
 			$this->logger->error(
-				'Procest bezwaar/beroep seed failed',
+				'Dossiq bezwaar/beroep seed failed',
 				['exception' => $e->getMessage()]
 			);
 		}//end try

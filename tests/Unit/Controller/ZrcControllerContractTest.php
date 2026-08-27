@@ -22,22 +22,22 @@
  *    ZGW specification requires for the search operation.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\ZrcController;
-use OCA\Procest\Service\CaseRelationService;
-use OCA\Procest\Service\ZgwService;
+use OCA\Dossiq\Controller\ZrcController;
+use OCA\Dossiq\Service\CaseRelationService;
+use OCA\Dossiq\Service\ZgwService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -48,7 +48,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Wire-contract tests for ZrcController.
  *
- * @covers \OCA\Procest\Controller\ZrcController
+ * @covers \OCA\Dossiq\Controller\ZrcController
  *
  * The ZGW controllers inherit from ZgwController, which in turn composes the
  * NormalisesObjectRows trait, so exercising this controller necessarily runs
@@ -57,8 +57,8 @@ use PHPUnit\Framework\TestCase;
  * executed-but-unlisted code risky and fails the run — so both are declared as
  * used rather than covered.
  *
- * @uses \OCA\Procest\Controller\ZgwController
- * @uses \OCA\Procest\Support\NormalisesObjectRows
+ * @uses \OCA\Dossiq\Controller\ZgwController
+ * @uses \OCA\Dossiq\Support\NormalisesObjectRows
  */
 class ZrcControllerContractTest extends TestCase {
 
@@ -113,7 +113,7 @@ class ZrcControllerContractTest extends TestCase {
 		$this->l10n->method('t')->willReturnArgument(0);
 
 		$this->controller = new ZrcController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			zgwService: $this->zgwService,
 			l10n: $this->l10n,

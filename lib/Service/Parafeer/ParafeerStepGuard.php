@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest parafeer step guard.
+ * Dossiq parafeer step guard.
  *
  * The fail-closed gate every parafeeractie passes through: it resolves the
  * voorstel's current step from its route snapshot, asserts the caller is that
@@ -15,7 +15,7 @@
  * non-actor caller are all refusals (OWASP A01:2021, ADR-005 Rule 3).
  *
  * @category Service
- * @package  OCA\Procest\Service\Parafeer
+ * @package  OCA\Dossiq\Service\Parafeer
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,7 +23,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -33,7 +33,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Parafeer;
+namespace OCA\Dossiq\Service\Parafeer;
 
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\AppFramework\OCS\OCSForbiddenException;

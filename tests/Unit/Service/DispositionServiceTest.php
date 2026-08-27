@@ -7,7 +7,7 @@
  * validation of oordeel values.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,10 +20,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\DispositionService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\DispositionService;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -59,7 +59,7 @@ interface DispositionObjectServiceStub {
 /**
  * Unit tests for DispositionService.
  *
- * @covers \OCA\Procest\Service\DispositionService
+ * @covers \OCA\Dossiq\Service\DispositionService
  */
 class DispositionServiceTest extends TestCase {
 
@@ -140,7 +140,7 @@ class DispositionServiceTest extends TestCase {
 		$this->settingsService
 			->method('getConfigValue')
 			->willReturnMap([
-				['register', '', 'procest'],
+				['register', '', 'dossiq'],
 				['complaint_disposition_schema', '', 'complaintDisposition'],
 			]);
 
@@ -159,7 +159,7 @@ class DispositionServiceTest extends TestCase {
 	public function testSubmitDispositionSetsApprovalStatusWhenRequired(): void {
 		$objectServiceMock = $this->createMock(DispositionObjectServiceStub::class);
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-		$this->settingsService->method('getConfigValue')->willReturn('procest');
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
 
 		$objectServiceMock
 			->method('saveObject')
@@ -186,7 +186,7 @@ class DispositionServiceTest extends TestCase {
 	public function testApproveDispositionSetsStatusToGoedgekeurd(): void {
 		$objectServiceMock = $this->createMock(DispositionObjectServiceStub::class);
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-		$this->settingsService->method('getConfigValue')->willReturn('procest');
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
 
 		$objectServiceMock
 			->method('saveObject')

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest DwangsomController.
+ * Dossiq DwangsomController.
  *
  * REST surface for DwangsomBerekening state + bezwaar lifecycle +
  * beschikking-stop. Defers all business logic to
@@ -9,7 +9,7 @@
  * (ADR-022).
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,20 +20,20 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\DwangsomBezwaarService;
-use OCA\Procest\Service\DwangsomCalculationService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\OwningCaseResolver;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\DwangsomBezwaarService;
+use OCA\Dossiq\Service\DwangsomCalculationService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

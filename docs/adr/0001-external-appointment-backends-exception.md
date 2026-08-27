@@ -7,7 +7,7 @@
 
 ## Context
 
-Procest previously shipped a pluggable appointment-scheduling engine
+Dossiq previously shipped a pluggable appointment-scheduling engine
 (`AppointmentService` + `AppointmentBackend/{LocalBackend,QmaticBackend,JccBackend}`).
 The `LocalBackend` path stored events inside the app and rendered its own
 scheduling UI — a direct duplication of what OpenRegister's `calendar`
@@ -33,7 +33,7 @@ This is an **ADR-022 exception under clause 1** ("fundamentally different
 domain requirements — external integration the leaf cannot satisfy").
 
 Resolution **(a) keep in-app** is chosen over **(b) move to openconnector**
-because procest is currently the sole fleet consumer of Qmatic/JCC. Should a
+because dossiq is currently the sole fleet consumer of Qmatic/JCC. Should a
 second app need external municipal scheduling, this decision is revisited in
 favour of (b) — an openconnector source mirroring `shared-pdok-via-openconnector`.
 
@@ -44,7 +44,7 @@ favour of (b) — an openconnector source mirroring `shared-pdok-via-openconnect
   error instead of silently scheduling locally.
 - Zaak-specific appointment metadata the leaf does not model (`productId`,
   `locationId`, `cancelToken`, `reminderSent`, no-show status) is retained on
-  the appointment object in procest's register, and `AppointmentReminderJob`
+  the appointment object in dossiq's register, and `AppointmentReminderJob`
   continues to read it.
 - The citizen public cancel-by-token surface (`PublicAppointmentController`)
   is retained for external bookings.

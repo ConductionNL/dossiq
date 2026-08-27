@@ -8,7 +8,7 @@
  * fallbacks an unconfigured instance relies on.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Ai
+ * @package  OCA\Dossiq\Tests\Unit\Service\Ai
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,16 +24,16 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Ai;
+namespace OCA\Dossiq\Tests\Unit\Service\Ai;
 
-use OCA\Procest\Service\Ai\AiModelIdentity;
+use OCA\Dossiq\Service\Ai\AiModelIdentity;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for AiModelIdentity.
  *
- * @covers \OCA\Procest\Service\Ai\AiModelIdentity
+ * @covers \OCA\Dossiq\Service\Ai\AiModelIdentity
  */
 class AiModelIdentityTest extends TestCase {
 

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest tenant branding sanitiser.
+ * Dossiq tenant branding sanitiser.
  *
  * Owns the fail-closed validation of every tenant-supplied branding input:
  * the hex-colour check on primary/secondary colours, the MIME-type + 5 MB
@@ -16,7 +16,7 @@
  * instead of passing through unrecognised.
  *
  * @category Service
- * @package  OCA\Procest\Service\Tenant
+ * @package  OCA\Dossiq\Service\Tenant
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,7 +24,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -34,7 +34,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Tenant;
+namespace OCA\Dossiq\Service\Tenant;
 
 use InvalidArgumentException;
 

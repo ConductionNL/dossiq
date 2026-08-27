@@ -31,8 +31,8 @@ The system SHALL provide a pre-seeded "Beroep" (appeal) case type for tracking a
 
 #### Scenario: Beroep case type is available after installation
 
-- **WHEN** the Procest app repair step runs
-- **THEN** a case type "Beroep" SHALL exist in the procest register
+- **WHEN** the Dossiq app repair step runs
+- **THEN** a case type "Beroep" SHALL exist in the dossiq register
 - **AND** the case type SHALL have appropriate status types for court proceedings tracking
 
 ### Requirement: Beroep Status Types

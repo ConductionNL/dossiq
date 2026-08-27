@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Seed VTH Workflow Templates Repair Step
+ * Dossiq Seed VTH Workflow Templates Repair Step
  *
  * Repair step that seeds six canonical VTH (Vergunningen, Toezicht &
  * Handhaving) workflow templates as published `workflowTemplate` v1 objects
@@ -18,11 +18,11 @@
  * of the catalog continues.
  *
  * This class is orchestration only. The OpenRegister reads live in
- * {@see \OCA\Procest\Repair\Vth\VthSeedLookup} and the steps/transitions
- * translation in {@see \OCA\Procest\Repair\Vth\VthWorkflowGraphResolver}.
+ * {@see \OCA\Dossiq\Repair\Vth\VthSeedLookup} and the steps/transitions
+ * translation in {@see \OCA\Dossiq\Repair\Vth\VthWorkflowGraphResolver}.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -33,20 +33,20 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/vth-workflow-templates/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Repair\Vth\VthSeedLookup;
-use OCA\Procest\Repair\Vth\VthWorkflowGraphResolver;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\WorkflowDefinitionService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Repair\Vth\VthSeedLookup;
+use OCA\Dossiq\Repair\Vth\VthWorkflowGraphResolver;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\WorkflowDefinitionService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -62,6 +62,17 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 	 * Catalog directory relative to lib/.
 	 */
 	private const CATALOG_DIR = __DIR__ . '/../Settings/seed/vth-workflow-templates';
+
+	/**
+	 * Memoised template slug → caseType UUID map, built once per run.
+	 *
+	 * A `spawnCase` action names its target by TEMPLATE slug, while the engine's
+	 * `createSubCase` needs a caseType UUID — which is instance-specific and so
+	 * cannot live in the catalog JSON. This map is the bridge.
+	 *
+	 * @var array<string, string>|null
+	 */
+	private ?array $spawnTargets = null;
 
 	/**
 	 * Constructor for SeedVthWorkflowTemplates.
@@ -91,7 +102,7 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 	 * @spec openspec/specs/vth-workflow-templates/spec.md
 	 */
 	public function getName(): string {
-		return 'Seed VTH (Vergunningen, Toezicht, Handhaving) workflow templates for Procest';
+		return 'Seed VTH (Vergunningen, Toezicht, Handhaving) workflow templates for Dossiq';
 	}//end getName()
 
 	/**
@@ -172,6 +183,53 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 	}//end catalogFiles()
 
 	/**
+	 * Build (once per run) the template slug → caseType UUID map for spawnCase.
+	 *
+	 * Every catalog entry is read, including cross-link ones: a cross-link entry
+	 * seeds no workflow of its own but its caseType is still a legitimate spawn
+	 * target. A slug whose caseType does not resolve is simply absent from the
+	 * map, and the resolver drops the action rather than storing a dead one.
+	 *
+	 * @return array<string, string> Template slug → caseType UUID
+	 *
+	 * @spec openspec/specs/vth-workflow-templates/spec.md
+	 */
+	private function spawnTargets(): array {
+		if ($this->spawnTargets !== null) {
+			return $this->spawnTargets;
+		}
+
+		$files = glob(self::CATALOG_DIR . '/*.json');
+		if ($files === false) {
+			$files = [];
+		}
+
+		$map = [];
+		foreach ($files as $file) {
+			$data = $this->loadCatalogEntry(file: $file);
+			if ($data === null) {
+				continue;
+			}
+
+			$caseTypeSlug = (string)($data['caseTypeSlug'] ?? '');
+			if ($caseTypeSlug === '') {
+				continue;
+			}
+
+			$caseTypeId = $this->lookup->resolveCaseTypeId(slug: $caseTypeSlug);
+			if ($caseTypeId === '') {
+				continue;
+			}
+
+			$map[(string)$data['slug']] = $caseTypeId;
+		}
+
+		$this->spawnTargets = $map;
+
+		return $map;
+	}//end spawnTargets()
+
+	/**
 	 * Process one catalog file, converting any throw into a `failed` tally.
 	 *
 	 * One unusable catalog file must never abort the rest of the catalog.
@@ -188,7 +246,7 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 			return $this->processCatalogFile(file: $file, output: $output);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to process VTH workflow template catalog file',
+				'Dossiq: failed to process VTH workflow template catalog file',
 				[
 					'app' => Application::APP_ID,
 					'file' => basename($file),
@@ -245,6 +303,7 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 			data: $data,
 			slug: $slug,
 			statusMap: (array)$context['statusMap'],
+			spawnTargets: $this->spawnTargets(),
 		);
 		if ($graph === null) {
 			return 'skipped';
@@ -271,7 +330,7 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 	 */
 	private function reportCrossLink(array $data, string $slug, IOutput $output): void {
 		$this->logger->info(
-			'Procest: VTH workflow template — cross-link entry, no new workflow created',
+			'Dossiq: VTH workflow template — cross-link entry, no new workflow created',
 			[
 				'app' => Application::APP_ID,
 				'slug' => $slug,
@@ -297,7 +356,7 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 		$raw = file_get_contents($file);
 		if ($raw === false) {
 			$this->logger->error(
-				'Procest: VTH workflow template — unable to read catalog file',
+				'Dossiq: VTH workflow template — unable to read catalog file',
 				['app' => Application::APP_ID, 'file' => basename($file)]
 			);
 			return null;
@@ -306,7 +365,7 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 		$data = json_decode($raw, true);
 		if (json_last_error() !== JSON_ERROR_NONE || is_array($data) === false) {
 			$this->logger->error(
-				'Procest: VTH workflow template — invalid JSON in catalog file',
+				'Dossiq: VTH workflow template — invalid JSON in catalog file',
 				['app' => Application::APP_ID, 'file' => basename($file)]
 			);
 			return null;
@@ -316,7 +375,7 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 		$title = (string)($data['title'] ?? '');
 		if ($slug === '' || $title === '') {
 			$this->logger->warning(
-				'Procest: VTH workflow template — missing slug or title',
+				'Dossiq: VTH workflow template — missing slug or title',
 				['app' => Application::APP_ID, 'file' => basename($file)]
 			);
 			return null;
@@ -349,7 +408,7 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 		// caseType is already present.
 		if ($this->lookup->isAlreadySeeded(caseTypeId: $caseTypeId, title: $title) === true) {
 			$this->logger->info(
-				'Procest: VTH workflow template already present, skipping',
+				'Dossiq: VTH workflow template already present, skipping',
 				[
 					'app' => Application::APP_ID,
 					'slug' => $slug,
@@ -363,7 +422,7 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 		$statusMap = $this->lookup->buildStatusMap(caseTypeId: $caseTypeId);
 		if ($statusMap === []) {
 			$this->logger->warning(
-				'Procest: VTH workflow template — no statusTypes found for caseType',
+				'Dossiq: VTH workflow template — no statusTypes found for caseType',
 				[
 					'app' => Application::APP_ID,
 					'slug' => $slug,
@@ -392,7 +451,7 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 		$caseTypeSlug = (string)($data['caseTypeSlug'] ?? '');
 		if ($caseTypeSlug === '') {
 			$this->logger->warning(
-				'Procest: VTH workflow template — missing caseTypeSlug',
+				'Dossiq: VTH workflow template — missing caseTypeSlug',
 				['app' => Application::APP_ID, 'slug' => $slug]
 			);
 			return '';
@@ -404,7 +463,7 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 			// has run (or while the anonymous repair context cannot read the
 			// caseType) — debug, not warning, so it does not spam the log.
 			$this->logger->debug(
-				'Procest: VTH workflow template — caseType not found, skipping',
+				'Dossiq: VTH workflow template — caseType not found, skipping',
 				[
 					'app' => Application::APP_ID,
 					'slug' => $slug,
@@ -454,7 +513,7 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 
 		if ($draft === null || isset($draft['id']) === false) {
 			$this->logger->error(
-				'Procest: VTH workflow template — createDraft returned null',
+				'Dossiq: VTH workflow template — createDraft returned null',
 				['app' => Application::APP_ID, 'slug' => $slug]
 			);
 			return 'failed';
@@ -466,7 +525,7 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 		$published = $this->definitionService->publish(id: (string)$draft['id']);
 		if ($published === null) {
 			$this->logger->error(
-				'Procest: VTH workflow template — publish returned null',
+				'Dossiq: VTH workflow template — publish returned null',
 				['app' => Application::APP_ID, 'slug' => $slug, 'draftId' => (string)$draft['id']]
 			);
 			return 'failed';

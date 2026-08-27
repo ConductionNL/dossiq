@@ -6,8 +6,8 @@
  *
  * IMPORTANT SCOPE NOTE
  * --------------------
- * This worker is registered at the app-root scope (`/apps/procest/`), so it
- * controls EVERY procest page and sees EVERY fetch those pages make — including
+ * This worker is registered at the app-root scope (`/apps/dossiq/`), so it
+ * controls EVERY dossiq page and sees EVERY fetch those pages make — including
  * the OpenRegister data calls (`/apps/openregister/api/objects/...`) and the
  * app-shell/navigation loads that the dashboard, case lists and task lists all
  * depend on. It must therefore only ever intercept the handful of requests the
@@ -20,7 +20,7 @@
  *
  * The reason a re-issued `fetch()` throws is now measured rather than assumed:
  * a Service Worker inherits the CSP of its OWN script response, and Nextcloud
- * served `/apps/procest/service-worker.js` with `default-src 'none'` and no
+ * served `/apps/dossiq/service-worker.js` with `default-src 'none'` and no
  * `connect-src`, so EVERY fetch the worker made was blocked. Every request the
  * worker claimed with `respondWith()` therefore became a network error; the
  * worker could only ever break a request, never serve one. That is fixed in
@@ -31,7 +31,7 @@
  * Caching strategy (Workbox-style, hand-rolled to avoid a build-time Workbox
  * dependency in this app's webpack pipeline):
  *
- *  - SYNC API calls (GET /apps/procest/api/sync/...): network-first with a
+ *  - SYNC API calls (GET /apps/dossiq/api/sync/...): network-first with a
  *    cache fallback, so the freshest planning is used when online and the
  *    last-known planning is served offline.
  *  - PDOK map tiles: cache-first (they are immutable for the cache window).
@@ -51,7 +51,7 @@
  * thin offline sync + tile cache layer and is exercised by Playwright, not vitest.
  */
 
-const CACHE_VERSION = 'procest-mio-v2'
+const CACHE_VERSION = 'dossiq-mio-v2'
 const DATA_CACHE = `${CACHE_VERSION}-data`
 const TILE_CACHE = `${CACHE_VERSION}-tiles`
 
@@ -103,7 +103,17 @@ self.addEventListener('activate', (event) => {
 					keys
 						.filter(
 							(k) =>
-								k.startsWith('procest-mio-')
+								/* The legacy `procest-mio-` prefix is matched as well as
+								   the current one. This app was renamed from procest to
+								   dossiq, and a browser that ran the old build still holds
+								   caches under the old name. Matching only the new prefix
+								   would strand them: unreachable by this code and so never
+								   swept on any future activation, which is the eviction
+								   guarantee this cache is built around. Drop the legacy arm
+								   only once no client can still be running a pre-rename
+								   build. */
+								(k.startsWith('dossiq-mio-')
+									|| k.startsWith('procest-mio-'))
 								&& k.startsWith(CACHE_VERSION) === false,
 						)
 						.map((k) => caches.delete(k)),
@@ -175,11 +185,11 @@ self.addEventListener('fetch', (event) => {
 		return
 	}
 
-	// procest offline-inspection sync API → network-first with cache fallback.
+	// dossiq offline-inspection sync API → network-first with cache fallback.
 	// NB: deliberately scoped to the inspection sync endpoints only. OpenRegister
 	// data calls and app-shell/navigation loads are intentionally NOT handled
 	// here — they fall through to the browser's own network stack.
-	if (url.pathname.includes('/apps/procest/api/sync')) {
+	if (url.pathname.includes('/apps/dossiq/api/sync')) {
 		event.respondWith(networkFirst(request, DATA_CACHE))
 	}
 

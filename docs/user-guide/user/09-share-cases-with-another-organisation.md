@@ -6,7 +6,7 @@ description: Federate cases to an organisation on another Nextcloud instance —
 
 # Share cases with another organisation
 
-Procest cases live in OpenRegister, and OpenRegister can **federate** — share objects with an organisation on *another* Nextcloud instance, the way Nextcloud already shares files between servers. Once federated, the other organisation sees your cases as native, live cases: they open in the list, on the map and on detail pages, and (if you allow it) they can edit them, with every change written straight back to your instance.
+Dossiq cases live in OpenRegister, and OpenRegister can **federate** — share objects with an organisation on *another* Nextcloud instance, the way Nextcloud already shares files between servers. Once federated, the other organisation sees your cases as native, live cases: they open in the list, on the map and on detail pages, and (if you allow it) they can edit them, with every change written straight back to your instance.
 
 This tutorial walks the three ways to share and how the other side consumes them.
 
@@ -16,7 +16,7 @@ By the end you will have paired two instances, shared a whole case type, shared 
 
 ## Prerequisites
 
-- Two Nextcloud instances, each running Procest + OpenRegister, that can reach each other over HTTPS.
+- Two Nextcloud instances, each running Dossiq + OpenRegister, that can reach each other over HTTPS.
 - On each instance you are an organisation admin (see [Admin settings](../admin/03-admin-settings.md)).
 - The two instances are **trusted servers** of each other (Nextcloud *Settings → Administration → Sharing → Federation*), so they can exchange federated shares.
 

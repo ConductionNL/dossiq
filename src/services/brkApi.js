@@ -1,7 +1,7 @@
 /**
  * BRK (Basisregistratie Kadaster) parcel lookup shim.
  *
- * Thin fetch wrapper over procest's own `brk#*` routes
+ * Thin fetch wrapper over dossiq's own `brk#*` routes
  * (`/api/external/brk/{parcel,parcel/{id}}`), backed by the authoritative
  * Kadaster Haal Centraal BRK Bevragen API v2 adapter (`BrkApiAdapter`) —
  * dormant by default until `integration.brk.mode` is configured. Mirrors
@@ -22,7 +22,7 @@
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-const BASE_URL = generateUrl('/apps/procest/api/external/brk')
+const BASE_URL = generateUrl('/apps/dossiq/api/external/brk')
 
 /**
  * Look up a parcel by kadastrale aanduiding.

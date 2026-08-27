@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Action Handler interface.
+ * Dossiq Action Handler interface.
  *
  * Implementations execute one automatic-action type configured on a workflow
  * transition. Handlers MUST catch \Throwable internally and return a static
@@ -9,7 +9,7 @@
  * failed side-effects MUST NOT roll back the status change.
  *
  * @category Service
- * @package  OCA\Procest\Service\Transitions
+ * @package  OCA\Dossiq\Service\Transitions
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,12 +20,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Transitions;
+namespace OCA\Dossiq\Service\Transitions;
 
 /**
  * Strategy interface for automatic-action handling.

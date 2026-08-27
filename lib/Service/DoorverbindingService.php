@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Doorverbinding Service.
+ * Dossiq Doorverbinding Service.
  *
  * Warm-transfer orchestration: captures an immutable context-snapshot at
  * transfer time, records the doorverbinding, and lets the receiving specialist
@@ -9,7 +9,7 @@
  * snapshot is never mutated, preserving the full context trail.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,16 +20,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -98,7 +98,7 @@ class DoorverbindingService {
 			$created = $objectService->saveObject($register, $schema, $record);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to initiate doorverbinding: ' . $e->getMessage(),
+				'Dossiq: failed to initiate doorverbinding: ' . $e->getMessage(),
 				['app' => Application::APP_ID],
 			);
 			throw new RuntimeException('Could not initiate doorverbinding');
@@ -241,7 +241,7 @@ class DoorverbindingService {
 			$updated = $objectService->saveObject($register, $schema, $patch, $doorverbindingId);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to update doorverbinding: ' . $e->getMessage(),
+				'Dossiq: failed to update doorverbinding: ' . $e->getMessage(),
 				['app' => Application::APP_ID],
 			);
 			throw new RuntimeException('Could not update doorverbinding');

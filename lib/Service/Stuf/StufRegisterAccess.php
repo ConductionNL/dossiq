@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest StufRegisterAccess.
+ * Dossiq StufRegisterAccess.
  *
  * Thin wrapper around OpenRegister's ObjectService for the three StUF
  * schemas. Centralises register/schema resolution and JSON serialisation so
  * the rest of the adapter never touches the OR API directly.
  *
  * @category Service
- * @package  OCA\Procest\Service\Stuf
+ * @package  OCA\Dossiq\Service\Stuf
  *
  * @author    Conduction <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,16 +19,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Stuf;
+namespace OCA\Dossiq\Service\Stuf;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\App\IAppManager;
 use OCP\AppFramework\IAppContainer;
 use OCP\IAppConfig;
@@ -150,7 +150,7 @@ class StufRegisterAccess {
 	}//end findAll()
 
 	/**
-	 * Resolve the OR register id for procest from IAppConfig.
+	 * Resolve the OR register id for dossiq from IAppConfig.
 	 *
 	 * @return string The register id.
 	 */
@@ -177,7 +177,7 @@ class StufRegisterAccess {
 	private function getObjectService(): ?object {
 		if ($this->appManager->isInstalled('openregister') === false) {
 			$this->logger->warning(
-				'Procest StUF: OpenRegister is not installed; the StUF register is unavailable.'
+				'Dossiq StUF: OpenRegister is not installed; the StUF register is unavailable.'
 			);
 			return null;
 		}
@@ -186,7 +186,7 @@ class StufRegisterAccess {
 			return $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
 		} catch (\Throwable $e) {
 			$this->logger->warning(
-				'Procest StUF: could not resolve OpenRegister ObjectService: ' . $e->getMessage()
+				'Dossiq StUF: could not resolve OpenRegister ObjectService: ' . $e->getMessage()
 			);
 			return null;
 		}

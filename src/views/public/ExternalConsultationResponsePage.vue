@@ -5,23 +5,23 @@
 		<!-- Loading state -->
 		<div v-if="loading" class="external-consultation-response__loading">
 			<NcLoadingIcon :size="32" />
-			<p>{{ t('procest', 'Loading consultation data...') }}</p>
+			<p>{{ t('dossiq', 'Loading consultation data...') }}</p>
 		</div>
 
 		<!-- Error state -->
 		<div v-else-if="loadError" class="external-consultation-response__error">
-			<h2>{{ t('procest', 'Not found') }}</h2>
+			<h2>{{ t('dossiq', 'Not found') }}</h2>
 			<p>{{ loadError }}</p>
 		</div>
 
 		<!-- Success state (after submission) -->
 		<div v-else-if="submitted" class="external-consultation-response__success">
 			<div class="external-consultation-response__success-icon">✓</div>
-			<h2>{{ t('procest', 'Advice submitted') }}</h2>
+			<h2>{{ t('dossiq', 'Advice submitted') }}</h2>
 			<p>
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Your advice has been received successfully. You can close this window.',
 					)
 				}}
@@ -33,36 +33,36 @@
 			v-else-if="consultationData"
 			class="external-consultation-response__content">
 			<header class="external-consultation-response__header">
-				<h1>{{ t('procest', 'Advice request') }}</h1>
+				<h1>{{ t('dossiq', 'Advice request') }}</h1>
 				<p class="external-consultation-response__organization">
-					{{ t('procest', 'From:') }}
+					{{ t('dossiq', 'From:') }}
 					{{
 						consultationData.aanvragendeOrganisatie
-						|| t('procest', 'Municipality')
+						|| t('dossiq', 'Municipality')
 					}}
 				</p>
 			</header>
 
 			<!-- Consultation details -->
 			<section class="external-consultation-response__section">
-				<h2>{{ t('procest', 'Consultation details') }}</h2>
+				<h2>{{ t('dossiq', 'Consultation details') }}</h2>
 				<dl class="external-consultation-response__details">
 					<div>
-						<dt>{{ t('procest', 'Onderwerp') }}</dt>
+						<dt>{{ t('dossiq', 'Onderwerp') }}</dt>
 						<dd>{{ consultationData.subject }}</dd>
 					</div>
 					<div v-if="consultationData.question_formulation">
-						<dt>{{ t('procest', 'Question') }}</dt>
+						<dt>{{ t('dossiq', 'Question') }}</dt>
 						<dd class="external-consultation-response__question">
 							{{ consultationData.question_formulation }}
 						</dd>
 					</div>
 					<div>
-						<dt>{{ t('procest', 'Requested by') }}</dt>
+						<dt>{{ t('dossiq', 'Requested by') }}</dt>
 						<dd>{{ consultationData.aanvragendeAfdeling || '—' }}</dd>
 					</div>
 					<div>
-						<dt>{{ t('procest', 'Deadline') }}</dt>
+						<dt>{{ t('dossiq', 'Deadline') }}</dt>
 						<dd
 							:class="{
 								'external-consultation-response__deadline--overdue':
@@ -72,7 +72,7 @@
 							<span
 								v-if="isDeadlinePassed"
 								class="external-consultation-response__overdue-label">
-								({{ t('procest', 'expired') }})
+								({{ t('dossiq', 'expired') }})
 							</span>
 						</dd>
 					</div>
@@ -81,20 +81,20 @@
 
 			<!-- Response form (inline, no dialog) -->
 			<section class="external-consultation-response__section">
-				<h2>{{ t('procest', 'Your advice') }}</h2>
+				<h2>{{ t('dossiq', 'Your advice') }}</h2>
 
 				<div class="external-consultation-response__form">
 					<div class="external-consultation-response__field">
 						<label class="external-consultation-response__label">
-							{{ t('procest', 'Advice') }} *
+							{{ t('dossiq', 'Advice') }} *
 						</label>
 						<NcSelect
 							v-model="responseForm.advies"
 							:options="adviesOptions"
-							:aria-label-combobox="t('procest', 'Advice type')"
+							:aria-label-combobox="t('dossiq', 'Advice type')"
 							label="label"
 							:reduce="(opt) => opt.value"
-							:placeholder="t('procest', 'Select advice type')" />
+							:placeholder="t('dossiq', 'Select advice type')" />
 					</div>
 
 					<div
@@ -103,7 +103,7 @@
 						<label
 							class="external-consultation-response__label"
 							for="external-consultation-response-toelichting">
-							{{ t('procest', 'Explanation') }}
+							{{ t('dossiq', 'Explanation') }}
 							<span v-if="toelichtingRequired">*</span>
 						</label>
 						<textarea
@@ -113,7 +113,7 @@
 							rows="5"
 							:placeholder="
 								t(
-									'procest',
+									'dossiq',
 									'Provide an explanation for your advice...',
 								)
 							" />
@@ -124,7 +124,7 @@
 						v-if="responseForm.advies === 'positief_with_terms'"
 						class="external-consultation-response__field">
 						<label class="external-consultation-response__label">
-							{{ t('procest', 'Conditions') }}
+							{{ t('dossiq', 'Conditions') }}
 						</label>
 						<div
 							v-for="(voorwaarde, idx) in responseForm.terms"
@@ -134,33 +134,33 @@
 								v-model="voorwaarde.description"
 								class="external-consultation-response__condition-input"
 								:aria-label="
-									t('procest', 'Condition description {n}', {
+									t('dossiq', 'Condition description {n}', {
 										n: idx + 1,
 									})
 								"
-								:placeholder="t('procest', 'Condition description')"
+								:placeholder="t('dossiq', 'Condition description')"
 								type="text" />
 							<NcSelect
 								v-model="voorwaarde.priority"
 								:options="priorityOptions"
 								:aria-label-combobox="
-									t('procest', 'Priority condition {n}', {
+									t('dossiq', 'Priority condition {n}', {
 										n: idx + 1,
 									})
 								"
 								label="label"
 								:reduce="(opt) => opt.value"
 								class="external-consultation-response__condition-priority"
-								:placeholder="t('procest', 'Priority')" />
+								:placeholder="t('dossiq', 'Priority')" />
 							<NcButton
 								type="tertiary"
-								:title="t('procest', 'Remove condition')"
+								:title="t('dossiq', 'Remove condition')"
 								@click="removeVoorwaarde(idx)">
 								✕
 							</NcButton>
 						</div>
 						<NcButton @click="addVoorwaarde">
-							{{ t('procest', 'Add condition') }}
+							{{ t('dossiq', 'Add condition') }}
 						</NcButton>
 					</div>
 
@@ -168,7 +168,7 @@
 						<label
 							class="external-consultation-response__label"
 							for="external-consultation-response-datum">
-							{{ t('procest', 'Advice date') }} *
+							{{ t('dossiq', 'Advice date') }} *
 						</label>
 						<input
 							id="external-consultation-response-datum"
@@ -188,8 +188,8 @@
 							@click="submitResponse">
 							{{
 								submitting
-									? t('procest', 'Bezig...')
-									: t('procest', 'Submit advice')
+									? t('dossiq', 'Bezig...')
+									: t('dossiq', 'Submit advice')
 							}}
 						</NcButton>
 					</div>
@@ -235,22 +235,22 @@ export default {
 			},
 
 			adviesOptions: [
-				{ label: this.t('procest', 'Positive'), value: 'positive' },
+				{ label: this.t('dossiq', 'Positive'), value: 'positive' },
 				{
-					label: this.t('procest', 'Positive with conditions'),
+					label: this.t('dossiq', 'Positive with conditions'),
 					value: 'positief_with_terms',
 				},
-				{ label: this.t('procest', 'Negative'), value: 'negative' },
+				{ label: this.t('dossiq', 'Negative'), value: 'negative' },
 				{
-					label: this.t('procest', 'Not applicable'),
+					label: this.t('dossiq', 'Not applicable'),
 					value: 'non_from_application',
 				},
 			],
 
 			priorityOptions: [
-				{ label: this.t('procest', 'High'), value: 'high' },
-				{ label: this.t('procest', 'Normal'), value: 'normal' },
-				{ label: this.t('procest', 'Low'), value: 'low' },
+				{ label: this.t('dossiq', 'High'), value: 'high' },
+				{ label: this.t('dossiq', 'Normal'), value: 'normal' },
+				{ label: this.t('dossiq', 'Low'), value: 'low' },
 			],
 		}
 	},
@@ -288,12 +288,12 @@ export default {
 			this.loadError = ''
 			try {
 				const response = await axios.get(
-					`/apps/procest/api/public/consultations/${encodeURIComponent(this.token)}`,
+					`/apps/dossiq/api/public/consultations/${encodeURIComponent(this.token)}`,
 				)
 				this.consultationData = response.data
 			} catch (err) {
 				this.loadError = this.t(
-					'procest',
+					'dossiq',
 					'Consultation not found or the link has expired.',
 				)
 			} finally {
@@ -324,7 +324,7 @@ export default {
 			this.submitting = true
 			try {
 				await axios.post(
-					`/apps/procest/api/public/consultations/${encodeURIComponent(this.token)}`,
+					`/apps/dossiq/api/public/consultations/${encodeURIComponent(this.token)}`,
 					{
 						advies: this.responseForm.advies,
 						notes: this.responseForm.notes.trim(),
@@ -338,7 +338,7 @@ export default {
 				this.submitted = true
 			} catch (err) {
 				this.submitError = this.t(
-					'procest',
+					'dossiq',
 					'Submission failed. Please try again.',
 				)
 			} finally {

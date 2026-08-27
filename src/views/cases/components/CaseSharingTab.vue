@@ -135,14 +135,14 @@ export default {
 			this.loading = true
 			try {
 				const response = await axios.get(
-					generateUrl('/apps/openregister/api/objects/procest/caseShare'),
+					generateUrl('/apps/openregister/api/objects/dossiq/caseShare'),
 					{
 						params: { caseId: this.objectId, shareType: 'partner' },
 					},
 				)
 				this.shares = response.data?.results || []
 			} catch (err) {
-				showError(t('procest', 'Could not load partner shares'))
+				showError(t('dossiq', 'Could not load partner shares'))
 			} finally {
 				this.loading = false
 			}
@@ -173,11 +173,12 @@ export default {
 			}
 		},
 
+		/** @spec openspec/specs/case-share-via-shares-leaf/spec.md */
 		async loadPartners() {
 			try {
 				const response = await axios.get(
 					generateUrl(
-						'/apps/openregister/api/objects/procest/partnerOrganization',
+						'/apps/openregister/api/objects/dossiq/partnerOrganization',
 					),
 				)
 				this.partners = response.data?.results || []
@@ -186,6 +187,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/specs/case-share-via-shares-leaf/spec.md */
 		async loadCaseDocuments() {
 			if (!this.objectId) {
 				return
@@ -193,7 +195,7 @@ export default {
 			try {
 				const response = await axios.get(
 					generateUrl(
-						`/apps/openregister/api/objects/procest/case/${encodeURIComponent(this.objectId)}`,
+						`/apps/openregister/api/objects/dossiq/case/${encodeURIComponent(this.objectId)}`,
 					),
 				)
 				const docs = response.data?.documents || []
@@ -209,14 +211,14 @@ export default {
 		 */
 		async createShare(payload) {
 			try {
-				await axios.post(generateUrl('/apps/procest/api/shares'), payload)
-				showSuccess(t('procest', 'Share created'))
+				await axios.post(generateUrl('/apps/dossiq/api/shares'), payload)
+				showSuccess(t('dossiq', 'Share created'))
 				this.createShareDialogOpen = false
 				this.loadShares()
 			} catch (err) {
 				showError(
 					err.response?.data?.error
-						|| t('procest', 'Could not create share'),
+						|| t('dossiq', 'Could not create share'),
 				)
 			}
 		},
@@ -229,13 +231,13 @@ export default {
 			try {
 				await axios.delete(
 					generateUrl(
-						`/apps/procest/api/shares/${encodeURIComponent(shareId)}`,
+						`/apps/dossiq/api/shares/${encodeURIComponent(shareId)}`,
 					),
 				)
-				showSuccess(t('procest', 'Share revoked'))
+				showSuccess(t('dossiq', 'Share revoked'))
 				this.loadShares()
 			} catch (err) {
-				showError(t('procest', 'Could not revoke share'))
+				showError(t('dossiq', 'Could not revoke share'))
 			}
 		},
 
@@ -245,13 +247,13 @@ export default {
 		 */
 		async initiateTransfer(payload) {
 			try {
-				await axios.post(generateUrl('/apps/procest/api/transfers'), payload)
-				showSuccess(t('procest', 'Transfer request submitted'))
+				await axios.post(generateUrl('/apps/dossiq/api/transfers'), payload)
+				showSuccess(t('dossiq', 'Transfer request submitted'))
 				this.transferDialogOpen = false
 			} catch (err) {
 				showError(
 					err.response?.data?.error
-						|| t('procest', 'Could not submit transfer request'),
+						|| t('dossiq', 'Could not submit transfer request'),
 				)
 			}
 		},
@@ -266,13 +268,13 @@ export default {
 					generateUrl(createFederatedShareEndpoint()),
 					payload,
 				)
-				showSuccess(t('procest', 'Case shared with remote organisation'))
+				showSuccess(t('dossiq', 'Case shared with remote organisation'))
 				this.createFederatedShareDialogOpen = false
 				this.loadFederatedShares()
 			} catch (err) {
 				showError(
 					err.response?.data?.error
-						|| t('procest', 'Could not create federated share'),
+						|| t('dossiq', 'Could not create federated share'),
 				)
 			}
 		},
@@ -286,10 +288,10 @@ export default {
 				await axios.delete(
 					generateUrl(revokeFederatedShareEndpoint(shareId)),
 				)
-				showSuccess(t('procest', 'Federated share revoked'))
+				showSuccess(t('dossiq', 'Federated share revoked'))
 				this.loadFederatedShares()
 			} catch (err) {
-				showError(t('procest', 'Could not revoke federated share'))
+				showError(t('dossiq', 'Could not revoke federated share'))
 			}
 		},
 
@@ -307,7 +309,7 @@ export default {
 				)
 				this.activityEntries = response.data?.entries || []
 			} catch (err) {
-				showError(t('procest', 'Could not load activity'))
+				showError(t('dossiq', 'Could not load activity'))
 			} finally {
 				this.activityLoading = false
 			}
@@ -329,7 +331,7 @@ export default {
 			} catch (err) {
 				showError(
 					err.response?.data?.error
-						|| t('procest', 'Could not post activity'),
+						|| t('dossiq', 'Could not post activity'),
 				)
 			}
 		},

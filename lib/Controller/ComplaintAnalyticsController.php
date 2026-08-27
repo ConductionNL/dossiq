@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Complaint Analytics Controller
+ * Dossiq Complaint Analytics Controller
  *
  * Read-only reporting surface over complaint (klacht) data: frequency
  * breakdowns, monthly trend, average resolution time, employee threshold
@@ -12,7 +12,7 @@
  * ComplaintAnalyticsService, and need no per-object authorization guard.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,7 +20,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -30,10 +30,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\Complaint\ComplaintAccessGuard;
-use OCA\Procest\Service\ComplaintAnalyticsService;
+use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
+use OCA\Dossiq\Service\ComplaintAnalyticsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;

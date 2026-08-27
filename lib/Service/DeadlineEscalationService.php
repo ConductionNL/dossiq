@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest DeadlineEscalationService.
+ * Dossiq DeadlineEscalationService.
  *
  * Resolves per-threshold escalation recipients and dispatches escalation
  * notifications when a TermijnInstance reaches a configured proximity
@@ -10,7 +10,7 @@
  * skips any threshold already in the list.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,14 +21,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use Psr\Log\LoggerInterface;
 
@@ -140,7 +140,7 @@ class DeadlineEscalationService {
 			'deadline' => (string)($instance['endDateCurrent'] ?? ''),
 		];
 
-		$this->logger->info('Procest termijn escalation dispatched', $payload);
+		$this->logger->info('Dossiq termijn escalation dispatched', $payload);
 
 		// Mark threshold as sent (duplicate suppression).
 		$alreadySent[] = $threshold;

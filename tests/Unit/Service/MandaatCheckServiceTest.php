@@ -4,7 +4,7 @@
  * Unit tests for MandaatCheckService.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -12,7 +12,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -20,18 +20,18 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\ConflictOfInterestService;
-use OCA\Procest\Service\MandaatCheckService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\ConflictOfInterestService;
+use OCA\Dossiq\Service\MandaatCheckService;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\MandaatCheckService
+ * @covers \OCA\Dossiq\Service\MandaatCheckService
  *
- * @uses \OCA\Procest\Service\ConflictOfInterestService
+ * @uses \OCA\Dossiq\Service\ConflictOfInterestService
  */
 class MandaatCheckServiceTest extends TestCase {
 	private FakeTermijnStore $objects;
@@ -44,7 +44,7 @@ class MandaatCheckServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'mandaat_schema' => 'mandate',
 					'medewerker_rol_toewijzing_schema' => 'medewerkerRolToewijzing',
 					default => '',
@@ -67,7 +67,7 @@ class MandaatCheckServiceTest extends TestCase {
 		//   - m-consulent: rol=consulent, decisionType=wmo-toekenning, plafond €5000
 		//   - m-manager:   rol=afdelingsmanager, decisionType=wmo-toekenning, plafond €25000, subdelegatie=true
 		//   - m-bestuurder: rol=bestuurder, decisionType=omgevingsvergunning, plafond=infinity
-		$this->objects->saveObject('procest', 'mandate', [
+		$this->objects->saveObject('dossiq', 'mandate', [
 			'id' => 'm-consulent',
 			'mandaatNummer' => 'WMO-1',
 			'mandateeRole' => 'rol-consulent',
@@ -78,7 +78,7 @@ class MandaatCheckServiceTest extends TestCase {
 			'validFrom' => '2026-01-01',
 			'status' => 'active',
 		]);
-		$this->objects->saveObject('procest', 'mandate', [
+		$this->objects->saveObject('dossiq', 'mandate', [
 			'id' => 'm-manager',
 			'mandaatNummer' => 'WMO-2',
 			'mandateeRole' => 'rol-afdelingsmanager',
@@ -92,20 +92,20 @@ class MandaatCheckServiceTest extends TestCase {
 		]);
 
 		// Seed users: alice = consulent (primair), bob = consulent (waarnemer), eve = nobody.
-		$this->objects->saveObject('procest', 'medewerkerRolToewijzing', [
+		$this->objects->saveObject('dossiq', 'medewerkerRolToewijzing', [
 			'userId' => 'alice',
 			'roleId' => 'rol-consulent',
 			'allocationType' => 'primair',
 			'validFrom' => '2026-01-01',
 		]);
-		$this->objects->saveObject('procest', 'medewerkerRolToewijzing', [
+		$this->objects->saveObject('dossiq', 'medewerkerRolToewijzing', [
 			'userId' => 'bob',
 			'roleId' => 'rol-consulent',
 			'allocationType' => 'observer',
 			'validFrom' => '2026-01-01',
 			'observerFor' => 'alice',
 		]);
-		$this->objects->saveObject('procest', 'medewerkerRolToewijzing', [
+		$this->objects->saveObject('dossiq', 'medewerkerRolToewijzing', [
 			'userId' => 'carol',
 			'roleId' => 'rol-afdelingsmanager',
 			'allocationType' => 'primair',
@@ -199,7 +199,7 @@ class MandaatCheckServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'mandaat_schema' => 'mandate',
 					'medewerker_rol_toewijzing_schema' => 'medewerkerRolToewijzing',
 					default => '',

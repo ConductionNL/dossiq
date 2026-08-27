@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Bezwaar Hearing Schedule Planner.
+ * Dossiq Bezwaar Hearing Schedule Planner.
  *
  * The Awb art. 7:4 lid 2 date arithmetic behind scheduling a hoorzitting.
  * Split out of HearingService so that service keeps only the persistence
@@ -18,7 +18,7 @@
  * infrastructure.
  *
  * @category Service
- * @package  OCA\Procest\Service\Bezwaar
+ * @package  OCA\Dossiq\Service\Bezwaar
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,7 +26,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -36,7 +36,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Bezwaar;
+namespace OCA\Dossiq\Service\Bezwaar;
 
 use DateTimeImmutable;
 use DateTimeInterface;

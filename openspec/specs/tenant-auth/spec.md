@@ -9,14 +9,14 @@ Injects the tenant context into a signed JWT at login, including via eHerkenning
 ## Requirements
 ### Requirement: JWT tenant claim injection (REQ-006-B)
 
-The system SHALL inject the tenant context into the JWT at login, including via eHerkenning SAML, and SHALL sign the token with the Procest key.
+The system SHALL inject the tenant context into the JWT at login, including via eHerkenning SAML, and SHALL sign the token with the Dossiq key.
 
 #### Scenario: eHerkenning login issues tenant-scoped JWT
 
 - **GIVEN** a user logs in via eHerkenning for tenant A with eherkenning_level=3, roles=[Behandelaar]
 - **WHEN** `AuthenticationService.createTokenFromSAML()` runs
 - **THEN** the issued JWT SHALL include `tenant_id` (tenant A), `tenant_slug`, mapped `roles`, and `eherkenning_level`
-- **AND** the JWT SHALL be signed with the Procest private key and returned to the browser
+- **AND** the JWT SHALL be signed with the Dossiq private key and returned to the browser
 
 ### Requirement: JWT signature validation and tenant extraction (REQ-002-B)
 

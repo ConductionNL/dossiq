@@ -9,7 +9,7 @@
  * or Doctrine DBAL installation.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Stubs
+ * @package  OCA\Dossiq\Tests\Unit\Stubs
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -17,7 +17,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);

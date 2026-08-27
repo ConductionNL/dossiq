@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Seed Bezwaar Workflow Definition Repair Step
+ * Dossiq Seed Bezwaar Workflow Definition Repair Step
  *
  * Idempotently seeds a published workflowTemplate for the pre-seeded
  * Bezwaar caseType, expressing the AWB-grounded state machine
@@ -12,7 +12,7 @@
  * BezwaarLifecycleService.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,19 +23,20 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/bezwaar-lifecycle/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
-use OCA\Procest\Service\WorkflowDefinitionService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\WorkflowDefinitionService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -45,6 +46,7 @@ use Psr\Log\LoggerInterface;
  */
 class SeedBezwaarWorkflowDefinition implements IRepairStep {
 
+	use RunsUnderSystemIdentity;
 	use SearchesObjects;
 
 	/**
@@ -102,6 +104,26 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep {
 			return;
 		}
 
+		// Under a system identity: an upgrade has no session, and OpenRegister
+		// refuses `create` for 'Anonymous'. Without it this seed writes nothing
+		// and says so only in a warning, which does not fail an upgrade.
+		$this->withSystemIdentity(
+			objectService: $objectService,
+			work: function () use ($objectService, $output): void {
+				$this->runInner(objectService: $objectService, output: $output);
+			}
+		);
+	}//end run()
+
+	/**
+	 * The seed itself.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param IOutput $output Progress reporting.
+	 *
+	 * @return void
+	 */
+	private function runInner(object $objectService, IOutput $output): void {
 		$register = $this->settingsService->getConfigValue('register');
 		$caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
 		$statusSchema = $this->settingsService->getConfigValue('status_type_schema');
@@ -180,7 +202,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep {
 			template: $template,
 			output: $output,
 		);
-	}//end run()
+	}//end runInner()
 
 	/**
 	 * Locate the bezwaar caseType that still needs a workflow definition.
@@ -207,7 +229,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: bezwaar workflow seed — failed to list caseTypes',
+				'Dossiq: bezwaar workflow seed — failed to list caseTypes',
 				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 			);
 			$output->warning('Could not list caseTypes — skipping bezwaar workflow seed.');
@@ -270,7 +292,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: bezwaar workflow seed — failed to list statusTypes',
+				'Dossiq: bezwaar workflow seed — failed to list statusTypes',
 				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return null;
@@ -335,7 +357,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: bezwaar workflow seed — failed to save workflowTemplate',
+				'Dossiq: bezwaar workflow seed — failed to save workflowTemplate',
 				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 			);
 			$output->warning('Bezwaar workflow seed: save failed — see log.');
@@ -355,7 +377,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep {
 				);
 			} catch (\Throwable $e) {
 				$this->logger->error(
-					'Procest: bezwaar workflow seed — failed to pin caseType',
+					'Dossiq: bezwaar workflow seed — failed to pin caseType',
 					['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 				);
 			}

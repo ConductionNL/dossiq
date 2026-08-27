@@ -5,7 +5,7 @@
 <template>
 	<div v-if="handlers.length > 0" class="workload-summary">
 		<span class="workload-summary__title">{{
-			t('procest', 'Team workload')
+			t('dossiq', 'Team workload')
 		}}</span>
 		<ul class="workload-summary__list">
 			<li

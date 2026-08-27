@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Procest Case Assistant Service.
+ * Dossiq Case Assistant Service.
  *
  * Orchestrates one conversational turn on a case: loads the case via the
  * SAME OpenRegister read path (and therefore the same authorization
- * scoping) every other procest service uses, builds a bounded context of
+ * scoping) every other dossiq service uses, builds a bounded context of
  * ONLY the fields already shown on the case-detail page's own widgets (never
  * documents, contacts, or initiator PII), forwards it to Hermiq via
  * `HermiqAssistantClient`, persists the Hermiq session per (user, case) so
@@ -16,7 +16,7 @@
  * conversation. This is context assembly + authorization + audit plumbing.
  *
  * @category Service
- * @package  OCA\Procest\Service\Assistant
+ * @package  OCA\Dossiq\Service\Assistant
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,19 +27,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/case-assistant-via-hermiq/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Assistant;
+namespace OCA\Dossiq\Service\Assistant;
 
 use Exception;
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Ai\AiAuditService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Ai\AiAuditService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\IConfig;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -127,6 +127,11 @@ class CaseAssistantService {
 			sessionId: $sessionId,
 			message: $message,
 			context: [
+				// FROZEN at `procest`: this is this app's id AS HERMIQ KNOWS IT,
+				// not our own app id. hermiq is not being renamed and matches this
+				// value exactly on stored conversation context; a mismatch is a
+				// silently dropped association, not an error. It moves only in a
+				// coordinated pass that moves sender and receiver together.
 				'app' => 'procest',
 				'objectType' => 'case',
 				'objectRef' => $caseId,
@@ -183,7 +188,7 @@ class CaseAssistantService {
 
 	/**
 	 * Load a case via the standard OpenRegister read path, scoped to the
-	 * caller's own session/permissions exactly like every other procest
+	 * caller's own session/permissions exactly like every other dossiq
 	 * service (`PublicationService`, `DsoCaseService`, …). A missing OR
 	 * install, an unknown case, and a case the caller is not authorized to
 	 * read all fail closed to the SAME 404 — never distinguished, so this

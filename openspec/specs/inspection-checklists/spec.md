@@ -8,7 +8,7 @@ retrofit_extensions:
 
 ## Purpose
 
-Provide VTH inspection (toezicht) checklist support in Procest: a versioned inspection-checklist schema linked to case types, an admin UI for managing checklists, completion of checklists into inspection rapporten stored as case documents, and a case-dashboard inspection panel showing progress and rapport history.
+Provide VTH inspection (toezicht) checklist support in Dossiq: a versioned inspection-checklist schema linked to case types, an admin UI for managing checklists, completion of checklists into inspection rapporten stored as case documents, and a case-dashboard inspection panel showing progress and rapport history.
 
 @e2e exclude Inspection checklists is V1; checklist schema and admin tab are not yet built in the Playwright-testable UI.
 
@@ -113,7 +113,7 @@ The system SHALL display an inspection panel on the case dashboard for Toezicht 
 
 ### REQ-001: InspectionController SHALL expose the in-field inspection lifecycle endpoints
 
-`OCA\Procest\Controller\InspectionController` SHALL provide endpoints for the field inspector: `index()` (list assigned inspections), `captureLocation($id)` (record GPS), `completeChecklistItem($id, $itemId)` (mark one item with conformity + comment + mandatory photos), `addPhoto($id)` (attach photo with EXIF metadata), and `complete($id)` (finalise the inspection with overall conclusion). Each endpoint SHALL delegate to `InspectionService` or `ChecklistService` and SHALL enforce that the calling user is the assigned inspector for the record.
+`OCA\Dossiq\Controller\InspectionController` SHALL provide endpoints for the field inspector: `index()` (list assigned inspections), `captureLocation($id)` (record GPS), `completeChecklistItem($id, $itemId)` (mark one item with conformity + comment + mandatory photos), `addPhoto($id)` (attach photo with EXIF metadata), and `complete($id)` (finalise the inspection with overall conclusion). Each endpoint SHALL delegate to `InspectionService` or `ChecklistService` and SHALL enforce that the calling user is the assigned inspector for the record.
 
 #### Scenario: Inspector completes an item with mandatory photo
 - **GIVEN** a checklist item flagged `photoRequired: true`
@@ -122,7 +122,7 @@ The system SHALL display an inspection panel on the case dashboard for Toezicht 
 
 ### REQ-002: InspectionService SHALL implement field-side state mutations
 
-`OCA\Procest\Service\InspectionService` SHALL implement `getInspections()` (filter by user/case/status), `captureLocation()` (persist GPS + accuracy + timestamp), `addPhoto()` (attach a photo with EXIF metadata + GPS extracted from the file), and `completeInspection()` (mark all items final, persist conclusion, transition the parent case if configured). Location and photo timestamps SHALL be persisted as `DateTime` and tagged with the capturing user — never overwritten by a later edit.
+`OCA\Dossiq\Service\InspectionService` SHALL implement `getInspections()` (filter by user/case/status), `captureLocation()` (persist GPS + accuracy + timestamp), `addPhoto()` (attach a photo with EXIF metadata + GPS extracted from the file), and `completeInspection()` (mark all items final, persist conclusion, transition the parent case if configured). Location and photo timestamps SHALL be persisted as `DateTime` and tagged with the capturing user — never overwritten by a later edit.
 
 #### Scenario: Complete an inspection with non-conformities
 - **GIVEN** an inspection with at least one item flagged non-conforming
@@ -131,7 +131,7 @@ The system SHALL display an inspection panel on the case dashboard for Toezicht 
 
 ### REQ-003: ChecklistService SHALL compute item completion + progress + conformity summary
 
-`OCA\Procest\Service\ChecklistService` (top-level, separate from `lib/Service/Inspection/ChecklistService.php` which handles template lifecycle) SHALL provide `completeItem()`, `getProgress()` (returns `{completed, total, percent}`), `validateCompletion()` (enforces mandatory items + photo-required rules), and `getConformitySummary()` (returns `{conforming, nonConforming, na, pending}` counts). All four methods SHALL be pure with respect to the checklist payload — no I/O — so they are reusable for both server-side validation and dry-run preview.
+`OCA\Dossiq\Service\ChecklistService` (top-level, separate from `lib/Service/Inspection/ChecklistService.php` which handles template lifecycle) SHALL provide `completeItem()`, `getProgress()` (returns `{completed, total, percent}`), `validateCompletion()` (enforces mandatory items + photo-required rules), and `getConformitySummary()` (returns `{conforming, nonConforming, na, pending}` counts). All four methods SHALL be pure with respect to the checklist payload — no I/O — so they are reusable for both server-side validation and dry-run preview.
 
 #### Scenario: Pure progress calculation
 - **WHEN** `ChecklistService::getProgress($checklist)` is called

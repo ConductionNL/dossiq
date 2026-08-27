@@ -9,7 +9,7 @@
  * masking. No mock-rigged passes — every assertion checks real behaviour.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Subsidie
+ * @package  OCA\Dossiq\Tests\Unit\Service\Subsidie
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,21 +20,21 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Subsidie;
+namespace OCA\Dossiq\Tests\Unit\Service\Subsidie;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Subsidie\SubsidieService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Subsidie\SubsidieService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\Subsidie\SubsidieService
+ * @covers \OCA\Dossiq\Service\Subsidie\SubsidieService
  *
  * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-04
  */

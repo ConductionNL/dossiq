@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
-# Procest dashboard & IA backlog
+# Dossiq dashboard & IA backlog
 
 Follow-ups captured 2026-06-22 after adding the KPI date-range pills.
 Status updated 2026-06-22 after the first execution pass.
@@ -62,7 +62,7 @@ become a real nested parent rather than a flat `section` foldout.
 
 ## 5. Bezwaren/Beroepen as case types — ✅ DONE
 Re-modelled Bezwaar & Beroep as first-class **caseTypes** and re-pointed the
-"Bezwaren"/"Beroepen" nav to filtered **Cases** views (register `procest`,
+"Bezwaren"/"Beroepen" nav to filtered **Cases** views (register `dossiq`,
 schema `case`, `filter: { caseType: <fixed-uuid> }`, action → CaseDetail). The
 `bezwaar` (116) / `beroep` (122) schemas stay as the AWB lifecycle detail
 records linked to a case (BezwaarDetail/BeroepDetail pages kept).
@@ -85,7 +85,7 @@ LHS-aanbevelingen, Zaaklocaties, Organisatie-onboarding, Vervanging,
 Vervangingen & hertoewijzing, Functies & roadmap, Veldinspecties (+ inspectie
 page titles).
 Remaining: the dashboard widget titles and other UI strings rendered via
-`t('procest', 'English')` are an l10n concern, not literals — the correct fix is
+`t('dossiq', 'English')` are an l10n concern, not literals — the correct fix is
 completing the Dutch `l10n/nl.*` translations (the dev instance also runs the
 English locale, so Vue `t()` strings show English here regardless). Plus a sweep
 of register/schema JSON titles. Do as an l10n PR.
@@ -97,7 +97,7 @@ optional one-way downstream integration only if demand warrants. No code change.
 
 ## 8. Field inspections — ✅ DONE (decision recorded)
 See `docs/decisions/field-inspections-ownership.md`. It is an offline mobile
-field-inspection workflow (domain), NOT data quality — stays in procest. Only
+field-inspection workflow (domain), NOT data quality — stays in dossiq. Only
 the label was changed ("Field inspections" → "Veldinspecties") under #6.
 
 ## 9. Rename "Analytics" -> Reports — ✅ DONE

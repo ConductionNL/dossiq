@@ -21,22 +21,22 @@
  *    invisible from the response shape.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\ComplaintAnalyticsController;
-use OCA\Procest\Service\Complaint\ComplaintAccessGuard;
-use OCA\Procest\Service\ComplaintAnalyticsService;
+use OCA\Dossiq\Controller\ComplaintAnalyticsController;
+use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
+use OCA\Dossiq\Service\ComplaintAnalyticsService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -46,7 +46,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Wire-contract tests for ComplaintAnalyticsController::kpi().
  *
- * @covers \OCA\Procest\Controller\ComplaintAnalyticsController
+ * @covers \OCA\Dossiq\Controller\ComplaintAnalyticsController
  */
 class ComplaintAnalyticsControllerContractTest extends TestCase {
 
@@ -91,7 +91,7 @@ class ComplaintAnalyticsControllerContractTest extends TestCase {
 		$this->accessGuard = $this->createMock(ComplaintAccessGuard::class);
 
 		$this->controller = new ComplaintAnalyticsController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			analyticsService: $this->analyticsService,
 			accessGuard: $this->accessGuard,

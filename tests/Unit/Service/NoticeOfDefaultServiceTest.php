@@ -8,7 +8,7 @@
  * one-dwangsom guard semantics.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -16,7 +16,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -24,19 +24,19 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\NoticeOfDefaultService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\TermijnService;
+use OCA\Dossiq\Service\NoticeOfDefaultService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TermijnService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\NoticeOfDefaultService
+ * @covers \OCA\Dossiq\Service\NoticeOfDefaultService
  *
- * @uses \OCA\Procest\Service\TermijnService
+ * @uses \OCA\Dossiq\Service\TermijnService
  */
 class NoticeOfDefaultServiceTest extends TestCase {
 	private FakeTermijnStore $objects;
@@ -50,7 +50,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'termijn_definitie_schema' => 'deadlineDefinition',
 					'termijn_instance_schema' => 'deadlineInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
@@ -66,7 +66,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 		$this->service = new NoticeOfDefaultService($settings, $this->termService, $logger);
 
 		// Seed an AWB-default definition.
-		$this->objects->saveObject('procest', 'deadlineDefinition', [
+		$this->objects->saveObject('dossiq', 'deadlineDefinition', [
 			'id' => 'td-ov',
 			'caseType' => 'omgevingsvergunning-regulier',
 			'wettelijkeGrondslag' => 'Wabo 3.9 lid 1',
@@ -76,7 +76,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 		]);
 
 		// Seed an overdue TermijnInstance.
-		$this->objects->saveObject('procest', 'deadlineInstance', [
+		$this->objects->saveObject('dossiq', 'deadlineInstance', [
 			'id' => 'ti-1',
 			'case' => 'Z/2026/300',
 			'deadlineDefinition' => 'td-ov',
@@ -119,7 +119,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 	 */
 	public function testPrematureNoticeIsRejected(): void {
 		// Use a different instance still in lopend (not overschreden).
-		$this->objects->saveObject('procest', 'deadlineInstance', [
+		$this->objects->saveObject('dossiq', 'deadlineInstance', [
 			'id' => 'ti-lopend',
 			'case' => 'Z/2026/301',
 			'deadlineDefinition' => 'td-ov',
@@ -168,7 +168,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testCustomRegimeIsResolvedFromDefinition(): void {
-		$this->objects->saveObject('procest', 'deadlineDefinition', [
+		$this->objects->saveObject('dossiq', 'deadlineDefinition', [
 			'id' => 'td-woo',
 			'caseType' => 'woo-verzoek',
 			'wettelijkeGrondslag' => 'Woo art 4.4',
@@ -177,7 +177,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 			'deviatingPenaltyPaymentRegime' => ['dailyTariff' => 1500, 'plafond' => 50000, 'grace' => 14],
 			'validFrom' => '2026-01-01',
 		]);
-		$this->objects->saveObject('procest', 'deadlineInstance', [
+		$this->objects->saveObject('dossiq', 'deadlineInstance', [
 			'id' => 'ti-woo',
 			'case' => 'Z/2026/302',
 			'deadlineDefinition' => 'td-woo',

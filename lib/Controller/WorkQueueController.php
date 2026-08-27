@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Work Queue Controller
+ * Dossiq Work Queue Controller
  *
  * Exposes the intelligent work-queue endpoints: a user's urgency-scored
  * open cases/tasks, and (coordinator-only) a per-handler workload summary.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,18 +18,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
 use DateTime;
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\WorkQueueService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\WorkQueueService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -126,11 +126,11 @@ class WorkQueueController extends Controller {
 	}//end workload()
 
 	/**
-	 * Whether a user holds the procest coordinator role (NC admin).
+	 * Whether a user holds the dossiq coordinator role (NC admin).
 	 *
 	 * Coordinator authority is delegated to Nextcloud admin membership, the
-	 * same model used elsewhere in procest (e.g.
-	 * {@see \OCA\Procest\Controller\SubstitutionController::isCoordinator()}).
+	 * same model used elsewhere in dossiq (e.g.
+	 * {@see \OCA\Dossiq\Controller\SubstitutionController::isCoordinator()}).
 	 *
 	 * @param string $userId The user id.
 	 *

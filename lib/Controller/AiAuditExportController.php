@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest AI Audit Export Controller
+ * Dossiq AI Audit Export Controller
  *
  * Exposes a single read-only action endpoint that exports the AI audit
  * trail (`aiAuditEntry` objects) as CSV (or JSON), gated to the same
@@ -10,7 +10,7 @@
  * evidence gathering.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,14 +21,14 @@
  *
  * @spec openspec/changes/ai-oversight-log/tasks.md#2.1
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\Ai\AiAuditService;
+use OCA\Dossiq\Service\Ai\AiAuditService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -160,7 +160,7 @@ class AiAuditExportController extends Controller {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: AI audit export failed',
+				'Dossiq: AI audit export failed',
 				['exception' => $e->getMessage()],
 			);
 

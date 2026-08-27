@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest ZGW ZRC (Zaken) Business Rules Service
+ * Dossiq ZGW ZRC (Zaken) Business Rules Service
  *
  * Implements business rules for the Zaken API as defined by VNG Realisatie.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -14,7 +14,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
  *
  * Business rules implemented:
@@ -52,7 +52,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 /**
  * ZRC (Zaken API) business rule validation and enrichment.

@@ -25,13 +25,13 @@
  * contradicting value in the body and asserts the session value wins.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -39,15 +39,15 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\ContactMomentController;
-use OCA\Procest\Service\BurgerIdentificationService;
-use OCA\Procest\Service\CaseVoorbladService;
-use OCA\Procest\Service\CitizenLookupGuard;
-use OCA\Procest\Service\ContactMomentService;
-use OCA\Procest\Service\DoorverbindingService;
-use OCA\Procest\Service\QuickActionService;
+use OCA\Dossiq\Controller\ContactMomentController;
+use OCA\Dossiq\Service\BurgerIdentificationService;
+use OCA\Dossiq\Service\CaseVoorbladService;
+use OCA\Dossiq\Service\CitizenLookupGuard;
+use OCA\Dossiq\Service\ContactMomentService;
+use OCA\Dossiq\Service\DoorverbindingService;
+use OCA\Dossiq\Service\QuickActionService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -59,7 +59,7 @@ use RuntimeException;
 /**
  * Wire-contract tests for ContactMomentController.
  *
- * @covers \OCA\Procest\Controller\ContactMomentController
+ * @covers \OCA\Dossiq\Controller\ContactMomentController
  */
 class ContactMomentControllerContractTest extends TestCase {
 
@@ -120,7 +120,7 @@ class ContactMomentControllerContractTest extends TestCase {
 		$this->userSession = $this->createMock(IUserSession::class);
 
 		$this->controller = new ContactMomentController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			contactMomentService: $this->contactMomentService,
 			caseVoorbladService: $this->createMock(CaseVoorbladService::class),

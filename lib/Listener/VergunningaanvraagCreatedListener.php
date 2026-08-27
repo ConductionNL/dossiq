@@ -6,28 +6,28 @@
  * Listens for ObjectCreatedEvent from OpenRegister and triggers
  * automatic zaak creation for new vergunningaanvraag objects matching
  * the configured schema. This wires the DSO intake flow into the
- * Procest case management engine without coupling the object storage
+ * Dossiq case management engine without coupling the object storage
  * layer to the domain logic.
  *
  * @category Listener
- * @package  OCA\Procest\Listener
+ * @package  OCA\Dossiq\Listener
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T02
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Listener;
+namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\DsoCaseService;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\DsoCaseService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\IAppConfig;
@@ -108,7 +108,7 @@ class VergunningaanvraagCreatedListener implements IEventListener {
 		$objectId = (string)($object['id'] ?? ($object['uuid'] ?? ''));
 		if ($objectId === '') {
 			$this->logger->warning(
-				'Procest DSO listener: ObjectCreatedEvent for vergunningaanvraag schema but no object id found',
+				'Dossiq DSO listener: ObjectCreatedEvent for vergunningaanvraag schema but no object id found',
 				['app' => Application::APP_ID]
 			);
 			return;
@@ -116,7 +116,7 @@ class VergunningaanvraagCreatedListener implements IEventListener {
 
 		if (isset(self::$processedIds[$objectId]) === true) {
 			$this->logger->info(
-				'Procest DSO listener: skipping duplicate ObjectCreatedEvent for vergunningaanvraag ' . $objectId,
+				'Dossiq DSO listener: skipping duplicate ObjectCreatedEvent for vergunningaanvraag ' . $objectId,
 				['app' => Application::APP_ID]
 			);
 			return;
@@ -127,7 +127,7 @@ class VergunningaanvraagCreatedListener implements IEventListener {
 		try {
 			$this->dsoCaseService->createZaakFromVergunningaanvraag(permitApplicationId: $objectId);
 			$this->logger->info(
-				'Procest DSO listener: zaak created for vergunningaanvraag',
+				'Dossiq DSO listener: zaak created for vergunningaanvraag',
 				[
 					'app' => Application::APP_ID,
 					'objectId' => $objectId,
@@ -135,7 +135,7 @@ class VergunningaanvraagCreatedListener implements IEventListener {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest DSO listener: failed to create zaak for vergunningaanvraag ' . $objectId . ': ' . $e->getMessage(),
+				'Dossiq DSO listener: failed to create zaak for vergunningaanvraag ' . $objectId . ': ' . $e->getMessage(),
 				[
 					'app' => Application::APP_ID,
 					'objectId' => $objectId,

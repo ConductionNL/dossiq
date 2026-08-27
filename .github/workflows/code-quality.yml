@@ -69,7 +69,47 @@ on:
 # Proven in openconnector#1158: its first-ever completed `development` push run
 # (31048998594) executed Coverage Baseline Check, SBOM and Features Extract.
 concurrency:
-  group: quality-${{ github.head_ref || github.ref_name }}${{ (github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'development')) && '-push' || '' }}
+  # SUFFIXED BY EVENT NAME, not just by `-push`.
+  #
+  # The previous expression gave a push on `development` its own lane
+  # (`-push`) but left EVERYTHING ELSE sharing `quality-development` — and
+  # that is not a quiet lane: `Sync to Beta` keeps a PR open whose head_ref
+  # IS `development`, so its run computes the same group and is re-triggered
+  # on every merge.
+  #
+  # A `workflow_dispatch` therefore shared a group with that PR and was
+  # cancelled by it. Measured on shillinq 2026-08-21: dispatch 32487948678
+  # cancelled by pull_request run 32490160836 (head_branch `development`).
+  # A run someone deliberately asked for could essentially never complete.
+  #
+  # That reaches past ad-hoc verification: the fleet gate-drift sweep
+  # (.github#523) dispatches per app with `--ref development`, because
+  # `schedule:` cannot choose a branch. Under the old group those runs are
+  # cancelled and report neither pass nor fail — and a routine that produces
+  # no verdict is indistinguishable from one that never ran.
+  #
+  # This is hermiq's form, already live there. Pull requests keep the bare
+  # group (so a PR still supersedes its own earlier run); push, dispatch and
+  # schedule each get their own lane.
+  #
+  # THE BRANCH RESTRICTION IS GONE, because it contradicted the sentence above.
+  #
+  # The suffix used to apply only when `ref_name` was `main` or `development`,
+  # so on every OTHER branch push and pull_request computed the SAME group —
+  # and `cancel-in-progress` made them kill each other. That became reachable
+  # when the push allow-list widened on 2026-08-14 to include `feat/**`,
+  # `fix/**`, `perf/**`, `refactor/**` and `chore/**`: those branches now get
+  # both a push run and a pull_request run for one commit.
+  #
+  # `quality / Quality Report` is a `needs:`-gated aggregator and reports
+  # FAILURE when its dependencies are CANCELLED, so the collision shows up as a
+  # red gate on a PR that was never actually evaluated — and re-running collides
+  # the same way. Measured on openregister#2821: a push run left queued and a
+  # pull_request run cancelled, 18 seconds apart, on one commit.
+  #
+  # A branch name is not a unique lane when two event types can each produce a
+  # run for it, so the event is now always part of the key.
+  group: quality-${{ github.head_ref || github.ref_name }}${{ github.event_name != 'pull_request' && format('-{0}', github.event_name) || '' }}
   cancel-in-progress: true
 
 # Permission CEILING for the called quality pipeline. GitHub statically
@@ -88,7 +128,7 @@ jobs:
   quality:
     uses: ConductionNL/.github/.github/workflows/quality.yml@main
     with:
-      app-name: procest
+      app-name: dossiq
       php-version: "8.3"
       php-test-versions: '["8.3", "8.4"]'
       # stable31 is REMOVED, not "dropped for coverage".
@@ -101,7 +141,7 @@ jobs:
       # continued WITHOUT its data layer and every /apps/openregister/... call
       # returned Nextcloud's HTML 404 page — a red that said nothing.
       #
-      # The standing reason is procest's own floor: appinfo/info.xml declares
+      # The standing reason is dossiq's own floor: appinfo/info.xml declares
       # <nextcloud min-version="32"/>, so a leg below 32 would test a
       # configuration this app does not claim to support.
       # tests/Unit/AppInfo/NextcloudFloorMatrixTest.php holds the two in sync.
@@ -130,13 +170,13 @@ jobs:
       enable-newman: false
       newman-collection-path: "data"
       newman-environment-path: "tests/zgw/zgw-environment.json"
-      newman-seed-command: "bash apps/procest/tests/zgw/seed-consumers.sh"
+      newman-seed-command: "bash apps/dossiq/tests/zgw/seed-consumers.sh"
       # `ref` moved off `feature/php-linting`. That is a short-lived quality
       # branch, not a line anyone develops against: pinning the FOUNDATION app
-      # to it made every CI instance behave unlike any environment procest is
+      # to it made every CI instance behave unlike any environment dossiq is
       # actually built or run in, and it silently rots the moment the branch is
       # merged or deleted (the checkout step does `git clone --depth 1 --branch
-      # "$ref"`, which fails outright). procest's own appinfo/routes.php depends
+      # "$ref"`, which fails outright). dossiq's own appinfo/routes.php depends
       # on `\OCA\OpenRegister\AppHost\Routes::standard()` and the E2E job's seed
       # needs the `settings#load` route it ships — `development` is where that
       # plumbing lands first.
@@ -167,7 +207,7 @@ jobs:
       # too. The dependency this comment blamed does not stop the job in four
       # sibling repos, so it does not stop it here.
       #
-      # procest already ships the other prerequisite: `composer.json` requires
+      # dossiq already ships the other prerequisite: `composer.json` requires
       # cyclonedx/cyclonedx-php-composer ^6.2 and allows its plugin, so the
       # `composer CycloneDX:make-sbom` step has what it needs.
       #
@@ -183,14 +223,14 @@ jobs:
       #   "Playwright disabled until the upstream @conduction/nextcloud-vue
       #    CnObjectDataWidget bundling bug is fixed: the published bundle has a
       #    hard-coded `require('../../store/index.js')` inside a soft try/catch
-      #    that webpack can't resolve in consumer apps, so the procest bundle
+      #    that webpack can't resolve in consumer apps, so the dossiq bundle
       #    fails to build and every E2E spec then 404s. Tracked in
       #    ConductionNL/nextcloud-vue#242 — re-enable once a beta past that fix
       #    is pinned in package.json."
       #
       # That precondition is met: package.json now pins
       # @conduction/nextcloud-vue 2.1.0-vue3.16 (the Vue 3 line, past #242) and
-      # `npm run build` emits js/procest-main.js. It is no longer taken on
+      # `npm run build` emits js/dossiq-main.js. It is no longer taken on
       # trust either — `ci-seed.sh` ends by FETCHING the bundle over HTTP and
       # failing the step unless the response is real JavaScript of non-trivial
       # size. A missing bundle returns HTTP 200 `text/html` (the Nextcloud error
@@ -214,7 +254,7 @@ jobs:
       enable-playwright-coverage: false
       playwright-coverage-threshold: 75
       # WAS `php occ maintenance:repair`. That is the IRepairStep path, and it
-      # CANNOT provision procest's register: a repair step runs with no user
+      # CANNOT provision dossiq's register: a repair step runs with no user
       # session, so OpenRegister RBAC denies the import ("User 'Anonymous' does
       # not have permission to 'create' objects in schema '…'"),
       # Repair\InitializeSettings::run() catches the Throwable and downgrades it
@@ -222,13 +262,13 @@ jobs:
       # looks fine, and every fixture call then 404s.
       #
       # ci-seed.sh instead imports EXPLICITLY over the admin HTTP API
-      # (POST /apps/procest/api/settings/load → loadConfiguration(force: true),
+      # (POST /apps/dossiq/api/settings/load → loadConfiguration(force: true),
       # which also deep-merges the 20 lib/Settings/register.d/*.json fragments)
       # and then VERIFIES the register + schema slugs, so a bad provision is one
       # loud step failure instead of a hundred misleading spec failures.
       #
       # cwd for this step is the Nextcloud server root.
-      playwright-seed-command: 'bash apps/procest/tests/e2e/ci-seed.sh'
+      playwright-seed-command: 'bash apps/dossiq/tests/e2e/ci-seed.sh'
 
       # Integration Tests (Newman) stays OFF here, deliberately. The
       # `enable-newman: false` further up is not a default nobody chose: it
@@ -261,7 +301,12 @@ jobs:
       # Measured on this tree before enabling: PASSES, 410 of 456 tracked
       # frontend files in scope (l10n/ and docs/ excluded via .prettierignore /
       # .gitignore, which prettier 3 also reads).
-      frontend-checks: '["check:manifest", "check:vue3-compile", "test:l10n", "format"]'
+      # `check:schema-l10n` is a RATCHET, not a gate. Every string inside a form
+      # comes from the schema and is a key in THIS app's catalogue; an absent key
+      # renders the English source inside an otherwise translated form, silently.
+      # The fleet had 30,459 such strings, so this records the current count and
+      # fails only when it GROWS — burning it down stays an ordinary PR.
+      frontend-checks: '["check:manifest", "check:vue3-compile", "test:l10n", "format", "check:schema-l10n"]'
 
       # ── Hydra mechanical gates ───────────────────────────────────────────
       # `enable-hydra-gates` defaults to FALSE, so this tier had never executed

@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Workflow Template Loader.
+ * Dossiq Workflow Template Loader.
  *
  * Loads the single active `workflowTemplate` for a given `caseType` from
  * OpenRegister, decodes `transitions[]` and `steps[]` from JSON, and caches
  * the result per-request to avoid repeated lookups during a single transition.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,12 +19,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use Psr\Log\LoggerInterface;
 

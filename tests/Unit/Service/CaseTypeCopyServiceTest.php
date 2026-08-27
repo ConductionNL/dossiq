@@ -9,7 +9,7 @@
  * the guarded draft-only delete (not_found / published / happy path).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,24 +20,24 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/zaaktype-copy/tasks.md#T13
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\CaseTypeCopyService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\CaseTypeCopyService;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
  * Unit tests for CaseTypeCopyService.
  *
- * @covers \OCA\Procest\Service\CaseTypeCopyService
+ * @covers \OCA\Dossiq\Service\CaseTypeCopyService
  */
 class CaseTypeCopyServiceTest extends TestCase {
 
@@ -67,7 +67,7 @@ class CaseTypeCopyServiceTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturnCallback(
 			static function (string $key, string $default = ''): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'case_type_schema' => 'caseType',
 					'status_type_schema' => 'statusType',
 					'result_type_schema' => 'resultType',

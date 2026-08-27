@@ -10,7 +10,7 @@
  * end-to-end case-driven run (REQ-CMMN-009).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Cmmn
+ * @package  OCA\Dossiq\Tests\Unit\Service\Cmmn
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,26 +18,26 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/cmmn-adaptive-case/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Cmmn;
+namespace OCA\Dossiq\Tests\Unit\Service\Cmmn;
 
-use OCA\Procest\Service\Cmmn\CaseModelEngine;
-use OCA\Procest\Service\Cmmn\CaseModelLoader;
-use OCA\Procest\Service\Cmmn\CasePlanRepository;
-use OCA\Procest\Service\Cmmn\IllegalPlanItemTransitionException;
-use OCA\Procest\Service\Cmmn\PlanItemCascade;
-use OCA\Procest\Service\Cmmn\PlanItemStateMachine;
-use OCA\Procest\Service\Cmmn\PlanItemTransitions;
-use OCA\Procest\Service\Cmmn\PlanItemTree;
-use OCA\Procest\Service\Cmmn\SentryEvaluator;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Tests\Unit\Service\FakeTermijnStore;
+use OCA\Dossiq\Service\Cmmn\CaseModelEngine;
+use OCA\Dossiq\Service\Cmmn\CaseModelLoader;
+use OCA\Dossiq\Service\Cmmn\CasePlanRepository;
+use OCA\Dossiq\Service\Cmmn\IllegalPlanItemTransitionException;
+use OCA\Dossiq\Service\Cmmn\PlanItemCascade;
+use OCA\Dossiq\Service\Cmmn\PlanItemStateMachine;
+use OCA\Dossiq\Service\Cmmn\PlanItemTransitions;
+use OCA\Dossiq\Service\Cmmn\PlanItemTree;
+use OCA\Dossiq\Service\Cmmn\SentryEvaluator;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -65,16 +65,16 @@ class CountingFakeStore extends FakeTermijnStore {
 }//end class
 
 /**
- * @covers \OCA\Procest\Service\Cmmn\CaseModelEngine
+ * @covers \OCA\Dossiq\Service\Cmmn\CaseModelEngine
  *
- * @uses \OCA\Procest\Service\Cmmn\CaseModelLoader
- * @uses \OCA\Procest\Service\Cmmn\CasePlanRepository
- * @uses \OCA\Procest\Service\Cmmn\IllegalPlanItemTransitionException
- * @uses \OCA\Procest\Service\Cmmn\PlanItemCascade
- * @uses \OCA\Procest\Service\Cmmn\PlanItemStateMachine
- * @uses \OCA\Procest\Service\Cmmn\PlanItemTransitions
- * @uses \OCA\Procest\Service\Cmmn\PlanItemTree
- * @uses \OCA\Procest\Service\Cmmn\SentryEvaluator
+ * @uses \OCA\Dossiq\Service\Cmmn\CaseModelLoader
+ * @uses \OCA\Dossiq\Service\Cmmn\CasePlanRepository
+ * @uses \OCA\Dossiq\Service\Cmmn\IllegalPlanItemTransitionException
+ * @uses \OCA\Dossiq\Service\Cmmn\PlanItemCascade
+ * @uses \OCA\Dossiq\Service\Cmmn\PlanItemStateMachine
+ * @uses \OCA\Dossiq\Service\Cmmn\PlanItemTransitions
+ * @uses \OCA\Dossiq\Service\Cmmn\PlanItemTree
+ * @uses \OCA\Dossiq\Service\Cmmn\SentryEvaluator
  */
 final class CaseModelEngineTest extends TestCase {
 

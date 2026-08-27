@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest immutability listener registrar.
+ * Dossiq immutability listener registrar.
  *
  * The pre-persist immutability guards: REQ-SUB-007 (a bewijsstuk linked to a
  * vaststelling is frozen) and REQ-IC-8 (a submitted inspectionChecklistRun is
@@ -17,7 +17,7 @@
  * the mutation it objects to.
  *
  * @category AppInfo
- * @package  OCA\Procest\AppInfo\Registrar
+ * @package  OCA\Dossiq\AppInfo\Registrar
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,7 +25,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -35,12 +35,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\AppInfo\Registrar;
+namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Listener\BewijsstukImmutabilityListener;
+use OCA\Dossiq\Listener\ChecklistRunImmutabilityListener;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Procest\Listener\BewijsstukImmutabilityListener;
-use OCA\Procest\Listener\ChecklistRunImmutabilityListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**

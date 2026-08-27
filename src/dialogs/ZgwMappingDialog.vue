@@ -1,38 +1,38 @@
 <template>
 	<NcDialog
 		v-if="open"
-		:name="t('procest', 'Edit ZGW Mapping: {key}', { key: resourceKey })"
+		:name="t('dossiq', 'Edit ZGW Mapping: {key}', { key: resourceKey })"
 		size="large"
 		@closing="$emit('close')">
 		<div class="mapping-editor">
 			<div class="form-group">
-				<label>{{ t('procest', 'Enabled') }}</label>
+				<label>{{ t('dossiq', 'Enabled') }}</label>
 				<NcCheckboxRadioSwitch
 					:modelValue="form.enabled"
 					@update:modelValue="(v) => (form.enabled = v)">
-					{{ t('procest', 'Enable this mapping') }}
+					{{ t('dossiq', 'Enable this mapping') }}
 				</NcCheckboxRadioSwitch>
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Source Register') }}</label>
+				<label>{{ t('dossiq', 'Source Register') }}</label>
 				<NcTextField
 					:modelValue="form.sourceRegister"
-					:label="t('procest', 'Register ID')"
+					:label="t('dossiq', 'Register ID')"
 					@update:modelValue="(v) => (form.sourceRegister = v)" />
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Source Schema') }}</label>
+				<label>{{ t('dossiq', 'Source Schema') }}</label>
 				<NcTextField
 					:modelValue="form.sourceSchema"
-					:label="t('procest', 'Schema ID')"
+					:label="t('dossiq', 'Schema ID')"
 					@update:modelValue="(v) => (form.sourceSchema = v)" />
 			</div>
 
 			<div class="form-group">
 				<label for="zgw-mapping-property">{{
-					t('procest', 'Property Mapping (outbound: English → Dutch)')
+					t('dossiq', 'Property Mapping (outbound: English → Dutch)')
 				}}</label>
 				<textarea
 					id="zgw-mapping-property"
@@ -43,7 +43,7 @@
 
 			<div class="form-group">
 				<label for="zgw-mapping-reverse">{{
-					t('procest', 'Reverse Mapping (inbound: Dutch → English)')
+					t('dossiq', 'Reverse Mapping (inbound: Dutch → English)')
 				}}</label>
 				<textarea
 					id="zgw-mapping-reverse"
@@ -54,7 +54,7 @@
 
 			<div class="form-group">
 				<label for="zgw-mapping-value">{{
-					t('procest', 'Value Mappings (enum translations)')
+					t('dossiq', 'Value Mappings (enum translations)')
 				}}</label>
 				<textarea
 					id="zgw-mapping-value"
@@ -65,7 +65,7 @@
 
 			<div class="form-group">
 				<label for="zgw-mapping-query-param">{{
-					t('procest', 'Query Parameter Mapping')
+					t('dossiq', 'Query Parameter Mapping')
 				}}</label>
 				<textarea
 					id="zgw-mapping-query-param"
@@ -81,10 +81,10 @@
 
 		<template #actions>
 			<NcButton type="tertiary" @click="$emit('close')">
-				{{ t('procest', 'Cancel') }}
+				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 			<NcButton type="primary" @click="onSave">
-				{{ t('procest', 'Save') }}
+				{{ t('dossiq', 'Save') }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -200,7 +200,7 @@ export default {
 				queryParameterMapping = JSON.parse(this.queryParamMappingJson)
 			} catch (e) {
 				this.jsonError = t(
-					'procest',
+					'dossiq',
 					'Invalid JSON in one of the mapping fields: {error}',
 					{ error: e.message },
 				)

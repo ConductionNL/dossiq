@@ -1,46 +1,46 @@
 {
-  "id": "procest-zgw-local",
-  "name": "Procest ZGW Local",
+  "id": "dossiq-zgw-local",
+  "name": "Dossiq ZGW Local",
   "values": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:8080/index.php/apps/procest/api/zgw",
+      "value": "http://localhost:8080/index.php/apps/dossiq/api/zgw",
       "type": "default",
       "enabled": true
     },
     {
       "key": "zrc_url",
-      "value": "http://localhost:8080/index.php/apps/procest/api/zgw/zaken/v1",
+      "value": "http://localhost:8080/index.php/apps/dossiq/api/zgw/zaken/v1",
       "type": "default",
       "enabled": true
     },
     {
       "key": "ztc_url",
-      "value": "http://localhost:8080/index.php/apps/procest/api/zgw/catalogi/v1",
+      "value": "http://localhost:8080/index.php/apps/dossiq/api/zgw/catalogi/v1",
       "type": "default",
       "enabled": true
     },
     {
       "key": "brc_url",
-      "value": "http://localhost:8080/index.php/apps/procest/api/zgw/besluiten/v1",
+      "value": "http://localhost:8080/index.php/apps/dossiq/api/zgw/besluiten/v1",
       "type": "default",
       "enabled": true
     },
     {
       "key": "drc_url",
-      "value": "http://localhost:8080/index.php/apps/procest/api/zgw/documenten/v1",
+      "value": "http://localhost:8080/index.php/apps/dossiq/api/zgw/documenten/v1",
       "type": "default",
       "enabled": true
     },
     {
       "key": "nrc_url",
-      "value": "http://localhost:8080/index.php/apps/procest/api/zgw/notificaties/v1",
+      "value": "http://localhost:8080/index.php/apps/dossiq/api/zgw/notificaties/v1",
       "type": "default",
       "enabled": true
     },
     {
       "key": "ac_url",
-      "value": "http://localhost:8080/index.php/apps/procest/api/zgw/autorisaties/v1",
+      "value": "http://localhost:8080/index.php/apps/dossiq/api/zgw/autorisaties/v1",
       "type": "default",
       "enabled": true
     },
@@ -88,7 +88,7 @@
     },
     {
       "key": "mock_url",
-      "value": "http://localhost:8080/index.php/apps/procest/api/zgw",
+      "value": "http://localhost:8080/index.php/apps/dossiq/api/zgw",
       "type": "default",
       "enabled": true
     },

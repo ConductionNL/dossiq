@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Backfill Informatieobject Metadata Repair Step
+ * Dossiq Backfill Informatieobject Metadata Repair Step
  *
  * Idempotent migration that converts existing dossier files into ZGW DRC
  * `informatieobject` register objects. It iterates the document storage
@@ -14,7 +14,7 @@
  * skipped, so a re-run is a no-op.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -30,11 +30,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
@@ -47,12 +48,13 @@ use Psr\Log\LoggerInterface;
  * Repair step that back-fills informatieobject metadata for existing files.
  */
 class BackfillInformatieobjectMetadata implements IRepairStep {
+	use RunsUnderSystemIdentity;
 	use SearchesObjects;
 
 	/**
 	 * Document storage base path (mirrors ZgwDocumentService::STORAGE_BASE).
 	 */
-	private const STORAGE_BASE = 'procest/documenten';
+	private const STORAGE_BASE = 'dossiq/documenten';
 
 	/**
 	 * Constructor.
@@ -74,7 +76,7 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 	 * @return string
 	 */
 	public function getName(): string {
-		return 'Back-fill ZGW informatieobject metadata for existing Procest dossier files';
+		return 'Back-fill ZGW informatieobject metadata for existing Dossiq dossier files';
 	}//end getName()
 
 	/**
@@ -89,20 +91,43 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 	public function run(IOutput $output): void {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
-			$output->info('Procest backfill: OpenRegister unavailable; skipping.');
+			$output->info('Dossiq backfill: OpenRegister unavailable; skipping.');
 			return;
 		}
+
+		// Under a system identity: an upgrade has no session, and OpenRegister
+		// refuses `create` for 'Anonymous'. Without it this backfill writes
+		// nothing and says so only in a warning, which does not fail an upgrade.
+		$this->withSystemIdentity(
+			objectService: $objectService,
+			work: function () use ($objectService, $output): void {
+				$this->runInner(objectService: $objectService, output: $output);
+			}
+		);
+	}//end run()
+
+	/**
+	 * The backfill itself.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param IOutput $output Progress reporting.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T09
+	 */
+	private function runInner(object $objectService, IOutput $output): void {
 
 		$register = $this->settingsService->getConfigValue('register');
 		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
 		if ($register === '' || $infoSchema === '') {
-			$output->info('Procest backfill: dossier schemas not configured; skipping.');
+			$output->info('Dossiq backfill: dossier schemas not configured; skipping.');
 			return;
 		}
 
 		$folder = $this->resolveStorageFolder();
 		if ($folder === null) {
-			$output->info('Procest backfill: storage folder absent; nothing to back-fill.');
+			$output->info('Dossiq backfill: storage folder absent; nothing to back-fill.');
 			return;
 		}
 
@@ -127,8 +152,8 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 			$existing = $result['existing'];
 		}//end foreach
 
-		$output->info('Procest backfill: created ' . $created . ' informatieobject(en), skipped ' . $skipped . ' existing.');
-	}//end run()
+		$output->info('Dossiq backfill: created ' . $created . ' informatieobject(en), skipped ' . $skipped . ' existing.');
+	}//end runInner()
 
 	/**
 	 * Back-fill every not-yet-registered file inside one case folder.
@@ -175,7 +200,7 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 				$created++;
 			} catch (\Throwable $e) {
 				$this->logger->warning(
-					'Procest backfill: failed for ' . $fileName . ': ' . $e->getMessage(),
+					'Dossiq backfill: failed for ' . $fileName . ': ' . $e->getMessage(),
 					['app' => Application::APP_ID],
 				);
 			}
@@ -290,7 +315,7 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 		} catch (NotFoundException $e) {
 			return null;
 		} catch (\Throwable $e) {
-			$this->logger->warning('Procest backfill: cannot resolve storage folder: ' . $e->getMessage());
+			$this->logger->warning('Dossiq backfill: cannot resolve storage folder: ' . $e->getMessage());
 			return null;
 		}
 

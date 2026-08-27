@@ -3,7 +3,7 @@
 <template>
 	<NcDialog
 		v-if="open"
-		:name="t('procest', 'Stap overslaan')"
+		:name="t('dossiq', 'Stap overslaan')"
 		size="normal"
 		:canClose="!submitting"
 		@closing="onClose">
@@ -11,30 +11,29 @@
 			<div v-if="step" class="skip-step-dialog__step">
 				<h4>
 					{{
-						t('procest', 'Stap {n}: {actor}', {
+						t('dossiq', 'Stap {n}: {actor}', {
 							n: step.order,
 							actor: step.actor,
 						})
 					}}
 				</h4>
 				<p>
-					<strong>{{ t('procest', 'Type') }}:</strong> {{ step.type
-					}}<br />
-					<strong>{{ t('procest', 'Actor type') }}:</strong>
+					<strong>{{ t('dossiq', 'Type') }}:</strong> {{ step.type }}<br />
+					<strong>{{ t('dossiq', 'Actor type') }}:</strong>
 					{{ step.actorType }}
 				</p>
 			</div>
 
 			<NcNoteCard v-if="step && step.mandatory" type="warning">
-				{{ t('procest', 'This step is mandatory and cannot be skipped.') }}
+				{{ t('dossiq', 'This step is mandatory and cannot be skipped.') }}
 			</NcNoteCard>
 
 			<NcTextArea
 				v-else
 				:modelValue="reason"
-				:label="t('procest', 'Reason for skipping')"
+				:label="t('dossiq', 'Reason for skipping')"
 				:placeholder="
-					t('procest', 'Give a reason why this step is being skipped...')
+					t('dossiq', 'Give a reason why this step is being skipped...')
 				"
 				required
 				@update:modelValue="(v) => (reason = v)" />
@@ -45,12 +44,10 @@
 		</div>
 		<template #actions>
 			<NcButton :disabled="submitting" @click="onClose">
-				{{ t('procest', 'Annuleren') }}
+				{{ t('dossiq', 'Annuleren') }}
 			</NcButton>
 			<NcButton type="primary" :disabled="!canSubmit" @click="onSubmit">
-				{{
-					submitting ? t('procest', 'Bezig...') : t('procest', 'Overslaan')
-				}}
+				{{ submitting ? t('dossiq', 'Bezig...') : t('dossiq', 'Overslaan') }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -58,7 +55,7 @@
 
 <script>
 import { NcButton, NcDialog, NcNoteCard, NcTextArea } from '@nextcloud/vue'
-import parafeerRouteApi from '../services/parafeerRouteApi.js'
+import { recordAction } from '../services/parafeerActieApi.js'
 
 export default {
 	name: 'SkipStepDialog',
@@ -126,14 +123,23 @@ export default {
 			this.submitting = true
 			this.error = ''
 			try {
-				await parafeerRouteApi.skipStep(this.voorstelId, {
+				// Re-pointed at the LIVE parafeeractie endpoint. This dialog used
+				// to POST to /api/parafeer-route/.../skip-step, which answered 400
+				// on every call — so the button has never once skipped a step.
+				// `skipped` is in the parafeeractie action enum, so the live path
+				// expresses exactly this, and the route API it used has been
+				// retired. `reason` becomes `comment`, which is the field that
+				// endpoint requires for a skip.
+				await recordAction({
+					proposal: this.voorstelId,
 					step: this.step.order,
-					reason: this.reason.trim(),
+					action: 'skipped',
+					comment: this.reason.trim(),
 				})
 				this.$emit('skipped')
 			} catch (err) {
 				const apiMessage = err?.response?.data?.error
-				this.error = apiMessage || this.t('procest', 'Failed to skip')
+				this.error = apiMessage || this.t('dossiq', 'Failed to skip')
 				console.error('skipStep failed', err)
 			} finally {
 				this.submitting = false

@@ -1,5 +1,5 @@
 {
-  "_format": "procest-vth-workflow-template-v1",
+  "_format": "dossiq-vth-workflow-template-v1",
   "slug": "toezichtbezoek",
   "title": "Toezichtbezoek",
   "description": "Workflow voor een toezichtbezoek (inspectie ter plaatse). Geen wettelijke beslistermijn. Bij constatering van een overtreding wordt een handhavingstraject gespawned via automaticAction.",
@@ -84,8 +84,8 @@
           "type": "spawnCase",
           "config": {
             "targetWorkflowSlug": "handhavingstraject",
-            "condition": "constatering.severity in ['aanzienlijk', 'ernstig']",
-            "comment": "Spawn handhavingstraject zodra rapport een aanzienlijke of ernstige overtreding bevat."
+            "title": "Handhavingstraject na toezichtbezoek",
+            "comment": "Spawnt een handhavingstraject als deelzaak zodra de inspecteur opvolging start. Wordt bij het seeden genormaliseerd naar createSubCase met de opgezochte caseType-UUID."
           }
         }
       ]

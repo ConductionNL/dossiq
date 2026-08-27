@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest MandaatImportService.
+ * Dossiq MandaatImportService.
  *
  * Imports a MandateringsBesluit + its Mandaten from a CSV payload
  * (header: mandaatNummer,omschrijving,rolNaam,plafondCents,subdelegatie,
@@ -14,7 +14,7 @@
  * convert .xlsx to .csv via openconnector before posting.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,18 +25,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\Mandaat\MandaatCsvParser;
-use OCA\Procest\Service\Mandaat\MandaatRepository;
+use OCA\Dossiq\Service\Mandaat\MandaatCsvParser;
+use OCA\Dossiq\Service\Mandaat\MandaatRepository;
 use RuntimeException;
 
 /**

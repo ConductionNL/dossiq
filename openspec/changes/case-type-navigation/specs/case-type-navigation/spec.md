@@ -1,7 +1,7 @@
 # case-type-navigation Specification
 
 **Status:** proposed
-**Scope:** procest
+**Scope:** dossiq
 
 ## Purpose
 
@@ -11,7 +11,7 @@ Model objections, appeals and subsidies as case TYPES rather than standalone nav
 
 ### Requirement: REQ-CTN-001 — One Navigation Child Per Case Type Via /api/manifest Delta
 
-procest SHALL expose `GET /api/manifest` (authenticated, `#[NoAdminRequired]`) returning a `mergeStrategy: 'delta'` menu payload that adds one navigation child per `caseType` object the current user may see under the existing `CasesGroup`. Each child SHALL carry `id: 'ct-<uuid>'`, `label: <case-type name>`, `route: 'Cases'` and `query: { caseType: <uuid> }`, sorted deterministically by name. The frontend SHALL consume this delta through `useAppManifest('procest', builtManifest, { mergeStrategy: 'delta' })` so the resolved manifest — and thus the navigation — updates reactively when the delta lands.
+dossiq SHALL expose `GET /api/manifest` (authenticated, `#[NoAdminRequired]`) returning a `mergeStrategy: 'delta'` menu payload that adds one navigation child per `caseType` object the current user may see under the existing `CasesGroup`. Each child SHALL carry `id: 'ct-<uuid>'`, `label: <case-type name>`, `route: 'Cases'` and `query: { caseType: <uuid> }`, sorted deterministically by name. The frontend SHALL consume this delta through `useAppManifest('dossiq', builtManifest, { mergeStrategy: 'delta' })` so the resolved manifest — and thus the navigation — updates reactively when the delta lands.
 
 #### Scenario: Case types appear as Cases children
 
@@ -30,7 +30,7 @@ procest SHALL expose `GET /api/manifest` (authenticated, `#[NoAdminRequired]`) r
 
 ### Requirement: REQ-CTN-002 — Objections, Appeals And Subsidies Have No Dedicated Menu Group
 
-procest SHALL NOT present dedicated navigation groups for objections/appeals or subsidies. The `BezwaarBeroepGroup` and `SubsidiesGroup` menu groups SHALL be removed, and the standalone `BezwaarDecisions` and `BezwaarAdviceRequests` workflow pages (page objects, menu entries and routes) SHALL be removed. The `Bezwaren`, `Beroepen` and `Subsidies` index pages SHALL remain routable for deep links and end-to-end tests, but SHALL NOT appear as dedicated menu leaves.
+dossiq SHALL NOT present dedicated navigation groups for objections/appeals or subsidies. The `BezwaarBeroepGroup` and `SubsidiesGroup` menu groups SHALL be removed, and the standalone `BezwaarDecisions` and `BezwaarAdviceRequests` workflow pages (page objects, menu entries and routes) SHALL be removed. The `Bezwaren`, `Beroepen` and `Subsidies` index pages SHALL remain routable for deep links and end-to-end tests, but SHALL NOT appear as dedicated menu leaves.
 
 #### Scenario: No dedicated objection/appeal/subsidy menu group
 

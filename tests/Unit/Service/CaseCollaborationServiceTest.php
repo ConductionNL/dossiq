@@ -9,7 +9,7 @@
  * when the OR federation leaf is unavailable.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,18 +18,18 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/federated-case-collaboration/spec.md#shared-activity-stream-is-async-append-only-scoped-to-one-federated-share
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\CaseCollaborationService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\TenantAuditTrailService;
+use OCA\Dossiq\Service\CaseCollaborationService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TenantAuditTrailService;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -142,7 +142,7 @@ final class CcaFakeFederatedShareMapper {
 }//end class
 
 /**
- * @covers \OCA\Procest\Service\CaseCollaborationService
+ * @covers \OCA\Dossiq\Service\CaseCollaborationService
  */
 class CaseCollaborationServiceTest extends TestCase {
 	private CcaFakeObjectService $objects;

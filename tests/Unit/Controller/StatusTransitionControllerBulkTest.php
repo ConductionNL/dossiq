@@ -10,7 +10,7 @@
  * body by the service itself, not raised as exceptions here).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,17 +18,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\StatusTransitionController;
-use OCA\Procest\Service\BulkStatusTransitionService;
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\StatusTransitionService;
+use OCA\Dossiq\Controller\StatusTransitionController;
+use OCA\Dossiq\Service\BulkStatusTransitionService;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\StatusTransitionService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -42,7 +42,7 @@ use RuntimeException;
 /**
  * Tests for StatusTransitionController::bulkPreview() and ::bulkExecute().
  *
- * @covers \OCA\Procest\Controller\StatusTransitionController
+ * @covers \OCA\Dossiq\Controller\StatusTransitionController
  *
  * @spec openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
  */
@@ -100,7 +100,7 @@ final class StatusTransitionControllerBulkTest extends TestCase {
 		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
 
 		$this->controller = new StatusTransitionController(
-			'procest',
+			'dossiq',
 			$this->request,
 			$this->transitionEngine,
 			$this->bulkEngine,
@@ -123,7 +123,7 @@ final class StatusTransitionControllerBulkTest extends TestCase {
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->userSession->method('getUser')->willReturn(null);
 		$this->controller = new StatusTransitionController(
-			'procest',
+			'dossiq',
 			$this->request,
 			$this->transitionEngine,
 			$this->bulkEngine,
@@ -148,7 +148,7 @@ final class StatusTransitionControllerBulkTest extends TestCase {
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->userSession->method('getUser')->willReturn(null);
 		$this->controller = new StatusTransitionController(
-			'procest',
+			'dossiq',
 			$this->request,
 			$this->transitionEngine,
 			$this->bulkEngine,

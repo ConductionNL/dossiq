@@ -139,7 +139,7 @@ so discovery never gates publication.
 
 The system MUST create a publication (and its disclosable documents) in
 OpenCatalogi's publication register when a case worker triggers publication
-of an assembled WOO decision, and record the result on the procest decision
+of an assembled WOO decision, and record the result on the dossiq decision
 object through a single write.
 
 The publication, its documents and their file bytes MUST be written through
@@ -158,7 +158,7 @@ acting identity is therefore the session user under OpenRegister's default
 - **AND** create a `document` object for each disclosable document, linked to
   the publication
 - **AND** write `wooPublication.publicationId`, `.publicationUrl`, `.status`
-  ("published"), `.category`, and `.publishedAt` onto the procest decision
+  ("published"), `.category`, and `.publishedAt` onto the dossiq decision
   object via exactly one `ObjectService::saveObject()` call
 - **AND** return the publication id and url in the response
 
@@ -184,7 +184,7 @@ acting identity is therefore the session user under OpenRegister's default
 ### Requirement: Withdraw a published WOO decision
 
 The system MUST support withdrawing (depublishing) a previously published WOO
-decision, marking it withdrawn both in OpenCatalogi and on the procest
+decision, marking it withdrawn both in OpenCatalogi and on the dossiq
 decision object.
 
 Withdrawal sends a single-key partial payload to OpenCatalogi's publication
@@ -202,7 +202,7 @@ would null every other property of the publication while reporting success.
 - **AND** the publication MUST retain its title, summary, publication date and
   category
 - **AND** update `wooPublication.status` to "withdrawn" and set
-  `wooPublication.withdrawnAt` on the procest decision object via one
+  `wooPublication.withdrawnAt` on the dossiq decision object via one
   `ObjectService::saveObject()` call
 
 #### Scenario: Withdraw without a prior publish is rejected

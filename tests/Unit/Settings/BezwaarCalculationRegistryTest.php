@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Procest Bezwaar Calculation Registry Test
+ * Dossiq Bezwaar Calculation Registry Test
  *
  * Verifies that the bezwaar schema's `x-openregister-calculations` annotation
- * in `lib/Settings/procest_register.json` is declared in the engine-compatible
+ * in `lib/Settings/dossiq_register.json` is declared in the engine-compatible
  * shape (a field-keyed MAP of AST expressions with `materialise` flags), that
  * every operator it uses is in OpenRegister's supported operator set, and that
  * the declared AWB 7:10 / 4:17 expressions compute the legally correct
@@ -24,7 +24,7 @@
  * the register file — not a hand-copied duplicate.
  *
  * @category Tests
- * @package  OCA\Procest\Tests
+ * @package  OCA\Dossiq\Tests
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -33,14 +33,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/bezwaar-lifecycle/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Settings;
+namespace OCA\Dossiq\Tests\Unit\Settings;
 
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
@@ -78,7 +78,7 @@ final class BezwaarCalculationRegistryTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
-		$path = __DIR__ . '/../../../lib/Settings/procest_register.json';
+		$path = __DIR__ . '/../../../lib/Settings/dossiq_register.json';
 		$json = json_decode((string)file_get_contents($path), true);
 		$this->assertIsArray($json, 'register JSON must parse');
 		$objection = $json['components']['schemas']['objectionProceeding'] ?? null;

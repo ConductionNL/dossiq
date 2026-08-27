@@ -2,7 +2,7 @@
 <!-- SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl> -->
 <!--
   Read-only chronological action history for a voorstel.
-  Loads parafeeracties via the procest /api/parafeer-actie GET endpoint.
+  Loads parafeeracties via the dossiq /api/parafeer-actie GET endpoint.
 
   @spec openspec/changes/parafering-actions/tasks.md#T09
 -->
@@ -13,7 +13,7 @@
 			{{ error }}
 		</p>
 		<p v-else-if="acties.length === 0" class="parafeer-actie-timeline__empty">
-			{{ t('procest', 'No actions recorded yet') }}
+			{{ t('dossiq', 'No actions recorded yet') }}
 		</p>
 		<ul v-else class="parafeer-actie-timeline__list">
 			<li
@@ -30,7 +30,7 @@
 					{{ formatActor(actie) }}
 				</div>
 				<div v-if="actie.advice" class="parafeer-actie-timeline__body">
-					<em>{{ t('procest', 'Advice') }}:</em> {{ actie.advice }}
+					<em>{{ t('dossiq', 'Advice') }}:</em> {{ actie.advice }}
 				</div>
 				<div v-else-if="actie.comment" class="parafeer-actie-timeline__body">
 					{{ actie.comment }}
@@ -87,7 +87,7 @@ export default {
 				this.acties = Array.isArray(results) ? results : []
 			} catch (error) {
 				const serverMessage = error?.response?.data?.message
-				this.error = serverMessage || this.t('procest', 'Operation failed')
+				this.error = serverMessage || this.t('dossiq', 'Operation failed')
 				this.acties = []
 			} finally {
 				this.loading = false
@@ -100,8 +100,8 @@ export default {
 		 */
 		formatStageLabel(actie) {
 			const englishKey = ACTION_LABELS[actie.action] || actie.action || ''
-			const localized = this.t('procest', englishKey)
-			return this.t('procest', 'Step {step} — {action}', {
+			const localized = this.t('dossiq', englishKey)
+			return this.t('dossiq', 'Step {step} — {action}', {
 				step: actie.step,
 				action: localized,
 			})
@@ -113,7 +113,7 @@ export default {
 		 */
 		formatActor(actie) {
 			if (actie.actorType === 'delegate' && actie.onBehalfOf) {
-				return this.t('procest', 'On behalf of {name} (mandate {ref})', {
+				return this.t('dossiq', 'On behalf of {name} (mandate {ref})', {
 					name: actie.onBehalfOf,
 					ref: actie.mandate || '—',
 				})

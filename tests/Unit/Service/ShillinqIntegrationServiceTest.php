@@ -4,7 +4,7 @@
  * ShillinqIntegrationService Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,15 +15,15 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\ShillinqIntegrationService;
+use OCA\Dossiq\Service\ShillinqIntegrationService;
 use OCP\Http\Client\IClientService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\ShillinqIntegrationService
+ * @covers \OCA\Dossiq\Service\ShillinqIntegrationService
  */
 class ShillinqIntegrationServiceTest extends TestCase {
 	private ShillinqIntegrationService $svc;

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest ZGW rules dispatcher.
+ * Dossiq ZGW rules dispatcher.
  *
  * The routing table that turns a (zgwApi, resource, action) triple into the
  * one rules method that owns it. Split out of ZgwBusinessRulesService so that
@@ -11,10 +11,10 @@
  * create vs update vs patch, lives here.
  *
  * An unrouted (resource, action) pair is a pass-through, not an error: the ZGW
- * APIs expose many resources that carry no procest-side business rule at all.
+ * APIs expose many resources that carry no dossiq-side business rule at all.
  *
  * @category Service
- * @package  OCA\Procest\Service\Zgw
+ * @package  OCA\Dossiq\Service\Zgw
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,7 +22,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -32,12 +32,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Zgw;
+namespace OCA\Dossiq\Service\Zgw;
 
-use OCA\Procest\Service\ZgwBrcRulesService;
-use OCA\Procest\Service\ZgwDrcRulesService;
-use OCA\Procest\Service\ZgwZrcRulesService;
-use OCA\Procest\Service\ZgwZtcRulesService;
+use OCA\Dossiq\Service\ZgwBrcRulesService;
+use OCA\Dossiq\Service\ZgwDrcRulesService;
+use OCA\Dossiq\Service\ZgwZrcRulesService;
+use OCA\Dossiq\Service\ZgwZtcRulesService;
 
 /**
  * Routes a validated ZGW request to the rules service that owns its resource.

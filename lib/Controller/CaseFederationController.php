@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Case Federation Controller
+ * Dossiq Case Federation Controller
  *
  * Controller for cross-instance (federated) case collaboration: field-scoped
  * federated shares, their revocation, the shared activity stream, and remote
@@ -16,7 +16,7 @@
  * session.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,7 +24,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -34,12 +34,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\CaseCollaborationService;
-use OCA\Procest\Service\CaseSharingService;
-use OCA\Procest\Service\CaseTransferService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\CaseCollaborationService;
+use OCA\Dossiq\Service\CaseSharingService;
+use OCA\Dossiq\Service\CaseTransferService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -70,7 +70,7 @@ class CaseFederationController extends Controller {
 	 *
 	 * @var string
 	 */
-	private const THROTTLE_ACTION = 'procest_case_federation_share_token';
+	private const THROTTLE_ACTION = 'dossiq_case_federation_share_token';
 
 	/**
 	 * Record a rejected share token with the brute-force throttler.

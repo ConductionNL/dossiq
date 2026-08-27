@@ -16,13 +16,13 @@ The `Cases` index page SHALL render an "Export" actions menu (via `actionsCompon
 
 ### Requirement: Export delegates to the OR export leaf
 
-Choosing an export format SHALL navigate the browser to the OpenRegister export endpoint `/apps/openregister/api/objects/procest/case/export` with `format=csv` or `format=excel`, passing the current route query through as filter parameters. Procest SHALL NOT serialize CSV/Excel itself.
+Choosing an export format SHALL navigate the browser to the OpenRegister export endpoint `/apps/openregister/api/objects/dossiq/case/export` with `format=csv` or `format=excel`, passing the current route query through as filter parameters. Dossiq SHALL NOT serialize CSV/Excel itself.
 
 #### Scenario: CSV export URL
 
 - **GIVEN** the Cases page is open with route query `?status=open`
 - **WHEN** the user clicks "Export as CSV"
-- **THEN** the browser requests `/apps/openregister/api/objects/procest/case/export?format=csv&status=open`
+- **THEN** the browser requests `/apps/openregister/api/objects/dossiq/case/export?format=csv&status=open`
 - **AND** the response is a `text/csv` download produced by openregister as the current user (OR pipeline enforces access)
 
 @e2e exclude URL construction covered by vitest unit test; the endpoint itself is owned and tested by openregister.
@@ -31,7 +31,7 @@ Choosing an export format SHALL navigate the browser to the OpenRegister export 
 
 - **GIVEN** the Cases page is open with no active filters
 - **WHEN** the user clicks "Export as Excel"
-- **THEN** the browser requests `/apps/openregister/api/objects/procest/case/export?format=excel`
+- **THEN** the browser requests `/apps/openregister/api/objects/dossiq/case/export?format=excel`
 
 @e2e exclude Same rationale as CSV scenario.
 

@@ -4,7 +4,7 @@
 			<p>
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Save the case type first before adding document types.',
 					)
 				}}
@@ -25,7 +25,7 @@
 							<span
 								v-if="item.isRequired"
 								class="sub-entity-row__badge">
-								{{ t('procest', 'Required') }}
+								{{ t('dossiq', 'Required') }}
 							</span>
 							<span
 								v-if="item.confidentiality"
@@ -36,7 +36,7 @@
 								<NcButton
 									type="tertiary"
 									:aria-label="
-										t('procest', 'Edit {name}', {
+										t('dossiq', 'Edit {name}', {
 											name: item.name,
 										})
 									"
@@ -48,7 +48,7 @@
 								<NcButton
 									type="tertiary"
 									:aria-label="
-										t('procest', 'Delete {name}', {
+										t('dossiq', 'Delete {name}', {
 											name: item.name,
 										})
 									"
@@ -65,7 +65,7 @@
 								<div class="edit-row">
 									<NcTextField
 										:modelValue="editForm.name"
-										:label="t('procest', 'Name')"
+										:label="t('dossiq', 'Name')"
 										:error="!!editError"
 										class="edit-field"
 										@update:modelValue="
@@ -73,7 +73,7 @@
 										" />
 									<NcTextField
 										:modelValue="editForm.category"
-										:label="t('procest', 'Category')"
+										:label="t('dossiq', 'Category')"
 										class="edit-field"
 										@update:modelValue="
 											(v) => (editForm.category = v)
@@ -82,7 +82,7 @@
 								<div class="edit-row">
 									<NcTextField
 										:modelValue="editForm.description"
-										:label="t('procest', 'Description')"
+										:label="t('dossiq', 'Description')"
 										class="edit-field edit-field--full"
 										@update:modelValue="
 											(v) => (editForm.description = v)
@@ -91,7 +91,7 @@
 								<div class="edit-row">
 									<NcTextField
 										:modelValue="editForm.confidentiality"
-										:label="t('procest', 'Confidentiality')"
+										:label="t('dossiq', 'Confidentiality')"
 										class="edit-field"
 										@update:modelValue="
 											(v) => (editForm.confidentiality = v)
@@ -103,7 +103,7 @@
 										@update:modelValue="
 											(v) => (editForm.isRequired = v)
 										">
-										{{ t('procest', 'Required') }}
+										{{ t('dossiq', 'Required') }}
 									</NcCheckboxRadioSwitch>
 								</div>
 								<p v-if="editError" class="edit-error">
@@ -111,10 +111,10 @@
 								</p>
 								<div class="edit-actions">
 									<NcButton type="primary" @click="saveEdit">
-										{{ t('procest', 'Save') }}
+										{{ t('dossiq', 'Save') }}
 									</NcButton>
 									<NcButton @click="cancelEdit">
-										{{ t('procest', 'Cancel') }}
+										{{ t('dossiq', 'Cancel') }}
 									</NcButton>
 								</div>
 							</div>
@@ -122,11 +122,11 @@
 					</div>
 				</div>
 				<p v-else class="sub-entity-tab__empty">
-					{{ t('procest', 'No document types configured yet.') }}
+					{{ t('dossiq', 'No document types configured yet.') }}
 				</p>
 
 				<NcButton v-if="editingId === null" @click="startAdd">
-					{{ t('procest', 'Add Document Type') }}
+					{{ t('dossiq', 'Add Document Type') }}
 				</NcButton>
 			</template>
 		</template>
@@ -235,7 +235,7 @@ export default {
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async saveEdit() {
 			if (!this.editForm.name.trim()) {
-				this.editError = t('procest', 'Name is required')
+				this.editError = t('dossiq', 'Name is required')
 				return
 			}
 			const objectStore = useObjectStore()
@@ -261,7 +261,7 @@ export default {
 			if (
 				!confirm(
 					t(
-						'procest',
+						'dossiq',
 						'Delete document type "{name}"? Existing uploaded files will not be deleted.',
 						{ name: item.name },
 					),

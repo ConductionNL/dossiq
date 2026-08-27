@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest ZGW DRC (Documenten) Business Rules Service
+ * Dossiq ZGW DRC (Documenten) Business Rules Service
  *
  * Implements business rules for the Documenten API as defined by VNG Realisatie.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -14,7 +14,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
  *
  * Business rules implemented:
@@ -62,7 +62,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 /**
  * DRC (Documenten API) business rule validation and enrichment.
@@ -115,11 +115,12 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 		}
 
 		// Drc-006b: If indicatieGebruiksrecht is explicitly true, gebruiksrechten must exist.
+		// No null-check on the result: validateIndicationGebruiksrechtTrue()
+		// returns `array` unconditionally — on create the document does not yet
+		// exist, so indicatieGebruiksrecht=true is ALWAYS an error. The old
+		// `if ($error !== null)` could never be false.
 		if ($body['indicatieGebruiksrecht'] === true && $this->objectService !== null) {
-			$error = $this->validateIndicationGebruiksrechtTrue(body: $body);
-			if ($error !== null) {
-				return $error;
-			}
+			return $this->validateIndicationGebruiksrechtTrue(body: $body);
 		}
 
 		// Drc-008: Check unique identificatie + bronorganisatie.

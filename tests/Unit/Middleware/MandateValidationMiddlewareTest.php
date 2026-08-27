@@ -4,31 +4,31 @@
  * MandateValidationMiddleware Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Middleware
+ * @package  OCA\Dossiq\Tests\Unit\Middleware
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Middleware;
+namespace OCA\Dossiq\Tests\Unit\Middleware;
 
-use OCA\Procest\Middleware\MandateValidationMiddleware;
-use OCA\Procest\Service\TenantAuthenticationService;
-use OCA\Procest\Service\TenantContext;
+use OCA\Dossiq\Middleware\MandateValidationMiddleware;
+use OCA\Dossiq\Service\TenantAuthenticationService;
+use OCA\Dossiq\Service\TenantContext;
 use OCP\IRequest;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Middleware\MandateValidationMiddleware
+ * @covers \OCA\Dossiq\Middleware\MandateValidationMiddleware
  */
 class MandateValidationMiddlewareTest extends TestCase {
 	private function newMiddleware(): MandateValidationMiddleware {

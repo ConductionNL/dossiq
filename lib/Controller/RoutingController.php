@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Routing Controller
+ * Dossiq Routing Controller
  *
  * Action endpoint for manual recomputation of step assignees on a case.
  * Generic CRUD over routing rules themselves lives on the workflow template
@@ -9,7 +9,7 @@
  * only owns the engine action `POST /api/cases/{id}/reroute`.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -20,15 +20,15 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\RoleResolverService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\RoleResolverService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -153,7 +153,7 @@ class RoutingController extends Controller {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: reroute failed for case ' . $id . ': ' . $e->getMessage(),
+				'Dossiq: reroute failed for case ' . $id . ': ' . $e->getMessage(),
 			);
 			return new JSONResponse(
 				['error' => 'Herberekening mislukt'],

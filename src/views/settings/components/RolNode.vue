@@ -10,7 +10,7 @@
 			<span
 				v-if="role.mandateLevel"
 				class="rol-node__pill rol-node__pill--alt"
-				>{{ t('procest', 'level {n}', { n: role.mandateLevel }) }}</span
+				>{{ t('dossiq', 'level {n}', { n: role.mandateLevel }) }}</span
 			>
 			<span v-if="role.department" class="rol-node__pill">{{
 				role.department
@@ -18,10 +18,10 @@
 			<span v-if="role.team" class="rol-node__pill">{{ role.team }}</span>
 			<div class="rol-node__actions">
 				<NcButton size="small" @click="onEdit(role)">
-					{{ t('procest', 'Edit') }}
+					{{ t('dossiq', 'Edit') }}
 				</NcButton>
 				<NcButton size="small" type="error" @click="onDelete(role)">
-					{{ t('procest', 'Delete') }}
+					{{ t('dossiq', 'Delete') }}
 				</NcButton>
 			</div>
 		</div>

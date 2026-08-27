@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Termijn Definitie Controller
+ * Dossiq Termijn Definitie Controller
  *
  * The admin settings surface for statutory term definitions (AWB 4:13/4:14).
  *
@@ -21,7 +21,7 @@
  * them back, and it already selects the version active on a given day.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -29,7 +29,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -39,11 +39,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\ConfiguredRegistryService;
-use OCA\Procest\Settings\AdminSettings;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\ConfiguredRegistryService;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -98,7 +98,7 @@ class TermijnDefinitieController extends Controller {
 	 *
 	 * @return JSONResponse The definitions as a JSON array.
 	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
 	 * @spec openspec/specs/termijn-verification-admin/spec.md
 	 */
@@ -115,7 +115,7 @@ class TermijnDefinitieController extends Controller {
 	 *
 	 * @return JSONResponse The created definition.
 	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
 	 * @spec openspec/specs/termijn-verification-admin/spec.md
 	 */
@@ -131,7 +131,7 @@ class TermijnDefinitieController extends Controller {
 	 *
 	 * @return JSONResponse The updated definition.
 	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
 	 * @spec openspec/specs/termijn-verification-admin/spec.md
 	 */

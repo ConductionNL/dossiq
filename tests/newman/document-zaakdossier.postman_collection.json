@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "d0c5e2f3-7a1b-4c9d-8e0f-procestdzd0001",
-		"name": "Procest Document Zaakdossier",
+		"name": "Dossiq Document Zaakdossier",
 		"description": "API-level checks for the ZGW DRC case dossier (document-zaakdossier spec). Exercises the ZaakdossierController surface against a seeded/ad-hoc case: upload a document (informatieobject + zaakinformatieobject join), list the grouped dossier, transition status concept->definitief, reject the reverse transition (HTTP 400), run a bulk status transition, request a ZGW DRC download with an HTTP Range header (HTTP 206 or 200), and assert that the unauthenticated dossier listing is rejected.\n\nAuth is HTTP Basic + OCS-APIRequest, admin:admin against http://localhost:8080. Admin holds top clearance so confidentiality never blocks the happy path; the confidentiality matrix itself is asserted in PHPUnit (InformatieobjectAccessGuardTest).\n\nWhere the dossier register/schemas are not yet imported on the target instance, the upload/list steps assert the documented service-unavailable contract (503) rather than faking a pass — flip those to 200/201 happy-path assertions once OpenRegister has imported the register.d/70-document-zaakdossier.json fragment.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -200,7 +200,7 @@
 		}
 	],
 	"variable": [
-		{"key": "base_url", "value": "http://localhost:8080/index.php/apps/procest", "type": "string"},
+		{"key": "base_url", "value": "http://localhost:8080/index.php/apps/dossiq", "type": "string"},
 		{"key": "admin_user", "value": "admin", "type": "string"},
 		{"key": "admin_pass", "value": "admin", "type": "string"}
 	]

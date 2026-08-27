@@ -17,7 +17,7 @@
  * columns are in scope, and that is what these tests pin.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Repair
+ * @package  OCA\Dossiq\Tests\Unit\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,7 +25,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -33,9 +33,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Repair;
+namespace OCA\Dossiq\Tests\Unit\Repair;
 
-use OCA\Procest\Repair\RenameDutchDeadlineColumns;
+use OCA\Dossiq\Repair\RenameDutchDeadlineColumns;
 use OCP\IDBConnection;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -43,7 +43,7 @@ use ReflectionClass;
 use ReflectionMethod;
 
 /**
- * @covers \OCA\Procest\Repair\RenameDutchDeadlineColumns
+ * @covers \OCA\Dossiq\Repair\RenameDutchDeadlineColumns
  */
 class RenameDutchDeadlineColumnsTest extends TestCase {
 	// PHPUnit assertions take positional ($actual, $expected) arguments; the
@@ -156,10 +156,10 @@ class RenameDutchDeadlineColumnsTest extends TestCase {
 	}//end testIgnoresUnrelatedTables()
 
 	/**
-	 * Both procest registers are covered, not just the exact-slug one.
+	 * Both dossiq registers are covered, not just the exact-slug one.
 	 *
-	 * The reference install carries `procest` (1051 rows) AND
-	 * `procest-default` (107). Resolving a single exact slug leaves the second
+	 * The reference install carries `dossiq` (1051 rows) AND
+	 * `dossiq-default` (107). Resolving a single exact slug leaves the second
 	 * behind and still reports success.
 	 *
 	 * @return void

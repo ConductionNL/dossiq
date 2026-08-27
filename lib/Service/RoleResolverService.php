@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Role Resolver Service
+ * Dossiq Role Resolver Service
  *
  * Central engine that resolves a `routingRule` plus a `case` to an ordered
  * set of participant references. Owns:
@@ -15,7 +15,7 @@
  * /api/cases/{id}/reroute controller.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -26,17 +26,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Routing\RoleDelegationResolver;
-use OCA\Procest\Service\Routing\RoutingStrategyMissingException;
-use OCA\Procest\Service\Routing\StrategyRegistry;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Routing\RoleDelegationResolver;
+use OCA\Dossiq\Service\Routing\RoutingStrategyMissingException;
+use OCA\Dossiq\Service\Routing\StrategyRegistry;
 use OCP\ICache;
 use OCP\ICacheFactory;
 use Psr\Log\LoggerInterface;
@@ -191,7 +191,7 @@ class RoleResolverService {
 
 		if ($resolved === []) {
 			$this->logger->info(
-				'Procest: routing rule resolved to empty set',
+				'Dossiq: routing rule resolved to empty set',
 				[
 					'event' => 'RoleRoutingEmpty',
 					'rule' => $rule,
@@ -226,7 +226,7 @@ class RoleResolverService {
 			$allowed = $this->resolve(rule: $rule, case: $case);
 		} catch (RoutingStrategyMissingException $e) {
 			$this->logger->warning(
-				'Procest: routing guard rejected — missing strategy: ' . $e->getMessage(),
+				'Dossiq: routing guard rejected — missing strategy: ' . $e->getMessage(),
 			);
 			return false;
 		}
@@ -310,7 +310,7 @@ class RoleResolverService {
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest: failed to load roles for case ' . $caseId . ': ' . $e->getMessage(),
+				'Dossiq: failed to load roles for case ' . $caseId . ': ' . $e->getMessage(),
 			);
 			return [];
 		}//end try

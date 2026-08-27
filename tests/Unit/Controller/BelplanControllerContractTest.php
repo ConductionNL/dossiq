@@ -18,22 +18,22 @@
  *    broken".
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\BelplanController;
-use OCA\Procest\Service\BelplanRoutingService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Controller\BelplanController;
+use OCA\Dossiq\Service\BelplanRoutingService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -45,7 +45,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Wire-contract tests for BelplanController::route().
  *
- * @covers \OCA\Procest\Controller\BelplanController
+ * @covers \OCA\Dossiq\Controller\BelplanController
  */
 class BelplanControllerContractTest extends TestCase {
 
@@ -106,7 +106,7 @@ class BelplanControllerContractTest extends TestCase {
 		$this->groupManager = $this->createMock(IGroupManager::class);
 
 		$this->controller = new BelplanController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			routingService: $this->routingService,
 			settingsService: $this->settingsService,

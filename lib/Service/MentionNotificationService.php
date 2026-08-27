@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Mention Notification Service.
+ * Dossiq Mention Notification Service.
  *
  * Turns a saved note's `@mention` tokens (nc-vue #207, `CnNotesTab`'s
  * `mention` event) into real Nextcloud notifications for each mentioned
@@ -9,7 +9,7 @@
  * IManager-based create/notify/try-catch-warn shape.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,17 +20,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTime;
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\Notification\IManager;
 use Psr\Log\LoggerInterface;
 

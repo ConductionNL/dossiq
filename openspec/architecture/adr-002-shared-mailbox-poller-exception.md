@@ -2,8 +2,8 @@
 
 - **Status:** Accepted
 - **Date:** 2026-05-25
-- **Deciders:** Procest product + architecture
-- **Scope:** procest (zaaksysteem) — case correspondence intake
+- **Deciders:** Dossiq product + architecture
+- **Scope:** dossiq (zaaksysteem) — case correspondence intake
 - **References:** [hydra ADR-022 — Apps consume OpenRegister abstractions](../../../hydra/openspec/architecture/adr-022-apps-consume-or-abstractions.md) (§ Exceptions), [hydra ADR-019 — Integration registry](../../../hydra/openspec/architecture/adr-019-integration-registry.md), [openregister `integration-email` leaf](../../../openregister/openspec/changes/integration-email/specs/integration-email/spec.md)
 
 ## Context
@@ -18,7 +18,7 @@ page (sidebar tab + `CnEmailCard` widget per ADR-024).
 
 One requirement does not fit the leaf. Dutch municipalities run **functional
 mailboxes** (`zaken@gemeente.nl`, `vergunningen@gemeente.nl`) that receive
-citizen correspondence with no human inbox owner. Procest must **ingest** those
+citizen correspondence with no human inbox owner. Dossiq must **ingest** those
 messages unattended and **auto-link** them to a case by the `[ZAAK-YYYY-NNNNNN]`
 subject tag, so correspondence reaches the case file even when no case worker
 is watching the mailbox.
@@ -38,7 +38,7 @@ The `email` leaf cannot satisfy this:
 ## Decision
 
 Per ADR-022 § Exceptions clause 1 (**fundamentally different domain
-requirements** — unattended ingest of an owner-less functional mailbox), procest
+requirements** — unattended ingest of an owner-less functional mailbox), dossiq
 ships a **server-side IMAP poller** (`InboundEmailJob`, a `TimedJob`) **scoped
 strictly to**:
 
@@ -46,12 +46,12 @@ strictly to**:
 2. Auto-linking each message to a case by `\[([A-Z]+-\d{4}-\d{6})\]` subject
    regex (subject header only, scoped to the current organization).
 3. Recording the link **through the email leaf's link-table** via
-   `POST /api/objects/{register}/{schema}/{id}/email` — NOT a procest-local
+   `POST /api/objects/{register}/{schema}/{id}/email` — NOT a dossiq-local
    `emailMessage` table.
 
-Everything the leaf can do, procest consumes from the leaf and does NOT rebuild:
+Everything the leaf can do, dossiq consumes from the leaf and does NOT rebuild:
 per-user compose/send (NC Mail), the sidebar tab, the `CnEmailCard` widget,
-manual "link existing email", unlink. There is **no** procest `EmailComposer`,
+manual "link existing email", unlink. There is **no** dossiq `EmailComposer`,
 `EmailThread`, `emailMessage`/`emailThread` schema, SMTP transport, or unlinked
 queue.
 
@@ -68,7 +68,7 @@ It explicitly does NOT license:
 ## Migration / sunset
 
 If OpenRegister later adds a shared-mailbox ingest contract to the `email` leaf
-(an unattended functional-mailbox provider with subject-based auto-link), procest
+(an unattended functional-mailbox provider with subject-based auto-link), dossiq
 MUST migrate `InboundEmailJob` onto it and retire the app-local poller. Tracked
 as a follow-up against the openregister integration-registry umbrella.
 
@@ -76,5 +76,5 @@ as a follow-up against the openregister integration-registry umbrella.
 
 - **Positive:** one narrow, justified piece of app-local code; all email
   display/compose/link consumed from the leaf; no duplicate data model.
-- **Negative:** procest carries IMAP connection + credential config for the
+- **Negative:** dossiq carries IMAP connection + credential config for the
   functional mailbox until OR offers the contract.

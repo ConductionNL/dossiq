@@ -9,7 +9,7 @@
  * audit recording through the existing AiAuditService sink.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Assistant
+ * @package  OCA\Dossiq\Tests\Unit\Service\Assistant
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -17,7 +17,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -27,13 +27,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Assistant;
+namespace OCA\Dossiq\Tests\Unit\Service\Assistant;
 
 use Exception;
-use OCA\Procest\Service\Ai\AiAuditService;
-use OCA\Procest\Service\Assistant\CaseAssistantService;
-use OCA\Procest\Service\Assistant\HermiqAssistantClient;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\Ai\AiAuditService;
+use OCA\Dossiq\Service\Assistant\CaseAssistantService;
+use OCA\Dossiq\Service\Assistant\HermiqAssistantClient;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\IConfig;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -77,7 +77,7 @@ class FakeCaseObjectService {
 }
 
 /**
- * @covers \OCA\Procest\Service\Assistant\CaseAssistantService
+ * @covers \OCA\Dossiq\Service\Assistant\CaseAssistantService
  */
 class CaseAssistantServiceTest extends TestCase {
 	/**
@@ -118,7 +118,7 @@ class CaseAssistantServiceTest extends TestCase {
 		$this->settingsService = $this->createMock(SettingsService::class);
 		$this->settingsService->method('getConfigValue')->willReturnCallback(
 			static fn (string $key): string => match ($key) {
-				'register' => 'procest',
+				'register' => 'dossiq',
 				'case_schema' => 'case',
 				default => '',
 			}
@@ -246,7 +246,7 @@ class CaseAssistantServiceTest extends TestCase {
 		$objectService = new FakeCaseObjectService(returnValue: $caseObject);
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
 
-		$this->config->method('getUserValue')->with('alice', 'procest', 'assistant_session_case-1', '')
+		$this->config->method('getUserValue')->with('alice', 'dossiq', 'assistant_session_case-1', '')
 			->willReturn('prior-session');
 
 		$capturedContext = null;
@@ -263,7 +263,7 @@ class CaseAssistantServiceTest extends TestCase {
 
 		$this->config->expects($this->once())
 			->method('setUserValue')
-			->with('alice', 'procest', 'assistant_session_case-1', 'new-session');
+			->with('alice', 'dossiq', 'assistant_session_case-1', 'new-session');
 
 		$this->auditService->expects($this->once())
 			->method('recordAssistantAuditEntry')
@@ -284,6 +284,9 @@ class CaseAssistantServiceTest extends TestCase {
 		$this->assertSame('2026-0042', $summary['identifier']);
 		$this->assertArrayNotHasKey('initiatorDisplayName', $summary);
 		$this->assertArrayNotHasKey('documents', $summary);
+		// FROZEN: the `app` this app announces in the hermiq converse() payload
+		// stays `procest` (CaseAssistantService). hermiq is not being renamed
+		// and matches on the value it already knows.
 		$this->assertSame('procest', $capturedContext['app']);
 		$this->assertSame('case', $capturedContext['objectType']);
 		$this->assertSame('case-1', $capturedContext['objectRef']);

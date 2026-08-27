@@ -4,15 +4,15 @@
  *
  * Case-assistant API service (case-assistant-via-hermiq).
  *
- * Thin axios wrapper for procest's case-assistant endpoints. Conversational
+ * Thin axios wrapper for dossiq's case-assistant endpoints. Conversational
  * assistance is delegated to Hermiq (fleet rule: AI functionality lives in
- * Hermiq); procest's backend only enriches the request with the case context
+ * Hermiq); dossiq's backend only enriches the request with the case context
  * the current user is authorized to see and forwards it.
  */
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-const baseUrl = generateUrl('/apps/procest/api/assistant')
+const baseUrl = generateUrl('/apps/dossiq/api/assistant')
 
 /**
  * Whether the case assistant is available (Hermiq installed + enabled).

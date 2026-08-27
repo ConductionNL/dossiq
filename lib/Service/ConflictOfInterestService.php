@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest ConflictOfInterestService.
+ * Dossiq ConflictOfInterestService.
  *
  * Belangenconflict detection for mandate decisions:
  *
@@ -13,7 +13,7 @@
  *     return belangenconflict.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,16 +24,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/mandaat-matrix-06-temporal-and-conflict/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\Service\External\Brp\BrpHaalCentraalAdapterInterface;
+use OCA\Dossiq\Service\External\Brp\BrpHaalCentraalAdapterInterface;
 use Psr\Log\LoggerInterface;
 
 /**

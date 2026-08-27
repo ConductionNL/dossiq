@@ -7,21 +7,21 @@ ORI feed adapter are merged and deployed.
 
 ## Summary
 
-procest drops the ORI (Open Raadsinformatie) register. Per the product-owner
+dossiq drops the ORI (Open Raadsinformatie) register. Per the product-owner
 decision, raadsinformatie moves to decidesk **purely**, modelled on Popolo from
-the start (decidesk `ori-adoption`). procest removes
+the start (decidesk `ori-adoption`). dossiq removes
 `lib/Settings/ori_register.json` and every surface that provisions, checks or
 serves it; existing instances migrate their ORI objects into decidesk's
-register via decidesk's importer **before** removal; and procest cases that
+register via decidesk's importer **before** removal; and dossiq cases that
 reference a council meeting (vergadering) link to the decidesk `Meeting`
-cross-app instead of a procest-owned record.
+cross-app instead of a dossiq-owned record.
 
 ## Why
 
 - **decidesk owns decision-making** (ADR-019/ADR-022; precedent:
-  `consume-decidesk-besluitvorming-leaf`, `procest-delegation-via-events`).
+  `consume-decidesk-besluitvorming-leaf`, `dossiq-delegation-via-events`).
   Meetings, agenda items, votes, council members and political groups are
-  decidesk's core Popolo domain; procest's ORI register is a parallel,
+  decidesk's core Popolo domain; dossiq's ORI register is a parallel,
   Dutch-named duplicate of it.
 - **English identifiers are a fleet contract.** The ORI register's schemas
   (`vergadering`, `zetels`, `aangenomen`, …) violate it structurally; the
@@ -29,7 +29,7 @@ cross-app instead of a procest-owned record.
 - **One register, one record.** Every consumer (feeds, dashboards, catalogs)
   reads one canonical dataset in decidesk instead of choosing between two.
 
-## What changes (procest)
+## What changes (dossiq)
 
 1. **Data migration first (blocking gate).** For every existing instance, the
    objects in the OpenRegister `ori` register are migrated into decidesk by
@@ -55,13 +55,13 @@ cross-app instead of a procest-owned record.
    - `lib/Controller/RaadsinformatieFeedController.php` + the three
      `/feed/ori/*.rss` routes in `appinfo/routes.php` — deleted; the feeds are
      re-served by decidesk (`/apps/decidesk/feed/ori/*.rss`, same wire shape).
-   - Any remaining procest reference to the `ori` register slug or its six
+   - Any remaining dossiq reference to the `ori` register slug or its six
      schema slugs — removed (verified by grep gate, not by memory).
 
-4. **Cross-app link: case ↔ decidesk Meeting.** procest keeps its
+4. **Cross-app link: case ↔ decidesk Meeting.** dossiq keeps its
    vergadering-backed *cases* (`VergaderingCaseService`,
    `VergaderingDeadlineJob`, the `VergaderingDetailView` page) — those are
-   procest case records, not ORI objects. Where such a case references a
+   dossiq case records, not ORI objects. Where such a case references a
    council meeting record, it now stores a `meetingRef` (decidesk `Meeting`
    uuid) and the UI deep-links to decidesk (or renders decidesk's integration
    leaf, same pattern as `consume-decidesk-besluitvorming-leaf`), instead of
@@ -72,10 +72,10 @@ cross-app instead of a procest-owned record.
 
 - decidesk-side work (schemas, importer, adapter, seed) — that is
   `ori-adoption` in the decidesk repo.
-- procest's vergadering-backed case lifecycle (statuses, deadline job) — kept;
+- dossiq's vergadering-backed case lifecycle (statuses, deadline job) — kept;
   only the *meeting record* moves.
 - The besluitvorming leaf and voorstel→Decision delegation — already shipped by
-  `consume-decidesk-besluitvorming-leaf` / `procest-delegation-via-events`.
+  `consume-decidesk-besluitvorming-leaf` / `dossiq-delegation-via-events`.
 
 ## Depends on
 

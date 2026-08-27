@@ -1,19 +1,19 @@
 # Test Flow: Dashboard Overview
 
-**App:** Procest
-**Page:** `/apps/procest`
+**App:** Dossiq
+**Page:** `/apps/dossiq`
 **Priority:** Critical
 **Tags:** smoke, dashboard
 **Personas:** zaakbehandelaar, teamleider
 
 ## Preconditions
 - Logged in as admin
-- Procest and OpenRegister apps enabled
+- Dossiq and OpenRegister apps enabled
 
 ## Steps
 
 ### 1. Dashboard loads with correct structure
-**Navigate to** `/apps/procest` (no trailing slash)
+**Navigate to** `/apps/dossiq` (no trailing slash)
 
 **Verify:**
 - [ ] Heading "Dashboard" (h2) is visible

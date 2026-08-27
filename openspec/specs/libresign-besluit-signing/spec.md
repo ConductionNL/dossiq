@@ -5,7 +5,7 @@
 Provide a concrete, LibreSign-backed implementation of the beschikking pipeline's
 `SigningAdapterInterface` so beschikkingen (decisions/rulings) can be digitally signed inside the
 platform, with signer identity resolved from mandaat-authorised actors, LibreSign's status
-vocabulary mapped onto procest's own pending/signed/declined outcomes, signed files persisted
+vocabulary mapped onto dossiq's own pending/signed/declined outcomes, signed files persisted
 through the existing zaakdossier storage path, and a clean, non-breaking fallback when LibreSign
 is not installed.
 
@@ -109,12 +109,12 @@ When a signature request reaches `SIGNED`, `LibresignSigningAdapter` SHALL fetch
 
 ### Requirement: REQ-LBS-005 — LibreSign-Unavailable Fallback
 
-`SigningAdapterInterface` SHALL resolve to `LibresignSigningAdapter` only when `IAppManager::isEnabledForUser('libresign')` is true at DI-wiring time; otherwise it SHALL resolve to the pre-existing `MockSigningAdapter` unchanged, procest SHALL install, build, and run unchanged when LibreSign is absent, and a structured, translated admin-facing hint SHALL be logged and exposed via `SettingsController::index()`.
+`SigningAdapterInterface` SHALL resolve to `LibresignSigningAdapter` only when `IAppManager::isEnabledForUser('libresign')` is true at DI-wiring time; otherwise it SHALL resolve to the pre-existing `MockSigningAdapter` unchanged, dossiq SHALL install, build, and run unchanged when LibreSign is absent, and a structured, translated admin-facing hint SHALL be logged and exposed via `SettingsController::index()`.
 
 #### Scenario: LibreSign is not installed — pipeline falls back unchanged
 
 - **GIVEN** the LibreSign app is not installed or not enabled
-- **WHEN** procest resolves `SigningAdapterInterface` from the DI container
+- **WHEN** dossiq resolves `SigningAdapterInterface` from the DI container
 - **THEN** it SHALL receive the existing `MockSigningAdapter` instance
 - **AND** a `warning`-level log entry SHALL be written carrying a translated hint that LibreSign
   is not installed/enabled and that installing it enables real digital signing
@@ -133,7 +133,7 @@ When a signature request reaches `SIGNED`, `LibresignSigningAdapter` SHALL fetch
 #### Scenario: LibreSign is installed and enabled
 
 - **GIVEN** the LibreSign app is installed and enabled
-- **WHEN** procest resolves `SigningAdapterInterface` from the DI container
+- **WHEN** dossiq resolves `SigningAdapterInterface` from the DI container
 - **THEN** it SHALL receive a `LibresignSigningAdapter` instance
 - **AND** `SettingsController::index()` SHALL report `libresignAvailable: true`
 

@@ -1,20 +1,20 @@
 <?php
 
 /**
- * Procest AI endpoint guard.
+ * Dossiq AI endpoint guard.
  *
  * The SSRF check applied to the configured AI model URL before any outbound
  * request is made: https-only plus a public-address requirement for cloud
  * models, http/https to loopback (or a docker service name that does not
  * resolve into the cloud metadata range) for local ones.
  *
- * Split out of {@see \OCA\Procest\Service\AiService}: this is a self-contained
+ * Split out of {@see \OCA\Dossiq\Service\AiService}: this is a self-contained
  * security decision with its own CIDR deny-list and its own IPv4/IPv6 range
  * arithmetic, and it belongs next to that deny-list rather than inside a class
  * that also builds prompts and writes audit entries.
  *
  * @category Service
- * @package  OCA\Procest\Service\Ai
+ * @package  OCA\Dossiq\Service\Ai
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,7 +22,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -32,9 +32,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Ai;
+namespace OCA\Dossiq\Service\Ai;
 
-use OCA\Procest\Support\SuppressesWarnings;
+use OCA\Dossiq\Support\SuppressesWarnings;
 use Psr\Log\LoggerInterface;
 
 /**

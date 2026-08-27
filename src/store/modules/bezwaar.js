@@ -1,5 +1,5 @@
 /**
- * Bezwaar (objection) and Beroep (appeal) store module for Procest.
+ * Bezwaar (objection) and Beroep (appeal) store module for Dossiq.
  *
  * Manages CRUD operations for objection, hearing session, advisory report,
  * and appeal decision objects. Also handles deadline calculation and

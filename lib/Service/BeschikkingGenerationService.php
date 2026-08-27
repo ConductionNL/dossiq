@@ -9,22 +9,22 @@
  * is not installed or the template is unconfigured.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -81,7 +81,7 @@ class BeschikkingGenerationService {
 
 		if ($documentService === null || $templateId === '') {
 			$this->logger->warning(
-				'Procest BeschikkingGenerationService: Docudesk unavailable or template unconfigured; creating stub bijlage.',
+				'Dossiq BeschikkingGenerationService: Docudesk unavailable or template unconfigured; creating stub bijlage.',
 				[
 					'app' => Application::APP_ID,
 					'caseId' => $caseId,
@@ -127,7 +127,7 @@ class BeschikkingGenerationService {
 			];
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest BeschikkingGenerationService: Docudesk generation failed: ' . $e->getMessage(),
+				'Dossiq BeschikkingGenerationService: Docudesk generation failed: ' . $e->getMessage(),
 				[
 					'app' => Application::APP_ID,
 					'caseId' => $caseId,
@@ -164,7 +164,7 @@ class BeschikkingGenerationService {
 			return $this->container->get('OCA\Docudesk\Service\DocumentService');
 		} catch (\Throwable $e) {
 			$this->logger->debug(
-				'Procest BeschikkingGenerationService: Docudesk DocumentService not available: ' . $e->getMessage(),
+				'Dossiq BeschikkingGenerationService: Docudesk DocumentService not available: ' . $e->getMessage(),
 				['app' => Application::APP_ID]
 			);
 			return null;
@@ -209,7 +209,7 @@ class BeschikkingGenerationService {
 			return (string)($bijlage['id'] ?? ($bijlage['uuid'] ?? 'stub-' . $caseId));
 		} catch (\Throwable $e) {
 			$this->logger->warning(
-				'Procest BeschikkingGenerationService: could not create stub bijlage: ' . $e->getMessage(),
+				'Dossiq BeschikkingGenerationService: could not create stub bijlage: ' . $e->getMessage(),
 				['app' => Application::APP_ID]
 			);
 			return 'stub-' . $caseId;
@@ -251,7 +251,7 @@ class BeschikkingGenerationService {
 			return (string)($bijlage['id'] ?? ($bijlage['uuid'] ?? ''));
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest BeschikkingGenerationService: could not attach bijlage: ' . $e->getMessage(),
+				'Dossiq BeschikkingGenerationService: could not attach bijlage: ' . $e->getMessage(),
 				['app' => Application::APP_ID]
 			);
 			return '';

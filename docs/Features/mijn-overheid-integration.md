@@ -4,7 +4,7 @@ The MijnOverheid integration enables citizens to view their case status and rece
 
 ## Overview
 
-MijnOverheid is the Dutch national government portal where citizens can view their personal government-related information. This integration allows Procest to publish case status information to MijnOverheid.
+MijnOverheid is the Dutch national government portal where citizens can view their personal government-related information. This integration allows Dossiq to publish case status information to MijnOverheid.
 
 ## Planned Features
 

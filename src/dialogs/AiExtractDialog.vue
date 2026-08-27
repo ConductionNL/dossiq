@@ -1,7 +1,7 @@
 <template>
 	<NcDialog
 		v-if="show"
-		:name="t('procest', 'AI Data Extraction')"
+		:name="t('dossiq', 'AI Data Extraction')"
 		size="large"
 		@close="$emit('close')">
 		<div class="ai-extract-dialog">
@@ -20,14 +20,14 @@
 							<th scope="col">
 								<NcCheckboxRadioSwitch
 									:modelValue="allSelected"
-									:aria-label="t('procest', 'Select all fields')"
+									:aria-label="t('dossiq', 'Select all fields')"
 									@update:modelValue="toggleAll" />
 							</th>
-							<th scope="col">{{ t('procest', 'Field') }}</th>
+							<th scope="col">{{ t('dossiq', 'Field') }}</th>
 							<th scope="col">
-								{{ t('procest', 'Extracted value') }}
+								{{ t('dossiq', 'Extracted value') }}
 							</th>
-							<th scope="col">{{ t('procest', 'Confidence') }}</th>
+							<th scope="col">{{ t('dossiq', 'Confidence') }}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -39,7 +39,7 @@
 								<NcCheckboxRadioSwitch
 									:modelValue="selectedFields.includes(field.name)"
 									:aria-label="
-										t('procest', 'Select field {field}', {
+										t('dossiq', 'Select field {field}', {
 											field: field.name,
 										})
 									"
@@ -52,7 +52,7 @@
 										modifiedValues[field.name] || field.value
 									"
 									:aria-label="
-										t('procest', 'Extracted value for {field}', {
+										t('dossiq', 'Extracted value for {field}', {
 											field: field.name,
 										})
 									"
@@ -73,13 +73,13 @@
 						:disabled="selectedFields.length === 0"
 						@click="applySelected">
 						{{
-							t('procest', 'Apply selected ({count})', {
+							t('dossiq', 'Apply selected ({count})', {
 								count: selectedFields.length,
 							})
 						}}
 					</NcButton>
 					<NcButton @click="$emit('close')">
-						{{ t('procest', 'Cancel') }}
+						{{ t('dossiq', 'Cancel') }}
 					</NcButton>
 				</div>
 			</div>
@@ -87,10 +87,7 @@
 			<div v-else>
 				<NcNoteCard type="info">
 					{{
-						t(
-							'procest',
-							'No data could be extracted from this document.',
-						)
+						t('dossiq', 'No data could be extracted from this document.')
 					}}
 				</NcNoteCard>
 			</div>
@@ -175,7 +172,7 @@ export default {
 				this.modifiedValues = {}
 			} catch (e) {
 				this.error =
-					e.response?.data?.error || t('procest', 'Extraction failed')
+					e.response?.data?.error || t('dossiq', 'Extraction failed')
 			} finally {
 				this.loading = false
 			}

@@ -1,6 +1,6 @@
 # Test Flow: Sidebar Navigation
 
-**App:** Procest
+**App:** Dossiq
 **Page:** all pages
 **Priority:** Critical
 **Tags:** navigation, sidebar
@@ -8,18 +8,18 @@
 
 ## Preconditions
 - Logged in as admin
-- Procest app enabled
+- Dossiq app enabled
 
 ## Steps
 
 ### 1. All navigation items visible
-**Navigate to** `/apps/procest`
+**Navigate to** `/apps/dossiq`
 
 **Verify sidebar contains these items:**
-- [ ] Dashboard (link to `/apps/procest/`)
-- [ ] My Work (link to `/apps/procest/my-work`)
-- [ ] Cases (link to `/apps/procest/cases`)
-- [ ] Tasks (link to `/apps/procest/tasks`)
+- [ ] Dashboard (link to `/apps/dossiq/`)
+- [ ] My Work (link to `/apps/dossiq/my-work`)
+- [ ] Cases (link to `/apps/dossiq/cases`)
+- [ ] Tasks (link to `/apps/dossiq/tasks`)
 - [ ] Documentation (link to `#`, placeholder)
 - [ ] Settings button at bottom
 

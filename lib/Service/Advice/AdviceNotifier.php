@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Advice Notifier.
+ * Dossiq Advice Notifier.
  *
  * The whole notification fan-out for advice requests. Split out of
  * AdviceService so that service keeps only the workflow orchestration:
@@ -14,7 +14,7 @@
  * class must never be the place that decides who someone is.
  *
  * @category Service
- * @package  OCA\Procest\Service\Advice
+ * @package  OCA\Dossiq\Service\Advice
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,7 +22,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -32,10 +32,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Advice;
+namespace OCA\Dossiq\Service\Advice;
 
 use DateTime;
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -94,7 +94,7 @@ class AdviceNotifier {
 			$this->notificationManager->notify($notification);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to send advice notification: ' . $e->getMessage(),
+				'Dossiq: failed to send advice notification: ' . $e->getMessage(),
 				['app' => Application::APP_ID]
 			);
 		}

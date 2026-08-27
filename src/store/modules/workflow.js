@@ -1,6 +1,6 @@
 import { generateUrl } from '@nextcloud/router'
 /**
- * Workflow store module for Procest.
+ * Workflow store module for Dossiq.
  *
  * Manages workflow templates, guard evaluation, transition execution,
  * version management, and automatic action dispatch.
@@ -346,7 +346,7 @@ export const useWorkflowStore = defineStore('workflow', {
 			const errors = this.validateWorkflow(statusNodes)
 			if (errors.length > 0) {
 				this.validationErrors = errors
-				this.error = t('procest', 'Workflow validation failed')
+				this.error = t('dossiq', 'Workflow validation failed')
 				return null
 			}
 
@@ -354,7 +354,7 @@ export const useWorkflowStore = defineStore('workflow', {
 			try {
 				const response = await fetch(
 					generateUrl(
-						`/apps/procest/api/workflow-definitions/${templateId}/publish`,
+						`/apps/dossiq/api/workflow-definitions/${templateId}/publish`,
 					),
 					{
 						method: 'POST',
@@ -370,7 +370,7 @@ export const useWorkflowStore = defineStore('workflow', {
 				if (!response.ok || !body?.success) {
 					this.error =
 						body?.error
-						|| t('procest', 'Could not publish workflow definition')
+						|| t('dossiq', 'Could not publish workflow definition')
 					return null
 				}
 
@@ -405,7 +405,7 @@ export const useWorkflowStore = defineStore('workflow', {
 					sourceTemplateId,
 				)
 				if (!source) {
-					this.error = t('procest', 'Source workflow template not found')
+					this.error = t('dossiq', 'Source workflow template not found')
 					return null
 				}
 
@@ -609,7 +609,7 @@ export const useWorkflowStore = defineStore('workflow', {
 					return {
 						met: false,
 						message: t(
-							'procest',
+							'dossiq',
 							'{count} checklist item(s) not completed: {items}',
 							{
 								count: unchecked.length,
@@ -641,7 +641,7 @@ export const useWorkflowStore = defineStore('workflow', {
 			if (!value || (typeof value === 'string' && value.trim() === '')) {
 				return {
 					met: false,
-					message: t('procest', 'Required field missing: {field}', {
+					message: t('dossiq', 'Required field missing: {field}', {
 						field: fieldName,
 					}),
 				}
@@ -670,7 +670,7 @@ export const useWorkflowStore = defineStore('workflow', {
 			if (!hasDocument) {
 				return {
 					met: false,
-					message: t('procest', 'Required document missing: {type}', {
+					message: t('dossiq', 'Required document missing: {type}', {
 						type: requiredType,
 					}),
 				}
@@ -704,7 +704,7 @@ export const useWorkflowStore = defineStore('workflow', {
 				)
 				if (!matchingTask || matchingTask.status !== 'completed') {
 					messages.push(
-						t('procest', 'Required step not completed: {step}', {
+						t('dossiq', 'Required step not completed: {step}', {
 							step: step.title,
 						}),
 					)
@@ -806,7 +806,7 @@ export const useWorkflowStore = defineStore('workflow', {
 		async dispatchEmailAction(action, caseData, transition) {
 			// Delegate to n8n webhook for email sending
 			const webhookUrl =
-				action.webhookUrl || '/apps/procest/api/workflow/actions/email'
+				action.webhookUrl || '/apps/dossiq/api/workflow/actions/email'
 			const body = {
 				recipient: action.recipient,
 				subject: this.interpolateTemplate(
@@ -853,7 +853,7 @@ export const useWorkflowStore = defineStore('workflow', {
 		async dispatchCreateTaskAction(action, caseData) {
 			const objectStore = useObjectStore()
 			await objectStore.saveObject('task', {
-				title: action.title || t('procest', 'New task'),
+				title: action.title || t('dossiq', 'New task'),
 				description: action.description || '',
 				case: caseData.id,
 				status: 'available',
@@ -879,7 +879,7 @@ export const useWorkflowStore = defineStore('workflow', {
 			await objectStore.saveObject('case', {
 				title:
 					action.title
-					|| t('procest', 'Sub-case of {title}', {
+					|| t('dossiq', 'Sub-case of {title}', {
 						title: caseData.title,
 					}),
 				caseType: action.caseTypeId,
@@ -1104,7 +1104,13 @@ export const useWorkflowStore = defineStore('workflow', {
 			}))
 
 			return {
-				_format: 'procest-workflow-v1',
+				// Provenance tag only — nothing in PHP or JS reads or validates
+				// `_format`, so it is not a compatibility surface. Renamed with
+				// the app id, in step with the six seed templates in
+				// lib/Settings/vth-templates/*.json. (Contrast `seriesKey` and
+				// `CASES_ON_MAP_KEY`, which OpenRegister UPSERTS on and which are
+				// therefore frozen at the old prefix.)
+				_format: 'dossiq-workflow-v1',
 				title: template.title,
 				description: template.description,
 				version: template.version,
@@ -1199,7 +1205,7 @@ export const useWorkflowStore = defineStore('workflow', {
 
 			const objectStore = useObjectStore()
 			const template = await objectStore.saveObject('workflowTemplate', {
-				title: importData.title || t('procest', 'Imported workflow'),
+				title: importData.title || t('dossiq', 'Imported workflow'),
 				description: importData.description || '',
 				caseType: caseTypeId,
 				version: maxVersion + 1,
@@ -1233,7 +1239,7 @@ export const useWorkflowStore = defineStore('workflow', {
 			const stepsInStatus = steps.filter((s) => s.status === statusId)
 			const newStep = {
 				id: generateUUID(),
-				title: stepData.title || t('procest', 'New step'),
+				title: stepData.title || t('dossiq', 'New step'),
 				description: stepData.description || '',
 				status: statusId,
 				order: stepsInStatus.length + 1,

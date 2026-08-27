@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest TemplateBundleSeeder.
+ * Dossiq TemplateBundleSeeder.
  *
  * The OpenRegister write path behind besluitvorming template activation:
  * given a decoded bundle it creates the caseType, its five child collections
@@ -17,7 +17,7 @@
  * usable caseType.
  *
  * @category Service
- * @package  OCA\Procest\Service\Besluitvorming
+ * @package  OCA\Dossiq\Service\Besluitvorming
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,7 +25,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -35,7 +35,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Besluitvorming;
+namespace OCA\Dossiq\Service\Besluitvorming;
 
 use Psr\Log\LoggerInterface;
 
@@ -153,7 +153,7 @@ class TemplateBundleSeeder {
 			counts: $counts,
 		);
 
-		$this->logger->info('Procest: besluitvorming template activated', $counts);
+		$this->logger->info('Dossiq: besluitvorming template activated', $counts);
 
 		return $counts;
 	}//end seedBundle()
@@ -195,7 +195,7 @@ class TemplateBundleSeeder {
 			return null;
 		} catch (\Throwable $e) {
 			$this->logger->debug(
-				'Procest: besluitvorming idempotency lookup failed',
+				'Dossiq: besluitvorming idempotency lookup failed',
 				['exception' => $e->getMessage()],
 			);
 			return null;
@@ -414,7 +414,7 @@ class TemplateBundleSeeder {
 			return null;
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: besluitvorming seed object create failed',
+				'Dossiq: besluitvorming seed object create failed',
 				['schema' => $schema, 'exception' => $e->getMessage()],
 			);
 			return null;

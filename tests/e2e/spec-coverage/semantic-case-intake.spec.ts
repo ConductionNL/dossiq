@@ -4,11 +4,11 @@
  *
  * Gate-19 spec-coverage tests for semantic-case-intake. The backend /
  * cross-app scenarios (SemanticTypeResolver discovery, graceful degrade,
- * the pipelinq→procest handoff execution, and the declarative notification)
+ * the pipelinq→dossiq handoff execution, and the declarative notification)
  * run inside OpenRegister's handoff engine + pipelinq's produce-side and
  * carry @e2e excludes in the spec (proven by PHPUnit against the REAL
  * HandoffKindContracts, plus OR's own engine tests). These tests cover the
- * procest-owned UI surface: a handoff-created case (carrying handoffSource)
+ * dossiq-owned UI surface: a handoff-created case (carrying handoffSource)
  * shows its provenance in the Werkvoorraad intake list and on the case
  * detail overview.
  */
@@ -23,7 +23,7 @@ import {
 import { STORAGE_STATE } from '../helpers/auth'
 import { request as pwRequest, type APIRequestContext } from '@playwright/test'
 
-const APP = '/index.php/apps/procest'
+const APP = '/index.php/apps/dossiq'
 
 test.describe('Semantic case intake — handoff provenance UI', () => {
 	let api: APIRequestContext

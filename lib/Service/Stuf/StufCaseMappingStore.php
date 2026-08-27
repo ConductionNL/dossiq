@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Procest StUF case-mapping store.
+ * Dossiq StUF case-mapping store.
  *
- * Reads and writes the ZaaksysteemMapping row that ties a procest case to its
+ * Reads and writes the ZaaksysteemMapping row that ties a dossiq case to its
  * zaak in a legacy zaaksysteem. The write is idempotent: an existing mapping is
  * updated in place rather than duplicated, which is what makes the anticipatory
  * mapping (`zaakIdentificatieStrategie = vooraf`) safe to write before the
@@ -12,7 +12,7 @@
  * Split out of {@see StufAdapterService}.
  *
  * @category Service
- * @package  OCA\Procest\Service\Stuf
+ * @package  OCA\Dossiq\Service\Stuf
  *
  * @author    Conduction <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,7 +20,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -30,7 +30,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Stuf;
+namespace OCA\Dossiq\Service\Stuf;
 
 use DateTimeImmutable;
 use DateTimeZone;

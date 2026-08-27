@@ -13,13 +13,13 @@
 	<div class="case-tab case-tab--documents">
 		<div class="case-tab__header">
 			<h3 class="case-tab__title">
-				{{ t('procest', 'Documents') }}
+				{{ t('dossiq', 'Documents') }}
 				<span v-if="documents.length > 0" class="case-tab__count"
 					>({{ documents.length }})</span
 				>
 			</h3>
 			<NcButton type="primary" @click="openCreate">
-				{{ t('procest', 'Add document') }}
+				{{ t('dossiq', 'Add document') }}
 			</NcButton>
 		</div>
 
@@ -27,9 +27,9 @@
 
 		<NcEmptyContent
 			v-else-if="documents.length === 0"
-			:title="t('procest', 'No documents yet')"
+			:title="t('dossiq', 'No documents yet')"
 			:description="
-				t('procest', 'Register a document to link it to this case.')
+				t('dossiq', 'Register a document to link it to this case.')
 			" />
 
 		<ul v-else class="case-tab__list">
@@ -48,17 +48,17 @@
 					}}</strong>
 					<NcActions :inline="0" @click.stop>
 						<NcActionButton @click="openEdit(doc)">
-							{{ t('procest', 'Edit') }}
+							{{ t('dossiq', 'Edit') }}
 						</NcActionButton>
 						<NcActionButton @click="openDelete(doc)">
-							{{ t('procest', 'Delete') }}
+							{{ t('dossiq', 'Delete') }}
 						</NcActionButton>
 					</NcActions>
 				</div>
 				<div class="case-tab__meta">
 					<span v-if="doc.registrationDate">
 						{{
-							t('procest', 'Registered: {date}', {
+							t('dossiq', 'Registered: {date}', {
 								date: formatDate(doc.registrationDate),
 							})
 						}}
@@ -76,9 +76,7 @@
 			:fields="formFields"
 			:item="editItem"
 			:dialogTitle="
-				editItem
-					? t('procest', 'Edit document')
-					: t('procest', 'Add document')
+				editItem ? t('dossiq', 'Edit document') : t('dossiq', 'Add document')
 			"
 			@confirm="onFormConfirm"
 			@close="showFormDialog = false" />
@@ -144,17 +142,24 @@ export default {
 			return this.objectId || this.$route?.params?.id || null
 		},
 
+		/**
+		 * Field descriptors for the case-document create/edit form.
+		 *
+		 * @return {Array<object>} The form field descriptors.
+		 *
+		 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-005-upload-must-present-a-metadata-dialog-and-require-informatieobjecttype-and-vertrouwelijkheidaanduiding
+		 */
 		formFields() {
 			return [
-				{ key: 'title', label: t('procest', 'Title'), required: true },
+				{ key: 'title', label: t('dossiq', 'Title'), required: true },
 				{
 					key: 'description',
-					label: t('procest', 'Description'),
+					label: t('dossiq', 'Description'),
 					widget: 'textarea',
 				},
 				{
 					key: 'registrationDate',
-					label: t('procest', 'Registration date'),
+					label: t('dossiq', 'Registration date'),
 					widget: 'datetime',
 				},
 			]
@@ -211,6 +216,14 @@ export default {
 			this.deleteItem = doc
 		},
 
+		/**
+		 * Persist the case document through the canonical object store.
+		 *
+		 * @param {object} formData The submitted form values.
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-001-zaak-objects-must-support-linked-documents-via-zgw-informatieobject-and-zaakinformatieobject
+		 */
 		async onFormConfirm(formData) {
 			try {
 				const result = await this.objectStore.saveObject('caseDocument', {
@@ -222,16 +235,24 @@ export default {
 					await this.reload()
 				} else {
 					this.$refs.formDialog.setResult({
-						error: t('procest', 'Could not save document'),
+						error: t('dossiq', 'Could not save document'),
 					})
 				}
 			} catch (err) {
 				this.$refs.formDialog.setResult({
-					error: err.message || t('procest', 'Could not save document'),
+					error: err.message || t('dossiq', 'Could not save document'),
 				})
 			}
 		},
 
+		/**
+		 * Delete the case document through the canonical object store.
+		 *
+		 * @param {string} id The caseDocument object id.
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-001-zaak-objects-must-support-linked-documents-via-zgw-informatieobject-and-zaakinformatieobject
+		 */
 		async onDeleteConfirm(id) {
 			try {
 				await this.objectStore.deleteObject('caseDocument', id)
@@ -239,7 +260,7 @@ export default {
 				await this.reload()
 			} catch (err) {
 				this.$refs.deleteDialog.setResult({
-					error: err.message || t('procest', 'Could not delete document'),
+					error: err.message || t('dossiq', 'Could not delete document'),
 				})
 			}
 		},

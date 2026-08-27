@@ -1,5 +1,5 @@
 {
-  "name": "Procest — Complaint Deadline Monitor",
+  "name": "Dossiq — Complaint Deadline Monitor",
   "nodes": [
     {
       "parameters": {
@@ -17,7 +17,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.PROCEST_BASE_URL || 'http://nextcloud' }}/index.php/apps/procest/api/complaints/deadline-alerts",
+        "url": "={{ $env.DOSSIQ_BASE_URL || 'http://nextcloud' }}/index.php/apps/dossiq/api/complaints/deadline-alerts",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpBasicAuth",
         "sendHeaders": true,
@@ -53,7 +53,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.PROCEST_BASE_URL || 'http://nextcloud' }}/index.php/apps/procest/api/notifications/send",
+        "url": "={{ $env.DOSSIQ_BASE_URL || 'http://nextcloud' }}/index.php/apps/dossiq/api/notifications/send",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpBasicAuth",
         "sendHeaders": true,
@@ -91,7 +91,7 @@
   },
   "meta": {
     "templateCredsSetupCompleted": false,
-    "owner": "procest",
+    "owner": "dossiq",
     "spec": "openspec/changes/complaint-management/specs/complaint-management/spec.md#deadline-monitoring",
     "purpose": "Daily 06:00 scan that calls /complaints/deadline-alerts and fans out warning notifications to the handler (T-5 working days) and overdue notifications to the coordinator (Awb 9:11 breach)."
   }

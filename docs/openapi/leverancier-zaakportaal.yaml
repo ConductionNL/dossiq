@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: Procest Leverancier Zaakportaal API
+  title: Dossiq Leverancier Zaakportaal API
   description: |
     Supplier-portal endpoints — eHerkenning auth, tender visibility,
     invoice forecast, contract renewal, messaging, master data
@@ -9,8 +9,8 @@ info:
     automatically supplier-scoped via `SupplierAuthMiddleware`.
   version: '0.1.0'
 servers:
-  - url: '/index.php/apps/procest'
-    description: Procest app base path
+  - url: '/index.php/apps/dossiq'
+    description: Dossiq app base path
 
 components:
   securitySchemes:
@@ -195,7 +195,7 @@ paths:
   /api/supplier-portal/contracts/{contractId}/request-renewal:
     parameters: [{ in: path, name: contractId, required: true, schema: { type: string } }]
     post:
-      summary: Request renewal (admin + contracts only) — creates a Procest case
+      summary: Request renewal (admin + contracts only) — creates a Dossiq case
       responses:
         '200': { description: Renewal case created }
         '403': { description: Not authorised (role gate) }
@@ -235,7 +235,7 @@ paths:
 
   /api/supplier-portal/profile/iban:
     post:
-      summary: Request an IBAN change (4-eyes Procest case)
+      summary: Request an IBAN change (4-eyes Dossiq case)
       requestBody:
         required: true
         content:

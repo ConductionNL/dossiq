@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Bezwaartermijn Job.
+ * Dossiq Bezwaartermijn Job.
  *
  * Daily timed job (Awb 6:7). Finds every active bezwaarTrigger whose
  * archiefDatum has been reached and for which no bezwaarschrift was received,
@@ -9,7 +9,7 @@
  * deactivates the trigger so it is not processed twice (idempotent).
  *
  * @category BackgroundJob
- * @package  OCA\Procest\BackgroundJob
+ * @package  OCA\Dossiq\BackgroundJob
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,20 +20,20 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T12
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\BackgroundJob;
+namespace OCA\Dossiq\BackgroundJob;
 
 use DateTimeImmutable;
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\BeschikkingService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\BeschikkingService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;

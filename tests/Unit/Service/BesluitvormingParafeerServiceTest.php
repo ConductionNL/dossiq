@@ -7,7 +7,7 @@
  * chain within the besluitvorming workflow.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,10 +18,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\BesluitvormingParafeerService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\BesluitvormingParafeerService;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -56,7 +56,7 @@ interface BvwParafeerObjectServiceStub {
 /**
  * Unit tests for BesluitvormingParafeerService.
  *
- * @covers \OCA\Procest\Service\BesluitvormingParafeerService
+ * @covers \OCA\Dossiq\Service\BesluitvormingParafeerService
  */
 class BesluitvormingParafeerServiceTest extends TestCase {
 

@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "b3a1f0c2-7d4e-4e2a-9c1b-related-case-linking",
-		"name": "Procest ZGW relevanteAndereZaken (related-case-linking)",
+		"name": "Dossiq ZGW relevanteAndereZaken (related-case-linking)",
 		"description": "Contract tests for the bidirectional relevanteAndereZaken mapping on the ZRC Zaak resource (related-case-linking). Verifies: outbound relevanteAndereZaken is present as an array (empty when no relations), inbound PATCH with a valid local zaak URL creates the symmetric relation and is re-emitted, and an unresolvable relation URL is rejected with the standard ZGW validation error. Self-contained and idempotent: seeds a zaaktype + two zaken and deletes them in teardown.\n\n@spec openspec/changes/related-case-linking/specs/zgw-api-mapping/spec.md",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -26,7 +26,7 @@
 		}
 	],
 	"variable": [
-		{ "key": "base_url", "value": "http://localhost:8080/index.php/apps/procest" },
+		{ "key": "base_url", "value": "http://localhost:8080/index.php/apps/dossiq" },
 		{ "key": "admin_user", "value": "admin" },
 		{ "key": "admin_pass", "value": "admin" }
 	],

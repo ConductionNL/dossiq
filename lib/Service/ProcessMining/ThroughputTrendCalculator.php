@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest ThroughputTrendCalculator.
+ * Dossiq ThroughputTrendCalculator.
  *
  * The throughput metric family of the process-mining report: how many cases
  * were closed (by `endDate`) per ISO week within the reporting period. Split
@@ -15,7 +15,7 @@
  * OpenRegister.
  *
  * @category Service
- * @package  OCA\Procest\Service\ProcessMining
+ * @package  OCA\Dossiq\Service\ProcessMining
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,7 +23,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -33,7 +33,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\ProcessMining;
+namespace OCA\Dossiq\Service\ProcessMining;
 
 use DateTimeImmutable;
 

@@ -5,7 +5,7 @@
   Case-assistant chat panel (case-assistant-via-hermiq) for the manifest
   CaseDetail overview. Conversational assistance is delegated to Hermiq
   (fleet rule: AI functionality lives in Hermiq); this panel only renders the
-  transcript and posts messages to procest's thin /api/assistant/converse
+  transcript and posts messages to dossiq's thin /api/assistant/converse
   consumer endpoint, which enriches with authorized case context and forwards.
 
   Availability-gated like InitiatorSection renders-nothing-when-empty: when
@@ -20,7 +20,7 @@
 			<p v-if="transcript.length === 0" class="case-assistant__empty">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Ask a question about this case. Answers are based only on case data you can already see.',
 					)
 				}}
@@ -34,7 +34,7 @@
 			</div>
 			<div v-if="loading" class="case-assistant__loading">
 				<NcLoadingIcon :size="20" />
-				<span>{{ t('procest', 'The assistant is thinking…') }}</span>
+				<span>{{ t('dossiq', 'The assistant is thinking…') }}</span>
 			</div>
 			<p v-if="errorMessage" class="case-assistant__error" role="alert">
 				{{ errorMessage }}
@@ -43,8 +43,8 @@
 		<div class="case-assistant__composer">
 			<NcTextField
 				:modelValue="draft"
-				:label="t('procest', 'Ask the assistant')"
-				:placeholder="t('procest', 'Ask a question about this case…')"
+				:label="t('dossiq', 'Ask the assistant')"
+				:placeholder="t('dossiq', 'Ask a question about this case…')"
 				:disabled="loading"
 				data-testid="case-assistant-input"
 				@update:modelValue="(v) => (draft = v)"
@@ -52,10 +52,10 @@
 			<NcButton
 				type="primary"
 				:disabled="!sendAllowed"
-				:aria-label="t('procest', 'Send')"
+				:aria-label="t('dossiq', 'Send')"
 				data-testid="case-assistant-send"
 				@click="onSend">
-				{{ t('procest', 'Send') }}
+				{{ t('dossiq', 'Send') }}
 			</NcButton>
 		</div>
 	</div>

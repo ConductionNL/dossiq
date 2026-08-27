@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Advice Service.
+ * Dossiq Advice Service.
  *
  * Workflow service for advice requests (adviesAanvraag). CRUD is delegated
  * to the manifest renderer (OpenRegister); this service owns the domain
@@ -14,7 +14,7 @@
  *   - getAdviceForCase()    — used by the guard + case-detail tab
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,19 +25,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/advice-management/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Advice\AdviceAuthorizationGuard;
-use OCA\Procest\Service\Advice\AdviceNotifier;
-use OCA\Procest\Service\Advice\AdviceRepository;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Advice\AdviceAuthorizationGuard;
+use OCA\Dossiq\Service\Advice\AdviceNotifier;
+use OCA\Dossiq\Service\Advice\AdviceRepository;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -307,7 +307,7 @@ class AdviceService {
 			return $this->applyTransition(adviceId: $adviceId, to: 'expired', current: $current);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to expire advice: ' . $e->getMessage(),
+				'Dossiq: failed to expire advice: ' . $e->getMessage(),
 				['app' => Application::APP_ID]
 			);
 			return [];
@@ -458,7 +458,7 @@ class AdviceService {
 			}
 		} catch (RuntimeException $e) {
 			$this->logger->error(
-				'Procest: requestAdvice: decidesk advice Decision raise failed — failing closed: ' . $e->getMessage(),
+				'Dossiq: requestAdvice: decidesk advice Decision raise failed — failing closed: ' . $e->getMessage(),
 				['app' => Application::APP_ID]
 			);
 			// REQ-PDRD-002: fail closed; surface the error.

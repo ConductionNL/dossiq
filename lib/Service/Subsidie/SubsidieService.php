@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Subsidie Service.
+ * Dossiq Subsidie Service.
  *
  * Core domain service for the subsidieverlening-keten — the end-to-end
  * grant lifecycle under AWB titel 4.2. Owns subsidieaanvraag CRUD, the
@@ -12,7 +12,7 @@
  * (find/findAll/saveObject) — never bespoke CRUD.
  *
  * @category Service
- * @package  OCA\Procest\Service\Subsidie
+ * @package  OCA\Dossiq\Service\Subsidie
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,16 +23,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Subsidie;
+namespace OCA\Dossiq\Service\Subsidie;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -216,6 +216,8 @@ class SubsidieService {
 	 * @return array<string, mixed> The created aanvraag record.
 	 *
 	 * @throws OCSBadRequestException When OpenRegister is unavailable/unconfigured.
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-002-awb-termijn-binding-for-each-phase
 	 */
 	public function createAanvraag(array $payload, int $termWeken = self::DEFAULT_AANVRAAG_TERMIJN_WEKEN): array {
 		[$objectService, $register, $schema] = $this->resolve(schemaConfigKey: 'subsidie_aanvraag_schema');
@@ -240,7 +242,7 @@ class SubsidieService {
 		try {
 			return $objectService->saveObject(object: $record, register: $register, schema: $schema);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest subsidie: createAanvraag failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq subsidie: createAanvraag failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon subsidieaanvraag niet aanmaken');
 		}
 	}//end createAanvraag()
@@ -254,6 +256,8 @@ class SubsidieService {
 	 * @return array<string, mixed> The updated aanvraag record.
 	 *
 	 * @throws OCSBadRequestException When the transition is illegal or persistence fails.
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-002-awb-termijn-binding-for-each-phase
 	 */
 	public function transitionAanvraag(string $id, string $toStatus): array {
 		[$objectService, $register, $schema] = $this->resolve(schemaConfigKey: 'subsidie_aanvraag_schema');
@@ -275,7 +279,7 @@ class SubsidieService {
 		try {
 			return $objectService->saveObject(object: ['status' => $toStatus], register: $register, schema: $schema, uuid: (string)$id);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest subsidie: transitionAanvraag failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq subsidie: transitionAanvraag failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon status niet bijwerken');
 		}
 	}//end transitionAanvraag()

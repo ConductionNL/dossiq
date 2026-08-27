@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest AI Service
+ * Dossiq AI Service
  *
  * Service for AI-assisted case processing. Orchestrates AI model calls
  * via n8n MCP workflows for document classification, data extraction,
  * knowledge base Q&A, summarization, and routing suggestions.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -19,7 +19,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/ai-assistance/spec.md
  * @spec openspec/specs/ai-assistance/spec.md
@@ -29,14 +29,14 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Ai\AiAuditLog;
-use OCA\Procest\Service\Ai\AiEndpointGuard;
-use OCA\Procest\Service\Ai\AiModelIdentity;
-use OCA\Procest\Service\Ai\AiPiiRedactor;
-use OCA\Procest\Service\Ai\AiPromptFactory;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Ai\AiAuditLog;
+use OCA\Dossiq\Service\Ai\AiEndpointGuard;
+use OCA\Dossiq\Service\Ai\AiModelIdentity;
+use OCA\Dossiq\Service\Ai\AiPiiRedactor;
+use OCA\Dossiq\Service\Ai\AiPromptFactory;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -55,7 +55,7 @@ use RuntimeException;
  *
  * The oversight surface — recording what a human did with a suggestion,
  * recording a conversational assistant exchange, and reading the trail back —
- * lives in {@see \OCA\Procest\Service\Ai\AiAuditService}.
+ * lives in {@see \OCA\Dossiq\Service\Ai\AiAuditService}.
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
@@ -606,7 +606,7 @@ class AiService {
 	 *
 	 * Visibility is `protected` (not `private`) so PHPUnit tests can stub
 	 * this single outbound-network seam via an anonymous subclass, rather
-	 * than mocking curl — see {@see \OCA\Procest\Tests\Unit\Service\AiServiceAuditLoggingCompletenessTest}
+	 * than mocking curl — see {@see \OCA\Dossiq\Tests\Unit\Service\AiServiceAuditLoggingCompletenessTest}
 	 * which asserts every suggestion-time operation records an audit entry
 	 * without making a real HTTP call.
 	 *

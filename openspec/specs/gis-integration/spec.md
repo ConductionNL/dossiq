@@ -92,7 +92,7 @@ when OpenRegister is unavailable.
 
 - **GIVEN** an authenticated WFS client
 - **WHEN** it requests `GET /wfs/cases?service=WFS&request=GetCapabilities`
-- **THEN** a well-formed WFS 2.0.0 capabilities document MUST advertise the `procest:cases` feature type and the supported operations
+- **THEN** a well-formed WFS 2.0.0 capabilities document MUST advertise the `dossiq:cases` feature type and the supported operations
 
 #### Scenario: GetFeature returns GML members honouring BBOX
 

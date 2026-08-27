@@ -7,13 +7,13 @@
  * handover. As of `migrate-parafering-to-or-audit` (ADR-022,
  * `consume-or-audit-trail-fleet-wide`), NEW parafering transitions are recorded
  * through OpenRegister's native hash-chained audit trail by
- * {@see \OCA\Procest\Listener\ParaferingAuditListener} — NOT through this
+ * {@see \OCA\Dossiq\Listener\ParaferingAuditListener} — NOT through this
  * service. This service is retained ONLY to read and export the deprecated
  * `paraferingAuditEntry` rows that pre-date the migration, until the schema's
  * sunset (one major release later). It performs no writes.
  *
  * @category Service
- * @package  OCA\Procest\Service\Parafering
+ * @package  OCA\Dossiq\Service\Parafering
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,17 +24,17 @@
  *
  * @spec openspec/specs/parafering-audit-via-or/spec.md
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Parafering;
+namespace OCA\Dossiq\Service\Parafering;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -50,7 +50,7 @@ class AuditTrailService {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Procest settings bridge (provides ObjectService + config keys)
+	 * @param SettingsService $settingsService Dossiq settings bridge (provides ObjectService + config keys)
 	 * @param LoggerInterface $logger PSR-3 logger
 	 */
 	public function __construct(
@@ -97,10 +97,9 @@ class AuditTrailService {
 		);
 
 		$entries = [];
-		if (is_array($results) === true) {
-			foreach ($results as $row) {
-				$entries[] = $this->toArray(value: $row);
-			}
+		// No is_array() guard: $results is already typed as an array.
+		foreach ($results as $row) {
+			$entries[] = $this->toArray(value: $row);
 		}
 
 		usort(
@@ -159,7 +158,7 @@ class AuditTrailService {
 			return (new DateTimeImmutable('now'))->modify('+7 years')->format('Y-m-d');
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest: failed to compute parafering audit retention date',
+				'Dossiq: failed to compute parafering audit retention date',
 				['exception' => $e->getMessage()],
 			);
 

@@ -1,10 +1,10 @@
 # Base Register Seed Data
 
-The base register seed data feature provides pre-configured case types, status types, and role definitions that are automatically imported when Procest is first installed.
+The base register seed data feature provides pre-configured case types, status types, and role definitions that are automatically imported when Dossiq is first installed.
 
 ## Overview
 
-To provide a functional out-of-the-box experience, Procest includes seed data that sets up common Dutch government case types and their associated configurations.
+To provide a functional out-of-the-box experience, Dossiq includes seed data that sets up common Dutch government case types and their associated configurations.
 
 ## Included Seed Data
 

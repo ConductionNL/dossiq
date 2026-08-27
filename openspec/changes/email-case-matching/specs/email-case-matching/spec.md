@@ -1,11 +1,11 @@
 # email-case-matching Specification
 
 **Status:** proposed
-**Scope:** procest
+**Scope:** dossiq
 **Tier:** V1
 **Depends on:** OpenRegister email leaf (`OCA\OpenRegister\Service\EmailLinkService`, generic —
 already consumed by pipelinq), Nextcloud Mail app tables (`mail_messages`, `mail_mailboxes`),
-procest `SettingsService` app-config (`register`, case schema resolution).
+dossiq `SettingsService` app-config (`register`, case schema resolution).
 
 ## Purpose
 
@@ -70,7 +70,7 @@ Mail store for that message. All distinct candidates found in the scanned text S
 
 The system SHALL attach a matched email to a case exclusively via
 `EmailLinkService::linkEmail(objectUuid, registerId, schemaId, mailAccountId, messageId, messageUid)`
-and SHALL NOT write any procest-local link table. Before linking, the system SHALL check the leaf's
+and SHALL NOT write any dossiq-local link table. Before linking, the system SHALL check the leaf's
 existing links for the case (`getLinkedEmails`) and SHALL NOT create a duplicate link for the same
 `(case, mailAccountId, messageId)`; reprocessing a message (cursor reset, job re-run) SHALL yield no
 new links.

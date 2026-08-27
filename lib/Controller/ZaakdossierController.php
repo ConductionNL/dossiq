@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Zaakdossier Controller
+ * Dossiq Zaakdossier Controller
  *
  * Authenticated JSON REST API for the ZGW DRC case dossier: list/upload
  * documents, link/unlink existing informatieobjecten, update metadata and
@@ -17,7 +17,7 @@
  * relying on the UI alone (OWASP A01:2021, ADR-005 Rule 3).
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -33,11 +33,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\Zaakdossier\DossierUploadHandler;
-use OCA\Procest\Service\Zaakdossier\InformatieobjectReader;
-use OCA\Procest\Service\ZaakdossierService;
+use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
+use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
+use OCA\Dossiq\Service\ZaakdossierService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

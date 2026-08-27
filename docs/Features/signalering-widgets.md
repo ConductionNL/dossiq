@@ -22,7 +22,7 @@ The signalering (alerting) feature adds six Nextcloud Dashboard widgets that giv
 
 All widgets are implemented as PHP classes in `lib/Dashboard/` implementing `OCP\Dashboard\IWidget`. They load Vue components via `Util::addScript()` and share a single stylesheet (`dashboardWidgets`).
 
-The Vue components fetch data at runtime from the OpenRegister backend using the Procest Pinia store. No data is stored in the PHP layer; widgets are purely metadata wrappers that bootstrap the frontend component.
+The Vue components fetch data at runtime from the OpenRegister backend using the Dossiq Pinia store. No data is stored in the PHP layer; widgets are purely metadata wrappers that bootstrap the frontend component.
 
 ## Testing
 
@@ -30,5 +30,5 @@ Unit tests are in `tests/Unit/Dashboard/SignaleringWidgetsTest.php`. They verify
 - Each widget returns its correct unique ID
 - All widget IDs are unique across the set
 - All widgets return non-empty titles (translated via IL10N)
-- All widgets provide a URL back to the Procest dashboard route
+- All widgets provide a URL back to the Dossiq dashboard route
 - Widget display order is consistent (Deadline > Cases)

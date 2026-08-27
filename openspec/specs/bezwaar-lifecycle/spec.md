@@ -23,7 +23,7 @@ no objection cases are visible — independently of whether the OpenRegister
 collection returns rows.
 
 #### Scenario: Bezwaren index page renders list shell
-- **GIVEN** an authenticated user on the Procest app
+- **GIVEN** an authenticated user on the Dossiq app
 - **WHEN** they navigate to the Bezwaren page
 - **THEN** the Cards/Table view-mode toggle MUST be visible
 - **AND** an "Add" create button MUST be visible
@@ -55,8 +55,8 @@ The system SHALL provide a pre-seeded "Bezwaar" (objection) case type with AWB c
 
 #### Scenario: Bezwaar case type is available after installation
 
-- **WHEN** the Procest app repair step runs
-- **THEN** a case type "Bezwaar" SHALL exist in the procest register
+- **WHEN** the Dossiq app repair step runs
+- **THEN** a case type "Bezwaar" SHALL exist in the dossiq register
 - **AND** the case type SHALL have `processingDeadline` set to `P6W`
 - **AND** the case type SHALL have `extensionAllowed` set to `true` with `extensionPeriod` `P6W`
 - **AND** the case type SHALL have `suspensionAllowed` set to `true`
@@ -130,9 +130,9 @@ The system SHALL automatically calculate legal deadlines when a bezwaar case is 
 
 **Implementation**: Deadlines SHALL be declared via OR's
 `x-openregister-calculations` annotation on the bezwaar case schema,
-not via a procest-specific `BezwaarDeadlineService`. Each AWB article
+not via a dossiq-specific `BezwaarDeadlineService`. Each AWB article
 maps to a calculation rule with `formula`, `inputs`, and `outputField`
-(per ADR-022, procest-adopt-or-abstractions; cross-reference
+(per ADR-022, dossiq-adopt-or-abstractions; cross-reference
 Algemene wet bestuursrecht art. 6:7, 6:8, 7:10, 7:24). See OR's
 computed-fields capability (`RenderObject.php:1418`).
 
@@ -209,7 +209,7 @@ The system SHALL store bezwaarschrift (objection letter) details as an OpenRegis
 
 ### Requirement: BezwaarLifecycleListener SHALL react to lifecycle events and update bezwaar state
 
-`OCA\Procest\Listener\BezwaarLifecycleListener` SHALL implement `OCP\EventDispatcher\IEventListener::handle($event)` and react to: bezwaar created (set initial status + assigned reviewer), bezwaar hearing scheduled (block status changes until hearing concludes), bezwaar decision made (compute decision deadline + propagate to case timeline), and bezwaar withdrawn (terminate the lifecycle). The listener SHALL be idempotent on repeated event delivery — handler effects SHALL be guarded by the bezwaar's current state so a re-played event is a no-op when the transition already occurred.
+`OCA\Dossiq\Listener\BezwaarLifecycleListener` SHALL implement `OCP\EventDispatcher\IEventListener::handle($event)` and react to: bezwaar created (set initial status + assigned reviewer), bezwaar hearing scheduled (block status changes until hearing concludes), bezwaar decision made (compute decision deadline + propagate to case timeline), and bezwaar withdrawn (terminate the lifecycle). The listener SHALL be idempotent on repeated event delivery — handler effects SHALL be guarded by the bezwaar's current state so a re-played event is a no-op when the transition already occurred.
 
 @e2e exclude Backend PHP event listener; idempotent state-machine logic covered by PHPUnit, not a UI surface.
 
@@ -220,17 +220,17 @@ The system SHALL store bezwaarschrift (objection letter) details as an OpenRegis
 
 ### Requirement: SeedBezwaarBeroepData SHALL seed shared reference data for bezwaar + beroep
 
-`OCA\Procest\Repair\SeedBezwaarBeroepData` SHALL run on app install/upgrade and create the shared reference data for bezwaar + beroep workflows: status types, role types, decision-type enumerations, and any standing notification templates. The seeder SHALL be idempotent — pre-existing records (matched by slug/code) SHALL be left untouched, and re-running the repair SHALL be safe.
+`OCA\Dossiq\Repair\SeedBezwaarBeroepData` SHALL run on app install/upgrade and create the shared reference data for bezwaar + beroep workflows: status types, role types, decision-type enumerations, and any standing notification templates. The seeder SHALL be idempotent — pre-existing records (matched by slug/code) SHALL be left untouched, and re-running the repair SHALL be safe.
 
 @e2e exclude Backend repair-step seeder; idempotency covered by PHPUnit, not a UI surface.
 
 #### Scenario: Repair re-runs on upgrade
-- **WHEN** a procest upgrade triggers repair steps
+- **WHEN** a dossiq upgrade triggers repair steps
 - **THEN** `SeedBezwaarBeroepData::run($output)` SHALL skip rows already in the database and only add net-new reference data introduced in this release
 
 ### Requirement: SeedBezwaarWorkflowDefinition SHALL seed the canonical bezwaar workflow definition
 
-`OCA\Procest\Repair\SeedBezwaarWorkflowDefinition` SHALL create the canonical bezwaar workflow definition (status nodes, transitions, role guards, deadline rules) as a published version 1 record. The seeder SHALL be idempotent — if a published bezwaar workflow already exists, the repair SHALL be a no-op rather than creating a competing version. If the existing record is on an older schema version, the seeder SHALL migrate it forward in-place rather than seeding a parallel record.
+`OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition` SHALL create the canonical bezwaar workflow definition (status nodes, transitions, role guards, deadline rules) as a published version 1 record. The seeder SHALL be idempotent — if a published bezwaar workflow already exists, the repair SHALL be a no-op rather than creating a competing version. If the existing record is on an older schema version, the seeder SHALL migrate it forward in-place rather than seeding a parallel record.
 
 @e2e exclude Backend repair-step workflow seeder; idempotent no-op covered by PHPUnit, not a UI surface.
 

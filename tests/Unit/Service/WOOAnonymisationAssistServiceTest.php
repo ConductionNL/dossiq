@@ -10,7 +10,7 @@
  * every proposal call is recorded through the existing AiAuditService audit sink.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,22 +26,22 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\Ai\AiAuditService;
-use OCA\Procest\Service\AiService;
-use OCA\Procest\Service\Assistant\HermiqAnonymisationClient;
-use OCA\Procest\Service\Assistant\HermiqAssistantException;
-use OCA\Procest\Service\WOOAnonymisationAssistService;
-use OCA\Procest\Service\WOODocumentAssessmentService;
-use OCA\Procest\Service\WOORedactionService;
+use OCA\Dossiq\Service\Ai\AiAuditService;
+use OCA\Dossiq\Service\AiService;
+use OCA\Dossiq\Service\Assistant\HermiqAnonymisationClient;
+use OCA\Dossiq\Service\Assistant\HermiqAssistantException;
+use OCA\Dossiq\Service\WOOAnonymisationAssistService;
+use OCA\Dossiq\Service\WOODocumentAssessmentService;
+use OCA\Dossiq\Service\WOORedactionService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\WOOAnonymisationAssistService
+ * @covers \OCA\Dossiq\Service\WOOAnonymisationAssistService
  *
- * @uses \OCA\Procest\Service\Assistant\HermiqAssistantException
+ * @uses \OCA\Dossiq\Service\Assistant\HermiqAssistantException
  */
 class WOOAnonymisationAssistServiceTest extends TestCase {
 	/**

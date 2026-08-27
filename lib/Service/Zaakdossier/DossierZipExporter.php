@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest DossierZipExporter.
+ * Dossiq DossierZipExporter.
  *
  * ZIP export collaborator for the ZGW DRC case dossier. Split out of
  * ZaakdossierController so that controller keeps only endpoint shape: gathering
@@ -15,7 +15,7 @@
  * written (a 500).
  *
  * @category Service
- * @package  OCA\Procest\Service\Zaakdossier
+ * @package  OCA\Dossiq\Service\Zaakdossier
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,7 +23,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -33,10 +33,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Zaakdossier;
+namespace OCA\Dossiq\Service\Zaakdossier;
 
-use OCA\Procest\Service\ZaakdossierService;
-use OCA\Procest\Service\ZipManifestBuilder;
+use OCA\Dossiq\Service\ZaakdossierService;
+use OCA\Dossiq\Service\ZipManifestBuilder;
 use OCP\IUser;
 use Psr\Log\LoggerInterface;
 
@@ -111,7 +111,7 @@ class DossierZipExporter {
 			$layout = ZipManifestBuilder::LAYOUT_FLAT;
 		}
 
-		$tmpPath = (string)tempnam(sys_get_temp_dir(), 'procest-dossier-');
+		$tmpPath = (string)tempnam(sys_get_temp_dir(), 'dossiq-dossier-');
 		try {
 			$this->zipBuilder->buildZip(
 				targetPath: $tmpPath,
@@ -126,7 +126,7 @@ class DossierZipExporter {
 			// so rather than hiding the failure behind an `@`.
 			if (is_file($tmpPath) === true && unlink($tmpPath) === false) {
 				$this->logger->warning(
-					'Procest dossier: temporary ZIP could not be removed',
+					'Dossiq dossier: temporary ZIP could not be removed',
 					['path' => $tmpPath]
 				);
 			}

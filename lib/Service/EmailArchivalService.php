@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Email Archival Service
+ * Dossiq Email Archival Service
  *
  * Lightweight archival surface that records linked emails as `caseDocument`
  * entries (ZGW informatieobject) and tracks PDF conversion status. The
@@ -9,7 +9,7 @@
  * service owns the registry side of the workflow.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,17 +20,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/case-email-integration/tasks.md#T05
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**

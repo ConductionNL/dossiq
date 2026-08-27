@@ -5,12 +5,12 @@
  *
  * Mirrors the public signature of the OpenRegister AppHost generic dashboard
  * controller (ADR-040) — the SPA page + history-mode catch-all. Used only
- * where the openregister runtime is not installed; procest's
+ * where the openregister runtime is not installed; dossiq's
  * DashboardController extends this class. No-ops to the leaf `index` template
  * in the stub. NOT scanned by PHPCS.
  *
  * @category Test
- * @package  OCA\Procest\Tests\Stubs\AppHost\Controller
+ * @package  OCA\Dossiq\Tests\Stubs\AppHost\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.

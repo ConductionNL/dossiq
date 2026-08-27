@@ -1,14 +1,14 @@
-# Procest: Architecture & Data Model
+# Dossiq: Architecture & Data Model
 
 ## 1. Overview
 
-Procest is a case management (zaakgericht werken) app for Nextcloud, built as a thin client on OpenRegister. It manages cases, tasks, statuses, roles, results, and decisions. Cases are governed by configurable **case types** that control behavior: allowed statuses, required fields, processing deadlines, retention rules, and more.
+Dossiq is a case management (zaakgericht werken) app for Nextcloud, built as a thin client on OpenRegister. It manages cases, tasks, statuses, roles, results, and decisions. Cases are governed by configurable **case types** that control behavior: allowed statuses, required fields, processing deadlines, retention rules, and more.
 
 ### Architecture Pattern
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  Procest Frontend (Vue 2 + Pinia)               │
+│  Dossiq Frontend (Vue 2 + Pinia)               │
 │  - Case list/detail views                       │
 │  - Task management                              │
 │  - Decision tracking                            │
@@ -30,7 +30,7 @@ Procest is a case management (zaakgericht werken) app for Nextcloud, built as a 
 └─────────────────────────────────────────────────┘
 ```
 
-Procest owns **no database tables**. All data is stored as OpenRegister objects, defined by schemas in a dedicated register.
+Dossiq owns **no database tables**. All data is stored as OpenRegister objects, defined by schemas in a dedicated register.
 
 ## 2. Standards Research
 
@@ -54,7 +54,7 @@ Procest owns **no database tables**. All data is stored as OpenRegister objects,
 This means:
 - Objects in OpenRegister are modeled after **CMMN, schema.org, and BPMN** concepts
 - When exposing a ZGW-compatible API, we **map** our international objects to ZGW field names
-- This makes Procest usable outside the Netherlands while remaining interoperable with Dutch systems
+- This makes Dossiq usable outside the Netherlands while remaining interoperable with Dutch systems
 
 ### 2.3 Key Findings
 
@@ -451,10 +451,10 @@ A cross-entity workload view showing all items assigned to the current user. No 
 
 ### 3.5 Relationship to Pipelinq
 
-Procest receives cases from Pipelinq through the **request-to-case** (verzoek-to-zaak) flow:
+Dossiq receives cases from Pipelinq through the **request-to-case** (verzoek-to-zaak) flow:
 
 ```
-Pipelinq (CRM)                    Procest (Case Management)
+Pipelinq (CRM)                    Dossiq (Case Management)
 ┌──────────────┐                  ┌──────────────┐
 │   Client     │                  │    Case       │
 │   Contact    │──── Request ────>│    Task       │
@@ -474,7 +474,7 @@ When a Pipelinq Request is converted to a Case:
 
 ### 3.6 Admin Settings
 
-Procest exposes a **Nextcloud admin settings panel** for case type configuration and general app settings. Configuration objects are stored in OpenRegister.
+Dossiq exposes a **Nextcloud admin settings panel** for case type configuration and general app settings. Configuration objects are stored in OpenRegister.
 
 **Configurable by admin**:
 
@@ -544,7 +544,7 @@ $results = $contactsManager->search($name, ['FN', 'EMAIL']);
 // Activity - publish case events (audit trail)
 $activityManager = \OCP\Server::get(\OCP\Activity\IManager::class);
 $event = $activityManager->generateEvent();
-$event->setApp('procest')->setType('case_status_change')
+$event->setApp('dossiq')->setType('case_status_change')
       ->setSubject('Case status changed to {status}', ['status' => $newStatus])
       ->setObject('case', $caseId, $caseTitle);
 $activityManager->publish($event);
@@ -564,13 +564,13 @@ $conversation = $broker->createConversation('Case: ' . $caseTitle, $participantI
 
 | Field | Value |
 |-------|-------|
-| Name | `procest` |
-| Slug | `procest` |
+| Name | `dossiq` |
+| Slug | `dossiq` |
 | Description | Case management register |
 
 ### Schema Definitions
 
-Schemas MUST be defined in `lib/Settings/procest_register.json` using OpenAPI 3.0.0 format, following the pattern used by opencatalogi and softwarecatalog.
+Schemas MUST be defined in `lib/Settings/dossiq_register.json` using OpenAPI 3.0.0 format, following the pattern used by opencatalogi and softwarecatalog.
 
 **Schemas**:
 - `caseType`: Case type definition (CMMN CaseDefinition)
@@ -590,9 +590,9 @@ The configuration is imported via `ConfigurationService::importFromApp()` in the
 
 ## 5. ZGW API Mapping Layer
 
-When Procest exposes a ZGW-compatible API (future work), the mapping is:
+When Dossiq exposes a ZGW-compatible API (future work), the mapping is:
 
-| Procest Object | ZGW Resource | ZGW API |
+| Dossiq Object | ZGW Resource | ZGW API |
 |----------------|-------------|---------|
 | CaseType | ZaakType | Catalogi API 1.3.x |
 | StatusType | StatusType | Catalogi API |
@@ -611,7 +611,7 @@ Field-level mappings are documented per entity in section 3.2 above.
 
 ## 5a. Observability (Health & Metrics)
 
-Procest's `GET /apps/procest/api/health` and `GET /apps/procest/api/metrics`
+Dossiq's `GET /apps/dossiq/api/health` and `GET /apps/dossiq/api/metrics`
 endpoints run declaratively on **OpenRegister's AppHost observability engine**
 (ADR-040). The hand-written `HealthController` and `MetricsController` were
 deleted; the endpoints are aliased to the engine's `GenericHealth#index` /
@@ -622,11 +622,11 @@ and the ADR-006 200/503 contract are unchanged.
 - **Health checks**: `database` (critical), `openregister` (critical), `filesystem`
   (degraded), under `statusCodePolicy: adr006`. The health JSON now also carries
   an `app` field (engine-added).
-- **Metrics**: `procest_cases_total{status,case_type}`, `procest_cases_overdue_total`,
-  `procest_cases_created_today`, `procest_tasks_total{status}`,
-  `procest_tasks_overdue_total` — all declared as portable `objectCount`
-  descriptors on register `procest`, schemas `case` / `task`. The implicit
-  `procest_info` / `procest_up` gauges are emitted by the engine. Per-metric
+- **Metrics**: `dossiq_cases_total{status,case_type}`, `dossiq_cases_overdue_total`,
+  `dossiq_cases_created_today`, `dossiq_tasks_total{status}`,
+  `dossiq_tasks_overdue_total` — all declared as portable `objectCount`
+  descriptors on register `dossiq`, schemas `case` / `task`. The implicit
+  `dossiq_info` / `dossiq_up` gauges are emitted by the engine. Per-metric
   `cacheTtl` (30s / 60s) via the distributed cache replaces the previous
   controller-local APCu cache (same TTLs, now shared across PHP workers).
 
@@ -634,7 +634,7 @@ and the ADR-006 200/503 contract are unchanged.
 schema slugs (`case`, `task`) rather than a SQL title match. The metric values
 are equivalent to the previous exact `s.title = 'Case'` / `'Task'` query; if any
 historic deployment ran the earlier `title LIKE '%aak%'` / `'%taak%'` variant,
-the `procest_cases_*` / `procest_tasks_*` series will correct to count the real
+the `dossiq_cases_*` / `dossiq_tasks_*` series will correct to count the real
 case/task objects. Dashboards/alerts keyed on those series should be reviewed
 after the upgrade.
 
@@ -644,15 +644,15 @@ after the upgrade.
 
 2. ~~**Case type system**~~: **RESOLVED**: Case types are a core feature with full behavioral controls, modeled after ZGW ZaakType but using international terminology.
 
-3. **CMMN runtime**: Should Procest implement CMMN runtime semantics (sentries, entry/exit criteria) or keep the simpler status-based lifecycle? Current decision: start with ordered status progression, add CMMN features as needed.
+3. **CMMN runtime**: Should Dossiq implement CMMN runtime semantics (sentries, entry/exit criteria) or keep the simpler status-based lifecycle? Current decision: start with ordered status progression, add CMMN features as needed.
 
 4. **Archival**: ZGW has detailed archival rules. The case type system now includes result-based archival configuration (`archiveAction`, `retentionPeriod`, `retentionDateSource`). Runtime archival enforcement is deferred until compliance requirements emerge.
 
-5. **DMN for decisions**: Should Procest support DMN decision tables for automated decision logic? This is ambitious but aligns with the OMG "Triple Crown" (BPMN + CMMN + DMN). Deferred.
+5. **DMN for decisions**: Should Dossiq support DMN decision tables for automated decision logic? This is ambitious but aligns with the OMG "Triple Crown" (BPMN + CMMN + DMN). Deferred.
 
-6. **Case type versioning**: ZGW supports versioning of case types (new versions when modifications are made). Should Procest implement version chains? Current decision: `validFrom`/`validUntil` for validity windows, explicit versioning deferred.
+6. **Case type versioning**: ZGW supports versioning of case types (new versions when modifications are made). Should Dossiq implement version chains? Current decision: `validFrom`/`validUntil` for validity windows, explicit versioning deferred.
 
-7. **Cross-app My Work**: Should the My Work view in Procest also show Pipelinq leads/requests? Requires cross-app API calls or a shared dashboard widget.
+7. **Cross-app My Work**: Should the My Work view in Dossiq also show Pipelinq leads/requests? Requires cross-app API calls or a shared dashboard widget.
 
 ## 7. References
 

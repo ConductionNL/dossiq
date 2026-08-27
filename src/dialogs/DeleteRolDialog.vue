@@ -4,26 +4,26 @@
 -->
 <template>
 	<NcDialog
-		:name="t('procest', 'Delete role')"
+		:name="t('dossiq', 'Delete role')"
 		:open="!!role"
 		@update:open="
 			(v) => {
 				if (!v) $emit('close')
 			}
 		">
-		<p>{{ t('procest', 'Delete role {n}?', { n: role.name || role.id }) }}</p>
+		<p>{{ t('dossiq', 'Delete role {n}?', { n: role.name || role.id }) }}</p>
 		<p v-if="blockedReason" class="rol-manager__warning">
 			{{ blockedReason }}
 		</p>
 		<template #actions>
 			<NcButton @click="$emit('close')">
-				{{ t('procest', 'Cancel') }}
+				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 			<NcButton
 				type="error"
 				:disabled="!!blockedReason"
 				@click="$emit('confirm')">
-				{{ t('procest', 'Delete') }}
+				{{ t('dossiq', 'Delete') }}
 			</NcButton>
 		</template>
 	</NcDialog>

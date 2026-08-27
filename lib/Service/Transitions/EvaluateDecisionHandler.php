@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest evaluateDecision action handler.
+ * Dossiq evaluateDecision action handler.
  *
  * Action config shape: `{type: 'evaluateDecision', decisionKey: '<key>',
  * inputMapping?: {decisionInputName: caseFieldName}, outputMapping?:
@@ -16,7 +16,7 @@
  * orphaned.
  *
  * @category Service
- * @package  OCA\Procest\Service\Transitions
+ * @package  OCA\Dossiq\Service\Transitions
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,19 +27,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Transitions;
+namespace OCA\Dossiq\Service\Transitions;
 
-use OCA\Procest\Service\Dmn\DecisionEngine;
-use OCA\Procest\Service\Dmn\DecisionEvaluationException;
-use OCA\Procest\Service\Dmn\DecisionTableService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\Dmn\DecisionEngine;
+use OCA\Dossiq\Service\Dmn\DecisionEvaluationException;
+use OCA\Dossiq\Service\Dmn\DecisionTableService;
+use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 

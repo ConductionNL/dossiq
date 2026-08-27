@@ -4,9 +4,9 @@
 			<table>
 				<thead>
 					<tr>
-						<th scope="col">{{ t('procest', 'ZGW Resource') }}</th>
-						<th scope="col">{{ t('procest', 'Status') }}</th>
-						<th scope="col">{{ t('procest', 'Actions') }}</th>
+						<th scope="col">{{ t('dossiq', 'ZGW Resource') }}</th>
+						<th scope="col">{{ t('dossiq', 'Status') }}</th>
+						<th scope="col">{{ t('dossiq', 'Actions') }}</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -16,21 +16,21 @@
 							<span
 								v-if="mappings[key] && mappings[key].enabled"
 								class="status-enabled">
-								{{ t('procest', 'Enabled') }}
+								{{ t('dossiq', 'Enabled') }}
 							</span>
 							<span v-else-if="mappings[key]" class="status-disabled">
-								{{ t('procest', 'Disabled') }}
+								{{ t('dossiq', 'Disabled') }}
 							</span>
 							<span v-else class="status-unconfigured">
-								{{ t('procest', 'Not configured') }}
+								{{ t('dossiq', 'Not configured') }}
 							</span>
 						</td>
 						<td>
 							<NcButton type="secondary" @click="editMapping(key)">
-								{{ t('procest', 'Edit') }}
+								{{ t('dossiq', 'Edit') }}
 							</NcButton>
 							<NcButton type="tertiary" @click="resetMapping(key)">
-								{{ t('procest', 'Reset') }}
+								{{ t('dossiq', 'Reset') }}
 							</NcButton>
 						</td>
 					</tr>
@@ -46,7 +46,7 @@
 			@close="editingKey = null" />
 
 		<p v-if="saved" class="success-message">
-			{{ t('procest', 'Mapping saved successfully') }}
+			{{ t('dossiq', 'Mapping saved successfully') }}
 		</p>
 	</div>
 </template>

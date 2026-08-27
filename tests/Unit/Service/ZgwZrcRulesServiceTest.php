@@ -6,7 +6,7 @@
  * Tests for the ZRC (Zaken API) business rule validation and enrichment service.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -14,7 +14,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -22,10 +22,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\ZgwZrcRulesService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\ZgwZrcRulesService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -52,10 +52,10 @@ interface ObjectServiceStub {
 /**
  * Unit tests for ZgwZrcRulesService.
  *
- * @covers \OCA\Procest\Service\ZgwZrcRulesService
- * @covers \OCA\Procest\Service\ZgwRulesBase
+ * @covers \OCA\Dossiq\Service\ZgwZrcRulesService
+ * @covers \OCA\Dossiq\Service\ZgwRulesBase
  *
- * @uses \OCA\Procest\Service\FieldValidator
+ * @uses \OCA\Dossiq\Service\FieldValidator
  */
 class ZgwZrcRulesServiceTest extends TestCase {
 
@@ -97,7 +97,7 @@ class ZgwZrcRulesServiceTest extends TestCase {
 		$this->service = new ZgwZrcRulesService(
 			logger: $this->logger,
 			settingsService: $this->settingsService,
-			fieldValidator: new \OCA\Procest\Service\FieldValidator()
+			fieldValidator: new \OCA\Dossiq\Service\FieldValidator()
 		);
 
 	}//end setUp()

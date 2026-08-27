@@ -1,22 +1,19 @@
 <template>
-	<CnAdminSettingsShell
-		appId="procest"
-		appName="Procest"
-		@reimported="onReimported">
+	<CnAdminSettingsShell appId="dossiq" appName="Dossiq" @reimported="onReimported">
 		<Settings />
 
 		<CnSettingsSection
-			:name="t('procest', 'Case Type Management')"
-			:description="t('procest', 'Manage case types and their configurations')"
+			:name="t('dossiq', 'Case Type Management')"
+			:description="t('dossiq', 'Manage case types and their configurations')"
 			:loading="!storesReady">
 			<CaseTypeAdmin v-if="storesReady" />
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('procest', 'ZGW API Mapping')"
+			:name="t('dossiq', 'ZGW API Mapping')"
 			:description="
 				t(
-					'procest',
+					'dossiq',
 					'Configure property mappings between English OpenRegister fields and Dutch ZGW API fields',
 				)
 			"
@@ -25,10 +22,10 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('procest', 'VTH Inspection Checklists')"
+			:name="t('dossiq', 'VTH Inspection Checklists')"
 			:description="
 				t(
-					'procest',
+					'dossiq',
 					'Configure reusable inspection checklists for VTH cases (Toezicht). Checklists are versioned and linked to case types.',
 				)
 			"
@@ -37,10 +34,10 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('procest', 'AI-Assisted Processing')"
+			:name="t('dossiq', 'AI-Assisted Processing')"
 			:description="
 				t(
-					'procest',
+					'dossiq',
 					'Configure AI features for document classification, data extraction, Q&A, summarization, routing and decision support',
 				)
 			"
@@ -49,10 +46,10 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('procest', 'AWB Term Definitions')"
+			:name="t('dossiq', 'AWB Term Definitions')"
 			:description="
 				t(
-					'procest',
+					'dossiq',
 					'Configure statutory term definitions per zaaktype for AWB termijnbewaking (legal basis, duration, validity). Versioning is enforced on save.',
 				)
 			"
@@ -61,10 +58,10 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('procest', 'Mandate Matrix — Administration')"
+			:name="t('dossiq', 'Mandate Matrix — Administration')"
 			:description="
 				t(
-					'procest',
+					'dossiq',
 					'Configure mandate decisions, organisational roles, role assignments, and import legacy mandate exports',
 				)
 			"
@@ -73,10 +70,10 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('procest', 'Mandate Matrix — System Settings')"
+			:name="t('dossiq', 'Mandate Matrix — System Settings')"
 			:description="
 				t(
-					'procest',
+					'dossiq',
 					'Awb art. 10:3 mandate administration: Decidesk import, role hierarchy, waarnemer assignments.',
 				)
 			"
@@ -85,10 +82,10 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('procest', 'Consultation Management')"
+			:name="t('dossiq', 'Consultation Management')"
 			:description="
 				t(
-					'procest',
+					'dossiq',
 					'Adviesaanvragen: advisory body registry, mandatory-gate config, n8n webhook contracts and external response settings.',
 				)
 			"
@@ -97,10 +94,10 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('procest', 'Case Email — Shared Mailbox')"
+			:name="t('dossiq', 'Case Email — Shared Mailbox')"
 			:description="
 				t(
-					'procest',
+					'dossiq',
 					'Shared functional mailbox ingest (IMAP) and transport for case correspondence. Outbound mail and per-user accounts are owned by Nextcloud Mail.',
 				)
 			"
@@ -109,10 +106,10 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('procest', 'KCC-werkplek Integration')"
+			:name="t('dossiq', 'KCC-werkplek Integration')"
 			:description="
 				t(
-					'procest',
+					'dossiq',
 					'Burger identification, case-voorblad limits, sentiment trigger words, and belplan overflow thresholds for the KCC contact-center bridge.',
 				)
 			"
@@ -121,10 +118,10 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('procest', 'Decision Tables (DMN)')"
+			:name="t('dossiq', 'Decision Tables (DMN)')"
 			:description="
 				t(
-					'procest',
+					'dossiq',
 					'Configure DMN-style decision tables (inputs, outputs, rules and a hit policy) that domain experts can maintain without a developer. A workflow step can invoke a decision by key, and decisions are also evaluable via the REST API.',
 				)
 			"
@@ -133,10 +130,10 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('procest', 'Financial Integration — Dwangsom Callback')"
+			:name="t('dossiq', 'Financial Integration — Dwangsom Callback')"
 			:description="
 				t(
-					'procest',
+					'dossiq',
 					'Configure the shared secret used to validate ERP payment-confirmation callbacks for dwangsom (penalty payment) uitbetalingen.',
 				)
 			"
@@ -145,10 +142,10 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('procest', 'StUF-ZKN Endpoints')"
+			:name="t('dossiq', 'StUF-ZKN Endpoints')"
 			:description="
 				t(
-					'procest',
+					'dossiq',
 					'Outbound StUF-ZKN/BG zaaksysteem endpoints per gemeente, with per-endpoint circuit-breaker health. Endpoints, WSSE credentials and mTLS certificates are managed by the platform operator.',
 				)
 			"
@@ -157,10 +154,22 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('procest', 'StUF-ZKN Audit Log')"
+			:name="t('dossiq', 'Tenant onboarding')"
 			:description="
 				t(
-					'procest',
+					'dossiq',
+					'Track a tenant through the seven onboarding steps, run the go-live readiness check and activate the tenant. One-time setup, so it belongs here rather than in the daily navigation.',
+				)
+			"
+			:loading="!storesReady">
+			<TenantOnboardingTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
+			:name="t('dossiq', 'StUF-ZKN Audit Log')"
+			:description="
+				t(
+					'dossiq',
 					'Per-call audit log for outbound and inbound StUF SOAP envelopes (full XML, HTTP status, duration, retry history).',
 				)
 			"
@@ -185,6 +194,7 @@ import DecisionTablesTab from './tabs/DecisionTablesTab.vue'
 import FinancialIntegrationTab from './tabs/FinancialIntegrationTab.vue'
 import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
 import MandaatMatrixTab from './tabs/MandaatMatrixTab.vue'
+import TenantOnboardingTab from './tabs/TenantOnboardingTab.vue'
 import TermijnDefinitiesTab from './tabs/TermijnDefinitiesTab.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import { initializeStores } from '../../store/store.js'
@@ -192,6 +202,7 @@ import { initializeStores } from '../../store/store.js'
 export default {
 	name: 'AdminRoot',
 	components: {
+		TenantOnboardingTab,
 		CnAdminSettingsShell,
 		CnSettingsSection,
 		Settings,

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest DMN Decision Engine
+ * Dossiq DMN Decision Engine
  *
  * Pure evaluation of a decision-table definition against an inputs map.
  * No OpenRegister, HTTP, or database dependency — a deterministic function
@@ -10,7 +10,7 @@
  * {@see DecisionEvaluationException}.
  *
  * @category Service
- * @package  OCA\Procest\Service\Dmn
+ * @package  OCA\Dossiq\Service\Dmn
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,14 +21,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Dmn;
+namespace OCA\Dossiq\Service\Dmn;
 
 /**
  * Evaluates a decisionTable definition against a runtime inputs map.

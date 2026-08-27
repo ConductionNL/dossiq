@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest CMMN cascade evaluator.
+ * Dossiq CMMN cascade evaluator.
  *
  * Drives the plan to a fixed point after any mutation: repeatedly evaluates
  * every non-terminal plan item's exit and entry sentries until a pass changes
@@ -26,7 +26,7 @@
  * ({@see CasePlanRepository}).
  *
  * @category Service
- * @package  OCA\Procest\Service\Cmmn
+ * @package  OCA\Dossiq\Service\Cmmn
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -34,7 +34,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -44,7 +44,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Cmmn;
+namespace OCA\Dossiq\Service\Cmmn;
 
 /**
  * Evaluates entry/exit sentries to a fixed point after a plan mutation.

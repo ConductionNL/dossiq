@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest BAG Controller
+ * Dossiq BAG Controller
  *
  * HTTP surface for the BAG (Basisregistratie Adressen en Gebouwen)
  * authoritative lookup seam (bag-register-adapter):
@@ -9,7 +9,7 @@
  *   - GET /api/external/bag/pand/{id}
  *   - GET /api/external/bag/verblijfsobject/{id}
  *
- * This is procest's first HTTP controller for a base-registration lookup
+ * This is dossiq's first HTTP controller for a base-registration lookup
  * — BRP/KvK's adapters are consumed internally only and have no route.
  * Auth posture and error-shape mirror `LhsController` (the closest
  * existing authenticated-lookup sibling in this app): `@NoAdminRequired`
@@ -19,7 +19,7 @@
  * errors — see openspec/changes/bag-register-adapter/design.md Decision 2.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -28,17 +28,17 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/bag-register-adapter/proposal.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\External\Bag\BagAdapterInterface;
-use OCA\Procest\Service\External\Bag\BagLookupResult;
+use OCA\Dossiq\Service\External\Bag\BagAdapterInterface;
+use OCA\Dossiq\Service\External\Bag\BagLookupResult;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -126,7 +126,7 @@ class BagController extends Controller {
 				toevoeging: $toevoeging,
 			);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest BAG address lookup failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq BAG address lookup failed: ' . $e->getMessage());
 			return new JSONResponse(
 				['error' => 'BAG address lookup failed'],
 				Http::STATUS_INTERNAL_SERVER_ERROR,
@@ -194,7 +194,7 @@ class BagController extends Controller {
 		try {
 			$result = $this->bagAdapter->lookupObject(objectType: $objectType, id: $id);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest BAG object lookup failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq BAG object lookup failed: ' . $e->getMessage());
 			return new JSONResponse(
 				['error' => 'BAG object lookup failed'],
 				Http::STATUS_INTERNAL_SERVER_ERROR,

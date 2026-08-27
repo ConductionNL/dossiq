@@ -7,7 +7,7 @@
  * one by status code alone, so the caller can refuse to delete the parent.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,11 +25,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\DeelzaakController;
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\DeelzaakService;
+use OCA\Dossiq\Controller\DeelzaakController;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\DeelzaakService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -44,7 +44,7 @@ use PHPUnit\Framework\TestCase;
  * `__construct`, which is not the named method, so strict coverage metadata
  * reports every case as risky.
  *
- * @covers \OCA\Procest\Controller\DeelzaakController
+ * @covers \OCA\Dossiq\Controller\DeelzaakController
  */
 class DeelzaakUnlinkControllerTest extends TestCase {
 

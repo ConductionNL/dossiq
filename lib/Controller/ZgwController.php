@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest ZGW Base Controller
+ * Dossiq ZGW Base Controller
  *
  * Abstract base class for all ZGW API controllers. Serves as the identity
  * marker used by ZgwAuthMiddleware to decide which controllers require JWT
  * validation and scope enforcement.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -19,14 +19,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Support\NormalisesObjectRows;
+use OCA\Dossiq\Support\NormalisesObjectRows;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

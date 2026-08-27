@@ -4,7 +4,7 @@
  * Unit tests for DeadlineReportingService.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -12,7 +12,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -20,14 +20,14 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\DeadlineReportingService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\DeadlineReportingService;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Procest\Service\DeadlineReportingService
+ * @covers \OCA\Dossiq\Service\DeadlineReportingService
  */
 class DeadlineReportingServiceTest extends TestCase {
 	private FakeTermijnStore $objects;
@@ -40,7 +40,7 @@ class DeadlineReportingServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'termijn_instance_schema' => 'deadlineInstance',
 					'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
 					default => '',
@@ -52,7 +52,7 @@ class DeadlineReportingServiceTest extends TestCase {
 
 		// Seed 5 instances spread across Q2-2026 for one zaaktype.
 		for ($i = 1; $i <= 5; $i++) {
-			$this->objects->saveObject('procest', 'deadlineInstance', [
+			$this->objects->saveObject('dossiq', 'deadlineInstance', [
 				'id' => 'ti-q2-' . $i,
 				'caseType' => 'omgevingsvergunning-regulier',
 				'case' => 'Z/2026/' . (400 + $i),
@@ -113,7 +113,7 @@ class DeadlineReportingServiceTest extends TestCase {
 	 */
 	public function testDwangsomAuditReportFiltersByYear(): void {
 		// Seed two uitbetalingen, one in 2026 one in 2025.
-		$this->objects->saveObject('procest', 'dwangsomUitbetaling', [
+		$this->objects->saveObject('dossiq', 'dwangsomUitbetaling', [
 			'id' => 'u-1',
 			'reference' => 'REF-1',
 			'amount' => 35700,
@@ -123,7 +123,7 @@ class DeadlineReportingServiceTest extends TestCase {
 			'wettelijkeGrondslag' => 'AWB 4:17',
 			'iban' => 'NL91ABNA0417164300',
 		]);
-		$this->objects->saveObject('procest', 'dwangsomUitbetaling', [
+		$this->objects->saveObject('dossiq', 'dwangsomUitbetaling', [
 			'id' => 'u-2',
 			'reference' => 'REF-2',
 			'amount' => 50000,

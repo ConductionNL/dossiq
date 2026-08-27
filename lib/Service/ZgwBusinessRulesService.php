@@ -1,20 +1,20 @@
 <?php
 
 /**
- * Procest ZGW Business Rules Service
+ * Dossiq ZGW Business Rules Service
  *
  * The entry point every ZGW write passes through. It owns the cross-cutting
  * checks that must run BEFORE any per-resource rule — catalogi concept
  * protection (ztc-009/010), the draft→published publish guard (CT-02b), the
  * destroy guard on caseTypes with active cases (CT-01d), and closed-zaak
  * protection (zrc-007) — and then hands the request to
- * {@see \OCA\Procest\Service\Zgw\ZgwRulesDispatcher}, which owns the routing
+ * {@see \OCA\Dossiq\Service\Zgw\ZgwRulesDispatcher}, which owns the routing
  * table to the per-register rule services (ZRC, ZTC, DRC, BRC).
  *
  * Cross-register rules (zrc-005, brc-005, brc-006) live in ZgwService.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -22,16 +22,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\Service\Zgw\ZgwRulesDispatcher;
+use OCA\Dossiq\Service\Zgw\ZgwRulesDispatcher;
 
 /**
  * Applies the cross-cutting ZGW guards, then delegates to the rules dispatcher.

@@ -4,7 +4,7 @@
 -->
 <template>
 	<NcDialog
-		:name="t('procest', 'Generate Beschikking')"
+		:name="t('dossiq', 'Generate Beschikking')"
 		:canClose="true"
 		@close="$emit('close')">
 		<template #default>
@@ -12,7 +12,7 @@
 				<p class="beschikking-dialog__intro">
 					{{
 						t(
-							'procest',
+							'dossiq',
 							'Generate a beslissing document (beschikking) using the configured Docudesk template.',
 						)
 					}}
@@ -20,25 +20,25 @@
 
 				<div class="beschikking-dialog__outcome-selector">
 					<label class="beschikking-dialog__label">{{
-						t('procest', 'Outcome')
+						t('dossiq', 'Outcome')
 					}}</label>
 					<div class="beschikking-dialog__outcome-buttons">
 						<NcButton
 							:type="outcome === 'granted' ? 'primary' : 'secondary'"
 							@click="outcome = 'granted'">
-							✓ {{ t('procest', 'Granted') }}
+							✓ {{ t('dossiq', 'Granted') }}
 						</NcButton>
 						<NcButton
 							:type="outcome === 'refused' ? 'error' : 'secondary'"
 							@click="outcome = 'refused'">
-							✗ {{ t('procest', 'Refused') }}
+							✗ {{ t('dossiq', 'Refused') }}
 						</NcButton>
 					</div>
 				</div>
 
 				<NcTextArea
 					v-model="motivation"
-					:label="t('procest', 'Motivation')"
+					:label="t('dossiq', 'Motivation')"
 					:placeholder="motivationPlaceholder"
 					rows="6" />
 
@@ -48,10 +48,7 @@
 
 				<div v-if="success" class="beschikking-dialog__success">
 					{{
-						t(
-							'procest',
-							'Beschikking generated and attached as bijlage.',
-						)
+						t('dossiq', 'Beschikking generated and attached as bijlage.')
 					}}
 				</div>
 			</div>
@@ -59,13 +56,13 @@
 
 		<template #actions>
 			<NcButton type="tertiary" @click="$emit('close')">
-				{{ t('procest', 'Cancel') }}
+				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 			<NcButton
 				type="primary"
 				:disabled="!outcome || submitting || success"
 				@click="submit">
-				{{ t('procest', 'Generate') }}
+				{{ t('dossiq', 'Generate') }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -101,27 +98,41 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * Placeholder text for the motivation field, per chosen outcome.
+		 *
+		 * @return {string} The translated placeholder.
+		 *
+		 * @spec openspec/specs/dso-omgevingsloket/spec.md#requirement-req-dso-008-dso-status-lifecycle-for-vergunningaanvragen
+		 */
 		motivationPlaceholder() {
 			if (this.outcome === 'granted') {
 				return t(
-					'procest',
+					'dossiq',
 					'The application meets all criteria of the omgevingsplan...',
 				)
 			}
 
 			if (this.outcome === 'refused') {
 				return t(
-					'procest',
+					'dossiq',
 					'The application is refused due to conflict with the omgevingsplan...',
 				)
 			}
 
-			return t('procest', 'Describe the decision motivation...')
+			return t('dossiq', 'Describe the decision motivation...')
 		},
 	},
 
 	methods: {
 		t,
+		/**
+		 * Record the beschikking on the DSO case.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/dso-omgevingsloket/spec.md#requirement-req-dso-008-dso-status-lifecycle-for-vergunningaanvragen
+		 */
 		async submit() {
 			if (!this.outcome) {
 				return
@@ -132,7 +143,7 @@ export default {
 			try {
 				const { data } = await axios.post(
 					generateUrl(
-						'/apps/procest/api/dso/cases/'
+						'/apps/dossiq/api/dso/cases/'
 							+ encodeURIComponent(this.caseId)
 							+ '/beschikking',
 					),
@@ -145,7 +156,7 @@ export default {
 				this.$emit('generated', data)
 			} catch {
 				this.error = t(
-					'procest',
+					'dossiq',
 					'Could not generate beschikking. Please try again.',
 				)
 			} finally {

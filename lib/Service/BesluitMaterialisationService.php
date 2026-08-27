@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Besluit Materialisation Service
+ * Dossiq Besluit Materialisation Service
  *
  * Materialises the ZGW Besluit artifact on a case from a decidesk Decision
  * outcome. decidesk owns the *making* of the decision; this service records
@@ -15,7 +15,7 @@
  *  - decidesk signer / mandaathouder + method         → audit fields on the Besluit
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,14 +24,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/contract-decision-delegation/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -134,7 +134,7 @@ class BesluitMaterialisationService {
 	 *
 	 * @throws RuntimeException When the case cannot be loaded or the Besluit cannot be persisted.
 	 *
-	 * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
 	public function materialiseFromConcludedEvent(string $caseId, string $decisionId, array $event): array {
 		$result = (string)($event['outcome'] ?? '');

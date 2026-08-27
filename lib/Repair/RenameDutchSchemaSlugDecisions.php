@@ -13,7 +13,7 @@
  * can be decided before touching it is decided here.
  *
  * @category  Repair
- * @package   OCA\Procest\Repair
+ * @package   OCA\Dossiq\Repair
  * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
@@ -25,7 +25,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
 /**
  * Pure predicates for the Dutch-to-English schema slug migration.
@@ -48,8 +48,8 @@ class RenameDutchSchemaSlugDecisions {
 	 * is visible to the collision check of a later one — otherwise two entries
 	 * targeting the same name would both look safe.
 	 *
-	 * @param array<string, string> $map      Old slug => new slug.
-	 * @param array<int, string>    $existing Slugs currently present.
+	 * @param array<string, string> $map Old slug => new slug.
+	 * @param array<int, string> $existing Slugs currently present.
 	 *
 	 * @return array{renames: array<string, string>, refused: array<string, string>}
 	 *

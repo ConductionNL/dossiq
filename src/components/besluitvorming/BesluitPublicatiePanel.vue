@@ -7,39 +7,38 @@
 		<div v-if="state === 'success'" class="besluit-publicatie-panel__success">
 			<span
 				class="besluit-publicatie-panel__badge besluit-publicatie-panel__badge--success">
-				{{ t('procest', 'Gepubliceerd') }}
+				{{ t('dossiq', 'Gepubliceerd') }}
 			</span>
 			<a
 				v-if="reference"
 				:href="reference"
 				target="_blank"
 				rel="noopener noreferrer">
-				{{ t('procest', 'View publication in DROP/LVBB') }}
+				{{ t('dossiq', 'View publication in DROP/LVBB') }}
 			</a>
 		</div>
 
 		<div v-else-if="state === 'failed'" class="besluit-publicatie-panel__failed">
 			<span
 				class="besluit-publicatie-panel__badge besluit-publicatie-panel__badge--failed">
-				{{ t('procest', 'Publicatie mislukt') }}
+				{{ t('dossiq', 'Publicatie mislukt') }}
 			</span>
 			<p>
 				{{
-					errorMessage
-					|| t('procest', 'The publication could not be sent.')
+					errorMessage || t('dossiq', 'The publication could not be sent.')
 				}}
 			</p>
 			<NcButton type="primary" :disabled="busy" @click="retry">
-				{{ t('procest', 'Opnieuw proberen') }}
+				{{ t('dossiq', 'Opnieuw proberen') }}
 			</NcButton>
 		</div>
 
 		<div v-else class="besluit-publicatie-panel__pending">
 			<span class="besluit-publicatie-panel__badge">
-				{{ t('procest', 'Publicatie in behandeling') }}
+				{{ t('dossiq', 'Publicatie in behandeling') }}
 			</span>
 			<NcButton type="secondary" :disabled="busy" @click="retry">
-				{{ t('procest', 'Nu publiceren') }}
+				{{ t('dossiq', 'Nu publiceren') }}
 			</NcButton>
 		</div>
 	</div>
@@ -100,7 +99,7 @@ export default {
 			} catch (error) {
 				this.state = 'failed'
 				this.errorMessage = this.t(
-					'procest',
+					'dossiq',
 					'The publication could not be sent.',
 				)
 			} finally {
@@ -113,21 +112,20 @@ export default {
 		 *
 		 * @param {string} code The error code.
 		 * @return {string} A localized message.
+		 *
+		 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-opencatalogi-absence-is-handled-gracefully
 		 */
 		mapError(code) {
 			if (code === 'not_configured') {
-				return this.t(
-					'procest',
-					'No DROP/LVBB endpoint has been configured.',
-				)
+				return this.t('dossiq', 'No DROP/LVBB endpoint has been configured.')
 			}
 			if (code === 'no_decision') {
 				return this.t(
-					'procest',
+					'dossiq',
 					'No decision has been recorded to publish yet.',
 				)
 			}
-			return this.t('procest', 'The publication could not be sent.')
+			return this.t('dossiq', 'The publication could not be sent.')
 		},
 	},
 }

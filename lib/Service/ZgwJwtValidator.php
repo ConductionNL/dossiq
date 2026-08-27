@@ -6,7 +6,7 @@
  * Self-contained JWT (HMAC) validation for the ZGW API surface.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -17,12 +17,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use OCP\IUserManager;
 use OCP\IUserSession;
@@ -32,7 +32,7 @@ use Psr\Log\LoggerInterface;
  * Validates ZGW JWT bearer tokens against OpenRegister Consumer credentials.
  *
  * OpenRegister's AuthorizationService::authorizeJwt() is a protected method and
- * cannot be invoked from procest. Calling it externally raises a PHP Error
+ * cannot be invoked from dossiq. Calling it externally raises a PHP Error
  * ("Call to protected method") which is not an Exception, so the previous
  * try/catch (\Exception) blocks did not catch it — every authenticated ZGW
  * request therefore failed with a 500. This validator reproduces the JWT HMAC

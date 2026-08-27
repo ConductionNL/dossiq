@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest PDOK Service.
+ * Dossiq PDOK Service.
  *
  * Thin shim that fronts the openconnector PDOK source adapters
  * (`PdokGeocodingClient`, `PdokWmsSourceAdapter`, `PdokWfsSourceAdapter`)
- * for procest backend callers. Per ADR-022 (apps-consume-OR-abstractions),
- * procest does NOT re-implement Locatieserver, BAG, WMS or WFS access
+ * for dossiq backend callers. Per ADR-022 (apps-consume-OR-abstractions),
+ * dossiq does NOT re-implement Locatieserver, BAG, WMS or WFS access
  * itself: every PDOK request is dispatched through the openconnector
  * HTTP shim at `/index.php/apps/openconnector/api/pdok/*`. The
  * `pdok.feature_flag` openconnector key gates the live binding; while
@@ -31,7 +31,7 @@
  *     containing case form stays submittable.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -40,7 +40,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/gis-integration/spec.md
  * @spec openspec/changes/migrate-pdok-to-openconnector/tasks.md
@@ -48,9 +48,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\Service\Pdok\PdokLocatieserverService;
+use OCA\Dossiq\Service\Pdok\PdokLocatieserverService;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
@@ -310,7 +310,7 @@ class PdokService {
 
 		$this->recordWarning(messageKey: $effectiveKey, status: $status);
 		$this->logger->info(
-			'Procest PdokService degraded',
+			'Dossiq PdokService degraded',
 			['messageKey' => $effectiveKey, 'status' => $status, 'error' => $msg]
 		);
 		return [];

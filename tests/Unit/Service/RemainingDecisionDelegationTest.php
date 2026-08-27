@@ -3,7 +3,7 @@
 /**
  * Remaining Decision Delegation Unit Tests
  *
- * Covers the procest decision-delegation plumbing after the switch to the
+ * Covers the dossiq decision-delegation plumbing after the switch to the
  * decidesk IEventDispatcher contract: the shared raiseDecision core fails CLOSED
  * when the dispatched DecisionRequestedEvent is not handled (REQ-PDCD-002), and
  * the thin per-flow siblings (BezwaarDecisionDelegationService,
@@ -15,17 +15,21 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md
+ * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Decidesk\Event\DecisionRequestedEvent;
-use OCA\Procest\Service\AdviceDelegationService;
-use OCA\Procest\Service\BezwaarDecisionDelegationService;
-use OCA\Procest\Service\ContractDecisionDelegationService;
+// The CURRENT namespace. The decision app renamed OCA\Decidesk -> OCA\Decidiq
+// with no alias, and the production resolver now prefers the current spelling —
+// so a test importing the OLD class asserts against an object the code no longer
+// builds. CrossAppEventNamesTest guards the ordering these follow.
+use OCA\Decidiq\Event\DecisionRequestedEvent;
+use OCA\Dossiq\Service\AdviceDelegationService;
+use OCA\Dossiq\Service\BezwaarDecisionDelegationService;
+use OCA\Dossiq\Service\ContractDecisionDelegationService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
 use PHPUnit\Framework\TestCase;
@@ -33,9 +37,9 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * @covers \OCA\Procest\Service\ContractDecisionDelegationService
- * @covers \OCA\Procest\Service\BezwaarDecisionDelegationService
- * @covers \OCA\Procest\Service\AdviceDelegationService
+ * @covers \OCA\Dossiq\Service\ContractDecisionDelegationService
+ * @covers \OCA\Dossiq\Service\BezwaarDecisionDelegationService
+ * @covers \OCA\Dossiq\Service\AdviceDelegationService
  */
 class RemainingDecisionDelegationTest extends TestCase {
 	/**
@@ -74,6 +78,10 @@ class RemainingDecisionDelegationTest extends TestCase {
 			function (DecisionRequestedEvent $event): void {
 				// The decisionType + sourceApp provenance must be carried.
 				$this->assertSame('advice', $event->getDecisionType());
+				// FROZEN: the sourceApp this app announces to decidesk stays
+				// `procest` (ContractDecisionDelegationService). decidesk still
+				// ships <id>decidesk</id> and filters on the emitted value, and
+				// in-flight/persisted events already carry it.
 				$this->assertSame('procest', $event->getSourceApp());
 			}
 		);

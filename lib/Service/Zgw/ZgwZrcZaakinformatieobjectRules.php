@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest ZGW ZRC ZaakInformatieObject rules.
+ * Dossiq ZGW ZRC ZaakInformatieObject rules.
  *
  * The Zaken API rules for the zaakinformatieobjecten sub-resource — the
  * document↔zaak relation — split out of ZgwZrcRulesService. That service owns
@@ -17,7 +17,7 @@
  * - zrc-017: Valideren informatieobjecttype bij Zaak.zaaktype
  *
  * @category Service
- * @package  OCA\Procest\Service\Zgw
+ * @package  OCA\Dossiq\Service\Zgw
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,7 +25,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
  *
  * SPDX-License-Identifier: EUPL-1.2
@@ -36,9 +36,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Zgw;
+namespace OCA\Dossiq\Service\Zgw;
 
-use OCA\Procest\Service\ZgwRulesBase;
+use OCA\Dossiq\Service\ZgwRulesBase;
 
 /**
  * ZRC zaakinformatieobjecten validation and enrichment.
@@ -327,7 +327,7 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase {
 	/**
 	 * Check whether a request body changes an immutable relation field (zrc-004).
 	 *
-	 * The stored object may carry the relation under the procest-side key
+	 * The stored object may carry the relation under the dossiq-side key
 	 * ($storedKey) or under the ZGW field name, so both are consulted in that
 	 * order. Both sides are reduced to a UUID before comparing, so the same
 	 * relation expressed as a bare UUID and as a full URL is not a change.
@@ -336,7 +336,7 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase {
 	 * @param array $body The request body
 	 * @param array $existingObject The stored object data
 	 * @param string $field The ZGW field name in the body
-	 * @param string $storedKey The procest-side key on the stored object
+	 * @param string $storedKey The dossiq-side key on the stored object
 	 *
 	 * @return bool True when the field is present and points at a different object
 	 *

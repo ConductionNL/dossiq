@@ -3,8 +3,8 @@
 /**
  * Test stub for OpenRegister's Organisation entity.
  *
- * Minimal surface needed by procest unit tests: the tenant migration builds an
- * Organisation from a legacy tenant row. Only the accessors the procest code
+ * Minimal surface needed by dossiq unit tests: the tenant migration builds an
+ * Organisation from a legacy tenant row. Only the accessors the dossiq code
  * touches are stubbed.
  *
  * @category Stub
@@ -17,7 +17,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);

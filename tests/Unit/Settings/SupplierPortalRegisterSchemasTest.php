@@ -8,7 +8,7 @@
  * duplicate slugs).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Settings
+ * @package  OCA\Dossiq\Tests\Unit\Settings
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,12 +19,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Settings;
+namespace OCA\Dossiq\Tests\Unit\Settings;
 
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Procest\Repair\InitializeSettings
+ * @covers \OCA\Dossiq\Repair\InitializeSettings
  */
 class SupplierPortalRegisterSchemasTest extends TestCase {
 	/**
@@ -34,7 +34,7 @@ class SupplierPortalRegisterSchemasTest extends TestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$path = __DIR__ . '/../../../lib/Settings/procest_register.json';
+		$path = __DIR__ . '/../../../lib/Settings/dossiq_register.json';
 		$this->assertFileExists($path);
 		$this->register = json_decode((string)file_get_contents($path), true);
 	}
@@ -58,7 +58,7 @@ class SupplierPortalRegisterSchemasTest extends TestCase {
 	}
 
 	public function testRegisterListsSupplierSchemas(): void {
-		$listed = $this->register['components']['registers']['procest']['schemas'] ?? [];
+		$listed = $this->register['components']['registers']['dossiq']['schemas'] ?? [];
 		foreach (['supplier', 'supplierUser', 'supplierTender', 'supplierContract', 'supplierInvoice', 'supplierMessage', 'supplierKpi'] as $slug) {
 			$this->assertContains($slug, $listed, "register must list {$slug}");
 		}

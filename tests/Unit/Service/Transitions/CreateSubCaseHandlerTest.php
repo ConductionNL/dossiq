@@ -8,7 +8,7 @@
  * exceptions per the spec contract.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Transitions
+ * @package  OCA\Dossiq\Tests\Unit\Service\Transitions
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -17,25 +17,25 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/workflow-engine-enhancement/tasks.md#W-20
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Transitions;
+namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Transitions\CreateSubCaseHandler;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Transitions\CreateSubCaseHandler;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
 
 /**
- * @covers \OCA\Procest\Service\Transitions\CreateSubCaseHandler
+ * @covers \OCA\Dossiq\Service\Transitions\CreateSubCaseHandler
  *
- * @uses \OCA\Procest\Service\Transitions\ActionResult
+ * @uses \OCA\Dossiq\Service\Transitions\ActionResult
  */
 class CreateSubCaseHandlerTest extends TestCase {
 	/**

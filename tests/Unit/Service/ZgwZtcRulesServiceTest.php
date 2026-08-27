@@ -18,20 +18,20 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\FieldValidator;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\ZgwZtcRulesService;
+use OCA\Dossiq\Service\FieldValidator;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\ZgwZtcRulesService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\ZgwZtcRulesService
+ * @covers \OCA\Dossiq\Service\ZgwZtcRulesService
  *
- * @uses \OCA\Procest\Service\Support\SearchesObjects
- * @uses \OCA\Procest\Service\DeadlineMonitoringSeedDataService
- * @uses \OCA\Procest\Service\ZgwRulesBase
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\DeadlineMonitoringSeedDataService
+ * @uses \OCA\Dossiq\Service\ZgwRulesBase
  */
 class ZgwZtcRulesServiceTest extends TestCase {
 	private ZgwZtcRulesService $svc;

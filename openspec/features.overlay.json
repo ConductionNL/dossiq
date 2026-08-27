@@ -154,7 +154,7 @@
     "summary": "You receive Omgevingswet intakes and track their deadlines.",
     "summary_nl": "Je ontvangt Omgevingswet-aanvragen en bewaakt hun termijnen.",
     "status": "beta",
-    "reason": "Config-ready seam (integration.dso.baseUrl + dso_lv_auth_token, warn-and-empty when unset); pre-productie (service.pre.omgevingswet.overheid.nl) needs the DSO aansluittraject + PKIoverheid cert — a customer-side track procest supports but cannot self-start.",
+    "reason": "Config-ready seam (integration.dso.baseUrl + dso_lv_auth_token, warn-and-empty when unset); pre-productie (service.pre.omgevingswet.overheid.nl) needs the DSO aansluittraject + PKIoverheid cert — a customer-side track dossiq supports but cannot self-start.",
     "docsUrl": "openspec/specs/dso-omgevingsloket/spec.md"
   },
   {
@@ -186,13 +186,13 @@
     "docsUrl": "openspec/specs/ai-assistance/spec.md"
   },
   {
-    "slug": "procest-sociaal-domein-wmo",
+    "slug": "dossiq-sociaal-domein-wmo",
     "title": "Sociaal domein (Wmo, Jeugdwet, Participatiewet)",
     "title_nl": "Sociaal domein (Wmo, Jeugdwet, Participatiewet)",
     "summary": "You handle social-domain cases on a shared data model.",
     "summary_nl": "Je behandelt sociaal-domeinzaken op een gedeeld datamodel.",
     "status": "soon",
-    "docsUrl": "openspec/specs/procest-sociaal-domein-wmo/spec.md"
+    "docsUrl": "openspec/specs/dossiq-sociaal-domein-wmo/spec.md"
   },
   {
     "slug": "digid-eherkenning",

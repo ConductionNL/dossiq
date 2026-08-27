@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Routing Strategy Missing Exception
+ * Dossiq Routing Strategy Missing Exception
  *
  * Thrown by StrategyRegistry::get() when a routing rule references a strategy
  * name that has not been registered. Callers translate this to a 422 in
@@ -9,7 +9,7 @@
  * in the admin UI.
  *
  * @category Service
- * @package  OCA\Procest\Service\Routing
+ * @package  OCA\Dossiq\Service\Routing
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -20,12 +20,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Routing;
+namespace OCA\Dossiq\Service\Routing;
 
 use RuntimeException;
 

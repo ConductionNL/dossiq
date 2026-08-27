@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest ZGW Service
+ * Dossiq ZGW Service
  *
  * Shared service for ZGW-compliant API operations. Provides mapping,
  * authentication, pagination, and OpenRegister integration used by
  * all register-specific ZGW controllers.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -16,15 +16,15 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-1
+ * @spec openspec/changes/archive/retrofit-2026-05-24-annotate-procest/tasks.md#task-1
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use OCA\OpenRegister\Db\Mapping;
 use OCP\AppFramework\Http;
@@ -48,7 +48,7 @@ use Psr\Log\LoggerInterface;
  */
 class ZgwService {
 	/**
-	 * Map of ZGW API + resource to the config key suffix used in Procest.
+	 * Map of ZGW API + resource to the config key suffix used in Dossiq.
 	 *
 	 * @var array<string, array<string, string>>
 	 */
@@ -555,7 +555,7 @@ class ZgwService {
 		$serverHost = $request->getServerHost();
 		$scheme = $request->getServerProtocol();
 
-		return $scheme . '://' . $serverHost . '/index.php/apps/procest/api/zgw/' . $zgwApi . '/v1/' . $resource;
+		return $scheme . '://' . $serverHost . '/index.php/apps/dossiq/api/zgw/' . $zgwApi . '/v1/' . $resource;
 	}//end buildBaseUrl()
 
 	/**
@@ -590,7 +590,7 @@ class ZgwService {
 			// messages in the HTTP response — they aid algorithm/issuer enumeration.
 			$this->logger->warning(
 				'ZGW JWT validation failed: ' . $e->getMessage(),
-				['app' => 'procest']
+				['app' => 'dossiq']
 			);
 
 			return new JSONResponse(
@@ -1220,7 +1220,7 @@ class ZgwService {
 			);
 
 			// Merge direct fields into mapped data (array fields that Twig drops).
-			if (empty($directFields) === false && is_array($englishData) === true) {
+			if (empty($directFields) === false) {
 				$englishData = array_merge($englishData, $directFields);
 			}
 
@@ -1302,7 +1302,7 @@ class ZgwService {
 			}//end if
 
 			// Apply _directFields after PATCH merge to ensure they override correctly.
-			if (empty($directFields) === false && is_array($englishData) === true) {
+			if (empty($directFields) === false) {
 				$englishData = array_merge($englishData, $directFields);
 			}
 
@@ -1484,9 +1484,15 @@ class ZgwService {
 		if (empty($entries) === true) {
 			$entries[] = [
 				'uuid' => $uuid . '-audit-1',
+				// `bron` and `applicatieId` are FROZEN at `procest`. They are the
+				// ZGW audit-trail SOURCE identifiers this app writes into the
+				// external zaaksysteem's audit trail; every entry already written
+				// carries them and consumers filter on them, so renaming would
+				// split one system's history into two. `applicatieWeergave` is a
+				// display label and does follow the brand.
 				'bron' => 'procest',
 				'applicatieId' => 'procest',
-				'applicatieWeergave' => 'Procest',
+				'applicatieWeergave' => 'Dossiq',
 				'action' => 'create',
 				'actieWeergave' => 'Object aangemaakt',
 				'result' => 200,
@@ -1554,9 +1560,15 @@ class ZgwService {
 		return new JSONResponse(
 			data: [
 				'uuid' => $auditUuid,
+				// `bron` and `applicatieId` are FROZEN at `procest`. They are the
+				// ZGW audit-trail SOURCE identifiers this app writes into the
+				// external zaaksysteem's audit trail; every entry already written
+				// carries them and consumers filter on them, so renaming would
+				// split one system's history into two. `applicatieWeergave` is a
+				// display label and does follow the brand.
 				'bron' => 'procest',
 				'applicatieId' => 'procest',
-				'applicatieWeergave' => 'Procest',
+				'applicatieWeergave' => 'Dossiq',
 				'action' => 'create',
 				'actieWeergave' => 'Object aangemaakt',
 				'result' => 200,
@@ -1619,7 +1631,7 @@ class ZgwService {
 			'uuid' => $logData['uuid'] ?? '',
 			'bron' => 'procest',
 			'applicatieId' => $logData['user'] ?? 'procest',
-			'applicatieWeergave' => $logData['userName'] ?? 'Procest',
+			'applicatieWeergave' => $logData['userName'] ?? 'Dossiq',
 			'action' => $zgwAction,
 			'actieWeergave' => $weergave,
 			'result' => 200,

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Termijn Notification Dispatch Job.
+ * Dossiq Termijn Notification Dispatch Job.
  *
  * Asynchronous QueuedJob that delivers a templated AWB termijn
  * notification (ontvangstbevestiging / extension / ingebrekestelling-
@@ -12,7 +12,7 @@
  * NC background-job runner.
  *
  * @category BackgroundJob
- * @package  OCA\Procest\BackgroundJob
+ * @package  OCA\Dossiq\BackgroundJob
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,16 +23,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\BackgroundJob;
+namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Procest\Service\TermijnNotificationService;
+use OCA\Dossiq\Service\TermijnNotificationService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\QueuedJob;
 use Psr\Log\LoggerInterface;

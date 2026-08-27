@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Mandaat Validation Service
+ * Dossiq Mandaat Validation Service
  *
  * Validates that the official signing a mandaatbesluit has sufficient delegated
  * authority for the decision scope, by querying the configured mandaatregister.
@@ -12,7 +12,7 @@
  * The mandaatregister endpoint is read from app config — never hardcoded.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,14 +23,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use OCP\Http\Client\IClientService;
 use Psr\Log\LoggerInterface;
@@ -114,7 +114,7 @@ class MandaatValidationService {
 			];
 		} catch (\Throwable $e) {
 			$this->logger->warning(
-				'Procest: mandaatregister unreachable',
+				'Dossiq: mandaatregister unreachable',
 				['case' => $caseId, 'exception' => $e->getMessage()],
 			);
 			return $this->unreachable(status: 'connection_error');
@@ -182,7 +182,7 @@ class MandaatValidationService {
 
 			return $this->extractPropertyValue(results: $results);
 		} catch (\Throwable $e) {
-			$this->logger->debug('Procest: could not resolve mandaatCategorie', ['exception' => $e->getMessage()]);
+			$this->logger->debug('Dossiq: could not resolve mandaatCategorie', ['exception' => $e->getMessage()]);
 		}//end try
 
 		return '';

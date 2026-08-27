@@ -5,7 +5,7 @@ status: done
 # nav-dedup-and-grouping Specification
 
 ## Purpose
-Cleans up the procest left navigation so no group and its child share the same label, relabelling the duplicate "Cases" and "Analytics" leaves and retiring the duplicate substitution entry while keeping every page routable. It introduces a "Work" group for the operational work-queue surfaces and completes the Cases and Analytics groups with their dossier and reporting surfaces, implemented purely through src/manifest.json and src/menu-layout.json with no backend, schema, or engine changes.
+Cleans up the dossiq left navigation so no group and its child share the same label, relabelling the duplicate "Cases" and "Analytics" leaves and retiring the duplicate substitution entry while keeping every page routable. It introduces a "Work" group for the operational work-queue surfaces and completes the Cases and Analytics groups with their dossier and reporting surfaces, implemented purely through src/manifest.json and src/menu-layout.json with no backend, schema, or engine changes.
 ## Requirements
 ### Requirement: REQ-PNDG-001 — The system SHALL render each navigation label at most once per group
 
@@ -40,7 +40,7 @@ The system SHALL retire the duplicate `SubstitutionMenu` top-level navigation en
 `SubstitutionSettings` page (`/substitution`, component `SubstitutionSettingsView`) SHALL remain
 declared in `src/manifest.json#pages` and SHALL stay routable for deep links and e2e specs.
 This change SHALL NOT relocate that page under Settings (that is the sibling
-`procest-config-to-settings`).
+`dossiq-config-to-settings`).
 
 #### Scenario: Only one substitution entry appears in the nav
 

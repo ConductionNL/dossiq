@@ -4,7 +4,7 @@
  * TenantLifecycleControlService Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,17 +15,17 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\TenantBillingService;
-use OCA\Procest\Service\TenantLifecycleControlService;
-use OCA\Procest\Service\TenantSaasService;
-use OCA\Procest\Service\TenantSchemaProvisioner;
+use OCA\Dossiq\Service\TenantBillingService;
+use OCA\Dossiq\Service\TenantLifecycleControlService;
+use OCA\Dossiq\Service\TenantSaasService;
+use OCA\Dossiq\Service\TenantSchemaProvisioner;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\TenantLifecycleControlService
+ * @covers \OCA\Dossiq\Service\TenantLifecycleControlService
  */
 class TenantLifecycleControlServiceTest extends TestCase {
 	private TenantSaasService $tenantSaas;

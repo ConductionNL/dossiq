@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Procest WorkflowEngineService
+ * Dossiq WorkflowEngineService
  *
- * Unified facade over the procest workflow engine: definition lookup,
+ * Unified facade over the dossiq workflow engine: definition lookup,
  * available-transition listing, guard evaluation, and transition execution
  * with automatic-action side-effect dispatch.
  *
@@ -20,7 +20,7 @@
  *   - executeTransition($caseId, $transitionId, $userId = null, $comment = null)
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -29,22 +29,22 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/workflow-engine-enhancement/tasks.md#W-3
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Transitions\GuardRegistry;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Transitions\GuardRegistry;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Public facade for the procest workflow engine.
+ * Public facade for the dossiq workflow engine.
  */
 class WorkflowEngineService {
 	/**

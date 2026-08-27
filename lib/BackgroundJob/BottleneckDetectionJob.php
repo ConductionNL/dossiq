@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Bottleneck Detection Job.
+ * Dossiq Bottleneck Detection Job.
  *
  * Daily timed job that scans active cases for ones that have stalled past an
  * expected milestone deadline and notifies the assigned case worker so the
@@ -10,7 +10,7 @@
  * their earliest unreached milestone.
  *
  * @category BackgroundJob
- * @package  OCA\Procest\BackgroundJob
+ * @package  OCA\Dossiq\BackgroundJob
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,18 +21,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/milestone-tracking/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\BackgroundJob;
+namespace OCA\Dossiq\BackgroundJob;
 
 use DateTime;
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\MilestoneService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\MilestoneService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;

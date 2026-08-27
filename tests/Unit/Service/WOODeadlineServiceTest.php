@@ -4,7 +4,7 @@
  * WOODeadlineService Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,10 +20,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\WOODeadlineService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\WOODeadlineService;
 use OCP\Notification\IManager as INotificationManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -60,7 +60,7 @@ interface WOODeadlineObjectServiceStub {
 /**
  * Unit tests for WOODeadlineService.
  *
- * @covers \OCA\Procest\Service\WOODeadlineService
+ * @covers \OCA\Dossiq\Service\WOODeadlineService
  */
 class WOODeadlineServiceTest extends TestCase {
 
@@ -145,7 +145,7 @@ class WOODeadlineServiceTest extends TestCase {
 
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
 		$this->settingsService->method('getConfigValue')->willReturnMap([
-			['register', '', 'procest'],
+			['register', '', 'dossiq'],
 			['case_schema', '', 'case'],
 		]);
 
@@ -195,7 +195,7 @@ class WOODeadlineServiceTest extends TestCase {
 
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
 		$this->settingsService->method('getConfigValue')->willReturnMap([
-			['register', '', 'procest'],
+			['register', '', 'dossiq'],
 			['case_schema', '', 'case'],
 		]);
 

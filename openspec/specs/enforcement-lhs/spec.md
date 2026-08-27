@@ -4,7 +4,7 @@ status: done
 
 ## Purpose
 
-Provide VTH enforcement (handhaving) support in Procest based on the Landelijke Handhavingsstrategie (LHS): a configurable ernst x gedrag interventie matrix, an enforcement-action schema with dwangsom tracking and status lifecycle, a guided enforcement wizard, and a case-dashboard enforcement panel.
+Provide VTH enforcement (handhaving) support in Dossiq based on the Landelijke Handhavingsstrategie (LHS): a configurable ernst x gedrag interventie matrix, an enforcement-action schema with dwangsom tracking and status lifecycle, a guided enforcement wizard, and a case-dashboard enforcement panel.
 
 @e2e exclude LHS matrix configuration is V1; matrix admin UI is a generic index page not yet exercised in Playwright tests.
 
@@ -20,7 +20,7 @@ The system SHALL support configuring the Landelijke Handhavingsstrategie (LHS) 4
 
 #### Scenario: Default LHS matrix on install
 
-- **WHEN** the Procest app is installed with VTH seed data
+- **WHEN** the Dossiq app is installed with VTH seed data
 - **THEN** the system SHALL create a default LHS matrix configuration with the national standard:
   | | Goedwillend | Onverschillig | Calculerend | Crimineel |
   |---|---|---|---|---|
@@ -30,7 +30,7 @@ The system SHALL support configuring the Landelijke Handhavingsstrategie (LHS) 4
 
 #### Scenario: Customize LHS matrix
 
-- **WHEN** the beheerder navigates to Procest Admin > VTH Instellingen > Handhavingsstrategie
+- **WHEN** the beheerder navigates to Dossiq Admin > VTH Instellingen > Handhavingsstrategie
 - **THEN** the system SHALL display the 4x4 matrix as an editable grid
 - **THEN** each cell SHALL be editable with a dropdown of intervention types: Waarschuwing, Herstelactie, Last onder dwangsom, Last + PV, PV + Bestuursdwang, Bestuursdwang
 - **THEN** the beheerder SHALL be able to save the customized matrix

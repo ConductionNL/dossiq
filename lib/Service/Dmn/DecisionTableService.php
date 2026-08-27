@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest DMN Decision Table Service
+ * Dossiq DMN Decision Table Service
  *
  * Loads and persists decisionTable definitions from OpenRegister, and
  * structurally validates them before save. Evaluation itself is delegated
@@ -10,7 +10,7 @@
  * split already used for KCC routing.
  *
  * @category Service
- * @package  OCA\Procest\Service\Dmn
+ * @package  OCA\Dossiq\Service\Dmn
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,16 +21,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Dmn;
+namespace OCA\Dossiq\Service\Dmn;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 
 /**

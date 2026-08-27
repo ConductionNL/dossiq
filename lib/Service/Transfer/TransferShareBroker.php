@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest transfer-scoped federated share broker.
+ * Dossiq transfer-scoped federated share broker.
  *
  * Owns both ends of the token that lets a remote org accept or reject ONE
  * zaakoverdracht: minting it when a federated transfer is initiated, and
@@ -21,7 +21,7 @@
  * permissions, wrong object — returns null. There is no partial grant.
  *
  * @category Service
- * @package  OCA\Procest\Service\Transfer
+ * @package  OCA\Dossiq\Service\Transfer
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -29,7 +29,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -39,7 +39,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Transfer;
+namespace OCA\Dossiq\Service\Transfer;
 
 use Psr\Log\LoggerInterface;
 
@@ -68,7 +68,7 @@ class TransferShareBroker {
 	 * at the transfer object) so the remote org can later authenticate its
 	 * accept/reject call. Distinct from the case-summary share's token —
 	 * this one grants no access to the case itself, only to this one
-	 * transfer's status field via procest's own state machine.
+	 * transfer's status field via dossiq's own state machine.
 	 *
 	 * @param string $transferUuid The transfer object's uuid
 	 * @param string $remoteCloudId The federated target (slug@host)

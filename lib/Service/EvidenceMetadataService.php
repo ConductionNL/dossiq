@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Evidence Metadata Service.
+ * Dossiq Evidence Metadata Service.
  *
  * Pure-logic helper that validates and enriches field-evidence metadata on the
  * server side: it builds the EXIF UserComment context block embedded in photos,
@@ -13,7 +13,7 @@
  * Contains no I/O; persistence of fieldEvidence objects is the caller's job.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,14 +24,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use DateTimeInterface;

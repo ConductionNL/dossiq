@@ -1,5 +1,5 @@
 OC.L10N.register(
-    "procest",
+    "dossiq",
     {
     "Add step" : "Přidat krok",
     "Address" : "Adresa",
@@ -388,8 +388,8 @@ OC.L10N.register(
     "Voorstel heeft geen actieve stap" : "Voorstel nemá žádný aktivní krok",
     "Wanneer is deze route van toepassing?" : "Kdy se tato trasa použije?",
     "Weet u zeker dat u de route \"{name}\" wilt verwijderen?" : "Opravdu chcete odstranit trasu \"{name}\"?",
-    "Welcome to Procest! Get started by creating your first case or task using the buttons above." : "Vítejte v aplikaci Procest! Začněte vytvořením prvního případu nebo úkolu pomocí tlačítek výše.",
-    "Welcome to Procest! Get started by creating your first case type in Settings." : "Vítejte v aplikaci Procest! Začněte vytvořením prvního typu případu v Nastavení.",
+    "Welcome to Dossiq! Get started by creating your first case or task using the buttons above." : "Vítejte v aplikaci Dossiq! Začněte vytvořením prvního případu nebo úkolu pomocí tlačítek výše.",
+    "Welcome to Dossiq! Get started by creating your first case type in Settings." : "Vítejte v aplikaci Dossiq! Začněte vytvořením prvního typu případu v Nastavení.",
     "When heeftAlleAutorisaties is false, autorisaties must be specified." : "Když je heeftAlleAutorisaties false, musí být zadáno autorisaties.",
     "When heeftAlleAutorisaties is true, autorisaties must not be specified. When heeftAlleAutorisaties is false, autorisaties must be specified." : "Když je heeftAlleAutorisaties true, nesmí být zadáno autorisaties. Když je heeftAlleAutorisaties false, musí být zadáno autorisaties.",
     "Why is an extension needed?" : "Proč je potřeba prodloužení?",

@@ -4,7 +4,7 @@
  * Test stub mirroring OpenRegister's GuardResult value object.
  *
  * Carries the allow/deny verdict returned by a lifecycle guard. Mirrors the
- * runtime OCA\OpenRegister\Lifecycle\GuardResult so procest's guards can be
+ * runtime OCA\OpenRegister\Lifecycle\GuardResult so dossiq's guards can be
  * exercised by the unit suite without the OpenRegister app on the classpath.
  * Autoloaded via the OCA\OpenRegister\ → tests/Stubs/ map (autoload-dev).
  *
@@ -20,7 +20,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);

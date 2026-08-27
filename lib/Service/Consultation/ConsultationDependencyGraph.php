@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest consultation dependency graph.
+ * Dossiq consultation dependency graph.
  *
  * Guards the `dependsOn` edges between consultations against cycles. A cycle
  * would make a chain of adviesaanvragen unsatisfiable — each waiting on the
@@ -19,7 +19,7 @@
  * the node under test.
  *
  * @category Service
- * @package  OCA\Procest\Service\Consultation
+ * @package  OCA\Dossiq\Service\Consultation
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,7 +27,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -37,7 +37,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Consultation;
+namespace OCA\Dossiq\Service\Consultation;
 
 /**
  * Detects cycles in the consultation `dependsOn` graph.

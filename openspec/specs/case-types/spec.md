@@ -138,7 +138,7 @@ The system MUST support creating, reading, updating, and deleting case types. Ca
 
 #### Scenario CT-01a: Create a case type
 
-- GIVEN an admin on the Procest settings page
+- GIVEN an admin on the Dossiq settings page
 - WHEN they click "Add Case Type" and fill in:
   - Title: "Omgevingsvergunning"
   - Purpose: "Beoordelen bouwplannen"
@@ -150,7 +150,7 @@ The system MUST support creating, reading, updating, and deleting case types. Ca
   - Responsible unit: "Afdeling Vergunningen, Gemeente Amsterdam"
   - Valid from: "2026-01-01"
 - AND submits the form
-- THEN the system MUST create an OpenRegister object in the `procest` register with the `caseType` schema
+- THEN the system MUST create an OpenRegister object in the `dossiq` register with the `caseType` schema
 - AND `isDraft` MUST default to `true`
 - AND a unique `identifier` MUST be auto-generated
 
@@ -878,15 +878,15 @@ The system MUST handle error scenarios gracefully for case type operations.
 ## Dependencies
 
 - **Case Management spec** (`../case-management/spec.md`): Cases reference case types for behavioral controls (statuses, deadlines, confidentiality, document requirements, property requirements, result types, role types).
-- **OpenRegister**: All case type data is stored as OpenRegister objects in the `procest` register under the respective schemas (caseType, statusType, resultType, roleType, propertyDefinition, documentType, decisionType).
-- **Nextcloud Admin Settings**: Case type management is exposed via the Nextcloud admin settings panel (`OCA\Procest\Settings\AdminSettings`).
+- **OpenRegister**: All case type data is stored as OpenRegister objects in the `dossiq` register under the respective schemas (caseType, statusType, resultType, roleType, propertyDefinition, documentType, decisionType).
+- **Nextcloud Admin Settings**: Case type management is exposed via the Nextcloud admin settings panel (`OCA\Dossiq\Settings\AdminSettings`).
 
 ### Current Implementation Status
 
 **Substantially implemented (MVP).** Core case type CRUD and status type management are functional.
 
 **Implemented:**
-- Case type CRUD via OpenRegister object store -- create, read, update, delete case types as OpenRegister objects in the `procest` register with the `caseType` schema.
+- Case type CRUD via OpenRegister object store -- create, read, update, delete case types as OpenRegister objects in the `dossiq` register with the `caseType` schema.
 - Case type list display (`src/views/settings/CaseTypeList.vue`) with title, isDraft badge (Draft/Published), processing deadline (formatted via `durationHelpers.js`), validity period, default star icon, delete action, set-as-default action (published only).
 - Case type detail/edit with tabbed interface (`src/views/settings/CaseTypeDetail.vue`) -- General and Statuses tabs implemented. Publish/unpublish buttons with validation error display.
 - General tab (`src/views/settings/tabs/GeneralTab.vue`) with all core fields: title, description, purpose, trigger, subject, processing deadline, service target, extension allowed/period, suspension allowed, origin, confidentiality, publication required/text, valid from, valid until.
@@ -894,7 +894,7 @@ The system MUST handle error scenarios gracefully for case type operations.
 - Draft/published lifecycle with publish validation (publish errors displayed in UI).
 - Default case type selection stored via `SettingsService` config key `default_case_type`.
 - Case type validation utilities (`src/utils/caseTypeValidation.js`).
-- All case type sub-entity schemas defined in `procest_register.json` and mapped in `SettingsService::SLUG_TO_CONFIG_KEY`: caseType, statusType, resultType, roleType, propertyDefinition, documentType, decisionType.
+- All case type sub-entity schemas defined in `dossiq_register.json` and mapped in `SettingsService::SLUG_TO_CONFIG_KEY`: caseType, statusType, resultType, roleType, propertyDefinition, documentType, decisionType.
 - ZGW Catalogi API compatibility via `ZtcController` (`lib/Controller/ZtcController.php`) and `ZgwZtcRulesService` (`lib/Service/ZgwZtcRulesService.php`).
 
 **Not yet implemented (V1):**
@@ -946,8 +946,8 @@ Each case type SHALL include its associated:
 
 #### Scenario: Bezwaar and Beroep case types are available after installation
 
-- **WHEN** the Procest app repair step runs for the first time or after an update
-- **THEN** case types "Bezwaar" and "Beroep" SHALL exist in the procest register
+- **WHEN** the Dossiq app repair step runs for the first time or after an update
+- **THEN** case types "Bezwaar" and "Beroep" SHALL exist in the dossiq register
 - **AND** each SHALL have its complete set of status types, role types, and an active workflow template
 - **AND** existing case types SHALL NOT be affected by the addition
 
@@ -972,22 +972,22 @@ Each case type SHALL include its associated:
 
 <!-- BEGIN retrofit-2026-05-24-case-types -->
 
-### REQ-CT-17: Procest SHALL expose case-definition export endpoints + ZIP package format
+### REQ-CT-17: Dossiq SHALL expose case-definition export endpoints + ZIP package format
 
 @e2e exclude Backend PHP export controller spec; ZIP download and import covered by PHPUnit.
 
-`OCA\Procest\Controller\CaseDefinitionController` SHALL provide `GET /api/case-definitions/{id}/export` that returns a ZIP package (via `DataDownloadResponse`) containing the case type and all linked dependencies (workflow templates, role/group mappings, document templates) needed for round-trip portability to another procest instance. The ZIP SHALL be produced by `CaseDefinitionExportService::exportCaseDefinition()` and SHALL embed a `manifest.json` describing the package schema version, source instance, and contained object refs.
+`OCA\Dossiq\Controller\CaseDefinitionController` SHALL provide `GET /api/case-definitions/{id}/export` that returns a ZIP package (via `DataDownloadResponse`) containing the case type and all linked dependencies (workflow templates, role/group mappings, document templates) needed for round-trip portability to another dossiq instance. The ZIP SHALL be produced by `CaseDefinitionExportService::exportCaseDefinition()` and SHALL embed a `manifest.json` describing the package schema version, source instance, and contained object refs.
 
 #### Scenario: Export a published case type
 - **GIVEN** a published case type with workflow templates + roles
 - **WHEN** a behandelaar calls `GET /api/case-definitions/{id}/export`
 - **THEN** the response SHALL be a ZIP download containing `case-type.json`, all linked `workflow-template-*.json` files, role/group mapping definitions, and a top-level `manifest.json`
 
-### REQ-CT-18: Procest SHALL validate + import case-definition packages with explicit conflict reporting
+### REQ-CT-18: Dossiq SHALL validate + import case-definition packages with explicit conflict reporting
 
 @e2e exclude Backend PHP import service spec; package validation and import covered by PHPUnit.
 
-`CaseDefinitionImportService::validatePackage()` SHALL inspect a ZIP package, parse `manifest.json`, and return a structured report of: (a) missing required files, (b) schema-version compatibility, (c) name/slug collisions against existing case types and templates, and (d) cross-reference integrity. Validation SHALL be a pure read — no side effects on the procest instance.
+`CaseDefinitionImportService::validatePackage()` SHALL inspect a ZIP package, parse `manifest.json`, and return a structured report of: (a) missing required files, (b) schema-version compatibility, (c) name/slug collisions against existing case types and templates, and (d) cross-reference integrity. Validation SHALL be a pure read — no side effects on the dossiq instance.
 
 `CaseDefinitionImportService::importCaseDefinition()` SHALL run validation first, then create the case type and all linked objects atomically. On collision, the importer SHALL accept a caller-provided `conflictResolution` mode (`reject`, `rename`, `replace`) and SHALL surface its decisions in the response so the admin can audit what was created versus replaced.
 

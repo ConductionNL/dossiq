@@ -3,7 +3,7 @@
 		<!-- Title -->
 		<div class="form-group">
 			<label class="required" for="general-tab-title">{{
-				t('procest', 'Title')
+				t('dossiq', 'Title')
 			}}</label>
 			<NcTextField
 				id="general-tab-title"
@@ -16,7 +16,7 @@
 		<!-- Description -->
 		<div class="form-group">
 			<label for="general-tab-description">{{
-				t('procest', 'Description')
+				t('dossiq', 'Description')
 			}}</label>
 			<textarea
 				id="general-tab-description"
@@ -28,7 +28,7 @@
 		<!-- Purpose -->
 		<div class="form-group">
 			<label class="required" for="general-tab-purpose">{{
-				t('procest', 'Purpose')
+				t('dossiq', 'Purpose')
 			}}</label>
 			<NcTextField
 				id="general-tab-purpose"
@@ -41,7 +41,7 @@
 		<!-- Trigger -->
 		<div class="form-group">
 			<label class="required" for="general-tab-trigger">{{
-				t('procest', 'Trigger')
+				t('dossiq', 'Trigger')
 			}}</label>
 			<NcTextField
 				id="general-tab-trigger"
@@ -54,7 +54,7 @@
 		<!-- Subject -->
 		<div class="form-group">
 			<label class="required" for="general-tab-subject">{{
-				t('procest', 'Subject')
+				t('dossiq', 'Subject')
 			}}</label>
 			<NcTextField
 				id="general-tab-subject"
@@ -67,7 +67,7 @@
 		<!-- Initiator Action -->
 		<div class="form-group">
 			<label for="general-tab-initiator-action">{{
-				t('procest', 'Initiator action')
+				t('dossiq', 'Initiator action')
 			}}</label>
 			<NcTextField
 				id="general-tab-initiator-action"
@@ -78,7 +78,7 @@
 		<!-- Handler Action -->
 		<div class="form-group">
 			<label for="general-tab-handler-action">{{
-				t('procest', 'Handler action')
+				t('dossiq', 'Handler action')
 			}}</label>
 			<NcTextField
 				id="general-tab-handler-action"
@@ -88,11 +88,11 @@
 
 		<!-- Origin -->
 		<div class="form-group">
-			<label class="required">{{ t('procest', 'Origin') }}</label>
+			<label class="required">{{ t('dossiq', 'Origin') }}</label>
 			<NcSelect
 				:modelValue="selectedOrigin"
 				:options="originOptions"
-				:aria-label-combobox="t('procest', 'Origin')"
+				:aria-label-combobox="t('dossiq', 'Origin')"
 				@update:modelValue="
 					(v) => $emit('update', 'origin', v ? v.id : '')
 				" />
@@ -101,7 +101,7 @@
 
 		<!-- Processing Deadline -->
 		<div class="form-group">
-			<label class="required">{{ t('procest', 'Processing deadline') }}</label>
+			<label class="required">{{ t('dossiq', 'Processing deadline') }}</label>
 			<DurationPicker
 				:value="form.processingDeadline"
 				presetType="deadline"
@@ -113,7 +113,7 @@
 
 		<!-- Service Target -->
 		<div class="form-group">
-			<label>{{ t('procest', 'Service target') }}</label>
+			<label>{{ t('dossiq', 'Service target') }}</label>
 			<DurationPicker
 				:value="form.serviceTarget"
 				presetType="deadline"
@@ -128,13 +128,13 @@
 			<NcCheckboxRadioSwitch
 				:modelValue="form.extensionAllowed"
 				@update:modelValue="(v) => $emit('update', 'extensionAllowed', v)">
-				{{ t('procest', 'Extension allowed') }}
+				{{ t('dossiq', 'Extension allowed') }}
 			</NcCheckboxRadioSwitch>
 		</div>
 
 		<!-- Extension Period (conditional) -->
 		<div v-if="form.extensionAllowed" class="form-group">
-			<label class="required">{{ t('procest', 'Extension period') }}</label>
+			<label class="required">{{ t('dossiq', 'Extension period') }}</label>
 			<DurationPicker
 				:value="form.extensionPeriod"
 				presetType="extension"
@@ -146,11 +146,11 @@
 
 		<!-- Confidentiality -->
 		<div class="form-group">
-			<label class="required">{{ t('procest', 'Confidentiality') }}</label>
+			<label class="required">{{ t('dossiq', 'Confidentiality') }}</label>
 			<NcSelect
 				:modelValue="selectedConfidentiality"
 				:options="confidentialityOptions"
-				:aria-label-combobox="t('procest', 'Confidentiality')"
+				:aria-label-combobox="t('dossiq', 'Confidentiality')"
 				@update:modelValue="
 					(v) => $emit('update', 'confidentiality', v ? v.id : '')
 				" />
@@ -161,20 +161,20 @@
 
 		<!-- IV3 taakveld -->
 		<div class="form-group">
-			<label>{{ t('procest', 'IV3 taakveld') }}</label>
+			<label>{{ t('dossiq', 'IV3 taakveld') }}</label>
 			<NcSelect
 				:modelValue="selectedIv3Taakveld"
 				:options="iv3TaakveldOptions"
 				:loading="iv3TaakveldenLoading"
-				:placeholder="t('procest', 'No IV3 classification')"
-				:aria-label-combobox="t('procest', 'IV3 taakveld')"
+				:placeholder="t('dossiq', 'No IV3 classification')"
+				:aria-label-combobox="t('dossiq', 'IV3 taakveld')"
 				@update:modelValue="
 					(v) => $emit('update', 'iv3TaskField', v ? v.id : '')
 				" />
 			<p class="general-tab__hint">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Classifies cases of this type for the quarterly IV3 (Informatie voor Derden) cost report to CBS. Leave empty if this case type has no taakveld — such cases are reported as uncategorized.',
 					)
 				}}
@@ -188,14 +188,14 @@
 				@update:modelValue="
 					(v) => $emit('update', 'publicationRequired', v)
 				">
-				{{ t('procest', 'Publication required') }}
+				{{ t('dossiq', 'Publication required') }}
 			</NcCheckboxRadioSwitch>
 		</div>
 
 		<!-- Publication Text (conditional) -->
 		<div v-if="form.publicationRequired" class="form-group">
 			<label for="general-tab-publication-text">{{
-				t('procest', 'Publication text')
+				t('dossiq', 'Publication text')
 			}}</label>
 			<textarea
 				id="general-tab-publication-text"
@@ -207,7 +207,7 @@
 		<!-- Responsible Unit -->
 		<div class="form-group">
 			<label class="required" for="general-tab-responsible-unit">{{
-				t('procest', 'Responsible unit')
+				t('dossiq', 'Responsible unit')
 			}}</label>
 			<NcTextField
 				id="general-tab-responsible-unit"
@@ -220,7 +220,7 @@
 		<!-- Reference Process -->
 		<div class="form-group">
 			<label for="general-tab-reference-process">{{
-				t('procest', 'Reference process')
+				t('dossiq', 'Reference process')
 			}}</label>
 			<NcTextField
 				id="general-tab-reference-process"
@@ -230,18 +230,18 @@
 
 		<!-- Keywords -->
 		<div class="form-group">
-			<label for="general-tab-keywords">{{ t('procest', 'Keywords') }}</label>
+			<label for="general-tab-keywords">{{ t('dossiq', 'Keywords') }}</label>
 			<NcTextField
 				id="general-tab-keywords"
 				:modelValue="form.keywords"
-				:placeholder="t('procest', 'Comma-separated keywords')"
+				:placeholder="t('dossiq', 'Comma-separated keywords')"
 				@update:modelValue="(v) => $emit('update', 'keywords', v)" />
 		</div>
 
 		<!-- Valid From -->
 		<div class="form-group">
 			<label class="required" for="general-tab-valid-from">{{
-				t('procest', 'Valid from')
+				t('dossiq', 'Valid from')
 			}}</label>
 			<input
 				id="general-tab-valid-from"
@@ -254,7 +254,7 @@
 		<!-- Valid Until -->
 		<div class="form-group">
 			<label for="general-tab-valid-until">{{
-				t('procest', 'Valid until')
+				t('dossiq', 'Valid until')
 			}}</label>
 			<input
 				id="general-tab-valid-until"
@@ -388,7 +388,7 @@ export default {
 			this.iv3TaakveldenLoading = true
 			try {
 				const res = await axios.get(
-					generateUrl('/apps/procest/api/reports/iv3/taakvelden'),
+					generateUrl('/apps/dossiq/api/reports/iv3/taakvelden'),
 				)
 				this.iv3Taakvelden = (res.data && res.data.taakvelden) || []
 			} catch (e) {

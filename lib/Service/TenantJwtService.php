@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Tenant JWT Service
+ * Dossiq Tenant JWT Service
  *
  * Self-contained HMAC JWT encode/decode with tenant claim support. Used by
  * the SaaS authentication path to mint and validate tokens carrying
@@ -9,11 +9,11 @@
  *
  * HMAC (HS256) is deliberate — it lines up with the existing
  * `ZgwJwtValidator` shape and the OpenRegister Consumer secret model.
- * The signing secret comes from procest configuration (never from the
+ * The signing secret comes from dossiq configuration (never from the
  * request) so a forged signature cannot pass verification.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,14 +22,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-05-auth-jwt-tenant-claim/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
 use RuntimeException;

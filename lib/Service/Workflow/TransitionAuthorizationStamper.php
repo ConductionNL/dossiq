@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Transition Authorization Stamper.
+ * Dossiq Transition Authorization Stamper.
  *
  * Freezes role routing into OR-enforceable group authorization at publish
  * time. Split out of WorkflowDefinitionService so that service keeps only the
@@ -17,7 +17,7 @@
  * rather than keeping a group resolved under a previous mapping.
  *
  * @category Service
- * @package  OCA\Procest\Service\Workflow
+ * @package  OCA\Dossiq\Service\Workflow
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,7 +25,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -35,9 +35,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Workflow;
+namespace OCA\Dossiq\Service\Workflow;
 
-use OCA\Procest\Service\WorkflowStepAuthorizationResolver;
+use OCA\Dossiq\Service\WorkflowStepAuthorizationResolver;
 
 /**
  * Stamps resolved NC group ids onto a definition's transitions at publish time.

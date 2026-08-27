@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest bezwaar subscription registrar (boot-time).
+ * Dossiq bezwaar subscription registrar (boot-time).
  *
  * The bezwaar listeners that declare a register/schema interest up front.
  * Driven from boot() rather than register(): the OpenRegister
@@ -12,7 +12,7 @@
  * {@see BezwaarListenerRegistrar}.
  *
  * @category AppInfo
- * @package  OCA\Procest\AppInfo\Registrar
+ * @package  OCA\Dossiq\AppInfo\Registrar
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,7 +20,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -30,13 +30,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\AppInfo\Registrar;
+namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Listener\BezwaarLegalHoldListener;
+use OCA\Dossiq\Listener\BezwaarLifecycleListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Listener\BezwaarLegalHoldListener;
-use OCA\Procest\Listener\BezwaarLifecycleListener;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Server;
 use Psr\Log\LoggerInterface;
@@ -79,9 +79,16 @@ class BezwaarSubscriptionRegistrar {
 	/**
 	 * The register slugs both narrowed listeners react to.
 	 *
+	 * The OpenRegister register SLUG, not this app's id. OpenRegister tags its
+	 * object events with the slug, so this value and the register row must say
+	 * the same thing or both bezwaar listeners stop firing — silently, because
+	 * an event nobody subscribes to is not an error. `MigrateRegisterSlug`
+	 * renames the row from `procest` to `dossiq` ahead of every register step,
+	 * which is what lets this move with it.
+	 *
 	 * @var array<int,string>
 	 */
-	private const REGISTERS = ['procest'];
+	private const REGISTERS = ['dossiq'];
 
 	/**
 	 * Subscribe the bezwaar listeners that declare a register/schema interest.
@@ -135,13 +142,13 @@ class BezwaarSubscriptionRegistrar {
 	 * OpenRegister's `ObjectEventSubscription` records the register/schema slugs
 	 * a listener reacts to and routes dispatches through a single shared proxy,
 	 * so an uninterested listener is neither constructed nor invoked. When
-	 * OpenRegister is absent — procest carries no hard dependency on it — this
+	 * OpenRegister is absent — dossiq carries no hard dependency on it — this
 	 * degrades to the plain global registration it replaced, which is exactly
 	 * the behaviour every listener had before.
 	 *
 	 * StaticAccess is unavoidable here: `ObjectEventSubscription::subscribe()`
 	 * is OpenRegister's published static entry point and is reached through a
-	 * `class_exists()` guard on a variable class name precisely so procest keeps
+	 * `class_exists()` guard on a variable class name precisely so dossiq keeps
 	 * no compile-time dependency on the optional app; there is no instance to
 	 * inject.
 	 *

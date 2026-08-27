@@ -3,14 +3,14 @@
 /**
  * DecisionConcludedListener Unit Tests
  *
- * Verifies that procest materialises the ZGW Besluit from decidesk's
+ * Verifies that dossiq materialises the ZGW Besluit from decidesk's
  * DecisionConcludedEvent: events for this source app with a terminal status are
  * projected onto the matching case via BesluitMaterialisationService; events
  * from another source app, or with a non-terminal status, are ignored
  * (REQ-PDCD-003).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Listener
+ * @package  OCA\Dossiq\Tests\Unit\Listener
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,18 +18,22 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Listener;
+namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Decidesk\Event\DecisionConcludedEvent;
-use OCA\Procest\Listener\DecisionConcludedListener;
-use OCA\Procest\Service\BesluitMaterialisationService;
-use OCA\Procest\Service\Bezwaar\AdvisoryCommitteeService;
-use OCA\Procest\Service\SettingsService;
+// The CURRENT namespace. The decision app renamed OCA\Decidesk -> OCA\Decidiq
+// with no alias, and the production resolver now prefers the current spelling —
+// so a test importing the OLD class asserts against an object the code no longer
+// builds. CrossAppEventNamesTest guards the ordering these follow.
+use OCA\Decidiq\Event\DecisionConcludedEvent;
+use OCA\Dossiq\Listener\DecisionConcludedListener;
+use OCA\Dossiq\Service\BesluitMaterialisationService;
+use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -51,7 +55,7 @@ interface ConcludedObjectServiceStub {
 /**
  * Unit tests for DecisionConcludedListener.
  *
- * @covers \OCA\Procest\Listener\DecisionConcludedListener
+ * @covers \OCA\Dossiq\Listener\DecisionConcludedListener
  */
 class DecisionConcludedListenerTest extends TestCase {
 	/**
@@ -59,7 +63,7 @@ class DecisionConcludedListenerTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testMaterialisesBesluitForProcestSourceApp(): void {
+	public function testMaterialisesBesluitForDossiqSourceApp(): void {
 		$objectService = $this->createMock(ConcludedObjectServiceStub::class);
 		$objectService->method('searchObjectsBySlug')
 			->willReturn([['decisionRef' => 'dec-1', 'case' => 'case-9', 'besluitRef' => 'bes-2']]);
@@ -87,7 +91,7 @@ class DecisionConcludedListenerTest extends TestCase {
 		);
 
 		$listener->handle($this->event(sourceApp: 'procest', status: 'approved'));
-	}//end testMaterialisesBesluitForProcestSourceApp()
+	}//end testMaterialisesBesluitForDossiqSourceApp()
 
 	/**
 	 * Events from another source app are ignored.

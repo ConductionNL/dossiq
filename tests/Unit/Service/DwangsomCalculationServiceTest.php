@@ -7,7 +7,7 @@
  * enforcement, and beschikking-stop locking.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,7 +15,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -23,15 +23,15 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\DwangsomCalculationService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\DwangsomCalculationService;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\DwangsomCalculationService
+ * @covers \OCA\Dossiq\Service\DwangsomCalculationService
  */
 class DwangsomCalculationServiceTest extends TestCase {
 	private FakeTermijnStore $objects;
@@ -44,7 +44,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'termijn_definitie_schema' => 'deadlineDefinition',
 					'termijn_instance_schema' => 'deadlineInstance',
 					'dwangsom_berekening_schema' => 'penaltyPaymentCalculation',
@@ -72,7 +72,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testCalculateDailyAdvancesOneDayAtTier1(): void {
-		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
+		$this->objects->saveObject('dossiq', 'penaltyPaymentCalculation', [
 			'id' => 'b1',
 			'noticeOfDefault' => 'ig-1',
 			'deadlineInstance' => 'ti-1',
@@ -96,7 +96,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testCalculateDailyTransitionsToTier2OnDay15(): void {
-		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
+		$this->objects->saveObject('dossiq', 'penaltyPaymentCalculation', [
 			'id' => 'b2',
 			'noticeOfDefault' => 'ig-1',
 			'deadlineInstance' => 'ti-1',
@@ -119,7 +119,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testCalculateDailyTransitionsToTier3OnDay29(): void {
-		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
+		$this->objects->saveObject('dossiq', 'penaltyPaymentCalculation', [
 			'id' => 'b3',
 			'noticeOfDefault' => 'ig-1',
 			'deadlineInstance' => 'ti-1',
@@ -142,7 +142,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testCalculateDailyCapsAtPlafond(): void {
-		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
+		$this->objects->saveObject('dossiq', 'penaltyPaymentCalculation', [
 			'id' => 'b4',
 			'noticeOfDefault' => 'ig-1',
 			'deadlineInstance' => 'ti-1',
@@ -168,7 +168,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testStopForBeschikkingLocksDefinitievBedrag(): void {
-		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
+		$this->objects->saveObject('dossiq', 'penaltyPaymentCalculation', [
 			'id' => 'b5',
 			'noticeOfDefault' => 'ig-1',
 			'deadlineInstance' => 'ti-1',
@@ -194,17 +194,17 @@ class DwangsomCalculationServiceTest extends TestCase {
 	 */
 	public function testCustomRegimeUsesDefinitionTariff(): void {
 		// Seed Woo definition + instance.
-		$this->objects->saveObject('procest', 'deadlineDefinition', [
+		$this->objects->saveObject('dossiq', 'deadlineDefinition', [
 			'id' => 'td-woo',
 			'caseType' => 'woo-verzoek',
 			'deviatingPenaltyPaymentRegime' => ['dailyTariff' => 1500, 'plafond' => 50000, 'grace' => 14],
 			'validFrom' => '2026-01-01',
 		]);
-		$this->objects->saveObject('procest', 'deadlineInstance', [
+		$this->objects->saveObject('dossiq', 'deadlineInstance', [
 			'id' => 'ti-woo',
 			'deadlineDefinition' => 'td-woo',
 		]);
-		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
+		$this->objects->saveObject('dossiq', 'penaltyPaymentCalculation', [
 			'id' => 'b-woo',
 			'noticeOfDefault' => 'ig-woo',
 			'deadlineInstance' => 'ti-woo',

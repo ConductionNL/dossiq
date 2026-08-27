@@ -1,19 +1,19 @@
 ---
 status: done
-note: Implemented and archived 2026-06-13 (change case-types-01-seed-and-stores). Sub-entity stores registered + seed data shipped; type slugs are consistently camelCase across procest.
+note: Implemented and archived 2026-06-13 (change case-types-01-seed-and-stores). Sub-entity stores registered + seed data shipped; type slugs are consistently camelCase across dossiq.
 ---
 
 # case-type-seed-data Specification
 
 ## Purpose
-Registers Pinia object stores for the five case-type sub-entities (resultType, roleType, propertyDefinition, documentType, decisionType) and ships seed data in `procest_register.json`, so the case-type admin tabs can query each entity by `caseType`.
+Registers Pinia object stores for the five case-type sub-entities (resultType, roleType, propertyDefinition, documentType, decisionType) and ships seed data in `dossiq_register.json`, so the case-type admin tabs can query each entity by `caseType`.
 ## Requirements
 ### Requirement: Sub-entity object stores MUST be registered
 The system SHALL register object stores for the five case-type sub-entities so the
 admin tab UI (members 03, 04) can query them by `caseType`.
 
 #### Scenario: Sub-entity stores are queryable
-- GIVEN the Procest frontend has loaded
+- GIVEN the Dossiq frontend has loaded
 - WHEN `objectStore.getObjects({ caseType: uuid })` is called for each of
   `result-type`, `role-type`, `property-definition`, `document-type`,
   `decision-type`
@@ -28,9 +28,9 @@ repair step. Seed data enables automated browser testing and manual QA without
 requiring manual setup.
 
 #### Scenario: Seed data imported on first install
-- GIVEN a fresh Procest installation running the repair step for the first time
-- WHEN `ConfigurationService::importFromApp('procest', data, version, false)` is called
-- THEN the following case types MUST exist in the `procest` register:
+- GIVEN a fresh Dossiq installation running the repair step for the first time
+- WHEN `ConfigurationService::importFromApp('dossiq', data, version, false)` is called
+- THEN the following case types MUST exist in the `dossiq` register:
   - "Omgevingsvergunning" (processingDeadline: P56D, isDraft: false)
   - "Subsidieaanvraag" (processingDeadline: P13W, isDraft: false)
   - "Klachtbehandeling" (processingDeadline: P6W, isDraft: false)

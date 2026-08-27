@@ -6,7 +6,7 @@
  * Models the maykinmedia `django-digid-eherkenning` mock-login pattern:
  * NO real SAML. Instead of decoding a broker assertion, the simulator
  * accepts a locally-entered BSN (carried in the `samlResponse` slot as a
- * JSON `{ "bsn": "..." }` blob produced by the procest simulator login
+ * JSON `{ "bsn": "..." }` blob produced by the dossiq simulator login
  * form) and returns a DigiD `BrokerAssertionResult` explicitly marked
  * `simulator: true` in its attributes. Selected by
  * `integration.digid.mode=simulator`.
@@ -18,13 +18,13 @@
  * adapter and lane).
  *
  * @category Service
- * @package  OCA\Procest\Service\Auth
+ * @package  OCA\Dossiq\Service\Auth
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://github.com/maykinmedia/django-digid-eherkenning
  *
  * @spec openspec/specs/external-integration-test-wiring/spec.md
@@ -35,7 +35,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Auth;
+namespace OCA\Dossiq\Service\Auth;
 
 use RuntimeException;
 
@@ -74,7 +74,7 @@ final class SimulatorDigidSamlAdapter implements DigidSamlAdapterInterface {
 			bsn: $bsn,
 			assertionId: 'simulator-' . $relayState,
 			level: 2,
-			issuer: 'procest-digid-simulator',
+			issuer: 'dossiq-digid-simulator',
 			attributes: [
 				'simulator' => true,
 				'authenticatedBy' => 'simulator',

@@ -5,11 +5,11 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # quality-gates Specification
 
 ## Purpose
-Defines the unified strict quality gate for procest: a single `composer check:strict` command that runs lint, PHPCS, PHPMD, Psalm, and PHPStan in sequence and fails on any violation, run on every pull request to `development`, `main`, or `beta`. It requires PHPMD to run with no baseline, keeps any PHPStan baseline minimal and documented, and pins the CI workflow to a served Codeberg runner so the gate is actually scheduled.
+Defines the unified strict quality gate for dossiq: a single `composer check:strict` command that runs lint, PHPCS, PHPMD, Psalm, and PHPStan in sequence and fails on any violation, run on every pull request to `development`, `main`, or `beta`. It requires PHPMD to run with no baseline, keeps any PHPStan baseline minimal and documented, and pins the CI workflow to a served Codeberg runner so the gate is actually scheduled.
 ## Requirements
 ### Requirement: Unified strict quality gate
 
-Procest SHALL expose a single unified quality gate, `composer check:strict`,
+Dossiq SHALL expose a single unified quality gate, `composer check:strict`,
 that runs lint, PHPCS, PHPMD, Psalm, and PHPStan in sequence and exits non-zero
 if any tool reports a violation. This gate SHALL run on every pull request
 targeting `development`, `main`, or `beta`.

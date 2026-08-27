@@ -6,7 +6,7 @@
  * Tests for AdvisoryBodyService covering search ranking, token issuance, and CRUD.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,10 +22,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\AdvisoryBodyService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\AdvisoryBodyService;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -93,7 +93,7 @@ interface AdvisoryObjectServiceStub {
 /**
  * Unit tests for AdvisoryBodyService.
  *
- * @covers \OCA\Procest\Service\AdvisoryBodyService
+ * @covers \OCA\Dossiq\Service\AdvisoryBodyService
  */
 class AdvisoryBodyServiceTest extends TestCase {
 

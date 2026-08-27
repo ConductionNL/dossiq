@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest VrijBerichtNotRegisteredException.
+ * Dossiq VrijBerichtNotRegisteredException.
  *
  * Raised when adapter.vrijBericht is invoked with a name that has no
  * registered template on the target StufEndpoint.
  *
  * @category Exception
- * @package  OCA\Procest\Service\Stuf
+ * @package  OCA\Dossiq\Service\Stuf
  *
  * @author    Conduction <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,14 +18,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/stuf-zkn-outbound/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Stuf;
+namespace OCA\Dossiq\Service\Stuf;
 
 /**
  * Pre-send domain error: vrijBericht template not registered.

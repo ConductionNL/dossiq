@@ -11,13 +11,13 @@ Provides a mandate matrix that decides, in real time, whether a user is authoriz
 
 The system SHALL register six OpenRegister schemas — `MandateringsBesluit`, `Mandaat`,
 `OrganisatieRol`, `MedewerkerRolToewijzing`, `MandaatGebruik`, and `MandaatEscalatie` — through
-the procest register on app install or upgrade, including the relations between them.
+the dossiq register on app install or upgrade, including the relations between them.
 
 #### Scenario: All six schemas exist after install
 
-- GIVEN a fresh procest install with OpenRegister available
+- GIVEN a fresh dossiq install with OpenRegister available
 - WHEN the schema-registration repair step runs
-- THEN each of the six schemas SHALL be retrievable from the procest register with a schema UUID
+- THEN each of the six schemas SHALL be retrievable from the dossiq register with a schema UUID
 - AND the `Mandaat` schema SHALL declare a `besluitId` reference to `MandateringsBesluit`
 - AND the `Mandaat` schema SHALL declare a `gemandateerdeRol` reference to `OrganisatieRol`
 - AND the `MedewerkerRolToewijzing` schema SHALL declare a `rolId` reference to `OrganisatieRol`

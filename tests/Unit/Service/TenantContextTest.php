@@ -4,27 +4,27 @@
  * TenantContext Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\TenantContext;
+use OCA\Dossiq\Service\TenantContext;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 /**
- * @covers \OCA\Procest\Service\TenantContext
+ * @covers \OCA\Dossiq\Service\TenantContext
  */
 class TenantContextTest extends TestCase {
 	public function testUnboundContextReportsUnbound(): void {

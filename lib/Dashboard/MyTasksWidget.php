@@ -6,7 +6,7 @@
  * Displays tasks assigned to the current user in the Nextcloud Dashboard.
  *
  * @category Dashboard
- * @package  OCA\Procest\Dashboard
+ * @package  OCA\Dossiq\Dashboard
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -17,18 +17,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-5
+ * @spec openspec/changes/archive/retrofit-2026-05-24-annotate-procest/tasks.md#task-5
  * @spec openspec/specs/dashboard/spec.md
  * @spec openspec/specs/dashboard/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Dashboard;
+namespace OCA\Dossiq\Dashboard;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\Dashboard\IWidget;
 use OCP\IL10N;
 use OCP\IURLGenerator;
@@ -57,6 +57,11 @@ class MyTasksWidget implements IWidget {
 	 * @return string The widget identifier
 	 */
 	public function getId(): string {
+		// FROZEN at the old app-id prefix — see CasesOverviewWidget::getId()
+		// for why: Nextcloud's Dashboard app stores each user's chosen widgets
+		// by id in its OWN app namespace, which this app's MigrateUserPreferences
+		// cannot reach, so a renamed id silently drops the widget from every
+		// dashboard that had it.
 		return 'procest_my_tasks_widget';
 	}//end getId()
 
@@ -87,7 +92,7 @@ class MyTasksWidget implements IWidget {
 	 * @return string The icon CSS class
 	 */
 	public function getIconClass(): string {
-		return 'icon-procest-widget';
+		return 'icon-dossiq-widget';
 	}//end getIconClass()
 
 	/**

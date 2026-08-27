@@ -1,5 +1,5 @@
 OC.L10N.register(
-    "procest",
+    "dossiq",
     {
     "Add step" : "Bæta við skrefi",
     "Address" : "Heimilisfang",
@@ -388,8 +388,8 @@ OC.L10N.register(
     "Voorstel heeft geen actieve stap" : "Tillagan hefur ekkert virkt skref",
     "Wanneer is deze route van toepassing?" : "Hvenær á þessi leið við?",
     "Weet u zeker dat u de route \"{name}\" wilt verwijderen?" : "Ertu viss um að þú viljir eyða leiðinni \"{name}\"?",
-    "Welcome to Procest! Get started by creating your first case or task using the buttons above." : "Velkomin í Procest! Byrjaðu á því að búa til fyrsta málið þitt eða verkefni með hnöppunum hér að ofan.",
-    "Welcome to Procest! Get started by creating your first case type in Settings." : "Velkomin í Procest! Byrjaðu á því að búa til fyrstu málagerðina þína í Stillingum.",
+    "Welcome to Dossiq! Get started by creating your first case or task using the buttons above." : "Velkomin í Dossiq! Byrjaðu á því að búa til fyrsta málið þitt eða verkefni með hnöppunum hér að ofan.",
+    "Welcome to Dossiq! Get started by creating your first case type in Settings." : "Velkomin í Dossiq! Byrjaðu á því að búa til fyrstu málagerðina þína í Stillingum.",
     "When heeftAlleAutorisaties is false, autorisaties must be specified." : "Þegar heeftAlleAutorisaties er false verður að tilgreina autorisaties.",
     "When heeftAlleAutorisaties is true, autorisaties must not be specified. When heeftAlleAutorisaties is false, autorisaties must be specified." : "Þegar heeftAlleAutorisaties er true má ekki tilgreina autorisaties. Þegar heeftAlleAutorisaties er false verður að tilgreina autorisaties.",
     "Why is an extension needed?" : "Hvers vegna er framlengingar þörf?",

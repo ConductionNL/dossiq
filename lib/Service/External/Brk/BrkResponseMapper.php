@@ -6,27 +6,27 @@
  * Contains zero I/O — takes an already-decoded JSON fragment (one
  * `kadastraalOnroerendeZaken[]` entry, or a single
  * `kadastraalOnroerendeZaak` resource) and returns the stable
- * Procest-internal DTO shape. All HTTP concerns (request building,
+ * Dossiq-internal DTO shape. All HTTP concerns (request building,
  * headers, retries, error mapping) live exclusively in `BrkApiAdapter`,
  * mirroring `BagResponseMapper` in spirit but scoped to the BRK payload
  * shape.
  *
  * `zakelijkGerechtigden` is deliberately mapped to REFERENCE identifiers
  * only (`identificatie` + `aardZakelijkRecht`), never inline natural-person
- * detail — see design.md Decision 2 (privacy scoping). Procest's VTH/tax
+ * detail — see design.md Decision 2 (privacy scoping). Dossiq's VTH/tax
  * workflows need to know THAT a parcel has a registered title holder and
  * what kind of right it is, not the holder's personal data; a caller that
  * needs the full rightholder record must resolve it through BRK's own
  * `zakelijkGerechtigden` sub-resource directly (out of scope here).
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Brk
+ * @package  OCA\Dossiq\Service\External\Brk
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://kadaster.github.io/BRK-bevragen/
  *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
@@ -37,11 +37,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Brk;
+namespace OCA\Dossiq\Service\External\Brk;
 
 /**
  * Normalizes Kadaster BRK Bevragen v2 kadastraalOnroerendeZaak fragments
- * into the Procest-internal DTO shape.
+ * into the Dossiq-internal DTO shape.
  *
  * @SuppressWarnings(PHPMD.LongVariable) — kadastrale-aanduiding local names
  * are the canonical BRK domain terms (see interface).
@@ -136,7 +136,7 @@ final class BrkResponseMapper {
 		}
 
 		// A single associative entry (not a list) is wrapped.
-		if (array_is_list($raw) === false && $raw !== []) {
+		if (array_is_list($raw) === false) {
 			$raw = [$raw];
 		}
 

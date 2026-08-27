@@ -9,7 +9,7 @@
  * `IllegalPlanItemTransitionException` rather than silently no-opping.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Cmmn
+ * @package  OCA\Dossiq\Tests\Unit\Service\Cmmn
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -17,23 +17,23 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-002
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Cmmn;
+namespace OCA\Dossiq\Tests\Unit\Service\Cmmn;
 
-use OCA\Procest\Service\Cmmn\IllegalPlanItemTransitionException;
-use OCA\Procest\Service\Cmmn\PlanItemTransitions;
+use OCA\Dossiq\Service\Cmmn\IllegalPlanItemTransitionException;
+use OCA\Dossiq\Service\Cmmn\PlanItemTransitions;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Procest\Service\Cmmn\PlanItemTransitions
+ * @covers \OCA\Dossiq\Service\Cmmn\PlanItemTransitions
  *
- * @uses \OCA\Procest\Service\Cmmn\IllegalPlanItemTransitionException
+ * @uses \OCA\Dossiq\Service\Cmmn\IllegalPlanItemTransitionException
  */
 final class PlanItemTransitionsTest extends TestCase {
 

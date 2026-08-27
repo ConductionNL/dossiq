@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Beroep Dossier Export.
+ * Dossiq Beroep Dossier Export.
  *
  * Produces the export plan for a beroep dossier destined for the
  * bestuursrechter (administrative court). It delegates document
@@ -20,7 +20,7 @@
  * from the same plan; the ZIP/plan is always the baseline regardless.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -31,12 +31,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use Psr\Log\LoggerInterface;
 use RuntimeException;

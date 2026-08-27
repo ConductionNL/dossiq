@@ -7,7 +7,7 @@
  * verdaging logic, and status transitions.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,10 +20,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\ComplaintService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\ComplaintService;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -82,7 +82,7 @@ interface ComplaintObjectServiceStub {
 /**
  * Unit tests for ComplaintService.
  *
- * @covers \OCA\Procest\Service\ComplaintService
+ * @covers \OCA\Dossiq\Service\ComplaintService
  */
 class ComplaintServiceTest extends TestCase {
 
@@ -230,7 +230,7 @@ class ComplaintServiceTest extends TestCase {
 		$this->settingsService
 			->method('getConfigValue')
 			->willReturnMap([
-				['register', '', 'procest'],
+				['register', '', 'dossiq'],
 				['complaint_schema', '', 'complaint'],
 			]);
 
@@ -264,7 +264,7 @@ class ComplaintServiceTest extends TestCase {
 
 		$objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-		$this->settingsService->method('getConfigValue')->willReturn('procest');
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
 		$objectServiceMock->method('find')->willReturn($complaint);
 
 		$this->expectException(\RuntimeException::class);
@@ -283,7 +283,7 @@ class ComplaintServiceTest extends TestCase {
 
 		$objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-		$this->settingsService->method('getConfigValue')->willReturn('procest');
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
 		$objectServiceMock->method('find')->willReturn($complaint);
 
 		$this->expectException(\RuntimeException::class);
@@ -302,7 +302,7 @@ class ComplaintServiceTest extends TestCase {
 
 		$objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-		$this->settingsService->method('getConfigValue')->willReturn('procest');
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
 		$objectServiceMock->method('find')->willReturn($complaint);
 		$objectServiceMock->method('saveObject')->willReturn(['status' => 'receipt_confirmed']);
 
@@ -320,7 +320,7 @@ class ComplaintServiceTest extends TestCase {
 
 		$objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-		$this->settingsService->method('getConfigValue')->willReturn('procest');
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
 		$objectServiceMock->method('find')->willReturn($complaint);
 
 		$this->expectException(\RuntimeException::class);

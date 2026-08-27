@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Seed VTH LHS Matrix Cells Repair Step
+ * Dossiq Seed VTH LHS Matrix Cells Repair Step
  *
  * Idempotent repair step that seeds the 16 default LHS matrix cells
  * (gedrag A-D × gevolg 1-4) as `lhsMatrixCell` objects in OpenRegister.
  * Re-runs are no-ops once cells exist.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,10 +24,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -62,7 +62,7 @@ class SeedVthMatrixCells implements IRepairStep {
 	 * @spec openspec/changes/vth-module/tasks.md#task-8
 	 */
 	public function getName(): string {
-		return 'Seed default LHS matrix cells (16 cells: gedrag A-D × gevolg 1-4) for Procest VTH module';
+		return 'Seed default LHS matrix cells (16 cells: gedrag A-D × gevolg 1-4) for Dossiq VTH module';
 	}//end getName()
 
 	/**
@@ -145,7 +145,7 @@ class SeedVthMatrixCells implements IRepairStep {
 	 * proceeds, exactly as before this check was extracted.
 	 *
 	 * @param object $objectService OpenRegister object service handle
-	 * @param string $register The Procest register slug
+	 * @param string $register The Dossiq register slug
 	 *
 	 * @return bool True when cells are already present.
 	 */

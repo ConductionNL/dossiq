@@ -8,7 +8,7 @@
  * deactivates triggers (idempotency), and is a no-op without OpenRegister.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\BackgroundJob
+ * @package  OCA\Dossiq\Tests\Unit\BackgroundJob
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -16,7 +16,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -24,12 +24,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\BackgroundJob;
+namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
-use OCA\Procest\BackgroundJob\BezwaarTermijnJob;
-use OCA\Procest\Service\BeschikkingService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Tests\Unit\Service\FakeObjectService;
+use OCA\Dossiq\BackgroundJob\BezwaarTermijnJob;
+use OCA\Dossiq\Service\BeschikkingService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Unit\Service\FakeObjectService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
@@ -40,7 +40,7 @@ require_once __DIR__ . '/../Service/BeschikkingServiceTest.php';
 /**
  * Unit tests for BezwaarTermijnJob.
  *
- * @covers \OCA\Procest\BackgroundJob\BezwaarTermijnJob
+ * @covers \OCA\Dossiq\BackgroundJob\BezwaarTermijnJob
  */
 class BezwaarTermijnJobTest extends TestCase {
 	/**
@@ -95,7 +95,7 @@ class BezwaarTermijnJobTest extends TestCase {
 		$this->settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'bezwaar_trigger_schema' => 'bezwaarTrigger',
 					default => '',
 				};
@@ -131,7 +131,7 @@ class BezwaarTermijnJobTest extends TestCase {
 		$this->appManager->method('getInstalledApps')->willReturn(['openregister']);
 
 		$yesterday = (new \DateTimeImmutable('-1 day'))->format('Y-m-d');
-		$this->objects->saveObject('procest', 'bezwaarTrigger', [
+		$this->objects->saveObject('dossiq', 'bezwaarTrigger', [
 			'id' => 'trig-1',
 			'decisionId' => 'besch-1',
 			'objectionReceived' => false,
@@ -146,7 +146,7 @@ class BezwaarTermijnJobTest extends TestCase {
 
 		$this->runJob();
 
-		$trigger = $this->objects->find('trig-1', 'procest', 'bezwaarTrigger');
+		$trigger = $this->objects->find('trig-1', 'dossiq', 'bezwaarTrigger');
 		$this->assertFalse($trigger['archiveTriggerActive']);
 	}//end testLapsedTriggerArchives()
 
@@ -159,7 +159,7 @@ class BezwaarTermijnJobTest extends TestCase {
 		$this->appManager->method('getInstalledApps')->willReturn(['openregister']);
 
 		$yesterday = (new \DateTimeImmutable('-1 day'))->format('Y-m-d');
-		$this->objects->saveObject('procest', 'bezwaarTrigger', [
+		$this->objects->saveObject('dossiq', 'bezwaarTrigger', [
 			'id' => 'trig-2',
 			'decisionId' => 'besch-2',
 			'objectionReceived' => true,
@@ -171,7 +171,7 @@ class BezwaarTermijnJobTest extends TestCase {
 
 		$this->runJob();
 
-		$trigger = $this->objects->find('trig-2', 'procest', 'bezwaarTrigger');
+		$trigger = $this->objects->find('trig-2', 'dossiq', 'bezwaarTrigger');
 		$this->assertFalse($trigger['archiveTriggerActive']);
 	}//end testBezwaarReceivedSkipsArchival()
 
@@ -184,7 +184,7 @@ class BezwaarTermijnJobTest extends TestCase {
 		$this->appManager->method('getInstalledApps')->willReturn(['openregister']);
 
 		$tomorrow = (new \DateTimeImmutable('+10 days'))->format('Y-m-d');
-		$this->objects->saveObject('procest', 'bezwaarTrigger', [
+		$this->objects->saveObject('dossiq', 'bezwaarTrigger', [
 			'id' => 'trig-3',
 			'decisionId' => 'besch-3',
 			'objectionReceived' => false,
@@ -196,7 +196,7 @@ class BezwaarTermijnJobTest extends TestCase {
 
 		$this->runJob();
 
-		$trigger = $this->objects->find('trig-3', 'procest', 'bezwaarTrigger');
+		$trigger = $this->objects->find('trig-3', 'dossiq', 'bezwaarTrigger');
 		$this->assertTrue($trigger['archiveTriggerActive']);
 	}//end testFutureTriggerUntouched()
 
@@ -206,7 +206,7 @@ class BezwaarTermijnJobTest extends TestCase {
 	 * @return void
 	 */
 	public function testNoOpWithoutOpenRegister(): void {
-		$this->appManager->method('getInstalledApps')->willReturn(['procest']);
+		$this->appManager->method('getInstalledApps')->willReturn(['dossiq']);
 		$this->decisionService->expects($this->never())->method('archive');
 
 		$this->runJob();

@@ -1,11 +1,11 @@
-# Procest — Conduction PHPStan config.
+# Dossiq — Conduction PHPStan config.
 #
 # The shared base is the single source of truth. Everything here is either the
 # app's own tracked debt or an ignore naming a symbol that exists in no other
 # fleet app. Anything you are tempted to add that another app would also need
 # belongs in the base, not here.
 #
-# No baseline. Procest carries zero suppressed PHPStan errors: `phpstan-baseline.neon`
+# No baseline. Dossiq carries zero suppressed PHPStan errors: `phpstan-baseline.neon`
 # was deleted once its last 10 live entries (injected-but-unused constructor
 # dependencies) were fixed at source. Do NOT reintroduce it — a baseline makes the
 # `phpstan` leg of `composer check:strict` exit 0 while real errors remain, which is
@@ -17,6 +17,38 @@ includes:
 parameters:
     # App-specific only. The base already sets level, paths, bootstrapFiles,
     # excludePaths, scanDirectories and every fleet-wide ignore.
+    scanDirectories:
+        # Declaration-only stubs for OpenRegister / decidesk / hermiq contracts —
+        # soft runtime dependencies, resolved only when those apps are installed.
+        # SCANNED, never analysed and never autoloaded at runtime (PSR-4 maps only
+        # OCA\Dossiq\ -> lib/), so the real classes win whenever the owning app
+        # is enabled.
+        #
+        # Needed rather than an ignoreErrors entry: phpstan REFUSES to ignore the
+        # "implements unknown interface" category, so a contract this app
+        # implements — OCA\OpenRegister\Service\Flow\IFlowNode, which the six
+        # case-action nodes implement — has to be resolvable.
+        #
+        # SCOPED TO Flow/, NOT the whole tests/Stubs tree. hermiq can scan all of
+        # its stubs because they are declaration-only for absent apps; dossiq's
+        # tree also holds stubs that SHADOW REAL CLASSES (HttpClientStubs.php
+        # redeclares OCP\Http\Client shapes for tests). Scanning the parent made
+        # phpstan prefer those narrower stubs over the real OCP classes and
+        # reported 57 false errors against a clean baseline — e.g. "Call to an
+        # undefined method OCP\Http\Client\IClient::delete()".
+        - tests/Stubs/Flow
+        # The decision app's event contract, under BOTH namespaces it has
+        # shipped (OCA\Decidiq, formerly OCA\Decidesk). Scanned for the same
+        # reason as Flow/ and with the same scoping discipline: these are
+        # declaration-only stubs for an absent app, so they shadow nothing.
+        #
+        # Needed because the production code resolves whichever class EXISTS.
+        # With neither namespace on the analysis path, phpstan proved the
+        # class_exists() call always false and reported the resilient lookup as
+        # dead code — turning a fix for a real outage into a CI failure.
+        - tests/Stubs/Decidiq
+        - tests/Stubs/Decidesk
+
     typeAliases:
         # OCP declares `@psalm-type DataResponseType = ...` in the DataResponse
         # class docblock and immediately uses it as a @template bound. PHPStan
@@ -28,6 +60,24 @@ parameters:
         DataResponseType: 'array|int|float|string|bool|object|null|\stdClass|\JsonSerializable'
 
     ignoreErrors:
+        # ApprovalStepNotificationListener dispatches on ANOTHER APP's event classes.
+        #
+        # It compares get_class($event) against
+        # 'OCA\OpenRegister\Event\ApprovalStepApprovedEvent' / ...RejectedEvent,
+        # held as string constants precisely so Dossiq carries no hard dependency
+        # on OpenRegister. Those classes therefore do not exist in this app's
+        # vendor tree, so the analyser types get_class($event) as
+        # class-string<Event>, decides neither comparison can ever match, and
+        # reports both as always-false. At runtime OpenRegister is installed and
+        # dispatches them.
+        #
+        # Surfaced by hydra-gates v1.8.2's `treatPhpDocTypesAsCertain: false`.
+        # Scoped to the one file: an always-false class comparison anywhere else
+        # is still a real finding.
+        -
+            message: '#Strict comparison using === between class-string#'
+            path: lib/Listener/ApprovalStepNotificationListener.php
+
         # registerJob exists on server; not yet in nextcloud/ocp stub used for analysis
         - '#Call to an undefined method OCP\\AppFramework\\Bootstrap\\IRegistrationContext::registerJob#'
         # registerEventListener accepts the listener FQCN string at runtime; the
@@ -50,3 +100,28 @@ parameters:
           paths:
               - lib/Controller/CaseDefinitionController.php
               - lib/Repair/SeedVthWorkflowTemplates.php
+        # ApprovalStepNotificationListener dispatches on `get_class($event)` against
+        # OpenRegister's ApprovalStep{Approved,Rejected}Event class-strings. Those
+        # classes are co-installed at runtime but absent from static analysis, so
+        # PHPStan narrows get_class() to class-string<Event> and concludes the
+        # comparison can never match — i.e. that the listener can never handle its
+        # own events. It does; the classes simply are not on the analysis path.
+        #
+        # Same family as the @implements ignore above. Comparing class-strings
+        # rather than using instanceof is deliberate here for exactly this reason:
+        # an instanceof would be a compile-time reference to an absent class.
+        - message: '#Strict comparison using === between class-string and .OCA\\\\OpenRegister\\\\Event\\\\ApprovalStep(Approved|Rejected)Event. will always evaluate to false#'
+          identifier: identical.alwaysFalse
+          path: lib/Listener/ApprovalStepNotificationListener.php
+        # InboundEmailJob::markProcessed() is an INTENTIONAL no-op placeholder: its
+        # own comment records that a real IMAP flag-set / folder-move needs an open
+        # connection that fetchUnreadBatch's scope does not currently expose, and
+        # that the dedup guarantee comes from isAlreadyLinked() instead. PHPStan 2
+        # correctly observes the body has no side effects (void.pure).
+        #
+        # Kept rather than deleted so the call site and the documented intent stay
+        # visible; delete the method AND this ignore together when the IMAP
+        # connection is plumbed through.
+        - message: '#Method .+InboundEmailJob::markProcessed\(\) returns void but does not have any side effects#'
+          identifier: void.pure
+          path: lib/BackgroundJob/InboundEmailJob.php

@@ -6,7 +6,7 @@ description: Transition a case to the next status, complete required tasks, and 
 
 # Move a case through its workflow
 
-Cases in Procest follow a configurable workflow: each case-type defines its allowed statuses and the transitions between them. This tutorial walks one case from intake to closure.
+Cases in Dossiq follow a configurable workflow: each case-type defines its allowed statuses and the transitions between them. This tutorial walks one case from intake to closure.
 
 ## Goal
 

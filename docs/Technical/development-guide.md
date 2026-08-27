@@ -1,4 +1,4 @@
-# Procest: Developer Guide
+# Dossiq: Developer Guide
 
 ## Branching Strategy
 

@@ -166,9 +166,87 @@ for (const file of files) {
 	}
 }
 
+// ---------------------------------------------------------------------------
+// Manifest strings count as used keys.
+//
+// Scanning .vue/.js/.ts finds every `t('dossiq', '...')` call and nothing else,
+// which is why this check passed for months while the app rendered English to
+// Dutch users. The manifest is not source code the extractor reads; it is data
+// the renderer walks. CnAppNav translates `menu[].label`, CnPageHeader
+// translates a page's `title` and `description`, CnWalkthrough translates a
+// step's `title` / `body` / `task` — all of them through the app's own
+// translate function, all of them looking up a key that was never extracted.
+//
+// Measured 2026-08-26: 125 of this app's manifest strings had no nl.json key.
+// Fleet-wide it was 1,939 of 2,965 (65%), and humaniq was the ONLY app whose
+// parity checker read the manifest at all.
+//
+// Underscore-prefixed blocks are skipped: `_meta` is per-fragment provenance
+// (spdx, change, adr), never rendered, and translating it would be nonsense.
+// ---------------------------------------------------------------------------
+const MANIFEST_TEXT_FIELDS = new Set([
+	'title', 'body', 'task', 'label', 'description',
+	'emptyText', 'placeholder', 'subtitle', 'helpText',
+])
+
+function recordManifestStrings (node, file, trail) {
+	if (Array.isArray(node)) {
+		node.forEach((v, i) => recordManifestStrings(v, file, `${trail}[${i}]`))
+		return
+	}
+	if (node === null || typeof node !== 'object') {
+		return
+	}
+	for (const [key, value] of Object.entries(node)) {
+		if (key.startsWith('_')) {
+			continue
+		}
+		const where = trail ? `${trail}.${key}` : key
+		if (MANIFEST_TEXT_FIELDS.has(key) && typeof value === 'string' && value.trim()) {
+			const k = value
+			if (!used.has(k)) {
+				used.set(k, new Set())
+			}
+			used.get(k).add(`${path.relative(ROOT, file)}:${where}`)
+		} else {
+			recordManifestStrings(value, file, where)
+		}
+	}
+}
+
+// The fragments matter as much as the manifest: src/manifest.d/*.json is merged
+// in at runtime via require.context, so a checker reading only src/manifest.json
+// is blind to whatever they add.
+const manifestFiles = []
+const mainManifest = path.join(ROOT, 'src', 'manifest.json')
+if (fs.existsSync(mainManifest)) {
+	manifestFiles.push(mainManifest)
+}
+const fragmentDir = path.join(ROOT, 'src', 'manifest.d')
+if (fs.existsSync(fragmentDir)) {
+	for (const name of fs.readdirSync(fragmentDir).sort()) {
+		if (name.endsWith('.json')) {
+			manifestFiles.push(path.join(fragmentDir, name))
+		}
+	}
+}
+for (const file of manifestFiles) {
+	let parsed
+	try {
+		parsed = JSON.parse(fs.readFileSync(file, 'utf8'))
+	} catch (e) {
+		// A manifest that will not parse is check:manifest's finding, not this
+		// script's. Say so rather than reporting a translation verdict over a
+		// file that was never read.
+		console.error(`[check-l10n] SKIP ${path.relative(ROOT, file)}: unreadable (${e.message})`)
+		continue
+	}
+	recordManifestStrings(parsed, file, '')
+}
+
 const missing = []
 for (const [key, locations] of used) {
-	if (!Object.prototype.hasOwnProperty.call(translations, key)) {
+	if (!Object.hasOwn(translations, key)) {
 		missing.push({ key, locations: [...locations] })
 	}
 }
@@ -183,22 +261,22 @@ console.log(`l10n-check [${appId}]: scanned ${files.length} files, `
 // silently falls back to the raw key literal in the other locale.
 // ---------------------------------------------------------------------------
 const nlFile = path.join(path.dirname(enFile), 'nl.json')
-let parityMissingInNl = []
-let parityMissingInEn = []
-let parityEmptyNl = []
+const parityMissingInNl = []
+const parityMissingInEn = []
+const parityEmptyNl = []
 let nlChecked = false
 if (fs.existsSync(nlFile)) {
 	nlChecked = true
 	const nlTranslations = readJson(nlFile).translations || {}
 	for (const key of Object.keys(translations)) {
-		if (!Object.prototype.hasOwnProperty.call(nlTranslations, key)) {
+		if (!Object.hasOwn(nlTranslations, key)) {
 			parityMissingInNl.push(key)
 		} else if (nlTranslations[key] === '' || nlTranslations[key] == null) {
 			parityEmptyNl.push(key)
 		}
 	}
 	for (const key of Object.keys(nlTranslations)) {
-		if (!Object.prototype.hasOwnProperty.call(translations, key)) {
+		if (!Object.hasOwn(translations, key)) {
 			parityMissingInEn.push(key)
 		}
 	}

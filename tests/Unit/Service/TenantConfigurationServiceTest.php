@@ -4,7 +4,7 @@
  * TenantConfigurationService Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,19 +15,19 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
 use InvalidArgumentException;
-use OCA\Procest\Service\Tenant\TenantBrandingSanitiser;
-use OCA\Procest\Service\TenantConfigurationService;
+use OCA\Dossiq\Service\Tenant\TenantBrandingSanitiser;
+use OCA\Dossiq\Service\TenantConfigurationService;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\TenantConfigurationService
- * @covers \OCA\Procest\Service\Tenant\TenantBrandingSanitiser
+ * @covers \OCA\Dossiq\Service\TenantConfigurationService
+ * @covers \OCA\Dossiq\Service\Tenant\TenantBrandingSanitiser
  */
 class TenantConfigurationServiceTest extends TestCase {
 	private TenantConfigurationService $svc;
@@ -123,7 +123,7 @@ class TenantConfigurationServiceTest extends TestCase {
 			],
 		]);
 		$this->assertSame('#abcdef', $tokens['--nc-color-primary']);
-		$this->assertSame('#123456', $tokens['--procest-color-secondary']);
-		$this->assertStringContainsString('Inter', $tokens['--procest-font-family']);
+		$this->assertSame('#123456', $tokens['--dossiq-color-secondary']);
+		$this->assertStringContainsString('Inter', $tokens['--dossiq-font-family']);
 	}
 }

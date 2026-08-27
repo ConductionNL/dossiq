@@ -30,7 +30,7 @@
 
 			<template v-else-if="cases.length === 0">
 				<p class="board-column__empty">
-					{{ t('procest', 'No cases') }}
+					{{ t('dossiq', 'No cases') }}
 				</p>
 			</template>
 

@@ -24,7 +24,7 @@ background job, or Vue view in the shipped code.
 
 #### Scenario: Cross-app integration claims require shared code or shared data wiring
 - **WHEN** the product page claims that another Conduction app (e.g. a citizen-facing portal)
-  integrates with Procest (e.g. "applicants track their case live")
+  integrates with Dossiq (e.g. "applicants track their case live")
 - **THEN** there SHALL be at least one code reference in either app pointing at the other (shared
   register schema consumption, an API call, or an explicit adapter), or the claim SHALL be reworded
   to describe ecosystem positioning rather than a functioning integration

@@ -1,18 +1,18 @@
 <template>
 	<NcDialog
-		:name="t('procest', 'New B&W proposal')"
+		:name="t('dossiq', 'New B&W proposal')"
 		size="normal"
 		@closing="$emit('close')">
 		<div class="voorstel-create">
 			<div class="form-group">
 				<label for="voorstel-create-onderwerp"
-					>{{ t('procest', 'Onderwerp') }} *</label
+					>{{ t('dossiq', 'Onderwerp') }} *</label
 				>
 				<NcTextField
 					id="voorstel-create-onderwerp"
 					:modelValue="form.subject"
 					:error="!!errors.subject"
-					:placeholder="t('procest', 'Subject of the proposal...')"
+					:placeholder="t('dossiq', 'Subject of the proposal...')"
 					@update:modelValue="
 						(v) => {
 							form.subject = v
@@ -25,58 +25,58 @@
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Type') }} *</label>
+				<label>{{ t('dossiq', 'Type') }} *</label>
 				<NcSelect
 					v-model="form.type"
 					:options="typeOptions"
-					:aria-label-combobox="t('procest', 'Type')"
-					:placeholder="t('procest', 'Select type...')" />
+					:aria-label-combobox="t('dossiq', 'Type')"
+					:placeholder="t('dossiq', 'Select type...')" />
 			</div>
 
 			<div v-if="!caseId" class="form-group">
-				<label>{{ t('procest', 'Case') }} *</label>
+				<label>{{ t('dossiq', 'Case') }} *</label>
 				<NcSelect
 					v-model="selectedCase"
 					:options="cases"
-					:aria-label-combobox="t('procest', 'Case')"
+					:aria-label-combobox="t('dossiq', 'Case')"
 					label="title"
 					trackBy="id"
-					:placeholder="t('procest', 'Select case...')"
+					:placeholder="t('dossiq', 'Select case...')"
 					@update:modelValue="onCaseSelected" />
 			</div>
 
 			<div class="form-group">
 				<label for="voorstel-create-portfolio-holder">{{
-					t('procest', 'Portfolio holder')
+					t('dossiq', 'Portfolio holder')
 				}}</label>
 				<NcTextField
 					id="voorstel-create-portfolio-holder"
 					:modelValue="form.portfolioHolder"
-					:placeholder="t('procest', 'Alderman user ID')"
+					:placeholder="t('dossiq', 'Alderman user ID')"
 					@update:modelValue="(v) => (form.portfolioHolder = v)" />
 			</div>
 
 			<div class="form-group">
 				<label for="voorstel-create-department">{{
-					t('procest', 'Department')
+					t('dossiq', 'Department')
 				}}</label>
 				<NcTextField
 					id="voorstel-create-department"
 					:modelValue="form.department"
-					:placeholder="t('procest', 'Department')"
+					:placeholder="t('dossiq', 'Department')"
 					@update:modelValue="(v) => (form.department = v)" />
 			</div>
 		</div>
 
 		<template #actions>
 			<NcButton @click="$emit('close')">
-				{{ t('procest', 'Annuleren') }}
+				{{ t('dossiq', 'Annuleren') }}
 			</NcButton>
 			<NcButton type="primary" :disabled="saving" @click="create">
 				<template v-if="saving">
 					<NcLoadingIcon :size="20" />
 				</template>
-				{{ t('procest', 'Create') }}
+				{{ t('dossiq', 'Create') }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -170,13 +170,13 @@ export default {
 		async create() {
 			this.errors = {}
 			if (!this.form.subject.trim()) {
-				this.errors.subject = t('procest', 'Subject is required')
+				this.errors.subject = t('dossiq', 'Subject is required')
 				return
 			}
 
 			const caseRef = this.caseId || this.selectedCase?.id
 			if (!caseRef) {
-				this.errors.subject = t('procest', 'Select a case')
+				this.errors.subject = t('dossiq', 'Select a case')
 				return
 			}
 
@@ -224,7 +224,7 @@ export default {
 			} catch (error) {
 				console.error('Failed to create proposal:', error)
 				this.errors.subject =
-					error.message || t('procest', 'Failed to create')
+					error.message || t('dossiq', 'Failed to create')
 			} finally {
 				this.saving = false
 			}

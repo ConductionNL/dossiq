@@ -21,7 +21,7 @@
       container with `method_exists` guards (openregister + mail optional runtime deps); pre-check
       `getLinkedEmails` per case, then `linkEmail(objectUuid, registerId, schemaId, mailAccountId,
       messageId, messageUid)`; link every distinct resolved case, per-case failures logged and
-      non-fatal (REQ-ECM-003, REQ-ECM-004). No procest-local link table.
+      non-fatal (REQ-ECM-003, REQ-ECM-004). No dossiq-local link table.
 - [ ] No-match and no-resolution paths write nothing and create nothing (REQ-ECM-005).
 
 ## Phase 3: Job, toggles, settings surface

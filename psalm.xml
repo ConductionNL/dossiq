@@ -84,10 +84,20 @@
                 <referencedClass name="OCA\OpenRegister\Service\FileService"/>
                 <referencedClass name="OCA\OpenRegister\Service\CalendarEventService"/>
                 <referencedClass name="OCA\OpenRegister\Mcp\IMcpToolProvider"/>
+                <!-- OpenRegister's Flow node contract (ADR-065: OR is the only
+                     flow engine). Same dynamic-load situation as the entries
+                     above: dossiq contributes nodes into OR's registry and
+                     never depends on OR at build time. Real stubs exist under
+                     tests/Stubs/Flow/, but they are deliberately NOT psr-4
+                     (composer skips them by design), so psalm cannot resolve
+                     them and the suppression is what keeps this honest. -->
+                <referencedClass name="OCA\OpenRegister\Service\Flow\IFlowNode"/>
+                <referencedClass name="OCA\OpenRegister\Service\Flow\FlowNodeRegistry"/>
+                <referencedClass name="OCA\OpenRegister\Service\Flow\RegisterFlowNodesEvent"/>
                 <!-- Nextcloud internals loaded at runtime (not in OCP stubs) -->
                 <referencedClass name="OC_Util"/>
-                <!-- Procest ZGW controller referenced in middleware (not yet implemented) -->
-                <referencedClass name="OCA\Procest\Controller\ZgwController"/>
+                <!-- Dossiq ZGW controller referenced in middleware (not yet implemented) -->
+                <referencedClass name="OCA\Dossiq\Controller\ZgwController"/>
                 <!-- Additional OCP infrastructure types used across the fleet -->
                 <referencedClass name="OCP\AppFramework\Bootstrap\IBootContext"/>
                 <referencedClass name="OCP\AppFramework\Bootstrap\IRegistrationContext"/>

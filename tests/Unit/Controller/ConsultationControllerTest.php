@@ -7,7 +7,7 @@
  * consultation listing, creation, and the public token endpoint.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,15 +23,15 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Controller\AdvisoryBodyController;
-use OCA\Procest\Controller\ConsultationController;
-use OCA\Procest\Controller\ConsultationPublicController;
-use OCA\Procest\Service\AdvisoryBodyService;
-use OCA\Procest\Service\Consultation\ConsultationAccessGuard;
-use OCA\Procest\Service\ConsultationService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Controller\AdvisoryBodyController;
+use OCA\Dossiq\Controller\ConsultationController;
+use OCA\Dossiq\Controller\ConsultationPublicController;
+use OCA\Dossiq\Service\AdvisoryBodyService;
+use OCA\Dossiq\Service\Consultation\ConsultationAccessGuard;
+use OCA\Dossiq\Service\ConsultationService;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -44,11 +44,11 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for ConsultationController.
  *
- * @covers \OCA\Procest\Controller\ConsultationController
- * @covers \OCA\Procest\Controller\AdvisoryBodyController
- * @covers \OCA\Procest\Controller\ConsultationPublicController
+ * @covers \OCA\Dossiq\Controller\ConsultationController
+ * @covers \OCA\Dossiq\Controller\AdvisoryBodyController
+ * @covers \OCA\Dossiq\Controller\ConsultationPublicController
  *
- * @uses \OCA\Procest\Service\Consultation\ConsultationAccessGuard
+ * @uses \OCA\Dossiq\Service\Consultation\ConsultationAccessGuard
  */
 class ConsultationControllerTest extends TestCase {
 

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Live Procest KvK Handelsregister adapter (external-integrations-test-environments).
+ * Live Dossiq KvK Handelsregister adapter (external-integrations-test-environments).
  *
  * Calls the KvK Handelsregister Zoeken API. The DEFAULT tier targets the
  * KvK Developer Portal TEST environment
@@ -17,13 +17,13 @@
  * throws into the lifecycle), mirroring the dormant Log adapter.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Kvk
+ * @package  OCA\Dossiq\Service\External\Kvk
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://developers.kvk.nl/documentation/testing
  *
  * @spec openspec/specs/external-integration-test-wiring/spec.md
@@ -34,9 +34,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Kvk;
+namespace OCA\Dossiq\Service\External\Kvk;
 
-use OCA\Procest\Service\External\IntegrationMode;
+use OCA\Dossiq\Service\External\IntegrationMode;
 use OCP\Http\Client\IClientService;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -125,7 +125,7 @@ class KvkApiAdapter implements KvkHandelsregisterAdapterInterface {
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest KvK Handelsregister lookup failed',
+				'Dossiq KvK Handelsregister lookup failed',
 				[
 					'kvkNumber' => $kvkNumber,
 					'error' => $e->getMessage(),

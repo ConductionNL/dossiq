@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Field Validator
+ * Dossiq Field Validator
  *
  * Stateless utility for ZGW field-format validation: UUID extraction,
  * syntactic URL validation, and ISO-8601 date validation. Extracted from
@@ -9,7 +9,7 @@
  * the per-register rule services without inheriting the full base class.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -17,7 +17,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/method-decomposition/tasks.md#task-decomp-036
  *
@@ -27,7 +27,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 /**
  * Stateless field-format validator.
@@ -38,7 +38,7 @@ namespace OCA\Procest\Service;
  * unit-testable and can be shared by every register-specific rules service.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @psalm-suppress UnusedClass
  *

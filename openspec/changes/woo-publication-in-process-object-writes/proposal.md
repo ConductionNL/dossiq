@@ -2,7 +2,7 @@
 
 ## Summary
 
-Move procest's WOO publication writes off a **self-addressed HTTP call to
+Move dossiq's WOO publication writes off a **self-addressed HTTP call to
 OpenRegister's Objects API** and onto OpenRegister's **published in-process
 contract** (`ObjectServiceInterface`, ADR-084). `OpenCatalogiApiClient` keeps
 its public method surface and its error contract; only the transport under it
@@ -18,8 +18,8 @@ fetches an OpenRegister objects-API URL with `IClientService`.
 
 `WooPublicationService` publishes a WOO besluit to OpenCatalogi's publication
 register. OpenCatalogi exposes no write endpoint of its own, so both
-OpenCatalogi and procest write through OpenRegister's generic Objects API.
-procest did that over HTTP, to its own instance:
+OpenCatalogi and dossiq write through OpenRegister's generic Objects API.
+dossiq did that over HTTP, to its own instance:
 
 ```
 IURLGenerator::getBaseUrl() + /index.php/apps/openregister/api/objects/…
@@ -28,7 +28,7 @@ IURLGenerator::getBaseUrl() + /index.php/apps/openregister/api/objects/…
 That is an app on a Nextcloud instance making an authenticated HTTP request to
 the same Nextcloud instance. It costs a full request cycle per object, needs a
 stored service account with a real app password, and re-implements — in
-procest — routing, envelope handling and error mapping that OpenRegister
+dossiq — routing, envelope handling and error mapping that OpenRegister
 already publishes as a PHP contract.
 
 **Why not `GenericStoreService`** (the class gate-62's message points at):
@@ -43,7 +43,7 @@ ADR-084 contract, which is what this change adopts.
 
 ## Affected Projects
 
-- [x] Project: procest
+- [x] Project: dossiq
 
 ## What changes
 
@@ -92,7 +92,7 @@ withdrawing a publication would have **erased its title, summary, description,
 publication date, category, status and case reference** — while reporting
 success. The HTTP `objects#patch` route this client used does
 `findSilent()` → `array_merge($existing, $patch)` → `saveObject(uuid:)`, so the
-migration has to reproduce that merge in procest, and it does.
+migration has to reproduce that merge in dossiq, and it does.
 
 **Reported, not fixed here:** the interface docblock and the implementation
 disagree, and the fleet's only merging write is unpublished. That belongs in

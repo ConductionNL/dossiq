@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Complaint Controller
+ * Dossiq Complaint Controller
  *
  * REST API for complaint (klacht) management per Awb chapter 9.
  * Exposes the core complaint lifecycle: listing, creation, retrieval, update,
@@ -15,7 +15,7 @@
  * {@see ComplaintAccessGuard} for authorization (ADR-022).
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -28,10 +28,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\Complaint\ComplaintAccessGuard;
-use OCA\Procest\Service\ComplaintService;
+use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
+use OCA\Dossiq\Service\ComplaintService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

@@ -3,7 +3,7 @@
 Status: done
 
 ## Purpose
-Close three live authorization bypasses in procest — advice IDOR on the
+Close three live authorization bypasses in dossiq — advice IDOR on the
 unguarded live transition path, the WOO per-case guard that fails open on an
 absent group, and the belangenconflict check that unconditionally reports "no
 conflict". Every requirement below is stated so that the BAD path is the thing
@@ -73,9 +73,9 @@ path.
 
 #### Scenario: submitAdvice and cancelAdvice no longer exist
 
-@e2e exclude Code-absence requirement: there is no runtime surface to exercise, because the assertion IS that the methods do not exist. Verified by grep over `lib/` (0 hits; the search is live — it still matches the schema key in `lib/Settings/procest_register.json` and the docblock in `AdviceServiceAuthorizationTest`).
+@e2e exclude Code-absence requirement: there is no runtime surface to exercise, because the assertion IS that the methods do not exist. Verified by grep over `lib/` (0 hits; the search is live — it still matches the schema key in `lib/Settings/dossiq_register.json` and the docblock in `AdviceServiceAuthorizationTest`).
 
-- **GIVEN** the procest codebase after this change
+- **GIVEN** the dossiq codebase after this change
 - **WHEN** `AdviceService` is inspected
 - **THEN** `submitAdvice()` and `cancelAdvice()` MUST NOT be present
 - **AND** the live `transitionStatus()` path MUST carry the authorization guard
@@ -228,7 +228,7 @@ MUST play no part in the authorization decision.
 ## ADDED Requirements (2026-08-11, gate-7 re-audit)
 
 The `.github#365` re-audit established that gate-7 accepts a `401` authentication
-preamble as an authorisation guard, so its `0` for procest was never a verdict.
+preamble as an authorisation guard, so its `0` for dossiq was never a verdict.
 Hand-verification found 33 `#[NoAdminRequired]` endpoints that take an object or
 subject identifier off the request and act on it with no per-object
 authorisation. The requirements below are stated, as in the rest of this spec, so
@@ -369,6 +369,6 @@ request returned 500 before the fix and 200/403 after, with the status code
 printed.
 
 - **GIVEN** an authenticated user bound to an active tenant
-- **WHEN** any non-exempt Procest endpoint is called
+- **WHEN** any non-exempt Dossiq endpoint is called
 - **THEN** the middleware MUST NOT raise
 - **AND** the controller's own response MUST be returned

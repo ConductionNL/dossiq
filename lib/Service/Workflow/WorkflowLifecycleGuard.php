@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Workflow Lifecycle Guard.
+ * Dossiq Workflow Lifecycle Guard.
  *
  * The preconditions a workflowTemplate must satisfy before its lifecycle
  * state may change. Split out of WorkflowDefinitionService so that service
@@ -19,7 +19,7 @@
  * Every refusal is logged with its reason; the caller only learns "no".
  *
  * @category Service
- * @package  OCA\Procest\Service\Workflow
+ * @package  OCA\Dossiq\Service\Workflow
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,7 +27,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -37,9 +37,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Workflow;
+namespace OCA\Dossiq\Service\Workflow;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -121,7 +121,7 @@ class WorkflowLifecycleGuard {
 	public function isPublishableDraft(array $current, array $transitions, string $id): bool {
 		if ($this->statusOf(row: $current) !== self::STATUS_DRAFT) {
 			$this->logger->warning(
-				'Procest: publish() — definition is not a draft',
+				'Dossiq: publish() — definition is not a draft',
 				['app' => Application::APP_ID, 'id' => $id]
 			);
 			return false;
@@ -134,7 +134,7 @@ class WorkflowLifecycleGuard {
 		);
 		if ($caseTypeId === '' || $foreign === true) {
 			$this->logger->warning(
-				'Procest: publish() — referential integrity failure',
+				'Dossiq: publish() — referential integrity failure',
 				['app' => Application::APP_ID, 'id' => $id]
 			);
 			return false;
@@ -158,7 +158,7 @@ class WorkflowLifecycleGuard {
 	public function isDeprecatable(array $current, string $id): bool {
 		if ($this->statusOf(row: $current) !== self::STATUS_PUBLISHED) {
 			$this->logger->warning(
-				'Procest: deprecate() — definition is not published',
+				'Dossiq: deprecate() — definition is not published',
 				['app' => Application::APP_ID, 'id' => $id]
 			);
 			return false;
@@ -169,7 +169,7 @@ class WorkflowLifecycleGuard {
 			&& $this->repository->hasCasesFor(caseTypeId: $caseTypeId) === true
 		) {
 			$this->logger->warning(
-				'Procest: deprecate() — last published definition with open cases',
+				'Dossiq: deprecate() — last published definition with open cases',
 				['app' => Application::APP_ID, 'id' => $id, 'caseType' => $caseTypeId]
 			);
 			return false;

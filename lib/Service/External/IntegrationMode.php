@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest external-integration tier selector (external-integrations-test-environments).
+ * Dossiq external-integration tier selector (external-integrations-test-environments).
  *
  * Single source of truth for the per-integration config-tier model.
  * Each external seam reads one `integration.<name>.mode` app-config key
@@ -22,13 +22,13 @@
  * tier in Application::register() (DC02).
  *
  * @category Service
- * @package  OCA\Procest\Service\External
+ * @package  OCA\Dossiq\Service\External
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/external-integration-test-wiring/spec.md
  *
@@ -38,7 +38,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External;
+namespace OCA\Dossiq\Service\External;
 
 use OCP\IAppConfig;
 
@@ -49,9 +49,9 @@ use OCP\IAppConfig;
  */
 final class IntegrationMode {
 	/**
-	 * Procest app id.
+	 * Dossiq app id.
 	 */
-	public const APP_ID = 'procest';
+	public const APP_ID = 'dossiq';
 
 	/**
 	 * Dormant tier — no external call. Default for every seam.

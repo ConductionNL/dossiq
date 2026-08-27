@@ -13,13 +13,13 @@
  * caller must never be able to supply it.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
  *
@@ -29,14 +29,14 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\MandaatMatrixController;
-use OCA\Procest\Service\MandaatCheckService;
-use OCA\Procest\Service\MandaatEscalatieService;
-use OCA\Procest\Service\MandaatGebruikService;
-use OCA\Procest\Service\MandaatImportService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Controller\MandaatMatrixController;
+use OCA\Dossiq\Service\MandaatCheckService;
+use OCA\Dossiq\Service\MandaatEscalatieService;
+use OCA\Dossiq\Service\MandaatGebruikService;
+use OCA\Dossiq\Service\MandaatImportService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -48,7 +48,7 @@ use RuntimeException;
 /**
  * Unit tests for MandaatMatrixController::escalateCreate().
  *
- * @covers \OCA\Procest\Controller\MandaatMatrixController
+ * @covers \OCA\Dossiq\Controller\MandaatMatrixController
  */
 final class MandaatMatrixControllerEscalateCreateTest extends TestCase {
 
@@ -91,7 +91,7 @@ final class MandaatMatrixControllerEscalateCreateTest extends TestCase {
 		$this->userSession = $this->createMock(IUserSession::class);
 
 		$this->controller = new MandaatMatrixController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			userSession: $this->userSession,
 			check: $this->createMock(MandaatCheckService::class),

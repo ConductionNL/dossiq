@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2026 Conduction / Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Conduction / Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Structural guard: a modal must not repeat its own dialog title as a
@@ -26,7 +26,7 @@
  * the body slot renders throws. That is why the same commit could go green on
  * one PR and red on another.
  *
- * Procest's Vitest project runs in the `node` environment with no Vue mount
+ * Dossiq's Vitest project runs in the `node` environment with no Vue mount
  * harness (see vitest.config.js — no @vue/test-utils / jsdom / vue-loader),
  * so `.vue` SFCs cannot be mounted here. This spec therefore asserts the
  * invariant against the component SOURCE, which is the level the defect
@@ -42,13 +42,13 @@ import { join } from 'node:path'
 const MODAL_DIR = join(__dirname, '..', '..', 'src', 'modals')
 
 /**
- * Pull the translated literal out of `:name="t('procest', '...')"`.
+ * Pull the translated literal out of `:name="t('dossiq', '...')"`.
  *
  * @param {string} source Component source.
  * @return {string|null} The dialog title, or null when the modal does not set one.
  */
 function dialogTitle(source) {
-	const m = source.match(/:name="t\('procest',\s*'((?:[^'\\]|\\.)+)'\)"/)
+	const m = source.match(/:name="t\('dossiq',\s*'((?:[^'\\]|\\.)+)'\)"/)
 	return m ? m[1] : null
 }
 
@@ -61,7 +61,7 @@ function dialogTitle(source) {
 function bodyHeadings(source) {
 	return [
 		...source.matchAll(
-			/<h[1-6][^>]*>\s*\{\{\s*t\('procest',\s*'((?:[^'\\]|\\.)+)'\)\s*\}\}\s*<\/h[1-6]>/g,
+			/<h[1-6][^>]*>\s*\{\{\s*t\('dossiq',\s*'((?:[^'\\]|\\.)+)'\)\s*\}\}\s*<\/h[1-6]>/g,
 		),
 	].map((m) => m[1])
 }

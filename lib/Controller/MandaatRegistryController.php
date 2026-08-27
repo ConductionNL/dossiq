@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Mandaat Registry Controller
+ * Dossiq Mandaat Registry Controller
  *
  * The admin settings surface for the mandate DECISION registries:
  * MandateringsBesluiten and Mandaten. The role hierarchy and person-to-role
@@ -17,13 +17,13 @@
  * ⚠️ Auth posture is deliberate and is the point of the fix. Every method here
  * carries `#[AuthorizedAdminSetting]`, matching `InspectionChecklistController`.
  * The tempting alternative — repointing the frontend at OpenRegister's generic
- * `/apps/openregister/api/objects/procest/<schema>` route — resolves, returns
+ * `/apps/openregister/api/objects/dossiq/<schema>` route — resolves, returns
  * clean JSON, and makes the symptom disappear, which is exactly why it was the
- * first (wrong) fix for the sibling issue procest#784: it bypasses procest's
+ * first (wrong) fix for the sibling issue procest#784: it bypasses dossiq's
  * admin authorization and adds a second write path for a guarded resource.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -31,7 +31,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -41,11 +41,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Mandaat\MandaatRegistryService;
-use OCA\Procest\Settings\AdminSettings;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Mandaat\MandaatRegistryService;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -87,7 +87,7 @@ class MandaatRegistryController extends Controller {
 	 *
 	 * @return JSONResponse The besluiten as a JSON array.
 	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
 	 * @spec openspec/specs/mandaat-matrix/spec.md
 	 */
@@ -104,7 +104,7 @@ class MandaatRegistryController extends Controller {
 	 *
 	 * @return JSONResponse The created mandaat.
 	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
 	 * @spec openspec/specs/mandaat-matrix/spec.md
 	 */
@@ -124,7 +124,7 @@ class MandaatRegistryController extends Controller {
 	 *
 	 * @return JSONResponse The updated mandaat.
 	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
 	 * @spec openspec/specs/mandaat-matrix/spec.md
 	 */

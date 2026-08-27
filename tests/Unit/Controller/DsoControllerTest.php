@@ -7,28 +7,28 @@
  * and authorization-failure handling for the key workflow endpoints.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T06
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\DsoController;
-use OCA\Procest\Service\BeschikkingGenerationService;
-use OCA\Procest\Service\Dso\DsoDoorsturenNotifier;
-use OCA\Procest\Service\Dso\DsoObjectRepository;
-use OCA\Procest\Service\DsoCaseService;
-use OCA\Procest\Service\SamenwerkverzoekService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Controller\DsoController;
+use OCA\Dossiq\Service\BeschikkingGenerationService;
+use OCA\Dossiq\Service\Dso\DsoDoorsturenNotifier;
+use OCA\Dossiq\Service\Dso\DsoObjectRepository;
+use OCA\Dossiq\Service\DsoCaseService;
+use OCA\Dossiq\Service\SamenwerkverzoekService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Http;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IRequest;
@@ -250,7 +250,7 @@ class DsoControllerRequestStub implements IRequest {
 	 * @return string
 	 */
 	public function getRequestUri(): string {
-		return '/apps/procest/api/dso/cases/case-123/transition';
+		return '/apps/dossiq/api/dso/cases/case-123/transition';
 	}//end getRequestUri()
 
 	/**
@@ -339,11 +339,11 @@ class DsoControllerRequestStub implements IRequest {
 /**
  * Unit tests for DsoController.
  *
- * @covers \OCA\Procest\Controller\DsoController
+ * @covers \OCA\Dossiq\Controller\DsoController
  *
- * @uses \OCA\Procest\Service\Dso\DsoDoorsturenNotifier
- * @uses \OCA\Procest\Service\Dso\DsoObjectRepository
- * @uses \OCA\Procest\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Dso\DsoDoorsturenNotifier
+ * @uses \OCA\Dossiq\Service\Dso\DsoObjectRepository
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class DsoControllerTest extends TestCase {
 
@@ -392,9 +392,9 @@ class DsoControllerTest extends TestCase {
 	/**
 	 * The DsoLvAuthService mock.
 	 *
-	 * @var \OCA\Procest\Service\DsoLvAuthService|MockObject
+	 * @var \OCA\Dossiq\Service\DsoLvAuthService|MockObject
 	 */
-	private \OCA\Procest\Service\DsoLvAuthService $lvAuthService;
+	private \OCA\Dossiq\Service\DsoLvAuthService $lvAuthService;
 
 	/**
 	 * The IEventDispatcher mock.
@@ -431,12 +431,12 @@ class DsoControllerTest extends TestCase {
 		$this->samenwerkService = $this->createMock(SamenwerkverzoekService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->settingsService = $this->createMock(SettingsService::class);
-		$this->lvAuthService = $this->createMock(\OCA\Procest\Service\DsoLvAuthService::class);
+		$this->lvAuthService = $this->createMock(\OCA\Dossiq\Service\DsoLvAuthService::class);
 		$this->eventDispatcher = $this->createMock(IEventDispatcher::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 
 		$this->controller = new DsoController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			dsoCaseService: $this->dsoCaseService,
 			decisionService: $this->decisionService,
@@ -507,13 +507,13 @@ class DsoControllerTest extends TestCase {
 		$settingsServiceMock = $this->createMock(SettingsService::class);
 		$settingsServiceMock->method('getObjectService')->willReturn($mockObjectService);
 		// phpcs:disable CustomSn.Functions.NamedParameters
-		$settingsServiceMock->method('getConfigValue')->willReturn('procest-register');
+		$settingsServiceMock->method('getConfigValue')->willReturn('dossiq-register');
 		// phpcs:enable CustomSn.Functions.NamedParameters
 
 		$requestStub = new DsoControllerRequestStub(content: '{"newStatus":"in_handling"}');
 
 		$controller = new DsoController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $requestStub,
 			dsoCaseService: $this->dsoCaseService,
 			decisionService: $this->decisionService,
@@ -551,7 +551,7 @@ class DsoControllerTest extends TestCase {
 		$requestStub = new DsoControllerRequestStub(content: '{"motivation":"test"}');
 
 		$controller = new DsoController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $requestStub,
 			dsoCaseService: $this->dsoCaseService,
 			decisionService: $this->decisionService,

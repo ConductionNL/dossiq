@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest AC (Autorisaties) Controller
+ * Dossiq AC (Autorisaties) Controller
  *
  * Controller for serving ZGW Autorisaties API endpoints (applicaties).
  * Uses ConsumerMapper from OpenRegister to manage API consumers as ZGW
  * applicaties. Does NOT use OpenRegister objects directly.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -19,14 +19,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\ZgwService;
+use OCA\Dossiq\Service\ZgwService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -800,7 +800,7 @@ class AcController extends ZgwController {
 		$clientIds = [];
 
 		// Primary clientId is the consumer name.
-		if (isset($data['name']) === true && $data['name'] !== '' && $data['name'] !== null) {
+		if (isset($data['name']) === true && $data['name'] !== '') {
 			$clientIds[] = $data['name'];
 		}
 
@@ -834,7 +834,7 @@ class AcController extends ZgwController {
 
 		// Build clientIds: primary name + any extras from authConfig.
 		$clientIds = [];
-		if (isset($data['name']) === true && $data['name'] !== '' && $data['name'] !== null) {
+		if (isset($data['name']) === true && $data['name'] !== '') {
 			$clientIds[] = $data['name'];
 		}
 

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Status Transition Controller.
+ * Dossiq Status Transition Controller.
  *
  * REST surface for the status-transition engine. CRUD on `statusRecord`
  * objects is delegated to the manifest renderer (OpenRegister); this
@@ -17,7 +17,7 @@
  * Error responses use static messages — `$e->getMessage()` is NEVER returned.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -28,17 +28,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\BulkStatusTransitionService;
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\StatusTransitionService;
-use OCA\Procest\Service\Transitions\GuardFailedException;
+use OCA\Dossiq\Service\BulkStatusTransitionService;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

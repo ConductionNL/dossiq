@@ -6,13 +6,13 @@
 
 ## Overview
 
-Configures the Procest workflow engine for VTH (Vergunningen, Toezicht, Handhaving: Permits, Supervision, Enforcement), adding domain-specific schemas, seed data, LHS matrix support, and UI panels for Dutch environmental compliance workflows.
+Configures the Dossiq workflow engine for VTH (Vergunningen, Toezicht, Handhaving: Permits, Supervision, Enforcement), adding domain-specific schemas, seed data, LHS matrix support, and UI panels for Dutch environmental compliance workflows.
 
 ## Architecture
 
 ### Backend
 
-**New schemas** in `lib/Settings/procest_register.json`:
+**New schemas** in `lib/Settings/dossiq_register.json`:
 | Schema | Purpose |
 |--------|---------|
 | `inspectieChecklist` | Template-driven inspection checklist per inspection phase |

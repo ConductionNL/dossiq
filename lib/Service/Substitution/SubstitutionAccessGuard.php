@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest SubstitutionAccessGuard.
+ * Dossiq SubstitutionAccessGuard.
  *
  * Authorization and lookup collaborator for the vervanging/waarneming
  * endpoints. Split out of SubstitutionController so that controller keeps only
@@ -12,7 +12,7 @@
  * which no ownership or coordinator check can ever satisfy (ADR-005 Rule 3).
  *
  * @category Service
- * @package  OCA\Procest\Service\Substitution
+ * @package  OCA\Dossiq\Service\Substitution
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,7 +20,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -30,10 +30,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Substitution;
+namespace OCA\Dossiq\Service\Substitution;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
@@ -49,8 +49,9 @@ class SubstitutionAccessGuard {
 
 	/**
 	 * Maximum number of substitution rows fetched per call, matching the
-	 * pagination pattern used elsewhere in this app (e.g.
-	 * RaadsinformatieFeedController::FEED_LIMIT).
+	 * pagination pattern used elsewhere in this app. (This used to cite
+	 * RaadsinformatieFeedController::FEED_LIMIT as the example; that controller
+	 * went with the ORI removal.)
 	 *
 	 * @var int
 	 */
@@ -89,10 +90,10 @@ class SubstitutionAccessGuard {
 	}//end currentUid()
 
 	/**
-	 * Whether a user holds the procest coordinator role (NC admin).
+	 * Whether a user holds the dossiq coordinator role (NC admin).
 	 *
 	 * Coordinator authority is delegated to Nextcloud admin membership, the
-	 * same model used elsewhere in procest (e.g. ComplaintController).
+	 * same model used elsewhere in dossiq (e.g. ComplaintController).
 	 *
 	 * @param string $userId The user id.
 	 *

@@ -4,10 +4,10 @@ status: done
 # kcc-werkplek-zaaksysteem-bridge Specification
 
 ## Purpose
-Bridge the KCC-werkplek (contact-center workplek) to the Procest zaaksysteem so KCC-medewerkers get real-time case context on every inbound contact: automatic case-voorblad, contactmoment capture with audit trail, one-click quick-actions (status terugkoppelen, nieuwe zaak, klacht registreren, warm doorverbinden), datagedreven belplan-routering, and real-time sentiment detection. Burger is a Nextcloud contact entity (opaque pseudonymous reference, no PII schema, per ADR-022). Procest exposes the read/write API; the KCC-werkplek agent UI is rendered by pipelinq.
+Bridge the KCC-werkplek (contact-center workplek) to the Dossiq zaaksysteem so KCC-medewerkers get real-time case context on every inbound contact: automatic case-voorblad, contactmoment capture with audit trail, one-click quick-actions (status terugkoppelen, nieuwe zaak, klacht registreren, warm doorverbinden), datagedreven belplan-routering, and real-time sentiment detection. Burger is a Nextcloud contact entity (opaque pseudonymous reference, no PII schema, per ADR-022). Dossiq exposes the read/write API; the KCC-werkplek agent UI is rendered by pipelinq.
 
 ## Status: partial — residue (cross-app, deferred; not stubbed)
-The Procest-side core is BUILT and tested: contactmoment capture + immutable case-activity audit, case-voorblad resolution (IDOR-scoped), identificatievragen scoring + threshold linking, quick-actions (status/nieuwe-zaak/klacht/bel-terug), belplan routing + overflow, sentiment scoring + escalation + persistence, doorverbinding record lifecycle with immutable snapshot + recipient-ownership guard, the admin settings UI, and the default seed. The following legs remain because they live in other apps and are not present in this repo:
+The Dossiq-side core is BUILT and tested: contactmoment capture + immutable case-activity audit, case-voorblad resolution (IDOR-scoped), identificatievragen scoring + threshold linking, quick-actions (status/nieuwe-zaak/klacht/bel-terug), belplan routing + overflow, sentiment scoring + escalation + persistence, doorverbinding record lifecycle with immutable snapshot + recipient-ownership guard, the admin settings UI, and the default seed. The following legs remain because they live in other apps and are not present in this repo:
 - **DigiD authentication** (auth-code → validated BSN assertion) → OpenConnector (ZGW/mTLS). Identificatievragen + scoring + linking are built; `resolveFromDigiD()` consumes an already-resolved BSN.
 - **SIP/SIPS warm phone transfer + screen-pop** → pipelinq telephony. The doorverbinding record + immutable context snapshot + accept/reject are built; the live SIP leg is not.
 - **Live specialist-availability feed** → pipelinq ACD / HR system. The refresh job + stale-record aging + resilience are built; the upstream push is not.
@@ -44,7 +44,7 @@ The identificatievragen flow MUST compute a weighted match score and only link t
 - **WHEN** `BurgerIdentificationService::startIdentificatievragen()` scores 0.6
 - **THEN** no burger reference is linked and the contact is treated as niet-geidentificeerd
 
-<!-- @e2e exclude DigiD OAuth2 handshake is delivered by OpenConnector (ZGW/mTLS); not exercisable from the Procest UI -->
+<!-- @e2e exclude DigiD OAuth2 handshake is delivered by OpenConnector (ZGW/mTLS); not exercisable from the Dossiq UI -->
 #### Scenario: DigiD assertion resolves to a pseudonymous reference
 - **GIVEN** a DigiD-validated BSN (handshake performed by OpenConnector)
 - **WHEN** `BurgerIdentificationService::resolveFromDigiD(bsn)` is called
@@ -82,17 +82,17 @@ A warm doorverbinding MUST capture an immutable context snapshot (bellergegevens
 - **WHEN** a different user calls accept
 - **THEN** the accept is rejected (recipient-ownership guard), preserving the snapshot
 
-<!-- @e2e exclude SIP/SIPS warm phone transfer + screen-pop are delivered by pipelinq telephony; the Procest side only records the doorverbinding + snapshot -->
-#### Scenario: Warm transfer records the Procest-side intent
+<!-- @e2e exclude SIP/SIPS warm phone transfer + screen-pop are delivered by pipelinq telephony; the Dossiq side only records the doorverbinding + snapshot -->
+#### Scenario: Warm transfer records the Dossiq-side intent
 - **GIVEN** a doorverbinding quick-action
 - **WHEN** `DoorverbindingService::initiateWarmTransfer()` runs
 - **THEN** a doorverbinding record with an immutable context snapshot is created with status pending (the live SIP leg is performed by pipelinq)
 
 ### Requirement: KCC integration is configurable from admin settings
-An admin MUST be able to configure identification method/threshold, voorblad limits, sentiment trigger words and belplan overflow thresholds from the Procest admin settings.
+An admin MUST be able to configure identification method/threshold, voorblad limits, sentiment trigger words and belplan overflow thresholds from the Dossiq admin settings.
 
 #### Scenario: KCC integration settings render and persist
-- **GIVEN** an admin on `/settings/admin/procest`
+- **GIVEN** an admin on `/settings/admin/dossiq`
 - **WHEN** the KCC-werkplek Integration section is opened
 - **THEN** the identification-threshold, sentiment trigger-word, voorblad-limit and belplan-overflow controls render and save through `/api/settings`
 

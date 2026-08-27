@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest ZGW Document Service
+ * Dossiq ZGW Document Service
  *
  * Handles binary file storage for ZGW Documenten API (DRC) documents.
  * Stores files in Nextcloud's file system and manages locking.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -15,7 +15,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  *
@@ -24,7 +24,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
 use OCP\Files\File;
@@ -37,7 +37,7 @@ use Psr\Log\LoggerInterface;
  * Service for managing binary document storage in the DRC.
  *
  * Stores document files under the admin user's Nextcloud files at:
- * /admin/files/procest/documenten/{uuid}/{filename}
+ * /admin/files/dossiq/documenten/{uuid}/{filename}
  *
  * @spec openspec/changes/document-zaakdossier/tasks.md#T02
  */
@@ -45,7 +45,7 @@ class ZgwDocumentService {
 	/**
 	 * Base folder path for document storage.
 	 */
-	private const STORAGE_BASE = 'procest/documenten';
+	private const STORAGE_BASE = 'dossiq/documenten';
 
 	/**
 	 * Constructor.

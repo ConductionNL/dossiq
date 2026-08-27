@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest AI audit service.
+ * Dossiq AI audit service.
  *
  * The oversight surface of the AI feature set: recording what a human did with
  * an AI suggestion (accept / reject / modify), recording a conversational
  * assistant exchange, and reading the Algoritmeregister trail back for the
  * oversight page and the CSV export.
  *
- * Split out of {@see \OCA\Procest\Service\AiService} so that model
+ * Split out of {@see \OCA\Dossiq\Service\AiService} so that model
  * orchestration (deciding whether a feature is on, building a prompt, making
  * the one outbound model call) and oversight (what was suggested, what a human
  * did with it, and who can read that back) are separate responsibilities.
@@ -16,7 +16,7 @@
  * controllers and assistant services consume.
  *
  * @category Service
- * @package  OCA\Procest\Service\Ai
+ * @package  OCA\Dossiq\Service\Ai
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,7 +24,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -35,7 +35,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Ai;
+namespace OCA\Dossiq\Service\Ai;
 
 /**
  * Records and reads the AI oversight audit trail.
@@ -48,12 +48,14 @@ class AiAuditService {
 	 *
 	 * @param AiAuditLog $audit The oversight audit trail storage.
 	 * @param AiModelIdentity $modelIdentity The configured model identifier.
+	 * @param AiOversightDelegationService $oversight Sends the decision to hermiq.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private AiAuditLog $audit,
 		private AiModelIdentity $modelIdentity,
+		private AiOversightDelegationService $oversight,
 	) {
 	}//end __construct()
 
@@ -81,22 +83,30 @@ class AiAuditService {
 		?string $reason,
 		string $userId,
 	): array {
-		$this->recordAuditEntry(
-			entry: [
-				'type' => $type,
-				'action' => $userAction,
-				'caseId' => $caseId,
-				'model' => $this->modelIdentity->identifier(),
-				'suggestion' => $suggestion,
-				'userAction' => $userAction,
-				'actualValue' => ($actualValue ?? []),
-				'reason' => ($reason ?? ''),
-				'userId' => $userId,
-				'timestamp' => date('c'),
-			]
-		);
+		$entry = [
+			'type' => $type,
+			'action' => $userAction,
+			'caseId' => $caseId,
+			'model' => $this->modelIdentity->identifier(),
+			'suggestion' => $suggestion,
+			'userAction' => $userAction,
+			'actualValue' => ($actualValue ?? []),
+			'reason' => ($reason ?? ''),
+			'userId' => $userId,
+			'timestamp' => date('c'),
+		];
 
-		return ['success' => true];
+		$this->recordAuditEntry(entry: $entry);
+
+		// Hermiq owns AI oversight (EU AI Act Art. 14); this is the moment the
+		// human decided, so it goes there too. The local write above STAYS: on an
+		// instance without hermiq it is the only copy, and dropping it would make
+		// the presence of an oversight trail depend on which apps are installed.
+		// Delegation never throws — the handler has already acted and the case has
+		// already moved on, so an audit outage must not become a functional one.
+		$delegated = $this->oversight->delegate($entry);
+
+		return ['success' => true, 'delegated' => $delegated];
 	}//end recordUserAction()
 
 	/**

@@ -10,7 +10,7 @@
  * POST /transition endpoint.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -18,17 +18,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\StatusTransitionController;
-use OCA\Procest\Service\BulkStatusTransitionService;
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\StatusTransitionService;
+use OCA\Dossiq\Controller\StatusTransitionController;
+use OCA\Dossiq\Service\BulkStatusTransitionService;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\StatusTransitionService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -41,7 +41,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Regression tests for StatusTransitionController body parsing.
  *
- * @covers \OCA\Procest\Controller\StatusTransitionController
+ * @covers \OCA\Dossiq\Controller\StatusTransitionController
  */
 class StatusTransitionControllerBodyRegressionTest extends TestCase {
 
@@ -92,7 +92,7 @@ class StatusTransitionControllerBodyRegressionTest extends TestCase {
 		$caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
 
 		$this->controller = new StatusTransitionController(
-			'procest',
+			'dossiq',
 			$this->request,
 			$this->transitionEngine,
 			$this->bulkEngine,

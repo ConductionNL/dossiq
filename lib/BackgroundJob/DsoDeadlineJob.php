@@ -9,25 +9,25 @@
  * configurable via IAppConfig.
  *
  * @category BackgroundJob
- * @package  OCA\Procest\BackgroundJob
+ * @package  OCA\Dossiq\BackgroundJob
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T06
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\BackgroundJob;
+namespace OCA\Dossiq\BackgroundJob;
 
 use DateTime;
 use DateTimeImmutable;
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 use OCP\IAppConfig;
@@ -98,7 +98,7 @@ class DsoDeadlineJob extends TimedJob {
 
 		if ($register === '' || $caseSchema === '') {
 			$this->logger->warning(
-				'Procest DsoDeadlineJob: register or case_schema not configured.',
+				'Dossiq DsoDeadlineJob: register or case_schema not configured.',
 				['app' => Application::APP_ID]
 			);
 			return;
@@ -137,7 +137,7 @@ class DsoDeadlineJob extends TimedJob {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest DsoDeadlineJob: could not fetch open zaken: ' . $e->getMessage(),
+				'Dossiq DsoDeadlineJob: could not fetch open zaken: ' . $e->getMessage(),
 				['app' => Application::APP_ID]
 			);
 			return;
@@ -156,7 +156,7 @@ class DsoDeadlineJob extends TimedJob {
 			} catch (\Throwable $e) {
 				$caseId = (string)($case['id'] ?? ($case['uuid'] ?? 'unknown'));
 				$this->logger->error(
-					'Procest DsoDeadlineJob: error processing zaak ' . $caseId . ': ' . $e->getMessage(),
+					'Dossiq DsoDeadlineJob: error processing zaak ' . $caseId . ': ' . $e->getMessage(),
 					[
 						'app' => Application::APP_ID,
 						'caseId' => $caseId,
@@ -339,7 +339,7 @@ class DsoDeadlineJob extends TimedJob {
 			$this->notificationManager->notify(notification: $notification);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
-				'Procest DsoDeadlineJob: could not send notification: ' . $e->getMessage(),
+				'Dossiq DsoDeadlineJob: could not send notification: ' . $e->getMessage(),
 				[
 					'app' => Application::APP_ID,
 					'caseId' => $caseId,
@@ -362,7 +362,7 @@ class DsoDeadlineJob extends TimedJob {
 			return $this->container->get('OCA\OpenRegister\Service\ObjectService');
 		} catch (\Throwable $e) {
 			$this->logger->warning(
-				'Procest DsoDeadlineJob: ObjectService not available: ' . $e->getMessage(),
+				'Dossiq DsoDeadlineJob: ObjectService not available: ' . $e->getMessage(),
 				['app' => Application::APP_ID]
 			);
 			return null;

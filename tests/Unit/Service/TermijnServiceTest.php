@@ -7,7 +7,7 @@
  * completion, and error handling against an in-memory ObjectService fake.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,7 +15,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -23,17 +23,17 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\TermijnService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TermijnService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * @covers \OCA\Procest\Service\TermijnService
+ * @covers \OCA\Dossiq\Service\TermijnService
  */
 class TermijnServiceTest extends TestCase {
 
@@ -48,7 +48,7 @@ class TermijnServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'termijn_definitie_schema' => 'deadlineDefinition',
 					'termijn_instance_schema' => 'deadlineInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
@@ -61,7 +61,7 @@ class TermijnServiceTest extends TestCase {
 
 		// Seed two definitions: omgevingsvergunning 56d (active) + Wmo 42d (active).
 		$this->objects->saveObject(
-			'procest',
+			'dossiq',
 			'deadlineDefinition',
 			[
 				'id' => 'td-omgevingsvergunning-regulier',
@@ -73,7 +73,7 @@ class TermijnServiceTest extends TestCase {
 			]
 		);
 		$this->objects->saveObject(
-			'procest',
+			'dossiq',
 			'deadlineDefinition',
 			[
 				'id' => 'td-wmo-aanvraag',
@@ -134,7 +134,7 @@ class TermijnServiceTest extends TestCase {
 	public function testGetTermijnDefinitieReturnsLatestActiveVersion(): void {
 		// Add a newer version of the omgevingsvergunning definition.
 		$this->objects->saveObject(
-			'procest',
+			'dossiq',
 			'deadlineDefinition',
 			[
 				'id' => 'td-omgevingsvergunning-regulier-v2',
@@ -151,7 +151,7 @@ class TermijnServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'termijn_definitie_schema' => 'deadlineDefinition',
 					'termijn_instance_schema' => 'deadlineInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
@@ -229,7 +229,7 @@ class TermijnServiceTest extends TestCase {
 
 		// Phase 2 — publish a new v2 (70 days) for the same zaaktype.
 		$this->objects->saveObject(
-			'procest',
+			'dossiq',
 			'deadlineDefinition',
 			[
 				'id' => 'td-omgevingsvergunning-regulier-v2',
@@ -256,7 +256,7 @@ class TermijnServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'termijn_definitie_schema' => 'deadlineDefinition',
 					'termijn_instance_schema' => 'deadlineInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',

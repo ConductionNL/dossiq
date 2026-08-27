@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest StUF outbound transport.
+ * Dossiq StUF outbound transport.
  *
  * Everything that happens to an outbound envelope AFTER it has been built and
  * logged: send it, classify the answer (Bv01 bevestiging, Fo02 fout, transport
@@ -15,7 +15,7 @@
  * next to the only code that reads it.
  *
  * @category Service
- * @package  OCA\Procest\Service\Stuf
+ * @package  OCA\Dossiq\Service\Stuf
  *
  * @author    Conduction <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,7 +23,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -33,7 +33,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Stuf;
+namespace OCA\Dossiq\Service\Stuf;
 
 use OCP\BackgroundJob\IJobList;
 use Psr\Log\LoggerInterface;
@@ -296,7 +296,7 @@ class StufOutboundTransport {
 		$delay = (self::RETRY_BACKOFF_SECONDS[$delayIndex] ?? 600);
 		try {
 			$this->jobList->add(
-				'OCA\\Procest\\BackgroundJob\\StufRetryJob',
+				'OCA\\Dossiq\\BackgroundJob\\StufRetryJob',
 				['stufMessageId' => $messageId, 'runAt' => (time() + $delay)]
 			);
 		} catch (\Throwable $e) {

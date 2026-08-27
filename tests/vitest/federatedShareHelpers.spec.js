@@ -6,7 +6,7 @@
  * CaseSharingTab.vue, CreateFederatedShareDialog.vue and
  * PublicFederatedTransferPage.vue.
  *
- * Procest's Vitest project runs in the `node` environment with no Vue mount
+ * Dossiq's Vitest project runs in the `node` environment with no Vue mount
  * harness installed (see vitest.config.js — no @vue/test-utils / jsdom /
  * vue-loader plugin registered), so the `.vue` single-file components
  * cannot be full-mounted here (same constraint documented in
@@ -48,31 +48,31 @@ describe('FEDERATION_ALLOWED_FIELDS', () => {
 describe('endpoint builders', () => {
 	it('builds the local federated-shares list endpoint', () => {
 		expect(federatedSharesListEndpoint()).toBe(
-			'/apps/openregister/api/objects/procest/caseFederatedShare',
+			'/apps/openregister/api/objects/dossiq/caseFederatedShare',
 		)
 	})
 
 	it('builds the create-federated-share endpoint', () => {
 		expect(createFederatedShareEndpoint()).toBe(
-			'/apps/procest/api/federation/shares',
+			'/apps/dossiq/api/federation/shares',
 		)
 	})
 
 	it('builds the revoke-federated-share endpoint with URL-encoding', () => {
 		expect(revokeFederatedShareEndpoint('share/1')).toBe(
-			'/apps/procest/api/federation/shares/share%2F1',
+			'/apps/dossiq/api/federation/shares/share%2F1',
 		)
 	})
 
 	it('builds the local activity endpoint', () => {
 		expect(federatedActivityEndpoint('share-1')).toBe(
-			'/apps/procest/api/federation/activity/share-1',
+			'/apps/dossiq/api/federation/activity/share-1',
 		)
 	})
 
 	it('builds the public transfer accept/reject endpoint from token + transferId', () => {
 		expect(publicFederatedTransferEndpoint('tok-abc', 'transfer-1')).toBe(
-			'/apps/procest/api/public/federation/transfers/tok-abc/transfer-1',
+			'/apps/dossiq/api/public/federation/transfers/tok-abc/transfer-1',
 		)
 	})
 })

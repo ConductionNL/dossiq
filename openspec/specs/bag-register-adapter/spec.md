@@ -12,7 +12,7 @@ external call to Kadaster is ever made unknowingly.
 
 #### Scenario: Fresh install calls nothing external
 
-- **GIVEN** a fresh procest install with no `integration.bag.mode` config
+- **GIVEN** a fresh dossiq install with no `integration.bag.mode` config
 - **WHEN** any flow calls `BagAdapterInterface::lookupAddress()` or `::lookupObject()`
 - **THEN** the Log adapter MUST handle it, return `LOOKUP_DEFERRED`, and no external request MUST
   leave the instance

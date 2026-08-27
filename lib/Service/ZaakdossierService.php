@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Zaakdossier Service
+ * Dossiq Zaakdossier Service
  *
  * Orchestrates the ZGW DRC case dossier: it stores uploaded documents as
  * Nextcloud files (via {@see ZgwDocumentService}) and as `informatieobject`
@@ -13,7 +13,7 @@
  * at the controller boundary.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -29,13 +29,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DomainException;
 use InvalidArgumentException;
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\SearchesObjects;
-use OCA\Procest\Service\Zaakdossier\InformatieobjectStatusLifecycle;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -164,7 +164,7 @@ class ZaakdossierService {
 		$this->createJoin(caseId: $caseId, infoObjectId: $infoId);
 
 		$this->logger->info(
-			'Procest dossier: uploaded informatieobject ' . $infoId . ' for case ' . $caseId,
+			'Dossiq dossier: uploaded informatieobject ' . $infoId . ' for case ' . $caseId,
 			['app' => Application::APP_ID],
 		);
 

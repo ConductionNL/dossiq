@@ -1,20 +1,20 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Behavioural UI coverage for the procest administrative settings pages.
+ * Behavioural UI coverage for the dossiq administrative settings pages.
  * Each renders an OpenRegister-backed index with a view-specific primary
  * create control. Every test navigates to the page's route and asserts that
  * it renders its OWN distinct create control — proving the route resolves to
  * the right view, not a stale one — while guarding against a 5xx render and
- * procest-origin console errors.
+ * dossiq-origin console errors.
  *
  * See the note above SETTINGS_PAGES for why these navigate by route rather
  * than by clicking a nav label.
  */
 
 import { test, expect } from '@playwright/test'
-import { navToRoute, trackProcestErrors } from '../helpers/nav'
+import { navToRoute, trackDossiqErrors } from '../helpers/nav'
 
 // name (for the test title), the ROUTE the settings page lives at, and the
 // view-specific create control it must render.
@@ -40,22 +40,31 @@ import { navToRoute, trackProcestErrors } from '../helpers/nav'
 //
 // Control labels below were measured against a CI runner (2026-08-04).
 const SETTINGS_PAGES: Array<{ name: string; route: string; addBtn: string }> = [
-	// CaseType settings form (Save control) — the /settings root.
-	{ name: 'Case Types', route: '/settings', addBtn: 'Save' },
+	// The in-app /settings page was retired by page-topology-cleanup (B1): it
+	// mounted the SAME AdminRoot.vue as /settings/admin/procest, reaching an
+	// administration component through the in-app router and bypassing the
+	// settings framework's server-side checks (ADR-004). Administration is
+	// covered by the admin-settings surface, not by an app route.
 	// Leges (the municipal-fee engine — verordeningen, articles, calculations)
-	// was retired from Procest in Wave 1 of the case-model consolidation
+	// was retired from Dossiq in Wave 1 of the case-model consolidation
 	// (ADR-003). Fees are now Pipelinq products referenced from a case type's
-	// productsOrServices; Procest owns no fee settings entries.
+	// productsOrServices; Dossiq owns no fee settings entries.
 	{
 		name: 'Approval routes',
 		route: '/settings/parafeerroutes',
 		addBtn: 'Add Endorsement Route',
 	},
-	{
-		name: 'Automatic actions',
-		route: '/settings/automatic-actions',
-		addBtn: 'Add Automatic Action',
-	},
+	// Automatic actions was retired by page-topology-cleanup (C2). The
+	// `automaticAction` objects it administered were never executed by anything
+	// — SideEffectDispatcher runs a separate vocabulary — so the page was a
+	// surface over a capability with no runtime. They migrate to OpenRegister
+	// flows via `occ dossiq:actions:migrate-to-flows`.
+	//
+	// The deep link that replaced it is gone too (ADR-110): flows are authored
+	// in THIS app now, at /flows and /flows/:id, on the shared canvas over the
+	// same single engine. That surface has its own spec — flows.spec.ts — rather
+	// than an entry here, because its create control is a canvas action, not the
+	// "Add X" button every row in this table asserts on.
 	{
 		name: 'Enforcement strategy',
 		route: '/settings/lhs-matrices',
@@ -85,11 +94,10 @@ const SETTINGS_PAGES: Array<{ name: string; route: string; addBtn: string }> = [
 	// The standalone "Status history" (StatusRecords) settings page was retired
 	// by retire-status-history-page — change history is now the CaseDetail
 	// audit-trail surface, not a page/menu item. Entry removed accordingly.
-	{
-		name: 'Case locations',
-		route: '/settings/locations',
-		addBtn: 'Add Case Location',
-	},
+	// The standalone "Case locations" page was retired by page-topology-cleanup
+	// (B5) — `case` is a required property on the `location` schema, so every
+	// location is reachable through its case via the /cases map view and the
+	// case-detail widget. No page to exercise.
 ]
 
 for (const { name, route, addBtn } of SETTINGS_PAGES) {
@@ -98,7 +106,7 @@ for (const { name, route, addBtn } of SETTINGS_PAGES) {
 		test(`${name} settings page renders its own "${addBtn}" control`, async ({
 			page,
 		}) => {
-			const errors = trackProcestErrors(page)
+			const errors = trackDossiqErrors(page)
 			await navToRoute(page, route)
 			await expect(
 				page.getByRole('button', { name: addBtn, exact: true }).first(),

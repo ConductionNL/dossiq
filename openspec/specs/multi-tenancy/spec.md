@@ -9,7 +9,7 @@ retrofit: true
 
 @e2e exclude Tenant provisioning is a backend REST API; UI renders via manifest, not custom Playwright-testable views.
 
-Provide per-tenant isolation for procest by mapping each tenant 1:1 to an OpenRegister `Organisation` entity (per ADR-022) and delegating lifecycle state-machine to OR's `TenantLifecycleService`. Procest exposes a thin domain surface — provisioning, resource-usage aggregation, current-tenant resolution, and the membership/status helpers `TenantMiddleware` needs to short-circuit suspended tenants — while generic tenant CRUD is rendered by the manifest off the OR object endpoints.
+Provide per-tenant isolation for dossiq by mapping each tenant 1:1 to an OpenRegister `Organisation` entity (per ADR-022) and delegating lifecycle state-machine to OR's `TenantLifecycleService`. Dossiq exposes a thin domain surface — provisioning, resource-usage aggregation, current-tenant resolution, and the membership/status helpers `TenantMiddleware` needs to short-circuit suspended tenants — while generic tenant CRUD is rendered by the manifest off the OR object endpoints.
 
 ## Requirements
 
@@ -68,12 +68,12 @@ The system SHALL provision a tenant by loading the Organisation by UUID, derivin
 #### Scenario: Provisioning failure
 
 - WHEN `TenantLifecycleService::provision` throws
-- THEN the service SHALL log `'Procest: provisionTenant failed via OR'` and return `{error: 'Failed to provision tenant: <message>'}`
+- THEN the service SHALL log `'Dossiq: provisionTenant failed via OR'` and return `{error: 'Failed to provision tenant: <message>'}`
 
 #### Scenario: Success
 
 - WHEN provisioning succeeds
-- THEN the service SHALL log `'Procest: Tenant provisioned via OR TenantLifecycleService'` with `tenantId` + new `status` and return `org->jsonSerialize()`
+- THEN the service SHALL log `'Dossiq: Tenant provisioned via OR TenantLifecycleService'` with `tenantId` + new `status` and return `org->jsonSerialize()`
 
 ### REQ-004: Tenant resource-usage aggregation from OR Organisation
 

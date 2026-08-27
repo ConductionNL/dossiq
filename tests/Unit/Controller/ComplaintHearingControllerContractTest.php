@@ -23,23 +23,23 @@
  *    "hearing completed" with no hearing on file is an Awb record defect.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\ComplaintHearingController;
-use OCA\Procest\Service\Complaint\ComplaintAccessGuard;
-use OCA\Procest\Service\ComplaintService;
-use OCA\Procest\Service\HearingService;
+use OCA\Dossiq\Controller\ComplaintHearingController;
+use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
+use OCA\Dossiq\Service\ComplaintService;
+use OCA\Dossiq\Service\HearingService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IGroupManager;
@@ -52,9 +52,9 @@ use PHPUnit\Framework\TestCase;
 /**
  * Wire-contract tests for ComplaintHearingController.
  *
- * @covers \OCA\Procest\Controller\ComplaintHearingController
+ * @covers \OCA\Dossiq\Controller\ComplaintHearingController
  *
- * @uses \OCA\Procest\Service\Complaint\ComplaintAccessGuard
+ * @uses \OCA\Dossiq\Service\Complaint\ComplaintAccessGuard
  */
 class ComplaintHearingControllerContractTest extends TestCase {
 
@@ -115,7 +115,7 @@ class ComplaintHearingControllerContractTest extends TestCase {
 		$this->groupManager = $this->createMock(IGroupManager::class);
 
 		$this->controller = new ComplaintHearingController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			complaintService: $this->complaintService,
 			hearingService: $this->hearingService,

@@ -4,7 +4,7 @@
 			<p>
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Save the case type first before adding result types.',
 					)
 				}}
@@ -30,8 +30,8 @@
 								:class="'badge--' + rt.archivalAction">
 								{{
 									rt.archivalAction === 'retain'
-										? t('procest', 'Retain')
-										: t('procest', 'Destroy')
+										? t('dossiq', 'Retain')
+										: t('dossiq', 'Destroy')
 								}}
 							</span>
 							<span class="result-type-row__period">
@@ -41,7 +41,7 @@
 								<NcButton
 									type="tertiary"
 									:aria-label="
-										t('procest', 'Edit {name}', {
+										t('dossiq', 'Edit {name}', {
 											name: rt.name,
 										})
 									"
@@ -53,7 +53,7 @@
 								<NcButton
 									type="tertiary"
 									:aria-label="
-										t('procest', 'Delete {name}', {
+										t('dossiq', 'Delete {name}', {
 											name: rt.name,
 										})
 									"
@@ -71,7 +71,7 @@
 								<div class="edit-row">
 									<NcTextField
 										:modelValue="editForm.name"
-										:label="t('procest', 'Name')"
+										:label="t('dossiq', 'Name')"
 										:error="!!editError"
 										class="edit-field"
 										@update:modelValue="
@@ -81,7 +81,7 @@
 								<div class="edit-row">
 									<NcTextField
 										:modelValue="editForm.description"
-										:label="t('procest', 'Description')"
+										:label="t('dossiq', 'Description')"
 										class="edit-field"
 										@update:modelValue="
 											(v) => (editForm.description = v)
@@ -90,7 +90,7 @@
 								<div class="edit-row">
 									<div class="edit-field">
 										<label class="field-label">{{
-											t('procest', 'Archive action')
+											t('dossiq', 'Archive action')
 										}}</label>
 										<NcCheckboxRadioSwitch
 											:modelValue="editForm.archivalAction"
@@ -100,7 +100,7 @@
 											@update:modelValue="
 												(v) => (editForm.archivalAction = v)
 											">
-											{{ t('procest', 'Retain') }}
+											{{ t('dossiq', 'Retain') }}
 										</NcCheckboxRadioSwitch>
 										<NcCheckboxRadioSwitch
 											:modelValue="editForm.archivalAction"
@@ -110,14 +110,14 @@
 											@update:modelValue="
 												(v) => (editForm.archivalAction = v)
 											">
-											{{ t('procest', 'Destroy') }}
+											{{ t('dossiq', 'Destroy') }}
 										</NcCheckboxRadioSwitch>
 									</div>
 									<NcTextField
 										:modelValue="editForm.archivalPeriod"
 										:label="
 											t(
-												'procest',
+												'dossiq',
 												'Retention period (ISO 8601, e.g. P20Y)',
 											)
 										"
@@ -134,10 +134,10 @@
 										type="primary"
 										:disabled="editSaving"
 										@click="saveEdit">
-										{{ t('procest', 'Save') }}
+										{{ t('dossiq', 'Save') }}
 									</NcButton>
 									<NcButton type="tertiary" @click="cancelEdit">
-										{{ t('procest', 'Cancel') }}
+										{{ t('dossiq', 'Cancel') }}
 									</NcButton>
 								</div>
 							</div>
@@ -146,24 +146,24 @@
 				</div>
 
 				<p v-else class="results-tab__empty">
-					{{ t('procest', 'No result types defined yet.') }}
+					{{ t('dossiq', 'No result types defined yet.') }}
 				</p>
 
 				<!-- Add new result type form -->
 				<div class="results-tab__add">
-					<h4>{{ t('procest', 'Add Result Type') }}</h4>
+					<h4>{{ t('dossiq', 'Add Result Type') }}</h4>
 					<div class="add-form">
 						<div class="add-form__row">
 							<NcTextField
 								:modelValue="newForm.name"
-								:label="t('procest', 'Name *')"
+								:label="t('dossiq', 'Name *')"
 								class="add-form__field"
 								@update:modelValue="(v) => (newForm.name = v)" />
 						</div>
 						<div class="add-form__row">
 							<NcTextField
 								:modelValue="newForm.description"
-								:label="t('procest', 'Description')"
+								:label="t('dossiq', 'Description')"
 								class="add-form__field"
 								@update:modelValue="
 									(v) => (newForm.description = v)
@@ -172,7 +172,7 @@
 						<div class="add-form__row">
 							<div class="add-form__field">
 								<label class="field-label">{{
-									t('procest', 'Archive action')
+									t('dossiq', 'Archive action')
 								}}</label>
 								<NcCheckboxRadioSwitch
 									:modelValue="newForm.archivalAction"
@@ -182,7 +182,7 @@
 									@update:modelValue="
 										(v) => (newForm.archivalAction = v)
 									">
-									{{ t('procest', 'Retain') }}
+									{{ t('dossiq', 'Retain') }}
 								</NcCheckboxRadioSwitch>
 								<NcCheckboxRadioSwitch
 									:modelValue="newForm.archivalAction"
@@ -192,12 +192,12 @@
 									@update:modelValue="
 										(v) => (newForm.archivalAction = v)
 									">
-									{{ t('procest', 'Destroy') }}
+									{{ t('dossiq', 'Destroy') }}
 								</NcCheckboxRadioSwitch>
 							</div>
 							<NcTextField
 								:modelValue="newForm.archivalPeriod"
-								:label="t('procest', 'Retention period (e.g. P20Y)')"
+								:label="t('dossiq', 'Retention period (e.g. P20Y)')"
 								class="add-form__field"
 								@update:modelValue="
 									(v) => (newForm.archivalPeriod = v)
@@ -210,7 +210,7 @@
 							type="primary"
 							:disabled="addSaving"
 							@click="addResultType">
-							{{ t('procest', 'Add') }}
+							{{ t('dossiq', 'Add') }}
 						</NcButton>
 					</div>
 				</div>
@@ -317,7 +317,7 @@ export default {
 		async addResultType() {
 			this.addError = ''
 			if (!this.newForm.name || !this.newForm.name.trim()) {
-				this.addError = t('procest', 'Name is required')
+				this.addError = t('dossiq', 'Name is required')
 				return
 			}
 			this.addSaving = true
@@ -335,7 +335,7 @@ export default {
 			} else {
 				this.addError =
 					this.objectStore.getError('resultType')
-					|| t('procest', 'Failed to add result type')
+					|| t('dossiq', 'Failed to add result type')
 			}
 		},
 
@@ -360,7 +360,7 @@ export default {
 		async saveEdit() {
 			this.editError = ''
 			if (!this.editForm.name || !this.editForm.name.trim()) {
-				this.editError = t('procest', 'Name is required')
+				this.editError = t('dossiq', 'Name is required')
 				return
 			}
 			this.editSaving = true
@@ -379,7 +379,7 @@ export default {
 			} else {
 				this.editError =
 					this.objectStore.getError('resultType')
-					|| t('procest', 'Failed to save')
+					|| t('dossiq', 'Failed to save')
 			}
 		},
 
@@ -390,7 +390,7 @@ export default {
 		async deleteResultType(rt) {
 			if (
 				!confirm(
-					t('procest', 'Delete result type "{name}"?', { name: rt.name }),
+					t('dossiq', 'Delete result type "{name}"?', { name: rt.name }),
 				)
 			)
 				return
@@ -400,7 +400,7 @@ export default {
 			} else {
 				this.error =
 					this.objectStore.getError('resultType')
-					|| t('procest', 'Failed to delete result type')
+					|| t('dossiq', 'Failed to delete result type')
 			}
 		},
 	},

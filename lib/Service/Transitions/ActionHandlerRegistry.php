@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Action Handler Registry.
+ * Dossiq Action Handler Registry.
  *
  * Strategy-pattern registry mapping action `type` strings to the corresponding
  * ActionHandlerInterface implementations. Built-in handlers are injected via
@@ -10,7 +10,7 @@
  * itself does not need to know about them at compile time.
  *
  * @category Service
- * @package  OCA\Procest\Service\Transitions
+ * @package  OCA\Dossiq\Service\Transitions
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,12 +21,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Transitions;
+namespace OCA\Dossiq\Service\Transitions;
 
 /**
  * Registry of action handlers keyed by action type.

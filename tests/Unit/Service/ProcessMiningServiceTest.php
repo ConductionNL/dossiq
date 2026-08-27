@@ -9,7 +9,7 @@
  * shared `FakeTermijnStore` in-memory ObjectService fake.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,32 +20,32 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T04
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\ProcessMining\DwellTimeAnalyzer;
-use OCA\Procest\Service\ProcessMining\ProcessMiningDataLoader;
-use OCA\Procest\Service\ProcessMining\ThroughputTrendCalculator;
-use OCA\Procest\Service\ProcessMining\TransitionMatrixBuilder;
-use OCA\Procest\Service\ProcessMiningService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer;
+use OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader;
+use OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator;
+use OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder;
+use OCA\Dossiq\Service\ProcessMiningService;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Procest\Service\ProcessMiningService
+ * @covers \OCA\Dossiq\Service\ProcessMiningService
  *
- * @uses \OCA\Procest\Service\ProcessMining\DwellTimeAnalyzer
- * @uses \OCA\Procest\Service\ProcessMining\ProcessMiningDataLoader
- * @uses \OCA\Procest\Service\ProcessMining\ThroughputTrendCalculator
- * @uses \OCA\Procest\Service\ProcessMining\TransitionMatrixBuilder
- * @uses \OCA\Procest\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer
+ * @uses \OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader
+ * @uses \OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator
+ * @uses \OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class ProcessMiningServiceTest extends TestCase {
 	private FakeTermijnStore $objects;
@@ -61,7 +61,7 @@ class ProcessMiningServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'case_schema' => 'case',
 					'case_type_schema' => 'caseType',
 					'status_type_schema' => 'statusType',
@@ -331,21 +331,21 @@ class ProcessMiningServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testGetReportOrchestratesFullPayload(): void {
-		$this->objects->saveObject('procest', 'caseType', ['id' => 'ct-1', 'title' => 'Omgevingsvergunning']);
-		$this->objects->saveObject('procest', 'statusType', ['id' => 'st-intake', 'name' => 'Intake']);
-		$this->objects->saveObject('procest', 'statusType', ['id' => 'st-review', 'name' => 'Review']);
+		$this->objects->saveObject('dossiq', 'caseType', ['id' => 'ct-1', 'title' => 'Omgevingsvergunning']);
+		$this->objects->saveObject('dossiq', 'statusType', ['id' => 'st-intake', 'name' => 'Intake']);
+		$this->objects->saveObject('dossiq', 'statusType', ['id' => 'st-review', 'name' => 'Review']);
 
-		$this->objects->saveObject('procest', 'case', [
+		$this->objects->saveObject('dossiq', 'case', [
 			'id' => 'case-1',
 			'caseType' => 'ct-1',
 			'startDate' => '2026-06-01',
 			'endDate' => '2026-06-05',
 		]);
 
-		$this->objects->saveObject('procest', 'statusRecord', [
+		$this->objects->saveObject('dossiq', 'statusRecord', [
 			'id' => 'sr-1', 'case' => 'case-1', 'statusType' => 'st-intake', 'createdAt' => '2026-06-01T09:00:00+00:00',
 		]);
-		$this->objects->saveObject('procest', 'statusRecord', [
+		$this->objects->saveObject('dossiq', 'statusRecord', [
 			'id' => 'sr-2', 'case' => 'case-1', 'statusType' => 'st-review', 'createdAt' => '2026-06-02T09:00:00+00:00',
 		]);
 
@@ -366,10 +366,10 @@ class ProcessMiningServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testGetReportFiltersByCaseType(): void {
-		$this->objects->saveObject('procest', 'caseType', ['id' => 'ct-1', 'title' => 'Type A']);
-		$this->objects->saveObject('procest', 'caseType', ['id' => 'ct-2', 'title' => 'Type B']);
-		$this->objects->saveObject('procest', 'case', ['id' => 'case-1', 'caseType' => 'ct-1', 'endDate' => null]);
-		$this->objects->saveObject('procest', 'case', ['id' => 'case-2', 'caseType' => 'ct-2', 'endDate' => null]);
+		$this->objects->saveObject('dossiq', 'caseType', ['id' => 'ct-1', 'title' => 'Type A']);
+		$this->objects->saveObject('dossiq', 'caseType', ['id' => 'ct-2', 'title' => 'Type B']);
+		$this->objects->saveObject('dossiq', 'case', ['id' => 'case-1', 'caseType' => 'ct-1', 'endDate' => null]);
+		$this->objects->saveObject('dossiq', 'case', ['id' => 'case-2', 'caseType' => 'ct-2', 'endDate' => null]);
 
 		$report = $this->service->getReport(['caseType' => 'ct-1']);
 

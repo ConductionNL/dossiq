@@ -1,20 +1,20 @@
 <?php
 
 /**
- * Procest AI audit log.
+ * Dossiq AI audit log.
  *
  * The Algoritmeregister oversight trail: every AI suggestion, every human
  * accept/reject/modify, and every conversational assistant exchange is written
  * as an `ai_audit_entry_schema` object in OpenRegister, and read back — newest
  * first — for the oversight page and the CSV export.
  *
- * Split out of {@see \OCA\Procest\Service\AiService} so the write and the read
+ * Split out of {@see \OCA\Dossiq\Service\AiService} so the write and the read
  * resolve the same register/schema config in one class, and so a misconfigured
  * or unavailable audit sink degrades in exactly one place (warning + empty
  * result, never a throw that would 500 the oversight surface).
  *
  * @category Service
- * @package  OCA\Procest\Service\Ai
+ * @package  OCA\Dossiq\Service\Ai
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,7 +22,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -32,10 +32,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Ai;
+namespace OCA\Dossiq\Service\Ai;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;

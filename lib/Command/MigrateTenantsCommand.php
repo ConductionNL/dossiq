@@ -1,16 +1,16 @@
 <?php
 
 /**
- * Procest procest:migrate-tenants command.
+ * Dossiq dossiq:migrate-tenants command.
  *
- * One-shot, idempotent migration of legacy procest `tenant` schema objects onto
+ * One-shot, idempotent migration of legacy dossiq `tenant` schema objects onto
  * OpenRegister Organisations (`migrate-tenant-to-or-tenant`, ADR-022). Reads any
  * pre-existing `tenant` rows, projects each onto an OR Organisation (preserving
  * the row UUID + lifecycle status), and reports a migrated/skipped/failed
  * summary. Safe to re-run — Organisations whose slug already exists are skipped.
  *
  * @category Command
- * @package  OCA\Procest\Command
+ * @package  OCA\Dossiq\Command
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,22 +21,22 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Command;
+namespace OCA\Dossiq\Command;
 
-use OCA\Procest\Service\TenantMigrationService;
+use OCA\Dossiq\Service\TenantMigrationService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Migrate legacy procest `tenant` objects to OR Organisations.
+ * Migrate legacy dossiq `tenant` objects to OR Organisations.
  *
  * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
  */
@@ -60,8 +60,8 @@ class MigrateTenantsCommand extends Command {
 	 * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
 	 */
 	protected function configure(): void {
-		$this->setName(name: 'procest:migrate-tenants')
-			->setDescription('Migrate legacy procest tenant objects to OpenRegister Organisations (idempotent).');
+		$this->setName(name: 'dossiq:migrate-tenants')
+			->setDescription('Migrate legacy dossiq tenant objects to OpenRegister Organisations (idempotent).');
 	}//end configure()
 
 	/**
@@ -84,7 +84,7 @@ class MigrateTenantsCommand extends Command {
 			return Command::FAILURE;
 		}
 
-		$output->writeln('<info>procest:migrate-tenants done</info>');
+		$output->writeln('<info>dossiq:migrate-tenants done</info>');
 		$output->writeln('  total    = ' . $summary['total']);
 		$output->writeln('  migrated = ' . $summary['migrated']);
 		$output->writeln('  skipped  = ' . $summary['skipped']);

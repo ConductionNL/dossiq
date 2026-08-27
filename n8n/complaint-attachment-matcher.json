@@ -1,10 +1,10 @@
 {
-  "name": "Procest — Complaint Attachment Matcher",
+  "name": "Dossiq — Complaint Attachment Matcher",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "procest/complaint-attachment-incoming",
+        "path": "dossiq/complaint-attachment-incoming",
         "options": {}
       },
       "id": "webhook-trigger",
@@ -48,7 +48,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.PROCEST_BASE_URL || 'http://nextcloud' }}/index.php/apps/procest/api/complaints/{{ $json.matchKlachtNummer }}/attachments",
+        "url": "={{ $env.DOSSIQ_BASE_URL || 'http://nextcloud' }}/index.php/apps/dossiq/api/complaints/{{ $json.matchKlachtNummer }}/attachments",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpBasicAuth",
         "sendHeaders": true,
@@ -70,7 +70,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.PROCEST_BASE_URL || 'http://nextcloud' }}/index.php/apps/procest/api/complaints",
+        "url": "={{ $env.DOSSIQ_BASE_URL || 'http://nextcloud' }}/index.php/apps/dossiq/api/complaints",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpBasicAuth",
         "sendHeaders": true,
@@ -107,7 +107,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.PROCEST_BASE_URL || 'http://nextcloud' }}/index.php/apps/procest/api/complaints/intake-review",
+        "url": "={{ $env.DOSSIQ_BASE_URL || 'http://nextcloud' }}/index.php/apps/dossiq/api/complaints/intake-review",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpBasicAuth",
         "sendHeaders": true,
@@ -154,7 +154,7 @@
   },
   "meta": {
     "templateCredsSetupCompleted": false,
-    "owner": "procest",
+    "owner": "dossiq",
     "spec": "openspec/changes/complaint-management/specs/complaint-management/spec.md#attachment-matching",
     "purpose": "Webhook-triggered matcher that links an incoming email's attachments to an existing complaint by KLA-YYYY-NNNN subject pattern (primary) or sender email match against open complaints (fallback)."
   }

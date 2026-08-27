@@ -1,4 +1,4 @@
-# Procest: Design References & Dashboard Wireframes
+# Dossiq: Design References & Dashboard Wireframes
 
 ## 1. Design Inspiration Sources
 
@@ -74,7 +74,7 @@ Features not currently in FEATURES.md but commonly present in case management da
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│  PROCEST                                           [Search...] [+] │
+│  DOSSIQ                                           [Search...] [+] │
 ├──────────┬──────────┬──────────┬──────────┬──────────┬──────────────┤
 │ Dashboard│  Cases   │  Tasks   │ Decisions│  My Work │   Settings   │
 ├──────────┴──────────┴──────────┴──────────┴──────────┴──────────────┤
@@ -136,7 +136,7 @@ Features not currently in FEATURES.md but commonly present in case management da
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│  PROCEST > Cases                               [+ New Case] [Filter]│
+│  DOSSIQ > Cases                               [+ New Case] [Filter]│
 ├──────────┬──────────┬──────────┬──────────┬──────────┬──────────────┤
 │ Dashboard│  Cases   │  Tasks   │ Decisions│  My Work │   Settings   │
 ├──────────┴──────────┴──────────┴──────────┴──────────┴──────────────┤
@@ -169,7 +169,7 @@ Features not currently in FEATURES.md but commonly present in case management da
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│  PROCEST > Cases > #2024-042 Bouwvergunning Keizersgracht  [···]   │
+│  DOSSIQ > Cases > #2024-042 Bouwvergunning Keizersgracht  [···]   │
 ├──────────────────────────────────────────────────────────────────────┤
 │                                                                     │
 │  STATUS TIMELINE                                                    │
@@ -273,7 +273,7 @@ Features not currently in FEATURES.md but commonly present in case management da
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│  PROCEST > Tasks                       [Board | List]  [+ New Task] │
+│  DOSSIQ > Tasks                       [Board | List]  [+ New Task] │
 ├──────────┬──────────┬──────────┬──────────┬──────────┬──────────────┤
 │ Dashboard│  Cases   │  Tasks   │ Decisions│  My Work │   Settings   │
 ├──────────┴──────────┴──────────┴──────────┴──────────┴──────────────┤
@@ -339,7 +339,7 @@ Features not currently in FEATURES.md but commonly present in case management da
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│  PROCEST > My Work                               [Filter ▾] [Sort] │
+│  DOSSIQ > My Work                               [Filter ▾] [Sort] │
 ├──────────┬──────────┬──────────┬──────────┬──────────┬──────────────┤
 │ Dashboard│  Cases   │  Tasks   │ Decisions│  My Work │   Settings   │
 ├──────────┴──────────┴──────────┴──────────┴──────────┴──────────────┤
@@ -407,7 +407,7 @@ Features not currently in FEATURES.md but commonly present in case management da
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│  Administration > Procest                                           │
+│  Administration > Dossiq                                           │
 ├──────────────────────────────────────────────────────────────────────┤
 │                                                                     │
 │  ┌──────────────────────────────────────────────────────────────┐  │
@@ -449,7 +449,7 @@ Features not currently in FEATURES.md but commonly present in case management da
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│  Administration > Procest > Omgevingsvergunning            [Save]   │
+│  Administration > Dossiq > Omgevingsvergunning            [Save]   │
 ├──────────────────────────────────────────────────────────────────────┤
 │                                                                     │
 │  ┌─────────┬──────────┬──────────┬──────────┬──────────┬────────┐  │

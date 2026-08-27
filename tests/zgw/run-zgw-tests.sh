@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# ZGW Newman Test Runner for Procest
+# ZGW Newman Test Runner for Dossiq
 #
-# Runs VNG ZGW Postman test collections against Procest's ZGW API endpoints.
+# Runs VNG ZGW Postman test collections against Dossiq's ZGW API endpoints.
 # Can run on the host (delegates to Docker container) or inside the container directly.
 #
 # Usage:
@@ -76,7 +76,7 @@ if [ ! -f /.dockerenv ] && [ -z "${NEWMAN_INSIDE_CONTAINER:-}" ]; then
     echo -e "${YELLOW}Running on host — delegating to Docker container...${NC}"
 
     CONTAINER_NAME="${CONTAINER_NAME:-nextcloud}"
-    CONTAINER_APP_DIR="/var/www/html/custom_apps/procest"
+    CONTAINER_APP_DIR="/var/www/html/custom_apps/dossiq"
 
     # Check if container is running
     if ! docker inspect "$CONTAINER_NAME" &>/dev/null; then

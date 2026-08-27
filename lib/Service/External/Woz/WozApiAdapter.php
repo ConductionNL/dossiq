@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Live Procest WOZ adapter (Kadaster Haal Centraal WOZ Bevragen API).
+ * Live Dossiq WOZ adapter (Kadaster Haal Centraal WOZ Bevragen API).
  *
  * Calls the Kadaster Haal Centraal WOZ Bevragen API (LV-WOZ) — the
  * authoritative, key-gated property-valuation channel restricted to WOZ
@@ -31,13 +31,13 @@
  * BAG/BRK/BRP/KvK adapters' fail-soft contract.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Woz
+ * @package  OCA\Dossiq\Service\External\Woz
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://kadaster.github.io/WOZ-bevragen/
  *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
@@ -48,9 +48,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Woz;
+namespace OCA\Dossiq\Service\External\Woz;
 
-use OCA\Procest\Service\External\IntegrationMode;
+use OCA\Dossiq\Service\External\IntegrationMode;
 use OCP\Http\Client\IClientService;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -192,7 +192,7 @@ class WozApiAdapter implements WozAdapterInterface {
 			return $this->foundSearchResult(wozObjecten: $wozObjecten);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest WOZ search lookup failed',
+				'Dossiq WOZ search lookup failed',
 				['query' => $query, 'error' => $e->getMessage(), 'context' => $context]
 			);
 
@@ -295,7 +295,7 @@ class WozApiAdapter implements WozAdapterInterface {
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest WOZ object lookup failed',
+				'Dossiq WOZ object lookup failed',
 				['wozobjectnummer' => $wozobjectnummer, 'error' => $e->getMessage(), 'context' => $context]
 			);
 
@@ -339,7 +339,7 @@ class WozApiAdapter implements WozAdapterInterface {
 	 */
 	private function errorResult(int $status, array $context): WozLookupResult {
 		$this->logger->warning(
-			'Procest WOZ lookup returned a non-success status',
+			'Dossiq WOZ lookup returned a non-success status',
 			['status' => $status, 'context' => $context]
 		);
 

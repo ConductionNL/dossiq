@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Procest WOO Category Mapper
+ * Dossiq WOO Category Mapper
  *
- * Maps a procest WOO decision onto OpenCatalogi's DIWOO informatiecategorie
+ * Maps a dossiq WOO decision onto OpenCatalogi's DIWOO informatiecategorie
  * vocabulary (`OCA\OpenCatalogi\Service\TooiVocabularyService::INFORMATIECATEGORIEEN`
  * at `origin/development` HEAD in the opencatalogi repo). The real DIWOO
  * vocabulary has 17 categories, not the 11 originally assumed for this
@@ -14,7 +14,7 @@
  * `subsidie`-domain decisions) without touching {@see WooPublicationService}.
  *
  * @category Service
- * @package  OCA\Procest\Service\WooPublication
+ * @package  OCA\Dossiq\Service\WooPublication
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -30,10 +30,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\WooPublication;
+namespace OCA\Dossiq\Service\WooPublication;
 
 /**
- * Maps procest WOO decisions to a DIWOO informatiecategorie.
+ * Maps dossiq WOO decisions to a DIWOO informatiecategorie.
  *
  * @psalm-suppress UnusedClass
  *

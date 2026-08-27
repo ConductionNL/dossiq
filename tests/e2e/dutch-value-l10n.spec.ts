@@ -1,8 +1,8 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The Dutch→English value migration translated procest's enum values, and the
+ * The Dutch→English value migration translated dossiq's enum values, and the
  * l10n files carry the Dutch word back so a Dutch-rendered UI still reads
  * correctly. Nothing tested that end to end, and the failure is quiet: a Dutch
  * user simply sees English.
@@ -15,7 +15,7 @@
  *
  * TWO TRAPS THIS SPEC IS BUILT AROUND, both hit while writing it:
  *
- *   1. `/apps/procest/l10n/nl.js` returns HTTP 200 — and serves the SPA SHELL.
+ *   1. `/apps/dossiq/l10n/nl.js` returns HTTP 200 — and serves the SPA SHELL.
  *      Nextcloud answers any app sub-path with the app's HTML. A `res.ok`
  *      check passes on that HTML. The real path comes from
  *      `OC.appswebroots`, which is how Nextcloud itself resolves it and which
@@ -48,7 +48,7 @@ test.describe('Dutch value vocabulary survives in l10n', () => {
 	test('the runtime nl bundle translates each migrated value back to Dutch', async ({
 		page,
 	}) => {
-		await page.goto('/apps/procest/')
+		await page.goto('/apps/dossiq/')
 		await page.waitForFunction(
 			() =>
 				typeof (window as unknown as { OC?: { appswebroots?: unknown } }).OC
@@ -63,14 +63,14 @@ test.describe('Dutch value vocabulary survives in l10n', () => {
 					OC: { appswebroots: Record<string, string> }
 				}
 			).OC
-			// Resolve the way Nextcloud does. `/apps/procest/l10n/nl.js` answers
+			// Resolve the way Nextcloud does. `/apps/dossiq/l10n/nl.js` answers
 			// 200 with the SPA shell on a custom_apps install.
-			const root = oc.appswebroots.procest
+			const root = oc.appswebroots.dossiq
 			const res = await fetch(`${root}/l10n/nl.js`)
 			return { root, ok: res.ok, body: res.ok ? await res.text() : '' }
 		})
 
-		expect(bundle.root, 'procest must be in OC.appswebroots').toBeTruthy()
+		expect(bundle.root, 'dossiq must be in OC.appswebroots').toBeTruthy()
 		expect(bundle.ok, `fetching ${bundle.root}/l10n/nl.js failed`).toBeTruthy()
 
 		// The shell guard: HTML is not a translation bundle, and it arrives with

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Subsidieregister Exporter.
+ * Dossiq Subsidieregister Exporter.
  *
  * Builds the Wet open overheid (art. 3.3 lid 2 onder f) subsidieregister
  * feed (REQ-SUB-006): a structured, JSON-LD-annotated list of granted and
@@ -11,7 +11,7 @@
  * unit-tested; the data is supplied by the calling controller/service.
  *
  * @category Service
- * @package  OCA\Procest\Service\Subsidie
+ * @package  OCA\Dossiq\Service\Subsidie
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,12 +22,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Subsidie;
+namespace OCA\Dossiq\Service\Subsidie;
 
 /**
  * Wet open overheid subsidieregister feed builder.

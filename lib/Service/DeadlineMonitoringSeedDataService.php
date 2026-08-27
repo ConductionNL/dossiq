@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Termijnbewaking Seed Data Service.
+ * Dossiq Termijnbewaking Seed Data Service.
  *
  * Seeds the three demo `TermijnDefinitie` rows
  * (Omgevingsvergunning-regulier 56d, Wmo-aanvraag 42d, Woo-verzoek 28d
@@ -10,7 +10,7 @@
  * seed is idempotent: an existing definition with the same id is skipped.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,16 +21,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-01-schemas-and-seed/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -90,7 +90,7 @@ class DeadlineMonitoringSeedDataService {
 			existingIds: $existingIds,
 		);
 
-		$this->logger->info('Procest termijnbewaking: seed complete', $counts);
+		$this->logger->info('Dossiq termijnbewaking: seed complete', $counts);
 
 		return array_merge(['success' => true], $counts);
 	}//end seed()
@@ -127,7 +127,7 @@ class DeadlineMonitoringSeedDataService {
 				$counts['definities']++;
 			} catch (\Throwable $e) {
 				$this->logger->warning(
-					'Procest termijnbewaking seed: row failed',
+					'Dossiq termijnbewaking seed: row failed',
 					['id' => $rowId, 'error' => $e->getMessage()]
 				);
 			}

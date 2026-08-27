@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest KCC Contact Controller
+ * Dossiq KCC Contact Controller
  *
  * REST endpoints for KCC contact moments and callback requests. All endpoints
  * require an authenticated user; reads/writes are scoped to the calling agent
@@ -9,7 +9,7 @@
  * across agents.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,18 +20,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Kcc\CallbackService;
-use OCA\Procest\Service\Kcc\ContactMomentService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Kcc\CallbackService;
+use OCA\Dossiq\Service\Kcc\ContactMomentService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

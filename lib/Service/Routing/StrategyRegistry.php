@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Strategy Registry
+ * Dossiq Strategy Registry
  *
  * Holds the built-in routing strategies (single-role, or-set, hierarchical,
  * round-robin, least-loaded) and exposes lookup by strategy name. Rules
@@ -9,7 +9,7 @@
  * the admin UI can block saving and the resolver can fail loudly.
  *
  * @category Service
- * @package  OCA\Procest\Service\Routing
+ * @package  OCA\Dossiq\Service\Routing
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -20,18 +20,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Routing;
+namespace OCA\Dossiq\Service\Routing;
 
-use OCA\Procest\Service\Routing\Strategy\HierarchicalStrategy;
-use OCA\Procest\Service\Routing\Strategy\LeastLoadedStrategy;
-use OCA\Procest\Service\Routing\Strategy\OrSetStrategy;
-use OCA\Procest\Service\Routing\Strategy\RoundRobinStrategy;
-use OCA\Procest\Service\Routing\Strategy\SingleRoleStrategy;
+use OCA\Dossiq\Service\Routing\Strategy\HierarchicalStrategy;
+use OCA\Dossiq\Service\Routing\Strategy\LeastLoadedStrategy;
+use OCA\Dossiq\Service\Routing\Strategy\OrSetStrategy;
+use OCA\Dossiq\Service\Routing\Strategy\RoundRobinStrategy;
+use OCA\Dossiq\Service\Routing\Strategy\SingleRoleStrategy;
 
 /**
  * Registry of routing strategies.

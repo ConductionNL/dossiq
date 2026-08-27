@@ -8,7 +8,7 @@
  * Self-skips via class_exists() guard when the real class is present.
  *
  * @category Test
- * @package  OCA\Procest\Tests\Stubs\Event
+ * @package  OCA\Dossiq\Tests\Stubs\Event
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.

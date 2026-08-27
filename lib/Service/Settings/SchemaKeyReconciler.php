@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest schema-key reconciler.
+ * Dossiq schema-key reconciler.
  *
  * Keeps every `*_schema` appconfig key pointing at the LIVE OpenRegister schema
  * id, from two directions: the ids that come back in a ConfigurationService
@@ -13,10 +13,10 @@
  * never written on a fresh deploy of an existing instance, and the status-name
  * lookup and the WorkflowBoard silently broke.
  *
- * Split out of {@see \OCA\Procest\Service\SettingsService}.
+ * Split out of {@see \OCA\Dossiq\Service\SettingsService}.
  *
  * @category Service
- * @package  OCA\Procest\Service\Settings
+ * @package  OCA\Dossiq\Service\Settings
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,7 +24,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -34,9 +34,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Settings;
+namespace OCA\Dossiq\Service\Settings;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -68,7 +68,7 @@ class SchemaKeyReconciler {
 	/**
 	 * Reconcile every `*_schema` appconfig key directly from OpenRegister.
 	 *
-	 * For each schema slug Procest knows about, resolves the LIVE schema ID via
+	 * For each schema slug Dossiq knows about, resolves the LIVE schema ID via
 	 * OpenRegister's SchemaMapper (slug-aware `find()`) and writes the matching
 	 * appconfig key. Fully idempotent — a key that already holds the correct ID
 	 * is left untouched — so it is safe to call on every install/upgrade and
@@ -94,7 +94,7 @@ class SchemaKeyReconciler {
 		}
 
 		$this->logger->info(
-			'Procest: Reconciled schema config keys from OpenRegister',
+			'Dossiq: Reconciled schema config keys from OpenRegister',
 			['written' => $written]
 		);
 
@@ -122,7 +122,7 @@ class SchemaKeyReconciler {
 		}
 
 		$this->logger->info(
-			'Procest: Auto-configuration complete',
+			'Dossiq: Auto-configuration complete',
 			['configuredSchemas' => $configuredCount]
 		);
 
@@ -145,7 +145,7 @@ class SchemaKeyReconciler {
 			$registerId = (string)$register->getId();
 			$this->appConfig->setValueString(Application::APP_ID, 'register', $registerId);
 			$this->logger->info(
-				'Procest: Auto-configured register ID',
+				'Dossiq: Auto-configured register ID',
 				['registerId' => $registerId]
 			);
 			return;
@@ -175,7 +175,7 @@ class SchemaKeyReconciler {
 		$this->writeSchemaKey(slug: (string)$slug, configKey: $configKey, schemaId: $schemaId);
 
 		$this->logger->debug(
-			'Procest: Auto-configured schema',
+			'Dossiq: Auto-configured schema',
 			[
 				'slug' => $slug,
 				'configKey' => $configKey,
@@ -194,7 +194,7 @@ class SchemaKeyReconciler {
 	 *
 	 * @param object $schemaMapper The OpenRegister SchemaMapper.
 	 * @param string $slug The schema slug (e.g. 'caseType').
-	 * @param string $configKey The Procest appconfig key to write.
+	 * @param string $configKey The Dossiq appconfig key to write.
 	 *
 	 * @return int 1 when the key was (re)written, 0 otherwise.
 	 *
@@ -258,7 +258,7 @@ class SchemaKeyReconciler {
 			return $this->container->get('OCA\OpenRegister\Db\SchemaMapper');
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: Could not access OpenRegister SchemaMapper for reconcile',
+				'Dossiq: Could not access OpenRegister SchemaMapper for reconcile',
 				['exception' => $e->getMessage()]
 			);
 			return null;

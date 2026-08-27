@@ -8,7 +8,7 @@
  * the anonymous, no-ObjectService, unconfigured and empty-list paths.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,10 +21,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\ManifestController;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Controller\ManifestController;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -61,7 +61,7 @@ class FakeCaseTypeObjectService {
 /**
  * Unit tests for ManifestController.
  *
- * @covers \OCA\Procest\Controller\ManifestController
+ * @covers \OCA\Dossiq\Controller\ManifestController
  */
 class ManifestControllerTest extends TestCase {
 
@@ -100,7 +100,7 @@ class ManifestControllerTest extends TestCase {
 		$this->userSession->method('getUser')->willReturn($user);
 
 		$this->controller = new ManifestController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			settingsService: $this->settingsService,
 			userSession: $this->userSession,
@@ -122,7 +122,7 @@ class ManifestControllerTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'case_type_schema' => 'caseType',
 					default => '',
 				};
@@ -175,7 +175,7 @@ class ManifestControllerTest extends TestCase {
 		$userSession->method('getUser')->willReturn(null);
 
 		$controller = new ManifestController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			settingsService: $this->settingsService,
 			userSession: $userSession,

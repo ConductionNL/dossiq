@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest MapTileService
+ * Dossiq MapTileService
  *
  * Computes the tile-list manifest the PWA service worker pre-downloads for
  * offline-map rendering during field inspections. Each call returns the
@@ -15,7 +15,7 @@
  * fetch ahead of time and can estimate the data volume.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,14 +24,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#Task-6
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
 

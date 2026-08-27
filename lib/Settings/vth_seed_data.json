@@ -1,5 +1,5 @@
 {
-  "description": "VTH (Vergunningen, Toezicht, Handhaving) seed data for Procest case types, status types, role types, document types, property definitions, and inspection checklists. Imported idempotently via repair step.",
+  "description": "VTH (Vergunningen, Toezicht, Handhaving) seed data for Dossiq case types, status types, role types, document types, property definitions, and inspection checklists. Imported idempotently via repair step.",
   "version": "1.0.0",
   "caseTypes": [
     {
