@@ -1,6 +1,6 @@
 {
 	"$schema": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"dependencies": [
 		"openregister"
 	],
@@ -28,6 +28,25 @@
 				"title": "Bezwaar & Beroep voorbeelddata laden",
 				"action": "seed",
 				"required": false
+			},
+			{
+				"id": "dwangsom-secret",
+				"type": "config-fields",
+				"title": "Dwangsom callback signing secret",
+				"required": false,
+				"configKeys": [
+					"dwangsom_callback_secret"
+				],
+				"schema": {
+					"type": "object",
+					"properties": {
+						"dwangsom_callback_secret": {
+							"type": "string",
+							"title": "Callback signing secret",
+							"description": "Shared secret the payment provider signs its dwangsom payout callbacks with. Until it is set, DwangsomPaymentCallbackController cannot verify that a callback really came from the provider. Only shown while the dwangsom payout integration is configured."
+						}
+					}
+				}
 			},
 			{
 				"id": "done",
@@ -95,6 +114,42 @@
 							"capture": {
 								"caseId": ":id"
 							}
+						}
+					},
+					{
+						"id": "see-case-types",
+						"sinceVersion": "1.2.0",
+						"placement": "right",
+						"optional": true,
+						"allowManualNext": true,
+						"title": "Where case types come from",
+						"body": "Every case follows a case type — its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look; you do not need to make one, 88 ship with the app.",
+						"task": "Open Case types in the menu",
+						"target": {
+							"kind": "nav-item",
+							"ref": "CaseTypesMenu"
+						},
+						"advanceOn": {
+							"type": "route-match",
+							"route": "CaseTypes"
+						}
+					},
+					{
+						"id": "see-flows",
+						"sinceVersion": "1.2.0",
+						"placement": "right",
+						"optional": true,
+						"allowManualNext": true,
+						"title": "Where the automation lives",
+						"body": "Flows are what happens without anyone clicking: a deadline that warns before it passes, a confirmation that goes out on submission. This is where you read and edit them — nothing to build now.",
+						"task": "Open Flows in the menu",
+						"target": {
+							"kind": "nav-item",
+							"ref": "FlowsMenu"
+						},
+						"advanceOn": {
+							"type": "route-match",
+							"route": "Flows"
 						}
 					},
 					{
@@ -2926,25 +2981,6 @@
 						"key": "isDefault"
 					}
 				],
-				"showViewAction": false,
-				"actions": [
-					{
-						"id": "view",
-						"label": "View",
-						"icon": "EyeOutline",
-						"handler": "navigate",
-						"route": "ParafeerrouteDetail",
-						"type": "handler"
-					},
-					{
-						"key": "edit",
-						"type": "handler"
-					},
-					{
-						"key": "delete",
-						"type": "handler"
-					}
-				],
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true
@@ -2979,29 +3015,6 @@
 					},
 					{
 						"key": "active"
-					}
-				],
-				"showViewAction": false,
-				"actions": [
-					{
-						"id": "view",
-						"label": "View",
-						"icon": "EyeOutline",
-						"handler": "navigate",
-						"route": "WmsLayerDetail",
-						"type": "handler"
-					},
-					{
-						"key": "create",
-						"type": "handler"
-					},
-					{
-						"key": "edit",
-						"type": "handler"
-					},
-					{
-						"key": "delete",
-						"type": "handler"
 					}
 				],
 				"sidebar": {
@@ -3241,20 +3254,6 @@
 					"type",
 					"contactEmail",
 					"active"
-				],
-				"showViewAction": false,
-				"actions": [
-					"create",
-					"edit",
-					"delete",
-					{
-						"id": "view",
-						"label": "View",
-						"icon": "EyeOutline",
-						"handler": "navigate",
-						"route": "PartnerDetail",
-						"type": "handler"
-					}
 				],
 				"sidebar": {
 					"enabled": true,
@@ -3502,20 +3501,6 @@
 					"isActive",
 					"updatedAt"
 				],
-				"showViewAction": false,
-				"actions": [
-					"create",
-					"edit",
-					"delete",
-					{
-						"id": "view",
-						"label": "View",
-						"icon": "EyeOutline",
-						"handler": "navigate",
-						"route": "WorkflowDefinitionDetail",
-						"type": "handler"
-					}
-				],
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true
@@ -3725,18 +3710,6 @@
 					"version",
 					"active",
 					"createdAt"
-				],
-				"showViewAction": false,
-				"actions": [
-					"create",
-					{
-						"id": "view",
-						"label": "View",
-						"icon": "EyeOutline",
-						"handler": "navigate",
-						"route": "LhsMatrixDetail",
-						"type": "handler"
-					}
 				],
 				"sidebar": {
 					"enabled": true,
@@ -4545,21 +4518,10 @@
 					"validFrom",
 					"validUntil"
 				],
-				"showViewAction": false,
-				"actions": [
-					"create",
-					"edit",
-					"delete",
-					{
-						"id": "view",
-						"label": "View",
-						"icon": "EyeOutline",
-						"handler": "navigate",
-						"route": "CaseTypeDetail",
-						"type": "handler"
-					}
-				],
-				"sidebar": { "enabled": true, "showMetadata": true },
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
 				"documentationUrl": "https://procest.conduction.nl"
 			},
 			"_note": "A case type is the blueprint every case is governed by — lifecycle, deadlines, classification, the workflow that drives it — and `case.caseType` references it. It had no surface at all: the original `CaseTypesMenu` pointed at the in-app `/settings` page, which page-topology-cleanup B1 retired for mounting AdminRoot through the in-app router (ADR-004), and no replacement was ever built. The capability went with the page and only its stale `settingsSection` id was left behind. WorkflowDefinitionDetail's own note still says cases are 'reached through their caseType index', naming this page. Restored as an ordinary schema-driven index rather than by reviving the retired settings route."
@@ -4572,7 +4534,10 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "caseType",
-				"sidebar": { "enabled": true, "showMetadata": true },
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
 				"documentationUrl": "https://procest.conduction.nl"
 			},
 			"_note": "The case-type blueprint: identity and classification, the processing deadline and extension rules (AWB terms), the pinned workflowDefinition, sub-case types and decision types. Cases of this type are reached from the Cases index filtered by caseType rather than duplicated here."
