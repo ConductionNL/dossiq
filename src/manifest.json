@@ -280,7 +280,7 @@
 		{
 			"id": "CaseTypesMenu",
 			"label": "Case types",
-			"icon": "ShapeOutline",
+			"icon": "FormatListBulletedType",
 			"route": "CaseTypes",
 			"section": "settings",
 			"order": 90
@@ -4580,17 +4580,17 @@
 		{
 			"id": "Flows",
 			"route": "/flows",
-			"type": "custom",
+			"type": "flows",
 			"title": "Flows",
-			"component": "FlowsIndex",
+			"config": { "app": "dossiq" },
 			"_note": "ADR-110 Decision 4: a flow is app-specific — a dossiq flow operates on cases — so the authoring surface lives here rather than behind a deep link to OpenRegister's list. Custom page rather than type:index because a flow lives in the shared native flow store, not a register/schema, so the object-backed index cannot address it. The body is CnFlowIndexPage semantics scoped app=\"dossiq\" — the same store OpenRegister, integriq and hermiq use, so list/status semantics stay identical fleet-wide. Mirrors openconnector/src/manifest.json:Flows."
 		},
 		{
 			"id": "FlowDetail",
 			"route": "/flows/:id",
-			"type": "custom",
+			"type": "flow-detail",
 			"title": "Flow",
-			"component": "FlowDetailPage",
+			"config": { "app": "dossiq" },
 			"sidebarComponent": "FlowDetailSidebar",
 			"_note": "The shared CnFlowDetail node/edge canvas over the same native flow store OpenRegister and hermiq use — not an app-owned editor. Controls live in the NcAppSidebar (sidebarComponent) so the canvas gets full width; canvas and sidebar share useFlowStore. Mirrors openregister/src/manifest.json:flowDetail."
 		}
