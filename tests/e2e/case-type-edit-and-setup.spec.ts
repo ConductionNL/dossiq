@@ -473,4 +473,48 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 			)
 		}
 	})
+
+	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	test('both new stops can actually anchor to their nav item', async ({
+		page,
+	}) => {
+		// The three tests above prove the steps are DECLARED and reach the
+		// built bundle. None of them proves a user ever sees one, and the
+		// difference is not academic:
+		//
+		//   CnWalkthrough.armStep()
+		//     const el = this.resolveTarget(this.step)
+		//     if (!el) { if (this.step.optional) { this.wt.skip(); return } }
+		//
+		// An OPTIONAL step whose target is absent is skipped outright — no
+		// console error, no stall, nothing on screen. And `optional: true` is
+		// exactly what keeps these two stops from forcing authorship, so the
+		// friendly authoring choice is the one that fails silently. The step
+		// counter is no help either: skip() advances past the step and the
+		// total stays 7, so "/ 7" reads identical either way.
+		//
+		// So assert the thing resolveTarget() actually queries. Both stops
+		// target nav items in the SETTINGS section, and CnAppNav emitted
+		// `data-cn-route` on its main/child/footer loops but not the settings
+		// one until nextcloud-vue#811 — which is precisely how both steps
+		// could ship fleet-wide and reach nobody.
+		await page.goto('/index.php/apps/dossiq')
+		await expect(page.locator('.app-navigation, #app-navigation')).toBeVisible({
+			timeout: 20000,
+		})
+
+		for (const route of ['CaseTypes', 'Flows']) {
+			// The exact selector from CnWalkthrough.resolveTarget(), keyed on
+			// the ROUTE (not the menu id — the attribute is set from
+			// `item.route`).
+			await expect(
+				page.locator(`[data-cn-route="${route}"]`),
+				`no [data-cn-route="${route}"] anchor: the "${route}" stop would be `
+					+ 'silently skipped for every user. Check that CnAppNav renders '
+					+ 'data-cn-route on the SETTINGS menu loop (nextcloud-vue#811) and '
+					+ "that this app's package-lock.json pins a library new enough to "
+					+ 'contain it.',
+			).toHaveCount(1)
+		}
+	})
 })
