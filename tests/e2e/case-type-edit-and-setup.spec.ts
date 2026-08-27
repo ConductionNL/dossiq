@@ -58,9 +58,11 @@ async function openFirstRowMenu(page: Page) {
 async function requestToken(page: Page): Promise<string> {
 	return await page.evaluate(() => {
 		const w = window as unknown as { OC?: { requestToken?: string } }
-		return w.OC?.requestToken
+		return (
+			w.OC?.requestToken
 			|| document.head.getAttribute('data-requesttoken')
 			|| ''
+		)
 	})
 }
 
@@ -77,7 +79,7 @@ async function readSetupStatus(page: Page): Promise<any> {
 			headers: { Accept: 'application/json', requesttoken: tok },
 		})
 		const body = await res.json().catch(() => null)
-		return (body && body.steps) ? body : null
+		return body && body.steps ? body : null
 	}, token)
 }
 
@@ -94,8 +96,9 @@ async function readSetupStatus(page: Page): Promise<any> {
  */
 async function mainBundleSource(page: Page): Promise<string> {
 	return await page.evaluate(async () => {
-		const el = [...document.querySelectorAll('script[src]')]
-			.find((s) => /dossiq-main\.js/.test(s.getAttribute('src') || ''))
+		const el = [...document.querySelectorAll('script[src]')].find((s) =>
+			/dossiq-main\.js/.test(s.getAttribute('src') || ''),
+		)
 		if (!el) return ''
 		const res = await fetch(el.getAttribute('src') as string)
 		return res.ok ? await res.text() : ''
@@ -152,7 +155,9 @@ test.describe('Case types — Edit goes to the detail page, not a modal', () => 
 
 		await menu.getByText('Edit', { exact: true }).click()
 
-		await expect(page).toHaveURL(/\/settings\/case-types\/[^/]+$/, { timeout: 20000 })
+		await expect(page).toHaveURL(/\/settings\/case-types\/[^/]+$/, {
+			timeout: 20000,
+		})
 	})
 
 	// @e2e openspec/changes/case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
@@ -164,10 +169,14 @@ test.describe('Case types — Edit goes to the detail page, not a modal', () => 
 		const menu = await openFirstRowMenu(page)
 
 		await menu.getByText('Edit', { exact: true }).click()
-		await expect(page).toHaveURL(/\/settings\/case-types\/[^/]+$/, { timeout: 20000 })
+		await expect(page).toHaveURL(/\/settings\/case-types\/[^/]+$/, {
+			timeout: 20000,
+		})
 
 		// A dialog may exist on the detail page only if the user asks for it.
-		await expect(page.getByRole('dialog').filter({ hasText: 'Edit Case Type' })).toHaveCount(0)
+		await expect(
+			page.getByRole('dialog').filter({ hasText: 'Edit Case Type' }),
+		).toHaveCount(0)
 	})
 })
 
@@ -183,9 +192,13 @@ test.describe('Case type detail — the record can be edited there', () => {
 		await dismissSupportDialog(page)
 		const menu = await openFirstRowMenu(page)
 		await menu.getByText('View', { exact: true }).click()
-		await expect(page).toHaveURL(/\/settings\/case-types\/[^/]+$/, { timeout: 20000 })
+		await expect(page).toHaveURL(/\/settings\/case-types\/[^/]+$/, {
+			timeout: 20000,
+		})
 
-		await expect(page.locator('[data-testid="cn-detail-page-edit"]')).toBeVisible({ timeout: 20000 })
+		await expect(
+			page.locator('[data-testid="cn-detail-page-edit"]'),
+		).toBeVisible({ timeout: 20000 })
 	})
 
 	// @e2e openspec/changes/case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
@@ -194,7 +207,9 @@ test.describe('Case type detail — the record can be edited there', () => {
 		await dismissSupportDialog(page)
 		const menu = await openFirstRowMenu(page)
 		await menu.getByText('View', { exact: true }).click()
-		await expect(page).toHaveURL(/\/settings\/case-types\/[^/]+$/, { timeout: 20000 })
+		await expect(page).toHaveURL(/\/settings\/case-types\/[^/]+$/, {
+			timeout: 20000,
+		})
 
 		await page.locator('[data-testid="cn-detail-page-edit"]').click()
 		await expect(page.getByRole('dialog')).toBeVisible({ timeout: 20000 })
@@ -205,7 +220,9 @@ test.describe('Setup — the sample-data step is reachable', () => {
 	test.setTimeout(120_000)
 
 	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
-	test('the server reports every actionable step, and reports the optional ones as outstanding', async ({ page }) => {
+	test('the server reports every actionable step, and reports the optional ones as outstanding', async ({
+		page,
+	}) => {
 		// `reported` vs `absent` is the whole distinction: CnAppRoot only
 		// prompts for a step the server actually answered for, so a step that
 		// merely goes unmentioned can never reach a user.
@@ -222,7 +239,9 @@ test.describe('Setup — the sample-data step is reachable', () => {
 	})
 
 	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
-	test('the wizard opens exactly when an optional step is outstanding', async ({ page }) => {
+	test('the wizard opens exactly when an optional step is outstanding', async ({
+		page,
+	}) => {
 		// Asserted against the SERVER's own answer rather than against a fixed
 		// expectation, so the test describes the rule instead of describing
 		// this instance: outstanding optional work => the wizard offering it is
@@ -233,37 +252,66 @@ test.describe('Setup — the sample-data step is reachable', () => {
 		expect(body).not.toBeNull()
 
 		const outstanding = Object.entries(body.steps)
-			.filter(([id, s]) => id !== 'register-check' && (s as { done: boolean }).done === false)
+			.filter(
+				([id, s]) =>
+					id !== 'register-check'
+					&& (s as { done: boolean }).done === false,
+			)
 			.map(([id]) => id)
 
-		const wizard = page.locator('.cn-app-root__setup-optional')
+		// The DIALOG, not `.cn-app-root__setup-optional`: CnSetupWizard teleports
+		// its NcDialog to <body>, so that wrapper is left empty and zero-height
+		// — permanently "hidden" to Playwright whether the wizard is open or
+		// not, which makes it a locator that can only ever fail.
+		const wizard = page.locator('[data-testid-modal="cn-wizard-dialog"]')
 		if (outstanding.length > 0) {
-			await expect(wizard, `outstanding optional steps: ${outstanding.join(', ')}`)
-				.toBeVisible({ timeout: 30000 })
+			await expect(
+				wizard,
+				`outstanding optional steps: ${outstanding.join(', ')}`,
+			).toBeVisible({ timeout: 30000 })
 		} else {
-			await expect(wizard).toBeHidden({ timeout: 10000 })
+			await expect(wizard).toHaveCount(0, { timeout: 10000 })
 		}
+		// The shell stays reachable behind it — this wizard does not gate.
 		await expect(page.locator('main')).toBeAttached()
 	})
 
 	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
-	test('a seed run that creates nothing does not record the step as done', async ({ page }) => {
+	test('a seed run that creates nothing does not record the step as done', async ({
+		page,
+	}) => {
 		// The seeder returns success with every counter at zero when its payload
 		// is absent, which is the state it is in. Recording that as done made
 		// the affordance one-shot and silently useless: one click, "Seeded 0
 		// case types", step complete, never offered again.
 		await page.goto('/index.php/apps/dossiq')
 		const before = await readSetupStatus(page)
-		test.skip(before?.steps?.seed?.done === true, 'sample data already loaded on this instance')
+		test.skip(
+			before?.steps?.seed?.done === true,
+			'sample data already loaded on this instance',
+		)
 
-		const run = await page.evaluate(async () => {
-			const token = (document.head.querySelector('meta[name=requesttoken]') as HTMLMetaElement)?.content
-			const res = await fetch('/index.php/apps/dossiq/api/setup/run/seed', {
+		const token = await requestToken(page)
+		// `/api/setup/action/{id}` — NOT `/run/{id}`, which answers 405 and whose
+		// empty body then reads as "the seeder returned nothing".
+		const run = await page.evaluate(async (tok) => {
+			const res = await fetch('/index.php/apps/dossiq/api/setup/action/seed', {
 				method: 'POST',
-				headers: { Accept: 'application/json', 'Content-Type': 'application/json', requesttoken: token },
+				headers: {
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
+					requesttoken: tok,
+				},
 			})
 			return { status: res.status, body: await res.json().catch(() => null) }
-		})
+		}, token)
+
+		// Fail by NAME when the call itself did not land, rather than reading a
+		// refusal as a seeder result.
+		expect(
+			run.body,
+			`POST /api/setup/action/seed returned ${run.status} with no JSON body`,
+		).not.toBeNull()
 
 		if (run.body?.detail && (run.body.detail.caseTypes ?? 0) === 0) {
 			// Nothing was created, so the step must still be outstanding.
@@ -283,7 +331,9 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 	test.setTimeout(120_000)
 
 	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
-	test('the tour a user actually gets includes the Case types and Flows stops', async ({ page }) => {
+	test('the tour a user actually gets includes the Case types and Flows stops', async ({
+		page,
+	}) => {
 		// Asserted against the SERVED BUNDLE, not the manifest on disk: the tour
 		// a user gets is the one webpack built into `dossiq-main.js`, and a
 		// source-level check cannot see a stale bundle. (`/api/manifest` is a
@@ -294,25 +344,69 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 		expect(bundle.length, 'could not fetch the app bundle').toBeGreaterThan(1000)
 
 		for (const id of ['see-case-types', 'see-flows']) {
-			expect(bundle, `walkthrough step "${id}" missing from the built bundle`).toContain(id)
+			expect(
+				bundle,
+				`walkthrough step "${id}" missing from the built bundle`,
+			).toContain(id)
 		}
 	})
 
 	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
-	test('the tour opens on a first visit and offers all seven steps', async ({ page, context }) => {
+	test('the tour opens for a user who has not seen it, and offers all seven steps', async ({
+		page,
+	}) => {
 		// The step COUNT is the user-visible consequence of adding the two
 		// stops: it cannot read 7 unless both are in the tour the shell
-		// composed. A fresh context has no seen-version recorded, so the tour
-		// auto-opens on `first-visit`.
-		await context.clearCookies({ name: 'nc_walkthrough' }).catch(() => {})
+		// composed.
+		//
+		// NOT `test.skip` on "the tour isn't showing": that reads "this user
+		// already finished it" off the tour's ABSENCE, which is the same
+		// observation you would get if the tour were broken and never opened
+		// at all. The seen-version is readable, so the absence is made to
+		// prove its own reason instead.
 		await page.goto('/index.php/apps/dossiq')
+		await page.evaluate(() => {
+			try {
+				window.localStorage.removeItem('cn-walkthrough-seen:dossiq')
+			} catch (e) {
+				/* blocked storage */
+			}
+		})
+		await page.reload()
 
-		const tour = page.getByRole('dialog').filter({ hasText: 'Welcome to Dossiq' })
+		const tour = page
+			.getByRole('dialog')
+			.filter({ hasText: 'Welcome to Dossiq' })
 		if (await tour.isVisible({ timeout: 20000 }).catch(() => false)) {
 			await expect(tour).toContainText('/ 7')
-		} else {
-			test.skip(true, 'walkthrough already completed for this user on this instance')
+			return
 		}
+
+		// Not showing — then the server preference must say this user has seen
+		// a version at least as new as the manifest's. Anything else is the
+		// tour failing to open, and must fail the test.
+		// `/apps/{appId}/api/preferences/{completionConfigKey}` is the
+		// authoritative store (useWalkthrough.js); the manifest declares the key
+		// as `walkthrough_completed_version`.
+		const seen = await page.evaluate(async () => {
+			const res = await fetch(
+				'/index.php/apps/dossiq/api/preferences/walkthrough_completed_version',
+				{
+					headers: { Accept: 'application/json' },
+				},
+			).catch(() => null)
+			if (!res || !res.ok) return null
+			const body = await res.json().catch(() => null)
+			// An HTML SPA fallback answers 200 too — only a real payload counts.
+			return body && typeof body === 'object' && !Array.isArray(body)
+				? body
+				: null
+		})
+		const recorded = seen ? String(Object.values(seen)[0] ?? '') : ''
+		expect(
+			recorded,
+			'the walkthrough did not open and no recorded seen-version explains why — that is the tour failing to open, not a user who has already finished it',
+		).not.toBe('')
 	})
 
 	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
@@ -330,8 +424,12 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 			const at = bundle.indexOf(id)
 			expect(at).toBeGreaterThan(-1)
 			const window = bundle.slice(at, at + 1200)
-			expect(window, `${id} must offer a manual way past`).toContain('allowManualNext')
-			expect(window, `${id} must not require creating one`).not.toContain('object-created')
+			expect(window, `${id} must offer a manual way past`).toContain(
+				'allowManualNext',
+			)
+			expect(window, `${id} must not require creating one`).not.toContain(
+				'object-created',
+			)
 		}
 	})
 })
