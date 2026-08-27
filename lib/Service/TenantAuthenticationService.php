@@ -314,6 +314,8 @@ class TenantAuthenticationService {
 	 * @return array<int, string> Tenant ids, possibly empty.
 	 *
 	 * @throws Throwable When the membership lookup fails.
+	 *
+	 * @spec openspec/specs/multi-tenancy/spec.md#requirement-tenant-membership-and-status-helpers-for-middleware-req-005
 	 */
 	public function listTenantsForUser(string $userId): array {
 		if ($userId === '') {
@@ -380,6 +382,8 @@ class TenantAuthenticationService {
 	 * @return bool Whether the user may act as this tenant.
 	 *
 	 * @throws Throwable When the membership lookup fails.
+	 *
+	 * @spec openspec/specs/multi-tenancy/spec.md#requirement-tenant-membership-and-status-helpers-for-middleware-req-005
 	 */
 	public function isMemberOf(string $tenantId, string $userId): bool {
 		if ($tenantId === '' || $userId === '') {

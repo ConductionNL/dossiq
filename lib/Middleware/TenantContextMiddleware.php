@@ -159,6 +159,8 @@ class TenantContextMiddleware extends Middleware {
 	 * Resolve the tenant UUID for the current request.
 	 *
 	 * @return string|null
+	 *
+	 * @spec openspec/specs/multi-tenancy/spec.md#requirement-user-to-tenant-resolution-via-or-organisation-with-nc-group-fallback-req-002
 	 */
 	public function resolveTenantIdFromRequest(): ?string {
 		$header = $this->request->getHeader('X-Tenant-Id');
