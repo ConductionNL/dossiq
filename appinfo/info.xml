@@ -245,6 +245,14 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 ORI register to retire.
             -->
             <step>OCA\Dossiq\Repair\RetireOriRegister</step>
+            <!--
+                Post-migration only, for the same reason as RetireOriRegister
+                above: a fresh install has no subsidieRegeling objects to move
+                onto case types. Running it on install would be a no-op that
+                still reports a count, which is the kind of reassuring noise
+                that makes a real zero hard to notice.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateSubsidieRegelingToCaseType</step>
             <step>OCA\Dossiq\Repair\SeedLhsMatrix</step>
             <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
             <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>

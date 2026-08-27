@@ -133,21 +133,69 @@ class SubsidieFragmentTest extends TestCase {
 	}//end testRegisterMembershipUnioned()
 
 	/**
-	 * Subsidie seed objects are appended to components.objects.
+	 * The two schemes are seeded as CASE TYPES, not as subsidieregelingen.
+	 *
+	 * A fresh install must not create rows in the schema this change retires.
+	 * It used to: the migration is a post-migration repair step, so on a fresh
+	 * install it ran BEFORE the seeder wrote these rows and had nothing to
+	 * convert — every new install therefore came up already needing migrating,
+	 * and the e2e specs correctly failed with "2 present, none migrated".
 	 *
 	 * @return void
 	 */
 	public function testSeedObjectsAppended(): void {
+		$objects = $this->merged['components']['objects'];
 		$slugs = array_map(
 			static function (array $object): string {
 				return (string)($object['@self']['slug'] ?? '');
 			},
-			$this->merged['components']['objects']
+			$objects
 		);
 
-		$this->assertContains('regeling-innovatiefonds-2026', $slugs);
-		$this->assertContains('regeling-cultuur-subsidie-2026', $slugs);
+		$this->assertContains('zaaktype-innovatiefonds-2026', $slugs);
+		$this->assertContains('zaaktype-cultuur-subsidie-2026', $slugs);
+
+		// The point of the change, asserted rather than assumed: nothing is
+		// seeded into subsidieRegeling any more.
+		$schemas = array_map(
+			static function (array $object): string {
+				return (string)($object['@self']['schema'] ?? '');
+			},
+			$objects
+		);
+		$this->assertNotContains('subsidieRegeling', $schemas);
 	}//end testSeedObjectsAppended()
+
+	/**
+	 * The grant-specific fields are seeded as property definitions.
+	 *
+	 * Carrying the case types across without them would produce two case types
+	 * that look right in a list and hold none of the scheme's actual terms.
+	 *
+	 * @return void
+	 */
+	public function testGrantPropertiesAreSeededAsDefinitions(): void {
+		$definitions = array_filter(
+			$this->merged['components']['objects'],
+			static function (array $object): bool {
+				return ($object['@self']['schema'] ?? '') === 'propertyDefinition';
+			}
+		);
+
+		$byName = [];
+		foreach ($definitions as $definition) {
+			$byName[(string)($definition['name'] ?? '')] = $definition;
+		}
+
+		foreach (['plafond', 'targetGroup', 'auditorsStatementThreshold'] as $property) {
+			$this->assertArrayHasKey($property, $byName, $property . ' must be seeded as a property definition');
+		}
+
+		// An enum with no enumValues is indistinguishable from a string: the
+		// value survives and the constraint does not.
+		$this->assertSame('enum', $byName['interimReportFrequency']['propertyType']);
+		$this->assertContains('halfjaarlijks', $byName['interimReportFrequency']['enumValues']);
+	}//end testGrantPropertiesAreSeededAsDefinitions()
 
 	/**
 	 * The bewijsstuk schema masks special-category data: BSN lives on the
@@ -163,4 +211,83 @@ class SubsidieFragmentTest extends TestCase {
 			(string)$request['applicantBsnRef']['description']
 		);
 	}//end testBsnIsMaskedReference()
+
+	/**
+	 * The seed data and the migration agree on case-type identity.
+	 *
+	 * These are two independent writers of the same objects: the seeder on a
+	 * fresh install, the repair step on an upgrade. They agree today because
+	 * two constants in two files happen to match, and nothing else would notice
+	 * if one moved.
+	 *
+	 * The failure that would follow is quiet in the worst way. The seeded
+	 * property definitions reference their case type by id — `caseType` is
+	 * `format: uuid`, so it cannot be a slug — and a mismatch leaves twelve
+	 * definitions that exist, validate, and belong to a case type that is not
+	 * the one on screen. The scheme simply appears to have no terms.
+	 *
+	 * @return void
+	 */
+	public function testTheSeedDataAndTheMigrationAgreeOnCaseTypeIds(): void {
+		$reflected = new \ReflectionClass(
+			\OCA\Dossiq\Repair\MigrateSubsidieRegelingToCaseType::class
+		);
+		$canonical = $reflected->getConstant('CANONICAL_CASE_TYPE_IDS');
+		$this->assertIsArray($canonical, 'the migration must still pin canonical ids');
+
+		$seededById = [];
+		foreach ($this->merged['components']['objects'] as $object) {
+			if (($object['@self']['schema'] ?? '') !== 'caseType') {
+				continue;
+			}
+
+			$seededById[(string)($object['@self']['slug'] ?? '')] = (string)($object['id'] ?? '');
+		}
+
+		foreach ($canonical as $slug => $id) {
+			$this->assertArrayHasKey(
+				$slug,
+				$seededById,
+				$slug . ' is pinned by the migration but not seeded — the two writers disagree'
+			);
+			$this->assertSame(
+				$id,
+				$seededById[$slug],
+				$slug . ' has a different id in the seed data than the migration writes'
+			);
+		}
+	}//end testTheSeedDataAndTheMigrationAgreeOnCaseTypeIds()
+
+	/**
+	 * Every seeded property definition points at a seeded case type.
+	 *
+	 * A dangling reference here is invisible: the definition is valid on its
+	 * own and simply belongs to nothing.
+	 *
+	 * @return void
+	 */
+	public function testEverySeededPropertyPointsAtASeededCaseType(): void {
+		$caseTypeIds = [];
+		$definitions = [];
+		foreach ($this->merged['components']['objects'] as $object) {
+			$schema = ($object['@self']['schema'] ?? '');
+			if ($schema === 'caseType') {
+				$caseTypeIds[] = (string)($object['id'] ?? '');
+			}
+
+			if ($schema === 'propertyDefinition') {
+				$definitions[] = $object;
+			}
+		}
+
+		$this->assertNotEmpty($definitions);
+		foreach ($definitions as $definition) {
+			$this->assertContains(
+				(string)($definition['caseType'] ?? ''),
+				$caseTypeIds,
+				$definition['name'] . ' references a case type that is not seeded'
+			);
+		}
+	}//end testEverySeededPropertyPointsAtASeededCaseType()
+
 }//end class

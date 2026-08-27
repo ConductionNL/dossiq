@@ -449,10 +449,20 @@
                             "boolean",
                             "date",
                             "url",
-                            "email"
+                            "email",
+                            "enum",
+                            "json"
                         ],
-                        "description": "Data type of this property",
+                        "description": "Data type of this property. 'enum' carries its allowed values in enumValues; 'json' carries a JSON Schema in defaultValue and is validated as a document rather than a scalar. Both exist because the alternative — flattening them to 'string' — moves a constraint out of the model and into nobody's hands: a four-value cadence and a JSON schema would both become free text that nothing checks.",
                         "title": "Property Type"
+                    },
+                    "enumValues": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "The allowed values, when propertyType is 'enum'. Ignored for every other type. Without this the 'enum' type would be indistinguishable from 'string' at runtime, which is the flattening it exists to prevent.",
+                        "title": "Enum Values"
                     },
                     "isRequired": {
                         "type": "boolean",
