@@ -3388,7 +3388,12 @@ OC.L10N.register(
         "Paid advances": "Betaalde voorschotten",
         "Open advances": "Openstaande voorschotten",
         "No execution records for this application yet": "Nog geen uitvoeringsregistraties voor deze aanvraag",
-        "External consultation response": "Reactie externe consultatie"
+        "External consultation response": "Reactie externe consultatie",
+        "A flow runs a series of steps when something happens — an object changes, a schedule fires, or you run it yourself.": "Een flow voert een reeks stappen uit zodra er iets gebeurt — een object wijzigt, een planning gaat af, of je start hem zelf.",
+        "Enabled, but has no owner — it will not start": "Ingeschakeld, maar zonder eigenaar — hij start niet",
+        "Flow": "Flow",
+        "Flows": "Flows",
+        "New flow": "Nieuwe flow"
     },
     "nplurals=2; plural=(n != 1);"
 )

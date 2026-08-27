@@ -3388,7 +3388,12 @@ OC.L10N.register(
         "Paid advances": "Paid advances",
         "Open advances": "Open advances",
         "No execution records for this application yet": "No execution records for this application yet",
-        "External consultation response": "External consultation response"
+        "External consultation response": "External consultation response",
+        "A flow runs a series of steps when something happens — an object changes, a schedule fires, or you run it yourself.": "A flow runs a series of steps when something happens — an object changes, a schedule fires, or you run it yourself.",
+        "Enabled, but has no owner — it will not start": "Enabled, but has no owner — it will not start",
+        "Flow": "Flow",
+        "Flows": "Flows",
+        "New flow": "New flow"
     },
     "nplurals=2; plural=(n != 1);"
 )
