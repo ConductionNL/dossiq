@@ -1,0 +1,1127 @@
+
+> dossiq@0.1.0 lint
+> eslint src
+
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/App.vue
+  176:1  warning  Missing JSDoc @param "key" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/components/besluitvorming/BesluitPublicatiePanel.vue
+  94:17  warning  The "published" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/components/initiator/InitiatorPicker.vue
+  247:15  warning  The "select" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/components/map/AddressSearch.vue
+   69:1  warning  Missing JSDoc @param "value" description   jsdoc/require-param-description
+  102:1  warning  Missing JSDoc @param "result" description  jsdoc/require-param-description
+  139:1  warning  Missing JSDoc @param "type" description    jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/components/map/LocationPicker.vue
+  171:1  warning  Missing JSDoc @param "mode" description               jsdoc/require-param-description
+  223:1  warning  Missing JSDoc @param "latlng" description             jsdoc/require-param-description
+  239:1  warning  Missing JSDoc @param "root0" description              jsdoc/require-param-description
+  240:1  warning  Missing JSDoc @param "root0.coordinates" description  jsdoc/require-param-description
+  280:1  warning  Missing JSDoc @param "sqm" description                jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/dialogs/AiClassifyDialog.vue
+  104:1  warning  Missing JSDoc @param "val" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/dialogs/AiExtractDialog.vue
+  152:1  warning  Missing JSDoc @param "val" description      jsdoc/require-param-description
+  182:1  warning  Missing JSDoc @param "checked" description  jsdoc/require-param-description
+  190:1  warning  Missing JSDoc @param "name" description     jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/dialogs/BesluitRegistration.vue
+    5:19  warning  The "close" event has been triggered but not declared on `emits` option       vue/require-explicit-emits
+   73:28  warning  The "close" event has been triggered but not declared on `emits` option       vue/require-explicit-emits
+  195:16  warning  The "registered" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/dialogs/ConsultationCreateDialog.vue
+  183:1  warning  Missing JSDoc @param "value" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/dialogs/ConsultationResponseForm.vue
+  219:1  warning  Missing JSDoc @param "value" description  jsdoc/require-param-description
+  243:1  warning  Missing JSDoc @param "idx" description    jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/dialogs/EndAssignmentDialog.vue
+  58:3  warning  'assignment' of property found, but never used  vue/no-unused-properties
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/dialogs/ParafeerActieDialog.vue
+  210:1  warning  Missing JSDoc @param "type" description     jsdoc/require-param-description
+  242:1  warning  Missing JSDoc @param "action" description   jsdoc/require-param-description
+  291:1  warning  Missing JSDoc @param "payload" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/dialogs/RedactionAssistDialog.vue
+  191:13  warning  Boolean prop should only be defaulted to false  vue/no-boolean-default
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/dialogs/SkipStepDialog.vue
+  108:1   warning  Missing JSDoc @param "value" description                                   jsdoc/require-param-description
+  139:16  warning  The "skipped" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  152:15  warning  The "close" event has been triggered but not declared on `emits` option    vue/require-explicit-emits
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/dialogs/StufEnvelopeDialog.vue
+  80:1  warning  Prefer a more specific type to `*`  jsdoc/reject-any-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/dialogs/VoorstelCreateDialog.vue
+    5:19  warning  The "close" event has been triggered but not declared on `emits` option    vue/require-explicit-emits
+   72:28  warning  The "close" event has been triggered but not declared on `emits` option    vue/require-explicit-emits
+  160:1   warning  Missing JSDoc @param "caseObj" description                                 jsdoc/require-param-description
+  223:16  warning  The "created" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/dialogs/ZgwMappingDialog.vue
+  148:1  warning  Missing JSDoc @param "value" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/modals/BulkReassignModal.vue
+  305:1  warning  Missing JSDoc @param "open" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/modals/DeelzaakCreateModal.vue
+  338:36  warning  The property or function OC.currentUser was deprecated in Nextcloud 19.0.0  @nextcloud/no-deprecated-globals
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/modals/DeelzaakDeleteWarningModal.vue
+  117:1  warning  Missing JSDoc @param "open" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/modals/InitiatorPickerModal.vue
+  17:17  warning  The "close" event has been triggered but not declared on `emits` option    vue/require-explicit-emits
+  43:45  warning  The "skip" event has been triggered but not declared on `emits` option     vue/require-explicit-emits
+  49:20  warning  The "confirm" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/modals/SubstitutionFormModal.vue
+  261:1  warning  Missing JSDoc @param "open" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/services/adviceApi.js
+   56:1  warning  Missing JSDoc @param "caseId" description  jsdoc/require-param-description
+   56:1  warning  Missing JSDoc @param "caseId" type         jsdoc/require-param-type
+   90:1  warning  Missing JSDoc @param "id" description      jsdoc/require-param-description
+   90:1  warning  Missing JSDoc @param "id" type             jsdoc/require-param-type
+   91:1  warning  Missing JSDoc @param "body" description    jsdoc/require-param-description
+   91:1  warning  Missing JSDoc @param "body" type           jsdoc/require-param-type
+  106:1  warning  Missing JSDoc @param "id" description      jsdoc/require-param-description
+  106:1  warning  Missing JSDoc @param "id" type             jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/services/aiApi.js
+   20:1  warning  Missing JSDoc @param "caseId" description      jsdoc/require-param-description
+   20:1  warning  Missing JSDoc @param "caseId" type             jsdoc/require-param-type
+   21:1  warning  Missing JSDoc @param "documentId" description  jsdoc/require-param-description
+   21:1  warning  Missing JSDoc @param "documentId" type         jsdoc/require-param-type
+   37:1  warning  Missing JSDoc @param "caseId" description      jsdoc/require-param-description
+   37:1  warning  Missing JSDoc @param "caseId" type             jsdoc/require-param-type
+   38:1  warning  Missing JSDoc @param "documentId" description  jsdoc/require-param-description
+   38:1  warning  Missing JSDoc @param "documentId" type         jsdoc/require-param-type
+   54:1  warning  Missing JSDoc @param "caseId" description      jsdoc/require-param-description
+   54:1  warning  Missing JSDoc @param "caseId" type             jsdoc/require-param-type
+   55:1  warning  Missing JSDoc @param "question" description    jsdoc/require-param-description
+   55:1  warning  Missing JSDoc @param "question" type           jsdoc/require-param-type
+   72:1  warning  Missing JSDoc @param "caseId" description      jsdoc/require-param-description
+   72:1  warning  Missing JSDoc @param "caseId" type             jsdoc/require-param-type
+   73:1  warning  Missing JSDoc @param "type" description        jsdoc/require-param-description
+   73:1  warning  Missing JSDoc @param "type" type               jsdoc/require-param-type
+   74:1  warning  Missing JSDoc @param "documentId" description  jsdoc/require-param-description
+   74:1  warning  Missing JSDoc @param "documentId" type         jsdoc/require-param-type
+   93:1  warning  Missing JSDoc @param "caseId" description      jsdoc/require-param-description
+   93:1  warning  Missing JSDoc @param "caseId" type             jsdoc/require-param-type
+  108:1  warning  Missing JSDoc @param "caseId" description      jsdoc/require-param-description
+  108:1  warning  Missing JSDoc @param "caseId" type             jsdoc/require-param-type
+  123:1  warning  Missing JSDoc @param "filters" description     jsdoc/require-param-description
+  123:1  warning  Missing JSDoc @param "filters" type            jsdoc/require-param-type
+  149:1  warning  Missing JSDoc @param "settings" description    jsdoc/require-param-description
+  149:1  warning  Missing JSDoc @param "settings" type           jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/services/berichtenboxApi.js
+   7:1  warning  Missing JSDoc @param "data" description       jsdoc/require-param-description
+   7:1  warning  Missing JSDoc @param "data" type              jsdoc/require-param-type
+  16:1  warning  Missing JSDoc @param "caseId" description     jsdoc/require-param-description
+  16:1  warning  Missing JSDoc @param "caseId" type            jsdoc/require-param-type
+  31:1  warning  Missing JSDoc @param "messageId" description  jsdoc/require-param-description
+  31:1  warning  Missing JSDoc @param "messageId" type         jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/services/caseRelationApi.js
+  30:1  warning  Missing JSDoc @param "caseId" description              jsdoc/require-param-description
+  30:1  warning  Missing JSDoc @param "caseId" type                     jsdoc/require-param-type
+  58:1  warning  @param "params.notes" does not exist on params         jsdoc/check-param-names
+  59:1  warning  Missing JSDoc @param "params.toelichting" description  jsdoc/require-param-description
+  59:1  warning  Missing JSDoc @param "params.toelichting" type         jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/services/formatters.js
+  175:1  warning  Prefer a more specific type to `*`  jsdoc/reject-any-type
+  188:1  warning  Prefer a more specific type to `*`  jsdoc/reject-any-type
+  202:1  warning  Prefer a more specific type to `*`  jsdoc/reject-any-type
+  238:1  warning  Prefer a more specific type to `*`  jsdoc/reject-any-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/services/mapFormatters.js
+   31:1  warning  Missing JSDoc @param "status" description   jsdoc/require-param-description
+   31:1  warning  Missing JSDoc @param "status" type          jsdoc/require-param-type
+   56:1  warning  Missing JSDoc @param "status" description   jsdoc/require-param-description
+   56:1  warning  Missing JSDoc @param "status" type          jsdoc/require-param-type
+  138:1  warning  Missing JSDoc @param "caseObj" description  jsdoc/require-param-description
+  138:1  warning  Missing JSDoc @param "caseObj" type         jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/services/parafeerActieApi.js
+  29:1  warning  Missing JSDoc @param "data" description        jsdoc/require-param-description
+  29:1  warning  Missing JSDoc @param "data" type               jsdoc/require-param-type
+  44:1  warning  Missing JSDoc @param "voorstelId" description  jsdoc/require-param-description
+  44:1  warning  Missing JSDoc @param "voorstelId" type         jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/services/pdokService.js
+   66:1  warning  Prefer a more specific type to `*`              jsdoc/reject-any-type
+   67:1  warning  Prefer a more specific type to `*`              jsdoc/reject-any-type
+   95:1  warning  Missing JSDoc @param "query" description        jsdoc/require-param-description
+   95:1  warning  Missing JSDoc @param "query" type               jsdoc/require-param-type
+  129:1  warning  Missing JSDoc @param "id" description           jsdoc/require-param-description
+  129:1  warning  Missing JSDoc @param "id" type                  jsdoc/require-param-type
+  153:1  warning  Missing JSDoc @param "query" description        jsdoc/require-param-description
+  153:1  warning  Missing JSDoc @param "query" type               jsdoc/require-param-type
+  154:1  warning  Missing JSDoc @param "rows" description         jsdoc/require-param-description
+  154:1  warning  Missing JSDoc @param "rows" type                jsdoc/require-param-type
+  180:1  warning  Missing JSDoc @param "lat" description          jsdoc/require-param-description
+  180:1  warning  Missing JSDoc @param "lat" type                 jsdoc/require-param-type
+  181:1  warning  Missing JSDoc @param "lng" description          jsdoc/require-param-description
+  181:1  warning  Missing JSDoc @param "lng" type                 jsdoc/require-param-type
+  209:1  warning  Missing JSDoc @param "resultOrWkt" description  jsdoc/require-param-description
+  209:1  warning  Missing JSDoc @param "resultOrWkt" type         jsdoc/require-param-type
+  256:1  warning  Missing JSDoc @param "result" description       jsdoc/require-param-description
+  256:1  warning  Missing JSDoc @param "result" type              jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/services/taskApi.js
+   48:1  warning  Missing JSDoc @param "task" description        jsdoc/require-param-description
+   48:1  warning  Missing JSDoc @param "task" type               jsdoc/require-param-type
+  107:1  warning  Missing JSDoc @param "registerId" description  jsdoc/require-param-description
+  107:1  warning  Missing JSDoc @param "registerId" type         jsdoc/require-param-type
+  108:1  warning  Missing JSDoc @param "schemaId" description    jsdoc/require-param-description
+  108:1  warning  Missing JSDoc @param "schemaId" type           jsdoc/require-param-type
+  109:1  warning  Missing JSDoc @param "objectId" description    jsdoc/require-param-description
+  109:1  warning  Missing JSDoc @param "objectId" type           jsdoc/require-param-type
+  145:1  warning  Missing JSDoc @param "cases" description       jsdoc/require-param-description
+  145:1  warning  Missing JSDoc @param "cases" type              jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/services/wooPublicationApi.js
+  16:1  warning  Missing JSDoc @param "caseId" description  jsdoc/require-param-description
+  16:1  warning  Missing JSDoc @param "caseId" type         jsdoc/require-param-type
+  17:1  warning  Missing JSDoc @param "path" description    jsdoc/require-param-description
+  17:1  warning  Missing JSDoc @param "path" type           jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/store/modules/advice.js
+   28:1  warning  Missing JSDoc @param "state" description        jsdoc/require-param-description
+   28:1  warning  Missing JSDoc @param "state" type               jsdoc/require-param-type
+   42:1  warning  Missing JSDoc @param "state" description        jsdoc/require-param-description
+   42:1  warning  Missing JSDoc @param "state" type               jsdoc/require-param-type
+   62:1  warning  Missing JSDoc @param "state" description        jsdoc/require-param-description
+   62:1  warning  Missing JSDoc @param "state" type               jsdoc/require-param-type
+   76:1  warning  Missing JSDoc @param "state" description        jsdoc/require-param-description
+   76:1  warning  Missing JSDoc @param "state" type               jsdoc/require-param-type
+   97:1  warning  Missing JSDoc @param "caseId" description       jsdoc/require-param-description
+   97:1  warning  Missing JSDoc @param "caseId" type              jsdoc/require-param-type
+  130:1  warning  Missing JSDoc @param "requestData" description  jsdoc/require-param-description
+  130:1  warning  Missing JSDoc @param "requestData" type         jsdoc/require-param-type
+  175:1  warning  Missing JSDoc @param "requestId" description    jsdoc/require-param-description
+  175:1  warning  Missing JSDoc @param "requestId" type           jsdoc/require-param-type
+  176:1  warning  Missing JSDoc @param "documentId" description   jsdoc/require-param-description
+  176:1  warning  Missing JSDoc @param "documentId" type          jsdoc/require-param-type
+  215:1  warning  Missing JSDoc @param "requestId" description    jsdoc/require-param-description
+  215:1  warning  Missing JSDoc @param "requestId" type           jsdoc/require-param-type
+  260:1  warning  Missing JSDoc @param "request" description      jsdoc/require-param-description
+  260:1  warning  Missing JSDoc @param "request" type             jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/store/modules/bezwaar.js
+  133:1  warning  Missing JSDoc @param "caseId" description               jsdoc/require-param-description
+  133:1  warning  Missing JSDoc @param "caseId" type                      jsdoc/require-param-type
+  192:1  warning  Missing JSDoc @param "data" description                 jsdoc/require-param-description
+  192:1  warning  Missing JSDoc @param "data" type                        jsdoc/require-param-type
+  220:1  warning  Missing JSDoc @param "data" description                 jsdoc/require-param-description
+  220:1  warning  Missing JSDoc @param "data" type                        jsdoc/require-param-type
+  248:1  warning  Missing JSDoc @param "objectionId" description          jsdoc/require-param-description
+  248:1  warning  Missing JSDoc @param "objectionId" type                 jsdoc/require-param-type
+  278:1  warning  Missing JSDoc @param "data" description                 jsdoc/require-param-description
+  278:1  warning  Missing JSDoc @param "data" type                        jsdoc/require-param-type
+  306:1  warning  Missing JSDoc @param "data" description                 jsdoc/require-param-description
+  306:1  warning  Missing JSDoc @param "data" type                        jsdoc/require-param-type
+  341:1  warning  Missing JSDoc @param "data" description                 jsdoc/require-param-description
+  341:1  warning  Missing JSDoc @param "data" type                        jsdoc/require-param-type
+  369:1  warning  Missing JSDoc @param "data" description                 jsdoc/require-param-description
+  369:1  warning  Missing JSDoc @param "data" type                        jsdoc/require-param-type
+  399:1  warning  Missing JSDoc @param "data" description                 jsdoc/require-param-description
+  399:1  warning  Missing JSDoc @param "data" type                        jsdoc/require-param-type
+  427:1  warning  Missing JSDoc @param "data" description                 jsdoc/require-param-description
+  427:1  warning  Missing JSDoc @param "data" type                        jsdoc/require-param-type
+  457:1  warning  Missing JSDoc @param "ontvangstDatum" description       jsdoc/require-param-description
+  457:1  warning  Missing JSDoc @param "ontvangstDatum" type              jsdoc/require-param-type
+  491:1  warning  Missing JSDoc @param "currentDeadline" description      jsdoc/require-param-description
+  491:1  warning  Missing JSDoc @param "currentDeadline" type             jsdoc/require-param-type
+  508:1  warning  Missing JSDoc @param "deadline" description             jsdoc/require-param-description
+  508:1  warning  Missing JSDoc @param "deadline" type                    jsdoc/require-param-type
+  509:1  warning  Missing JSDoc @param "isSuspended" description          jsdoc/require-param-description
+  509:1  warning  Missing JSDoc @param "isSuspended" type                 jsdoc/require-param-type
+  560:1  warning  Missing JSDoc @param "bezwaarCase" description          jsdoc/require-param-description
+  560:1  warning  Missing JSDoc @param "bezwaarCase" type                 jsdoc/require-param-type
+  561:1  warning  Missing JSDoc @param "options" description              jsdoc/require-param-description
+  561:1  warning  Missing JSDoc @param "options" type                     jsdoc/require-param-type
+  614:1  warning  Missing JSDoc @param "besluitDate" description          jsdoc/require-param-description
+  614:1  warning  Missing JSDoc @param "besluitDate" type                 jsdoc/require-param-type
+  615:1  warning  Missing JSDoc @param "bezwaarReceivedDate" description  jsdoc/require-param-description
+  615:1  warning  Missing JSDoc @param "bezwaarReceivedDate" type         jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/store/modules/deelzaak.js
+  38:1  warning  Missing JSDoc @param "parentCaseUuid" description  jsdoc/require-param-description
+  38:1  warning  Missing JSDoc @param "parentCaseUuid" type         jsdoc/require-param-type
+  57:1  warning  Missing JSDoc @param "parentCaseUuid" description  jsdoc/require-param-description
+  57:1  warning  Missing JSDoc @param "parentCaseUuid" type         jsdoc/require-param-type
+  71:1  warning  Missing JSDoc @param "caseUuidArray" description   jsdoc/require-param-description
+  71:1  warning  Missing JSDoc @param "caseUuidArray" type          jsdoc/require-param-type
+  84:1  warning  Missing JSDoc @param "params" description          jsdoc/require-param-description
+  84:1  warning  Missing JSDoc @param "params" type                 jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/store/modules/enforcement.js
+   57:1  warning  Missing JSDoc @param "state" description       jsdoc/require-param-description
+   57:1  warning  Missing JSDoc @param "state" type              jsdoc/require-param-type
+   71:1  warning  Missing JSDoc @param "state" description       jsdoc/require-param-description
+   71:1  warning  Missing JSDoc @param "state" type              jsdoc/require-param-type
+   87:1  warning  Missing JSDoc @param "state" description       jsdoc/require-param-description
+   87:1  warning  Missing JSDoc @param "state" type              jsdoc/require-param-type
+  101:1  warning  Missing JSDoc @param "state" description       jsdoc/require-param-description
+  101:1  warning  Missing JSDoc @param "state" type              jsdoc/require-param-type
+  118:1  warning  Missing JSDoc @param "caseId" description      jsdoc/require-param-description
+  118:1  warning  Missing JSDoc @param "caseId" type             jsdoc/require-param-type
+  152:1  warning  Missing JSDoc @param "ernst" description       jsdoc/require-param-description
+  152:1  warning  Missing JSDoc @param "ernst" type              jsdoc/require-param-type
+  153:1  warning  Missing JSDoc @param "gedrag" description      jsdoc/require-param-description
+  153:1  warning  Missing JSDoc @param "gedrag" type             jsdoc/require-param-type
+  205:1  warning  Missing JSDoc @param "matrix" description      jsdoc/require-param-description
+  205:1  warning  Missing JSDoc @param "matrix" type             jsdoc/require-param-type
+  237:1  warning  Missing JSDoc @param "actionData" description  jsdoc/require-param-description
+  237:1  warning  Missing JSDoc @param "actionData" type         jsdoc/require-param-type
+  280:1  warning  Missing JSDoc @param "actionId" description    jsdoc/require-param-description
+  280:1  warning  Missing JSDoc @param "actionId" type           jsdoc/require-param-type
+  281:1  warning  Missing JSDoc @param "newStatus" description   jsdoc/require-param-description
+  281:1  warning  Missing JSDoc @param "newStatus" type          jsdoc/require-param-type
+  319:1  warning  Missing JSDoc @param "caseId" description      jsdoc/require-param-description
+  319:1  warning  Missing JSDoc @param "caseId" type             jsdoc/require-param-type
+  320:1  warning  Missing JSDoc @param "action" description      jsdoc/require-param-description
+  320:1  warning  Missing JSDoc @param "action" type             jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/store/modules/inspection.js
+   32:1  warning  Missing JSDoc @param "state" description          jsdoc/require-param-description
+   32:1  warning  Missing JSDoc @param "state" type                 jsdoc/require-param-type
+   46:1  warning  Missing JSDoc @param "state" description          jsdoc/require-param-description
+   46:1  warning  Missing JSDoc @param "state" type                 jsdoc/require-param-type
+   60:1  warning  Missing JSDoc @param "state" description          jsdoc/require-param-description
+   60:1  warning  Missing JSDoc @param "state" type                 jsdoc/require-param-type
+   78:1  warning  Missing JSDoc @param "caseTypeId" description     jsdoc/require-param-description
+   78:1  warning  Missing JSDoc @param "caseTypeId" type            jsdoc/require-param-type
+  111:1  warning  Missing JSDoc @param "checklistData" description  jsdoc/require-param-description
+  111:1  warning  Missing JSDoc @param "checklistData" type         jsdoc/require-param-type
+  147:1  warning  Missing JSDoc @param "checklist" description      jsdoc/require-param-description
+  147:1  warning  Missing JSDoc @param "checklist" type             jsdoc/require-param-type
+  171:1  warning  Missing JSDoc @param "checklistId" description    jsdoc/require-param-description
+  171:1  warning  Missing JSDoc @param "checklistId" type           jsdoc/require-param-type
+  196:1  warning  Missing JSDoc @param "caseId" description         jsdoc/require-param-description
+  196:1  warning  Missing JSDoc @param "caseId" type                jsdoc/require-param-type
+  229:1  warning  Missing JSDoc @param "reportData" description     jsdoc/require-param-description
+  229:1  warning  Missing JSDoc @param "reportData" type            jsdoc/require-param-type
+  298:1  warning  Missing JSDoc @param "caseId" description         jsdoc/require-param-description
+  298:1  warning  Missing JSDoc @param "caseId" type                jsdoc/require-param-type
+  299:1  warning  Missing JSDoc @param "file" description           jsdoc/require-param-description
+  299:1  warning  Missing JSDoc @param "file" type                  jsdoc/require-param-type
+  329:1  warning  Missing JSDoc @param "caseId" description         jsdoc/require-param-description
+  329:1  warning  Missing JSDoc @param "caseId" type                jsdoc/require-param-type
+  330:1  warning  Missing JSDoc @param "failedCount" description    jsdoc/require-param-description
+  330:1  warning  Missing JSDoc @param "failedCount" type           jsdoc/require-param-type
+  331:1  warning  Missing JSDoc @param "reportId" description       jsdoc/require-param-description
+  331:1  warning  Missing JSDoc @param "reportId" type              jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/store/modules/processMining.js
+  65:1  warning  Missing JSDoc @param "state" description  jsdoc/require-param-description
+  65:1  warning  Missing JSDoc @param "state" type         jsdoc/require-param-type
+  71:1  warning  Missing JSDoc @param "state" description  jsdoc/require-param-description
+  71:1  warning  Missing JSDoc @param "state" type         jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/store/modules/settings.js
+  63:1  warning  Missing JSDoc @param "settingsData" description  jsdoc/require-param-description
+  63:1  warning  Missing JSDoc @param "settingsData" type         jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/store/modules/workflow.js
+   123:1  warning  Missing JSDoc @param "caseTypeId" description        jsdoc/require-param-description
+   123:1  warning  Missing JSDoc @param "caseTypeId" type               jsdoc/require-param-type
+   156:1  warning  Missing JSDoc @param "templateId" description        jsdoc/require-param-description
+   156:1  warning  Missing JSDoc @param "templateId" type               jsdoc/require-param-type
+   185:1  warning  Missing JSDoc @param "caseTypeId" description        jsdoc/require-param-description
+   185:1  warning  Missing JSDoc @param "caseTypeId" type               jsdoc/require-param-type
+   220:1  warning  Missing JSDoc @param "caseTypeId" description        jsdoc/require-param-description
+   220:1  warning  Missing JSDoc @param "caseTypeId" type               jsdoc/require-param-type
+   221:1  warning  Missing JSDoc @param "title" description             jsdoc/require-param-description
+   221:1  warning  Missing JSDoc @param "title" type                    jsdoc/require-param-type
+   256:1  warning  Missing JSDoc @param "templateData" description      jsdoc/require-param-description
+   256:1  warning  Missing JSDoc @param "templateData" type             jsdoc/require-param-type
+   293:1  warning  Missing JSDoc @param "templateId" description        jsdoc/require-param-description
+   293:1  warning  Missing JSDoc @param "templateId" type               jsdoc/require-param-type
+   338:1  warning  Missing JSDoc @param "templateId" description        jsdoc/require-param-description
+   338:1  warning  Missing JSDoc @param "templateId" type               jsdoc/require-param-type
+   339:1  warning  Missing JSDoc @param "statusNodes" description       jsdoc/require-param-description
+   339:1  warning  Missing JSDoc @param "statusNodes" type              jsdoc/require-param-type
+   395:1  warning  Missing JSDoc @param "sourceTemplateId" description  jsdoc/require-param-description
+   395:1  warning  Missing JSDoc @param "sourceTemplateId" type         jsdoc/require-param-type
+   454:1  warning  Missing JSDoc @param "caseData" description          jsdoc/require-param-description
+   454:1  warning  Missing JSDoc @param "caseData" type                 jsdoc/require-param-type
+   455:1  warning  Missing JSDoc @param "userRoles" description         jsdoc/require-param-description
+   455:1  warning  Missing JSDoc @param "userRoles" type                jsdoc/require-param-type
+   456:1  warning  Missing JSDoc @param "workflow" description          jsdoc/require-param-description
+   456:1  warning  Missing JSDoc @param "workflow" type                 jsdoc/require-param-type
+   457:1  warning  Missing JSDoc @param "caseTasks" description         jsdoc/require-param-description
+   457:1  warning  Missing JSDoc @param "caseTasks" type                jsdoc/require-param-type
+   458:1  warning  Missing JSDoc @param "caseDocuments" description     jsdoc/require-param-description
+   458:1  warning  Missing JSDoc @param "caseDocuments" type            jsdoc/require-param-type
+   543:1  warning  Missing JSDoc @param "guards" description            jsdoc/require-param-description
+   543:1  warning  Missing JSDoc @param "guards" type                   jsdoc/require-param-type
+   544:1  warning  Missing JSDoc @param "caseData" description          jsdoc/require-param-description
+   544:1  warning  Missing JSDoc @param "caseData" type                 jsdoc/require-param-type
+   545:1  warning  Missing JSDoc @param "caseTasks" description         jsdoc/require-param-description
+   545:1  warning  Missing JSDoc @param "caseTasks" type                jsdoc/require-param-type
+   546:1  warning  Missing JSDoc @param "caseDocuments" description     jsdoc/require-param-description
+   546:1  warning  Missing JSDoc @param "caseDocuments" type            jsdoc/require-param-type
+   547:1  warning  Missing JSDoc @param "steps" description             jsdoc/require-param-description
+   547:1  warning  Missing JSDoc @param "steps" type                    jsdoc/require-param-type
+   548:1  warning  Missing JSDoc @param "currentStatus" description     jsdoc/require-param-description
+   548:1  warning  Missing JSDoc @param "currentStatus" type            jsdoc/require-param-type
+   587:1  warning  Missing JSDoc @param "guard" description             jsdoc/require-param-description
+   587:1  warning  Missing JSDoc @param "guard" type                    jsdoc/require-param-type
+   588:1  warning  Missing JSDoc @param "caseTasks" description         jsdoc/require-param-description
+   588:1  warning  Missing JSDoc @param "caseTasks" type                jsdoc/require-param-type
+   634:1  warning  Missing JSDoc @param "guard" description             jsdoc/require-param-description
+   634:1  warning  Missing JSDoc @param "guard" type                    jsdoc/require-param-type
+   635:1  warning  Missing JSDoc @param "caseData" description          jsdoc/require-param-description
+   635:1  warning  Missing JSDoc @param "caseData" type                 jsdoc/require-param-type
+   660:1  warning  Missing JSDoc @param "guard" description             jsdoc/require-param-description
+   660:1  warning  Missing JSDoc @param "guard" type                    jsdoc/require-param-type
+   661:1  warning  Missing JSDoc @param "caseDocuments" description     jsdoc/require-param-description
+   661:1  warning  Missing JSDoc @param "caseDocuments" type            jsdoc/require-param-type
+   690:1  warning  Missing JSDoc @param "steps" description             jsdoc/require-param-description
+   690:1  warning  Missing JSDoc @param "steps" type                    jsdoc/require-param-type
+   691:1  warning  Missing JSDoc @param "currentStatus" description     jsdoc/require-param-description
+   691:1  warning  Missing JSDoc @param "currentStatus" type            jsdoc/require-param-type
+   692:1  warning  Missing JSDoc @param "caseTasks" description         jsdoc/require-param-description
+   692:1  warning  Missing JSDoc @param "caseTasks" type                jsdoc/require-param-type
+   731:1  warning  Missing JSDoc @param "actions" description           jsdoc/require-param-description
+   731:1  warning  Missing JSDoc @param "actions" type                  jsdoc/require-param-type
+   732:1  warning  Missing JSDoc @param "caseData" description          jsdoc/require-param-description
+   732:1  warning  Missing JSDoc @param "caseData" type                 jsdoc/require-param-type
+   733:1  warning  Missing JSDoc @param "transition" description        jsdoc/require-param-description
+   733:1  warning  Missing JSDoc @param "transition" type               jsdoc/require-param-type
+   801:1  warning  Missing JSDoc @param "action" description            jsdoc/require-param-description
+   801:1  warning  Missing JSDoc @param "action" type                   jsdoc/require-param-type
+   802:1  warning  Missing JSDoc @param "caseData" description          jsdoc/require-param-description
+   802:1  warning  Missing JSDoc @param "caseData" type                 jsdoc/require-param-type
+   803:1  warning  Missing JSDoc @param "transition" description        jsdoc/require-param-description
+   803:1  warning  Missing JSDoc @param "transition" type               jsdoc/require-param-type
+   849:1  warning  Missing JSDoc @param "action" description            jsdoc/require-param-description
+   849:1  warning  Missing JSDoc @param "action" type                   jsdoc/require-param-type
+   850:1  warning  Missing JSDoc @param "caseData" description          jsdoc/require-param-description
+   850:1  warning  Missing JSDoc @param "caseData" type                 jsdoc/require-param-type
+   873:1  warning  Missing JSDoc @param "action" description            jsdoc/require-param-description
+   873:1  warning  Missing JSDoc @param "action" type                   jsdoc/require-param-type
+   874:1  warning  Missing JSDoc @param "caseData" description          jsdoc/require-param-description
+   874:1  warning  Missing JSDoc @param "caseData" type                 jsdoc/require-param-type
+   900:1  warning  Missing JSDoc @param "action" description            jsdoc/require-param-description
+   900:1  warning  Missing JSDoc @param "action" type                   jsdoc/require-param-type
+   901:1  warning  Missing JSDoc @param "caseData" description          jsdoc/require-param-description
+   901:1  warning  Missing JSDoc @param "caseData" type                 jsdoc/require-param-type
+   902:1  warning  Missing JSDoc @param "transition" description        jsdoc/require-param-description
+   902:1  warning  Missing JSDoc @param "transition" type               jsdoc/require-param-type
+   943:1  warning  Missing JSDoc @param "action" description            jsdoc/require-param-description
+   943:1  warning  Missing JSDoc @param "action" type                   jsdoc/require-param-type
+   944:1  warning  Missing JSDoc @param "caseData" description          jsdoc/require-param-description
+   944:1  warning  Missing JSDoc @param "caseData" type                 jsdoc/require-param-type
+   963:1  warning  Missing JSDoc @param "action" description            jsdoc/require-param-description
+   963:1  warning  Missing JSDoc @param "action" type                   jsdoc/require-param-type
+   964:1  warning  Missing JSDoc @param "caseData" description          jsdoc/require-param-description
+   964:1  warning  Missing JSDoc @param "caseData" type                 jsdoc/require-param-type
+   999:1  warning  Missing JSDoc @param "template" description          jsdoc/require-param-description
+   999:1  warning  Missing JSDoc @param "template" type                 jsdoc/require-param-type
+  1000:1  warning  Missing JSDoc @param "caseData" description          jsdoc/require-param-description
+  1000:1  warning  Missing JSDoc @param "caseData" type                 jsdoc/require-param-type
+  1001:1  warning  Missing JSDoc @param "transition" description        jsdoc/require-param-description
+  1001:1  warning  Missing JSDoc @param "transition" type               jsdoc/require-param-type
+  1039:1  warning  Missing JSDoc @param "statusNodes" description       jsdoc/require-param-description
+  1039:1  warning  Missing JSDoc @param "statusNodes" type              jsdoc/require-param-type
+  1061:1  warning  Missing JSDoc @param "template" description          jsdoc/require-param-description
+  1061:1  warning  Missing JSDoc @param "template" type                 jsdoc/require-param-type
+  1062:1  warning  Missing JSDoc @param "statusTypes" description       jsdoc/require-param-description
+  1062:1  warning  Missing JSDoc @param "statusTypes" type              jsdoc/require-param-type
+  1063:1  warning  Missing JSDoc @param "roleTypes" description         jsdoc/require-param-description
+  1063:1  warning  Missing JSDoc @param "roleTypes" type                jsdoc/require-param-type
+  1064:1  warning  Missing JSDoc @param "docTypes" description          jsdoc/require-param-description
+  1064:1  warning  Missing JSDoc @param "docTypes" type                 jsdoc/require-param-type
+  1139:1  warning  Missing JSDoc @param "importData" description        jsdoc/require-param-description
+  1139:1  warning  Missing JSDoc @param "importData" type               jsdoc/require-param-type
+  1140:1  warning  Missing JSDoc @param "caseTypeId" description        jsdoc/require-param-description
+  1140:1  warning  Missing JSDoc @param "caseTypeId" type               jsdoc/require-param-type
+  1141:1  warning  Missing JSDoc @param "statusTypes" description       jsdoc/require-param-description
+  1141:1  warning  Missing JSDoc @param "statusTypes" type              jsdoc/require-param-type
+  1142:1  warning  Missing JSDoc @param "roleTypes" description         jsdoc/require-param-description
+  1142:1  warning  Missing JSDoc @param "roleTypes" type                jsdoc/require-param-type
+  1143:1  warning  Missing JSDoc @param "docTypes" description          jsdoc/require-param-description
+  1143:1  warning  Missing JSDoc @param "docTypes" type                 jsdoc/require-param-type
+  1233:1  warning  Missing JSDoc @param "statusId" description          jsdoc/require-param-description
+  1233:1  warning  Missing JSDoc @param "statusId" type                 jsdoc/require-param-type
+  1234:1  warning  Missing JSDoc @param "stepData" description          jsdoc/require-param-description
+  1234:1  warning  Missing JSDoc @param "stepData" type                 jsdoc/require-param-type
+  1264:1  warning  Missing JSDoc @param "stepId" description            jsdoc/require-param-description
+  1264:1  warning  Missing JSDoc @param "stepId" type                   jsdoc/require-param-type
+  1294:1  warning  Missing JSDoc @param "stepId" description            jsdoc/require-param-description
+  1294:1  warning  Missing JSDoc @param "stepId" type                   jsdoc/require-param-type
+  1295:1  warning  Missing JSDoc @param "updates" description           jsdoc/require-param-description
+  1295:1  warning  Missing JSDoc @param "updates" type                  jsdoc/require-param-type
+  1318:1  warning  Missing JSDoc @param "fromStatus" description        jsdoc/require-param-description
+  1318:1  warning  Missing JSDoc @param "fromStatus" type               jsdoc/require-param-type
+  1319:1  warning  Missing JSDoc @param "toStatus" description          jsdoc/require-param-description
+  1319:1  warning  Missing JSDoc @param "toStatus" type                 jsdoc/require-param-type
+  1320:1  warning  Missing JSDoc @param "data" description              jsdoc/require-param-description
+  1320:1  warning  Missing JSDoc @param "data" type                     jsdoc/require-param-type
+  1347:1  warning  Missing JSDoc @param "transitionId" description      jsdoc/require-param-description
+  1347:1  warning  Missing JSDoc @param "transitionId" type             jsdoc/require-param-type
+  1366:1  warning  Missing JSDoc @param "transitionId" description      jsdoc/require-param-description
+  1366:1  warning  Missing JSDoc @param "transitionId" type             jsdoc/require-param-type
+  1367:1  warning  Missing JSDoc @param "updates" description           jsdoc/require-param-description
+  1367:1  warning  Missing JSDoc @param "updates" type                  jsdoc/require-param-type
+  1389:1  warning  Missing JSDoc @param "statusId" description          jsdoc/require-param-description
+  1389:1  warning  Missing JSDoc @param "statusId" type                 jsdoc/require-param-type
+  1390:1  warning  Missing JSDoc @param "x" description                 jsdoc/require-param-description
+  1390:1  warning  Missing JSDoc @param "x" type                        jsdoc/require-param-type
+  1391:1  warning  Missing JSDoc @param "y" description                 jsdoc/require-param-description
+  1391:1  warning  Missing JSDoc @param "y" type                        jsdoc/require-param-type
+  1414:1  warning  Missing JSDoc @param "statusId" description          jsdoc/require-param-description
+  1414:1  warning  Missing JSDoc @param "statusId" type                 jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/store/modules/zgwMapping.js
+  53:1  warning  Missing JSDoc @param "resourceKey" description  jsdoc/require-param-description
+  53:1  warning  Missing JSDoc @param "resourceKey" type         jsdoc/require-param-type
+  54:1  warning  Missing JSDoc @param "config" description       jsdoc/require-param-description
+  54:1  warning  Missing JSDoc @param "config" type              jsdoc/require-param-type
+  94:1  warning  Missing JSDoc @param "resourceKey" description  jsdoc/require-param-description
+  94:1  warning  Missing JSDoc @param "resourceKey" type         jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/utils/caseExportHelpers.js
+  37:1  warning  Prefer a more specific type to `*`  jsdoc/reject-any-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/utils/caseHelpers.js
+   37:1  warning  Missing JSDoc @param "startDate" description       jsdoc/require-param-description
+   37:1  warning  Missing JSDoc @param "startDate" type              jsdoc/require-param-type
+   38:1  warning  Missing JSDoc @param "durationString" description  jsdoc/require-param-description
+   38:1  warning  Missing JSDoc @param "durationString" type         jsdoc/require-param-type
+   78:1  warning  Missing JSDoc @param "caseObj" description         jsdoc/require-param-description
+   78:1  warning  Missing JSDoc @param "caseObj" type                jsdoc/require-param-type
+   79:1  warning  Missing JSDoc @param "isFinal" description         jsdoc/require-param-description
+   79:1  warning  Missing JSDoc @param "isFinal" type                jsdoc/require-param-type
+  100:1  warning  Missing JSDoc @param "caseObj" description         jsdoc/require-param-description
+  100:1  warning  Missing JSDoc @param "caseObj" type                jsdoc/require-param-type
+  101:1  warning  Missing JSDoc @param "isFinal" description         jsdoc/require-param-description
+  101:1  warning  Missing JSDoc @param "isFinal" type                jsdoc/require-param-type
+  124:1  warning  Missing JSDoc @param "caseObj" description         jsdoc/require-param-description
+  124:1  warning  Missing JSDoc @param "caseObj" type                jsdoc/require-param-type
+  125:1  warning  Missing JSDoc @param "isFinal" description         jsdoc/require-param-description
+  125:1  warning  Missing JSDoc @param "isFinal" type                jsdoc/require-param-type
+  149:1  warning  Missing JSDoc @param "caseObj" description         jsdoc/require-param-description
+  149:1  warning  Missing JSDoc @param "caseObj" type                jsdoc/require-param-type
+  150:1  warning  Missing JSDoc @param "isFinal" description         jsdoc/require-param-description
+  150:1  warning  Missing JSDoc @param "isFinal" type                jsdoc/require-param-type
+  175:1  warning  Missing JSDoc @param "caseObj" description         jsdoc/require-param-description
+  175:1  warning  Missing JSDoc @param "caseObj" type                jsdoc/require-param-type
+  176:1  warning  Missing JSDoc @param "isFinal" description         jsdoc/require-param-description
+  176:1  warning  Missing JSDoc @param "isFinal" type                jsdoc/require-param-type
+  210:1  warning  Missing JSDoc @param "startDate" description       jsdoc/require-param-description
+  210:1  warning  Missing JSDoc @param "startDate" type              jsdoc/require-param-type
+  230:1  warning  Missing JSDoc @param "deadline" description        jsdoc/require-param-description
+  230:1  warning  Missing JSDoc @param "deadline" type               jsdoc/require-param-type
+  250:1  warning  Missing JSDoc @param "dateString" description      jsdoc/require-param-description
+  250:1  warning  Missing JSDoc @param "dateString" type             jsdoc/require-param-type
+  270:1  warning  Missing JSDoc @param "dateString" description      jsdoc/require-param-description
+  270:1  warning  Missing JSDoc @param "dateString" type             jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/utils/caseTypeValidation.js
+   44:1  warning  Missing JSDoc @param "data" description         jsdoc/require-param-description
+   44:1  warning  Missing JSDoc @param "data" type                jsdoc/require-param-type
+  110:1  warning  Missing JSDoc @param "caseType" description     jsdoc/require-param-description
+  110:1  warning  Missing JSDoc @param "caseType" type            jsdoc/require-param-type
+  111:1  warning  Missing JSDoc @param "statusTypes" description  jsdoc/require-param-description
+  111:1  warning  Missing JSDoc @param "statusTypes" type         jsdoc/require-param-type
+  150:1  warning  Missing JSDoc @param "field" description        jsdoc/require-param-description
+  150:1  warning  Missing JSDoc @param "field" type               jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/utils/caseValidation.js
+   13:1  warning  Missing JSDoc @param "caseType" description      jsdoc/require-param-description
+   13:1  warning  Missing JSDoc @param "caseType" type             jsdoc/require-param-type
+   45:1  warning  Missing JSDoc @param "caseType" description      jsdoc/require-param-description
+   45:1  warning  Missing JSDoc @param "caseType" type             jsdoc/require-param-type
+   98:1  warning  Missing JSDoc @param "form" description          jsdoc/require-param-description
+   98:1  warning  Missing JSDoc @param "form" type                 jsdoc/require-param-type
+   99:1  warning  Missing JSDoc @param "caseTypes" description     jsdoc/require-param-description
+   99:1  warning  Missing JSDoc @param "caseTypes" type            jsdoc/require-param-type
+  136:1  warning  Missing JSDoc @param "form" description          jsdoc/require-param-description
+  136:1  warning  Missing JSDoc @param "form" type                 jsdoc/require-param-type
+  161:1  warning  Missing JSDoc @param "targetStatus" description  jsdoc/require-param-description
+  161:1  warning  Missing JSDoc @param "targetStatus" type         jsdoc/require-param-type
+  162:1  warning  Missing JSDoc @param "caseObj" description       jsdoc/require-param-description
+  162:1  warning  Missing JSDoc @param "caseObj" type              jsdoc/require-param-type
+  163:1  warning  Missing JSDoc @param "statusTypes" description   jsdoc/require-param-description
+  163:1  warning  Missing JSDoc @param "statusTypes" type          jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/utils/dashboardHelpers.js
+   33:1  warning  Missing JSDoc @param "openCases" description        jsdoc/require-param-description
+   33:1  warning  Missing JSDoc @param "openCases" type               jsdoc/require-param-type
+   34:1  warning  Missing JSDoc @param "completedCases" description   jsdoc/require-param-description
+   34:1  warning  Missing JSDoc @param "completedCases" type          jsdoc/require-param-type
+   35:1  warning  Missing JSDoc @param "myTasks" description          jsdoc/require-param-description
+   35:1  warning  Missing JSDoc @param "myTasks" type                 jsdoc/require-param-type
+   95:1  warning  Missing JSDoc @param "openCases" description        jsdoc/require-param-description
+   95:1  warning  Missing JSDoc @param "openCases" type               jsdoc/require-param-type
+   96:1  warning  Missing JSDoc @param "statusTypes" description      jsdoc/require-param-description
+   96:1  warning  Missing JSDoc @param "statusTypes" type             jsdoc/require-param-type
+  150:1  warning  Missing JSDoc @param "openCases" description        jsdoc/require-param-description
+  150:1  warning  Missing JSDoc @param "openCases" type               jsdoc/require-param-type
+  151:1  warning  Missing JSDoc @param "caseTypes" description        jsdoc/require-param-description
+  151:1  warning  Missing JSDoc @param "caseTypes" type               jsdoc/require-param-type
+  181:1  warning  Missing JSDoc @param "cases" description            jsdoc/require-param-description
+  181:1  warning  Missing JSDoc @param "cases" type                   jsdoc/require-param-type
+  182:1  warning  Missing JSDoc @param "limit" description            jsdoc/require-param-description
+  182:1  warning  Missing JSDoc @param "limit" type                   jsdoc/require-param-type
+  214:1  warning  Missing JSDoc @param "cases" description            jsdoc/require-param-description
+  214:1  warning  Missing JSDoc @param "cases" type                   jsdoc/require-param-type
+  215:1  warning  Missing JSDoc @param "tasks" description            jsdoc/require-param-description
+  215:1  warning  Missing JSDoc @param "tasks" type                   jsdoc/require-param-type
+  216:1  warning  Missing JSDoc @param "limit" description            jsdoc/require-param-description
+  216:1  warning  Missing JSDoc @param "limit" type                   jsdoc/require-param-type
+  311:1  warning  Missing JSDoc @param "cases" description            jsdoc/require-param-description
+  311:1  warning  Missing JSDoc @param "cases" type                   jsdoc/require-param-type
+  312:1  warning  Missing JSDoc @param "normalizedTasks" description  jsdoc/require-param-description
+  312:1  warning  Missing JSDoc @param "normalizedTasks" type         jsdoc/require-param-type
+  416:1  warning  Missing JSDoc @param "openCases" description        jsdoc/require-param-description
+  416:1  warning  Missing JSDoc @param "openCases" type               jsdoc/require-param-type
+  417:1  warning  Missing JSDoc @param "caseTypes" description        jsdoc/require-param-description
+  417:1  warning  Missing JSDoc @param "caseTypes" type               jsdoc/require-param-type
+  418:1  warning  Missing JSDoc @param "warningDays" description      jsdoc/require-param-description
+  418:1  warning  Missing JSDoc @param "warningDays" type             jsdoc/require-param-type
+  474:1  warning  Missing JSDoc @param "tasks" description            jsdoc/require-param-description
+  474:1  warning  Missing JSDoc @param "tasks" type                   jsdoc/require-param-type
+  475:1  warning  Missing JSDoc @param "warningDays" description      jsdoc/require-param-description
+  475:1  warning  Missing JSDoc @param "warningDays" type             jsdoc/require-param-type
+  525:1  warning  Missing JSDoc @param "openCases" description        jsdoc/require-param-description
+  525:1  warning  Missing JSDoc @param "openCases" type               jsdoc/require-param-type
+  526:1  warning  Missing JSDoc @param "caseTypes" description        jsdoc/require-param-description
+  526:1  warning  Missing JSDoc @param "caseTypes" type               jsdoc/require-param-type
+  527:1  warning  Missing JSDoc @param "stalledDays" description      jsdoc/require-param-description
+  527:1  warning  Missing JSDoc @param "stalledDays" type             jsdoc/require-param-type
+  578:1  warning  Missing JSDoc @param "dateString" description       jsdoc/require-param-description
+  578:1  warning  Missing JSDoc @param "dateString" type              jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/utils/decisionHelpers.js
+   12:1  warning  Missing JSDoc @param "decision" description    jsdoc/require-param-description
+   12:1  warning  Missing JSDoc @param "decision" type           jsdoc/require-param-type
+   98:1  warning  Missing JSDoc @param "dateString" description  jsdoc/require-param-description
+   98:1  warning  Missing JSDoc @param "dateString" type         jsdoc/require-param-type
+  118:1  warning  Missing JSDoc @param "form" description        jsdoc/require-param-description
+  118:1  warning  Missing JSDoc @param "form" type               jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/utils/doorlooptijdHelpers.js
+   20:1  warning  Missing JSDoc @param "duration" description        jsdoc/require-param-description
+   20:1  warning  Missing JSDoc @param "duration" type               jsdoc/require-param-type
+   45:1  warning  Missing JSDoc @param "caseObj" description         jsdoc/require-param-description
+   45:1  warning  Missing JSDoc @param "caseObj" type                jsdoc/require-param-type
+   68:1  warning  Missing JSDoc @param "caseObj" description         jsdoc/require-param-description
+   68:1  warning  Missing JSDoc @param "caseObj" type                jsdoc/require-param-type
+   69:1  warning  Missing JSDoc @param "caseTypeMap" description     jsdoc/require-param-description
+   69:1  warning  Missing JSDoc @param "caseTypeMap" type            jsdoc/require-param-type
+   85:1  warning  Missing JSDoc @param "caseTypes" description       jsdoc/require-param-description
+   85:1  warning  Missing JSDoc @param "caseTypes" type              jsdoc/require-param-type
+  104:1  warning  Missing JSDoc @param "completedCases" description  jsdoc/require-param-description
+  104:1  warning  Missing JSDoc @param "completedCases" type         jsdoc/require-param-type
+  105:1  warning  Missing JSDoc @param "caseTypes" description       jsdoc/require-param-description
+  105:1  warning  Missing JSDoc @param "caseTypes" type              jsdoc/require-param-type
+  197:1  warning  Missing JSDoc @param "completedCases" description  jsdoc/require-param-description
+  197:1  warning  Missing JSDoc @param "completedCases" type         jsdoc/require-param-type
+  198:1  warning  Missing JSDoc @param "caseTypes" description       jsdoc/require-param-description
+  198:1  warning  Missing JSDoc @param "caseTypes" type              jsdoc/require-param-type
+  199:1  warning  Missing JSDoc @param "bins" description            jsdoc/require-param-description
+  199:1  warning  Missing JSDoc @param "bins" type                   jsdoc/require-param-type
+  251:1  warning  Missing JSDoc @param "completedCases" description  jsdoc/require-param-description
+  251:1  warning  Missing JSDoc @param "completedCases" type         jsdoc/require-param-type
+  252:1  warning  Missing JSDoc @param "caseTypes" description       jsdoc/require-param-description
+  252:1  warning  Missing JSDoc @param "caseTypes" type              jsdoc/require-param-type
+  253:1  warning  Missing JSDoc @param "months" description          jsdoc/require-param-description
+  253:1  warning  Missing JSDoc @param "months" type                 jsdoc/require-param-type
+  305:1  warning  Missing JSDoc @param "openCases" description       jsdoc/require-param-description
+  305:1  warning  Missing JSDoc @param "openCases" type              jsdoc/require-param-type
+  306:1  warning  Missing JSDoc @param "caseTypes" description       jsdoc/require-param-description
+  306:1  warning  Missing JSDoc @param "caseTypes" type              jsdoc/require-param-type
+  307:1  warning  Missing JSDoc @param "thresholdPct" description    jsdoc/require-param-description
+  307:1  warning  Missing JSDoc @param "thresholdPct" type           jsdoc/require-param-type
+  364:1  warning  Missing JSDoc @param "completedCases" description  jsdoc/require-param-description
+  364:1  warning  Missing JSDoc @param "completedCases" type         jsdoc/require-param-type
+  365:1  warning  Missing JSDoc @param "caseTypes" description       jsdoc/require-param-description
+  365:1  warning  Missing JSDoc @param "caseTypes" type              jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/utils/durationHelpers.js
+  17:1  warning  Missing JSDoc @param "value" description  jsdoc/require-param-description
+  17:1  warning  Missing JSDoc @param "value" type         jsdoc/require-param-type
+  32:1  warning  Missing JSDoc @param "iso" description    jsdoc/require-param-description
+  32:1  warning  Missing JSDoc @param "iso" type           jsdoc/require-param-type
+  53:1  warning  Missing JSDoc @param "iso" description    jsdoc/require-param-description
+  53:1  warning  Missing JSDoc @param "iso" type           jsdoc/require-param-type
+  96:1  warning  Missing JSDoc @param "value" description  jsdoc/require-param-description
+  96:1  warning  Missing JSDoc @param "value" type         jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/utils/i18nResolver.js
+   45:1  warning  Prefer a more specific type to `*`                 jsdoc/reject-any-type
+   51:1  warning  Missing JSDoc @param "value" description           jsdoc/require-param-description
+   51:1  warning  Missing JSDoc @param "value" type                  jsdoc/require-param-type
+   52:1  warning  Missing JSDoc @param "locale" description          jsdoc/require-param-description
+   52:1  warning  Missing JSDoc @param "locale" type                 jsdoc/require-param-type
+   53:1  warning  Missing JSDoc @param "fallbackLocale" description  jsdoc/require-param-description
+   53:1  warning  Missing JSDoc @param "fallbackLocale" type         jsdoc/require-param-type
+  120:1  warning  Missing JSDoc @param "obj" description             jsdoc/require-param-description
+  120:1  warning  Missing JSDoc @param "obj" type                    jsdoc/require-param-type
+  121:1  warning  Missing JSDoc @param "field" description           jsdoc/require-param-description
+  121:1  warning  Missing JSDoc @param "field" type                  jsdoc/require-param-type
+  122:1  warning  Missing JSDoc @param "locale" description          jsdoc/require-param-description
+  122:1  warning  Missing JSDoc @param "locale" type                 jsdoc/require-param-type
+  141:1  warning  Missing JSDoc @param "obj" description             jsdoc/require-param-description
+  141:1  warning  Missing JSDoc @param "obj" type                    jsdoc/require-param-type
+  142:1  warning  Missing JSDoc @param "field" description           jsdoc/require-param-description
+  142:1  warning  Missing JSDoc @param "field" type                  jsdoc/require-param-type
+  143:1  warning  Missing JSDoc @param "locale" description          jsdoc/require-param-description
+  143:1  warning  Missing JSDoc @param "locale" type                 jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/utils/openregisterCheck.js
+  51:1  warning  Missing JSDoc @param "status" description  jsdoc/require-param-description
+  51:1  warning  Missing JSDoc @param "status" type         jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/utils/parafeerEngine.js
+   15:1  warning  Missing JSDoc @param "voorstel" description      jsdoc/require-param-description
+   15:1  warning  Missing JSDoc @param "voorstel" type             jsdoc/require-param-type
+   36:1  warning  Missing JSDoc @param "voorstel" description      jsdoc/require-param-description
+   36:1  warning  Missing JSDoc @param "voorstel" type             jsdoc/require-param-type
+   53:1  warning  Missing JSDoc @param "voorstel" description      jsdoc/require-param-description
+   53:1  warning  Missing JSDoc @param "voorstel" type             jsdoc/require-param-type
+   54:1  warning  Missing JSDoc @param "userId" description        jsdoc/require-param-description
+   54:1  warning  Missing JSDoc @param "userId" type               jsdoc/require-param-type
+   70:1  warning  Missing JSDoc @param "voorstel" description      jsdoc/require-param-description
+   70:1  warning  Missing JSDoc @param "voorstel" type             jsdoc/require-param-type
+   87:1  warning  Missing JSDoc @param "voorstel" description      jsdoc/require-param-description
+   87:1  warning  Missing JSDoc @param "voorstel" type             jsdoc/require-param-type
+  114:1  warning  Missing JSDoc @param "route" description         jsdoc/require-param-description
+  114:1  warning  Missing JSDoc @param "route" type                jsdoc/require-param-type
+  140:1  warning  Missing JSDoc @param "steps" description         jsdoc/require-param-description
+  140:1  warning  Missing JSDoc @param "steps" type                jsdoc/require-param-type
+  141:1  warning  Missing JSDoc @param "afterOrder" description    jsdoc/require-param-description
+  141:1  warning  Missing JSDoc @param "afterOrder" type           jsdoc/require-param-type
+  142:1  warning  Missing JSDoc @param "newStep" description       jsdoc/require-param-description
+  142:1  warning  Missing JSDoc @param "newStep" type              jsdoc/require-param-type
+  173:1  warning  Missing JSDoc @param "steps" description         jsdoc/require-param-description
+  173:1  warning  Missing JSDoc @param "steps" type                jsdoc/require-param-type
+  174:1  warning  Missing JSDoc @param "stepOrder" description     jsdoc/require-param-description
+  174:1  warning  Missing JSDoc @param "stepOrder" type            jsdoc/require-param-type
+  195:1  warning  Missing JSDoc @param "routes" description        jsdoc/require-param-description
+  195:1  warning  Missing JSDoc @param "routes" type               jsdoc/require-param-type
+  196:1  warning  Missing JSDoc @param "caseTypeId" description    jsdoc/require-param-description
+  196:1  warning  Missing JSDoc @param "caseTypeId" type           jsdoc/require-param-type
+  197:1  warning  Missing JSDoc @param "voorstelType" description  jsdoc/require-param-description
+  197:1  warning  Missing JSDoc @param "voorstelType" type         jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/utils/taskHelpers.js
+   47:1  warning  Missing JSDoc @param "task" description        jsdoc/require-param-description
+   47:1  warning  Missing JSDoc @param "task" type               jsdoc/require-param-type
+   67:1  warning  Missing JSDoc @param "task" description        jsdoc/require-param-description
+   67:1  warning  Missing JSDoc @param "task" type               jsdoc/require-param-type
+   89:1  warning  Missing JSDoc @param "task" description        jsdoc/require-param-description
+   89:1  warning  Missing JSDoc @param "task" type               jsdoc/require-param-type
+  113:1  warning  Missing JSDoc @param "dateString" description  jsdoc/require-param-description
+  113:1  warning  Missing JSDoc @param "dateString" type         jsdoc/require-param-type
+  129:1  warning  Missing JSDoc @param "priority" description    jsdoc/require-param-description
+  129:1  warning  Missing JSDoc @param "priority" type           jsdoc/require-param-type
+  167:1  warning  Missing JSDoc @param "tasks" description       jsdoc/require-param-description
+  167:1  warning  Missing JSDoc @param "tasks" type              jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/utils/taskLifecycle.js
+   60:1  warning  Missing JSDoc @param "currentStatus" description  jsdoc/require-param-description
+   60:1  warning  Missing JSDoc @param "currentStatus" type         jsdoc/require-param-type
+   75:1  warning  Missing JSDoc @param "from" description           jsdoc/require-param-description
+   75:1  warning  Missing JSDoc @param "from" type                  jsdoc/require-param-type
+   76:1  warning  Missing JSDoc @param "to" description             jsdoc/require-param-description
+   76:1  warning  Missing JSDoc @param "to" type                    jsdoc/require-param-type
+   91:1  warning  Missing JSDoc @param "status" description         jsdoc/require-param-description
+   91:1  warning  Missing JSDoc @param "status" type                jsdoc/require-param-type
+  105:1  warning  Missing JSDoc @param "targetStatus" description   jsdoc/require-param-description
+  105:1  warning  Missing JSDoc @param "targetStatus" type          jsdoc/require-param-type
+  119:1  warning  Missing JSDoc @param "status" description         jsdoc/require-param-description
+  119:1  warning  Missing JSDoc @param "status" type                jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/utils/taskValidation.js
+  14:1  warning  Missing JSDoc @param "form" description  jsdoc/require-param-description
+  14:1  warning  Missing JSDoc @param "form" type         jsdoc/require-param-type
+  41:1  warning  Missing JSDoc @param "form" description  jsdoc/require-param-description
+  41:1  warning  Missing JSDoc @param "form" type         jsdoc/require-param-type
+  65:1  warning  Missing JSDoc @param "from" description  jsdoc/require-param-description
+  65:1  warning  Missing JSDoc @param "from" type         jsdoc/require-param-type
+  66:1  warning  Missing JSDoc @param "to" description    jsdoc/require-param-description
+  66:1  warning  Missing JSDoc @param "to" type           jsdoc/require-param-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/CasesOnMapView.vue
+  91:1  warning  Unexpected inline JSDoc tag. Did you mean to use {@type}, \@type, or `@type`?  jsdoc/escape-inline-tags
+  97:1  warning  Unexpected inline JSDoc tag. Did you mean to use {@type}, \@type, or `@type`?  jsdoc/escape-inline-tags
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/MyWorkCards.vue
+  121:38  warning  The property or function OC.currentUser was deprecated in Nextcloud 19.0.0                     @nextcloud/no-deprecated-globals
+  190:1   warning  Use object shorthand or index signatures instead of `Object`, e.g., `{[key: string]: string}`  jsdoc/check-types
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/MyWorkCaseCard.vue
+  10:17  warning  The "open" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/admin/SubstitutionAdmin.vue
+  201:1  warning  Missing JSDoc @param "id" description   jsdoc/require-param-description
+  214:1  warning  Missing JSDoc @param "sub" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/cases/DeelzaakList.vue
+  434:1  warning  Missing JSDoc @param "deletedId" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/cases/components/AdviceRequestPanel.vue
+  159:1   warning  Missing JSDoc @param "status" description                                 jsdoc/require-param-description
+  173:1   warning  Missing JSDoc @param "response" description                               jsdoc/require-param-description
+  188:1   warning  Missing JSDoc @param "dateStr" description                                jsdoc/require-param-description
+  199:1   warning  Missing JSDoc @param "req" description                                    jsdoc/require-param-description
+  215:15  warning  The "create" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/cases/components/AdviesPanel.vue
+  135:1  warning  Missing JSDoc @param "value" description   jsdoc/require-param-description
+  172:1  warning  Missing JSDoc @param "item" description    jsdoc/require-param-description
+  184:1  warning  Missing JSDoc @param "item" description    jsdoc/require-param-description
+  200:1  warning  Missing JSDoc @param "item" description    jsdoc/require-param-description
+  210:1  warning  Missing JSDoc @param "type" description    jsdoc/require-param-description
+  220:1  warning  Missing JSDoc @param "type" description    jsdoc/require-param-description
+  228:1  warning  Missing JSDoc @param "status" description  jsdoc/require-param-description
+  241:1  warning  Missing JSDoc @param "status" description  jsdoc/require-param-description
+  254:1  warning  Missing JSDoc @param "item" description    jsdoc/require-param-description
+  265:1  warning  Missing JSDoc @param "item" description    jsdoc/require-param-description
+  277:1  warning  Missing JSDoc @param "value" description   jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/cases/components/AiConfidenceBadge.vue
+  22:3  warning  'size' of property found, but never used  vue/no-unused-properties
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/cases/components/CaseEmailTab.vue
+  311:16  warning  The "drafted" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/cases/components/CaseNotesTab.vue
+  33:2  warning  The '<CnNotesTabComponent>' component has been used, but not defined  vue/no-undef-components
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/cases/components/CmmnCasePlanPanel.vue
+  171:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/cases/components/EmailThread.vue
+   64:46  warning  The "compose" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  110:1   warning  Missing JSDoc @param "dateStr" description                                 jsdoc/require-param-description
+  127:1   warning  Missing JSDoc @param "body" description                                    jsdoc/require-param-description
+  144:1   warning  Missing JSDoc @param "id" description                                      jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/cases/components/InspectionChecklistPanel.vue
+  65:3  warning  'caseId' of property found, but never used  vue/no-unused-properties
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/cases/components/InspectionPanel.vue
+  287:13  warning  Boolean prop should only be defaulted to false                              vue/no-boolean-default
+  350:1   warning  Missing JSDoc @param "newId" description                                    jsdoc/require-param-description
+  363:1   warning  Missing JSDoc @param "newId" description                                    jsdoc/require-param-description
+  374:1   warning  Missing JSDoc @param "checklist" description                                jsdoc/require-param-description
+  394:1   warning  Missing JSDoc @param "result" description                                   jsdoc/require-param-description
+  407:1   warning  Missing JSDoc @param "dateStr" description                                  jsdoc/require-param-description
+  418:1   warning  Missing JSDoc @param "reportId" description                                 jsdoc/require-param-description
+  439:17  warning  The property or function OC.currentUser was deprecated in Nextcloud 19.0.0  @nextcloud/no-deprecated-globals
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/casetypes/components/EmailTemplateAdmin.vue
+   62:11  warning  'subjectField' is defined as ref, but never used  vue/no-unused-refs
+   71:11  warning  'bodyField' is defined as ref, but never used     vue/no-unused-refs
+   82:7   warning  'v-html' directive can lead to XSS attack         vue/no-v-html
+  234:1   warning  Missing JSDoc @param "name" description           jsdoc/require-param-description
+  242:1   warning  Missing JSDoc @param "group" description          jsdoc/require-param-description
+  304:1   warning  Missing JSDoc @param "tpl" description            jsdoc/require-param-description
+  323:1   warning  Missing JSDoc @param "name" description           jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/doorlooptijd/widgets/DtKpiWidget.vue
+  123:1  warning  Expected 1 lines after block description  jsdoc/tag-lines
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/doorlooptijd/widgets/DtWooWidget.vue
+  26:1  warning  Expected 1 lines after block description  jsdoc/tag-lines
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/processMining/pmWidgetMixin.js
+  86:1  warning  Expected 1 lines after block description  jsdoc/tag-lines
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/public/ExternalConsultationResponsePage.vue
+  313:1  warning  Missing JSDoc @param "idx" description      jsdoc/require-param-description
+  350:1  warning  Missing JSDoc @param "dateStr" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/public/PublicAppointmentPage.vue
+  81:1  warning  Missing JSDoc @param "dt" description      jsdoc/require-param-description
+  93:1  warning  Missing JSDoc @param "status" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/public/PublicStatusPage.vue
+  145:1  warning  Missing JSDoc @param "dateString" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/CaseTypeAdmin.vue
+  33:1  warning  Missing JSDoc @param "id" description  jsdoc/require-param-description
+  54:1  warning  Missing JSDoc @param "id" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/CaseTypeDetail.vue
+    4:44  warning  The "back" event has been triggered but not declared on `emits` option        vue/require-explicit-emits
+  300:1   warning  Missing JSDoc @param "field" description                                      jsdoc/require-param-description
+  301:1   warning  Missing JSDoc @param "value" description                                      jsdoc/require-param-description
+  336:17  warning  The "saved" event has been triggered but not declared on `emits` option       vue/require-explicit-emits
+  405:17  warning  The "duplicated" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/CaseTypeList.vue
+   10:16  warning  The "create" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+   45:6   warning  The '<NcButton>' component has been used, but not defined                 vue/no-undef-components
+   54:6   warning  The '<NcButton>' component has been used, but not defined                 vue/no-undef-components
+   66:6   warning  The '<NcButton>' component has been used, but not defined                 vue/no-undef-components
+  158:1   warning  Missing JSDoc @param "caseTypeId" description                             jsdoc/require-param-description
+  178:1   warning  Missing JSDoc @param "duration" description                               jsdoc/require-param-description
+  186:1   warning  Missing JSDoc @param "ct" description                                     jsdoc/require-param-description
+  206:1   warning  Missing JSDoc @param "ct" description                                     jsdoc/require-param-description
+  218:1   warning  Missing JSDoc @param "row" description                                    jsdoc/require-param-description
+  222:15  warning  The "select" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  226:1   warning  Missing JSDoc @param "ct" description                                     jsdoc/require-param-description
+  243:1   warning  Missing JSDoc @param "ct" description                                     jsdoc/require-param-description
+  341:1   warning  Missing JSDoc @param "ct" description                                     jsdoc/require-param-description
+  356:17  warning  The "select" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/SubstitutionSettings.vue
+  115:41  warning  The property or function OC.currentUser was deprecated in Nextcloud 19.0.0  @nextcloud/no-deprecated-globals
+  149:1   warning  Missing JSDoc @param "id" description                                       jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/WorkflowEditor.vue
+  285:1   warning  Missing JSDoc @param "statusId" description                              jsdoc/require-param-description
+  295:1   warning  Missing JSDoc @param "statusId" description                              jsdoc/require-param-description
+  309:1   warning  Missing JSDoc @param "statusId" description                              jsdoc/require-param-description
+  319:1   warning  Missing JSDoc @param "transitionId" description                          jsdoc/require-param-description
+  329:1   warning  Missing JSDoc @param "transitionId" description                          jsdoc/require-param-description
+  337:1   warning  Missing JSDoc @param "step" description                                  jsdoc/require-param-description
+  348:1   warning  Missing JSDoc @param "statusId" description                              jsdoc/require-param-description
+  349:1   warning  Missing JSDoc @param "event" description                                 jsdoc/require-param-description
+  361:1   warning  Missing JSDoc @param "event" description                                 jsdoc/require-param-description
+  394:16  warning  The "dirty" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  403:1   warning  Missing JSDoc @param "event" description                                 jsdoc/require-param-description
+  424:1   warning  Missing JSDoc @param "event" description                                 jsdoc/require-param-description
+  435:1   warning  Missing JSDoc @param "statusId" description                              jsdoc/require-param-description
+  436:1   warning  Missing JSDoc @param "event" description                                 jsdoc/require-param-description
+  451:1   warning  Missing JSDoc @param "statusId" description                              jsdoc/require-param-description
+  463:16  warning  The "dirty" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  470:1   warning  Missing JSDoc @param "type" description                                  jsdoc/require-param-description
+  478:1   warning  Missing JSDoc @param "event" description                                 jsdoc/require-param-description
+  498:17  warning  The "dirty" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  528:16  warning  The "dirty" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  544:1   warning  Missing JSDoc @param "fromStatusId" description                          jsdoc/require-param-description
+  545:1   warning  Missing JSDoc @param "toStatusId" description                            jsdoc/require-param-description
+  550:15  warning  The "dirty" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  563:1   warning  Missing JSDoc @param "transitionId" description                          jsdoc/require-param-description
+  571:15  warning  The "dirty" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  584:1   warning  Missing JSDoc @param "statusId" description                              jsdoc/require-param-description
+  637:15  warning  The "dirty" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  648:1   warning  Missing JSDoc @param "stepId" description                                jsdoc/require-param-description
+  654:15  warning  The "dirty" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  659:1   warning  Missing JSDoc @param "statusId" description                              jsdoc/require-param-description
+  665:15  warning  The "dirty" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  669:1   warning  Missing JSDoc @param "updatedStep" description                           jsdoc/require-param-description
+  675:15  warning  The "dirty" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  680:1   warning  Missing JSDoc @param "updatedTransition" description                     jsdoc/require-param-description
+  688:15  warning  The "dirty" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  692:1   warning  Missing JSDoc @param "transitionId" description                          jsdoc/require-param-description
+  698:15  warning  The "dirty" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/ZgwMappingSettings.vue
+  109:1  warning  Missing JSDoc @param "key" description     jsdoc/require-param-description
+  117:1  warning  Missing JSDoc @param "config" description  jsdoc/require-param-description
+  132:1  warning  Missing JSDoc @param "key" description     jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/components/DurationPicker.vue
+  101:1   warning  Missing JSDoc @param "val" description                                   jsdoc/require-param-description
+  107:16  warning  The "input" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  110:15  warning  The "input" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  114:1   warning  Missing JSDoc @param "preset" description                                jsdoc/require-param-description
+  118:15  warning  The "input" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/components/MandaatImportPanel.vue
+  128:1  warning  Missing JSDoc @param "e" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/components/MandaatMatrixTable.vue
+  102:1  warning  Missing JSDoc @param "status" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/components/MandaatToewijzingenTable.vue
+  136:1  warning  Missing JSDoc @param "a" description        jsdoc/require-param-description
+  145:1  warning  Missing JSDoc @param "a" description        jsdoc/require-param-description
+  155:1  warning  Missing JSDoc @param "a" description        jsdoc/require-param-description
+  164:1  warning  Missing JSDoc @param "a" description        jsdoc/require-param-description
+  172:1  warning  Missing JSDoc @param "payload" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/components/OrganisatieRolManager.vue
+  140:1  warning  Missing JSDoc @param "role" description     jsdoc/require-param-description
+  155:1  warning  Missing JSDoc @param "role" description     jsdoc/require-param-description
+  163:1  warning  Missing JSDoc @param "payload" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/components/StepConfigPanel.vue
+  402:1  warning  Missing JSDoc @param "newStep" description      jsdoc/require-param-description
+  423:1  warning  Missing JSDoc @param "config" description       jsdoc/require-param-description
+  537:1  warning  Missing JSDoc @param "index" description        jsdoc/require-param-description
+  551:1  warning  Missing JSDoc @param "checklist" description    jsdoc/require-param-description
+  567:1  warning  Missing JSDoc @param "actions" description      jsdoc/require-param-description
+  609:1  warning  Missing JSDoc @param "index" description        jsdoc/require-param-description
+  618:1  warning  Missing JSDoc @param "index" description        jsdoc/require-param-description
+  619:1  warning  Missing JSDoc @param "event" description        jsdoc/require-param-description
+  628:1  warning  Missing JSDoc @param "targetIndex" description  jsdoc/require-param-description
+  629:1  warning  Missing JSDoc @param "event" description        jsdoc/require-param-description
+  651:1  warning  Missing JSDoc @param "index" description        jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/components/TransitionConfigPanel.vue
+  322:1  warning  Missing JSDoc @param "newVal" description   jsdoc/require-param-description
+  338:1  warning  Missing JSDoc @param "guards" description   jsdoc/require-param-description
+  354:1  warning  Missing JSDoc @param "actions" description  jsdoc/require-param-description
+  380:1  warning  Missing JSDoc @param "roleId" description   jsdoc/require-param-description
+  400:1  warning  Missing JSDoc @param "index" description    jsdoc/require-param-description
+  415:1  warning  Missing JSDoc @param "index" description    jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/components/WorkflowNode.vue
+  200:1   warning  Missing JSDoc @param "statusId" description                                     jsdoc/require-param-description
+  210:1   warning  Missing JSDoc @param "event" description                                        jsdoc/require-param-description
+  221:1   warning  Missing JSDoc @param "event" description                                        jsdoc/require-param-description
+  229:1   warning  Missing JSDoc @param "step" description                                         jsdoc/require-param-description
+  230:1   warning  Missing JSDoc @param "event" description                                        jsdoc/require-param-description
+  240:1   warning  Missing JSDoc @param "targetStep" description                                   jsdoc/require-param-description
+  241:1   warning  Missing JSDoc @param "event" description                                        jsdoc/require-param-description
+  247:16  warning  The "step-reorder" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/components/WorkflowPalette.vue
+  79:1  warning  Missing JSDoc @param "type" description   jsdoc/require-param-description
+  80:1  warning  Missing JSDoc @param "event" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/tabs/AiSettingsTab.vue
+  236:1  warning  Missing JSDoc @param "key" description    jsdoc/require-param-description
+  237:1  warning  Missing JSDoc @param "value" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/tabs/ChecklistsTab.vue
+  136:1  warning  Prefer a more specific type to `*`  jsdoc/reject-any-type
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/tabs/DocumentTypesTab.vue
+  212:1  warning  Missing JSDoc @param "item" description  jsdoc/require-param-description
+  257:1  warning  Missing JSDoc @param "item" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/tabs/FinancialIntegrationTab.vue
+   86:1  warning  Missing JSDoc @param "value" description  jsdoc/require-param-description
+  106:1  warning  Missing JSDoc @param "value" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/tabs/GeneralTab.vue
+   13:38  warning  The "update" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+   25:19  warning  The "update" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+   38:38  warning  The "update" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+   51:38  warning  The "update" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+   64:38  warning  The "update" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+   75:38  warning  The "update" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+   86:38  warning  The "update" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+   97:19  warning  The "update" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  108:26  warning  The "update" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  120:26  warning  The "update" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  130:38  warning  The "update" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  141:26  warning  The "update" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  155:19  warning  The "update" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  172:19  warning  The "update" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  189:19  warning  The "update" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  204:19  warning  The "update" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  217:38  warning  The "update" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  228:38  warning  The "update" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  238:38  warning  The "update" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  251:19  warning  The "update" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+  264:19  warning  The "update" event has been triggered but not declared on `emits` option  vue/require-explicit-emits
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/tabs/MandaatMatrixTab.vue
+  125:1  warning  Missing JSDoc @param "v" description        jsdoc/require-param-description
+  190:1  warning  Missing JSDoc @param "mandaat" description  jsdoc/require-param-description
+  216:1  warning  Missing JSDoc @param "payload" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/tabs/PropertiesTab.vue
+  384:1  warning  Missing JSDoc @param "pd" description  jsdoc/require-param-description
+  428:1  warning  Missing JSDoc @param "pd" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/tabs/ResultsTab.vue
+  290:1  warning  Missing JSDoc @param "period" description  jsdoc/require-param-description
+  343:1  warning  Missing JSDoc @param "rt" description      jsdoc/require-param-description
+  387:1  warning  Missing JSDoc @param "rt" description      jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/tabs/RolesTab.vue
+  236:1  warning  Missing JSDoc @param "value" description  jsdoc/require-param-description
+  287:1  warning  Missing JSDoc @param "rt" description     jsdoc/require-param-description
+  329:1  warning  Missing JSDoc @param "rt" description     jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/tabs/StatusesTab.vue
+  380:1  warning  Missing JSDoc @param "st" description           jsdoc/require-param-description
+  458:1  warning  Missing JSDoc @param "st" description           jsdoc/require-param-description
+  498:1  warning  Missing JSDoc @param "index" description        jsdoc/require-param-description
+  499:1  warning  Missing JSDoc @param "event" description        jsdoc/require-param-description
+  508:1  warning  Missing JSDoc @param "index" description        jsdoc/require-param-description
+  522:1  warning  Missing JSDoc @param "targetIndex" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/tabs/TermijnDefinitiesTab.vue
+  181:1  warning  Missing JSDoc @param "def" description      jsdoc/require-param-description
+  192:1  warning  Missing JSDoc @param "def" description      jsdoc/require-param-description
+  207:1  warning  Missing JSDoc @param "def" description      jsdoc/require-param-description
+  222:1  warning  Missing JSDoc @param "payload" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/settings/tabs/WorkflowTab.vue
+  365:1  warning  Missing JSDoc @param "event" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/termijn/TdAnnualWidget.vue
+  91:1  warning  Expected 1 lines after block description  jsdoc/tag-lines
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/termijn/TdKpiWidget.vue
+  98:1  warning  Expected 1 lines after block description  jsdoc/tag-lines
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/termijn/TdQuarterlyWidget.vue
+  113:1  warning  Expected 1 lines after block description  jsdoc/tag-lines
+  121:1  warning  Expected 1 lines after block description  jsdoc/tag-lines
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/voorstellen/VoorstelDetail.vue
+  379:1  warning  Missing JSDoc @param "type" description    jsdoc/require-param-description
+  387:1  warning  Missing JSDoc @param "status" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/voorstellen/components/AuditTrail.vue
+   97:1  warning  Missing JSDoc @param "action" description  jsdoc/require-param-description
+  105:1  warning  Missing JSDoc @param "actie" description   jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/voorstellen/components/DelegateSelectorField.vue
+  56:1  warning  Missing JSDoc @param "entry" description  jsdoc/require-param-description
+  68:1  warning  Missing JSDoc @param "event" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/voorstellen/components/ParafeerActieTimeline.vue
+   98:1  warning  Missing JSDoc @param "actie" description  jsdoc/require-param-description
+  111:1  warning  Missing JSDoc @param "actie" description  jsdoc/require-param-description
+  125:1  warning  Missing JSDoc @param "actie" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/voorstellen/components/ProgressTimeline.vue
+   87:1  warning  Missing JSDoc @param "step" description  jsdoc/require-param-description
+   97:1  warning  Missing JSDoc @param "type" description  jsdoc/require-param-description
+  105:1  warning  Missing JSDoc @param "step" description  jsdoc/require-param-description
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/widgets/CasesOverviewWidget.vue
+  35:3  warning  'title' of property found, but never used  vue/no-unused-properties
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/widgets/DeadlineAlertsWidget.vue
+  36:3  warning  'title' of property found, but never used  vue/no-unused-properties
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/widgets/MyTasksWidget.vue
+  36:3  warning  'title' of property found, but never used  vue/no-unused-properties
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/widgets/OverdueCasesWidget.vue
+  36:3  warning  'title' of property found, but never used  vue/no-unused-properties
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/widgets/StalledCasesWidget.vue
+  36:3  warning  'title' of property found, but never used  vue/no-unused-properties
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/widgets/StartCaseWidget.vue
+  63:3  warning  'title' of property found, but never used  vue/no-unused-properties
+
+/home/rubenlinde/fleet-work/fx/dossiq/src/views/widgets/TaskRemindersWidget.vue
+  37:3  warning  'title' of property found, but never used  vue/no-unused-properties
+
+✖ 883 problems (0 errors, 883 warnings)
+  0 errors and 7 warnings potentially fixable with the `--fix` option.
+

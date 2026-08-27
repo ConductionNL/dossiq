@@ -1,0 +1,177 @@
+
+> dossiq@0.1.0 stylelint
+> stylelint "{src,css}/**/*.{vue,scss,css}"
+
+
+src/dialogs/AiExtractDialog.vue
+  226:2  ⚠  Unexpected "left" value in "text-align" property. Use "start".  csstools/use-logical
+  231:2  ⚠  Unexpected "border-left" property. Use "border-inline-start".   csstools/use-logical
+
+src/dialogs/BerichtenboxComposeDialog.vue
+  167:2  ⚠  Unexpected "right" value in "float" property. Use "inline-end".  csstools/use-logical
+
+src/dialogs/BulkTransitionDialog.vue
+  366:2  ⚠  Unexpected "padding-left" property. Use "padding-inline-start".  csstools/use-logical
+
+src/dialogs/ConsultationResponseForm.vue
+  311:2  ⚠  Unexpected "margin-right" property. Use "margin-inline-end".  csstools/use-logical
+
+src/dialogs/RedactionAssistDialog.vue
+  387:2  ⚠  Unexpected "left" value in "text-align" property. Use "start".  csstools/use-logical
+
+src/modals/BulkReassignModal.vue
+  348:2  ⚠  Unexpected "left" value in "text-align" property. Use "start".  csstools/use-logical
+
+src/components/map/AddressSearch.vue
+  169:2  ⚠  Unexpected "left" property. Use "inset-inline".  csstools/use-logical
+  217:2  ⚠  Unexpected "left" property. Use "inset-inline".  csstools/use-logical
+
+src/components/map/LocationPicker.vue
+  297:2  ⚠  Unexpected "left" property. Use "inset-inline".  csstools/use-logical
+
+src/views/admin/SubstitutionAdmin.vue
+  269:2  ⚠  Unexpected "left" value in "text-align" property. Use "start".  csstools/use-logical
+
+src/views/cases/DeelzaakList.vue
+  487:2  ⚠  Unexpected "margin-left" property. Use "margin-inline-start".   csstools/use-logical
+  508:2  ⚠  Unexpected "left" value in "text-align" property. Use "start".  csstools/use-logical
+
+src/views/dashboard/WooDeadlinePanel.vue
+  174:2  ⚠  Unexpected "border-left" property. Use "border-inline-start".              csstools/use-logical
+  175:2  ⚠  Unexpected "left" value in "text-align" property. Use "start".             csstools/use-logical
+  192:2  ⚠  Unexpected "border-left-color" property. Use "border-inline-start-color".  csstools/use-logical
+  196:2  ⚠  Unexpected "border-left-color" property. Use "border-inline-start-color".  csstools/use-logical
+  200:2  ⚠  Unexpected "border-left-color" property. Use "border-inline-start-color".  csstools/use-logical
+  204:2  ⚠  Unexpected "border-left-color" property. Use "border-inline-start-color".  csstools/use-logical
+  238:2  ⚠  Unexpected "margin-left" property. Use "margin-inline-start".              csstools/use-logical
+
+src/views/processMining/PmBottleneckTableWidget.vue
+  93:2  ⚠  Unexpected "left" value in "text-align" property. Use "start".  csstools/use-logical
+
+src/views/settings/StufAuditLog.vue
+  267:2  ⚠  Unexpected "left" value in "text-align" property. Use "start".  csstools/use-logical
+  276:2  ⚠  Unexpected "right" value in "text-align" property. Use "end".   csstools/use-logical
+
+src/views/settings/StufEndpoints.vue
+  148:2  ⚠  Unexpected "left" value in "text-align" property. Use "start".  csstools/use-logical
+
+src/views/settings/SubstitutionSettings.vue
+  190:2  ⚠  Unexpected "left" value in "text-align" property. Use "start".  csstools/use-logical
+
+src/views/settings/WorkflowEditor.vue
+  739:2  ⚠  Unexpected "border-right" property. Use "border-inline-end".  csstools/use-logical
+  760:2  ⚠  Unexpected "left" property. Use "inset-inline-start".         csstools/use-logical
+
+src/views/settings/ZgwMappingSettings.vue
+  156:2  ⚠  Unexpected "left" value in "text-align" property. Use "start".  csstools/use-logical
+
+src/views/termijn/TdAnnualWidget.vue
+  112:2  ⚠  Unexpected "margin-left" property. Use "margin-inline-start".  csstools/use-logical
+
+src/views/termijn/TdQuarterlyWidget.vue
+  179:2  ⚠  Unexpected "left" value in "text-align" property. Use "start".  csstools/use-logical
+
+src/views/workflow-board/CaseCard.vue
+  212:2  ⚠  Unexpected "border-left" property. Use "border-inline-start".              csstools/use-logical
+  225:2  ⚠  Unexpected "right" property. Use "inset-inline-end".                       csstools/use-logical
+  231:2  ⚠  Unexpected "left" property. Use "inset-inline-start".                      csstools/use-logical
+  255:2  ⚠  Unexpected "border-left-color" property. Use "border-inline-start-color".  csstools/use-logical
+  259:2  ⚠  Unexpected "border-left-color" property. Use "border-inline-start-color".  csstools/use-logical
+  269:2  ⚠  Unexpected "padding-left" property. Use "padding-inline-start".            csstools/use-logical
+
+src/views/cases/components/CaseEmailTab.vue
+  359:2  ⚠  Unexpected "padding-left" property. Use "padding-inline-start".  csstools/use-logical
+
+src/views/cases/components/DossierGroup.vue
+  125:2  ⚠  Unexpected "left" value in "text-align" property. Use "start".   csstools/use-logical
+  135:2  ⚠  Unexpected "padding-left" property. Use "padding-inline-start".  csstools/use-logical
+
+src/views/cases/components/EmailThread.vue
+  181:2  ⚠  Unexpected "border-left" property. Use "border-inline-start".  csstools/use-logical
+  185:2  ⚠  Unexpected "border-left" property. Use "border-inline-start".  csstools/use-logical
+
+src/views/cases/components/InspectionChecklistPanel.vue
+  80:2  ⚠  Unexpected "padding-left" property. Use "padding-inline-start".  csstools/use-logical
+
+src/views/cases/components/InspectionPanel.vue
+  583:2  ⚠  Unexpected "left" property. Use "inset-inline".  csstools/use-logical
+
+src/views/cases/components/RelatedCasesSection.vue
+  290:2  ⚠  Unexpected "right" value in "text-align" property. Use "end".  csstools/use-logical
+
+src/views/casetypes/components/EmailTemplateAdmin.vue
+  454:2  ⚠  Unexpected "left" value in "text-align" property. Use "start".  csstools/use-logical
+
+src/views/doorlooptijd/components/CaseTypeBreakdown.vue
+  180:2  ⚠  Unexpected "left" value in "text-align" property. Use "start".  csstools/use-logical
+  203:2  ⚠  Unexpected "right" value in "text-align" property. Use "end".   csstools/use-logical
+  207:2  ⚠  Unexpected "margin-left" property. Use "margin-inline-start".   csstools/use-logical
+
+src/views/doorlooptijd/components/DeadlineCaseTable.vue
+  201:2  ⚠  Unexpected "right" value in "text-align" property. Use "end".  csstools/use-logical
+
+src/views/settings/components/MandaatMatrixTable.vue
+  134:2  ⚠  Unexpected "left" value in "text-align" property. Use "start".  csstools/use-logical
+
+src/views/settings/components/MandaatToewijzingenTable.vue
+  238:2  ⚠  Unexpected "left" value in "text-align" property. Use "start".  csstools/use-logical
+
+src/views/settings/components/RolNode.vue
+  100:2  ⚠  Unexpected "margin-left" property. Use "margin-inline-start".    csstools/use-logical
+  104:2  ⚠  Unexpected "margin-left" property. Use "margin-inline-start".    csstools/use-logical
+  105:2  ⚠  Unexpected "border-left" property. Use "border-inline-start".    csstools/use-logical
+  106:2  ⚠  Unexpected "padding-left" property. Use "padding-inline-start".  csstools/use-logical
+
+src/views/settings/components/StepConfigPanel.vue
+  665:2  ⚠  Unexpected "right" property. Use "inset-inline-end".           csstools/use-logical
+  670:2  ⚠  Unexpected "border-left" property. Use "border-inline-start".  csstools/use-logical
+
+src/views/settings/components/TransitionConfigPanel.vue
+  440:2  ⚠  Unexpected "right" property. Use "inset-inline-end".           csstools/use-logical
+  445:2  ⚠  Unexpected "border-left" property. Use "border-inline-start".  csstools/use-logical
+
+src/views/settings/components/WorkflowNode.vue
+  292:2  ⚠  Unexpected "left" property. Use "inset-inline-start".           csstools/use-logical
+  298:2  ⚠  Unexpected "left" property. Use "inset-inline-start".           csstools/use-logical
+  393:2  ⚠  Unexpected "left" value in "text-align" property. Use "start".  csstools/use-logical
+
+src/views/settings/components/WorkflowValidationBanner.vue
+  83:2  ⚠  Unexpected "margin-left" property. Use "margin-inline-start".  csstools/use-logical
+
+src/views/settings/tabs/DecisionTablesTab.vue
+  421:2  ⚠  Unexpected "padding-left" property. Use "padding-inline-start".  csstools/use-logical
+
+src/views/settings/tabs/PropertiesTab.vue
+  511:2  ⚠  Unexpected "margin-left" property. Use "margin-inline-start".  csstools/use-logical
+
+src/views/settings/tabs/ResultsTab.vue
+  472:2  ⚠  Unexpected "margin-left" property. Use "margin-inline-start".  csstools/use-logical
+
+src/views/settings/tabs/RolesTab.vue
+  401:2  ⚠  Unexpected "margin-left" property. Use "margin-inline-start".  csstools/use-logical
+
+src/views/settings/tabs/StatusesTab.vue
+  658:2  ⚠  Unexpected "margin-left" property. Use "margin-inline-start".  csstools/use-logical
+
+src/views/settings/tabs/SubCaseTypesTab.vue
+  262:2  ⚠  Unexpected "margin-left" property. Use "margin-inline-start".  csstools/use-logical
+
+src/views/settings/tabs/sub-entity-tab.css
+  55:2  ⚠  Unexpected "margin-left" property. Use "margin-inline-start".  csstools/use-logical
+
+src/views/voorstellen/components/AuditTrail.vue
+  155:2  ⚠  Unexpected "border-left" property. Use "border-inline-start".              csstools/use-logical
+  162:2  ⚠  Unexpected "border-left-color" property. Use "border-inline-start-color".  csstools/use-logical
+  166:2  ⚠  Unexpected "border-left-color" property. Use "border-inline-start-color".  csstools/use-logical
+  170:2  ⚠  Unexpected "border-left-color" property. Use "border-inline-start-color".  csstools/use-logical
+  174:2  ⚠  Unexpected "border-left-color" property. Use "border-inline-start-color".  csstools/use-logical
+  219:2  ⚠  Unexpected "margin-left" property. Use "margin-inline-start".              csstools/use-logical
+
+src/views/voorstellen/components/ParafeerActieTimeline.vue
+  151:2  ⚠  Unexpected "border-left" property. Use "border-inline-start".  csstools/use-logical
+
+src/views/voorstellen/components/ProgressTimeline.vue
+  145:2  ⚠  Unexpected "left" property. Use "inset-inline-start".  csstools/use-logical
+
+⚠ 78 problems (0 errors, 78 warnings)
+
