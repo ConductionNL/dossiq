@@ -3393,7 +3393,16 @@ OC.L10N.register(
         "Enabled, but has no owner — it will not start": "Enabled, but has no owner — it will not start",
         "Flow": "Flow",
         "Flows": "Flows",
-        "New flow": "New flow"
+        "New flow": "New flow",
+        "Callback signing secret": "Callback signing secret",
+        "Dwangsom callback signing secret": "Dwangsom callback signing secret",
+        "Every case follows a case type — its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look; you do not need to make one, 88 ship with the app.": "Every case follows a case type — its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look; you do not need to make one, 88 ship with the app.",
+        "Flows are what happens without anyone clicking: a deadline that warns before it passes, a confirmation that goes out on submission. This is where you read and edit them — nothing to build now.": "Flows are what happens without anyone clicking: a deadline that warns before it passes, a confirmation that goes out on submission. This is where you read and edit them — nothing to build now.",
+        "Open Case types in the menu": "Open Case types in the menu",
+        "Open Flows in the menu": "Open Flows in the menu",
+        "Shared secret the payment provider signs its dwangsom payout callbacks with. Until it is set, DwangsomPaymentCallbackController cannot verify that a callback really came from the provider. Only shown while the dwangsom payout integration is configured.": "Shared secret the payment provider signs its dwangsom payout callbacks with. Until it is set, DwangsomPaymentCallbackController cannot verify that a callback really came from the provider. Only shown while the dwangsom payout integration is configured.",
+        "Where case types come from": "Where case types come from",
+        "Where the automation lives": "Where the automation lives"
     },
     "nplurals=2; plural=(n != 1);"
 )

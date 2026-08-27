@@ -23,9 +23,38 @@
  */
 
 import { test, expect, type Page } from '@playwright/test'
-import { navTo, dismissSupportDialog } from './helpers/nav'
+import { dismissSupportDialog } from './helpers/nav'
 
-const CASE_TYPES_LABEL = 'Case types'
+/**
+ * Open the case-types index by ROUTE, not by sidebar label.
+ *
+ * `navTo()` resolves a nav entry by its exact visible text, which is
+ * translated: on a Dutch-locale instance the sidebar reads "Zaaktypen", not
+ * "Case types", and the helper fails by name with a list of Dutch labels. A
+ * spec that asserts on case types has no business also asserting on the
+ * language the instance happens to run in.
+ *
+ * @param page The page.
+ */
+async function gotoCaseTypes(page: Page): Promise<void> {
+	await page.goto('/index.php/apps/dossiq')
+	await dismissSupportDialog(page)
+	const href = await page.evaluate(() => {
+		const nav = document.querySelector('[id^="app-navigation"]')
+		const link = nav
+			? [...nav.querySelectorAll('a')].find((a) =>
+					/\/settings\/case-types$/.test(a.getAttribute('href') || ''),
+				)
+			: null
+		return link ? link.getAttribute('href') : null
+	})
+	if (!href) {
+		throw new Error(
+			'[dossiq e2e] no sidebar link routes to /settings/case-types — the Case types menu entry is missing from the manifest or the nav did not render.',
+		)
+	}
+	await page.goto(href)
+}
 
 /**
  * Open the row-actions overflow menu on the first table row.
@@ -110,8 +139,7 @@ test.describe('Case types — the row action menu', () => {
 
 	// @e2e openspec/changes/case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
 	test('every entry in the row menu has a visible label', async ({ page }) => {
-		await navTo(page, CASE_TYPES_LABEL)
-		await dismissSupportDialog(page)
+		await gotoCaseTypes(page)
 		const menu = await openFirstRowMenu(page)
 
 		const items = menu.locator('[role="menuitem"], li')
@@ -134,8 +162,7 @@ test.describe('Case types — the row action menu', () => {
 		// The manifest used to hand-roll a `view` action next to the built-in
 		// one; both now resolve to the same detail route, so only one should
 		// remain.
-		await navTo(page, CASE_TYPES_LABEL)
-		await dismissSupportDialog(page)
+		await gotoCaseTypes(page)
 		const menu = await openFirstRowMenu(page)
 		const text = ((await menu.innerText()) || '').trim()
 
@@ -149,8 +176,7 @@ test.describe('Case types — Edit goes to the detail page, not a modal', () => 
 
 	// @e2e openspec/changes/case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
 	test('Edit navigates to the case type detail route', async ({ page }) => {
-		await navTo(page, CASE_TYPES_LABEL)
-		await dismissSupportDialog(page)
+		await gotoCaseTypes(page)
 		const menu = await openFirstRowMenu(page)
 
 		await menu.getByText('Edit', { exact: true }).click()
@@ -164,8 +190,7 @@ test.describe('Case types — Edit goes to the detail page, not a modal', () => 
 	test('Edit does not open a dialog over the index', async ({ page }) => {
 		// The decisive half. Navigating AND opening the modal would satisfy the
 		// test above while changing nothing about the defect.
-		await navTo(page, CASE_TYPES_LABEL)
-		await dismissSupportDialog(page)
+		await gotoCaseTypes(page)
 		const menu = await openFirstRowMenu(page)
 
 		await menu.getByText('Edit', { exact: true }).click()
@@ -188,8 +213,7 @@ test.describe('Case type detail — the record can be edited there', () => {
 		// Without this the change above would simply have made every case type
 		// read-only — which is what "0 of 233 detail pages declared an edit
 		// action" measured across the fleet.
-		await navTo(page, CASE_TYPES_LABEL)
-		await dismissSupportDialog(page)
+		await gotoCaseTypes(page)
 		const menu = await openFirstRowMenu(page)
 		await menu.getByText('View', { exact: true }).click()
 		await expect(page).toHaveURL(/\/settings\/case-types\/[^/]+$/, {
@@ -203,8 +227,7 @@ test.describe('Case type detail — the record can be edited there', () => {
 
 	// @e2e openspec/changes/case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
 	test('the Edit button opens the record form', async ({ page }) => {
-		await navTo(page, CASE_TYPES_LABEL)
-		await dismissSupportDialog(page)
+		await gotoCaseTypes(page)
 		const menu = await openFirstRowMenu(page)
 		await menu.getByText('View', { exact: true }).click()
 		await expect(page).toHaveURL(/\/settings\/case-types\/[^/]+$/, {
