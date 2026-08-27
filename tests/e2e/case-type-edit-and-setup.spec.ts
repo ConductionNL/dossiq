@@ -44,25 +44,61 @@ async function openFirstRowMenu(page: Page) {
 }
 
 /**
- * Read `/api/setup/status`.
+ * The Nextcloud CSRF request token for the loaded page.
  *
- * Goes through `page.evaluate` with the request token rather than
- * `page.request.get`: the endpoint sits behind Nextcloud's CSRF middleware,
- * which rejects a cookie-authenticated request that carries no token — and
- * answers with a 200 whose body is `{message: "CSRF check failed"}`, so a
- * caller that only checks the status code reads the refusal as data.
+ * NOT `meta[name=requesttoken]`: that meta tag does not exist on NC 34, so a
+ * lookup through it yields `undefined`, the header goes out empty, and the
+ * request comes back `412 {"message":"CSRF check failed"}` — a refusal that a
+ * caller checking only for a 2xx reads as data. The token lives on
+ * `OC.requestToken`, with `<head data-requesttoken>` as the fallback.
  *
  * @param page The page.
- * @return The parsed status payload, or null.
+ * @return The token, or an empty string.
+ */
+async function requestToken(page: Page): Promise<string> {
+	return await page.evaluate(() => {
+		const w = window as unknown as { OC?: { requestToken?: string } }
+		return w.OC?.requestToken
+			|| document.head.getAttribute('data-requesttoken')
+			|| ''
+	})
+}
+
+/**
+ * Read `/api/setup/status` from the loaded page, with CSRF.
+ *
+ * @param page The page.
+ * @return The parsed status payload, or null when the answer was not one.
  */
 async function readSetupStatus(page: Page): Promise<any> {
-	return await page.evaluate(async () => {
-		const token = (document.head.querySelector('meta[name=requesttoken]') as HTMLMetaElement)?.content
+	const token = await requestToken(page)
+	return await page.evaluate(async (tok) => {
 		const res = await fetch('/index.php/apps/dossiq/api/setup/status', {
-			headers: { Accept: 'application/json', requesttoken: token },
+			headers: { Accept: 'application/json', requesttoken: tok },
 		})
 		const body = await res.json().catch(() => null)
 		return (body && body.steps) ? body : null
+	}, token)
+}
+
+/**
+ * Fetch the app's main bundle — the artefact the browser actually loaded.
+ *
+ * The URL is read off the page's own `<script src>` rather than hardcoded:
+ * `/apps/dossiq/js/dossiq-main.js` answers 200 with the app's HTML shell, not
+ * the bundle, so a hardcoded path yields a page that contains none of the
+ * strings being looked for and fails as though the code were missing.
+ *
+ * @param page The page.
+ * @return The bundle source.
+ */
+async function mainBundleSource(page: Page): Promise<string> {
+	return await page.evaluate(async () => {
+		const el = [...document.querySelectorAll('script[src]')]
+			.find((s) => /dossiq-main\.js/.test(s.getAttribute('src') || ''))
+		if (!el) return ''
+		const res = await fetch(el.getAttribute('src') as string)
+		return res.ok ? await res.text() : ''
 	})
 }
 
@@ -253,9 +289,9 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 		// source-level check cannot see a stale bundle. (`/api/manifest` is a
 		// delta endpoint and does not carry the walkthrough, so it is no use
 		// here.)
-		const res = await page.request.get('/apps/dossiq/js/dossiq-main.js')
-		expect(res.status()).toBe(200)
-		const bundle = await res.text()
+		await page.goto('/index.php/apps/dossiq')
+		const bundle = await mainBundleSource(page)
+		expect(bundle.length, 'could not fetch the app bundle').toBeGreaterThan(1000)
 
 		for (const id of ['see-case-types', 'see-flows']) {
 			expect(bundle, `walkthrough step "${id}" missing from the built bundle`).toContain(id)
@@ -284,7 +320,9 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 		// "Show where, do not force" is the whole point of both steps. A tour
 		// step that only advances on `object-created` would make looking at the
 		// case types a prerequisite for finishing the tour.
-		const bundle = await (await page.request.get('/apps/dossiq/js/dossiq-main.js')).text()
+		await page.goto('/index.php/apps/dossiq')
+		const bundle = await mainBundleSource(page)
+		expect(bundle.length, 'could not fetch the app bundle').toBeGreaterThan(1000)
 
 		for (const id of ['see-case-types', 'see-flows']) {
 			// The step object is emitted as one contiguous run in the bundle;
