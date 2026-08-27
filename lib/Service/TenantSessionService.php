@@ -96,7 +96,7 @@ class TenantSessionService {
 	 *
 	 * @return string|null The tenant id, or null when none is resolved.
 	 *
-	 * @spec openspec/specs/multi-tenancy/spec.md#requirement-req-002-user-to-tenant-resolution-via-or-organisation-with-nc-group-fallback
+	 * @spec openspec/specs/multi-tenancy/spec.md#req-002-user-to-tenant-resolution-via-or-organisation-with-nc-group-fallback
 	 */
 	public function activeTenantId(): ?string {
 		$uid = $this->uid();
@@ -146,7 +146,7 @@ class TenantSessionService {
 	 *
 	 * @return bool Whether the switch was permitted and applied.
 	 *
-	 * @spec openspec/specs/multi-tenancy/spec.md#requirement-req-002-user-to-tenant-resolution-via-or-organisation-with-nc-group-fallback
+	 * @spec openspec/specs/multi-tenancy/spec.md#req-002-user-to-tenant-resolution-via-or-organisation-with-nc-group-fallback
 	 */
 	public function switchTo(string $tenantId): bool {
 		$tenantId = trim($tenantId);
@@ -189,7 +189,7 @@ class TenantSessionService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/specs/multi-tenancy/spec.md#requirement-req-002-user-to-tenant-resolution-via-or-organisation-with-nc-group-fallback
+	 * @spec openspec/specs/multi-tenancy/spec.md#req-002-user-to-tenant-resolution-via-or-organisation-with-nc-group-fallback
 	 */
 	public function clear(): void {
 		$this->session->remove(self::SESSION_KEY);
