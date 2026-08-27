@@ -10,13 +10,6 @@
 		{
 			"id": "SubsidiesGroup",
 			"route": "Subsidies"
-		},
-		{
-			"id": "Subsidieregelingen",
-			"label": "Subsidy schemes",
-			"icon": "HandHeartOutline",
-			"route": "Subsidieregelingen",
-			"order": 96
 		}
 	],
 	"pages": [
@@ -96,28 +89,6 @@
 					"tabs": [
 						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
 					]
-				}
-			}
-		},
-		{
-			"id": "Subsidieregelingen",
-			"route": "/subsidieregelingen",
-			"type": "index",
-			"title": "Subsidieregelingen",
-			"config": {
-				"register": "dossiq",
-				"schema": "subsidieRegeling",
-				"columns": [
-					"schemeName",
-					"juridischeGrondslag",
-					"plafond",
-					"interimReportFrequency",
-					"termStart",
-					"termEnd"
-				],
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true
 				}
 			}
 		},
