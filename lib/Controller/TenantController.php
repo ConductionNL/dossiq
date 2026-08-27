@@ -57,6 +57,8 @@ class TenantController extends Controller {
 	 * @param IRequest $request The request object
 	 * @param TenantService $tenantService The tenant service
 	 * @param IUserSession $userSession The user session
+	 * @param TenantSessionService $tenantSession The session-held active tenant.
+	 * @param TenantAuthenticationService $tenantAuthentication Membership lookups.
 	 *
 	 * @return void
 	 */

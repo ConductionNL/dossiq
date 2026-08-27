@@ -73,6 +73,7 @@ class TenantContextMiddleware extends Middleware {
 	 * Constructor.
 	 *
 	 * @param IRequest $request Request.
+	 * @param TenantSessionService $tenantSession Session-held active tenant.
 	 * @param TenantSaasService $tenantSaasService Tenant SaaS service.
 	 * @param TenantProvisioningService $provisioning Provisioning service (schema-name builder).
 	 * @param TenantContext $context Request-scoped context.
