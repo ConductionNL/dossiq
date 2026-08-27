@@ -30,7 +30,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\TenantAuthenticationService;
 use OCA\Dossiq\Service\TenantService;
+use OCA\Dossiq\Service\TenantSessionService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -38,6 +40,7 @@ use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUserSession;
+use Throwable;
 
 /**
  * Controller for tenant domain operations (provisioning, usage, current tenant).
@@ -61,6 +64,8 @@ class TenantController extends Controller {
 		IRequest $request,
 		private TenantService $tenantService,
 		private IUserSession $userSession,
+		private TenantSessionService $tenantSession,
+		private TenantAuthenticationService $tenantAuthentication,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -132,6 +137,85 @@ class TenantController extends Controller {
 
 		return new JSONResponse(['success' => true, 'tenant' => $tenant]);
 	}//end current()
+
+	/**
+	 * The tenants the signed-in user may act as.
+	 *
+	 * The switcher needs this: a user with several memberships resolves to no
+	 * tenant until they choose one, and they cannot choose from a list they
+	 * cannot see.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @return JSONResponse The memberships.
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/proposal.md
+	 */
+	public function memberships(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		try {
+			$tenantIds = $this->tenantAuthentication->listTenantsForUser(userId: $user->getUID());
+		} catch (Throwable $e) {
+			// Fail CLOSED, and say so. An empty list rendered as a clean answer
+			// would show the user "you belong to nothing" when the truth is
+			// "we could not find out".
+			return new JSONResponse(
+				['success' => false, 'error' => 'Could not read your tenant memberships'],
+				Http::STATUS_INTERNAL_SERVER_ERROR
+			);
+		}
+
+		return new JSONResponse(
+			[
+				'success' => true,
+				'tenants' => $tenantIds,
+				'active' => $this->tenantSession->activeTenantId(),
+			]
+		);
+	}//end memberships()
+
+	/**
+	 * Switch the session to another tenant the user belongs to.
+	 *
+	 * WHY THIS IS AN ENDPOINT AND NOT A HEADER. The tenant a request acts as
+	 * used to come from `X-Tenant-Id`, which the caller supplies — so the
+	 * caller chose their own tenant and nothing verified they could. Switching
+	 * is now an explicit act whose membership is checked at the moment it
+	 * happens, and the result lives in the session rather than in something the
+	 * next request can retype.
+	 *
+	 * A refusal is deliberately a 403 with no detail about whether the tenant
+	 * exists: telling an outsider "that tenant is real, you just are not on it"
+	 * enumerates the tenant list.
+	 *
+	 * @param string $tenantId The tenant to switch to.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @return JSONResponse The outcome.
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/proposal.md
+	 */
+	public function switchTenant(string $tenantId = ''): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->tenantSession->switchTo($tenantId) === false) {
+			return new JSONResponse(
+				['success' => false, 'error' => 'You cannot act as that tenant'],
+				Http::STATUS_FORBIDDEN
+			);
+		}
+
+		return new JSONResponse(['success' => true, 'active' => $this->tenantSession->activeTenantId()]);
+	}//end switchTenant()
+
 
 	/**
 	 * Check if current user is a platform administrator.

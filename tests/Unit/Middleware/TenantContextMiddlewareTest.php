@@ -3,14 +3,10 @@
 /**
  * TenantContextMiddleware Unit Tests
  *
- * PINNING TESTS, written before the tenancy store moves onto OpenRegister's
- * Organisation entity. This middleware decides WHICH TENANT a request acts as,
- * and everything downstream — quota, isolation, the claim check — trusts what
- * it bound. It had no tests.
- *
- * Two behaviours are pinned here that are worth a decision rather than a
- * refactor: see testHeaderAloneBindsTheTenant() and
- * testUserFallbackResolvesNothing().
+ * These began as PINNING tests written before the tenancy store moved, and
+ * recorded that the `X-Tenant-Id` header alone bound the tenant. That is the
+ * behaviour this change removes, so the tests now assert its inverse — which
+ * is what a pinning test is for: it made the change visible instead of silent.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Middleware
@@ -32,9 +28,8 @@ use OCA\Dossiq\Middleware\TenantContextMiddleware;
 use OCA\Dossiq\Service\TenantContext;
 use OCA\Dossiq\Service\TenantProvisioningService;
 use OCA\Dossiq\Service\TenantSaasService;
+use OCA\Dossiq\Service\TenantSessionService;
 use OCP\IRequest;
-use OCP\IUser;
-use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -45,36 +40,30 @@ use Psr\Log\LoggerInterface;
  */
 class TenantContextMiddlewareTest extends TestCase {
 	/**
-	 * Build the middleware over a controllable request and tenant lookup.
+	 * Build the middleware over a controllable header, session and lookup.
 	 *
-	 * The tenant lookup is keyed on the id it is ASKED for rather than returning
-	 * a fixed row: a mock that answers the same row to every id would let this
-	 * test pass even if the middleware ignored the header entirely. That mutant
-	 * survived the first draft of these tests, which is why the lookup is
-	 * modelled instead of stubbed.
+	 * The tenant lookup is keyed on the id it is ASKED for rather than
+	 * returning a fixed row: a mock that answers the same row to every id would
+	 * let these tests pass even if the middleware resolved the wrong tenant.
+	 * That mutant survived the first draft, which is why the lookup is modelled
+	 * rather than stubbed.
 	 *
-	 * @param string        $header   The X-Tenant-Id header value.
-	 * @param array<string> $known    Tenant ids the lookup can resolve.
-	 * @param bool          $signedIn Whether a user session exists.
+	 * @param string        $header        The X-Tenant-Id header value.
+	 * @param string|null   $sessionTenant The tenant the session resolves to.
+	 * @param array<string> $known         Tenant ids the lookup can resolve.
 	 *
 	 * @return array{0: TenantContextMiddleware, 1: TenantContext} Middleware and the live context.
 	 */
 	private function newMiddleware(
 		string $header,
+		?string $sessionTenant,
 		array $known,
-		bool $signedIn = true,
 	): array {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn($header);
 
-		$userSession = $this->createMock(IUserSession::class);
-		if ($signedIn === true) {
-			$user = $this->createMock(IUser::class);
-			$user->method('getUID')->willReturn('alice');
-			$userSession->method('getUser')->willReturn($user);
-		} else {
-			$userSession->method('getUser')->willReturn(null);
-		}
+		$tenantSession = $this->createMock(TenantSessionService::class);
+		$tenantSession->method('activeTenantId')->willReturn($sessionTenant);
 
 		$saas = $this->createMock(TenantSaasService::class);
 		$saas->method('getById')->willReturnCallback(
@@ -86,7 +75,6 @@ class TenantContextMiddlewareTest extends TestCase {
 				return ['uuid' => $tenantId, 'slug' => $tenantId];
 			}
 		);
-		$saas->method('listActive')->willReturn([]);
 
 		$provisioning = $this->createMock(TenantProvisioningService::class);
 		$provisioning->method('buildSchemaName')->willReturn('tenant_schema');
@@ -95,7 +83,7 @@ class TenantContextMiddlewareTest extends TestCase {
 
 		$middleware = new TenantContextMiddleware(
 			request: $request,
-			userSession: $userSession,
+			tenantSession: $tenantSession,
 			tenantSaasService: $saas,
 			provisioning: $provisioning,
 			context: $context,
@@ -106,91 +94,101 @@ class TenantContextMiddlewareTest extends TestCase {
 	}
 
 	/**
-	 * THE X-Tenant-Id HEADER ALONE BINDS THE TENANT — pinned, not endorsed.
+	 * THE FIX: the X-Tenant-Id header no longer binds anything.
 	 *
-	 * `resolveTenantIdFromRequest()` returns the header verbatim, with no check
-	 * that the caller may act for that tenant. Nothing in THIS middleware
-	 * verifies it.
+	 * Previously this header was returned verbatim with nothing checking the
+	 * caller could act for that tenant, and the middleware that would have
+	 * caught a forged value only inspects requests carrying a Bearer token — so
+	 * a session-authenticated user could name any tenant and be believed.
 	 *
-	 * `TenantClaimValidationMiddleware` is what catches a forged value — but it
-	 * returns early unless the request carries a `Bearer ` Authorization header.
-	 * A session-authenticated request with a forged X-Tenant-Id and no bearer
-	 * token therefore passes both: one binds on trust, the other declines to
-	 * look. The two middlewares are each individually reasonable and the gap is
-	 * between them, which is why neither file reads as wrong on its own.
-	 *
-	 * Pinned as-is so the migration cannot change it by accident, and named for
-	 * what it is so a green suite is not read as "the header is validated".
-	 * Whether the header should be verified against the session user's
-	 * memberships is a decision for the migration, not a refactor: tightening it
-	 * may break service-to-service callers that rely on it today.
+	 * The header is supplied by the caller, and the caller is exactly who must
+	 * not choose. Here it names a tenant that genuinely exists and the session
+	 * resolves to nothing: if the header still had any force, this would bind.
 	 *
 	 * @return void
 	 */
-	public function testHeaderAloneBindsTheTenant(): void {
+	public function testTheHeaderNoLongerBindsATenant(): void {
 		[$middleware, $context] = $this->newMiddleware(
 			header: 'tenant-anything',
+			sessionTenant: null,
 			known: ['tenant-anything'],
 		);
 
 		$middleware->beforeController(new \stdClass(), 'index');
 
-		$this->assertTrue($context->isBound());
-		$this->assertSame('tenant-anything', $context->getTenantId());
-	}
-
-	/**
-	 * An unresolvable tenant binds nothing rather than binding a default.
-	 *
-	 * Fail-closed in the useful direction: an unknown id leaves the request
-	 * unbound, so the downstream scoping has nothing to scope TO rather than
-	 * silently scoping to somebody.
-	 *
-	 * @return void
-	 */
-	public function testUnknownTenantLeavesTheRequestUnbound(): void {
-		[$middleware, $context] = $this->newMiddleware(
-			header: 'tenant-ghost',
-			known: [],
-		);
-
-		$middleware->beforeController(new \stdClass(), 'index');
-
 		$this->assertFalse($context->isBound());
 	}
 
 	/**
-	 * With no header, nothing binds — the user fallback resolves nothing.
+	 * A header naming a DIFFERENT tenant cannot override the session's.
 	 *
-	 * The fallback branch reads the active-tenant list and then discards it
-	 * (`unset($rows); return null;`), with a comment saying the per-user filter
-	 * does not exist yet. So a signed-in user with no header is unbound, and the
-	 * lookup it performs is pure cost. Pinned so the dead branch is visible: it
-	 * either grows a real filter or it goes.
+	 * The companion to the test above, and the one that catches a partial fix:
+	 * an implementation that consulted the session but let a present header win
+	 * would still pass a test where the session resolves to nothing.
 	 *
 	 * @return void
 	 */
-	public function testUserFallbackResolvesNothing(): void {
+	public function testTheHeaderCannotOverrideTheSessionTenant(): void {
+		[$middleware, $context] = $this->newMiddleware(
+			header: 'tenant-b',
+			sessionTenant: 'tenant-a',
+			known: ['tenant-a', 'tenant-b'],
+		);
+
+		$middleware->beforeController(new \stdClass(), 'index');
+
+		$this->assertTrue($context->isBound());
+		$this->assertSame('tenant-a', $context->getTenantId());
+	}
+
+	/**
+	 * The session's tenant is what binds.
+	 *
+	 * @return void
+	 */
+	public function testTheSessionTenantBinds(): void {
 		[$middleware, $context] = $this->newMiddleware(
 			header: '',
+			sessionTenant: 'tenant-a',
 			known: ['tenant-a'],
 		);
 
 		$middleware->beforeController(new \stdClass(), 'index');
 
+		$this->assertTrue($context->isBound());
+		$this->assertSame('tenant-a', $context->getTenantId());
+	}
+
+	/**
+	 * A session tenant that no longer resolves binds nothing.
+	 *
+	 * Fail-closed in the useful direction: the request has nothing to scope TO
+	 * rather than silently scoping to somebody.
+	 *
+	 * @return void
+	 */
+	public function testAnUnresolvableSessionTenantBindsNothing(): void {
+		[$middleware, $context] = $this->newMiddleware(
+			header: '',
+			sessionTenant: 'tenant-ghost',
+			known: [],
+		);
+
+		$middleware->beforeController(new \stdClass(), 'index');
+
 		$this->assertFalse($context->isBound());
 	}
 
 	/**
-	 * An anonymous request with no header binds nothing.
+	 * No session tenant, no binding.
 	 *
 	 * @return void
 	 */
-	public function testAnonymousRequestBindsNothing(): void {
+	public function testNoSessionTenantBindsNothing(): void {
 		[$middleware, $context] = $this->newMiddleware(
 			header: '',
-			known: [],
-			signedIn: false,
+			sessionTenant: null,
+			known: ['tenant-a'],
 		);
 
 		$middleware->beforeController(new \stdClass(), 'index');
