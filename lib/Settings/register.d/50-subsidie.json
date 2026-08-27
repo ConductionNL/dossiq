@@ -231,6 +231,8 @@
                     "schema": "caseType",
                     "slug": "zaaktype-innovatiefonds-2026"
                 },
+                "id": "b3c1a000-0000-4000-a000-00000000f001",
+                "uuid": "b3c1a000-0000-4000-a000-00000000f001",
                 "title": "Innovatiefonds 2026",
                 "purpose": "AWB titel 4.2 jo. ASV gemeente artikel 3",
                 "validFrom": "2026-01-01",
@@ -244,7 +246,7 @@
                     "slug": "zaaktype-innovatiefonds-2026-plafond"
                 },
                 "name": "plafond",
-                "caseType": "zaaktype-innovatiefonds-2026",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f001",
                 "propertyType": "number",
                 "defaultValue": "2500000"
             },
@@ -255,7 +257,7 @@
                     "slug": "zaaktype-innovatiefonds-2026-targetgroup"
                 },
                 "name": "targetGroup",
-                "caseType": "zaaktype-innovatiefonds-2026",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f001",
                 "propertyType": "string",
                 "defaultValue": "MKB en kennisinstellingen"
             },
@@ -266,7 +268,7 @@
                     "slug": "zaaktype-innovatiefonds-2026-interimreportfrequency"
                 },
                 "name": "interimReportFrequency",
-                "caseType": "zaaktype-innovatiefonds-2026",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f001",
                 "propertyType": "enum",
                 "defaultValue": "annually",
                 "enumValues": [
@@ -283,7 +285,7 @@
                     "slug": "zaaktype-innovatiefonds-2026-interimreporttermweeks"
                 },
                 "name": "interimReportTermWeeks",
-                "caseType": "zaaktype-innovatiefonds-2026",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f001",
                 "propertyType": "number",
                 "defaultValue": "22"
             },
@@ -294,7 +296,7 @@
                     "slug": "zaaktype-innovatiefonds-2026-determinationtermweeks"
                 },
                 "name": "determinationTermWeeks",
-                "caseType": "zaaktype-innovatiefonds-2026",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f001",
                 "propertyType": "number",
                 "defaultValue": "22"
             },
@@ -305,7 +307,7 @@
                     "slug": "zaaktype-innovatiefonds-2026-auditorsstatementthreshold"
                 },
                 "name": "auditorsStatementThreshold",
-                "caseType": "zaaktype-innovatiefonds-2026",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f001",
                 "propertyType": "number",
                 "defaultValue": "125000"
             },
@@ -315,6 +317,8 @@
                     "schema": "caseType",
                     "slug": "zaaktype-cultuur-subsidie-2026"
                 },
+                "id": "b3c1a000-0000-4000-a000-00000000f002",
+                "uuid": "b3c1a000-0000-4000-a000-00000000f002",
                 "title": "Cultuursubsidie 2026",
                 "purpose": "AWB titel 4.2 jo. ASV gemeente artikel 7",
                 "validFrom": "2026-01-01",
@@ -328,7 +332,7 @@
                     "slug": "zaaktype-cultuur-subsidie-2026-plafond"
                 },
                 "name": "plafond",
-                "caseType": "zaaktype-cultuur-subsidie-2026",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f002",
                 "propertyType": "number",
                 "defaultValue": "800000"
             },
@@ -339,7 +343,7 @@
                     "slug": "zaaktype-cultuur-subsidie-2026-targetgroup"
                 },
                 "name": "targetGroup",
-                "caseType": "zaaktype-cultuur-subsidie-2026",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f002",
                 "propertyType": "string",
                 "defaultValue": "Culturele instellingen en stichtingen"
             },
@@ -350,7 +354,7 @@
                     "slug": "zaaktype-cultuur-subsidie-2026-interimreportfrequency"
                 },
                 "name": "interimReportFrequency",
-                "caseType": "zaaktype-cultuur-subsidie-2026",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f002",
                 "propertyType": "enum",
                 "defaultValue": "halfjaarlijks",
                 "enumValues": [
@@ -367,7 +371,7 @@
                     "slug": "zaaktype-cultuur-subsidie-2026-interimreporttermweeks"
                 },
                 "name": "interimReportTermWeeks",
-                "caseType": "zaaktype-cultuur-subsidie-2026",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f002",
                 "propertyType": "number",
                 "defaultValue": "13"
             },
@@ -378,7 +382,7 @@
                     "slug": "zaaktype-cultuur-subsidie-2026-determinationtermweeks"
                 },
                 "name": "determinationTermWeeks",
-                "caseType": "zaaktype-cultuur-subsidie-2026",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f002",
                 "propertyType": "number",
                 "defaultValue": "13"
             },
@@ -389,7 +393,7 @@
                     "slug": "zaaktype-cultuur-subsidie-2026-auditorsstatementthreshold"
                 },
                 "name": "auditorsStatementThreshold",
-                "caseType": "zaaktype-cultuur-subsidie-2026",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f002",
                 "propertyType": "number",
                 "defaultValue": "50000"
             }

@@ -374,4 +374,89 @@ class MigrateSubsidieRegelingToCaseTypeTest extends TestCase {
 
 		$this->assertSame([], $this->saved);
 	}
+
+	/**
+	 * The migrated case type lands on the slug the SEED DATA uses.
+	 *
+	 * The same two schemes ship as seeded case types under `zaaktype-<name>`.
+	 * An instance that upgrades runs this migration and then imports the seed;
+	 * without a matching slug the import writes a second copy beside the
+	 * migrated one. Two case types, same title, both plausible, nothing failing
+	 * — found by running the import on a live instance, not by reading it.
+	 *
+	 * @return void
+	 */
+	public function testTheMigratedCaseTypeUsesTheSeedDataSlug(): void {
+		$scheme = ($this->scheme() + ['@self' => ['slug' => 'regeling-innovatiefonds-2026']]);
+		[$step, $output] = $this->newStep(schemes: [$scheme]);
+
+		$step->run($output);
+
+		$this->assertSame(
+			'zaaktype-innovatiefonds-2026',
+			$this->caseTypes()[0]['@self']['slug']
+		);
+	}
+
+	/**
+	 * A hand-made scheme with no `regeling-` prefix still gets a stable slug.
+	 *
+	 * @return void
+	 */
+	public function testAHandMadeSchemeFallsBackToASlugifiedTitle(): void {
+		$scheme = ($this->scheme() + ['@self' => ['slug' => 'iets-anders']]);
+		[$step, $output] = $this->newStep(schemes: [$scheme]);
+
+		$step->run($output);
+
+		$this->assertSame(
+			'zaaktype-innovatiefonds-2026',
+			$this->caseTypes()[0]['@self']['slug']
+		);
+	}
+
+	/**
+	 * The migrated case type carries the SAME id the seed data ships.
+	 *
+	 * `propertyDefinition.caseType` is `format: uuid` — a slug there is refused
+	 * outright, measured against a live instance. So the seed data references
+	 * its case types by a pinned id. If this migration created the same case
+	 * type under a different id, those seeded property definitions would point
+	 * at an object that is not the one the upgrade produced: present, valid,
+	 * and attached to nothing.
+	 *
+	 * Agreeing on the slug is not enough when the reference is by id.
+	 *
+	 * @return void
+	 */
+	public function testTheMigratedCaseTypeCarriesTheCanonicalId(): void {
+		$scheme = ($this->scheme() + ['@self' => ['slug' => 'regeling-innovatiefonds-2026']]);
+		[$step, $output] = $this->newStep(schemes: [$scheme]);
+
+		$step->run($output);
+
+		$this->assertSame('b3c1a000-0000-4000-a000-00000000f001', $this->caseTypes()[0]['id']);
+		$this->assertSame('b3c1a000-0000-4000-a000-00000000f001', $this->caseTypes()[0]['uuid']);
+	}
+
+	/**
+	 * A scheme the seed data does not ship gets no pinned id.
+	 *
+	 * Forcing one would make every hand-made scheme collide on a single id.
+	 *
+	 * @return void
+	 */
+	public function testASchemeOutsideTheSeedGetsNoPinnedId(): void {
+		$scheme = (
+			['schemeName' => 'Eigen regeling', 'legalBasis' => 'ASV artikel 9']
+			+ ['@self' => ['slug' => 'regeling-eigen']]
+		);
+		[$step, $output] = $this->newStep(schemes: [$scheme]);
+
+		$step->run($output);
+
+		$caseType = $this->caseTypes()[0];
+		$this->assertSame('zaaktype-eigen', $caseType['@self']['slug']);
+		$this->assertArrayNotHasKey('id', $caseType);
+	}
 }

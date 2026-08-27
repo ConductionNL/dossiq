@@ -211,4 +211,83 @@ class SubsidieFragmentTest extends TestCase {
 			(string)$request['applicantBsnRef']['description']
 		);
 	}//end testBsnIsMaskedReference()
+
+	/**
+	 * The seed data and the migration agree on case-type identity.
+	 *
+	 * These are two independent writers of the same objects: the seeder on a
+	 * fresh install, the repair step on an upgrade. They agree today because
+	 * two constants in two files happen to match, and nothing else would notice
+	 * if one moved.
+	 *
+	 * The failure that would follow is quiet in the worst way. The seeded
+	 * property definitions reference their case type by id — `caseType` is
+	 * `format: uuid`, so it cannot be a slug — and a mismatch leaves twelve
+	 * definitions that exist, validate, and belong to a case type that is not
+	 * the one on screen. The scheme simply appears to have no terms.
+	 *
+	 * @return void
+	 */
+	public function testTheSeedDataAndTheMigrationAgreeOnCaseTypeIds(): void {
+		$reflected = new \ReflectionClass(
+			\OCA\Dossiq\Repair\MigrateSubsidieRegelingToCaseType::class
+		);
+		$canonical = $reflected->getConstant('CANONICAL_CASE_TYPE_IDS');
+		$this->assertIsArray($canonical, 'the migration must still pin canonical ids');
+
+		$seededById = [];
+		foreach ($this->merged['components']['objects'] as $object) {
+			if (($object['@self']['schema'] ?? '') !== 'caseType') {
+				continue;
+			}
+
+			$seededById[(string)($object['@self']['slug'] ?? '')] = (string)($object['id'] ?? '');
+		}
+
+		foreach ($canonical as $slug => $id) {
+			$this->assertArrayHasKey(
+				$slug,
+				$seededById,
+				$slug . ' is pinned by the migration but not seeded — the two writers disagree'
+			);
+			$this->assertSame(
+				$id,
+				$seededById[$slug],
+				$slug . ' has a different id in the seed data than the migration writes'
+			);
+		}
+	}//end testTheSeedDataAndTheMigrationAgreeOnCaseTypeIds()
+
+	/**
+	 * Every seeded property definition points at a seeded case type.
+	 *
+	 * A dangling reference here is invisible: the definition is valid on its
+	 * own and simply belongs to nothing.
+	 *
+	 * @return void
+	 */
+	public function testEverySeededPropertyPointsAtASeededCaseType(): void {
+		$caseTypeIds = [];
+		$definitions = [];
+		foreach ($this->merged['components']['objects'] as $object) {
+			$schema = ($object['@self']['schema'] ?? '');
+			if ($schema === 'caseType') {
+				$caseTypeIds[] = (string)($object['id'] ?? '');
+			}
+
+			if ($schema === 'propertyDefinition') {
+				$definitions[] = $object;
+			}
+		}
+
+		$this->assertNotEmpty($definitions);
+		foreach ($definitions as $definition) {
+			$this->assertContains(
+				(string)($definition['caseType'] ?? ''),
+				$caseTypeIds,
+				$definition['name'] . ' references a case type that is not seeded'
+			);
+		}
+	}//end testEverySeededPropertyPointsAtASeededCaseType()
+
 }//end class

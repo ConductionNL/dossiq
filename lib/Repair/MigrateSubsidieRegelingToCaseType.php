@@ -99,6 +99,27 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 	private const INTERIM_FREQUENCIES = ['none', 'annually', 'halfjaarlijks', 'on_milestone'];
 
 	/**
+	 * The canonical id each shipped scheme's case type carries.
+	 *
+	 * ONE IDENTITY, TWO WRITERS. The seed data ships these schemes as case
+	 * types with these exact ids, and references them from its property
+	 * definitions — `propertyDefinition.caseType` is `format: uuid`, so a slug
+	 * there is REFUSED, measured against a live instance.
+	 *
+	 * If this migration created the same case type under a different id, the
+	 * seeded property definitions would point at an object that is not the one
+	 * the upgrade produced: present, valid, and attached to nothing. Agreeing
+	 * on the slug is not enough — the reference is by id, so the id has to
+	 * agree too.
+	 *
+	 * @var array<string, string>
+	 */
+	private const CANONICAL_CASE_TYPE_IDS = [
+		'zaaktype-innovatiefonds-2026' => 'b3c1a000-0000-4000-a000-00000000f001',
+		'zaaktype-cultuur-subsidie-2026' => 'b3c1a000-0000-4000-a000-00000000f002',
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Schema/register bridge
@@ -307,6 +328,22 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 	 */
 	private function buildCaseTypePayload(array $scheme, string $name): array {
 		$caseType = ['title' => $name];
+
+		// SLUG, NOT JUST TITLE. The seed data ships these same two schemes as
+		// case types under `zaaktype-<name>`, so an instance that upgrades runs
+		// this migration and then imports the seed. Without a matching slug the
+		// import writes a SECOND copy beside the migrated one: two case types,
+		// same title, both plausible, and nothing failing. Measured on a live
+		// instance, which is the only place it shows up.
+		$slug = $this->caseTypeSlugFor(scheme: $scheme, name: $name);
+		if ($slug !== '') {
+			$caseType['@self'] = ['slug' => $slug];
+			if (array_key_exists($slug, self::CANONICAL_CASE_TYPE_IDS) === true) {
+				$caseType['id'] = self::CANONICAL_CASE_TYPE_IDS[$slug];
+				$caseType['uuid'] = self::CANONICAL_CASE_TYPE_IDS[$slug];
+			}
+		}
+
 		foreach (self::DIRECT_MAP as $from => $to) {
 			if (isset($scheme[$from]) === true && $scheme[$from] !== '') {
 				$caseType[$to] = $scheme[$from];
@@ -322,6 +359,37 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 		}
 
 		return $caseType;
+	}
+
+	/**
+	 * The case-type slug a scheme migrates to.
+	 *
+	 * Derived from the scheme's own slug so it lands on the SAME identifier the
+	 * seed data uses (`regeling-x` -> `zaaktype-x`). A scheme created by hand
+	 * has no such prefix, so the title is slugified as a fallback.
+	 *
+	 * @param array<string, mixed> $scheme The source subsidieRegeling.
+	 * @param string               $name   Its schemeName.
+	 *
+	 * @return string The slug, or '' when none can be derived.
+	 */
+	private function caseTypeSlugFor(array $scheme, string $name): string {
+		$self = ($scheme['@self'] ?? []);
+		$sourceSlug = '';
+		if (is_array($self) === true) {
+			$sourceSlug = (string) ($self['slug'] ?? '');
+		}
+
+		if (str_starts_with($sourceSlug, 'regeling-') === true) {
+			return 'zaaktype-' . substr($sourceSlug, strlen('regeling-'));
+		}
+
+		$fallback = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $name) ?? '', '-'));
+		if ($fallback === '') {
+			return '';
+		}
+
+		return 'zaaktype-' . $fallback;
 	}
 
 	/**
