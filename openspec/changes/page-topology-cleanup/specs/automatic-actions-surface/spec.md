@@ -65,11 +65,30 @@ The rewrite SHALL be idempotent and SHALL NOT fail an upgrade.
 
 ### Requirement: Procest hosts no automatic-actions administration pages
 
-Automatic actions SHALL be administered through OpenRegister's flows surface.
+Automatic actions SHALL be administered as flows on OpenRegister's engine.
 Procest SHALL NOT declare `/settings/automatic-actions` or its detail page.
+
+Per **ADR-110 Decision 4** the authoring surface is an **in-app page**, not a
+deep link: a flow is app-specific — a dossiq flow operates on cases — so it
+belongs in the app whose objects it drives. The page is the shared
+`CnFlowIndexPage` / `CnFlowDetail` over OpenRegister's native flow store, scoped
+`app: "dossiq"`, so the engine stays single (ADR-065) while the surface is local.
 
 #### Scenario: The pages are gone
 
 - **GIVEN** the procest manifest
 - **THEN** neither `/settings/automatic-actions` nor `/settings/automatic-actions/:id` exists
-- **AND** one navigation entry deep-links to OpenRegister's flows surface
+- **AND** no navigation entry deep-links to another app's flows surface
+
+#### Scenario: Flows are authored in the app
+
+- **GIVEN** the procest manifest
+- **THEN** a `/flows` page and a `/flows/:id` page exist, rendering the shared flow components scoped `app: "dossiq"`
+- **AND** exactly one settings-foldout entry points at the in-app `/flows` route
+
+> **Amended 2026-08-26 by ADR-110.** The first scenario previously required
+> *"one navigation entry deep-links to OpenRegister's flows surface"*. That
+> asserted the opposite of the contract the fleet now holds: a cross-app link
+> cannot be the active route, carries no counter, and reads as this app's
+> feature. The entry is not deleted — it becomes a real page, so ADR-044
+> Decision 5's no-functionality-loss invariant still holds.

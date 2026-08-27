@@ -83,6 +83,7 @@ import DeelzaakList from './views/cases/DeelzaakList.vue'
 // `CnMapWidget`. No bespoke Leaflet / WMS / WFS stack in dossiq (ADR-022).
 // @spec openspec/specs/case-map-overview/spec.md
 import CasesOnMapView from './views/CasesOnMapView.vue'
+import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
 import MyWorkView from './views/MyWorkCards.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
@@ -179,6 +180,20 @@ const registry = {
 		kind: 'page',
 		component: WorkflowBoardView,
 		_note: 'Kanban board: column per non-final status, drag-to-advance via saveObject (RBAC-enforced). No declarative board page type in lib yet.',
+	},
+
+	// --- Flows (ADR-110 Decision 4). ---
+	// The shared CnFlowIndexPage / CnFlowDetail surfaces over OpenRegister's
+	// native flow store, scoped `app: "dossiq"` so this app sees only its own.
+	// Only the SIDEBAR is an app component now. The list and the canvas are the
+	// shared `flows` / `flow-detail` manifest page types (nextcloud-vue 2.19.0),
+	// so this app no longer carries wrapper copies of them — the three apps that
+	// did each carried the same dead `@rowClick` listener.
+	// @spec openspec/specs/automatic-actions/spec.md
+	FlowDetailSidebar: {
+		kind: 'page',
+		component: FlowDetailSidebar,
+		_note: 'CnFlowSidebar in the NC app sidebar; shares useFlowStore with the canvas.',
 	},
 
 	// --- Handler vervanging/waarneming (handler-vervanging-waarneming). ---

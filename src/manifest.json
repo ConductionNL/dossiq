@@ -278,10 +278,18 @@
 			"order": 97
 		},
 		{
-			"id": "FlowsLink",
-			"label": "Automatic actions",
+			"id": "CaseTypesMenu",
+			"label": "Case types",
+			"icon": "FormatListBulletedType",
+			"route": "CaseTypes",
+			"section": "settings",
+			"order": 90
+		},
+		{
+			"id": "FlowsMenu",
+			"label": "Flows",
 			"icon": "Sitemap",
-			"href": "/apps/openregister/#/flows",
+			"route": "Flows",
 			"section": "settings",
 			"order": 96
 		},
@@ -334,28 +342,20 @@
 			"order": 100
 		},
 		{
-			"id": "AdminSettingsLink",
-			"label": "Configuration",
-			"icon": "CogOutline",
-			"href": "/settings/admin/dossiq",
-			"section": "settings",
-			"order": 99
-		},
-		{
 			"id": "AvgRegisterLink",
 			"label": "Processing activities (AVG)",
 			"icon": "ShieldLockOutline",
 			"href": "/apps/openregister/#/avg",
-			"section": "settings",
-			"order": 95
+			"order": 10,
+			"visibleIf": { "appInstalled": "openregister" }
 		},
 		{
 			"id": "AiOversightLink",
 			"label": "AI oversight",
 			"icon": "ShieldCheckOutline",
 			"href": "/apps/hermiq/ai-oversight",
-			"section": "settings",
-			"order": 96
+			"order": 20,
+			"visibleIf": { "appInstalled": "hermiq" }
 		}
 	],
 	"pages": [
@@ -4526,6 +4526,73 @@
 			"title": "Substitutions & reassignment",
 			"component": "SubstitutionAdminView",
 			"_note": "Coordinator substitution console: a filterable list of all substitutions plus register-on-behalf, revoke, inspect-capacity-stamped-actions, and bulk-reassignment actions (the latter two open dedicated modals). Coordinator role is enforced server-side. The standard list type cannot host the on-behalf-of register flow, the action-list inspection, or the bulk-reassign operation over the listed objects."
+		},
+		{
+			"id": "CaseTypes",
+			"route": "/settings/case-types",
+			"type": "index",
+			"title": "Case types",
+			"config": {
+				"register": "dossiq",
+				"schema": "caseType",
+				"columns": [
+					"title",
+					"identifier",
+					"handlingModel",
+					"processingDeadline",
+					"confidentiality",
+					"isDraft",
+					"validFrom",
+					"validUntil"
+				],
+				"showViewAction": false,
+				"actions": [
+					"create",
+					"edit",
+					"delete",
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "EyeOutline",
+						"handler": "navigate",
+						"route": "CaseTypeDetail",
+						"type": "handler"
+					}
+				],
+				"sidebar": { "enabled": true, "showMetadata": true },
+				"documentationUrl": "https://procest.conduction.nl"
+			},
+			"_note": "A case type is the blueprint every case is governed by — lifecycle, deadlines, classification, the workflow that drives it — and `case.caseType` references it. It had no surface at all: the original `CaseTypesMenu` pointed at the in-app `/settings` page, which page-topology-cleanup B1 retired for mounting AdminRoot through the in-app router (ADR-004), and no replacement was ever built. The capability went with the page and only its stale `settingsSection` id was left behind. WorkflowDefinitionDetail's own note still says cases are 'reached through their caseType index', naming this page. Restored as an ordinary schema-driven index rather than by reviving the retired settings route."
+		},
+		{
+			"id": "CaseTypeDetail",
+			"route": "/settings/case-types/:id",
+			"type": "detail",
+			"title": "Case type",
+			"config": {
+				"register": "dossiq",
+				"schema": "caseType",
+				"sidebar": { "enabled": true, "showMetadata": true },
+				"documentationUrl": "https://procest.conduction.nl"
+			},
+			"_note": "The case-type blueprint: identity and classification, the processing deadline and extension rules (AWB terms), the pinned workflowDefinition, sub-case types and decision types. Cases of this type are reached from the Cases index filtered by caseType rather than duplicated here."
+		},
+		{
+			"id": "Flows",
+			"route": "/flows",
+			"type": "flows",
+			"title": "Flows",
+			"config": { "app": "dossiq" },
+			"_note": "ADR-110 Decision 4: a flow is app-specific — a dossiq flow operates on cases — so the authoring surface lives here rather than behind a deep link to OpenRegister's list. Custom page rather than type:index because a flow lives in the shared native flow store, not a register/schema, so the object-backed index cannot address it. The body is CnFlowIndexPage semantics scoped app=\"dossiq\" — the same store OpenRegister, integriq and hermiq use, so list/status semantics stay identical fleet-wide. Mirrors openconnector/src/manifest.json:Flows."
+		},
+		{
+			"id": "FlowDetail",
+			"route": "/flows/:id",
+			"type": "flow-detail",
+			"title": "Flow",
+			"config": { "app": "dossiq" },
+			"sidebarComponent": "FlowDetailSidebar",
+			"_note": "The shared CnFlowDetail node/edge canvas over the same native flow store OpenRegister and hermiq use — not an app-owned editor. Controls live in the NcAppSidebar (sidebarComponent) so the canvas gets full width; canvas and sidebar share useFlowStore. Mirrors openregister/src/manifest.json:flowDetail."
 		}
 	],
 	"observability": {
