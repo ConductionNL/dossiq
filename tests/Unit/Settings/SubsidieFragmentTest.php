@@ -133,21 +133,69 @@ class SubsidieFragmentTest extends TestCase {
 	}//end testRegisterMembershipUnioned()
 
 	/**
-	 * Subsidie seed objects are appended to components.objects.
+	 * The two schemes are seeded as CASE TYPES, not as subsidieregelingen.
+	 *
+	 * A fresh install must not create rows in the schema this change retires.
+	 * It used to: the migration is a post-migration repair step, so on a fresh
+	 * install it ran BEFORE the seeder wrote these rows and had nothing to
+	 * convert — every new install therefore came up already needing migrating,
+	 * and the e2e specs correctly failed with "2 present, none migrated".
 	 *
 	 * @return void
 	 */
 	public function testSeedObjectsAppended(): void {
+		$objects = $this->merged['components']['objects'];
 		$slugs = array_map(
 			static function (array $object): string {
 				return (string)($object['@self']['slug'] ?? '');
 			},
-			$this->merged['components']['objects']
+			$objects
 		);
 
-		$this->assertContains('regeling-innovatiefonds-2026', $slugs);
-		$this->assertContains('regeling-cultuur-subsidie-2026', $slugs);
+		$this->assertContains('zaaktype-innovatiefonds-2026', $slugs);
+		$this->assertContains('zaaktype-cultuur-subsidie-2026', $slugs);
+
+		// The point of the change, asserted rather than assumed: nothing is
+		// seeded into subsidieRegeling any more.
+		$schemas = array_map(
+			static function (array $object): string {
+				return (string)($object['@self']['schema'] ?? '');
+			},
+			$objects
+		);
+		$this->assertNotContains('subsidieRegeling', $schemas);
 	}//end testSeedObjectsAppended()
+
+	/**
+	 * The grant-specific fields are seeded as property definitions.
+	 *
+	 * Carrying the case types across without them would produce two case types
+	 * that look right in a list and hold none of the scheme's actual terms.
+	 *
+	 * @return void
+	 */
+	public function testGrantPropertiesAreSeededAsDefinitions(): void {
+		$definitions = array_filter(
+			$this->merged['components']['objects'],
+			static function (array $object): bool {
+				return ($object['@self']['schema'] ?? '') === 'propertyDefinition';
+			}
+		);
+
+		$byName = [];
+		foreach ($definitions as $definition) {
+			$byName[(string)($definition['name'] ?? '')] = $definition;
+		}
+
+		foreach (['plafond', 'targetGroup', 'auditorsStatementThreshold'] as $property) {
+			$this->assertArrayHasKey($property, $byName, $property . ' must be seeded as a property definition');
+		}
+
+		// An enum with no enumValues is indistinguishable from a string: the
+		// value survives and the constraint does not.
+		$this->assertSame('enum', $byName['interimReportFrequency']['propertyType']);
+		$this->assertContains('halfjaarlijks', $byName['interimReportFrequency']['enumValues']);
+	}//end testGrantPropertiesAreSeededAsDefinitions()
 
 	/**
 	 * The bewijsstuk schema masks special-category data: BSN lives on the

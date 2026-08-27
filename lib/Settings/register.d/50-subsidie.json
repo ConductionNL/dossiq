@@ -228,38 +228,170 @@
             {
                 "@self": {
                     "register": "dossiq",
-                    "schema": "subsidieRegeling",
-                    "slug": "regeling-innovatiefonds-2026"
+                    "schema": "caseType",
+                    "slug": "zaaktype-innovatiefonds-2026"
                 },
-                "schemeName": "Innovatiefonds 2026",
-                "legalBasis": "AWB titel 4.2 jo. ASV gemeente artikel 3",
-                "plafond": 2500000,
-                "termStart": "2026-01-01",
-                "termEnd": "2028-12-31",
-                "targetGroup": "MKB en kennisinstellingen",
-                "interimReportFrequency": "annually",
-                "interimReportTermWeeks": 22,
-                "requestTermWeeks": 13,
-                "determinationTermWeeks": 22,
-                "auditorsStatementThreshold": 125000
+                "title": "Innovatiefonds 2026",
+                "purpose": "AWB titel 4.2 jo. ASV gemeente artikel 3",
+                "validFrom": "2026-01-01",
+                "validUntil": "2028-12-31",
+                "processingDeadline": "P13W"
             },
             {
                 "@self": {
                     "register": "dossiq",
-                    "schema": "subsidieRegeling",
-                    "slug": "regeling-cultuur-subsidie-2026"
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-innovatiefonds-2026-plafond"
                 },
-                "schemeName": "Cultuursubsidie 2026",
-                "legalBasis": "AWB titel 4.2 jo. ASV gemeente artikel 7",
-                "plafond": 800000,
-                "termStart": "2026-01-01",
-                "termEnd": "2026-12-31",
-                "targetGroup": "Culturele instellingen en stichtingen",
-                "interimReportFrequency": "halfjaarlijks",
-                "interimReportTermWeeks": 13,
-                "requestTermWeeks": 8,
-                "determinationTermWeeks": 13,
-                "auditorsStatementThreshold": 50000
+                "name": "plafond",
+                "caseType": "zaaktype-innovatiefonds-2026",
+                "propertyType": "number",
+                "defaultValue": "2500000"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-innovatiefonds-2026-targetgroup"
+                },
+                "name": "targetGroup",
+                "caseType": "zaaktype-innovatiefonds-2026",
+                "propertyType": "string",
+                "defaultValue": "MKB en kennisinstellingen"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-innovatiefonds-2026-interimreportfrequency"
+                },
+                "name": "interimReportFrequency",
+                "caseType": "zaaktype-innovatiefonds-2026",
+                "propertyType": "enum",
+                "defaultValue": "annually",
+                "enumValues": [
+                    "none",
+                    "annually",
+                    "halfjaarlijks",
+                    "on_milestone"
+                ]
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-innovatiefonds-2026-interimreporttermweeks"
+                },
+                "name": "interimReportTermWeeks",
+                "caseType": "zaaktype-innovatiefonds-2026",
+                "propertyType": "number",
+                "defaultValue": "22"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-innovatiefonds-2026-determinationtermweeks"
+                },
+                "name": "determinationTermWeeks",
+                "caseType": "zaaktype-innovatiefonds-2026",
+                "propertyType": "number",
+                "defaultValue": "22"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-innovatiefonds-2026-auditorsstatementthreshold"
+                },
+                "name": "auditorsStatementThreshold",
+                "caseType": "zaaktype-innovatiefonds-2026",
+                "propertyType": "number",
+                "defaultValue": "125000"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "slug": "zaaktype-cultuur-subsidie-2026"
+                },
+                "title": "Cultuursubsidie 2026",
+                "purpose": "AWB titel 4.2 jo. ASV gemeente artikel 7",
+                "validFrom": "2026-01-01",
+                "validUntil": "2026-12-31",
+                "processingDeadline": "P8W"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-cultuur-subsidie-2026-plafond"
+                },
+                "name": "plafond",
+                "caseType": "zaaktype-cultuur-subsidie-2026",
+                "propertyType": "number",
+                "defaultValue": "800000"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-cultuur-subsidie-2026-targetgroup"
+                },
+                "name": "targetGroup",
+                "caseType": "zaaktype-cultuur-subsidie-2026",
+                "propertyType": "string",
+                "defaultValue": "Culturele instellingen en stichtingen"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-cultuur-subsidie-2026-interimreportfrequency"
+                },
+                "name": "interimReportFrequency",
+                "caseType": "zaaktype-cultuur-subsidie-2026",
+                "propertyType": "enum",
+                "defaultValue": "halfjaarlijks",
+                "enumValues": [
+                    "none",
+                    "annually",
+                    "halfjaarlijks",
+                    "on_milestone"
+                ]
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-cultuur-subsidie-2026-interimreporttermweeks"
+                },
+                "name": "interimReportTermWeeks",
+                "caseType": "zaaktype-cultuur-subsidie-2026",
+                "propertyType": "number",
+                "defaultValue": "13"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-cultuur-subsidie-2026-determinationtermweeks"
+                },
+                "name": "determinationTermWeeks",
+                "caseType": "zaaktype-cultuur-subsidie-2026",
+                "propertyType": "number",
+                "defaultValue": "13"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-cultuur-subsidie-2026-auditorsstatementthreshold"
+                },
+                "name": "auditorsStatementThreshold",
+                "caseType": "zaaktype-cultuur-subsidie-2026",
+                "propertyType": "number",
+                "defaultValue": "50000"
             }
         ]
     }

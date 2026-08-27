@@ -61,6 +61,18 @@ async function readAll(request, schema) {
  *
  * A lookup failure must not wear the same words as a judgement.
  *
+ * WHAT THIS PROVES IN CI, STATED PLAINLY. CI reaches the third outcome, but
+ * the case types it finds were written by the SEED DATA, not by the migration:
+ * a fresh install no longer creates subsidieRegeling objects at all, because
+ * the schema is being retired and seeding rows into it would mean every new
+ * install immediately needed migrating.
+ *
+ * So these assertions verify the SHAPE both paths must produce — and in CI
+ * they measure the seeder reaching it, not the migration. The migration's own
+ * behaviour is covered by MigrateSubsidieRegelingToCaseTypeTest. Reading a
+ * green run here as "the migration works" would be reading it about the wrong
+ * writer, which is the whole reason this note exists.
+ *
  * @param request The Playwright request context.
  * @return The two populations.
  */
@@ -97,7 +109,7 @@ test.describe('the grant schemes became case types', () => {
 		const { schemes, migrated } = await migrationState(request)
 		test.skip(
 			schemes.length === 0 && migrated.length === 0,
-			'no subsidieRegeling objects and none migrated — a fresh install has nothing to migrate, since the step is post-migration only',
+			'no subsidieRegeling objects and no case types — neither the seeder nor the migration produced anything to check',
 		)
 		expect(
 			migrated.length,
@@ -135,7 +147,7 @@ test.describe('the grant schemes became case types', () => {
 		const { schemes, migrated } = await migrationState(request)
 		test.skip(
 			schemes.length === 0 && migrated.length === 0,
-			'no subsidieRegeling objects and none migrated — a fresh install has nothing to migrate, since the step is post-migration only',
+			'no subsidieRegeling objects and no case types — neither the seeder nor the migration produced anything to check',
 		)
 		for (const ct of migrated) {
 			const name = ct.title
@@ -155,7 +167,7 @@ test.describe('the grant schemes became case types', () => {
 		const { schemes, migrated } = await migrationState(request)
 		test.skip(
 			schemes.length === 0 && migrated.length === 0,
-			'no subsidieRegeling objects and none migrated — a fresh install has nothing to migrate, since the step is post-migration only',
+			'no subsidieRegeling objects and no case types — neither the seeder nor the migration produced anything to check',
 		)
 		const defs = await readAll(request, 'propertyDefinition')
 		const freq = defs.filter((d) => d.name === 'interimReportFrequency')
@@ -187,7 +199,7 @@ test.describe('the grant schemes became case types', () => {
 		const { schemes, migrated } = await migrationState(request)
 		test.skip(
 			schemes.length === 0 && migrated.length === 0,
-			'no subsidieRegeling objects and none migrated — a fresh install has nothing to migrate, since the step is post-migration only',
+			'no subsidieRegeling objects and no case types — neither the seeder nor the migration produced anything to check',
 		)
 		const defs = await readAll(request, 'propertyDefinition')
 		const names = new Set(defs.map((d) => d.name))
