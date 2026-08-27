@@ -150,6 +150,23 @@ async function globalSetup(config: FullConfig): Promise<void> {
 		await page.evaluate(() => {
 			try {
 				window.localStorage.setItem('cn-walkthrough-seen:dossiq', '999.0.0')
+				// Same problem, different overlay: the NON-GATING first-time-setup
+				// wizard (ADR-042). It only started appearing once CnAppRoot learned
+				// to tell "the server reports this optional step as not done" from
+				// "the server never mentioned it" — before that it could not open at
+				// all, so no spec in this suite had ever had to account for it. Its
+				// modal-mask subtree intercepts every click on the app behind it, and
+				// `navigation.spec.ts` clicks the sidebar without dismissing anything,
+				// so leaving it armed turns one library fix into a suite-wide timeout.
+				//
+				// The dismissal key is per manifest `setup.version`; seed a generous
+				// range so a version bump does not silently re-arm it.
+				for (let v = 0; v <= 20; v++) {
+					window.localStorage.setItem(
+						`cn-setup-wizard-dismissed:dossiq:${v}`,
+						'1',
+					)
+				}
 			} catch (e) {
 				// localStorage unavailable — tour dismissal falls back to helper clicks.
 			}

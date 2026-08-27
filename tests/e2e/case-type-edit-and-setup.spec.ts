@@ -248,6 +248,24 @@ test.describe('Setup — the sample-data step is reachable', () => {
 		// on screen; none => it is not. Either way the shell stays reachable —
 		// this wizard does not gate.
 		await page.goto('/index.php/apps/dossiq')
+		// global-setup seeds the wizard's dismissal marker so its modal-mask
+		// cannot swallow clicks across the rest of the suite. This spec is the
+		// one place that needs it armed, so clear it here — otherwise the
+		// assertion below could only ever observe a wizard that was suppressed
+		// before it had a chance to open.
+		await page.evaluate(() => {
+			try {
+				for (let v = 0; v <= 20; v++) {
+					window.localStorage.removeItem(
+						`cn-setup-wizard-dismissed:dossiq:${v}`,
+					)
+				}
+			} catch (e) {
+				/* blocked storage */
+			}
+		})
+		await page.reload()
+
 		const body = await readSetupStatus(page)
 		expect(body).not.toBeNull()
 
