@@ -486,7 +486,7 @@ export default {
 
 				// Create a new status type
 				const statusType = await this.objectStore.saveObject('statusType', {
-					name: t('procest', 'New status'),
+					name: t('dossiq', 'New status'),
 					caseType: this.caseTypeId,
 					order: this.statusNodes.length + 1,
 					isFinal: false,
@@ -516,7 +516,7 @@ export default {
 			const y = 100 + Math.floor(index / 4) * 200
 
 			const statusType = await this.objectStore.saveObject('statusType', {
-				name: t('procest', 'New status'),
+				name: t('dossiq', 'New status'),
 				caseType: this.caseTypeId,
 				order: this.statusNodes.length + 1,
 				isFinal: false,
@@ -597,7 +597,7 @@ export default {
 						{
 							type: 'error',
 							message: t(
-								'procest',
+								'dossiq',
 								'At least one status must be marked as final',
 							),
 						},
@@ -609,7 +609,7 @@ export default {
 			if (
 				!confirm(
 					t(
-						'procest',
+						'dossiq',
 						'Delete status "{name}"? This also removes its steps and transitions.',
 						{ name: target.name },
 					),
@@ -623,7 +623,7 @@ export default {
 				this.validationErrors = [
 					{
 						type: 'error',
-						message: t('procest', 'Failed to delete status'),
+						message: t('dossiq', 'Failed to delete status'),
 					},
 				]
 				return

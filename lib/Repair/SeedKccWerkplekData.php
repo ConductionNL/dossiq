@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Seed KCC-Werkplek Data Repair Step.
+ * Dossiq Seed KCC-Werkplek Data Repair Step.
  *
  * Seeds the default KCC quick-actions and two example belplannen into
  * OpenRegister via {@see KccWerkplekSeedDataService}. Idempotent: existing
  * objects (matched by id) are skipped.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,17 +19,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/specs.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
-use OCA\Procest\Service\KccWerkplekSeedDataService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\KccWerkplekSeedDataService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -98,7 +98,7 @@ class SeedKccWerkplekData implements IRepairStep {
 			$output->warning('KCC-werkplek seed issue: ' . ((string)($result['message'] ?? 'unknown error')));
 		} catch (Throwable $e) {
 			$output->warning('Could not seed KCC-werkplek data: ' . $e->getMessage());
-			$this->logger->error('Procest KCC-werkplek seed failed', ['exception' => $e->getMessage()]);
+			$this->logger->error('Dossiq KCC-werkplek seed failed', ['exception' => $e->getMessage()]);
 		}
 	}//end run()
 }//end class

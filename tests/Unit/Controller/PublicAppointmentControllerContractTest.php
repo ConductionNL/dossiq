@@ -25,21 +25,21 @@
  *    caller-supplied token.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\PublicAppointmentController;
-use OCA\Procest\Service\AppointmentService;
+use OCA\Dossiq\Controller\PublicAppointmentController;
+use OCA\Dossiq\Service\AppointmentService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -48,7 +48,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Wire-contract tests for PublicAppointmentController.
  *
- * @covers \OCA\Procest\Controller\PublicAppointmentController
+ * @covers \OCA\Dossiq\Controller\PublicAppointmentController
  */
 class PublicAppointmentControllerContractTest extends TestCase {
 

@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest DSO Intake Service
+ * Dossiq DSO Intake Service
  *
  * Service for receiving and processing vergunningaanvragen from the
  * Digitaal Stelsel Omgevingswet (DSO/Omgevingsloket).
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -15,7 +15,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/dso-omgevingsloket-client/spec.md
  * @spec openspec/specs/dso-omgevingsloket-client/spec.md
@@ -24,9 +24,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -222,7 +222,7 @@ class DsoIntakeService {
 
 		$register = $this->settingsService->getConfigValue('register');
 		if (empty($register) === true) {
-			throw new RuntimeException('Procest register not configured');
+			throw new RuntimeException('Dossiq register not configured');
 		}
 
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');

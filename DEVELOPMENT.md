@@ -16,12 +16,12 @@ This app is developed using the [nextcloud-docker-dev](https://github.com/julius
 docker compose -f openregister/docker-compose.yml up -d
 
 # Build the frontend
-cd procest
+cd dossiq
 npm install
 npm run dev
 ```
 
-The app will be available at `http://localhost:8080/apps/procest`.
+The app will be available at `http://localhost:8080/apps/dossiq`.
 
 ## Frontend Build
 
@@ -42,7 +42,7 @@ composer phpmetrics  # Generate HTML metrics report
 
 ## Product Page
 
-The product page at [procest.app](https://procest.app) is built with [Docusaurus 3](https://docusaurus.io/) and deployed via GitHub Pages.
+The product page at [conduction.nl](https://conduction.nl) is built with [Docusaurus 3](https://docusaurus.io/) and deployed via GitHub Pages.
 
 ### How it works
 
@@ -50,7 +50,7 @@ The product page at [procest.app](https://procest.app) is built with [Docusaurus
 - Documentation content comes from the `docs/` folder at the project root — **not** duplicated inside `docusaurus/`
 - The Docusaurus config uses `path: '../docs'` to reference the root docs directly
 - Pushing to the `development` branch triggers the GitHub Actions workflow (`.github/workflows/documentation.yml`) which builds and deploys to the `gh-pages` branch
-- GitHub Pages serves the built site at `procest.app` (configured via `static/CNAME`)
+- GitHub Pages serves the built site at `procest.conduction.nl` (configured via `static/CNAME`)
 
 ### Local preview
 

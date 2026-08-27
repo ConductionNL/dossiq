@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest StUF TimeoutException.
+ * Dossiq StUF TimeoutException.
  *
  * Raised when a synchronous Lv01 vraag does not receive a La01 antwoord
  * within the configured timeout (default 30 seconds).
  *
  * @category Exception
- * @package  OCA\Procest\Service\Stuf
+ * @package  OCA\Dossiq\Service\Stuf
  *
  * @author    Conduction <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,14 +18,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/stuf-zkn-outbound/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Stuf;
+namespace OCA\Dossiq\Service\Stuf;
 
 /**
  * Synchronous vraag/antwoord exceeded the configured timeout.

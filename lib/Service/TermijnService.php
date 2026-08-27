@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest TermijnService.
+ * Dossiq TermijnService.
  *
  * Server-authoritative service for the AWB termijnbewaking engine. Owns
  * the TermijnInstance lifecycle: create, get, update, complete. Resolves
@@ -14,7 +14,7 @@
  * integer EUR cents (ADR-031).
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,17 +25,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 

@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest boot-time registrar.
+ * Dossiq boot-time registrar.
  *
  * The composite over everything that must happen in Application::boot() rather
  * than register(): the narrowed bezwaar subscriptions (which need every app's
  * register() to have completed) and the map Content-Security-Policy allowlist.
  *
  * @category AppInfo
- * @package  OCA\Procest\AppInfo\Registrar
+ * @package  OCA\Dossiq\AppInfo\Registrar
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -16,7 +16,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -26,7 +26,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\AppInfo\Registrar;
+namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCP\EventDispatcher\IEventDispatcher;
 

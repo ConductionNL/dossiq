@@ -4,7 +4,7 @@
  * SentimentService Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,15 +22,15 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\SentimentService;
+use OCA\Dossiq\Service\SentimentService;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for SentimentService.
  *
- * @covers \OCA\Procest\Service\SentimentService
+ * @covers \OCA\Dossiq\Service\SentimentService
  */
 class SentimentServiceTest extends TestCase {
 

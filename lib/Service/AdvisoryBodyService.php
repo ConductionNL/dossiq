@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Advisory Body Service
+ * Dossiq Advisory Body Service
  *
  * Service for managing advisory bodies — departments and external organizations
  * that can receive consultation requests (adviesaanvragen). Supports registry
@@ -9,7 +9,7 @@
  * body access per ADR-034 and the Awb 3:5-3:9 external consultation pattern.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,10 +25,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -115,7 +115,7 @@ class AdvisoryBodyService {
 			filters: ['id' => $id, '_limit' => 1],
 		);
 
-		if (is_array($results) === true && empty($results) === false) {
+		if (empty($results) === false) {
 			return $results[0];
 		}
 

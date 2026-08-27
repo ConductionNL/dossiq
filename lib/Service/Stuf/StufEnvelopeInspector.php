@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest StUF envelope inspector.
+ * Dossiq StUF envelope inspector.
  *
  * The best-effort reads the async-confirmation webhook performs on a raw
  * inbound envelope before anything is persisted: which endpoint sent it, whether
@@ -13,10 +13,10 @@
  * zaaksystemen whose namespace prefixes vary, and a parse failure must not stop
  * the caller from being identified and rejected.
  *
- * Split out of {@see \OCA\Procest\Controller\StufController}.
+ * Split out of {@see \OCA\Dossiq\Controller\StufController}.
  *
  * @category Service
- * @package  OCA\Procest\Service\Stuf
+ * @package  OCA\Dossiq\Service\Stuf
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,7 +24,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -34,7 +34,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Stuf;
+namespace OCA\Dossiq\Service\Stuf;
 
 /**
  * Reads endpoint identity, WSSE credentials and routing hints off a raw envelope.
@@ -63,7 +63,7 @@ class StufEnvelopeInspector {
 	 *
 	 * @param string $envelopeXml The inbound envelope.
 	 * @param string $headerEndpointId Fallback endpoint id from the
-	 *                                 X-Procest-Endpoint-Id header (used by
+	 *                                 X-Dossiq-Endpoint-Id header (used by
 	 *                                 callers we control); empty when absent.
 	 *
 	 * @return array|null The endpoint or null.

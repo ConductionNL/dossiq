@@ -5,20 +5,20 @@ TBD - created by archiving change migrate-status-engine-to-or-lifecycle. Update 
 ## Requirements
 ### Requirement: Voorstel Lifecycle MUST Be Declared as an OR Schema Extension
 
-The `voorstel` schema in `lib/Settings/procest_register.json` MUST declare its
+The `voorstel` schema in `lib/Settings/dossiq_register.json` MUST declare its
 status state machine via an `x-openregister-lifecycle` block under
 `configuration`, so OR's lifecycle engine validates every transition on
-`saveObject`. The `startParafering` transition MUST reference the procest guard
-`OCA\Procest\Lifecycle\VoorstelSubmitGuard` through the `requires` key.
+`saveObject`. The `startParafering` transition MUST reference the dossiq guard
+`OCA\Dossiq\Lifecycle\VoorstelSubmitGuard` through the `requires` key.
 
 #### Scenario: Voorstel lifecycle declares the status field and transitions
 
-- GIVEN the `voorstel` schema in `procest_register.json`
+- GIVEN the `voorstel` schema in `dossiq_register.json`
 - WHEN its `configuration.x-openregister-lifecycle` block is inspected
 - THEN `field` MUST equal `"status"` and `initial` MUST equal `"concept"`
 - AND the transition `startParafering` MUST move `concept` → `in_parafering`
 - AND the `startParafering` transition MUST declare
-  `requires: "OCA\\Procest\\Lifecycle\\VoorstelSubmitGuard"`
+  `requires: "OCA\\Dossiq\\Lifecycle\\VoorstelSubmitGuard"`
 
 #### Scenario: OR rejects an illegal voorstel transition on save
 
@@ -32,7 +32,7 @@ status state machine via an `x-openregister-lifecycle` block under
 
 - GIVEN a voorstel in state `"concept"` whose `onderwerp` is empty
 - WHEN a save attempts the `startParafering` transition (`status: "in_parafering"`)
-- THEN OR MUST invoke `OCA\Procest\Lifecycle\VoorstelSubmitGuard::check()`
+- THEN OR MUST invoke `OCA\Dossiq\Lifecycle\VoorstelSubmitGuard::check()`
 - AND the guard MUST return a denying `GuardResult`
 - AND OR MUST reject the save with a `lifecycle-guard-denied` error
 - AND the voorstel MUST remain in state `"concept"`
@@ -45,12 +45,12 @@ The `bezwaar` schema MUST declare its AWB objection state machine via an
 `x-openregister-lifecycle` block whose `field` is `status` and whose transitions
 match the `bezwaar-lifecycle` spec, using the schema's existing status enum
 values verbatim. The `hoorzitting_overslaan` transition MUST require
-`OCA\Procest\Lifecycle\HoorzittingAfzienGuard`; the `beslissen` transition MUST
-require `OCA\Procest\Lifecycle\BezwaarDeadlineGuard`.
+`OCA\Dossiq\Lifecycle\HoorzittingAfzienGuard`; the `beslissen` transition MUST
+require `OCA\Dossiq\Lifecycle\BezwaarDeadlineGuard`.
 
 #### Scenario: All AWB bezwaar transitions are declared
 
-- GIVEN the `bezwaar` schema in `procest_register.json`
+- GIVEN the `bezwaar` schema in `dossiq_register.json`
 - WHEN its `configuration.x-openregister-lifecycle.transitions` map is inspected
 - THEN it MUST declare `ontvankelijkheidstoets_starten`, `in_behandeling_nemen`,
   `hoorzitting_plannen`, `hoorzitting_afronden`, `advies_uitbrengen`,
@@ -72,7 +72,7 @@ require `OCA\Procest\Lifecycle\BezwaarDeadlineGuard`.
 - GIVEN a bezwaar in state `"In behandeling"` with `hearingWaived: false`
 - WHEN a save attempts the `hoorzitting_overslaan` transition
   (`status: "Advies uitgebracht"`)
-- THEN OR MUST invoke `OCA\Procest\Lifecycle\HoorzittingAfzienGuard::check()`
+- THEN OR MUST invoke `OCA\Dossiq\Lifecycle\HoorzittingAfzienGuard::check()`
 - AND the guard MUST return a denying `GuardResult`
 - AND OR MUST reject the save with a `lifecycle-guard-denied` error
 
@@ -80,7 +80,7 @@ require `OCA\Procest\Lifecycle\BezwaarDeadlineGuard`.
 
 ### Requirement: PHP Guard Classes Implement the OR Lifecycle Guard Interface
 
-Each procest guard class MUST implement `OCA\OpenRegister\Lifecycle\LifecycleGuardInterface::check()`, live under `lib/Lifecycle/`, and be read-only. The guards `VoorstelSubmitGuard`, `HoorzittingAfzienGuard`, and `BezwaarDeadlineGuard` MUST NOT mutate the object or call `ObjectService::saveObject()`.
+Each dossiq guard class MUST implement `OCA\OpenRegister\Lifecycle\LifecycleGuardInterface::check()`, live under `lib/Lifecycle/`, and be read-only. The guards `VoorstelSubmitGuard`, `HoorzittingAfzienGuard`, and `BezwaarDeadlineGuard` MUST NOT mutate the object or call `ObjectService::saveObject()`.
 
 #### Scenario: Guards are read-only precondition checkers
 

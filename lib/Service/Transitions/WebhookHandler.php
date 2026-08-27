@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest webhook action handler.
+ * Dossiq webhook action handler.
  *
  * Action config shape: `{type: 'webhook', url: '<https-url>', headers?: {...}}`.
  * Posts a JSON payload `{case, transition}` to the configured URL with a
  * 5-second timeout. Non-2xx responses produce `ok: false`.
  *
  * @category Service
- * @package  OCA\Procest\Service\Transitions
+ * @package  OCA\Dossiq\Service\Transitions
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,12 +19,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Transitions;
+namespace OCA\Dossiq\Service\Transitions;
 
 use OCP\Http\Client\IClientService;
 use Psr\Log\LoggerInterface;

@@ -1,5 +1,5 @@
 {
-  "name": "Procest — Consultation Deadline Monitor",
+  "name": "Dossiq — Consultation Deadline Monitor",
   "nodes": [
     {
       "parameters": {
@@ -17,7 +17,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.PROCEST_BASE_URL || 'http://nextcloud' }}/index.php/apps/procest/api/consultations/overdue",
+        "url": "={{ $env.DOSSIQ_BASE_URL || 'http://nextcloud' }}/index.php/apps/dossiq/api/consultations/overdue",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpBasicAuth",
         "sendHeaders": true,
@@ -36,7 +36,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.PROCEST_BASE_URL || 'http://nextcloud' }}/index.php/apps/procest/api/consultations",
+        "url": "={{ $env.DOSSIQ_BASE_URL || 'http://nextcloud' }}/index.php/apps/dossiq/api/consultations",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpBasicAuth",
         "sendHeaders": true,
@@ -73,7 +73,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.PROCEST_BASE_URL || 'http://nextcloud' }}/index.php/apps/procest/api/notifications/send",
+        "url": "={{ $env.DOSSIQ_BASE_URL || 'http://nextcloud' }}/index.php/apps/dossiq/api/notifications/send",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpBasicAuth",
         "sendHeaders": true,
@@ -117,7 +117,7 @@
   },
   "meta": {
     "templateCredsSetupCompleted": false,
-    "owner": "procest",
+    "owner": "dossiq",
     "spec": "openspec/changes/consultation-management/specs/consultation-management/spec.md#deadline-warning",
     "purpose": "Daily 07:00 scan: T-5 warnings via /consultations?deadlineWithin=P5D; overdue escalations via /consultations/overdue. Internal bodies are notified via Nextcloud groups; external bodies via configured email."
   }

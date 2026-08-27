@@ -7,7 +7,7 @@
  * StufMessageBuilder (Lk01/Lk02/Lv01/Du01 + WSSE + ULID + payload limits).
  *
  * @category Test
- * @package  OCA\Procest\Tests\Unit\Service\Stuf
+ * @package  OCA\Dossiq\Tests\Unit\Service\Stuf
  *
  * @author    Conduction <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,21 +15,21 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
- * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-envelope-construction
+ * @spec openspec/changes/archive/2026-06-23-procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-envelope-construction
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Stuf;
+namespace OCA\Dossiq\Tests\Unit\Service\Stuf;
 
-use OCA\Procest\Service\Stuf\PayloadTooLargeException;
-use OCA\Procest\Service\Stuf\StufResponseBuilder;
-use OCA\Procest\Service\Stuf\StufVaultService;
-use OCA\Procest\Service\Stuf\VrijBerichtNotRegisteredException;
-use OCA\Procest\Service\Stuf\ZaaktypeNotMappedException;
-use OCA\Procest\Service\StufMessageBuilder;
+use OCA\Dossiq\Service\Stuf\PayloadTooLargeException;
+use OCA\Dossiq\Service\Stuf\StufResponseBuilder;
+use OCA\Dossiq\Service\Stuf\StufVaultService;
+use OCA\Dossiq\Service\Stuf\VrijBerichtNotRegisteredException;
+use OCA\Dossiq\Service\Stuf\ZaaktypeNotMappedException;
+use OCA\Dossiq\Service\StufMessageBuilder;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -231,7 +231,7 @@ class StufMessageBuilderOutboundTest extends TestCase {
 
 	/**
 	 * Inbound builder behaviour is preserved after the split: the responses
-	 * procest returns as a StUF receiver now come from StufResponseBuilder,
+	 * dossiq returns as a StUF receiver now come from StufResponseBuilder,
 	 * and must be byte-compatible with what StufMessageBuilder used to emit.
 	 *
 	 * @return void
@@ -239,22 +239,22 @@ class StufMessageBuilderOutboundTest extends TestCase {
 	public function testInboundBuildersStillWork(): void {
 		$responses = new StufResponseBuilder();
 
-		$bv01 = $responses->buildBv01(['organisation' => 'Procest', 'applicatie' => 'Procest'], [], 'REF-123');
+		$bv01 = $responses->buildBv01(['organisation' => 'Dossiq', 'applicatie' => 'Dossiq'], [], 'REF-123');
 		$this->assertStringContainsString('Bv01', $bv01);
 		$this->assertStringContainsString('REF-123', $bv01);
-		$this->assertStringContainsString('<stuf:organisatie>Procest</stuf:organisatie>', $bv01);
+		$this->assertStringContainsString('<stuf:organisatie>Dossiq</stuf:organisatie>', $bv01);
 		$this->assertStringContainsString('<stuf:crossRefnummer>REF-123</stuf:crossRefnummer>', $bv01);
 
 		$fault = $responses->buildSoapFault('boom');
 		$this->assertStringContainsString('soap:Fault', $fault);
 		$this->assertStringContainsString('boom', $fault);
 
-		$fo01 = $responses->buildFo01('StUF055', 'kapot', 'server', ['organisation' => 'Procest'], []);
+		$fo01 = $responses->buildFo01('StUF055', 'kapot', 'server', ['organisation' => 'Dossiq'], []);
 		$this->assertStringContainsString('<stuf:code>StUF055</stuf:code>', $fo01);
 		$this->assertStringContainsString('<stuf:plek>server</stuf:plek>', $fo01);
 		$this->assertStringContainsString('<stuf:omschrijving>kapot</stuf:omschrijving>', $fo01);
 
-		$stuurgegevens = $responses->buildStuurgegevens(['applicatie' => 'Procest'], [], 'REF-9');
+		$stuurgegevens = $responses->buildStuurgegevens(['applicatie' => 'Dossiq'], [], 'REF-9');
 		$this->assertStringContainsString('<stuf:berichtcode>Lk01</stuf:berichtcode>', $stuurgegevens);
 		$this->assertStringContainsString('<stuf:referentienummer>REF-9</stuf:referentienummer>', $stuurgegevens);
 	}//end testInboundBuildersStillWork()

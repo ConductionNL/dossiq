@@ -7,7 +7,7 @@
                 "version": "1.0.0",
                 "x-schema-org": "schema:Message",
                 "title": "Portaal Bericht",
-                "description": "A message sent by a citizen (burger/bedrijf/gemachtigde) to the case handler via the Mijn gemeente citizen portal, linked to a Procest case. Citizen identity (BSN/KvK) is a Nextcloud/DigiD session identity, never invented as a contact schema.",
+                "description": "A message sent by a citizen (burger/bedrijf/gemachtigde) to the case handler via the Mijn gemeente citizen portal, linked to a Dossiq case. Citizen identity (BSN/KvK) is a Nextcloud/DigiD session identity, never invented as a contact schema.",
                 "type": "object",
                 "required": [
                     "caseId",
@@ -18,7 +18,7 @@
                     "caseId": {
                         "title": "Case ID",
                         "type": "string",
-                        "description": "Procest case id (zaakId) the message is attached to."
+                        "description": "Dossiq case id (zaakId) the message is attached to."
                     },
                     "caseReference": {
                         "title": "Case Reference",
@@ -88,7 +88,7 @@
                 "version": "1.0.0",
                 "x-schema-org": "schema:Action",
                 "title": "Portaal Verzoek",
-                "description": "A citizen-initiated request submitted via the Mijn gemeente portal: a bezwaarschrift (objection), klachtschrift (complaint) or subsidie-aanvraag. Creates a new bezwaar/klacht/subsidie case in Procest.",
+                "description": "A citizen-initiated request submitted via the Mijn gemeente portal: a bezwaarschrift (objection), klachtschrift (complaint) or subsidie-aanvraag. Creates a new bezwaar/klacht/subsidie case in Dossiq.",
                 "type": "object",
                 "required": [
                     "kind",
@@ -173,7 +173,7 @@
                     "newCaseId": {
                         "title": "New Case ID",
                         "type": "string",
-                        "description": "Id of the new Procest case created from this request."
+                        "description": "Id of the new Dossiq case created from this request."
                     },
                     "reference": {
                         "title": "Reference",
@@ -275,7 +275,7 @@
             }
         },
         "registers": {
-            "procest": {
+            "dossiq": {
                 "schemas": [
                     "portaalBericht",
                     "portaalVerzoek",
@@ -286,7 +286,7 @@
         "objects": [
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "portaalNotificatieVoorkeur",
                     "slug": "portaal-pref-demo-burger"
                 },
@@ -303,7 +303,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "portaalBericht",
                     "slug": "portaal-bericht-demo-1"
                 },

@@ -5,7 +5,7 @@
  *
  * Contract coverage for `POST /api/voorstellen/{voorstelId}/register-besluit`
  * (gate-25). Registering a besluit on a voorstel does NOT author a
- * procest-local decision: per ADR-019 / REQ-PDRD-001 it raises a decidesk
+ * dossiq-local decision: per ADR-019 / REQ-PDRD-001 it raises a decidesk
  * `report-adoption` Decision, and per REQ-PDRD-002 it must FAIL CLOSED when
  * decidesk is unavailable. These tests pin both the IDOR gate and that
  * fail-closed rule:
@@ -23,26 +23,26 @@
  *  - REQ-PDRD-002: a `RuntimeException` from the delegation is a **503**, and
  *    the response carries NO locally-authored besluit — there is no fallback;
  *  - the happy path is **202 Accepted** (not 201) carrying the decidesk
- *    `decisionRef` and `status: awaiting-decidesk`, because procest has not
+ *    `decisionRef` and `status: awaiting-decidesk`, because dossiq has not
  *    decided anything yet — decidesk has yet to.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\VoorstelBesluitController;
-use OCA\Procest\Service\AdviceDelegationService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Controller\VoorstelBesluitController;
+use OCA\Dossiq\Service\AdviceDelegationService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -251,7 +251,7 @@ class VoorstelBesluitControllerContractRequestStub implements IRequest {
 	 * @return string
 	 */
 	public function getRequestUri(): string {
-		return '/apps/procest/api/voorstellen/voorstel-1/register-besluit';
+		return '/apps/dossiq/api/voorstellen/voorstel-1/register-besluit';
 	}//end getRequestUri()
 
 	/**
@@ -331,7 +331,7 @@ class VoorstelBesluitControllerContractRequestStub implements IRequest {
 /**
  * Wire-contract tests for VoorstelBesluitController::registerBesluit().
  *
- * @covers \OCA\Procest\Controller\VoorstelBesluitController
+ * @covers \OCA\Dossiq\Controller\VoorstelBesluitController
  */
 class VoorstelBesluitControllerContractTest extends TestCase {
 
@@ -387,7 +387,7 @@ class VoorstelBesluitControllerContractTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'voorstel_schema' => 'voorstel',
 					default => '',
 				};
@@ -544,7 +544,7 @@ class VoorstelBesluitControllerContractTest extends TestCase {
 
 	/**
 	 * The happy path is 202 Accepted with the decidesk reference and an
-	 * `awaiting-decidesk` status — procest has NOT decided anything yet, so a
+	 * `awaiting-decidesk` status — dossiq has NOT decided anything yet, so a
 	 * 201 Created would misstate the outcome. The payload sent to decidesk
 	 * carries the voorstel's case as the external reference and the body's
 	 * title.

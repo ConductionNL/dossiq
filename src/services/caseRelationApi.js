@@ -1,11 +1,11 @@
 /**
- * Case-relation (typed peer / relevanteAndereZaken) API service for Procest.
+ * Case-relation (typed peer / relevanteAndereZaken) API service for Dossiq.
  *
  * Wraps the typed peer-relation endpoints exposed by
  * `lib/Controller/CaseRelationController.php`:
- *   GET    /apps/procest/api/cases/{caseId}/relations
- *   POST   /apps/procest/api/cases/{caseId}/relations
- *   DELETE /apps/procest/api/cases/{caseId}/relations/{targetId}/{aardRelatie}
+ *   GET    /apps/dossiq/api/cases/{caseId}/relations
+ *   POST   /apps/dossiq/api/cases/{caseId}/relations
+ *   DELETE /apps/dossiq/api/cases/{caseId}/relations/{targetId}/{natureRelationship}
  *
  * Relations are typed (`vervolg` | `onderwerp` | `bijdrage`), bidirectionally
  * consistent (written symmetrically server-side), and guarded.
@@ -31,7 +31,7 @@ export {
  */
 function base(caseId) {
 	return generateUrl(
-		`/apps/procest/api/cases/${encodeURIComponent(caseId)}/relations`,
+		`/apps/dossiq/api/cases/${encodeURIComponent(caseId)}/relations`,
 	)
 }
 

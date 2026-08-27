@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest Settings Controller
+ * Dossiq Settings Controller
  *
- * Controller for managing Procest application settings.
+ * Controller for managing Dossiq application settings.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -17,18 +17,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/admin-settings/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Settings\AdminSettings;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -41,7 +41,7 @@ use Psr\Container\ContainerInterface;
 use RuntimeException;
 
 /**
- * Controller for managing Procest application settings.
+ * Controller for managing Dossiq application settings.
  *
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
@@ -186,7 +186,7 @@ class SettingsController extends Controller {
 	 *
 	 * The canonical AppHost route table still ships `settings#create`
 	 * (POST /api/settings) for the pre-ADR-066 `index/create/load` dialect, and
-	 * three procest views still POST to it, so it stays reachable (ADR-029).
+	 * three dossiq views still POST to it, so it stays reachable (ADR-029).
 	 *
 	 * @return JSONResponse
 	 *
@@ -198,7 +198,7 @@ class SettingsController extends Controller {
 	}//end create()
 
 	/**
-	 * Re-import the configuration from procest_register.json.
+	 * Re-import the configuration from dossiq_register.json.
 	 *
 	 * Forces a fresh import regardless of version, auto-configuring
 	 * all schema and register IDs from the import result.

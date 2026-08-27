@@ -1,18 +1,18 @@
 <?php
 
 /**
- * Procest Portal Contribution Provider
+ * Dossiq Portal Contribution Provider
  *
- * Procest's contribution to the shared Portaliq external portal (hydra ADR-046
+ * Dossiq's contribution to the shared Portaliq external portal (hydra ADR-046
  * + contribution contract v2.2). Portaliq — the ONE shared portal for people
  * WITHOUT Nextcloud accounts — discovers this class by convention FQCN
  * (`OCA\{Namespace}\Portal\PortalContributionProvider`) and duck-types it
  * (getAudiences/getAudience + getContribution) via method_exists(), never
  * instanceof. This class is therefore deliberately PLAIN: no portaliq imports,
  * no `implements` clause, no info.xml dependency, no constructor dependencies.
- * Without portaliq installed it is inert and Procest behaves exactly as before.
+ * Without portaliq installed it is inert and Dossiq behaves exactly as before.
  *
- * It moves Procest's four former in-app portal surfaces (ADR-046, procest#162)
+ * It moves Dossiq's four former in-app portal surfaces (ADR-046, procest#162)
  * into Portaliq's declarative contract, across three audiences:
  *
  *  - `supplier`  — a supplier's tenders, contracts, invoices and message inbox,
@@ -43,7 +43,7 @@
  * safe and shipped. See design.md "Deferred creates".
  *
  * @category Portal
- * @package  OCA\Procest\Portal
+ * @package  OCA\Dossiq\Portal
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -52,22 +52,22 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Portal;
+namespace OCA\Dossiq\Portal;
 
 /**
- * Declares what an external Portaliq subject may see and do in Procest.
+ * Declares what an external Portaliq subject may see and do in Dossiq.
  *
  * The contribution is a declarative manifest (pure data — no I/O, no
  * callbacks). All subject identity (subjectRef, audience, organisation, trust)
  * is derived server-side by Portaliq's auth edge and MUST never be trusted from
- * the client (ADR-005). Returns null for any audience Procest does not serve
+ * the client (ADR-005). Returns null for any audience Dossiq does not serve
  * (fail-closed; the registry already filters by audience, but a provider must
  * not rely on that).
  *
@@ -79,12 +79,16 @@ class PortalContributionProvider {
 	 *
 	 * @var string
 	 */
-	private const REGISTER = 'procest';
+	// FROZEN: OpenRegister register SLUG, not this app's id, and unchanged by
+	// the procest -> dossiq rename. The `claims.procest.*` claim names in the
+	// docblock above are frozen for a different reason — they are a contract
+	// the portal reads, so renaming them here would not rename them there.
+	private const REGISTER = 'dossiq';
 
 	/**
 	 * The audiences this provider contributes to (contract v2, preferred).
 	 *
-	 * The registry probes for this method first. Procest serves suppliers, the
+	 * The registry probes for this method first. Dossiq serves suppliers, the
 	 * citizen ('Mijn gemeente') and external field inspectors.
 	 *
 	 * @return array<int, string> The audience identifiers.
@@ -135,7 +139,7 @@ class PortalContributionProvider {
 			return $this->inspectorContribution();
 		}
 
-		// Any audience Procest does not serve → null (fail-closed; ADR-005).
+		// Any audience Dossiq does not serve → null (fail-closed; ADR-005).
 		return null;
 	}//end getContribution()
 
@@ -144,7 +148,7 @@ class PortalContributionProvider {
 	 *
 	 * The supplier's tenders, contracts, invoices and message inbox, all scoped
 	 * by the DEFAULT subjectRef == the record's `supplierRef`. Portaliq reads
-	 * them RBAC-scoped to the subject; Procest exposes no portal endpoints of
+	 * them RBAC-scoped to the subject; Dossiq exposes no portal endpoints of
 	 * its own here.
 	 *
 	 * @return array<string, mixed> The supplier manifest.
@@ -153,7 +157,7 @@ class PortalContributionProvider {
 	 */
 	private function supplierContribution(): array {
 		return [
-			'label' => 'Procest',
+			'label' => 'Dossiq',
 			'collections' => [
 				[
 					'id' => 'tenders',
@@ -230,7 +234,7 @@ class PortalContributionProvider {
 	 */
 	private function citizenContribution(): array {
 		return [
-			'label' => 'Procest',
+			'label' => 'Dossiq',
 			'collections' => [
 				[
 					'id' => 'mijnZaken',
@@ -346,7 +350,7 @@ class PortalContributionProvider {
 	 */
 	private function inspectorContribution(): array {
 		return [
-			'label' => 'Procest',
+			'label' => 'Dossiq',
 			'collections' => [
 				[
 					'id' => 'inspectieRapporten',

@@ -31,7 +31,7 @@
 		<NcTextField
 			v-model="query"
 			class="initiator-picker__search"
-			:label="t('procest', 'Search initiator')"
+			:label="t('dossiq', 'Search initiator')"
 			:placeholder="searchPlaceholder"
 			trailingButtonIcon="close"
 			:showTrailingButton="query !== ''"
@@ -126,9 +126,9 @@ export default {
 		/** @spec openspec/specs/initiator-selection/spec.md */
 		tabs() {
 			return [
-				{ id: 'person', label: t('procest', 'Person') },
-				{ id: 'company', label: t('procest', 'Company') },
-				{ id: 'contact', label: t('procest', 'Contact') },
+				{ id: 'person', label: t('dossiq', 'Person') },
+				{ id: 'company', label: t('dossiq', 'Company') },
+				{ id: 'contact', label: t('dossiq', 'Contact') },
 			]
 		},
 
@@ -136,29 +136,29 @@ export default {
 		searchPlaceholder() {
 			switch (this.activeTab) {
 				case 'company':
-					return t('procest', 'Trade name or KvK number')
+					return t('dossiq', 'Trade name or KvK number')
 				case 'contact':
-					return t('procest', 'Contact name or email')
+					return t('dossiq', 'Contact name or email')
 				default:
-					return t('procest', 'Name or BSN')
+					return t('dossiq', 'Name or BSN')
 			}
 		},
 
 		/** @spec openspec/specs/initiator-selection/spec.md */
 		emptyTitle() {
 			return this.activeTab === 'contact'
-				? t('procest', 'No contacts found')
-				: t('procest', 'No results')
+				? t('dossiq', 'No contacts found')
+				: t('dossiq', 'No results')
 		},
 
 		/** @spec openspec/specs/initiator-selection/spec.md */
 		emptyDescription() {
 			return this.activeTab === 'contact'
 				? t(
-						'procest',
+						'dossiq',
 						'No matching contacts — the Contacts app may not be installed or holds no matching entries.',
 					)
-				: t('procest', 'No matching records in the seeded register set.')
+				: t('dossiq', 'No matching records in the seeded register set.')
 		},
 	},
 

@@ -18,7 +18,7 @@
  * exercised directly through reflection rather than over a faked request.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -34,14 +34,14 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\MandaatMatrixController;
-use OCA\Procest\Service\MandaatCheckService;
-use OCA\Procest\Service\MandaatEscalatieService;
-use OCA\Procest\Service\MandaatGebruikService;
-use OCA\Procest\Service\MandaatImportService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Controller\MandaatMatrixController;
+use OCA\Dossiq\Service\MandaatCheckService;
+use OCA\Dossiq\Service\MandaatEscalatieService;
+use OCA\Dossiq\Service\MandaatGebruikService;
+use OCA\Dossiq\Service\MandaatImportService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\IRequest;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
@@ -67,7 +67,7 @@ interface MandaatCaseObjectServiceStub {
 /**
  * Unit tests for MandaatMatrixController identity handling.
  *
- * @covers \OCA\Procest\Controller\MandaatMatrixController
+ * @covers \OCA\Dossiq\Controller\MandaatMatrixController
  */
 class MandaatMatrixControllerIdentityTest extends TestCase {
 
@@ -86,12 +86,12 @@ class MandaatMatrixControllerIdentityTest extends TestCase {
 		$settings->method('getObjectService')->willReturn($objectService);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
-				return ['register' => 'procest', 'case_schema' => 'case'][$key] ?? '';
+				return ['register' => 'dossiq', 'case_schema' => 'case'][$key] ?? '';
 			}
 		);
 
 		return new MandaatMatrixController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->createMock(IRequest::class),
 			userSession: $this->createMock(IUserSession::class),
 			check: $this->createMock(MandaatCheckService::class),

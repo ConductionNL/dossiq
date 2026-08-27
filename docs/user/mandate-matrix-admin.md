@@ -23,7 +23,7 @@ De matrix bestaat uit zes met elkaar verbonden entiteiten:
 
 ## Importworkflow vanuit Decidesk
 
-Juridische Zaken onderhoudt het mandaatregister doorgaans in Decidesk. Procest haalt de actuele versie op, leest de bijgevoegde Excel/CSV, vergelijkt met de huidige situatie, en presenteert een diff voor goedkeuring.
+Juridische Zaken onderhoudt het mandaatregister doorgaans in Decidesk. Dossiq haalt de actuele versie op, leest de bijgevoegde Excel/CSV, vergelijkt met de huidige situatie, en presenteert een diff voor goedkeuring.
 
 ### Stap 1 — Klaarzetten in Decidesk
 
@@ -39,11 +39,11 @@ Juridische Zaken onderhoudt het mandaatregister doorgaans in Decidesk. Procest h
     - `geldigVanaf`, `geldigTot` (ISO-datum, leeg = onbepaald)
 3. Onthoud het `besluitId` van het Decidesk-besluit.
 
-### Stap 2 — Import starten in Procest
+### Stap 2 — Import starten in Dossiq
 
-1. Open **Beheer → Procest → Mandaat-matrix → Import**.
+1. Open **Beheer → Dossiq → Mandaat-matrix → Import**.
 2. Plak het Decidesk-besluitId of kies het uit de lijst (de koppeling met Decidesk wordt via `openconnector` opgehaald).
-3. Klik **Voorbeeld genereren**. Procest:
+3. Klik **Voorbeeld genereren**. Dossiq:
     - Haalt het besluit + bijlage op.
     - Parseert de tabel (PhpSpreadsheet).
     - Valideert dat elke `gemandateerdeRol` overeenkomt met een bestaande `OrganisatieRol`.
@@ -65,7 +65,7 @@ Wanneer de diff klopt:
 
 1. Klik **Goedkeuren en activeren**.
 2. Vul de juridische datum van inwerkingtreding (`vanaf`) in.
-3. Procest:
+3. Dossiq:
     - Markeert het vorige `MandateringsBesluit` als `vervallen` (op `vanaf - 1 dag`).
     - Zet het nieuwe besluit op `vastgesteld` met geldigheid vanaf de gekozen datum.
     - Plaatst de Mandaat-records in de juiste relatie tot het nieuwe besluit.
@@ -76,7 +76,7 @@ Vanaf dit moment hanteert de authorisatie-engine automatisch de nieuwe matrix.
 
 De rolhiërarchie bepaalt hoe escalaties verlopen wanneer een plafond wordt overschreden.
 
-1. Open **Beheer → Procest → Mandaat-matrix → Rollen**.
+1. Open **Beheer → Dossiq → Mandaat-matrix → Rollen**.
 2. Bekijk de boomweergave: bovenaan staat (typisch) **College van B&W**; daaronder afdelingshoofden, daaronder senior- en operationele rollen.
 3. Voor elke rol:
     - **Naam** (verplicht, uniek).
@@ -94,7 +94,7 @@ Voor grootschalige initialisatie staat een Excel-template klaar: **Rollen → Sj
 
 Tijdens vakantie of ziekte kan een waarnemer een rol tijdelijk vervullen. Een waarnemer-toewijzing is een `MedewerkerRolToewijzing` met `toewijzingType = waarnemer`.
 
-1. Open **Beheer → Procest → Mandaat-matrix → Toewijzingen**.
+1. Open **Beheer → Dossiq → Mandaat-matrix → Toewijzingen**.
 2. Klik **Waarnemer toevoegen**.
 3. Selecteer:
     - **Te vervangen medewerker** (de hoofdhouder van de rol).
@@ -122,7 +122,7 @@ Tijdens vakantie of ziekte kan een waarnemer een rol tijdelijk vervullen. Een wa
 Nee. Het schema is write-once gemarkeerd; corrigeren gebeurt via een nieuw record met `correctieVan` verwijzing.
 
 **Hoe ga ik om met overlappende waarnemers?**
-Een rol kan slechts één actieve waarnemer tegelijk hebben. Procest weigert overlapping bij het opslaan; los het op door de eerste waarnemer te beëindigen voordat de tweede start.
+Een rol kan slechts één actieve waarnemer tegelijk hebben. Dossiq weigert overlapping bij het opslaan; los het op door de eerste waarnemer te beëindigen voordat de tweede start.
 
 **Wat gebeurt bij een vervallen mandaat dat nog open zaken raakt?**
 Lopende zaken behouden hun originele `MandaatGebruik`-snapshot. Nieuwe besluiten op die zaak gebruiken het nieuwe besluit zodra het geldig is.
@@ -140,7 +140,7 @@ Nee. De authorisatie is integraal onderdeel van procesvoering. Voor ad-hoc behee
 | `subdelegatie_toegestaan` | enum | ja | `ja` / `nee`. |
 | `actief` | enum | ja | `ja` / `nee` (gearchiveerde rol blijft beschikbaar voor historische audit). |
 
-Importeer via **Rollen → Importeren**; Procest valideert circular references en weigert imports met cycli.
+Importeer via **Rollen → Importeren**; Dossiq valideert circular references en weigert imports met cycli.
 
 ## Specs
 

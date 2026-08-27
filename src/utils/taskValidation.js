@@ -18,11 +18,11 @@ export function validateTaskCreate(form) {
 	const errors = {}
 
 	if (!form.title || !form.title.trim()) {
-		errors.title = t('procest', 'Title is required')
+		errors.title = t('dossiq', 'Title is required')
 	}
 
 	if (!form.case) {
-		errors.case = t('procest', 'Case is required')
+		errors.case = t('dossiq', 'Case is required')
 	}
 
 	return {
@@ -45,7 +45,7 @@ export function validateTaskUpdate(form) {
 	const errors = {}
 
 	if (!form.title || !form.title.trim()) {
-		errors.title = t('procest', 'Title is required')
+		errors.title = t('dossiq', 'Title is required')
 	}
 
 	return {
@@ -68,7 +68,7 @@ export function validateTaskUpdate(form) {
  */
 export function validateTaskTransition(from, to) {
 	if (!from || !to) {
-		return { valid: false, error: t('procest', 'Invalid status transition') }
+		return { valid: false, error: t('dossiq', 'Invalid status transition') }
 	}
 
 	if (!validateTransition(from, to)) {
@@ -76,7 +76,7 @@ export function validateTaskTransition(from, to) {
 			return {
 				valid: false,
 				error: t(
-					'procest',
+					'dossiq',
 					'A task must be active before it can be completed. Start the task first.',
 				),
 			}
@@ -85,7 +85,7 @@ export function validateTaskTransition(from, to) {
 			return {
 				valid: false,
 				error: t(
-					'procest',
+					'dossiq',
 					'Cannot change status of a {status} task. Terminal states cannot be reversed.',
 					{ status: from },
 				),
@@ -93,7 +93,7 @@ export function validateTaskTransition(from, to) {
 		}
 		return {
 			valid: false,
-			error: t('procest', "Cannot transition from '{from}' to '{to}'", {
+			error: t('dossiq', "Cannot transition from '{from}' to '{to}'", {
 				from,
 				to,
 			}),

@@ -25,22 +25,22 @@
  *    on two near-identical methods.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\ComplaintCategoryController;
-use OCA\Procest\Service\Complaint\ComplaintAccessGuard;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Controller\ComplaintCategoryController;
+use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IGroupManager;
@@ -76,9 +76,9 @@ interface ComplaintCategoryControllerObjectServiceStub {
 /**
  * Wire-contract tests for ComplaintCategoryController.
  *
- * @covers \OCA\Procest\Controller\ComplaintCategoryController
+ * @covers \OCA\Dossiq\Controller\ComplaintCategoryController
  *
- * @uses \OCA\Procest\Service\Complaint\ComplaintAccessGuard
+ * @uses \OCA\Dossiq\Service\Complaint\ComplaintAccessGuard
  */
 class ComplaintCategoryControllerContractTest extends TestCase {
 
@@ -144,7 +144,7 @@ class ComplaintCategoryControllerContractTest extends TestCase {
 		);
 
 		$this->controller = new ComplaintCategoryController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			settingsService: $this->settingsService,
 			accessGuard: $this->accessGuard,
@@ -173,7 +173,7 @@ class ComplaintCategoryControllerContractTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturnCallback(
 			static function (string $key, string $default = ''): string {
 				return match ($key) {
-					'register' => 'procest-register',
+					'register' => 'dossiq-register',
 					'complaint_category_schema' => 'klachtcategorie',
 					default => $default,
 				};
@@ -270,7 +270,7 @@ class ComplaintCategoryControllerContractTest extends TestCase {
 		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
 		$this->assertSame(['id' => 'cat-1', 'name' => 'Bejegening'], $response->getData());
 		$this->assertSame(['name' => 'Bejegening'], $captured['object']);
-		$this->assertSame('procest-register', $captured['register']);
+		$this->assertSame('dossiq-register', $captured['register']);
 		$this->assertSame('klachtcategorie', $captured['schema']);
 		$this->assertNull($captured['uuid'], 'a create must not address an existing uuid');
 	}//end testCreateCategoryReturns201AndWritesWithoutAUuid()

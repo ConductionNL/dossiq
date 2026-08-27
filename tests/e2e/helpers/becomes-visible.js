@@ -14,7 +14,7 @@
  *
  * So this shape, which this repo used in three spec files:
  *
- *     await page.goto('/index.php/apps/procest/workflow-board')
+ *     await page.goto('/index.php/apps/dossiq/workflow-board')
  *     if (!(await heading.isVisible({ timeout: 10000 }).catch(() => false))) {
  *         test.skip(true, 'Workflow Board surface not deployed in target instance')
  *     }
@@ -25,7 +25,7 @@
  * A SKIP WHOSE STATED REASON IS UNTRUE IS AN INVISIBLE PASS — worse than a
  * stub assertion, because it renders as "not applicable" rather than as a gap,
  * the reason looks investigated, and it inflates the skip count, which is the
- * number that separates a flake from a regression. procest skips 38 of 128.
+ * number that separates a flake from a regression. dossiq skips 38 of 128.
  *
  * `waitFor` polls. **The skip that survives it is a real one.**
  *

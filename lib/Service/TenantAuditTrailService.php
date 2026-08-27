@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Tenant Audit Trail Service
+ * Dossiq Tenant Audit Trail Service
  *
  * Emits tenant-stamped audit-trail entries for every mutating action so
  * REQ-010 (compliance — tenant-stamped audit log on data access) is met.
@@ -22,7 +22,7 @@
  * is unavailable, rather than claiming a control it cannot back.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -31,14 +31,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-12-isolation-tests-compliance/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCP\App\IAppManager;
@@ -54,7 +54,11 @@ class TenantAuditTrailService {
 	 * OpenRegister register + schema holding tenant objects. An audit row is
 	 * anchored to the tenant ObjectEntity it concerns.
 	 */
-	private const REGISTER = 'procest';
+	// FROZEN: the OpenRegister register SLUG, not this app's id. OR resolves
+	// registers by slug, so renaming it with the app id would address a
+	// register that does not exist and every durable audit row would fail to
+	// be written — a compliance surface going quiet, not erroring.
+	private const REGISTER = 'dossiq';
 
 	/**
 	 * Schema slug for tenant objects.
@@ -111,7 +115,7 @@ class TenantAuditTrailService {
 
 		$entry['persisted'] = $this->persist(entry: $entry);
 
-		$this->logger->info('Procest AUDIT', $entry);
+		$this->logger->info('Dossiq AUDIT', $entry);
 		return $entry;
 	}//end emit()
 
@@ -126,7 +130,7 @@ class TenantAuditTrailService {
 	private function persist(array $entry): bool {
 		$tenantId = (string)$entry['tenantId'];
 		if ($tenantId === '') {
-			$this->logger->error('Procest AUDIT: no tenantId — durable audit row NOT written', $entry);
+			$this->logger->error('Dossiq AUDIT: no tenantId — durable audit row NOT written', $entry);
 			return false;
 		}
 
@@ -135,7 +139,7 @@ class TenantAuditTrailService {
 			$object = $this->resolveTenantEntity(tenantId: $tenantId);
 			if ($mapper === null || $object === null) {
 				$this->logger->error(
-					'Procest AUDIT: OpenRegister audit sink unavailable — durable audit row NOT written',
+					'Dossiq AUDIT: OpenRegister audit sink unavailable — durable audit row NOT written',
 					$entry
 				);
 				return false;
@@ -143,13 +147,18 @@ class TenantAuditTrailService {
 
 			$mapper->createAuditTrailEntry(
 				object: $object,
+				// FROZEN PREFIX — still `procest.`, deliberately. Written into
+				// OpenRegister's append-only audit trail; every existing tenant
+				// audit row already carries it and readers filter on it, so a
+				// rename splits the trail and shows a partial history as though
+				// it were complete.
 				action: 'procest.tenant.' . $entry['action'],
 				context: $entry,
 			);
 			return true;
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest AUDIT: durable audit row failed',
+				'Dossiq AUDIT: durable audit row failed',
 				['exception' => $e->getMessage()] + $entry
 			);
 			return false;
@@ -185,7 +194,7 @@ class TenantAuditTrailService {
 		try {
 			return $this->container->get('OCA\\OpenRegister\\Db\\AuditTrailMapper');
 		} catch (Throwable $e) {
-			$this->logger->error('Procest: could not resolve AuditTrailMapper', ['exception' => $e->getMessage()]);
+			$this->logger->error('Dossiq: could not resolve AuditTrailMapper', ['exception' => $e->getMessage()]);
 			return null;
 		}
 	}//end getAuditTrailMapper()
@@ -203,7 +212,7 @@ class TenantAuditTrailService {
 			return $objectService->find($tenantId, register: self::REGISTER, schema: self::SCHEMA_TENANT);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest AUDIT: could not resolve tenant ObjectEntity',
+				'Dossiq AUDIT: could not resolve tenant ObjectEntity',
 				['tenantId' => $tenantId, 'exception' => $e->getMessage()]
 			);
 			return null;

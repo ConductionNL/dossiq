@@ -4,19 +4,19 @@
 -->
 <template>
 	<NcDialog
-		:name="t('procest', 'Delete checklist')"
+		:name="t('dossiq', 'Delete checklist')"
 		:message="
-			t('procest', 'Are you sure you want to delete \'{name}\'?', {
+			t('dossiq', 'Are you sure you want to delete \'{name}\'?', {
 				name: checklist ? checklist.name : '',
 			})
 		"
 		@close="$emit('cancel')">
 		<template #actions>
 			<NcButton type="error" @click="$emit('confirm')">
-				{{ t('procest', 'Delete') }}
+				{{ t('dossiq', 'Delete') }}
 			</NcButton>
 			<NcButton @click="$emit('cancel')">
-				{{ t('procest', 'Cancel') }}
+				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 		</template>
 	</NcDialog>

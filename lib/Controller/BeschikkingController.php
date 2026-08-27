@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Beschikking Controller.
+ * Dossiq Beschikking Controller.
  *
  * REST surface for the beschikking lifecycle:
  *
@@ -18,7 +18,7 @@
  * mapped HTTP statuses are used instead.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -29,16 +29,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T05
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\BeschikkingService;
+use OCA\Dossiq\Service\BeschikkingService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDownloadResponse;

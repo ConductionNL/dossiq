@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Procest Bezwaar Decision Delegation Service
+ * Dossiq Bezwaar Decision Delegation Service
  *
  * Delegates the beslissing-op-bezwaar (decision on objection) to decidesk via
- * the decidesk `DecisionRequestedEvent` (IEventDispatcher). procest keeps the
+ * the decidesk `DecisionRequestedEvent` (IEventDispatcher). dossiq keeps the
  * Awb domain rules and the ZGW Besluit recording (as a projection); decidesk
  * owns the *making* of the decision. This service is a thin sibling of
  * ContractDecisionDelegationService — it reuses that service's shared
@@ -14,11 +14,11 @@
  *  - raiseBezwaarDecision() — raise a decidesk `bezwaar-decision` Decision.
  *
  * The terminal outcome is delivered by decidesk's `DecisionConcludedEvent`
- * (consumed by {@see \OCA\Procest\Listener\DecisionConcludedListener}), not by
+ * (consumed by {@see \OCA\Dossiq\Listener\DecisionConcludedListener}), not by
  * a poll. FAILS CLOSED when decidesk is unavailable (never auto-decides).
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,14 +27,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/remaining-decision-delegation/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 /**
  * Raises and consumes the decidesk `bezwaar-decision` Decision.
@@ -58,7 +58,7 @@ class BezwaarDecisionDelegationService {
 	 * The caller (Bezwaar/DecisionService) MUST have run the Awb validity
 	 * matrix (7:11 disposition set, 7:12 reasoning+legalBasis, proceskosten,
 	 * replacement guard) BEFORE invoking this — the domain rules stay in
-	 * procest. FAILS CLOSED when decidesk is unavailable.
+	 * dossiq. FAILS CLOSED when decidesk is unavailable.
 	 *
 	 * @param string $objectionId The bezwaar/case reference (UUID) persisted on the decidesk Decision.
 	 * @param array<string,mixed> $payload Decision payload: disposition, reasoning, legalBasis,

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Link In-Flight Contract Decisions Repair
+ * Dossiq Link In-Flight Contract Decisions Repair
  *
  * Migration repair step: for each open contract / besluitvorming case that
  * does NOT yet have a `decisionRef`, link it forward to a decidesk Decision
@@ -13,7 +13,7 @@
  * skips (no case data is modified); it does not fail the migration.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,19 +22,19 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/contract-decision-delegation/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
-use OCA\Procest\Service\ContractDecisionDelegationService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
-use OCA\Procest\Service\TenantSaasService;
+use OCA\Dossiq\Service\ContractDecisionDelegationService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\TenantSaasService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -91,7 +91,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 	 * @return string
 	 */
 	public function getName(): string {
-		return 'Link in-flight Procest contract/besluitvorming cases to decidesk Decisions';
+		return 'Link in-flight Dossiq contract/besluitvorming cases to decidesk Decisions';
 	}//end getName()
 
 	/**
@@ -179,7 +179,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 	 *
 	 * @param object $objectService The OpenRegister ObjectService.
 	 * @param array<string, mixed> $case The case row.
-	 * @param string $caseTypeSlug The procest case type slug.
+	 * @param string $caseTypeSlug The dossiq case type slug.
 	 * @param IOutput $output The migration output interface.
 	 *
 	 * @return string One of the self::RESULT_* constants.
@@ -254,9 +254,9 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 	}//end linkCase()
 
 	/**
-	 * Map a procest case type slug to a decidesk decisionType.
+	 * Map a dossiq case type slug to a decidesk decisionType.
 	 *
-	 * @param string $caseTypeSlug The procest case type slug.
+	 * @param string $caseTypeSlug The dossiq case type slug.
 	 *
 	 * @return string The decidesk decisionType.
 	 */

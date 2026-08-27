@@ -1,15 +1,15 @@
 <?php
 
 /**
- * Procest Vergadering Deadline Job
+ * Dossiq Vergadering Deadline Job
  *
  * Nightly background job that advances the status of vergadering-backed
- * Procest cases whose agenda-publication deadline has been reached.
+ * Dossiq cases whose agenda-publication deadline has been reached.
  * A vergadering with a startDatum of today or in the past and current status
  * "planned" is transitioned to "lopend" by this job.
  *
  * @category BackgroundJob
- * @package  OCA\Procest\BackgroundJob
+ * @package  OCA\Dossiq\BackgroundJob
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,10 +22,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\BackgroundJob;
+namespace OCA\Dossiq\BackgroundJob;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\VergaderingCaseService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\VergaderingCaseService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -79,7 +79,7 @@ class VergaderingDeadlineJob extends TimedJob {
 
 		if ($advanced > 0) {
 			$this->logger->info(
-				'Procest: vergadering deadline job advanced ' . $advanced . ' case(s) to lopend',
+				'Dossiq: vergadering deadline job advanced ' . $advanced . ' case(s) to lopend',
 				['app' => Application::APP_ID]
 			);
 		}

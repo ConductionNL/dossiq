@@ -3,7 +3,7 @@
  *
  * Pure result-shaping helpers plus thin search functions over the three
  * initiator sources: the seeded `brpPerson` / `kvkCompany` register sets
- * (OpenRegister objects API via the object store — thin client, no procest
+ * (OpenRegister objects API via the object store — thin client, no dossiq
  * backend CRUD wrapper) and Nextcloud contacts (core /contactsmenu/contacts
  * endpoint; degrades to an empty list when unavailable — never an error).
  *

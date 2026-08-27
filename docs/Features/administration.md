@@ -11,7 +11,7 @@ Nextcloud admin panel for case type management, plus the foundational OpenRegist
 
 ### Nextcloud Admin Panel (MVP)
 
-Procest registers a settings section in Nextcloud's admin panel for case type configuration.
+Dossiq registers a settings section in Nextcloud's admin panel for case type configuration.
 
 ### Case Type List View (MVP)
 
@@ -47,7 +47,7 @@ Additional case type configuration tabs:
 
 ### OpenRegister Integration (MVP)
 
-Procest owns no database tables: all data is stored as OpenRegister objects in the `procest` register with 12 schemas:
+Dossiq owns no database tables: all data is stored as OpenRegister objects in the `dossiq` register with 12 schemas:
 
 **Configuration schemas (admin-managed):**
 - `caseType`: Case behavior configuration

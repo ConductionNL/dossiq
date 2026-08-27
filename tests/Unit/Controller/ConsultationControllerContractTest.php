@@ -16,22 +16,22 @@
  *    `show()` returns its object bare, so the two shapes are easy to confuse.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\ConsultationController;
-use OCA\Procest\Service\Consultation\ConsultationAccessGuard;
-use OCA\Procest\Service\ConsultationService;
+use OCA\Dossiq\Controller\ConsultationController;
+use OCA\Dossiq\Service\Consultation\ConsultationAccessGuard;
+use OCA\Dossiq\Service\ConsultationService;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -43,9 +43,9 @@ use PHPUnit\Framework\TestCase;
 /**
  * Wire-contract tests for ConsultationController::overdue().
  *
- * @covers \OCA\Procest\Controller\ConsultationController
+ * @covers \OCA\Dossiq\Controller\ConsultationController
  *
- * @uses \OCA\Procest\Service\Consultation\ConsultationAccessGuard
+ * @uses \OCA\Dossiq\Service\Consultation\ConsultationAccessGuard
  */
 class ConsultationControllerContractTest extends TestCase {
 
@@ -99,7 +99,7 @@ class ConsultationControllerContractTest extends TestCase {
 	 */
 	private function controller(): ConsultationController {
 		return new ConsultationController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			consultationService: $this->consultationService,
 			accessGuard: new ConsultationAccessGuard(

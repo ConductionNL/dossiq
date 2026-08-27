@@ -1,8 +1,8 @@
 <template>
 	<div>
 		<CnIndexPage
-			:title="t('procest', 'Case Types')"
-			:description="t('procest', 'Configure case types')"
+			:title="t('dossiq', 'Case Types')"
+			:description="t('dossiq', 'Configure case types')"
 			:schema="schema"
 			:objects="caseTypes"
 			:loading="loading"
@@ -25,9 +25,7 @@
 					class="ct-badge"
 					:class="row.isDraft ? 'ct-badge--draft' : 'ct-badge--published'">
 					{{
-						row.isDraft
-							? t('procest', 'Draft')
-							: t('procest', 'Published')
+						row.isDraft ? t('dossiq', 'Draft') : t('dossiq', 'Published')
 					}}
 				</span>
 			</template>
@@ -47,7 +45,7 @@
 					<NcButton
 						v-if="!row.isDraft"
 						type="tertiary"
-						:title="t('procest', 'Set as default')"
+						:title="t('dossiq', 'Set as default')"
 						@click="setDefault(row)">
 						<template #icon>
 							<StarIcon :size="20" />
@@ -56,7 +54,7 @@
 					<NcButton
 						type="tertiary"
 						:disabled="duplicating === row.id"
-						:title="t('procest', 'Duplicate')"
+						:title="t('dossiq', 'Duplicate')"
 						@click="duplicate(row)">
 						<template #icon>
 							<NcLoadingIcon
@@ -67,7 +65,7 @@
 					</NcButton>
 					<NcButton
 						type="tertiary"
-						:title="t('procest', 'Delete')"
+						:title="t('dossiq', 'Delete')"
 						@click="confirmDelete(row)">
 						<template #icon>
 							<DeleteIcon :size="20" />
@@ -201,7 +199,7 @@ export default {
 				})
 				return `${from} \u2014 ${until}`
 			}
-			return t('procest', '{from} \u2014 (no end)', { from })
+			return t('dossiq', '{from} \u2014 (no end)', { from })
 		},
 
 		/**
@@ -232,7 +230,7 @@ export default {
 			this.error = ''
 			if (ct.isDraft) {
 				this.error = t(
-					'procest',
+					'dossiq',
 					'Only published case types can be set as default',
 				)
 				return
@@ -255,7 +253,7 @@ export default {
 				})
 				if (cases && cases.length > 0) {
 					this.error = t(
-						'procest',
+						'dossiq',
 						'Cannot delete: active cases are using this type',
 					)
 					await this.fetchCaseTypes()
@@ -269,11 +267,11 @@ export default {
 			const message =
 				statusCount > 0
 					? t(
-							'procest',
+							'dossiq',
 							'This will delete the case type and all {count} status types. Continue?',
 							{ count: statusCount },
 						)
-					: t('procest', 'Delete case type "{title}"?', {
+					: t('dossiq', 'Delete case type "{title}"?', {
 							title: ct.title,
 						})
 
@@ -297,7 +295,7 @@ export default {
 					)
 					if (!ok) {
 						this.error = t(
-							'procest',
+							'dossiq',
 							'Failed to delete status type "{name}"',
 							{ name: st.name },
 						)
@@ -309,7 +307,7 @@ export default {
 
 			try {
 				await axios.delete(
-					generateUrl('/apps/procest/api/case-definitions/{id}', {
+					generateUrl('/apps/dossiq/api/case-definitions/{id}', {
 						id: ct.id,
 					}),
 				)
@@ -317,11 +315,11 @@ export default {
 				this.error =
 					err.response?.status === 409
 						? t(
-								'procest',
+								'dossiq',
 								'Cannot delete: unpublish this case type first',
 							)
 						: err.response?.data?.error
-							|| t('procest', 'Failed to delete case type')
+							|| t('dossiq', 'Failed to delete case type')
 				await this.fetchCaseTypes()
 				return
 			}
@@ -348,7 +346,7 @@ export default {
 			this.duplicating = ct.id
 			try {
 				const response = await axios.post(
-					generateUrl('/apps/procest/api/case-definitions/{id}/copy', {
+					generateUrl('/apps/dossiq/api/case-definitions/{id}/copy', {
 						id: ct.id,
 					}),
 				)
@@ -360,7 +358,7 @@ export default {
 			} catch (err) {
 				this.error =
 					err.response?.data?.error
-					|| t('procest', 'Failed to duplicate case type')
+					|| t('dossiq', 'Failed to duplicate case type')
 			} finally {
 				this.duplicating = null
 			}

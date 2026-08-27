@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Tenant Controller
+ * Dossiq Tenant Controller
  *
  * Controller for tenant provisioning, usage aggregation, and current-tenant
  * resolution. Generic tenant CRUD (list/create/update/delete) is delegated
@@ -9,7 +9,7 @@
  * the multi-tenant domain logic that cannot be expressed declaratively.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -20,18 +20,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/multi-tenancy/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\TenantService;
-use OCA\Procest\Settings\AdminSettings;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\TenantService;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;

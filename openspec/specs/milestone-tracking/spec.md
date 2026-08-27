@@ -332,7 +332,7 @@ Milestone instances (reached milestones on a case) MUST be stored as structured 
 - **THEN** the OpenRegister audit trail plugin MUST show: creation event, any updates (reversals), and the full change history
 
 ### Requirement: Dashboard MUST show milestone-based KPIs
-The Procest dashboard MUST include milestone-based performance indicators.
+The Dossiq dashboard MUST include milestone-based performance indicators.
 
 #### Scenario: Milestone completion rate KPI card
 - **GIVEN** the Dashboard.vue already shows KPI cards

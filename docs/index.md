@@ -2,12 +2,12 @@
 id: intro
 title: Introduction
 sidebar_position: 1
-description: Get started with Procest, case management and BPMN workflows on Nextcloud. VTH-grade compliance with typed registers and a full audit trail.
+description: Get started with Dossiq, case management and BPMN workflows on Nextcloud. VTH-grade compliance with typed registers and a full audit trail.
 ---
 
-# Procest Documentation
+# Dossiq Documentation
 
-Procest is a case management (zaakgericht werken) application for Nextcloud, designed for Dutch government organizations. It provides a complete case management solution built on top of OpenRegister.
+Dossiq is a case management (zaakgericht werken) application for Nextcloud, designed for Dutch government organizations. It provides a complete case management solution built on top of OpenRegister.
 
 ## Screenshots
 
@@ -81,7 +81,7 @@ Procest is a case management (zaakgericht werken) application for Nextcloud, des
 
 ## Architecture
 
-Procest is built as a Nextcloud app with the following architecture:
+Dossiq is built as a Nextcloud app with the following architecture:
 
 - **Frontend**: Vue.js single-page application within the Nextcloud framework.
 - **Backend**: PHP (Nextcloud app structure with controllers, services, and mappers).

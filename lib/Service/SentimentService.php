@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest KCC Sentiment Service.
+ * Dossiq KCC Sentiment Service.
  *
  * Detects trigger words and a coarse sentiment score for a contactmoment
  * transcription using a hardcoded Dutch word-weight dictionary, and derives an
@@ -9,7 +9,7 @@
  * unit-testable and safe to run in a background job.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,14 +20,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 /**
  * Trigger-word detection and sentiment scoring for KCC contactmomenten.

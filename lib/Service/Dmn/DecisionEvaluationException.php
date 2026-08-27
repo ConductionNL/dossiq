@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest DMN Decision Evaluation Exception
+ * Dossiq DMN Decision Evaluation Exception
  *
  * Typed exception carrying a stable `errorCode` for every way a decision
  * evaluation can fail. Callers (the REST controller, the workflow action
  * handler) MUST branch on `errorCode`, never on the message text.
  *
  * @category Service
- * @package  OCA\Procest\Service\Dmn
+ * @package  OCA\Dossiq\Service\Dmn
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,14 +19,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Dmn;
+namespace OCA\Dossiq\Service\Dmn;
 
 use RuntimeException;
 

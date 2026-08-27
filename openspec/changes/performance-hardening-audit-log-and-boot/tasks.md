@@ -55,5 +55,5 @@
 
 - [ ] 5.1 Live-verify: `GET /api/archief/audit-log?_limit=50&_offset=0` returns at most 50 rows
       even when the register holds more.
-- [ ] 5.2 Live-verify: production build's `js/procest-main.js` (or equivalent) is not accompanied
+- [ ] 5.2 Live-verify: production build's `js/dossiq-main.js` (or equivalent) is not accompanied
       by a full-fidelity `.js.map` exposing original source.

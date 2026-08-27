@@ -1,4 +1,4 @@
-# Design — procest first-time setup
+# Design — dossiq first-time setup
 
 ## Steps (manifest `setup.steps[]`)
 
@@ -13,14 +13,14 @@
 
 ## Server-side contract (the privilege fix)
 
-- `GET /apps/procest/api/setup/status` → `{ version, completed, steps: { <id>: { done, detail } } }`. `register-check.done` = OR enabled AND `register` + `case_type_schema` configured. `seed.done` = bezwaar/beroep caseTypes exist.
-- `POST /apps/procest/api/setup/action/{actionId}` (admin-only, CSRF) → runs the named action server-side and returns a summary. Actions: `init-register` (ConfigurationService import), `seed` (`SeedDataService::seedBezwaarBeroepData()` + the other `Seed*` repair steps).
+- `GET /apps/dossiq/api/setup/status` → `{ version, completed, steps: { <id>: { done, detail } } }`. `register-check.done` = OR enabled AND `register` + `case_type_schema` configured. `seed.done` = bezwaar/beroep caseTypes exist.
+- `POST /apps/dossiq/api/setup/action/{actionId}` (admin-only, CSRF) → runs the named action server-side and returns a summary. Actions: `init-register` (ConfigurationService import), `seed` (`SeedDataService::seedBezwaarBeroepData()` + the other `Seed*` repair steps).
 
-Both endpoints run with system privileges so OR `saveObject` succeeds (RBAC). This replaces the `occ procest:bezwaar:seed`-only path — the command stays as a CLI fallback; the controller shares the same `SeedDataService` + admin-context wiring.
+Both endpoints run with system privileges so OR `saveObject` succeeds (RBAC). This replaces the `occ dossiq:bezwaar:seed`-only path — the command stays as a CLI fallback; the controller shares the same `SeedDataService` + admin-context wiring.
 
 ## Reuse / not rebuild
 
-- The wizard chrome, step rendering, gating phase and admin-page entry come from the central `CnSetupWizard` + CnAppRoot change — procest only declares `manifest.setup` and implements the two endpoints.
+- The wizard chrome, step rendering, gating phase and admin-page entry come from the central `CnSetupWizard` + CnAppRoot change — dossiq only declares `manifest.setup` and implements the two endpoints.
 - `register-check` reuses the SAME schema-driven config fields the admin page renders (`fieldsFromSchema`), per the "reuse settings components in a different way" goal.
 - `seed` action reuses `lib/Service/SeedDataService.php` and the existing `Seed*` repair steps (`appinfo/info.xml`).
 

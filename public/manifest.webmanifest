@@ -1,9 +1,9 @@
 {
-	"name": "Procest Mobiel Inspectie",
+	"name": "Dossiq Mobiel Inspectie",
 	"short_name": "Inspectie",
 	"description": "Offline-capable field inspection for VTH, social welfare, water management and municipal enforcement inspectors.",
-	"start_url": "/index.php/apps/procest/#/inspecties",
-	"scope": "/index.php/apps/procest/",
+	"start_url": "/index.php/apps/dossiq/#/inspecties",
+	"scope": "/index.php/apps/dossiq/",
 	"display": "standalone",
 	"orientation": "portrait",
 	"background_color": "#ffffff",
@@ -11,7 +11,7 @@
 	"lang": "nl",
 	"icons": [
 		{
-			"src": "/index.php/apps/procest/img/app.svg",
+			"src": "/index.php/apps/dossiq/img/app.svg",
 			"sizes": "any",
 			"type": "image/svg+xml",
 			"purpose": "any maskable"

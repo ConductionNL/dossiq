@@ -17,7 +17,7 @@ The system SHALL provide seed data for permit case types that are automatically 
 
 #### Scenario: Import Omgevingsvergunning Bouwactiviteit case type
 
-- **WHEN** the Procest app is installed or upgraded
+- **WHEN** the Dossiq app is installed or upgraded
 - **THEN** the repair step SHALL import a case type "Omgevingsvergunning Bouwactiviteit" with:
   - Status types: Ontvangen, Ontvankelijkheidstoets, In behandeling, Advies, Besluitvorming, Bekendmaking, Afgehandeld
   - Role types: behandelaar, aanvrager, gemachtigde, adviseur (welstand), adviseur (brandweer), teamleider
@@ -27,7 +27,7 @@ The system SHALL provide seed data for permit case types that are automatically 
 
 #### Scenario: Import Sloopmelding case type
 
-- **WHEN** the Procest app is installed or upgraded
+- **WHEN** the Dossiq app is installed or upgraded
 - **THEN** the repair step SHALL import a case type "Sloopmelding" with:
   - Status types: Ontvangen, Beoordeling, Akkoord, Afgehandeld
   - processingDeadline: P28D (4 weeks)
@@ -42,7 +42,7 @@ The system SHALL provide seed data for supervision case types with inspection-sp
 
 #### Scenario: Import Toezichtzaak Bouw case type
 
-- **WHEN** the Procest app is installed or upgraded
+- **WHEN** the Dossiq app is installed or upgraded
 - **THEN** the repair step SHALL import a case type "Toezichtzaak Bouw" with:
   - Status types: Gepland, Inspectie fase 1, Inspectie fase 2, Inspectie fase 3, Rapport, Opvolging, Afgehandeld
   - Role types: inspecteur, contactpersoon, opdrachtgever
@@ -51,7 +51,7 @@ The system SHALL provide seed data for supervision case types with inspection-sp
 
 #### Scenario: Import Toezichtzaak Milieu case type
 
-- **WHEN** the Procest app is installed or upgraded
+- **WHEN** the Dossiq app is installed or upgraded
 - **THEN** the repair step SHALL import a case type "Toezichtzaak Milieu" with:
   - Status types: Gepland, Inspectie, Rapport, Opvolging, Afgehandeld
   - Role types: inspecteur, contactpersoon, inrichtinghouder
@@ -66,7 +66,7 @@ The system SHALL provide seed data for enforcement case types with LHS-specific 
 
 #### Scenario: Import Handhavingszaak case type
 
-- **WHEN** the Procest app is installed or upgraded
+- **WHEN** the Dossiq app is installed or upgraded
 - **THEN** the repair step SHALL import a case type "Handhavingszaak" with:
   - Status types: Constatering, Vooraankondiging, Zienswijze, Handhavingsbesluit, Begunstigingstermijn, Hercontrole, Afgehandeld
   - Role types: behandelaar, overtreder, gemachtigde, teamleider
@@ -75,7 +75,7 @@ The system SHALL provide seed data for enforcement case types with LHS-specific 
 
 #### Scenario: Import Invorderingszaak case type
 
-- **WHEN** the Procest app is installed or upgraded
+- **WHEN** the Dossiq app is installed or upgraded
 - **THEN** the repair step SHALL import a case type "Invorderingszaak" with:
   - Status types: Verbeuring, Invordering, Betaald, Afgehandeld
   - Property definitions: bronHandhavingszaak (reference), verbeurdBedrag (decimal), verbeuringsDatum (date)
@@ -94,5 +94,5 @@ The seed data import SHALL be idempotent -- running the repair step multiple tim
 
 #### Scenario: Upgrade adds new seed case types
 
-- **WHEN** a Procest upgrade adds a new VTH case type template (e.g., "Gebruiksmelding brandveiligheid")
+- **WHEN** a Dossiq upgrade adds a new VTH case type template (e.g., "Gebruiksmelding brandveiligheid")
 - **THEN** the repair step SHALL create the new case type without affecting existing ones

@@ -8,18 +8,18 @@
 <template>
 	<div class="mandaat-matrix-tab">
 		<div class="mandaat-matrix-tab__header">
-			<h3>{{ t('procest', 'Mandate Matrix') }}</h3>
+			<h3>{{ t('dossiq', 'Mandate Matrix') }}</h3>
 			<p class="mandaat-matrix-tab__description">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Configure mandate decisions, organisational roles, role assignments, and import legacy mandate exports. All changes are version-tracked.',
 					)
 				}}
 			</p>
 		</div>
 
-		<NcAppNavigationCaption :name="t('procest', 'Sections')" />
+		<NcAppNavigationCaption :name="t('dossiq', 'Sections')" />
 		<div class="mandaat-matrix-tab__chips">
 			<NcButton
 				v-for="opt in tabOptions"
@@ -102,10 +102,10 @@ export default {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		tabOptions() {
 			return [
-				{ id: 'besluiten', label: t('procest', 'Decisions') },
-				{ id: 'rollen', label: t('procest', 'Roles') },
-				{ id: 'toewijzingen', label: t('procest', 'Assignments') },
-				{ id: 'import', label: t('procest', 'Import') },
+				{ id: 'besluiten', label: t('dossiq', 'Decisions') },
+				{ id: 'rollen', label: t('dossiq', 'Roles') },
+				{ id: 'toewijzingen', label: t('dossiq', 'Assignments') },
+				{ id: 'import', label: t('dossiq', 'Import') },
 			]
 		},
 
@@ -140,7 +140,7 @@ export default {
 			this.loading = true
 			try {
 				const res = await axios.get(
-					generateUrl('/apps/procest/api/mandate/besluiten'),
+					generateUrl('/apps/dossiq/api/mandate/besluiten'),
 				)
 				this.matrices = Array.isArray(res.data)
 					? res.data
@@ -157,7 +157,7 @@ export default {
 			this.loading = true
 			try {
 				const res = await axios.get(
-					generateUrl('/apps/procest/api/mandate/rollen'),
+					generateUrl('/apps/dossiq/api/mandate/rollen'),
 				)
 				this.roles = Array.isArray(res.data)
 					? res.data
@@ -174,7 +174,7 @@ export default {
 			this.loading = true
 			try {
 				const res = await axios.get(
-					generateUrl('/apps/procest/api/mandate/toewijzingen'),
+					generateUrl('/apps/dossiq/api/mandate/toewijzingen'),
 				)
 				this.assignments = Array.isArray(res.data)
 					? res.data
@@ -221,14 +221,14 @@ export default {
 				if (this.editingMandaat && this.editingMandaat.id) {
 					await axios.patch(
 						generateUrl(
-							'/apps/procest/api/mandate/mandaten/'
+							'/apps/dossiq/api/mandate/mandaten/'
 								+ encodeURIComponent(this.editingMandaat.id),
 						),
 						payload,
 					)
 				} else {
 					await axios.post(
-						generateUrl('/apps/procest/api/mandate/mandaten'),
+						generateUrl('/apps/dossiq/api/mandate/mandaten'),
 						payload,
 					)
 				}

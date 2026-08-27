@@ -4,7 +4,7 @@
  * BezwaarCreationHook Unit Tests.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Bezwaar
+ * @package  OCA\Dossiq\Tests\Unit\Service\Bezwaar
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,10 +20,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Bezwaar;
+namespace OCA\Dossiq\Tests\Unit\Service\Bezwaar;
 
-use OCA\Procest\Service\Bezwaar\BezwaarCreationHook;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\Bezwaar\BezwaarCreationHook;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -32,7 +32,7 @@ use RuntimeException;
 /**
  * Unit tests for BezwaarCreationHook.
  *
- * @covers \OCA\Procest\Service\Bezwaar\BezwaarCreationHook
+ * @covers \OCA\Dossiq\Service\Bezwaar\BezwaarCreationHook
  */
 class BezwaarCreationHookTest extends TestCase {
 

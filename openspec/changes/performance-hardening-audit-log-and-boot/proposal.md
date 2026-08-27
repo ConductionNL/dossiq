@@ -5,7 +5,7 @@ covers unused Leaflet deps only — a different bundle concern).
 
 ## Why
 
-Three independent, verifiable performance issues were found while sweeping procest for
+Three independent, verifiable performance issues were found while sweeping dossiq for
 performance/bundle problems not covered by the 2026-07-07 code review:
 
 **1. Unbounded audit-log full-table scan on every read (`lib/Controller/ArchiefController.php`)**

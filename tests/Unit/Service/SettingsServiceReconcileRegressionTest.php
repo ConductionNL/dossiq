@@ -9,7 +9,7 @@
  * import result and therefore skipped them on an already-imported instance).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -17,14 +17,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -53,10 +53,10 @@ interface ReconcileSchemaStub {
 /**
  * Regression tests for SettingsService::reconcileSchemaConfig().
  *
- * @covers \OCA\Procest\Service\SettingsService
+ * @covers \OCA\Dossiq\Service\SettingsService
  *
- * @uses \OCA\Procest\Service\Settings\SchemaAnnotationReconciler
- * @uses \OCA\Procest\Service\Settings\SchemaKeyReconciler
+ * @uses \OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler
+ * @uses \OCA\Dossiq\Service\Settings\SchemaKeyReconciler
  */
 class SettingsServiceReconcileRegressionTest extends TestCase {
 

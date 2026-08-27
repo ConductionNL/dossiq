@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest Berichtenbox Adapter Interface.
+ * Dossiq Berichtenbox Adapter Interface.
  *
  * Contract for Mijn Overheid Berichtenbox API adapter implementations.
  *
  * @category Interface
- * @package  OCA\Procest\Service\BerichtenboxAdapter
+ * @package  OCA\Dossiq\Service\BerichtenboxAdapter
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -14,14 +14,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/berichtenbox-integration/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\BerichtenboxAdapter;
+namespace OCA\Dossiq\Service\BerichtenboxAdapter;
 
 /**
  * Interface for Mijn Overheid Berichtenbox API adapters.

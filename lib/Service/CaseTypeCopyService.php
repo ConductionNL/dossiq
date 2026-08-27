@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Case Type Copy Service
+ * Dossiq Case Type Copy Service
  *
  * Deep-copies an existing case type (zaaktype) definition -- and every
  * owned sub-object (status types, result types, role types, property
@@ -9,7 +9,7 @@
  * Also guards case-type deletion to draft-status definitions only.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,7 +20,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/zaaktype-copy/tasks.md#T01
  * @spec openspec/changes/zaaktype-copy/tasks.md#T02
@@ -31,7 +31,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use Psr\Log\LoggerInterface;
 

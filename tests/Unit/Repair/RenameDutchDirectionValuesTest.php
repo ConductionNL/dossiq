@@ -1,4 +1,5 @@
 <?php
+
 /**
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -12,18 +13,18 @@
  * scope and the exact value set, not just the happy-path mapping.
  *
  * @category Test
- * @package  OCA\Procest\Tests\Unit\Repair
+ * @package  OCA\Dossiq\Tests\Unit\Repair
  * @author   Conduction Development Team <info@conduction.nl>
  * @license  EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
- * @link     https://procest.nl
+ * @link     https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Repair;
+namespace OCA\Dossiq\Tests\Unit\Repair;
 
-use OCA\Procest\Repair\RenameDutchDirectionValues;
-use OCA\Procest\Service\ZgwRulesBase;
+use OCA\Dossiq\Repair\RenameDutchDirectionValues;
+use OCA\Dossiq\Service\ZgwRulesBase;
 use OCP\DB\Exception as DbException;
 use OCP\DB\IPreparedStatement;
 use OCP\DB\IResult;
@@ -36,7 +37,7 @@ use ReflectionClass;
 /**
  * Unit tests for RenameDutchDirectionValues.
  *
- * @covers \OCA\Procest\Repair\RenameDutchDirectionValues
+ * @covers \OCA\Dossiq\Repair\RenameDutchDirectionValues
  */
 class RenameDutchDirectionValuesTest extends TestCase {
 
@@ -53,7 +54,6 @@ class RenameDutchDirectionValuesTest extends TestCase {
 
 	}//end step()
 
-
 	/**
 	 * Read a private constant.
 	 *
@@ -63,14 +63,12 @@ class RenameDutchDirectionValuesTest extends TestCase {
 	 */
 	private function constant(string $name) {
 		return (new ReflectionClass(RenameDutchDirectionValues::class))->getConstant($name);
-
 	}//end constant()
-
 
 	/**
 	 * Call a private method.
 	 *
-	 * @param string            $name The method name.
+	 * @param string $name The method name.
 	 * @param array<int, mixed> $args The arguments.
 	 *
 	 * @return mixed
@@ -79,12 +77,10 @@ class RenameDutchDirectionValuesTest extends TestCase {
 		$method = (new ReflectionClass(RenameDutchDirectionValues::class))->getMethod($name);
 		$method->setAccessible(true);
 		return $method->invokeArgs($this->step(), $args);
-
 	}//end call()
 
-
 	/**
-	 * THE BEHAVIOURAL ARM — a procest shard table with a `direction` column is
+	 * THE BEHAVIOURAL ARM — a dossiq shard table with a `direction` column is
 	 * updated once per Dutch value, and only ever on that column.
 	 *
 	 * Everything else in this file inspects constants. This one drives run()
@@ -93,7 +89,7 @@ class RenameDutchDirectionValuesTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testItUpdatesEachDutchValueOnAProcestShardTable(): void {
+	public function testItUpdatesEachDutchValueOnADossiqShardTable(): void {
 		$registers = $this->createMock(IResult::class);
 		$registers->method('fetchAll')->willReturn([17]);
 
@@ -154,8 +150,7 @@ class RenameDutchDirectionValuesTest extends TestCase {
 			$pairs
 		);
 
-	}//end testItUpdatesEachDutchValueOnAProcestShardTable()
-
+	}//end testItUpdatesEachDutchValueOnADossiqShardTable()
 
 	/**
 	 * The step names itself for `occ maintenance:repair`.
@@ -167,16 +162,15 @@ class RenameDutchDirectionValuesTest extends TestCase {
 
 	}//end testItNamesItself()
 
-
 	/**
-	 * An install with no procest register does nothing and SAYS so.
+	 * An install with no dossiq register does nothing and SAYS so.
 	 *
 	 * A repair step that prints nothing on a clean install is indistinguishable
 	 * from one that never ran.
 	 *
 	 * @return void
 	 */
-	public function testAnInstallWithoutProcestRegistersReportsInsteadOfSilentlyPassing(): void {
+	public function testAnInstallWithoutDossiqRegistersReportsInsteadOfSilentlyPassing(): void {
 		$result = $this->createMock(IResult::class);
 		$result->method('fetchAll')->willReturn([]);
 
@@ -193,8 +187,7 @@ class RenameDutchDirectionValuesTest extends TestCase {
 		$step = new RenameDutchDirectionValues($db, $this->createMock(LoggerInterface::class));
 		$step->run($output);
 
-	}//end testAnInstallWithoutProcestRegistersReportsInsteadOfSilentlyPassing()
-
+	}//end testAnInstallWithoutDossiqRegistersReportsInsteadOfSilentlyPassing()
 
 	/**
 	 * A database error while resolving registers is logged and skipped, not
@@ -218,7 +211,6 @@ class RenameDutchDirectionValuesTest extends TestCase {
 
 	}//end testAFailedRegisterLookupIsLoggedAndSkipped()
 
-
 	/**
 	 * A table whose columns cannot be inspected is skipped rather than updated
 	 * blind.
@@ -241,7 +233,6 @@ class RenameDutchDirectionValuesTest extends TestCase {
 
 	}//end testAnUninspectableTableIsSkippedRatherThanUpdatedBlind()
 
-
 	/**
 	 * The three Dutch values map to their English equivalents.
 	 *
@@ -254,7 +245,6 @@ class RenameDutchDirectionValuesTest extends TestCase {
 		);
 
 	}//end testTheValueMapCoversTheThreeDutchDirections()
-
 
 	/**
 	 * THE EXEMPTION ARM — the step touches only the `direction` column.
@@ -269,7 +259,6 @@ class RenameDutchDirectionValuesTest extends TestCase {
 		$this->assertSame('direction', $this->constant('COLUMN'));
 
 	}//end testItTouchesOnlyTheDirectionColumn()
-
 
 	/**
 	 * THE EXEMPTION ARM, from the other side — every statutory
@@ -304,23 +293,21 @@ class RenameDutchDirectionValuesTest extends TestCase {
 
 	}//end testTheStatutoryConfidentialityValuesAreNotRewritten()
 
-
 	/**
-	 * Both procest registers are in scope — resolving one slug would migrate
+	 * Both dossiq registers are in scope — resolving one slug would migrate
 	 * half the rows and report success.
 	 *
 	 * @return void
 	 */
-	public function testBothProcestRegistersAreInScope(): void {
-		$this->assertSame('procest', $this->constant('REGISTER_SLUG_PREFIX'));
+	public function testBothDossiqRegistersAreInScope(): void {
+		$this->assertSame('dossiq', $this->constant('REGISTER_SLUG_PREFIX'));
 
 		$markers = ['openregister_table_17_', 'openregister_table_2424_'];
 
 		$this->assertTrue($this->call('isShardOf', ['oc_openregister_table_17_928', $markers]));
 		$this->assertTrue($this->call('isShardOf', ['oc_openregister_table_2424_928', $markers]));
 
-	}//end testBothProcestRegistersAreInScope()
-
+	}//end testBothDossiqRegistersAreInScope()
 
 	/**
 	 * Another app's shard table is out of scope.
@@ -341,7 +328,6 @@ class RenameDutchDirectionValuesTest extends TestCase {
 
 	}//end testAnotherAppsShardTableIsNotMatched()
 
-
 	/**
 	 * A register id that merely starts with an in-scope id is not a match.
 	 *
@@ -356,7 +342,6 @@ class RenameDutchDirectionValuesTest extends TestCase {
 		$this->assertFalse($this->call('isShardOf', ['oc_openregister_table_1700_928', $markers]));
 
 	}//end testALongerRegisterIdIsNotMatched()
-
 
 	/**
 	 * Values outside the map are left alone.
@@ -373,7 +358,6 @@ class RenameDutchDirectionValuesTest extends TestCase {
 		$this->assertArrayNotHasKey('handler_to_citizen', $map);
 
 	}//end testAnUnrecognisedDirectionVocabularyIsNotRewritten()
-
 
 	/**
 	 * The step is idempotent by construction: no English target is also a
@@ -394,6 +378,5 @@ class RenameDutchDirectionValuesTest extends TestCase {
 		}
 
 	}//end testTheMigrationIsIdempotentByConstruction()
-
 
 }//end class

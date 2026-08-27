@@ -7,7 +7,7 @@
  * milestone deadline and notifies the assigned case worker.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\BackgroundJob
+ * @package  OCA\Dossiq\Tests\Unit\BackgroundJob
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,10 +20,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\BackgroundJob;
+namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
-use OCA\Procest\BackgroundJob\BottleneckDetectionJob;
-use OCA\Procest\Service\MilestoneService;
+use OCA\Dossiq\BackgroundJob\BottleneckDetectionJob;
+use OCA\Dossiq\Service\MilestoneService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Notification\IManager as INotificationManager;
@@ -34,7 +34,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for BottleneckDetectionJob.
  *
- * @covers \OCA\Procest\BackgroundJob\BottleneckDetectionJob
+ * @covers \OCA\Dossiq\BackgroundJob\BottleneckDetectionJob
  */
 class BottleneckDetectionJobTest extends TestCase {
 
@@ -122,7 +122,7 @@ class BottleneckDetectionJobTest extends TestCase {
 	public function testRunExitsEarlyWhenOpenRegisterNotInstalled(): void {
 		$this->appManager
 			->method('getInstalledApps')
-			->willReturn(['procest', 'contacts']);
+			->willReturn(['dossiq', 'contacts']);
 
 		$this->milestoneService
 			->expects($this->never())
@@ -140,7 +140,7 @@ class BottleneckDetectionJobTest extends TestCase {
 	public function testStalledCaseNotifiesAssignee(): void {
 		$this->appManager
 			->method('getInstalledApps')
-			->willReturn(['openregister', 'procest']);
+			->willReturn(['openregister', 'dossiq']);
 
 		$this->milestoneService
 			->method('findStalledCases')
@@ -191,7 +191,7 @@ class BottleneckDetectionJobTest extends TestCase {
 	public function testStalledCaseWithoutAssigneeIsSkipped(): void {
 		$this->appManager
 			->method('getInstalledApps')
-			->willReturn(['openregister', 'procest']);
+			->willReturn(['openregister', 'dossiq']);
 
 		$this->milestoneService
 			->method('findStalledCases')
@@ -222,7 +222,7 @@ class BottleneckDetectionJobTest extends TestCase {
 	public function testNoStalledCasesSendsNoNotifications(): void {
 		$this->appManager
 			->method('getInstalledApps')
-			->willReturn(['openregister', 'procest']);
+			->willReturn(['openregister', 'dossiq']);
 
 		$this->milestoneService
 			->method('findStalledCases')

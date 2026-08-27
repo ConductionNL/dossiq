@@ -8,7 +8,7 @@
  * and malformed expressions.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Dmn
+ * @package  OCA\Dossiq\Tests\Unit\Service\Dmn
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -17,23 +17,23 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Dmn;
+namespace OCA\Dossiq\Tests\Unit\Service\Dmn;
 
-use OCA\Procest\Service\Dmn\DecisionEvaluationException;
-use OCA\Procest\Service\Dmn\ExpressionEvaluator;
+use OCA\Dossiq\Service\Dmn\DecisionEvaluationException;
+use OCA\Dossiq\Service\Dmn\ExpressionEvaluator;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Procest\Service\Dmn\ExpressionEvaluator
+ * @covers \OCA\Dossiq\Service\Dmn\ExpressionEvaluator
  *
- * @uses \OCA\Procest\Service\Dmn\DecisionEvaluationException
+ * @uses \OCA\Dossiq\Service\Dmn\DecisionEvaluationException
  */
 class ExpressionEvaluatorTest extends TestCase {
 

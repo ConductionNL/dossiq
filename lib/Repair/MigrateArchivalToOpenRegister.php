@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest Migrate-Archival-to-OpenRegister Repair Step.
+ * Dossiq Migrate-Archival-to-OpenRegister Repair Step.
  *
- * One-shot, idempotent, fail-closed migration from procest's retired app-local
+ * One-shot, idempotent, fail-closed migration from dossiq's retired app-local
  * archival/e-Depot chain onto OpenRegister's archival abstractions (ADR-022 /
  * migrate-archival-to-or). It:
- *   1. enables TMLO auto-population on the procest register (Register
+ *   1. enables TMLO auto-population on the dossiq register (Register
  *      configuration `tmloEnabled`) so OR's TmloService populates the schema's
  *      `tmloDefaults`;
  *   2. re-nominates in-flight suspended transfers by placing an OpenRegister
@@ -23,7 +23,7 @@
  * register-import fragment (the underlying objects are preserved by OR).
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -34,17 +34,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -57,6 +58,7 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 class MigrateArchivalToOpenRegister implements IRepairStep {
+	use RunsUnderSystemIdentity;
 	use SearchesObjects;
 
 	/**
@@ -64,7 +66,11 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 	 *
 	 * @var string
 	 */
-	private const APP_ID = 'procest';
+	// This one DOES move: it is the IAppConfig namespace (used only for the
+	// completion marker below), not the register slug. Repair\MigrateAppConfigKeys
+	// copies the existing marker across the procest -> dossiq rename, so a
+	// migration already completed under the old id is not re-run.
+	private const APP_ID = 'dossiq';
 
 	/**
 	 * App-config key recording that the migration completed (idempotency guard).
@@ -118,7 +124,7 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 	 * @spec openspec/specs/archief-edepot-handover/spec.md
 	 */
 	public function getName(): string {
-		return 'Migrate Procest archival/e-Depot state to OpenRegister';
+		return 'Migrate Dossiq archival/e-Depot state to OpenRegister';
 	}//end getName()
 
 	/**
@@ -146,10 +152,33 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 
 		$register = (string)$this->settings->getConfigValue('register');
 		if ($register === '') {
-			$output->warning('Procest register not configured — archival migration deferred.');
+			$output->warning('Dossiq register not configured — archival migration deferred.');
 			return;
 		}
 
+		// Under a system identity: an upgrade has no session, and OpenRegister
+		// refuses the write for 'Anonymous'. Without it the holds and proofs are
+		// never written — AND the completion marker below would still be set,
+		// so the migration would mark itself done having moved nothing.
+		$this->withSystemIdentity(
+			objectService: $this->settings->getObjectService(),
+			work: function () use ($register, $output): void {
+				$this->runInner(register: $register, output: $output);
+			}
+		);
+	}//end run()
+
+	/**
+	 * The migration itself.
+	 *
+	 * @param string $register The register slug.
+	 * @param IOutput $output Progress reporting.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
+	 */
+	private function runInner(string $register, IOutput $output): void {
 		$this->enableTmlo(register: $register, output: $output);
 		$holds = $this->placeHoldsForSuspendedTriggers(register: $register);
 		$proofs = $this->exportProofRecords(register: $register);
@@ -159,10 +188,10 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 			'Archival migration complete: ' . $holds . ' legal hold(s) placed, '
 			. $proofs . ' proof-of-transfer record(s) exported to the zaakdossier.'
 		);
-	}//end run()
+	}//end runInner()
 
 	/**
-	 * Enable TMLO auto-population on the procest register (idempotent).
+	 * Enable TMLO auto-population on the dossiq register (idempotent).
 	 *
 	 * @param string $register Register slug or id.
 	 * @param IOutput $output Output.
@@ -196,7 +225,7 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 			$config['tmloEnabled'] = true;
 			$entity->setConfiguration($config);
 			$mapper->update($entity);
-			$output->info('TMLO auto-population enabled on the procest register.');
+			$output->info('TMLO auto-population enabled on the dossiq register.');
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Archival migration: could not enable TMLO on register',

@@ -8,7 +8,7 @@
  * helpers are private static methods.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Settings
+ * @package  OCA\Dossiq\Tests\Unit\Settings
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -16,14 +16,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Settings;
+namespace OCA\Dossiq\Tests\Unit\Settings;
 
-use OCA\Procest\Service\Settings\RegisterFragmentMerger;
+use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 
@@ -95,13 +95,13 @@ class RegisterFragmentMergeTest extends TestCase {
 	 * @return void
 	 */
 	public function testDeepMergeOverridesScalar(): void {
-		$base = ['info' => ['version' => '1.0.0', 'title' => 'Procest']];
+		$base = ['info' => ['version' => '1.0.0', 'title' => 'Dossiq']];
 		$override = ['info' => ['version' => '2.0.0']];
 
 		$result = $this->invokePrivate('deepMerge', [$base, $override]);
 
 		$this->assertSame('2.0.0', $result['info']['version']);
-		$this->assertSame('Procest', $result['info']['title']);
+		$this->assertSame('Dossiq', $result['info']['title']);
 
 	}//end testDeepMergeOverridesScalar()
 
@@ -158,7 +158,7 @@ class RegisterFragmentMergeTest extends TestCase {
 	 * @return void
 	 */
 	public function testMergeFragmentsMergesFilesInOrder(): void {
-		$dir = sys_get_temp_dir() . '/procest-frag-test-' . uniqid();
+		$dir = sys_get_temp_dir() . '/dossiq-frag-test-' . uniqid();
 		mkdir($dir);
 
 		file_put_contents(
@@ -195,7 +195,7 @@ class RegisterFragmentMergeTest extends TestCase {
 	 * @return void
 	 */
 	public function testMergeFragmentsIgnoresNonJson(): void {
-		$dir = sys_get_temp_dir() . '/procest-frag-readme-' . uniqid();
+		$dir = sys_get_temp_dir() . '/dossiq-frag-readme-' . uniqid();
 		mkdir($dir);
 		file_put_contents($dir . '/README.md', '# not a fragment');
 

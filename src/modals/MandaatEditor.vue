@@ -12,7 +12,7 @@
 
 			<div class="form-group">
 				<label class="required" for="me-num">{{
-					t('procest', 'Mandate number')
+					t('dossiq', 'Mandate number')
 				}}</label>
 				<NcTextField
 					id="me-num"
@@ -24,7 +24,7 @@
 
 			<div class="form-group">
 				<label class="required" for="me-omschr">{{
-					t('procest', 'Description')
+					t('dossiq', 'Description')
 				}}</label>
 				<textarea
 					id="me-omschr"
@@ -38,13 +38,13 @@
 
 			<div class="form-group">
 				<label class="required" for="me-type">{{
-					t('procest', 'Bevoegdheidstype')
+					t('dossiq', 'Bevoegdheidstype')
 				}}</label>
 				<NcSelect
 					id="me-type"
 					:modelValue="selectedType"
 					:options="typeOptions"
-					:inputLabel="t('procest', 'Bevoegdheidstype')"
+					:inputLabel="t('dossiq', 'Bevoegdheidstype')"
 					@update:modelValue="
 						(v) => (form.competenceType = v ? v.id : '')
 					" />
@@ -55,7 +55,7 @@
 
 			<div class="form-group">
 				<label class="required" for="me-grond">{{
-					t('procest', 'Legal basis')
+					t('dossiq', 'Legal basis')
 				}}</label>
 				<NcTextField
 					id="me-grond"
@@ -66,7 +66,7 @@
 			</div>
 
 			<div class="form-group">
-				<label for="me-voorw">{{ t('procest', 'Conditions (JSON)') }}</label>
+				<label for="me-voorw">{{ t('dossiq', 'Conditions (JSON)') }}</label>
 				<textarea
 					id="me-voorw"
 					v-model="voorwaardenJson"
@@ -74,7 +74,7 @@
 					rows="6"
 					:placeholder="
 						t(
-							'procest',
+							'dossiq',
 							'e.g. { \&quot;maxBedrag\&quot;: 50000, \&quot;categorie\&quot;: [\&quot;subsidie\&quot;] }',
 						)
 					" />
@@ -86,7 +86,7 @@
 			<div class="form-row">
 				<div class="form-group">
 					<label class="required" for="me-inwerkingtreding">{{
-						t('procest', 'In werkingtreding')
+						t('dossiq', 'In werkingtreding')
 					}}</label>
 					<input
 						id="me-inwerkingtreding"
@@ -96,7 +96,7 @@
 						@input="form.inWerkingtreding = $event.target.value" />
 				</div>
 				<div class="form-group">
-					<label for="me-verval">{{ t('procest', 'Expiry date') }}</label>
+					<label for="me-verval">{{ t('dossiq', 'Expiry date') }}</label>
 					<input
 						id="me-verval"
 						type="date"
@@ -107,12 +107,12 @@
 			</div>
 
 			<div class="form-group">
-				<label for="me-rol">{{ t('procest', 'Assigned role') }}</label>
+				<label for="me-rol">{{ t('dossiq', 'Assigned role') }}</label>
 				<NcSelect
 					id="me-rol"
 					:modelValue="selectedRole"
 					:options="roleOptions"
-					:inputLabel="t('procest', 'Assigned role')"
+					:inputLabel="t('dossiq', 'Assigned role')"
 					@update:modelValue="
 						(v) => (form.toegewezenRol = v ? v.id : '')
 					" />
@@ -120,14 +120,14 @@
 
 			<div class="mandaat-editor__actions">
 				<NcButton @click="$emit('close')">
-					{{ t('procest', 'Cancel') }}
+					{{ t('dossiq', 'Cancel') }}
 				</NcButton>
 				<NcButton type="primary" :disabled="saving" @click="save">
 					<template #icon>
 						<NcLoadingIcon v-if="saving" :size="18" />
 						<ContentSave v-else :size="18" />
 					</template>
-					{{ saving ? t('procest', 'Saving…') : t('procest', 'Save') }}
+					{{ saving ? t('dossiq', 'Saving…') : t('dossiq', 'Save') }}
 				</NcButton>
 			</div>
 		</div>
@@ -190,8 +190,8 @@ export default {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		title() {
 			return this.mandaat
-				? t('procest', 'Edit mandaat')
-				: t('procest', 'New mandaat')
+				? t('dossiq', 'Edit mandaat')
+				: t('dossiq', 'New mandaat')
 		},
 
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
@@ -199,17 +199,17 @@ export default {
 			return [
 				{
 					id: 'beslissingsbevoegdheid',
-					label: t('procest', 'Decision authority'),
+					label: t('dossiq', 'Decision authority'),
 				},
 				{
 					id: 'ondertekeningsbevoegdheid',
-					label: t('procest', 'Signing authority'),
+					label: t('dossiq', 'Signing authority'),
 				},
 				{
 					id: 'gemandateerde-bevoegdheid',
-					label: t('procest', 'Mandated authority'),
+					label: t('dossiq', 'Mandated authority'),
 				},
-				{ id: 'doormandaat', label: t('procest', 'Doormandaat') },
+				{ id: 'doormandaat', label: t('dossiq', 'Doormandaat') },
 			]
 		},
 
@@ -236,19 +236,19 @@ export default {
 		validate() {
 			const errs = {}
 			if (!this.form.mandateNumber)
-				errs.mandateNumber = t('procest', 'Mandaatnummer is required')
+				errs.mandateNumber = t('dossiq', 'Mandaatnummer is required')
 			if (!this.form.description)
-				errs.description = t('procest', 'Omschrijving is required')
+				errs.description = t('dossiq', 'Omschrijving is required')
 			if (!this.form.competenceType)
-				errs.competenceType = t('procest', 'Bevoegdheidstype is required')
+				errs.competenceType = t('dossiq', 'Bevoegdheidstype is required')
 			if (!this.form.legalBasis)
-				errs.legalBasis = t('procest', 'Wettelijke grondslag is required')
+				errs.legalBasis = t('dossiq', 'Wettelijke grondslag is required')
 			try {
 				this.form.terms = this.voorwaardenJson.trim()
 					? JSON.parse(this.voorwaardenJson)
 					: {}
 			} catch (e) {
-				errs.terms = t('procest', 'Voorwaarden must be valid JSON')
+				errs.terms = t('dossiq', 'Voorwaarden must be valid JSON')
 			}
 			this.errors = errs
 			return Object.keys(errs).length === 0

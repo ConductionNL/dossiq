@@ -9,7 +9,7 @@
  * open-ended ranges.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Http
+ * @package  OCA\Dossiq\Tests\Unit\Http
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,16 +25,16 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Http;
+namespace OCA\Dossiq\Tests\Unit\Http;
 
-use OCA\Procest\Http\RangeStreamResponse;
+use OCA\Dossiq\Http\RangeStreamResponse;
 use OCP\AppFramework\Http;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for RangeStreamResponse.
  *
- * @covers \OCA\Procest\Http\RangeStreamResponse
+ * @covers \OCA\Dossiq\Http\RangeStreamResponse
  */
 class RangeStreamResponseTest extends TestCase {
 

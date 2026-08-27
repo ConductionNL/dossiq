@@ -16,13 +16,13 @@
 		<table class="stuf-endpoints__table" data-testid="stuf-endpoints-table">
 			<thead>
 				<tr>
-					<th scope="col">{{ t('procest', 'Name') }}</th>
-					<th scope="col">{{ t('procest', 'Municipality code') }}</th>
-					<th scope="col">{{ t('procest', 'Application') }}</th>
-					<th scope="col">{{ t('procest', 'SOAP version') }}</th>
-					<th scope="col">{{ t('procest', 'Strategy') }}</th>
-					<th scope="col">{{ t('procest', 'Health') }}</th>
-					<th scope="col">{{ t('procest', 'Active') }}</th>
+					<th scope="col">{{ t('dossiq', 'Name') }}</th>
+					<th scope="col">{{ t('dossiq', 'Municipality code') }}</th>
+					<th scope="col">{{ t('dossiq', 'Application') }}</th>
+					<th scope="col">{{ t('dossiq', 'SOAP version') }}</th>
+					<th scope="col">{{ t('dossiq', 'Strategy') }}</th>
+					<th scope="col">{{ t('dossiq', 'Health') }}</th>
+					<th scope="col">{{ t('dossiq', 'Active') }}</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -42,14 +42,14 @@
 					<td>
 						{{
 							row.actief
-								? t('procest', 'Active')
-								: t('procest', 'Inactive')
+								? t('dossiq', 'Active')
+								: t('dossiq', 'Inactive')
 						}}
 					</td>
 				</tr>
 				<tr v-if="!endpoints.length">
 					<td colspan="7" class="stuf-endpoints__empty">
-						{{ t('procest', 'No StUF endpoints configured yet.') }}
+						{{ t('dossiq', 'No StUF endpoints configured yet.') }}
 					</td>
 				</tr>
 			</tbody>
@@ -57,7 +57,7 @@
 		<p class="stuf-endpoints__note">
 			{{
 				t(
-					'procest',
+					'dossiq',
 					'Endpoints, credentials (WSSE), and mTLS certificates are managed by the platform operator. Reach out to your administrator to add or rotate them.',
 				)
 			}}
@@ -97,7 +97,7 @@ export default {
 				this.endpoints = Array.isArray(data.items) ? data.items : []
 				this.loadError = ''
 			} catch (e) {
-				this.loadError = t('procest', 'Failed to load StUF endpoints')
+				this.loadError = t('dossiq', 'Failed to load StUF endpoints')
 				showError(this.loadError)
 			}
 		},
@@ -124,12 +124,12 @@ export default {
 			const state =
 				row && row.health && row.health.state ? row.health.state : 'ok'
 			if (state === 'circuit_open') {
-				return t('procest', 'Circuit open')
+				return t('dossiq', 'Circuit open')
 			}
 			if (state === 'degraded') {
-				return t('procest', 'Degraded')
+				return t('dossiq', 'Degraded')
 			}
-			return t('procest', 'OK')
+			return t('dossiq', 'OK')
 		},
 	},
 }

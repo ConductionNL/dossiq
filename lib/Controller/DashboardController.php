@@ -1,26 +1,26 @@
 <?php
 
 /**
- * Procest Dashboard Controller
+ * Dossiq Dashboard Controller
  *
  * SPA host implemented by COMPOSITION, not inheritance. The SPA shell
  * (`page()` / `catchAll()`) is behaviourally identical to the OpenRegister
  * AppHost `GenericDashboardController` this class used to subclass, but is
- * implemented locally against OCP only. The two procest-specific PWA asset
+ * implemented locally against OCP only. The two dossiq-specific PWA asset
  * endpoints (`serviceWorker()` / `webManifest()`) — required by the
  * mobiel-inspectie-offline Progressive Web App — remain bespoke here.
  *
  * ⚠️ DO NOT "simplify" this back into a subclass of the AppHost generic, and do
  * not `use`-import an OpenRegister class here. Nextcloud's router
  * `ReflectionClass()`es every file in `lib/Controller/` while MATCHING a route,
- * so an unresolvable parent makes EVERY route in procest return HTTP 500 —
- * including routes with no OpenRegister involvement at all. Procest does not
+ * so an unresolvable parent makes EVERY route in dossiq return HTTP 500 —
+ * including routes with no OpenRegister involvement at all. Dossiq does not
  * declare `<app>openregister</app>`, so an admin can create exactly that
  * configuration. `extends` is resolved by the AUTOLOADER, not the DI container,
  * so no amount of lazy registration can rescue it. See decidesk#377 / #388.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -31,16 +31,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/adopt-apphost/tasks.md#task-2.1
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -53,7 +53,7 @@ use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
 
 /**
- * Controller for the main Procest dashboard page plus the PWA assets.
+ * Controller for the main Dossiq dashboard page plus the PWA assets.
  *
  * @psalm-suppress UnusedClass
  */
@@ -68,7 +68,7 @@ class DashboardController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * Supplies the procest app id so Nextcloud's DI can auto-wire this
+	 * Supplies the dossiq app id so Nextcloud's DI can auto-wire this
 	 * controller from `IRequest` alone.
 	 *
 	 * @param IRequest $request HTTP request.
@@ -84,7 +84,7 @@ class DashboardController extends Controller {
 	 * the AppHost generic; they are declared explicitly here so the auth posture
 	 * is byte-for-byte unchanged by dropping the inheritance.
 	 *
-	 * @return TemplateResponse The rendered procest index template.
+	 * @return TemplateResponse The rendered dossiq index template.
 	 *
 	 * @spec openspec/changes/adopt-apphost/tasks.md#task-2.1
 	 */
@@ -97,7 +97,7 @@ class DashboardController extends Controller {
 	/**
 	 * Serve the SPA for deep links (Vue history mode). Delegates to {@see page()}.
 	 *
-	 * @return TemplateResponse The rendered procest index template.
+	 * @return TemplateResponse The rendered dossiq index template.
 	 *
 	 * @spec openspec/changes/adopt-apphost/tasks.md#task-2.1
 	 */
@@ -110,7 +110,7 @@ class DashboardController extends Controller {
 	/**
 	 * Build the `index` TemplateResponse.
 	 *
-	 * @return TemplateResponse The rendered procest index template.
+	 * @return TemplateResponse The rendered dossiq index template.
 	 */
 	protected function renderIndex(): TemplateResponse {
 		return new TemplateResponse($this->appName, 'index');
@@ -120,7 +120,7 @@ class DashboardController extends Controller {
 	 * Serve the mobiel-inspectie-offline Service Worker script.
 	 *
 	 * Served from the app scope root with the `Service-Worker-Allowed` header
-	 * so the worker may control the whole `/apps/procest/` scope. Public +
+	 * so the worker may control the whole `/apps/dossiq/` scope. Public +
 	 * no-CSRF because the worker must register before the user is interactive
 	 * and runs without the SPA's request context.
 	 *

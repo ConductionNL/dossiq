@@ -10,7 +10,7 @@
  * transitionId validation on both entry points.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,16 +18,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\BulkStatusTransitionService;
-use OCA\Procest\Service\StatusTransitionService;
-use OCA\Procest\Service\Transitions\GuardFailedException;
+use OCA\Dossiq\Service\BulkStatusTransitionService;
+use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -36,9 +36,9 @@ use RuntimeException;
 /**
  * Tests for BulkStatusTransitionService::preview() and ::execute().
  *
- * @covers \OCA\Procest\Service\BulkStatusTransitionService
+ * @covers \OCA\Dossiq\Service\BulkStatusTransitionService
  *
- * @uses \OCA\Procest\Service\Transitions\GuardFailedException
+ * @uses \OCA\Dossiq\Service\Transitions\GuardFailedException
  *
  * @spec openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
  */

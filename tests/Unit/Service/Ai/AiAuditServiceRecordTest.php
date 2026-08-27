@@ -8,7 +8,7 @@
  * `recordAssistantAuditEntry()` (forwards an already-built entry verbatim).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Ai
+ * @package  OCA\Dossiq\Tests\Unit\Service\Ai
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,20 +25,21 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Ai;
+namespace OCA\Dossiq\Tests\Unit\Service\Ai;
 
-use OCA\Procest\Service\Ai\AiAuditLog;
-use OCA\Procest\Service\Ai\AiAuditService;
-use OCA\Procest\Service\Ai\AiModelIdentity;
+use OCA\Dossiq\Service\Ai\AiAuditLog;
+use OCA\Dossiq\Service\Ai\AiAuditService;
+use OCA\Dossiq\Service\Ai\AiModelIdentity;
+use OCA\Dossiq\Service\Ai\AiOversightDelegationService;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for AiAuditService's write paths.
  *
- * @covers \OCA\Procest\Service\Ai\AiAuditService
+ * @covers \OCA\Dossiq\Service\Ai\AiAuditService
  *
- * @uses \OCA\Procest\Service\Ai\AiModelIdentity
+ * @uses \OCA\Dossiq\Service\Ai\AiModelIdentity
  */
 class AiAuditServiceRecordTest extends TestCase {
 
@@ -64,6 +65,10 @@ class AiAuditServiceRecordTest extends TestCase {
 		return new AiAuditService(
 			audit: $audit,
 			modelIdentity: new AiModelIdentity($appConfig),
+			// These tests are about what procest WRITES LOCALLY. Delegation to
+			// hermiq is covered separately; a stub that records nothing keeps
+			// this suite measuring one thing.
+			oversight: $this->createMock(AiOversightDelegationService::class),
 		);
 	}//end service()
 
@@ -95,7 +100,11 @@ class AiAuditServiceRecordTest extends TestCase {
 			userId: 'alice',
 		);
 
-		$this->assertSame(['success' => true], $result);
+		// The response gained a `delegated` flag: the caller needs to be able to
+		// tell "hermiq recorded this centrally" from "only the local copy exists",
+		// and those look identical without it. `false` here because this suite
+		// stubs the delegation out on purpose.
+		$this->assertSame(['success' => true, 'delegated' => false], $result);
 		$this->assertSame('classification', $captured['type']);
 		$this->assertSame('modified', $captured['action']);
 		$this->assertSame('modified', $captured['userAction']);

@@ -10,7 +10,7 @@
  * `BrkControllerTest`.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,11 +21,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\WozController;
-use OCA\Procest\Service\External\Woz\WozAdapterInterface;
-use OCA\Procest\Service\External\Woz\WozLookupResult;
+use OCA\Dossiq\Controller\WozController;
+use OCA\Dossiq\Service\External\Woz\WozAdapterInterface;
+use OCA\Dossiq\Service\External\Woz\WozLookupResult;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -34,9 +34,9 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Controller\WozController
+ * @covers \OCA\Dossiq\Controller\WozController
  *
- * @uses \OCA\Procest\Service\External\Woz\WozLookupResult
+ * @uses \OCA\Dossiq\Service\External\Woz\WozLookupResult
  */
 class WozControllerTest extends TestCase {
 
@@ -81,7 +81,7 @@ class WozControllerTest extends TestCase {
 		$this->userSession->method('getUser')->willReturn($user);
 
 		$this->controller = new WozController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			wozAdapter: $this->wozAdapter,
 			userSession: $this->userSession,
@@ -99,7 +99,7 @@ class WozControllerTest extends TestCase {
 		$unauthSession->method('getUser')->willReturn(null);
 
 		$controller = new WozController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			wozAdapter: $this->wozAdapter,
 			userSession: $unauthSession,
@@ -250,7 +250,7 @@ class WozControllerTest extends TestCase {
 		$unauthSession->method('getUser')->willReturn(null);
 
 		$controller = new WozController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			wozAdapter: $this->wozAdapter,
 			userSession: $unauthSession,

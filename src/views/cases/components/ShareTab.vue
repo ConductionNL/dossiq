@@ -1,6 +1,6 @@
 <template>
 	<div class="share-tab">
-		<h3>{{ t('procest', 'Partner shares') }}</h3>
+		<h3>{{ t('dossiq', 'Partner shares') }}</h3>
 
 		<!--
 			Partner-organisation handovers only (zaak-domain). Public
@@ -11,13 +11,13 @@
 		-->
 		<div v-if="loading" class="share-tab__loading">
 			<NcLoadingIcon :size="20" />
-			{{ t('procest', 'Loading shares...') }}
+			{{ t('dossiq', 'Loading shares...') }}
 		</div>
 
 		<div v-else-if="shares.length === 0" class="share-tab__empty">
 			<p>
 				{{
-					t('procest', 'This case has not been shared with a partner yet.')
+					t('dossiq', 'This case has not been shared with a partner yet.')
 				}}
 			</p>
 		</div>
@@ -27,10 +27,10 @@
 				<div class="share-tab__item-header">
 					<span
 						class="share-tab__type-badge share-tab__type-badge--partner">
-						{{ t('procest', 'Partner') }}
+						{{ t('dossiq', 'Partner') }}
 					</span>
 					<span class="share-tab__label">{{
-						share.label || t('procest', 'Unnamed share')
+						share.label || t('dossiq', 'Unnamed share')
 					}}</span>
 				</div>
 				<div class="share-tab__item-details">
@@ -38,7 +38,7 @@
 				</div>
 				<div class="share-tab__item-actions">
 					<NcButton type="error" @click="$emit('revoke', share.id)">
-						{{ t('procest', 'Revoke') }}
+						{{ t('dossiq', 'Revoke') }}
 					</NcButton>
 				</div>
 			</li>
@@ -47,10 +47,10 @@
 		<!-- Create partner share / transfer -->
 		<div class="share-tab__actions">
 			<NcButton type="primary" @click="$emit('create-partner-share')">
-				{{ t('procest', 'Share with partner') }}
+				{{ t('dossiq', 'Share with partner') }}
 			</NcButton>
 			<NcButton @click="$emit('transfer-case')">
-				{{ t('procest', 'Transfer case') }}
+				{{ t('dossiq', 'Transfer case') }}
 			</NcButton>
 		</div>
 
@@ -61,19 +61,19 @@
 			surface is the async activity stream, not the case itself.
 		-->
 		<h3 class="share-tab__federated-heading">
-			{{ t('procest', 'Federated shares') }}
+			{{ t('dossiq', 'Federated shares') }}
 		</h3>
 
 		<div v-if="federatedLoading" class="share-tab__loading">
 			<NcLoadingIcon :size="20" />
-			{{ t('procest', 'Loading federated shares...') }}
+			{{ t('dossiq', 'Loading federated shares...') }}
 		</div>
 
 		<div v-else-if="federatedShares.length === 0" class="share-tab__empty">
 			<p>
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'This case has not been shared with a remote organisation yet.',
 					)
 				}}
@@ -88,29 +88,29 @@
 				<div class="share-tab__item-header">
 					<span
 						class="share-tab__type-badge share-tab__type-badge--federated">
-						{{ t('procest', 'Federated') }}
+						{{ t('dossiq', 'Federated') }}
 					</span>
 					<span class="share-tab__label">{{ share.remoteCloudId }}</span>
 				</div>
 				<div class="share-tab__item-details">
 					<span>{{
-						t('procest', 'Shared fields: {fields}', {
+						t('dossiq', 'Shared fields: {fields}', {
 							fields: (share.sharedFields || []).join(', '),
 						})
 					}}</span>
 					<span>{{
-						t('procest', 'Status: {status}', { status: share.status })
+						t('dossiq', 'Status: {status}', { status: share.status })
 					}}</span>
 				</div>
 				<div class="share-tab__item-actions">
 					<NcButton @click="$emit('open-activity', share.id)">
-						{{ t('procest', 'Activity') }}
+						{{ t('dossiq', 'Activity') }}
 					</NcButton>
 					<NcButton
 						v-if="share.status !== 'revoked'"
 						type="error"
 						@click="$emit('revoke-federated', share.id)">
-						{{ t('procest', 'Revoke') }}
+						{{ t('dossiq', 'Revoke') }}
 					</NcButton>
 				</div>
 			</li>
@@ -118,7 +118,7 @@
 
 		<div class="share-tab__actions">
 			<NcButton type="primary" @click="$emit('create-federated-share')">
-				{{ t('procest', 'Share with remote organisation') }}
+				{{ t('dossiq', 'Share with remote organisation') }}
 			</NcButton>
 		</div>
 	</div>
@@ -173,9 +173,9 @@ export default {
 		 */
 		permissionLabel(level) {
 			const labels = {
-				bekijken: t('procest', 'View only'),
-				bekijken_reageren: t('procest', 'View + Comment'),
-				bekijken_bijdragen: t('procest', 'View + Contribute'),
+				bekijken: t('dossiq', 'View only'),
+				bekijken_reageren: t('dossiq', 'View + Comment'),
+				bekijken_bijdragen: t('dossiq', 'View + Contribute'),
 			}
 			return labels[level] || level
 		},

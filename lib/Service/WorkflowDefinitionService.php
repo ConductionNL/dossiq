@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Workflow Definition Service
+ * Dossiq Workflow Definition Service
  *
  * Lifecycle and consumer service for workflowTemplate objects (aka
  * "workflow definitions"). Pure CRUD over workflowTemplate is delegated to
@@ -40,7 +40,7 @@
  * freezing of role routing into literal NC group ids.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -51,19 +51,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/workflow-definition-model/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Workflow\TransitionAuthorizationStamper;
-use OCA\Procest\Service\Workflow\WorkflowDefinitionRepository;
-use OCA\Procest\Service\Workflow\WorkflowLifecycleGuard;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Workflow\TransitionAuthorizationStamper;
+use OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository;
+use OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -208,7 +208,7 @@ class WorkflowDefinitionService {
 		$current = $this->repository->findById(id: $id);
 		if ($current === null) {
 			$this->logger->warning(
-				'Procest: publish() — definition not found',
+				'Dossiq: publish() — definition not found',
 				['app' => Application::APP_ID, 'id' => $id]
 			);
 			return null;
@@ -347,7 +347,7 @@ class WorkflowDefinitionService {
 		$caseTypeId = (string)($payload['caseType'] ?? '');
 		if ($caseTypeId === '' || (string)($payload['title'] ?? '') === '') {
 			$this->logger->warning(
-				'Procest: createDraft() — missing caseType or title',
+				'Dossiq: createDraft() — missing caseType or title',
 				['app' => Application::APP_ID]
 			);
 			return null;

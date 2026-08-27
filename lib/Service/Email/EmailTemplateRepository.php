@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest email template repository.
+ * Dossiq email template repository.
  *
  * Owns every OpenRegister read/write the emailTemplate registry needs: the
  * active-template query for a caseType, single-template load, template
@@ -15,7 +15,7 @@
  * it degrades to null / an empty list exactly as the pre-split service did.
  *
  * @category Service
- * @package  OCA\Procest\Service\Email
+ * @package  OCA\Dossiq\Service\Email
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,7 +23,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -33,10 +33,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Email;
+namespace OCA\Dossiq\Service\Email;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
 
 /**

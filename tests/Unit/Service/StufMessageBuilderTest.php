@@ -3,7 +3,7 @@
 /**
  * StufMessageBuilder Unit Tests
  *
- * The builder emits the StUF-ZKN envelopes procest sends to a municipal
+ * The builder emits the StUF-ZKN envelopes dossiq sends to a municipal
  * ZS-DMS. What matters about a message on that wire is not that a method
  * returned a string, so these assert the parts a receiver actually rejects on:
  * the ZAAK entity type and functie, the mapped zaaktype-omschrijving, a
@@ -12,7 +12,7 @@
  * document payload over the size limit.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,18 +26,18 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\Stuf\StufVaultService;
-use OCA\Procest\Service\Stuf\ZaaktypeNotMappedException;
-use OCA\Procest\Service\StufMessageBuilder;
+use OCA\Dossiq\Service\Stuf\StufVaultService;
+use OCA\Dossiq\Service\Stuf\ZaaktypeNotMappedException;
+use OCA\Dossiq\Service\StufMessageBuilder;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
 /**
  * Unit tests for StufMessageBuilder.
  *
- * @covers \OCA\Procest\Service\StufMessageBuilder
+ * @covers \OCA\Dossiq\Service\StufMessageBuilder
  */
 class StufMessageBuilderTest extends TestCase {
 
@@ -59,7 +59,7 @@ class StufMessageBuilderTest extends TestCase {
 		// shape silently produces EMPTY organisatie/applicatie elements rather
 		// than failing, which is precisely why the routing quartet is asserted
 		// below instead of assumed.
-		'senderOrganisation' => 'Procest',
+		'senderOrganisation' => 'Dossiq',
 		'senderApplication' => 'PROCEST',
 		'recipientOrganisation' => 'Gemeente',
 		'recipientApplication' => 'ZSDMS',
@@ -81,7 +81,7 @@ class StufMessageBuilderTest extends TestCase {
 
 	/**
 	 * A mapped case yields a well-formed Lk01 carrying the ZAAK entity type,
-	 * the creeerZaak functie and the MAPPED omschrijving — not the procest
+	 * the creeerZaak functie and the MAPPED omschrijving — not the dossiq
 	 * case type. Sending the local type would be rejected by the receiver.
 	 *
 	 * @return void
@@ -99,7 +99,7 @@ class StufMessageBuilderTest extends TestCase {
 		$this->assertStringNotContainsString(
 			'<omschrijving>melding-openbare-ruimte<',
 			$xml,
-			"procest's own case type must never be sent as the zaaktype"
+			"dossiq's own case type must never be sent as the zaaktype"
 		);
 	}//end testLk01CarriesTheMappedZaaktypeAndZaakEntity()
 

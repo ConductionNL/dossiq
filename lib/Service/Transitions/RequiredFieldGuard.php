@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Required Field Guard evaluator.
+ * Dossiq Required Field Guard evaluator.
  *
  * Guard config shape: `{type: 'requiredField', field: 'result'}`.
  * Passes when `case[field]` is non-null, non-empty-string, non-empty-array.
  *
  * @category Service
- * @package  OCA\Procest\Service\Transitions
+ * @package  OCA\Dossiq\Service\Transitions
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,12 +18,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Transitions;
+namespace OCA\Dossiq\Service\Transitions;
 
 /**
  * Guard: verifies a named case field is non-empty.

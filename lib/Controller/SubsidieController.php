@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Subsidie Controller.
+ * Dossiq Subsidie Controller.
  *
  * REST endpoints for the subsidieverlening-keten under `/api/subsidies`. All
  * authenticated endpoints require a logged-in user (`@NoAdminRequired`); the
@@ -11,7 +11,7 @@
  * returns only anonymised, already-published data.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,18 +22,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Subsidie\BeschikkingService;
-use OCA\Procest\Service\Subsidie\SubsidieService;
-use OCA\Procest\Service\Subsidie\TussenrapportageService;
-use OCA\Procest\Service\Subsidie\VaststellingService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Subsidie\BeschikkingService;
+use OCA\Dossiq\Service\Subsidie\SubsidieService;
+use OCA\Dossiq\Service\Subsidie\TussenrapportageService;
+use OCA\Dossiq\Service\Subsidie\VaststellingService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

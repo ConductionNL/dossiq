@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest case-email attachment resolver.
+ * Dossiq case-email attachment resolver.
  *
  * Owns the H5 security control for case email: an attachment reference
  * supplied by the caller is resolved through *that caller's own* user folder,
@@ -16,7 +16,7 @@
  * than aborting the send — a broken attachment must not swallow the message.
  *
  * @category Service
- * @package  OCA\Procest\Service\Email
+ * @package  OCA\Dossiq\Service\Email
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,7 +24,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -34,9 +34,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Email;
+namespace OCA\Dossiq\Service\Email;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;
 use OCP\IUserSession;

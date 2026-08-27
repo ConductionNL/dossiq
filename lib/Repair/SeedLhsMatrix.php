@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Seed LHS Matrix Repair Step
+ * Dossiq Seed LHS Matrix Repair Step
  *
  * Idempotent repair step that seeds the default national Landelijke
  * Handhavingsstrategie 2024 matrix (3 ernst x 4 gedrag x 4 actorType = 48
@@ -11,7 +11,7 @@
  * Cell payload is loaded from lib/Settings/seed/lhs-matrix-2024.json.
  *
  * @category Repair
- * @package  OCA\Procest\Repair
+ * @package  OCA\Dossiq\Repair
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -22,16 +22,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -43,6 +44,8 @@ use Throwable;
  * @spec openspec/changes/enforcement-lhs/tasks.md#T02
  */
 class SeedLhsMatrix implements IRepairStep {
+	use RunsUnderSystemIdentity;
+
 	/**
 	 * Constructor.
 	 *
@@ -61,7 +64,7 @@ class SeedLhsMatrix implements IRepairStep {
 	 * @return string
 	 */
 	public function getName(): string {
-		return 'Seed default LHS matrix (Landelijke Handhavingsstrategie 2024) for Procest';
+		return 'Seed default LHS matrix (Landelijke Handhavingsstrategie 2024) for Dossiq';
 	}//end getName()
 
 	/**
@@ -82,11 +85,20 @@ class SeedLhsMatrix implements IRepairStep {
 		}
 
 		try {
-			$this->seedMatrix(output: $output);
+			// Under a system identity: an upgrade has no session, and
+			// OpenRegister refuses `create` for 'Anonymous'. Without it this
+			// seed writes nothing and says so only in a warning, which does not
+			// fail an upgrade.
+			$this->withSystemIdentity(
+				objectService: $this->settingsService->getObjectService(),
+				work: function () use ($output): void {
+					$this->seedMatrix(output: $output);
+				}
+			);
 		} catch (Throwable $e) {
 			$output->warning('Could not seed LHS matrix: ' . $e->getMessage());
 			$this->logger->error(
-				'Procest LHS matrix seed failed',
+				'Dossiq LHS matrix seed failed',
 				['exception' => $e->getMessage()]
 			);
 		}//end try

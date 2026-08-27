@@ -4,7 +4,7 @@
 			<p>
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Save the case type first before adding property definitions.',
 					)
 				}}
@@ -27,16 +27,16 @@
 								pd.format || 'text'
 							}}</span>
 							<span v-if="pd.maxLength" class="property-row__max">
-								{{ t('procest', 'max {n}', { n: pd.maxLength }) }}
+								{{ t('dossiq', 'max {n}', { n: pd.maxLength }) }}
 							</span>
 							<span class="property-row__required">
-								{{ pd.requiredAtStatus || t('procest', 'Optional') }}
+								{{ pd.requiredAtStatus || t('dossiq', 'Optional') }}
 							</span>
 							<div class="property-row__actions">
 								<NcButton
 									type="tertiary"
 									:aria-label="
-										t('procest', 'Edit {name}', {
+										t('dossiq', 'Edit {name}', {
 											name: pd.name,
 										})
 									"
@@ -48,7 +48,7 @@
 								<NcButton
 									type="tertiary"
 									:aria-label="
-										t('procest', 'Delete {name}', {
+										t('dossiq', 'Delete {name}', {
 											name: pd.name,
 										})
 									"
@@ -65,7 +65,7 @@
 								<div class="edit-row">
 									<NcTextField
 										:modelValue="editForm.name"
-										:label="t('procest', 'Name')"
+										:label="t('dossiq', 'Name')"
 										:error="!!editError"
 										class="edit-field"
 										@update:modelValue="
@@ -75,7 +75,7 @@
 								<div class="edit-row">
 									<NcTextField
 										:modelValue="editForm.definition"
-										:label="t('procest', 'Definition')"
+										:label="t('dossiq', 'Definition')"
 										class="edit-field"
 										@update:modelValue="
 											(v) => (editForm.definition = v)
@@ -84,7 +84,7 @@
 								<div class="edit-row">
 									<div class="edit-field">
 										<label class="field-label">{{
-											t('procest', 'Format')
+											t('dossiq', 'Format')
 										}}</label>
 										<select
 											:value="editForm.format"
@@ -93,16 +93,16 @@
 												editForm.format = $event.target.value
 											">
 											<option value="text">
-												{{ t('procest', 'Text') }}
+												{{ t('dossiq', 'Text') }}
 											</option>
 											<option value="number">
-												{{ t('procest', 'Number') }}
+												{{ t('dossiq', 'Number') }}
 											</option>
 											<option value="date">
-												{{ t('procest', 'Date') }}
+												{{ t('dossiq', 'Date') }}
 											</option>
 											<option value="datetime">
-												{{ t('procest', 'Date & Time') }}
+												{{ t('dossiq', 'Date & Time') }}
 											</option>
 										</select>
 									</div>
@@ -112,7 +112,7 @@
 												? String(editForm.maxLength)
 												: ''
 										"
-										:label="t('procest', 'Max length')"
+										:label="t('dossiq', 'Max length')"
 										type="number"
 										class="edit-field edit-field--small"
 										@update:modelValue="
@@ -124,7 +124,7 @@
 								<div class="edit-row">
 									<div class="edit-field">
 										<label class="field-label">{{
-											t('procest', 'Required at status')
+											t('dossiq', 'Required at status')
 										}}</label>
 										<select
 											:value="editForm.requiredAtStatus || ''"
@@ -134,7 +134,7 @@
 													$event.target.value || null
 											">
 											<option value="">
-												{{ t('procest', 'Optional') }}
+												{{ t('dossiq', 'Optional') }}
 											</option>
 											<option
 												v-for="st in statusTypes"
@@ -153,10 +153,10 @@
 										type="primary"
 										:disabled="editSaving"
 										@click="saveEdit">
-										{{ t('procest', 'Save') }}
+										{{ t('dossiq', 'Save') }}
 									</NcButton>
 									<NcButton type="tertiary" @click="cancelEdit">
-										{{ t('procest', 'Cancel') }}
+										{{ t('dossiq', 'Cancel') }}
 									</NcButton>
 								</div>
 							</div>
@@ -165,23 +165,23 @@
 				</div>
 
 				<p v-else class="properties-tab__empty">
-					{{ t('procest', 'No property definitions yet.') }}
+					{{ t('dossiq', 'No property definitions yet.') }}
 				</p>
 
 				<div class="properties-tab__add">
-					<h4>{{ t('procest', 'Add Property Definition') }}</h4>
+					<h4>{{ t('dossiq', 'Add Property Definition') }}</h4>
 					<div class="add-form">
 						<div class="add-form__row">
 							<NcTextField
 								:modelValue="newForm.name"
-								:label="t('procest', 'Name *')"
+								:label="t('dossiq', 'Name *')"
 								class="add-form__field"
 								@update:modelValue="(v) => (newForm.name = v)" />
 						</div>
 						<div class="add-form__row">
 							<NcTextField
 								:modelValue="newForm.definition"
-								:label="t('procest', 'Definition')"
+								:label="t('dossiq', 'Definition')"
 								class="add-form__field"
 								@update:modelValue="
 									(v) => (newForm.definition = v)
@@ -190,23 +190,23 @@
 						<div class="add-form__row">
 							<div class="add-form__field">
 								<label class="field-label">{{
-									t('procest', 'Format')
+									t('dossiq', 'Format')
 								}}</label>
 								<select
 									:value="newForm.format"
 									class="format-select"
 									@change="newForm.format = $event.target.value">
 									<option value="text">
-										{{ t('procest', 'Text') }}
+										{{ t('dossiq', 'Text') }}
 									</option>
 									<option value="number">
-										{{ t('procest', 'Number') }}
+										{{ t('dossiq', 'Number') }}
 									</option>
 									<option value="date">
-										{{ t('procest', 'Date') }}
+										{{ t('dossiq', 'Date') }}
 									</option>
 									<option value="datetime">
-										{{ t('procest', 'Date & Time') }}
+										{{ t('dossiq', 'Date & Time') }}
 									</option>
 								</select>
 							</div>
@@ -216,7 +216,7 @@
 										? String(newForm.maxLength)
 										: ''
 								"
-								:label="t('procest', 'Max length')"
+								:label="t('dossiq', 'Max length')"
 								type="number"
 								class="add-form__field add-form__field--small"
 								@update:modelValue="
@@ -227,7 +227,7 @@
 						<div class="add-form__row">
 							<div class="add-form__field">
 								<label class="field-label">{{
-									t('procest', 'Required at status')
+									t('dossiq', 'Required at status')
 								}}</label>
 								<select
 									:value="newForm.requiredAtStatus || ''"
@@ -237,7 +237,7 @@
 											$event.target.value || null
 									">
 									<option value="">
-										{{ t('procest', 'Optional') }}
+										{{ t('dossiq', 'Optional') }}
 									</option>
 									<option
 										v-for="st in statusTypes"
@@ -255,7 +255,7 @@
 							type="primary"
 							:disabled="addSaving"
 							@click="addProperty">
-							{{ t('procest', 'Add') }}
+							{{ t('dossiq', 'Add') }}
 						</NcButton>
 					</div>
 				</div>
@@ -355,7 +355,7 @@ export default {
 		async addProperty() {
 			this.addError = ''
 			if (!this.newForm.name?.trim()) {
-				this.addError = t('procest', 'Name is required')
+				this.addError = t('dossiq', 'Name is required')
 				return
 			}
 			this.addSaving = true
@@ -376,7 +376,7 @@ export default {
 			} else {
 				this.addError =
 					this.objectStore.getError('propertyDefinition')
-					|| t('procest', 'Failed to add property')
+					|| t('dossiq', 'Failed to add property')
 			}
 		},
 
@@ -401,7 +401,7 @@ export default {
 		async saveEdit() {
 			this.editError = ''
 			if (!this.editForm.name?.trim()) {
-				this.editError = t('procest', 'Name is required')
+				this.editError = t('dossiq', 'Name is required')
 				return
 			}
 			this.editSaving = true
@@ -420,7 +420,7 @@ export default {
 			} else {
 				this.editError =
 					this.objectStore.getError('propertyDefinition')
-					|| t('procest', 'Failed to save')
+					|| t('dossiq', 'Failed to save')
 			}
 		},
 
@@ -430,9 +430,7 @@ export default {
 		 */
 		async deleteProperty(pd) {
 			if (
-				!confirm(
-					t('procest', 'Delete property "{name}"?', { name: pd.name }),
-				)
+				!confirm(t('dossiq', 'Delete property "{name}"?', { name: pd.name }))
 			)
 				return
 			const ok = await this.objectStore.deleteObject(
@@ -444,7 +442,7 @@ export default {
 			} else {
 				this.error =
 					this.objectStore.getError('propertyDefinition')
-					|| t('procest', 'Failed to delete property')
+					|| t('dossiq', 'Failed to delete property')
 			}
 		},
 	},

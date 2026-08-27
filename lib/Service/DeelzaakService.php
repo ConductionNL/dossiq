@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Deelzaak (sub-case) Service
+ * Dossiq Deelzaak (sub-case) Service
  *
  * Backend support for parent-child case relations: efficient sub-case
  * lookup, batch counts (used by the case list to avoid N+1 queries), parent
@@ -9,7 +9,7 @@
  * against `caseType.subCaseTypes`.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,17 +20,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/deelzaak-support/tasks.md#T01
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\Service\Deelzaak\CaseObjectReader;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**

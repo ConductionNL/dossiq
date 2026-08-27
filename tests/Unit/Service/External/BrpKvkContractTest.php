@@ -15,7 +15,7 @@
  * API; this proves the request/response mapping deterministically.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\External
+ * @package  OCA\Dossiq\Tests\Unit\Service\External
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,11 +26,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\External;
+namespace OCA\Dossiq\Tests\Unit\Service\External;
 
-use OCA\Procest\Service\External\Brp\HaalCentraalBrpAdapter;
-use OCA\Procest\Service\External\IntegrationMode;
-use OCA\Procest\Service\External\Kvk\KvkApiAdapter;
+use OCA\Dossiq\Service\External\Brp\HaalCentraalBrpAdapter;
+use OCA\Dossiq\Service\External\IntegrationMode;
+use OCA\Dossiq\Service\External\Kvk\KvkApiAdapter;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
@@ -39,12 +39,12 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\External\Brp\HaalCentraalBrpAdapter
- * @covers \OCA\Procest\Service\External\Kvk\KvkApiAdapter
+ * @covers \OCA\Dossiq\Service\External\Brp\HaalCentraalBrpAdapter
+ * @covers \OCA\Dossiq\Service\External\Kvk\KvkApiAdapter
  *
- * @uses \OCA\Procest\Service\External\Brp\BrpLookupResult
- * @uses \OCA\Procest\Service\External\IntegrationMode
- * @uses \OCA\Procest\Service\External\Kvk\KvkLookupResult
+ * @uses \OCA\Dossiq\Service\External\Brp\BrpLookupResult
+ * @uses \OCA\Dossiq\Service\External\IntegrationMode
+ * @uses \OCA\Dossiq\Service\External\Kvk\KvkLookupResult
  */
 class BrpKvkContractTest extends TestCase {
 	private const FIXTURES = __DIR__ . '/../../../fixtures/contracts';

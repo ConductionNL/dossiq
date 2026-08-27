@@ -7,7 +7,7 @@
  * employee-threshold alerts, and KPI summary.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,17 +20,17 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\ComplaintAnalyticsService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\ComplaintAnalyticsService;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
  * Unit tests for ComplaintAnalyticsService.
  *
- * @covers \OCA\Procest\Service\ComplaintAnalyticsService
+ * @covers \OCA\Dossiq\Service\ComplaintAnalyticsService
  */
 class ComplaintAnalyticsServiceTest extends TestCase {
 
@@ -90,7 +90,7 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 
 		$objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['searchObjects', 'searchObjectsBySlug', 'saveObject'])->getMock();
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-		$this->settingsService->method('getConfigValue')->willReturn('procest');
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
 		$objectServiceMock->method('searchObjectsBySlug')->willReturn($complaints);
 
 		$result = $this->service->getFrequencyByDimension('category', '2026-01-01', '2026-12-31');
@@ -113,7 +113,7 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 
 		$objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['searchObjects', 'searchObjectsBySlug', 'saveObject'])->getMock();
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-		$this->settingsService->method('getConfigValue')->willReturn('procest');
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
 		$objectServiceMock->method('searchObjectsBySlug')->willReturn($complaints);
 
 		$result = $this->service->getMonthlyTrend('2026-01-01', '2026-12-31');
@@ -130,7 +130,7 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 	public function testDetectSystemicIssuesFlagsHighIncreaseCategories(): void {
 		$objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['searchObjects', 'searchObjectsBySlug', 'saveObject'])->getMock();
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-		$this->settingsService->method('getConfigValue')->willReturn('procest');
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
 
 		// Q1 2026 has 6 Wachttijd complaints, Q4 2025 had 3 => 100% increase.
 		$currentComplaints = array_fill(0, 6, ['category' => 'Wachttijd', 'receiptDate' => '2026-01-15']);
@@ -161,7 +161,7 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 	public function testDetectSystemicIssuesDoesNotFlagBelowThreshold(): void {
 		$objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['searchObjects', 'searchObjectsBySlug', 'saveObject'])->getMock();
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-		$this->settingsService->method('getConfigValue')->willReturn('procest');
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
 
 		// 10 current, 8 previous => 25% increase — below threshold.
 		$currentComplaints = array_fill(0, 10, ['category' => 'Dienstverlening', 'receiptDate' => '2026-01-10']);
@@ -189,7 +189,7 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 	public function testCheckEmployeeThresholdAlertsReturnsAlertsAboveThreshold(): void {
 		$objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['searchObjects', 'searchObjectsBySlug', 'saveObject'])->getMock();
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-		$this->settingsService->method('getConfigValue')->willReturn('procest');
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
 
 		$complaints = [
 			['involvedEmployee' => 'medewerker-A', 'category' => 'Bejegening', 'receiptDate' => '2026-01-10'],
@@ -217,7 +217,7 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 	public function testCheckEmployeeThresholdAlertsReturnsEmptyBelowThreshold(): void {
 		$objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['searchObjects', 'searchObjectsBySlug', 'saveObject'])->getMock();
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-		$this->settingsService->method('getConfigValue')->willReturn('procest');
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
 
 		$complaints = [
 			['involvedEmployee' => 'medewerker-B', 'category' => 'Wachttijd', 'receiptDate' => '2026-01-10'],
@@ -238,7 +238,7 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 	public function testGetKpiSummaryReturnsExpectedStructure(): void {
 		$objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['searchObjects', 'searchObjectsBySlug', 'saveObject'])->getMock();
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-		$this->settingsService->method('getConfigValue')->willReturn('procest');
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
 
 		$complaints = [
 			['status' => 'handled', 'afhandelDeadline' => '2026-04-12', 'receiptDate' => '2026-03-01'],

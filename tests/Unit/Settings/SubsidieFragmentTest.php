@@ -4,11 +4,11 @@
  * Subsidie Register Fragment Unit Tests
  *
  * Verifies that the register.d/50-subsidie.json fragment unions its nine
- * schemas, register membership and seed objects onto the procest monolith via
+ * schemas, register membership and seed objects onto the dossiq monolith via
  * the ADR-037 deep-merge loader, without disturbing the base configuration.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Settings
+ * @package  OCA\Dossiq\Tests\Unit\Settings
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,22 +19,22 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Settings;
+namespace OCA\Dossiq\Tests\Unit\Settings;
 
-use OCA\Procest\Service\Settings\RegisterFragmentMerger;
+use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Integration-style unit tests for the subsidie register fragment.
  *
- * @covers \OCA\Procest\Service\SettingsService
+ * @covers \OCA\Dossiq\Service\SettingsService
  *
- * @uses \OCA\Procest\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  *
  * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-01
  * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-02
@@ -70,7 +70,7 @@ class SubsidieFragmentTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$base = json_decode(
-			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/procest_register.json'),
+			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'),
 			true
 		);
 
@@ -118,14 +118,14 @@ class SubsidieFragmentTest extends TestCase {
 	}//end testNoApplicantSchemaInvented()
 
 	/**
-	 * The procest register lists the new subsidie schemas (list concatenation).
+	 * The dossiq register lists the new subsidie schemas (list concatenation).
 	 *
 	 * @return void
 	 */
 	public function testRegisterMembershipUnioned(): void {
-		$schemas = $this->merged['components']['registers']['procest']['schemas'];
+		$schemas = $this->merged['components']['registers']['dossiq']['schemas'];
 		foreach (self::SCHEMA_SLUGS as $slug) {
-			$this->assertContains($slug, $schemas, $slug . ' must be a member of the procest register');
+			$this->assertContains($slug, $schemas, $slug . ' must be a member of the dossiq register');
 		}
 
 		// Existing membership preserved.

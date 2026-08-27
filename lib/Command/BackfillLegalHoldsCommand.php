@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Procest procest:legal-hold:backfill command.
+ * Dossiq dossiq:legal-hold:backfill command.
  *
  * Repairs the cases that passed through an Awb bezwaar/beroep proceeding while
- * {@see \OCA\Procest\Listener\BezwaarLegalHoldListener} was dead and therefore
+ * {@see \OCA\Dossiq\Listener\BezwaarLegalHoldListener} was dead and therefore
  * never received the legal hold archiving law requires (procest#694).
  *
  * The listener was inert for its entire life: `resolveCaseObject()` called
@@ -27,7 +27,7 @@
  *   is never mistaken for a contemporaneous one in an audit.
  *
  * @category Command
- * @package  OCA\Procest\Command
+ * @package  OCA\Dossiq\Command
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -38,15 +38,15 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Command;
+namespace OCA\Dossiq\Command;
 
-use OCA\Procest\Command\Backfill\AwbProceedingScanner;
-use OCA\Procest\Command\Backfill\LegalHoldApplier;
+use OCA\Dossiq\Command\Backfill\AwbProceedingScanner;
+use OCA\Dossiq\Command\Backfill\LegalHoldApplier;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
@@ -106,9 +106,11 @@ class BackfillLegalHoldsCommand extends Command {
 	 * Define command name, description and options.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/specs/archief-edepot-handover/spec.md#requirement-legal-proceedings-must-suspend-archival-via-or-legal-holds
 	 */
 	protected function configure(): void {
-		$this->setName(name: 'procest:legal-hold:backfill')
+		$this->setName(name: 'dossiq:legal-hold:backfill')
 			->setDescription(
 				'Backfill Awb legal holds on cases with an open bezwaar/beroep proceeding (procest#694). Dry-run unless --apply.'
 			)

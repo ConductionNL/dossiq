@@ -8,7 +8,7 @@
  * invalid transition, 404 not found).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -16,7 +16,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -24,10 +24,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\BeschikkingController;
-use OCA\Procest\Service\BeschikkingService;
+use OCA\Dossiq\Controller\BeschikkingController;
+use OCA\Dossiq\Service\BeschikkingService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -39,7 +39,7 @@ use RuntimeException;
 /**
  * Unit tests for BeschikkingController.
  *
- * @covers \OCA\Procest\Controller\BeschikkingController
+ * @covers \OCA\Dossiq\Controller\BeschikkingController
  */
 class BeschikkingControllerTest extends TestCase {
 	/**
@@ -87,7 +87,7 @@ class BeschikkingControllerTest extends TestCase {
 		$logger = $this->createMock(LoggerInterface::class);
 
 		$this->controller = new BeschikkingController(
-			'procest',
+			'dossiq',
 			$this->request,
 			$this->service,
 			$this->userSession,

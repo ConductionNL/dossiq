@@ -41,7 +41,7 @@ Determine the GitHub repository using this priority order:
 
 Extract the `owner/repo` (e.g., `ConductionNL/nldesign`). This will be stored in plan.json's `repo` field and used by `/opsx-apply` for all GitHub operations.
 
-Determine the **app name** from the project directory name (e.g., `nldesign`, `procest`). This is used as a label on the GitHub issue.
+Determine the **app name** from the project directory name (e.g., `nldesign`, `dossiq`). This is used as a label on the GitHub issue.
 
 ### Step 3: Parse tasks.md into structured JSON
 
@@ -120,7 +120,7 @@ Options:
 
 **Determine labels** (once per change):
 - `openspec` — always present
-- `<app-name>` — the project directory name (e.g., `procest`, `nldesign`)
+- `<app-name>` — the project directory name (e.g., `dossiq`, `nldesign`)
 - One label per delta spec — scan `openspec/changes/<change-name>/specs/` for subdirectories; each subdirectory name becomes a label (e.g., if `specs/lead-management/` and `specs/pipeline-views/` exist, add labels `lead-management` and `pipeline-views`)
 
 Ensure all required labels exist (create if missing) — do this **once** before the loop, collecting all unique labels across all changes:

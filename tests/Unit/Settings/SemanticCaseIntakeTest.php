@@ -3,7 +3,7 @@
 /**
  * Semantic Case Intake schema-wiring test (semantic-case-intake).
  *
- * Verifies procest's consume-side of the ns#Case semantic handoff:
+ * Verifies dossiq's consume-side of the ns#Case semantic handoff:
  * the case schema declares `implements` on the canonical kind URI, carries
  * a COMPLETE handoffContract binding (every mandatory contract field bound
  * to an existing own property), declares the requester + handoffSource
@@ -15,7 +15,7 @@
  * requester, priority) so a contract drift on OR fails this test.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Settings
+ * @package  OCA\Dossiq\Tests\Unit\Settings
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,12 +26,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Settings;
+namespace OCA\Dossiq\Tests\Unit\Settings;
 
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Procest\Repair\InitializeSettings
+ * @covers \OCA\Dossiq\Repair\InitializeSettings
  */
 class SemanticCaseIntakeTest extends TestCase {
 	/**
@@ -53,7 +53,7 @@ class SemanticCaseIntakeTest extends TestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$path = __DIR__ . '/../../../lib/Settings/procest_register.json';
+		$path = __DIR__ . '/../../../lib/Settings/dossiq_register.json';
 		$this->assertFileExists($path);
 		$register = json_decode((string)file_get_contents($path), true);
 		$this->case = $register['components']['schemas']['case'];
@@ -133,7 +133,7 @@ class SemanticCaseIntakeTest extends TestCase {
 
 	public function testNoImperativeNotificationDispatchInLib(): void {
 		// ADR-031: the handoff intake notification is declarative only; no
-		// procest service may imperatively dispatch a notification for it.
+		// dossiq service may imperatively dispatch a notification for it.
 		$libDir = __DIR__ . '/../../../lib';
 		$offenders = [];
 		$iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($libDir, \FilesystemIterator::SKIP_DOTS));

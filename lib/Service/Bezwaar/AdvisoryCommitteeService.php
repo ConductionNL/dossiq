@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Bezwaar Advisory Committee Service.
+ * Dossiq Bezwaar Advisory Committee Service.
  *
  * Domain service for the bezwaaradviescommissie (BAC) capability under
  * Awb Art. 7:13. Owns the legitimate domain operations that cannot be
@@ -22,7 +22,7 @@
  * only — exception details never bubble to controllers.
  *
  * @category Service
- * @package  OCA\Procest\Service\Bezwaar
+ * @package  OCA\Dossiq\Service\Bezwaar
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -33,18 +33,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Bezwaar;
+namespace OCA\Dossiq\Service\Bezwaar;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Procest\Service\AdviceDelegationService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Transitions\GuardFailedException;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\AdviceDelegationService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -175,7 +176,14 @@ class AdvisoryCommitteeService {
 			],
 			$payload,
 			[
-				'objectionProceeding' => $objectionId,
+				// `bezwaar` IS THE PROPERTY NAME. `objectionProceeding` is the
+				// SCHEMA it $refs — the two were confused, and every advice
+				// request written since has omitted a property the schema marks
+				// required while carrying an undeclared one instead. The visible
+				// cost: BezwaarDetail's advice-request stats and list filter on
+				// `bezwaar: @objectId` (src/manifest.json:1852, 1871, 1906), so a
+				// bezwaar showed NO advice requests, however many it had.
+				'bezwaar' => $objectionId,
 				'committee' => $commissieId,
 				'status' => 'assigned',
 				'assignedAt' => $now,
@@ -197,7 +205,7 @@ class AdvisoryCommitteeService {
 			return $objectService->saveObject(object: $record, register: $register, schema: $requestSchema);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest BAC: failed to create advice request: ' . $e->getMessage()
+				'Dossiq BAC: failed to create advice request: ' . $e->getMessage()
 			);
 			throw new RuntimeException('Could not create advice request');
 		}
@@ -220,7 +228,7 @@ class AdvisoryCommitteeService {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md
-	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-procest
+	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-dossiq
 	 */
 	public function transitionAdviceStatus(
 		string $requestId,
@@ -293,7 +301,7 @@ class AdvisoryCommitteeService {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest BAC: failed to transition advice request '
+				'Dossiq BAC: failed to transition advice request '
 				. $requestId . ': ' . $e->getMessage()
 			);
 			throw new RuntimeException('Could not transition advice request');
@@ -319,7 +327,7 @@ class AdvisoryCommitteeService {
 		);
 		if ($defaultId === '') {
 			$this->logger->info(
-				'Procest BAC: no default committee configured; '
+				'Dossiq BAC: no default committee configured; '
 				. 'skipping auto-assignment for bezwaar ' . $objectionId
 			);
 			return null;
@@ -332,7 +340,7 @@ class AdvisoryCommitteeService {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest BAC: auto-assignment failed for bezwaar '
+				'Dossiq BAC: auto-assignment failed for bezwaar '
 				. $objectionId . ': ' . $e->getMessage()
 			);
 			return null;
@@ -390,7 +398,7 @@ class AdvisoryCommitteeService {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest BAC: failed to record council deviation: '
+				'Dossiq BAC: failed to record council deviation: '
 				. $e->getMessage()
 			);
 		}//end try
@@ -448,7 +456,7 @@ class AdvisoryCommitteeService {
 		}
 
 		$independence = $this->independence->check(
-			objectionId: (string)($current['objectionProceeding'] ?? ''),
+			objectionId: $this->objectionIdOf(request: $current),
 			panel: $panel,
 		);
 
@@ -475,7 +483,7 @@ class AdvisoryCommitteeService {
 			);
 		} catch (\Throwable $auditError) {
 			$this->logger->error(
-				'Procest BAC: failed to write audit on '
+				'Dossiq BAC: failed to write audit on '
 				. 'independence failure: '
 				. $auditError->getMessage()
 			);
@@ -528,7 +536,7 @@ class AdvisoryCommitteeService {
 				subjectId: (string)$requestId,
 				payload: [
 					'subjectRegister' => $register,
-					'externalReference' => (string)($current['objectionProceeding'] ?? $requestId),
+					'externalReference' => $this->externalReferenceFor(request: $current, requestId: (string)$requestId),
 					'subjectLabel' => (string)($merged['conclusion'] ?? 'BAC-advies'),
 					'adviceType' => (string)($merged['recommendation'] ?? ''),
 					'question' => (string)($merged['conclusion'] ?? ''),
@@ -536,7 +544,7 @@ class AdvisoryCommitteeService {
 			);
 		} catch (RuntimeException $e) {
 			$this->logger->error(
-				'Procest BAC: decidesk advice Decision raise failed — failing closed: '
+				'Dossiq BAC: decidesk advice Decision raise failed — failing closed: '
 				. $e->getMessage()
 			);
 			throw new RuntimeException('Decision service unavailable: ' . $e->getMessage(), 0, $e);
@@ -587,4 +595,58 @@ class AdvisoryCommitteeService {
 
 		return $update;
 	}//end buildTransitionUpdate()
+
+	/**
+	 * The objection this advice request belongs to.
+	 *
+	 * `bezwaar` is the schema-declared property; `objectionProceeding` is the
+	 * schema it $refs, and was written into the object by mistake for as long as
+	 * this service has existed. Rows created before the fix carry only the wrong
+	 * key, so the legacy branch stays until `BackfillAdviceRequestObjection` has
+	 * run everywhere.
+	 *
+	 * The legacy branch LOGS. A silent fallback would make the repair step look
+	 * unnecessary — the reads would keep working, the manifest filters would keep
+	 * showing nothing, and the only symptom would stay invisible.
+	 *
+	 * @param array<string, mixed> $request The stored advice request.
+	 *
+	 * @return string The objection id, or '' when neither key is present.
+	 */
+	private function objectionIdOf(array $request): string {
+		$objectionId = (string)($request['bezwaar'] ?? '');
+		if ($objectionId !== '') {
+			return $objectionId;
+		}
+
+		$legacy = (string)($request['objectionProceeding'] ?? '');
+		if ($legacy !== '') {
+			$this->logger->warning(
+				'Dossiq BAC: advice request still carries the legacy objection key; run the backfill repair step',
+				['app' => Application::APP_ID, 'requestId' => ($request['id'] ?? null)]
+			);
+		}
+
+		return $legacy;
+	}//end objectionIdOf()
+
+	/**
+	 * The external reference a raised advice decision carries.
+	 *
+	 * Prefers the objection, falling back to the advice request's own id so the
+	 * decision is never raised with an empty reference.
+	 *
+	 * @param array<string, mixed> $request The stored advice request.
+	 * @param string $requestId The advice request's own id.
+	 *
+	 * @return string The reference.
+	 */
+	private function externalReferenceFor(array $request, string $requestId): string {
+		$objectionId = $this->objectionIdOf(request: $request);
+		if ($objectionId !== '') {
+			return $objectionId;
+		}
+
+		return $requestId;
+	}//end externalReferenceFor()
 }//end class

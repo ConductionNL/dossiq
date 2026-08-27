@@ -9,7 +9,7 @@
  * membership list and seed object list.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Settings
+ * @package  OCA\Dossiq\Tests\Unit\Settings
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -17,7 +17,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T01
  *
@@ -27,18 +27,18 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Settings;
+namespace OCA\Dossiq\Tests\Unit\Settings;
 
-use OCA\Procest\Service\Settings\RegisterFragmentMerger;
+use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 
 /**
  * Unit tests for the 40-kcc-werkplek.json register fragment.
  *
- * @covers \OCA\Procest\Service\SettingsService
+ * @covers \OCA\Dossiq\Service\SettingsService
  *
- * @uses \OCA\Procest\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class KccWerkplekFragmentTest extends TestCase {
 
@@ -77,7 +77,7 @@ class KccWerkplekFragmentTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$fragmentPath = __DIR__ . '/../../../lib/Settings/register.d/40-kcc-werkplek.json';
-		$basePath = __DIR__ . '/../../../lib/Settings/procest_register.json';
+		$basePath = __DIR__ . '/../../../lib/Settings/dossiq_register.json';
 
 		$this->fragment = json_decode((string)file_get_contents($fragmentPath), true);
 		$this->base = json_decode((string)file_get_contents($basePath), true);
@@ -136,7 +136,7 @@ class KccWerkplekFragmentTest extends TestCase {
 
 		$merged = $reflection->invokeArgs(new RegisterFragmentMerger(), [$this->base, $this->fragment]);
 
-		$registerSchemas = $merged['components']['registers']['procest']['schemas'];
+		$registerSchemas = $merged['components']['registers']['dossiq']['schemas'];
 		foreach ($this->kccSchemas as $slug) {
 			$this->assertContains(needle: $slug, haystack: $registerSchemas, message: "Merged register must include '{$slug}'");
 		}

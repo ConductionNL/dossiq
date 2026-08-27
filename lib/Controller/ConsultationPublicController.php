@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Consultation Public Controller
+ * Dossiq Consultation Public Controller
  *
  * Token-based public surface for external advisory bodies to read a
  * consultation and submit their advice, per Awb 3:5-3:9.
@@ -13,7 +13,7 @@
  * Informatiebeveiliging Overheid).
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,7 +21,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -31,10 +31,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\ConsultationService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\ConsultationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -99,7 +99,7 @@ class ConsultationPublicController extends Controller {
 		}
 
 		$this->logger->info(
-			'Procest BIO: external consultation access via token (GET)',
+			'Dossiq BIO: external consultation access via token (GET)',
 			[
 				'app' => Application::APP_ID,
 				'consultationId' => $consultation['id'] ?? '',
@@ -143,7 +143,7 @@ class ConsultationPublicController extends Controller {
 		$consultationId = $consultation['id'] ?? '';
 
 		$this->logger->info(
-			'Procest BIO: external consultation response submitted via token (POST)',
+			'Dossiq BIO: external consultation response submitted via token (POST)',
 			[
 				'app' => Application::APP_ID,
 				'consultationId' => $consultationId,

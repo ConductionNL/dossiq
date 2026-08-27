@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Dormant default Procest WOZ adapter.
+ * Dormant default Dossiq WOZ adapter.
  *
  * Records the would-be Kadaster WOZ Bevragen lookup to the structured
  * logger and returns a synthetic LOOKUP_DEFERRED result so the surrounding
@@ -9,16 +9,16 @@
  * live binding is configured via `integration.woz.mode` (resolved through
  * `Application::register()`). Mirrors the `LogBagAdapter` / `LogBrkAdapter`
  * / `LogBrpHaalCentraalAdapter` / `LogKvkHandelsregisterAdapter`
- * dormant-default pattern used across the Procest external surface.
+ * dormant-default pattern used across the Dossiq external surface.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Woz
+ * @package  OCA\Dossiq\Service\External\Woz
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  *
@@ -28,12 +28,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Woz;
+namespace OCA\Dossiq\Service\External\Woz;
 
 use Psr\Log\LoggerInterface;
 
 /**
- * Dormant log-backed Procest WOZ adapter.
+ * Dormant log-backed Dossiq WOZ adapter.
  *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */
@@ -73,7 +73,7 @@ class LogWozAdapter implements WozAdapterInterface {
 		array $context = [],
 	): WozLookupResult {
 		$this->logger->info(
-			'Procest WOZ lookup deferred (no outbound connector bound)',
+			'Dossiq WOZ lookup deferred (no outbound connector bound)',
 			[
 				'postcode' => $postcode,
 				'houseNumber' => $houseNumber,
@@ -98,7 +98,7 @@ class LogWozAdapter implements WozAdapterInterface {
 	 */
 	public function lookupByNummeraanduiding(string $addressDesignationId, array $context = []): WozLookupResult {
 		$this->logger->info(
-			'Procest WOZ lookup deferred (no outbound connector bound)',
+			'Dossiq WOZ lookup deferred (no outbound connector bound)',
 			['addressDesignationId' => $addressDesignationId, 'context' => $context]
 		);
 
@@ -117,7 +117,7 @@ class LogWozAdapter implements WozAdapterInterface {
 	 */
 	public function lookupByWozObjectNummer(string $wozobjectnummer, array $context = []): WozLookupResult {
 		$this->logger->info(
-			'Procest WOZ lookup deferred (no outbound connector bound)',
+			'Dossiq WOZ lookup deferred (no outbound connector bound)',
 			['wozobjectnummer' => $wozobjectnummer, 'context' => $context]
 		);
 

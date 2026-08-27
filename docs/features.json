@@ -183,11 +183,11 @@
     "summary_nl": "Je classificeert, vat samen en routeert documenten met je eigen AI-model."
   },
   {
-    "slug": "procest-sociaal-domein-wmo",
+    "slug": "dossiq-sociaal-domein-wmo",
     "title": "Sociaal domein (Wmo, Jeugdwet, Participatiewet)",
     "summary": "You handle social-domain cases on a shared data model.",
     "status": "soon",
-    "docsUrl": "openspec/specs/procest-sociaal-domein-wmo/spec.md",
+    "docsUrl": "openspec/specs/dossiq-sociaal-domein-wmo/spec.md",
     "title_nl": "Sociaal domein (Wmo, Jeugdwet, Participatiewet)",
     "summary_nl": "Je behandelt sociaal-domeinzaken op een gedeeld datamodel."
   },

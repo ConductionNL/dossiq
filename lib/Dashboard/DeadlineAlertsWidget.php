@@ -7,7 +7,7 @@
  * in the Nextcloud Dashboard.
  *
  * @category Dashboard
- * @package  OCA\Procest\Dashboard
+ * @package  OCA\Dossiq\Dashboard
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -18,9 +18,9 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-4
+ * @spec openspec/changes/archive/retrofit-2026-05-24-annotate-procest/tasks.md#task-4
  * @spec openspec/specs/signalering-widgets/spec.md
  * @spec openspec/specs/signalering-widgets/spec.md
  * @spec openspec/specs/signalering-widgets/spec.md
@@ -28,9 +28,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Dashboard;
+namespace OCA\Dossiq\Dashboard;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\Dashboard\IWidget;
 use OCP\IL10N;
 use OCP\IURLGenerator;
@@ -59,6 +59,7 @@ class DeadlineAlertsWidget implements IWidget {
 	 * @return string The widget identifier
 	 */
 	public function getId(): string {
+		// FROZEN at the old app-id prefix — see CasesOverviewWidget::getId().
 		return 'procest_deadline_alerts_widget';
 	}//end getId()
 
@@ -89,7 +90,7 @@ class DeadlineAlertsWidget implements IWidget {
 	 * @return string The icon CSS class
 	 */
 	public function getIconClass(): string {
-		return 'icon-procest-widget';
+		return 'icon-dossiq-widget';
 	}//end getIconClass()
 
 	/**

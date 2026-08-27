@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest OpenRegister autoload prelude
+ * Dossiq OpenRegister autoload prelude
  *
  * Puts OpenRegister's PSR-4 prefix on the autoloader so this app can reference
  * `OCA\OpenRegister\AppHost\…` from its own `Application::register()`.
  *
  * @category AppInfo
- * @package  OCA\Procest\AppInfo
+ * @package  OCA\Dossiq\AppInfo
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,7 +15,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -23,7 +23,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\AppInfo;
+namespace OCA\Dossiq\AppInfo;
 
 /**
  * Registers OpenRegister's autoload prefix before AppHost is referenced.
@@ -36,11 +36,11 @@ namespace OCA\Procest\AppInfo;
  * one app at a time. So every app's `register()` runs BEFORE the PSR-4 prefix
  * of every alphabetically-LATER app exists.
  *
- * `procest` sorts AFTER `openregister`, so the prefix happens to be on the
+ * `dossiq` sorts AFTER `openregister`, so the prefix happens to be on the
  * autoloader by the time `AppHostRegistrar::register()` runs today. That is the
  * alphabet, not a design property: the `class_exists()` guard in the registrar
  * cannot tell "OpenRegister is not installed" apart from "OpenRegister has not
- * registered its prefix yet", and both answer FALSE. Under the second, procest
+ * registered its prefix yet", and both answer FALSE. Under the second, dossiq
  * would silently skip the whole AppHost engine — health, metrics, preferences,
  * deep links, the SPA page/catch-all, the dashboard widgets and the MCP
  * provider — on a perfectly healthy instance, with nothing in the UI to say so.

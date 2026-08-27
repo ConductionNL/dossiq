@@ -1,5 +1,5 @@
 /**
- * OpenRegister maps-overview client for Procest's cases-on-map page.
+ * OpenRegister maps-overview client for Dossiq's cases-on-map page.
  *
  * Consumes OpenRegister's page-level **maps-overview** integration surface
  * (ADR-022) — the leaf-foundation render contract landed on openregister
@@ -15,14 +15,14 @@
  *          `[lat,lng]` per object via its own GeoFeatureCollectionBuilder, and
  *          returns `{ points: [{ id, label, lat, lng, register, schema,
  *          geometry }], count }`. An anonymous / low-privilege caller only ever
- *          sees public-readable objects (fail-closed) — procest does NO bespoke
+ *          sees public-readable objects (fail-closed) — dossiq does NO bespoke
  *          geo query and NO bespoke RBAC of its own (ADR-005, no IDOR).
  *
- * Procest OWNS only the geo *data* contract (the `case` schema's geometry
- * field stays in procest's register); OR owns persistence, the geometry
+ * Dossiq OWNS only the geo *data* contract (the `case` schema's geometry
+ * field stays in dossiq's register); OR owns persistence, the geometry
  * extraction, RBAC scoping, and the base-layer config. The markers are then
  * drawn by `@conduction/nextcloud-vue`'s declarative `CnMapWidget` (which owns
- * the Leaflet engine) — procest embeds no Leaflet / WMS / WFS stack of its own.
+ * the Leaflet engine) — dossiq embeds no Leaflet / WMS / WFS stack of its own.
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
@@ -32,7 +32,16 @@
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-/** Stable key for procest's cases-on-map overview (one per app). */
+/**
+ * Stable key for dossiq's cases-on-map overview (one per app).
+ *
+ * FROZEN at the old `procest-` prefix across the procest -> dossiq app-id
+ * rename. This is an IDEMPOTENCY KEY stored inside OpenRegister: the register
+ * call upserts on `overviewKey`, so a renamed key does not rename the existing
+ * overview — it creates a SECOND one and orphans the first, which keeps
+ * appearing in OR's overview list and stays the target of anything already
+ * pointing at it. Nothing errors; the estate just quietly grows a duplicate.
+ */
 export const CASES_ON_MAP_KEY = 'procest-cases-on-map'
 
 const OVERVIEWS_URL = generateUrl(
@@ -40,20 +49,20 @@ const OVERVIEWS_URL = generateUrl(
 )
 
 /**
- * Declare (or refresh) procest's cases-on-map overview with OpenRegister's
+ * Declare (or refresh) dossiq's cases-on-map overview with OpenRegister's
  * maps-overview surface. Idempotent on `overviewKey` (OR upserts the widget).
  * Fire-and-forget: a registration failure never throws into the view — the
  * page still fetches points and degrades to its empty state.
  *
  * @param {object} [options] Overview options.
- * @param {string} [options.register] Register slug holding the cases (default `procest`).
+ * @param {string} [options.register] Register slug holding the cases (default `dossiq`).
  * @param {string} [options.schema] Schema slug for the case objects (default `case`).
  * @param {string} [options.title] Human-readable overview title.
  * @return {Promise<object|null>} The stored widget render contract, or null on failure.
  * @spec openspec/specs/case-map-overview/spec.md
  */
 export async function registerCasesOnMapOverview({
-	register = 'procest',
+	register = 'dossiq',
 	schema = 'case',
 	title = 'Cases on map',
 } = {}) {
@@ -67,7 +76,7 @@ export async function registerCasesOnMapOverview({
 		return response.data
 	} catch (err) {
 		console.warn(
-			'[procest] maps-overview register failed for',
+			'[dossiq] maps-overview register failed for',
 			CASES_ON_MAP_KEY,
 			err,
 		)
@@ -83,14 +92,14 @@ export async function registerCasesOnMapOverview({
  * on any failure so the map renders blank rather than throwing.
  *
  * @param {object} [options] Query options.
- * @param {string} [options.register] Register slug (default `procest`).
+ * @param {string} [options.register] Register slug (default `dossiq`).
  * @param {string} [options.schema] Schema slug (default `case`).
  * @param {object} [options.filters] Extra object filters (property=value) forwarded to OR.
  * @return {Promise<Array<object>>} The RBAC-scoped point rows (possibly empty).
  * @spec openspec/specs/case-map-overview/spec.md
  */
 export async function fetchCasePoints({
-	register = 'procest',
+	register = 'dossiq',
 	schema = 'case',
 	filters = {},
 } = {}) {
@@ -101,7 +110,7 @@ export async function fetchCasePoints({
 		return Array.isArray(data.points) ? data.points : []
 	} catch (err) {
 		console.warn(
-			'[procest] maps-overview points fetch failed for',
+			'[dossiq] maps-overview points fetch failed for',
 			register,
 			schema,
 			err,

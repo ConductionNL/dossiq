@@ -17,7 +17,7 @@ import path from 'path'
 
 const REGISTER_PATH = path.resolve(
 	__dirname,
-	'../../lib/Settings/procest_register.json',
+	'../../lib/Settings/dossiq_register.json',
 )
 const MANIFEST_PATH = path.resolve(__dirname, '../../src/manifest.json')
 
@@ -64,14 +64,14 @@ describe('deep links cover all searchable schemas', () => {
 		const manifest = loadJson(MANIFEST_PATH)
 
 		const expectedTemplates = {
-			case: '/apps/procest/cases/{uuid}',
-			task: '/apps/procest/tasks/{uuid}',
+			case: '/apps/dossiq/cases/{uuid}',
+			task: '/apps/dossiq/tasks/{uuid}',
 			// The KEY is the schema slug and moved with it; the URL is a published
 			// ROUTE and deliberately did not — a route resolves at request time,
 			// so breaking one fails silently.
-			objectionProceeding: '/apps/procest/bezwaren/{uuid}',
-			proposal: '/apps/procest/voorstellen/{uuid}',
-			beroep: '/apps/procest/beroepen/{uuid}',
+			objectionProceeding: '/apps/dossiq/bezwaren/{uuid}',
+			proposal: '/apps/dossiq/voorstellen/{uuid}',
+			beroep: '/apps/dossiq/beroepen/{uuid}',
 		}
 
 		const expectedRoutes = {

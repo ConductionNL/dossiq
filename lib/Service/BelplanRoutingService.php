@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Belplan Routing Service.
+ * Dossiq Belplan Routing Service.
  *
  * Datagedreven inbound-telephony routing: resolves the active belplan for a
  * dialed number, maps a keuzemenu selection to a vaardigheid, and picks the
@@ -10,7 +10,7 @@
  * escalatie-flag.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,17 +21,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -171,7 +171,7 @@ class BelplanRoutingService {
 			$results = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['_limit' => 200]);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to fetch specialist beschikbaarheid: ' . $e->getMessage(),
+				'Dossiq: failed to fetch specialist beschikbaarheid: ' . $e->getMessage(),
 				['app' => Application::APP_ID],
 			);
 			return [];
@@ -291,7 +291,7 @@ class BelplanRoutingService {
 			$results = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['_limit' => 200]);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to load belplannen: ' . $e->getMessage(),
+				'Dossiq: failed to load belplannen: ' . $e->getMessage(),
 				['app' => Application::APP_ID],
 			);
 			return [];

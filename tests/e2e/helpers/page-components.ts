@@ -1,13 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Route constants NAMED AFTER THE COMPONENT THAT RENDERS THEM.
  *
  * Why the identifier matters
  * -------------------------
- * A spec that navigates to `/verwerkingen` really does drive
- * `src/views/admin/VerwerkingenOverview.vue`, but nothing in the spec SAYS so,
+ * A spec that navigates to `/my-work` really does drive
+ * `src/views/MyWorkCards.vue`, but nothing in the spec SAYS so,
  * so neither a reader nor a tool can tell which screen the test covers. The
  * link used to be written in a comment — and a comment is not a reference:
  * hydra gate-26 (visual-coverage) reads the e2e corpus through
@@ -17,7 +17,7 @@
  *
  * Binding the route to a constant whose IDENTIFIER is the component's file
  * stem fixes both halves at once: the spec reads as "navigate to the
- * VerwerkingenOverview screen", and the reference survives comment-masking
+ * MyWorkCards screen", and the reference survives comment-masking
  * because it is executable code the spec actually evaluates.
  *
  * Scope: only screens that an existing spec in this suite genuinely drives.
@@ -35,7 +35,7 @@
  * an assumption.
  *
  * Routes are app-relative; the app is HISTORY-mode, so `navToRoute()` /
- * `page.goto()` prefix them with `/index.php/apps/procest`.
+ * `page.goto()` prefix them with `/index.php/apps/dossiq`.
  */
 
 /** `src/views/CasesOnMapView.vue` — the Cases map view (manifest page `CaseMap`). */
@@ -44,25 +44,32 @@ export const CasesOnMapView = '/map'
 /** `src/views/MyWorkCards.vue` — the personal workload cards (manifest page `MyWork`). */
 export const MyWorkCards = '/my-work'
 
-/** `src/views/admin/VerwerkingenOverview.vue` — the AVG processing-activity register. */
-export const VerwerkingenOverview = '/verwerkingen'
-
 /** `src/views/workflow-board/WorkflowBoard.vue` — the kanban status board. */
 export const WorkflowBoard = '/workflow-board'
 
-/** `src/views/settings/SubstitutionSettings.vue` — self-service vervanging (manifest page `SubstitutionSettings`). */
-export const SubstitutionSettings = '/substitution'
+/**
+ * `src/views/settings/SubstitutionSettings.vue` — self-service vervanging.
+ * Retired as an app page by page-topology-cleanup (B4); it is now a PERSONAL
+ * SETTING, so this is an absolute Nextcloud settings path, not an app route.
+ */
+export const SubstitutionPersonalSettings = '/settings/user/dossiq'
 
 /** `src/views/admin/SubstitutionAdmin.vue` — the coordinator substitution console (manifest page `SubstitutionAdmin`). */
 export const SubstitutionAdmin = '/substitution-admin'
 
-/** `src/views/dashboard/ProcessMiningDashboard.vue` — bottleneck analysis; renders `<h2>Process Mining</h2>`. */
+/** Manifest `type: "dashboard"` page — bottleneck analysis; heading comes from the page title, widgets from `src/views/processMining/`. */
 export const ProcessMiningDashboard = '/process-mining'
 
-/** `src/views/dashboard/TenantOnboardingDashboard.vue` — SaaS tenant onboarding; renders `<h2>Tenant onboarding</h2>`. */
-export const TenantOnboardingDashboard = '/tenant-onboarding'
+/**
+ * SaaS tenant onboarding. Retired as an app page by page-topology-cleanup (B3);
+ * it is now a section inside the ADMIN settings surface.
+ */
+// The Nextcloud admin-settings SECTION id, which follows the app id — not the
+// OpenRegister register slug, which is frozen at `procest` and must not move
+// with it (see REGISTER in fixtures.ts).
+export const TenantOnboardingAdminSettings = '/settings/admin/dossiq'
 
-/** `src/views/dashboard/TermijnDashboard.vue` — AWB termijnbewaking KPIs; renders `<h2>Deadline monitoring</h2>`. */
+/** Manifest `type: "dashboard"` page — AWB termijnbewaking KPIs + quarterly/annual reports; heading comes from the page title, widgets from `src/views/termijn/`. */
 export const TermijnDashboard = '/termijn-dashboard'
 
 /**
@@ -106,7 +113,7 @@ export const PublicFederatedTransferPage =
  * on length — and no consultation carries it, so
  * `consultationPublic#publicResponseGet` answers a uniform 404 and the page
  * lands in its `loadError` branch deterministically, with no fixture to seed.
- * Measured against a running instance (procest 0.3.9, 2026-08-17): a 44-char
+ * Measured against a running instance (dossiq 0.3.9, 2026-08-17): a 44-char
  * unknown token and a 5-char token both answer
  * `404 {"error":"Invalid or expired token"}`, while a token that a seeded
  * consultation really carries answers 200 with that consultation — see

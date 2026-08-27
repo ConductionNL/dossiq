@@ -1,4 +1,4 @@
-# Procest -- Final Review
+# Dossiq -- Final Review
 
 **Date:** 2026-03-21
 **Version:** 0.1.10
@@ -15,7 +15,7 @@
 | Active changes | 0 |
 | Archived changes | 50 |
 
-All changes have been processed and archived. No active changes remain in `openspec/changes/`. The 43 specs cover the full breadth of Procest functionality: core case management, ZGW API mapping, dashboard, task management, roles/decisions, admin settings, i18n, multi-tenant SaaS, Prometheus metrics, and many domain-specific modules (VTH, WOO, DSO, legesberekening, complaint management, etc.).
+All changes have been processed and archived. No active changes remain in `openspec/changes/`. The 43 specs cover the full breadth of Dossiq functionality: core case management, ZGW API mapping, dashboard, task management, roles/decisions, admin settings, i18n, multi-tenant SaaS, Prometheus metrics, and many domain-specific modules (VTH, WOO, DSO, legesberekening, complaint management, etc.).
 
 **Verdict: PASS**
 
@@ -51,22 +51,22 @@ All 33 tests pass with 94 assertions across 4 test classes:
 
 ## 4. Browser Testing
 
-### 4.1 Dashboard (`/apps/procest/dashboard`)
+### 4.1 Dashboard (`/apps/dossiq/dashboard`)
 - **Status: RENDERS** -- Loads correctly with KPI cards (Open Cases, Overdue, Completed This Month, My Tasks), "Cases by Status" chart, "My Work" preview, and quick actions (New Case, New Task, Refresh).
 - **Note:** Data fetch fails with 404s from OpenRegister (registers 92, schemas 197/198/204/205 not found in current environment). This is an environment configuration issue, not a code bug -- the schemas need to be seeded via the admin settings "Re-import configuration" button.
 
-### 4.2 My Work (`/apps/procest/my-work`)
+### 4.2 My Work (`/apps/dossiq/my-work`)
 - **Status: RENDERS** -- Shows tabbed view (All/Cases/Tasks) with counts, "Show completed" toggle, and empty state with loading indicator.
 
-### 4.3 Cases (`/apps/procest/cases`)
+### 4.3 Cases (`/apps/dossiq/cases`)
 - **Status: RENDERS** -- Cards/Table toggle, Add Item button, Actions menu, "No items found" empty state.
 - **Console error:** `Object type "case" is not registered in the object store` -- the object store types are not initialized because the register/schemas are not configured in this environment.
 
-### 4.4 Tasks (`/apps/procest/tasks`)
+### 4.4 Tasks (`/apps/dossiq/tasks`)
 - **Status: RENDERS** -- Same layout as Cases with Cards/Table toggle, Add Item, Actions, and empty state.
 - **Console error:** `Object type "task" is not registered` -- same root cause as Cases.
 
-### 4.5 Admin Settings (`/settings/admin/procest`)
+### 4.5 Admin Settings (`/settings/admin/dossiq`)
 - **Status: FULLY RENDERS** -- Four sections:
   1. **Version Information** -- v0.1.10, "Up to date" badge, "Re-import configuration" button
   2. **Configuration** -- 9 fields: Register (92), Case schema (204), Task schema (205), Status schema (empty), Role schema (206), Result schema (207), Decision schema (209), Case type schema (197), Status type schema (198)
@@ -74,13 +74,13 @@ All 33 tests pass with 94 assertions across 4 test classes:
   4. **ZGW API Mapping** -- Table with 12 ZGW resource types (zaak, zaaktype, status, statustype, resultaat, resultaattype, rol, roltype, eigenschap, besluit, besluittype, informatieobjecttype) all showing "Not configured" with Edit/Reset buttons
 
 ### 4.6 Root Route Bug (PERSISTS FROM PREVIOUS REVIEW)
-- **CRITICAL:** Navigating to `/apps/procest/` returns HTTP 404.
+- **CRITICAL:** Navigating to `/apps/dossiq/` returns HTTP 404.
 - **Root cause:** In `appinfo/routes.php`, two routes share the name `dashboard#page`:
   - Line 8: `['name' => 'dashboard#page', 'url' => '/', 'verb' => 'GET']`
   - Line 116: `['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']]`
 
   Symfony router uses route names as keys, so the second entry overwrites the first. The catch-all requires `path` to match `.+` (one or more characters), which does not match an empty path.
-- **Impact:** The Procest navigation icon in the Nextcloud header links to `/apps/procest/` which 404s. Users must navigate to `/apps/procest/dashboard` manually.
+- **Impact:** The Dossiq navigation icon in the Nextcloud header links to `/apps/dossiq/` which 404s. Users must navigate to `/apps/dossiq/dashboard` manually.
 - **Fix:** Either rename the first route to a distinct name (e.g., `dashboard#index`) or change the catch-all pattern from `.+` to `.*`.
 
 **Verdict: PARTIAL PASS -- root route 404 is a real bug (unchanged since previous review)**
@@ -92,7 +92,7 @@ All 33 tests pass with 94 assertions across 4 test classes:
 | Endpoint | Status | Notes |
 |----------|--------|-------|
 | `GET /api/health` | 200 | `{"status":"ok","version":"0.1.10","checks":{"database":"ok","filesystem":"ok"}}` |
-| `GET /api/metrics` | 200 | Prometheus format: procest_info, procest_up, cases_total, cases_overdue_total, tasks_total, tasks_overdue_total |
+| `GET /api/metrics` | 200 | Prometheus format: dossiq_info, dossiq_up, cases_total, cases_overdue_total, tasks_total, tasks_overdue_total |
 | `GET /api/zgw/zaken/v1/zaken` | 200 | ZGW paginated response `{"count":0,"next":null,"previous":null,"results":[]}` |
 | `GET /api/zgw/catalogi/v1/zaaktypen` | 403 | ZGW JWT auth required (middleware working correctly) |
 | `GET /api/settings` | 403 | CSRF check (expected for curl without session token) |
@@ -179,7 +179,7 @@ Located in `tests/zgw/` with run scripts, environment config, and 8 result files
 ## 9. Issues Found
 
 ### CRITICAL
-1. **Root route returns 404** -- `/apps/procest/` gives 404 due to duplicate route name `dashboard#page` in `appinfo/routes.php` (lines 8 and 116). The catch-all `/{path}` with `.+` requirement overwrites the root `/` route. Users clicking the Procest nav icon in the Nextcloud header get a "Page not found" error. **Persists from previous review.**
+1. **Root route returns 404** -- `/apps/dossiq/` gives 404 due to duplicate route name `dashboard#page` in `appinfo/routes.php` (lines 8 and 116). The catch-all `/{path}` with `.+` requirement overwrites the root `/` route. Users clicking the Dossiq nav icon in the Nextcloud header get a "Page not found" error. **Persists from previous review.**
 
 ### WARNING
 2. **Object store types not registered** -- Console errors `Object type "case" is not registered in the object store` and `Object type "task" is not registered` on Cases and Tasks pages. Root cause: the `createObjectStore` calls depend on register/schema IDs that reference schemas not present in this test environment. Running "Re-import configuration" from admin settings should resolve this.
@@ -208,7 +208,7 @@ Located in `tests/zgw/` with run scripts, environment config, and 8 result files
 | Browser: My Work | 8/10 | Renders with filters and toggle |
 | Browser: Cases/Tasks | 7/10 | UI renders, object types not registered (env issue) |
 | Browser: Admin Settings | 9/10 | Full settings page with 4 sections |
-| Browser: Root route | 3/10 | 404 on `/apps/procest/` -- critical navigation bug |
+| Browser: Root route | 3/10 | 404 on `/apps/dossiq/` -- critical navigation bug |
 | API endpoints | 9/10 | Health, metrics, ZGW APIs all respond correctly |
 | Documentation | 7/10 | 7 feature docs present; screenshots incomplete |
 | Architecture | 9/10 | Comprehensive ZGW implementation, clean separation |

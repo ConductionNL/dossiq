@@ -4,7 +4,7 @@
  * InspectionChecklistController Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,11 +22,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\InspectionChecklistController;
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\InspectionChecklistService;
+use OCA\Dossiq\Controller\InspectionChecklistController;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\InspectionChecklistService;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -38,7 +38,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for InspectionChecklistController.
  *
- * @covers \OCA\Procest\Controller\InspectionChecklistController
+ * @covers \OCA\Dossiq\Controller\InspectionChecklistController
  */
 class InspectionChecklistControllerTest extends TestCase {
 
@@ -91,7 +91,7 @@ class InspectionChecklistControllerTest extends TestCase {
 		$this->caseAccessGuard = $this->createMock(CaseAccessGuard::class);
 
 		$this->controller = new InspectionChecklistController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			checklistService: $this->inspectionChecklistService,
 			userSession: $this->userSession,

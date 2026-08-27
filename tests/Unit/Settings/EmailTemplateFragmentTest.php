@@ -4,14 +4,14 @@
  * Email Template Register Fragment + Settings Unit Tests
  *
  * Verifies that the register.d/35-email-templates.json fragment appends its
- * three Dutch seed objects onto the procest monolith via the ADR-037
+ * three Dutch seed objects onto the dossiq monolith via the ADR-037
  * deep-merge loader, that the emailTemplate schema is the only new email
  * schema (no emailMessage/emailThread), and that EmailSettings scopes the
  * shared-mailbox config keys for delegated admins without leaking the
  * sensitive password key.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Settings
+ * @package  OCA\Dossiq\Tests\Unit\Settings
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,16 +22,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Settings;
+namespace OCA\Dossiq\Tests\Unit\Settings;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Settings\RegisterFragmentMerger;
-use OCA\Procest\Settings\EmailSettings;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
+use OCA\Dossiq\Settings\EmailSettings;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Services\IInitialState;
 use PHPUnit\Framework\TestCase;
@@ -39,10 +39,10 @@ use PHPUnit\Framework\TestCase;
 /**
  * Integration-style unit tests for the case-email-integration seeds + settings.
  *
- * @covers \OCA\Procest\Service\SettingsService
- * @covers \OCA\Procest\Settings\EmailSettings
+ * @covers \OCA\Dossiq\Service\SettingsService
+ * @covers \OCA\Dossiq\Settings\EmailSettings
  *
- * @uses \OCA\Procest\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  *
  * @spec openspec/changes/case-email-integration/tasks.md#T03
  * @spec openspec/changes/case-email-integration/tasks.md#T10
@@ -72,7 +72,7 @@ class EmailTemplateFragmentTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$base = json_decode(
-			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/procest_register.json'),
+			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'),
 			true
 		);
 
@@ -103,7 +103,7 @@ class EmailTemplateFragmentTest extends TestCase {
 	}//end testSeedObjectsAppended()
 
 	/**
-	 * Each seed targets the emailTemplate schema in the procest register, has
+	 * Each seed targets the emailTemplate schema in the dossiq register, has
 	 * a Dutch name, version 1, and is active.
 	 *
 	 * @return void
@@ -116,7 +116,7 @@ class EmailTemplateFragmentTest extends TestCase {
 				continue;
 			}
 
-			$this->assertSame('procest', $self['register'] ?? null);
+			$this->assertSame('dossiq', $self['register'] ?? null);
 			$this->assertSame(1, $object['version'] ?? null);
 			$this->assertTrue($object['isActive'] ?? false);
 			$this->assertNotEmpty($object['subject'] ?? '');
@@ -153,7 +153,7 @@ class EmailTemplateFragmentTest extends TestCase {
 			$this->createMock(IInitialState::class),
 		);
 
-		$this->assertSame('procest', $settings->getSection());
+		$this->assertSame('dossiq', $settings->getSection());
 
 		$authorized = $settings->getAuthorizedAppConfig();
 		$this->assertArrayHasKey(Application::APP_ID, $authorized);

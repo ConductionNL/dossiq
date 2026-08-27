@@ -1,8 +1,8 @@
-# Procest
+# Dossiq
 
-> Procest is an open-source case-management app for the Nextcloud workspace, built for Dutch government organisations.
+> Dossiq is an open-source case-management app for the Nextcloud workspace, built for Dutch government organisations.
 
-Procest is an open-source case-management app for the Nextcloud workspace, built for Dutch government organisations. Case workers list and filter cases, drive them through ZGW-compliant case-type definitions, and pick up tasks from a personal work queue. The app maps ZGW API fields onto OpenRegister, so cases interoperate with national exchange standards without a second database. It targets zaakgericht werken scenarios such as complaints, consultations, and WOO disclosure requests. Released under EUPL-1.2 and maintained by Conduction since 2019.
+Dossiq is an open-source case-management app for the Nextcloud workspace, built for Dutch government organisations. Case workers list and filter cases, drive them through ZGW-compliant case-type definitions, and pick up tasks from a personal work queue. The app maps ZGW API fields onto OpenRegister, so cases interoperate with national exchange standards without a second database. It targets zaakgericht werken scenarios such as complaints, consultations, and WOO disclosure requests. Released under EUPL-1.2 and maintained by Conduction since 2019.
 
 ## Docs
 
@@ -12,8 +12,8 @@ Procest is an open-source case-management app for the Nextcloud workspace, built
 ## Optional
 
 - [Install](https://www.conduction.nl/install): self-host on your Nextcloud instance.
-- [Source code](https://github.com/ConductionNL/procest): repository and issue tracker.
-- [App page](https://www.conduction.nl/apps/procest): product positioning on conduction.nl.
+- [Source code](https://github.com/ConductionNL/dossiq): repository and issue tracker.
+- [App page](https://www.conduction.nl/apps/dossiq): product positioning on conduction.nl.
 
 ## Contact
 

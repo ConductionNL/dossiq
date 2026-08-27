@@ -4,7 +4,7 @@
  * ConfiguredRegistryService Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Support
+ * @package  OCA\Dossiq\Tests\Unit\Service\Support
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,10 +22,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Support;
+namespace OCA\Dossiq\Tests\Unit\Service\Support;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\ConfiguredRegistryService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ConfiguredRegistryService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -33,7 +33,7 @@ use RuntimeException;
 /**
  * Unit tests for ConfiguredRegistryService.
  *
- * @covers \OCA\Procest\Service\Support\ConfiguredRegistryService
+ * @covers \OCA\Dossiq\Service\Support\ConfiguredRegistryService
  */
 class ConfiguredRegistryServiceTest extends TestCase {
 
@@ -241,14 +241,14 @@ class ConfiguredRegistryServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testSlugIdsUseTheSlugBridge(): void {
-		$this->withConfig('procest', 'organisatieRol');
+		$this->withConfig('dossiq', 'organisatieRol');
 		$stub = $this->objectService([['id' => 'a']]);
 		$service = $this->subject($stub);
 
 		$rows = $service->list('organisatie_rol_schema');
 
 		$this->assertCount(1, $rows);
-		$this->assertSame(['search', 'procest', 'organisatieRol'], array_slice($stub->calls[0], 0, 3));
+		$this->assertSame(['search', 'dossiq', 'organisatieRol'], array_slice($stub->calls[0], 0, 3));
 	}//end testSlugIdsUseTheSlugBridge()
 
 	/**

@@ -31,11 +31,11 @@
                 "version": "1.0.0",
                 "x-schema-org": "schema:Application",
                 "title": "Subsidieaanvraag",
-                "description": "A grant application; extends the procest case lifecycle.",
+                "description": "A grant application; extends the dossiq case lifecycle.",
                 "type": "object",
                 "required": ["subsidyScheme", "requestedAmount"],
                 "properties": {
-                    "case": { "title": "Case", "type": "string", "format": "uuid", "$ref": "case", "onDelete": "SET_NULL", "description": "Linked procest case" },
+                    "case": { "title": "Case", "type": "string", "format": "uuid", "$ref": "case", "onDelete": "SET_NULL", "description": "Linked dossiq case" },
                     "aanvraagnummer": { "title": "Application Number", "type": "string", "description": "Auto-generated identifier", "facetable": true },
                     "subsidyScheme": { "title": "Grant Regulation", "type": "string", "format": "uuid", "$ref": "subsidieRegeling", "description": "The grant program applied under" },
                     "requestedAmount": { "title": "Requested Amount", "type": "number", "description": "Requested grant amount in EUR" },
@@ -210,7 +210,7 @@
             }
         },
         "registers": {
-            "procest": {
+            "dossiq": {
                 "schemas": [
                     "subsidieRegeling",
                     "subsidieAanvraag",
@@ -227,7 +227,7 @@
         "objects": [
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "subsidieRegeling",
                     "slug": "regeling-innovatiefonds-2026"
                 },
@@ -245,7 +245,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "subsidieRegeling",
                     "slug": "regeling-cultuur-subsidie-2026"
                 },

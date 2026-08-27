@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Work Queue Service
+ * Dossiq Work Queue Service
  *
  * Computes a deterministic urgency score for a case handler's open cases
  * and tasks (deadline proximity, priority, case age), and a per-handler
  * open-case workload summary for coordinators.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,17 +19,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**

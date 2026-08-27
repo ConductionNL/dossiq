@@ -1,16 +1,16 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 <!--
   BesluitvormingLeafTab — consumes decidesk's "Besluitvorming" (decisions)
-  integration leaf on the procest case-detail sidebar.
+  integration leaf on the dossiq case-detail sidebar.
 
-  "decidesk owns it; procest shows a leaf" (ADR-019 / ADR-022). decidesk
+  "decidesk owns it; dossiq shows a leaf" (ADR-019 / ADR-022). decidesk
   registers a `decidesk-decisions` provider on the shared OpenRegister
   integration registry (`window.OCA.OpenRegister.integrations`) via a
   global init script that loads on every Nextcloud page. This wrapper
   resolves that provider's `tab` component at render time and forwards the
   host case's `{ register, schema, objectId }` as the integration context.
 
-  Procest's host `<CnObjectSidebar>` runs with `:use-registry="false"`
+  Dossiq's host `<CnObjectSidebar>` runs with `:use-registry="false"`
   (manifest `component:`-based tabs), so the registry-driven tab strip is
   off; this thin wrapper is how a single registry leaf is surfaced through
   the `sidebarTabs[].component` path without flipping the whole sidebar to
@@ -127,7 +127,7 @@ export default {
 		 * @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
 		 */
 		unavailableTitle() {
-			return t('procest', 'Besluitvorming unavailable')
+			return t('dossiq', 'Besluitvorming unavailable')
 		},
 
 		/**
@@ -138,7 +138,7 @@ export default {
 		 */
 		unavailableDescription() {
 			return t(
-				'procest',
+				'dossiq',
 				'The decidesk app provides decision-making for this case. Install or enable decidesk to manage proposals, advice and decisions here.',
 			)
 		},

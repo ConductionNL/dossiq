@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Mock Signing Adapter.
+ * Dossiq Mock Signing Adapter.
  *
  * Deterministic stand-in for the OpenConnector eIDAS-TSP signing flow. Used
  * until the real TSP adapter (task T23) is available. Returns stable
@@ -9,7 +9,7 @@
  * transition and audit export are testable in isolation.
  *
  * @category Service
- * @package  OCA\Procest\Service\Beschikking
+ * @package  OCA\Dossiq\Service\Beschikking
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,14 +20,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T23
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Beschikking;
+namespace OCA\Dossiq\Service\Beschikking;
 
 use DateTimeImmutable;
 

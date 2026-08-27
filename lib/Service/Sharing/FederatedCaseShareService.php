@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest federated (OCM) case-share service.
+ * Dossiq federated (OCM) case-share service.
  *
  * Shares a purpose-built, field-scoped SNAPSHOT of a case with a remote org
  * over OpenRegister's OCM federation leaf. OpenRegister's `scope: object`
@@ -24,7 +24,7 @@
  * everywhere rather than eventually consistent.
  *
  * @category Service
- * @package  OCA\Procest\Service\Sharing
+ * @package  OCA\Dossiq\Service\Sharing
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -32,7 +32,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -42,12 +42,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Sharing;
+namespace OCA\Dossiq\Service\Sharing;
 
 use DateTime;
-use OCA\Procest\Service\CaseSharingService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\TenantAuditTrailService;
+use OCA\Dossiq\Service\CaseSharingService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TenantAuditTrailService;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -184,7 +184,7 @@ class FederatedCaseShareService {
 		);
 
 		$this->logger->info(
-			'Procest: Federated case share created',
+			'Dossiq: Federated case share created',
 			['caseId' => $caseId, 'remoteCloudId' => $remoteCloudId, 'shareId' => $shareUuid]
 		);
 
@@ -194,7 +194,7 @@ class FederatedCaseShareService {
 	/**
 	 * Revoke a federated case share. Sets the OR `FederatedShare.status` to
 	 * 'revoked' — the single source of truth every downstream check
-	 * (OR's own serving endpoint, procest's own token checks) consults, so
+	 * (OR's own serving endpoint, dossiq's own token checks) consults, so
 	 * revocation is immediate everywhere.
 	 *
 	 * @param string $shareId The UUID of the caseFederatedShare to revoke
@@ -256,7 +256,7 @@ class FederatedCaseShareService {
 			]
 		);
 
-		$this->logger->info('Procest: Federated case share revoked', ['shareId' => $shareId, 'revokedBy' => $userId]);
+		$this->logger->info('Dossiq: Federated case share revoked', ['shareId' => $shareId, 'revokedBy' => $userId]);
 
 		if (is_array($result) === true) {
 			return $result;

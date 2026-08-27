@@ -10,7 +10,7 @@
  * createMock() to build a usable double.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Stubs
+ * @package  OCA\Dossiq\Tests\Stubs
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,7 +19,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
@@ -27,7 +27,7 @@ declare(strict_types=1);
 namespace OCP\AppFramework {
 	if (class_exists(\OCP\AppFramework\App::class) === false) {
 		/**
-		 * Minimal App stub so OCA\Procest\AppInfo\Application (which extends it
+		 * Minimal App stub so OCA\Dossiq\AppInfo\Application (which extends it
 		 * only to expose APP_ID) can be autoloaded in the unit-test runtime.
 		 */
 		class App {

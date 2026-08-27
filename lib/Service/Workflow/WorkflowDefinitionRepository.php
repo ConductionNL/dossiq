@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Workflow Definition Repository.
+ * Dossiq Workflow Definition Repository.
  *
  * Every OpenRegister read and write the workflow-definition lifecycle
  * performs. Split out of WorkflowDefinitionService so that service keeps only
@@ -18,7 +18,7 @@
  * workflow definition and the referential integrity around it.
  *
  * @category Service
- * @package  OCA\Procest\Service\Workflow
+ * @package  OCA\Dossiq\Service\Workflow
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,7 +26,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -36,11 +36,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Workflow;
+namespace OCA\Dossiq\Service\Workflow;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -168,7 +168,7 @@ class WorkflowDefinitionRepository {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to load workflow definition',
+				'Dossiq: failed to load workflow definition',
 				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return null;
@@ -202,7 +202,7 @@ class WorkflowDefinitionRepository {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to list workflow definitions for caseType',
+				'Dossiq: failed to list workflow definitions for caseType',
 				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return [];
@@ -285,7 +285,7 @@ class WorkflowDefinitionRepository {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to save workflow definition',
+				'Dossiq: failed to save workflow definition',
 				['app' => Application::APP_ID, 'uuid' => $uuid, 'exception' => $e->getMessage()]
 			);
 			return null;
@@ -322,7 +322,7 @@ class WorkflowDefinitionRepository {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to pin caseType.workflowDefinition',
+				'Dossiq: failed to pin caseType.workflowDefinition',
 				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 			);
 		}
@@ -351,7 +351,7 @@ class WorkflowDefinitionRepository {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to load case for definition lookup',
+				'Dossiq: failed to load case for definition lookup',
 				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return null;
@@ -384,7 +384,7 @@ class WorkflowDefinitionRepository {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to list statusTypes for caseType',
+				'Dossiq: failed to list statusTypes for caseType',
 				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return [];
@@ -433,13 +433,13 @@ class WorkflowDefinitionRepository {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Procest: failed to count open cases for caseType',
+				'Dossiq: failed to count open cases for caseType',
 				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return true;
 		}
 
-		return (is_array($results) === true && count($results) > 0);
+		return (count($results) > 0);
 	}//end hasCasesFor()
 
 	/**

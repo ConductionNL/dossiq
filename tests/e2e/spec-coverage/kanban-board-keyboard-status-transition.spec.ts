@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Gate-19 spec-coverage tests for kanban-board-keyboard-status-transition
@@ -33,7 +33,7 @@
  * assertions target THIS run's card (never another run's or an instance's
  * demo data) and `afterAll` deletes exactly what this run created.
  *
- * Note: navigation is `page.goto('/index.php/apps/procest/workflow-board')` —
+ * Note: navigation is `page.goto('/index.php/apps/dossiq/workflow-board')` —
  * the identical path `spec-coverage/workflow-operations.spec.ts:18` uses to
  * reach the same board, and that test passes.
  */
@@ -108,11 +108,11 @@ test.describe('Workflow Board keyboard status transition', () => {
 		// child-first cleanup deletes them out from under a case that is still
 		// live — leaving a DANGLING reference. Observed in CI run
 		// 31964165472: the dashboard's grouped aggregations
-		// (`aggregations/procest/case/grouped?groupBy=status|caseType`) still
+		// (`aggregations/dossiq/case/grouped?groupBy=status|caseType`) still
 		// return the orphaned case's group keys, the chart widget resolves each
 		// key by id, and two of those lookups 404. That reddened
 		// `spec-coverage/ui-pages.spec.ts:55` ("dashboard mounts without
-		// procest console errors"), which is a test that was doing its job.
+		// dossiq console errors"), which is a test that was doing its job.
 		//
 		// So the referential integrity of the surviving case is what has to be
 		// preserved. The residue is small, RUN_PREFIX-tagged and consistent,
@@ -136,7 +136,7 @@ test.describe('Workflow Board keyboard status transition', () => {
 	 * @return The `.case-card` element rendering the seeded case.
 	 */
 	async function openBoardAndFindSeededCard(page: Page): Promise<Locator> {
-		await page.goto('/index.php/apps/procest/workflow-board')
+		await page.goto('/index.php/apps/dossiq/workflow-board')
 		await dismissSupportDialog(page)
 
 		// The board renders its heading unconditionally; the columns and cards

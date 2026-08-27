@@ -1,5 +1,5 @@
 OC.L10N.register(
-    "procest",
+    "dossiq",
     {
     "Add step" : "Προσθήκη βήματος",
     "Address" : "Διεύθυνση",
@@ -382,8 +382,8 @@ OC.L10N.register(
     "Voorstel heeft geen actieve stap" : "Το voorstel δεν έχει ενεργό βήμα",
     "Wanneer is deze route van toepassing?" : "Πότε ισχύει αυτή η διαδρομή;",
     "Weet u zeker dat u de route \"{name}\" wilt verwijderen?" : "Είστε βέβαιοι ότι θέλετε να διαγράψετε τη διαδρομή \"{name}\";",
-    "Welcome to Procest! Get started by creating your first case or task using the buttons above." : "Καλώς ορίσατε στο Procest! Ξεκινήστε δημιουργώντας την πρώτη σας υπόθεση ή εργασία χρησιμοποιώντας τα παραπάνω κουμπιά.",
-    "Welcome to Procest! Get started by creating your first case type in Settings." : "Καλώς ορίσατε στο Procest! Ξεκινήστε δημιουργώντας τον πρώτο σας τύπο υπόθεσης στις Ρυθμίσεις.",
+    "Welcome to Dossiq! Get started by creating your first case or task using the buttons above." : "Καλώς ορίσατε στο Dossiq! Ξεκινήστε δημιουργώντας την πρώτη σας υπόθεση ή εργασία χρησιμοποιώντας τα παραπάνω κουμπιά.",
+    "Welcome to Dossiq! Get started by creating your first case type in Settings." : "Καλώς ορίσατε στο Dossiq! Ξεκινήστε δημιουργώντας τον πρώτο σας τύπο υπόθεσης στις Ρυθμίσεις.",
     "When heeftAlleAutorisaties is false, autorisaties must be specified." : "Όταν το heeftAlleAutorisaties είναι false, πρέπει να προσδιοριστούν τα autorisaties.",
     "When heeftAlleAutorisaties is true, autorisaties must not be specified. When heeftAlleAutorisaties is false, autorisaties must be specified." : "Όταν το heeftAlleAutorisaties είναι true, τα autorisaties δεν πρέπει να προσδιορίζονται. Όταν το heeftAlleAutorisaties είναι false, πρέπει να προσδιοριστούν τα autorisaties.",
     "Why is an extension needed?" : "Γιατί απαιτείται παράταση;",

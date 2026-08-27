@@ -6,7 +6,7 @@ The case dashboard view shows the detail page for an individual case, accessible
 
 ## Overview
 
-The case detail view is accessed via the URL pattern `/apps/procest/cases/{uuid}`. When navigating to a specific case (e.g., from the My Work list), the application loads the case detail page.
+The case detail view is accessed via the URL pattern `/apps/dossiq/cases/{uuid}`. When navigating to a specific case (e.g., from the My Work list), the application loads the case detail page.
 
 ## Current State
 

@@ -3,11 +3,11 @@
 /**
  * ConsultationService Unit Tests
  *
- * Tests for the Procest ConsultationService covering CRUD, status machine,
+ * Tests for the Dossiq ConsultationService covering CRUD, status machine,
  * dependency cycle validation, blocking consultations, and extension requests.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,13 +23,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\AdviceDelegationService;
-use OCA\Procest\Service\Consultation\ConsultationDependencyGraph;
-use OCA\Procest\Service\Consultation\ConsultationRepository;
-use OCA\Procest\Service\ConsultationService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\AdviceDelegationService;
+use OCA\Dossiq\Service\Consultation\ConsultationDependencyGraph;
+use OCA\Dossiq\Service\Consultation\ConsultationRepository;
+use OCA\Dossiq\Service\ConsultationService;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -97,10 +97,10 @@ interface ConsultationObjectServiceStub {
 /**
  * Unit tests for ConsultationService.
  *
- * @covers \OCA\Procest\Service\ConsultationService
+ * @covers \OCA\Dossiq\Service\ConsultationService
  *
- * @uses \OCA\Procest\Service\Consultation\ConsultationDependencyGraph
- * @uses \OCA\Procest\Service\Consultation\ConsultationRepository
+ * @uses \OCA\Dossiq\Service\Consultation\ConsultationDependencyGraph
+ * @uses \OCA\Dossiq\Service\Consultation\ConsultationRepository
  */
 class ConsultationServiceTest extends TestCase {
 

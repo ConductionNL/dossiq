@@ -1,12 +1,12 @@
 /**
- * SPDX-FileCopyrightText: 2026 Conduction / Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Conduction / Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Unit tests for the case-list export URL builder
  * (src/utils/caseExportHelpers.js), consumed by
  * src/components/export/CaseListExportAction.vue.
  *
- * Procest's Vitest project runs in the `node` environment with no Vue mount
+ * Dossiq's Vitest project runs in the `node` environment with no Vue mount
  * harness installed (see vitest.config.js — no @vue/test-utils / jsdom /
  * vue-loader plugin registered), so the `.vue` single-file component cannot
  * be full-mounted here (see tests/vitest/deelzaakComponentLogic.spec.js for
@@ -32,12 +32,12 @@ import {
 	CASE_EXPORT_ENDPOINT,
 } from '../../src/utils/caseExportHelpers.js'
 
-const EXPECTED_BASE = '/index.php/apps/openregister/api/objects/procest/case/export'
+const EXPECTED_BASE = '/index.php/apps/openregister/api/objects/dossiq/case/export'
 
 describe('CASE_EXPORT_ENDPOINT', () => {
-	it('points at the (procest, case) OpenRegister export leaf', () => {
+	it('points at the (dossiq, case) OpenRegister export leaf', () => {
 		expect(CASE_EXPORT_ENDPOINT).toBe(
-			'/apps/openregister/api/objects/procest/case/export',
+			'/apps/openregister/api/objects/dossiq/case/export',
 		)
 	})
 })

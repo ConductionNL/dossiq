@@ -1,12 +1,12 @@
 /**
- * SPDX-FileCopyrightText: 2026 Conduction / Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Conduction / Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Unit tests for the WOZ lookup shim in src/services/wozApi.js.
  *
  * These assert the consumer contract from the brk-woz-register-adapters
- * change: every export delegates to procest's own
- * `/apps/procest/api/external/woz/*` routes (never wozwaardeloket.nl,
+ * change: every export delegates to dossiq's own
+ * `/apps/dossiq/api/external/woz/*` routes (never wozwaardeloket.nl,
  * which has no programmatic API — see design.md Decision 2), forwards
  * optional huisletter/huisnummertoevoeging only when present, and returns
  * the adapter's raw envelope (`{lookupStatus, wozObject, dormant, extras}`)
@@ -23,7 +23,7 @@ import {
 	lookupWozObject,
 } from '../../src/services/wozApi.js'
 
-const BASE = '/index.php/apps/procest/api/external/woz'
+const BASE = '/index.php/apps/dossiq/api/external/woz'
 
 /**
  * Build an axios-style success response.
@@ -39,7 +39,7 @@ describe('wozApi shim — endpoint routing', () => {
 		axios.get.mockReset()
 	})
 
-	it('lookupWozValue delegates to the procest value route with postcode + huisnummer', async () => {
+	it('lookupWozValue delegates to the dossiq value route with postcode + huisnummer', async () => {
 		const envelope = {
 			lookupStatus: 'FOUND',
 			wozObject: { wozobjectnummer: '05180000001234' },
@@ -100,7 +100,7 @@ describe('wozApi shim — endpoint routing', () => {
 		expect(config.params).not.toHaveProperty('huisnummertoevoeging')
 	})
 
-	it('lookupWozValueByNummeraanduiding delegates to the procest value route with nummeraanduidingId', async () => {
+	it('lookupWozValueByNummeraanduiding delegates to the dossiq value route with nummeraanduidingId', async () => {
 		const envelope = {
 			lookupStatus: 'FOUND',
 			wozObject: { wozobjectnummer: '05180000001234' },
@@ -117,7 +117,7 @@ describe('wozApi shim — endpoint routing', () => {
 		expect(result).toEqual(envelope)
 	})
 
-	it('lookupWozObject delegates to the procest object route with an encoded wozobjectnummer', async () => {
+	it('lookupWozObject delegates to the dossiq object route with an encoded wozobjectnummer', async () => {
 		const envelope = {
 			lookupStatus: 'FOUND',
 			wozObject: { waarde: 385000 },

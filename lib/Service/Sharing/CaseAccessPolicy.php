@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest case-access policy for the sharing surface.
+ * Dossiq case-access policy for the sharing surface.
  *
  * Answers "may this user act on this case?" for every share operation. Three
  * things grant access: the case names the user as assignee (single-valued or
@@ -20,7 +20,7 @@
  * never as a grant.
  *
  * @category Service
- * @package  OCA\Procest\Service\Sharing
+ * @package  OCA\Dossiq\Service\Sharing
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -28,7 +28,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -38,9 +38,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Sharing;
+namespace OCA\Dossiq\Service\Sharing;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
 /**

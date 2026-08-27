@@ -6,7 +6,7 @@ kind: config
 
 ## Why
 
-Procest shipped a standalone `StatusRecords` page (menu entry "Status history", relocated into the Reports group) that listed status-change records app-wide. But status/change history is inherently **per-case** context, and `CaseDetail` already surfaces it as a sidebar tab — an `audit-trail` tab titled "Change history". A separate top-level page is redundant navigation: it duplicates data the case detail already shows and adds a menu item that isn't a real workspace.
+Dossiq shipped a standalone `StatusRecords` page (menu entry "Status history", relocated into the Reports group) that listed status-change records app-wide. But status/change history is inherently **per-case** context, and `CaseDetail` already surfaces it as a sidebar tab — an `audit-trail` tab titled "Change history". A separate top-level page is redundant navigation: it duplicates data the case detail already shows and adds a menu item that isn't a real workspace.
 
 This change removes the standalone page and its menu entry, leaving the case-detail "Change history" audit-trail tab as the single, in-context surface for a case's history.
 

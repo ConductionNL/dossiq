@@ -1,14 +1,14 @@
 <template>
 	<NcDialog
 		v-if="show"
-		:name="t('procest', 'Send Mijn Overheid Message')"
+		:name="t('dossiq', 'Send Mijn Overheid Message')"
 		size="normal"
 		@close="$emit('close')">
 		<div class="compose-dialog">
 			<div class="form-group">
 				<NcTextField
 					:modelValue="form.bsn"
-					:label="t('procest', 'BSN (burgerservicenummer)')"
+					:label="t('dossiq', 'BSN (burgerservicenummer)')"
 					:error="!!errors.bsn"
 					@update:modelValue="(v) => (form.bsn = v)" />
 				<p v-if="errors.bsn" class="form-error">
@@ -19,7 +19,7 @@
 			<div class="form-group">
 				<NcTextField
 					:modelValue="form.subject"
-					:label="t('procest', 'Subject')"
+					:label="t('dossiq', 'Subject')"
 					:error="!!errors.subject"
 					@update:modelValue="(v) => (form.subject = v)" />
 				<p v-if="errors.subject" class="form-error">
@@ -29,16 +29,16 @@
 
 			<div class="form-group">
 				<label for="berichtenbox-compose-body">{{
-					t('procest', 'Message (plain text only)')
+					t('dossiq', 'Message (plain text only)')
 				}}</label>
 				<textarea
 					id="berichtenbox-compose-body"
 					v-model="form.body"
 					class="compose-dialog__body"
 					rows="8"
-					:placeholder="t('procest', 'Enter your message...')" />
+					:placeholder="t('dossiq', 'Enter your message...')" />
 				<small class="compose-dialog__char-count">
-					{{ form.body.length }} {{ t('procest', 'characters') }}
+					{{ form.body.length }} {{ t('dossiq', 'characters') }}
 				</small>
 				<p v-if="errors.body" class="form-error">
 					{{ errors.body }}
@@ -46,21 +46,21 @@
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Bericht type') }}</label>
+				<label>{{ t('dossiq', 'Bericht type') }}</label>
 				<NcSelect
 					v-model="form.berichtTypeCode"
 					:options="typeCodes"
-					:aria-label-combobox="t('procest', 'Bericht type')"
+					:aria-label-combobox="t('dossiq', 'Bericht type')"
 					label="label"
 					trackBy="code" />
 			</div>
 
 			<div class="compose-dialog__actions">
 				<NcButton type="primary" :disabled="sending" @click="send">
-					{{ sending ? t('procest', 'Sending...') : t('procest', 'Send') }}
+					{{ sending ? t('dossiq', 'Sending...') : t('dossiq', 'Send') }}
 				</NcButton>
 				<NcButton @click="$emit('close')">
-					{{ t('procest', 'Cancel') }}
+					{{ t('dossiq', 'Cancel') }}
 				</NcButton>
 			</div>
 
@@ -96,9 +96,9 @@ export default {
 		return {
 			form: { bsn: this.bsn, subject: '', body: '', berichtTypeCode: null },
 			typeCodes: [
-				{ code: 'decision', label: t('procest', 'Decision (Besluit)') },
-				{ code: 'status', label: t('procest', 'Status update') },
-				{ code: 'informatie', label: t('procest', 'Information') },
+				{ code: 'decision', label: t('dossiq', 'Decision (Besluit)') },
+				{ code: 'status', label: t('dossiq', 'Status update') },
+				{ code: 'informatie', label: t('dossiq', 'Information') },
 			],
 
 			errors: {},
@@ -114,15 +114,15 @@ export default {
 			this.errors = {}
 			if (!this.form.bsn) {
 				this.errors.bsn = t(
-					'procest',
+					'dossiq',
 					'BSN is required for Mijn Overheid messages',
 				)
 			}
 			if (!this.form.subject) {
-				this.errors.subject = t('procest', 'Subject is required')
+				this.errors.subject = t('dossiq', 'Subject is required')
 			}
 			if (!this.form.body) {
-				this.errors.body = t('procest', 'Message body is required')
+				this.errors.body = t('dossiq', 'Message body is required')
 			}
 			return Object.keys(this.errors).length === 0
 		},
@@ -143,7 +143,7 @@ export default {
 				this.$emit('sent')
 			} catch (e) {
 				this.sendError =
-					e.response?.data?.error || t('procest', 'Failed to send message')
+					e.response?.data?.error || t('dossiq', 'Failed to send message')
 			} finally {
 				this.sending = false
 			}

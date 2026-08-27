@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest WOO Assessment Controller
+ * Dossiq WOO Assessment Controller
  *
  * REST API for WOO-specific case operations: per-document disclosure
  * assessment, deadline extension, and besluit assembly.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,14 +24,14 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\WOOAnonymisationAssistService;
-use OCA\Procest\Service\WOODeadlineService;
-use OCA\Procest\Service\WOODecisionService;
-use OCA\Procest\Service\WOODocumentAssessmentService;
-use OCA\Procest\Service\WooPublicationService;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\WOOAnonymisationAssistService;
+use OCA\Dossiq\Service\WOODeadlineService;
+use OCA\Dossiq\Service\WOODecisionService;
+use OCA\Dossiq\Service\WOODocumentAssessmentService;
+use OCA\Dossiq\Service\WooPublicationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -194,7 +194,7 @@ class WOOAssessmentController extends Controller {
 		} catch (\RuntimeException $e) {
 			$this->logger->error(
 				'WOO besluit assembly failed: ' . $e->getMessage(),
-				['app' => 'procest', 'caseId' => $id],
+				['app' => 'dossiq','caseId' => $id],
 			);
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
@@ -306,7 +306,7 @@ class WOOAssessmentController extends Controller {
 		} catch (\RuntimeException $e) {
 			$this->logger->warning(
 				'WOO redaction proposal failed: ' . $e->getMessage(),
-				['app' => 'procest', 'caseId' => $id, 'documentRef' => $documentRef],
+				['app' => 'dossiq','caseId' => $id, 'documentRef' => $documentRef],
 			);
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}

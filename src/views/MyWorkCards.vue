@@ -1,11 +1,19 @@
 <!--
   - SPDX-FileCopyrightText: 2026 Conduction B.V.
   - SPDX-License-Identifier: EUPL-1.2
+  -
+  - NOTE ON `register="dossiq"` BELOW — it is deliberately NOT `dossiq`.
+  - That value is the OpenRegister register SLUG, not this app's id. OpenRegister
+  - resolves a register by slug, so renaming it alongside the procest -> dossiq
+  - app-id rename would point this page at a register that does not exist and
+  - orphan every stored case. The failure is silent: the page still renders and
+  - simply shows no work. The l10n domain and the /apps/… URLs on the same
+  - component DO move, because those name this app to Nextcloud.
 -->
 <template>
 	<CnIndexPage
-		:title="t('procest', 'My Work')"
-		register="procest"
+		:title="t('dossiq', 'My Work')"
+		register="dossiq"
 		schema="case"
 		:filter="filter"
 		viewMode="cards"
@@ -22,16 +30,16 @@
 			<div
 				class="mywork-sort-toggle"
 				role="group"
-				:aria-label="t('procest', 'Sort My Work')">
+				:aria-label="t('dossiq', 'Sort My Work')">
 				<NcButton
 					:type="sortMode === 'urgency' ? 'primary' : 'tertiary'"
 					@click="setSortMode('urgency')">
-					{{ t('procest', 'Urgency') }}
+					{{ t('dossiq', 'Urgency') }}
 				</NcButton>
 				<NcButton
 					:type="sortMode === 'newest' ? 'primary' : 'tertiary'"
 					@click="setSortMode('newest')">
-					{{ t('procest', 'Newest') }}
+					{{ t('dossiq', 'Newest') }}
 				</NcButton>
 			</div>
 		</template>
@@ -126,12 +134,12 @@ export default {
 				'title',
 				{
 					key: 'caseType',
-					label: this.t('procest', 'Case type'),
+					label: this.t('dossiq', 'Case type'),
 					formatter: 'caseTypeName',
 				},
 				{
 					key: 'status',
-					label: this.t('procest', 'Status'),
+					label: this.t('dossiq', 'Status'),
 					formatter: 'statusTypeName',
 				},
 				'deadline',
@@ -202,7 +210,7 @@ export default {
 		async fetchWorkQueue() {
 			try {
 				const response = await axios.get(
-					generateUrl('/apps/procest/api/work-queue'),
+					generateUrl('/apps/dossiq/api/work-queue'),
 				)
 				this.urgencyMap = buildUrgencyMap(
 					response.data && response.data.items,
@@ -221,7 +229,7 @@ export default {
 		async fetchWorkload() {
 			try {
 				const response = await axios.get(
-					generateUrl('/apps/procest/api/work-queue/workload'),
+					generateUrl('/apps/dossiq/api/work-queue/workload'),
 				)
 				this.workloadHandlers =
 					(response.data && response.data.handlers) || []

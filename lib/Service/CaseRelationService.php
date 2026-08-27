@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Case Relation (peer / relevanteAndereZaken) Service
+ * Dossiq Case Relation (peer / relevanteAndereZaken) Service
  *
  * Typed peer relations between cases on the existing `case.relatedCases`
  * field, per RGBZ/ZRC `relevanteAndereZaken`. Relations are typed with an
@@ -17,7 +17,7 @@
  * {@see DeelzaakService}; this service refuses to mirror it as a peer relation.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -28,18 +28,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/related-case-linking/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\Service\Relation\CaseHierarchyOverlapGuard;
-use OCA\Procest\Service\Relation\CaseRelationCodec;
-use OCA\Procest\Service\Relation\CaseRelationStore;
+use OCA\Dossiq\Service\Relation\CaseHierarchyOverlapGuard;
+use OCA\Dossiq\Service\Relation\CaseRelationCodec;
+use OCA\Dossiq\Service\Relation\CaseRelationStore;
 
 /**
  * Service for typed peer relations between cases.
@@ -108,7 +108,7 @@ class CaseRelationService {
 	 * resolves to null"*. That claim was false and the check was INERT:
 	 * `PermissionHandler::hasGroupPermission()` returns `true` for a schema
 	 * with no `authorization` block and `enforce_default_closed` defaults
-	 * false, and none of procest's 85 schemas declares one — so an existing
+	 * false, and none of dossiq's 85 schemas declares one — so an existing
 	 * case never resolved to null for anybody (ConductionNL/.github#372).
 	 * Authorisation is now enforced by `CaseAccessGuard` in
 	 * `CaseRelationController`, ahead of every call into this service. Do not
@@ -118,7 +118,7 @@ class CaseRelationService {
 	 * @param string $caseId Origin case UUID.
 	 * @param string $targetId Target case UUID.
 	 * @param string $natureRelationship Relation type.
-	 * @param string|null $notes Optional free-text clarification (procest-local).
+	 * @param string|null $notes Optional free-text clarification (dossiq-local).
 	 *
 	 * @return array{ok: bool, reason?: string, detail?: string}
 	 *

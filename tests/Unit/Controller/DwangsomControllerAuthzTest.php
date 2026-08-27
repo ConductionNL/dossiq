@@ -26,7 +26,7 @@
  * indistinguishable — the test would pass against the dead predicate too.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -42,15 +42,15 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use JsonSerializable;
-use OCA\Procest\Controller\DwangsomController;
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\DwangsomBezwaarService;
-use OCA\Procest\Service\DwangsomCalculationService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\OwningCaseResolver;
+use OCA\Dossiq\Controller\DwangsomController;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\DwangsomBezwaarService;
+use OCA\Dossiq\Service\DwangsomCalculationService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -117,7 +117,7 @@ interface DwangsomObjectServiceStub {
 /**
  * Unit tests for DwangsomController per-object authorization and the repair.
  *
- * @covers \OCA\Procest\Controller\DwangsomController
+ * @covers \OCA\Dossiq\Controller\DwangsomController
  */
 class DwangsomControllerAuthzTest extends TestCase {
 
@@ -161,7 +161,7 @@ class DwangsomControllerAuthzTest extends TestCase {
 		);
 
 		return new DwangsomController(
-			'procest',
+			'dossiq',
 			$this->createMock(IRequest::class),
 			$calc,
 			$objection,

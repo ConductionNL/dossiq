@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Guard Result value object.
+ * Dossiq Guard Result value object.
  *
  * Carries the outcome of a single guard evaluation: pass flag, optional
  * failure message, and structured details (e.g. `silent: true` for role
  * guards that should hide a transition entirely).
  *
  * @category Service
- * @package  OCA\Procest\Service\Transitions
+ * @package  OCA\Dossiq\Service\Transitions
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,12 +19,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Transitions;
+namespace OCA\Dossiq\Service\Transitions;
 
 /**
  * Immutable value object returned by every GuardEvaluator.

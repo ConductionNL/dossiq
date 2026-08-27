@@ -2,7 +2,7 @@
 
 ## Approach
 
-Decompose 152 PHPMD complexity suppressions across 12 files by extracting complex methods into smaller, focused handler/service classes. The refactoring follows existing Procest patterns:
+Decompose 152 PHPMD complexity suppressions across 12 files by extracting complex methods into smaller, focused handler/service classes. The refactoring follows existing Dossiq patterns:
 
 - **Controllers (ZrcController, ZtcController, BrcController, DrcController, AcController):** Extract method groups into handler classes (e.g., `ZrcController/ZaakObjectHandler.php`), delegating from the original public API methods
 - **Services (ZgwService, ZgwZrcRulesService, ZgwZtcRulesService, ZgwBrcRulesService, ZgwDrcRulesService, ZgwBusinessRulesService, ZgwRulesBase, ZgwMappingService):** Extract validation, resolution, and transformation logic into dedicated utility services
@@ -79,7 +79,7 @@ Reduce constructor parameters by grouping related dependencies into composite se
 ## Testing Strategy
 
 ### Before decomposition
-- Run existing unit tests: `docker exec -w /var/www/html/custom_apps/procest nextcloud php vendor/bin/phpunit -c phpunit-unit.xml`
+- Run existing unit tests: `docker exec -w /var/www/html/custom_apps/dossiq nextcloud php vendor/bin/phpunit -c phpunit-unit.xml`
 - Record current PHPMD suppression count
 
 ### Per-file decomposition

@@ -5,7 +5,7 @@
 <template>
 	<NcDialog
 		:open="true"
-		:name="t('procest', 'End role assignment')"
+		:name="t('dossiq', 'End role assignment')"
 		@update:open="
 			(v) => {
 				if (!v) $emit('close')
@@ -15,14 +15,14 @@
 			<p>
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Setting an end date closes the assignment. The person retains the role through end-of-day.',
 					)
 				}}
 			</p>
 			<div class="form-group">
 				<label class="required" for="ea-end">{{
-					t('procest', 'End date')
+					t('dossiq', 'End date')
 				}}</label>
 				<input
 					id="ea-end"
@@ -35,13 +35,13 @@
 
 		<template #actions>
 			<NcButton @click="$emit('close')">
-				{{ t('procest', 'Cancel') }}
+				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 			<NcButton
 				type="primary"
 				:disabled="!endDate"
 				@click="$emit('save', endDate)">
-				{{ t('procest', 'End assignment') }}
+				{{ t('dossiq', 'End assignment') }}
 			</NcButton>
 		</template>
 	</NcDialog>

@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Hierarchical Routing Strategy
+ * Dossiq Hierarchical Routing Strategy
  *
  * Tries each `roleType` in priority order and returns the first non-empty set
  * of participants. Lets organisations fall back to a senior or department
  * head when the preferred role is currently unassigned.
  *
  * @category Service
- * @package  OCA\Procest\Service\Routing\Strategy
+ * @package  OCA\Dossiq\Service\Routing\Strategy
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -19,14 +19,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Routing\Strategy;
+namespace OCA\Dossiq\Service\Routing\Strategy;
 
-use OCA\Procest\Service\Routing\RoutingStrategyInterface;
+use OCA\Dossiq\Service\Routing\RoutingStrategyInterface;
 
 /**
  * Hierarchical fall-through strategy.

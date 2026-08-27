@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest WOO Publication Service
+ * Dossiq WOO Publication Service
  *
  * Bridges an assembled WOO besluit ({@see WOODecisionService}) to
  * OpenCatalogi's publication model. Builds a disclosure-safe publication
  * payload (redacted documents only, never unredacted originals or withheld
  * documents), creates/updates the publication via
- * {@see OCA\Procest\Service\WooPublication\OpenCatalogiApiClient}, and
- * writes the resulting publication id/url/status back onto the procest
+ * {@see OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient}, and
+ * writes the resulting publication id/url/status back onto the dossiq
  * `decision` object through a single `ObjectService::saveObject()` call.
  *
  * OpenCatalogi is a same-instance peer app, consumed only if installed and
@@ -18,7 +18,7 @@
  * flow.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -34,12 +34,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\SearchesObjects;
-use OCA\Procest\Service\WooPublication\OpenCatalogiApiClient;
-use OCA\Procest\Service\WooPublication\WooCategoryMapper;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
+use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCP\App\IAppManager;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -278,8 +278,8 @@ class WooPublicationService {
 	 * Load the case and decision objects for a publish/withdraw request.
 	 *
 	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register The procest register slug.
-	 * @param string $decisionSchema The procest decision schema slug.
+	 * @param string $register The dossiq register slug.
+	 * @param string $decisionSchema The dossiq decision schema slug.
 	 * @param string $caseId The case UUID.
 	 * @param string $decisionId The decision UUID.
 	 *
@@ -307,7 +307,7 @@ class WooPublicationService {
 	 * Load and select the disclosable documents for a case's WOO assessments.
 	 *
 	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register The procest register slug.
+	 * @param string $register The dossiq register slug.
 	 * @param string $caseId The case UUID.
 	 *
 	 * @return array<int, array<string, mixed>> The disclosable documents.
@@ -446,7 +446,7 @@ class WooPublicationService {
 	 * @param string $ocRegister The OpenCatalogi register slug.
 	 * @param string $ocDocumentSchema The OpenCatalogi document schema slug.
 	 * @param string $publicationId The publication id to link to.
-	 * @param array<string, mixed> $document The disclosable document (procest shape).
+	 * @param array<string, mixed> $document The disclosable document (dossiq shape).
 	 *
 	 * @return void
 	 *

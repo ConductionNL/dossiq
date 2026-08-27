@@ -6,7 +6,7 @@ description: "Use the Handhavingsstrategie matrix on a case: record observations
 
 # Run an inspection checklist
 
-Procest's *Handhavingsstrategie* (enforcement strategy) module turns the LHS (*Landelijke Handhavingsstrategie*) matrix into an interactive checklist. Inspectors record observations against the matrix; Procest looks up the recommended sanction; the inspector can override with a motivation.
+Dossiq's *Handhavingsstrategie* (enforcement strategy) module turns the LHS (*Landelijke Handhavingsstrategie*) matrix into an interactive checklist. Inspectors record observations against the matrix; Dossiq looks up the recommended sanction; the inspector can override with a motivation.
 
 ## Goal
 
@@ -28,7 +28,7 @@ By the end you will have opened a case that requires inspection, run through the
 
    ![Recording observations](/screenshots/tutorials/user/08-inspection-checklist-02.png)
 
-3. Click **Get recommendation**. Procest looks up the recommended sanction from the configured matrix: usually one of *Waarschuwing*, *Bestuurlijke boete*, *Last onder dwangsom*, *Bestuursdwang*. The recommendation is shown with its reasoning.
+3. Click **Get recommendation**. Dossiq looks up the recommended sanction from the configured matrix: usually one of *Waarschuwing*, *Bestuurlijke boete*, *Last onder dwangsom*, *Bestuursdwang*. The recommendation is shown with its reasoning.
 
    ![Sanction recommendation](/screenshots/tutorials/user/08-inspection-checklist-03.png)
 

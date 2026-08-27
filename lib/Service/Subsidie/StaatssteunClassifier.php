@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Staatssteun Classifier.
+ * Dossiq Staatssteun Classifier.
  *
  * EU state-aid classification helpers (REQ-SUB-008): de-minimis threshold
  * checking against the €300.000-per-three-years ceiling (Verordening
@@ -11,7 +11,7 @@
  * provider so this class stays free of persistence coupling.
  *
  * @category Service
- * @package  OCA\Procest\Service\Subsidie
+ * @package  OCA\Dossiq\Service\Subsidie
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,12 +22,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Subsidie;
+namespace OCA\Dossiq\Service\Subsidie;
 
 /**
  * Pure EU state-aid classification helpers.

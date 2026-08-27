@@ -1,11 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * DEEP, data-dependent coverage — complaint-family workflow items (bezwaren).
  *
  * The prompt asks for "Complaints (klachten) or WorkflowBoard if drivable".
- * The `complaint` (klacht) schema exists in the procest register but has NO
+ * The `complaint` (klacht) schema exists in the dossiq register but has NO
  * manifest UI page, so it cannot be driven honestly through the rendered app.
  * The drivable, status-bearing complaint-family workflow that IS exposed is
  * Bezwaren (objections) — manifest page `Bezwaren` (`type:"index"`, schema
@@ -104,7 +104,7 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 		// and strands on the Dashboard — reach the list by a BARE deep-link instead
 		// (a /index.php-prefixed one resets the history-mode router to the
 		// Dashboard; the bare path resolves the /bezwaren route directly).
-		await page.goto('/index.php/apps/procest/bezwaren')
+		await page.goto('/index.php/apps/dossiq/bezwaren')
 		await dismissSupportDialog(page)
 		await expect(page.locator('tbody tr').first()).toBeVisible({
 			timeout: 15000,

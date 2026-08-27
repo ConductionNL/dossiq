@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Guard Registry.
+ * Dossiq Guard Registry.
  *
  * Strategy-pattern registry mapping guard `type` strings to the corresponding
  * GuardEvaluatorInterface implementations. Built-in evaluators are injected
@@ -9,7 +9,7 @@
  * `registerEvaluator()` (e.g. an integration hook in `Application::register()`).
  *
  * @category Service
- * @package  OCA\Procest\Service\Transitions
+ * @package  OCA\Dossiq\Service\Transitions
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,12 +20,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Transitions;
+namespace OCA\Dossiq\Service\Transitions;
 
 use Psr\Log\LoggerInterface;
 

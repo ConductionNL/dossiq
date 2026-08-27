@@ -8,7 +8,7 @@
  * passing.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -17,15 +17,15 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\MandaatValidationService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\MandaatValidationService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\Http\Client\IClientService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -33,7 +33,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for MandaatValidationService.
  *
- * @covers \OCA\Procest\Service\MandaatValidationService
+ * @covers \OCA\Dossiq\Service\MandaatValidationService
  */
 class MandaatValidationServiceTest extends TestCase {
 	/**

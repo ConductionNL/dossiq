@@ -1,16 +1,16 @@
 <?php
 
 /**
- * Result value-object returned by a Procest external-ZGW push call.
+ * Result value-object returned by a Dossiq external-ZGW push call.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Zgw
+ * @package  OCA\Dossiq\Service\External\Zgw
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  *
@@ -20,7 +20,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Zgw;
+namespace OCA\Dossiq\Service\External\Zgw;
 
 /**
  * Result of an external-ZGW push attempt.

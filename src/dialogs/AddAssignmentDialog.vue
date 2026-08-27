@@ -5,7 +5,7 @@
 <template>
 	<NcDialog
 		:open="true"
-		:name="t('procest', 'Add role assignment')"
+		:name="t('dossiq', 'Add role assignment')"
 		@update:open="
 			(v) => {
 				if (!v) $emit('close')
@@ -14,7 +14,7 @@
 		<div class="add-assignment">
 			<div class="form-group">
 				<label class="required" for="aa-person">{{
-					t('procest', 'Person (UID / email)')
+					t('dossiq', 'Person (UID / email)')
 				}}</label>
 				<NcTextField
 					id="aa-person"
@@ -26,13 +26,13 @@
 
 			<div class="form-group">
 				<label class="required" for="aa-role">{{
-					t('procest', 'Role')
+					t('dossiq', 'Role')
 				}}</label>
 				<NcSelect
 					id="aa-role"
 					:modelValue="selectedRole"
 					:options="roleOptions"
-					:inputLabel="t('procest', 'Role')"
+					:inputLabel="t('dossiq', 'Role')"
 					@update:modelValue="(v) => (form.roleId = v ? v.id : '')" />
 				<span v-if="errors.roleId" class="field-error">{{
 					errors.roleId
@@ -40,12 +40,12 @@
 			</div>
 
 			<div class="form-group">
-				<label for="aa-type">{{ t('procest', 'Type') }}</label>
+				<label for="aa-type">{{ t('dossiq', 'Type') }}</label>
 				<NcSelect
 					id="aa-type"
 					:modelValue="selectedType"
 					:options="typeOptions"
-					:inputLabel="t('procest', 'Type')"
+					:inputLabel="t('dossiq', 'Type')"
 					@update:modelValue="
 						(v) => (form.allocationType = v ? v.id : '')
 					" />
@@ -53,7 +53,7 @@
 
 			<div class="form-group">
 				<label class="required" for="aa-vanaf">{{
-					t('procest', 'From')
+					t('dossiq', 'From')
 				}}</label>
 				<input
 					id="aa-vanaf"
@@ -64,7 +64,7 @@
 			</div>
 
 			<div class="form-group">
-				<label for="aa-tot">{{ t('procest', 'Up to and including') }}</label>
+				<label for="aa-tot">{{ t('dossiq', 'Up to and including') }}</label>
 				<input
 					id="aa-tot"
 					type="date"
@@ -76,10 +76,10 @@
 
 		<template #actions>
 			<NcButton @click="$emit('close')">
-				{{ t('procest', 'Cancel') }}
+				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 			<NcButton type="primary" @click="save">
-				{{ t('procest', 'Add') }}
+				{{ t('dossiq', 'Add') }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -114,9 +114,9 @@ export default {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		typeOptions() {
 			return [
-				{ id: 'reguliere', label: t('procest', 'Regular assignment') },
-				{ id: 'observer', label: t('procest', 'Substitute') },
-				{ id: 'plaatsvervanger', label: t('procest', 'Deputy') },
+				{ id: 'reguliere', label: t('dossiq', 'Regular assignment') },
+				{ id: 'observer', label: t('dossiq', 'Substitute') },
+				{ id: 'plaatsvervanger', label: t('dossiq', 'Deputy') },
 			]
 		},
 
@@ -140,8 +140,8 @@ export default {
 		validate() {
 			const errs = {}
 			if (!this.form.persoonId)
-				errs.persoonId = t('procest', 'Person is required')
-			if (!this.form.roleId) errs.roleId = t('procest', 'Role is required')
+				errs.persoonId = t('dossiq', 'Person is required')
+			if (!this.form.roleId) errs.roleId = t('dossiq', 'Role is required')
 			this.errors = errs
 			return Object.keys(errs).length === 0
 		},

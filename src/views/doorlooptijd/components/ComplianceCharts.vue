@@ -11,14 +11,14 @@
 
 	MIGRATED to the OpenRegister analytics-series leaf (ADR-022):
 
-	- Procest OWNS the SLA maths: the parent computes compliance / distribution
+	- Dossiq OWNS the SLA maths: the parent computes compliance / distribution
 	  / trend / throughput (computeSlaCompliance etc.), and chartShaping.js maps
 	  those into labels + datasets. That zaak-domain calc STAYS in-app.
 	- Each computed series is REGISTERED with OR's page-level analytics-series
 	  surface (POST /api/integrations/analytics/series) so OR owns persistence +
 	  the chart-ready render contract + the page-widget declaration.
 	- The chart itself is drawn by `@conduction/nextcloud-vue`'s declarative
-	  `CnChartWidget` (which owns the chart engine). Procest embeds NO chart
+	  `CnChartWidget` (which owns the chart engine). Dossiq embeds NO chart
 	  library of its own — the bespoke `vue-apexcharts` import + per-chart
 	  ApexCharts option objects were removed.
 
@@ -32,7 +32,7 @@
 		<div class="doorlooptijd-charts-row">
 			<!-- Donut: SLA by case type -->
 			<div class="chart-card">
-				<h3>{{ t('procest', 'Compliance by Case Type') }}</h3>
+				<h3>{{ t('dossiq', 'Compliance by Case Type') }}</h3>
 				<div v-if="donutSeries.length > 0" class="chart-container">
 					<CnChartWidget
 						type="donut"
@@ -42,13 +42,13 @@
 						:options="donutOptions" />
 				</div>
 				<div v-else class="chart-empty">
-					{{ t('procest', 'No data available') }}
+					{{ t('dossiq', 'No data available') }}
 				</div>
 			</div>
 
 			<!-- Histogram: processing time distribution -->
 			<div class="chart-card">
-				<h3>{{ t('procest', 'Processing Time Distribution') }}</h3>
+				<h3>{{ t('dossiq', 'Processing Time Distribution') }}</h3>
 				<div v-if="histogramSeries.length > 0" class="chart-container">
 					<CnChartWidget
 						type="bar"
@@ -58,14 +58,14 @@
 						:options="histogramOptions" />
 				</div>
 				<div v-else class="chart-empty">
-					{{ t('procest', 'No data available') }}
+					{{ t('dossiq', 'No data available') }}
 				</div>
 			</div>
 		</div>
 
 		<!-- Trend chart -->
 		<div class="chart-card chart-card--full">
-			<h3>{{ t('procest', 'Monthly SLA Trend') }}</h3>
+			<h3>{{ t('dossiq', 'Monthly SLA Trend') }}</h3>
 			<div v-if="trendData.length > 0" class="chart-container">
 				<CnChartWidget
 					type="line"
@@ -75,13 +75,13 @@
 					:options="trendOptions" />
 			</div>
 			<div v-else class="chart-empty">
-				{{ t('procest', 'No trend data available') }}
+				{{ t('dossiq', 'No trend data available') }}
 			</div>
 		</div>
 
 		<!-- Throughput chart — cases closed per week -->
 		<div class="chart-card chart-card--full">
-			<h3>{{ t('procest', 'Throughput (cases closed per week)') }}</h3>
+			<h3>{{ t('dossiq', 'Throughput (cases closed per week)') }}</h3>
 			<div v-if="throughputData.length > 0" class="chart-container">
 				<CnChartWidget
 					type="line"
@@ -91,7 +91,7 @@
 					:options="throughputOptions" />
 			</div>
 			<div v-else class="chart-empty">
-				{{ t('procest', 'No completed cases in the selected range') }}
+				{{ t('dossiq', 'No completed cases in the selected range') }}
 			</div>
 		</div>
 	</div>
@@ -186,7 +186,7 @@ export default {
 								show: true,
 								total: {
 									show: true,
-									label: t('procest', 'Within SLA'),
+									label: t('dossiq', 'Within SLA'),
 								},
 							},
 						},
@@ -211,7 +211,7 @@ export default {
 		 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 		 */
 		histogramSeries() {
-			return buildHistogramSeries(this.distributionData, t('procest', 'Cases'))
+			return buildHistogramSeries(this.distributionData, t('dossiq', 'Cases'))
 		},
 
 		/**
@@ -239,7 +239,7 @@ export default {
 					x: bins[targetBinIndex]?.label || '',
 					borderColor: 'var(--color-error)',
 					label: {
-						text: t('procest', 'SLA Target: {days}d', {
+						text: t('dossiq', 'SLA Target: {days}d', {
 							days: targetDays,
 						}),
 						style: {
@@ -256,17 +256,17 @@ export default {
 				},
 
 				xaxis: {
-					title: { text: t('procest', 'Processing time (days)') },
+					title: { text: t('dossiq', 'Processing time (days)') },
 				},
 
 				yaxis: {
-					title: { text: t('procest', 'Number of cases') },
+					title: { text: t('dossiq', 'Number of cases') },
 				},
 
 				colors: ['var(--color-primary)'],
 				annotations: { xaxis: annotations },
 				tooltip: {
-					y: { formatter: (val) => `${val} ${t('procest', 'cases')}` },
+					y: { formatter: (val) => `${val} ${t('dossiq', 'cases')}` },
 				},
 			}
 		},
@@ -277,7 +277,7 @@ export default {
 		 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 		 */
 		trendSeries() {
-			return buildTrendSeries(this.trendData, t('procest', 'SLA Compliance %'))
+			return buildTrendSeries(this.trendData, t('dossiq', 'SLA Compliance %'))
 		},
 
 		/**
@@ -299,7 +299,7 @@ export default {
 				yaxis: {
 					min: 0,
 					max: 100,
-					title: { text: t('procest', 'Compliance %') },
+					title: { text: t('dossiq', 'Compliance %') },
 					labels: { formatter: (val) => (val !== null ? val + '%' : '') },
 				},
 
@@ -313,7 +313,7 @@ export default {
 							borderColor: 'var(--color-success)',
 							strokeDashArray: 4,
 							label: {
-								text: t('procest', '100% target'),
+								text: t('dossiq', '100% target'),
 								style: {
 									color: 'var(--color-success)',
 									background: 'var(--color-background-hover)',
@@ -326,7 +326,7 @@ export default {
 				tooltip: {
 					y: {
 						formatter: (val, opts) => {
-							if (val === null) return t('procest', 'No data')
+							if (val === null) return t('dossiq', 'No data')
 							const dataPoint = this.trendData[opts.dataPointIndex]
 							return `${val}% (${dataPoint.withinSla}/${dataPoint.total})`
 						},
@@ -343,7 +343,7 @@ export default {
 		throughputSeries() {
 			return buildThroughputSeries(
 				this.throughputData,
-				t('procest', 'Cases closed'),
+				t('dossiq', 'Cases closed'),
 			)
 		},
 
@@ -366,7 +366,7 @@ export default {
 				yaxis: {
 					min: 0,
 					forceNiceScale: true,
-					title: { text: t('procest', 'Cases closed') },
+					title: { text: t('dossiq', 'Cases closed') },
 					labels: { formatter: (val) => Math.round(val) },
 				},
 
@@ -392,7 +392,7 @@ export default {
 		/**
 		 * Register the four computed SLA series with OpenRegister's page-level
 		 * analytics-series surface so OR owns persistence + the render contract
-		 * + the page-widget declaration (ADR-022). Procest computes the maths;
+		 * + the page-widget declaration (ADR-022). Dossiq computes the maths;
 		 * OR is the analytics leaf. Fire-and-forget: registration failures never
 		 * block the dashboard (it still renders the same series via CnChartWidget).
 		 *
@@ -402,7 +402,7 @@ export default {
 			if (this.donutSeries.length > 0) {
 				registerSeries({
 					seriesKey: 'procest-sla-compliance-by-type',
-					title: t('procest', 'Compliance by Case Type'),
+					title: t('dossiq', 'Compliance by Case Type'),
 					chartType: 'doughnut',
 					labels: this.donutLabels,
 					datasets: this.donutSeries,
@@ -411,7 +411,7 @@ export default {
 			if (this.histogramSeries.length > 0) {
 				registerSeries({
 					seriesKey: 'procest-sla-processing-time-distribution',
-					title: t('procest', 'Processing Time Distribution'),
+					title: t('dossiq', 'Processing Time Distribution'),
 					chartType: 'bar',
 					labels: this.histogramCategories,
 					datasets: this.histogramSeries,
@@ -420,7 +420,7 @@ export default {
 			if (this.trendData.length > 0) {
 				registerSeries({
 					seriesKey: 'procest-sla-monthly-trend',
-					title: t('procest', 'Monthly SLA Trend'),
+					title: t('dossiq', 'Monthly SLA Trend'),
 					chartType: 'line',
 					labels: this.trendCategories,
 					datasets: this.trendSeries,
@@ -429,7 +429,7 @@ export default {
 			if (this.throughputData.length > 0) {
 				registerSeries({
 					seriesKey: 'procest-sla-weekly-throughput',
-					title: t('procest', 'Throughput (cases closed per week)'),
+					title: t('dossiq', 'Throughput (cases closed per week)'),
 					chartType: 'line',
 					labels: this.throughputCategories,
 					datasets: this.throughputSeries,

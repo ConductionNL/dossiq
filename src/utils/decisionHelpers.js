@@ -22,9 +22,9 @@ export function getDecisionValidity(decision) {
 		if (effective > today) {
 			return {
 				status: 'not_effective',
-				label: t('procest', 'Not yet effective'),
+				label: t('dossiq', 'Not yet effective'),
 				style: 'validity--pending',
-				remaining: t('procest', 'Effective from {date}', {
+				remaining: t('dossiq', 'Effective from {date}', {
 					date: formatDecisionDate(decision.effectiveDate),
 				}),
 			}
@@ -38,7 +38,7 @@ export function getDecisionValidity(decision) {
 		if (expiry < today) {
 			return {
 				status: 'expired',
-				label: t('procest', 'Expired'),
+				label: t('dossiq', 'Expired'),
 				style: 'validity--expired',
 				remaining: null,
 			}
@@ -50,9 +50,9 @@ export function getDecisionValidity(decision) {
 		if (diffDays <= 30) {
 			return {
 				status: 'expiring_soon',
-				label: t('procest', 'Expires in {days} days', { days: diffDays }),
+				label: t('dossiq', 'Expires in {days} days', { days: diffDays }),
 				style: 'validity--warning',
-				remaining: t('procest', 'Expires {date}', {
+				remaining: t('dossiq', 'Expires {date}', {
 					date: formatDecisionDate(decision.expiryDate),
 				}),
 			}
@@ -60,9 +60,9 @@ export function getDecisionValidity(decision) {
 
 		return {
 			status: 'active',
-			label: t('procest', 'Active'),
+			label: t('dossiq', 'Active'),
 			style: 'validity--active',
-			remaining: t('procest', 'Valid until {date}', {
+			remaining: t('dossiq', 'Valid until {date}', {
 				date: formatDecisionDate(decision.expiryDate),
 			}),
 		}
@@ -72,9 +72,9 @@ export function getDecisionValidity(decision) {
 	if (decision.effectiveDate) {
 		return {
 			status: 'active',
-			label: t('procest', 'Active'),
+			label: t('dossiq', 'Active'),
 			style: 'validity--active',
-			remaining: t('procest', 'From {date}', {
+			remaining: t('dossiq', 'From {date}', {
 				date: formatDecisionDate(decision.effectiveDate),
 			}),
 		}
@@ -122,7 +122,7 @@ export function validateDecision(form) {
 	const errors = {}
 
 	if (!form.title || !form.title.trim()) {
-		errors.title = t('procest', 'Title is required')
+		errors.title = t('dossiq', 'Title is required')
 	}
 
 	if (form.effectiveDate && form.expiryDate) {
@@ -130,7 +130,7 @@ export function validateDecision(form) {
 		const expiry = new Date(form.expiryDate)
 		if (expiry <= effective) {
 			errors.expiryDate = t(
-				'procest',
+				'dossiq',
 				'Expiry date must be after effective date',
 			)
 		}

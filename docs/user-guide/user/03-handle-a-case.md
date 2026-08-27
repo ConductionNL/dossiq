@@ -6,7 +6,7 @@ description: Open a case, read its detail page, and move it through its workflow
 
 # Handle a case from start to finish
 
-This is the core Procest journey: find a case, open it, work it, and advance it through its statuses. Everything a case-handler does day-to-day starts here.
+This is the core Dossiq journey: find a case, open it, work it, and advance it through its statuses. Everything a case-handler does day-to-day starts here.
 
 ## Goal
 
@@ -14,7 +14,7 @@ By the end you will have opened the **Cases** list, filtered it by case type, op
 
 ## Prerequisites
 
-- Completed [Open Procest for the first time](./01-first-launch.md).
+- Completed [Open Dossiq for the first time](./01-first-launch.md).
 - At least one case exists. The demo ships example cases across four case types — **Building Permit**, **Grant Application**, **Citizen Complaint** and **Freedom of Information Request** — each with its own status lifecycle (Received → In progress → … → Completed).
 
 ## Steps

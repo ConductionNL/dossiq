@@ -7,7 +7,7 @@
  * besluitvorming workflow.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,10 +18,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\MandaatController;
-use OCA\Procest\Service\MandaatValidationService;
+use OCA\Dossiq\Controller\MandaatController;
+use OCA\Dossiq\Service\MandaatValidationService;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUser;
@@ -32,7 +32,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for MandaatController.
  *
- * @covers \OCA\Procest\Controller\MandaatController
+ * @covers \OCA\Dossiq\Controller\MandaatController
  */
 class MandaatControllerTest extends TestCase {
 
@@ -86,7 +86,7 @@ class MandaatControllerTest extends TestCase {
 		$this->userSession->method('getUser')->willReturn($user);
 
 		$this->controller = new MandaatController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			mandateValidator: $this->mandateValidator,
 			userSession: $this->userSession,
@@ -146,7 +146,7 @@ class MandaatControllerTest extends TestCase {
 		$unauthSession->method('getUser')->willReturn(null);
 
 		$controller = new MandaatController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			mandateValidator: $this->mandateValidator,
 			userSession: $unauthSession,

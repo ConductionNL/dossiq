@@ -3,10 +3,7 @@
 		<div v-if="isCreate" class="roles-tab__notice">
 			<p>
 				{{
-					t(
-						'procest',
-						'Save the case type first before adding role types.',
-					)
+					t('dossiq', 'Save the case type first before adding role types.')
 				}}
 			</p>
 		</div>
@@ -30,7 +27,7 @@
 								<NcButton
 									type="tertiary"
 									:aria-label="
-										t('procest', 'Edit {name}', {
+										t('dossiq', 'Edit {name}', {
 											name: rt.name,
 										})
 									"
@@ -42,7 +39,7 @@
 								<NcButton
 									type="tertiary"
 									:aria-label="
-										t('procest', 'Delete {name}', {
+										t('dossiq', 'Delete {name}', {
 											name: rt.name,
 										})
 									"
@@ -59,7 +56,7 @@
 								<div class="edit-row">
 									<NcTextField
 										:modelValue="editForm.name"
-										:label="t('procest', 'Name')"
+										:label="t('dossiq', 'Name')"
 										:error="!!editError"
 										class="edit-field"
 										@update:modelValue="
@@ -69,7 +66,7 @@
 								<div class="edit-row">
 									<NcTextField
 										:modelValue="editForm.description"
-										:label="t('procest', 'Description')"
+										:label="t('dossiq', 'Description')"
 										class="edit-field"
 										@update:modelValue="
 											(v) => (editForm.description = v)
@@ -78,7 +75,7 @@
 								<div class="edit-row">
 									<div class="edit-field">
 										<label class="field-label">{{
-											t('procest', 'Generic role')
+											t('dossiq', 'Generic role')
 										}}</label>
 										<select
 											:value="editForm.genericRole"
@@ -104,10 +101,10 @@
 										type="primary"
 										:disabled="editSaving"
 										@click="saveEdit">
-										{{ t('procest', 'Save') }}
+										{{ t('dossiq', 'Save') }}
 									</NcButton>
 									<NcButton type="tertiary" @click="cancelEdit">
-										{{ t('procest', 'Cancel') }}
+										{{ t('dossiq', 'Cancel') }}
 									</NcButton>
 								</div>
 							</div>
@@ -116,23 +113,23 @@
 				</div>
 
 				<p v-else class="roles-tab__empty">
-					{{ t('procest', 'No role types defined yet.') }}
+					{{ t('dossiq', 'No role types defined yet.') }}
 				</p>
 
 				<div class="roles-tab__add">
-					<h4>{{ t('procest', 'Add Role Type') }}</h4>
+					<h4>{{ t('dossiq', 'Add Role Type') }}</h4>
 					<div class="add-form">
 						<div class="add-form__row">
 							<NcTextField
 								:modelValue="newForm.name"
-								:label="t('procest', 'Name *')"
+								:label="t('dossiq', 'Name *')"
 								class="add-form__field"
 								@update:modelValue="(v) => (newForm.name = v)" />
 						</div>
 						<div class="add-form__row">
 							<NcTextField
 								:modelValue="newForm.description"
-								:label="t('procest', 'Description')"
+								:label="t('dossiq', 'Description')"
 								class="add-form__field"
 								@update:modelValue="
 									(v) => (newForm.description = v)
@@ -141,7 +138,7 @@
 						<div class="add-form__row">
 							<div class="add-form__field">
 								<label class="field-label">{{
-									t('procest', 'Generic role *')
+									t('dossiq', 'Generic role *')
 								}}</label>
 								<select
 									:value="newForm.genericRole"
@@ -165,7 +162,7 @@
 							type="primary"
 							:disabled="addSaving"
 							@click="addRoleType">
-							{{ t('procest', 'Add') }}
+							{{ t('dossiq', 'Add') }}
 						</NcButton>
 					</div>
 				</div>
@@ -263,7 +260,7 @@ export default {
 		async addRoleType() {
 			this.addError = ''
 			if (!this.newForm.name?.trim()) {
-				this.addError = t('procest', 'Name is required')
+				this.addError = t('dossiq', 'Name is required')
 				return
 			}
 			this.addSaving = true
@@ -282,7 +279,7 @@ export default {
 			} else {
 				this.addError =
 					this.objectStore.getError('roleType')
-					|| t('procest', 'Failed to add role type')
+					|| t('dossiq', 'Failed to add role type')
 			}
 		},
 
@@ -307,7 +304,7 @@ export default {
 		async saveEdit() {
 			this.editError = ''
 			if (!this.editForm.name?.trim()) {
-				this.editError = t('procest', 'Name is required')
+				this.editError = t('dossiq', 'Name is required')
 				return
 			}
 			this.editSaving = true
@@ -324,7 +321,7 @@ export default {
 			} else {
 				this.editError =
 					this.objectStore.getError('roleType')
-					|| t('procest', 'Failed to save')
+					|| t('dossiq', 'Failed to save')
 			}
 		},
 
@@ -335,7 +332,7 @@ export default {
 		async deleteRoleType(rt) {
 			if (
 				!confirm(
-					t('procest', 'Delete role type "{name}"?', { name: rt.name }),
+					t('dossiq', 'Delete role type "{name}"?', { name: rt.name }),
 				)
 			)
 				return
@@ -345,7 +342,7 @@ export default {
 			} else {
 				this.error =
 					this.objectStore.getError('roleType')
-					|| t('procest', 'Failed to delete role type')
+					|| t('dossiq', 'Failed to delete role type')
 			}
 		},
 	},

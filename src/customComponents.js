@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 //
-// Custom-component registry for procest's manifest-driven app shell.
+// Custom-component registry for dossiq's manifest-driven app shell.
 //
 // Every entry here is the "escape hatch" — pages or sidebar tabs that
 // don't fit one of the manifest's built-in types/widgets. Keep this
@@ -33,12 +33,6 @@ import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 // @spec openspec/changes/deelzaak-support/tasks.md#T05
 // @spec openspec/changes/deelzaak-support/tasks.md#T06
 import DeelzaakList from './views/cases/DeelzaakList.vue'
-import ProcessMiningDashboard from './views/dashboard/ProcessMiningDashboard.vue'
-import TenantOnboardingDashboard from './views/dashboard/TenantOnboardingDashboard.vue'
-// --- Termijnbewaking + Tenant dashboards (chain-builds 06/2026). ---
-// Archief dashboard retired (migrate-archival-to-or, ADR-022): the archivist
-// views are owned by OpenRegister.
-import TermijnDashboard from './views/dashboard/TermijnDashboard.vue'
 // --- Leverancier-zaakportaal (external supplier portal) MOVED to Portaliq
 //     (ADR-046, procest#162): the /leverancier Vue surface is retired here and
 //     re-expressed as the `supplier` audience in
@@ -47,9 +41,19 @@ import TermijnDashboard from './views/dashboard/TermijnDashboard.vue'
 //     and their nav/routes are removed. ---
 // CaseMapView removed — superseded by manifest `type: 'map'` CnMapPage
 // (see openspec/changes/case-map-overview/design.md).
-import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
+import DtAtRiskWidget from './views/doorlooptijd/widgets/DtAtRiskWidget.vue'
+import DtBreakdownWidget from './views/doorlooptijd/widgets/DtBreakdownWidget.vue'
+import DtCaseTypeFilter from './views/doorlooptijd/widgets/DtCaseTypeFilter.vue'
+import DtChartsWidget from './views/doorlooptijd/widgets/DtChartsWidget.vue'
+import DtKpiWidget from './views/doorlooptijd/widgets/DtKpiWidget.vue'
+import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
 // --- Surviving custom pages — see design.md "Custom-fallback inventory". ---
 import MyWorkView from './views/MyWorkCards.vue'
+import PmBottleneckTableWidget from './views/processMining/PmBottleneckTableWidget.vue'
+import PmCaseTypeFilter from './views/processMining/PmCaseTypeFilter.vue'
+import PmDwellChartWidget from './views/processMining/PmDwellChartWidget.vue'
+import PmKpiWidget from './views/processMining/PmKpiWidget.vue'
+import PmThroughputChartWidget from './views/processMining/PmThroughputChartWidget.vue'
 // Token-addressed advice-response surface for external advisory bodies
 // (consultation-management TASK-CN-06). Declared as page
 // `ExternalConsultationResponse` in src/manifest.d/consultation-public.json;
@@ -60,13 +64,19 @@ import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 // Remote-org accept/reject for a federated zaakoverdracht (federated-case-collaboration).
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
+// --- Termijnbewaking + Tenant dashboards (chain-builds 06/2026). ---
+// Archief dashboard retired (migrate-archival-to-or, ADR-022): the archivist
+// views are owned by OpenRegister.
+import TdAnnualWidget from './views/termijn/TdAnnualWidget.vue'
+import TdCaseTypeFilter from './views/termijn/TdCaseTypeFilter.vue'
+import TdKpiWidget from './views/termijn/TdKpiWidget.vue'
+import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 // Mobiel-inspectie offline views retired — "Veldinspecties" now surfaces the
 // generic `field-inspection` OpenRegister integration leaf (a nc-vue builtin),
-// registered with procest's offline schema mapping in src/main.js. The custom
+// registered with dossiq's offline schema mapping in src/main.js. The custom
 // InspectieList/InspectieDetail views + their offline glue (offlineDb.js,
 // syncReplayService.js) are deleted; the leaf owns the planning list, checklist
 // completion, mutation queue and reconnect-replay.
-import AdminRootView from './views/settings/AdminRoot.vue'
 // VoorstellenView removed — the Voorstellen list page is now a declarative
 // `type:"index"` on the `voorstel` schema (formatter columns + status badge,
 // see src/manifest.json + src/services/formatters.js).
@@ -103,7 +113,7 @@ async function voorstelReminder({ actionId, item }) {
 	const current = steps.find((s) => s.order === item.currentStep)
 	const actor = current ? current.label || current.actor || '-' : '-'
 	try {
-		await fetch('/apps/procest/api/notifications/parafering-reminder', {
+		await fetch('/apps/dossiq/api/notifications/parafering-reminder', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
@@ -118,7 +128,7 @@ async function voorstelReminder({ actionId, item }) {
 		})
 	} catch (error) {
 		// eslint-disable-next-line no-console
-		console.error('[procest] parafering reminder failed', error)
+		console.error('[dossiq] parafering reminder failed', error)
 	}
 }
 
@@ -128,11 +138,26 @@ export default {
 	// CaseMapView removed — see import comment above.
 
 	// --- Lib gaps: would migrate once lib gains the missing primitive. ---
-	DoorlooptijdView, // SLA dashboard — charts via OR analytics-series leaf + lib CnChartWidget (ADR-022)
-	AdminRootView, // multi-tab admin root (lib settings-custom-slot gap)
-	TermijnDashboard, // AWB termijnbewaking + dwangsom KPI dashboard
-	ProcessMiningDashboard, // bottleneck analysis — dwell time, transition matrix, rework, throughput (CnKpiGrid + CnChartWidget leaves)
-	TenantOnboardingDashboard, // SaaS tenant onboarding (7-step + go-live)
+	// Processing time is a type:"dashboard" page; these are its slots.
+	DtCaseTypeFilter, // header-actions slot: SLA-bearing case types only
+	DtKpiWidget, // KPI row + the three guidance states
+	DtChartsWidget, // donut / histogram / trend / throughput
+	DtWooWidget, // Woo statutory-deadline panel
+	DtAtRiskWidget, // open cases within 25% of deadline
+	DtBreakdownWidget, // per-case-type performance table
+	// Deadline monitoring is a type:"dashboard" page; these are its slots.
+	TdCaseTypeFilter, // header-actions slot: case-type filter
+	TdKpiWidget, // headline KPI tiles (CnKpiGrid + CnStatsBlock)
+	TdQuarterlyWidget, // quarterly report table + CSV export
+	TdAnnualWidget, // annual dwangsom audit summary
+	// Process mining is a type:"dashboard" page; these are its widget slots.
+	// The page owns the heading and both filters — a widget that drew its own
+	// heading would be the dashboard-in-dashboard antipattern (hydra#316).
+	PmCaseTypeFilter, // header-actions slot: case-type filter (pageFilters cannot bind dynamic options)
+	PmKpiWidget, // headline KPI tiles (CnKpiGrid + CnStatsBlock)
+	PmDwellChartWidget, // dwell time by status (CnChartWidget bar)
+	PmThroughputChartWidget, // weekly throughput (CnChartWidget line)
+	PmBottleneckTableWidget, // bottleneck ranking (ad-hoc row shape, no object-list leaf applies)
 
 	// --- Migration cost: deferred to a follow-up. ---
 	VoorstelDetailView, // parafeerroute multi-step approver flow

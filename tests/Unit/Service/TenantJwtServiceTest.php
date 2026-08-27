@@ -4,28 +4,28 @@
  * TenantJwtService Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-05-auth-jwt-tenant-claim/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
 use InvalidArgumentException;
-use OCA\Procest\Service\TenantJwtService;
+use OCA\Dossiq\Service\TenantJwtService;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 /**
- * @covers \OCA\Procest\Service\TenantJwtService
+ * @covers \OCA\Dossiq\Service\TenantJwtService
  */
 class TenantJwtServiceTest extends TestCase {
 	private const SECRET = 'a-very-secret-test-secret-32+chars-long!';
@@ -36,7 +36,7 @@ class TenantJwtServiceTest extends TestCase {
 	}
 
 	/**
-	 * The service exposes no token minter. Procest validates tenant JWTs
+	 * The service exposes no token minter. Dossiq validates tenant JWTs
 	 * issued by the external broker; a minting method here would let anything
 	 * that can reach it assert an arbitrary tenant and role set.
 	 *
@@ -72,6 +72,8 @@ class TenantJwtServiceTest extends TestCase {
 		$this->assertSame('tenant-uuid-1', $claims['tenant_id']);
 		$this->assertSame('amsterdam', $claims['tenant_slug']);
 		$this->assertSame(['tenant_admin'], $claims['roles']);
+		// The `iss` claim comes from the EXTERNAL broker that mints the token;
+		// the fixture above signs it as `procest` and this app does not own it.
 		$this->assertSame('procest', $claims['iss']);
 	}
 

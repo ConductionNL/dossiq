@@ -1,21 +1,21 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Seeded-fixture helper for the DEEP, data-dependent procest e2e layer.
+ * Seeded-fixture helper for the DEEP, data-dependent dossiq e2e layer.
  *
  * Cases (zaken), caseTypes, statusTypes, statusRecords and complaints are
- * all OpenRegister objects in the `procest` register (the manifest pages
- * `Cases`/`CaseDetail` declare `register: "procest", schema: "case"`, and
+ * all OpenRegister objects in the `dossiq` register (the manifest pages
+ * `Cases`/`CaseDetail` declare `register: "dossiq", schema: "case"`, and
  * the front-end uses the shared `createObjectStore('object')`). This helper
  * creates and tears down those objects directly through the OpenRegister
  * object CRUD API so the UI-driving specs start from known data:
  *
- *   GET    /apps/openregister/api/objects/procest/{schema}
- *   POST   /apps/openregister/api/objects/procest/{schema}
- *   GET    /apps/openregister/api/objects/procest/{schema}/{id}
- *   PUT    /apps/openregister/api/objects/procest/{schema}/{id}
- *   DELETE /apps/openregister/api/objects/procest/{schema}/{id}
+ *   GET    /apps/openregister/api/objects/dossiq/{schema}
+ *   POST   /apps/openregister/api/objects/dossiq/{schema}
+ *   GET    /apps/openregister/api/objects/dossiq/{schema}/{id}
+ *   PUT    /apps/openregister/api/objects/dossiq/{schema}/{id}
+ *   DELETE /apps/openregister/api/objects/dossiq/{schema}/{id}
  *
  * Playwright = UI only for assertions: this helper is *fixture setup/teardown*
  * (allowed — the prompt and ADR permit API/occ for seeding). The behavioural
@@ -29,8 +29,8 @@
 
 import { APIRequestContext, expect } from '@playwright/test'
 
-/** OpenRegister register slug that owns every procest object. */
-export const REGISTER = 'procest'
+/** OpenRegister register slug that owns every dossiq object. */
+export const REGISTER = 'dossiq'
 
 /**
  * Unique-per-process prefix. Every seeded object embeds this in a visible
@@ -42,17 +42,17 @@ export const RUN_PREFIX = `E2EZAAK-${Date.now().toString(36)}-${Math.floor(Math.
 const API_BASE = '/index.php/apps/openregister/api/objects'
 
 /**
- * Read a CSRF request-token from a freshly-loaded procest page. The
+ * Read a CSRF request-token from a freshly-loaded dossiq page. The
  * OpenRegister write endpoints (POST/PUT/DELETE) are CSRF-protected, so
  * mutating calls must carry a `requesttoken` header. GET is not protected.
  * @param api  The authenticated request context (storageState).
  */
 export async function getRequestToken(api: APIRequestContext): Promise<string> {
-	const res = await api.get('/index.php/apps/procest/dashboard')
+	const res = await api.get('/index.php/apps/dossiq/dashboard')
 	const html = await res.text()
 	const m = html.match(/data-requesttoken="([^"]+)"/)
 	if (!m) {
-		throw new Error('Could not read requesttoken from /apps/procest/dashboard')
+		throw new Error('Could not read requesttoken from /apps/dossiq/dashboard')
 	}
 	return m[1]
 }
@@ -101,7 +101,7 @@ export function objectId(obj: any): string {
 }
 
 /**
- * Create one object of `schema` in the procest register.
+ * Create one object of `schema` in the dossiq register.
  * @param api    Authenticated request context.
  * @param token  CSRF request-token.
  * @param schema Schema slug (e.g. "case", "caseType", "statusType").
@@ -227,7 +227,7 @@ export async function ensureCaseType(
 	const ct = await createObject(api, token, 'caseType', {
 		title: name,
 		identifier: `${RUN_PREFIX.toLowerCase()}-casetype`,
-		description: 'Throwaway caseType seeded by the procest deep e2e layer.',
+		description: 'Throwaway caseType seeded by the dossiq deep e2e layer.',
 	})
 	return { id: objectId(ct), name, seeded: true }
 }
@@ -253,7 +253,7 @@ export async function seedCase(
 
 /**
  * Live schema field map (the deployed schemas differ from the stale
- * lib/Settings/procest_register.json — caseType uses `title`+`identifier`,
+ * lib/Settings/dossiq_register.json — caseType uses `title`+`identifier`,
  * statusType uses `name`+`caseType`+`order`+`isFinal`, workflowTemplate uses
  * `title`+`caseType`+`isActive`+`transitions` (a JSON string)).
  */
@@ -297,7 +297,7 @@ export async function seedStateMachine(
 	const caseType = await createObject(api, token, 'caseType', {
 		title: `${RUN_PREFIX} Vergunning`,
 		identifier: `${RUN_PREFIX.toLowerCase()}-verg`,
-		description: 'Throwaway caseType for the procest state-machine e2e layer.',
+		description: 'Throwaway caseType for the dossiq state-machine e2e layer.',
 	})
 	const caseTypeId = add('caseType', caseType)
 
@@ -352,7 +352,7 @@ export async function seedStateMachine(
 	return { caseTypeId, statusReceived, statusInProgress, statusDone, created }
 }
 
-const PROCEST_API = '/index.php/apps/procest/api'
+const DOSSIQ_API = '/index.php/apps/dossiq/api'
 
 /**
  * GET the engine's available transitions for a case.
@@ -365,10 +365,9 @@ export async function getAvailableTransitions(
 	token: string,
 	caseId: string,
 ): Promise<any> {
-	const res = await api.get(
-		`${PROCEST_API}/case/${caseId}/available-transitions`,
-		{ headers: writeHeaders(token) },
-	)
+	const res = await api.get(`${DOSSIQ_API}/case/${caseId}/available-transitions`, {
+		headers: writeHeaders(token),
+	})
 	return { status: res.status(), body: await res.json().catch(() => ({})) }
 }
 
@@ -387,7 +386,7 @@ export async function executeTransition(
 	transitionId: string,
 	comment?: string,
 ): Promise<any> {
-	const res = await api.post(`${PROCEST_API}/case/${caseId}/transition`, {
+	const res = await api.post(`${DOSSIQ_API}/case/${caseId}/transition`, {
 		headers: writeHeaders(token),
 		data: comment !== undefined ? { transitionId, comment } : { transitionId },
 	})
@@ -405,7 +404,7 @@ export async function getTransitionHistory(
 	token: string,
 	caseId: string,
 ): Promise<any> {
-	const res = await api.get(`${PROCEST_API}/case/${caseId}/transition-history`, {
+	const res = await api.get(`${DOSSIQ_API}/case/${caseId}/transition-history`, {
 		headers: writeHeaders(token),
 	})
 	return { status: res.status(), body: await res.json().catch(() => ({})) }

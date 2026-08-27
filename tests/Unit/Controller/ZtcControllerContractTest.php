@@ -29,21 +29,21 @@
  * removing a scope check here becomes a visible, deliberate change.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\ZtcController;
-use OCA\Procest\Service\ZgwService;
+use OCA\Dossiq\Controller\ZtcController;
+use OCA\Dossiq\Service\ZgwService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -84,15 +84,15 @@ interface ZtcContractObjectServiceStub {
 /**
  * Wire-contract tests for the ZtcController publish endpoints.
  *
- * @covers \OCA\Procest\Controller\ZtcController
+ * @covers \OCA\Dossiq\Controller\ZtcController
  *
  * ZtcController extends ZgwController, which composes NormalisesObjectRows, so
  * exercising it necessarily runs code declared on both. CI runs phpunit.xml
  * with beStrictAboutCoverageMetadata="true" and failOnRisky="true", which marks
  * executed-but-unlisted code risky and fails the run.
  *
- * @uses \OCA\Procest\Controller\ZgwController
- * @uses \OCA\Procest\Support\NormalisesObjectRows
+ * @uses \OCA\Dossiq\Controller\ZgwController
+ * @uses \OCA\Dossiq\Support\NormalisesObjectRows
  */
 class ZtcControllerContractTest extends TestCase {
 
@@ -129,7 +129,7 @@ class ZtcControllerContractTest extends TestCase {
 		$this->zgwService = $this->createMock(ZgwService::class);
 
 		$this->controller = new ZtcController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			zgwService: $this->zgwService,
 		);

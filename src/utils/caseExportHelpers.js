@@ -5,7 +5,7 @@
  * OpenRegister ships the export leaf `GET
  * /apps/openregister/api/objects/{register}/{schema}/export?format=csv|json|excel`
  * (ObjectsController::export -> ExportService), which honours request
- * filters and the current user. Per ADR-022 procest consumes this leaf
+ * filters and the current user. Per ADR-022 dossiq consumes this leaf
  * rather than serialising CSV/Excel itself — this module only builds the
  * URL; the browser download and the actual export run entirely in
  * openregister.
@@ -18,12 +18,12 @@
 import { generateUrl } from '@nextcloud/router'
 
 /**
- * The (procest, case) OpenRegister export-leaf endpoint.
+ * The (dossiq, case) OpenRegister export-leaf endpoint.
  *
  * @type {string}
  */
 export const CASE_EXPORT_ENDPOINT =
-	'/apps/openregister/api/objects/procest/case/export'
+	'/apps/openregister/api/objects/dossiq/case/export'
 
 /**
  * Build the OpenRegister export-leaf URL for the case list.

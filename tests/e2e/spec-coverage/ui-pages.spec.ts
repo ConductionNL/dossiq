@@ -1,8 +1,8 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Gate-19 spec-coverage tests for the rendering UI pages of Procest.
+ * Gate-19 spec-coverage tests for the rendering UI pages of Dossiq.
  *
  * Each test drives a real browser against a live page and asserts the
  * rendered shell (heading / view toggle / create button / filter controls).
@@ -21,7 +21,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { navTo, navToRoute, trackProcestErrors } from '../helpers/nav'
+import { navTo, navToRoute, trackDossiqErrors } from '../helpers/nav'
 
 test.describe('Dashboard page render', () => {
 	// @e2e openspec/specs/dashboard/spec.md#dashboard-page-renders-heading-and-widget-grid
@@ -52,8 +52,8 @@ test.describe('Dashboard page render', () => {
 	})
 
 	// @e2e openspec/specs/dashboard/spec.md#dashboard-mounts-without-console-errors
-	test('dashboard mounts without procest console errors', async ({ page }) => {
-		const errors = trackProcestErrors(page)
+	test('dashboard mounts without dossiq console errors', async ({ page }) => {
+		const errors = trackDossiqErrors(page)
 		await navTo(page, 'Dashboard')
 		// The deployed @conduction/nextcloud-vue renders the manifest dashboard
 		// grid as `.cn-dashboard-grid` (older builds used `.cn-widget-grid`);
@@ -123,7 +123,10 @@ test.describe('Doorlooptijd page render', () => {
 		await navToRoute(page, '/doorlooptijd')
 		await expect(
 			page.getByRole('heading', {
-				name: 'Processing Time Analytics',
+				// page-topology-cleanup (A3): the heading is the dashboard
+				// page's title now. The old wording lives on as the subtitle,
+				// asserted separately below where this spec checks it.
+				name: 'Processing time',
 				level: 2,
 			}),
 		).toBeVisible({ timeout: 15000 })

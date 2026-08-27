@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest ComplaintAccessGuard.
+ * Dossiq ComplaintAccessGuard.
  *
  * Authorization and request-decoding collaborator for the complaint
  * (klacht) surface. Split out of ComplaintController when that controller was
@@ -15,7 +15,7 @@
  * had before the split.
  *
  * @category Service
- * @package  OCA\Procest\Service\Complaint
+ * @package  OCA\Dossiq\Service\Complaint
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,7 +23,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -33,7 +33,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Complaint;
+namespace OCA\Dossiq\Service\Complaint;
 
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -100,7 +100,7 @@ class ComplaintAccessGuard {
 	 */
 	public function parseBody(): array {
 		$params = $this->request->getParams();
-		if (is_array($params) === true && empty($params) === false) {
+		if (empty($params) === false) {
 			return $params;
 		}
 

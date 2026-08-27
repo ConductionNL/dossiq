@@ -4,7 +4,7 @@
  * PdokService Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,10 +19,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\Pdok\PdokLocatieserverService;
-use OCA\Procest\Service\PdokService;
+use OCA\Dossiq\Service\Pdok\PdokLocatieserverService;
+use OCA\Dossiq\Service\PdokService;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;
@@ -32,7 +32,7 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * @covers \OCA\Procest\Service\PdokService
+ * @covers \OCA\Dossiq\Service\PdokService
  */
 class PdokServiceTest extends TestCase {
 	private function makeService(

@@ -7,7 +7,7 @@
  * OpenRegister.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -16,17 +16,17 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\Besluitvorming\TemplateBundleSeeder;
-use OCA\Procest\Service\Besluitvorming\WorkflowReferenceResolver;
-use OCA\Procest\Service\BesluitvormingTemplateService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\Besluitvorming\TemplateBundleSeeder;
+use OCA\Dossiq\Service\Besluitvorming\WorkflowReferenceResolver;
+use OCA\Dossiq\Service\BesluitvormingTemplateService;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -61,10 +61,10 @@ interface BvwTemplateObjectServiceStub {
 /**
  * Unit tests for BesluitvormingTemplateService.
  *
- * @covers \OCA\Procest\Service\BesluitvormingTemplateService
+ * @covers \OCA\Dossiq\Service\BesluitvormingTemplateService
  *
- * @uses \OCA\Procest\Service\Besluitvorming\TemplateBundleSeeder
- * @uses \OCA\Procest\Service\Besluitvorming\WorkflowReferenceResolver
+ * @uses \OCA\Dossiq\Service\Besluitvorming\TemplateBundleSeeder
+ * @uses \OCA\Dossiq\Service\Besluitvorming\WorkflowReferenceResolver
  */
 class BesluitvormingTemplateServiceTest extends TestCase {
 	/**

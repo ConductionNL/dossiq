@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest Notifier Unit Tests
+ * Dossiq Notifier Unit Tests
  *
- * Tests for the Procest INotifier implementation that renders the
+ * Tests for the Dossiq INotifier implementation that renders the
  * `note_mention` notification (nc-vue #207 @mention → real NC
  * notification) for the bell menu.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Notification
+ * @package  OCA\Dossiq\Tests\Unit\Notification
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -16,17 +16,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/ncvue-w2-leaves-adoption/specs/ncvue-w2-leaves-adoption/spec.md#REQ-W2L-003
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Notification;
+namespace OCA\Dossiq\Tests\Unit\Notification;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Notification\Notifier;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Notification\Notifier;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCP\L10N\IFactory;
@@ -35,9 +35,9 @@ use OCP\Notification\UnknownNotificationException;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Unit tests for the Procest Notifier class.
+ * Unit tests for the Dossiq Notifier class.
  *
- * @covers \OCA\Procest\Notification\Notifier
+ * @covers \OCA\Dossiq\Notification\Notifier
  */
 class NotifierTest extends TestCase {
 
@@ -140,7 +140,7 @@ class NotifierTest extends TestCase {
 			[
 				'actorUserId' => 'alice',
 				'actorDisplayName' => 'Alice',
-				'register' => 'procest',
+				'register' => 'dossiq',
 				'schema' => 'case',
 				'objectId' => 'case-1',
 				'noteId' => 'note-9',

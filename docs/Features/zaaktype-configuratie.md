@@ -6,7 +6,7 @@ The zaaktype configuration is part of the Settings area and provides ZGW-complia
 
 ## Overview
 
-This feature manages the mapping between Procest's internal case type definitions and the Dutch ZGW (Zaakgericht Werken) standard. It is accessible from the Case Types settings page.
+This feature manages the mapping between Dossiq's internal case type definitions and the Dutch ZGW (Zaakgericht Werken) standard. It is accessible from the Case Types settings page.
 
 ## ZGW Resource Mapping
 
@@ -34,4 +34,4 @@ Each mapping includes:
 
 ## Purpose
 
-The ZGW API mapping ensures that Procest can expose its data through ZGW-compatible API endpoints, enabling interoperability with other Dutch government systems that follow the ZGW standard (such as OpenZaak, Dimpact ZAC, and XXLLnc Zaken).
+The ZGW API mapping ensures that Dossiq can expose its data through ZGW-compatible API endpoints, enabling interoperability with other Dutch government systems that follow the ZGW standard (such as OpenZaak, Dimpact ZAC, and XXLLnc Zaken).

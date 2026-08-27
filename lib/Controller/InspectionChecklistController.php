@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Inspection Checklist Controller
+ * Dossiq Inspection Checklist Controller
  *
  * REST endpoints for admin CRUD on inspection checklists and per-case
  * inspection result submission.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,12 +23,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\InspectionChecklistService;
-use OCA\Procest\Settings\AdminSettings;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\InspectionChecklistService;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -80,7 +80,7 @@ class InspectionChecklistController extends Controller {
 	 *
 	 * @return JSONResponse List of inspectionChecklist objects
 	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
 	 * @spec openspec/changes/vth-module/tasks.md#task-4
 	 */
@@ -96,7 +96,7 @@ class InspectionChecklistController extends Controller {
 	 *
 	 * @return JSONResponse Created inspectionChecklist object
 	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
 	 * @spec openspec/changes/vth-module/tasks.md#task-4
 	 */
@@ -127,7 +127,7 @@ class InspectionChecklistController extends Controller {
 	 *
 	 * @return JSONResponse Updated inspectionChecklist object
 	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
 	 * @spec openspec/changes/vth-module/tasks.md#task-4
 	 */
@@ -158,7 +158,7 @@ class InspectionChecklistController extends Controller {
 	 *
 	 * @return JSONResponse Success or error
 	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
 	 * @spec openspec/changes/vth-module/tasks.md#task-4
 	 */

@@ -5,15 +5,15 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # tenant-schemas Specification
 
 ## Purpose
-Declares the seven OpenRegister schemas that model multi-tenant zaaksysteem data — Tenant, TenantConfiguration, TenantQuota, TenantUser, TenantMandate, TenantBillingEvent, and TenantOnboardingTask — with their documented properties, enums, and relations registered through the procest register template. It seeds tier quota-limit templates and a default-tenant onboarding template via the register repair step and ensures OpenRegister queries are tenant-scoped at materialisation so a query carrying a tenant context returns only that tenant's rows.
+Declares the seven OpenRegister schemas that model multi-tenant zaaksysteem data — Tenant, TenantConfiguration, TenantQuota, TenantUser, TenantMandate, TenantBillingEvent, and TenantOnboardingTask — with their documented properties, enums, and relations registered through the dossiq register template. It seeds tier quota-limit templates and a default-tenant onboarding template via the register repair step and ensures OpenRegister queries are tenant-scoped at materialisation so a query carrying a tenant context returns only that tenant's rows.
 ## Requirements
 ### Requirement: Multi-tenant register schemas (REQ-001-A-SCHEMA)
 
-The system SHALL declare seven OpenRegister schemas — `Tenant`, `TenantConfiguration`, `TenantQuota`, `TenantUser`, `TenantMandate`, `TenantBillingEvent`, and `TenantOnboardingTask` — with the documented properties, enums, and relations, registered through the procest register template so every consumer reads the same canonical shape.
+The system SHALL declare seven OpenRegister schemas — `Tenant`, `TenantConfiguration`, `TenantQuota`, `TenantUser`, `TenantMandate`, `TenantBillingEvent`, and `TenantOnboardingTask` — with the documented properties, enums, and relations, registered through the dossiq register template so every consumer reads the same canonical shape.
 
 #### Scenario: Schemas materialise with documented properties
 
-- **GIVEN** the procest register template is imported into OpenRegister
+- **GIVEN** the dossiq register template is imported into OpenRegister
 - **WHEN** the seven tenant schemas are materialised
 - **THEN** the `Tenant` schema SHALL expose `slug` (unique), `displayName`, a `status` enum of {onboarding, active, suspended, terminated}, a `tier` enum of {basic, standard, enterprise}, an `isolationMode` enum of {schema, database}, and a `dataResidency` enum of {nl, eu}
 - **AND** `TenantBillingEvent` SHALL be modelled as an insert-only schema with an `eventType` enum including {case_created, case_closed, user_activated, quota_exceeded, case_refund}
@@ -31,7 +31,7 @@ The system SHALL seed tier quota-limit templates (basic, standard, enterprise) a
 
 #### Scenario: Seed templates load via repair step
 
-- **GIVEN** the procest app is enabled and the register repair step runs
+- **GIVEN** the dossiq app is enabled and the register repair step runs
 - **WHEN** the seed import completes
 - **THEN** the tier quota templates SHALL be queryable via the OpenRegister REST API (basic = cases_per_month 100, standard = 1000, enterprise = unlimited)
 - **AND** the default-tenant onboarding template SHALL declare the seven steps {contract, mandate_import, sso_setup, branding, zaaktype_selection, first_user, go_live} in `pending` state

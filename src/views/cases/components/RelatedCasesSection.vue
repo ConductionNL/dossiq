@@ -15,12 +15,12 @@
 <template>
 	<div class="related-cases-section">
 		<div class="related-cases-section__header">
-			<h3>{{ t('procest', 'Related cases') }}</h3>
+			<h3>{{ t('dossiq', 'Related cases') }}</h3>
 			<NcButton type="secondary" @click="showAddModal = true">
 				<template #icon>
 					<Plus :size="20" />
 				</template>
-				{{ t('procest', 'Link case') }}
+				{{ t('dossiq', 'Link case') }}
 			</NcButton>
 		</div>
 
@@ -28,10 +28,10 @@
 
 		<NcEmptyContent
 			v-else-if="relations.length === 0"
-			:name="t('procest', 'No related cases')"
+			:name="t('dossiq', 'No related cases')"
 			:description="
 				t(
-					'procest',
+					'dossiq',
 					'Link this case to a follow-up, subject, or contributing case.',
 				)
 			" />
@@ -40,10 +40,10 @@
 			<table class="viewTable">
 				<thead>
 					<tr>
-						<th scope="col">{{ t('procest', 'Relation') }}</th>
-						<th scope="col">{{ t('procest', 'Case') }}</th>
-						<th scope="col">{{ t('procest', 'Status') }}</th>
-						<th scope="col">{{ t('procest', 'Explanation') }}</th>
+						<th scope="col">{{ t('dossiq', 'Relation') }}</th>
+						<th scope="col">{{ t('dossiq', 'Case') }}</th>
+						<th scope="col">{{ t('dossiq', 'Status') }}</th>
+						<th scope="col">{{ t('dossiq', 'Explanation') }}</th>
 						<th class="related-cases-section__actions-col" />
 					</tr>
 				</thead>
@@ -65,7 +65,7 @@
 								class="related-cases-section__masked"
 								:title="
 									t(
-										'procest',
+										'dossiq',
 										'You do not have access to this case',
 									)
 								">
@@ -77,7 +77,7 @@
 						<td class="related-cases-section__actions-col">
 							<NcButton
 								type="tertiary"
-								:aria-label="t('procest', 'Remove relation')"
+								:aria-label="t('dossiq', 'Remove relation')"
 								@click="remove(rel)">
 								<template #icon>
 									<Delete :size="18" />

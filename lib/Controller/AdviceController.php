@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Advice Controller.
+ * Dossiq Advice Controller.
  *
  * Workflow endpoints for advice requests (adviesAanvraag). CRUD is delegated
  * to the manifest renderer (OpenRegister); this controller exposes only the
@@ -9,7 +9,7 @@
  * (which trigger notifications) and manual reminder dispatch.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,18 +20,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/advice-management/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\AdviceService;
-use OCA\Procest\Service\CaseAccessGuard;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\AdviceService;
+use OCA\Dossiq\Service\CaseAccessGuard;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -112,7 +112,7 @@ class AdviceController extends Controller {
 				Http::STATUS_BAD_REQUEST,
 			);
 		} catch (\Throwable $e) {
-			$this->logger->error('Procest: advice transition failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq: advice transition failed: ' . $e->getMessage());
 			return new JSONResponse(
 				['error' => 'Could not transition advice request'],
 				Http::STATUS_INTERNAL_SERVER_ERROR,
@@ -144,7 +144,7 @@ class AdviceController extends Controller {
 		} catch (\RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_FORBIDDEN);
 		} catch (\Throwable $e) {
-			$this->logger->error('Procest: advice dispatchReminder failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq: advice dispatchReminder failed: ' . $e->getMessage());
 			return new JSONResponse(
 				['error' => 'Could not send reminder'],
 				Http::STATUS_INTERNAL_SERVER_ERROR,

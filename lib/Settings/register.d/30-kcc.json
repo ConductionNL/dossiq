@@ -257,14 +257,14 @@
             }
         },
         "registers": {
-            "procest": {
+            "dossiq": {
                 "schemas": ["routingRule", "kccAgent", "callbackRequest"]
             }
         },
         "objects": [
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "routingRule",
                     "slug": "kcc-rule-paspoort-burgerzaken"
                 },
@@ -281,7 +281,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "routingRule",
                     "slug": "kcc-rule-openbare-werken"
                 },
@@ -299,7 +299,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "routingRule",
                     "slug": "kcc-rule-wmo-sociaal-domein"
                 },
@@ -316,7 +316,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "kccAgent",
                     "slug": "kcc-agent-maria-santos"
                 },
@@ -329,7 +329,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "kccAgent",
                     "slug": "kcc-agent-anke-vandermeer"
                 },
@@ -342,7 +342,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "kccAgent",
                     "slug": "kcc-agent-jan-vandijk"
                 },
@@ -355,7 +355,7 @@
             },
             {
                 "@self": {
-                    "register": "procest",
+                    "register": "dossiq",
                     "schema": "callbackRequest",
                     "slug": "kcc-callback-demo-scheduled"
                 },

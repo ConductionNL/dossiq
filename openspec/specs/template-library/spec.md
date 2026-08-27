@@ -83,7 +83,7 @@ The system SHALL activate a template by creating one `caseType` object, then ite
 
 - WHEN OpenRegister is unavailable
 - THEN the service SHALL throw `\RuntimeException('OpenRegister is not available')`
-- AND when `register` config is unset it SHALL throw `\RuntimeException('Procest register not configured')`
+- AND when `register` config is unset it SHALL throw `\RuntimeException('Dossiq register not configured')`
 
 #### Scenario: Child objects linked to caseType
 

@@ -2,7 +2,7 @@
 
 Refs: Conduction/procest#162 · hydra ADR-046. kind: code.
 
-- [x] **T1**: Extend `OCA\Procest\Portal\PortalContributionProvider` to three
+- [x] **T1**: Extend `OCA\Dossiq\Portal\PortalContributionProvider` to three
   audiences — `getAudiences() = ['supplier','citizen','inspector']`,
   `getAudience() = 'supplier'` (v1 fallback), `getContribution()` branching.
   Keep the supplier audience byte-for-byte. Add citizen (mijnZaken/berichten/
@@ -10,7 +10,7 @@ Refs: Conduction/procest#162 · hydra ADR-046. kind: code.
   audiences, each fields-projected and returning null when not served.
 
 - [x] **T2**: Add three additive OpenRegister scope properties in
-  `lib/Settings/procest_register.json`: `case.portaalSubject`,
+  `lib/Settings/dossiq_register.json`: `case.portaalSubject`,
   `inspectieRapport.assignedInspectorRef`,
   `inspectionChecklistRun.assignedInspectorRef` (internal `inspector` untouched).
 
@@ -31,7 +31,7 @@ Refs: Conduction/procest#162 · hydra ADR-046. kind: code.
 
 - [x] **T6**: Add provider PHPUnit unit tests — assert the 3 audiences + null for
   others, and register-drift-pin every scopeField/projected-field against
-  `procest_register.json`.
+  `dossiq_register.json`.
 
 - [ ] **T7**: (deferred) Re-add the citizen bezwaar / message-reply and inspector
   run-submit creates once Portaliq validates create-body cross-refs

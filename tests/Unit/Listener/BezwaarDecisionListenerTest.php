@@ -16,7 +16,7 @@
  * broken code too.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Listener
+ * @package  OCA\Dossiq\Tests\Unit\Listener
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,17 +27,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Listener;
+namespace OCA\Dossiq\Tests\Unit\Listener;
 
+use OCA\Dossiq\Listener\BezwaarDecisionListener;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
-use OCA\Procest\Listener\BezwaarDecisionListener;
-use OCA\Procest\Service\SettingsService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -45,7 +45,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for BezwaarDecisionListener.
  *
- * @covers \OCA\Procest\Listener\BezwaarDecisionListener
+ * @covers \OCA\Dossiq\Listener\BezwaarDecisionListener
  */
 class BezwaarDecisionListenerTest extends TestCase {
 
@@ -97,7 +97,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 		$this->settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key, string $default = ''): string {
 				return match ($key) {
-					'register' => 'procest-register',
+					'register' => 'dossiq-register',
 					'bezwaar_schema' => 'objectionProceeding',
 					'bezwaar_decision_schema' => 'bezwaardecision',
 					default => $default,
@@ -258,7 +258,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 		);
 		$this->assertSame(
 			[
-				'register' => 'procest-register',
+				'register' => 'dossiq-register',
 				'schema' => 'bezwaardecision',
 				'objectionProceeding' => 'bezwaar-1',
 			],

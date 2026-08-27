@@ -16,10 +16,10 @@
  * touches, so the rows move with the schema untouched.
  *
  * ORDERING: this MUST run before `InitializeSettings`, which triggers the
- * procest register import. Registered first in info.xml's post-migration block.
+ * dossiq register import. Registered first in info.xml's post-migration block.
  *
  * `bezwaar` is now IN, as `objectionProceeding`. It was held back because
- * procest declares BOTH `bezwaar` and `objection` and an earlier attempt renamed
+ * dossiq declares BOTH `bezwaar` and `objection` and an earlier attempt renamed
  * the first onto the second — a DUPLICATE JSON KEY, which is legal, parses, and
  * silently kept only the last block, dropping one schema's lifecycle and
  * calculations. They are two entities, not a duplicate: `objection` is the
@@ -30,11 +30,11 @@
  * colliding with the first.
  *
  * @category  Repair
- * @package   OCA\Procest\Repair
+ * @package   OCA\Dossiq\Repair
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
- * @link      https://procest.nl
+ * @link      https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -42,7 +42,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Repair;
+namespace OCA\Dossiq\Repair;
 
 use OCP\DB\Exception;
 use OCP\IDBConnection;
@@ -70,7 +70,7 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	 * owns the canonical Popolo-shaped schemas — Person, Membership, Post,
 	 * Meeting, Vote, VotingRound, AgendaItem, GovernanceBody — extended with
 	 * schema.org, plus an OriController/OriSerializer that maps them onto ORI.
-	 * procest's `ori` register duplicates that and should be REMOVED rather than
+	 * dossiq's `ori` register duplicates that and should be REMOVED rather than
 	 * renamed: renaming would cement a structure that is going away, and mint
 	 * names that collide conceptually with decidesk's canonical ones.
 	 *
@@ -94,13 +94,22 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	 *
 	 * @var array<int, string>
 	 */
-	private const REGISTER_SLUGS = ['procest'];
+	// The OpenRegister register SLUG. It MOVES with the app id: the
+	// `MigrateRegisterSlug` step renames `procest` -> `dossiq` (and
+	// `dossiq-default` -> `dossiq-default`) on the existing register rows and
+	// is registered ahead of this step in both info.xml blocks. Renaming a
+	// register strands nothing, because objects are bound to it by NUMERIC id:
+	// every shard table's `_register` column holds that id, and the tables are
+	// named `oc_openregister_table_<registerId>_<schemaId>`. What the ordering
+	// buys is that this step still resolves a register at all — run before
+	// MigrateRegisterSlug it would match none and migrate nothing, silently.
+	private const REGISTER_SLUGS = ['dossiq'];
 
 	/**
 	 * Constructor.
 	 *
-	 * @param IDBConnection                  $db        Database connection.
-	 * @param LoggerInterface                $logger    Logger.
+	 * @param IDBConnection $db Database connection.
+	 * @param LoggerInterface $logger Logger.
 	 * @param RenameDutchSchemaSlugDecisions $decisions The pure predicates.
 	 *
 	 * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
@@ -124,7 +133,7 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	 *  requirement that says nothing about it.
 	 */
 	public function getName(): string {
-		return 'Rename Dutch Procest schema slugs';
+		return 'Rename Dutch Dossiq schema slugs';
 	}//end getName()
 
 	/**
@@ -141,7 +150,7 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	public function run(IOutput $output): void {
 		$schemaIds = $this->inScopeSchemaIds();
 		if ($schemaIds === []) {
-			$output->info('RenameDutchSchemaSlugs: no Procest registers on this install; nothing to do.');
+			$output->info('RenameDutchSchemaSlugs: no Dossiq registers on this install; nothing to do.');
 			return;
 		}
 
@@ -224,8 +233,8 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	/**
 	 * Rename one slug, scoped to this app's schemas.
 	 *
-	 * @param string          $old       Current slug.
-	 * @param string          $new       Replacement slug.
+	 * @param string $old Current slug.
+	 * @param string $new Replacement slug.
 	 * @param array<int, int> $schemaIds Schema ids in scope.
 	 *
 	 * @return bool True when the row was updated.

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest NoticeOfDefaultService.
+ * Dossiq NoticeOfDefaultService.
  *
  * Handles AWB 4:17 ingebrekestelling registration: validates the notice
  * against the lapsed TermijnInstance, sets gevalideerd + geldigheidStatus,
@@ -13,7 +13,7 @@
  * berekening (REQ-TERM-005).
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,14 +24,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use Psr\Log\LoggerInterface;

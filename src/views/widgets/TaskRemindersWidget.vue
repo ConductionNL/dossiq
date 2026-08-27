@@ -5,14 +5,14 @@
 		:loading="loading"
 		hideHeader
 		borderless
-		:emptyText="t('procest', 'No task reminders')"
+		:emptyText="t('dossiq', 'No task reminders')"
 		@rowClick="onRowClick">
 		<template #footer>
 			<a
 				class="cn-data-table__view-all"
 				:href="viewAllUrl"
 				@click.prevent="onViewAll">
-				{{ t('procest', 'View all') }} →
+				{{ t('dossiq', 'View all') }} →
 			</a>
 		</template>
 	</CnDataTable>
@@ -62,7 +62,7 @@ export default {
 		 * @spec openspec/specs/signalering-widgets/spec.md
 		 */
 		viewAllUrl() {
-			return generateUrl('/apps/procest/tasks')
+			return generateUrl('/apps/dossiq/tasks')
 		},
 
 		/** @spec openspec/specs/signalering-widgets/spec.md */
@@ -70,21 +70,21 @@ export default {
 			const overdueItems = this.reminders.overdue.map((item) => ({
 				id: item.id,
 				mainText: item.title,
-				subText: t('procest', '{days} days overdue', {
+				subText: t('dossiq', '{days} days overdue', {
 					days: item.daysOverdue,
 				}),
-				targetUrl: generateUrl(`/apps/procest/tasks/${item.id}`),
+				targetUrl: generateUrl(`/apps/dossiq/tasks/${item.id}`),
 			}))
 			const dueSoonItems = this.reminders.dueSoon.map((item) => ({
 				id: item.id,
 				mainText: item.title,
 				subText:
 					item.daysRemaining === 0
-						? t('procest', 'Due today')
-						: t('procest', '{days} days remaining', {
+						? t('dossiq', 'Due today')
+						: t('dossiq', '{days} days remaining', {
 								days: item.daysRemaining,
 							}),
-				targetUrl: generateUrl(`/apps/procest/tasks/${item.id}`),
+				targetUrl: generateUrl(`/apps/dossiq/tasks/${item.id}`),
 			}))
 			return [...overdueItems, ...dueSoonItems].slice(0, 5)
 		},
@@ -114,9 +114,11 @@ export default {
 		 * Navigate to the full tasks list.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/specs/signalering-widgets/spec.md#requirement-task-due-reminders-widget-v1
 		 */
 		onViewAll() {
-			navigateTo(generateUrl('/apps/procest/tasks'))
+			navigateTo(generateUrl('/apps/dossiq/tasks'))
 		},
 
 		/**

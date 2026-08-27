@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest StUF Field Mapping Service
+ * Dossiq StUF Field Mapping Service
  *
  * Service for bidirectional field mapping between StUF XML paths and
  * OpenRegister object properties. Handles date format conversion,
  * enum value transformation, and configurable custom mappings.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -16,14 +16,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/stuf-integration/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
@@ -49,7 +49,7 @@ class StufFieldMappingService {
 	private const STUF_DATETIME_FORMAT = 'YmdHis';
 
 	/**
-	 * Default StUF-ZKN to Procest case field mappings.
+	 * Default StUF-ZKN to Dossiq case field mappings.
 	 *
 	 * @var array<string, array{property: string, transform: string|null}>
 	 */

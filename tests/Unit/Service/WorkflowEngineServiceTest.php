@@ -10,7 +10,7 @@
  * shapes the guard-evaluation envelope the spec mandates.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,24 +19,24 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/workflow-engine-enhancement/tasks.md#W-3
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\StatusTransitionService;
-use OCA\Procest\Service\Transitions\GuardRegistry;
-use OCA\Procest\Service\WorkflowDefinitionService;
-use OCA\Procest\Service\WorkflowEngineService;
+use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Transitions\GuardRegistry;
+use OCA\Dossiq\Service\WorkflowDefinitionService;
+use OCA\Dossiq\Service\WorkflowEngineService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
 /**
- * @covers \OCA\Procest\Service\WorkflowEngineService
+ * @covers \OCA\Dossiq\Service\WorkflowEngineService
  */
 class WorkflowEngineServiceTest extends TestCase {
 	/**

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Broker Assertion Result.
+ * Dossiq Broker Assertion Result.
  *
  * Value object returned by both `EHerkenningSamlAdapterInterface` and
  * `DigidSamlAdapterInterface` after a SAML response from the OpenConnector
@@ -15,7 +15,7 @@
  * a citizen identifier into a business-portal session.
  *
  * @category Service
- * @package  OCA\Procest\Service\Auth
+ * @package  OCA\Dossiq\Service\Auth
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,17 +26,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Auth;
+namespace OCA\Dossiq\Service\Auth;
 
 use InvalidArgumentException;
 
 /**
- * Decoded SAML-broker assertion result for procest auth flows.
+ * Decoded SAML-broker assertion result for dossiq auth flows.
  */
 final class BrokerAssertionResult {
 	/**

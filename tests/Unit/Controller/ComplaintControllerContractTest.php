@@ -27,22 +27,22 @@
  *    still answering 200.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\ComplaintController;
-use OCA\Procest\Service\Complaint\ComplaintAccessGuard;
-use OCA\Procest\Service\ComplaintService;
+use OCA\Dossiq\Controller\ComplaintController;
+use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
+use OCA\Dossiq\Service\ComplaintService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IGroupManager;
@@ -55,9 +55,9 @@ use PHPUnit\Framework\TestCase;
 /**
  * Wire-contract tests for ComplaintController's verdaging + escalate endpoints.
  *
- * @covers \OCA\Procest\Controller\ComplaintController
+ * @covers \OCA\Dossiq\Controller\ComplaintController
  *
- * @uses \OCA\Procest\Service\Complaint\ComplaintAccessGuard
+ * @uses \OCA\Dossiq\Service\Complaint\ComplaintAccessGuard
  */
 class ComplaintControllerContractTest extends TestCase {
 
@@ -110,7 +110,7 @@ class ComplaintControllerContractTest extends TestCase {
 		$this->groupManager = $this->createMock(IGroupManager::class);
 
 		$this->controller = new ComplaintController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			complaintService: $this->complaintService,
 			accessGuard: new ComplaintAccessGuard(
@@ -197,7 +197,7 @@ class ComplaintControllerContractTest extends TestCase {
 		$this->signIn(uid: 'alice');
 		$this->complaintService->method('getComplaint')
 			->willReturn(['id' => 'klacht-1', 'handler' => 'alice']);
-		$this->request->method('getParams')->willReturn(['_route' => 'procest.complaint.escalate']);
+		$this->request->method('getParams')->willReturn(['_route' => 'dossiq.complaint.escalate']);
 		$this->complaintService->expects($this->never())->method('linkEscalatedCase');
 
 		$response = $this->controller->escalate(id: 'klacht-1');

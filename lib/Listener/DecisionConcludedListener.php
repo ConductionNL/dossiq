@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Decision Concluded Listener.
+ * Dossiq Decision Concluded Listener.
  *
  * Consumes decidesk's terminal `DecisionConcludedEvent` and materialises the
- * ZGW `Besluit` on the matching procest case from the decided outcome. decidesk
+ * ZGW `Besluit` on the matching dossiq case from the decided outcome. decidesk
  * owns the *making* of the decision; this listener records the ZGW `Besluit` for
  * the zaak dossier (Besluiten API) as a PROJECTION of the decidesk outcome —
- * procest never authors the besluit locally.
+ * dossiq never authors the besluit locally.
  *
  * This REPLACES the former poll-and-consume outcome path that was removed from
  * the delegation service: the full outcome now arrives synchronously on the
@@ -19,7 +19,7 @@
  * NEVER materialises a besluit on an absent/non-terminal outcome.
  *
  * @category Listener
- * @package  OCA\Procest\Listener
+ * @package  OCA\Dossiq\Listener
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -30,19 +30,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
- * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md
+ * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Listener;
+namespace OCA\Dossiq\Listener;
 
-use OCA\Procest\Service\BesluitMaterialisationService;
-use OCA\Procest\Service\Bezwaar\AdvisoryCommitteeService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\BesluitMaterialisationService;
+use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -53,13 +53,19 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+ * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
  */
 class DecisionConcludedListener implements IEventListener {
 	use SearchesObjects;
 
 	/**
 	 * This app's source-app marker on the decidesk event.
+	 *
+	 * FROZEN at `procest`: this is this app's id AS OTHER APPS KNOW IT, not our
+	 * own app id. decidesk still ships `<id>decidesk</id>` and echoes this value
+	 * back verbatim, and events already in flight or persisted there carry
+	 * `sourceApp: procest`. A mismatch is a silently ignored event, not an error.
+	 * It moves only in a coordinated pass that moves emitter and receiver together.
 	 */
 	private const SOURCE_APP = 'procest';
 
@@ -92,7 +98,7 @@ class DecisionConcludedListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
 	public function handle(Event $event): void {
 		// Defensive duck-typing: the event class is decidesk's and is optional
@@ -124,7 +130,7 @@ class DecisionConcludedListener implements IEventListener {
 			$subjectId = $this->readString(event: $event, getter: 'getSubjectId');
 			$externalRef = $this->readString(event: $event, getter: 'getExternalReference');
 
-			// Locate the procest domain record carrying this decisionRef so we
+			// Locate the dossiq domain record carrying this decisionRef so we
 			// can resolve the owning case and any existing besluitRef. Fall back
 			// to the externalReference / subjectId as the case identifier.
 			[$caseId, $besluitId, $decisionRecord] = $this->resolveCaseAndDecision(
@@ -138,7 +144,7 @@ class DecisionConcludedListener implements IEventListener {
 
 			if ($caseId === '') {
 				$this->logger->warning(
-					'Procest DecisionConcludedListener: could not resolve a case for the concluded decision',
+					'Dossiq DecisionConcludedListener: could not resolve a case for the concluded decision',
 					['decisionId' => $decisionId, 'externalReference' => $externalRef]
 				);
 				return;
@@ -151,7 +157,7 @@ class DecisionConcludedListener implements IEventListener {
 			);
 
 			$this->logger->info(
-				'Procest DecisionConcludedListener: materialised ZGW Besluit from decidesk outcome',
+				'Dossiq DecisionConcludedListener: materialised ZGW Besluit from decidesk outcome',
 				['decisionId' => $decisionId, 'caseId' => $caseId, 'status' => $status]
 			);
 
@@ -169,7 +175,7 @@ class DecisionConcludedListener implements IEventListener {
 			// Never block event delivery on our own derivation failure; never
 			// author a besluit on a failed outcome.
 			$this->logger->warning(
-				'Procest DecisionConcludedListener: could not materialise Besluit from decidesk outcome: '
+				'Dossiq DecisionConcludedListener: could not materialise Besluit from decidesk outcome: '
 				. $e->getMessage()
 			);
 		}//end try
@@ -207,7 +213,7 @@ class DecisionConcludedListener implements IEventListener {
 				$record = ($matches[0] ?? null);
 			} catch (Throwable $e) {
 				$this->logger->warning(
-					'Procest DecisionConcludedListener: decisionRef lookup failed: ' . $e->getMessage()
+					'Dossiq DecisionConcludedListener: decisionRef lookup failed: ' . $e->getMessage()
 				);
 			}
 		}

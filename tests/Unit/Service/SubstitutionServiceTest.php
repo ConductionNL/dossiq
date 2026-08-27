@@ -8,7 +8,7 @@
  * and substituted-work resolution.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,14 +21,14 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Substitution\SubstitutedWorkResolver;
-use OCA\Procest\Service\Substitution\SubstitutionValidator;
-use OCA\Procest\Service\SubstitutionService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Substitution\SubstitutedWorkResolver;
+use OCA\Dossiq\Service\Substitution\SubstitutionValidator;
+use OCA\Dossiq\Service\SubstitutionService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -61,10 +61,10 @@ if (interface_exists(SubstitutionObjectServiceStub::class) === false) {
 /**
  * Unit tests for SubstitutionService.
  *
- * @covers \OCA\Procest\Service\SubstitutionService
+ * @covers \OCA\Dossiq\Service\SubstitutionService
  *
- * @uses \OCA\Procest\Service\Substitution\SubstitutedWorkResolver
- * @uses \OCA\Procest\Service\Substitution\SubstitutionValidator
+ * @uses \OCA\Dossiq\Service\Substitution\SubstitutedWorkResolver
+ * @uses \OCA\Dossiq\Service\Substitution\SubstitutionValidator
  */
 class SubstitutionServiceTest extends TestCase {
 
@@ -104,7 +104,7 @@ class SubstitutionServiceTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturnCallback(
 			static function (string $key, string $default = ''): string {
 				$map = [
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'substitution_schema' => 'substitution',
 					'case_schema' => 'case',
 					'task_schema' => 'task',

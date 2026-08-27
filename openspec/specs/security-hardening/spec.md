@@ -1,7 +1,7 @@
 # security-hardening Specification
 
 ## Purpose
-TBD - created by archiving change procest-security-hardening. Update Purpose after archive.
+TBD - created by archiving change dossiq-security-hardening. Update Purpose after archive.
 ## Requirements
 ### Requirement: REQ-PSH-001 — Supplier portal endpoints derive scope from the authenticated session, not a client parameter
 
@@ -17,7 +17,7 @@ fail CLOSED (HTTP 401) when no valid supplier session is present.
 - **THEN** the endpoint SHALL scope the read to supplier `A` (the session value)
 - **AND** the client-supplied `supplierRef = B` SHALL be ignored
 
-@e2e exclude Backend authorization invariant (session-derived supplierRef in SupplierPortalController via SupplierSessionService::requireSupplierRef) verified by PHPUnit; not a UI flow exercisable by a procest-only Playwright e2e.
+@e2e exclude Backend authorization invariant (session-derived supplierRef in SupplierPortalController via SupplierSessionService::requireSupplierRef) verified by PHPUnit; not a UI flow exercisable by a dossiq-only Playwright e2e.
 
 #### Scenario: A request without a valid supplier session is denied
 
@@ -26,7 +26,7 @@ fail CLOSED (HTTP 401) when no valid supplier session is present.
 - **THEN** it SHALL return HTTP 401
 - **AND** it SHALL NOT read or write any supplier-scoped object
 
-@e2e exclude Fail-closed 401 on missing bearer (SupplierAuthMiddleware) is a server middleware contract verified by PHPUnit; no UI surface to exercise in a procest-only e2e.
+@e2e exclude Fail-closed 401 on missing bearer (SupplierAuthMiddleware) is a server middleware contract verified by PHPUnit; no UI surface to exercise in a dossiq-only e2e.
 
 #### Scenario: The supplier auth middleware covers the portal controllers
 
@@ -50,7 +50,7 @@ present, so its server-derived scoping is explicit and recognisable as the IDOR 
 - **THEN** the resolver SHALL throw and the endpoint SHALL return an error response
 - **AND** no case, message, request or preference SHALL be read or written
 
-@e2e exclude Citizen-portal fail-closed subject resolver (ZaakportaalController::requireAuthenticatedSubject) is a backend IDOR guard verified by PHPUnit; not a procest-only UI flow.
+@e2e exclude Citizen-portal fail-closed subject resolver (ZaakportaalController::requireAuthenticatedSubject) is a backend IDOR guard verified by PHPUnit; not a dossiq-only UI flow.
 
 ### Requirement: REQ-PSH-003 — KvK and logo validators are wired into their write paths
 

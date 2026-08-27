@@ -1,7 +1,7 @@
 <template>
 	<NcDialog
 		v-if="show"
-		:name="t('procest', 'AI Document Classification')"
+		:name="t('dossiq', 'AI Document Classification')"
 		size="normal"
 		@close="$emit('close')">
 		<div class="ai-classify-dialog">
@@ -22,7 +22,7 @@
 
 				<div class="form-group">
 					<label for="ai-classify-document-type">{{
-						t('procest', 'Suggested document type')
+						t('dossiq', 'Suggested document type')
 					}}</label>
 					<NcTextField
 						id="ai-classify-document-type"
@@ -31,7 +31,7 @@
 				</div>
 
 				<div v-if="result.metadata" class="ai-classify-dialog__metadata">
-					<h4>{{ t('procest', 'Extracted metadata') }}</h4>
+					<h4>{{ t('dossiq', 'Extracted metadata') }}</h4>
 					<div
 						v-for="(value, key) in result.metadata"
 						:key="key"
@@ -48,10 +48,10 @@
 
 				<div class="ai-classify-dialog__actions">
 					<NcButton type="primary" @click="apply">
-						{{ t('procest', 'Apply classification') }}
+						{{ t('dossiq', 'Apply classification') }}
 					</NcButton>
 					<NcButton type="error" @click="reject">
-						{{ t('procest', 'Reject') }}
+						{{ t('dossiq', 'Reject') }}
 					</NcButton>
 				</div>
 			</div>
@@ -122,7 +122,7 @@ export default {
 				this.modifiedMetadata = { ...(this.result.metadata || {}) }
 			} catch (e) {
 				this.error =
-					e.response?.data?.error || t('procest', 'Classification failed')
+					e.response?.data?.error || t('dossiq', 'Classification failed')
 			} finally {
 				this.loading = false
 			}

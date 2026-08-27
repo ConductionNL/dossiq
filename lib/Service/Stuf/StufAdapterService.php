@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Procest StufAdapterService.
+ * Dossiq StufAdapterService.
  *
- * The orchestrator. Each public method takes a procest entity (a `case`) and a
+ * The orchestrator. Each public method takes a dossiq entity (a `case`) and a
  * StufEndpoint, builds the right envelope through StufMessageBuilder, logs the
  * outbound row, and hands the envelope to {@see StufOutboundTransport} to be
  * sent and classified.
@@ -19,7 +19,7 @@
  * StufMessage row.
  *
  * @category Service
- * @package  OCA\Procest\Service\Stuf
+ * @package  OCA\Dossiq\Service\Stuf
  *
  * @author    Conduction <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -30,16 +30,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Stuf;
+namespace OCA\Dossiq\Service\Stuf;
 
-use OCA\Procest\Service\StufMessageBuilder;
+use OCA\Dossiq\Service\StufMessageBuilder;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -84,7 +84,7 @@ class StufAdapterService {
 	}//end __construct()
 
 	/**
-	 * Create a zaak in the zaaksysteem from a procest case.
+	 * Create a zaak in the zaaksysteem from a dossiq case.
 	 *
 	 * @param array $case The case array (id, type, omschrijving, startdatum, betrokkenen, documenten).
 	 * @param array $endpoint The StufEndpoint.

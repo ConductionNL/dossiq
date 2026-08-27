@@ -4,7 +4,7 @@
  * Unit tests for MandaatEscalatieService.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -12,7 +12,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -20,16 +20,16 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\MandaatEscalatieService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\MandaatEscalatieService;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * @covers \OCA\Procest\Service\MandaatEscalatieService
+ * @covers \OCA\Dossiq\Service\MandaatEscalatieService
  */
 class MandaatEscalatieServiceTest extends TestCase {
 
@@ -44,7 +44,7 @@ class MandaatEscalatieServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'mandaat_schema' => 'mandate',
 					'medewerker_rol_toewijzing_schema' => 'medewerkerRolToewijzing',
 					'mandaat_escalatie_schema' => 'mandaatEscalatie',
@@ -56,7 +56,7 @@ class MandaatEscalatieServiceTest extends TestCase {
 
 		// Seed mandates + assignments.
 		$this->objects->saveObject(
-			'procest',
+			'dossiq',
 			'mandate',
 			[
 				'id' => 'm-low',
@@ -66,7 +66,7 @@ class MandaatEscalatieServiceTest extends TestCase {
 			]
 		);
 		$this->objects->saveObject(
-			'procest',
+			'dossiq',
 			'mandate',
 			[
 				'id' => 'm-high',
@@ -76,7 +76,7 @@ class MandaatEscalatieServiceTest extends TestCase {
 			]
 		);
 		$this->objects->saveObject(
-			'procest',
+			'dossiq',
 			'medewerkerRolToewijzing',
 			[
 				'userId' => 'carol',

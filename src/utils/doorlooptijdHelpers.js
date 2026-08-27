@@ -135,7 +135,7 @@ export function computeSlaCompliance(completedCases, caseTypes) {
 			const ct = caseTypeMap.get(ctId)
 			byType.set(ctId, {
 				id: ctId,
-				name: ct?.title || ct?.name || t('procest', 'Unknown'),
+				name: ct?.title || ct?.name || t('dossiq', 'Unknown'),
 				total: 0,
 				withinSla: 0,
 				totalDays: 0,
@@ -333,7 +333,7 @@ export function getAtRiskCases(openCases, caseTypes, thresholdPct) {
 				id: c.id,
 				title: c.title || '',
 				identifier: c.identifier || '',
-				caseTypeName: ct?.title || ct?.name || t('procest', 'Unknown'),
+				caseTypeName: ct?.title || ct?.name || t('dossiq', 'Unknown'),
 				targetDays,
 				elapsedDays,
 				remainingDays,
@@ -375,7 +375,7 @@ export function computePerformanceTable(completedCases, caseTypes) {
 			: null
 		byType.set(ct.id, {
 			id: ct.id,
-			name: ct.title || ct.name || t('procest', 'Unknown'),
+			name: ct.title || ct.name || t('dossiq', 'Unknown'),
 			targetDays,
 			totalDays: 0,
 			total: 0,

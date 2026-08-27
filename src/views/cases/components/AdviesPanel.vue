@@ -100,7 +100,7 @@ import {
 	transitionStatus,
 } from '../../../services/adviceApi.js'
 
-const APP_NAME = 'procest'
+const APP_NAME = 'dossiq'
 
 export default {
 	name: 'AdviesPanel',
@@ -150,7 +150,7 @@ export default {
 			try {
 				this.advies = await getAdviceForCase(this.caseId)
 			} catch (error) {
-				console.error('Procest: failed to load advice', error)
+				console.error('Dossiq: failed to load advice', error)
 				this.advies = []
 			} finally {
 				this.loading = false
@@ -176,7 +176,7 @@ export default {
 			try {
 				await dispatchReminder(item.id || item.uuid)
 			} catch (error) {
-				console.error('Procest: failed to send reminder', error)
+				console.error('Dossiq: failed to send reminder', error)
 			}
 		},
 
@@ -192,7 +192,7 @@ export default {
 				})
 				await this.fetchAdvies()
 			} catch (error) {
-				console.error('Procest: failed to mark received', error)
+				console.error('Dossiq: failed to mark received', error)
 			}
 		},
 

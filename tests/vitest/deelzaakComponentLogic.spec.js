@@ -1,10 +1,10 @@
 /**
- * SPDX-FileCopyrightText: 2026 Conduction / Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Conduction / Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Component-logic unit tests for the NEW sub-case + case-email UI.
  *
- * Procest's Vitest project runs in the `node` environment with no Vue mount
+ * Dossiq's Vitest project runs in the `node` environment with no Vue mount
  * harness installed (see vitest.config.js), so we cannot full-mount the .vue
  * leaves here. Instead we replicate the pure, side-effect-free computed logic
  * that drives each new component's rendering and assert it directly:

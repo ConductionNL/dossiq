@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest GuardFailedException.
+ * Dossiq GuardFailedException.
  *
  * Thrown by `StatusTransitionService::execute()` when server-side guard
  * re-evaluation rejects the transition (REQ-STE-4-002). Carries the list of
  * failed guard snapshots so the caller can render specific messages.
  *
  * @category Service
- * @package  OCA\Procest\Service\Transitions
+ * @package  OCA\Dossiq\Service\Transitions
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,12 +19,12 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Transitions;
+namespace OCA\Dossiq\Service\Transitions;
 
 use RuntimeException;
 

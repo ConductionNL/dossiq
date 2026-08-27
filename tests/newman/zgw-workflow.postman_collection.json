@@ -1,8 +1,8 @@
 {
 	"info": {
 		"_postman_id": "c7a4d2e1-1f3d-4c4a-9c0e-procestzgw0001",
-		"name": "Procest ZGW Workflow",
-		"description": "End-to-end CRUD workflow over procest's ZGW REST API. Drives the catalogi (ZTC), zaken (ZRC), and besluiten (BRC) registers through a single happy-path scenario:\n\n1. Create a `zaaktype` in /catalogi/v1/zaaktypen.\n2. Create a `zaak` (referencing that zaaktype) in /zaken/v1/zaken.\n3. List + show the zaak — verify it round-trips.\n4. Create a `besluit` linked to the zaak in /besluiten/v1/besluiten.\n5. List besluiten — verify the new one appears.\n6. Cleanup: DELETE besluit, zaak, zaaktype.\n\nThe controller stack (ZtcController, ZrcController, BrcController → ZgwService) is exercised end-to-end; this collection is the runtime companion to the missing ZtcControllerTest / ZrcControllerTest / BrcControllerTest unit tests called out by openspec/changes/unit-test-coverage-75/tasks.md (task 7.1).\n\nAuth is HTTP Basic + OCS-APIRequest. Defaults to admin:admin against http://localhost:8080.",
+		"name": "Dossiq ZGW Workflow",
+		"description": "End-to-end CRUD workflow over dossiq's ZGW REST API. Drives the catalogi (ZTC), zaken (ZRC), and besluiten (BRC) registers through a single happy-path scenario:\n\n1. Create a `zaaktype` in /catalogi/v1/zaaktypen.\n2. Create a `zaak` (referencing that zaaktype) in /zaken/v1/zaken.\n3. List + show the zaak — verify it round-trips.\n4. Create a `besluit` linked to the zaak in /besluiten/v1/besluiten.\n5. List besluiten — verify the new one appears.\n6. Cleanup: DELETE besluit, zaak, zaaktype.\n\nThe controller stack (ZtcController, ZrcController, BrcController → ZgwService) is exercised end-to-end; this collection is the runtime companion to the missing ZtcControllerTest / ZrcControllerTest / BrcControllerTest unit tests called out by openspec/changes/unit-test-coverage-75/tasks.md (task 7.1).\n\nAuth is HTTP Basic + OCS-APIRequest. Defaults to admin:admin against http://localhost:8080.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"auth": {
@@ -254,7 +254,7 @@
 		}
 	],
 	"variable": [
-		{"key": "base_url", "value": "http://localhost:8080/index.php/apps/procest", "type": "string"},
+		{"key": "base_url", "value": "http://localhost:8080/index.php/apps/dossiq", "type": "string"},
 		{"key": "admin_user", "value": "admin", "type": "string"},
 		{"key": "admin_pass", "value": "admin", "type": "string"}
 	]

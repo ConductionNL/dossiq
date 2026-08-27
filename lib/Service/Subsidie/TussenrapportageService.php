@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Tussenrapportage Service.
+ * Dossiq Tussenrapportage Service.
  *
  * Interim-report (tussenrapportage) workflow within a grant execution
  * (REQ-SUB-004). Owns auto-creation cadence (jaarlijks/halfjaarlijks),
@@ -12,7 +12,7 @@
  * to OpenRegister via SettingsService.
  *
  * @category Service
- * @package  OCA\Procest\Service\Subsidie
+ * @package  OCA\Dossiq\Service\Subsidie
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,16 +23,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Subsidie;
+namespace OCA\Dossiq\Service\Subsidie;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -127,6 +127,8 @@ class TussenrapportageService {
 	 * @return array<string, mixed> The created report record.
 	 *
 	 * @throws OCSBadRequestException When OpenRegister is unavailable/unconfigured.
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-004-tussenrapportage-as-typed-sub-zaak
 	 */
 	public function createExpected(string $uitvoeringId, array $payload): array {
 		[$objectService, $register, $schema] = $this->resolve();
@@ -143,7 +145,7 @@ class TussenrapportageService {
 		try {
 			return $objectService->saveObject(object: $record, register: $register, schema: $schema);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest subsidie: createExpected tussenrapportage failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq subsidie: createExpected tussenrapportage failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon tussenrapportage niet aanmaken');
 		}
 	}//end createExpected()
@@ -161,6 +163,8 @@ class TussenrapportageService {
 	 * @return array<string, mixed> The approved report record.
 	 *
 	 * @throws OCSBadRequestException When unauthenticated or persistence fails.
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-004-tussenrapportage-as-typed-sub-zaak
 	 */
 	public function approveReport(string $reportId, ?string $beoordelingsoordeel = null, ?float $approvedAmount = null): array {
 		$user = $this->userSession->getUser();
@@ -186,7 +190,7 @@ class TussenrapportageService {
 		try {
 			return $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string)$reportId);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest subsidie: approveReport failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq subsidie: approveReport failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon tussenrapportage niet goedkeuren');
 		}
 	}//end approveReport()
@@ -203,6 +207,8 @@ class TussenrapportageService {
 	 * @return array<string, mixed> The updated report record.
 	 *
 	 * @throws OCSBadRequestException When the corrections text is empty or persistence fails.
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-004-tussenrapportage-as-typed-sub-zaak
 	 */
 	public function partialApprove(string $reportId, string $correctionRequest, int $currentTeller): array {
 		if (trim($correctionRequest) === '') {
@@ -227,7 +233,7 @@ class TussenrapportageService {
 		try {
 			return $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string)$reportId);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest subsidie: partialApprove failed: ' . $e->getMessage());
+			$this->logger->error('Dossiq subsidie: partialApprove failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon tussenrapportage niet gedeeltelijk goedkeuren');
 		}
 	}//end partialApprove()

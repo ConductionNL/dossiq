@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest public case-token share service.
+ * Dossiq public case-token share service.
  *
- * The "track your case" public link surface. Procest mints NO tokens of its
+ * The "track your case" public link surface. Dossiq mints NO tokens of its
  * own: every token is minted, listed and revoked through OpenRegister's shares
  * integration leaf (ADR-022), which owns the 256-bit non-guessable handle,
  * expiry, revocation, and the `#[PublicPage]` resolve path that returns only
- * the fields the public group may read. There is no procest-side token store,
+ * the fields the public group may read. There is no dossiq-side token store,
  * field-exclusion list, password gate or brute-force lockout to keep in sync.
  *
  * Split out of CaseSharingService so this mode's entire dependency on the leaf
@@ -18,7 +18,7 @@
  * a missing leaf is never reported as a successful share.
  *
  * @category Service
- * @package  OCA\Procest\Service\Sharing
+ * @package  OCA\Dossiq\Service\Sharing
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,7 +26,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -36,9 +36,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Sharing;
+namespace OCA\Dossiq\Service\Sharing;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -71,9 +71,9 @@ class CaseTokenShareService {
 	 * resolves anonymously to a PUBLIC-SAFE view of the case via OR's
 	 * `#[PublicPage]` resolve endpoint — only the fields the public group
 	 * may read are returned (the `publicatiedatum<=$now` + public-group
-	 * predicate), so procest no longer hand-maintains a token store,
+	 * predicate), so dossiq no longer hand-maintains a token store,
 	 * field-exclusion list, password gate, or brute-force lockout. RBAC
-	 * is enforced by the OR public read path, not by procest.
+	 * is enforced by the OR public read path, not by dossiq.
 	 *
 	 * @param string $caseId The UUID of the case to share
 	 * @param string $label Human-readable label for the link
@@ -143,7 +143,7 @@ class CaseTokenShareService {
 		}
 
 		$this->logger->info(
-			'Procest: Public case-token link minted via OR shares leaf',
+			'Dossiq: Public case-token link minted via OR shares leaf',
 			[
 				'caseId' => $caseId,
 				'createdBy' => $createdBy,
@@ -218,7 +218,7 @@ class CaseTokenShareService {
 		try {
 			$tokenService->revoke($tokenId);
 			$this->logger->info(
-				'Procest: Public case-token link revoked via OR shares leaf',
+				'Dossiq: Public case-token link revoked via OR shares leaf',
 				['tokenId' => $tokenId]
 			);
 			return true;

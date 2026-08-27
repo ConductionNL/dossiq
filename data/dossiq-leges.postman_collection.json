@@ -1,0 +1,128 @@
+{
+	"info": {
+		"name": "Procest Leges API",
+		"_postman_id": "b1e7c2a0-1f3d-4c4a-9c0e-procestleges01",
+		"description": "API/contract coverage for the leges-heffingen feature (#67). Exercises the LegesController calculation endpoints and the LegesAdminController verordening-management endpoints against a live dossiq instance (localhost:8080, admin:admin). Happy paths plus 400 negative cases. Companion UI coverage lives in tests/e2e/leges-heffingen.spec.ts (Playwright). Auth is HTTP Basic + OCS-APIRequest at the collection level.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{"key": "username", "value": "{{admin_user}}", "type": "string"},
+			{"key": "password", "value": "{{admin_pass}}", "type": "string"}
+		]
+	},
+	"item": [
+		{
+			"name": "Calculate — missing parameters returns 400",
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "OCS-APIRequest", "value": "true"},
+					{"key": "Content-Type", "value": "application/json"}
+				],
+				"body": {"mode": "raw", "raw": "{}"},
+				"url": {"raw": "{{base_url}}/api/leges/calculate", "host": ["{{base_url}}"], "path": ["api", "leges", "calculate"]}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('400 Bad Request', function () { pm.response.to.have.status(400) })",
+					"pm.test('error names required parameters', function () { pm.expect(pm.response.json().error).to.match(/caseData and verordening are required/) })"
+				]}}
+			]
+		},
+		{
+			"name": "Calculate — vast tariff returns total + breakdown",
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "OCS-APIRequest", "value": "true"},
+					{"key": "Content-Type", "value": "application/json"}
+				],
+				"body": {"mode": "raw", "raw": "{\"caseData\":{\"zaaktype\":\"omgevingsvergunning\"},\"verordening\":{\"id\":\"v1\",\"artikelen\":[{\"nummer\":\"1.1\",\"omschrijving\":\"Bouw\",\"type\":\"vast\",\"bedrag\":250}]}}"},
+				"url": {"raw": "{{base_url}}/api/leges/calculate", "host": ["{{base_url}}"], "path": ["api", "leges", "calculate"]}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('200 OK', function () { pm.response.to.have.status(200) })",
+					"var b = pm.response.json()",
+					"pm.test('total equals the vast bedrag', function () { pm.expect(b.total).to.eql(250) })",
+					"pm.test('breakdown lists the artikel', function () { pm.expect(b.breakdown).to.be.an('array').that.has.lengthOf(1); pm.expect(b.breakdown[0].type).to.eql('vast') })",
+					"pm.test('result carries audit fields', function () { pm.expect(b).to.have.property('calculatedBy'); pm.expect(b).to.have.property('calculatedAt'); pm.expect(b).to.have.property('version') })"
+				]}}
+			]
+		},
+		{
+			"name": "Recalculate — re-runs with correction context",
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "OCS-APIRequest", "value": "true"},
+					{"key": "Content-Type", "value": "application/json"}
+				],
+				"body": {"mode": "raw", "raw": "{\"caseData\":{\"zaaktype\":\"omgevingsvergunning\"},\"verordening\":{\"id\":\"v1\",\"artikelen\":[{\"nummer\":\"1.1\",\"omschrijving\":\"Bouw\",\"type\":\"vast\",\"bedrag\":250}]},\"previousCalculation\":{\"total\":250,\"version\":1},\"correctionReason\":\"Aanvraag gewijzigd\"}"},
+				"url": {"raw": "{{base_url}}/api/leges/recalculate", "host": ["{{base_url}}"], "path": ["api", "leges", "recalculate"]}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('200 OK', function () { pm.response.to.have.status(200) })",
+					"var b = pm.response.json()",
+					"pm.test('returns a recalculated total + breakdown', function () { pm.expect(b).to.have.property('total'); pm.expect(b.breakdown).to.be.an('array') })",
+					"pm.test('audit-trails the correction with a bumped version', function () { pm.expect(b).to.have.property('version') })"
+				]}}
+			]
+		},
+		{
+			"name": "Admin — list verordeningen returns 200 + results array",
+			"request": {
+				"method": "GET",
+				"header": [{"key": "OCS-APIRequest", "value": "true"}],
+				"url": {"raw": "{{base_url}}/api/admin/leges/verordeningen", "host": ["{{base_url}}"], "path": ["api", "admin", "leges", "verordeningen"]}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('200 OK (leges schemas configured)', function () { pm.response.to.have.status(200) })",
+					"pm.test('response has a results array', function () { pm.expect(pm.response.json().results).to.be.an('array') })"
+				]}}
+			]
+		},
+		{
+			"name": "Admin — import verordening with metaData persists concept (201 + tariefTabelId)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "OCS-APIRequest", "value": "true"},
+					{"key": "Content-Type", "value": "application/json"}
+				],
+				"body": {"mode": "raw", "raw": "{\"metaData\":{\"naam\":\"Newman Verordening 2026\",\"geldigVanaf\":\"2026-01-01\",\"vastgesteldDoor\":\"Newman QA\"},\"tarieven\":[{\"tariefNummer\":\"1.1.1\",\"omschrijving\":\"Paspoort\",\"grondslag\":\"vast\",\"eenheid\":\"per_stuk\",\"bedrag\":7500,\"btwTarief\":0,\"grootboekrekening\":\"8000\"}]}"},
+				"url": {"raw": "{{base_url}}/api/leges/import-verordening", "host": ["{{base_url}}"], "path": ["api", "leges", "import-verordening"]}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('201 Created (write path persists, no TypeError)', function () { pm.response.to.have.status(201) })",
+					"var b = pm.response.json()",
+					"pm.test('returns a persisted tariefTabelId (real OR uuid)', function () { pm.expect(b).to.have.property('tariefTabelId'); pm.expect(b.tariefTabelId).to.be.a('string').and.to.have.length.above(0) })",
+					"pm.test('reports concept status and a written tarief', function () { pm.expect(b.status).to.eql('concept'); pm.expect(b.tarieven).to.be.at.least(1) })"
+				]}}
+			]
+		},
+		{
+			"name": "Admin — import verordening without metaData returns 400",
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "OCS-APIRequest", "value": "true"},
+					{"key": "Content-Type", "value": "application/json"}
+				],
+				"body": {"mode": "raw", "raw": "{}"},
+				"url": {"raw": "{{base_url}}/api/leges/import-verordening", "host": ["{{base_url}}"], "path": ["api", "leges", "import-verordening"]}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('400 Bad Request', function () { pm.response.to.have.status(400) })",
+					"pm.test('error names metaData', function () { pm.expect(pm.response.json().error).to.match(/metaData is required/) })"
+				]}}
+			]
+		}
+	]
+}

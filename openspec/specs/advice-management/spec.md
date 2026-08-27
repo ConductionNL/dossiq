@@ -23,7 +23,7 @@ advice requests are visible — independently of whether the OpenRegister collec
 returns rows.
 
 #### Scenario: Advice index page renders list shell
-- **GIVEN** an authenticated user on the Procest app
+- **GIVEN** an authenticated user on the Dossiq app
 - **WHEN** they navigate to the Advice page
 - **THEN** the Cards/Table view-mode toggle MUST be visible
 - **AND** an "Add" create button MUST be visible
@@ -113,7 +113,7 @@ The system SHALL provide a form for creating advice requests from the case dashb
 
 ### Requirement: AdviceController SHALL expose advice transition + reminder endpoints
 
-`OCA\Procest\Controller\AdviceController` SHALL provide `POST /api/advice/{id}/transition` (transition the advice between statuses with optional payload) and `POST /api/advice/{id}/reminder` (manually dispatch a reminder to the assigned adviseur). Each endpoint SHALL delegate to `AdviceService` and SHALL enforce that the calling user has authority on the parent case.
+`OCA\Dossiq\Controller\AdviceController` SHALL provide `POST /api/advice/{id}/transition` (transition the advice between statuses with optional payload) and `POST /api/advice/{id}/reminder` (manually dispatch a reminder to the assigned adviseur). Each endpoint SHALL delegate to `AdviceService` and SHALL enforce that the calling user has authority on the parent case.
 
 @e2e exclude Backend PHP controller endpoints; covered by Newman API tests + PHPUnit, not a UI surface.
 
@@ -123,7 +123,7 @@ The system SHALL provide a form for creating advice requests from the case dashb
 
 ### Requirement: AdviceService SHALL implement the full advice lifecycle + workflow guard
 
-`OCA\Procest\Service\AdviceService` SHALL provide `transitionStatus()`, `dispatchReminder()`, `getAdviceForCase()`, `getOpenAdvice()`, `expireAdvice()`, and `applyWorkflowGuard()`. The workflow guard SHALL block parent-case status transitions while open advice requests are still pending for that case — releasing only when all advice is `received`, `withdrawn`, or `expired`. Status transitions SHALL be append-only audit-trailed.
+`OCA\Dossiq\Service\AdviceService` SHALL provide `transitionStatus()`, `dispatchReminder()`, `getAdviceForCase()`, `getOpenAdvice()`, `expireAdvice()`, and `applyWorkflowGuard()`. The workflow guard SHALL block parent-case status transitions while open advice requests are still pending for that case — releasing only when all advice is `received`, `withdrawn`, or `expired`. Status transitions SHALL be append-only audit-trailed.
 
 @e2e exclude Backend PHP service + workflow guard; lifecycle logic covered by PHPUnit, not a UI surface.
 
@@ -138,7 +138,7 @@ The system SHALL provide a form for creating advice requests from the case dashb
 
 ### Requirement: AdviceDeadlineJob SHALL send reminders and auto-expire overdue advice
 
-`OCA\Procest\BackgroundJob\AdviceDeadlineJob` SHALL run on the Nextcloud BackgroundJob schedule and: (a) dispatch reminders to assigned adviseurs at the configured thresholds before the deadline, (b) call `AdviceService::expireAdvice()` on requests whose deadline has passed without response. The job SHALL be idempotent — duplicate runs SHALL NOT send duplicate reminders for the same threshold.
+`OCA\Dossiq\BackgroundJob\AdviceDeadlineJob` SHALL run on the Nextcloud BackgroundJob schedule and: (a) dispatch reminders to assigned adviseurs at the configured thresholds before the deadline, (b) call `AdviceService::expireAdvice()` on requests whose deadline has passed without response. The job SHALL be idempotent — duplicate runs SHALL NOT send duplicate reminders for the same threshold.
 
 @e2e exclude Backend BackgroundJob; reminder/expiry idempotency covered by PHPUnit, not a UI surface.
 

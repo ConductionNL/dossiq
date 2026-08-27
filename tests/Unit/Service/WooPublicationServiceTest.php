@@ -4,7 +4,7 @@
  * WooPublicationService Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,12 +20,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\WooPublication\OpenCatalogiApiClient;
-use OCA\Procest\Service\WooPublication\WooCategoryMapper;
-use OCA\Procest\Service\WooPublicationService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
+use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
+use OCA\Dossiq\Service\WooPublicationService;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -75,9 +75,9 @@ interface WooPublicationObjectServiceStub {
 /**
  * Unit tests for WooPublicationService.
  *
- * @covers \OCA\Procest\Service\WooPublicationService
+ * @covers \OCA\Dossiq\Service\WooPublicationService
  *
- * @uses \OCA\Procest\Service\WooPublication\WooCategoryMapper
+ * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
  */
 class WooPublicationServiceTest extends TestCase {
 
@@ -305,8 +305,8 @@ class WooPublicationServiceTest extends TestCase {
 
 		$objectService = $this->createMock(WooPublicationObjectServiceStub::class);
 		$objectService->method('find')->willReturnMap([
-			['case-001', null, false, 'procest', 'case', ['id' => 'case-001', 'title' => 'Test case']],
-			['decision-001', null, false, 'procest', 'decision', ['id' => 'decision-001', 'decisionType' => 'WOO-besluit']],
+			['case-001', null, false, 'dossiq', 'case', ['id' => 'case-001', 'title' => 'Test case']],
+			['decision-001', null, false, 'dossiq', 'decision', ['id' => 'decision-001', 'decisionType' => 'WOO-besluit']],
 		]);
 		$objectService->method('searchObjectsBySlug')->willReturn([
 			['documentRef' => 'doc-001', 'classification' => 'niet_openbaar'],
@@ -314,7 +314,7 @@ class WooPublicationServiceTest extends TestCase {
 
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
 		$this->settingsService->method('getConfigValue')->willReturnMap([
-			['register', '', 'procest'],
+			['register', '', 'dossiq'],
 			['case_schema', '', 'case'],
 			['decision_schema', '', 'decision'],
 			['woo_assessment_schema', '', 'wooAssessment'],
@@ -341,9 +341,9 @@ class WooPublicationServiceTest extends TestCase {
 
 		$objectService = $this->createMock(WooPublicationObjectServiceStub::class);
 		$objectService->method('find')->willReturnMap([
-			['case-001', null, false, 'procest', 'case', ['id' => 'case-001', 'title' => 'Test case']],
-			['decision-001', null, false, 'procest', 'decision', ['id' => 'decision-001', 'decisionType' => 'WOO-besluit', 'decisionDate' => '2026-07-13']],
-			['doc-001', null, false, 'procest', 'document', ['id' => 'doc-001', 'title' => 'Besluit document', 'fileName' => 'besluit.pdf', 'format' => 'application/pdf', 'content' => base64_encode('public content')]],
+			['case-001', null, false, 'dossiq', 'case', ['id' => 'case-001', 'title' => 'Test case']],
+			['decision-001', null, false, 'dossiq', 'decision', ['id' => 'decision-001', 'decisionType' => 'WOO-besluit', 'decisionDate' => '2026-07-13']],
+			['doc-001', null, false, 'dossiq', 'document', ['id' => 'doc-001', 'title' => 'Besluit document', 'fileName' => 'besluit.pdf', 'format' => 'application/pdf', 'content' => base64_encode('public content')]],
 		]);
 		$objectService->method('searchObjectsBySlug')->willReturn([
 			['documentRef' => 'doc-001', 'classification' => 'openbaar'],
@@ -357,7 +357,7 @@ class WooPublicationServiceTest extends TestCase {
 						&& $object['wooPublication']['status'] === 'published';
 				}),
 				[],
-				'procest',
+				'dossiq',
 				'decision',
 				'decision-001'
 			)
@@ -365,7 +365,7 @@ class WooPublicationServiceTest extends TestCase {
 
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
 		$this->settingsService->method('getConfigValue')->willReturnMap([
-			['register', '', 'procest'],
+			['register', '', 'dossiq'],
 			['case_schema', '', 'case'],
 			['decision_schema', '', 'decision'],
 			['woo_assessment_schema', '', 'wooAssessment'],
@@ -402,7 +402,7 @@ class WooPublicationServiceTest extends TestCase {
 
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
 		$this->settingsService->method('getConfigValue')->willReturnMap([
-			['register', '', 'procest'],
+			['register', '', 'dossiq'],
 			['decision_schema', '', 'decision'],
 		]);
 
@@ -436,7 +436,7 @@ class WooPublicationServiceTest extends TestCase {
 					return $object['wooPublication']['status'] === 'withdrawn';
 				}),
 				[],
-				'procest',
+				'dossiq',
 				'decision',
 				'decision-001'
 			)
@@ -444,7 +444,7 @@ class WooPublicationServiceTest extends TestCase {
 
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
 		$this->settingsService->method('getConfigValue')->willReturnMap([
-			['register', '', 'procest'],
+			['register', '', 'dossiq'],
 			['decision_schema', '', 'decision'],
 		]);
 		$this->settingsService->method('getWooPublicationConfigValue')->willReturnMap([

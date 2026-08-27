@@ -9,7 +9,7 @@
  * /api/objects/&lt;register&gt;/&lt;schema&gt; route via the manifest index page.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,15 +20,15 @@
  *
  * @spec openspec/changes/parafering-audit-trail/tasks.md#T07
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\Parafering\AuditTrailService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\Parafering\AuditTrailService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -56,7 +56,7 @@ class ParaferingAuditExportController extends Controller {
 	 * @param IUserSession $userSession Current user session
 	 * @param IGroupManager $groupManager Group manager (for RBAC check)
 	 * @param AuditTrailService $auditTrailService The audit-trail service
-	 * @param SettingsService $settingsService Procest settings bridge
+	 * @param SettingsService $settingsService Dossiq settings bridge
 	 * @param LoggerInterface $logger PSR-3 logger
 	 */
 	public function __construct(
@@ -129,7 +129,7 @@ class ParaferingAuditExportController extends Controller {
 			return new JSONResponse($envelope, Http::STATUS_OK);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: parafering audit export failed',
+				'Dossiq: parafering audit export failed',
 				['proposal' => $id, 'exception' => $e->getMessage()],
 			);
 
@@ -223,7 +223,7 @@ class ParaferingAuditExportController extends Controller {
 			return (string)($array['subject'] ?? '');
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest: failed to resolve voorstel onderwerp for export',
+				'Dossiq: failed to resolve voorstel onderwerp for export',
 				['proposal' => $proposalId, 'exception' => $e->getMessage()],
 			);
 

@@ -7,7 +7,7 @@
  * (ceiling + supervisor override) against an in-memory store.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,7 +15,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -23,25 +23,25 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\DeadlineExtensionService;
-use OCA\Procest\Service\DeadlinePauseService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\TermijnService;
+use OCA\Dossiq\Service\DeadlineExtensionService;
+use OCA\Dossiq\Service\DeadlinePauseService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TermijnService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * @covers \OCA\Procest\Service\DeadlinePauseService
- * @covers \OCA\Procest\Service\DeadlineExtensionService
+ * @covers \OCA\Dossiq\Service\DeadlinePauseService
+ * @covers \OCA\Dossiq\Service\DeadlineExtensionService
  *
- * @uses \OCA\Procest\Service\Substitution\SubstitutedWorkResolver
- * @uses \OCA\Procest\Service\Support\SearchesObjects
- * @uses \OCA\Procest\Service\DeadlineDailyScanService
- * @uses \OCA\Procest\Service\TermijnService
+ * @uses \OCA\Dossiq\Service\Substitution\SubstitutedWorkResolver
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\DeadlineDailyScanService
+ * @uses \OCA\Dossiq\Service\TermijnService
  */
 class DeadlinePauseExtensionServiceTest extends TestCase {
 	private FakeTermijnStore $objects;
@@ -56,7 +56,7 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'termijn_definitie_schema' => 'deadlineDefinition',
 					'termijn_instance_schema' => 'deadlineInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
@@ -71,7 +71,7 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 		$this->extService = new DeadlineExtensionService($this->termService);
 
 		// Seed an Omgevingsvergunning definition (max 1 extension).
-		$this->objects->saveObject('procest', 'deadlineDefinition', [
+		$this->objects->saveObject('dossiq', 'deadlineDefinition', [
 			'id' => 'td-ov',
 			'caseType' => 'omgevingsvergunning-regulier',
 			'wettelijkeGrondslag' => 'Wabo 3.9 lid 1',

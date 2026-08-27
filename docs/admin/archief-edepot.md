@@ -1,9 +1,9 @@
 # Archief en e-Depot — beheerdersgids
 
 Sinds de migratie `migrate-archival-to-or` (ADR-022) **voert OpenRegister de
-archivering, vernietiging en e-Depot-overdracht uit**. Procest levert alleen nog
+archivering, vernietiging en e-Depot-overdracht uit**. Dossiq levert alleen nog
 de zaakgerichte domeinkennis *declaratief* aan en vertaalt Awb-gebeurtenissen
-(bezwaar/beroep) naar OpenRegister *legal holds*. Procest draait geen eigen
+(bezwaar/beroep) naar OpenRegister *legal holds*. Dossiq draait geen eigen
 archief-pipeline meer.
 
 > **Spec:** `openspec/changes/migrate-archival-to-or/specs/archief-edepot-handover/spec.md`
@@ -12,13 +12,13 @@ archief-pipeline meer.
 > `Edepot/*` (EdepotTransferService, SipPackageBuilder, MdtoXmlGenerator,
 > Transport/*), `TmloService`.
 
-## Wat procest nog doet (en wat niet meer)
+## Wat dossiq nog doet (en wat niet meer)
 
 | Onderdeel | Voorheen (app-lokaal, verwijderd) | Nu |
 |-----------|-----------------------------------|-----|
 | Bewaartermijnregels | `BewaarTermijnRegel`-objecten + `ArchivalTriggerService` | Declaratief: `x-openregister-archival` op het `case`-schema |
 | Detectie afgeronde zaken | `ArchivalTriggerScanJob` daemon | OpenRegister `RetentionEvaluator` + `DestructionCheckJob` |
-| Bezwaar/beroep-opschorting | `OverdrachtTrigger` status `opgeschort-juridische-procedure` | OpenRegister legal hold (`LegalHoldService`), geplaatst door procest |
+| Bezwaar/beroep-opschorting | `OverdrachtTrigger` status `opgeschort-juridische-procedure` | OpenRegister legal hold (`LegalHoldService`), geplaatst door dossiq |
 | SIP-bundeling / BagIt / MDTO | `BagItBundlerService`, `MetadataBundlerService` | OpenRegister `SipPackageBuilder` + `MdtoXmlGenerator` |
 | Verzenden + retry naar e-Depot | `ArchivalBatchService`, `ArchivalSubmissionRetryService` | OpenRegister `EdepotTransferService` + durable retry |
 | Bewijs van overdracht | `ArchiefBewijs`-objecten, `ProofOfTransferService` | OpenRegister transfer-/proof-records |
@@ -28,8 +28,8 @@ archief-pipeline meer.
 
 De bewaartermijnen staan in het `case`-schema onder `x-openregister-archival`
 (VNG-selectielijst 2020 als default set). Aanpassen doe je in **Beheer →
-OpenRegister → Registers → Procest → schema `case`**, of in
-`lib/Settings/procest_register.json`:
+OpenRegister → Registers → Dossiq → schema `case`**, of in
+`lib/Settings/dossiq_register.json`:
 
 ```json
 "x-openregister-archival": {
@@ -52,7 +52,7 @@ OpenRegister → Registers → Procest → schema `case`**, of in
 
 OpenRegister berekent hieruit de `archiefactiedatum` en nomineert de zaak in
 zijn archivist-workflow (V-lijst / overbrenging). Zaaktypen zónder regel
-verschijnen in OpenRegister's archivist-view als *unconfigured* — procest houdt
+verschijnen in OpenRegister's archivist-view als *unconfigured* — dossiq houdt
 geen eigen `geblokkeerd-geen-regel`-administratie meer bij.
 
 ## 2. TMLO/MDTO-metadata
@@ -66,13 +66,13 @@ voeg je toe onder `tmloDefaults` op het schema.
 ## 3. Bezwaar/beroep → legal hold
 
 Zolang een Awb-procedure loopt mag een zaak niet worden overgebracht of
-vernietigd. Procest regelt dit via `BezwaarLegalHoldListener`:
+vernietigd. Dossiq regelt dit via `BezwaarLegalHoldListener`:
 
-- **Bezwaar geregistreerd** (`objection` aangemaakt) → procest plaatst een
+- **Bezwaar geregistreerd** (`objection` aangemaakt) → dossiq plaatst een
   OpenRegister *legal hold* op de zaak. OR's retention-evaluator en
   vernietigingsjobs slaan de zaak over zolang de hold staat.
 - **Eindbeslissing** (`bezwaarDecision` of `appealDecision` aangemaakt) →
-  procest heft de hold op; de zaak komt weer in OR's archief-evaluatie zonder
+  dossiq heft de hold op; de zaak komt weer in OR's archief-evaluatie zonder
   handmatige her-nominatie.
 
 Holds zijn zichtbaar en beheerbaar in OpenRegister
@@ -98,7 +98,7 @@ de migratie in **OpenRegister's e-Depot-instellingen**:
 
 Vernietiging/overbrenging draait volledig in OpenRegister: `DestructionCheckJob`
 stelt vernietigingslijsten (V-lijsten) samen voor archivist-review,
-`DestructionExecutionJob` voert goedgekeurde vernietiging uit. Procest heeft geen
+`DestructionExecutionJob` voert goedgekeurde vernietiging uit. Dossiq heeft geen
 eigen vernietigings-UI meer; gebruik OpenRegister's archivist-surface.
 
 ## 6. Migratie-repair (eenmalig)
@@ -106,14 +106,14 @@ eigen vernietigings-UI meer; gebruik OpenRegister's archivist-surface.
 Bij de upgrade draait `MigrateArchivalToOpenRegister` (post-migration,
 idempotent, fail-closed):
 
-1. Zet `tmloEnabled` op de procest-register.
+1. Zet `tmloEnabled` op de dossiq-register.
 2. Plaatst een legal hold op elke zaak waarvan de `OverdrachtTrigger` op
    `opgeschort-juridische-procedure` stond.
 3. Exporteert elk afgerond `ArchiefBewijs` als onveranderlijk zaakdossier-
    document, zodat geen bewijs van overbrenging verloren gaat.
 
 De stap draait maar één keer (markering in app-config
-`procest/archival_migration_completed`) en doet niets wanneer OpenRegister's
+`dossiq/archival_migration_completed`) en doet niets wanneer OpenRegister's
 archief-abstracties ontbreken.
 
 ## 7. Troubleshooting

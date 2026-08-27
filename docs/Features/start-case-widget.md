@@ -2,7 +2,7 @@
 
 ## Summary
 
-Dashboard widget for starting new cases directly from the Nextcloud dashboard or LaunchPad, without navigating into the Procest app first.
+Dashboard widget for starting new cases directly from the Nextcloud dashboard or LaunchPad, without navigating into the Dossiq app first.
 
 ## Overview
 
@@ -14,7 +14,7 @@ In government case management (zaakgericht werken), fast intake is critical. Cit
 
 - **Case type quick-start cards**: Shows configured case types as clickable cards with titles
 - **Inline case creation**: Creates a case via OpenRegister API and navigates to the new case detail page
-- **Empty state**: When no case types are configured, shows a helpful message directing admins to Procest settings
+- **Empty state**: When no case types are configured, shows a helpful message directing admins to Dossiq settings
 - **Loading state**: Shows loading indicator while fetching case types
 - **i18n support**: All widget text available in Dutch and English
 - **LaunchPad compatible**: Widget appears automatically when LaunchPad discovers registered Nextcloud widgets
@@ -30,6 +30,6 @@ In government case management (zaakgericht werken), fast intake is critical. Cit
 
 ## Related
 
-- Original issue: [#105](https://github.com/ConductionNL/procest/issues/105)
-- Tracking issue: [#107](https://github.com/ConductionNL/procest/issues/107)
+- Original issue: [#105](https://github.com/ConductionNL/dossiq/issues/105)
+- Tracking issue: [#107](https://github.com/ConductionNL/dossiq/issues/107)
 - OpenSpec change: `openspec/changes/archive/2026-03-24-start-case-widget/`

@@ -6,7 +6,7 @@
  * Tests for C4/H6/L1 security fixes in CaseEmailService.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -17,18 +17,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\CaseEmailService;
-use OCA\Procest\Service\Email\CaseContactDirectory;
-use OCA\Procest\Service\Email\CaseEmailAttachmentResolver;
-use OCA\Procest\Service\Email\CaseEmailRepository;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\CaseEmailService;
+use OCA\Dossiq\Service\Email\CaseContactDirectory;
+use OCA\Dossiq\Service\Email\CaseEmailAttachmentResolver;
+use OCA\Dossiq\Service\Email\CaseEmailRepository;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\Files\IRootFolder;
 use OCP\IAppConfig;
 use OCP\IUserSession;
@@ -41,10 +41,10 @@ use Psr\Log\LoggerInterface;
  *
  * Covers C4 (IDOR + file-disclosure), H6 (XSS + reserved-domain), L1 (log-injection).
  *
- * @covers \OCA\Procest\Service\CaseEmailService
+ * @covers \OCA\Dossiq\Service\CaseEmailService
  *
- * @uses \OCA\Procest\Service\Email\CaseEmailAttachmentResolver
- * @uses \OCA\Procest\Service\Email\CaseEmailRepository
+ * @uses \OCA\Dossiq\Service\Email\CaseEmailAttachmentResolver
+ * @uses \OCA\Dossiq\Service\Email\CaseEmailRepository
  */
 class CaseEmailServiceTest extends TestCase {
 

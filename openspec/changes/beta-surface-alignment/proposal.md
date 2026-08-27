@@ -1,8 +1,8 @@
-# Beta surface alignment — Procest
+# Beta surface alignment — Dossiq
 
 ## Why
 
-Procest ships a large, real feature set (77 controllers spanning VTH permits/supervision/enforcement,
+Dossiq ships a large, real feature set (77 controllers spanning VTH permits/supervision/enforcement,
 bezwaar & beroep, WOO disclosure requests, DSO, KCC, dwangsom enforcement payments, a workflow
 board, a case map, appointment booking, and a full ZGW registratiecomponenten stack), but the four
 public-facing surfaces (info.xml, the conduction.nl product page, the docs site) had drifted out of
@@ -58,7 +58,7 @@ No changes — already the accurate source of truth; the nav/menu labels (Cases,
 Workflow board, Fee calculations, Map, Deadline monitoring, etc.) match the controllers 1:1 and were
 used to build the canonical vocabulary above.
 
-### 3. Product page — `conduction-website/src/pages/apps/procest.mdx` (+ `i18n/nl/.../procest.mdx`)
+### 3. Product page — `conduction-website/src/pages/apps/dossiq.mdx` (+ `i18n/nl/.../dossiq.mdx`)
 - **Version/status**: `v1.6` / "Stable" → `v0.2.40` / "Beta" (info.xml is the version source of
   truth per the beta-alignment convention; 0.2.x is pre-1.0 and unreleased-as-stable).
 - **FeatureItem 1** ("Pre-defined VTH process models"): the named case types — *milieumelding*,
@@ -76,7 +76,7 @@ used to build the canonical vocabulary above.
   separate real (composition + OpenRegister TMLO archival) from pluggable-but-mocked
   (PDF generation + signing via adapter, DocuDesk optional).
 - **FeatureItem 4** ("Citizen portal via ZaakAfhandelApp... track their case at
-  jouwgemeente.nl/zaken"): zero references to Procest in `zaakafhandelapp/lib` or `.../src`, and
+  jouwgemeente.nl/zaken"): zero references to Dossiq in `zaakafhandelapp/lib` or `.../src`, and
   vice versa — the two apps share no code, no shared register wiring, no API calls. This is a
   fabricated live-integration claim. Replaced the FeatureItem with a real, verified feature
   (workflow board + case map + appointment booking) and softened the "Pairs well with" PairCard to
@@ -114,7 +114,7 @@ integrated via adapter interfaces"). Left unchanged.
 
 | Claim | Verdict | Evidence |
 |---|---|---|
-| Configurable case types / status lifecycle / deadlines / tasks & decisions / roles / document checklists / sub-cases / 8 confidentiality levels / My Work dashboard | **Verified** | `lib/Settings/procest_register.json`, `lib/Controller/*` |
+| Configurable case types / status lifecycle / deadlines / tasks & decisions / roles / document checklists / sub-cases / 8 confidentiality levels / My Work dashboard | **Verified** | `lib/Settings/dossiq_register.json`, `lib/Controller/*` |
 | VTH templates (omgevingsvergunning, toezichtzaak, handhavingszaak, sloopmelding) | **Verified** | `lib/Settings/vth-templates/*.json` |
 | VTH templates milieumelding / brandveiligheid / BAG-melding / RUD-controle | **Removed** | zero shipped templates; only free-text tag examples or no match at all |
 | Bezwaar & beroep AWB workflow | **Verified** | `docs/features.json` bezwaar-* entries, 6+ Repair steps, `BezwaarTermijnJob` |

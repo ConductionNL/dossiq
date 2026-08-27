@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Tenant Authentication Service
+ * Dossiq Tenant Authentication Service
  *
  * Validates that a user is authorised to perform an action on a tenant by
  * resolving the tenant's active TenantMandate and matching the user's role
@@ -11,7 +11,7 @@
  * `{allowed: false}` so the caller cannot fall open.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,14 +20,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -67,6 +67,8 @@ class TenantAuthenticationService {
 	 * @param string $action Requested action (create|edit|status_update|delete|...).
 	 *
 	 * @return array{allowed: bool, reason: string} Decision payload.
+	 *
+	 * @spec openspec/specs/tenant-mandate/spec.md#requirement-mandate-matrix-validation-per-action-req-002-d-req-006-d
 	 */
 	public function validateMandateMatrix(string $tenantId, string $userId, string $action): array {
 		try {
@@ -88,7 +90,7 @@ class TenantAuthenticationService {
 			return ['allowed' => false, 'reason' => 'Role ' . $role . ' is not authorised for action ' . $action];
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Procest: mandate matrix validation failed (fail-closed)',
+				'Dossiq: mandate matrix validation failed (fail-closed)',
 				['tenantId' => $tenantId, 'userId' => $userId, 'exception' => $e->getMessage()]
 			);
 			return ['allowed' => false, 'reason' => 'Mandate validation error'];
@@ -274,7 +276,7 @@ class TenantAuthenticationService {
 			// simply absent and silently fall open. Log it and re-throw so the
 			// single caller (validateMandateMatrix) denies the action.
 			$this->logger->error(
-				'Procest: resolveUserRole lookup failed (fail-closed)',
+				'Dossiq: resolveUserRole lookup failed (fail-closed)',
 				['tenantId' => $tenantId, 'userId' => $userId, 'exception' => $e->getMessage()]
 			);
 			throw $e;

@@ -8,7 +8,7 @@
  * unconfigured or the OpenRegister lookup fails.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Ai
+ * @package  OCA\Dossiq\Tests\Unit\Service\Ai
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,11 +24,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Ai;
+namespace OCA\Dossiq\Tests\Unit\Service\Ai;
 
-use OCA\Procest\Service\Ai\AiAuditLog;
-use OCA\Procest\Service\Ai\AiAuditService;
-use OCA\Procest\Service\Ai\AiModelIdentity;
+use OCA\Dossiq\Service\Ai\AiAuditLog;
+use OCA\Dossiq\Service\Ai\AiAuditService;
+use OCA\Dossiq\Service\Ai\AiModelIdentity;
+use OCA\Dossiq\Service\Ai\AiOversightDelegationService;
 use OCP\IAppConfig;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -38,7 +39,7 @@ use Psr\Log\LoggerInterface;
 /**
  * ObjectService stub matching the named-arg signatures used by the
  * SearchesObjects trait's slug path (register/schema config values in
- * procest are slugs, e.g. "procest" / "aiAuditEntry").
+ * dossiq are slugs, e.g. "dossiq" / "aiAuditEntry").
  */
 interface AiAuditObjectServiceStub {
 
@@ -57,11 +58,11 @@ interface AiAuditObjectServiceStub {
 /**
  * Unit tests for AiAuditService::listAuditEntries().
  *
- * @covers \OCA\Procest\Service\Ai\AiAuditService
+ * @covers \OCA\Dossiq\Service\Ai\AiAuditService
  *
- * @uses \OCA\Procest\Service\Ai\AiAuditLog
- * @uses \OCA\Procest\Service\Ai\AiModelIdentity
- * @uses \OCA\Procest\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Ai\AiAuditLog
+ * @uses \OCA\Dossiq\Service\Ai\AiModelIdentity
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class AiAuditServiceListTest extends TestCase {
 
@@ -96,6 +97,7 @@ class AiAuditServiceListTest extends TestCase {
 		$this->service = new AiAuditService(
 			audit: new AiAuditLog($this->appConfig, $this->container, $this->logger),
 			modelIdentity: new AiModelIdentity($this->appConfig),
+			oversight: $this->createMock(AiOversightDelegationService::class),
 		);
 	}//end setUp()
 
@@ -108,7 +110,7 @@ class AiAuditServiceListTest extends TestCase {
 		$this->appConfig->method('getValueString')
 			->willReturnCallback(function (string $app, string $key, string $default) {
 				if ($key === 'register') {
-					return 'procest';
+					return 'dossiq';
 				}
 
 				if ($key === 'ai_audit_entry_schema') {
@@ -136,7 +138,7 @@ class AiAuditServiceListTest extends TestCase {
 		$objectService->expects($this->once())
 			->method('searchObjectsBySlug')
 			->with(
-				'procest',
+				'dossiq',
 				'aiAuditEntry',
 				$this->callback(function (array $filters) {
 					return ($filters['caseId'] ?? null) === 'case-a'
@@ -172,7 +174,7 @@ class AiAuditServiceListTest extends TestCase {
 		$objectService = $this->createMock(AiAuditObjectServiceStub::class);
 		$objectService->method('searchObjectsBySlug')
 			->with(
-				'procest',
+				'dossiq',
 				'aiAuditEntry',
 				$this->callback(fn (array $filters) => ($filters['_limit'] ?? null) === 200)
 			)
@@ -196,7 +198,7 @@ class AiAuditServiceListTest extends TestCase {
 		$objectService = $this->createMock(AiAuditObjectServiceStub::class);
 		$objectService->method('searchObjectsBySlug')
 			->with(
-				'procest',
+				'dossiq',
 				'aiAuditEntry',
 				$this->callback(fn (array $filters) => ($filters['_limit'] ?? null) === 50)
 			)

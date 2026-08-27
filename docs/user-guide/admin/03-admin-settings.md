@@ -1,16 +1,16 @@
 ---
 sidebar_position: 3
-title: Manage Procest settings
-description: "Walk the Administration > Procest settings page: version, register configuration, ZGW mapping, map layers, AI features."
+title: Manage Dossiq settings
+description: "Walk the Administration > Dossiq settings page: version, register configuration, ZGW mapping, map layers, AI features."
 ---
 
-# Manage Procest settings
+# Manage Dossiq settings
 
-The **Administration settings → Procest** page is the single pane for everything you configure once and then forget: the version banner, the OpenRegister mapping, the ZGW API mapping, GIS map layers, and the AI-assisted processing toggles.
+The **Administration settings → Dossiq** page is the single pane for everything you configure once and then forget: the version banner, the OpenRegister mapping, the ZGW API mapping, GIS map layers, and the AI-assisted processing toggles.
 
 ## Goal
 
-By the end you will have opened the Administration settings page, re-imported the Procest configuration, confirmed the register and schema mapping, and recognised the ZGW mapping table.
+By the end you will have opened the Administration settings page, re-imported the Dossiq configuration, confirmed the register and schema mapping, and recognised the ZGW mapping table.
 
 ## Prerequisites
 
@@ -19,15 +19,15 @@ By the end you will have opened the Administration settings page, re-imported th
 
 ## Steps
 
-1. Open **Administration settings → Procest** (left navigation under *Administration*). The header reads *Administration settings: Procest* and the body has five sections: *Version Information*, *Configuration*, *Case Type Management*, *Map Layers*, *ZGW API Mapping*, *AI-Assisted Processing*.
+1. Open **Administration settings → Dossiq** (left navigation under *Administration*). The header reads *Administration settings: Dossiq* and the body has five sections: *Version Information*, *Configuration*, *Case Type Management*, *Map Layers*, *ZGW API Mapping*, *AI-Assisted Processing*.
 
    ![Admin settings landing](/screenshots/tutorials/admin/03-admin-settings-01.png)
 
-2. The **Version Information** card shows the installed version (e.g. *Procest 0.2.0*) and an **Up to date** badge. Click **Re-import configuration** to (re-)run the OpenRegister import: needed on first install and whenever a Procest release bumps the schemas. Confirm the success toast.
+2. The **Version Information** card shows the installed version (e.g. *Dossiq 0.2.0*) and an **Up to date** badge. Click **Re-import configuration** to (re-)run the OpenRegister import: needed on first install and whenever a Dossiq release bumps the schemas. Confirm the success toast.
 
    ![Re-import configuration](/screenshots/tutorials/admin/03-admin-settings-02.png)
 
-3. Scroll to **Configuration**. Pick the *Register* (e.g. *Procest*) from the first dropdown: the rest of the fields (*Case schema*, *Task schema*, *Status schema*, *Role schema*, *Result schema*, *Decision schema*, *Case type schema*, *Status type schema*) auto-fill from the register. Click **Save** to persist.
+3. Scroll to **Configuration**. Pick the *Register* (e.g. *Dossiq*) from the first dropdown: the rest of the fields (*Case schema*, *Task schema*, *Status schema*, *Role schema*, *Result schema*, *Decision schema*, *Case type schema*, *Status type schema*) auto-fill from the register. Click **Save** to persist.
 
    ![Register and schema mapping](/screenshots/tutorials/admin/03-admin-settings-03.png)
 
@@ -41,7 +41,7 @@ By the end you will have opened the Administration settings page, re-imported th
 
 ## Verification
 
-You have configured Procest correctly when: *Version Information* shows *Up to date*, every dropdown under *Configuration* has a value (no empties), *Case Type Management* loads its list, and **ZGW API Mapping** has at least *zaak* / *zaaktype* / *status* / *statustype* configured.
+You have configured Dossiq correctly when: *Version Information* shows *Up to date*, every dropdown under *Configuration* has a value (no empties), *Case Type Management* loads its list, and **ZGW API Mapping** has at least *zaak* / *zaaktype* / *status* / *statustype* configured.
 
 ## Common issues
 

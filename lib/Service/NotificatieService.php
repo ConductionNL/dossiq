@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Notificatie Service
+ * Dossiq Notificatie Service
  *
  * Handles ZGW notification (NRC) publishing — finds matching subscriptions
  * and delivers notifications via HTTP POST to registered callback URLs.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -15,19 +15,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTime;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
-use OCA\Procest\Support\SuppressesWarnings;
+use OCA\Dossiq\Support\SuppressesWarnings;
 use Psr\Log\LoggerInterface;
 
 /**

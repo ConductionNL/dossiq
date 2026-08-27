@@ -12,16 +12,16 @@ retrofit_extensions:
 
 ## Purpose
 
-The dashboard is the landing page of the Procest app. It provides an at-a-glance overview of case management activity: KPI cards with headline metrics, status and type distribution charts, an overdue cases panel, a personal workload preview, a recent activity feed, and quick actions. The dashboard aggregates data across all cases visible to the current user (respecting RBAC via OpenRegister).
+The dashboard is the landing page of the Dossiq app. It provides an at-a-glance overview of case management activity: KPI cards with headline metrics, status and type distribution charts, an overdue cases panel, a personal workload preview, a recent activity feed, and quick actions. The dashboard aggregates data across all cases visible to the current user (respecting RBAC via OpenRegister).
 
 **Feature tiers**: MVP (KPI cards, status chart, overdue panel, my work preview, activity feed, quick actions, empty state, refresh); V1 (average processing time KPI, case type breakdown chart, SLA compliance widget, workload distribution)
 
 ## Data Sources
 
-All dashboard data comes from OpenRegister queries against the `procest` register:
+All dashboard data comes from OpenRegister queries against the `dossiq` register:
 - **Cases**: schema `case` — filtered by non-final status for "open", by `deadline < today` for "overdue", by `endDate` within current month for "completed this month"
 - **Tasks**: schema `task` — filtered by `assignee == currentUser` and status `available` or `active`
-- **Activity**: Nextcloud Activity API (`OCP\Activity\IManager`) — filtered by app `procest`, last 10 events
+- **Activity**: Nextcloud Activity API (`OCP\Activity\IManager`) — filtered by app `dossiq`, last 10 events
 - **SLA metrics**: derived from case type `processingDeadline` vs actual processing time per case
 ## Requirements
 
@@ -237,10 +237,10 @@ The dashboard MUST display a feed of the last 10 case management events.
 #### Scenario DASH-006b: Activity feed "view all" link
 - GIVEN the activity feed is displayed
 - WHEN the user clicks "View all activity"
-- THEN the system MUST navigate to a full activity view or the Nextcloud activity app filtered to Procest events
+- THEN the system MUST navigate to a full activity view or the Nextcloud activity app filtered to Dossiq events
 
 #### Scenario DASH-006c: Activity feed with no events
-- GIVEN no Procest activity events have been recorded
+- GIVEN no Dossiq activity events have been recorded
 - WHEN the user views the dashboard
 - THEN the activity feed MUST display a message such as "No recent activity"
 
@@ -304,10 +304,10 @@ The dashboard MUST aggregate data across all cases visible to the current user, 
 The dashboard MUST display a helpful setup message when no cases exist.
 
 #### Scenario DASH-009a: Fresh installation with no data
-- GIVEN Procest was just installed and no cases or case types exist
+- GIVEN Dossiq was just installed and no cases or case types exist
 - WHEN the user views the dashboard
 - THEN the system MUST display an empty state with:
-  - A friendly message explaining what Procest does (e.g., "Welcome to Procest - Case Management for Nextcloud")
+  - A friendly message explaining what Dossiq does (e.g., "Welcome to Dossiq - Case Management for Nextcloud")
   - A call-to-action to create the first case type (for admins) or inform non-admins that the app needs configuration
   - Helpful guidance or a link to documentation
 - AND all KPI cards MUST show "0" without errors
@@ -320,7 +320,7 @@ The dashboard MUST display a helpful setup message when no cases exist.
 - AND the system SHOULD display a message such as "You have no cases assigned yet"
 
 #### Scenario DASH-009c: Admin empty state shows setup guidance
-- GIVEN Procest is freshly installed and the user is an admin
+- GIVEN Dossiq is freshly installed and the user is an admin
 - WHEN the admin views the dashboard
 - THEN the empty state MUST include a "Configure Case Types" button linking to admin settings
 - AND the guidance MUST explain the setup flow: create case type, add statuses, then create cases
@@ -461,23 +461,23 @@ The dashboard MUST follow a configurable grid layout using `CnDashboardPage` fro
 The system MUST register three Nextcloud-native dashboard widgets for display on the main Nextcloud dashboard.
 
 #### Scenario DASH-015a: Cases Overview widget
-- GIVEN the user has Procest installed
+- GIVEN the user has Dossiq installed
 - WHEN the user views the main Nextcloud dashboard
 - THEN a "Cases Overview" widget MUST be available for selection
 - AND the widget MUST show open cases count and overdue count
-- AND clicking the widget MUST navigate to the Procest dashboard
+- AND clicking the widget MUST navigate to the Dossiq dashboard
 
 #### Scenario DASH-015b: My Tasks widget
-- GIVEN the user has tasks assigned in Procest
+- GIVEN the user has tasks assigned in Dossiq
 - WHEN the My Tasks widget is displayed on the Nextcloud dashboard
 - THEN it MUST show the top 5 tasks with title, due date, and parent case reference
-- AND clicking a task MUST navigate to the task detail in Procest
+- AND clicking a task MUST navigate to the task detail in Dossiq
 
 #### Scenario DASH-015c: Overdue Cases widget
 - GIVEN there are 3 overdue cases
 - WHEN the Overdue Cases widget is displayed on the Nextcloud dashboard
 - THEN it MUST list overdue cases with title, days overdue, and handler
-- AND clicking a case MUST navigate to the case detail in Procest
+- AND clicking a case MUST navigate to the case detail in Dossiq
 
 ### Requirement: REQ-DASH-003 Cases by Type Chart [V1]
 
@@ -698,20 +698,20 @@ The system SHALL register the three existing Nextcloud Dashboard widget classes 
 #### Scenario DASH-FIX-001a: Widgets appear in Nextcloud Dashboard
 - GIVEN the user navigates to the Nextcloud Dashboard (`/apps/dashboard`)
 - WHEN widgets have been registered in Application.php
-- THEN the Procest widgets (Cases Overview, My Tasks, Overdue Cases) MUST be available for the user to add
+- THEN the Dossiq widgets (Cases Overview, My Tasks, Overdue Cases) MUST be available for the user to add
 - AND the widgets MUST load without routing errors
 
 #### Scenario DASH-FIX-001b: CasesOverviewWidget deep link resolves correctly
 - GIVEN the user has added the Cases Overview widget to their Nextcloud Dashboard
 - WHEN the widget renders and the user clicks a link in it
-- THEN the system MUST navigate to the correct Procest route (`.dashboard.page`)
+- THEN the system MUST navigate to the correct Dossiq route (`.dashboard.page`)
 - AND a 404 or broken navigation MUST NOT occur
 
 ## Non-Functional Requirements
 
 - **Performance**: Dashboard MUST load within 2 seconds for up to 1000 cases. Individual API calls SHOULD complete within 500ms. Data is fetched using `Promise.allSettled` with a limit of 1000 cases, 100 case types, 500 status types, and 100 tasks.
 - **Accessibility**: All KPI cards MUST have appropriate ARIA labels. Charts MUST have text alternatives. The dashboard MUST meet WCAG AA standards. All clickable elements MUST be keyboard-navigable.
-- **Localization**: All labels, messages, and date formatting MUST support English and Dutch localization using `t('procest', ...)`.
+- **Localization**: All labels, messages, and date formatting MUST support English and Dutch localization using `t('dossiq', ...)`.
 - **Caching**: Dashboard data MAY be cached client-side for up to 60 seconds to reduce API load, but MUST be refreshable on demand via the refresh button.
 
 ### Current Implementation Status
@@ -768,7 +768,7 @@ The system SHALL register the three existing Nextcloud Dashboard widget classes 
 
 @e2e exclude NC dashboard widget registration (IWidget PHP classes); widget deep-link is app-boot plumbing covered by PHPUnit.
 
-`CasesOverviewWidget`, `MyTasksWidget` and `StartCaseWidget` SHALL each implement `OCP\Dashboard\IWidget` with stable kebab-case ids (`procest-cases-overview`, `procest-my-tasks`, `procest-start-case`), localised titles via `IL10N::t()`, deterministic `getOrder()` return values, MDI-style `getIconClass()`, and an in-app `getUrl()` deep link. Each widget's `load()` SHALL register the corresponding webpack-built Vue bundle via `Util::addScript()` + `Util::addStyle()` — no server-side data computation in PHP.
+`CasesOverviewWidget`, `MyTasksWidget` and `StartCaseWidget` SHALL each implement `OCP\Dashboard\IWidget` with stable kebab-case ids (`dossiq-cases-overview`, `dossiq-my-tasks`, `dossiq-start-case`), localised titles via `IL10N::t()`, deterministic `getOrder()` return values, MDI-style `getIconClass()`, and an in-app `getUrl()` deep link. Each widget's `load()` SHALL register the corresponding webpack-built Vue bundle via `Util::addScript()` + `Util::addStyle()` — no server-side data computation in PHP.
 
 #### Scenario: StartCase widget exposes deep-link to the case-creation flow
 - **WHEN** a user clicks the Start Case widget tile
@@ -778,7 +778,7 @@ The system SHALL register the three existing Nextcloud Dashboard widget classes 
 
 @e2e exclude Backend PHP DashboardController spec; endpoint payload structure covered by PHPUnit controller tests.
 
-`OCA\Procest\Controller\DashboardController` SHALL serve the in-app dashboard surface (not the Nextcloud dashboard system, which is widget-driven and loads client-side). The controller SHALL provide endpoints for the dashboard landing-page Vue to fetch its initial state (KPIs, layout, widget data) so the SPA can render without spinning up multiple per-widget HTTP requests.
+`OCA\Dossiq\Controller\DashboardController` SHALL serve the in-app dashboard surface (not the Nextcloud dashboard system, which is widget-driven and loads client-side). The controller SHALL provide endpoints for the dashboard landing-page Vue to fetch its initial state (KPIs, layout, widget data) so the SPA can render without spinning up multiple per-widget HTTP requests.
 
 #### Scenario: Initial dashboard payload
 - **WHEN** an authenticated user opens the in-app dashboard (`/dashboard`)
@@ -788,7 +788,7 @@ The system SHALL register the three existing Nextcloud Dashboard widget classes 
 
 @e2e exclude NC Application::register() PHP bootstrap spec; widget picker registration covered by PHPUnit.
 
-`OCA\Procest\AppInfo\Application::register()` SHALL register `CasesOverviewWidget`, `MyTasksWidget`, and `StartCaseWidget` with the Nextcloud dashboard container so they appear in the dashboard widget picker. Registration order SHALL match the canonical `getOrder()` return values.
+`OCA\Dossiq\AppInfo\Application::register()` SHALL register `CasesOverviewWidget`, `MyTasksWidget`, and `StartCaseWidget` with the Nextcloud dashboard container so they appear in the dashboard widget picker. Registration order SHALL match the canonical `getOrder()` return values.
 
 #### Scenario: Widgets appear in the dashboard picker
 - **WHEN** an authenticated user opens the dashboard widget picker
@@ -800,7 +800,7 @@ The system SHALL register the three existing Nextcloud Dashboard widget classes 
 
 ### REQ-DASH-UI-01: The in-app dashboard page SHALL render its shell on navigation
 
-The Procest dashboard landing page (`CnDashboardPage`, route `/`) SHALL mount and
+The Dossiq dashboard landing page (`CnDashboardPage`, route `/`) SHALL mount and
 render a stable shell — the "Dashboard" page heading, its action controls, and the
 widget grid container — regardless of whether the underlying OpenRegister
 aggregation endpoints return data. This is a real, browser-verifiable UI surface
@@ -809,7 +809,7 @@ sidebar and asserts the rendered shell (data rows themselves remain
 data-dependent and are excluded above).
 
 #### Scenario: Dashboard page renders heading and widget grid
-- **GIVEN** an authenticated user on the Procest app
+- **GIVEN** an authenticated user on the Dossiq app
 - **WHEN** they click the "Dashboard" entry in the app sidebar
 - **THEN** the main content MUST show a level-2 "Dashboard" heading
 - **AND** the widget grid container MUST render (showing the configured widget tiles or their unavailable-placeholder shells)

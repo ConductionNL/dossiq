@@ -22,12 +22,12 @@ personal-workload dashboard widgets (below) remain the at-a-glance surface.
 **Competitive context**: Dimpact ZAC provides a configurable worklist with
 signaling cards and real-time updates; xxllnc Zaken uses phase-bound task
 lists; Flowable offers a unified task inbox with claiming and delegation.
-Procest takes a deliberately simple approach: the current user's cases in the
+Dossiq takes a deliberately simple approach: the current user's cases in the
 standard index, plus dashboard widgets for tasks/overdue at-a-glance.
 
 ## Data Sources
 
-My Work queries one OpenRegister schema in the `procest` register:
+My Work queries one OpenRegister schema in the `dossiq` register:
 - **Cases**: schema `case`, base filter `assignee == currentUser` (the signed-in
   user's uid, resolved client-side from `@nextcloud/auth`). No status filter is
   applied — every case assigned to the user is listed regardless of lifecycle
@@ -39,7 +39,7 @@ My Work queries one OpenRegister schema in the `procest` register:
 
 The system MUST provide a "My Work" navigation entry that opens a case index
 scoped to the current user's assignments, implemented as a thin `CnIndexPage`
-wrapper in `src/views/MyWorkCards.vue` (register `procest`, schema `case`,
+wrapper in `src/views/MyWorkCards.vue` (register `dossiq`, schema `case`,
 base filter `{ assignee: <current uid> }`). It is a `type: "custom"` manifest
 page because the stock index base-filter resolves only `@route.*` tokens, not
 the `@me` current-user token; the wrapper injects the resolved uid.
@@ -117,14 +117,14 @@ covered by PHPUnit + smoke tests, not Playwright browser assertions.
 
 #### Scenario: My Tasks / Overdue widgets
 - GIVEN the Nextcloud dashboard is displayed
-- THEN the Procest "My Tasks" widget (`lib/Dashboard/MyTasksWidget.php`) MUST
+- THEN the Dossiq "My Tasks" widget (`lib/Dashboard/MyTasksWidget.php`) MUST
   summarise the user's assigned tasks
 - AND the "Overdue Cases" widget (`lib/Dashboard/OverdueCasesWidget.php`) MUST
   summarise overdue cases with a red indicator
 - AND clicking a widget MUST navigate into the app
 
 #### Scenario: Dashboard preview panel
-- GIVEN the user opens the Procest app dashboard (home view)
+- GIVEN the user opens the Dossiq app dashboard (home view)
 - THEN `src/views/dashboard/MyWorkPreview.vue` MUST show a summary of the
   user's assigned work
 
@@ -145,7 +145,7 @@ covered by PHPUnit + smoke tests, not Playwright browser assertions.
 **Implemented (MVP).**
 
 - **My Work index**: `src/views/MyWorkCards.vue` — a `CnIndexPage` card list
-  (card default + table toggle) over `procest`/`case`, base filter
+  (card default + table toggle) over `dossiq`/`case`, base filter
   `{ assignee: <uid from @nextcloud/auth> }`, wired as the `MyWork`
   `type: "custom"` manifest page (`component: MyWorkView`).
 - **Card**: `src/views/MyWorkCaseCard.vue` — title, description, identifier,

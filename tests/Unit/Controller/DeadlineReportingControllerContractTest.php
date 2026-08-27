@@ -24,21 +24,21 @@
  *    (2019 refused, 2020 accepted) rather than at one arbitrary value.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\DeadlineReportingController;
-use OCA\Procest\Service\DeadlineReportingService;
+use OCA\Dossiq\Controller\DeadlineReportingController;
+use OCA\Dossiq\Service\DeadlineReportingService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -50,7 +50,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Wire-contract tests for DeadlineReportingController.
  *
- * @covers \OCA\Procest\Controller\DeadlineReportingController
+ * @covers \OCA\Dossiq\Controller\DeadlineReportingController
  */
 class DeadlineReportingControllerContractTest extends TestCase {
 
@@ -103,7 +103,7 @@ class DeadlineReportingControllerContractTest extends TestCase {
 		$this->logger = $this->createMock(LoggerInterface::class);
 
 		$this->controller = new DeadlineReportingController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			service: $this->service,
 			userSession: $this->userSession,
@@ -180,7 +180,7 @@ class DeadlineReportingControllerContractTest extends TestCase {
 	public function testDashboardMasksAnInternalFailureAs500AndLogsIt(): void {
 		$this->signIn();
 		$this->service->method('getTermijnKpi')
-			->willThrowException(new \RuntimeException('SQLSTATE[42S02] table procest_cases missing'));
+			->willThrowException(new \RuntimeException('SQLSTATE[42S02] table dossiq_cases missing'));
 		$this->logger->expects($this->once())->method('error');
 
 		$response = $this->controller->dashboard();

@@ -5,9 +5,9 @@
 		</div>
 		<NcEmptyContent
 			v-else-if="caseTypes.length === 0"
-			:title="t('procest', 'No case types configured')"
+			:title="t('dossiq', 'No case types configured')"
 			:description="
-				t('procest', 'Configure case types in Procest admin settings')
+				t('dossiq', 'Configure case types in Dossiq admin settings')
 			">
 			<template #icon>
 				<BriefcaseVariantOutline />
@@ -174,7 +174,7 @@ export default {
 				})
 				if (newCase?.id) {
 					window.location.href = generateUrl(
-						`/apps/procest/cases/${newCase.id}`,
+						`/apps/dossiq/cases/${newCase.id}`,
 					)
 				}
 			} catch (err) {

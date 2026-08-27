@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest ZRC (Zaken Register) Controller
+ * Dossiq ZRC (Zaken Register) Controller
  *
  * Handles the ZGW Zaken register API endpoints: zaken, statussen, resultaten,
  * rollen, zaakeigenschappen, zaakinformatieobjecten, zaakobjecten, klantcontacten.
@@ -11,7 +11,7 @@
  * authorization-based filtering (zrc-006), and OIO cross-register sync (zrc-005).
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -22,20 +22,20 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-1
+ * @spec openspec/changes/archive/retrofit-2026-05-24-annotate-procest/tasks.md#task-1
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
 use DateInterval;
 use DateTime;
-use OCA\Procest\Service\CaseRelationService;
-use OCA\Procest\Service\ZgwService;
+use OCA\Dossiq\Service\CaseRelationService;
+use OCA\Dossiq\Service\ZgwService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -789,10 +789,9 @@ class ZrcController extends ZgwController {
 	public function zoek(): JSONResponse {
 		$indexResponse = $this->index(resource: 'zaken');
 		// The zoek endpoint reuses the list handler but returns 201 Created.
-		$responseData = [];
-		if ($indexResponse instanceof JSONResponse) {
-			$responseData = $indexResponse->getData() ?? [];
-		}
+		// No instanceof guard: index() is declared to return JSONResponse, so the
+		// check was always true (PHPStan 2: instanceof.alwaysTrue).
+		$responseData = ($indexResponse->getData() ?? []);
 
 		return new JSONResponse(data: $responseData, statusCode: Http::STATUS_CREATED);
 	}//end zoek()
@@ -2392,7 +2391,7 @@ class ZrcController extends ZgwController {
 	/**
 	 * Build the ZRC relevanteAndereZaken array for a single zaak from its
 	 * relatedCases field (outbound). Emits absolute zaak URLs and the
-	 * aardRelatie; never emits the procest-local toelichting. Always an array
+	 * aardRelatie; never emits the dossiq-local toelichting. Always an array
 	 * (empty when there are no relations), per VNG schema compliance.
 	 *
 	 * @param array<string, mixed> $caseData The mapped zaak response data.

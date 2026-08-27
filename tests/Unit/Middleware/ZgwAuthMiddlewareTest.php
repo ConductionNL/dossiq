@@ -6,7 +6,7 @@
  * Tests for the ZGW authentication middleware.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Middleware
+ * @package  OCA\Dossiq\Tests\Unit\Middleware
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -14,15 +14,15 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Middleware;
+namespace OCA\Dossiq\Tests\Unit\Middleware;
 
-use OCA\Procest\Middleware\ZgwAuthMiddleware;
-use OCA\Procest\Service\ZgwJwtValidator;
+use OCA\Dossiq\Middleware\ZgwAuthMiddleware;
+use OCA\Dossiq\Service\ZgwJwtValidator;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -30,8 +30,8 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for the ZgwAuthMiddleware class.
  *
- * @covers \OCA\Procest\Middleware\ZgwAuthMiddleware
- * @uses   \OCA\Procest\Middleware\ZgwAuthException
+ * @covers \OCA\Dossiq\Middleware\ZgwAuthMiddleware
+ * @uses   \OCA\Dossiq\Middleware\ZgwAuthException
  */
 class ZgwAuthMiddlewareTest extends TestCase {
 
@@ -152,7 +152,7 @@ class ZgwAuthMiddlewareTest extends TestCase {
 	 * @return void
 	 */
 	public function testZgwControllerIsAbstract(): void {
-		$reflection = new \ReflectionClass(\OCA\Procest\Controller\ZgwController::class);
+		$reflection = new \ReflectionClass(\OCA\Dossiq\Controller\ZgwController::class);
 		$this->assertTrue(
 			$reflection->isAbstract(),
 			'ZgwController must be abstract — it is an instanceof marker only'
@@ -170,17 +170,17 @@ class ZgwAuthMiddlewareTest extends TestCase {
 	 */
 	public function testZgwControllersExtendBase(): void {
 		$zgwControllers = [
-			\OCA\Procest\Controller\AcController::class,
-			\OCA\Procest\Controller\ZrcController::class,
-			\OCA\Procest\Controller\ZtcController::class,
-			\OCA\Procest\Controller\DrcController::class,
-			\OCA\Procest\Controller\BrcController::class,
-			\OCA\Procest\Controller\NrcController::class,
+			\OCA\Dossiq\Controller\AcController::class,
+			\OCA\Dossiq\Controller\ZrcController::class,
+			\OCA\Dossiq\Controller\ZtcController::class,
+			\OCA\Dossiq\Controller\DrcController::class,
+			\OCA\Dossiq\Controller\BrcController::class,
+			\OCA\Dossiq\Controller\NrcController::class,
 		];
 
 		foreach ($zgwControllers as $class) {
 			$this->assertTrue(
-				is_subclass_of($class, \OCA\Procest\Controller\ZgwController::class),
+				is_subclass_of($class, \OCA\Dossiq\Controller\ZgwController::class),
 				"$class must extend ZgwController so middleware applies"
 			);
 		}
@@ -219,14 +219,14 @@ class ZgwAuthMiddlewareTest extends TestCase {
 	 */
 	public static function provideZgwUriToComponent(): array {
 		return [
-			'zrc (zaken)' => ['/index.php/apps/procest/api/zgw/zaken/v1/zaken', 'zrc'],
-			'ztc (catalogi)' => ['/apps/procest/api/zgw/catalogi/v1/zaaktypen', 'ztc'],
-			'brc (besluiten)' => ['/index.php/apps/procest/api/zgw/besluiten/v1/besluiten', 'brc'],
-			'drc (documenten)' => ['/apps/procest/api/zgw/documenten/v1/enkelvoudiginformatieobjecten', 'drc'],
-			'nrc (notificaties)' => ['/apps/procest/api/zgw/notificaties/v1/kanalen', 'nrc'],
-			'ac (autorisaties)' => ['/apps/procest/api/zgw/autorisaties/v1/applicaties', 'ac'],
-			'unknown api group' => ['/apps/procest/api/zgw/unknown/v1/resources', null],
-			'non-zgw path' => ['/apps/procest/api/settings', null],
+			'zrc (zaken)' => ['/index.php/apps/dossiq/api/zgw/zaken/v1/zaken', 'zrc'],
+			'ztc (catalogi)' => ['/apps/dossiq/api/zgw/catalogi/v1/zaaktypen', 'ztc'],
+			'brc (besluiten)' => ['/index.php/apps/dossiq/api/zgw/besluiten/v1/besluiten', 'brc'],
+			'drc (documenten)' => ['/apps/dossiq/api/zgw/documenten/v1/enkelvoudiginformatieobjecten', 'drc'],
+			'nrc (notificaties)' => ['/apps/dossiq/api/zgw/notificaties/v1/kanalen', 'nrc'],
+			'ac (autorisaties)' => ['/apps/dossiq/api/zgw/autorisaties/v1/applicaties', 'ac'],
+			'unknown api group' => ['/apps/dossiq/api/zgw/unknown/v1/resources', null],
+			'non-zgw path' => ['/apps/dossiq/api/settings', null],
 			'empty path' => ['', null],
 		];
 	}//end provideZgwUriToComponent()
@@ -261,7 +261,7 @@ class ZgwAuthMiddlewareTest extends TestCase {
 	 */
 	public function testAfterExceptionReturnsJsonForZgwAuthException(): void {
 		$controller = $this->createMock(\OCP\AppFramework\Controller::class);
-		$exception = new \OCA\Procest\Middleware\ZgwAuthException(
+		$exception = new \OCA\Dossiq\Middleware\ZgwAuthException(
 			'test error',
 			403
 		);

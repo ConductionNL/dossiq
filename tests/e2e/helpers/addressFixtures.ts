@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Address-fixture seeding helper for the PDOK-via-openconnector e2e layer
@@ -62,16 +62,16 @@ export const ADDRESS_FIXTURES = [
 ]
 
 /**
- * Read a CSRF request-token from a freshly-loaded procest page. OpenRegister
+ * Read a CSRF request-token from a freshly-loaded dossiq page. OpenRegister
  * write endpoints (POST/PUT/DELETE) are CSRF-protected; GET is not.
  * @param api Authenticated request context (storageState).
  */
 export async function getRequestToken(api: APIRequestContext): Promise<string> {
-	const res = await api.get('/index.php/apps/procest/dashboard')
+	const res = await api.get('/index.php/apps/dossiq/dashboard')
 	const html = await res.text()
 	const m = html.match(/data-requesttoken="([^"]+)"/)
 	if (!m) {
-		throw new Error('Could not read requesttoken from /apps/procest/dashboard')
+		throw new Error('Could not read requesttoken from /apps/dossiq/dashboard')
 	}
 	return m[1]
 }

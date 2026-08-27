@@ -12,7 +12,7 @@
 
 ## 2. Admin settings — make the secret actually configurable
 
-- [ ] 2.1 Add a `dwangsom_callback_secret` field to the procest admin settings Vue page (password/
+- [ ] 2.1 Add a `dwangsom_callback_secret` field to the dossiq admin settings Vue page (password/
       secret-style input, not plain text display) that writes via the existing settings POST
       endpoint into `IAppConfig`
 - [ ] 2.2 Add a "generate random secret" convenience action (client or server-side) so admins are

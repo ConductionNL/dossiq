@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Pure data-shaping helpers for the process-mining bottleneck dashboard
- * (ProcessMiningDashboard.vue). Map the backend `/api/reports/process-mining`
+ * (the `/process-mining` dashboard widgets). Map the backend `/api/reports/process-mining`
  * payload (see lib/Service/ProcessMiningService.php) into the exact
  * CnChartWidget series/categories and table row arrays the view renders.
- * Procest owns this shaping arithmetic; the chart engine itself is
+ * Dossiq owns this shaping arithmetic; the chart engine itself is
  * @conduction/nextcloud-vue's CnChartWidget (ADR-Leaf-First — no bespoke
  * chart components here).
  *

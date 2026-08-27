@@ -22,13 +22,13 @@
  *    single catch-all would either leak internals or hide the refusal.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -36,12 +36,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use LogicException;
-use OCA\Procest\Controller\AdviceController;
-use OCA\Procest\Service\AdviceService;
-use OCA\Procest\Service\CaseAccessGuard;
+use OCA\Dossiq\Controller\AdviceController;
+use OCA\Dossiq\Service\AdviceService;
+use OCA\Dossiq\Service\CaseAccessGuard;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
@@ -232,7 +232,7 @@ class AdviceControllerRequestStub implements IRequest {
 	 * @return string
 	 */
 	public function getRequestUri(): string {
-		return '/apps/procest/api/vth/cases/case-1/advice-requests';
+		return '/apps/dossiq/api/vth/cases/case-1/advice-requests';
 	}//end getRequestUri()
 
 	/**
@@ -312,7 +312,7 @@ class AdviceControllerRequestStub implements IRequest {
 /**
  * Wire-contract tests for AdviceController.
  *
- * @covers \OCA\Procest\Controller\AdviceController
+ * @covers \OCA\Dossiq\Controller\AdviceController
  */
 class AdviceControllerContractTest extends TestCase {
 
@@ -368,7 +368,7 @@ class AdviceControllerContractTest extends TestCase {
 	 */
 	private function controller(IRequest $request): AdviceController {
 		return new AdviceController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $request,
 			adviceService: $this->adviceService,
 			userSession: $this->userSession,
@@ -609,7 +609,7 @@ class AdviceControllerContractTest extends TestCase {
 	public function testDispatchReminderWithholdsTheInternalMessageOn500(): void {
 		$this->authenticate();
 		$this->adviceService->method('dispatchReminderAsUser')
-			->willThrowException(new LogicException('SQLSTATE[42S02] table procest_advice missing'));
+			->willThrowException(new LogicException('SQLSTATE[42S02] table dossiq_advice missing'));
 
 		$response = $this->bodylessController()->dispatchReminder(id: 'advice-1');
 

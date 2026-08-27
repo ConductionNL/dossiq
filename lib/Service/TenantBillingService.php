@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Tenant Billing Service
+ * Dossiq Tenant Billing Service
  *
  * Emits insert-only `tenantBillingEvent` rows and aggregates them for the
  * billing dashboard / Shillinq export.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -16,14 +16,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-10-billing-shillinq/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
@@ -170,6 +170,8 @@ class TenantBillingService {
 	 * @return array<string,mixed>|null Persisted event row.
 	 *
 	 * @throws InvalidArgumentException On invalid event type.
+	 *
+	 * @spec openspec/specs/tenant-billing/spec.md#requirement-billing-event-emission-on-case-lifecycle-req-007-a
 	 */
 	public function emitEvent(string $tenantId, string $eventType, float $quantity = 1.0, float $unitPrice = 0.0, string $currency = 'EUR'): ?array {
 		if (in_array($eventType, self::ALLOWED_EVENT_TYPES, true) === false) {
@@ -199,7 +201,7 @@ class TenantBillingService {
 				uuid: null,
 			);
 		} catch (Throwable $e) {
-			$this->logger->error('Procest: emitEvent failed', ['eventType' => $eventType, 'exception' => $e->getMessage()]);
+			$this->logger->error('Dossiq: emitEvent failed', ['eventType' => $eventType, 'exception' => $e->getMessage()]);
 			return null;
 		}
 	}//end emitEvent()
@@ -258,6 +260,8 @@ class TenantBillingService {
 	 * @param string $invoiceRef Shillinq invoice ref.
 	 *
 	 * @return int Number of events updated.
+	 *
+	 * @spec openspec/specs/tenant-billing/spec.md#requirement-daily-billing-export-to-shillinq-req-007-b
 	 */
 	public function markExported(array $events, string $invoiceRef): int {
 		$objectService = $this->getObjectService();
@@ -288,7 +292,7 @@ class TenantBillingService {
 				);
 				$updated++;
 			} catch (Throwable $e) {
-				$this->logger->error('Procest: markExported write failed', ['exception' => $e->getMessage()]);
+				$this->logger->error('Dossiq: markExported write failed', ['exception' => $e->getMessage()]);
 			}
 		}//end foreach
 

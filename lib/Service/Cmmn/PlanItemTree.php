@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest CMMN plan-item tree queries.
+ * Dossiq CMMN plan-item tree queries.
  *
  * Pure structural questions about the plan-item hierarchy, asked by both the
  * cascade evaluator and the engine's REST-facing views: is an item's
@@ -22,7 +22,7 @@
  *     a stage the instant it activated.
  *
  * @category Service
- * @package  OCA\Procest\Service\Cmmn
+ * @package  OCA\Dossiq\Service\Cmmn
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -30,7 +30,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -40,7 +40,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Cmmn;
+namespace OCA\Dossiq\Service\Cmmn;
 
 /**
  * Read-only structural queries over the CMMN plan-item hierarchy.

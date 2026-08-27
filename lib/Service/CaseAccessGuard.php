@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Case Access Guard.
+ * Dossiq Case Access Guard.
  *
  * Per-case mutation authorization that FAILS CLOSED.
  *
@@ -23,13 +23,13 @@
  * case? It mirrors the already-live, already-fail-closed
  * `DsoCaseService::authorizeZaakMutation()` rather than inventing a new idiom.
  *
- * ADR-022: OpenRegister owns RBAC. Procest does not grow a parallel RBAC
+ * ADR-022: OpenRegister owns RBAC. Dossiq does not grow a parallel RBAC
  * engine — the case is resolved THROUGH OR's `ObjectService` (so OR's own
  * access rules apply to that read) and this class only enforces the per-case
  * relationship on top.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -37,7 +37,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -47,10 +47,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -136,7 +136,7 @@ class CaseAccessGuard {
 			// An unresolvable admin check is NOT an authorization: fall through
 			// to the per-case check rather than granting or throwing.
 			$this->logger->warning(
-				'Procest CaseAccessGuard: admin check failed: ' . $e->getMessage(),
+				'Dossiq CaseAccessGuard: admin check failed: ' . $e->getMessage(),
 				['app' => Application::APP_ID]
 			);
 		}
@@ -188,7 +188,7 @@ class CaseAccessGuard {
 			}
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest CaseAccessGuard: admin check failed: ' . $e->getMessage(),
+				'Dossiq CaseAccessGuard: admin check failed: ' . $e->getMessage(),
 				['app' => Application::APP_ID]
 			);
 		}
@@ -220,7 +220,7 @@ class CaseAccessGuard {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			$this->logger->warning(
-				'Procest CaseAccessGuard: OpenRegister unavailable — denying case mutation',
+				'Dossiq CaseAccessGuard: OpenRegister unavailable — denying case mutation',
 				['app' => Application::APP_ID]
 			);
 			return null;
@@ -230,7 +230,7 @@ class CaseAccessGuard {
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');
 		if (empty($register) === true || empty($caseSchema) === true) {
 			$this->logger->warning(
-				'Procest CaseAccessGuard: case schema not configured — denying case mutation',
+				'Dossiq CaseAccessGuard: case schema not configured — denying case mutation',
 				['app' => Application::APP_ID]
 			);
 			return null;
@@ -245,7 +245,7 @@ class CaseAccessGuard {
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest CaseAccessGuard: case lookup failed — denying case mutation: ' . $e->getMessage(),
+				'Dossiq CaseAccessGuard: case lookup failed — denying case mutation: ' . $e->getMessage(),
 				['app' => Application::APP_ID]
 			);
 			return null;

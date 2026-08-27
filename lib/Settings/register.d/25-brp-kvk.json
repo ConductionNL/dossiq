@@ -1,7 +1,7 @@
 {
     "components": {
         "registers": {
-            "procest": {
+            "dossiq": {
                 "schemas": [
                     "brpPerson",
                     "kvkCompany"
@@ -179,7 +179,7 @@
         },
         "objects": [
             {
-                "@self": { "register": "procest", "schema": "brpPerson", "slug": "brp-999990627" },
+                "@self": { "register": "dossiq", "schema": "brpPerson", "slug": "brp-999990627" },
                 "citizenServiceNumber": "999990627",
                 "name": { "givenNames": "Stephan", "namePrefix": "", "surname": "Janssen" },
                 "birth": { "date": "1975-04-06" },
@@ -188,7 +188,7 @@
                 "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
             },
             {
-                "@self": { "register": "procest", "schema": "brpPerson", "slug": "brp-999992570" },
+                "@self": { "register": "dossiq", "schema": "brpPerson", "slug": "brp-999992570" },
                 "citizenServiceNumber": "999992570",
                 "name": { "givenNames": "Albert", "namePrefix": "", "surname": "Vogel" },
                 "birth": { "date": "1958-07-19" },
@@ -197,7 +197,7 @@
                 "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
             },
             {
-                "@self": { "register": "procest", "schema": "brpPerson", "slug": "brp-999995091" },
+                "@self": { "register": "dossiq", "schema": "brpPerson", "slug": "brp-999995091" },
                 "citizenServiceNumber": "999995091",
                 "name": { "givenNames": "Thanatos", "namePrefix": "", "surname": "Olympos" },
                 "birth": { "date": "1988-04-01" },
@@ -206,7 +206,7 @@
                 "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
             },
             {
-                "@self": { "register": "procest", "schema": "brpPerson", "slug": "brp-999996277" },
+                "@self": { "register": "dossiq", "schema": "brpPerson", "slug": "brp-999996277" },
                 "citizenServiceNumber": "999996277",
                 "name": { "givenNames": "Christina Annabel", "namePrefix": "", "surname": "Christiaansen" },
                 "birth": { "date": "1970-07-17" },
@@ -215,7 +215,7 @@
                 "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
             },
             {
-                "@self": { "register": "procest", "schema": "brpPerson", "slug": "brp-900194054" },
+                "@self": { "register": "dossiq", "schema": "brpPerson", "slug": "brp-900194054" },
                 "citizenServiceNumber": "900194054",
                 "name": { "givenNames": "Tina-Antïna", "namePrefix": "de", "surname": "Bruin" },
                 "birth": { "date": "1990-12-11" },
@@ -224,7 +224,7 @@
                 "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
             },
             {
-                "@self": { "register": "procest", "schema": "brpPerson", "slug": "brp-999997609" },
+                "@self": { "register": "dossiq", "schema": "brpPerson", "slug": "brp-999997609" },
                 "citizenServiceNumber": "999997609",
                 "name": { "givenNames": "Eleonora", "namePrefix": "de", "surname": "Crooy" },
                 "birth": { "date": "1969-12-27" },
@@ -233,7 +233,7 @@
                 "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
             },
             {
-                "@self": { "register": "procest", "schema": "brpPerson", "slug": "brp-999993355" },
+                "@self": { "register": "dossiq", "schema": "brpPerson", "slug": "brp-999993355" },
                 "citizenServiceNumber": "999993355",
                 "name": { "givenNames": "Jan-Kees", "namePrefix": "", "surname": "Brouwers" },
                 "birth": { "date": "1978-03-31" },
@@ -242,7 +242,7 @@
                 "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
             },
             {
-                "@self": { "register": "procest", "schema": "brpPerson", "slug": "brp-999990949" },
+                "@self": { "register": "dossiq", "schema": "brpPerson", "slug": "brp-999990949" },
                 "citizenServiceNumber": "999990949",
                 "name": { "givenNames": "Marianne", "namePrefix": "de", "surname": "Jong" },
                 "birth": { "date": "1952-04-22" },
@@ -251,7 +251,7 @@
                 "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
             },
             {
-                "@self": { "register": "procest", "schema": "brpPerson", "slug": "brp-999990792" },
+                "@self": { "register": "dossiq", "schema": "brpPerson", "slug": "brp-999990792" },
                 "citizenServiceNumber": "999990792",
                 "name": { "givenNames": "Jan", "namePrefix": "de", "surname": "Cuykelaer" },
                 "birth": { "date": "1977-12-10" },
@@ -260,7 +260,7 @@
                 "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
             },
             {
-                "@self": { "register": "procest", "schema": "brpPerson", "slug": "brp-999999655" },
+                "@self": { "register": "dossiq", "schema": "brpPerson", "slug": "brp-999999655" },
                 "citizenServiceNumber": "999999655",
                 "name": { "givenNames": "Astrid", "namePrefix": "", "surname": "Abels" },
                 "birth": { "date": "1974-12-16" },
@@ -269,7 +269,7 @@
                 "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
             },
             {
-                "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-69599084" },
+                "@self": { "register": "dossiq", "schema": "kvkCompany", "slug": "kvk-69599084" },
                 "kvkNumber": "69599084",
                 "tradeName": "Test EMZ Dagobert",
                 "legalForm": "Eenmanszaak",
@@ -277,7 +277,7 @@
                 "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
             },
             {
-                "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-68750110" },
+                "@self": { "register": "dossiq", "schema": "kvkCompany", "slug": "kvk-68750110" },
                 "kvkNumber": "68750110",
                 "tradeName": "Test BV Donald",
                 "legalForm": "BV",
@@ -285,7 +285,7 @@
                 "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
             },
             {
-                "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-69599068" },
+                "@self": { "register": "dossiq", "schema": "kvkCompany", "slug": "kvk-69599068" },
                 "kvkNumber": "69599068",
                 "tradeName": "Test Stichting Bolderbast",
                 "legalForm": "Stichting",
@@ -293,7 +293,7 @@
                 "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
             },
             {
-                "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-55344526" },
+                "@self": { "register": "dossiq", "schema": "kvkCompany", "slug": "kvk-55344526" },
                 "kvkNumber": "55344526",
                 "tradeName": "Regional Stimflex Coöperatie",
                 "legalForm": "Coöperatie",
@@ -301,7 +301,7 @@
                 "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
             },
             {
-                "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-68727720" },
+                "@self": { "register": "dossiq", "schema": "kvkCompany", "slug": "kvk-68727720" },
                 "kvkNumber": "68727720",
                 "tradeName": "Test NV Katrien - Handelsnaam",
                 "legalForm": "NV",
@@ -309,7 +309,7 @@
                 "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
             },
             {
-                "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-90004760" },
+                "@self": { "register": "dossiq", "schema": "kvkCompany", "slug": "kvk-90004760" },
                 "kvkNumber": "90004760",
                 "tradeName": "Local Funzoom N.V. - Statutory Naam",
                 "legalForm": "NV",
@@ -317,7 +317,7 @@
                 "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
             },
             {
-                "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-90001354" },
+                "@self": { "register": "dossiq", "schema": "kvkCompany", "slug": "kvk-90001354" },
                 "kvkNumber": "90001354",
                 "tradeName": "Grand Joyflex B.V.",
                 "legalForm": "BV",
@@ -325,7 +325,7 @@
                 "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
             },
             {
-                "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-90000102" },
+                "@self": { "register": "dossiq", "schema": "kvkCompany", "slug": "kvk-90000102" },
                 "kvkNumber": "90000102",
                 "tradeName": "Stichting Free opentrans - Eigenaar",
                 "legalForm": "Stichting",
@@ -333,7 +333,7 @@
                 "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
             },
             {
-                "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-69599076" },
+                "@self": { "register": "dossiq", "schema": "kvkCompany", "slug": "kvk-69599076" },
                 "kvkNumber": "69599076",
                 "tradeName": "Test VOF Guus",
                 "legalForm": "VoF",
@@ -341,7 +341,7 @@
                 "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
             },
             {
-                "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-90001745" },
+                "@self": { "register": "dossiq", "schema": "kvkCompany", "slug": "kvk-90001745" },
                 "kvkNumber": "90001745",
                 "tradeName": "Free Movelax",
                 "legalForm": "Maatschap",

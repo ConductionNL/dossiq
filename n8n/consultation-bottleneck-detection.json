@@ -1,5 +1,5 @@
 {
-  "name": "Procest — Consultation Bottleneck Detection",
+  "name": "Dossiq — Consultation Bottleneck Detection",
   "nodes": [
     {
       "parameters": {
@@ -17,7 +17,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.PROCEST_BASE_URL || 'http://nextcloud' }}/index.php/apps/procest/api/consultations/analytics",
+        "url": "={{ $env.DOSSIQ_BASE_URL || 'http://nextcloud' }}/index.php/apps/dossiq/api/consultations/analytics",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpBasicAuth",
         "sendHeaders": true,
@@ -75,7 +75,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.PROCEST_BASE_URL || 'http://nextcloud' }}/index.php/apps/procest/api/notifications/send",
+        "url": "={{ $env.DOSSIQ_BASE_URL || 'http://nextcloud' }}/index.php/apps/dossiq/api/notifications/send",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpBasicAuth",
         "sendHeaders": true,
@@ -119,7 +119,7 @@
   },
   "meta": {
     "templateCredsSetupCompleted": false,
-    "owner": "procest",
+    "owner": "dossiq",
     "spec": "openspec/changes/consultation-management/specs/consultation-management/spec.md#bottleneck-detection",
     "purpose": "Daily 08:00 bottleneck scan per advisory body using a 30-day analytics window. Emits a coordinator-group notification when overdue rate > 20% (spec rule)."
   }

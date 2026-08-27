@@ -1,6 +1,6 @@
 # ZGW API Compliance
 
-Procest implements the Dutch ZGW (Zaakgericht Werken) API suite, enabling interoperability with other ZGW-compliant systems (OpenZaak, Dimpact ZAC, XXLLnc Zaken) and passing the VNG Newman test suite.
+Dossiq implements the Dutch ZGW (Zaakgericht Werken) API suite, enabling interoperability with other ZGW-compliant systems (OpenZaak, Dimpact ZAC, XXLLnc Zaken) and passing the VNG Newman test suite.
 
 ## ZGW APIs Implemented
 

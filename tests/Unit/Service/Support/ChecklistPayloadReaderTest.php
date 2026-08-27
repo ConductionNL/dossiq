@@ -4,7 +4,7 @@
  * ChecklistPayloadReader Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Support
+ * @package  OCA\Dossiq\Tests\Unit\Service\Support
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,15 +22,15 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Support;
+namespace OCA\Dossiq\Tests\Unit\Service\Support;
 
-use OCA\Procest\Service\Support\ChecklistPayloadReader;
+use OCA\Dossiq\Service\Support\ChecklistPayloadReader;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for the checklist payload shape rules.
  *
- * @covers \OCA\Procest\Service\Support\ChecklistPayloadReader
+ * @covers \OCA\Dossiq\Service\Support\ChecklistPayloadReader
  */
 class ChecklistPayloadReaderTest extends TestCase {
 

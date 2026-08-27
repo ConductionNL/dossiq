@@ -19,7 +19,7 @@ AI-assisted processing integrates with Nextcloud's AI infrastructure (ExApps lik
 
 ## AI Infrastructure
 
-Procest leverages the following AI services (available via Docker profiles):
+Dossiq leverages the following AI services (available via Docker profiles):
 - **Ollama** -- Local LLM inference.
 - **OpenWebUI** -- Chat interface for AI interaction.
 - **Presidio** -- PII detection and anonymization.

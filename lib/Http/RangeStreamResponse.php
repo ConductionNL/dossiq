@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Range Stream Response
+ * Dossiq Range Stream Response
  *
  * A Nextcloud AppFramework Response that serves file content with HTTP Range
  * support, used by the ZGW DRC-compatible download endpoint for resumable
@@ -11,7 +11,7 @@
  * otherwise the full content is returned with `Accept-Ranges: bytes`.
  *
  * @category Http
- * @package  OCA\Procest\Http
+ * @package  OCA\Dossiq\Http
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,7 +27,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Http;
+namespace OCA\Dossiq\Http;
 
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Response;

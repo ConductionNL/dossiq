@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Playwright globalSetup — logs into Nextcloud once and persists the
@@ -20,10 +20,10 @@ import { STORAGE_STATE } from './helpers/auth'
 import { BASE_URL } from './base-url'
 
 const APP_ROOT = path.resolve(__dirname, '..', '..')
-const BUNDLE_PATH = path.join(APP_ROOT, 'js', 'procest-main.js')
+const BUNDLE_PATH = path.join(APP_ROOT, 'js', 'dossiq-main.js')
 
 /**
- * Ensure the webpack bundle exists before specs hit `/apps/procest`.
+ * Ensure the webpack bundle exists before specs hit `/apps/dossiq`.
  * On a fresh CI VM the shared quality.yml workflow runs `npm ci` +
  * `npx playwright install` but never `npm run build`, so without the
  * bundle the rendered page loads a 404 script tag and the Vue app
@@ -134,7 +134,7 @@ async function globalSetup(config: FullConfig): Promise<void> {
 		)
 	}
 
-	// Suppress the procest product walkthrough (ADR-043) for automated runs: on
+	// Suppress the dossiq product walkthrough (ADR-043) for automated runs: on
 	// first visit it mounts a modal spotlight tour (`.cn-walkthrough`) whose full
 	// dim layer intercepts pointer events and blocks every sidebar click. Its
 	// "seen" marker is browser-local (`cn-walkthrough-seen:<appId>` in
@@ -143,13 +143,13 @@ async function globalSetup(config: FullConfig): Promise<void> {
 	// tour step's `sinceVersion` sorts below it, so the tour composes to an empty
 	// step set (see useWalkthrough compareSemver gate) and never shows.
 	try {
-		await page.goto('/apps/procest/', {
+		await page.goto('/apps/dossiq/', {
 			waitUntil: 'domcontentloaded',
 			timeout: 60_000,
 		})
 		await page.evaluate(() => {
 			try {
-				window.localStorage.setItem('cn-walkthrough-seen:procest', '999.0.0')
+				window.localStorage.setItem('cn-walkthrough-seen:dossiq', '999.0.0')
 			} catch (e) {
 				// localStorage unavailable — tour dismissal falls back to helper clicks.
 			}

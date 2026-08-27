@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest TermijnController.
+ * Dossiq TermijnController.
  *
  * REST surface for TermijnInstance lifecycle (create, get, pauze,
  * hervat, verleng, voltooi). Defers all business logic to
@@ -15,7 +15,7 @@
  * authenticated-user default + the case-bound zaakId on the row.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,19 +26,19 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\DeadlineExtensionService;
-use OCA\Procest\Service\DeadlinePauseService;
-use OCA\Procest\Service\TermijnService;
+use OCA\Dossiq\Service\DeadlineExtensionService;
+use OCA\Dossiq\Service\DeadlinePauseService;
+use OCA\Dossiq\Service\TermijnService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

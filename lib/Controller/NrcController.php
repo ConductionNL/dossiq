@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Procest NRC (Notificaties) Controller
+ * Dossiq NRC (Notificaties) Controller
  *
  * Controller for serving ZGW Notificaties API endpoints (kanaal, abonnement,
  * notificaties). Delegates standard CRUD to ZgwService and provides a
  * simple notificatie acceptance endpoint.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -19,17 +19,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-1
+ * @spec openspec/changes/archive/retrofit-2026-05-24-annotate-procest/tasks.md#task-1
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\Service\ZgwService;
+use OCA\Dossiq\Service\ZgwService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;

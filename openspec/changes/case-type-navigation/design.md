@@ -9,7 +9,7 @@ Objections (`bezwaar`), appeals (`beroep`) and subsidies are administrative-law 
 Resolve the case-type navigation from live data at request time and merge it into the existing "Cases" group.
 
 1. A backend `ManifestController::manifest()` lists the `caseType` objects the current user may see (via OpenRegister `ObjectService`, RBAC-scoped) and returns a keyed menu **delta**: `{ menu: [{ id: 'CasesGroup', children: [ { id: 'ct-<uuid>', label: <name>, route: 'Cases', query: { caseType: <uuid> }, order } ] }] }`.
-2. The frontend consumes it with `useAppManifest('procest', builtManifest, { mergeStrategy: 'delta' })`. `mergeManifestDelta` merges a menu entry's `children[]` **by child id**, so the delta ADDS one child per case type under the pre-existing `CasesGroup` without clobbering its other children.
+2. The frontend consumes it with `useAppManifest('dossiq', builtManifest, { mergeStrategy: 'delta' })`. `mergeManifestDelta` merges a menu entry's `children[]` **by child id**, so the delta ADDS one child per case type under the pre-existing `CasesGroup` without clobbering its other children.
 3. Routes are still built from the static built manifest — the delta introduces no new pages, only children that point at the existing `Cases` route with a `query.caseType` filter.
 
 ## ADR-031 note — imperative resolution is justified here
@@ -18,11 +18,11 @@ ADR-031 restricts imperative object-notification/dispatch in a leaf app and favo
 
 ## ADR-022 note — apps consume OR abstractions server-side
 
-Per ADR-022, apps consume OpenRegister abstractions rather than reimplementing storage. The controller reads case types through the shared `SearchesObjects` trait (the canonical `ObjectService::searchObjects` / `searchObjectsBySlug` bridge) under the user session, so RBAC and register/schema resolution stay in OpenRegister. procest adds no table and no bespoke query path — it reuses the same abstraction the frontend index pages use, just from the server side to shape a nav delta.
+Per ADR-022, apps consume OpenRegister abstractions rather than reimplementing storage. The controller reads case types through the shared `SearchesObjects` trait (the canonical `ObjectService::searchObjects` / `searchObjectsBySlug` bridge) under the user session, so RBAC and register/schema resolution stay in OpenRegister. dossiq adds no table and no bespoke query path — it reuses the same abstraction the frontend index pages use, just from the server side to shape a nav delta.
 
 ## Cases map view
 
-Cases carry a `geometry` field (GeoJSON, per `procest_register.json`). The `Cases` page opts into `viewModes: ["table","cards","map"]` and a `mapConfig` mirroring the row shape: `geoField: "geometry"` (GeoJSON Point `coordinates: [lng, lat]`), `popupField: "title"`, `center` fallback over the Netherlands. The standalone `CaseMap`/`CasesOnMapView` page/route is retained for deep links but dropped from the menu, since the Cases index now covers the map surface.
+Cases carry a `geometry` field (GeoJSON, per `dossiq_register.json`). The `Cases` page opts into `viewModes: ["table","cards","map"]` and a `mapConfig` mirroring the row shape: `geoField: "geometry"` (GeoJSON Point `coordinates: [lng, lat]`), `popupField: "title"`, `center` fallback over the Netherlands. The standalone `CaseMap`/`CasesOnMapView` page/route is retained for deep links but dropped from the menu, since the Cases index now covers the map surface.
 
 ## Alternatives considered
 

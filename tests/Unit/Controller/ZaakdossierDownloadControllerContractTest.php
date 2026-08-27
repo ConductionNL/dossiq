@@ -29,33 +29,33 @@
  * `OCP\AppFramework\Http\DataDownloadResponse` cannot be constructed in this
  * unit-test environment: `DownloadResponse::__construct()` calls
  * `Symfony\Component\HttpFoundation\HeaderUtils`, and symfony/http-foundation
- * is not in procest's vendor tree (Nextcloud supplies it at runtime).
+ * is not in dossiq's vendor tree (Nextcloud supplies it at runtime).
  * Constructing one raises an `Error`. The pre-existing
  * `ZaakdossierDownloadControllerGuardTest::testCallerWithCaseAccessStillGetsTheArchive`
  * is red on an untouched checkout for exactly this reason. So `downloadFile`
  * is covered on its refusal branches and on the reader delegation; its
- * `RangeStreamResponse` sibling — a procest-owned class with no Symfony
+ * `RangeStreamResponse` sibling — a dossiq-owned class with no Symfony
  * dependency — carries the successful-download assertions instead.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Http\RangeStreamResponse;
-use OCA\Procest\Service\CaseAccessGuard;
-use OCA\Procest\Service\Zaakdossier\DossierZipExporter;
-use OCA\Procest\Service\Zaakdossier\InformatieobjectReader;
-use OCA\Procest\Controller\ZaakdossierDownloadController;
+use OCA\Dossiq\Controller\ZaakdossierDownloadController;
+use OCA\Dossiq\Http\RangeStreamResponse;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Zaakdossier\DossierZipExporter;
+use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -68,9 +68,9 @@ use Psr\Log\LoggerInterface;
 /**
  * Wire-contract tests for the ZaakdossierDownloadController file endpoints.
  *
- * @covers \OCA\Procest\Controller\ZaakdossierDownloadController
+ * @covers \OCA\Dossiq\Controller\ZaakdossierDownloadController
  *
- * @uses \OCA\Procest\Http\RangeStreamResponse
+ * @uses \OCA\Dossiq\Http\RangeStreamResponse
  */
 class ZaakdossierDownloadControllerContractTest extends TestCase {
 
@@ -139,7 +139,7 @@ class ZaakdossierDownloadControllerContractTest extends TestCase {
 		$this->caseAccessGuard = $this->createMock(CaseAccessGuard::class);
 
 		$this->controller = new ZaakdossierDownloadController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			reader: $this->reader,
 			zipExporter: $this->zipExporter,
@@ -172,7 +172,7 @@ class ZaakdossierDownloadControllerContractTest extends TestCase {
 		$this->reader->expects($this->never())->method('contentFor');
 
 		$file = $this->controller->downloadFile(
-			register: 'procest',
+			register: 'dossiq',
 			schema: 'informatieobject',
 			objectId: 'io-1',
 			fileId: 42,
@@ -209,7 +209,7 @@ class ZaakdossierDownloadControllerContractTest extends TestCase {
 		$this->reader->expects($this->never())->method('contentFor');
 
 		$response = $this->controller->downloadFile(
-			register: 'procest',
+			register: 'dossiq',
 			schema: 'informatieobject',
 			objectId: 'io-vertrouwelijk',
 			fileId: 42,
@@ -237,7 +237,7 @@ class ZaakdossierDownloadControllerContractTest extends TestCase {
 			->willReturn(null);
 
 		$response = $this->controller->downloadFile(
-			register: 'procest',
+			register: 'dossiq',
 			schema: 'informatieobject',
 			objectId: 'io-1',
 			fileId: 42,

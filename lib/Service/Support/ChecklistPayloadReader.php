@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest checklist payload reader.
+ * Dossiq checklist payload reader.
  *
  * Knows the SHAPE of an inspection checklist payload — nothing about what the
  * answers mean. Split out of `ChecklistService` (REQ-003) so that service holds
@@ -18,7 +18,7 @@
  * Pure: no I/O, no state.
  *
  * @category Service
- * @package  OCA\Procest\Service\Support
+ * @package  OCA\Dossiq\Service\Support
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,7 +26,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -36,7 +36,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Support;
+namespace OCA\Dossiq\Service\Support;
 
 /**
  * Reads items and responses out of a checklist payload.
@@ -175,6 +175,14 @@ class ChecklistPayloadReader {
 	 *
 	 * @param mixed $items The candidate item list.
 	 * @param array<string, array<string, mixed>> $out The index, updated in place.
+	 *
+	 * @param-out array<int|string, array<int|string, mixed>> $out Both key types
+	 *        WIDEN on write. Outer: $id is cast to string, but PHP coerces a
+	 *        CANONICAL NUMERIC string array key to an integer — and $id falls back
+	 *        to `$item['order']` or the loop `$index`, which are numeric far more
+	 *        often than not. Inner: `$item` is only narrowed to `array` by the
+	 *        `is_array()` guard above, so its own keys are unproven. Lookups
+	 *        coerce identically, so the index still works.
 	 *
 	 * @return void
 	 *

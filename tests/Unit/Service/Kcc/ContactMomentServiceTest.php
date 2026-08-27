@@ -4,7 +4,7 @@
  * ContactMomentService Unit Tests
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Kcc
+ * @package  OCA\Dossiq\Tests\Unit\Service\Kcc
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,10 +20,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Kcc;
+namespace OCA\Dossiq\Tests\Unit\Service\Kcc;
 
-use OCA\Procest\Service\Kcc\ContactMomentService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\Kcc\ContactMomentService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -31,7 +31,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for ContactMomentService payload building.
  *
- * @covers \OCA\Procest\Service\Kcc\ContactMomentService
+ * @covers \OCA\Dossiq\Service\Kcc\ContactMomentService
  */
 class ContactMomentServiceTest extends TestCase {
 

@@ -30,7 +30,7 @@ Inbound phone calls MUST trigger immediate agent display of caller identity, ope
 - **AND** ContactMoment is created with `customerRef=null`
 
 #### Scenario: Multiple open cases on same caller
-- **GIVEN** caller has 7 open cases in Procest
+- **GIVEN** caller has 7 open cases in Dossiq
 - **WHEN** CTI popup displays
 - **THEN** only 5 most-recent cases are shown
 - **AND** agent can click "View all cases" to open full list in new tab
@@ -147,7 +147,7 @@ Multiple input channels MUST feed the same ContactMoment workflow.
 - **AND** assigned to the correct team's email queue
 
 #### Scenario: Web form submission creates ContactMoment
-- **GIVEN** a citizen submits a form via Procest form-engine
+- **GIVEN** a citizen submits a form via Dossiq form-engine
 - **WHEN** form submission webhook fires
 - **THEN** ContactMoment is created with `channel=web_form`
 - **AND** form fields (name, email, subject, message) populate ContactMoment fields
@@ -201,7 +201,7 @@ When a routed case is picked up or completed, the KCC agent MUST be notified.
 
 #### Scenario: Notification when backoffice handler picks up case
 - **GIVEN** ContactMoment cm-001 is routed to Burgerzaken, assigned to Agent B
-- **WHEN** Agent B opens the linked Procest case in their workload
+- **WHEN** Agent B opens the linked Dossiq case in their workload
 - **AND** case status transitions to `In behandeling`
 - **THEN** a notification is sent to original KCC agent (Agent A):
   - "Anke van der Meer has picked up case ZK-2026-0123"

@@ -1,7 +1,7 @@
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-const baseUrl = generateUrl('/apps/procest/api/beschikkingen')
+const baseUrl = generateUrl('/apps/dossiq/api/beschikkingen')
 
 /**
  * Compose a new beschikking from a case.

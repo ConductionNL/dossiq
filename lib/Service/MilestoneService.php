@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Milestone Service
+ * Dossiq Milestone Service
  *
  * Service for managing milestones: configurable progress markers on cases
  * that translate technical workflow states into business-friendly indicators.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -15,7 +15,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/milestone-tracking/spec.md
  * @spec openspec/specs/milestone-tracking/spec.md
@@ -25,12 +25,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Milestone\MilestoneRepository;
-use OCA\Procest\Service\Milestone\StalledCaseDetector;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Milestone\MilestoneRepository;
+use OCA\Dossiq\Service\Milestone\StalledCaseDetector;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 

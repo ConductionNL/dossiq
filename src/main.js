@@ -11,7 +11,7 @@ import {
 	registerTranslations,
 	useAppManifest,
 } from '@conduction/nextcloud-vue'
-// @vue/compat REMOVED (ADR-066 task 6.1): lib + procest source are compat-
+// @vue/compat REMOVED (ADR-066 task 6.1): lib + dossiq source are compat-
 // construct-free (v-model, no .sync/$set/filters/Vue.extend) — pure Vue 3.
 import {
 	loadTranslations,
@@ -56,7 +56,7 @@ try {
 } catch (e) {
 	// Non-fatal — lib translations fall back to English source.
 	// eslint-disable-next-line no-console
-	console.warn('[procest] registerTranslations failed; falling back to English', e)
+	console.warn('[dossiq] registerTranslations failed; falling back to English', e)
 }
 
 // Fire-and-forget translation load. Some Nextcloud installs (including
@@ -72,7 +72,7 @@ try {
  */
 function tryLoadTranslations() {
 	try {
-		const result = loadTranslations('procest', () => {})
+		const result = loadTranslations('dossiq', () => {})
 		if (result && typeof result.then === 'function') {
 			result.then(
 				() => {},
@@ -85,15 +85,15 @@ function tryLoadTranslations() {
 }
 
 // Surface the generic `field-inspection` OpenRegister integration leaf with
-// procest's own offline schema mapping. The leaf (a nc-vue builtin, registered
+// dossiq's own offline schema mapping. The leaf (a nc-vue builtin, registered
 // live by OpenRegister's `integration-global` bundle) owns the offline planning
-// list, checklist completion, mutation queue and reconnect-replay; procest only
-// supplies its `offlineConfig` so the generic core points at procest's schemas.
+// list, checklist completion, mutation queue and reconnect-replay; dossiq only
+// supplies its `offlineConfig` so the generic core points at dossiq's schemas.
 //
-// Bootstrap-order safety: procest's bundle may load before OpenRegister's, so
+// Bootstrap-order safety: dossiq's bundle may load before OpenRegister's, so
 // install a minimal `_queue` stub that buffers the registration and replays it
-// once OR's registry attaches. Registering procest's mapping FIRST means the
-// AD-13 first-wins collision policy keeps procest's `offlineConfig` even when
+// once OR's registry attaches. Registering dossiq's mapping FIRST means the
+// AD-13 first-wins collision policy keeps dossiq's `offlineConfig` even when
 // OR later registers the leaf with its canonical defaults. The mapping mirrors
 // `DailySyncService` exactly (fieldInspection / inspectionChecklist /
 // checklistResult, filtered by inspectorRef + scheduledAt).
@@ -144,7 +144,7 @@ const builtManifest = markRaw(buildManifest(bundledManifest, fragments, menuLayo
 // now removed). `useAppManifest` still returns a REACTIVE ref (the render
 // function reads `resolvedManifest.value`); with no backend delta it resolves
 // to the built manifest.
-const { manifest: resolvedManifest } = useAppManifest('procest', builtManifest)
+const { manifest: resolvedManifest } = useAppManifest('dossiq', builtManifest)
 
 // Shallow-clone CnPageRenderer because the lib's barrel exports are
 // non-extensible (webpack ESM module records). Vue 2's `Vue.extend()`
@@ -180,7 +180,7 @@ function routesFromManifest(manifest) {
 // menu CHILDREN that point at the existing `Cases` route (via `query.caseType`);
 // it introduces no new pages, so the route table needs no reactive rebuild.
 const router = createRouter({
-	history: createWebHistory(generateUrl('/apps/procest')),
+	history: createWebHistory(generateUrl('/apps/dossiq')),
 	routes: routesFromManifest(builtManifest),
 })
 
@@ -253,12 +253,12 @@ app.mount('#content')
 if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
 	window.addEventListener('load', () => {
 		navigator.serviceWorker
-			.register(generateUrl('/apps/procest/service-worker.js'), {
-				scope: generateUrl('/apps/procest/'),
+			.register(generateUrl('/apps/dossiq/service-worker.js'), {
+				scope: generateUrl('/apps/dossiq/'),
 			})
 
 			.catch((e) =>
-				console.warn('[procest] service worker registration failed', e),
+				console.warn('[dossiq] service worker registration failed', e),
 			)
 	})
 }

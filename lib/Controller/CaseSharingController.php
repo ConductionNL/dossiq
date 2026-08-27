@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Case Sharing Controller
+ * Dossiq Case Sharing Controller
  *
  * Controller for case share creation/revocation and case transfer workflow.
  *
@@ -16,7 +16,7 @@
  * {@see CaseFederationController}.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -27,18 +27,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\CaseSharingService;
-use OCA\Procest\Service\CaseTransferService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\CaseSharingService;
+use OCA\Dossiq\Service\CaseTransferService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -133,7 +133,7 @@ class CaseSharingController extends Controller {
 		// Public "track your case" token link — minted through the OR
 		// shares integration leaf (ADR-022). The leaf owns token
 		// generation, expiry and the RBAC-respecting public resolve
-		// path; procest no longer stores a token, password or
+		// path; dossiq no longer stores a token, password or
 		// field-exclusion list. The C2 owner/handler guard above is the
 		// authz scope for minting a public surface (ADR-005).
 		$expiresAt = $this->request->getParam('expiresAt');

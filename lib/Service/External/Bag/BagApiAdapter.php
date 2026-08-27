@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Live Procest BAG adapter (Kadaster BAG API Individuele Bevragingen v2).
+ * Live Dossiq BAG adapter (Kadaster BAG API Individuele Bevragingen v2).
  *
  * Calls the Kadaster BAG API Individuele Bevragingen v2 — the
  * authoritative, key-gated, individual-record channel Kadaster operates
@@ -26,13 +26,13 @@
  * dormant Log adapter's fail-soft contract.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Bag
+ * @package  OCA\Dossiq\Service\External\Bag
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://lvbag.github.io/BAG-API/Technische%20specificatie/
  *
  * @spec openspec/changes/bag-register-adapter/proposal.md
@@ -43,9 +43,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Bag;
+namespace OCA\Dossiq\Service\External\Bag;
 
-use OCA\Procest\Service\External\IntegrationMode;
+use OCA\Dossiq\Service\External\IntegrationMode;
 use OCP\Http\Client\IClientService;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -153,7 +153,7 @@ class BagApiAdapter implements BagAdapterInterface {
 			return $this->foundAddressResult(adressen: $adressen);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest BAG address lookup failed',
+				'Dossiq BAG address lookup failed',
 				['postcode' => $normalizedPostcode, 'houseNumber' => $houseNumber, 'error' => $e->getMessage(), 'context' => $context]
 			);
 
@@ -319,7 +319,7 @@ class BagApiAdapter implements BagAdapterInterface {
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Procest BAG object lookup failed',
+				'Dossiq BAG object lookup failed',
 				['objectType' => $objectType, 'id' => $id, 'error' => $e->getMessage(), 'context' => $context]
 			);
 
@@ -363,7 +363,7 @@ class BagApiAdapter implements BagAdapterInterface {
 	 */
 	private function errorResult(int $status, array $context): BagLookupResult {
 		$this->logger->warning(
-			'Procest BAG lookup returned a non-success status',
+			'Dossiq BAG lookup returned a non-success status',
 			['status' => $status, 'context' => $context]
 		);
 

@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest Route Configuration
+ * Dossiq Route Configuration
  *
- * Defines all HTTP routes for the Procest application.
+ * Defines all HTTP routes for the Dossiq application.
  *
  * @category Routes
- * @package  OCA\Procest
+ * @package  OCA\Dossiq
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -17,7 +17,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
@@ -26,22 +26,22 @@ declare(strict_types=1);
 // (`/{path}`), settings#index/create/load, preferences#getPreference/setPreference,
 // metrics#index and health#index — are now provided by the OpenRegister AppHost
 // canonical route table (ADR-040). URLs, verbs and route names are unchanged.
-// The procest-bespoke dashboard PWA assets (dashboard#serviceWorker /
+// The dossiq-bespoke dashboard PWA assets (dashboard#serviceWorker /
 // dashboard#webManifest) and every domain route below are passed through as
 // `$extra`; they are inserted before the catch-all so they keep priority.
 //
 // ⚠️ The AppHost builder is invoked through a `class_exists()` guard. Nextcloud
-// `include`s this file for EVERY procest request, so an unguarded static call
+// `include`s this file for EVERY dossiq request, so an unguarded static call
 // to a class in another app makes every route in the app fatal with HTTP 500
-// when openregister is absent — not just the AppHost ones. Procest does not
+// when openregister is absent — not just the AppHost ones. Dossiq does not
 // declare `<app>openregister</app>`, so an admin can create exactly that
 // configuration. Fixing only the controllers MOVES the fatal here rather than
 // removing it. The fallback branch below reproduces `Routes::standard()`'s
-// output locally so procest still routes without openregister.
+// output locally so dossiq still routes without openregister.
 // See decidesk#377 / #388.
 $extra = [
         // Backend manifest delta — case-type navigation (case-type-navigation).
-        // Consumed by useAppManifest('procest', bundled, { mergeStrategy: 'delta' }).
+        // Consumed by useAppManifest('dossiq', bundled, { mergeStrategy: 'delta' }).
     ['name' => 'manifest#manifest',  'url' => '/api/manifest',           'verb' => 'GET'],
 
         // AI-Assisted Processing (specific endpoints precede wildcard routes).
@@ -105,9 +105,13 @@ $extra = [
     ['name' => 'subsidie#create', 'url' => '/api/subsidies', 'verb' => 'POST'],
     ['name' => 'subsidie#createTussenrapportage', 'url' => '/api/subsidies/uitvoeringen/{uitvoeringId}/tussenrapportages', 'verb' => 'POST'],
     ['name' => 'subsidie#approveTussenrapportage', 'url' => '/api/subsidies/tussenrapportages/{reportId}/beoordelen', 'verb' => 'POST'],
-    ['name' => 'subsidie#finalizeVaststelling', 'url' => '/api/subsidies/vaststellingen/{vaststellingId}/vast', 'verb' => 'POST'],
-    ['name' => 'subsidie#signBeschikking', 'url' => '/api/subsidies/beschikkingen/{beschikkingId}/sign', 'verb' => 'POST'],
-    ['name' => 'subsidie#publishBeschikking', 'url' => '/api/subsidies/beschikkingen/{beschikkingId}/publish', 'verb' => 'POST'],
+        // The placeholder names bind BY NAME to the method parameters — see the
+        // note on the parafeer-route block below. These three were
+        // {vaststellingId}/{beschikkingId} against $determinationId/$decisionId
+        // and answered HTTP 400 on every call.
+    ['name' => 'subsidie#finalizeVaststelling', 'url' => '/api/subsidies/vaststellingen/{determinationId}/vast', 'verb' => 'POST'],
+    ['name' => 'subsidie#signBeschikking', 'url' => '/api/subsidies/beschikkingen/{decisionId}/sign', 'verb' => 'POST'],
+    ['name' => 'subsidie#publishBeschikking', 'url' => '/api/subsidies/beschikkingen/{decisionId}/publish', 'verb' => 'POST'],
     ['name' => 'subsidie#transition', 'url' => '/api/subsidies/{id}/transition', 'verb' => 'POST'],
     ['name' => 'subsidie#createBeschikking', 'url' => '/api/subsidies/{id}/beschikking', 'verb' => 'POST'],
 
@@ -228,7 +232,7 @@ $extra = [
         // GIS / cases-on-map: the multi-object overview is served by
         // OpenRegister's page-level maps-overview surface (OR #154) — RBAC-scoped
         // marker points at /apps/openregister/api/integrations/maps/overviews/...
-        // Procest's bespoke GIS-proxy / WMS-WFS-proxy / WFS-export / WFS-XML /
+        // Dossiq's bespoke GIS-proxy / WMS-WFS-proxy / WFS-export / WFS-XML /
         // map-layer-CRUD / cases-geo routes were removed with that migration
         // (issue #112, ADR-022). PDOK address resolution is owned separately by
         // the migrate-pdok-to-openconnector change.
@@ -258,15 +262,32 @@ $extra = [
         // ── Parafeerroute (B&W parafering engine) ───────────────────────
         // CRUD on parafeerroute objects is served by OpenRegister's auto-exposed
         // /api/objects/<register>/<schema> endpoints — only engine routes remain.
-    ['name' => 'parafeerRoute#start',        'url' => '/api/parafeer-route/voorstel/{voorstelId}/start',          'verb' => 'POST'],
-    ['name' => 'parafeerRoute#completeStep', 'url' => '/api/parafeer-route/voorstel/{voorstelId}/complete-step',  'verb' => 'POST'],
-    ['name' => 'parafeerRoute#skipStep',     'url' => '/api/parafeer-route/voorstel/{voorstelId}/skip-step',      'verb' => 'POST'],
-    ['name' => 'parafeerRoute#addStep',      'url' => '/api/parafeer-route/voorstel/{voorstelId}/add-step',       'verb' => 'POST'],
+        // ⚠️ THE PLACEHOLDER NAME IS LOAD-BEARING. Nextcloud's Dispatcher binds a
+        // controller argument by PARAMETER NAME (`$this->request->getParam($param)`),
+        // not by position. These four were `{voorstelId}` while every target method
+        // signs `string $proposalId` — so the argument resolved to null, the string
+        // typehint threw a TypeError, and the Dispatcher answered HTTP 400. Measured
+        // against the running instance before the fix: start, complete-step and
+        // register-besluit all returned 400 with an empty body, on every call, for
+        // any input.
+        //
+        // The Dutch→English vocabulary sweep renamed the method parameters and left
+        // the URLs behind. Nothing caught it: the route exists, the method exists,
+        // and gate-6 (route-reachability) checks that a route's target method is
+        // present — which it is. Only the NAMES disagree.
+        // The four parafeer-route engine routes were RETIRED. They were a second
+        // implementation of a flow /api/parafeer-actie already runs, and they had
+        // never served a request: the placeholder bound no argument, so every call
+        // answered 400. `start` is covered by the `besluitvormingActivate`
+        // transition action, `complete-step` and `skip-step` by parafeeractie's
+        // own `parafered`/`accorded`/`skipped` vocabulary, and `add-step` has no
+        // live equivalent — that button went with them.
 
         // Voorstel → besluit registration delegates to a decidesk report-adoption
-        // Decision (procest-delegate-remaining-decisions-to-decidesk, ADR-019).
+        // Decision (dossiq-delegate-remaining-decisions-to-decidesk, ADR-019).
         // The parafeerroute above is untouched; only the besluit decision moves.
-    ['name' => 'voorstelBesluit#registerBesluit', 'url' => '/api/voorstellen/{voorstelId}/register-besluit',       'verb' => 'POST'],
+        // Same placeholder-name defect as the four routes above — see that note.
+    ['name' => 'voorstelBesluit#registerBesluit', 'url' => '/api/voorstellen/{proposalId}/register-besluit',       'verb' => 'POST'],
 
         // NOTE: ParaferingController + ParaferingService were superseded scaffolding
         // that operated entirely in-memory (no persistence, client-supplied state).
@@ -324,7 +345,8 @@ $extra = [
         // Related-case linking — typed peer relations (relevanteAndereZaken).
     ['name' => 'caseRelation#list',    'url' => '/api/cases/{caseId}/relations',                          'verb' => 'GET'],
     ['name' => 'caseRelation#create',  'url' => '/api/cases/{caseId}/relations',                          'verb' => 'POST'],
-    ['name' => 'caseRelation#destroy', 'url' => '/api/cases/{caseId}/relations/{targetId}/{aardRelatie}', 'verb' => 'DELETE'],
+        // {aardRelatie} bound nothing: the method signs $natureRelationship. HTTP 400.
+    ['name' => 'caseRelation#destroy', 'url' => '/api/cases/{caseId}/relations/{targetId}/{natureRelationship}', 'verb' => 'DELETE'],
         // Dashboard KPI aggregation endpoint.
     ['name' => 'kpi#index', 'url' => '/api/dashboard/kpis', 'verb' => 'GET'],
 
@@ -346,7 +368,7 @@ $extra = [
         // ── Notes @mention notifications (ncvue-w2-leaves-adoption) ─────
         // Note storage/CRUD is owned entirely by the OpenRegister notes
         // integration leaf (nc-vue CnNotesTab). This is the only
-        // procest-side side-effect: turning a saved note's @mention
+        // dossiq-side side-effect: turning a saved note's @mention
         // tokens into real Nextcloud notifications.
     ['name' => 'notes#mention', 'url' => '/api/notes/mention', 'verb' => 'POST'],
 
@@ -438,13 +460,13 @@ $extra = [
         // stay in-app (zaak-domain). CRUD over the partner/transfer schemas
         // is served by the OpenRegister manifest renderer.
         //
-        // The bespoke procest public-share controller + its token routes
+        // The bespoke dossiq public-share controller + its token routes
         // (/api/public/share/*, /api/public/status/*) were REMOVED: the
         // citizen-facing public case-status page now resolves anonymously
         // through OR's `#[PublicPage]` endpoint
         // `GET /apps/openregister/api/public/case-tokens/{token}` — an
         // audited, RBAC-respecting surface (only public-group-readable
-        // fields), not a hand-maintained procest auth surface.
+        // fields), not a hand-maintained dossiq auth surface.
     ['name' => 'caseSharing#createShare',      'url' => '/api/shares',                   'verb' => 'POST'],
     ['name' => 'caseSharing#revokeShare',      'url' => '/api/shares/{shareId}',         'verb' => 'DELETE'],
     ['name' => 'caseSharing#initiateTransfer', 'url' => '/api/transfers',                'verb' => 'POST'],
@@ -577,14 +599,17 @@ $extra = [
 
         // ── Besluitvorming workflow ──────────────────────────────────────
     ['name' => 'besluitvorming#activateTemplate', 'url' => '/api/besluitvorming/templates/{slug}/activate', 'verb' => 'POST'],
-    ['name' => 'agenda#addToAgenda',              'url' => '/api/besluitvorming/cases/{id}/agenda',         'verb' => 'POST'],
-    ['name' => 'agenda#updateAgendaItem',         'url' => '/api/besluitvorming/cases/{id}/agenda',         'verb' => 'PUT'],
+        // The two `agenda#` routes were removed with the agenda compiler: decidiq
+        // owns agenda-building and meetings, and it surfaces them here through the
+        // `decidesk-decisions` integration leaf. They served only the compiler view
+        // and became unreachable the moment it went, which is the dead-endpoint
+        // shape this programme already retired once on the AVG page.
     ['name' => 'publication#publish',             'url' => '/api/besluitvorming/cases/{id}/publish',        'verb' => 'POST'],
     ['name' => 'mandaat#mandaatCheck',            'url' => '/api/besluitvorming/cases/{id}/mandaat-check',  'verb' => 'GET'],
 
         // GIS map-layer CRUD removed (issue #112): base-layer config is now
         // declarative on OpenRegister's maps-overview surface (PDOK WMTS default,
-        // overridable) — procest no longer manages WMS/WFS overlay layers.
+        // overridable) — dossiq no longer manages WMS/WFS overlay layers.
         // ── DSO / Omgevingsloket (DSO controller endpoints) ──────────────
     ['name' => 'dso#dashboard',            'url' => '/api/dso/dashboard',                                'verb' => 'GET'],
     ['name' => 'dso#transitionStatus',     'url' => '/api/dso/cases/{caseId}/transition',                'verb' => 'POST'],
@@ -648,7 +673,7 @@ $extra = [
 
         // Archief / e-Depot handover is owned by OpenRegister (migrate-archival-to-or,
         // ADR-022): retention, transfer, proof and destruction run through OR's
-        // /api/archival, /api/transfers, /api/settings/edepot surfaces. Procest
+        // /api/archival, /api/transfers, /api/settings/edepot surfaces. Dossiq
         // contributes retention config declaratively (x-openregister-archival on the
         // case schema) and places legal holds via BezwaarLegalHoldListener; it exposes
         // no archief endpoints of its own.
@@ -691,7 +716,7 @@ $extra = [
 
         // ── Termijnbewaking + dwangsom engine (AWB 4:13/4:14/4:17) ─────────
         // Public webhook for openconnector/ERP payment confirmation callbacks.
-    ['name' => 'dwangsomPaymentCallback#callback', 'url' => '/api/procest/openconnector/dwangsom-payment-callback', 'verb' => 'POST'],
+    ['name' => 'dwangsomPaymentCallback#callback', 'url' => '/api/dossiq/openconnector/dwangsom-payment-callback', 'verb' => 'POST'],
         // TermijnInstance lifecycle (caseworker / handler).
     ['name' => 'termijn#create',     'url' => '/api/termijn/instances',                  'verb' => 'POST'],
     ['name' => 'termijn#show',       'url' => '/api/termijn/instances/{id}',             'verb' => 'GET'],
@@ -747,14 +772,15 @@ $extra = [
     ['name' => 'zaakdossierDownload#downloadFile',         'url' => '/api/objects/{register}/{schema}/{objectId}/files/{fileId}/download', 'verb' => 'GET'],
     ['name' => 'zaakdossierDownload#downloadZgwDocumenten','url' => '/api/zgw/documenten/v1/enkelvoudiginformatieobjecten/{uuid}/download', 'verb' => 'GET'],
 
-        // ── ORI Atom Feeds (public, no auth required) ───────────────────
-    ['name' => 'raadsinformatieFeed#vergaderingen', 'url' => '/feed/ori/vergaderingen.rss', 'verb' => 'GET'],
-    ['name' => 'raadsinformatieFeed#agendapunten',  'url' => '/feed/ori/agendapunten.rss',  'verb' => 'GET'],
-    ['name' => 'raadsinformatieFeed#documenten',    'url' => '/feed/ori/documenten.rss',    'verb' => 'GET'],
+        // ORI Atom feeds REMOVED (ori-removal). Raadsinformatie is decidiq's
+        // domain; these three routes moved to /apps/decidiq/feed/ori/*.
+        // Deliberately no proxy and no redirect — a feed that silently answers
+        // from a different app is worse than one that stops, because a
+        // subscriber cannot tell it has moved.
 
         // NOTE: dashboard#page (`/`) and the SPA catch-all (`/{path}`,
         // dashboard#catchAll) are supplied by Routes::standard(); both resolve to
-        // procest's DashboardController, which implements them locally.
+        // dossiq's DashboardController, which implements them locally.
 ];
 
 // Preferred path: the OpenRegister AppHost owns the canonical route table.

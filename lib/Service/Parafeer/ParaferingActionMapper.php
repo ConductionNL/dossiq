@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest ParaferingActionMapper.
+ * Dossiq ParaferingActionMapper.
  *
  * Pure shaping of parafering action data. Split out of ParafeerActieService so
  * that service keeps only the orchestration (authorize, persist, propagate,
@@ -11,7 +11,7 @@
  * is side-effect free — no ObjectService, no logging, no events.
  *
  * @category Service
- * @package  OCA\Procest\Service\Parafeer
+ * @package  OCA\Dossiq\Service\Parafeer
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -19,7 +19,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -29,7 +29,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Parafeer;
+namespace OCA\Dossiq\Service\Parafeer;
 
 /**
  * Shapes parafering action input, payloads and route navigation.

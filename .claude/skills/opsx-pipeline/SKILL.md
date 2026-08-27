@@ -12,7 +12,7 @@ Process one or more OpenSpec change proposals through the full lifecycle using p
 
 Examples:
 - `/opsx-pipeline all` — process all open proposals across all repos
-- `/opsx-pipeline procest` — process all open proposals in Procest
+- `/opsx-pipeline dossiq` — process all open proposals in Dossiq
 - `/opsx-pipeline sla-tracking routing` — process specific changes by name
 
 **Overview**
@@ -35,7 +35,7 @@ Scan for open proposals (directories in `openspec/changes/` that contain a `prop
 
 ```bash
 # For each app directory, find open proposals
-for app in procest pipelinq docudesk openregister opencatalogi mydash nldesign larpingapp openconnector softwarecatalog zaakafhandelapp; do
+for app in dossiq pipelinq docudesk openregister opencatalogi mydash nldesign larpingapp openconnector softwarecatalog zaakafhandelapp; do
   if [ -d "$app/openspec/changes" ]; then
     for change in $app/openspec/changes/*/proposal.md; do
       echo "$app:$(basename $(dirname $change))"
@@ -56,9 +56,9 @@ Also check `.github/openspec/changes/` for org-wide proposals.
 ### 2. Build the execution plan
 
 For each change, determine:
-- **App directory**: e.g., `procest/`
+- **App directory**: e.g., `dossiq/`
 - **Change name**: e.g., `brp-kvk-register-sets`
-- **GitHub repo**: e.g., `ConductionNL/procest` (from git remote)
+- **GitHub repo**: e.g., `ConductionNL/dossiq` (from git remote)
 - **Existing issue**: Check if an `openspec`-labeled issue already exists for this change (search GitHub issues by title)
 
 Display the plan:
@@ -68,7 +68,7 @@ Display the plan:
 
 | # | App | Change | GitHub Repo | Issue |
 |---|-----|--------|-------------|-------|
-| 1 | procest | brp-kvk-register-sets | ConductionNL/procest | #103 |
+| 1 | dossiq | brp-kvk-register-sets | ConductionNL/dossiq | #103 |
 | 2 | pipelinq | sla-tracking | ConductionNL/pipelinq | #79 |
 | ... | ... | ... | ... | ... |
 
@@ -353,7 +353,7 @@ Display progress updates:
 
 | # | App | Change | Status | Tasks | Quality | Browser | Docs |
 |---|-----|--------|--------|-------|---------|---------|------|
-| 1 | procest | brp-kvk-register-sets | ✓ Complete | 7/7 | All pass | ✓ 3 scenarios | ✓ Updated |
+| 1 | dossiq | brp-kvk-register-sets | ✓ Complete | 7/7 | All pass | ✓ 3 scenarios | ✓ Updated |
 | 2 | pipelinq | sla-tracking | ⏳ Running | 3/5 | — | — | — |
 | 3 | pipelinq | routing | ⏳ Queued | — | — | — | — |
 ```
@@ -425,7 +425,7 @@ Display the complete pipeline results:
 ### Results
 | # | App | Change | Branch | PR | Tasks | Quality | Browser | Docs | Status |
 |---|-----|--------|--------|-----|-------|---------|---------|------|--------|
-| 1 | procest | brp-kvk-register-sets | feature/103/brp-kvk-register-sets | #105 | 7/7 | ✓ | ✓ 3 | ✓ | Merged-ready |
+| 1 | dossiq | brp-kvk-register-sets | feature/103/brp-kvk-register-sets | #105 | 7/7 | ✓ | ✓ 3 | ✓ | Merged-ready |
 | 2 | pipelinq | sla-tracking | feature/79/sla-tracking | #82 | 5/5 | ✓ | Skipped | ✓ | Merged-ready |
 | ... |
 

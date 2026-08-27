@@ -1,16 +1,16 @@
 <?php
 
 /**
- * Procest Notifier.
+ * Dossiq Notifier.
  *
- * Renders Procest's Nextcloud notifications for the bell menu.
+ * Renders Dossiq's Nextcloud notifications for the bell menu.
  * MentionNotificationService raises `note_mention` notifications when a
  * saved note contains an `@mention` (nc-vue #207, CnNotesTab); this
  * INotifier turns the stored subject key + parameters into localised
  * text with an icon.
  *
  * @category Notification
- * @package  OCA\Procest\Notification
+ * @package  OCA\Dossiq\Notification
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -21,16 +21,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Notification;
+namespace OCA\Dossiq\Notification;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\IURLGenerator;
 use OCP\L10N\IFactory;
 use OCP\Notification\INotification;
@@ -38,7 +38,7 @@ use OCP\Notification\INotifier;
 use OCP\Notification\UnknownNotificationException;
 
 /**
- * Parses Procest notifications into localised, rendered form.
+ * Parses Dossiq notifications into localised, rendered form.
  */
 class Notifier implements INotifier {
 
@@ -78,27 +78,27 @@ class Notifier implements INotifier {
 	 * @return string
 	 */
 	public function getName(): string {
-		return 'Procest';
+		return 'Dossiq';
 	}//end getName()
 
 	/**
-	 * Prepare a Procest notification for display.
+	 * Prepare a Dossiq notification for display.
 	 *
 	 * @param INotification $notification The raw notification.
 	 * @param string $languageCode The recipient's language code.
 	 *
 	 * @return INotification The prepared notification.
 	 *
-	 * @throws UnknownNotificationException When the notification is not a Procest one.
+	 * @throws UnknownNotificationException When the notification is not a Dossiq one.
 	 */
 	public function prepare(INotification $notification, string $languageCode): INotification {
 		if ($notification->getApp() !== Application::APP_ID) {
-			throw new UnknownNotificationException('Notification not handled by Procest');
+			throw new UnknownNotificationException('Notification not handled by Dossiq');
 		}
 
 		$subjectKey = $notification->getSubject();
 		if (in_array($subjectKey, self::KNOWN_SUBJECTS, true) === false) {
-			throw new UnknownNotificationException('Unknown Procest notification subject');
+			throw new UnknownNotificationException('Unknown Dossiq notification subject');
 		}
 
 		$l = $this->l10nFactory->get(Application::APP_ID, $languageCode);

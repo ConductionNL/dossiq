@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Procest WOZ (Waardering Onroerende Zaken) lookup port.
+ * Dossiq WOZ (Waardering Onroerende Zaken) lookup port.
  *
  * The Kadaster Haal Centraal WOZ Bevragen API (LV-WOZ) is the authoritative
- * source-of-truth for Dutch property valuations. Procest ships
+ * source-of-truth for Dutch property valuations. Dossiq ships
  * authoritative BRP, KvK, BAG and (with this change) BRK lookup seams
  * already; this port fills the property-valuation gap for VTH
  * (Vergunningen, Toezicht en Handhaving) and tax case lifecycles that need
@@ -17,7 +17,7 @@
  * `openspec/changes/brk-woz-register-adapters/design.md` Decision 2). The
  * Kadaster WOZ Bevragen API is the only structured, programmatic WOZ
  * channel and is restricted to WOZ data holders (municipalities) — which
- * matches Procest's actual customer base.
+ * matches Dossiq's actual customer base.
  *
  * The port is intentionally narrow — three methods returning a shared
  * result value-object — so the live binding (Kadaster WOZ Bevragen,
@@ -38,13 +38,13 @@
  * `lookupByNummeraanduiding()` over `lookupAddress()`.
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Woz
+ * @package  OCA\Dossiq\Service\External\Woz
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://kadaster.github.io/WOZ-bevragen/
  *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
@@ -55,7 +55,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Woz;
+namespace OCA\Dossiq\Service\External\Woz;
 
 /**
  * WOZ (Waardering Onroerende Zaken) property-valuation lookup port.

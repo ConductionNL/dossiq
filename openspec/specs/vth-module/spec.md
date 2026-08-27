@@ -433,7 +433,7 @@ The system SHALL support mobile inspection workflows for inspectors working in t
 
 ### Requirement: REQ-VTH-11 — DSO Intake Mapping
 
-The system MUST map DSO verzoek data fields to Procest case properties.
+The system MUST map DSO verzoek data fields to Dossiq case properties.
 
 **Feature tier**: V1
 

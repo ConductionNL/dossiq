@@ -1,8 +1,8 @@
-# Method Decomposition — Procest
+# Method Decomposition — Dossiq
 
 ## Why
 
-Procest has accumulated 152 PHPMD complexity suppressions across 12 files, with 95 in Priority 1 (5+ suppressions each). These suppressions hide maintainability issues that hinder code quality audits and make Dutch government tender compliance (ISO 25010 software quality) harder to demonstrate.
+Dossiq has accumulated 152 PHPMD complexity suppressions across 12 files, with 95 in Priority 1 (5+ suppressions each). These suppressions hide maintainability issues that hinder code quality audits and make Dutch government tender compliance (ISO 25010 software quality) harder to demonstrate.
 
 ### Business Driver
 Dutch government procurement increasingly requires documented code quality metrics. ISO 25010 compliance requires demonstrable maintainability via clean code metrics. Removing PHPMD suppressions proves we meet those standards without resorting to suppression pragmatism.
@@ -111,7 +111,7 @@ Run phpunit, PHPMD, PHPCS, Psalm, PHPStan. Smoke test in browser.
 - **Public API** — Controller method signatures unchanged (backwards-compatible)
 
 ### Dependencies
-- **OpenRegister** — No changes (all refactoring is internal to Procest)
+- **OpenRegister** — No changes (all refactoring is internal to Dossiq)
 - **Nextcloud platform APIs** — No changes
 - **PHPMD, PHPCS, Psalm, PHPStan** — Existing versions; no library upgrades needed
 

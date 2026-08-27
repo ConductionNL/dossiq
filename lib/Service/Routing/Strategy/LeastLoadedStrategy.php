@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Least-Loaded Routing Strategy
+ * Dossiq Least-Loaded Routing Strategy
  *
  * Picks the participant currently holding the lowest count of open tasks.
  * Open-task counts are taken from the case's `openTaskCountsByParticipant`
@@ -9,7 +9,7 @@
  * per resolve pass to avoid N+1 queries).
  *
  * @category Service
- * @package  OCA\Procest\Service\Routing\Strategy
+ * @package  OCA\Dossiq\Service\Routing\Strategy
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -20,14 +20,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Routing\Strategy;
+namespace OCA\Dossiq\Service\Routing\Strategy;
 
-use OCA\Procest\Service\Routing\RoutingStrategyInterface;
+use OCA\Dossiq\Service\Routing\RoutingStrategyInterface;
 
 /**
  * Least-loaded strategy.

@@ -5,11 +5,11 @@
  *
  * Verifies that the register.d/50-sociaal-domein.json fragment unions its
  * schemas (WMO, Jeugdwet, Participatiewet + supporting AVG/consent entities),
- * register membership and seed objects onto the procest monolith via the
+ * register membership and seed objects onto the dossiq monolith via the
  * ADR-037 deep-merge loader, without colliding with the base register.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Settings
+ * @package  OCA\Dossiq\Tests\Unit\Settings
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,22 +20,22 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Settings;
+namespace OCA\Dossiq\Tests\Unit\Settings;
 
-use OCA\Procest\Service\Settings\RegisterFragmentMerger;
+use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Integration-style unit tests for the sociaal-domein register fragment.
  *
- * @covers \OCA\Procest\Service\SettingsService
+ * @covers \OCA\Dossiq\Service\SettingsService
  *
- * @uses \OCA\Procest\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class SociaalDomeinFragmentTest extends TestCase {
 
@@ -51,7 +51,7 @@ class SociaalDomeinFragmentTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$base = json_decode(
-			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/procest_register.json'),
+			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'),
 			true
 		);
 
@@ -130,13 +130,13 @@ class SociaalDomeinFragmentTest extends TestCase {
 	}//end testZaaktypesRequireAvgClassificatie()
 
 	/**
-	 * The procest register lists every new sociaal-domein schema while keeping
+	 * The dossiq register lists every new sociaal-domein schema while keeping
 	 * its existing membership (list concatenation per ADR-037).
 	 *
 	 * @return void
 	 */
 	public function testRegisterMembershipUnioned(): void {
-		$schemas = $this->merged['components']['registers']['procest']['schemas'];
+		$schemas = $this->merged['components']['registers']['dossiq']['schemas'];
 
 		foreach ([
 			'wmoZaak',
@@ -151,7 +151,7 @@ class SociaalDomeinFragmentTest extends TestCase {
 			'sociaalDomeinAuditLog',
 			'avgIncident',
 		] as $name) {
-			$this->assertContains($name, $schemas, $name . ' must be in the procest register membership');
+			$this->assertContains($name, $schemas, $name . ' must be in the dossiq register membership');
 		}
 
 		// Existing membership preserved.

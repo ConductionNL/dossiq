@@ -4,12 +4,12 @@
  * KCC Register Fragment Unit Tests
  *
  * Verifies that the register.d/30-kcc.json fragment unions its schemas,
- * register membership and seed objects onto the procest monolith via the
+ * register membership and seed objects onto the dossiq monolith via the
  * ADR-037 deep-merge loader, and that the contactMoment (customerContact)
  * schema is extended rather than duplicated.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Settings
+ * @package  OCA\Dossiq\Tests\Unit\Settings
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,22 +20,22 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Settings;
+namespace OCA\Dossiq\Tests\Unit\Settings;
 
-use OCA\Procest\Service\Settings\RegisterFragmentMerger;
+use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Integration-style unit tests for the KCC register fragment.
  *
- * @covers \OCA\Procest\Service\SettingsService
+ * @covers \OCA\Dossiq\Service\SettingsService
  *
- * @uses \OCA\Procest\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class KccFragmentTest extends TestCase {
 
@@ -51,7 +51,7 @@ class KccFragmentTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$base = json_decode(
-			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/procest_register.json'),
+			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'),
 			true
 		);
 
@@ -96,12 +96,12 @@ class KccFragmentTest extends TestCase {
 	}//end testContactMomentReusesCustomerContact()
 
 	/**
-	 * The procest register lists the new KCC schemas (list concatenation).
+	 * The dossiq register lists the new KCC schemas (list concatenation).
 	 *
 	 * @return void
 	 */
 	public function testRegisterMembershipUnioned(): void {
-		$schemas = $this->merged['components']['registers']['procest']['schemas'];
+		$schemas = $this->merged['components']['registers']['dossiq']['schemas'];
 		$this->assertContains('routingRule', $schemas);
 		$this->assertContains('kccAgent', $schemas);
 		$this->assertContains('callbackRequest', $schemas);

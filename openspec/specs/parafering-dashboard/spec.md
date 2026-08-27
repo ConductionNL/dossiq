@@ -9,7 +9,7 @@ The parafering dashboard provides the secretariaat and case handlers with an ove
 ## OR Capability Citations
 
 This spec consumes the following OpenRegister capabilities (per
-ADR-022, procest-adopt-or-abstractions):
+ADR-022, dossiq-adopt-or-abstractions):
 
 - `aggregations-backend-native` — count-by-status queries for the
   parafering dashboard are expressed as `x-openregister-aggregations`
@@ -76,7 +76,7 @@ The system SHALL allow the secretariaat to send reminders to actors who have not
 
 ### Requirement: Voorstel List Navigation
 
-The system SHALL add a "Voorstellen" navigation item to the Procest sidebar, linking to the parafering dashboard at `/voorstellen`.
+The system SHALL add a "Voorstellen" navigation item to the Dossiq sidebar, linking to the parafering dashboard at `/voorstellen`.
 
 @e2e exclude Voorstel list navigation is V1; the sidebar navigation item for Voorstellen is not yet implemented in the current build and navigating to /voorstellen shows an empty or unbuilt page.
 
@@ -84,6 +84,6 @@ The system SHALL add a "Voorstellen" navigation item to the Procest sidebar, lin
 
 #### Scenario: Navigate to voorstellen
 
-- **WHEN** any authenticated user clicks "Voorstellen" in the Procest sidebar
+- **WHEN** any authenticated user clicks "Voorstellen" in the Dossiq sidebar
 - **THEN** the system SHALL navigate to `/voorstellen`
 - **AND** the list SHALL show voorstellen the user has access to (based on case access)

@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Procest Contract Decision Delegation Service
+ * Dossiq Contract Decision Delegation Service
  *
  * Delegates contract approval / renewal / besluit decisions to decidesk via
- * the Nextcloud event dispatcher (decidesk's merged event contract). procest
+ * the Nextcloud event dispatcher (decidesk's merged event contract). dossiq
  * keeps ZGW case management; decidesk owns the deciding. This service:
  *
  * - Raises a decidesk Decision by dispatching `DecisionRequestedEvent`.
@@ -13,10 +13,10 @@
  * - FAILS CLOSED when decidesk is unavailable (never auto-approves).
  *
  * The terminal outcome is delivered separately, by decidesk dispatching a
- * `DecisionConcludedEvent` consumed by {@see \OCA\Procest\Listener\DecisionConcludedListener}.
+ * `DecisionConcludedEvent` consumed by {@see \OCA\Dossiq\Listener\DecisionConcludedListener}.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,14 +25,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
- * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md
+ * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
@@ -43,7 +43,7 @@ use Throwable;
  * Raises decidesk Decisions (via `DecisionRequestedEvent`) for contract /
  * besluit decisions.
  *
- * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md
+ * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md
  */
 class ContractDecisionDelegationService {
 	/**
@@ -61,10 +61,24 @@ class ContractDecisionDelegationService {
 	public const DECISION_TYPE_ADVICE = 'advice';
 
 	/**
-	 * The decidesk request-event FQN. Guarded by class_exists so procest stays
-	 * installable without decidesk (decidesk is an optional runtime dependency).
+	 * Every spelling of the decision-request event FQN, newest first.
+	 *
+	 * Guarded by class_exists so dossiq stays installable without the decision
+	 * app, which is an optional runtime dependency.
+	 *
+	 * TWO SPELLINGS because a cross-app event class name is a RUNTIME lookup
+	 * this app can only follow, never move. The app renamed its namespace from
+	 * OCA\Decidesk to OCA\Decidiq with no compatibility alias, and this constant
+	 * named only the old one — so the guard below started throwing "decidesk is
+	 * not installed" on an instance where it very much was, and every contract
+	 * decision was blocked by a message that pointed at the wrong problem.
+	 *
+	 * @var array<int, string>
 	 */
-	private const DECISION_REQUESTED_EVENT = '\\OCA\\Decidesk\\Event\\DecisionRequestedEvent';
+	private const DECISION_REQUESTED_EVENTS = [
+		'\\OCA\\Decidiq\\Event\\DecisionRequestedEvent',
+		'\\OCA\\Decidesk\\Event\\DecisionRequestedEvent',
+	];
 
 	/**
 	 * Constructor.
@@ -97,8 +111,8 @@ class ContractDecisionDelegationService {
 	 *
 	 * @throws RuntimeException When decidesk is unavailable or the Decision could not be created.
 	 *
-	 * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-001-contract-decisions-are-raised-as-decidesk-decisions-via-events
-	 * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-002-delegation-fails-closed-when-decidesk-is-unavailable
+	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-001-contract-decisions-are-raised-as-decidesk-decisions-via-events
+	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-002-delegation-fails-closed-when-decidesk-is-unavailable
 	 */
 	public function raiseContractDecision(
 		string $caseRef,
@@ -142,8 +156,8 @@ class ContractDecisionDelegationService {
 	 *
 	 * @throws RuntimeException When decidesk is unavailable or the Decision could not be created.
 	 *
-	 * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-001-contract-decisions-are-raised-as-decidesk-decisions-via-events
-	 * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-002-delegation-fails-closed-when-decidesk-is-unavailable
+	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-001-contract-decisions-are-raised-as-decidesk-decisions-via-events
+	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-002-delegation-fails-closed-when-decidesk-is-unavailable
 	 */
 	public function raiseDecision(
 		string $decisionType,
@@ -193,21 +207,34 @@ class ContractDecisionDelegationService {
 		string $actorId,
 		array $payload,
 	): string {
-		$eventClass = self::DECISION_REQUESTED_EVENT;
+		$eventClass = $this->resolveRequestEventClass();
 
-		// REQ-PDCD-002: fail closed when decidesk is not installed.
-		if (class_exists($eventClass) === false) {
+		// REQ-PDCD-002: fail closed when the decision app is not installed.
+		if ($eventClass === null) {
 			$this->logger->error(
-				'ContractDecisionDelegationService: decidesk is not installed (DecisionRequestedEvent missing); failing closed',
-				['externalReference' => $externalReference, 'decisionType' => $decisionType]
+				'ContractDecisionDelegationService: the decision app is not installed (DecisionRequestedEvent missing under any known namespace); failing closed',
+				[
+					'externalReference' => $externalReference,
+					'decisionType' => $decisionType,
+					'tried' => self::DECISION_REQUESTED_EVENTS,
+				]
 			);
-			throw new RuntimeException('Decision service unavailable: decidesk is not installed. Decision cannot proceed.');
+			throw new RuntimeException(
+				'Decision service unavailable: the decision app is not installed. Decision cannot proceed.'
+			);
 		}
 
 		try {
 			// Positional ctor args (decidesk contract): sourceApp, subjectRegister,
 			// subjectSchema, subjectId, subjectLabel, decisionType, actorId,
 			// payload, externalReference, correlationId.
+			//
+			// sourceApp is FROZEN at `procest`: it is this app's id AS DECIDESK
+			// KNOWS IT, not our own app id. decidesk still ships
+			// `<id>decidesk</id>`, matches this value exactly, and echoes it back
+			// to DecisionConcludedListener::SOURCE_APP. Renaming it here silently
+			// drops every in-flight and already-persisted decision. It moves only
+			// in a coordinated pass that moves emitter and receiver together.
 			$event = new $eventClass(
 				'procest',
 				(string)$subject['subjectRegister'],
@@ -250,4 +277,23 @@ class ContractDecisionDelegationService {
 
 		return (string)$decisionId;
 	}//end dispatchDecisionRequest()
+	/**
+	 * The first decision-request event class that actually exists.
+	 *
+	 * Returns null when NONE does, which the caller turns into a fail-closed
+	 * refusal. Resolving rather than assuming is the whole point: this app can
+	 * only follow the other app's namespace, and a hard-coded spelling turns a
+	 * rename over there into a broken feature over here.
+	 *
+	 * @return string|null The event FQN, or null when the decision app is absent.
+	 */
+	private function resolveRequestEventClass(): ?string {
+		foreach (self::DECISION_REQUESTED_EVENTS as $candidate) {
+			if (class_exists($candidate) === true) {
+				return $candidate;
+			}
+		}
+
+		return null;
+	}//end resolveRequestEventClass()
 }//end class

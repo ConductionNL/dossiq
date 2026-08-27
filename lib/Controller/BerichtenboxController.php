@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Berichtenbox Controller.
+ * Dossiq Berichtenbox Controller.
  *
  * REST endpoints for sending, listing and polling Mijn Overheid Berichtenbox
  * messages linked to cases.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,18 +15,18 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/berichtenbox-integration/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\BerichtenboxService;
-use OCA\Procest\Service\CaseAccessGuard;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\BerichtenboxService;
+use OCA\Dossiq\Service\CaseAccessGuard;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;

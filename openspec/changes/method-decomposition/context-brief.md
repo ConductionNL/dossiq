@@ -1,6 +1,6 @@
 ## Why
 
-Method Decomposition -- Procest is not yet implemented in Procest. This change proposes adding this capability based on the detailed spec in `specs/method-decomposition/spec.md`.
+Method Decomposition -- Dossiq is not yet implemented in Dossiq. This change proposes adding this capability based on the detailed spec in `specs/method-decomposition/spec.md`.
 
 **Feature tier**: V1 (Priority 1 files), V2 (Priority 2+3 files)
 

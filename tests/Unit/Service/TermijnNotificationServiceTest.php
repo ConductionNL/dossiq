@@ -7,7 +7,7 @@
  * that the dispatcher attaches the recipient + instance metadata.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -15,7 +15,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -23,20 +23,20 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\BerichtenboxRoutingService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\TermijnNotificationService;
-use OCA\Procest\Service\TermijnService;
+use OCA\Dossiq\Service\BerichtenboxRoutingService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TermijnNotificationService;
+use OCA\Dossiq\Service\TermijnService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\TermijnNotificationService
+ * @covers \OCA\Dossiq\Service\TermijnNotificationService
  *
- * @uses \OCA\Procest\Service\BerichtenboxRoutingService
- * @uses \OCA\Procest\Service\TermijnService
+ * @uses \OCA\Dossiq\Service\BerichtenboxRoutingService
+ * @uses \OCA\Dossiq\Service\TermijnService
  */
 class TermijnNotificationServiceTest extends TestCase {
 	private TermijnNotificationService $service;
@@ -48,14 +48,14 @@ class TermijnNotificationServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'termijn_instance_schema' => 'deadlineInstance',
 					default => '',
 				};
 			},
 		);
 
-		$objects->saveObject('procest', 'deadlineInstance', [
+		$objects->saveObject('dossiq', 'deadlineInstance', [
 			'id' => 'ti-1',
 			'case' => 'Z/2026/300',
 			'endDateCurrent' => '2026-07-27',

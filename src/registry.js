@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 //
-// V2 component registry for procest.
+// V2 component registry for dossiq.
 //
 // Every entry here corresponds to a manifest `type: "custom"` page or a
 // sidebar tab that uses `component:` instead of `widgets[]`. The registry
@@ -28,7 +28,7 @@ import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicati
 import BezwaarBeroepOverview from './components/bezwaar/BezwaarBeroepOverview.vue'
 // Case-list CSV/Excel export via the OR export leaf — actions-slot component
 // on the Cases page (manifest `pages[].actionsComponent`). Builds the OR
-// export-leaf URL client-side; no procest-side serialization (ADR-022).
+// export-leaf URL client-side; no dossiq-side serialization (ADR-022).
 // @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
 import CaseListExportAction from './components/export/CaseListExportAction.vue'
 // Initiator (indiener) selection + display — brp-kvk-register-sets.
@@ -44,14 +44,11 @@ import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
-import VerwerkingenOverviewView from './views/admin/VerwerkingenOverview.vue'
-import AgendaCompilerView from './views/besluitvorming/AgendaCompilerView.vue'
-import VergaderingDetailView from './views/besluitvorming/VergaderingDetailView.vue'
 // VTH-specific case detail panels
 import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
 import AdviesPanel from './views/cases/components/AdviesPanel.vue'
 // Case-assistant chat panel — conversational assistance delegated to Hermiq
-// (fleet rule: AI functionality lives in Hermiq; procest is a thin consumer).
+// (fleet rule: AI functionality lives in Hermiq; dossiq is a thin consumer).
 // @spec openspec/specs/case-assistant-via-hermiq/spec.md
 import CaseAssistantPanel from './views/cases/components/CaseAssistantPanel.vue'
 // Case-email integration — leaf-first per ADR-022. The sidebar tab
@@ -83,16 +80,14 @@ import DeelzaakList from './views/cases/DeelzaakList.vue'
 // Cases-on-map — full-screen multi-object overview. Consumes OpenRegister's
 // page-level maps-overview leaf (OR #154): OR owns the geometry extraction,
 // RBAC scoping, and base-layer config; the markers render through the lib's
-// `CnMapWidget`. No bespoke Leaflet / WMS / WFS stack in procest (ADR-022).
+// `CnMapWidget`. No bespoke Leaflet / WMS / WFS stack in dossiq (ADR-022).
 // @spec openspec/specs/case-map-overview/spec.md
 import CasesOnMapView from './views/CasesOnMapView.vue'
-import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
+import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
 import MyWorkView from './views/MyWorkCards.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
-import AdminRootView from './views/settings/AdminRoot.vue'
-import SubstitutionSettingsView from './views/settings/SubstitutionSettings.vue'
 import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
 import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
 import { leafTab } from './integrations/leafTabs.js'
@@ -161,7 +156,7 @@ const registry = {
 	CaseListExportAction: {
 		kind: 'page',
 		component: CaseListExportAction,
-		_note: 'Cases-page actions-slot "Export" menu (CSV/Excel); receives no props (CnIndexPage\'s #actions slot is unscoped). Builds the OR export-leaf URL client-side — no procest-side serialization (ADR-022).',
+		_note: 'Cases-page actions-slot "Export" menu (CSV/Excel); receives no props (CnIndexPage\'s #actions slot is unscoped). Builds the OR export-leaf URL client-side — no dossiq-side serialization (ADR-022).',
 	},
 
 	// --- Genuine exceptions: no abstract manifest analogue. ---
@@ -179,12 +174,6 @@ const registry = {
 		_note: "Full-screen multi-object cases-on-map overview. Markers come from OpenRegister's page-level maps-overview surface (RBAC-scoped, OR #154) and render through the lib's CnMapWidget — no bespoke Leaflet/WMS/WFS plumbing (ADR-022).",
 	},
 
-	DoorlooptijdView: {
-		kind: 'page',
-		component: DoorlooptijdView,
-		_note: "SLA / processing-time dashboard. SLA maths stays in-app (doorlooptijdHelpers.js); charts render through OR's analytics-series leaf surface via the lib CnChartWidget (ADR-022) — no bespoke chart library.",
-	},
-
 	// --- Workflow Board — Kanban with drag-to-advance status transitions. ---
 	// @spec openspec/specs/dashboard/spec.md
 	WorkflowBoardView: {
@@ -192,32 +181,28 @@ const registry = {
 		component: WorkflowBoardView,
 		_note: 'Kanban board: column per non-final status, drag-to-advance via saveObject (RBAC-enforced). No declarative board page type in lib yet.',
 	},
-	AdminRootView: {
+
+	// --- Flows (ADR-110 Decision 4). ---
+	// The shared CnFlowIndexPage / CnFlowDetail surfaces over OpenRegister's
+	// native flow store, scoped `app: "dossiq"` so this app sees only its own.
+	// Only the SIDEBAR is an app component now. The list and the canvas are the
+	// shared `flows` / `flow-detail` manifest page types (nextcloud-vue 2.19.0),
+	// so this app no longer carries wrapper copies of them — the three apps that
+	// did each carried the same dead `@rowClick` listener.
+	// @spec openspec/specs/automatic-actions/spec.md
+	FlowDetailSidebar: {
 		kind: 'page',
-		component: AdminRootView,
-		_note: 'Multi-tab admin root; pending lib settings-custom-slot support.',
+		component: FlowDetailSidebar,
+		_note: 'CnFlowSidebar in the NC app sidebar; shares useFlowStore with the canvas.',
 	},
 
 	// --- Handler vervanging/waarneming (handler-vervanging-waarneming). ---
 	// @spec openspec/specs/handler-vervanging-waarneming/spec.md
-	SubstitutionSettingsView: {
-		kind: 'page',
-		component: SubstitutionSettingsView,
-		_note: 'User self-service vervanging settings; register/revoke own waarnemer. No index-page analogue (custom form + own-records table).',
-	},
 	// @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	SubstitutionAdminView: {
 		kind: 'page',
 		component: SubstitutionAdminView,
 		_note: 'Coordinator substitution admin + bulk reassignment + capacity action list. Coordinator-gated server-side.',
-	},
-
-	// --- AVG verwerkingenlogging (thin consumer, OR owns the engine). ---
-	// @spec openspec/specs/avg-verwerkingenlogging/spec.md
-	VerwerkingenOverviewView: {
-		kind: 'page',
-		component: VerwerkingenOverviewView,
-		_note: "FG/admin window on OR's processing-activity register: catalogue review status, unclassified counter (OR-PA-4), inzageverzoek export entry (OR-PA-7). OR enforces FG access fail-closed.",
 	},
 
 	// --- Initiator selection + display (brp-kvk-register-sets). ---
@@ -239,7 +224,7 @@ const registry = {
 	CaseAssistantPanel: {
 		kind: 'widget',
 		component: CaseAssistantPanel,
-		_note: 'CaseDetail chat panel delegating conversational assistance to Hermiq (fleet rule: AI lives in Hermiq; procest only enriches with authorized case context). Availability-gated: renders NOTHING when the hermiq app is not installed/enabled.',
+		_note: 'CaseDetail chat panel delegating conversational assistance to Hermiq (fleet rule: AI lives in Hermiq; dossiq only enriches with authorized case context). Availability-gated: renders NOTHING when the hermiq app is not installed/enabled.',
 	},
 
 	// --- CMMN adaptive case plan (cmmn-adaptive-case). ---
@@ -258,16 +243,9 @@ const registry = {
 	},
 
 	// --- Besluitvorming workflow views. ---
-	AgendaCompilerView: {
-		kind: 'page',
-		component: AgendaCompilerView,
-		_note: 'Agenda compiler: available vs agenda panels, hamerstuk/bespreekstuk toggle (besluitvorming-workflow).',
-	},
-	VergaderingDetailView: {
-		kind: 'page',
-		component: VergaderingDetailView,
-		_note: 'Decision recording per geagendeerd case: stemuitslag, attending members, aanhouden flow.',
-	},
+	// The agenda compiler and the vergadering detail view were retired: decidiq
+	// owns agenda-building and meetings, and surfaces them on a case through the
+	// `decidesk-decisions` integration leaf rather than through pages here.
 	BesluitPublicatiePanel: {
 		kind: 'page',
 		component: BesluitPublicatiePanel,
@@ -342,7 +320,7 @@ const registry = {
 	// The former bespoke LocalBackend scheduling surface is replaced by OR's
 	// `calendar` integration leaf (CalendarProvider): the leaf owns event
 	// list/create/link/unlink/delete and fetches straight from OR using the
-	// objectId/register/schema/apiBase that CnObjectSidebar injects. Procest
+	// objectId/register/schema/apiBase that CnObjectSidebar injects. Dossiq
 	// keeps only zaak-specific metadata + external Qmatic/JCC (ADR-022 exception).
 	// @spec openspec/changes/migrate-appointments-to-calendar-leaf/tasks.md#P1.2
 	CalendarLeafTab: {
@@ -369,7 +347,7 @@ const registry = {
 	// The existing "case-notes" CaseDetail body widget renders CnNotesCard,
 	// which predates @mention and does not emit it. This sidebar tab renders
 	// the full CnNotesTab (which does emit `mention`) and forwards the event
-	// to procest's own notification endpoint — see CaseNotesTab.vue for the
+	// to dossiq's own notification endpoint — see CaseNotesTab.vue for the
 	// full rationale. Wired as a `component:` sidebar tab on CaseDetail.
 	// @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
 	CaseNotesTab: {
@@ -395,13 +373,13 @@ const registry = {
 	},
 
 	// --- Besluitvorming (decision-making) sidebar tab — decidesk leaf. ---
-	// "decidesk owns it; procest shows a leaf" (ADR-019 / ADR-022). The
+	// "decidesk owns it; dossiq shows a leaf" (ADR-019 / ADR-022). The
 	// decidesk `decidesk-decisions` integration leaf (registered cross-app on
 	// the shared OR integration registry by decidesk's global init script)
 	// surfaces proposals/advice/decisions linked to this case via decidesk's
 	// subjectId back-reference. The wrapper resolves the registered provider's
 	// tab at render time and forwards the case `{ register, schema, objectId }`
-	// context that CnObjectSidebar injects. Retires procest's former standalone
+	// context that CnObjectSidebar injects. Retires dossiq's former standalone
 	// Voorstellen/Advies/Agenda nav (those pages stay routable for deep links).
 	// @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
 	BesluitvormingLeafTab: {

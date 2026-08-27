@@ -3,7 +3,7 @@
 /**
  * DsoIntakeService Unit Tests
  *
- * Characterization tests for the Procest DsoIntakeService. These pin the
+ * Characterization tests for the Dossiq DsoIntakeService. These pin the
  * observable behaviour of the live DSO webhook path (`processAanvraag`):
  * the exact ObjectService::saveObject() call sequence — including the
  * ARGUMENT POSITIONS the named arguments bind to — the case-property rows
@@ -11,7 +11,7 @@
  * that the webhook echoes back to the Omgevingsloket.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,10 +27,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\DsoIntakeService;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\DsoIntakeService;
+use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -44,7 +44,7 @@ use Psr\Log\LoggerInterface;
  * ?array $extend = [], Register|string|int|null $register = null,
  * Schema|string|int|null $schema = null, ...)`.
  *
- * Because Procest calls saveObject() with NAMED arguments, PHP binds those
+ * Because Dossiq calls saveObject() with NAMED arguments, PHP binds those
  * names against this declaration — so a caller that reverts to the positional
  * `saveObject($register, $schema, $data)` order lands a string in `$object`
  * and a string in `$extend`, which this declaration rejects. That is what
@@ -71,7 +71,7 @@ interface DsoIntakeObjectServiceStub {
 }//end interface
 
 /**
- * Saved-object double exposing only the getUuid() accessor Procest uses.
+ * Saved-object double exposing only the getUuid() accessor Dossiq uses.
  */
 final class DsoIntakeSavedObjectDouble {
 
@@ -141,7 +141,7 @@ final class DsoIntakeRecordingObjectService implements DsoIntakeObjectServiceStu
 /**
  * Characterization tests for DsoIntakeService.
  *
- * @covers \OCA\Procest\Service\DsoIntakeService
+ * @covers \OCA\Dossiq\Service\DsoIntakeService
  */
 class DsoIntakeServiceTest extends TestCase {
 
@@ -190,7 +190,7 @@ class DsoIntakeServiceTest extends TestCase {
 	 * @return DsoIntakeRecordingObjectService The recorder handed to the service.
 	 */
 	private function wireObjectService(
-		string $register = 'procest',
+		string $register = 'dossiq',
 		string $caseSchema = 'case',
 		string $propertySchema = 'zaakeigenschap',
 	): DsoIntakeRecordingObjectService {
@@ -249,7 +249,7 @@ class DsoIntakeServiceTest extends TestCase {
 		$this->wireObjectService(register: '');
 
 		$this->expectException(\RuntimeException::class);
-		$this->expectExceptionMessage('Procest register not configured');
+		$this->expectExceptionMessage('Dossiq register not configured');
 
 		$this->service->processAanvraag(dsoMessage: $this->fullPayload());
 	}//end testProcessAanvraagThrowsWhenRegisterNotConfigured()
@@ -277,7 +277,7 @@ class DsoIntakeServiceTest extends TestCase {
 					'priority' => 'normal',
 				],
 				'extend' => [],
-				'register' => 'procest',
+				'register' => 'dossiq',
 				'schema' => 'case',
 			],
 			$recorder->calls[0]
@@ -316,7 +316,7 @@ class DsoIntakeServiceTest extends TestCase {
 						'value' => $value,
 					],
 					'extend' => [],
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'schema' => 'zaakeigenschap',
 				],
 				$properties[$index],
@@ -499,7 +499,7 @@ class DsoIntakeServiceTest extends TestCase {
 			->method('info')
 			->with(
 				'DSO intake processed: case case-uuid-1 (DSO: DSO-2026-0042)',
-				['app' => 'procest']
+				['app' => 'dossiq']
 			);
 
 		$this->service->processAanvraag(dsoMessage: $this->fullPayload());

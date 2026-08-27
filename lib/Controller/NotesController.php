@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Notes Controller.
+ * Dossiq Notes Controller.
  *
  * Thin endpoint for note-typed side-effects that the shared nc-vue notes
  * surface (CnNotesTab, nc-vue #207) cannot own itself: turning a saved
@@ -12,7 +12,7 @@
  * mentions has already been saved.
  *
  * @category Controller
- * @package  OCA\Procest\Controller
+ * @package  OCA\Dossiq\Controller
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,17 +23,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Controller;
+namespace OCA\Dossiq\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\MentionNotificationService;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\MentionNotificationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -121,7 +121,7 @@ class NotesController extends Controller {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Failed to dispatch note mention notifications: ' . $e->getMessage(),
-				['app' => 'procest']
+				['app' => 'dossiq']
 			);
 			return new JSONResponse(
 				['error' => 'Could not dispatch mention notifications: ' . $e->getMessage()],

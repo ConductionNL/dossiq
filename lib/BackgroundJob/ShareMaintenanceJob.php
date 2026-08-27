@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Procest Share Maintenance Background Job
+ * Dossiq Share Maintenance Background Job
  *
  * Daily job for share expiration reminders and cleanup.
  *
  * @category BackgroundJob
- * @package  OCA\Procest\BackgroundJob
+ * @package  OCA\Dossiq\BackgroundJob
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -17,17 +17,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\BackgroundJob;
+namespace OCA\Dossiq\BackgroundJob;
 
 use DateTime;
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -89,7 +89,7 @@ class ShareMaintenanceJob extends TimedJob {
 			$objectService = $this->container->get('OCA\OpenRegister\Service\ObjectService');
 		} catch (\Exception $e) {
 			$this->logger->error(
-				'Procest: ShareMaintenanceJob could not get ObjectService',
+				'Dossiq: ShareMaintenanceJob could not get ObjectService',
 				['exception' => $e->getMessage()]
 			);
 			return;
@@ -114,7 +114,7 @@ class ShareMaintenanceJob extends TimedJob {
 			}
 		} catch (\Exception $e) {
 			$this->logger->error(
-				'Procest: ShareMaintenanceJob failed',
+				'Dossiq: ShareMaintenanceJob failed',
 				['exception' => $e->getMessage()]
 			);
 		}//end try
@@ -151,7 +151,7 @@ class ShareMaintenanceJob extends TimedJob {
 		$expiresAt = new DateTime($shareData['expiresAt']);
 		if ($expiresAt <= $reminderDate && $expiresAt > new DateTime()) {
 			$this->logger->info(
-				'Procest: Share expiring soon',
+				'Dossiq: Share expiring soon',
 				[
 					'shareId' => ($shareData['id'] ?? 'unknown'),
 					'expiresAt' => $shareData['expiresAt'],

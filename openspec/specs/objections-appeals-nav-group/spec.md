@@ -9,7 +9,7 @@ Presents the objections-and-appeals (bezwaar & beroep) domain as a single top-le
 ## Requirements
 ### Requirement: REQ-POAG-001 — The Objections-And-Appeals Domain Is One Top-Level Nav Group
 
-procest SHALL present the objections-and-appeals (bezwaar & beroep) domain as a single top-level
+dossiq SHALL present the objections-and-appeals (bezwaar & beroep) domain as a single top-level
 navigation group `BezwaarBeroepGroup` (label "Bezwaar & Beroep"). The transactional surfaces
 `Bezwaren`, `Beroepen`, `BezwaarDecisions` (Beslissingen op bezwaar), `BezwaarAdviceRequests`
 (BAC-adviezen), and `BezwaarCommitteesMenu` (Bezwaaradviescommissies) SHALL render as **children**
@@ -17,7 +17,7 @@ of that group, and SHALL NOT render as flat top-level (or stray settings-section
 
 #### Scenario: Sidebar shows one group, not six flat entries
 
-- **GIVEN** the procest left navigation after the manifest fragments merge and
+- **GIVEN** the dossiq left navigation after the manifest fragments merge and
   `applyMenuRelocations` runs
 - **WHEN** the sidebar renders
 - **THEN** there SHALL be exactly one top-level entry for the bezwaar/beroep domain — the
@@ -37,7 +37,7 @@ of that group, and SHALL NOT render as flat top-level (or stray settings-section
 
 ### Requirement: REQ-POAG-002 — Group Children Render In A Coherent Workflow Order
 
-procest SHALL order the five children of `BezwaarBeroepGroup` as a contiguous, workflow-meaningful
+dossiq SHALL order the five children of `BezwaarBeroepGroup` as a contiguous, workflow-meaningful
 sequence: Bezwaren, then Beroepen, then Beslissingen op bezwaar, then BAC-adviezen, then
 Bezwaaradviescommissies. The leaf `order` values in `src/manifest.json` SHALL be set to a
 contiguous run (`Bezwaren`=45, `Beroepen`=46, `BezwaarDecisions`=47, `BezwaarAdviceRequests`=48,
@@ -56,7 +56,7 @@ contiguous run (`Bezwaren`=45, `Beroepen`=46, `BezwaarDecisions`=47, `BezwaarAdv
 
 ### Requirement: REQ-POAG-003 — Every Grouped Page Stays Routable (Relocation Moves The Entry, Not The Page)
 
-procest SHALL keep every objections-and-appeals page routable at its existing route after the
+dossiq SHALL keep every objections-and-appeals page routable at its existing route after the
 grouping. Relocation SHALL move only the menu entry; the `pages[]` declarations and their routes —
 `/bezwaren` (+`/bezwaren/:id`), `/beroepen` (+`/beroepen/:id`), `/bezwaar-decisions`
 (+`/bezwaar-decisions/:id`), `/bezwaar-advice-requests` (+`/bezwaar-advice-requests/:id`),
@@ -81,15 +81,15 @@ reachable by direct URL and e2e specs. No page SHALL be added to `src/menu-layou
 
 ### Requirement: REQ-POAG-004 — Grouping Introduces No Schema, Controller, Or Decision-Flow Change
 
-procest SHALL implement this grouping as a pure information-architecture change limited to
+dossiq SHALL implement this grouping as a pure information-architecture change limited to
 `src/menu-layout.json` (the relocation map) and `src/manifest.json` (`menu[]` `order` values). It
 SHALL NOT add or modify any schema, controller, route, or page, and it SHALL NOT delegate or alter
 the decision flow behind the "Beslissingen op bezwaar" or "BAC-adviezen" surfaces — that delegation
-is the separate change `procest-delegate-remaining-decisions-to-decidesk`.
+is the separate change `dossiq-delegate-remaining-decisions-to-decidesk`.
 
 #### Scenario: No backend or flow change ships with the grouping
 
-- **GIVEN** the procest-objections-appeals-group change
+- **GIVEN** the dossiq-objections-appeals-group change
 - **WHEN** its diff is inspected
 - **THEN** only `src/menu-layout.json` and `src/manifest.json` `menu[]` ordering SHALL change
 - **AND** no schema, controller, route, or `pages[]` entry SHALL be added, removed, or modified

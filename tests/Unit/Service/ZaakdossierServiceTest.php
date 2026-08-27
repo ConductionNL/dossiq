@@ -10,7 +10,7 @@
  * default-classification resolution.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,13 +26,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\InformatieobjectAccessGuard;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Zaakdossier\InformatieobjectStatusLifecycle;
-use OCA\Procest\Service\ZaakdossierService;
-use OCA\Procest\Service\ZgwDocumentService;
+use OCA\Dossiq\Service\InformatieobjectAccessGuard;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
+use OCA\Dossiq\Service\ZaakdossierService;
+use OCA\Dossiq\Service\ZgwDocumentService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -99,10 +99,10 @@ interface DossierObjectServiceStub {
 /**
  * Unit tests for ZaakdossierService.
  *
- * @covers \OCA\Procest\Service\ZaakdossierService
+ * @covers \OCA\Dossiq\Service\ZaakdossierService
  *
- * @uses \OCA\Procest\Service\InformatieobjectAccessGuard
- * @uses \OCA\Procest\Service\Zaakdossier\InformatieobjectStatusLifecycle
+ * @uses \OCA\Dossiq\Service\InformatieobjectAccessGuard
+ * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
  */
 class ZaakdossierServiceTest extends TestCase {
 
@@ -145,7 +145,7 @@ class ZaakdossierServiceTest extends TestCase {
 		$this->settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key, string $default = '') {
 				$map = [
-					'register' => 'procest',
+					'register' => 'dossiq',
 					'dossier_informatieobject_schema' => 'informatieobject',
 					'dossier_zaakinformatieobject_schema' => 'zaakinformatieobject',
 					'dossier_besluitinformatieobject_schema' => 'besluitinformatieobject',

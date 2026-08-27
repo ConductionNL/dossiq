@@ -1,6 +1,6 @@
 ---
 status: retired
-retired_in: procest-adopt-or-abstractions
+retired_in: dossiq-adopt-or-abstractions
 canonical_home: case-management/spec.md
 ---
 
@@ -36,7 +36,7 @@ canonical_home: case-management/spec.md
 
 ### Requirement: Voorstel Schema Registration
 
-The system SHALL register a `voorstel` schema in the Procest OpenRegister configuration with properties: case (reference), type (enum: dt_advies, collegeadvies, raadsvoorstel), onderwerp (string), steller (string, user UID), afdeling (string), portefeuillehouder (string, user UID), status (enum: concept, in_parafering, ter_accordering, geaccordeerd, aangeboden, besloten, gearchiveerd, teruggestuurd), parafeerroute (reference), currentStep (integer), document (string, Nextcloud file ID), bijlagen (array of strings), behandeling (enum: hamerstuk, bespreekstuk).
+The system SHALL register a `voorstel` schema in the Dossiq OpenRegister configuration with properties: case (reference), type (enum: dt_advies, collegeadvies, raadsvoorstel), onderwerp (string), steller (string, user UID), afdeling (string), portefeuillehouder (string, user UID), status (enum: concept, in_parafering, ter_accordering, geaccordeerd, aangeboden, besloten, gearchiveerd, teruggestuurd), parafeerroute (reference), currentStep (integer), document (string, Nextcloud file ID), bijlagen (array of strings), behandeling (enum: hamerstuk, bespreekstuk).
 
 **Feature tier**: V1
 **Schema.org type**: `schema:CreativeWork`
@@ -45,8 +45,8 @@ The system SHALL register a `voorstel` schema in the Procest OpenRegister config
 
 #### Scenario: Schema is available after app install
 
-- **WHEN** the Procest app is installed or updated
-- **THEN** the `voorstel` schema SHALL be registered in the Procest register via the repair step
+- **WHEN** the Dossiq app is installed or updated
+- **THEN** the `voorstel` schema SHALL be registered in the Dossiq register via the repair step
 - **AND** the schema SHALL enforce required properties: case, type, onderwerp, steller, status
 
 ### Requirement: Create Voorstel from Case

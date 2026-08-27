@@ -5,16 +5,16 @@ TBD - created by archiving change case-search-via-or-unified-search. Update Purp
 ## Requirements
 ### Requirement: Searchable schema opt-in
 
-The procest register definition SHALL flag exactly these schemas `searchable: true`: `case`, `task`, `bezwaar`, `voorstel`, `beroep`. Schemas without a standalone detail route SHALL NOT be flagged.
+The dossiq register definition SHALL flag exactly these schemas `searchable: true`: `case`, `task`, `bezwaar`, `voorstel`, `beroep`. Schemas without a standalone detail route SHALL NOT be flagged.
 
 #### Scenario: Case findable in unified search
 
 - **GIVEN** a case titled "Kapvergunning Dorpsstraat 12" exists and the user may read it
 - **WHEN** the user types "Kapvergunning" in the Nextcloud unified search bar
 - **THEN** the case appears as a result under the OpenRegister objects provider
-- **AND** activating it navigates to `/apps/procest/cases/{uuid}`
+- **AND** activating it navigates to `/apps/dossiq/cases/{uuid}`
 
-@e2e exclude Requires the OR ObjectsProvider pipeline and NC search UI; provider behaviour is covered by openregister's own unified-search-provider e2e suite — procest only supplies declarative flags, asserted by unit test on the register JSON.
+@e2e exclude Requires the OR ObjectsProvider pipeline and NC search UI; provider behaviour is covered by openregister's own unified-search-provider e2e suite — dossiq only supplies declarative flags, asserted by unit test on the register JSON.
 
 #### Scenario: Non-flagged schema absent from search
 
@@ -30,17 +30,17 @@ The procest register definition SHALL flag exactly these schemas `searchable: tr
 - **WHEN** the user searches for its title
 - **THEN** the case does not appear (OR provider delegates to `searchObjectsPaginated(_rbac: true)`)
 
-@e2e exclude Enforced and tested in openregister (provider security contract); procest adds no code path.
+@e2e exclude Enforced and tested in openregister (provider security contract); dossiq adds no code path.
 
 ### Requirement: Deep links for searchable schemas
 
-Every schema flagged `searchable: true` SHALL have a `deepLinks` entry in `src/manifest.json` mapping `(procest, <schemaSlug>)` to its detail route, so the OR provider can render result URLs and display names.
+Every schema flagged `searchable: true` SHALL have a `deepLinks` entry in `src/manifest.json` mapping `(dossiq, <schemaSlug>)` to its detail route, so the OR provider can render result URLs and display names.
 
 #### Scenario: Deep links cover all searchable schemas
 
 - **GIVEN** the manifest and register definition at HEAD
 - **WHEN** the searchable schema slugs are compared against `deepLinks[].schemaSlug`
-- **THEN** `case`, `task`, `bezwaar`, `voorstel`, `beroep` each have an entry with url templates `/apps/procest/cases/{uuid}`, `/apps/procest/tasks/{uuid}`, `/apps/procest/bezwaren/{uuid}`, `/apps/procest/voorstellen/{uuid}`, `/apps/procest/beroepen/{uuid}`
+- **THEN** `case`, `task`, `bezwaar`, `voorstel`, `beroep` each have an entry with url templates `/apps/dossiq/cases/{uuid}`, `/apps/dossiq/tasks/{uuid}`, `/apps/dossiq/bezwaren/{uuid}`, `/apps/dossiq/voorstellen/{uuid}`, `/apps/dossiq/beroepen/{uuid}`
 
 @e2e exclude Declarative cross-file consistency asserted by unit test (vitest) on the two JSON files.
 
@@ -50,7 +50,7 @@ The change SHALL bump both the register `info.version` and the app version in `a
 
 #### Scenario: Upgrade re-imports searchable flags
 
-- **GIVEN** an instance running the previous procest version with the register already imported
+- **GIVEN** an instance running the previous dossiq version with the register already imported
 - **WHEN** the app upgrades and the repair step runs
 - **THEN** the register import re-runs (version gate passes) and the five schemas carry `searchable: true` in OR
 

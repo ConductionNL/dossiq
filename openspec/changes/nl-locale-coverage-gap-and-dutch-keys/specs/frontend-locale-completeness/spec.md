@@ -8,21 +8,21 @@ translations, not app UI string translations.
 
 ### Requirement: Translation keys are English source
 
-Every `t('procest', ...)` / `n('procest', ...)` call site MUST use an English string as the
+Every `t('dossiq', ...)` / `n('dossiq', ...)` call site MUST use an English string as the
 translation key. Dutch text MUST NOT be used directly as a translation key.
 
 #### Scenario: Dutch-literal key is rejected
 
-- **GIVEN** a developer writes `t('procest', 'Afgesloten')` where `'Afgesloten'` is the intended
+- **GIVEN** a developer writes `t('dossiq', 'Afgesloten')` where `'Afgesloten'` is the intended
   Dutch UI text
 - **WHEN** the string is reviewed against this requirement
-- **THEN** the call MUST use an English source key instead (e.g. `t('procest', 'Closed')`)
+- **THEN** the call MUST use an English source key instead (e.g. `t('dossiq', 'Closed')`)
 - **AND** `l10n/nl.json` MUST map that English key to the Dutch text (`"Closed": "Afgesloten"`)
 
 #### Scenario: English-locale users never see raw Dutch text
 
 - **GIVEN** the Nextcloud UI language is set to English
-- **WHEN** any procest page renders
+- **WHEN** any dossiq page renders
 - **THEN** no visible string SHALL be untranslated Dutch text (e.g. `Aanbestedingen`, `Actie`,
   `Afgesloten`, `Adres bijgewerkt` rendering verbatim instead of an English equivalent)
 

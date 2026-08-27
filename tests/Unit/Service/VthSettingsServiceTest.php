@@ -8,7 +8,7 @@
  * handhavingsactie_schema, advies_aanvraag_schema, lhsMatrix).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
@@ -16,14 +16,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
@@ -33,10 +33,10 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for VTH-specific SettingsService configuration.
  *
- * @covers \OCA\Procest\Service\SettingsService
+ * @covers \OCA\Dossiq\Service\SettingsService
  *
- * @uses \OCA\Procest\Service\Settings\SchemaAnnotationReconciler
- * @uses \OCA\Procest\Service\Settings\SchemaKeyReconciler
+ * @uses \OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler
+ * @uses \OCA\Dossiq\Service\Settings\SchemaKeyReconciler
  */
 class VthSettingsServiceTest extends TestCase {
 
@@ -176,7 +176,7 @@ class VthSettingsServiceTest extends TestCase {
 		$this->appConfig
 			->expects($this->once())
 			->method('getValueString')
-			->with('procest', 'lhsMatrix', '')
+			->with('dossiq', 'lhsMatrix', '')
 			->willReturn($matrixJson);
 
 		$result = $this->service->getConfigValue('lhsMatrix', '');

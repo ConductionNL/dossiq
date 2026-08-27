@@ -1,17 +1,17 @@
 <?php
 
 /**
- * Procest StufVaultService.
+ * Dossiq StufVaultService.
  *
  * Resolves `vault://...` references to their plaintext secret. The current
  * implementation looks up the secret from IAppConfig under the
- * `stuf.vault.<sha256(reference)>` key (app=procest) — this keeps the actual
+ * `stuf.vault.<sha256(reference)>` key (app=dossiq) — this keeps the actual
  * passwords/cert blobs out of git, while the JSON schemas only carry the
  * reference URL. A production install would plug a real vault driver via
  * the same interface (KMS, HashiCorp, NC encrypted credentials, etc.).
  *
  * @category Service
- * @package  OCA\Procest\Service\Stuf
+ * @package  OCA\Dossiq\Service\Stuf
  *
  * @author    Conduction <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,16 +22,16 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-secure-credential-handling
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Stuf;
+namespace OCA\Dossiq\Service\Stuf;
 
-use OCA\Procest\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Application;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 

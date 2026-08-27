@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 /**
- * SPDX-FileCopyrightText: 2026 Conduction / Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Conduction / Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Regression tests for procest#784 — the admin settings page's 41-50 MB DOM.
  *
  * MEASURED CAUSE, so the assertions below are not arbitrary. `ChecklistsTab`
- * fetched `/apps/procest/api/objects/inspectionChecklist`, a route procest does
+ * fetched `/apps/dossiq/api/objects/inspectionChecklist`, a route dossiq does
  * not serve (its auto-exposed `/api/objects/<register>/<schema>` routes were
  * deleted; OpenRegister serves them). Nextcloud answers an unmatched app URL
  * with its own HTML page under **HTTP 200, `text/html`** — so axios did not
@@ -23,7 +23,7 @@
  *
  * These tests pin the two properties that jointly make that impossible:
  *   1. a non-array, non-`{results:[]}` body renders ZERO rows;
- *   2. the component addresses OpenRegister's route, not procest's dead one.
+ *   2. the component addresses OpenRegister's route, not dossiq's dead one.
  *
  * TRUE-POSITIVE CONTROL, actually run rather than predicted: with the component
  * stashed back to its pre-fix state, **4 of these 6 tests fail** —
@@ -31,7 +31,7 @@
  *   renders ZERO rows … HTML page   → expected 0, got 4104
  *   does not render one button …    → expected <=1, got 4104
  *   renders ZERO rows … not a collection envelope → expected 0, got 1
- *   addresses OpenRegister's route  → got '/index.php/apps/procest/api/objects/…'
+ *   addresses OpenRegister's route  → got '/index.php/apps/dossiq/api/objects/…'
  *
  * 4104 is the exact character length of `HTML_ERROR_PAGE` below: one row per
  * character, reproduced in a unit test. (The live page's 45,031 rows are the
@@ -147,8 +147,8 @@ describe('ChecklistsTab — response-shape handling (procest#784)', () => {
 	})
 
 	it('renders ZERO rows for an object body that is not a collection envelope', async () => {
-		// e.g. OpenRegister's `{"message":"Register not found: 'procest'"}`.
-		const wrapper = await mountWith({ message: "Register not found: 'procest'" })
+		// e.g. OpenRegister's `{"message":"Register not found: 'dossiq'"}`.
+		const wrapper = await mountWith({ message: "Register not found: 'dossiq'" })
 
 		expect(wrapper.findAll('.checklists-tab__item')).toHaveLength(0)
 	})
@@ -163,7 +163,7 @@ describe('ChecklistsTab — response-shape handling (procest#784)', () => {
 		// OpenRegister's generic object route would work mechanically but would
 		// bypass that guard and add a second write path — see the note on
 		// COLLECTION_URL.
-		expect(url).toContain('/apps/procest/api/vth/checklists')
+		expect(url).toContain('/apps/dossiq/api/vth/checklists')
 		// The dead route is what made Nextcloud serve HTML under HTTP 200.
 		expect(url).not.toContain('/api/objects/')
 	})

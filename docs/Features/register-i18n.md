@@ -1,10 +1,10 @@
 # Register i18n (Internationalization)
 
-The register i18n feature provides multilingual support for Procest, with Dutch (nl) and English (en) as the minimum required languages.
+The register i18n feature provides multilingual support for Dossiq, with Dutch (nl) and English (en) as the minimum required languages.
 
 ## Overview
 
-As a Dutch government application, Procest must support Dutch as its primary language while also providing English translations for international users and developers.
+As a Dutch government application, Dossiq must support Dutch as its primary language while also providing English translations for international users and developers.
 
 ## Scope
 

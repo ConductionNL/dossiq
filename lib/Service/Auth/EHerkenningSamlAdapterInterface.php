@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest eHerkenning SAML Adapter Interface.
+ * Dossiq eHerkenning SAML Adapter Interface.
  *
  * Dormant external API adapter contract for the eHerkenning broker. The
  * leverancier-portaal session flow obtains a `BrokerAssertionResult`
@@ -20,7 +20,7 @@
  *     a populated `BrokerAssertionResult::forEHerkenning(...)`.
  *
  * @category Service
- * @package  OCA\Procest\Service\Auth
+ * @package  OCA\Dossiq\Service\Auth
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -31,14 +31,14 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/leverancier-zaakportaal-02-eherkenning-auth/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Auth;
+namespace OCA\Dossiq\Service\Auth;
 
 use RuntimeException;
 
@@ -48,7 +48,7 @@ use RuntimeException;
  * Activation requirements (documented for the operator):
  *  1. openconnector eHerkenning broker entry configured (entryPoint URL +
  *     broker EntityID + IdP metadata XML).
- *  2. Procest signing private key + X.509 certificate (PEM) loaded into
+ *  2. Dossiq signing private key + X.509 certificate (PEM) loaded into
  *     app-config under `eherkenning.sp.private_key` and
  *     `eherkenning.sp.certificate`.
  *  3. `eherkenning.feature_flag` app-config key flipped from `0` to `1`.

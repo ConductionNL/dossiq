@@ -1,8 +1,8 @@
-.icon-procest-widget {
+.icon-dossiq-widget {
 	background-image: url('../img/app-dark.svg');
 	filter: var(--background-invert-if-dark);
 }
 
-body.theme--dark .icon-procest-widget {
+body.theme--dark .icon-dossiq-widget {
 	background-image: url('../img/app.svg');
 }

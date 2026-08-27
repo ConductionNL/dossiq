@@ -1,10 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Documentation screenshot capture suite — procest.
+ * Documentation screenshot capture suite — dossiq.
  *
- * This spec is *not* a regression test — it drives the Procest UI
+ * This spec is *not* a regression test — it drives the Dossiq UI
  * through the flows documented under `docs/tutorials/{user,admin}/*.md`
  * and writes a fresh PNG into `docs/static/screenshots/tutorials/<track>/`
  * for each step the markdown references.
@@ -23,7 +23,7 @@
  * Nextcloud login → storage state) and `use.storageState`, so the
  * `page` fixture here arrives already signed in.
  *
- * Data dependency: Procest stores cases / tasks / bezwaren / decisions
+ * Data dependency: Dossiq stores cases / tasks / bezwaren / decisions
  * in OpenRegister. On an instance with no seed data the list views
  * still render (empty state) and the *Add Item* dialog still opens, so
  * the structural screenshots below capture cleanly. The flow-detail
@@ -33,8 +33,8 @@
  * markdown pages that reference the as-yet-uncaptured PNGs warn under
  * `onBrokenMarkdownImages: 'warn'` rather than failing the docs build.
  *
- * Procest routing nuance: the SPA shell mounts at `/apps/procest`
- * (no trailing slash). Hitting `/apps/procest/` returns a 404 page —
+ * Dossiq routing nuance: the SPA shell mounts at `/apps/dossiq`
+ * (no trailing slash). Hitting `/apps/dossiq/` returns a 404 page —
  * the wildcard catch-all does not match the literal trailing slash
  * in this NC version. `go()` below normalises trailing slashes.
  *
@@ -54,7 +54,7 @@ const SHOT_ROOT = path.resolve(
 	'screenshots',
 	'tutorials',
 )
-const APP = '/apps/procest'
+const APP = '/apps/dossiq'
 
 /**
  * Save a viewport screenshot under
@@ -109,8 +109,8 @@ async function dismissOverlays(page: Page): Promise<void> {
 }
 
 /**
- * Navigate to a Procest sub-route (or an absolute /apps/... NC route).
- * The bare app root is `/apps/procest` with NO trailing slash — adding
+ * Navigate to a Dossiq sub-route (or an absolute /apps/... NC route).
+ * The bare app root is `/apps/dossiq` with NO trailing slash — adding
  * one returns a NC 404. Sub-routes use a single leading slash and the
  * trailing slash is stripped before goto.
  */
@@ -198,7 +198,7 @@ test.describe('docs: user track', () => {
 		await shoot(page, 'user', '01-first-launch-03.png')
 		await go(page, '/cases')
 		await shoot(page, 'user', '01-first-launch-04.png')
-		expect(page.url()).toContain('/apps/procest')
+		expect(page.url()).toContain('/apps/dossiq')
 	})
 
 	test('U2 my-work', async ({ page }) => {
@@ -322,29 +322,21 @@ test.describe('docs: admin track', () => {
 		await shoot(page, 'admin', '01-configure-case-types-05.png')
 	})
 
-	test('A2 automatic-actions', async ({ page }) => {
-		// docs/tutorials/admin/02-automatic-actions.md
-		await go(page, '/settings/automatic-actions')
-		await shoot(page, 'admin', '02-automatic-actions-01.png')
-		const had = await captureCreateDialog(
-			page,
-			'admin',
-			'02-automatic-actions-02.png',
-		)
-		if (!had) {
-			await shoot(page, 'admin', '02-automatic-actions-02.png')
-		}
-		await go(page, '/settings/automatic-actions')
-		await shoot(page, 'admin', '02-automatic-actions-03.png')
-		await shoot(page, 'admin', '02-automatic-actions-04.png')
-		await shoot(page, 'admin', '02-automatic-actions-05.png')
-	})
+	// A2 automatic-actions was retired with the page it captured
+	// (page-topology-cleanup C2). Automatic actions are OpenRegister flows now,
+	// so docs/user-guide/admin/02-automatic-actions.md documents the migration
+	// command and the flow editor instead — neither of which is a Dossiq screen,
+	// and OpenRegister's own capture spec owns the Flows page.
+	//
+	// The five 02-automatic-actions-*.png screenshots this produced are stale in
+	// the same way the old page was: they show a create dialog for a record that
+	// nothing executed. The rewritten tutorial no longer references them.
 
 	test('A3 admin-settings', async ({ page }) => {
-		// docs/tutorials/admin/03-admin-settings.md — Procest's admin
-		// surface lives at /index.php/settings/admin/procest (NC core
+		// docs/tutorials/admin/03-admin-settings.md — Dossiq's admin
+		// surface lives at /index.php/settings/admin/dossiq (NC core
 		// settings, not the in-app /settings route).
-		await page.goto('/index.php/settings/admin/procest', {
+		await page.goto('/index.php/settings/admin/dossiq', {
 			waitUntil: 'domcontentloaded',
 		})
 		// networkidle never settles on Nextcloud (ADR-074 rule 4) — wait on
@@ -382,6 +374,6 @@ test.describe('docs: admin track', () => {
 		await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
 		await page.waitForTimeout(300)
 		await shoot(page, 'admin', '03-admin-settings-05.png')
-		expect(page.url()).toContain('/settings/admin/procest')
+		expect(page.url()).toContain('/settings/admin/dossiq')
 	})
 })

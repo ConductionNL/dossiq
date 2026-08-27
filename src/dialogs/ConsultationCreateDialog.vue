@@ -3,7 +3,7 @@
 <template>
 	<NcDialog
 		v-if="open"
-		:name="t('procest', 'New consultation')"
+		:name="t('dossiq', 'New consultation')"
 		size="normal"
 		:canClose="!submitting"
 		@closing="onClose">
@@ -11,7 +11,7 @@
 			<!-- Read-only parent case display -->
 			<div class="consultation-create-dialog__field">
 				<label class="consultation-create-dialog__label">
-					{{ t('procest', 'Case') }}
+					{{ t('dossiq', 'Case') }}
 				</label>
 				<span class="consultation-create-dialog__readonly">{{
 					caseId
@@ -21,9 +21,9 @@
 			<div class="consultation-create-dialog__field">
 				<NcTextField
 					:modelValue="form.adviceAuthority"
-					:label="t('procest', 'Advisory body')"
+					:label="t('dossiq', 'Advisory body')"
 					:placeholder="
-						t('procest', 'e.g. Fire brigade, Aesthetics committee')
+						t('dossiq', 'e.g. Fire brigade, Aesthetics committee')
 					"
 					required
 					@update:modelValue="(v) => (form.adviceAuthority = v)" />
@@ -32,7 +32,7 @@
 			<div class="consultation-create-dialog__field">
 				<NcTextField
 					:modelValue="form.subject"
-					:label="t('procest', 'Onderwerp')"
+					:label="t('dossiq', 'Onderwerp')"
 					required
 					@update:modelValue="(v) => (form.subject = v)" />
 			</div>
@@ -41,7 +41,7 @@
 				<label
 					class="consultation-create-dialog__label"
 					for="consultation-create-question">
-					{{ t('procest', 'Question') }} *
+					{{ t('dossiq', 'Question') }} *
 				</label>
 				<textarea
 					id="consultation-create-question"
@@ -54,7 +54,7 @@
 				<label
 					class="consultation-create-dialog__label"
 					for="consultation-create-response-date">
-					{{ t('procest', 'Latest response date') }} *
+					{{ t('dossiq', 'Latest response date') }} *
 				</label>
 				<input
 					id="consultation-create-response-date"
@@ -66,15 +66,15 @@
 
 			<div class="consultation-create-dialog__field">
 				<label class="consultation-create-dialog__label">
-					{{ t('procest', 'Priority') }}
+					{{ t('dossiq', 'Priority') }}
 				</label>
 				<NcSelect
 					v-model="form.priority"
 					:options="prioriteitOptions"
-					:aria-label-combobox="t('procest', 'Priority')"
+					:aria-label-combobox="t('dossiq', 'Priority')"
 					label="label"
 					:reduce="(opt) => opt.value"
-					:placeholder="t('procest', 'Select priority')" />
+					:placeholder="t('dossiq', 'Select priority')" />
 			</div>
 
 			<NcNoteCard v-if="validationError" type="error">
@@ -84,13 +84,13 @@
 
 		<template #actions>
 			<NcButton :disabled="submitting" @click="onClose">
-				{{ t('procest', 'Annuleren') }}
+				{{ t('dossiq', 'Annuleren') }}
 			</NcButton>
 			<NcButton type="primary" :disabled="!canSubmit" @click="onSubmit">
 				{{
 					submitting
-						? t('procest', 'Bezig...')
-						: t('procest', 'Create consultation')
+						? t('dossiq', 'Bezig...')
+						: t('dossiq', 'Create consultation')
 				}}
 			</NcButton>
 		</template>
@@ -147,8 +147,8 @@ export default {
 			},
 
 			prioriteitOptions: [
-				{ label: this.t('procest', 'Normal'), value: 'normal' },
-				{ label: this.t('procest', 'Urgent'), value: 'spoed' },
+				{ label: this.t('dossiq', 'Normal'), value: 'normal' },
+				{ label: this.t('dossiq', 'Urgent'), value: 'spoed' },
 			],
 		}
 	},
@@ -202,23 +202,20 @@ export default {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		validate() {
 			if (this.form.adviceAuthority.trim() === '') {
-				this.validationError = this.t(
-					'procest',
-					'Advisory body is required.',
-				)
+				this.validationError = this.t('dossiq', 'Advisory body is required.')
 				return false
 			}
 			if (this.form.subject.trim() === '') {
-				this.validationError = this.t('procest', 'Subject is required.')
+				this.validationError = this.t('dossiq', 'Subject is required.')
 				return false
 			}
 			if (this.form.question_formulation.trim() === '') {
-				this.validationError = this.t('procest', 'Question is required.')
+				this.validationError = this.t('dossiq', 'Question is required.')
 				return false
 			}
 			if (this.form.latestResponseDate === '') {
 				this.validationError = this.t(
-					'procest',
+					'dossiq',
 					'Latest response date is required.',
 				)
 				return false

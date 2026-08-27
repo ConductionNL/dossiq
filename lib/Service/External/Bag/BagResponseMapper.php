@@ -6,7 +6,7 @@
  *
  * Contains zero I/O — takes an already-decoded JSON fragment (one
  * `adressen[]` entry, or a single `verblijfsobject`/`pand` resource) and
- * returns the stable Procest-internal DTO shape. All HTTP concerns
+ * returns the stable Dossiq-internal DTO shape. All HTTP concerns
  * (request building, headers, retries, error mapping) live exclusively in
  * `BagApiAdapter`, per REQ-BAG-004 (one testable normalization seam,
  * mirrors `PdokBagService::normaliseFeature()` in spirit but scoped to the
@@ -14,13 +14,13 @@
  * feature shape PDOK returns).
  *
  * @category Service
- * @package  OCA\Procest\Service\External\Bag
+ * @package  OCA\Dossiq\Service\External\Bag
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  * @link https://lvbag.github.io/BAG-API/Technische%20specificatie/
  *
  * @spec openspec/changes/bag-register-adapter/proposal.md
@@ -31,11 +31,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\External\Bag;
+namespace OCA\Dossiq\Service\External\Bag;
 
 /**
  * Normalizes Kadaster BAG API Individuele Bevragingen v2 address / pand /
- * verblijfsobject fragments into the Procest-internal DTO shape.
+ * verblijfsobject fragments into the Dossiq-internal DTO shape.
  *
  * @spec openspec/changes/bag-register-adapter/proposal.md
  */

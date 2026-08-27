@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest Bezwaar Decision Validator.
+ * Dossiq Bezwaar Decision Validator.
  *
  * The complete Awb validity matrix for a beslissing op bezwaar. Split out
  * of DecisionService so that service keeps only the draft/publish
@@ -13,13 +13,13 @@
  * proceskostenvergoeding rules including the point-value total — live
  * here and nowhere else.
  *
- * Per REQ-PDRD-004 these rules stay in procest and run BEFORE any
+ * Per REQ-PDRD-004 these rules stay in dossiq and run BEFORE any
  * decidesk Decision is raised, so no Decision can ever be raised on an
  * Awb-invalid payload. The class is deliberately dependency-free: it is
  * pure payload inspection.
  *
  * @category Service
- * @package  OCA\Procest\Service\Bezwaar
+ * @package  OCA\Dossiq\Service\Bezwaar
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,7 +27,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -37,7 +37,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service\Bezwaar;
+namespace OCA\Dossiq\Service\Bezwaar;
 
 use RuntimeException;
 

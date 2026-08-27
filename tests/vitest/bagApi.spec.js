@@ -1,11 +1,11 @@
 /**
- * SPDX-FileCopyrightText: 2026 Conduction / Procest Contributors
+ * SPDX-FileCopyrightText: 2026 Conduction / Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Unit tests for the BAG lookup shim in src/services/bagApi.js.
  *
  * These assert the consumer contract from the bag-register-adapter change:
- * every export delegates to procest's own `/apps/procest/api/external/bag/*`
+ * every export delegates to dossiq's own `/apps/dossiq/api/external/bag/*`
  * routes (not openconnector, and not api.bag.kadaster.nl directly), forwards
  * optional huisletter/huisnummertoevoeging only when present, and returns
  * the adapter's raw envelope (`{lookupStatus, address, dormant, extras}`)
@@ -22,7 +22,7 @@ import {
 	lookupVerblijfsobject,
 } from '../../src/services/bagApi.js'
 
-const BASE = '/index.php/apps/procest/api/external/bag'
+const BASE = '/index.php/apps/dossiq/api/external/bag'
 
 /**
  * Build an axios-style success response.
@@ -38,7 +38,7 @@ describe('bagApi shim — endpoint routing', () => {
 		axios.get.mockReset()
 	})
 
-	it('lookupAddress delegates to the procest address route with postcode + huisnummer', async () => {
+	it('lookupAddress delegates to the dossiq address route with postcode + huisnummer', async () => {
 		const envelope = {
 			lookupStatus: 'FOUND',
 			address: { street: 'Voorstraat' },
@@ -105,7 +105,7 @@ describe('bagApi shim — endpoint routing', () => {
 		expect(config.params).not.toHaveProperty('huisnummertoevoeging')
 	})
 
-	it('lookupPand delegates to the procest pand route with an encoded id', async () => {
+	it('lookupPand delegates to the dossiq pand route with an encoded id', async () => {
 		const envelope = {
 			lookupStatus: 'FOUND',
 			address: { oorspronkelijkBouwjaar: 1998 },
@@ -120,7 +120,7 @@ describe('bagApi shim — endpoint routing', () => {
 		expect(result).toEqual(envelope)
 	})
 
-	it('lookupVerblijfsobject delegates to the procest verblijfsobject route', async () => {
+	it('lookupVerblijfsobject delegates to the dossiq verblijfsobject route', async () => {
 		const envelope = {
 			lookupStatus: 'NOT_FOUND',
 			address: {},

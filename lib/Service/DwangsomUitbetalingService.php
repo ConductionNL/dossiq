@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest DwangsomUitbetalingService.
+ * Dossiq DwangsomUitbetalingService.
  *
  * Prepares payment signals towards the burger after the dwangsom has
  * been locked and processes ERP callbacks confirming actual payment.
@@ -12,7 +12,7 @@
  * Money values: integer EUR cents throughout (ADR-031).
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -23,17 +23,17 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
 
 /**
@@ -282,7 +282,7 @@ class DwangsomUitbetalingService {
 		}
 
 		$row = null;
-		if (is_array($rows) === true && count($rows) > 0) {
+		if (count($rows) > 0) {
 			$row = $rows[0];
 		}
 

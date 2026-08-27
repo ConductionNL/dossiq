@@ -8,7 +8,7 @@
  * never an implicit SIGNED).
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service\Beschikking
+ * @package  OCA\Dossiq\Tests\Unit\Service\Beschikking
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -16,7 +16,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -26,13 +26,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service\Beschikking;
+namespace OCA\Dossiq\Tests\Unit\Service\Beschikking;
 
-use OCA\Procest\Service\Beschikking\LibresignStatusMapper;
+use OCA\Dossiq\Service\Beschikking\LibresignStatusMapper;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Procest\Service\Beschikking\LibresignStatusMapper
+ * @covers \OCA\Dossiq\Service\Beschikking\LibresignStatusMapper
  */
 class LibresignStatusMapperTest extends TestCase {
 	/**

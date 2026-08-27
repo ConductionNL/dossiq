@@ -1,5 +1,5 @@
 OC.L10N.register(
-    "procest",
+    "dossiq",
     {
     "Add step" : "Adăugați pas",
     "Address" : "Adresă",
@@ -388,8 +388,8 @@ OC.L10N.register(
     "Voorstel heeft geen actieve stap" : "Voorstel nu are niciun pas activ",
     "Wanneer is deze route van toepassing?" : "Când se aplică această rută?",
     "Weet u zeker dat u de route \"{name}\" wilt verwijderen?" : "Sunteți sigur că doriți să ștergeți ruta „{name}”?",
-    "Welcome to Procest! Get started by creating your first case or task using the buttons above." : "Bun venit la Procest! Începeți prin crearea primului dumneavoastră dosar sau a primei sarcini utilizând butoanele de mai sus.",
-    "Welcome to Procest! Get started by creating your first case type in Settings." : "Bun venit la Procest! Începeți prin crearea primului dumneavoastră tip de dosar în Setări.",
+    "Welcome to Dossiq! Get started by creating your first case or task using the buttons above." : "Bun venit la Dossiq! Începeți prin crearea primului dumneavoastră dosar sau a primei sarcini utilizând butoanele de mai sus.",
+    "Welcome to Dossiq! Get started by creating your first case type in Settings." : "Bun venit la Dossiq! Începeți prin crearea primului dumneavoastră tip de dosar în Setări.",
     "When heeftAlleAutorisaties is false, autorisaties must be specified." : "Când heeftAlleAutorisaties este false, autorisaties trebuie specificat.",
     "When heeftAlleAutorisaties is true, autorisaties must not be specified. When heeftAlleAutorisaties is false, autorisaties must be specified." : "Când heeftAlleAutorisaties este true, autorisaties nu trebuie specificat. Când heeftAlleAutorisaties este false, autorisaties trebuie specificat.",
     "Why is an extension needed?" : "De ce este necesară o prelungire?",

@@ -9,7 +9,7 @@
  * dormant) rather than an HTTP error. Mirrors `BagControllerTest`.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Controller
+ * @package  OCA\Dossiq\Tests\Unit\Controller
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,11 +20,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Controller;
+namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\BrkController;
-use OCA\Procest\Service\External\Brk\BrkAdapterInterface;
-use OCA\Procest\Service\External\Brk\BrkLookupResult;
+use OCA\Dossiq\Controller\BrkController;
+use OCA\Dossiq\Service\External\Brk\BrkAdapterInterface;
+use OCA\Dossiq\Service\External\Brk\BrkLookupResult;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -33,9 +33,9 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Controller\BrkController
+ * @covers \OCA\Dossiq\Controller\BrkController
  *
- * @uses \OCA\Procest\Service\External\Brk\BrkLookupResult
+ * @uses \OCA\Dossiq\Service\External\Brk\BrkLookupResult
  */
 class BrkControllerTest extends TestCase {
 
@@ -80,7 +80,7 @@ class BrkControllerTest extends TestCase {
 		$this->userSession->method('getUser')->willReturn($user);
 
 		$this->controller = new BrkController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			brkAdapter: $this->brkAdapter,
 			userSession: $this->userSession,
@@ -98,7 +98,7 @@ class BrkControllerTest extends TestCase {
 		$unauthSession->method('getUser')->willReturn(null);
 
 		$controller = new BrkController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			brkAdapter: $this->brkAdapter,
 			userSession: $unauthSession,
@@ -224,7 +224,7 @@ class BrkControllerTest extends TestCase {
 		$unauthSession->method('getUser')->willReturn(null);
 
 		$controller = new BrkController(
-			appName: 'procest',
+			appName: 'dossiq',
 			request: $this->request,
 			brkAdapter: $this->brkAdapter,
 			userSession: $unauthSession,

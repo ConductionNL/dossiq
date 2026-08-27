@@ -3,7 +3,7 @@
 		<!-- Version selector and actions -->
 		<div class="workflow-tab__toolbar">
 			<div class="workflow-tab__version-selector">
-				<label>{{ t('procest', 'Version:') }}</label>
+				<label>{{ t('dossiq', 'Version:') }}</label>
 				<select
 					v-model="selectedVersionId"
 					class="workflow-tab__select"
@@ -22,7 +22,7 @@
 					v-if="versions.length === 0"
 					type="primary"
 					@click="createWorkflow">
-					{{ t('procest', 'Create workflow') }}
+					{{ t('dossiq', 'Create workflow') }}
 				</NcButton>
 
 				<!-- Publish draft -->
@@ -34,7 +34,7 @@
 					<template v-if="publishing" #icon>
 						<NcLoadingIcon :size="20" />
 					</template>
-					{{ t('procest', 'Publish') }}
+					{{ t('dossiq', 'Publish') }}
 				</NcButton>
 
 				<!-- Edit published (create draft copy) -->
@@ -42,7 +42,7 @@
 					v-if="currentIsPublished && !hasDraft"
 					type="secondary"
 					@click="editPublished">
-					{{ t('procest', 'Edit') }}
+					{{ t('dossiq', 'Edit') }}
 				</NcButton>
 
 				<!-- Save -->
@@ -54,15 +54,15 @@
 					<template v-if="saving" #icon>
 						<NcLoadingIcon :size="20" />
 					</template>
-					{{ t('procest', 'Save') }}
+					{{ t('dossiq', 'Save') }}
 				</NcButton>
 
 				<!-- Import / Export -->
 				<NcButton type="tertiary" @click="exportWorkflow">
-					{{ t('procest', 'Export') }}
+					{{ t('dossiq', 'Export') }}
 				</NcButton>
 				<NcButton type="tertiary" @click="triggerImport">
-					{{ t('procest', 'Import') }}
+					{{ t('dossiq', 'Import') }}
 				</NcButton>
 				<input
 					ref="importInput"
@@ -76,7 +76,7 @@
 		<!-- Publish errors -->
 		<div v-if="publishErrors.length > 0" class="workflow-tab__errors">
 			<p>
-				<strong>{{ t('procest', 'Cannot publish:') }}</strong>
+				<strong>{{ t('dossiq', 'Cannot publish:') }}</strong>
 			</p>
 			<ul>
 				<li v-for="(err, i) in publishErrors" :key="i">
@@ -88,18 +88,18 @@
 		<!-- Import report -->
 		<div v-if="importReport" class="workflow-tab__import-report">
 			<p>
-				<strong>{{ t('procest', 'Import validation:') }}</strong>
+				<strong>{{ t('dossiq', 'Import validation:') }}</strong>
 			</p>
 			<ul>
 				<li v-for="(type, i) in importReport.statusTypes" :key="'s' + i">
-					{{ t('procest', 'Missing status type: {name}', { name: type }) }}
+					{{ t('dossiq', 'Missing status type: {name}', { name: type }) }}
 				</li>
 				<li v-for="(type, i) in importReport.roleTypes" :key="'r' + i">
-					{{ t('procest', 'Missing role type: {name}', { name: type }) }}
+					{{ t('dossiq', 'Missing role type: {name}', { name: type }) }}
 				</li>
 			</ul>
 			<NcButton type="secondary" @click="importReport = null">
-				{{ t('procest', 'Cancel import') }}
+				{{ t('dossiq', 'Cancel import') }}
 			</NcButton>
 		</div>
 
@@ -118,11 +118,11 @@
 
 		<!-- Empty state -->
 		<div v-if="versions.length === 0 && !loading" class="workflow-tab__empty">
-			<p>{{ t('procest', 'No workflow defined for this case type yet.') }}</p>
+			<p>{{ t('dossiq', 'No workflow defined for this case type yet.') }}</p>
 			<p>
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'Create a workflow to define process steps and status transitions.',
 					)
 				}}
@@ -211,7 +211,7 @@ export default {
 				&& !this.currentTemplate.isDraft
 			) {
 				return t(
-					'procest',
+					'dossiq',
 					'Viewing version {version}. Active version is {active}.',
 					{
 						version: this.currentTemplate.version,
@@ -258,7 +258,7 @@ export default {
 			this.loading = true
 			const template = await this.workflowStore.createTemplate(
 				this.caseTypeId,
-				t('procest', 'Workflow'),
+				t('dossiq', 'Workflow'),
 			)
 			if (template) {
 				this.selectedVersionId = template.id

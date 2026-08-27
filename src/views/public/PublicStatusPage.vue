@@ -2,11 +2,11 @@
 	<div class="public-status-page">
 		<div v-if="loading" class="public-status-page__loading">
 			<NcLoadingIcon :size="32" />
-			<p>{{ t('procest', 'Loading status...') }}</p>
+			<p>{{ t('dossiq', 'Loading status...') }}</p>
 		</div>
 
 		<div v-else-if="error" class="public-status-page__error">
-			<h2>{{ t('procest', 'Status unavailable') }}</h2>
+			<h2>{{ t('dossiq', 'Status unavailable') }}</h2>
 			<p>{{ error }}</p>
 		</div>
 
@@ -15,7 +15,7 @@
 				<h1>{{ statusData.title }}</h1>
 				<p v-if="statusData.identifier" class="public-status-page__ref">
 					{{
-						t('procest', 'Reference: {ref}', {
+						t('dossiq', 'Reference: {ref}', {
 							ref: statusData.identifier,
 						})
 					}}
@@ -26,12 +26,12 @@
 			<section
 				class="public-status-page__progress"
 				role="progressbar"
-				:aria-label="t('procest', 'Case progress')">
+				:aria-label="t('dossiq', 'Case progress')">
 				<div class="public-status-page__status-label">
-					{{ t('procest', 'Current status') }}
+					{{ t('dossiq', 'Current status') }}
 				</div>
 				<div class="public-status-page__status-value">
-					{{ statusData.currentStatus || t('procest', 'In progress') }}
+					{{ statusData.currentStatus || t('dossiq', 'In progress') }}
 				</div>
 			</section>
 
@@ -41,7 +41,7 @@
 					v-if="statusData.startDate"
 					class="public-status-page__date-item">
 					<span class="public-status-page__date-label">{{
-						t('procest', 'Submitted')
+						t('dossiq', 'Submitted')
 					}}</span>
 					<span class="public-status-page__date-value">{{
 						formatDate(statusData.startDate)
@@ -51,7 +51,7 @@
 					v-if="statusData.plannedEndDate"
 					class="public-status-page__date-item">
 					<span class="public-status-page__date-label">{{
-						t('procest', 'Expected completion')
+						t('dossiq', 'Expected completion')
 					}}</span>
 					<span class="public-status-page__date-value">{{
 						formatDate(statusData.plannedEndDate)
@@ -63,7 +63,7 @@
 				<p>
 					{{
 						t(
-							'procest',
+							'dossiq',
 							'For questions about your case, please contact the municipality.',
 						)
 					}}
@@ -107,7 +107,7 @@ export default {
 		 * shares integration leaf (ADR-022). The OR `#[PublicPage]` endpoint
 		 * `GET /apps/openregister/api/public/case-tokens/{token}` returns an
 		 * RBAC-respecting, public-safe view of the case (only the fields the
-		 * public group may read) — procest no longer runs its own public
+		 * public group may read) — dossiq no longer runs its own public
 		 * token-resolution controller. An unknown / revoked / expired token,
 		 * or an RBAC-denied object, resolves to a uniform 404.
 		 *
@@ -120,7 +120,7 @@ export default {
 					`/apps/openregister/api/public/case-tokens/${encodeURIComponent(this.token)}`,
 				)
 				if (!response.ok) {
-					this.error = t('procest', 'Status unavailable')
+					this.error = t('dossiq', 'Status unavailable')
 					return
 				}
 
@@ -135,7 +135,7 @@ export default {
 					startDate: obj.startDate || null,
 				}
 			} catch (err) {
-				this.error = t('procest', 'Could not load status')
+				this.error = t('dossiq', 'Could not load status')
 			} finally {
 				this.loading = false
 			}

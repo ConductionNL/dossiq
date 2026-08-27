@@ -1,7 +1,7 @@
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-const baseUrl = generateUrl('/apps/procest/api/berichtenbox')
+const baseUrl = generateUrl('/apps/dossiq/api/berichtenbox')
 
 /**
  * @param data

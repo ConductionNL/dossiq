@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Procest Berichtenbox Service.
+ * Dossiq Berichtenbox Service.
  *
  * Sends citizen-facing messages through a pluggable Mijn Overheid
  * Berichtenbox adapter and records them in OpenRegister.
  *
  * @category Service
- * @package  OCA\Procest\Service
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,7 +18,7 @@
  *
  * @version GIT: <git-id>
  *
- * @link https://procest.nl
+ * @link https://conduction.nl
  *
  * @spec openspec/specs/berichtenbox-integration/spec.md
  * @spec openspec/specs/berichtenbox-integration/spec.md
@@ -26,12 +26,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Service;
+namespace OCA\Dossiq\Service;
 
 use DateTime;
-use OCA\Procest\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
-use OCA\Procest\Service\BerichtenboxAdapter\MockAdapter;
-use OCA\Procest\Service\Support\OwningCaseResolver;
+use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
+use OCA\Dossiq\Service\BerichtenboxAdapter\MockAdapter;
+use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -128,7 +128,7 @@ class BerichtenboxService {
 		);
 
 		$this->logger->info(
-			'Procest: Berichtenbox message sent',
+			'Dossiq: Berichtenbox message sent',
 			[
 				'caseId' => $caseId,
 				'messageId' => $result['messageId'] ?? '',
@@ -347,7 +347,7 @@ class BerichtenboxService {
 		try {
 			return $this->container->get('OCA\OpenRegister\Service\ObjectService');
 		} catch (\Exception $e) {
-			$this->logger->error('Procest: Could not get ObjectService', ['exception' => $e->getMessage()]);
+			$this->logger->error('Dossiq: Could not get ObjectService', ['exception' => $e->getMessage()]);
 			return null;
 		}
 	}//end getObjectService()

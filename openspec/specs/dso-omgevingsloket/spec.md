@@ -6,7 +6,7 @@ note: Implemented and archived 2026-06-13 (change dso-omgevingsloket). Schemas, 
 # dso-omgevingsloket Specification
 
 ## Purpose
-Integrates Procest with the DSO/Omgevingsloket: ingests vergunningaanvragen from OpenConnector into Procest zaken with statutory working-day deadlines, drives the omgevingsvergunning status lifecycle (dual-write + event dispatch), supports samenwerkverzoek and doorstuur flows, generates beschikkingen, and surfaces a VTH dashboard.
+Integrates Dossiq with the DSO/Omgevingsloket: ingests vergunningaanvragen from OpenConnector into Dossiq zaken with statutory working-day deadlines, drives the omgevingsvergunning status lifecycle (dual-write + event dispatch), supports samenwerkverzoek and doorstuur flows, generates beschikkingen, and surfaces a VTH dashboard.
 ## Requirements
 ### Requirement: REQ-DSO-001 -- Register schemas for core DSO entities
 OpenRegister MUST provide register schemas for the core DSO entity types, enabling structured storage of omgevingsvergunning-related data. All schemas MUST be defined as OpenRegister schemas per ADR-001 (OpenRegister as Universal Data Layer) and MUST NOT use custom database tables. Schemas SHALL be registered during installation via repair steps or the `openregister:load-register` CLI command using the `dso_register.json` template.
@@ -445,26 +445,26 @@ OpenRegister SHOULD implement caching strategies for DSO reference data (activit
 - **THEN** the query SHOULD complete within 3 seconds (per tender SLA requirements)
 - **AND** the system SHOULD leverage Solr or Elasticsearch if configured for full-text search and faceted filtering
 
-### Requirement: REQ-DSO-014 -- Integration with Procest for zaakafhandeling
-OpenRegister's DSO vergunningaanvraag objects SHALL be linkable to Procest zaak objects for full case lifecycle management. The vergunningaanvraag captures the DSO-specific data (activiteiten, locatie, initiatiefnemer); the zaak captures the case management workflow (deadlines, behandelaars, milestones). This integration is optional -- municipalities MAY use DSO data without Procest.
+### Requirement: REQ-DSO-014 -- Integration with Dossiq for zaakafhandeling
+OpenRegister's DSO vergunningaanvraag objects SHALL be linkable to Dossiq zaak objects for full case lifecycle management. The vergunningaanvraag captures the DSO-specific data (activiteiten, locatie, initiatiefnemer); the zaak captures the case management workflow (deadlines, behandelaars, milestones). This integration is optional -- municipalities MAY use DSO data without Dossiq.
 
-#### Scenario: Link vergunningaanvraag to a Procest zaak
+#### Scenario: Link vergunningaanvraag to a Dossiq zaak
 - **GIVEN** a vergunningaanvraag is created in the DSO register
 - **WHEN** the vergunningaanvraag is taken into treatment
-- **THEN** a Procest zaak SHOULD be created automatically (via n8n workflow or OpenConnector event)
+- **THEN** a Dossiq zaak SHOULD be created automatically (via n8n workflow or OpenConnector event)
 - **AND** the vergunningaanvraag SHOULD store a reference to the zaak for cross-navigation
 
-#### Scenario: Procest zaak references DSO data
-- **GIVEN** a Procest zaak exists for an omgevingsvergunning case
-- **WHEN** a behandelaar views the zaak in Procest
+#### Scenario: Dossiq zaak references DSO data
+- **GIVEN** a Dossiq zaak exists for an omgevingsvergunning case
+- **WHEN** a behandelaar views the zaak in Dossiq
 - **THEN** the DSO vergunningaanvraag data (activiteiten, locatie, initiatiefnemer) MUST be retrievable from OpenRegister via the stored reference
 - **AND** the activiteit regelkwalificatie MUST be visible to inform the behandelaar about permit type
 
-#### Scenario: Status synchronization between DSO and Procest
-- **GIVEN** a vergunningaanvraag in OpenRegister is linked to a Procest zaak
-- **WHEN** the zaak status changes in Procest (e.g., case closed with result `verleend`)
+#### Scenario: Status synchronization between DSO and Dossiq
+- **GIVEN** a vergunningaanvraag in OpenRegister is linked to a Dossiq zaak
+- **WHEN** the zaak status changes in Dossiq (e.g., case closed with result `verleend`)
 - **THEN** the corresponding vergunningaanvraag status in OpenRegister SHOULD be updated to match
-- **AND** both audit trails (Procest and OpenRegister) MUST record the synchronized status change
+- **AND** both audit trails (Dossiq and OpenRegister) MUST record the synchronized status change
 
 ### Requirement: REQ-DSO-015 -- Notification support for DSO events
 OpenRegister MUST fire typed events when DSO-relevant state changes occur, enabling notifications to behandelaars and integration with OpenConnector for DSO-LV synchronization. Notifications SHALL use Nextcloud's `INotifier` / `INotification` framework.

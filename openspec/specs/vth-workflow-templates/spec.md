@@ -127,7 +127,7 @@ The system SHALL provide a browsable library of VTH workflow templates that admi
 
 ### REQ-001: SeedVthWorkflowTemplates repair step SHALL idempotently seed the VTH workflow catalog from bundled JSON files
 
-`OCA\Procest\Repair\SeedVthWorkflowTemplates` SHALL implement `IRepairStep` and SHALL run on every app enable / upgrade. The `run(IOutput $output)` method SHALL:
+`OCA\Dossiq\Repair\SeedVthWorkflowTemplates` SHALL implement `IRepairStep` and SHALL run on every app enable / upgrade. The `run(IOutput $output)` method SHALL:
 - Short-circuit with a warning when `SettingsService::isOpenRegisterAvailable()` returns false — never throw.
 - Short-circuit with a warning when the bundled catalog directory (`SeedVthWorkflowTemplates::CATALOG_DIR`) does not exist — never throw.
 - Glob the catalog dir for `*.json` files. If no files match, emit a warning and return.
@@ -138,7 +138,7 @@ The step SHALL be IDEMPOTENT: `isAlreadySeeded(string $caseTypeId, string $title
 
 #### Scenario: OpenRegister missing -> graceful no-op
 - **GIVEN** the `openregister` app is not installed
-- **WHEN** `SeedVthWorkflowTemplates::run()` executes during `occ app:enable procest`
+- **WHEN** `SeedVthWorkflowTemplates::run()` executes during `occ app:enable dossiq`
 - **THEN** the step SHALL emit `$output->warning('OpenRegister is not available. Skipping VTH workflow templates seed.')`
 - **AND** SHALL return without globbing the catalog directory
 
@@ -157,7 +157,7 @@ The step SHALL be IDEMPOTENT: `isAlreadySeeded(string $caseTypeId, string $title
 #### Scenario: One bad catalog file does not block the rest
 - **GIVEN** 4 catalog files exist, one of which contains invalid JSON
 - **WHEN** the seeder runs
-- **THEN** the bad file's exception SHALL be logged with `app=procest` + the file basename + the exception message
+- **THEN** the bad file's exception SHALL be logged with `app=dossiq` + the file basename + the exception message
 - **AND** the user-facing summary SHALL report `1 failed`
 - **AND** the other 3 catalog files SHALL still be processed
 

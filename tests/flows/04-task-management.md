@@ -1,7 +1,7 @@
 # Test Flow: Task Management
 
-**App:** Procest
-**Pages:** `/apps/procest/tasks`, `/apps/procest/tasks/new`, `/apps/procest/my-work`
+**App:** Dossiq
+**Pages:** `/apps/dossiq/tasks`, `/apps/dossiq/tasks/new`, `/apps/dossiq/my-work`
 **Priority:** High
 **Tags:** crud, tasks, assignment
 **Personas:** zaakbehandelaar, teamleider
@@ -9,13 +9,13 @@
 
 ## Preconditions
 - Logged in as admin
-- Procest and OpenRegister apps enabled
+- Dossiq and OpenRegister apps enabled
 - A case exists (from flow 03)
 
 ## Journey: Create and complete a task linked to a case
 
 ### 1. View task list
-**Navigate to** `/apps/procest/tasks`
+**Navigate to** `/apps/dossiq/tasks`
 
 **Verify:**
 - [ ] Cards/Table toggle visible (Table selected)
@@ -46,14 +46,14 @@
 **Click Create/Save**
 
 ### 3. Verify task in list
-**Navigate to** `/apps/procest/tasks`
+**Navigate to** `/apps/dossiq/tasks`
 
 **Verify:**
 - [ ] Task visible in table
 - [ ] Shows title, status, due date
 
 ### 4. Verify in My Work
-**Navigate to** `/apps/procest/my-work`
+**Navigate to** `/apps/dossiq/my-work`
 **Click "Tasks" filter**
 
 **Verify:**
@@ -70,7 +70,7 @@
 - [ ] Hidden from My Work unless "Show completed" checked
 
 ### 6. Actions menu
-**Navigate to** `/apps/procest/tasks`
+**Navigate to** `/apps/dossiq/tasks`
 **Click "Actions"**
 
 **Verify:**
