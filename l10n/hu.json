@@ -1982,6 +1982,24 @@
         "Zaaktype key": "Ügytípus kulcsa",
         "Zaaktype key is required": "Az ügytípus kulcsa kötelező",
         "Zienswijze period (days)": "Zienswijze időszak (nap)",
-        "Zoom": "Nagyítás"
+        "Zoom": "Nagyítás",
+        "Akkoord door": "Jóváhagyta",
+        "De actie kon niet worden uitgevoerd.": "A műveletet nem sikerült végrehajtani.",
+        "De beschikking is samengesteld als concept.": "A határozat tervezetként lett összeállítva.",
+        "De beschikking kon niet worden opgesteld.": "A határozatot nem sikerült összeállítani.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "A címzett még hiányzik, és megadása kötelező.",
+        "De motivering ontbreekt nog en is verplicht.": "Az indokolás még hiányzik, és megadása kötelező.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Ez a lépés kötelező, és nem hagyható ki.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Adja meg, miért hagyja ki ezt a lépést...",
+        "Geen beschikking gevonden": "Nem található határozat",
+        "Het audit-pakket kon niet worden geexporteerd.": "Az auditcsomagot nem sikerült exportálni.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Még nincsenek lépések. A kezdéshez adjon hozzá egy lépést.",
+        "Reden voor overslaan": "A kihagyás indoka",
+        "Selecteer actor type": "Válasszon szereplőtípust",
+        "Selecteer een sjabloon": "Válasszon egy sablont",
+        "Selecteer invoegpositie": "Válassza ki a beszúrási pozíciót",
+        "Selecteer type": "Válasszon típust",
+        "Selecteer zaaktype": "Válasszon ügytípust",
+        "Verplicht": "Kötelező"
     }
 }

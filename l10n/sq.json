@@ -1982,6 +1982,24 @@
         "Zaaktype key": "Çelësi i zaaktype",
         "Zaaktype key is required": "Çelësi i zaaktype është i detyrueshëm",
         "Zienswijze period (days)": "Periudha e zienswijze (ditë)",
-        "Zoom": "Zoom"
+        "Zoom": "Zoom",
+        "Akkoord door": "Miratuar nga",
+        "De actie kon niet worden uitgevoerd.": "Veprimi nuk u krye dot.",
+        "De beschikking is samengesteld als concept.": "Vendimi u hartua si draft.",
+        "De beschikking kon niet worden opgesteld.": "Vendimi nuk u hartua dot.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Adresuesi ende mungon dhe është i detyrueshëm.",
+        "De motivering ontbreekt nog en is verplicht.": "Arsyetimi ende mungon dhe është i detyrueshëm.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Ky hap është i detyrueshëm dhe nuk mund të anashkalohet.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Jepni një arsye pse ky hap po anashkalohet ...",
+        "Geen beschikking gevonden": "Nuk u gjet vendim",
+        "Het audit-pakket kon niet worden geexporteerd.": "Paketa e auditimit nuk u eksportua dot.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Ende nuk ka hapa. Shtoni një hap për të filluar.",
+        "Reden voor overslaan": "Arsyeja për anashkalim",
+        "Selecteer actor type": "Zgjidh llojin e aktorit",
+        "Selecteer een sjabloon": "Zgjidh një shabllon",
+        "Selecteer invoegpositie": "Zgjidh pozicionin e futjes",
+        "Selecteer type": "Zgjidh llojin",
+        "Selecteer zaaktype": "Zgjidh llojin e rastit",
+        "Verplicht": "E detyrueshme"
     }
 }

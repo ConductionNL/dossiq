@@ -1982,6 +1982,24 @@
         "Zaaktype key": "Clé du zaaktype",
         "Zaaktype key is required": "La clé du zaaktype est obligatoire",
         "Zienswijze period (days)": "Période de zienswijze (jours)",
-        "Zoom": "Zoom"
+        "Zoom": "Zoom",
+        "Akkoord door": "Approuvé par",
+        "De actie kon niet worden uitgevoerd.": "L'action n'a pas pu être effectuée.",
+        "De beschikking is samengesteld als concept.": "La décision a été rédigée comme brouillon.",
+        "De beschikking kon niet worden opgesteld.": "La décision n'a pas pu être rédigée.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Le destinataire est encore manquant et est obligatoire.",
+        "De motivering ontbreekt nog en is verplicht.": "La motivation est encore manquante et est obligatoire.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Cette étape est obligatoire et ne peut pas être ignorée.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Indiquez une raison pour laquelle cette étape est ignorée...",
+        "Geen beschikking gevonden": "Aucune décision trouvée",
+        "Het audit-pakket kon niet worden geexporteerd.": "Le dossier d'audit n'a pas pu être exporté.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Aucune étape pour le moment. Ajoutez une étape pour commencer.",
+        "Reden voor overslaan": "Motif de l'ignorance",
+        "Selecteer actor type": "Sélectionner le type d'acteur",
+        "Selecteer een sjabloon": "Sélectionner un modèle",
+        "Selecteer invoegpositie": "Sélectionner le point d'insertion",
+        "Selecteer type": "Sélectionner le type",
+        "Selecteer zaaktype": "Sélectionner le type d'affaire",
+        "Verplicht": "Obligatoire"
     }
 }

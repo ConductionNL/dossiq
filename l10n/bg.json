@@ -1982,6 +1982,24 @@
         "Zaaktype key": "Zaaktype ключ",
         "Zaaktype key is required": "Zaaktype ключът е задължителен",
         "Zienswijze period (days)": "Период за Zienswijze (дни)",
-        "Zoom": "Zoom"
+        "Zoom": "Zoom",
+        "Akkoord door": "Одобрено от",
+        "De actie kon niet worden uitgevoerd.": "Действието не можа да бъде изпълнено.",
+        "De beschikking is samengesteld als concept.": "Решението е съставено като чернова.",
+        "De beschikking kon niet worden opgesteld.": "Решението не можа да бъде съставено.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Адресатът все още липсва и е задължителен.",
+        "De motivering ontbreekt nog en is verplicht.": "Мотивировката все още липсва и е задължителна.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Тази стъпка е задължителна и не може да бъде пропусната.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Посочете причина, поради която тази стъпка се пропуска...",
+        "Geen beschikking gevonden": "Не е намерено решение",
+        "Het audit-pakket kon niet worden geexporteerd.": "Одитният пакет не можа да бъде експортиран.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Все още няма стъпки. Добавете стъпка, за да започнете.",
+        "Reden voor overslaan": "Причина за пропускане",
+        "Selecteer actor type": "Изберете тип участник",
+        "Selecteer een sjabloon": "Изберете шаблон",
+        "Selecteer invoegpositie": "Изберете позиция за вмъкване",
+        "Selecteer type": "Изберете тип",
+        "Selecteer zaaktype": "Изберете zaaktype",
+        "Verplicht": "Задължително"
     }
 }

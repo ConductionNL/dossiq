@@ -1982,6 +1982,24 @@
         "Zaaktype key": "Cheie zaaktype",
         "Zaaktype key is required": "Cheia zaaktype este obligatorie",
         "Zienswijze period (days)": "Perioadă zienswijze (zile)",
-        "Zoom": "Zoom"
+        "Zoom": "Zoom",
+        "Akkoord door": "Aprobat de",
+        "De actie kon niet worden uitgevoerd.": "Acțiunea nu a putut fi efectuată.",
+        "De beschikking is samengesteld als concept.": "Decizia a fost întocmită ca ciornă.",
+        "De beschikking kon niet worden opgesteld.": "Decizia nu a putut fi întocmită.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Destinatarul lipsește încă și este obligatoriu.",
+        "De motivering ontbreekt nog en is verplicht.": "Motivarea lipsește încă și este obligatorie.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Acest pas este obligatoriu și nu poate fi omis.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Indicați un motiv pentru care acest pas este omis...",
+        "Geen beschikking gevonden": "Nicio decizie găsită",
+        "Het audit-pakket kon niet worden geexporteerd.": "Pachetul de audit nu a putut fi exportat.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Niciun pas încă. Adăugați un pas pentru a începe.",
+        "Reden voor overslaan": "Motivul omiterii",
+        "Selecteer actor type": "Selectați tipul de actor",
+        "Selecteer een sjabloon": "Selectați un șablon",
+        "Selecteer invoegpositie": "Selectați poziția de inserare",
+        "Selecteer type": "Selectați tipul",
+        "Selecteer zaaktype": "Selectați tipul de dosar",
+        "Verplicht": "Obligatoriu"
     }
 }

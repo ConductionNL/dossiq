@@ -2014,6 +2014,24 @@
         "Publicatie in behandeling": "Publikasjon under behandling",
         "Nu publiceren": "Publiser nå",
         "No DROP/LVBB endpoint has been configured.": "Det er ikke konfigurert noe DROP/LVBB-endepunkt.",
-        "No decision has been recorded to publish yet.": "Det er ennå ikke registrert noe vedtak å publisere."
+        "No decision has been recorded to publish yet.": "Det er ennå ikke registrert noe vedtak å publisere.",
+        "Akkoord door": "Godkjent av",
+        "De actie kon niet worden uitgevoerd.": "Handlingen kunne ikke utføres.",
+        "De beschikking is samengesteld als concept.": "Vedtaket er satt sammen som utkast.",
+        "De beschikking kon niet worden opgesteld.": "Vedtaket kunne ikke utarbeides.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Mottakeren mangler fortsatt og er påkrevd.",
+        "De motivering ontbreekt nog en is verplicht.": "Begrunnelsen mangler fortsatt og er påkrevd.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Dette trinnet er obligatorisk og kan ikke hoppes over.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Oppgi en årsak til at dette trinnet hoppes over...",
+        "Geen beschikking gevonden": "Ingen vedtak funnet",
+        "Het audit-pakket kon niet worden geexporteerd.": "Revisjonspakken kunne ikke eksporteres.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Ingen trinn ennå. Legg til et trinn for å begynne.",
+        "Reden voor overslaan": "Årsak for overhopping",
+        "Selecteer actor type": "Velg aktørtype",
+        "Selecteer een sjabloon": "Velg en mal",
+        "Selecteer invoegpositie": "Velg innsettingspunkt",
+        "Selecteer type": "Velg type",
+        "Selecteer zaaktype": "Velg sakstype",
+        "Verplicht": "Obligatorisk"
     }
 }
