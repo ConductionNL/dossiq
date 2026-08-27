@@ -3393,7 +3393,9 @@ OC.L10N.register(
         "Enabled, but has no owner — it will not start": "Ingeschakeld, maar zonder eigenaar — hij start niet",
         "Flow": "Flow",
         "Flows": "Flows",
-        "New flow": "Nieuwe flow"
+        "New flow": "Nieuwe flow",
+        "Demo data (optional)": "Demodata (optioneel)",
+        "Load example dossiers, case types and documents so lists, the case timeline and the detail pages show a working product right away. Optional, and safe to run more than once. Skip this on a production install.": "Laad voorbeelddossiers, zaaktypen en documenten, zodat lijsten, de zaaktijdlijn en de detailpagina's meteen een werkend product tonen. Optioneel en veilig om vaker uit te voeren. Sla dit over op een productie-installatie."
     },
     "nplurals=2; plural=(n != 1);"
 )
