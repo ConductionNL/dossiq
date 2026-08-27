@@ -6481,11 +6481,6 @@
                         "description": "Dutch Chamber of Commerce (KvK) number",
                         "title": "KvK Number"
                     },
-                    "contractRef": {
-                        "type": "string",
-                        "description": "Reference to signed contract document (UUID or filename)",
-                        "title": "Contract Ref"
-                    },
                     "status": {
                         "type": "string",
                         "enum": [
@@ -6506,26 +6501,6 @@
                         ],
                         "description": "Service tier — drives quota defaults and feature flags",
                         "title": "Tier"
-                    },
-                    "isolationMode": {
-                        "type": "string",
-                        "enum": [
-                            "schema",
-                            "database"
-                        ],
-                        "default": "schema",
-                        "description": "Physical isolation mode — schema-per-tenant (default) or dedicated database",
-                        "title": "Isolation Mode"
-                    },
-                    "dataResidency": {
-                        "type": "string",
-                        "enum": [
-                            "nl",
-                            "eu"
-                        ],
-                        "default": "nl",
-                        "description": "Data residency region (AVG art. 28)",
-                        "title": "Data Residency"
                     },
                     "createdAt": {
                         "type": "string",
