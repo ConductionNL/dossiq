@@ -83,9 +83,7 @@ import DeelzaakList from './views/cases/DeelzaakList.vue'
 // `CnMapWidget`. No bespoke Leaflet / WMS / WFS stack in dossiq (ADR-022).
 // @spec openspec/specs/case-map-overview/spec.md
 import CasesOnMapView from './views/CasesOnMapView.vue'
-import FlowDetailPage from './views/flows/FlowDetailPage.vue'
 import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
-import FlowsIndex from './views/flows/FlowsIndex.vue'
 import MyWorkView from './views/MyWorkCards.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
@@ -187,23 +185,11 @@ const registry = {
 	// --- Flows (ADR-110 Decision 4). ---
 	// The shared CnFlowIndexPage / CnFlowDetail surfaces over OpenRegister's
 	// native flow store, scoped `app: "dossiq"` so this app sees only its own.
-	// Custom pages rather than `type:index`: a flow lives in the native flow
-	// store, not a register/schema, so the object-backed index cannot address
-	// it. Replaces the `/apps/openregister/#/flows` deep link the settings menu
-	// used to carry — a dossiq flow operates on cases, so the authoring surface
-	// belongs here rather than behind a link to another app's list.
-	// Mirrors openconnector/src/registry.js and openregister/src/manifest.json.
+	// Only the SIDEBAR is an app component now. The list and the canvas are the
+	// shared `flows` / `flow-detail` manifest page types (nextcloud-vue 2.19.0),
+	// so this app no longer carries wrapper copies of them — the three apps that
+	// did each carried the same dead `@rowClick` listener.
 	// @spec openspec/specs/automatic-actions/spec.md
-	FlowsIndex: {
-		kind: 'page',
-		component: FlowsIndex,
-		_note: 'App-scoped flow list on the shared CnIndexPage; source is useFlowStore, not a register/schema.',
-	},
-	FlowDetailPage: {
-		kind: 'page',
-		component: FlowDetailPage,
-		_note: 'Shared CnFlowDetail canvas. Controls live in FlowDetailSidebar via the manifest sidebarComponent so the canvas keeps full width.',
-	},
 	FlowDetailSidebar: {
 		kind: 'page',
 		component: FlowDetailSidebar,
