@@ -58,9 +58,13 @@ const SETTINGS_PAGES: Array<{ name: string; route: string; addBtn: string }> = [
 	// `automaticAction` objects it administered were never executed by anything
 	// — SideEffectDispatcher runs a separate vocabulary — so the page was a
 	// surface over a capability with no runtime. They migrate to OpenRegister
-	// flows via `occ dossiq:actions:migrate-to-flows`, and the settings menu now
-	// deeplinks to /apps/openregister/#/flows, which OpenRegister's own suite
-	// covers.
+	// flows via `occ dossiq:actions:migrate-to-flows`.
+	//
+	// The deep link that replaced it is gone too (ADR-110): flows are authored
+	// in THIS app now, at /flows and /flows/:id, on the shared canvas over the
+	// same single engine. That surface has its own spec — flows.spec.ts — rather
+	// than an entry here, because its create control is a canvas action, not the
+	// "Add X" button every row in this table asserts on.
 	{
 		name: 'Enforcement strategy',
 		route: '/settings/lhs-matrices',

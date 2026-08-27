@@ -15,8 +15,17 @@ move.
 #### Scenario: Procest hosts no processing-activities page
 
 - **GIVEN** the procest manifest
-- **THEN** no `/verwerkingen` page and no processing-activities menu entry exist
+- **THEN** no `/verwerkingen` page and no processing-activities NAVIGATION entry exist
 - **AND** `VerwerkingenOverview.vue` is not registered as a component
+- **AND** the link into OpenRegister's `/avg` surface is a `section: "integrations"` entry, gated on `visibleIf.appInstalled: "openregister"`
+
+> **Clarified 2026-08-26 by ADR-110.** This requirement was already the strictest
+> of the three surface specs — it forbade a menu entry outright where the
+> automatic-actions and ai-oversight specs each mandated one, and ADR-047's
+> migration step prescribed a deep link. That inconsistency is resolved in this
+> spec's favour fleet-wide, and ADR-047 is amended to match. What changes here is
+> only the destination being named: the link survives as an Integrations entry
+> rather than vanishing, which is what keeps ADR-044 Decision 5 satisfied.
 
 #### Scenario: The capability is reachable in OpenRegister
 
