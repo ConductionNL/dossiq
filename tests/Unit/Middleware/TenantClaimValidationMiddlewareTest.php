@@ -44,6 +44,14 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Middleware\TenantClaimValidationMiddleware
+ *
+ * TenantContext is exercised for real rather than mocked: the middleware
+ * compares against getTenantId(), which derives the id from the bound row, so a
+ * mock would let the test agree with itself about a shape the real class does
+ * not produce. phpunit.xml sets beStrictAboutCoverageMetadata + failOnRisky, so
+ * that collaborator has to be declared.
+ *
+ * @uses \OCA\Dossiq\Service\TenantContext
  */
 class TenantClaimValidationMiddlewareTest extends TestCase {
 	/**
