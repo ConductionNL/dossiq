@@ -180,7 +180,10 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 		$register = $this->appConfig->getValueString(Application::APP_ID, 'register', '');
 		$schemaId = $this->appConfig->getValueString(Application::APP_ID, 'subsidie_regeling_schema', '');
 		if ($register === '' || $schemaId === '') {
-			$output->warning('Register or subsidieregeling schema id is not configured — cannot scope the migration, so it is skipped rather than run unscoped.');
+			$output->warning(
+				'Register or subsidieregeling schema id is not configured — '
+				. 'cannot scope the migration, so it is skipped rather than run unscoped.'
+			);
 			return;
 		}
 
@@ -202,7 +205,7 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 		$migrated = 0;
 		$skipped = 0;
 		foreach ($schemes as $scheme) {
-			// findAll() returns ObjectEntity instances, not arrays. Indexing one
+			// The rows are ObjectEntity instances, not arrays. Indexing one
 			// directly fatals with "Cannot use object of type ... as array" —
 			// measured on a live instance, where the whole step then reported a
 			// warning and the upgrade still said Update successful. The rest of
@@ -269,8 +272,40 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 	 * @return void
 	 */
 	private function createCaseTypeFor(array $scheme, string $name, IOutput $output): void {
-		$objectService = $this->settingsService->getObjectService();
+		$register = $this->appConfig->getValueString(Application::APP_ID, 'register', '');
+		$caseTypeSchema = $this->appConfig->getValueString(Application::APP_ID, 'case_type_schema', '');
 
+		$caseTypeId = $this->saveCaseType(
+			payload: $this->buildCaseTypePayload(scheme: $scheme, name: $name),
+			register: $register,
+			schema: $caseTypeSchema
+		);
+
+		if ($caseTypeId === '') {
+			$output->warning(
+				sprintf('Case type for "%s" was created without an id — its properties cannot be linked.', $name)
+			);
+			return;
+		}
+
+		$this->savePropertyDefinitions(
+			scheme: $scheme,
+			caseTypeId: $caseTypeId,
+			name: $name,
+			register: $register,
+			output: $output
+		);
+	}
+
+	/**
+	 * Build the caseType payload from a scheme.
+	 *
+	 * @param array<string, mixed> $scheme The source subsidieRegeling.
+	 * @param string               $name   Its schemeName.
+	 *
+	 * @return array<string, mixed> The caseType payload.
+	 */
+	private function buildCaseTypePayload(array $scheme, string $name): array {
 		$caseType = ['title' => $name];
 		foreach (self::DIRECT_MAP as $from => $to) {
 			if (isset($scheme[$from]) === true && $scheme[$from] !== '') {
@@ -286,24 +321,60 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 			$caseType['processingDeadline'] = sprintf('P%dW', $weeks);
 		}
 
-		$register = $this->appConfig->getValueString(Application::APP_ID, 'register', '');
-		$caseTypeSchema = $this->appConfig->getValueString(Application::APP_ID, 'case_type_schema', '');
-		$propertySchema = $this->appConfig->getValueString(Application::APP_ID, 'property_definition_schema', '');
+		return $caseType;
+	}
 
-		$created = $objectService->saveObject($caseType, [], $register, $caseTypeSchema);
+	/**
+	 * Persist the case type and return its id.
+	 *
+	 * @param array<string, mixed> $payload  The caseType payload.
+	 * @param string               $register Register id.
+	 * @param string               $schema   caseType schema id.
+	 *
+	 * @return string The new id, or '' when it could not be read back.
+	 */
+	private function saveCaseType(array $payload, string $register, string $schema): string {
+		$created = $this->settingsService->getObjectService()->saveObject($payload, [], $register, $schema);
 		if (is_object($created) === true && method_exists($created, 'jsonSerialize') === true) {
 			$created = $created->jsonSerialize();
 		}
 
 		$created = (array) $created;
-		$caseTypeId = (string) ($created['id'] ?? $created['uuid'] ?? '');
-		if ($caseTypeId === '') {
-			$output->warning(sprintf('Case type for "%s" was created without an id — its properties cannot be linked.', $name));
+
+		return (string) ($created['id'] ?? $created['uuid'] ?? '');
+	}
+
+	/**
+	 * Persist one propertyDefinition per grant-specific property.
+	 *
+	 * @param array<string, mixed> $scheme     The source subsidieRegeling.
+	 * @param string               $caseTypeId The case type they belong to.
+	 * @param string               $name       The scheme name, for messages.
+	 * @param string               $register   Register id.
+	 * @param IOutput              $output     Upgrade output.
+	 *
+	 * @return void
+	 */
+	private function savePropertyDefinitions(
+		array $scheme,
+		string $caseTypeId,
+		string $name,
+		string $register,
+		IOutput $output,
+	): void {
+		$propertySchema = $this->appConfig->getValueString(Application::APP_ID, 'property_definition_schema', '');
+		if ($propertySchema === '') {
+			$output->warning(
+				sprintf('propertyDefinition schema id is not configured — "%s" keeps its case type but loses its properties.', $name)
+			);
 			return;
 		}
 
+		$objectService = $this->settingsService->getObjectService();
 		foreach (self::PROPERTY_MAP as $property => $type) {
-			if (isset($scheme[$property]) === false || $scheme[$property] === '' || $scheme[$property] === null) {
+			// `isset()` already excludes null, so a `=== null` test here would
+			// be dead code — phpstan flags it as always-false.
+			if (isset($scheme[$property]) === false || $scheme[$property] === '') {
 				continue;
 			}
 
@@ -316,11 +387,6 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 
 			if ($type === 'enum') {
 				$definition['enumValues'] = self::INTERIM_FREQUENCIES;
-			}
-
-			if ($propertySchema === '') {
-				$output->warning(sprintf('propertyDefinition schema id is not configured — "%s" keeps its case type but loses property "%s".', $name, $property));
-				continue;
 			}
 
 			$objectService->saveObject($definition, [], $register, $propertySchema);
