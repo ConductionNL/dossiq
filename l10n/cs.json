@@ -1982,6 +1982,24 @@
         "Zaaktype key": "Klíč zaaktype",
         "Zaaktype key is required": "Klíč zaaktype je povinný",
         "Zienswijze period (days)": "Lhůta zienswijze (dny)",
-        "Zoom": "Přiblížení"
+        "Zoom": "Přiblížení",
+        "Akkoord door": "Schváleno uživatelem",
+        "De actie kon niet worden uitgevoerd.": "Akci se nepodařilo provést.",
+        "De beschikking is samengesteld als concept.": "Rozhodnutí bylo sestaveno jako koncept.",
+        "De beschikking kon niet worden opgesteld.": "Rozhodnutí se nepodařilo sestavit.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Adresát stále chybí a je povinný.",
+        "De motivering ontbreekt nog en is verplicht.": "Odůvodnění stále chybí a je povinné.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Tento krok je povinný a nelze jej přeskočit.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Uveďte důvod, proč je tento krok přeskočen...",
+        "Geen beschikking gevonden": "Nebylo nalezeno žádné rozhodnutí",
+        "Het audit-pakket kon niet worden geexporteerd.": "Auditní balíček se nepodařilo exportovat.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Zatím žádné kroky. Pro začátek přidejte krok.",
+        "Reden voor overslaan": "Důvod přeskočení",
+        "Selecteer actor type": "Vyberte typ aktéra",
+        "Selecteer een sjabloon": "Vyberte šablonu",
+        "Selecteer invoegpositie": "Vyberte pozici vložení",
+        "Selecteer type": "Vyberte typ",
+        "Selecteer zaaktype": "Vyberte zaaktype",
+        "Verplicht": "Povinné"
     }
 }

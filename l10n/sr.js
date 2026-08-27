@@ -2015,7 +2015,25 @@ OC.L10N.register(
         "{present}/{total} complete": "{present}/{total} завршено",
         "{reached} of {total} milestones reached": "{reached} од {total} прекретница достигнуто",
         "{within}/{total} within SLA": "{within}/{total} у оквиру SLA",
-        "{years} years": "{years} година"
+        "{years} years": "{years} година",
+        "Akkoord door": "Одобрио",
+        "De actie kon niet worden uitgevoerd.": "Радњу није било могуће извршити.",
+        "De beschikking is samengesteld als concept.": "Одлука је састављена као нацрт.",
+        "De beschikking kon niet worden opgesteld.": "Одлуку није било могуће саставити.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Прималац још недостаје и обавезан је.",
+        "De motivering ontbreekt nog en is verplicht.": "Образложење још недостаје и обавезно је.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Овај корак је обавезан и не може се прескочити.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Наведите разлог зашто се овај корак прескаче...",
+        "Geen beschikking gevonden": "Одлука није пронађена",
+        "Het audit-pakket kon niet worden geexporteerd.": "Пакет ревизије није било могуће извести.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Још нема корака. Додајте корак да бисте започели.",
+        "Reden voor overslaan": "Разлог за прескакање",
+        "Selecteer actor type": "Изаберите тип актера",
+        "Selecteer een sjabloon": "Изаберите шаблон",
+        "Selecteer invoegpositie": "Изаберите место уметања",
+        "Selecteer type": "Изаберите тип",
+        "Selecteer zaaktype": "Изаберите тип предмета",
+        "Verplicht": "Обавезно"
     },
     "nplurals=2; plural=(n != 1);"
 )

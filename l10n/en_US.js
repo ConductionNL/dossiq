@@ -675,7 +675,8 @@ OC.L10N.register(
         "The sub-cases will remain accessible as standalone cases after deletion.": "The sub-cases will remain accessible as standalone cases after deletion.",
         "This case has {count} sub-cases. Deleting it will unlink the sub-cases from their parent. Do you want to continue?": "This case has {count} sub-cases. Deleting it will unlink the sub-cases from their parent. Do you want to continue?",
         "Whether burgers are identified via DigiD (portaal/chat), identificatievragen (telefoon), or both.": "Whether burgers are identified via DigiD (portaal/chat), identificatievragen (telefoon), or both.",
-        "{count} deelzaken": "{count} deelzaken"
+        "{count} deelzaken": "{count} deelzaken",
+        "_%n document selected_::_%n documents selected_": ["%n document selected","%n documents selected"]
     },
     "nplurals=2; plural=(n != 1);"
 )

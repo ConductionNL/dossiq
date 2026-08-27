@@ -2015,7 +2015,25 @@ OC.L10N.register(
         "{present}/{total} complete": "{present}/{total} завершана",
         "{reached} of {total} milestones reached": "{reached} з {total} вех дасягнута",
         "{within}/{total} within SLA": "{within}/{total} у межах SLA",
-        "{years} years": "{years} гадоў"
+        "{years} years": "{years} гадоў",
+        "Akkoord door": "Зацверджана кім",
+        "De actie kon niet worden uitgevoerd.": "Дзеянне не ўдалося выканаць.",
+        "De beschikking is samengesteld als concept.": "Рашэнне складзена ў выглядзе чарнавіка.",
+        "De beschikking kon niet worden opgesteld.": "Не ўдалося скласці рашэнне.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Адрасат яшчэ адсутнічае і з'яўляецца абавязковым.",
+        "De motivering ontbreekt nog en is verplicht.": "Абгрунтаванне яшчэ адсутнічае і з'яўляецца абавязковым.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Гэты крок абавязковы і не можа быць прапушчаны.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Укажыце прычыну, чаму гэты крок прапускаецца...",
+        "Geen beschikking gevonden": "Рашэнне не знойдзена",
+        "Het audit-pakket kon niet worden geexporteerd.": "Не ўдалося экспартаваць аўдытарскі пакет.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Яшчэ няма крокаў. Дадайце крок, каб пачаць.",
+        "Reden voor overslaan": "Прычына прапуску",
+        "Selecteer actor type": "Выберыце тып удзельніка",
+        "Selecteer een sjabloon": "Выберыце шаблон",
+        "Selecteer invoegpositie": "Выберыце пазіцыю ўстаўкі",
+        "Selecteer type": "Выберыце тып",
+        "Selecteer zaaktype": "Выберыце тып справы",
+        "Verplicht": "Абавязкова"
     },
     "nplurals=2; plural=(n != 1);"
 )

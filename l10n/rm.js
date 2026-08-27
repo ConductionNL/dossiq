@@ -2015,7 +2015,25 @@ OC.L10N.register(
         "Publicatie in behandeling": "Publicaziun en elavuraziun",
         "Nu publiceren": "Publitgar ussa",
         "No DROP/LVBB endpoint has been configured.": "Nagin endpoint DROP/LVBB n'è configurà.",
-        "No decision has been recorded to publish yet.": "I n'è anc registrada nagina decisiun per publitgar."
+        "No decision has been recorded to publish yet.": "I n'è anc registrada nagina decisiun per publitgar.",
+        "Akkoord door": "Accord da",
+        "De actie kon niet worden uitgevoerd.": "L'acziun n'ha betg pudì vegnir exequida.",
+        "De beschikking is samengesteld als concept.": "La decisiun è vegnida cumponida sco sboz.",
+        "De beschikking kon niet worden opgesteld.": "La decisiun n'ha betg pudì vegnir redigida.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Il destinatari manca anc ed è obligatoric.",
+        "De motivering ontbreekt nog en is verplicht.": "La motivaziun manca anc ed è obligatorica.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Quest pass è obligatoric e na po betg vegnir sursaltà.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Inditgai in motiv pertge che quest pass vegn sursaltà...",
+        "Geen beschikking gevonden": "Nagina decisiun chattada",
+        "Het audit-pakket kon niet worden geexporteerd.": "Il pachet d'audit n'ha betg pudì vegnir exportà.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Anc nagins pass. Agiuntai in pass per cumenzar.",
+        "Reden voor overslaan": "Motiv per il sursaltar",
+        "Selecteer actor type": "Tscherner il tip d'actur",
+        "Selecteer een sjabloon": "Tscherner in model",
+        "Selecteer invoegpositie": "Tscherner la posiziun d'inserziun",
+        "Selecteer type": "Tscherner il tip",
+        "Selecteer zaaktype": "Tscherner il tip da cas",
+        "Verplicht": "Obligatoric"
     },
     "nplurals=2; plural=(n != 1);"
 )

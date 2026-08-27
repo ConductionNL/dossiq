@@ -1983,7 +1983,25 @@ OC.L10N.register(
         "Zaaktype key": "Zaaktype key",
         "Zaaktype key is required": "Zaaktype key ir obligāts",
         "Zienswijze period (days)": "Zienswijze periods (dienas)",
-        "Zoom": "Zoom"
+        "Zoom": "Zoom",
+        "Akkoord door": "Apstiprinājis",
+        "De actie kon niet worden uitgevoerd.": "Darbību nevarēja izpildīt.",
+        "De beschikking is samengesteld als concept.": "Lēmums ir sagatavots kā melnraksts.",
+        "De beschikking kon niet worden opgesteld.": "Lēmumu nevarēja sagatavot.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Adresāts joprojām trūkst un ir obligāts.",
+        "De motivering ontbreekt nog en is verplicht.": "Pamatojums joprojām trūkst un ir obligāts.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Šis solis ir obligāts un to nevar izlaist.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Norādiet iemeslu, kāpēc šis solis tiek izlaists...",
+        "Geen beschikking gevonden": "Lēmums nav atrasts",
+        "Het audit-pakket kon niet worden geexporteerd.": "Audita paketi nevarēja eksportēt.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Vēl nav soļu. Pievienojiet soli, lai sāktu.",
+        "Reden voor overslaan": "Izlaišanas iemesls",
+        "Selecteer actor type": "Atlasiet dalībnieka veidu",
+        "Selecteer een sjabloon": "Atlasiet veidni",
+        "Selecteer invoegpositie": "Atlasiet ievietošanas pozīciju",
+        "Selecteer type": "Atlasiet veidu",
+        "Selecteer zaaktype": "Atlasiet lietas veidu",
+        "Verplicht": "Obligāts"
     },
     "nplurals=2; plural=(n != 1);"
 )

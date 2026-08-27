@@ -2014,7 +2014,25 @@
         "Publicatie in behandeling": "Публікація в обробці",
         "Nu publiceren": "Опублікувати зараз",
         "No DROP/LVBB endpoint has been configured.": "Не налаштовано кінцеву точку DROP/LVBB.",
-        "No decision has been recorded to publish yet.": "Ще не зафіксовано Рішення для публікації."
+        "No decision has been recorded to publish yet.": "Ще не зафіксовано Рішення для публікації.",
+        "Akkoord door": "Погоджено ким",
+        "De actie kon niet worden uitgevoerd.": "Не вдалося виконати дію.",
+        "De beschikking is samengesteld als concept.": "Рішення складено як чернетку.",
+        "De beschikking kon niet worden opgesteld.": "Не вдалося скласти рішення.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Адресата ще не вказано, а це обов'язково.",
+        "De motivering ontbreekt nog en is verplicht.": "Обґрунтування ще не вказано, а це обов'язково.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Цей крок обов'язковий, і його не можна пропустити.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Вкажіть причину, чому цей крок пропускається...",
+        "Geen beschikking gevonden": "Рішення не знайдено",
+        "Het audit-pakket kon niet worden geexporteerd.": "Не вдалося експортувати пакет аудиту.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Ще немає кроків. Додайте крок, щоб розпочати.",
+        "Reden voor overslaan": "Причина пропуску",
+        "Selecteer actor type": "Виберіть тип виконавця",
+        "Selecteer een sjabloon": "Виберіть шаблон",
+        "Selecteer invoegpositie": "Виберіть місце вставлення",
+        "Selecteer type": "Виберіть тип",
+        "Selecteer zaaktype": "Виберіть тип справи",
+        "Verplicht": "Обов'язково"
     },
     "plurals": ""
 }

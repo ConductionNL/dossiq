@@ -1983,7 +1983,25 @@ OC.L10N.register(
         "Zaaktype key": "Ključ zaaktype",
         "Zaaktype key is required": "Ključ zaaktype je obvezen",
         "Zienswijze period (days)": "Obdobje zienswijze (dni)",
-        "Zoom": "Povečava"
+        "Zoom": "Povečava",
+        "Akkoord door": "Odobril",
+        "De actie kon niet worden uitgevoerd.": "Dejanja ni bilo mogoče izvesti.",
+        "De beschikking is samengesteld als concept.": "Odločba je sestavljena kot osnutek.",
+        "De beschikking kon niet worden opgesteld.": "Odločbe ni bilo mogoče sestaviti.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Naslovnik še manjka in je obvezen.",
+        "De motivering ontbreekt nog en is verplicht.": "Obrazložitev še manjka in je obvezna.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Ta korak je obvezen in ga ni mogoče preskočiti.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Navedite razlog, zakaj je ta korak preskočen ...",
+        "Geen beschikking gevonden": "Odločba ni najdena",
+        "Het audit-pakket kon niet worden geexporteerd.": "Revizijskega paketa ni bilo mogoče izvoziti.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Še ni korakov. Za začetek dodajte korak.",
+        "Reden voor overslaan": "Razlog za preskok",
+        "Selecteer actor type": "Izberite vrsto akterja",
+        "Selecteer een sjabloon": "Izberite predlogo",
+        "Selecteer invoegpositie": "Izberite mesto vstavljanja",
+        "Selecteer type": "Izberite vrsto",
+        "Selecteer zaaktype": "Izberite vrsto zadeve",
+        "Verplicht": "Obvezno"
     },
     "nplurals=2; plural=(n != 1);"
 )

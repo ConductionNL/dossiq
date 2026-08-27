@@ -1983,7 +1983,25 @@ OC.L10N.register(
         "Zaaktype key": "Bylos tipo raktas",
         "Zaaktype key is required": "Bylos tipo raktas yra privalomas",
         "Zienswijze period (days)": "Zienswijze laikotarpis (dienos)",
-        "Zoom": "Mastelis"
+        "Zoom": "Mastelis",
+        "Akkoord door": "Patvirtino",
+        "De actie kon niet worden uitgevoerd.": "Nepavyko įvykdyti veiksmo.",
+        "De beschikking is samengesteld als concept.": "Sprendimas parengtas kaip juodraštis.",
+        "De beschikking kon niet worden opgesteld.": "Nepavyko parengti sprendimo.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Adresatas dar nenurodytas ir yra privalomas.",
+        "De motivering ontbreekt nog en is verplicht.": "Motyvavimas dar nenurodytas ir yra privalomas.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Šis veiksmas yra privalomas ir negali būti praleistas.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Nurodykite priežastį, kodėl šis veiksmas praleidžiamas...",
+        "Geen beschikking gevonden": "Sprendimas nerastas",
+        "Het audit-pakket kon niet worden geexporteerd.": "Nepavyko eksportuoti audito paketo.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Dar nėra veiksmų. Pridėkite veiksmą, kad pradėtumėte.",
+        "Reden voor overslaan": "Praleidimo priežastis",
+        "Selecteer actor type": "Pasirinkite veikėjo tipą",
+        "Selecteer een sjabloon": "Pasirinkite šabloną",
+        "Selecteer invoegpositie": "Pasirinkite įterpimo vietą",
+        "Selecteer type": "Pasirinkite tipą",
+        "Selecteer zaaktype": "Pasirinkite bylos tipą",
+        "Verplicht": "Privaloma"
     },
     "nplurals=2; plural=(n != 1);"
 )

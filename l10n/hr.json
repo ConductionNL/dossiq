@@ -1982,6 +1982,24 @@
         "Zaaktype key": "Zaaktype ključ",
         "Zaaktype key is required": "Zaaktype ključ je obavezan",
         "Zienswijze period (days)": "Razdoblje zienswijze (dani)",
-        "Zoom": "Zumiranje"
+        "Zoom": "Zumiranje",
+        "Akkoord door": "Odobrio",
+        "De actie kon niet worden uitgevoerd.": "Radnju nije bilo moguće izvršiti.",
+        "De beschikking is samengesteld als concept.": "Odluka je sastavljena kao nacrt.",
+        "De beschikking kon niet worden opgesteld.": "Odluku nije bilo moguće sastaviti.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Primatelj još nedostaje i obavezan je.",
+        "De motivering ontbreekt nog en is verplicht.": "Obrazloženje još nedostaje i obavezno je.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Ovaj je korak obavezan i ne može se preskočiti.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Navedite razlog zašto se ovaj korak preskače...",
+        "Geen beschikking gevonden": "Nije pronađena odluka",
+        "Het audit-pakket kon niet worden geexporteerd.": "Revizijski paket nije bilo moguće izvesti.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Još nema koraka. Dodajte korak za početak.",
+        "Reden voor overslaan": "Razlog za preskakanje",
+        "Selecteer actor type": "Odaberite vrstu sudionika",
+        "Selecteer een sjabloon": "Odaberite predložak",
+        "Selecteer invoegpositie": "Odaberite mjesto umetanja",
+        "Selecteer type": "Odaberite vrstu",
+        "Selecteer zaaktype": "Odaberite vrstu predmeta",
+        "Verplicht": "Obavezno"
     }
 }

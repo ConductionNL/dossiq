@@ -2019,7 +2019,25 @@ OC.L10N.register(
         "Zoek op onderwerp, afdeling...": "Αναζήτηση κατά θέμα, τμήμα...",
         "Zoeken": "Αναζήτηση",
         "Beschrijving voorwaarde": "Περιγραφή προϋπόθεσης",
-        "Zoom": "Zoom"
+        "Zoom": "Zoom",
+        "Akkoord door": "Εγκρίθηκε από",
+        "De actie kon niet worden uitgevoerd.": "Η ενέργεια δεν ήταν δυνατό να εκτελεστεί.",
+        "De beschikking is samengesteld als concept.": "Η απόφαση συντάχθηκε ως προσχέδιο.",
+        "De beschikking kon niet worden opgesteld.": "Η απόφαση δεν ήταν δυνατό να συνταχθεί.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Ο παραλήπτης λείπει ακόμη και είναι υποχρεωτικός.",
+        "De motivering ontbreekt nog en is verplicht.": "Η αιτιολόγηση λείπει ακόμη και είναι υποχρεωτική.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Αυτό το βήμα είναι υποχρεωτικό και δεν μπορεί να παραλειφθεί.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Δώστε μια αιτιολογία για την παράλειψη αυτού του βήματος...",
+        "Geen beschikking gevonden": "Δεν βρέθηκε απόφαση",
+        "Het audit-pakket kon niet worden geexporteerd.": "Το πακέτο ελέγχου δεν ήταν δυνατό να εξαχθεί.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Δεν υπάρχουν ακόμη βήματα. Προσθέστε ένα βήμα για να ξεκινήσετε.",
+        "Reden voor overslaan": "Αιτιολογία παράλειψης",
+        "Selecteer actor type": "Επιλέξτε τύπο δράστη",
+        "Selecteer een sjabloon": "Επιλέξτε ένα πρότυπο",
+        "Selecteer invoegpositie": "Επιλέξτε σημείο εισαγωγής",
+        "Selecteer type": "Επιλέξτε τύπο",
+        "Selecteer zaaktype": "Επιλέξτε τύπο υπόθεσης",
+        "Verplicht": "Υποχρεωτικό"
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -1982,6 +1982,24 @@
         "Zaaktype key": "Juhtumitüübi võti",
         "Zaaktype key is required": "Juhtumitüübi võti on kohustuslik",
         "Zienswijze period (days)": "Zienswijze periood (päevades)",
-        "Zoom": "Suum"
+        "Zoom": "Suum",
+        "Akkoord door": "Nõustunud",
+        "De actie kon niet worden uitgevoerd.": "Toimingut ei õnnestunud teostada.",
+        "De beschikking is samengesteld als concept.": "Otsus on koostatud mustandina.",
+        "De beschikking kon niet worden opgesteld.": "Otsust ei õnnestunud koostada.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Adressaat on endiselt puudu ja on kohustuslik.",
+        "De motivering ontbreekt nog en is verplicht.": "Põhjendus on endiselt puudu ja on kohustuslik.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "See samm on kohustuslik ja seda ei saa vahele jätta.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Esitage põhjus, miks see samm vahele jäetakse...",
+        "Geen beschikking gevonden": "Otsust ei leitud",
+        "Het audit-pakket kon niet worden geexporteerd.": "Auditipaketti ei õnnestunud eksportida.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Veel ühtegi sammu pole. Alustamiseks lisage samm.",
+        "Reden voor overslaan": "Vahelejätmise põhjus",
+        "Selecteer actor type": "Vali osaleja tüüp",
+        "Selecteer een sjabloon": "Vali mall",
+        "Selecteer invoegpositie": "Vali lisamiskoht",
+        "Selecteer type": "Vali tüüp",
+        "Selecteer zaaktype": "Vali juhtumitüüp",
+        "Verplicht": "Kohustuslik"
     }
 }

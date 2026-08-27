@@ -1982,6 +1982,24 @@
         "Zaaktype key": "Ċavetta taz-zaaktype",
         "Zaaktype key is required": "Iċ-ċavetta taz-zaaktype hija meħtieġa",
         "Zienswijze period (days)": "Perjodu ta' zienswijze (jiem)",
-        "Zoom": "Zoom"
+        "Zoom": "Zoom",
+        "Akkoord door": "Approvat minn",
+        "De actie kon niet worden uitgevoerd.": "L-azzjoni ma setgħetx titwettaq.",
+        "De beschikking is samengesteld als concept.": "Id-deċiżjoni ġiet imfassla bħala abbozz.",
+        "De beschikking kon niet worden opgesteld.": "Id-deċiżjoni ma setgħetx tiġi mfassla.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Id-destinatarju għadu nieqes u huwa obbligatorju.",
+        "De motivering ontbreekt nog en is verplicht.": "Il-motivazzjoni għadha nieqsa u hija obbligatorja.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Dan il-pass huwa obbligatorju u ma jistax jinqabeż.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Agħti raġuni għaliex dan il-pass qed jinqabeż...",
+        "Geen beschikking gevonden": "L-ebda deċiżjoni ma nstabet",
+        "Het audit-pakket kon niet worden geexporteerd.": "Il-pakkett tal-awditjar ma setax jiġi esportat.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Għadhom l-ebda passi. Żid pass biex tibda.",
+        "Reden voor overslaan": "Raġuni għall-qbiż",
+        "Selecteer actor type": "Agħżel it-tip ta' attur",
+        "Selecteer een sjabloon": "Agħżel mudell",
+        "Selecteer invoegpositie": "Agħżel il-pożizzjoni tad-dħul",
+        "Selecteer type": "Agħżel it-tip",
+        "Selecteer zaaktype": "Agħżel it-tip ta' każ",
+        "Verplicht": "Obbligatorju"
     }
 }

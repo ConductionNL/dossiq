@@ -2014,7 +2014,25 @@
         "{present}/{total} complete": "{present}/{total} komplett",
         "{reached} of {total} milestones reached": "{reached} vun {total} Meilesteng erreecht",
         "{within}/{total} within SLA": "{within}/{total} bannent dem SLA",
-        "{years} years": "{years} Joer"
+        "{years} years": "{years} Joer",
+        "Akkoord door": "Akkord vun",
+        "De actie kon niet worden uitgevoerd.": "D'Aktioun konnt net ausgefouert ginn.",
+        "De beschikking is samengesteld als concept.": "D'Decisioun ass als Entworf zesummegestallt ginn.",
+        "De beschikking kon niet worden opgesteld.": "D'Decisioun konnt net erstallt ginn.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Den Adressat feelt nach an ass obligatoresch.",
+        "De motivering ontbreekt nog en is verplicht.": "D'Begrënnung feelt nach an ass obligatoresch.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Dëse Schrëtt ass obligatoresch a kann net iwwersprongen ginn.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Gitt e Grond un, firwat dëse Schrëtt iwwersprongen gëtt...",
+        "Geen beschikking gevonden": "Keng Decisioun fonnt",
+        "Het audit-pakket kon niet worden geexporteerd.": "Den Audit-Pak konnt net exportéiert ginn.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Nach keng Schrëtt. Setzt e Schrëtt derbäi fir unzefänken.",
+        "Reden voor overslaan": "Grond fir d'Iwwersprangen",
+        "Selecteer actor type": "Akteurstyp auswielen",
+        "Selecteer een sjabloon": "Eng Schabloun auswielen",
+        "Selecteer invoegpositie": "Afügepositioun auswielen",
+        "Selecteer type": "Typ auswielen",
+        "Selecteer zaaktype": "Falltyp auswielen",
+        "Verplicht": "Obligatoresch"
     },
     "plurals": ""
 }

@@ -2015,7 +2015,25 @@ OC.L10N.register(
         "{present}/{total} complete": "{present}/{total} complet",
         "{reached} of {total} milestones reached": "{reached} de {total} fites assolides",
         "{within}/{total} within SLA": "{within}/{total} dins de l'SLA",
-        "{years} years": "{years} anys"
+        "{years} years": "{years} anys",
+        "Akkoord door": "Aprovat per",
+        "De actie kon niet worden uitgevoerd.": "No s'ha pogut executar l'acció.",
+        "De beschikking is samengesteld als concept.": "La resolució s'ha redactat com a esborrany.",
+        "De beschikking kon niet worden opgesteld.": "No s'ha pogut redactar la resolució.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "El destinatari encara falta i és obligatori.",
+        "De motivering ontbreekt nog en is verplicht.": "La motivació encara falta i és obligatòria.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Aquest pas és obligatori i no es pot ometre.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Indiqueu un motiu pel qual s'omet aquest pas...",
+        "Geen beschikking gevonden": "No s'ha trobat cap resolució",
+        "Het audit-pakket kon niet worden geexporteerd.": "No s'ha pogut exportar el paquet d'auditoria.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Encara no hi ha passos. Afegiu un pas per començar.",
+        "Reden voor overslaan": "Motiu de l'omissió",
+        "Selecteer actor type": "Seleccioneu el tipus d'actor",
+        "Selecteer een sjabloon": "Seleccioneu una plantilla",
+        "Selecteer invoegpositie": "Seleccioneu el punt d'inserció",
+        "Selecteer type": "Seleccioneu el tipus",
+        "Selecteer zaaktype": "Seleccioneu el tipus d'expedient",
+        "Verplicht": "Obligatori"
     },
     "nplurals=2; plural=(n != 1);"
 )

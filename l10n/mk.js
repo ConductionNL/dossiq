@@ -2015,7 +2015,25 @@ OC.L10N.register(
         "Publicatie in behandeling": "Објавата е во обработка",
         "Nu publiceren": "Објави сега",
         "No DROP/LVBB endpoint has been configured.": "Не е конфигурирана крајна точка за DROP/LVBB.",
-        "No decision has been recorded to publish yet.": "Сè уште нема запишана одлука за објавување."
+        "No decision has been recorded to publish yet.": "Сè уште нема запишана одлука за објавување.",
+        "Akkoord door": "Одобрено од",
+        "De actie kon niet worden uitgevoerd.": "Дејството не можеше да биде извршено.",
+        "De beschikking is samengesteld als concept.": "Одлуката е составена како нацрт.",
+        "De beschikking kon niet worden opgesteld.": "Одлуката не можеше да биде составена.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Адресатот сè уште недостасува и е задолжителен.",
+        "De motivering ontbreekt nog en is verplicht.": "Образложението сè уште недостасува и е задолжително.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Овој чекор е задолжителен и не може да биде прескокнат.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Наведете причина зошто овој чекор се прескокнува...",
+        "Geen beschikking gevonden": "Не е пронајдена одлука",
+        "Het audit-pakket kon niet worden geexporteerd.": "Ревизорскиот пакет не можеше да биде извезен.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Сè уште нема чекори. Додадете чекор за да започнете.",
+        "Reden voor overslaan": "Причина за прескокнување",
+        "Selecteer actor type": "Изберете тип на учесник",
+        "Selecteer een sjabloon": "Изберете шаблон",
+        "Selecteer invoegpositie": "Изберете позиција за вметнување",
+        "Selecteer type": "Изберете тип",
+        "Selecteer zaaktype": "Изберете тип на предмет",
+        "Verplicht": "Задолжително"
     },
     "nplurals=2; plural=(n != 1);"
 )

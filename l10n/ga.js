@@ -2019,7 +2019,25 @@ OC.L10N.register(
         "Deadline van": "Spriocdháta ó",
         "Zoek op onderwerp, afdeling...": "Cuardaigh de réir ábhair, roinne...",
         "Zoeken": "Cuardaigh",
-        "Beschrijving voorwaarde": "Cur síos ar an gcoinníoll"
+        "Beschrijving voorwaarde": "Cur síos ar an gcoinníoll",
+        "Akkoord door": "Faofa ag",
+        "De actie kon niet worden uitgevoerd.": "Níorbh fhéidir an gníomh a chur i bhfeidhm.",
+        "De beschikking is samengesteld als concept.": "Cuireadh an cinneadh le chéile mar dhréacht.",
+        "De beschikking kon niet worden opgesteld.": "Níorbh fhéidir an cinneadh a chur le chéile.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Tá an seolaí fós ar iarraidh agus tá sé riachtanach.",
+        "De motivering ontbreekt nog en is verplicht.": "Tá an réasúnaíocht fós ar iarraidh agus tá sí riachtanach.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Tá an chéim seo riachtanach agus ní féidir í a scipeáil.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Tabhair cúis a scipeáiltear an chéim seo...",
+        "Geen beschikking gevonden": "Níor aimsíodh aon chinneadh",
+        "Het audit-pakket kon niet worden geexporteerd.": "Níorbh fhéidir an pacáiste iniúchta a easpórtáil.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Níl aon chéim ann go fóill. Cuir céim leis chun tosú.",
+        "Reden voor overslaan": "Cúis le scipeáil",
+        "Selecteer actor type": "Roghnaigh cineál aisteora",
+        "Selecteer een sjabloon": "Roghnaigh teimpléad",
+        "Selecteer invoegpositie": "Roghnaigh pointe ionsáite",
+        "Selecteer type": "Roghnaigh cineál",
+        "Selecteer zaaktype": "Roghnaigh cineál cáis",
+        "Verplicht": "Riachtanach"
     },
     "nplurals=2; plural=(n != 1);"
 )

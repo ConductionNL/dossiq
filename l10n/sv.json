@@ -1982,6 +1982,24 @@
         "Zaaktype key": "Zaaktype-nyckel",
         "Zaaktype key is required": "Zaaktype-nyckel krävs",
         "Zienswijze period (days)": "Zienswijze-period (dagar)",
-        "Zoom": "Zooma"
+        "Zoom": "Zooma",
+        "Akkoord door": "Godkänt av",
+        "De actie kon niet worden uitgevoerd.": "Åtgärden kunde inte utföras.",
+        "De beschikking is samengesteld als concept.": "Beslutet har upprättats som utkast.",
+        "De beschikking kon niet worden opgesteld.": "Beslutet kunde inte upprättas.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Adressaten saknas fortfarande och är obligatorisk.",
+        "De motivering ontbreekt nog en is verplicht.": "Motiveringen saknas fortfarande och är obligatorisk.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Detta steg är obligatoriskt och kan inte hoppas över.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Ange en anledning till varför detta steg hoppas över ...",
+        "Geen beschikking gevonden": "Inget beslut hittades",
+        "Het audit-pakket kon niet worden geexporteerd.": "Revisionspaketet kunde inte exporteras.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Inga steg ännu. Lägg till ett steg för att komma igång.",
+        "Reden voor overslaan": "Anledning till överhoppning",
+        "Selecteer actor type": "Välj aktörstyp",
+        "Selecteer een sjabloon": "Välj en mall",
+        "Selecteer invoegpositie": "Välj infogningsposition",
+        "Selecteer type": "Välj typ",
+        "Selecteer zaaktype": "Välj ärendetyp",
+        "Verplicht": "Obligatorisk"
     }
 }

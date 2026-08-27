@@ -2015,7 +2015,25 @@ OC.L10N.register(
         "Publicatie in behandeling": "Публикация в обработке",
         "Nu publiceren": "Опубликовать сейчас",
         "No DROP/LVBB endpoint has been configured.": "Конечная точка DROP/LVBB не настроена.",
-        "No decision has been recorded to publish yet.": "Решение для публикации ещё не зафиксировано."
+        "No decision has been recorded to publish yet.": "Решение для публикации ещё не зафиксировано.",
+        "Akkoord door": "Согласовано кем",
+        "De actie kon niet worden uitgevoerd.": "Не удалось выполнить действие.",
+        "De beschikking is samengesteld als concept.": "Решение составлено как черновик.",
+        "De beschikking kon niet worden opgesteld.": "Не удалось составить решение.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Адресат ещё не указан и является обязательным.",
+        "De motivering ontbreekt nog en is verplicht.": "Обоснование ещё не указано и является обязательным.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Этот шаг является обязательным и не может быть пропущен.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Укажите причину пропуска этого шага...",
+        "Geen beschikking gevonden": "Решение не найдено",
+        "Het audit-pakket kon niet worden geexporteerd.": "Не удалось экспортировать пакет аудита.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Шагов пока нет. Добавьте шаг, чтобы начать.",
+        "Reden voor overslaan": "Причина пропуска",
+        "Selecteer actor type": "Выберите тип участника",
+        "Selecteer een sjabloon": "Выберите шаблон",
+        "Selecteer invoegpositie": "Выберите позицию вставки",
+        "Selecteer type": "Выберите тип",
+        "Selecteer zaaktype": "Выберите тип дела",
+        "Verplicht": "Обязательно"
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -2015,7 +2015,25 @@ OC.L10N.register(
         "{present}/{total} complete": "{present}/{total} tamamlandı",
         "{reached} of {total} milestones reached": "{total} kilometre taşının {reached} tanesine ulaşıldı",
         "{within}/{total} within SLA": "{within}/{total} SLA içinde",
-        "{years} years": "{years} yıl"
+        "{years} years": "{years} yıl",
+        "Akkoord door": "Onaylayan",
+        "De actie kon niet worden uitgevoerd.": "Eylem gerçekleştirilemedi.",
+        "De beschikking is samengesteld als concept.": "Karar taslak olarak oluşturuldu.",
+        "De beschikking kon niet worden opgesteld.": "Karar oluşturulamadı.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Muhatap hâlâ eksik ve zorunludur.",
+        "De motivering ontbreekt nog en is verplicht.": "Gerekçe hâlâ eksik ve zorunludur.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Bu adım zorunludur ve atlanamaz.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Bu adımın neden atlandığına dair bir neden belirtin...",
+        "Geen beschikking gevonden": "Karar bulunamadı",
+        "Het audit-pakket kon niet worden geexporteerd.": "Denetim paketi dışa aktarılamadı.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Henüz adım yok. Başlamak için bir adım ekleyin.",
+        "Reden voor overslaan": "Atlama nedeni",
+        "Selecteer actor type": "Aktör türü seçin",
+        "Selecteer een sjabloon": "Bir şablon seçin",
+        "Selecteer invoegpositie": "Ekleme noktası seçin",
+        "Selecteer type": "Tür seçin",
+        "Selecteer zaaktype": "Dava türü seçin",
+        "Verplicht": "Zorunlu"
     },
     "nplurals=2; plural=(n != 1);"
 )

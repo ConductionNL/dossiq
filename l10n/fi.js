@@ -1983,7 +1983,25 @@ OC.L10N.register(
         "Zaaktype key": "Zaaktype-avain",
         "Zaaktype key is required": "Zaaktype-avain on pakollinen",
         "Zienswijze period (days)": "Zienswijze-jakso (päivää)",
-        "Zoom": "Zoom"
+        "Zoom": "Zoom",
+        "Akkoord door": "Hyväksynyt",
+        "De actie kon niet worden uitgevoerd.": "Toimintoa ei voitu suorittaa.",
+        "De beschikking is samengesteld als concept.": "Päätös on laadittu luonnoksena.",
+        "De beschikking kon niet worden opgesteld.": "Päätöstä ei voitu laatia.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Vastaanottaja puuttuu vielä ja on pakollinen.",
+        "De motivering ontbreekt nog en is verplicht.": "Perustelu puuttuu vielä ja on pakollinen.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Tämä vaihe on pakollinen, eikä sitä voida ohittaa.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Antakaa syy tämän vaiheen ohittamiselle...",
+        "Geen beschikking gevonden": "Päätöstä ei löytynyt",
+        "Het audit-pakket kon niet worden geexporteerd.": "Auditointipakettia ei voitu viedä.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Ei vielä vaiheita. Lisää vaihe aloittaaksesi.",
+        "Reden voor overslaan": "Syy ohittamiselle",
+        "Selecteer actor type": "Valitse toimijan tyyppi",
+        "Selecteer een sjabloon": "Valitse malli",
+        "Selecteer invoegpositie": "Valitse lisäyskohta",
+        "Selecteer type": "Valitse tyyppi",
+        "Selecteer zaaktype": "Valitse asiatyyppi",
+        "Verplicht": "Pakollinen"
     },
     "nplurals=2; plural=(n != 1);"
 )

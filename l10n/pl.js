@@ -1983,7 +1983,25 @@ OC.L10N.register(
         "Zaaktype key": "Klucz zaaktype",
         "Zaaktype key is required": "Klucz zaaktype jest wymagany",
         "Zienswijze period (days)": "Okres zienswijze (dni)",
-        "Zoom": "Zoom"
+        "Zoom": "Zoom",
+        "Akkoord door": "Zatwierdzone przez",
+        "De actie kon niet worden uitgevoerd.": "Nie można było wykonać działania.",
+        "De beschikking is samengesteld als concept.": "Decyzja została sporządzona jako wersja robocza.",
+        "De beschikking kon niet worden opgesteld.": "Nie można było sporządzić decyzji.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Adresat nadal jest pominięty i jest wymagany.",
+        "De motivering ontbreekt nog en is verplicht.": "Uzasadnienie nadal jest pominięte i jest wymagane.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Ten krok jest obowiązkowy i nie można go pominąć.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Proszę podać powód pominięcia tego kroku...",
+        "Geen beschikking gevonden": "Nie znaleziono decyzji",
+        "Het audit-pakket kon niet worden geexporteerd.": "Nie można było wyeksportować pakietu audytowego.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Brak kroków. Aby rozpocząć, dodaj krok.",
+        "Reden voor overslaan": "Powód pominięcia",
+        "Selecteer actor type": "Wybierz typ podmiotu",
+        "Selecteer een sjabloon": "Wybierz szablon",
+        "Selecteer invoegpositie": "Wybierz pozycję wstawienia",
+        "Selecteer type": "Wybierz typ",
+        "Selecteer zaaktype": "Wybierz typ sprawy",
+        "Verplicht": "Obowiązkowe"
     },
     "nplurals=2; plural=(n != 1);"
 )
