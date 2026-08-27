@@ -127,7 +127,7 @@
 						"task": "Open Case types in the menu",
 						"target": {
 							"kind": "nav-item",
-							"ref": "CaseTypesMenu"
+							"ref": "CaseTypes"
 						},
 						"advanceOn": {
 							"type": "route-match",
@@ -145,7 +145,7 @@
 						"task": "Open Flows in the menu",
 						"target": {
 							"kind": "nav-item",
-							"ref": "FlowsMenu"
+							"ref": "Flows"
 						},
 						"advanceOn": {
 							"type": "route-match",
