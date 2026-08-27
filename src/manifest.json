@@ -123,7 +123,7 @@
 						"optional": true,
 						"allowManualNext": true,
 						"title": "Where case types come from",
-						"body": "Every case follows a case type — its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look; you do not need to make one, 88 ship with the app.",
+						"body": "Every case follows a case type, its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look; you do not need to make one, 88 ship with the app.",
 						"task": "Open Case types in the menu",
 						"target": {
 							"kind": "nav-item",
@@ -141,7 +141,7 @@
 						"optional": true,
 						"allowManualNext": true,
 						"title": "Where the automation lives",
-						"body": "Flows are what happens without anyone clicking: a deadline that warns before it passes, a confirmation that goes out on submission. This is where you read and edit them — nothing to build now.",
+						"body": "Flows are what happens without anyone clicking: a deadline that warns before it passes, a confirmation that goes out on submission. This is where you read and edit them. Nothing to build now.",
 						"task": "Open Flows in the menu",
 						"target": {
 							"kind": "nav-item",
