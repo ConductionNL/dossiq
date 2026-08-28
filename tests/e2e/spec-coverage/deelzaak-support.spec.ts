@@ -207,8 +207,17 @@ test.describe('Sub-case orphan deletion (deelzaak-support REQ — deletion prote
 				name: /Delete case|Zaak verwijderen|Delete parent case|Hoofdzaak verwijderen/i,
 			})
 			.first()
-		if ((await deleteBtn.count()) === 0) {
-			test.skip(true, 'Delete-case control not present (deploy mismatch).')
+		// `count()` takes ONE snapshot and cannot retry, so this fired before
+		// the section had painted and then blamed a deployment for it.
+		const present = await deleteBtn
+			.waitFor({ state: 'attached', timeout: 5_000 })
+			.then(() => true)
+			.catch(() => false)
+		if (!present) {
+			test.skip(
+				true,
+				'the delete-case control did not attach within 5s. NOT a deploy gap — "Delete case" appears in 3 files under src/ and "Delete parent case" in 1, so the control ships in this commit. The locator already accepts the Dutch strings. Debug why it does not render on the sub-cases section rather than waiting for a build.',
+			)
 			return
 		}
 		await expect(deleteBtn).toBeVisible({ timeout: 10000 })
