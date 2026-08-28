@@ -40,7 +40,9 @@ const INCOMPLETE_CASE = 'Schuur Molenweg 3'
  * nobody has set up.
  */
 async function shippedFlow(page: Page): Promise<Record<string, unknown> | null> {
-	const response = await page.request.get('/index.php/apps/openregister/api/flows?limit=200')
+	const response = await page.request.get(
+		'/index.php/apps/openregister/api/flows?limit=200',
+	)
 	if (!response.ok()) {
 		return null
 	}
@@ -48,7 +50,9 @@ async function shippedFlow(page: Page): Promise<Record<string, unknown> | null> 
 	const body = await response.json()
 	const flows = (body?.results ?? body ?? []) as Array<Record<string, unknown>>
 
-	return flows.find((flow) => String(flow.name ?? '') === 'Case behandeling') ?? null
+	return (
+		flows.find((flow) => String(flow.name ?? '') === 'Case behandeling') ?? null
+	)
 }
 
 test.describe('Case flow — human steps', () => {
@@ -58,17 +62,25 @@ test.describe('Case flow — human steps', () => {
 		expect(
 			flow,
 			'The case flow was not found in the flow store. It is declared as '
-			+ 'x-openregister-flows on the case schema, so its absence means the register '
-			+ 'import did not run or the declaration was rejected.',
+				+ 'x-openregister-flows on the case schema, so its absence means the register '
+				+ 'import did not run or the declaration was rejected.',
 		).not.toBeNull()
 
 		// Shipping a flow is not an operator volunteering to run it as
 		// themselves. It must arrive disabled and unowned.
-		expect(flow?.enabled, 'A shipped flow must arrive disabled until somebody adopts it.').toBeFalsy()
-		expect(flow?.owner ?? null, 'A shipped flow must arrive with no owner.').toBeFalsy()
+		expect(
+			flow?.enabled,
+			'A shipped flow must arrive disabled until somebody adopts it.',
+		).toBeFalsy()
+		expect(
+			flow?.owner ?? null,
+			'A shipped flow must arrive with no owner.',
+		).toBeFalsy()
 	})
 
-	test('the flow carries every step the case needs, and a way out of the loop', async ({ page }) => {
+	test('the flow carries every step the case needs, and a way out of the loop', async ({
+		page,
+	}) => {
 		const flow = await shippedFlow(page)
 		test.skip(flow === null, 'flow not imported — covered by the test above')
 
@@ -78,18 +90,26 @@ test.describe('Case flow — human steps', () => {
 		const types = nodes.map((n) => String(n.type ?? ''))
 
 		// The human steps are the point of the change.
-		expect(types.filter((t) => t === 'dossiq.askPerson').length).toBeGreaterThanOrEqual(2)
+		expect(
+			types.filter((t) => t === 'dossiq.askPerson').length,
+		).toBeGreaterThanOrEqual(2)
 		expect(types.filter((t) => t === 'dossiq.requestDecision').length).toBe(3)
 
 		// Status is moved by its own steps, so the applicant's view is driven by
 		// the flow rather than by a side effect of something else.
-		expect(types.filter((t) => t === 'dossiq.setStatus').length).toBeGreaterThanOrEqual(5)
+		expect(
+			types.filter((t) => t === 'dossiq.setStatus').length,
+		).toBeGreaterThanOrEqual(5)
 
 		// Exactly one unconditional exit from the completeness check: the
 		// declared way out. Without it an unanswered case runs until the
 		// engine's ceiling and is reported as a broken flow.
-		const fromCheck = edges.filter((e) => String(e.from ?? '') === 'check-complete')
-		const unconditional = fromCheck.filter((e) => e.condition === undefined || e.condition === null)
+		const fromCheck = edges.filter(
+			(e) => String(e.from ?? '') === 'check-complete',
+		)
+		const unconditional = fromCheck.filter(
+			(e) => e.condition === undefined || e.condition === null,
+		)
 		expect(unconditional).toHaveLength(1)
 		expect(String(unconditional[0].to)).toBe('status-gestrand')
 	})
@@ -104,11 +124,13 @@ test.describe('Case flow — human steps', () => {
 		await expect(
 			body,
 			`The seeded case type "${CASE_TYPE}" is missing, so every status the flow `
-			+ 'names would fail to resolve and the case would never move.',
+				+ 'names would fail to resolve and the case would never move.',
 		).toContainText(CASE_TYPE, { timeout: 15000 })
 	})
 
-	test('an incomplete case is asked for more, and says so to the applicant', async ({ page }) => {
+	test('an incomplete case is asked for more, and says so to the applicant', async ({
+		page,
+	}) => {
 		await page.goto('/index.php/apps/dossiq/cases')
 
 		const body = page.locator('body')
@@ -116,7 +138,7 @@ test.describe('Case flow — human steps', () => {
 		await expect(
 			body,
 			`The seeded case "${INCOMPLETE_CASE}" is missing — it is the one that exercises `
-			+ 'the applicant loop, so without it this journey proves nothing.',
+				+ 'the applicant loop, so without it this journey proves nothing.',
 		).toContainText(INCOMPLETE_CASE, { timeout: 15000 })
 
 		await page.getByText(INCOMPLETE_CASE).first().click()
@@ -124,9 +146,10 @@ test.describe('Case flow — human steps', () => {
 		// What the applicant reads. Either it is still at intake, or the flow
 		// has already asked them for more — both are correct depending on
 		// whether the run has been advanced, and neither is an internal detail.
-		await expect(
-			page.locator('body'),
-		).toContainText(/Ontvangen|Wacht op aanvulling/, { timeout: 15000 })
+		await expect(page.locator('body')).toContainText(
+			/Ontvangen|Wacht op aanvulling/,
+			{ timeout: 15000 },
+		)
 	})
 
 	test('a complete case is not asked for anything', async ({ page }) => {
@@ -144,16 +167,23 @@ test.describe('Case flow — human steps', () => {
 		await expect(page.locator('body')).not.toContainText('Wacht op aanvulling')
 	})
 
-	test('a run reports the objects it touched, grouped by node', async ({ page }) => {
+	test('a run reports the objects it touched, grouped by node', async ({
+		page,
+	}) => {
 		// The traceability half. Asserted through the API because it is an API:
 		// the panel that renders it lives in nextcloud-vue and is covered there.
-		const runs = await page.request.get('/index.php/apps/openregister/api/flow-runs?limit=25')
+		const runs = await page.request.get(
+			'/index.php/apps/openregister/api/flow-runs?limit=25',
+		)
 		expect(runs.ok(), 'The flow-runs surface must answer.').toBeTruthy()
 
 		const body = await runs.json()
 		const results = (body?.results ?? []) as Array<Record<string, unknown>>
 
-		test.skip(results.length === 0, 'no runs on this instance yet — nothing to attribute')
+		test.skip(
+			results.length === 0,
+			'no runs on this instance yet — nothing to attribute',
+		)
 
 		const uuid = String(results[0].uuid ?? '')
 		expect(uuid).not.toBe('')
@@ -175,7 +205,9 @@ test.describe('Case flow — human steps', () => {
 		expect(Array.isArray(payload.nodes)).toBeTruthy()
 	})
 
-	test('the objects endpoint does not answer for a run that does not exist', async ({ page }) => {
+	test('the objects endpoint does not answer for a run that does not exist', async ({
+		page,
+	}) => {
 		// The refusal must not distinguish "no such run" from "not yours", or
 		// the endpoint becomes a probe for which runs exist.
 		const response = await page.request.get(

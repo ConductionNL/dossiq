@@ -342,6 +342,10 @@ if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowRunContext') === false
 	include_once __DIR__ . '/Stubs/Service/Flow/FlowRunContext.php';
 }
 
+if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowResumeState') === false) {
+	include_once __DIR__ . '/Stubs/Service/Flow/FlowResumeState.php';
+}
+
 // bag-location-save-validation: pre-persist OpenRegister event stubs —
 // loaded when the openregister runtime is absent so
 // LocationBagValidationListenerTest can exercise handle() against real

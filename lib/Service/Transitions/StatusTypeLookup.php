@@ -130,12 +130,21 @@ class StatusTypeLookup {
 
 		$resolved = [];
 		foreach ($statuses as $entry) {
-			$id = (string)$entry;
+			// An entry is either an embedded object or a bare uuid. Casting
+			// FIRST and correcting afterwards raised "Array to string
+			// conversion" on every embedded entry — a warning, so it neither
+			// failed nor changed the result, which is exactly why it survived
+			// until a test looked.
+			$id = '';
 			$name = '';
 
 			if (is_array($entry) === true) {
 				$id = (string)($entry['id'] ?? ($entry['uuid'] ?? ''));
 				$name = (string)($entry['name'] ?? ($entry['title'] ?? ''));
+			}
+
+			if (is_array($entry) === false) {
+				$id = (string)$entry;
 			}
 
 			if ($id === '') {
