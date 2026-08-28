@@ -326,6 +326,22 @@ if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowRunAssignee') === fals
 	include_once __DIR__ . '/Stubs/Service/Flow/FlowRunAssignee.php';
 }
 
+// The suspend/resume vocabulary the two waiting nodes use. FlowSuspension must
+// extend RuntimeException here as it does in the real app: a node suspends by
+// THROWING it, so a stub that did not would make `@throws` tags analyse as
+// not-a-Throwable and any catch in a test meaningless.
+if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowSuspension') === false) {
+	include_once __DIR__ . '/Stubs/Service/Flow/FlowSuspension.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowNodeResumeState') === false) {
+	include_once __DIR__ . '/Stubs/Service/Flow/FlowNodeResumeState.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowRunContext') === false) {
+	include_once __DIR__ . '/Stubs/Service/Flow/FlowRunContext.php';
+}
+
 // bag-location-save-validation: pre-persist OpenRegister event stubs —
 // loaded when the openregister runtime is absent so
 // LocationBagValidationListenerTest can exercise handle() against real

@@ -111,30 +111,12 @@ class TaskCompletionResumeListener implements IEventListener {
 			return;
 		}
 
-		try {
-			$new = $event->getNewObject()->getObject();
-			$old = $event->getOldObject()?->getObject();
-		} catch (Throwable $e) {
+		$task = $this->completedFlowTask(event: $event);
+		if ($task === null) {
 			return;
 		}
 
-		if (is_array($new) === false) {
-			return;
-		}
-
-		$runUuid = trim((string)($new['flowRun'] ?? ''));
-		$nodeId = trim((string)($new['flowNode'] ?? ''));
-
-		// Not a flow task. Completing it is a perfectly ordinary thing to do
-		// and resumes nothing — the overwhelmingly common case, and not an
-		// error.
-		if ($runUuid === '' || $nodeId === '') {
-			return;
-		}
-
-		if ($this->justCompleted(new: $new, old: $old) === false) {
-			return;
-		}
+		$runUuid = (string)$task['flowRun'];
 
 		try {
 			$run = $this->runs->findByUuid($runUuid);
@@ -144,7 +126,7 @@ class TaskCompletionResumeListener implements IEventListener {
 			// the person completing it did nothing wrong.
 			$this->logger->info(
 				'Dossiq: a completed task named flow run ' . $runUuid . ', which no longer exists',
-				['task' => ($new['id'] ?? null)]
+				['task' => ($task['id'] ?? null)]
 			);
 			return;
 		}
@@ -158,7 +140,7 @@ class TaskCompletionResumeListener implements IEventListener {
 			$this->logger->warning(
 				'Dossiq: refusing to resume flow run ' . $runUuid
 					. ' — the user who completed the task is not the assignee of the awaiting step',
-				['task' => ($new['id'] ?? null), 'user' => $uid, 'node' => $nodeId]
+				['task' => ($task['id'] ?? null), 'user' => $uid, 'node' => $task['flowNode']]
 			);
 			return;
 		}
@@ -171,18 +153,58 @@ class TaskCompletionResumeListener implements IEventListener {
 					// the awaiting node suspends again. Saying `completed`
 					// explicitly is what makes this an answer.
 					'decision' => 'completed',
-					'node' => $nodeId,
-					'taskId' => (string)($new['id'] ?? ''),
+					'node' => (string)$task['flowNode'],
+					'taskId' => (string)($task['id'] ?? ''),
 					'completedBy' => (string)$uid,
 				]
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: could not resume flow run ' . $runUuid . ' after its task was completed',
-				['error' => $e->getMessage(), 'task' => ($new['id'] ?? null)]
+				['error' => $e->getMessage(), 'task' => ($task['id'] ?? null)]
 			);
 		}
 	}//end handle()
+
+	/**
+	 * The task this event just completed, when it is one a flow is waiting on.
+	 *
+	 * Returns null for everything else — an update to a non-task object, a task
+	 * belonging to no run, an unrelated field change, or a re-save of a task
+	 * that was already completed. Each of those is an ordinary thing to do and
+	 * must resume nothing.
+	 *
+	 * @param ObjectUpdatedEvent $event The update.
+	 *
+	 * @return array|null The task, or null when nothing should be resumed.
+	 *
+	 * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+	 */
+	private function completedFlowTask(ObjectUpdatedEvent $event): ?array {
+		try {
+			$new = $event->getNewObject()->getObject();
+			$old = $event->getOldObject()?->getObject();
+		} catch (Throwable $e) {
+			return null;
+		}
+
+		if (is_array($new) === false) {
+			return null;
+		}
+
+		// Both are required. A task naming a run but no node cannot say WHICH
+		// of that run's awaiting nodes it answers, so it resumes nothing rather
+		// than guessing.
+		if (trim((string)($new['flowRun'] ?? '')) === '' || trim((string)($new['flowNode'] ?? '')) === '') {
+			return null;
+		}
+
+		if ($this->justCompleted(new: $new, old: $old) === false) {
+			return null;
+		}
+
+		return $new;
+	}//end completedFlowTask()
 
 	/**
 	 * Whether this update is the moment the task became completed.

@@ -80,6 +80,8 @@ class DossiqRequestDecisionNode implements IFlowNode {
      * @param LoggerInterface                   $logger     The logger.
      *
      * @return void
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
      */
     public function __construct(
         private readonly ContractDecisionDelegationService $delegation,
@@ -94,6 +96,8 @@ class DossiqRequestDecisionNode implements IFlowNode {
      * This node's catalogue id.
      *
      * @return string The namespaced node id.
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
      */
     public function getId(): string {
         return 'dossiq.requestDecision';
@@ -105,6 +109,8 @@ class DossiqRequestDecisionNode implements IFlowNode {
      * The node's display name.
      *
      * @return string The translated name.
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
      */
     public function getDisplayName(): string {
         return $this->l10n->t('Request a decision');
@@ -116,6 +122,8 @@ class DossiqRequestDecisionNode implements IFlowNode {
      * What the node does.
      *
      * @return string The translated description.
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
      */
     public function getDescription(): string {
         return $this->l10n->t('Ask Decidiq to decide, and pause the case until it has.');
@@ -127,6 +135,8 @@ class DossiqRequestDecisionNode implements IFlowNode {
      * The node's icon.
      *
      * @return string The icon name.
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
      */
     public function getIcon(): string {
         return 'gavel';
@@ -140,6 +150,8 @@ class DossiqRequestDecisionNode implements IFlowNode {
      * @param integer $scope The Nextcloud workflow scope.
      *
      * @return boolean True when available in this scope.
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
      */
     public function isAvailableForScope(int $scope): bool {
         return in_array($scope, [IManager::SCOPE_ADMIN, IManager::SCOPE_USER], true);
@@ -155,6 +167,8 @@ class DossiqRequestDecisionNode implements IFlowNode {
      * @return void
      *
      * @throws UnexpectedValueException When the question is missing.
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
      */
     public function validateConfig(array $config): void {
         if (trim((string) ($config['question'] ?? '')) === '') {
@@ -176,6 +190,8 @@ class DossiqRequestDecisionNode implements IFlowNode {
      * @return array The items, each carrying the outcome.
      *
      * @throws FlowSuspension While the decision is outstanding.
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
      */
     public function execute(array $items, array $config, array $context): array {
         $this->validateConfig(config: $config);

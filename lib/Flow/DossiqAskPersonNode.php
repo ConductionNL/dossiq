@@ -82,6 +82,8 @@ class DossiqAskPersonNode implements IFlowNode {
      * @param LoggerInterface $logger          The logger.
      *
      * @return void
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
      */
     public function __construct(
         private readonly SettingsService $settingsService,
@@ -96,6 +98,8 @@ class DossiqAskPersonNode implements IFlowNode {
      * This node's catalogue id.
      *
      * @return string The namespaced node id.
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
      */
     public function getId(): string {
         return 'dossiq.askPerson';
@@ -107,6 +111,8 @@ class DossiqAskPersonNode implements IFlowNode {
      * The node's display name.
      *
      * @return string The translated name.
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
      */
     public function getDisplayName(): string {
         return $this->l10n->t('Ask a person');
@@ -118,6 +124,8 @@ class DossiqAskPersonNode implements IFlowNode {
      * What the node does.
      *
      * @return string The translated description.
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
      */
     public function getDescription(): string {
         return $this->l10n->t('Create a task for somebody and pause the case until they complete it.');
@@ -129,6 +137,8 @@ class DossiqAskPersonNode implements IFlowNode {
      * The node's icon.
      *
      * @return string The icon name.
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
      */
     public function getIcon(): string {
         return 'account-question';
@@ -142,6 +152,8 @@ class DossiqAskPersonNode implements IFlowNode {
      * @param integer $scope The Nextcloud workflow scope.
      *
      * @return boolean True when available in this scope.
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
      */
     public function isAvailableForScope(int $scope): bool {
         return in_array($scope, [IManager::SCOPE_ADMIN, IManager::SCOPE_USER], true);
@@ -157,6 +169,8 @@ class DossiqAskPersonNode implements IFlowNode {
      * @return void
      *
      * @throws UnexpectedValueException When the question or the assignee is missing.
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
      */
     public function validateConfig(array $config): void {
         if (trim((string) ($config['question'] ?? '')) === '') {
@@ -188,6 +202,8 @@ class DossiqAskPersonNode implements IFlowNode {
      * @return array The items, each carrying the answer.
      *
      * @throws FlowSuspension While the task is outstanding.
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
      */
     public function execute(array $items, array $config, array $context): array {
         $this->validateConfig(config: $config);
@@ -252,59 +268,10 @@ class DossiqAskPersonNode implements IFlowNode {
             return;
         }
 
-        $case   = [];
-        $first  = ($items[0] ?? null);
-        if (is_array($first) === true) {
-            $case = (array) ($first['json'] ?? []);
-        }
-
-        $caseId = (string) ($case['id'] ?? ($case['uuid'] ?? ''));
-        if ($caseId === '') {
-            throw new RuntimeException('dossiq.askPerson had no case to attach a task to');
-        }
-
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('storage_unavailable');
-        }
-
-        $register   = $this->settingsService->getConfigValue(key: 'register');
-        $taskSchema = $this->settingsService->getConfigValue(key: 'task_schema');
-        if ($register === '' || $taskSchema === '') {
-            throw new RuntimeException('task_schema_not_configured');
-        }
-
-        $task = [
-            'title'       => trim((string) ($config['question'] ?? '')),
-            'description' => trim((string) ($config['details'] ?? '')),
-            'case'        => $caseId,
-            'status'      => 'available',
-            'assignee'    => trim((string) ($config['assignee'] ?? '')),
-            // The two fields that make this task an answer to a specific
-            // question rather than a loose to-do. Both are required to resume:
-            // the run alone cannot say which of its awaiting nodes this is for.
-            'flowRun'     => (string) ($context[FlowRunContext::CONTEXT_RUN] ?? ''),
-            'flowNode'    => $resume->nodeId(),
-        ];
-
-        $due = trim((string) ($config['dueInDays'] ?? ''));
-        if ($due !== '' && ctype_digit($due) === true) {
-            $task['dueDate'] = (new DateTime())->modify('+' . $due . ' days')->format('c');
-        }
-
-        $created = $objectService->saveObject(object: $task, register: $register, schema: $taskSchema);
-
-        $taskId = '';
-        if (is_array($created) === true) {
-            $taskId = (string) ($created['id'] ?? ($created['uuid'] ?? ''));
-        }
-
-        if ($taskId === '') {
-            // A task that was written but cannot be identified is worse than
-            // none: the slot would stay empty, so the next heartbeat writes
-            // another, and the run accumulates duplicates nobody asked for.
-            throw new RuntimeException('dossiq.askPerson could not identify the task it created');
-        }
+        $caseId = $this->caseIdFrom(items: $items);
+        $taskId = $this->persistTask(
+            task: $this->buildTask(caseId: $caseId, config: $config, context: $context, resume: $resume)
+        );
 
         $resume->merge(
             values: [
@@ -323,6 +290,113 @@ class DossiqAskPersonNode implements IFlowNode {
         );
 
     }//end ensureTask()
+
+
+    /**
+     * The case the items carry.
+     *
+     * @param array $items The input items; the first carries the case.
+     *
+     * @return string The case id.
+     *
+     * @throws RuntimeException When there is no case to attach a task to.
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     */
+    private function caseIdFrom(array $items): string {
+        $case  = [];
+        $first = ($items[0] ?? null);
+        if (is_array($first) === true) {
+            $case = (array) ($first['json'] ?? []);
+        }
+
+        $caseId = (string) ($case['id'] ?? ($case['uuid'] ?? ''));
+        if ($caseId === '') {
+            throw new RuntimeException('dossiq.askPerson had no case to attach a task to');
+        }
+
+        return $caseId;
+
+    }//end caseIdFrom()
+
+
+    /**
+     * The task record this step asks somebody to complete.
+     *
+     * @param string              $caseId  The case the task belongs to.
+     * @param array               $config  The step configuration.
+     * @param array               $context Run-level metadata.
+     * @param FlowNodeResumeState $resume  This node's resume slot, which knows its id.
+     *
+     * @return array The task to persist.
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     */
+    private function buildTask(string $caseId, array $config, array $context, FlowNodeResumeState $resume): array {
+        $task = [
+            'title'       => trim((string) ($config['question'] ?? '')),
+            'description' => trim((string) ($config['details'] ?? '')),
+            'case'        => $caseId,
+            'status'      => 'available',
+            'assignee'    => trim((string) ($config['assignee'] ?? '')),
+            // The two fields that make this task an answer to a specific
+            // question rather than a loose to-do. Both are required to resume:
+            // the run alone cannot say which of its awaiting nodes this is for.
+            'flowRun'     => (string) ($context[FlowRunContext::CONTEXT_RUN] ?? ''),
+            'flowNode'    => $resume->nodeId(),
+        ];
+
+        $due = trim((string) ($config['dueInDays'] ?? ''));
+        if ($due !== '' && ctype_digit($due) === true) {
+            $task['dueDate'] = (new DateTime())->modify('+' . $due . ' days')->format('c');
+        }
+
+        return $task;
+
+    }//end buildTask()
+
+
+    /**
+     * Write the task and return the id the run must remember.
+     *
+     * @param array $task The task to persist.
+     *
+     * @return string The created task's id.
+     *
+     * @throws RuntimeException When storage is unavailable, unconfigured, or the
+     *                          written task cannot be identified.
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     */
+    private function persistTask(array $task): string {
+        $objectService = $this->settingsService->getObjectService();
+        if ($objectService === null) {
+            throw new RuntimeException('storage_unavailable');
+        }
+
+        $register   = $this->settingsService->getConfigValue(key: 'register');
+        $taskSchema = $this->settingsService->getConfigValue(key: 'task_schema');
+        if ($register === '' || $taskSchema === '') {
+            throw new RuntimeException('task_schema_not_configured');
+        }
+
+        $created = $objectService->saveObject(object: $task, register: $register, schema: $taskSchema);
+
+        $taskId = '';
+        if (is_array($created) === true) {
+            $taskId = (string) ($created['id'] ?? ($created['uuid'] ?? ''));
+        }
+
+        if ($taskId === '') {
+            // A task that was written but cannot be identified is worse than
+            // none: the slot would stay empty, so the next heartbeat writes
+            // another, and the run accumulates duplicates nobody asked for.
+            throw new RuntimeException('dossiq.askPerson could not identify the task it created');
+        }
+
+        return $taskId;
+
+    }//end persistTask()
 
 
     /**

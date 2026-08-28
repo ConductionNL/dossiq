@@ -52,12 +52,12 @@ class SetStatusHandler implements ActionHandlerInterface {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Resolves the object service and the configured schemas.
-	 * @param CaseStatusStore $statusStore     Resolves a status name to its id within a case type.
+	 * @param StatusTypeLookup $statuses       Resolves a status name to its id within a case type.
 	 * @param LoggerInterface $logger          The logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly CaseStatusStore $statusStore,
+		private readonly StatusTypeLookup $statuses,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -98,7 +98,7 @@ class SetStatusHandler implements ActionHandlerInterface {
 				return new ActionResult(succeeded: false, error: 'case_has_no_case_type');
 			}
 
-			$statusId = $this->statusStore->lookupStatusIdByName(
+			$statusId = $this->statuses->idForName(
 				caseTypeId: $caseTypeId,
 				statusName: $statusName
 			);
