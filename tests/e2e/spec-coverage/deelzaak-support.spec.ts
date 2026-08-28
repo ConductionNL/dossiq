@@ -151,9 +151,13 @@ test.describe('Sub-case count badge (deelzaak-support REQ — case list)', () =>
 	// FIXME(#719): data-dependent. Measured on /cases with an unseeded list:
 	// table=0, [role=table]=0, .viewTable=0, [class*=card]=0 — the body
 	// renders an empty state, so there is no table to assert against.
-	test.fixme('the case list renders and may show an "N deelzaken" badge in a single batch', async ({
+	test('the case list renders and may show an "N deelzaken" badge in a single batch', async ({
 		page,
 	}) => {
+		test.fixme(
+			true,
+			'FIXME(#719): data-dependent. Measured on /cases with an unseeded list: table=0, [role=table]=0, .viewTable=0, [class*=card]=0 — the body renders an empty state, so there is no table to assert against.',
+		)
 		const opened = await openCasesListOrSkip(page)
 		if (!opened) return
 
