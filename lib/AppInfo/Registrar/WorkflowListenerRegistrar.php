@@ -30,7 +30,9 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
+use OCA\Dossiq\Listener\TaskCompletionResumeListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
@@ -69,6 +71,7 @@ class WorkflowListenerRegistrar {
 	public function register(IRegistrationContext $context): void {
 		$this->registerTermListeners(context: $context);
 		$this->registerDecisionListeners(context: $context);
+		$this->registerHumanStepListeners(context: $context);
 	}//end register()
 
 	/**
@@ -132,4 +135,26 @@ class WorkflowListenerRegistrar {
 			$context->registerEventListener(event: $event, listener: DecisionConcludedListener::class);
 		}
 	}//end registerDecisionListeners()
+
+	/**
+	 * Register the listener that resumes a run when its task is completed.
+	 *
+	 * A task is an ordinary OpenRegister object, so completing one is an object
+	 * UPDATE — there is no dossiq task endpoint this could hang on instead.
+	 *
+	 * Registered unconditionally: unlike the decision events, `ObjectUpdatedEvent`
+	 * is OpenRegister's own and OpenRegister is a hard dependency of this app.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+	 */
+	private function registerHumanStepListeners(IRegistrationContext $context): void {
+		$context->registerEventListener(
+			event: ObjectUpdatedEvent::class,
+			listener: TaskCompletionResumeListener::class
+		);
+	}//end registerHumanStepListeners()
 }//end class
