@@ -257,6 +257,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
             <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
+            <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
             <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <!--
                 Must run AFTER the register sync that adds the English columns, so it
@@ -410,6 +411,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
             <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
+            <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
             <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <step>OCA\Dossiq\Repair\SeedKccWerkplekData</step>
             <step>OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten</step>

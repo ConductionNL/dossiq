@@ -110,9 +110,15 @@ class StatusTypeLookup {
 	/**
 	 * A case type's statuses as `id => name`.
 	 *
-	 * Reads both `statusTypes` and the older `statusses` spelling. One reader
-	 * accepting a key another does not is how a case type ends up with statuses
-	 * that validate and cannot be resolved.
+	 * 🔴 THE LINK LIVES ON THE CHILD, NOT THE PARENT. `caseType` has no
+	 * `statusTypes` property — every `statusType` carries a `caseType`
+	 * back-reference instead (see how TemplateLibraryService creates them:
+	 * `$statusData['caseType'] = $caseTypeId`). An earlier version of this
+	 * method read `caseType['statusTypes']`, which does not exist, so it always
+	 * returned an empty map — meaning `idForName()` always returned '' and
+	 * `SetStatusHandler` refused EVERY status move. The flow could never move a
+	 * case, and every unit test passed, because the fixtures were written to
+	 * match the assumption rather than the schema. Found by the e2e.
 	 *
 	 * @param string $caseTypeId CaseType UUID.
 	 *
@@ -121,41 +127,17 @@ class StatusTypeLookup {
 	 * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
 	 */
 	public function statusesOf(string $caseTypeId): array {
-		$caseType = $this->read(schemaKey: 'case_type_schema', id: $caseTypeId);
-
-		$statuses = ($caseType['statusTypes'] ?? ($caseType['statusses'] ?? []));
-		if (is_array($statuses) === false) {
+		if (trim($caseTypeId) === '') {
 			return [];
 		}
 
 		$resolved = [];
-		foreach ($statuses as $entry) {
-			// An entry is either an embedded object or a bare uuid. Casting
-			// FIRST and correcting afterwards raised "Array to string
-			// conversion" on every embedded entry — a warning, so it neither
-			// failed nor changed the result, which is exactly why it survived
-			// until a test looked.
-			$id = '';
-			$name = '';
+		foreach ($this->statusRowsFor(caseTypeId: $caseTypeId) as $row) {
+			$id = (string)($row['id'] ?? ($row['uuid'] ?? ''));
+			$name = (string)($row['name'] ?? ($row['title'] ?? ''));
 
-			if (is_array($entry) === true) {
-				$id = (string)($entry['id'] ?? ($entry['uuid'] ?? ''));
-				$name = (string)($entry['name'] ?? ($entry['title'] ?? ''));
-			}
-
-			if (is_array($entry) === false) {
-				$id = (string)$entry;
-			}
-
-			if ($id === '') {
+			if ($id === '' || $name === '') {
 				continue;
-			}
-
-			// An embedded entry carries its own name; a bare uuid must be
-			// resolved. Reading the embedded one first avoids a lookup per
-			// status on the common path.
-			if ($name === '') {
-				$name = $this->nameFor(statusTypeId: $id);
 			}
 
 			$resolved[$id] = $name;
@@ -163,6 +145,82 @@ class StatusTypeLookup {
 
 		return $resolved;
 	}//end statusesOf()
+
+	/**
+	 * The raw statusType rows belonging to one case type.
+	 *
+	 * Filtered SERVER-side on the back-reference. Fetching every status type and
+	 * filtering here would drop rows the first page did not contain, and would
+	 * match a same-named status belonging to another case type.
+	 *
+	 * @param string $caseTypeId CaseType UUID.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 *
+	 * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+	 */
+	private function statusRowsFor(string $caseTypeId): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return [];
+		}
+
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$statusTypeSchema = $this->settingsService->getConfigValue(key: 'status_type_schema');
+		if ($register === '' || $statusTypeSchema === '') {
+			return [];
+		}
+
+		try {
+			$found = $objectService->searchObjects(
+				[
+					'@self' => ['register' => $register, 'schema' => $statusTypeSchema],
+					'caseType' => $caseTypeId,
+					'_limit' => 200,
+				]
+			);
+		} catch (Throwable $e) {
+			return [];
+		}
+
+		return $this->asRows(value: $found);
+	}//end statusRowsFor()
+
+	/**
+	 * Normalise whatever the object store returned into plain rows.
+	 *
+	 * The store answers with either a bare list or a paged envelope, and each
+	 * row as an array or an entity. Reading only one of those shapes is how a
+	 * lookup silently finds nothing on an instance that answers the other way.
+	 *
+	 * @param mixed $value The search result.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 *
+	 * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+	 */
+	private function asRows(mixed $value): array {
+		if (is_array($value) === true && isset($value['results']) === true) {
+			$value = $value['results'];
+		}
+
+		if (is_array($value) === false) {
+			return [];
+		}
+
+		$out = [];
+		foreach ($value as $row) {
+			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
+				$row = $row->jsonSerialize();
+			}
+
+			if (is_array($row) === true) {
+				$out[] = $row;
+			}
+		}
+
+		return $out;
+	}//end asRows()
 
 	/**
 	 * Read one object from a configured schema.
