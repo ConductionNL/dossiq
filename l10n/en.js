@@ -3393,7 +3393,9 @@ OC.L10N.register(
         "Enabled, but has no owner — it will not start": "Enabled, but has no owner — it will not start",
         "Flow": "Flow",
         "Flows": "Flows",
-        "New flow": "New flow"
+        "New flow": "New flow",
+        "Demo data (optional)": "Demo data (optional)",
+        "Load example dossiers, case types and documents so lists, the case timeline and the detail pages show a working product right away. Optional, and safe to run more than once. Skip this on a production install.": "Load example dossiers, case types and documents so lists, the case timeline and the detail pages show a working product right away. Optional, and safe to run more than once. Skip this on a production install."
     },
     "nplurals=2; plural=(n != 1);"
 )

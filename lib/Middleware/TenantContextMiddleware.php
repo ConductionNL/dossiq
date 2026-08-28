@@ -3,15 +3,23 @@
 /**
  * Dossiq Tenant Context Middleware
  *
- * Resolves the requesting tenant from headers / user / route parameter and
- * binds it onto the request-scoped `TenantContext` service. Runs after the
- * existing `TenantMiddleware` (which does the older Organisation-shaped
- * resolution) and before `TenantIsolationMiddleware` (which sets the
- * Postgres search_path).
+ * Resolves the requesting tenant from the SESSION and binds it onto the
+ * request-scoped `TenantContext` service. Runs after the existing
+ * `TenantMiddleware` (which does the older Organisation-shaped resolution) and
+ * before `TenantIsolationMiddleware` (which sets the Postgres search_path).
  *
- * Resolution order:
- *   1. `X-Tenant-Id` header (platform-admin or JWT claim)
- *   2. The current user's `tenantUser` membership row (one-to-one)
+ * Resolution: `TenantSessionService::activeTenantId()`, which re-verifies the
+ * session's choice against the user's `tenantUser` memberships on every read.
+ *
+ * WHAT CHANGED AND WHY. This used to return the `X-Tenant-Id` header verbatim.
+ * The header is supplied by the caller, and the only check that would have
+ * caught a forged value — `TenantClaimValidationMiddleware` — returns early
+ * unless the request carries a Bearer token. A session-authenticated user
+ * could therefore name any tenant and be believed, because each middleware was
+ * individually reasonable and the gap was between them.
+ *
+ * The header no longer binds. Switching tenant is an explicit act that
+ * verifies membership first; see `TenantSessionService`.
  *
  * @category Middleware
  * @package  OCA\Dossiq\Middleware
@@ -35,9 +43,9 @@ namespace OCA\Dossiq\Middleware;
 use OCA\Dossiq\Service\TenantContext;
 use OCA\Dossiq\Service\TenantProvisioningService;
 use OCA\Dossiq\Service\TenantSaasService;
+use OCA\Dossiq\Service\TenantSessionService;
 use OCP\AppFramework\Middleware;
 use OCP\IRequest;
-use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -65,7 +73,7 @@ class TenantContextMiddleware extends Middleware {
 	 * Constructor.
 	 *
 	 * @param IRequest $request Request.
-	 * @param IUserSession $userSession User session.
+	 * @param TenantSessionService $tenantSession Session-held active tenant.
 	 * @param TenantSaasService $tenantSaasService Tenant SaaS service.
 	 * @param TenantProvisioningService $provisioning Provisioning service (schema-name builder).
 	 * @param TenantContext $context Request-scoped context.
@@ -73,7 +81,7 @@ class TenantContextMiddleware extends Middleware {
 	 */
 	public function __construct(
 		private readonly IRequest $request,
-		private readonly IUserSession $userSession,
+		private readonly TenantSessionService $tenantSession,
 		private readonly TenantSaasService $tenantSaasService,
 		private readonly TenantProvisioningService $provisioning,
 		private readonly TenantContext $context,
@@ -151,31 +159,22 @@ class TenantContextMiddleware extends Middleware {
 	 * Resolve the tenant UUID for the current request.
 	 *
 	 * @return string|null
+	 *
+	 * @spec openspec/specs/multi-tenancy/spec.md#req-002-user-to-tenant-resolution-via-or-organisation-with-nc-group-fallback
 	 */
 	public function resolveTenantIdFromRequest(): ?string {
 		$header = $this->request->getHeader('X-Tenant-Id');
 		if ($header !== '') {
-			return $header;
+			// Deliberately IGNORED, and logged rather than silently dropped: a
+			// caller still sending this is relying on behaviour that has been
+			// removed, and would otherwise find their requests quietly acting
+			// as a different tenant than they asked for.
+			$this->logger->warning(
+				'Dossiq: X-Tenant-Id was supplied and ignored; the session decides the tenant',
+				['supplied' => $header]
+			);
 		}
 
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return null;
-		}
-
-		// Fall back: look up the tenantUser row for the current user — covers
-		// the common single-tenant-per-user case.
-		try {
-			$rows = $this->tenantSaasService->listActive(statusFilter: 'active', limit: 100);
-			// No per-user filter in the SaaS service yet; the tenant binding
-			// for an unauthenticated single-tenant deployment is handled by
-			// the older TenantMiddleware via the OR Organisation entity. This
-			// middleware only fires when an X-Tenant-Id is explicitly supplied.
-			unset($rows);
-		} catch (Throwable $e) {
-			$this->logger->info('Dossiq: tenant lookup miss', ['exception' => $e->getMessage()]);
-		}
-
-		return null;
+		return $this->tenantSession->activeTenantId();
 	}//end resolveTenantIdFromRequest()
 }//end class
