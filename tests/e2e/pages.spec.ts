@@ -11,7 +11,11 @@ test.describe('Dashboard', () => {
 	// renders its widget grid but not its header — no <h2>Dashboard</h2>, no action
 	// buttons — and every widget shows "Widget not available". Renders fine in a
 	// normal dev container. Re-enable once the dashboard header wires up under that env.
-	test.fixme('shows heading and action buttons', async ({ page }) => {
+	test('shows heading and action buttons', async ({ page }) => {
+		test.fixme(
+			true,
+			'PARTLY REAL, needs triage rather than a spec: "New Case" exists in src/manifest.json, but "New Task" and "Refresh dashboard" appear 0 times in src/. So this is not one missing feature - it asserts a mix of shipped and never-built controls, and should be split before it is either fixed or dropped.',
+		)
 		// Land on a route that resolves, then navigate to the dashboard via the
 		// sidebar (client-side). A direct GET of the bare app root leaves
 		// vue-router's history-mode location empty so the '/' route never
@@ -56,7 +60,11 @@ test.describe('Cases page', () => {
 	// CnFormDialog ("Create Item") with an empty form body instead of dossiq's
 	// CaseCreateDialog — the `case` schema's fields never resolve there. Renders
 	// fine in a normal dev container. Re-enable once the schema config wires up.
-	test.fixme('new case modal has correct fields', async ({ page }) => {
+	test('new case modal has correct fields', async ({ page }) => {
+		test.fixme(
+			true,
+			'PARTLY REAL: "New Case" exists in src/manifest.json but "Set location" appears 0 times in src/. Either the field was renamed and this selector is stale, or it was never built - worth checking which before treating this as pending work.',
+		)
 		await page.goto('/index.php/apps/dossiq/cases')
 		// CnIndexPage labels the create button "Add <SchemaTitle>" when the
 		// schema title resolves, "Add Item" otherwise — match either.
@@ -138,17 +146,26 @@ test.describe('My Work page', () => {
 })
 
 test.describe('B&W Voorstellen page', () => {
-	// DEPLOY-MISMATCH: the bespoke "B&W Voorstellen" view (heading "B&W
-	// Voorstellen", "Nieuw voorstel" button, "Actief"/"Afgerond"/"Alle" filter
-	// tabs, "Geen actieve voorstellen" Dutch empty state) is a v0.2.8 feature.
-	// The build deployed to this environment is v0.2.0, whose /voorstellen route
-	// renders the generic index shell instead — none of these strings exist in
-	// that bundle. The non-strict shell assertion lives in
-	// spec-coverage/ui-pages.spec.ts (accepts either the custom or generic
-	// shell). Re-enable once a v0.2.8 build is deployed.
+	// NOT a deploy mismatch — that framing was wrong and hid the real state.
+	// development is 0.3.1-unstable, past the v0.2.8 the old comment waited
+	// for, and /voorstellen IS declared in src/manifest.json with
+	// VoorstelDetail.vue present. Nothing is waiting on a deployment.
+	//
+	// The bespoke LIST view was simply never built. Measured against src/:
+	// "B&W Voorstellen" 0 hits, "Nieuw voorstel" 0, "Geen actieve
+	// voorstellen" 0. The route falls through to the generic index shell
+	// because that is all there is. The non-strict shell assertion lives in
+	// spec-coverage/ui-pages.spec.ts (accepts either shell).
+	//
+	// Tracked in openspec/changes/bw-voorstellen-view/, which now exists and
+	// carries the requirements plus tasks 4.1-4.3 to un-skip these three.
 
 	// @e2e openspec/specs/case-management/spec.md#voorstellen-page-renders-heading-and-create-control
-	test.fixme('renders with heading and create button', async ({ page }) => {
+	test('renders with heading and create button', async ({ page }) => {
+		test.fixme(
+			true,
+			'the bespoke B&W Voorstellen list view was never built - measured against src/: "B&W Voorstellen" 0 hits, "Nieuw voorstel" 0, "Geen actieve voorstellen" 0, so the route falls through to the generic index shell. Tracked in openspec/changes/bw-voorstellen-view/ (tasks 4.1-4.3).',
+		)
 		await navTo(page, 'Voorstellen')
 		await expect(
 			page.getByRole('heading', { name: 'B&W Voorstellen', level: 2 }),
@@ -158,7 +175,11 @@ test.describe('B&W Voorstellen page', () => {
 		).toBeVisible()
 	})
 
-	test.fixme('has filter tabs', async ({ page }) => {
+	test('has filter tabs', async ({ page }) => {
+		test.fixme(
+			true,
+			'the bespoke B&W Voorstellen list view was never built - measured against src/: "B&W Voorstellen" 0 hits, "Nieuw voorstel" 0, "Geen actieve voorstellen" 0, so the route falls through to the generic index shell. Tracked in openspec/changes/bw-voorstellen-view/ (tasks 4.1-4.3).',
+		)
 		await navTo(page, 'Voorstellen')
 		await expect(page.getByRole('button', { name: /Actief/ })).toBeVisible({
 			timeout: 15000,
@@ -167,7 +188,11 @@ test.describe('B&W Voorstellen page', () => {
 		await expect(page.getByRole('button', { name: /Alle/ })).toBeVisible()
 	})
 
-	test.fixme('shows Dutch empty state', async ({ page }) => {
+	test('shows Dutch empty state', async ({ page }) => {
+		test.fixme(
+			true,
+			'the bespoke B&W Voorstellen list view was never built - measured against src/: "B&W Voorstellen" 0 hits, "Nieuw voorstel" 0, "Geen actieve voorstellen" 0, so the route falls through to the generic index shell. Tracked in openspec/changes/bw-voorstellen-view/ (tasks 4.1-4.3).',
+		)
 		await navTo(page, 'Voorstellen')
 		await expect(page.getByText('Geen actieve voorstellen')).toBeVisible({
 			timeout: 15000,
@@ -262,7 +287,11 @@ test.describe('Settings page', () => {
 
 	// FIXME(#719): same gap — no "Case Type Management" heading renders on the
 	// in-app settings page (it does on /settings/admin/dossiq).
-	test.fixme('has case type management section', async ({ page }) => {
+	test('has case type management section', async ({ page }) => {
+		test.fixme(
+			true,
+			'NOT missing at all: "Case Type Management" IS present in src/views/settings/AdminRoot.vue. The old blanket comment blamed a stale deploy for this test too, which cannot be right - the section is in the head commit. Most likely a navigation or selector problem, and it should be debugged rather than skipped.',
+		)
 		await page.goto('/index.php/apps/dossiq/settings')
 		await dismissSupportDialog(page)
 		await loadAllAdminSections(page)
