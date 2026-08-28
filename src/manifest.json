@@ -12,10 +12,16 @@
 			{
 				"id": "demo-data",
 				"type": "run-action",
-				"title": "Welkom bij Dossiq: laad de voorbeelddata",
-				"body": "Laten we Dossiq klaarzetten. Laad de Bezwaar & Beroep voorbeelddata, dan ziet u meteen hoe een zaak eruitziet in plaats van een leeg scherm. Het register en de schema's worden hierbij vanzelf aangemaakt. Overslaan mag; u kunt later altijd zelf zaken aanmaken.",
-				"action": "demo-data",
-				"required": false
+				"action": "install-demo-data",
+				"title": "Demo data (optional)",
+				"required": false,
+				"body": "Load example dossiers, case types and documents so lists, the case timeline and the detail pages show a working product right away. Optional, and safe to run more than once. Skip this on a production install."
+			},
+			{
+				"id": "welcome",
+				"type": "info",
+				"title": "Welkom bij Dossiq",
+				"body": "Laten we Dossiq klaarzetten. Initialiseer eerst het register; laad daarna optioneel de Bezwaar & Beroep voorbeelddata."
 			},
 			{
 				"id": "register-check",
@@ -23,6 +29,13 @@
 				"title": "Register en schema's initialiseren",
 				"action": "init-register",
 				"required": true
+			},
+			{
+				"id": "seed",
+				"type": "run-action",
+				"title": "Bezwaar & Beroep voorbeelddata laden",
+				"action": "seed",
+				"required": false
 			},
 			{
 				"id": "dwangsom-secret",
@@ -2976,6 +2989,17 @@
 						"key": "isDefault"
 					}
 				],
+				"showViewAction": false,
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "EyeOutline",
+						"handler": "navigate",
+						"route": "ParafeerrouteDetail",
+						"type": "handler"
+					}
+				],
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true
@@ -3010,6 +3034,17 @@
 					},
 					{
 						"key": "active"
+					}
+				],
+				"showViewAction": false,
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "EyeOutline",
+						"handler": "navigate",
+						"route": "WmsLayerDetail",
+						"type": "handler"
 					}
 				],
 				"sidebar": {
@@ -3249,6 +3284,17 @@
 					"type",
 					"contactEmail",
 					"active"
+				],
+				"showViewAction": false,
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "EyeOutline",
+						"handler": "navigate",
+						"route": "PartnerDetail",
+						"type": "handler"
+					}
 				],
 				"sidebar": {
 					"enabled": true,
@@ -3496,6 +3542,17 @@
 					"isActive",
 					"updatedAt"
 				],
+				"showViewAction": false,
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "EyeOutline",
+						"handler": "navigate",
+						"route": "WorkflowDefinitionDetail",
+						"type": "handler"
+					}
+				],
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true
@@ -3705,6 +3762,17 @@
 					"version",
 					"active",
 					"createdAt"
+				],
+				"showViewAction": false,
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "EyeOutline",
+						"handler": "navigate",
+						"route": "LhsMatrixDetail",
+						"type": "handler"
+					}
 				],
 				"sidebar": {
 					"enabled": true,
@@ -4513,10 +4581,18 @@
 					"validFrom",
 					"validUntil"
 				],
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true
-				},
+				"showViewAction": false,
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "EyeOutline",
+						"handler": "navigate",
+						"route": "CaseTypeDetail",
+						"type": "handler"
+					}
+				],
+				"sidebar": { "enabled": true, "showMetadata": true },
 				"documentationUrl": "https://procest.conduction.nl"
 			},
 			"_note": "A case type is the blueprint every case is governed by — lifecycle, deadlines, classification, the workflow that drives it — and `case.caseType` references it. It had no surface at all: the original `CaseTypesMenu` pointed at the in-app `/settings` page, which page-topology-cleanup B1 retired for mounting AdminRoot through the in-app router (ADR-004), and no replacement was ever built. The capability went with the page and only its stale `settingsSection` id was left behind. WorkflowDefinitionDetail's own note still says cases are 'reached through their caseType index', naming this page. Restored as an ordinary schema-driven index rather than by reviving the retired settings route."

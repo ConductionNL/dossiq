@@ -3394,17 +3394,17 @@ OC.L10N.register(
         "Flow": "Flow",
         "Flows": "Flows",
         "New flow": "Nieuwe flow",
+        "Demo data (optional)": "Demodata (optioneel)",
+        "Load example dossiers, case types and documents so lists, the case timeline and the detail pages show a working product right away. Optional, and safe to run more than once. Skip this on a production install.": "Laad voorbeelddossiers, zaaktypen en documenten, zodat lijsten, de zaaktijdlijn en de detailpagina's meteen een werkend product tonen. Optioneel en veilig om vaker uit te voeren. Sla dit over op een productie-installatie.",
+        "Callback signing secret": "Callback-ondertekeningsgeheim",
+        "Dwangsom callback signing secret": "Dwangsom callback-ondertekeningsgeheim",
+        "Shared secret the payment provider signs its dwangsom payout callbacks with. Until it is set, DwangsomPaymentCallbackController cannot verify that a callback really came from the provider. Only shown while the dwangsom payout integration is configured.": "Gedeeld geheim waarmee de betaaldienst zijn dwangsom-uitbetalingscallbacks ondertekent. Zolang het niet is ingesteld, kan DwangsomPaymentCallbackController niet verifieren dat een callback echt van de betaaldienst komt. Alleen zichtbaar zolang de dwangsom-uitbetaling is geconfigureerd.",
         "Where case types come from": "Waar zaaktypen vandaan komen",
-        "Every case follows a case type, its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look; you do not need to make one, 88 ship with the app.": "Elke zaak volgt een zaaktype, de blauwdruk ervan. Het zaaktype bepaalt welke statussen een zaak doorloopt, hoe lang die mag duren, wie hem behandelt en wat er besloten mag worden. Kijk gerust rond; je hoeft er geen aan te maken, er zitten er 88 in de app.",
+        "Every case follows a case type, its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look; you do not need to make one, 88 ship with the app.": "Elke zaak volgt een zaaktype, de blauwdruk. Het zaaktype bepaalt welke statussen een zaak doorloopt, hoe lang die mag duren, wie hem behandelt en wat er besloten mag worden. Kijk gerust rond; u hoeft er geen te maken, er zijn er 88 meegeleverd.",
         "Open Case types in the menu": "Open Zaaktypen in het menu",
         "Where the automation lives": "Waar de automatisering zit",
-        "Laten we Dossiq klaarzetten. Laad de Bezwaar & Beroep voorbeelddata, dan ziet u meteen hoe een zaak eruitziet in plaats van een leeg scherm. Het register en de schema's worden hierbij vanzelf aangemaakt. Overslaan mag; u kunt later altijd zelf zaken aanmaken.": "Laten we Dossiq klaarzetten. Laad de Bezwaar & Beroep voorbeelddata, dan ziet u meteen hoe een zaak eruitziet in plaats van een leeg scherm. Het register en de schema's worden hierbij vanzelf aangemaakt. Overslaan mag; u kunt later altijd zelf zaken aanmaken.",
-        "Welkom bij Dossiq: laad de voorbeelddata": "Welkom bij Dossiq: laad de voorbeelddata",
-        "Flows are what happens without anyone clicking: a deadline that warns before it passes, a confirmation that goes out on submission. This is where you read and edit them. Nothing to build now.": "Flows zijn wat er gebeurt zonder dat iemand klikt: een termijn die waarschuwt voordat hij verstrijkt, een bevestiging die uitgaat bij indiening. Hier lees en bewerk je ze. Je hoeft nu niets te bouwen.",
-        "Open Flows in the menu": "Open Flows in het menu",
-        "Dwangsom callback signing secret": "Ondertekeningsgeheim voor dwangsom-callbacks",
-        "Callback signing secret": "Ondertekeningsgeheim voor callbacks",
-        "Shared secret the payment provider signs its dwangsom payout callbacks with. Until it is set, DwangsomPaymentCallbackController cannot verify that a callback really came from the provider. Only shown while the dwangsom payout integration is configured.": "Gedeeld geheim waarmee de betaaldienstverlener zijn callbacks voor dwangsomuitbetalingen ondertekent. Zolang dit niet is ingesteld, kan DwangsomPaymentCallbackController niet vaststellen dat een callback echt van de dienstverlener komt. Alleen zichtbaar zolang de dwangsom-uitbetalingskoppeling is geconfigureerd."
+        "Flows are what happens without anyone clicking: a deadline that warns before it passes, a confirmation that goes out on submission. This is where you read and edit them. Nothing to build now.": "Flows zijn wat er gebeurt zonder dat iemand klikt: een termijn die waarschuwt voordat die verstrijkt, een bevestiging die bij indiening uitgaat. Hier leest en bewerkt u ze. U hoeft nu niets te bouwen.",
+        "Open Flows in the menu": "Open Flows in het menu"
     },
     "nplurals=2; plural=(n != 1);"
 )

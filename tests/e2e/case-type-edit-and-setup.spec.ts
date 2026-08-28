@@ -328,7 +328,7 @@ test.describe('Setup — the sample-data step is reachable', () => {
 		await page.goto('/index.php/apps/dossiq')
 		const before = await readSetupStatus(page)
 		test.skip(
-			before?.steps?.['demo-data']?.done === true,
+			before?.steps?.seed?.done === true,
 			'sample data already loaded on this instance',
 		)
 
@@ -336,7 +336,7 @@ test.describe('Setup — the sample-data step is reachable', () => {
 		// `/api/setup/action/{id}` — NOT `/run/{id}`, which answers 405 and whose
 		// empty body then reads as "the seeder returned nothing".
 		const run = await page.evaluate(async (tok) => {
-			const res = await fetch('/index.php/apps/dossiq/api/setup/action/demo-data', {
+			const res = await fetch('/index.php/apps/dossiq/api/setup/action/seed', {
 				method: 'POST',
 				headers: {
 					Accept: 'application/json',
@@ -351,19 +351,19 @@ test.describe('Setup — the sample-data step is reachable', () => {
 		// refusal as a seeder result.
 		expect(
 			run.body,
-			`POST /api/setup/action/demo-data returned ${run.status} with no JSON body`,
+			`POST /api/setup/action/seed returned ${run.status} with no JSON body`,
 		).not.toBeNull()
 
 		if (run.body?.detail && (run.body.detail.caseTypes ?? 0) === 0) {
 			// Nothing was created, so the step must still be outstanding.
 			expect(run.body.success).toBe(false)
 			const after = await readSetupStatus(page)
-			expect(after.steps['demo-data'].done).toBe(false)
+			expect(after.steps.seed.done).toBe(false)
 		} else {
 			// A seeder with real payload: it created something, so it is done.
 			expect(run.body.success).toBe(true)
 			const after = await readSetupStatus(page)
-			expect(after.steps['demo-data'].done).toBe(true)
+			expect(after.steps.seed.done).toBe(true)
 		}
 	})
 })

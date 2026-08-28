@@ -26,9 +26,13 @@ test.describe('Initiator selection (brp-kvk-register-sets)', () => {
 	// so `.start-case-widget__card` never renders and the initiator flow has
 	// no entry point to click.
 	// @e2e openspec/specs/initiator-selection/spec.md#agent-picks-an-initiator-type
-	test.fixme('start-case flow offers Person / Company / Contact and stays skippable', async ({
+	test('start-case flow offers Person / Company / Contact and stays skippable', async ({
 		page,
 	}) => {
+		test.fixme(
+			true,
+			'#718: the Dashboard manifest declares twelve widgets (four `stat`, two `chart`, six `object-table`) and StartCaseWidget is NOT among them, so `.start-case-widget__card` never renders and the initiator flow has no entry point to click.',
+		)
 		await page.goto(APP_ROOT)
 		// The dashboard StartCaseWidget lists case types; picking one opens
 		// the optional initiator step.
@@ -48,9 +52,13 @@ test.describe('Initiator selection (brp-kvk-register-sets)', () => {
 	// provisions the dossiq register + schemas but creates no BRP objects, so
 	// on a runner there is no "Stephan Janssen" to find.
 	// @e2e openspec/specs/initiator-selection/spec.md#person-search-hits-the-brp-register-set
-	test.fixme('person search lists a seeded personen-mock persona with BSN', async ({
+	test('person search lists a seeded personen-mock persona with BSN', async ({
 		page,
 	}) => {
+		test.fixme(
+			true,
+			'#718: needs a seeded `brp` register-set fixture. ci-seed.sh provisions the dossiq register + schemas but creates no BRP objects, so on a runner there is no "Stephan Janssen" to find.',
+		)
 		await page.goto(APP_ROOT)
 		await page.locator('.start-case-widget__card').first().click()
 		await page.getByLabel('Search initiator').fill('Janssen')
@@ -65,9 +73,13 @@ test.describe('Initiator selection (brp-kvk-register-sets)', () => {
 	// FIXME(#718): needs a seeded `kvk` register-set fixture — no
 	// "Test EMZ Dagobert" / KvK 69599084 object exists on a runner.
 	// @e2e openspec/specs/initiator-selection/spec.md#company-search-hits-the-kvk-register-set
-	test.fixme('company search by pinned KvK number lists the fixture company', async ({
+	test('company search by pinned KvK number lists the fixture company', async ({
 		page,
 	}) => {
+		test.fixme(
+			true,
+			'#718: needs a seeded `kvk` register-set fixture — no "Test EMZ Dagobert" / KvK 69599084 object exists on a runner.',
+		)
 		await page.goto(APP_ROOT)
 		await page.locator('.start-case-widget__card').first().click()
 		await page.getByText('Company', { exact: true }).click()
@@ -83,9 +95,13 @@ test.describe('Initiator selection (brp-kvk-register-sets)', () => {
 	// provisioned on a runner, so the tab renders neither results nor the
 	// "No contacts found" empty state this asserts.
 	// @e2e openspec/specs/initiator-selection/spec.md#contacts-source-degrades-gracefully
-	test.fixme('contact tab shows an explicit empty state, never an error toast', async ({
+	test('contact tab shows an explicit empty state, never an error toast', async ({
 		page,
 	}) => {
+		test.fixme(
+			true,
+			'#718: the Contacts source is backed by a register set that is not provisioned on a runner, so the tab renders neither results nor the "No contacts found" empty state this asserts.',
+		)
 		await page.goto(APP_ROOT)
 		await page.locator('.start-case-widget__card').first().click()
 		await page.getByText('Contact', { exact: true }).click()
@@ -101,9 +117,13 @@ test.describe('Initiator selection (brp-kvk-register-sets)', () => {
 	// FIXME(#718): needs the seeded `brp` persona to pick in the first place.
 	// @e2e openspec/specs/initiator-selection/spec.md#selection-persists-on-the-case
 	// @e2e openspec/specs/initiator-display/spec.md#initiator-visible-on-the-case
-	test.fixme('picked persona persists as projection and shows on case detail with source link', async ({
+	test('picked persona persists as projection and shows on case detail with source link', async ({
 		page,
 	}) => {
+		test.fixme(
+			true,
+			'#718: needs the seeded `brp` persona to pick in the first place.',
+		)
 		await page.goto(APP_ROOT)
 		await page.locator('.start-case-widget__card').first().click()
 		await page.getByLabel('Search initiator').fill('Janssen')
@@ -126,9 +146,13 @@ test.describe('Initiator selection (brp-kvk-register-sets)', () => {
 	// FIXME(#718): same StartCaseWidget gap — there is no start-case card to
 	// click, so the "created without an initiator" path cannot be driven.
 	// @e2e openspec/specs/initiator-display/spec.md#no-initiator-no-clutter
-	test.fixme('a case created without initiator renders no initiator block', async ({
+	test('a case created without initiator renders no initiator block', async ({
 		page,
 	}) => {
+		test.fixme(
+			true,
+			'#718: same StartCaseWidget gap — there is no start-case card to click, so the "created without an initiator" path cannot be driven.',
+		)
 		await page.goto(APP_ROOT)
 		await page.locator('.start-case-widget__card').first().click()
 		await page.getByRole('button', { name: 'Skip' }).click()

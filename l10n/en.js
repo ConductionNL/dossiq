@@ -3394,6 +3394,8 @@ OC.L10N.register(
         "Flow": "Flow",
         "Flows": "Flows",
         "New flow": "New flow",
+        "Demo data (optional)": "Demo data (optional)",
+        "Load example dossiers, case types and documents so lists, the case timeline and the detail pages show a working product right away. Optional, and safe to run more than once. Skip this on a production install.": "Load example dossiers, case types and documents so lists, the case timeline and the detail pages show a working product right away. Optional, and safe to run more than once. Skip this on a production install.",
         "Callback signing secret": "Callback signing secret",
         "Dwangsom callback signing secret": "Dwangsom callback signing secret",
         "Every case follows a case type, its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look; you do not need to make one, 88 ship with the app.": "Every case follows a case type, its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look; you do not need to make one, 88 ship with the app.",
@@ -3402,9 +3404,7 @@ OC.L10N.register(
         "Open Flows in the menu": "Open Flows in the menu",
         "Shared secret the payment provider signs its dwangsom payout callbacks with. Until it is set, DwangsomPaymentCallbackController cannot verify that a callback really came from the provider. Only shown while the dwangsom payout integration is configured.": "Shared secret the payment provider signs its dwangsom payout callbacks with. Until it is set, DwangsomPaymentCallbackController cannot verify that a callback really came from the provider. Only shown while the dwangsom payout integration is configured.",
         "Where case types come from": "Where case types come from",
-        "Where the automation lives": "Where the automation lives",
-        "Laten we Dossiq klaarzetten. Laad de Bezwaar & Beroep voorbeelddata, dan ziet u meteen hoe een zaak eruitziet in plaats van een leeg scherm. Het register en de schema's worden hierbij vanzelf aangemaakt. Overslaan mag; u kunt later altijd zelf zaken aanmaken.": "Laten we Dossiq klaarzetten. Laad de Bezwaar & Beroep voorbeelddata, dan ziet u meteen hoe een zaak eruitziet in plaats van een leeg scherm. Het register en de schema's worden hierbij vanzelf aangemaakt. Overslaan mag; u kunt later altijd zelf zaken aanmaken.",
-        "Welkom bij Dossiq: laad de voorbeelddata": "Welkom bij Dossiq: laad de voorbeelddata"
+        "Where the automation lives": "Where the automation lives"
     },
     "nplurals=2; plural=(n != 1);"
 )
