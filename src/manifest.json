@@ -10,6 +10,14 @@
 		"completionConfigKey": "setup_completed_version",
 		"steps": [
 			{
+				"id": "demo-data",
+				"type": "run-action",
+				"action": "install-demo-data",
+				"title": "Demo data (optional)",
+				"required": false,
+				"body": "Load example dossiers, case types and documents so lists, the case timeline and the detail pages show a working product right away. Optional, and safe to run more than once. Skip this on a production install."
+			},
+			{
 				"id": "welcome",
 				"type": "info",
 				"title": "Welkom bij Dossiq",
@@ -2935,14 +2943,6 @@
 						"handler": "navigate",
 						"route": "ParafeerrouteDetail",
 						"type": "handler"
-					},
-					{
-						"key": "edit",
-						"type": "handler"
-					},
-					{
-						"key": "delete",
-						"type": "handler"
 					}
 				],
 				"sidebar": {
@@ -2989,18 +2989,6 @@
 						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "WmsLayerDetail",
-						"type": "handler"
-					},
-					{
-						"key": "create",
-						"type": "handler"
-					},
-					{
-						"key": "edit",
-						"type": "handler"
-					},
-					{
-						"key": "delete",
 						"type": "handler"
 					}
 				],
@@ -3244,9 +3232,6 @@
 				],
 				"showViewAction": false,
 				"actions": [
-					"create",
-					"edit",
-					"delete",
 					{
 						"id": "view",
 						"label": "View",
@@ -3504,9 +3489,6 @@
 				],
 				"showViewAction": false,
 				"actions": [
-					"create",
-					"edit",
-					"delete",
 					{
 						"id": "view",
 						"label": "View",
@@ -3728,7 +3710,6 @@
 				],
 				"showViewAction": false,
 				"actions": [
-					"create",
 					{
 						"id": "view",
 						"label": "View",
@@ -4547,9 +4528,6 @@
 				],
 				"showViewAction": false,
 				"actions": [
-					"create",
-					"edit",
-					"delete",
 					{
 						"id": "view",
 						"label": "View",

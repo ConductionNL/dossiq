@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Service\DemoDataService;
 use OCA\Dossiq\Service\SeedDataService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Settings\AdminSettings;
@@ -54,6 +55,16 @@ class SetupController extends Controller {
 	 * @var int
 	 */
 	private const SETUP_VERSION = 1;
+	/**
+	 * App-config key recording that the optional demo-data step has been dealt with.
+	 *
+	 * Records a DECISION, not a state: "installed" and "declined" both set it.
+	 * A step that reports itself undone until demo objects exist can never be
+	 * completed by an operator who does not want them.
+	 *
+	 * @var string
+	 */
+	private const DEMO_DATA_DECIDED_KEY = 'demo_data_decided';
 
 	/**
 	 * Construct the setup controller.
@@ -61,6 +72,7 @@ class SetupController extends Controller {
 	 * @param string $appName The app id.
 	 * @param IRequest $request The request.
 	 * @param IAppConfig $appConfig App-config reader/writer.
+	 * @param DemoDataService $demoDataService Demo dataset import (ADR-111 rule 4).
 	 * @param SettingsService $settingsService OpenRegister availability + config import.
 	 * @param SeedDataService $seedDataService Bezwaar/beroep seeder.
 	 */
@@ -68,6 +80,7 @@ class SetupController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly IAppConfig $appConfig,
+		private readonly DemoDataService $demoDataService,
 		private readonly SettingsService $settingsService,
 		private readonly SeedDataService $seedDataService,
 	) {
@@ -87,6 +100,10 @@ class SetupController extends Controller {
 			&& $this->config(key: 'register') !== ''
 			&& $this->config(key: 'case_type_schema') !== '';
 		$seedDone = $this->config(key: 'setup_seed_done') === '1';
+		// DEALT WITH, not "demo objects exist". An operator who declines demo
+		// data has finished the step; re-offering it every visit would make
+		// "no thanks" impossible to express.
+		$demoDecided = $this->config(key: self::DEMO_DATA_DECIDED_KEY) !== '';
 		$completed = $registerDone;
 
 		if ($completed === true) {
@@ -97,6 +114,7 @@ class SetupController extends Controller {
 			'version' => self::SETUP_VERSION,
 			'completed' => $completed,
 			'steps' => [
+				'demo-data' => ['done' => $demoDecided],
 				'register-check' => ['done' => $registerDone],
 				'seed' => ['done' => $seedDone],
 			],
@@ -152,6 +170,14 @@ class SetupController extends Controller {
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function runAction(string $actionId): DataResponse {
+		if ($actionId === 'install-demo-data') {
+			return $this->installDemoData();
+		}
+
+		if ($actionId === 'skip-demo-data') {
+			return $this->skipDemoData();
+		}
+
 		if ($actionId === 'init-register') {
 			$this->settingsService->loadConfiguration(force: true);
 			return new DataResponse(['success' => true, 'message' => 'Register and schemas initialised.']);
@@ -182,6 +208,56 @@ class SetupController extends Controller {
 			Http::STATUS_NOT_FOUND,
 		);
 	}//end runAction()
+
+	/**
+	 * Install the shipped demo dataset (ADR-111 rule 4).
+	 *
+	 * @return DataResponse The outcome, carrying the counts.
+	 *
+	 * @spec exclude Demo-data install action (ADR-111 rule 4); no per-app openspec change yet.
+	 */
+	private function installDemoData(): DataResponse {
+		try {
+			$imported = $this->demoDataService->install();
+		} catch (\Throwable $e) {
+			return new DataResponse(['success' => false, 'message' => $e->getMessage()]);
+		}
+
+		// Recorded only after the import actually returned. Marking it first
+		// would let a failed install present as a finished step.
+		$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, 'installed');
+
+		// 🔴 THE COUNTS, ALWAYS. "Demo data installed" with no numbers cannot be
+		// told apart from an import that wrote nothing.
+		return new DataResponse(
+			[
+				'success' => true,
+				'message' => sprintf(
+					'Demo data installed: %d objects across %d schemas.',
+					$imported['objects'],
+					$imported['schemas']
+				),
+				'detail'  => $imported,
+			]
+		);
+	}//end installDemoData()
+
+	/**
+	 * Record that the operator declined the demo dataset.
+	 *
+	 * Its own action so "no thanks" is a decision the wizard can record. Without
+	 * it the only way past the step would be to install demo data, which is
+	 * wrong on a production instance.
+	 *
+	 * @return DataResponse The outcome.
+	 *
+	 * @spec exclude Demo-data skip action (ADR-111 rule 4); no per-app openspec change yet.
+	 */
+	private function skipDemoData(): DataResponse {
+		$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, 'skipped');
+
+		return new DataResponse(['success' => true, 'message' => 'Demo data skipped.']);
+	}//end skipDemoData()
 
 	/**
 	 * Read a dossiq app-config string value.
