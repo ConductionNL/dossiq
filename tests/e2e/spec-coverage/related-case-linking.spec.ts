@@ -30,10 +30,19 @@ async function openFirstCaseOrSkip(page) {
 	await navTo(page, 'Cases').catch(() => {})
 	await dismissSupportDialog(page).catch(() => {})
 	const row = page.locator('.viewTableRow, tr[role="row"], .list-item').first()
-	if ((await row.count()) === 0) {
+	// This gate gives the WHOLE FILE its verdict, and it used `count()` — one
+	// snapshot, no retry — immediately after navigating. Firing early skipped
+	// every test here (3 skipped, 0 executed), which the skip-discipline gate
+	// reports as a spec file that ran nothing. Wait for a row before deciding
+	// the list is empty.
+	const hasRow = await row
+		.waitFor({ state: 'attached', timeout: 8_000 })
+		.then(() => true)
+		.catch(() => false)
+	if (!hasRow) {
 		test.skip(
 			true,
-			'No cases in the deployed/seeded register — related-cases tab is data-dependent.',
+			'no case rows rendered within 8s, so there is nothing to open a related-cases tab on. This is data-dependence on a seeded register, not a missing feature: src/views/cases/components/RelatedCasesSection.vue ships in this commit.',
 		)
 		return false
 	}
@@ -55,10 +64,18 @@ test.describe('Related cases section (related-case-linking)', () => {
 		const tab = page
 			.getByRole('tab', { name: /Related cases|Gerelateerde zaken/i })
 			.first()
-		if ((await tab.count()) === 0) {
+		// `count()` takes ONE snapshot and cannot retry, so this fired the
+		// instant the sidebar had not painted yet — and then blamed a
+		// deployment for it. Wait for the tab to attach before concluding it
+		// is absent.
+		const present = await tab
+			.waitFor({ state: 'attached', timeout: 5_000 })
+			.then(() => true)
+			.catch(() => false)
+		if (!present) {
 			test.skip(
 				true,
-				'Related cases sidebar tab not present in the deployed build (deploy mismatch).',
+				'the Related cases sidebar tab did not attach within 5s. NOT a deploy gap — src/views/cases/components/RelatedCasesSection.vue is in this commit, so the section ships; what is missing is the tab appearing on CaseDetail. Treat this as a registration or seeding bug and debug it, rather than waiting for a build.',
 			)
 			return
 		}
@@ -86,10 +103,18 @@ test.describe('Related cases section (related-case-linking)', () => {
 		const tab = page
 			.getByRole('tab', { name: /Related cases|Gerelateerde zaken/i })
 			.first()
-		if ((await tab.count()) === 0) {
+		// `count()` takes ONE snapshot and cannot retry, so this fired the
+		// instant the sidebar had not painted yet — and then blamed a
+		// deployment for it. Wait for the tab to attach before concluding it
+		// is absent.
+		const present = await tab
+			.waitFor({ state: 'attached', timeout: 5_000 })
+			.then(() => true)
+			.catch(() => false)
+		if (!present) {
 			test.skip(
 				true,
-				'Related cases sidebar tab not present in the deployed build (deploy mismatch).',
+				'the Related cases sidebar tab did not attach within 5s. NOT a deploy gap — src/views/cases/components/RelatedCasesSection.vue is in this commit, so the section ships; what is missing is the tab appearing on CaseDetail. Treat this as a registration or seeding bug and debug it, rather than waiting for a build.',
 			)
 			return
 		}
@@ -120,10 +145,18 @@ test.describe('Related cases section (related-case-linking)', () => {
 		const tab = page
 			.getByRole('tab', { name: /Related cases|Gerelateerde zaken/i })
 			.first()
-		if ((await tab.count()) === 0) {
+		// `count()` takes ONE snapshot and cannot retry, so this fired the
+		// instant the sidebar had not painted yet — and then blamed a
+		// deployment for it. Wait for the tab to attach before concluding it
+		// is absent.
+		const present = await tab
+			.waitFor({ state: 'attached', timeout: 5_000 })
+			.then(() => true)
+			.catch(() => false)
+		if (!present) {
 			test.skip(
 				true,
-				'Related cases sidebar tab not present in the deployed build (deploy mismatch).',
+				'the Related cases sidebar tab did not attach within 5s. NOT a deploy gap — src/views/cases/components/RelatedCasesSection.vue is in this commit, so the section ships; what is missing is the tab appearing on CaseDetail. Treat this as a registration or seeding bug and debug it, rather than waiting for a build.',
 			)
 			return
 		}

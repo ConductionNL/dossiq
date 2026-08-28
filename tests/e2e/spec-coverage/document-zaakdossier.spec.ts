@@ -55,9 +55,13 @@ test.describe('document-zaakdossier spec coverage', () => {
 	// for the Playwright environment. Previously an unconditional
 	// `test.skip(true, …)` at the end of the body, which reads as an environment
 	// condition but can never become true. See #764.
-	test.fixme('dossier upload + sort flow is reachable from the dossier tab — blocked by #764 (no seeded case fixture)', async ({
+	test('dossier upload + sort flow is reachable from the dossier tab — blocked by #764 (no seeded case fixture)', async ({
 		page,
 	}) => {
+		test.fixme(
+			true,
+			'no seeded case fixture Quarantined by declaration: the upload dialog + sort controls need a case seeded with a linked informatieobject, which nothing in this repo provides for the Playwright environment. Previously an unconditional `test.skip(true, …)` at the end of the body, which reads as an environment condition but can never become true. See #764.',
+		)
 		const response = await page
 			.goto('/index.php/apps/dossiq/cases')
 			.catch(() => null)
@@ -76,9 +80,13 @@ test.describe('document-zaakdossier spec coverage', () => {
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-006b-restore-is-disabled-for-definitief-documents
 	// Quarantined by declaration — needs a concept document with more than one
 	// file version on a seeded case. See #764.
-	test.fixme('version history panel is reachable from a dossier row — blocked by #764 (no seeded versioned fixture)', async ({
+	test('version history panel is reachable from a dossier row — blocked by #764 (no seeded versioned fixture)', async ({
 		page,
 	}) => {
+		test.fixme(
+			true,
+			'no seeded versioned fixture Quarantined by declaration — needs a concept document with more than one file version on a seeded case. See #764.',
+		)
 		const response = await page
 			.goto('/index.php/apps/dossiq/cases')
 			.catch(() => null)
@@ -96,9 +104,13 @@ test.describe('document-zaakdossier spec coverage', () => {
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-008c-bulk-status-transition-returns-per-document-result
 	// Quarantined by declaration — needs a case seeded with two or more dossier
 	// documents so a multi-select can raise the bulk bar. See #764.
-	test.fixme('bulk actions bar appears when dossier documents are selected — blocked by #764 (no multi-document fixture)', async ({
+	test('bulk actions bar appears when dossier documents are selected — blocked by #764 (no multi-document fixture)', async ({
 		page,
 	}) => {
+		test.fixme(
+			true,
+			'no multi-document fixture Quarantined by declaration — needs a case seeded with two or more dossier documents so a multi-select can raise the bulk bar. See #764.',
+		)
 		const response = await page
 			.goto('/index.php/apps/dossiq/cases')
 			.catch(() => null)

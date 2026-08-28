@@ -29,15 +29,21 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	}) => {
 		await page.goto(`/index.php${SubstitutionPersonalSettings}`)
 		await dismissSupportDialog(page)
-		const heading = page.getByRole('heading', { name: /Substitution/ }).first()
+		const heading = page
+			.getByRole('heading', { name: /Substitution|Vervanging|Waarneming/i })
+			.first()
 		if (await becomesVisible(heading)) {
 			await expect(
-				page.getByRole('button', { name: /Register substitution/ }).first(),
+				page
+					.getByRole('button', {
+						name: /Register substitution|Waarneming registreren/i,
+					})
+					.first(),
 			).toBeVisible()
 		} else {
 			test.skip(
 				true,
-				'Substitution settings surface not deployed in target instance',
+				'the substitution settings heading did not appear. NOT a deploy gap — SubstitutionAdmin.vue is registered in src/registry.js and this commit ships it. Note the locators above accept the Dutch strings too: l10n/nl.json translates Substitution -> Vervanging and Register substitution -> Waarneming registreren, so an English-only locator could never match a Dutch instance.',
 			)
 		}
 	})
@@ -49,7 +55,9 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 		await page.goto(`/index.php${SubstitutionPersonalSettings}`)
 		await dismissSupportDialog(page)
 		const btn = page
-			.getByRole('button', { name: /Register substitution/ })
+			.getByRole('button', {
+				name: /Register substitution|Waarneming registreren/i,
+			})
 			.first()
 		if (await becomesVisible(btn)) {
 			await btn.click()
@@ -61,7 +69,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 		} else {
 			test.skip(
 				true,
-				'Substitution settings surface not deployed in target instance',
+				'the substitution settings heading did not appear. NOT a deploy gap — SubstitutionAdmin.vue is registered in src/registry.js and this commit ships it. Note the locators above accept the Dutch strings too: l10n/nl.json translates Substitution -> Vervanging and Register substitution -> Waarneming registreren, so an English-only locator could never match a Dutch instance.',
 			)
 		}
 	})
@@ -114,7 +122,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 		} else {
 			test.skip(
 				true,
-				'Coordinator substitution admin not deployed/authorised in target instance',
+				'the coordinator substitution admin did not appear. NOT a deploy gap — SubstitutionAdminView is registered in src/registry.js. If this persists it is an authorisation or routing problem, not a missing build.',
 			)
 		}
 	})
@@ -136,7 +144,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 		} else {
 			test.skip(
 				true,
-				'Coordinator substitution admin not deployed/authorised in target instance',
+				'the coordinator substitution admin did not appear. NOT a deploy gap — SubstitutionAdminView is registered in src/registry.js. If this persists it is an authorisation or routing problem, not a missing build.',
 			)
 		}
 	})

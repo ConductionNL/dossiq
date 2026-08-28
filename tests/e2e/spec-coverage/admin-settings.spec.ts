@@ -76,7 +76,11 @@ test.describe('Admin Settings spec coverage', () => {
 	// above, which asserts the same heading + add control without clicking,
 	// passes, so the page itself loads.
 	// @e2e openspec/specs/admin-settings/spec.md#add-a-new-case-type
-	test.fixme('clicking add case type opens creation form', async ({ page }) => {
+	test('clicking add case type opens creation form', async ({ page }) => {
+		test.fixme(
+			true,
+			'FIXME(#719): the creation form never surfaces its Save control — this overruns even the tripled test.slow() budget of 180s. The sibling test above, which asserts the same heading + add control without clicking, passes, so the page itself loads.',
+		)
 		await page.goto(ADMIN_SETTINGS_URL)
 		await expect(
 			page.getByRole('heading', { name: 'Case Type Management' }),
