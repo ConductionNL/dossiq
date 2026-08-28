@@ -46,22 +46,30 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 	 *
 	 * @param string|null $failsOnSchema A schema whose writes throw, modelling a
 	 *                                   partial seed.
+	 * @param string      $shape         What saveObject hands back: 'array', an
+	 *                                   'entity' with jsonSerialize, an 'idless'
+	 *                                   row, or a 'scalar'. The store answers
+	 *                                   differently across instances, and a
+	 *                                   reader that understands only one shape
+	 *                                   silently treats a successful write as a
+	 *                                   failed one.
 	 *
 	 * @return object The ObjectService double.
 	 */
-	private function store(?string $failsOnSchema = null): object {
+	private function store(?string $failsOnSchema = null, string $shape = 'array'): object {
 		$this->saved = [];
 
-		return new class($this->saved, $failsOnSchema) {
+		return new class($this->saved, $failsOnSchema, $shape) {
 			private int $n = 0;
 
 			public function __construct(
 				public array &$saved,
 				private ?string $failsOnSchema,
+				private string $shape,
 			) {
 			}
 
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object, string $register, string $schema): mixed {
 				if ($schema === $this->failsOnSchema) {
 					throw new RuntimeException('schema rejected the object');
 				}
@@ -69,7 +77,29 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 				$this->saved[] = ['schema' => $schema, 'object' => $object];
 				$this->n++;
 
-				return ($object + ['id' => $schema . '-' . $this->n]);
+				$saved = ($object + ['id' => $schema . '-' . $this->n]);
+
+				if ($this->shape === 'entity') {
+					return new class($saved) {
+						public function __construct(private array $row) {
+						}
+
+						public function jsonSerialize(): array {
+							return $this->row;
+						}
+					};
+				}
+
+				if ($this->shape === 'idless') {
+					unset($saved['id']);
+					return $saved;
+				}
+
+				if ($this->shape === 'scalar') {
+					return 'not-an-object';
+				}
+
+				return $saved;
 			}
 		};
 	}//end store()
@@ -297,4 +327,90 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 
 		$step->run($output);
 	}//end testWithoutOpenRegisterItSkipsRatherThanThrows()
+
+	/**
+	 * A case type the store saves without an id stops that branch cleanly.
+	 *
+	 * Its statuses would otherwise be written with an empty `caseType`, which is
+	 * the exact shape that makes them invisible to the status lookup.
+	 */
+	public function testACaseTypeSavedWithoutAnIdSkipsItsStatuses(): void {
+		$step = $this->step($this->store(shape: 'idless'));
+
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->atLeastOnce())->method('warning');
+
+		$step->run($output);
+
+		$this->assertSame([], $this->savedTo('status_type_schema'));
+	}//end testACaseTypeSavedWithoutAnIdSkipsItsStatuses()
+
+	/**
+	 * An entity return value is read the same as a plain array.
+	 */
+	public function testAnEntityReturnValueIsUnwrappedForItsId(): void {
+		$step = $this->step($this->store(shape: 'entity'));
+		$step->run($this->createMock(IOutput::class));
+
+		$statuses = $this->savedTo('status_type_schema');
+		$this->assertNotSame([], $statuses, 'the case type id was read out of the entity');
+		$this->assertNotSame('', (string)$statuses[0]['caseType']);
+	}//end testAnEntityReturnValueIsUnwrappedForItsId()
+
+	/**
+	 * A store that answers with something that is not an object at all is
+	 * treated as "no id", not as a crash.
+	 */
+	public function testAScalarReturnValueIsTreatedAsNoId(): void {
+		$step = $this->step($this->store(shape: 'scalar'));
+
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->atLeastOnce())->method('warning');
+
+		$step->run($output);
+
+		$this->assertSame([], $this->savedTo('status_type_schema'));
+	}//end testAScalarReturnValueIsTreatedAsNoId()
+
+	/**
+	 * 🔴 ONE CASE TYPE FAILING MUST NOT STOP THE OTHERS.
+	 *
+	 * The per-case-type catch is what makes a partial seed recoverable: the
+	 * failure is reported and logged, the run continues, and the next repair
+	 * pass finishes what is missing.
+	 */
+	public function testACaseTypeThatFailsEntirelyIsReportedAndTheRunContinues(): void {
+		$step = $this->step($this->store(failsOnSchema: 'case_type_schema'));
+
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->atLeastOnce())->method('warning');
+
+		$step->run($output);
+
+		$this->assertSame([], $this->saved, 'nothing was written, and nothing threw out of run()');
+	}//end testACaseTypeThatFailsEntirelyIsReportedAndTheRunContinues()
+
+	/**
+	 * With OpenRegister reporting available but no ObjectService, it skips.
+	 *
+	 * These are separate reads on SettingsService, and only the second one is
+	 * the object the seed actually writes through.
+	 */
+	public function testAvailableOpenRegisterWithNoObjectServiceStillSkips(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('isOpenRegisterAvailable')->willReturn(true);
+		$settings->method('getObjectService')->willReturn(null);
+
+		$step = new CaseFlowSeedDataRepairStep(
+			$settings,
+			$this->createMock(StatusTypeLookup::class),
+			$this->createMock(CaseFlowSeedIndex::class),
+			new NullLogger()
+		);
+
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->atLeastOnce())->method('warning');
+
+		$step->run($output);
+	}//end testAvailableOpenRegisterWithNoObjectServiceStillSkips()
 }//end class
