@@ -58,14 +58,14 @@
             "description": "Aanvraag voor het plaatsen van een dakkapel aan de achterzijde. Compleet ingediend: bouwtekening, constructieberekening en situatieschets zijn bijgevoegd.",
             "caseTypeSlug": "omgevingsvergunning-kleinbouw",
             "status": "Ontvangen",
-            "intakeChannel": "digitaal-loket"
+            "intakeChannel": "website"
         },
         {
             "title": "Schuur Molenweg 3",
             "description": "",
             "caseTypeSlug": "omgevingsvergunning-kleinbouw",
             "status": "Ontvangen",
-            "intakeChannel": "digitaal-loket"
+            "intakeChannel": "website"
         }
     ]
 }
