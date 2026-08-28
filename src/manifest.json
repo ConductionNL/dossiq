@@ -10,6 +10,14 @@
 		"completionConfigKey": "setup_completed_version",
 		"steps": [
 			{
+				"id": "demo-data",
+				"type": "run-action",
+				"action": "install-demo-data",
+				"title": "Demo data (optioneel)",
+				"required": false,
+				"body": "Laad de meegeleverde voorbeelddata zodat je Dossiq meteen ziet werken. Sla dit over op een productie-instantie."
+			},
+			{
 				"id": "welcome",
 				"type": "info",
 				"title": "Welkom bij Dossiq",
