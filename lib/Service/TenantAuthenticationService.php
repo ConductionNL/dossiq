@@ -46,6 +46,17 @@ class TenantAuthenticationService {
 	private const DEFAULT_DENY_MATRIX = [];
 
 	/**
+	 * Upper bound on memberships read for one user.
+	 *
+	 * A person belongs to a handful of tenants, not hundreds. The cap exists so
+	 * a malformed filter that matches every row cannot turn a per-request
+	 * lookup into a full table read.
+	 *
+	 * @var int
+	 */
+	private const MAX_MEMBERSHIPS = 100;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IAppManager $appManager App manager (for OR availability check).
@@ -284,6 +295,104 @@ class TenantAuthenticationService {
 
 		return null;
 	}//end resolveUserRole()
+
+	/**
+	 * The tenant ids the given user is a member of.
+	 *
+	 * WHY THIS EXISTS. The tenant a request acts as is decided by the session,
+	 * not by an `X-Tenant-Id` header and not by a JWT claim. Both of those are
+	 * supplied by the caller, and a caller is exactly who must not choose. This
+	 * is the lookup that says which tenants a user may legitimately be on, so
+	 * that a switch can be verified and a session can be resolved.
+	 *
+	 * Fails CLOSED for the same reason as `resolveUserRole()`: a backend error
+	 * returned as an empty list is indistinguishable from "member of nothing",
+	 * and the caller would read it as a clean answer.
+	 *
+	 * @param string $userId The Nextcloud uid.
+	 *
+	 * @return array<int, string> Tenant ids, possibly empty.
+	 *
+	 * @throws Throwable When the membership lookup fails.
+	 *
+	 * @spec openspec/specs/multi-tenancy/spec.md#req-005-tenant-membership-and-status-helpers-for-middleware
+	 */
+	public function listTenantsForUser(string $userId): array {
+		if ($userId === '') {
+			return [];
+		}
+
+		$objectService = $this->getObjectService();
+		if ($objectService === null) {
+			return [];
+		}
+
+		try {
+			$rows = $objectService->findAll(
+				[
+					'filters' => [
+						'register' => TenantSaasService::REGISTER,
+						'schema' => 'tenantUser',
+						'userRef' => $userId,
+					],
+					'limit' => self::MAX_MEMBERSHIPS,
+					'offset' => 0,
+				]
+			);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: listTenantsForUser lookup failed (fail-closed)',
+				['userId' => $userId, 'exception' => $e->getMessage()]
+			);
+			throw $e;
+		}
+
+		if (is_array($rows) === false) {
+			return [];
+		}
+
+		$tenantIds = [];
+		foreach ($rows as $row) {
+			if (is_array($row) === false) {
+				continue;
+			}
+
+			$tenantId = trim((string)($row['tenantRef'] ?? ''));
+			if ($tenantId === '' || in_array($tenantId, $tenantIds, true) === true) {
+				continue;
+			}
+
+			$tenantIds[] = $tenantId;
+		}
+
+		return $tenantIds;
+	}//end listTenantsForUser()
+
+	/**
+	 * Whether the user is a member of the tenant.
+	 *
+	 * Membership is "has a tenantUser row", which is what `resolveUserRole()`
+	 * already answers — a row without a role is still a row, so this asks the
+	 * membership question directly rather than inferring it from a role string
+	 * that may legitimately be empty.
+	 *
+	 * @param string $tenantId The tenant id.
+	 * @param string $userId   The Nextcloud uid.
+	 *
+	 * @return bool Whether the user may act as this tenant.
+	 *
+	 * @throws Throwable When the membership lookup fails.
+	 *
+	 * @spec openspec/specs/multi-tenancy/spec.md#req-005-tenant-membership-and-status-helpers-for-middleware
+	 */
+	public function isMemberOf(string $tenantId, string $userId): bool {
+		if ($tenantId === '' || $userId === '') {
+			return false;
+		}
+
+		return in_array($tenantId, $this->listTenantsForUser(userId: $userId), true);
+	}//end isMemberOf()
+
 
 	/**
 	 * Resolve OR's ObjectService when installed.
