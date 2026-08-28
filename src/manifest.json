@@ -1,6 +1,6 @@
 {
 	"$schema": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"dependencies": [
 		"openregister"
 	],
@@ -36,6 +36,25 @@
 				"title": "Bezwaar & Beroep voorbeelddata laden",
 				"action": "seed",
 				"required": false
+			},
+			{
+				"id": "dwangsom-secret",
+				"type": "config-fields",
+				"title": "Dwangsom callback signing secret",
+				"required": false,
+				"configKeys": [
+					"dwangsom_callback_secret"
+				],
+				"schema": {
+					"type": "object",
+					"properties": {
+						"dwangsom_callback_secret": {
+							"type": "string",
+							"title": "Callback signing secret",
+							"description": "Shared secret the payment provider signs its dwangsom payout callbacks with. Until it is set, DwangsomPaymentCallbackController cannot verify that a callback really came from the provider. Only shown while the dwangsom payout integration is configured."
+						}
+					}
+				}
 			},
 			{
 				"id": "done",
@@ -103,6 +122,42 @@
 							"capture": {
 								"caseId": ":id"
 							}
+						}
+					},
+					{
+						"id": "see-case-types",
+						"sinceVersion": "1.2.0",
+						"placement": "right",
+						"optional": true,
+						"allowManualNext": true,
+						"title": "Where case types come from",
+						"body": "Every case follows a case type, its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look; you do not need to make one, 88 ship with the app.",
+						"task": "Open Case types in the menu",
+						"target": {
+							"kind": "nav-item",
+							"ref": "CaseTypes"
+						},
+						"advanceOn": {
+							"type": "route-match",
+							"route": "CaseTypes"
+						}
+					},
+					{
+						"id": "see-flows",
+						"sinceVersion": "1.2.0",
+						"placement": "right",
+						"optional": true,
+						"allowManualNext": true,
+						"title": "Where the automation lives",
+						"body": "Flows are what happens without anyone clicking: a deadline that warns before it passes, a confirmation that goes out on submission. This is where you read and edit them. Nothing to build now.",
+						"task": "Open Flows in the menu",
+						"target": {
+							"kind": "nav-item",
+							"ref": "Flows"
+						},
+						"advanceOn": {
+							"type": "route-match",
+							"route": "Flows"
 						}
 					},
 					{
@@ -4550,7 +4605,10 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "caseType",
-				"sidebar": { "enabled": true, "showMetadata": true },
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
 				"documentationUrl": "https://procest.conduction.nl"
 			},
 			"_note": "The case-type blueprint: identity and classification, the processing deadline and extension rules (AWB terms), the pinned workflowDefinition, sub-case types and decision types. Cases of this type are reached from the Cases index filtered by caseType rather than duplicated here."

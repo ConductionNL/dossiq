@@ -3395,7 +3395,16 @@ OC.L10N.register(
         "Flows": "Flows",
         "New flow": "Nieuwe flow",
         "Demo data (optional)": "Demodata (optioneel)",
-        "Load example dossiers, case types and documents so lists, the case timeline and the detail pages show a working product right away. Optional, and safe to run more than once. Skip this on a production install.": "Laad voorbeelddossiers, zaaktypen en documenten, zodat lijsten, de zaaktijdlijn en de detailpagina's meteen een werkend product tonen. Optioneel en veilig om vaker uit te voeren. Sla dit over op een productie-installatie."
+        "Load example dossiers, case types and documents so lists, the case timeline and the detail pages show a working product right away. Optional, and safe to run more than once. Skip this on a production install.": "Laad voorbeelddossiers, zaaktypen en documenten, zodat lijsten, de zaaktijdlijn en de detailpagina's meteen een werkend product tonen. Optioneel en veilig om vaker uit te voeren. Sla dit over op een productie-installatie.",
+        "Callback signing secret": "Callback-ondertekeningsgeheim",
+        "Dwangsom callback signing secret": "Dwangsom callback-ondertekeningsgeheim",
+        "Shared secret the payment provider signs its dwangsom payout callbacks with. Until it is set, DwangsomPaymentCallbackController cannot verify that a callback really came from the provider. Only shown while the dwangsom payout integration is configured.": "Gedeeld geheim waarmee de betaaldienst zijn dwangsom-uitbetalingscallbacks ondertekent. Zolang het niet is ingesteld, kan DwangsomPaymentCallbackController niet verifieren dat een callback echt van de betaaldienst komt. Alleen zichtbaar zolang de dwangsom-uitbetaling is geconfigureerd.",
+        "Where case types come from": "Waar zaaktypen vandaan komen",
+        "Every case follows a case type, its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look; you do not need to make one, 88 ship with the app.": "Elke zaak volgt een zaaktype, de blauwdruk. Het zaaktype bepaalt welke statussen een zaak doorloopt, hoe lang die mag duren, wie hem behandelt en wat er besloten mag worden. Kijk gerust rond; u hoeft er geen te maken, er zijn er 88 meegeleverd.",
+        "Open Case types in the menu": "Open Zaaktypen in het menu",
+        "Where the automation lives": "Waar de automatisering zit",
+        "Flows are what happens without anyone clicking: a deadline that warns before it passes, a confirmation that goes out on submission. This is where you read and edit them. Nothing to build now.": "Flows zijn wat er gebeurt zonder dat iemand klikt: een termijn die waarschuwt voordat die verstrijkt, een bevestiging die bij indiening uitgaat. Hier leest en bewerkt u ze. U hoeft nu niets te bouwen.",
+        "Open Flows in the menu": "Open Flows in het menu"
     },
     "nplurals=2; plural=(n != 1);"
 )

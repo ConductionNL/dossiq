@@ -187,6 +187,13 @@ test.describe('Cases — full CRUD with persistence', () => {
 		await expect(editItem).toBeVisible({ timeout: 10000 })
 		await editItem.click()
 
+		// Edit on an index row NAVIGATES to the case's detail page now; it no
+		// longer opens a modal over the list. A record with its own detail page
+		// is edited there, where its nested collections are reachable, rather
+		// than through a dialog showing only the schema's flat scalars
+		// (@conduction/nextcloud-vue 2.21.0). The form is one click further on.
+		await page.getByTestId('cn-detail-page-edit').click()
+
 		// In the edit dialog, change the title field, then save.
 		const dialog = page.locator('[role="dialog"], .modal-container').first()
 		await expect(dialog).toBeVisible({ timeout: 10000 })
