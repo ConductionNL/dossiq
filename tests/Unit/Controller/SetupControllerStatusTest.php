@@ -136,8 +136,8 @@ class SetupControllerStatusTest extends TestCase {
 		$data = $this->controller($this->provisioned())->status()->getData();
 
 		$this->assertTrue($data['completed'], 'completed describes REQUIRED steps, and the required one is done');
-		$this->assertArrayHasKey('seed', $data['steps'], 'an omitted step is invisible to the wizard');
-		$this->assertFalse($data['steps']['seed']['done']);
+		$this->assertArrayHasKey('demo-data', $data['steps'], 'an omitted step is invisible to the wizard');
+		$this->assertFalse($data['steps']['demo-data']['done']);
 		$this->assertTrue($data['steps']['register-check']['done']);
 
 	}//end testSeedIsReportedAsNotDoneOnACleanInstall()
@@ -179,7 +179,7 @@ class SetupControllerStatusTest extends TestCase {
 	public function testSeedIsDoneOnceItHasRun(): void {
 		$data = $this->controller($this->provisioned() + ['setup_seed_done' => '1'])->status()->getData();
 
-		$this->assertTrue($data['steps']['seed']['done']);
+		$this->assertTrue($data['steps']['demo-data']['done']);
 
 	}//end testSeedIsDoneOnceItHasRun()
 
@@ -303,7 +303,7 @@ class SetupControllerStatusTest extends TestCase {
 			seedResult: ['success' => true, 'caseTypes' => 0, 'statusTypes' => 0, 'roleTypes' => 0, 'workflows' => 0, 'skipped' => 0]
 		);
 
-		$response = $built['controller']->runAction(actionId: 'seed');
+		$response = $built['controller']->runAction(actionId: 'demo-data');
 
 		$this->assertSame(422, $response->getStatus());
 		$this->assertFalse($response->getData()['success']);
@@ -325,7 +325,7 @@ class SetupControllerStatusTest extends TestCase {
 			seedResult: ['success' => true, 'caseTypes' => 3, 'statusTypes' => 9, 'roleTypes' => 2, 'workflows' => 1, 'skipped' => 0]
 		);
 
-		$response = $built['controller']->runAction(actionId: 'seed');
+		$response = $built['controller']->runAction(actionId: 'demo-data');
 
 		$this->assertTrue($response->getData()['success']);
 		$this->assertSame('1', $built['written']['setup_seed_done'] ?? null);
@@ -344,10 +344,39 @@ class SetupControllerStatusTest extends TestCase {
 			seedResult: ['success' => true, 'caseTypes' => 0, 'statusTypes' => 0, 'roleTypes' => 0, 'workflows' => 0, 'skipped' => 12]
 		);
 
-		$response = $built['controller']->runAction(actionId: 'seed');
+		$response = $built['controller']->runAction(actionId: 'demo-data');
 
 		$this->assertTrue($response->getData()['success']);
 		$this->assertSame('1', $built['written']['setup_seed_done'] ?? null);
 
 	}//end testASeedThatOnlySkippedStillRecordsTheStepAsDone()
+
+	/**
+	 * The pre-rename `seed` action id still runs the step.
+	 *
+	 * ADR-111 rule 4 renamed this step to `demo-data` so it can lead the
+	 * wizard. The action id is a POST route (`/api/setup/action/{actionId}`),
+	 * not just an internal label, so the rename is a public-surface change: a
+	 * wizard a user left half-finished, or anything holding the old URL, keeps
+	 * posting `seed`. Without the alias that becomes a silent 400 and the demo
+	 * data never lands, which presents as "the button does nothing" — the
+	 * hardest kind of failure to trace back to a rename.
+	 *
+	 * @return void
+	 */
+	public function testTheOldSeedActionIdStillRunsTheStep(): void {
+		$built = $this->build(
+			config: $this->provisioned(),
+			seedResult: ['success' => true, 'caseTypes' => 3, 'statusTypes' => 9, 'roleTypes' => 2, 'workflows' => 1, 'skipped' => 0]
+		);
+
+		$response = $built['controller']->runAction(actionId: 'seed');
+
+		$this->assertTrue(
+			$response->getData()['success'],
+			'the pre-rename action id must keep working, or a half-finished wizard 400s'
+		);
+		$this->assertSame('1', $built['written']['setup_seed_done'] ?? null);
+
+	}//end testTheOldSeedActionIdStillRunsTheStep()
 }//end class

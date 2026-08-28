@@ -105,7 +105,7 @@ class SetupController extends Controller {
 			'completed' => $completed,
 			'steps' => [
 				'register-check'  => ['done' => $registerDone],
-				'seed'            => ['done' => $seedDone],
+				'demo-data'       => ['done' => $seedDone],
 				// Reported unconditionally so the wizard can tell "configured"
 				// from "never mentioned" — an unreported step is UNKNOWN to
 				// CnAppRoot and never prompts.
@@ -162,7 +162,7 @@ class SetupController extends Controller {
 	/**
 	 * Run a privileged server-side setup action.
 	 *
-	 * @param string $actionId One of `init-register` | `seed`.
+	 * @param string $actionId One of `demo-data` (alias `seed`) | `init-register`.
 	 *
 	 * @return DataResponse `{ success, message, detail }`.
 	 *
@@ -175,7 +175,18 @@ class SetupController extends Controller {
 			return new DataResponse(['success' => true, 'message' => 'Register and schemas initialised.']);
 		}
 
-		if ($actionId === 'seed') {
+		// `demo-data` is the manifest's id for this step; ADR-111 rule 4 puts it
+		// first. `seed` stays accepted as an alias so a bookmarked POST or a
+		// half-finished wizard from before the rename does not 400.
+		if ($actionId === 'demo-data' || $actionId === 'seed') {
+			// This step now runs BEFORE `register-check`, so it cannot assume the
+			// register and schemas already exist. On a clean install they do not,
+			// and seeding into a register that is not there yet touches zero rows,
+			// which the check below correctly refuses to record as done.
+			// loadConfiguration() is idempotent, so this costs nothing on a repeat
+			// run and is what lets the demo data land when it is the first thing a
+			// new admin clicks.
+			$this->settingsService->loadConfiguration(force: true);
 			$result = $this->seedDataService->seedBezwaarBeroepData();
 			if (($result['success'] ?? false) === false) {
 				return new DataResponse(

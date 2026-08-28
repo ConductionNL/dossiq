@@ -254,7 +254,7 @@ test.describe('Setup — the sample-data step is reachable', () => {
 
 		expect(body).not.toBeNull()
 		expect(body.steps).toHaveProperty('register-check')
-		expect(body.steps).toHaveProperty('seed')
+		expect(body.steps).toHaveProperty('demo-data')
 		expect(body.steps).toHaveProperty('dwangsom-secret')
 		for (const id of Object.keys(body.steps)) {
 			expect(typeof body.steps[id].done).toBe('boolean')
