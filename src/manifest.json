@@ -2943,14 +2943,6 @@
 						"handler": "navigate",
 						"route": "ParafeerrouteDetail",
 						"type": "handler"
-					},
-					{
-						"key": "edit",
-						"type": "handler"
-					},
-					{
-						"key": "delete",
-						"type": "handler"
 					}
 				],
 				"sidebar": {
@@ -2997,18 +2989,6 @@
 						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "WmsLayerDetail",
-						"type": "handler"
-					},
-					{
-						"key": "create",
-						"type": "handler"
-					},
-					{
-						"key": "edit",
-						"type": "handler"
-					},
-					{
-						"key": "delete",
 						"type": "handler"
 					}
 				],
@@ -3252,9 +3232,6 @@
 				],
 				"showViewAction": false,
 				"actions": [
-					"create",
-					"edit",
-					"delete",
 					{
 						"id": "view",
 						"label": "View",
@@ -3512,9 +3489,6 @@
 				],
 				"showViewAction": false,
 				"actions": [
-					"create",
-					"edit",
-					"delete",
 					{
 						"id": "view",
 						"label": "View",
@@ -3736,7 +3710,6 @@
 				],
 				"showViewAction": false,
 				"actions": [
-					"create",
 					{
 						"id": "view",
 						"label": "View",
@@ -4555,9 +4528,6 @@
 				],
 				"showViewAction": false,
 				"actions": [
-					"create",
-					"edit",
-					"delete",
 					{
 						"id": "view",
 						"label": "View",
