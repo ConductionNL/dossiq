@@ -1803,6 +1803,12 @@
                         "description": "Id of the node within the flow that asked this question. Required alongside flowRun because a run accumulates one awaiting slot PER NODE, so the run alone cannot say which question this task answers.",
                         "visible": false,
                         "title": "Flow Node"
+                    },
+                    "blocksCase": {
+                        "type": "boolean",
+                        "description": "Set when a case flow is waiting on this task. Derived — see x-openregister-calculations.",
+                        "title": "Blocks a case",
+                        "facetable": true
                     }
                 },
                 "searchable": true,
@@ -1963,6 +1969,46 @@
                                 "to": "disabled",
                                 "description": "Disable the task."
                             }
+                        }
+                    }
+                },
+                "x-openregister-calculations": {
+                    "blocksCase": {
+                        "type": "boolean",
+                        "materialise": true,
+                        "description": "Whether a case flow is currently WAITING on this task. True when the task records the run that created it and has not yet been answered. This is the half of the relationship a person cannot otherwise see: `case` already says which case the task belongs to, but not that the case has stopped and is waiting for them. Materialised so a work queue can filter on it server-side — a client-side filter over server-paged rows silently drops what it never fetched. Declarative per ADR-031: this is derived state, not a service.",
+                        "expression": {
+                            "and": [
+                                {
+                                    "ne": [
+                                        {
+                                            "coalesce": [
+                                                {
+                                                    "prop": "flowRun"
+                                                },
+                                                ""
+                                            ]
+                                        },
+                                        ""
+                                    ]
+                                },
+                                {
+                                    "ne": [
+                                        {
+                                            "prop": "status"
+                                        },
+                                        "completed"
+                                    ]
+                                },
+                                {
+                                    "ne": [
+                                        {
+                                            "prop": "status"
+                                        },
+                                        "terminated"
+                                    ]
+                                }
+                            ]
                         }
                     }
                 }

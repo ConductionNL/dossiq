@@ -372,6 +372,69 @@ class CaseFlowDeclarationTest extends TestCase {
 	}//end testTheSeedExercisesBothSidesOfTheCompletenessCheck()
 
 	/**
+	 * 🔴 THE `blocksCase` CALCULATION USES OPERATORS THE ENGINE ACTUALLY HAS.
+	 *
+	 * A calculation whose expression form the engine does not understand is
+	 * INERT — it is not rejected, it simply never produces a value. This schema
+	 * already carries a scar from exactly that: `objectionProceeding`'s
+	 * decisionDeadline shipped for months as an array-form string DSL
+	 * "which OpenRegister's calculation engine never honoured".
+	 *
+	 * The operator list below is copied from
+	 * `OpenRegister\Service\Calculation\CalculationEvaluator::apply()`. It is a
+	 * cheap structural check, not a substitute for evaluating: the expression was
+	 * additionally run through the real evaluator during development, and returns
+	 * true only for a task that names a run and is neither completed nor
+	 * terminated.
+	 *
+	 * @return void
+	 */
+	public function testTheBlocksCaseCalculationUsesSupportedOperatorsOnly(): void {
+		$register = json_decode(
+			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'),
+			true
+		);
+
+		$calc = ($register['components']['schemas']['task']['x-openregister-calculations']['blocksCase'] ?? null);
+		$this->assertIsArray($calc, 'The task must declare when it is blocking a case.');
+		$this->assertTrue(($calc['materialise'] ?? false), 'It must be materialised, or it cannot be filtered server-side.');
+
+		$supported = [
+			'abs', 'and', 'coalesce', 'concat', 'dateAdd', 'dateDiff', 'days', 'diffDays',
+			'eq', 'formatDate', 'global', 'gt', 'gte', 'hours', 'if', 'lit', 'lt', 'lte',
+			'max', 'min', 'minutes', 'monthly', 'months', 'monthsElapsed', 'ne', 'not',
+			'now', 'or', 'prop', 'round', 'seconds', 'sequence', 'weeks', 'year',
+			'yearly', 'years',
+		];
+
+		$operators = [];
+		$walk = static function (mixed $node) use (&$walk, &$operators): void {
+			if (is_array($node) === false) {
+				return;
+			}
+
+			foreach ($node as $key => $value) {
+				if (is_string($key) === true) {
+					$operators[] = $key;
+				}
+
+				$walk($value);
+			}
+		};
+		$walk($calc['expression']);
+
+		$this->assertNotEmpty($operators, 'An expression with no operators computes nothing.');
+
+		foreach (array_unique($operators) as $operator) {
+			$this->assertContains(
+				$operator,
+				$supported,
+				sprintf('"%s" is not an operator the calculation engine implements, so the field would be inert.', $operator)
+			);
+		}
+	}//end testTheBlocksCaseCalculationUsesSupportedOperatorsOnly()
+
+	/**
 	 * Every path ends at an end node rather than simply stopping.
 	 */
 	public function testEveryTerminalPathEndsDeliberately(): void {
