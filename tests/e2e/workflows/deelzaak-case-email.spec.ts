@@ -101,9 +101,13 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 
 	// FIXME(#719): same gap as cases-crud — the case detail page does not
 	// display the assigned zaaknummer anywhere in its rendered text.
-	test.fixme('CaseDetail page renders the case the sub-case + email tabs hang off', async ({
+	test('CaseDetail page renders the case the sub-case + email tabs hang off', async ({
 		page,
 	}) => {
+		test.fixme(
+			true,
+			'FIXME(#719): same gap as cases-crud — the case detail page does not display the assigned zaaknummer anywhere in its rendered text.',
+		)
 		const title = `${RUN_PREFIX} Deelzaak parent`
 		const identifier = `${RUN_PREFIX}-DZP`
 		const parent = await seedCase(api, token, {
