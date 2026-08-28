@@ -72,7 +72,13 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 *                                          than re-queried here: two readers of the
 	 *                                          same relationship drift, and this one is
 	 *                                          the same object the flow resolves through.
-	 * @param LoggerInterface $logger          Logger.
+	 * @param CaseFlowSeedIndex $index           Records which seed objects already
+	 *                                           landed. Idempotency is kept PER
+	 *                                           OBJECT, not per case type: a run
+	 *                                           that seeded half the objects and
+	 *                                           then failed must be able to finish
+	 *                                           on the next repair pass.
+	 * @param LoggerInterface   $logger          Logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
