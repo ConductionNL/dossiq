@@ -1,0 +1,71 @@
+{
+    "description": "Demo data for the shipped `Case behandeling` flow. The flow moves a case between statuses BY NAME, resolved within the case type at run time, because a statusType uuid is minted per installation and a shipped flow cannot carry one. These six names are therefore not decorative: they are the flow's contract with the case type, and a name changed on one side without the other stops the case moving.",
+    "version": "1.0.0",
+    "caseTypes": [
+        {
+            "slug": "omgevingsvergunning-kleinbouw",
+            "title": "Omgevingsvergunning kleine bouwactiviteit",
+            "description": "Kleine bouwactiviteit onder de Omgevingswet, afgehandeld met de standaard casebehandeling-flow: volledigheidstoets, twee inhoudelijke besluiten, een voorbereidende taak en een definitief besluit van de planningscommissie.",
+            "processingDeadline": "P56D",
+            "suspensionAllowed": true,
+            "extensionAllowed": true,
+            "extensionDuration": "P42D",
+            "confidentiality": "openbaar",
+            "origin": "aanvragen",
+            "statusTypes": [
+                {
+                    "name": "Ontvangen",
+                    "description": "De aanvraag is binnengekomen en staat geregistreerd.",
+                    "order": 1,
+                    "isFinal": false
+                },
+                {
+                    "name": "Wacht op aanvulling",
+                    "description": "De aanvraag is niet compleet; de indiener is gevraagd om aanvullende gegevens.",
+                    "order": 2,
+                    "isFinal": false
+                },
+                {
+                    "name": "In behandeling",
+                    "description": "De aanvraag is compleet en wordt inhoudelijk beoordeeld.",
+                    "order": 3,
+                    "isFinal": false
+                },
+                {
+                    "name": "Bij commissie",
+                    "description": "De aanvraag ligt voor bij de planningscommissie voor een definitief besluit.",
+                    "order": 4,
+                    "isFinal": false
+                },
+                {
+                    "name": "Afgehandeld",
+                    "description": "Er is een besluit genomen en het besluitdocument is aan de zaak toegevoegd.",
+                    "order": 5,
+                    "isFinal": true
+                },
+                {
+                    "name": "Gestrand",
+                    "description": "De gevraagde aanvulling is uitgebleven. De zaak is bewust beëindigd in plaats van te blijven rondlopen.",
+                    "order": 6,
+                    "isFinal": true
+                }
+            ]
+        }
+    ],
+    "cases": [
+        {
+            "title": "Dakkapel Kerkstraat 12",
+            "description": "Aanvraag voor het plaatsen van een dakkapel aan de achterzijde. Compleet ingediend: bouwtekening, constructieberekening en situatieschets zijn bijgevoegd.",
+            "caseTypeSlug": "omgevingsvergunning-kleinbouw",
+            "status": "Ontvangen",
+            "intakeChannel": "digitaal-loket"
+        },
+        {
+            "title": "Schuur Molenweg 3",
+            "description": "",
+            "caseTypeSlug": "omgevingsvergunning-kleinbouw",
+            "status": "Ontvangen",
+            "intakeChannel": "digitaal-loket"
+        }
+    ]
+}
