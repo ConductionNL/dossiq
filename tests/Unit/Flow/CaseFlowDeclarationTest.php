@@ -42,8 +42,25 @@ class CaseFlowDeclarationTest extends TestCase {
 		$register = json_decode((string)file_get_contents($path), true);
 		$this->assertIsArray($register, 'The register file must be valid JSON.');
 
-		$flows = ($register['components']['schemas']['case']['x-openregister-flows'] ?? null);
-		$this->assertIsArray($flows, 'The case schema must declare its flow.');
+		// READ IT WHERE THE RUNTIME READS IT.
+		//
+		// SchemaFlowImportListener takes the declaration from the schema's
+		// CONFIGURATION -- `$schema->getConfiguration()['x-openregister-flows']`
+		// -- and nothing lifts a top-level `x-openregister-*` key into
+		// configuration on import.
+		//
+		// This test used to read it from the schema's top level, where the
+		// declaration also sat. Both agreed with each other and neither agreed
+		// with the importer, so this suite was green over a flow the runtime
+		// could never materialise -- which is exactly what the e2e
+		// (case-flow-human-steps.spec.ts) then reported as "not found in the
+		// flow store".
+		$flows = ($register['components']['schemas']['case']['configuration']['x-openregister-flows'] ?? null);
+		$this->assertIsArray(
+			$flows,
+			'The case schema must declare its flow inside `configuration` — '
+			. 'that is the only place SchemaFlowImportListener looks.'
+		);
 		$this->assertCount(1, $flows, 'Exactly one case flow ships; a second would import as a separate flow.');
 
 		$this->flow = $flows[0];
