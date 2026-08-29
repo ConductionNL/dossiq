@@ -50,7 +50,7 @@ The product page at [conduction.nl](https://conduction.nl) is built with [Docusa
 - Documentation content comes from the `docs/` folder at the project root — **not** duplicated inside `docusaurus/`
 - The Docusaurus config uses `path: '../docs'` to reference the root docs directly
 - Pushing to the `development` branch triggers the GitHub Actions workflow (`.github/workflows/documentation.yml`) which builds and deploys to the `gh-pages` branch
-- GitHub Pages serves the built site at `procest.conduction.nl` (configured via `static/CNAME`)
+- GitHub Pages serves the built site at `dossiq.conduction.nl` (configured via `static/CNAME`)
 
 ### Local preview
 

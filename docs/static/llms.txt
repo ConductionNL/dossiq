@@ -6,8 +6,8 @@ Dossiq is an open-source case-management app for the Nextcloud workspace, built 
 
 ## Docs
 
-- [Documentation](https://procest.conduction.nl/docs/intro): main entry, including tutorials, user guide, and admin guide.
-- [API reference](https://procest.conduction.nl/api): OpenAPI documentation.
+- [Documentation](https://dossiq.conduction.nl/docs/intro): main entry, including tutorials, user guide, and admin guide.
+- [API reference](https://dossiq.conduction.nl/api): OpenAPI documentation.
 
 ## Optional
 

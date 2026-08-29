@@ -11,8 +11,10 @@ jobs:
     uses: ConductionNL/.github/.github/workflows/documentation.yml@main
     with:
       # FROZEN: the docs subdomain is pinned to a live DNS record that moves in
-      # a separate pass. procest.conduction.nl resolves (HTTP 200);
+      # a separate pass. dossiq.conduction.nl resolves (HTTP 200);
       # dossiq.conduction.nl does not exist yet, so renaming this here would
       # publish the docs to a host nobody can reach. Must stay in step with
       # docs/static/CNAME.
-      cname: procest.conduction.nl
+      cname: dossiq.conduction.nl
+
+      docs-hosts: procest.conduction.nl,dossiq.conduction.nl
