@@ -1024,7 +1024,276 @@
                             "from": "caseType",
                             "field": "initialStatus"
                         }
-                    }
+                    },
+                    "x-openregister-flows": [
+                        {
+                            "name": "Case behandeling",
+                            "app": "dossiq",
+                            "description": "Walks a case from intake to closure: completeness check, an ask to the applicant when something is missing, two employee decisions, a task, the planning commission's approval, the decision document, and closure. Each status move is its own step so the applicant's view is driven by the flow.",
+                            "trigger": "object.created",
+                            "triggerRegister": "dossiq",
+                            "executionMode": "async",
+                            "limits": {
+                                "maxTransitions": 200
+                            },
+                            "nodes": [
+                                {
+                                    "id": "start",
+                                    "type": "openregister.trigger-object",
+                                    "config": {
+                                        "event": "object.created",
+                                        "register": "dossiq",
+                                        "schema": "case"
+                                    }
+                                },
+                                {
+                                    "id": "status-ontvangen",
+                                    "type": "dossiq.setStatus",
+                                    "config": {
+                                        "status": "Ontvangen"
+                                    }
+                                },
+                                {
+                                    "id": "check-complete",
+                                    "type": "openregister.switch",
+                                    "config": {}
+                                },
+                                {
+                                    "id": "count-round",
+                                    "type": "openregister.set-fields",
+                                    "config": {
+                                        "compute": {
+                                            "aanvullingRound": {
+                                                "+": [
+                                                    {
+                                                        "var": "json.aanvullingRound"
+                                                    },
+                                                    1
+                                                ]
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "id": "status-wacht",
+                                    "type": "dossiq.setStatus",
+                                    "config": {
+                                        "status": "Wacht op aanvulling"
+                                    }
+                                },
+                                {
+                                    "id": "ask-indiener",
+                                    "type": "dossiq.askPerson",
+                                    "config": {
+                                        "question": "Vul uw aanvraag aan",
+                                        "details": "Uw aanvraag is nog niet compleet. Vul de ontbrekende gegevens aan zodat wij verder kunnen.",
+                                        "assignee": "{{ case.assignee }}",
+                                        "dueInDays": "14",
+                                        "signalKey": "aanvulling"
+                                    }
+                                },
+                                {
+                                    "id": "status-gestrand",
+                                    "type": "dossiq.setStatus",
+                                    "config": {
+                                        "status": "Gestrand"
+                                    }
+                                },
+                                {
+                                    "id": "end-gestrand",
+                                    "type": "openregister.end",
+                                    "config": {}
+                                },
+                                {
+                                    "id": "status-behandeling",
+                                    "type": "dossiq.setStatus",
+                                    "config": {
+                                        "status": "In behandeling"
+                                    }
+                                },
+                                {
+                                    "id": "decide-register-b",
+                                    "type": "dossiq.requestDecision",
+                                    "config": {
+                                        "question": "Toets de aanvraag aan register B",
+                                        "decisionType": "advice",
+                                        "signalKey": "toetsRegisterB"
+                                    }
+                                },
+                                {
+                                    "id": "decide-tweede-toets",
+                                    "type": "dossiq.requestDecision",
+                                    "config": {
+                                        "question": "Tweede inhoudelijke toets",
+                                        "decisionType": "advice",
+                                        "signalKey": "tweedeToets"
+                                    }
+                                },
+                                {
+                                    "id": "task-behandelaar",
+                                    "type": "dossiq.askPerson",
+                                    "config": {
+                                        "question": "Rond de inhoudelijke voorbereiding af",
+                                        "details": "Controleer het dossier en maak het gereed voor de planningscommissie.",
+                                        "assignee": "behandelaars",
+                                        "dueInDays": "7",
+                                        "signalKey": "voorbereiding"
+                                    }
+                                },
+                                {
+                                    "id": "status-commissie",
+                                    "type": "dossiq.setStatus",
+                                    "config": {
+                                        "status": "Bij commissie"
+                                    }
+                                },
+                                {
+                                    "id": "decide-commissie",
+                                    "type": "dossiq.requestDecision",
+                                    "config": {
+                                        "question": "Definitief besluit van de planningscommissie",
+                                        "decisionType": "report-adoption",
+                                        "signalKey": "commissieBesluit"
+                                    }
+                                },
+                                {
+                                    "id": "route-besluit",
+                                    "type": "openregister.switch",
+                                    "config": {}
+                                },
+                                {
+                                    "id": "besluit-document",
+                                    "type": "dossiq.action.mergeTemplate",
+                                    "config": {
+                                        "template": "besluit",
+                                        "outputName": "besluit.pdf"
+                                    }
+                                },
+                                {
+                                    "id": "status-afgehandeld",
+                                    "type": "dossiq.setStatus",
+                                    "config": {
+                                        "status": "Afgehandeld"
+                                    }
+                                },
+                                {
+                                    "id": "end",
+                                    "type": "openregister.end",
+                                    "config": {}
+                                }
+                            ],
+                            "edges": [
+                                {
+                                    "id": "e-start",
+                                    "from": "start",
+                                    "to": "status-ontvangen"
+                                },
+                                {
+                                    "id": "e-ontvangen",
+                                    "from": "status-ontvangen",
+                                    "to": "check-complete"
+                                },
+                                {
+                                    "id": "e-compleet",
+                                    "from": "check-complete",
+                                    "to": "status-behandeling",
+                                    "label": "compleet",
+                                    "condition": {
+                                        "!!": [
+                                            {
+                                                "var": "json.description"
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": "e-onvolledig",
+                                    "from": "check-complete",
+                                    "to": "status-wacht",
+                                    "label": "onvolledig",
+                                    "condition": {
+                                        "<": [
+                                            {
+                                                "var": "json.aanvullingRound"
+                                            },
+                                            3
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": "e-gestrand",
+                                    "from": "check-complete",
+                                    "to": "status-gestrand"
+                                },
+                                {
+                                    "id": "e-wacht",
+                                    "from": "status-wacht",
+                                    "to": "count-round"
+                                },
+                                {
+                                    "id": "e-count",
+                                    "from": "count-round",
+                                    "to": "ask-indiener"
+                                },
+                                {
+                                    "id": "e-heraanbieding",
+                                    "from": "ask-indiener",
+                                    "to": "check-complete"
+                                },
+                                {
+                                    "id": "e-gestrand-end",
+                                    "from": "status-gestrand",
+                                    "to": "end-gestrand"
+                                },
+                                {
+                                    "id": "e-behandeling",
+                                    "from": "status-behandeling",
+                                    "to": "decide-register-b"
+                                },
+                                {
+                                    "id": "e-toets1",
+                                    "from": "decide-register-b",
+                                    "to": "decide-tweede-toets"
+                                },
+                                {
+                                    "id": "e-toets2",
+                                    "from": "decide-tweede-toets",
+                                    "to": "task-behandelaar"
+                                },
+                                {
+                                    "id": "e-taak",
+                                    "from": "task-behandelaar",
+                                    "to": "status-commissie"
+                                },
+                                {
+                                    "id": "e-commissie",
+                                    "from": "status-commissie",
+                                    "to": "decide-commissie"
+                                },
+                                {
+                                    "id": "e-besluit",
+                                    "from": "decide-commissie",
+                                    "to": "route-besluit"
+                                },
+                                {
+                                    "id": "e-toegekend",
+                                    "from": "route-besluit",
+                                    "to": "besluit-document",
+                                    "label": "besluit genomen"
+                                },
+                                {
+                                    "id": "e-document",
+                                    "from": "besluit-document",
+                                    "to": "status-afgehandeld"
+                                },
+                                {
+                                    "id": "e-end",
+                                    "from": "status-afgehandeld",
+                                    "to": "end"
+                                }
+                            ]
+                        }
+                    ]
                 },
                 "required": [
                     "title",
@@ -1399,276 +1668,7 @@
                         "x-allow-create": true
                     }
                 },
-                "searchable": true,
-                "x-openregister-flows": [
-                    {
-                        "name": "Case behandeling",
-                        "app": "dossiq",
-                        "description": "Walks a case from intake to closure: completeness check, an ask to the applicant when something is missing, two employee decisions, a task, the planning commission's approval, the decision document, and closure. Each status move is its own step so the applicant's view is driven by the flow.",
-                        "trigger": "object.created",
-                        "triggerRegister": "dossiq",
-                        "executionMode": "async",
-                        "limits": {
-                            "maxTransitions": 200
-                        },
-                        "nodes": [
-                            {
-                                "id": "start",
-                                "type": "openregister.trigger-object",
-                                "config": {
-                                    "event": "object.created",
-                                    "register": "dossiq",
-                                    "schema": "case"
-                                }
-                            },
-                            {
-                                "id": "status-ontvangen",
-                                "type": "dossiq.setStatus",
-                                "config": {
-                                    "status": "Ontvangen"
-                                }
-                            },
-                            {
-                                "id": "check-complete",
-                                "type": "openregister.switch",
-                                "config": {}
-                            },
-                            {
-                                "id": "count-round",
-                                "type": "openregister.set-fields",
-                                "config": {
-                                    "compute": {
-                                        "aanvullingRound": {
-                                            "+": [
-                                                {
-                                                    "var": "json.aanvullingRound"
-                                                },
-                                                1
-                                            ]
-                                        }
-                                    }
-                                }
-                            },
-                            {
-                                "id": "status-wacht",
-                                "type": "dossiq.setStatus",
-                                "config": {
-                                    "status": "Wacht op aanvulling"
-                                }
-                            },
-                            {
-                                "id": "ask-indiener",
-                                "type": "dossiq.askPerson",
-                                "config": {
-                                    "question": "Vul uw aanvraag aan",
-                                    "details": "Uw aanvraag is nog niet compleet. Vul de ontbrekende gegevens aan zodat wij verder kunnen.",
-                                    "assignee": "{{ case.assignee }}",
-                                    "dueInDays": "14",
-                                    "signalKey": "aanvulling"
-                                }
-                            },
-                            {
-                                "id": "status-gestrand",
-                                "type": "dossiq.setStatus",
-                                "config": {
-                                    "status": "Gestrand"
-                                }
-                            },
-                            {
-                                "id": "end-gestrand",
-                                "type": "openregister.end",
-                                "config": {}
-                            },
-                            {
-                                "id": "status-behandeling",
-                                "type": "dossiq.setStatus",
-                                "config": {
-                                    "status": "In behandeling"
-                                }
-                            },
-                            {
-                                "id": "decide-register-b",
-                                "type": "dossiq.requestDecision",
-                                "config": {
-                                    "question": "Toets de aanvraag aan register B",
-                                    "decisionType": "advice",
-                                    "signalKey": "toetsRegisterB"
-                                }
-                            },
-                            {
-                                "id": "decide-tweede-toets",
-                                "type": "dossiq.requestDecision",
-                                "config": {
-                                    "question": "Tweede inhoudelijke toets",
-                                    "decisionType": "advice",
-                                    "signalKey": "tweedeToets"
-                                }
-                            },
-                            {
-                                "id": "task-behandelaar",
-                                "type": "dossiq.askPerson",
-                                "config": {
-                                    "question": "Rond de inhoudelijke voorbereiding af",
-                                    "details": "Controleer het dossier en maak het gereed voor de planningscommissie.",
-                                    "assignee": "behandelaars",
-                                    "dueInDays": "7",
-                                    "signalKey": "voorbereiding"
-                                }
-                            },
-                            {
-                                "id": "status-commissie",
-                                "type": "dossiq.setStatus",
-                                "config": {
-                                    "status": "Bij commissie"
-                                }
-                            },
-                            {
-                                "id": "decide-commissie",
-                                "type": "dossiq.requestDecision",
-                                "config": {
-                                    "question": "Definitief besluit van de planningscommissie",
-                                    "decisionType": "report-adoption",
-                                    "signalKey": "commissieBesluit"
-                                }
-                            },
-                            {
-                                "id": "route-besluit",
-                                "type": "openregister.switch",
-                                "config": {}
-                            },
-                            {
-                                "id": "besluit-document",
-                                "type": "dossiq.action.mergeTemplate",
-                                "config": {
-                                    "template": "besluit",
-                                    "outputName": "besluit.pdf"
-                                }
-                            },
-                            {
-                                "id": "status-afgehandeld",
-                                "type": "dossiq.setStatus",
-                                "config": {
-                                    "status": "Afgehandeld"
-                                }
-                            },
-                            {
-                                "id": "end",
-                                "type": "openregister.end",
-                                "config": {}
-                            }
-                        ],
-                        "edges": [
-                            {
-                                "id": "e-start",
-                                "from": "start",
-                                "to": "status-ontvangen"
-                            },
-                            {
-                                "id": "e-ontvangen",
-                                "from": "status-ontvangen",
-                                "to": "check-complete"
-                            },
-                            {
-                                "id": "e-compleet",
-                                "from": "check-complete",
-                                "to": "status-behandeling",
-                                "label": "compleet",
-                                "condition": {
-                                    "!!": [
-                                        {
-                                            "var": "json.description"
-                                        }
-                                    ]
-                                }
-                            },
-                            {
-                                "id": "e-onvolledig",
-                                "from": "check-complete",
-                                "to": "status-wacht",
-                                "label": "onvolledig",
-                                "condition": {
-                                    "<": [
-                                        {
-                                            "var": "json.aanvullingRound"
-                                        },
-                                        3
-                                    ]
-                                }
-                            },
-                            {
-                                "id": "e-gestrand",
-                                "from": "check-complete",
-                                "to": "status-gestrand"
-                            },
-                            {
-                                "id": "e-wacht",
-                                "from": "status-wacht",
-                                "to": "count-round"
-                            },
-                            {
-                                "id": "e-count",
-                                "from": "count-round",
-                                "to": "ask-indiener"
-                            },
-                            {
-                                "id": "e-heraanbieding",
-                                "from": "ask-indiener",
-                                "to": "check-complete"
-                            },
-                            {
-                                "id": "e-gestrand-end",
-                                "from": "status-gestrand",
-                                "to": "end-gestrand"
-                            },
-                            {
-                                "id": "e-behandeling",
-                                "from": "status-behandeling",
-                                "to": "decide-register-b"
-                            },
-                            {
-                                "id": "e-toets1",
-                                "from": "decide-register-b",
-                                "to": "decide-tweede-toets"
-                            },
-                            {
-                                "id": "e-toets2",
-                                "from": "decide-tweede-toets",
-                                "to": "task-behandelaar"
-                            },
-                            {
-                                "id": "e-taak",
-                                "from": "task-behandelaar",
-                                "to": "status-commissie"
-                            },
-                            {
-                                "id": "e-commissie",
-                                "from": "status-commissie",
-                                "to": "decide-commissie"
-                            },
-                            {
-                                "id": "e-besluit",
-                                "from": "decide-commissie",
-                                "to": "route-besluit"
-                            },
-                            {
-                                "id": "e-toegekend",
-                                "from": "route-besluit",
-                                "to": "besluit-document",
-                                "label": "besluit genomen"
-                            },
-                            {
-                                "id": "e-document",
-                                "from": "besluit-document",
-                                "to": "status-afgehandeld"
-                            },
-                            {
-                                "id": "e-end",
-                                "from": "status-afgehandeld",
-                                "to": "end"
-                            }
-                        ]
-                    }
-                ]
+                "searchable": true
             },
             "task": {
                 "slug": "task",
