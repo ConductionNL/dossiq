@@ -291,7 +291,7 @@ class CaseDefinitionExportService {
 			],
 			'workflows' => [],
 			default => null,
-		};//end match
+		};
 	}//end exportComponent()
 
 	/**

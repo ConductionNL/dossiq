@@ -203,7 +203,7 @@ class ZgwRulesDispatcher {
 			$resource === 'zaakeigenschappen' && $action === 'create'
 				=> $this->zrcRules->rulesZaakeigenschappenCreate($body),
 			default => $this->isValid(body: $body),
-		};//end match
+		};
 	}//end dispatchZrc()
 
 	/**
