@@ -1,0 +1,218 @@
+openapi: 3.0.0
+info:
+  title: Dossiq Tenant SaaS API
+  description: |
+    Tenant SaaS chain (tenant-zaaksysteem-saas-01..12) endpoints — CRUD,
+    onboarding, configuration, quotas, billing, lifecycle. All endpoints are
+    admin-only (#[AuthorizedAdminSetting]) unless documented otherwise.
+  version: '0.1.0'
+servers:
+  - url: '/index.php/apps/dossiq'
+    description: Dossiq app base path
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+    Tenant:
+      type: object
+      required: [slug, displayName, status, tier]
+      properties:
+        slug: { type: string, maxLength: 64 }
+        displayName: { type: string, maxLength: 255 }
+        legalName: { type: string }
+        kvkNumber: { type: string }
+        contractRef: { type: string }
+        status: { type: string, enum: [onboarding, active, suspended, terminated] }
+        tier: { type: string, enum: [basic, standard, enterprise] }
+        isolationMode: { type: string, enum: [schema, database] }
+        dataResidency: { type: string, enum: [nl, eu] }
+        createdAt: { type: string, format: date-time }
+        activatedAt: { type: string, format: date-time }
+        terminatedAt: { type: string, format: date-time }
+    OnboardingProgress:
+      type: object
+      properties:
+        completed: { type: integer }
+        total: { type: integer }
+        fraction: { type: number, format: float }
+        steps:
+          type: array
+          items:
+            type: object
+            properties:
+              step: { type: string }
+              status: { type: string, enum: [pending, in_progress, completed, skipped] }
+              completedAt: { type: string, format: date-time, nullable: true }
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/saas/tenants:
+    get:
+      summary: List tenants (admin)
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [onboarding, active, suspended, terminated] }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 100 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  results:
+                    type: array
+                    items: { $ref: '#/components/schemas/Tenant' }
+        '401': { description: Unauthorised, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: Forbidden (not admin), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      summary: Create a tenant (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, kvkNumber, tier]
+              properties:
+                name: { type: string }
+                kvkNumber: { type: string }
+                tier: { type: string, enum: [basic, standard, enterprise] }
+      responses:
+        '201': { description: Created }
+        '400': { description: Missing required field, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '409': { description: Duplicate slug or invalid tier, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /api/saas/tenants/{tenantId}:
+    parameters:
+      - in: path
+        name: tenantId
+        required: true
+        schema: { type: string }
+    get:
+      summary: Show a tenant (admin)
+      responses:
+        '200': { description: OK }
+        '404': { description: Not found }
+    patch:
+      summary: Update a tenant's status (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [active, suspended, terminated] }
+      responses:
+        '200': { description: OK }
+        '404': { description: Tenant not found }
+        '409': { description: Illegal lifecycle transition }
+    delete:
+      summary: Hard-delete a terminated tenant (admin)
+      responses:
+        '200': { description: Deleted }
+        '404': { description: Not found }
+        '409': { description: Tenant must be in 'terminated' status before deletion }
+
+  /api/saas/tenants/{tenantId}/onboarding/progress:
+    parameters:
+      - in: path
+        name: tenantId
+        required: true
+        schema: { type: string }
+    get:
+      summary: Onboarding progress (admin)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OnboardingProgress' }
+
+  /api/saas/tenants/{tenantId}/onboarding/{step}/complete:
+    parameters:
+      - in: path
+        name: tenantId
+        required: true
+        schema: { type: string }
+      - in: path
+        name: step
+        required: true
+        schema: { type: string, enum: [contract, mandate_import, sso_setup, branding, zaaktype_selection, first_user, go_live] }
+    post:
+      summary: Mark an onboarding step complete (admin)
+      responses:
+        '200': { description: OK }
+        '400': { description: Unknown step }
+        '404': { description: Step row not found }
+        '401': { description: Not authenticated }
+
+  /api/saas/tenants/{tenantId}/onboarding/activate:
+    parameters:
+      - in: path
+        name: tenantId
+        required: true
+        schema: { type: string }
+    post:
+      summary: Validate go-live + transition to active (admin)
+      responses:
+        '200': { description: Activated }
+        '409':
+          description: Not ready — missing required pieces
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  result:
+                    type: object
+                    properties:
+                      activated: { type: boolean }
+                      missing:
+                        type: array
+                        items: { type: string }
+
+  /api/saas/tenants/{tenantId}/onboarding/initialise:
+    parameters:
+      - in: path
+        name: tenantId
+        required: true
+        schema: { type: string }
+    post:
+      summary: Fork the 7-step onboarding checklist for a tenant (admin)
+      responses:
+        '200': { description: OK }
+
+# Standard cross-cutting error responses
+# - 401 Bearer JWT missing or invalid (TenantJwtService)
+# - 403 mandate denied (MandateValidationMiddleware) or cross-tenant
+#       JWT claim mismatch (TenantClaimValidationMiddleware) or tenant
+#       suspended/terminated (TenantMiddleware)
+# - 404 cross-tenant lookup (TenantIsolationMiddleware search_path)
+# - 429 quota exceeded (QuotaEnforcementMiddleware)

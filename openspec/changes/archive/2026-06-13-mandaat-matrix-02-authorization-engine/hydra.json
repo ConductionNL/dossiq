@@ -1,0 +1,7 @@
+{
+  "schema_version": 2,
+  "spec_slug": "mandaat-matrix-02-authorization-engine",
+  "app": "procest",
+  "kind": "code",
+  "depends_on": ["mandaat-matrix-01-schema-foundation"]
+}

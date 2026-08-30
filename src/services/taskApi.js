@@ -44,6 +44,10 @@ function mapCalDavPriority(icalPriority) {
  * @param {object} task CalDAV task object from API
  * @return {object} Normalized work item
  */
+/**
+ * @param task
+ * @spec openspec/specs/task-management/spec.md
+ */
 export function normalizeCalDavTask(task) {
 	const due = task.due || null
 	const isCompleted = task.status === 'completed'
@@ -63,13 +67,14 @@ export function normalizeCalDavTask(task) {
 		if (diffDays < 0) {
 			isOverdue = true
 			const absDays = Math.abs(diffDays)
-			daysText = absDays === 1
-				? t('procest', '1 day overdue')
-				: t('procest', '{days} days overdue', { days: absDays })
+			daysText =
+				absDays === 1
+					? t('dossiq', '1 day overdue')
+					: t('dossiq', '{days} days overdue', { days: absDays })
 		} else if (diffDays === 0) {
-			daysText = t('procest', 'Due today')
+			daysText = t('dossiq', 'Due today')
 		} else {
-			daysText = t('procest', '{days} days', { days: diffDays })
+			daysText = t('dossiq', '{days} days', { days: diffDays })
 		}
 	}
 
@@ -98,6 +103,12 @@ export function normalizeCalDavTask(task) {
  * @param {string} objectId The object UUID
  * @return {Promise<object[]>} Array of normalized task work items
  */
+/**
+ * @param registerId
+ * @param schemaId
+ * @param objectId
+ * @spec openspec/specs/task-management/spec.md
+ */
 export async function fetchTasksForObject(registerId, schemaId, objectId) {
 	const url = `/apps/openregister/api/objects/${registerId}/${schemaId}/${objectId}/tasks`
 
@@ -105,7 +116,9 @@ export async function fetchTasksForObject(registerId, schemaId, objectId) {
 		const response = await fetch(url, { headers: getHeaders() })
 		if (!response.ok) {
 			if (response.status === 404) return []
-			console.warn(`Failed to fetch tasks for object ${objectId}: ${response.status}`)
+			console.warn(
+				`Failed to fetch tasks for object ${objectId}: ${response.status}`,
+			)
 			return []
 		}
 
@@ -119,7 +132,7 @@ export async function fetchTasksForObject(registerId, schemaId, objectId) {
 }
 
 /**
- * Fetch all CalDAV tasks linked to the Procest register by fetching tasks
+ * Fetch all CalDAV tasks linked to the Dossiq register by fetching tasks
  * for each of the user's assigned cases.
  *
  * Strategy (DD-01 fallback): Fetch user's cases first, then batch-fetch
@@ -127,6 +140,10 @@ export async function fetchTasksForObject(registerId, schemaId, objectId) {
  *
  * @param {object[]} cases Array of case objects (must have id property)
  * @return {Promise<object[]>} Array of normalized task work items
+ */
+/**
+ * @param cases
+ * @spec openspec/specs/task-management/spec.md
  */
 export async function fetchTasksForCases(cases) {
 	const objectStore = useObjectStore()
@@ -138,7 +155,7 @@ export async function fetchTasksForCases(cases) {
 
 	const casesToFetch = cases.slice(0, 20)
 
-	const taskPromises = casesToFetch.map(c =>
+	const taskPromises = casesToFetch.map((c) =>
 		fetchTasksForObject(caseConfig.register, caseConfig.schema, c.id),
 	)
 

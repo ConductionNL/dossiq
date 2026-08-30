@@ -1,0 +1,175 @@
+{
+  "components": {
+    "schemas": {
+      "case": {
+        "properties": {
+          "permitApplicationRef": {
+            "type": "string",
+            "title": "Permit Application Reference",
+            "description": "Reference to the DSO vergunningaanvraag object in OpenRegister",
+            "visible": false
+          },
+          "procedureType": {
+            "type": "string",
+            "title": "Procedure Type",
+            "enum": ["reguliere", "uitgebreide"],
+            "description": "DSO procedure type: reguliere (8 wk) or uitgebreide (26 wk)",
+            "visible": false
+          },
+          "deadlineDate": {
+            "type": "string",
+            "title": "Deadline Date",
+            "format": "date",
+            "description": "Computed DSO statutory deadline (working days from indieningsdatum)",
+            "visible": false
+          },
+          "competentAuthority": {
+            "type": "string",
+            "title": "Competent Authority",
+            "description": "OIN or organization name of the bevoegd gezag",
+            "visible": false
+          },
+          "collaborationRequests": {
+            "type": "array",
+            "title": "Collaboration Requests",
+            "items": { "type": "string" },
+            "description": "UUIDs of linked samenwerkverzoek objects",
+            "visible": false
+          },
+          "dsoStatus": {
+            "type": "string",
+            "title": "DSO Status",
+            "enum": ["submitted", "in_handling", "granted", "refused", "withdrawn"],
+            "description": "DSO-LV status value mirrored from the vergunningaanvraag",
+            "visible": false
+          },
+          "besluitdatum": {
+            "type": "string",
+            "title": "Decision Date",
+            "format": "date",
+            "description": "Date the decision was made (set when dsoStatus = verleend/geweigerd)",
+            "visible": false
+          },
+          "dsoNotes": {
+            "type": "string",
+            "title": "DSO Explanation",
+            "description": "Decision motivation or rejection reasoning for DSO transparency",
+            "visible": false
+          }
+        }
+      },
+      "samenwerkverzoek": {
+        "slug": "samenwerkverzoek",
+        "icon": "AccountMultipleOutline",
+        "version": "1.0.0",
+        "title": "Samenwerkverzoek",
+        "description": "Request for collaboration between bevoegd gezag on a vergunningaanvraag",
+        "type": "object",
+        "required": [
+          "initiatorCompetentAuthority",
+          "requestedCompetentAuthority",
+          "permitApplicationRef",
+          "status"
+        ],
+        "properties": {
+          "initiatorCompetentAuthority": {
+            "type": "string",
+            "title": "Initiating Competent Authority",
+            "description": "OIN or organization name of the initiating bevoegd gezag"
+          },
+          "requestedCompetentAuthority": {
+            "type": "string",
+            "title": "Requested Competent Authority",
+            "description": "OIN or organization name of the receiving bevoegd gezag"
+          },
+          "permitApplicationRef": {
+            "type": "string",
+            "title": "Permit Application Reference",
+            "description": "Reference to the linked vergunningaanvraag object"
+          },
+          "rationale": {
+            "type": "string",
+            "title": "Rationale",
+            "description": "Reason for requesting collaboration"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "enum": ["requested", "accepted", "refused", "completed"],
+            "description": "Current status of the samenwerkverzoek",
+            "facetable": true
+          },
+          "advies": {
+            "type": "string",
+            "title": "Advice",
+            "description": "Advice given by the aangezochte bevoegd gezag"
+          },
+          "requestedOn": {
+            "type": "string",
+            "title": "Requested On",
+            "format": "date-time",
+            "description": "Timestamp when the samenwerkverzoek was initiated"
+          },
+          "respondedOn": {
+            "type": "string",
+            "title": "Responded On",
+            "format": "date-time",
+            "description": "Timestamp when the aangezochte bevoegd gezag responded"
+          },
+          "caseId": {
+            "type": "string",
+            "title": "Case ID",
+            "format": "uuid",
+            "$ref": "case",
+            "description": "UUID of the linked Dossiq zaak"
+          }
+        }
+      }
+    },
+    "objects": [
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "samenwerkverzoek",
+          "slug": "samenwerkverzoek-demo-001"
+        },
+        "initiatorCompetentAuthority": "Gemeente Amsterdam",
+        "requestedCompetentAuthority": "Waterschap Amstel, Gooi en Vecht",
+        "permitApplicationRef": "nl.dso.aanvraag.2026-AMS-001",
+        "rationale": "Aanvraag betreft activiteiten nabij waterkering, afstemming waterschap vereist.",
+        "status": "accepted",
+        "advies": "Waterschap heeft geen bezwaar mits geluidsnormen worden nageleefd.",
+        "requestedOn": "2026-03-20T09:00:00+01:00",
+        "respondedOn": "2026-03-28T14:30:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "samenwerkverzoek",
+          "slug": "samenwerkverzoek-demo-002"
+        },
+        "initiatorCompetentAuthority": "Gemeente Rotterdam",
+        "requestedCompetentAuthority": "Provincie Zuid-Holland",
+        "permitApplicationRef": "nl.dso.aanvraag.2026-RTD-007",
+        "rationale": "Grootschalig bouwproject raakt provinciaal belang omgevingsvisie.",
+        "status": "requested",
+        "requestedOn": "2026-04-10T10:15:00+02:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "samenwerkverzoek",
+          "slug": "samenwerkverzoek-demo-003"
+        },
+        "initiatorCompetentAuthority": "Gemeente Utrecht",
+        "requestedCompetentAuthority": "Rijkswaterstaat",
+        "permitApplicationRef": "nl.dso.aanvraag.2026-UTR-014",
+        "rationale": "Activiteit vindt plaats binnen rijkszone langs snelweg A12.",
+        "status": "refused",
+        "advies": "Rijkswaterstaat kan niet meewerken wegens veiligheidszone.",
+        "requestedOn": "2026-02-15T08:00:00+01:00",
+        "respondedOn": "2026-02-22T16:45:00+01:00"
+      }
+    ]
+  }
+}

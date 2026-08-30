@@ -12,23 +12,25 @@ export const REQUIRED_FIELDS = [
 	'responsibleUnit',
 ]
 
+/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 export function getOriginOptions() {
 	return [
-		{ id: 'internal', label: t('procest', 'Internal') },
-		{ id: 'external', label: t('procest', 'External') },
+		{ id: 'internal', label: t('dossiq', 'Internal') },
+		{ id: 'external', label: t('dossiq', 'External') },
 	]
 }
 
+/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 export function getConfidentialityOptions() {
 	return [
-		{ id: 'public', label: t('procest', 'Public') },
-		{ id: 'restricted', label: t('procest', 'Restricted') },
-		{ id: 'internal', label: t('procest', 'Internal') },
-		{ id: 'case_sensitive', label: t('procest', 'Case sensitive') },
-		{ id: 'confidential', label: t('procest', 'Confidential') },
-		{ id: 'highly_confidential', label: t('procest', 'Highly confidential') },
-		{ id: 'secret', label: t('procest', 'Secret') },
-		{ id: 'top_secret', label: t('procest', 'Top secret') },
+		{ id: 'public', label: t('dossiq', 'Public') },
+		{ id: 'restricted', label: t('dossiq', 'Restricted') },
+		{ id: 'internal', label: t('dossiq', 'Internal') },
+		{ id: 'case_sensitive', label: t('dossiq', 'Case sensitive') },
+		{ id: 'confidential', label: t('dossiq', 'Confidential') },
+		{ id: 'highly_confidential', label: t('dossiq', 'Highly confidential') },
+		{ id: 'secret', label: t('dossiq', 'Secret') },
+		{ id: 'top_secret', label: t('dossiq', 'Top secret') },
 	]
 }
 
@@ -38,33 +40,57 @@ export function getConfidentialityOptions() {
  * @param {object} data Case type data
  * @return {{ valid: boolean, errors: object }}
  */
+/**
+ * @param data
+ * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+ */
 export function validateCaseType(data) {
 	const errors = {}
 
 	for (const field of REQUIRED_FIELDS) {
-		if (!data[field] || (typeof data[field] === 'string' && !data[field].trim())) {
-			errors[field] = t('procest', '{field} is required', { field: getFieldLabel(field) })
+		if (
+			!data[field]
+			|| (typeof data[field] === 'string' && !data[field].trim())
+		) {
+			errors[field] = t('dossiq', '{field} is required', {
+				field: getFieldLabel(field),
+			})
 		}
 	}
 
 	if (data.processingDeadline && !isValidDuration(data.processingDeadline)) {
-		errors.processingDeadline = t('procest', 'Must be a valid ISO 8601 duration (e.g., P56D)')
+		errors.processingDeadline = t(
+			'dossiq',
+			'Must be a valid ISO 8601 duration (e.g., P56D)',
+		)
 	}
 
 	if (data.serviceTarget && !isValidDuration(data.serviceTarget)) {
-		errors.serviceTarget = t('procest', 'Must be a valid ISO 8601 duration (e.g., P42D)')
+		errors.serviceTarget = t(
+			'dossiq',
+			'Must be a valid ISO 8601 duration (e.g., P42D)',
+		)
 	}
 
-	if (data.extensionAllowed && (!data.extensionPeriod || !data.extensionPeriod.trim())) {
-		errors.extensionPeriod = t('procest', 'Extension period is required when extension is allowed')
+	if (
+		data.extensionAllowed
+		&& (!data.extensionPeriod || !data.extensionPeriod.trim())
+	) {
+		errors.extensionPeriod = t(
+			'dossiq',
+			'Extension period is required when extension is allowed',
+		)
 	}
 
 	if (data.extensionPeriod && !isValidDuration(data.extensionPeriod)) {
-		errors.extensionPeriod = t('procest', 'Must be a valid ISO 8601 duration (e.g., P28D)')
+		errors.extensionPeriod = t(
+			'dossiq',
+			'Must be a valid ISO 8601 duration (e.g., P28D)',
+		)
 	}
 
 	if (data.validFrom && data.validUntil && data.validUntil <= data.validFrom) {
-		errors.validUntil = t('procest', "'Valid until' must be after 'Valid from'")
+		errors.validUntil = t('dossiq', "'Valid until' must be after 'Valid from'")
 	}
 
 	return {
@@ -80,27 +106,36 @@ export function validateCaseType(data) {
  * @param {Array} statusTypes Array of status type objects linked to this case type
  * @return {{ valid: boolean, errors: string[] }}
  */
+/**
+ * @param caseType
+ * @param statusTypes
+ * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+ */
 export function validateForPublish(caseType, statusTypes) {
 	const errors = []
 
 	const fieldValidation = validateCaseType(caseType)
 	if (!fieldValidation.valid) {
 		const missing = Object.keys(fieldValidation.errors)
-			.map(f => getFieldLabel(f))
+			.map((f) => getFieldLabel(f))
 			.join(', ')
-		errors.push(t('procest', 'Missing required fields: {fields}', { fields: missing }))
+		errors.push(
+			t('dossiq', 'Missing required fields: {fields}', { fields: missing }),
+		)
 	}
 
 	if (!caseType.validFrom) {
-		errors.push(t('procest', "'Valid from' date must be set"))
+		errors.push(t('dossiq', "'Valid from' date must be set"))
 	}
 
 	if (!statusTypes || statusTypes.length === 0) {
-		errors.push(t('procest', 'At least one status type must be defined'))
+		errors.push(t('dossiq', 'At least one status type must be defined'))
 	} else {
-		const hasFinal = statusTypes.some(st => st.isFinal)
+		const hasFinal = statusTypes.some((st) => st.isFinal)
 		if (!hasFinal) {
-			errors.push(t('procest', 'At least one status type must be marked as final'))
+			errors.push(
+				t('dossiq', 'At least one status type must be marked as final'),
+			)
 		}
 	}
 
@@ -110,19 +145,23 @@ export function validateForPublish(caseType, statusTypes) {
 	}
 }
 
+/**
+ *
+ * @param field
+ */
 function getFieldLabel(field) {
 	const labels = {
-		title: t('procest', 'Title'),
-		purpose: t('procest', 'Purpose'),
-		trigger: t('procest', 'Trigger'),
-		subject: t('procest', 'Subject'),
-		processingDeadline: t('procest', 'Processing deadline'),
-		origin: t('procest', 'Origin'),
-		confidentiality: t('procest', 'Confidentiality'),
-		responsibleUnit: t('procest', 'Responsible unit'),
-		extensionPeriod: t('procest', 'Extension period'),
-		serviceTarget: t('procest', 'Service target'),
-		validUntil: t('procest', 'Valid until'),
+		title: t('dossiq', 'Title'),
+		purpose: t('dossiq', 'Purpose'),
+		trigger: t('dossiq', 'Trigger'),
+		subject: t('dossiq', 'Subject'),
+		processingDeadline: t('dossiq', 'Processing deadline'),
+		origin: t('dossiq', 'Origin'),
+		confidentiality: t('dossiq', 'Confidentiality'),
+		responsibleUnit: t('dossiq', 'Responsible unit'),
+		extensionPeriod: t('dossiq', 'Extension period'),
+		serviceTarget: t('dossiq', 'Service target'),
+		validUntil: t('dossiq', 'Valid until'),
 	}
 	return labels[field] || field
 }

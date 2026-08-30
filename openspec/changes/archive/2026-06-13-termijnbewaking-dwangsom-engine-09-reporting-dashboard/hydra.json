@@ -1,0 +1,7 @@
+{
+  "schema_version": 2,
+  "spec_slug": "termijnbewaking-dwangsom-engine-09-reporting-dashboard",
+  "app": "procest",
+  "kind": "code",
+  "depends_on": ["termijnbewaking-dwangsom-engine-08-burger-notifications"]
+}

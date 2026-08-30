@@ -1,0 +1,135 @@
+{
+  "_format": "dossiq-vth-workflow-template-v1",
+  "slug": "handhavingstraject",
+  "title": "Handhavingstraject",
+  "description": "Workflow voor een handhavingstraject conform de Landelijke Handhavingsstrategie (LHS). Volgt de Awb-procedure 5:24 met redelijke termijn voor herstel.",
+  "version": 1,
+  "caseTypeSlug": "handhavingszaak",
+  "statutoryFramework": "Awb 5:24 + LHS",
+  "steps": [
+    {
+      "slug": "voornemen",
+      "title": "Voornemen tot handhaven",
+      "statusName": "Vooraankondiging",
+      "order": 1,
+      "isInitial": true,
+      "isFinal": false,
+      "assigneeRole": "Behandelaar",
+      "description": "Vooraankondiging is verstuurd; overtreder krijgt gelegenheid tot zienswijze (Awb 4:8)."
+    },
+    {
+      "slug": "zienswijze-ontvangen",
+      "title": "Zienswijze ontvangen",
+      "statusName": "Zienswijze",
+      "order": 2,
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Behandelaar",
+      "description": "Zienswijze van overtreder is ontvangen en beoordeeld."
+    },
+    {
+      "slug": "decision",
+      "title": "Handhavingsbesluit",
+      "statusName": "Handhavingsbesluit",
+      "order": 3,
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Teamleider",
+      "description": "Handhavingsbesluit (last onder dwangsom of bestuursdwang) is genomen."
+    },
+    {
+      "slug": "bezwaarperiode",
+      "title": "Bezwaarperiode",
+      "statusName": "Begunstigingstermijn",
+      "order": 4,
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Behandelaar",
+      "description": "Begunstigings- en bezwaartermijn loopt; overtreder kan bezwaar maken."
+    },
+    {
+      "slug": "in-werking",
+      "title": "Handhaving in werking",
+      "statusName": "Hercontrole",
+      "order": 5,
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Inspecteur",
+      "description": "Hercontrole; bij niet-naleving treedt last onder dwangsom in werking."
+    },
+    {
+      "slug": "invordering",
+      "title": "Invordering",
+      "statusName": "Hercontrole",
+      "order": 6,
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Behandelaar",
+      "description": "Verbeurde dwangsommen worden ingevorderd (separate invorderingszaak)."
+    },
+    {
+      "slug": "afgehandeld",
+      "title": "Afgehandeld",
+      "statusName": "Afgehandeld",
+      "order": 7,
+      "isInitial": false,
+      "isFinal": true,
+      "assigneeRole": null,
+      "description": "Handhavingstraject is afgehandeld."
+    }
+  ],
+  "transitions": [
+    {
+      "slug": "voornemen-naar-zienswijze",
+      "fromStatus": "Vooraankondiging",
+      "toStatus": "Zienswijze",
+      "label": "Zienswijze ontvangen",
+      "allowedRoles": ["Behandelaar"],
+      "deadline": {
+        "duration": "P14D",
+        "source": "Awb 4:8 (zienswijzetermijn)",
+        "escalationRole": "Teamleider"
+      }
+    },
+    {
+      "slug": "voornemen-naar-besluit",
+      "fromStatus": "Vooraankondiging",
+      "toStatus": "Handhavingsbesluit",
+      "label": "Handhavingsbesluit nemen",
+      "allowedRoles": ["Teamleider"],
+      "deadline": {
+        "duration": "P56D",
+        "source": "Awb 5:24 (redelijke termijn)",
+        "escalationRole": "afdelingsmanager"
+      }
+    },
+    {
+      "slug": "zienswijze-naar-besluit",
+      "fromStatus": "Zienswijze",
+      "toStatus": "Handhavingsbesluit",
+      "label": "Handhavingsbesluit nemen na zienswijze",
+      "allowedRoles": ["Teamleider"]
+    },
+    {
+      "slug": "besluit-naar-bezwaarperiode",
+      "fromStatus": "Handhavingsbesluit",
+      "toStatus": "Begunstigingstermijn",
+      "label": "Bezwaar- en begunstigingstermijn starten",
+      "allowedRoles": ["Behandelaar"]
+    },
+    {
+      "slug": "bezwaarperiode-naar-werking",
+      "fromStatus": "Begunstigingstermijn",
+      "toStatus": "Hercontrole",
+      "label": "Hercontrole uitvoeren",
+      "allowedRoles": ["Inspecteur"]
+    },
+    {
+      "slug": "werking-naar-afgehandeld",
+      "fromStatus": "Hercontrole",
+      "toStatus": "Afgehandeld",
+      "label": "Handhaving afsluiten",
+      "allowedRoles": ["Behandelaar"]
+    }
+  ]
+}

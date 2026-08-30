@@ -1,0 +1,7 @@
+{
+  "schema_version": 2,
+  "spec_slug": "mandaat-matrix-06-temporal-and-conflict",
+  "app": "procest",
+  "kind": "code",
+  "depends_on": ["mandaat-matrix-05-case-decision-integration"]
+}

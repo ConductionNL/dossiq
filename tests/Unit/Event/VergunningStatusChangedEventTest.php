@@ -1,0 +1,102 @@
+<?php
+
+/**
+ * VergunningStatusChangedEvent Unit Tests
+ *
+ * Tests for the VergunningStatusChangedEvent domain event, covering
+ * constructor injection and all getter methods.
+ *
+ * @category Tests
+ * @package  OCA\Dossiq\Tests\Unit\Event
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Tests\Unit\Event;
+
+use OCA\Dossiq\Event\VergunningStatusChangedEvent;
+use OCP\EventDispatcher\Event;
+use PHPUnit\Framework\TestCase;
+
+/**
+ * Unit tests for VergunningStatusChangedEvent.
+ *
+ * @covers \OCA\Dossiq\Event\VergunningStatusChangedEvent
+ */
+class VergunningStatusChangedEventTest extends TestCase {
+	/**
+	 * Test that the event can be constructed and extends Event.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
+	 */
+	public function testEventExtendsOcpEvent(): void {
+		$event = new VergunningStatusChangedEvent(
+			requestRef: 'ref-001',
+			oldStatus: 'submitted',
+			newStatus: 'in_handling',
+			besluitdatum: null,
+			notes: null,
+			userId: 'user1',
+		);
+
+		$this->assertInstanceOf(Event::class, $event);
+	}//end testEventExtendsOcpEvent()
+
+	/**
+	 * Test that all getters return the values provided to the constructor.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
+	 */
+	public function testGettersReturnConstructorValues(): void {
+		$event = new VergunningStatusChangedEvent(
+			requestRef: 'aanvraag-abc-123',
+			oldStatus: 'submitted',
+			newStatus: 'granted',
+			besluitdatum: '2026-06-01',
+			notes: 'Voldoet aan alle eisen.',
+			userId: 'behandelaar1',
+		);
+
+		$this->assertSame('aanvraag-abc-123', $event->getVergunningaanvraagRef());
+		$this->assertSame('submitted', $event->getOldStatus());
+		$this->assertSame('granted', $event->getNewStatus());
+		$this->assertSame('2026-06-01', $event->getBesluitdatum());
+		$this->assertSame('Voldoet aan alle eisen.', $event->getToelichting());
+		$this->assertSame('behandelaar1', $event->getUserId());
+	}//end testGettersReturnConstructorValues()
+
+	/**
+	 * Test that nullable fields accept null values.
+	 *
+	 * besluitdatum and toelichting are optional and must be nullable.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
+	 */
+	public function testNullableFieldsAcceptNull(): void {
+		$event = new VergunningStatusChangedEvent(
+			requestRef: 'ref-002',
+			oldStatus: 'in_handling',
+			newStatus: 'refused',
+			besluitdatum: null,
+			notes: null,
+			userId: 'user2',
+		);
+
+		$this->assertNull($event->getBesluitdatum());
+		$this->assertNull($event->getToelichting());
+	}//end testNullableFieldsAcceptNull()
+}//end class

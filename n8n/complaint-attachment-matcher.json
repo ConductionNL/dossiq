@@ -1,0 +1,161 @@
+{
+  "name": "Dossiq — Complaint Attachment Matcher",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dossiq/complaint-attachment-incoming",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook: incoming email with attachment",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Match incoming email attachment to an existing complaint.\n//\n// Strategy (in order):\n//   1. KLA-YYYY-NNNN pattern in subject line (preferred — spec scenario).\n//   2. Sender email matches an existing complaint's klager.email AND the\n//      complaint is in an open status (ontvangen | in_behandeling).\n//   3. Neither — flag for handler review.\nconst body = $input.first().json.body || {};\nconst from = (body.from || '').toLowerCase();\nconst subject = body.subject || '';\nconst messageId = body.messageId || '';\nconst attachments = body.attachments || [];\nconst pattern = /(KLA-\\d{4}-\\d{4,})/i;\nconst subjectMatch = subject.match(pattern);\nlet matchKlachtNummer = subjectMatch ? subjectMatch[1].toUpperCase() : null;\nreturn [{\n  json: {\n    matchKlachtNummer,\n    fallbackFromEmail: matchKlachtNummer ? null : from,\n    subject,\n    messageId,\n    attachments,\n    matchStrategy: matchKlachtNummer ? 'subject-pattern' : 'sender-email-fallback'\n  }\n}];"
+      },
+      "id": "extract-match",
+      "name": "Extract match strategy",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "has-direct-match",
+              "leftValue": "={{ $json.matchKlachtNummer }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEmpty" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-direct-match",
+      "name": "Subject pattern matched?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DOSSIQ_BASE_URL || 'http://nextcloud' }}/index.php/apps/dossiq/api/complaints/{{ $json.matchKlachtNummer }}/attachments",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "OCS-APIRequest", "value": "true" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"attachments\": $json.attachments,\n  \"source\": \"email-followup\",\n  \"messageId\": $json.messageId,\n  \"matchStrategy\": $json.matchStrategy\n}"
+      },
+      "id": "link-direct",
+      "name": "Link to complaint (direct)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [860, 220]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.DOSSIQ_BASE_URL || 'http://nextcloud' }}/index.php/apps/dossiq/api/complaints",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "OCS-APIRequest", "value": "true" },
+            { "name": "Accept", "value": "application/json" }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "klagerEmail", "value": "={{ $json.fallbackFromEmail }}" },
+            { "name": "status", "value": "ontvangen,in_behandeling" }
+          ]
+        }
+      },
+      "id": "search-by-email",
+      "name": "Search by klager.email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [860, 380]
+    },
+    {
+      "parameters": {
+        "jsCode": "const search = $input.first().json || {};\nconst results = search.results || search.data || [];\nif (results.length === 1) {\n  return [{ json: { ...search, resolvedKlachtNummer: results[0].klachtNummer || results[0].identificatie, ambiguous: false } }];\n}\nreturn [{ json: { ...search, resolvedKlachtNummer: null, ambiguous: true, candidates: results.length } }];"
+      },
+      "id": "evaluate-fallback",
+      "name": "Single open match?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1080, 380]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DOSSIQ_BASE_URL || 'http://nextcloud' }}/index.php/apps/dossiq/api/complaints/intake-review",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "OCS-APIRequest", "value": "true" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"reason\": \"attachment-could-not-be-matched\",\n  \"messageId\": $json.messageId,\n  \"candidateCount\": $json.candidates\n}"
+      },
+      "id": "flag-review",
+      "name": "Flag for handler review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1300, 380]
+    }
+  ],
+  "connections": {
+    "Webhook: incoming email with attachment": {
+      "main": [[{ "node": "Extract match strategy", "type": "main", "index": 0 }]]
+    },
+    "Extract match strategy": {
+      "main": [[{ "node": "Subject pattern matched?", "type": "main", "index": 0 }]]
+    },
+    "Subject pattern matched?": {
+      "main": [
+        [{ "node": "Link to complaint (direct)", "type": "main", "index": 0 }],
+        [{ "node": "Search by klager.email", "type": "main", "index": 0 }]
+      ]
+    },
+    "Search by klager.email": {
+      "main": [[{ "node": "Single open match?", "type": "main", "index": 0 }]]
+    },
+    "Single open match?": {
+      "main": [[{ "node": "Flag for handler review", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "owner": "dossiq",
+    "spec": "openspec/changes/complaint-management/specs/complaint-management/spec.md#attachment-matching",
+    "purpose": "Webhook-triggered matcher that links an incoming email's attachments to an existing complaint by KLA-YYYY-NNNN subject pattern (primary) or sender email match against open complaints (fallback)."
+  }
+}

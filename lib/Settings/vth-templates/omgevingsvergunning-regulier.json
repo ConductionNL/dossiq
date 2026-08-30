@@ -1,0 +1,293 @@
+{
+  "_format": "dossiq-workflow-v1",
+  "title": "Omgevingsvergunning Bouwactiviteit (regulier)",
+  "description": "Workflow voor reguliere omgevingsvergunning bouwactiviteit — 8 weken beslistermijn, verlengbaar met 6 weken. Omvat ontvankelijkheidstoets, inhoudelijke toets, advies, besluitvorming en bekendmaking.",
+  "version": 1,
+  "steps": [
+    {
+      "id": "step-ontvangen",
+      "label": "Ontvangen",
+      "status": "Received",
+      "isInitial": true,
+      "isFinal": false,
+      "assigneeRole": null,
+      "description": "Aanvraag is ontvangen via DSO of handmatig",
+      "checklist": [],
+      "actions": [
+        {
+          "type": "notification",
+          "config": {
+            "message": "Nieuwe vergunningaanvraag ontvangen",
+            "targetRole": "Behandelaar"
+          }
+        }
+      ]
+    },
+    {
+      "id": "step-ontvankelijkheid",
+      "label": "Ontvankelijkheidstoets",
+      "status": "AdmissibilityCheck",
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Behandelaar",
+      "description": "Controle op volledigheid vereiste documenten",
+      "checklist": [
+        "Bouwtekening aanwezig",
+        "Constructieberekening aanwezig",
+        "Situatietekening aanwezig",
+        "Foto's bestaande situatie aanwezig"
+      ],
+      "actions": []
+    },
+    {
+      "id": "step-in-behandeling",
+      "label": "In behandeling",
+      "status": "In handling",
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Behandelaar",
+      "description": "Inhoudelijke beoordeling van de aanvraag",
+      "checklist": [],
+      "actions": []
+    },
+    {
+      "id": "step-advies",
+      "label": "Advies",
+      "status": "Advies",
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": null,
+      "description": "Intern/extern advies wordt ingewonnen (welstand, brandweer, etc.)",
+      "checklist": [
+        "Alle benodigde adviezen aangevraagd",
+        "Alle adviezen ontvangen"
+      ],
+      "actions": []
+    },
+    {
+      "id": "step-besluitvorming",
+      "label": "Besluitvorming",
+      "status": "Besluitvorming",
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Behandelaar",
+      "description": "Besluit over verlening of weigering vergunning",
+      "checklist": [
+        "Inhoudelijke toets afgerond",
+        "Alle adviezen verwerkt"
+      ],
+      "actions": []
+    },
+    {
+      "id": "step-bekendmaking",
+      "label": "Bekendmaking",
+      "status": "Bekendmaking",
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Behandelaar",
+      "description": "Publicatie van het besluit",
+      "checklist": [],
+      "actions": [
+        {
+          "type": "notification",
+          "config": {
+            "message": "Besluit gepubliceerd — bezwaartermijn gestart",
+            "targetRole": "Teamleider"
+          }
+        }
+      ]
+    },
+    {
+      "id": "step-afgehandeld",
+      "label": "Afgehandeld",
+      "status": "Handled",
+      "isInitial": false,
+      "isFinal": true,
+      "assigneeRole": null,
+      "description": "Zaak is afgehandeld",
+      "checklist": [],
+      "actions": []
+    }
+  ],
+  "transitions": [
+    {
+      "id": "tr-ontvangen-ontvankelijkheid",
+      "label": "Start ontvankelijkheidstoets",
+      "fromStatus": "Ontvangen",
+      "toStatus": "Ontvankelijkheidstoets",
+      "allowedRoles": [
+        "Behandelaar",
+        "Teamleider"
+      ],
+      "guards": [],
+      "actions": []
+    },
+    {
+      "id": "tr-ontvankelijkheid-behandeling",
+      "label": "Aanvraag ontvankelijk",
+      "fromStatus": "Ontvankelijkheidstoets",
+      "toStatus": "In behandeling",
+      "allowedRoles": [
+        "Behandelaar"
+      ],
+      "guards": [
+        {
+          "type": "checklist",
+          "config": {
+            "message": "Alle vereiste documenten moeten aanwezig zijn"
+          }
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "tr-behandeling-advies",
+      "label": "Advies aanvragen",
+      "fromStatus": "In behandeling",
+      "toStatus": "Advies",
+      "allowedRoles": [
+        "Behandelaar"
+      ],
+      "guards": [],
+      "actions": []
+    },
+    {
+      "id": "tr-advies-behandeling",
+      "label": "Terug naar behandeling",
+      "fromStatus": "Advies",
+      "toStatus": "In behandeling",
+      "allowedRoles": [
+        "Behandelaar"
+      ],
+      "guards": [],
+      "actions": []
+    },
+    {
+      "id": "tr-behandeling-besluitvorming",
+      "label": "Naar besluitvorming",
+      "fromStatus": "In behandeling",
+      "toStatus": "Besluitvorming",
+      "allowedRoles": [
+        "Behandelaar"
+      ],
+      "guards": [
+        {
+          "type": "requiredField",
+          "config": {
+            "field": "inhoudelijkeToets",
+            "message": "Inhoudelijke toets moet zijn afgerond"
+          }
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "tr-advies-besluitvorming",
+      "label": "Direct naar besluitvorming",
+      "fromStatus": "Advies",
+      "toStatus": "Besluitvorming",
+      "allowedRoles": [
+        "Behandelaar"
+      ],
+      "guards": [
+        {
+          "type": "checklist",
+          "config": {
+            "message": "Alle adviezen moeten zijn ontvangen"
+          }
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "tr-besluitvorming-bekendmaking",
+      "label": "Besluit bekendmaken",
+      "fromStatus": "Besluitvorming",
+      "toStatus": "Bekendmaking",
+      "allowedRoles": [
+        "Behandelaar",
+        "Teamleider"
+      ],
+      "guards": [
+        {
+          "type": "role",
+          "config": {
+            "requiredRole": "Behandelaar",
+            "message": "Alleen de behandelaar kan het besluit bekendmaken"
+          }
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "tr-bekendmaking-afgehandeld",
+      "label": "Zaak afsluiten",
+      "fromStatus": "Bekendmaking",
+      "toStatus": "Afgehandeld",
+      "allowedRoles": [
+        "Behandelaar",
+        "Teamleider"
+      ],
+      "guards": [],
+      "actions": []
+    }
+  ],
+  "nodePositions": {
+    "step-ontvangen": {
+      "x": 100,
+      "y": 200
+    },
+    "step-ontvankelijkheid": {
+      "x": 300,
+      "y": 200
+    },
+    "step-in-behandeling": {
+      "x": 500,
+      "y": 200
+    },
+    "step-advies": {
+      "x": 500,
+      "y": 50
+    },
+    "step-besluitvorming": {
+      "x": 700,
+      "y": 200
+    },
+    "step-bekendmaking": {
+      "x": 900,
+      "y": 200
+    },
+    "step-afgehandeld": {
+      "x": 1100,
+      "y": 200
+    }
+  },
+  "manifest": {
+    "statusTypes": [
+      "Ontvangen",
+      "Ontvankelijkheidstoets",
+      "In behandeling",
+      "Advies",
+      "Besluitvorming",
+      "Bekendmaking",
+      "Afgehandeld"
+    ],
+    "roleTypes": [
+      "Behandelaar",
+      "Aanvrager",
+      "Gemachtigde",
+      "Adviseur (welstand)",
+      "Adviseur (brandweer)",
+      "Teamleider"
+    ],
+    "documentTypes": [
+      "Bouwtekening",
+      "Constructieberekening",
+      "Situatietekening",
+      "Welstandsadvies",
+      "Foto's bestaande situatie",
+      "Besluit",
+      "Bekendmakingstekst"
+    ]
+  }
+}

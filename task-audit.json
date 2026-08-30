@@ -1,0 +1,20 @@
+{
+  "spec": "openspec/changes/complaint-management",
+  "verified": [
+    {"task": "TASK-CM-01", "file": "lib/Settings/dossiq_register.json", "ok": true},
+    {"task": "TASK-CM-01", "file": "lib/Service/SettingsService.php", "ok": true},
+    {"task": "TASK-CM-02", "file": "lib/Service/ComplaintService.php", "ok": true},
+    {"task": "TASK-CM-02", "file": "tests/Unit/Service/ComplaintServiceTest.php", "ok": true},
+    {"task": "TASK-CM-03", "file": "lib/Service/HearingService.php", "ok": true},
+    {"task": "TASK-CM-03", "file": "tests/Unit/Service/HearingServiceTest.php", "ok": true},
+    {"task": "TASK-CM-04", "file": "lib/Service/DispositionService.php", "ok": true},
+    {"task": "TASK-CM-04", "file": "tests/Unit/Service/DispositionServiceTest.php", "ok": true},
+    {"task": "TASK-CM-05", "file": "lib/Service/ComplaintAnalyticsService.php", "ok": true},
+    {"task": "TASK-CM-05", "file": "tests/Unit/Service/ComplaintAnalyticsServiceTest.php", "ok": true},
+    {"task": "TASK-CM-06", "file": "lib/Controller/ComplaintController.php", "ok": true},
+    {"task": "TASK-CM-06", "file": "appinfo/routes.php", "ok": true},
+    {"task": "TASK-CM-06", "file": "tests/Unit/Controller/ComplaintControllerTest.php", "ok": true}
+  ],
+  "stubs": [],
+  "missing_routes": []
+}

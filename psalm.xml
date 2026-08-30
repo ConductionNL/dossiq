@@ -21,6 +21,12 @@
         <UndefinedDocblockClass errorLevel="suppress"/>
         <UndefinedClass>
             <errorLevel type="suppress">
+                <!-- Nextcloud's legacy bootstrap class. There is no OCP
+                     interface for registering another app's autoloader, so the
+                     ADR-040 load-order prelude in AppInfo\OpenRegisterAutoloader
+                     has to call OC_App::registerAutoloading() directly. It is
+                     server-private and therefore absent from nextcloud/ocp. -->
+                <referencedClass name="OC_App"/>
                 <!-- Nextcloud OCP Classes -->
                 <referencedClass name="OCP\AppFramework\App"/>
                 <referencedClass name="OCP\AppFramework\Bootstrap\IBootstrap"/>
@@ -59,6 +65,52 @@
                 <referencedClass name="OCP\Http\Client\IClientService"/>
                 <referencedClass name="OCP\Notification\IManager"/>
                 <referencedClass name="OCP\Share\IManager"/>
+                <!-- OpenRegister cross-app classes (loaded dynamically) -->
+                <referencedClass name="OCA\OpenRegister\Db\ObjectEntity"/>
+                <referencedClass name="OCA\OpenRegister\Db\Mapping"/>
+                <referencedClass name="OCA\OpenRegister\Db\RegisterMapper"/>
+                <referencedClass name="OCA\OpenRegister\Db\SchemaMapper"/>
+                <referencedClass name="OCA\OpenRegister\Event\DeepLinkRegistrationEvent"/>
+                <referencedClass name="OCA\OpenRegister\Event\ObjectCreatingEvent"/>
+                <referencedClass name="OCA\OpenRegister\Event\ObjectCreatedEvent"/>
+                <referencedClass name="OCA\OpenRegister\Event\ObjectUpdatingEvent"/>
+                <referencedClass name="OCA\OpenRegister\Event\ObjectUpdatedEvent"/>
+                <referencedClass name="OCA\OpenRegister\Event\ObjectDeletedEvent"/>
+                <referencedClass name="OCA\OpenRegister\Event\ObjectDeletingEvent"/>
+                <referencedClass name="OCA\OpenRegister\Exception\LockedException"/>
+                <referencedClass name="OCA\OpenRegister\Service\ObjectService"/>
+                <referencedClass name="OCA\OpenRegister\Service\ConfigurationService"/>
+                <referencedClass name="OCA\OpenRegister\Service\RegisterService"/>
+                <referencedClass name="OCA\OpenRegister\Service\FileService"/>
+                <referencedClass name="OCA\OpenRegister\Service\CalendarEventService"/>
+                <referencedClass name="OCA\OpenRegister\Mcp\IMcpToolProvider"/>
+                <!-- OpenRegister's Flow node contract (ADR-065: OR is the only
+                     flow engine). Same dynamic-load situation as the entries
+                     above: dossiq contributes nodes into OR's registry and
+                     never depends on OR at build time. Real stubs exist under
+                     tests/Stubs/Flow/, but they are deliberately NOT psr-4
+                     (composer skips them by design), so psalm cannot resolve
+                     them and the suppression is what keeps this honest. -->
+                <referencedClass name="OCA\OpenRegister\Service\Flow\IFlowNode"/>
+                <referencedClass name="OCA\OpenRegister\Service\Flow\FlowNodeRegistry"/>
+                <referencedClass name="OCA\OpenRegister\Service\Flow\RegisterFlowNodesEvent"/>
+                <!-- Nextcloud internals loaded at runtime (not in OCP stubs) -->
+                <referencedClass name="OC_Util"/>
+                <!-- Dossiq ZGW controller referenced in middleware (not yet implemented) -->
+                <referencedClass name="OCA\Dossiq\Controller\ZgwController"/>
+                <!-- Additional OCP infrastructure types used across the fleet -->
+                <referencedClass name="OCP\AppFramework\Bootstrap\IBootContext"/>
+                <referencedClass name="OCP\AppFramework\Bootstrap\IRegistrationContext"/>
+                <referencedClass name="OCP\AppFramework\Db\DoesNotExistException"/>
+                <referencedClass name="OCP\DB\Exception"/>
+                <referencedClass name="OCP\IGroup"/>
+                <referencedClass name="OCP\IUser"/>
+                <referencedClass name="OCP\Migration\IRepairStep"/>
+                <!-- Nextcloud server internals -->
+                <referencedClass name="OC"/>
+                <!-- GuzzleHttp (loaded via composer at runtime) -->
+                <referencedClass name="GuzzleHttp\Client"/>
+                <referencedClass name="GuzzleHttp\Exception\GuzzleException"/>
             </errorLevel>
         </UndefinedClass>
         <UndefinedMagicMethod errorLevel="suppress"/>
@@ -89,6 +141,8 @@
         <EmptyArrayAccess errorLevel="suppress"/>
         <ImplementedReturnTypeMismatch errorLevel="suppress"/>
         <InvalidMethodCall errorLevel="suppress"/>
+        <UndefinedInterfaceMethod errorLevel="suppress"/>
+        <MissingTemplateParam errorLevel="suppress"/>
     </issueHandlers>
     <extraFiles>
         <directory name="vendor/nextcloud/ocp" />

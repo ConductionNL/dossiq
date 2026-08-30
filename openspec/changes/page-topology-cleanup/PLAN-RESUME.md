@@ -1,0 +1,211 @@
+# Resume plan — page-topology-cleanup
+
+> Updated 2026-08-24. **Blocks A, B, C1, C2, D1 and E1 are done and on
+> `development` or in review.** D2 and D3 turned out not to be migrations at all
+> — both target models had to be BUILT in decidiq first — and that work is now
+> open as decidiq#874.
+
+## Where things stand
+
+| Item | State |
+|---|---|
+| **A** — three dashboards converted | ✅ merged (dossiq#1323) |
+| **B** — administration surface | ✅ merged (dossiq#1323) |
+| **C1** — verwerkingen retired | ✅ merged (dossiq#1323) |
+| **E1** — AI oversight → hermiq | ✅ merged (hermiq#514/#517 + dossiq#1323) |
+| **C2** — automatic actions → OR flows | ✅ in review (dossiq#1343) |
+| **D1** — agenda compiler retired | ✅ in review (dossiq#1343) |
+| **D2** — bezwaaradviescommissie | 🚧 decidiq side in review (decidiq#874); dossiq migration NOT started |
+| **D3** — parafeerroute | 🚧 decidiq side in review (decidiq#874); dossiq migration NOT started |
+| **D4** — case leaf render-and-read only | ⬜ not started |
+| **F/G** — e2e + final verification | ✅ retirement e2e added; blok G open |
+
+### 🔴 D2/D3 were mis-scoped, and the correction matters
+
+Both were planned as "move a schema to decidiq". Measured on 2026-08-24, neither
+target existed:
+
+- **`governance-body` could not represent a bezwaaradviescommissie.** Six
+  blocking gaps, the worst being no `active` flag — the ONE field dossiq's live
+  code reads and throws on. And decidiq's cross-app API was GET-only, so there
+  was no supported way to write a body at all.
+- **`DecisionStage` had no engine.** Zero writers across `lib/`, and a route tab
+  whose own header says read-only. `routedDocumentsJoin.js` is a red herring: it
+  routes documents onto a meeting AGENDA, not for sign-off.
+
+decidiq#874 builds both: the four committee fields + a scoped write path, and
+`ApprovalRoute` / `ApprovalAction` / `ApprovalRouteService` with a fail-closed
+engine. **The dossiq-side migrations remain to do, and cannot start until it
+merges.**
+
+### Open PR
+
+- `ConductionNL/dossiq#1323` — blok A/B/C1/E1 together, base `development`.
+  #1328 has been merged into its branch, so the gate-16/gate-60 fixes are in.
+  **This is the only thing between the finished work and `development`.**
+
+### Merged already
+
+`hermiq#514` (advisory Approval + event + `/ai-oversight`), `hermiq#517`
+(description key), `hydra#600` (PLATFORM-POLICY GitHub-first),
+`.github#546` + `#549` (gate 94 + its acceptance fixture).
+
+---
+
+## C2 — automatic actions become OpenRegister flow nodes
+
+### Measured, not assumed
+
+procest ships **six** action handlers in `lib/Service/Actions/`, each declaring
+its own `type()` slug:
+
+| Handler | type() |
+|---|---|
+| `CallWebhookHandler` | `callWebhook` |
+| `CreateDocumentHandler` | `createDocument` |
+| `MergeTemplateHandler` | `mergeTemplate` |
+| `NotifyRoleHandler` | `notifyRole` |
+| `ScheduleReminderHandler` | `scheduleReminder` |
+| `SendEmailHandler` | `sendEmail` |
+
+OpenRegister's consolidated engine registers **nineteen** node ids:
+`await-signal, batch, end, explode, filter, flow-state, iterate, map, merge,
+object-read, object-write, route, set-fields, sub-flow, switch, trigger-manual,
+trigger-object, trigger-schedule, wait`.
+
+🔑 **Every one of those is control-flow or data. Not one of them does anything
+outward-facing** — no email, no webhook, no document, no notification. So C2 is
+NOT "map six handlers onto existing nodes". All six are side-effecting actions
+that OR deliberately does not own, and mapping them would mean inventing
+behaviour OR does not have.
+
+### The seam already exists — no OpenRegister change needed
+
+`FlowNodeRegistry`'s docblock says the point is that *"apps present nodes through
+OpenRegister"*, and hermiq already does it:
+`lib/Flow/HermiqFlowNodeListener.php` listens for
+`OCA\OpenRegister\Service\Flow\RegisterFlowNodesEvent` and calls
+`$event->registerNode(...)` for `HermiqAgentNode`, `HermiqWorkloadNode` and
+`HermiqWorkloadCollectNode`.
+
+So C2 is **procest contributing six nodes the same way** — which means, like C1,
+it needs no OpenRegister-side work and the two-PR rule does not apply. The
+handlers keep their logic; they gain a node wrapper and lose their private
+registry.
+
+### 🔴🔥 MEASURED 2026-08-22: THERE ARE TWO ACTION SYSTEMS, AND ONE IS DEAD
+
+Porting `SideEffectDispatcher` to the node route failed its own tests and that is
+how this surfaced. procest has **two entirely separate action vocabularies**:
+
+| | `lib/Service/Actions/` | `lib/Service/Transitions/` |
+|---|---|---|
+| interface | `Actions\ActionHandlerInterface` | `Transitions\ActionHandlerInterface` |
+| types | callWebhook, createDocument, mergeTemplate, notifyRole, scheduleReminder, sendEmail | sendEmail, createTask, createSubCase, webhook, setField, notify, besluitvormingActivate, besluitvormingPublish, evaluateDecision |
+| resolved by | `ActionRegistry::resolve(tenantId, slug)` | `ActionHandlerRegistry::getHandler(type)` |
+| fired by | **nothing** | `SideEffectDispatcher`, on every transition |
+
+Only `sendEmail` overlaps by NAME — different classes, different config keys.
+
+**`Service\Actions` has no runtime consumer.** Grepped: zero references to
+`ActionRegistry`, `ActionHandlerLocator` or any of the six handlers outside their
+own directory, and no route reaches them. `/settings/automatic-actions`
+administers `automaticAction` objects that `ActionRegistry` reads and **nothing
+executes** — the same shape as C1's dead endpoint: a surface over a capability
+that does not run.
+
+`Service\Transitions` is the live one. `caseType.workflowSteps.automaticActions[]`
+is dispatched by `SideEffectDispatcher` using ITS nine types, not the six.
+
+**Consequence for C2.** The node contribution in C2.1 wrapped the `Actions` six —
+correct for the pages, wrong for the dispatcher. Porting the dispatcher to
+`procest.<type>` would route eight of its nine live types at nodes that do not
+exist. That port is reverted; do not redo it without deciding which system moves.
+
+### 🔴 The dependency that makes this bigger than two pages
+
+`automaticAction` is **not standalone**. `caseType.workflowSteps` embeds
+references in three places — `automaticActions: ActionRef[]`,
+`config.autoActions: ActionRef[]`, and `config.escalationRule` — and there are
+**9 such references in the shipped seed/templates alone**, before any customer
+data. Retiring the pages does not retire the concept: every case type in the
+field points at these by id.
+
+### Steps
+
+1. **Wrap each handler as an `IFlowNode`** (`lib/Flow/Procest*Node.php`), keeping
+   the handler classes as the implementation. Register them through a
+   `ProcestFlowNodeListener` on `RegisterFlowNodesEvent`, copying hermiq's shape.
+2. **Decide the reference story for `workflowSteps`** — this is the real design
+   question, and it should be settled before any code:
+   - either `ActionRef` starts resolving to a flow node id (rewrite on migration), or
+   - the step executor calls OR's flow runner with the node inline.
+   Whichever wins, existing case types must keep working across the upgrade.
+3. **Migrate** the `automaticAction` objects to flow definitions + rewrite the
+   `workflowSteps` references. Repair step: idempotent, non-fatal, and it must
+   read required keys **without** a `??` fallback (see lesson 2).
+4. **Retire** `/settings/automatic-actions` + `/:id`, the menu entry, and
+   `ActionRegistry`/`ActionHandlerLocator` once the nodes are the only path.
+   Keep the six handler classes.
+5. **Deeplink** to `/apps/openregister/#/flows` — hash-routed. C1 hit this trap.
+
+## D1–D4 — decision-making to decidiq
+
+**D1 is still gated on `consume-decidesk-besluitvorming-leaf`** (an active change
+in this repo). That change retires the Besluitvorming *nav group* and surfaces
+decidesk's decisions as a case-detail leaf, but deliberately keeps
+`/besluitvorming/agenda` and `/besluitvorming/vergaderingen/:id` routable. D1
+removes those two outright, so it must land after — not in parallel.
+
+- **D1** — retire `/besluitvorming/agenda`, `/besluitvorming/vergaderingen/:id`,
+  `AgendaCompilerView.vue`, `VergaderingDetailView.vue`,
+  `src/manifest.d/50-besluitvorming.json`. decidiq's `/agenda-items` and
+  `/meetings` are the owner.
+- **D2** — `bezwaaradviescommissie` → decidiq's `governance-body`.
+- **D3** — `parafeerroute` → decidiq's routed-document/approval model
+  (`routedDocumentsJoin.js`).
+- **D4** — assert the case leaf is **render-and-read only** (ADR-066): no verb,
+  no command. Anything procest needs decidiq to *do* travels as a typed event
+  (ADR-041) — the shape `ContractDecisionDelegationService` and E1's
+  `AiOversightDelegationService` both use.
+
+Each of D1–D3 is two PRs: land in decidiq, merge, *then* retire here.
+
+---
+
+## Lessons this programme paid for — apply them to C2/D
+
+1. **`git add -A` re-adds files a previous commit deleted** if they are still on
+   disk. Four component deletions silently came back that way and only gate-26
+   noticed. Stage deletions explicitly, and verify with
+   `git cat-file -e <branch>:<path>`.
+2. **A default-valued read turns missing data into confident wrong behaviour.**
+   The E1 repair step read `$batch['results']` where the API returns `entries`;
+   `?? []` made it report "nothing to migrate" on a full instance. phpstan caught
+   it. Read required keys **without** a fallback.
+3. **A manifest key that validates can still render nothing.** `config.subtitle`
+   passed Ajv and was never read — `CnDashboardPage`'s prop is `description`.
+   Verify a declaration renders, in a browser, before believing it.
+4. **The icon gate knows better than the ADR table.** Two rows look applicable;
+   run `check_icon_vocabulary.py` rather than reading ADR-077 and guessing. An
+   unregistered icon renders as *nothing*, not a fallback.
+5. **Cross-app writes go through a typed event**, never into the other app's
+   register. decidesk's `DecisionRequestedEvent` and hermiq's
+   `AiOversightRecordedEvent` are the two working precedents.
+6. **The e2e suite refuses `localhost:8080` on purpose** — it seeds *and deletes*
+   OpenRegister objects and that is the shared dev container. CI provisions its
+   own instance. Verify pages individually in the browser instead.
+7. **A cancelled duplicate CI run reports as a failure** in the PR rollup. Check
+   `gh run list --json headSha,conclusion` before believing a red check.
+
+## Local tooling notes
+
+- procest's `vendor/` is root-owned; run phpcs/phpmd/phpstan/phpunit **inside the
+  container**: `docker exec -w /var/www/html/custom_apps/procest nextcloud sh -lc '...'`.
+- procest's vendor lacks `conduction/hydra-gates/quality-config`; it was copied
+  in from hermiq's vendor inside the container to make the tools runnable.
+- The real gate checkers are cloned at `~/dotgithub-gates/hydra-gates/scripts/lib/`
+  — run them directly against a repo path, e.g.
+  `python3 ~/dotgithub-gates/hydra-gates/scripts/lib/check_spec_coverage.py .`
+- Build needs headroom: `NODE_OPTIONS="--max-old-space-size=6144"` (the default
+  heap OOM-kills webpack on this box).

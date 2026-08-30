@@ -1,0 +1,82 @@
+{
+	"info": {
+		"name": "Dossiq — Open Raadsinformatie Feed (smoke)",
+		"description": "Smoke test for the public ORI feed endpoints (vergaderingen, agendapunten, documenten). Unauth read per open-raadsinformatie spec — see openspec/changes/open-raadsinformatie/tasks.md.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "GET /feed/ori/vergaderingen — unauth public feed renders OK",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/feed/ori/vergaderingen",
+					"host": ["{{base_url}}"],
+					"path": ["feed", "ori", "vergaderingen"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+							"pm.test('Content-Type is XML', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.match(/xml/i); });",
+							"pm.test('Body looks like an ORI feed', function () { pm.expect(pm.response.text()).to.match(/<\\?xml|<feed|<rss/i); });"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "GET /feed/ori/agendapunten — unauth public feed renders OK",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/feed/ori/agendapunten",
+					"host": ["{{base_url}}"],
+					"path": ["feed", "ori", "agendapunten"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+							"pm.test('Content-Type is XML', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.match(/xml/i); });"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "GET /feed/ori/documenten — unauth public feed renders OK",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/feed/ori/documenten",
+					"host": ["{{base_url}}"],
+					"path": ["feed", "ori", "documenten"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+							"pm.test('Content-Type is XML', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.match(/xml/i); });"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		}
+	]
+}

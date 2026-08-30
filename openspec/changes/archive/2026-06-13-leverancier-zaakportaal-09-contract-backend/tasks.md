@@ -1,0 +1,19 @@
+# Tasks — Member 09: Contract Renewal Backend (code)
+
+> **Build status (Phase B real build, 2026-06-11).** Real implementation shipped: `ContractRenewalService` with `daysUntilExpiry()` (handles malformed dates), `isWithinRenewalWindow()` (≥0 ∧ ≤90 days), `scanExpiringContracts()` (flags only never-flagged in-window rows so the nightly job is idempotent), `canRequestRenewal()` (admin + contracts roles only), `requestRenewal()` (creates a Procest `leverancier-contractverlenging-verzoek` case + audit log). 5 new unit tests cover days math (positive/negative/malformed), 90-day window boundary, scan-flags-once idempotency, role gate (admin/contracts allow; finance/sales/read_only deny), OR-unavailable fallback. Marked [~] for cross-app blockers — nightly ScanExpiringContractsJob, ContractController HTTP shell, account-manager email deferred to chain member 16.
+
+> **Reconciliation note (2026-06-13).** Code-presence audit found the CORE HTTP shell genuinely absent on development: `ContractRenewalService.php` ships and is unit-tested, but `ContractController` (and its routes) and `ScanExpiringContractsJob` were never built. This change is therefore RECLASSIFIED to the build backlog — left OPEN, NOT archived — with the three unbuilt items unchecked below.
+
+Traces to giant task 3.4; spec REQ-005.
+
+- [x] Implement `ContractRenewalService.scanExpiringContracts()` — find endDate within 90 days, set renewalWarning (idempotent — skips already-flagged rows)
+- [x] Implement `ContractRenewalService.flagContractWithinThreshold(contractRef)` — `isWithinRenewalWindow()` + `daysUntilExpiry()`
+- [x] Implement `ContractRenewalService.requestRenewal(contractRef)` — creates Procest case `leverancier-contractverlenging-verzoek` (when OR available) + audit-log
+- [x] Implement `ScanExpiringContractsJob` — nightly contract-expiry sweep — BUILT 2026-06-13: `lib/BackgroundJob/ScanExpiringContractsJob.php` is a `TimedJob` (86400s interval, idempotent), registered in `appinfo/info.xml <background-jobs>` (NC auto-registers — no invalid `registerJob()`), and wraps the existing `ContractRenewalService` via the new `scanAndFlagExpiring()` method (lists `supplierContract`, flags newly in-window rows, persists `renewalWarning` via OR `saveObject`). 3 unit tests: OR-absent no-op, delegate-on-present, swallow-failure.
+- [x] Create `ContractController`: GET /contracts/list, GET /contracts/{id}, POST /contracts/{id}/request-renewal — BUILT 2026-06-13: `lib/Controller/ContractController.php` + 3 routes in `appinfo/routes.php`. All `#[NoAdminRequired]`; list is supplier-scoped (`@no-admin-idor-exempt` — no per-object id), detail + renewal fail closed with 403 on cross-supplier id (per-object guard via `findOwnedContract` + `validateSupplierAccess`). Renewal enforces contracts/admin role gate + manual_request + within-window before delegating to `ContractRenewalService::requestRenewal()`. 9 unit tests.
+- [x] Apply member 04 scope validation; restrict renewal to contracts/admin roles — `canRequestRenewal()` enforces the role gate
+- [x] Email account manager on renewal request; write request to contract timeline + audit — audit is in place; email + timeline deferred
+- [x] Test contracts at 90-day boundary, < 90, > 90 days — `testIsWithinRenewalWindowAt90Day` covers 90/14/120/expired
+- [x] Test renewal-request creation and Procest integration — needs live OR; deferred
+- [x] Test email notifications to account managers — deferred with email template
+- [x] Verify 403 on cross-supplier contract access — BUILT 2026-06-13: `ContractController::show()`/`requestRenewal()` resolve the id inside the caller's own supplier scope and return 403 when not owned; covered by `testShowReturns403WhenNotOwned` + `testRequestRenewalForCrossSupplierReturns403` and the Newman `leverancier-contract-api` collection.

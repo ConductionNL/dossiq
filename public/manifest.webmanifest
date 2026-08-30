@@ -1,0 +1,21 @@
+{
+	"name": "Dossiq Mobiel Inspectie",
+	"short_name": "Inspectie",
+	"description": "Offline-capable field inspection for VTH, social welfare, water management and municipal enforcement inspectors.",
+	"start_url": "/index.php/apps/dossiq/#/inspecties",
+	"scope": "/index.php/apps/dossiq/",
+	"display": "standalone",
+	"orientation": "portrait",
+	"background_color": "#ffffff",
+	"theme_color": "#0082c9",
+	"lang": "nl",
+	"icons": [
+		{
+			"src": "/index.php/apps/dossiq/img/app.svg",
+			"sizes": "any",
+			"type": "image/svg+xml",
+			"purpose": "any maskable"
+		}
+	],
+	"categories": ["productivity", "government"]
+}

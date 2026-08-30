@@ -1,0 +1,117 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"change": "subsidies-as-casetype",
+		"adr": "ADR-044 unified-case — subsidy applications fold into the unified case model as the 'subsidie' caseType (seeded in lib/Settings/bezwaar_seed_data.json, uuid b3c1a000-0000-4000-a000-0000000005ab). The bespoke subsidieAanvraag index is replaced by a Cases index pre-filtered to that caseType. subsidieAanvraag remains a SUPPORTING schema linked to the case (case.$ref via subsidieAanvraag.case) carrying the subsidy-specific detail (regeling, requested/granted amount, begroting, beschikking); the case carries the common workflow/status. subsidieRegeling stays a config register surfaced under settings. The SubsidieDetail route + subsidieAanvraag schema stay registered for deep links to the linked detail data.",
+		"data-model-decision": "Option (b) — linked detail schema. subsidieAanvraag already declares a `case` property ($ref:case, onDelete:SET_NULL), so subsidy cases use the generic `case` workflow while subsidy-specific fields live on the linked subsidieAanvraag record. The `case` schema is NOT bloated with subsidy-only properties."
+	},
+	"menu": [
+		{
+			"id": "SubsidiesGroup",
+			"route": "Subsidies"
+		}
+	],
+	"pages": [
+		{
+			"id": "Subsidies",
+			"route": "/subsidies",
+			"type": "index",
+			"title": "Subsidies",
+			"config": {
+				"register": "dossiq",
+				"schema": "case",
+				"filter": {
+					"caseType": "b3c1a000-0000-4000-a000-0000000005ab"
+				},
+				"showViewAction": false,
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "EyeOutline",
+						"handler": "navigate",
+						"route": "CaseDetail",
+						"type": "handler"
+					}
+				],
+				"columns": [
+					"identifier",
+					"title",
+					{
+						"key": "status",
+						"label": "Status",
+						"formatter": "statusTypeName"
+					},
+					"assignee",
+					"deadline"
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://procest.conduction.nl"
+			}
+		},
+		{
+			"id": "SubsidieDetail",
+			"route": "/subsidies/:id",
+			"type": "detail",
+			"title": "Subsidie",
+			"config": {
+				"register": "dossiq",
+				"schema": "subsidieAanvraag",
+				"_note": "SUBSIDY-APPLICATION archetype (subsidieAanvraag). Per ADR-044 the common workflow/status lives on a unified `case` (caseType=subsidie) shown by CaseDetail; subsidieAanvraag is the linked schema holding subsidy-specific data reached by deep link. It declares NO comms linkedTypes, so no files/notes/contacts/calendar leaves — those live on the parent case. The Data widget carries the application and its budget/applicant fields (aanvraagnummer, subsidieregeling, aangevraagdBedrag, begroting, cofinancieringList, projectStartdatum/Einddatum, aanvragerKvkRef, aanvragerBsnRef, behandelaar) and a Related panel links the parent case, the scheme and the handler. Its genuine children — assessments (subsidieBeoordeling), decisions (subsidieBeschikking) and executions (subsidieUitvoering), all keyed subsidieaanvraag=@objectId — are FK-scoped object-lists (these were previously mis-modelled as case-scoped tabs that never matched a subsidieAanvraag id). ADR-062 round 2: the deprecated header summaryAggregates moved into an in-grid stats-block top-right (decision/execution counts), stacked over the Related panel to close the lead row against the 12-field data widget (8x6 = 4x3+4x3); child lists carry tailored emptyText. lifecycleActions drive the status (ontvangen → … → verleend/afgewezen). Audit history is a sidebar tab.",
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
+					{ "id": "subsidie-data", "type": "data", "title": "Subsidieaanvraag", "icon": "CashMultiple", "content": { "columns": 2 } },
+					{ "id": "subsidie-kpis", "type": "stats-block", "title": "Key figures", "icon": "Gauge", "content": { "entries": [
+						{ "title": "Decisions", "register": "dossiq", "schema": "subsidieBeschikking", "metric": "count", "filter": { "subsidieaanvraag": "@objectId" } },
+						{ "title": "Executions", "register": "dossiq", "schema": "subsidieUitvoering", "metric": "count", "filter": { "subsidieaanvraag": "@objectId" } }
+					] } },
+					{ "id": "subsidie-related", "type": "related", "title": "Case, scheme & handler", "icon": "LinkVariant" },
+					{ "id": "subsidie-beoordelingen", "type": "object-list", "title": "Assessments", "icon": "ClipboardCheckOutline", "content": { "register": "dossiq", "schema": "subsidieBeoordeling", "filter": { "subsidieaanvraag": "@objectId" }, "sort": { "field": "beoordelingsdatum", "dir": "desc" }, "limit": 25, "columns": [ { "key": "beoordelaar", "label": "Assessor" }, { "key": "substantiveAssessmentOpinion", "label": "Content check" }, { "key": "financialAssessmentOpinion", "label": "Financial check" }, { "key": "advies", "label": "Advice" }, { "key": "beoordelingsdatum", "label": "Assessed" } ], "emptyText": "No assessments for this application yet" } },
+					{ "id": "subsidie-beschikkingen", "type": "object-list", "title": "Decisions", "icon": "FileSign", "content": { "register": "dossiq", "schema": "subsidieBeschikking", "filter": { "subsidieaanvraag": "@objectId" }, "sort": { "field": "decisionDate", "dir": "desc" }, "limit": 25, "columns": [ { "key": "beschikkingnummer", "label": "Number" }, { "key": "beschikkingtype", "label": "Type" }, { "key": "grantedAmount", "label": "Granted" }, { "key": "status", "label": "Status" }, { "key": "decisionDate", "label": "Date" } ], "emptyText": "No decisions issued on this application yet" } },
+					{ "id": "subsidie-uitvoeringen", "type": "object-list", "title": "Executions", "icon": "Cash", "content": { "register": "dossiq", "schema": "subsidieUitvoering", "filter": { "subsidieaanvraag": "@objectId" }, "sort": { "field": "order", "dir": "asc" }, "limit": 25, "columns": [ { "key": "status", "label": "Status" }, { "key": "betaaldeVoorschotten", "label": "Paid advances" }, { "key": "outstandingAdvances", "label": "Open advances" } ], "emptyText": "No execution records for this application yet" } }
+				],
+				"layout": [
+					{ "id": "1", "widgetId": "subsidie-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 6, "showTitle": false },
+					{ "id": "2", "widgetId": "subsidie-kpis", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 3 },
+					{ "id": "3", "widgetId": "subsidie-related", "gridX": 8, "gridY": 3, "gridWidth": 4, "gridHeight": 3 },
+					{ "id": "4", "widgetId": "subsidie-beoordelingen", "gridX": 0, "gridY": 6, "gridWidth": 12, "gridHeight": 4 },
+					{ "id": "5", "widgetId": "subsidie-beschikkingen", "gridX": 0, "gridY": 10, "gridWidth": 6, "gridHeight": 4 },
+					{ "id": "6", "widgetId": "subsidie-uitvoeringen", "gridX": 6, "gridY": 10, "gridWidth": 6, "gridHeight": 4 }
+				],
+				"lifecycleActions": { "field": "status" },
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+					]
+				}
+			}
+		},
+		{
+			"id": "Terugvorderingen",
+			"route": "/terugvorderingen",
+			"type": "index",
+			"title": "Terugvorderingen",
+			"config": {
+				"register": "dossiq",
+				"schema": "terugvordering",
+				"columns": [
+					"terugvorderingsnummer",
+					"amount",
+					"paidAmount",
+					"betaaltermijnEinde",
+					"status"
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
+			}
+		}
+	]
+}

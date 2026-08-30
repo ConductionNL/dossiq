@@ -1,25 +1,25 @@
 <p align="center">
-  <img src="img/app-store.svg" alt="Procest logo" width="80" height="80">
+  <img src="img/app-store.svg" alt="Dossiq logo" width="80" height="80">
 </p>
 
-<h1 align="center">Procest</h1>
+<h1 align="center">Dossiq</h1>
 
 <p align="center">
   <strong>Case management for Nextcloud — configurable workflows, deadlines, and formal decisions</strong>
 </p>
 
 <p align="center">
-  <a href="https://github.com/ConductionNL/procest/releases"><img src="https://img.shields.io/github/v/release/ConductionNL/procest" alt="Latest release"></a>
-  <a href="https://github.com/ConductionNL/procest/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License"></a>
-  <a href="https://github.com/ConductionNL/procest/actions"><img src="https://img.shields.io/github/actions/workflow/status/ConductionNL/procest/code-quality.yml?label=quality" alt="Code quality"></a>
-  <a href="https://procest.app"><img src="https://img.shields.io/badge/docs-procest.app-green" alt="Documentation"></a>
+  <a href="https://github.com/ConductionNL/dossiq/releases"><img src="https://img.shields.io/github/v/release/ConductionNL/dossiq" alt="Latest release"></a>
+  <a href="https://github.com/ConductionNL/dossiq/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-EUPL--1.2-blue" alt="License"></a>
+  <a href="https://github.com/ConductionNL/dossiq/actions"><img src="https://img.shields.io/github/actions/workflow/status/ConductionNL/dossiq/code-quality.yml?label=quality" alt="Code quality"></a>
+  <a href="https://conduction.nl"><img src="https://img.shields.io/badge/docs-conduction.nl-green" alt="Documentation"></a>
 </p>
 
 ---
 
-Procest brings structured case management (*zaakgericht werken*) natively into Nextcloud. Define case types with custom status lifecycles, track progress and deadlines, assign roles, and record formal decisions — all within a clean, intuitive interface that integrates naturally with the rest of your Nextcloud workspace.
+Dossiq brings structured case management (*zaakgericht werken*) natively into Nextcloud. Define case types with custom status lifecycles, track progress and deadlines, assign roles, and record formal decisions — all within a clean, intuitive interface that integrates naturally with the rest of your Nextcloud workspace.
 
-It pairs with [Pipelinq](https://github.com/ConductionNL/pipelinq) to form a complete intake-to-resolution workflow: Pipelinq handles the customer-facing CRM side, Procest handles the internal case processing.
+It pairs with [Pipelinq](https://github.com/ConductionNL/pipelinq) to form a complete intake-to-resolution workflow: Pipelinq handles the customer-facing CRM side, Dossiq handles the internal case processing.
 
 > **Requires:** [OpenRegister](https://github.com/ConductionNL/openregister) — all data is stored as OpenRegister objects (no own database tables).
 
@@ -64,8 +64,8 @@ It pairs with [Pipelinq](https://github.com/ConductionNL/pipelinq) to form a com
 - **Activity Timeline** — Complete history of every change made to a case, with timestamps and responsible party
 
 ### Integrations
-- **Unified Search** — Deep links for cases and tasks in Nextcloud's global search
-- **Pipelinq Bridge** — Receive requests handed off from Pipelinq CRM as new cases
+- **Unified Search** — Cases and tasks appear in Nextcloud's global search, provided centrally via OpenRegister (dossiq ships no own search provider)
+- **Pipelinq Bridge** — Receive requests handed off from Pipelinq CRM as new cases, via OpenRegister's semantic object handoff (dossiq implements the `ns#Case` kind; requests map onto cases with navigable provenance)
 - **Sub-cases** — Break complex cases into parent-child hierarchies for structured processing
 
 ## Architecture
@@ -96,7 +96,7 @@ graph TD
 ### Directory Structure
 
 ```
-procest/
+dossiq/
 ├── appinfo/           # Nextcloud app manifest, routes, navigation
 ├── lib/               # PHP backend — controllers, services
 ├── src/               # Vue 2 frontend — components, Pinia stores, views
@@ -104,20 +104,62 @@ procest/
 │   ├── store/         # Pinia stores per entity (cases, caseTypes, tasks…)
 │   └── views/         # Route-level views
 ├── docs/
-│   ├── FEATURES.md    # Full feature specification
-│   ├── ARCHITECTURE.md
-│   └── features/      # Per-feature documentation
+│   ├── Features/      # Per-feature documentation
+│   └── Technical/     # Architecture and development guides
 ├── img/               # App icons and screenshots
 ├── l10n/              # Translations (en, nl)
-└── docusaurus/        # Product documentation site (procest.app)
+└── docusaurus/        # Product documentation site (conduction.nl)
 ```
+
+## KCC-werkplek Integration
+
+The `kcc-werkplek-zaaksysteem-bridge` capability surfaces real-time zaaksysteem
+context inside the pipelinq KCC-werkplek. Pipelinq owns the contact-center UI;
+Dossiq exposes a read/write API plus background jobs.
+
+**Schemas** (modular `lib/Settings/register.d/40-kcc-werkplek.json`, ADR-037 — the
+monolith is never edited): `contactmoment`, `kccQuickAction`, `belplan`,
+`specialistBeschikbaarheid`, `doorverbinding`, `klantSentiment`. A *burger* is a
+Nextcloud contact entity resolved through `OCP\Contacts\IManager`; no bespoke
+person/customer schema is introduced.
+
+**Services**: `ContactMomentService` (log contacts, append immutable case
+activity), `BurgerIdentificationService` (DigiD pseudonymisation + weighted
+identificatievragen scoring), `CaseVoorbladService` (open zaken + history +
+suggested topic), `BelplanRoutingService` (vaardigheid match + wachtrij-overflow),
+`QuickActionService` (status / nieuwe zaak / klacht / bel-terug),
+`DoorverbindingService` (immutable context snapshot + accept/reject),
+`SentimentService` (Dutch trigger-word + escalatie scoring).
+
+**Controllers / routes** (under `/api/` and `/api/kcc/`): `ContactMomentController`,
+`BelplanController` (belplan CRUD is admin-gated), `SpecialistBeschikbaarheidController`
+(read-only).
+
+**Background jobs**: `SentimentAnalysisJob` (every 10 min, scores transcriptions),
+`SpecialistBeschikbaarheidRefreshJob` (every 30 s, ages out stale availability).
+
+| Setting | Default | Purpose |
+|---------|---------|---------|
+| `identification_method` | `both` | digid / bsn_questions / both |
+| `identification_score_threshold` | `0.8` | minimum identificatievragen score to link a burger |
+| `sentiment_polling_interval` | `5` | seconds |
+| `specialist_availability_polling_interval` | `30` | seconds (drives the refresh job staleness window) |
+| `max_zaken_voorblad` | `10` | open zaken shown on the voorblad |
+| `max_contactmomenten_history` | `5` | recent contactmomenten shown |
+| `sentiment_trigger_words` | JSON list | Dutch escalation trigger words |
+
+**Troubleshooting** — *specialist-beschikbaarheid API unreachable?* The refresh
+job logs a warning and keeps the existing (stale) cache; routing keeps using the
+last known availability, and stale records are marked `afwezig` after
+`specialist_availability_polling_interval × 4` so calls are never routed to a
+silent specialist.
 
 ## Requirements
 
 | Dependency | Version |
 |-----------|---------|
-| Nextcloud | 28 – 33 |
-| PHP | 8.1+ |
+| Nextcloud | 28 – 34 |
+| PHP | 8.3+ |
 | [OpenRegister](https://github.com/ConductionNL/openregister) | latest |
 
 ## Installation
@@ -125,7 +167,7 @@ procest/
 ### From the Nextcloud App Store
 
 1. Go to **Apps** in your Nextcloud instance
-2. Search for **Procest**
+2. Search for **Dossiq**
 3. Click **Download and enable**
 
 > OpenRegister must be installed first. [Install OpenRegister →](https://apps.nextcloud.com/apps/openregister)
@@ -134,11 +176,11 @@ procest/
 
 ```bash
 cd /var/www/html/custom_apps
-git clone https://github.com/ConductionNL/procest.git
-cd procest
+git clone https://github.com/ConductionNL/dossiq.git
+cd dossiq
 npm install
 npm run build
-php occ app:enable procest
+php occ app:enable dossiq
 ```
 
 ## Development
@@ -152,7 +194,7 @@ docker compose -f openregister/docker-compose.yml up -d
 ### Frontend development
 
 ```bash
-cd procest
+cd dossiq
 npm install
 npm run dev        # Watch mode
 npm run build      # Production build
@@ -161,10 +203,15 @@ npm run build      # Production build
 ### Code quality
 
 ```bash
-# PHP
+# PHP — unified strict gate (runs in CI on every PR)
+composer check:strict   # lint + phpcs + phpmd + psalm + phpstan + tests
+
+# Individual tools
 composer phpcs          # Check coding standards
 composer cs:fix         # Auto-fix issues
-composer phpmd          # Mess detection
+composer phpmd          # Mess detection (no baseline — must pass clean)
+composer phpstan        # Static analysis (level 5)
+composer psalm          # Static analysis
 composer phpmetrics     # HTML metrics report
 
 # Frontend
@@ -172,31 +219,41 @@ npm run lint            # ESLint
 npm run stylelint       # CSS linting
 ```
 
+`composer check:strict` is the unified quality gate; the equivalent gates are
+enforced on every PR by `.github/workflows/code-quality.yml` (the shared
+`ConductionNL/.github` quality pipeline). PHPMD and PHPStan
+both run with **no baseline** — every violation is fixed at source, so the gate's
+green is bought entirely by the code and not by a suppression file. The only
+PHPStan suppressions are the documented `ignoreErrors` patterns in `phpstan.neon`
+covering stub gaps in `nextcloud/ocp` (server-internal `\OC` classes, other apps'
+`OCA\` namespaces, Guzzle, Doctrine DBAL), each with a written justification.
+Do not reintroduce `phpstan-baseline.neon`.
+
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Frontend | Vue 2.7, Pinia, @nextcloud/vue |
 | Build | Webpack 5, @nextcloud/webpack-vue-config |
-| Backend | PHP 8.1+, Nextcloud App Framework |
+| Backend | PHP 8.3+, Nextcloud App Framework |
 | Data | OpenRegister (PostgreSQL JSON objects) |
 | UX | @conduction/nextcloud-vue |
 | Quality | PHPCS, PHPMD, phpmetrics, ESLint, Stylelint |
 
 ## Documentation
 
-Full documentation is available at **[procest.app](https://procest.app)**
+Full documentation is available at **[conduction.nl](https://conduction.nl)**
 
 | Page | Description |
 |------|-------------|
-| [Features](docs/FEATURES.md) | Complete feature specification |
-| [Architecture](docs/ARCHITECTURE.md) | Technical architecture and design decisions |
-| [Development](docs/development.md) | Developer setup and contribution guide |
+| [Features](docs/Features/README.md) | Complete feature specification |
+| [Architecture](docs/Technical/architecture.md) | Technical architecture and design decisions |
+| [Development](docs/Technical/development-guide.md) | Developer setup and contribution guide |
 
 ## Standards & Compliance
 
 - **Data standard:** CMMN 1.1 (OMG Case Management specification)
-- **Process standards:** BPMN 2.0, DMN for task and decision logic
+- **Process standards:** BPMN 2.0 for task lifecycles (DMN: roadmap — no DMN engine ships today)
 - **Dutch interoperability:** ZGW APIs (Zaken, Besluiten, Catalogi), RGBZ information model
 - **Accessibility:** WCAG AA (Dutch government requirement)
 - **Authorization:** RBAC via OpenRegister
@@ -205,14 +262,29 @@ Full documentation is available at **[procest.app](https://procest.app)**
 
 ## Related Apps
 
-- **[Pipelinq](https://github.com/ConductionNL/pipelinq)** — CRM intake; hands off requests to Procest as new cases
+- **[Pipelinq](https://github.com/ConductionNL/pipelinq)** — CRM intake; hands off requests to Dossiq as new cases
 - **[OpenRegister](https://github.com/ConductionNL/openregister)** — Object storage layer (required dependency)
 - **[OpenCatalogi](https://github.com/ConductionNL/opencatalogi)** — Application catalogue
 
+## Support
+
+For support, contact us at [support@conduction.nl](mailto:support@conduction.nl).
+
+For a Service Level Agreement (SLA), contact [sales@conduction.nl](mailto:sales@conduction.nl).
+
 ## License
 
-AGPL-3.0-or-later
+This project is licensed under the [EUPL-1.2](LICENSE).
 
+### Dependency license policy
+
+All dependencies (PHP and JavaScript) are automatically checked against an approved license allowlist during CI. The following SPDX license families are approved for use in dependencies:
+
+- **Permissive:** MIT, ISC, BSD-2-Clause, BSD-3-Clause, 0BSD, Apache-2.0, Unlicense, CC0-1.0, CC-BY-3.0, CC-BY-4.0, Zlib, BlueOak-1.0.0, Artistic-2.0, BSL-1.0
+- **Copyleft (EUPL-compatible):** LGPL-2.0/2.1/3.0, GPL-2.0/3.0, AGPL-3.0, EUPL-1.1/1.2, MPL-2.0
+- **Font licenses:** OFL-1.0, OFL-1.1
+
+Dependencies with licenses not on this list will fail CI unless explicitly approved in `.license-overrides.json` with a documented justification.
 ## Authors
 
 Built by [Conduction](https://conduction.nl) — open-source software for Dutch government and public sector organizations.

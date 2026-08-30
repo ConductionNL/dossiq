@@ -1,0 +1,59 @@
+{
+  "pagina": 1,
+  "resultatenPerPagina": 10,
+  "totaal": 2,
+  "resultaten": [
+    {
+      "kvkNumber": "69599084",
+      "vestigingsnummer": "000038509520",
+      "name": "Test EMZ Nevenvestiging Govert",
+      "address": {
+        "binnenlandsAdres": {
+          "type": "bezoekadres",
+          "streetName": "Geneinde",
+          "place": "Maastricht"
+        }
+      },
+      "type": "nevenvestiging",
+      "links": [
+        {
+          "rel": "basisprofiel",
+          "href": "https://api.kvk.nl/test/api/v1/basisprofielen/69599084"
+        },
+        {
+          "rel": "vestigingsprofiel",
+          "href": "https://api.kvk.nl/test/api/v1/vestigingsprofielen/000038509520"
+        }
+      ]
+    },
+    {
+      "kvkNumber": "69599084",
+      "vestigingsnummer": "000038509504",
+      "name": "Test EMZ Dagobert",
+      "address": {
+        "binnenlandsAdres": {
+          "type": "bezoekadres",
+          "streetName": "Abebe Bikilalaan",
+          "place": "Amsterdam"
+        }
+      },
+      "type": "hoofdvestiging",
+      "links": [
+        {
+          "rel": "basisprofiel",
+          "href": "https://api.kvk.nl/test/api/v1/basisprofielen/69599084"
+        },
+        {
+          "rel": "vestigingsprofiel",
+          "href": "https://api.kvk.nl/test/api/v1/vestigingsprofielen/000038509504"
+        }
+      ]
+    }
+  ],
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://api.kvk.nl/test/api/v2/zoeken?kvknummer=69599084&pagina=1&resultatenperpagina=10"
+    }
+  ]
+}

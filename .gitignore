@@ -1,6 +1,69 @@
-/node_modules/
-/js/
+# IDE
+/.idea/
+/*.iml
+*.Identifier
+
+# Dependencies
 /vendor/
+/vendor-bin/*/vendor/
+/node_modules/
+
+# Build artifacts
+/js/
+
+# Documentation
+/docs/node_modules/
+/docs/build/
+/docs/.docusaurus/
 /docusaurus/node_modules/
 /docusaurus/build/
 /docusaurus/.docusaurus/
+
+# Testing & Quality
+/.php-cs-fixer.cache
+/tests/.phpunit.cache
+/.phpunit.cache/
+.phpunit.cache
+.phpunit.cache/
+.phpunit.result.cache
+/coverage/
+coverage/
+/coverage-frontend/
+/phpmetrics/
+phpmetrics/
+/quality-reports/
+/phpqa/
+
+# Playwright output (paths align with the shared quality.yml artifact uploads)
+/test-results/
+/playwright-report/
+
+# Nextcloud
+/custom_apps/
+/config/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code
+.claude/worktrees/
+
+# Repo-specific
+tests/e2e/.auth/
+/coverage-vitest/
+/coverage/
+composer.phar
+
+# Agent/test scratch and tool caches — generated, never source.
+# Added by the 2026-08-25 fleet hygiene sweep (ADR-100 Decision 2).
+.stale/
+/.e2e-state/
+
+# Build and test transcripts written at the repo ROOT by local tooling. These
+# were tracked, so every local build produced a commit-shaped diff, and every
+# such commit triggered the full Code Quality suite — 34 jobs deciding a
+# changed log file. Root-anchored on purpose: .claude/skills/*/examples/*.log
+# are gate FIXTURES, not artefacts, and must stay tracked.
+/*.log
+/changed.tsv

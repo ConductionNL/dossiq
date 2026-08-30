@@ -18,12 +18,21 @@ const PRIORITY_WEIGHTS = {
  *
  * @return {object} Priority levels keyed by priority name
  */
+/** @spec openspec/specs/task-management/spec.md */
 export function getPriorityLevels() {
 	return {
-		urgent: { label: t('procest', 'Urgent'), weight: 1, cssVar: '--color-error' },
-		high: { label: t('procest', 'High'), weight: 2, cssVar: '--color-warning' },
-		normal: { label: t('procest', 'Normal'), weight: 3, cssVar: null },
-		low: { label: t('procest', 'Low'), weight: 4, cssVar: '--color-text-maxcontrast' },
+		urgent: {
+			label: t('dossiq', 'Urgent'),
+			weight: 1,
+			cssVar: '--color-error',
+		},
+		high: { label: t('dossiq', 'High'), weight: 2, cssVar: '--color-warning' },
+		normal: { label: t('dossiq', 'Normal'), weight: 3, cssVar: null },
+		low: {
+			label: t('dossiq', 'Low'),
+			weight: 4,
+			cssVar: '--color-text-maxcontrast',
+		},
 	}
 }
 
@@ -33,6 +42,10 @@ export function getPriorityLevels() {
  *
  * @param {object} task Task object with dueDate and status
  * @return {boolean}
+ */
+/**
+ * @param task
+ * @spec openspec/specs/task-management/spec.md
  */
 export function isOverdue(task) {
 	if (!task.dueDate) return false
@@ -50,14 +63,20 @@ export function isOverdue(task) {
  * @param {object} task Task object with dueDate and status
  * @return {boolean}
  */
+/**
+ * @param task
+ * @spec openspec/specs/task-management/spec.md
+ */
 export function isDueToday(task) {
 	if (!task.dueDate) return false
 	if (isTerminalStatus(task.status)) return false
 	const due = new Date(task.dueDate)
 	const now = new Date()
-	return due.getFullYear() === now.getFullYear()
+	return (
+		due.getFullYear() === now.getFullYear()
 		&& due.getMonth() === now.getMonth()
 		&& due.getDate() === now.getDate()
+	)
 }
 
 /**
@@ -65,6 +84,10 @@ export function isDueToday(task) {
  *
  * @param {object} task Task object with dueDate
  * @return {string|null} Overdue text or null if not overdue
+ */
+/**
+ * @param task
+ * @spec openspec/specs/task-management/spec.md
  */
 export function getOverdueText(task) {
 	if (!isOverdue(task)) return null
@@ -75,9 +98,9 @@ export function getOverdueText(task) {
 	const diffMs = now - due
 	const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 	if (diffDays === 1) {
-		return t('procest', '1 day overdue')
+		return t('dossiq', '1 day overdue')
 	}
-	return t('procest', '{days} days overdue', { days: diffDays })
+	return t('dossiq', '{days} days overdue', { days: diffDays })
 }
 
 /**
@@ -85,6 +108,10 @@ export function getOverdueText(task) {
  *
  * @param {string} dateString ISO 8601 date string
  * @return {string} Formatted date
+ */
+/**
+ * @param dateString
+ * @spec openspec/specs/task-management/spec.md
  */
 export function formatDueDate(dateString) {
 	if (!dateString) return '—'
@@ -98,6 +125,10 @@ export function formatDueDate(dateString) {
  * @param {string} priority One of urgent, high, normal, low
  * @return {number}
  */
+/**
+ * @param priority
+ * @spec openspec/specs/task-management/spec.md
+ */
 export function prioritySortWeight(priority) {
 	return PRIORITY_WEIGHTS[priority] ?? 3
 }
@@ -110,12 +141,18 @@ export function prioritySortWeight(priority) {
  */
 function statusGroupWeight(status) {
 	switch (status) {
-	case 'active': return 0
-	case 'available': return 1
-	case 'completed': return 2
-	case 'terminated': return 3
-	case 'disabled': return 4
-	default: return 5
+		case 'active':
+			return 0
+		case 'available':
+			return 1
+		case 'completed':
+			return 2
+		case 'terminated':
+			return 3
+		case 'disabled':
+			return 4
+		default:
+			return 5
 	}
 }
 
@@ -126,12 +163,17 @@ function statusGroupWeight(status) {
  * @param {object[]} tasks Array of task objects
  * @return {object[]} Sorted copy of the array
  */
+/**
+ * @param tasks
+ * @spec openspec/specs/task-management/spec.md
+ */
 export function sortTasks(tasks) {
 	return [...tasks].sort((a, b) => {
 		const statusDiff = statusGroupWeight(a.status) - statusGroupWeight(b.status)
 		if (statusDiff !== 0) return statusDiff
 
-		const priorityDiff = prioritySortWeight(a.priority) - prioritySortWeight(b.priority)
+		const priorityDiff =
+			prioritySortWeight(a.priority) - prioritySortWeight(b.priority)
 		if (priorityDiff !== 0) return priorityDiff
 
 		if (a.dueDate && b.dueDate) {

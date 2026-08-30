@@ -1,0 +1,133 @@
+{
+  "components": {
+    "registers": {
+      "dossiq": {
+        "schemas": [
+          "caseModel"
+        ]
+      }
+    },
+    "schemas": {
+      "caseModel": {
+        "slug": "caseModel",
+        "icon": "SitemapOutline",
+        "version": "1.0.0",
+        "x-schema-org": "schema:HowTo",
+        "x-cmmn-equivalent": "CasePlanModel",
+        "title": "Case Model",
+        "description": "CMMN adaptive case-plan definition for a case type — a tree of stages, human tasks and milestones made adaptive through discretionary items and entry/exit sentries. Complements (does not replace) workflowTemplate: a caseType is driven by exactly one of the two, selected via caseType.handlingModel. See openspec/specs/cmmn-adaptive-case/spec.md.",
+        "type": "object",
+        "required": ["title", "caseType"],
+        "properties": {
+          "title":           {"type": "string", "maxLength": 255, "title": "Title", "description": "Name of this case model."},
+          "description":     {"type": "string", "title": "Description", "description": "Purpose and usage notes for this case model."},
+          "caseType":         {"type": "string", "format": "uuid", "$ref": "caseType", "onDelete": "CASCADE", "title": "Case Type", "description": "Reference to the case type this case model belongs to. That caseType's handlingModel MUST be 'cmmn' for this model to be loadable by CaseModelEngine."},
+          "version":         {"type": "integer", "default": 1, "title": "Version", "description": "Auto-incrementing version number, mirroring workflowTemplate."},
+          "lifecycleStatus": {"type": "string", "enum": ["draft", "published", "deprecated"], "default": "draft", "title": "Lifecycle Status", "description": "draft = editable, cannot back new cases. published = immutable, can back new cases (one active per caseType). deprecated = immutable, existing cases keep using it."},
+          "caseFileItems": {
+            "type": "array",
+            "title": "Case File Items",
+            "description": "Named data slots in the case file that sentries can reference (onPart.caseFileItem / ifPart.field).",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id":          {"type": "string", "title": "Identifier", "description": "Stable slug referenced by sentries."},
+                "name":        {"type": "string", "title": "Name", "description": "Display name."},
+                "type":        {"type": "string", "enum": ["string", "boolean", "number", "document"], "title": "Type", "description": "Value type of this case-file item."},
+                "description": {"type": "string", "title": "Description", "description": "Optional free-text note on what this case-file item represents and how sentries use it."}
+              }
+            }
+          },
+          "planItems": {
+            "type": "array",
+            "title": "Plan Items",
+            "description": "The case-plan tree: stages (nestable via parentId), human tasks, and milestones. Each item's lifecycle is tracked at runtime in case.casePlanState — the definition here is immutable data.",
+            "items": {
+              "type": "object",
+              "required": ["id", "type", "name"],
+              "properties": {
+                "id":             {"type": "string", "title": "Identifier", "description": "Stable id, unique within the model, referenced by parentId/children and by sentry onPart.planItem."},
+                "type":           {"type": "string", "enum": ["stage", "humanTask", "milestone"], "title": "Type", "description": "CMMN plan-item type: 'stage' nests other plan items in a sub-plan, 'humanTask' is completed by a case worker, 'milestone' marks a point-in-time achievement with no work of its own."},
+                "name":           {"type": "string", "title": "Name", "description": "Display name of this plan item, shown in the case-plan UI."},
+                "description":    {"type": "string", "title": "Description", "description": "Optional free-text explanation of this plan item's purpose."},
+                "discretionary":  {"type": "boolean", "default": false, "title": "Discretionary", "description": "True = an optional item the case worker may choose to enable. False = mandatory, auto-cascades to active once entry criteria are met."},
+                "parentId":       {"type": "string", "title": "Parent Id", "description": "Id of the containing stage plan item, or null/absent for a top-level item."},
+                "children":       {"type": "array", "title": "Children", "description": "Ids of direct child plan items (stage only). Validated against parentId at load time.", "items": {"type": "string"}},
+                "entryCriteria":  {
+                  "type": "array",
+                  "title": "Entry Criteria",
+                  "description": "Sentries; the item's entry is satisfied when ANY sentry in this array fires. Empty = satisfied as soon as the parent is active.",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {"type": "string", "title": "Identifier", "description": "Stable identifier for this sentry, unique within its entryCriteria/exitCriteria array."},
+                      "onPart": {
+                        "type": "object",
+                        "title": "On Part",
+                        "description": "Event that must occur: either {planItem, standardEvent} or {caseFileItem, caseFileEvent}.",
+                        "properties": {
+                          "planItem":       {"type": "string", "title": "Plan Item", "description": "Id of the referenced plan item."},
+                          "standardEvent":  {"type": "string", "enum": ["complete", "terminate", "disable"], "title": "Standard Event", "description": "CMMN standard event on the referenced plan item that satisfies this sentry: 'complete' when it reaches Completed, 'terminate' when it reaches Terminated, 'disable' when it reaches Disabled."},
+                          "caseFileItem":   {"type": "string", "title": "Case File Item", "description": "Id of the referenced case-file item."},
+                          "caseFileEvent":  {"type": "string", "enum": ["set", "changed"], "title": "Case File Event", "description": "CMMN case-file event on the referenced case-file item that satisfies this sentry: 'set' when the item first receives a value, 'changed' on any subsequent update."}
+                        }
+                      },
+                      "ifPart": {
+                        "type": "object",
+                        "title": "If Part",
+                        "description": "Condition on the case-file data snapshot, same {field, operator, value} shape as Service/Transitions/RequiredFieldGuard.",
+                        "properties": {
+                          "field":    {"type": "string", "title": "Field", "description": "Dot-path into the case-file data snapshot that this condition evaluates, e.g. a caseFileItem id or nested field."},
+                          "operator": {"type": "string", "title": "Operator", "description": "Comparison operator applied between field and value (same vocabulary as Service/Transitions/RequiredFieldGuard, e.g. 'equals', 'notEquals', 'contains')."},
+                          "value":    {"title": "Value", "description": "The value field is compared against using operator. Type depends on the referenced case-file item."}
+                        }
+                      }
+                    }
+                  }
+                },
+                "exitCriteria": {
+                  "type": "array",
+                  "title": "Exit Criteria",
+                  "description": "Sentries; the item is force-terminated when ANY sentry in this array fires.",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {"type": "string", "title": "Identifier", "description": "Stable identifier for this sentry, unique within its entryCriteria/exitCriteria array."},
+                      "onPart": {
+                        "type": "object",
+                        "title": "On Part",
+                        "description": "Event that must occur: either {planItem, standardEvent} or {caseFileItem, caseFileEvent}.",
+                        "properties": {
+                          "planItem":       {"type": "string", "title": "Plan Item", "description": "Id of the referenced plan item."},
+                          "standardEvent":  {"type": "string", "enum": ["complete", "terminate", "disable"], "title": "Standard Event", "description": "CMMN standard event on the referenced plan item that satisfies this sentry: 'complete' when it reaches Completed, 'terminate' when it reaches Terminated, 'disable' when it reaches Disabled."},
+                          "caseFileItem":   {"type": "string", "title": "Case File Item", "description": "Id of the referenced case-file item."},
+                          "caseFileEvent":  {"type": "string", "enum": ["set", "changed"], "title": "Case File Event", "description": "CMMN case-file event on the referenced case-file item that satisfies this sentry: 'set' when the item first receives a value, 'changed' on any subsequent update."}
+                        }
+                      },
+                      "ifPart": {
+                        "type": "object",
+                        "title": "If Part",
+                        "description": "Condition on the case-file data snapshot, same {field, operator, value} shape as Service/Transitions/RequiredFieldGuard.",
+                        "properties": {
+                          "field":    {"type": "string", "title": "Field", "description": "Dot-path into the case-file data snapshot that this condition evaluates, e.g. a caseFileItem id or nested field."},
+                          "operator": {"type": "string", "title": "Operator", "description": "Comparison operator applied between field and value (same vocabulary as Service/Transitions/RequiredFieldGuard, e.g. 'equals', 'notEquals', 'contains')."},
+                          "value":    {"title": "Value", "description": "The value field is compared against using operator. Type depends on the referenced case-file item."}
+                        }
+                      }
+                    }
+                  }
+                },
+                "authorization": {
+                  "type": "array",
+                  "title": "Authorization",
+                  "description": "Optional list of NC group ids gating the enable/complete/terminate REST actions on this item, same convention as workflowTemplate transition.authorization. Absent/empty = open.",
+                  "items": {"type": "string"}
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

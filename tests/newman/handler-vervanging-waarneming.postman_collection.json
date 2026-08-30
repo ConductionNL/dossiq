@@ -1,0 +1,187 @@
+{
+	"info": {
+		"name": "handler-vervanging-waarneming — substitution + bulk reassignment",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"description": "Contract tests for the dossiq substitution + bulk-reassignment endpoints (handler-vervanging-waarneming). Authenticated as admin (= dossiq coordinator). Validates auth posture, validation rejections, and response shapes. No fixtures are persisted that need teardown beyond optional self-substitution which is revoked."
+	},
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{ "key": "username", "value": "{{admin_user}}", "type": "string" },
+			{ "key": "password", "value": "{{admin_pass}}", "type": "string" }
+		]
+	},
+	"item": [
+		{
+			"name": "GET /api/substitutions — list returns a results envelope",
+			"request": {
+				"method": "GET",
+				"header": [ { "key": "OCS-APIRequest", "value": "true" } ],
+				"url": {
+					"raw": "{{base_url}}/api/substitutions",
+					"host": [ "{{base_url}}" ],
+					"path": [ "api", "substitutions" ]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('200 OK', function () { pm.response.to.have.status(200) })",
+							"pm.test('has results array', function () { pm.expect(pm.response.json().results).to.be.an('array') })"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "POST /api/substitutions — self-substitution rejected (400)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{ "key": "OCS-APIRequest", "value": "true" },
+					{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"absentee\":\"admin\",\"substitute\":\"admin\",\"startDate\":\"2026-07-01\",\"endDate\":\"2026-07-21\",\"scope\":\"all\",\"reason\":\"verlof\"}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/substitutions",
+					"host": [ "{{base_url}}" ],
+					"path": [ "api", "substitutions" ]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('400 Bad Request', function () { pm.response.to.have.status(400) })",
+							"pm.test('error mentions waarnemer/self', function () { pm.expect(pm.response.json().error || '').to.match(/waarnemer|self/i) })"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "POST /api/substitutions — missing endDate rejected (400)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{ "key": "OCS-APIRequest", "value": "true" },
+					{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"absentee\":\"admin\",\"substitute\":\"someoneelse\",\"startDate\":\"2026-07-01\",\"endDate\":\"\",\"scope\":\"all\",\"reason\":\"verlof\"}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/substitutions",
+					"host": [ "{{base_url}}" ],
+					"path": [ "api", "substitutions" ]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('400 Bad Request', function () { pm.response.to.have.status(400) })",
+							"pm.test('error mentions endDate', function () { pm.expect(pm.response.json().error || '').to.match(/endDate/i) })"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "GET /api/substitutions/work — substituted work envelope",
+			"request": {
+				"method": "GET",
+				"header": [ { "key": "OCS-APIRequest", "value": "true" } ],
+				"url": {
+					"raw": "{{base_url}}/api/substitutions/work",
+					"host": [ "{{base_url}}" ],
+					"path": [ "api", "substitutions", "work" ]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('200 OK', function () { pm.response.to.have.status(200) })",
+							"pm.test('has cases + tasks arrays', function () { var b = pm.response.json(); pm.expect(b.cases).to.be.an('array'); pm.expect(b.tasks).to.be.an('array') })"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "POST /api/reassignments/preview — coordinator preview is non-mutating envelope",
+			"request": {
+				"method": "POST",
+				"header": [
+					{ "key": "OCS-APIRequest", "value": "true" },
+					{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"fromUser\":\"nonexistent-handler\"}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/reassignments/preview",
+					"host": [ "{{base_url}}" ],
+					"path": [ "api", "reassignments", "preview" ]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('200 OK (admin is coordinator)', function () { pm.response.to.have.status(200) })",
+							"pm.test('returns cases + tasks arrays', function () { var b = pm.response.json(); pm.expect(b.cases).to.be.an('array'); pm.expect(b.tasks).to.be.an('array') })"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "POST /api/reassignments/execute — self-reassignment rejected (400)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{ "key": "OCS-APIRequest", "value": "true" },
+					{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"fromUser\":\"admin\",\"toUser\":\"admin\"}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/reassignments/execute",
+					"host": [ "{{base_url}}" ],
+					"path": [ "api", "reassignments", "execute" ]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('400 Bad Request', function () { pm.response.to.have.status(400) })"
+						]
+					}
+				}
+			]
+		}
+	]
+}

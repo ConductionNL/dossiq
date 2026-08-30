@@ -1,0 +1,155 @@
+{
+	"info": {
+		"name": "Dossiq deelzaken API (deelzaak-support)",
+		"description": "Contract checks for the dossiq deelzaken (sub-case) REST surface served by DeelzaakController: the batch counts endpoint (single round-trip for a list page — REQ-DZS-005-C), the children list, and the parent lookup. The collection is read-only and self-contained: it asserts the response SHAPE and auth behaviour rather than seeding objects, so it is safe to run against any deployed register. SPDX-License-Identifier: EUPL-1.2",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{ "key": "username", "value": "{{admin_user}}", "type": "string" },
+			{ "key": "password", "value": "{{admin_pass}}", "type": "string" }
+		]
+	},
+	"variable": [
+		{ "key": "base_url", "value": "http://localhost:8080/index.php/apps/dossiq" }
+	],
+	"item": [
+		{
+			"name": "Counts — batch endpoint returns a counts map",
+			"request": {
+				"method": "GET",
+				"header": [
+					{ "key": "OCS-APIRequest", "value": "true" },
+					{ "key": "Accept", "value": "application/json" }
+				],
+				"url": {
+					"raw": "{{base_url}}/api/deelzaken/counts?ids=case-a,case-b,case-c",
+					"host": ["{{base_url}}"],
+					"path": ["api", "deelzaken", "counts"],
+					"query": [{ "key": "ids", "value": "case-a,case-b,case-c" }]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"// The batch counts endpoint backs the case-list sub-case badge.",
+							"// A single request with a comma-separated ids list returns a counts",
+							"// map keyed by parent UUID (REQ-DZS-005-C). Unknown ids resolve to 0.",
+							"pm.test('status is 200 (or 401 when unauthenticated)', function () {",
+							"  pm.expect([200, 401]).to.include(pm.response.code)",
+							"})",
+							"if (pm.response.code === 200) {",
+							"  const body = pm.response.json()",
+							"  pm.test('response has a counts object', function () {",
+							"    pm.expect(body).to.have.property('counts')",
+							"    pm.expect(body.counts).to.be.an('object')",
+							"  })",
+							"}"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Counts — empty ids is rejected",
+			"request": {
+				"method": "GET",
+				"header": [
+					{ "key": "OCS-APIRequest", "value": "true" },
+					{ "key": "Accept", "value": "application/json" }
+				],
+				"url": {
+					"raw": "{{base_url}}/api/deelzaken/counts",
+					"host": ["{{base_url}}"],
+					"path": ["api", "deelzaken", "counts"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"// A counts request with no ids is a client error (or 401 when",
+							"// unauthenticated) — never a 500.",
+							"pm.test('status is 400 or 401, never 5xx', function () {",
+							"  pm.expect([400, 401]).to.include(pm.response.code)",
+							"})"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Children — list endpoint returns a results array",
+			"request": {
+				"method": "GET",
+				"header": [
+					{ "key": "OCS-APIRequest", "value": "true" },
+					{ "key": "Accept", "value": "application/json" }
+				],
+				"url": {
+					"raw": "{{base_url}}/api/deelzaken/non-existent-parent/children",
+					"host": ["{{base_url}}"],
+					"path": ["api", "deelzaken", "non-existent-parent", "children"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"// The children endpoint returns a results array (empty for an",
+							"// unknown parent), never a 500.",
+							"pm.test('status is 200 or 401, never 5xx', function () {",
+							"  pm.expect([200, 401]).to.include(pm.response.code)",
+							"})",
+							"if (pm.response.code === 200) {",
+							"  const body = pm.response.json()",
+							"  pm.test('response has a results array', function () {",
+							"    pm.expect(body).to.have.property('results')",
+							"    pm.expect(body.results).to.be.an('array')",
+							"  })",
+							"}"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Parent — unknown child returns 404, not 500",
+			"request": {
+				"method": "GET",
+				"header": [
+					{ "key": "OCS-APIRequest", "value": "true" },
+					{ "key": "Accept", "value": "application/json" }
+				],
+				"url": {
+					"raw": "{{base_url}}/api/deelzaken/non-existent-child/parent",
+					"host": ["{{base_url}}"],
+					"path": ["api", "deelzaken", "non-existent-child", "parent"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"// A child with no resolvable parent yields 404 (404-safe path the",
+							"// breadcrumb relies on), or 401 when unauthenticated.",
+							"pm.test('status is 404 or 401, never 5xx', function () {",
+							"  pm.expect([404, 401]).to.include(pm.response.code)",
+							"})"
+						]
+					}
+				}
+			]
+		}
+	]
+}

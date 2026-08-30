@@ -1,0 +1,84 @@
+import { defineConfig, devices } from '@playwright/test'
+import path from 'path'
+
+const STORAGE_STATE = path.join(__dirname, 'tests/e2e/.auth/user.json')
+
+export default defineConfig({
+	testDir: './tests/e2e',
+	timeout: 30000,
+	expect: { timeout: 10000 },
+	fullyParallel: false,
+	retries: 1,
+	workers: 1,
+	// The shared quality.yml Playwright job is `timeout-minutes: 45`, and a job
+	// cancelled by that cap produces NO verdict: Playwright never prints its
+	// tally, the `if: failure()` trace upload never fires, and the
+	// `if: always()` report upload does not run on a cancelled job either — the
+	// run you most need to read is the one that leaves nothing behind, and it
+	// still renders as "fail" in `gh pr checks` while carrying no information.
+	// Runs cancelled at ~45m16s have been observed in this fleet. Measured
+	// overhead before `Run Playwright tests` starts is 2.0-2.4 min and the
+	// uploads after it take seconds, so 38m keeps ~7 min of margin while
+	// guaranteeing both a tally and the artifacts that explain it.
+	globalTimeout: 38 * 60_000,
+	reporter: [
+		// Output paths match the shared quality.yml workflow's artifact-upload
+		// paths (server/apps/<app>/playwright-report and .../test-results) so
+		// the HTML report + failure screenshots/traces actually get uploaded.
+		['html', { open: 'never', outputFolder: 'playwright-report' }],
+		['junit', { outputFile: 'test-results/results.xml' }],
+	],
+	outputDir: 'test-results',
+	globalSetup: './tests/e2e/global-setup.ts',
+
+	use: {
+		baseURL: process.env.NEXTCLOUD_URL || 'http://localhost:8080',
+		storageState: STORAGE_STATE,
+		trace: 'retain-on-failure',
+		screenshot: 'only-on-failure',
+	},
+
+	projects: [
+		// Default regression project — excludes the docs capture spec so
+		// PR pipelines don't reshoot screenshots on every push.
+		{
+			name: 'chromium',
+			testIgnore: ['**/docs-screenshots.spec.ts', '**/visual/**'],
+			use: { ...devices['Desktop Chrome'] },
+		},
+
+		// Documentation capture project (ADR-030). Opt-in run:
+		//
+		//   npx playwright test --project docs-capture
+		//
+		// Output lands in `docs/static/screenshots/tutorials/{user,admin}/`.
+		// See `tests/e2e/docs-screenshots.spec.ts`.
+		{
+			name: 'docs-capture',
+			testMatch: /docs-screenshots\.spec\.ts$/,
+			use: {
+				...devices['Desktop Chrome'],
+				viewport: { width: 1280, height: 800 },
+			},
+			timeout: 90_000,
+		},
+		// Visual-regression project (GAP-5). Opt-in / non-gating:
+		//   npx playwright test --project visual
+		//   npx playwright test --project visual --update-snapshots  (rebaseline)
+		// Fixed viewport + authenticated session => deterministic shots.
+		// Baselines live in tests/e2e/visual/*-snapshots/ and ARE committed.
+		// PLATFORM CAVEAT: PNG baselines are host-font/GPU specific, so a CI
+		// Linux runner will not byte-match a dev-container baseline; the visual
+		// project must regenerate its baselines in-CI before it can gate.
+		{
+			name: 'visual',
+			testMatch: /visual\/.*\.visual\.spec\.ts$/,
+			use: {
+				...devices['Desktop Chrome'],
+				viewport: { width: 1280, height: 800 },
+				storageState: STORAGE_STATE,
+			},
+			timeout: 90_000,
+		},
+	],
+})

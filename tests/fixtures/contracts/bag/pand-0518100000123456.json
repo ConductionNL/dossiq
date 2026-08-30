@@ -1,0 +1,26 @@
+{
+    "pand": {
+        "identificatie": "0518100000123456",
+        "oorspronkelijkBouwjaar": 1998,
+        "status": "Pand in gebruik",
+        "geometrie": {
+            "vlak": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [4.4698, 51.9243],
+                        [4.4700, 51.9243],
+                        [4.4700, 51.9245],
+                        [4.4698, 51.9245],
+                        [4.4698, 51.9243]
+                    ]
+                ]
+            }
+        }
+    },
+    "_links": {
+        "self": {
+            "href": "/lvbag/individuelebevragingen/v2/panden/0518100000123456"
+        }
+    }
+}

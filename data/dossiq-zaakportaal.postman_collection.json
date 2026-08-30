@@ -1,0 +1,144 @@
+{
+	"info": {
+		"name": "Procest Zaakportaal API",
+		"_postman_id": "c2f8d3b1-2a4e-4d5b-8a1f-procestportaal1",
+		"description": "API/contract coverage for the zaakportaal-mijngemeente feature (#68) — the citizen 'Mijn gemeente' portal. Exercises the ZaakportaalController endpoints against a live dossiq instance (localhost:8080, admin:admin): case overview, requests, messages, objection-deadline validation, objection/complaint filing, and notification preferences. Happy paths plus 400/404 negative cases. Companion UI coverage lives in tests/e2e/zaakportaal-mijngemeente.spec.ts (Playwright). Auth is HTTP Basic + OCS-APIRequest at the collection level.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{"key": "username", "value": "{{admin_user}}", "type": "string"},
+			{"key": "password", "value": "{{admin_pass}}", "type": "string"}
+		]
+	},
+	"item": [
+		{
+			"name": "Cases — overview returns 200 + results array",
+			"request": {
+				"method": "GET",
+				"header": [{"key": "OCS-APIRequest", "value": "true"}],
+				"url": {"raw": "{{base_url}}/api/portaal/cases", "host": ["{{base_url}}"], "path": ["api", "portaal", "cases"]}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('200 OK (case schema configured)', function () { pm.response.to.have.status(200) })",
+					"pm.test('response has a results array', function () { pm.expect(pm.response.json().results).to.be.an('array') })"
+				]}}
+			]
+		},
+		{
+			"name": "Case detail — unknown id returns 404",
+			"request": {
+				"method": "GET",
+				"header": [{"key": "OCS-APIRequest", "value": "true"}],
+				"url": {"raw": "{{base_url}}/api/portaal/cases/nonexistent-id-xyz", "host": ["{{base_url}}"], "path": ["api", "portaal", "cases", "nonexistent-id-xyz"]}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('404 Not Found', function () { pm.response.to.have.status(404) })",
+					"pm.test('error reports zaak not found', function () { pm.expect(pm.response.json().error).to.match(/niet gevonden/i) })"
+				]}}
+			]
+		},
+		{
+			"name": "Requests — overview returns 200 + results array",
+			"request": {
+				"method": "GET",
+				"header": [{"key": "OCS-APIRequest", "value": "true"}],
+				"url": {"raw": "{{base_url}}/api/portaal/requests", "host": ["{{base_url}}"], "path": ["api", "portaal", "requests"]}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('200 OK', function () { pm.response.to.have.status(200) })",
+					"pm.test('response has a results array', function () { pm.expect(pm.response.json().results).to.be.an('array') })"
+				]}}
+			]
+		},
+		{
+			"name": "Messages — missing caseId returns 400",
+			"request": {
+				"method": "GET",
+				"header": [{"key": "OCS-APIRequest", "value": "true"}],
+				"url": {"raw": "{{base_url}}/api/portaal/messages", "host": ["{{base_url}}"], "path": ["api", "portaal", "messages"]}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('400 Bad Request', function () { pm.response.to.have.status(400) })",
+					"pm.test('error names caseId', function () { pm.expect(pm.response.json().error).to.match(/caseId/) })"
+				]}}
+			]
+		},
+		{
+			"name": "Objection deadline — validates and reports days remaining",
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "OCS-APIRequest", "value": "true"},
+					{"key": "Content-Type", "value": "application/json"}
+				],
+				"body": {"mode": "raw", "raw": "{}"},
+				"url": {"raw": "{{base_url}}/api/portaal/objections/validate-deadline", "host": ["{{base_url}}"], "path": ["api", "portaal", "objections", "validate-deadline"]}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('200 OK', function () { pm.response.to.have.status(200) })",
+					"var b = pm.response.json()",
+					"pm.test('reports a deadline + binnenTermijn flag', function () { pm.expect(b).to.have.property('deadline'); pm.expect(b).to.have.property('binnenTermijn') })"
+				]}}
+			]
+		},
+		{
+			"name": "Submit objection — empty body returns 400",
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "OCS-APIRequest", "value": "true"},
+					{"key": "Content-Type", "value": "application/json"}
+				],
+				"body": {"mode": "raw", "raw": "{}"},
+				"url": {"raw": "{{base_url}}/api/portaal/objections", "host": ["{{base_url}}"], "path": ["api", "portaal", "objections"]}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('400 Bad Request', function () { pm.response.to.have.status(400) })",
+					"pm.test('error names tegenZaakId', function () { pm.expect(pm.response.json().error).to.match(/tegenZaakId/) })"
+				]}}
+			]
+		},
+		{
+			"name": "Submit complaint — invalid category returns 400",
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "OCS-APIRequest", "value": "true"},
+					{"key": "Content-Type", "value": "application/json"}
+				],
+				"body": {"mode": "raw", "raw": "{}"},
+				"url": {"raw": "{{base_url}}/api/portaal/complaints", "host": ["{{base_url}}"], "path": ["api", "portaal", "complaints"]}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('400 Bad Request', function () { pm.response.to.have.status(400) })",
+					"pm.test('error rejects the category', function () { pm.expect(pm.response.json().error).to.match(/categorie/i) })"
+				]}}
+			]
+		},
+		{
+			"name": "Notification preferences — GET returns the preference shape",
+			"request": {
+				"method": "GET",
+				"header": [{"key": "OCS-APIRequest", "value": "true"}],
+				"url": {"raw": "{{base_url}}/api/portaal/notification-preferences", "host": ["{{base_url}}"], "path": ["api", "portaal", "notification-preferences"]}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('200 OK', function () { pm.response.to.have.status(200) })",
+					"var b = pm.response.json()",
+					"pm.test('Berichtenbox channel is active (statutory)', function () { pm.expect(b.berichtenboxActief).to.eql(true) })",
+					"pm.test('exposes per-event preference flags', function () { pm.expect(b).to.have.property('eventStatuswijziging'); pm.expect(b).to.have.property('eventTermijnHerinnering') })"
+				]}}
+			]
+		}
+	]
+}

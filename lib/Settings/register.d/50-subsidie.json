@@ -1,0 +1,402 @@
+{
+    "components": {
+        "schemas": {
+            "subsidieRegeling": {
+                "slug": "subsidieRegeling",
+                "icon": "FileDocumentMultipleOutline",
+                "version": "1.0.0",
+                "x-schema-org": "schema:GovernmentService",
+                "title": "Subsidieregeling",
+                "description": "DEPRECATED — superseded by caseType plus its propertyDefinition records (openspec/changes/subsidieregeling-is-a-casetype). Retained for ONE release so MigrateSubsidieRegelingToCaseType can still resolve and read these objects: a schema the register no longer carries returns zero rows, and a migration that reads nothing reports the same success as one that had nothing to do. Remove once the migration has run everywhere. Policy-level definition of a grant program (AWB titel 4.2 / VNG ASV).",
+                "type": "object",
+                "required": ["schemeName", "legalBasis"],
+                "properties": {
+                    "schemeName": { "title": "Regulation Name", "type": "string", "maxLength": 255, "description": "Name of the grant program", "facetable": true },
+                    "legalBasis": { "title": "Legal Basis", "type": "string", "description": "Legal basis (AWB / kaderwet reference)" },
+                    "plafond": { "title": "Budget Cap", "type": "number", "description": "Annual or total spending cap in EUR" },
+                    "termStart": { "title": "Duration Start", "type": "string", "format": "date", "description": "When the regeling becomes effective" },
+                    "termEnd": { "title": "Duration End", "type": "string", "format": "date", "description": "When the regeling expires" },
+                    "targetGroup": { "title": "Target Group", "type": "string", "description": "Target group (gemeenten, kmo's, ngo's, ...)" },
+                    "beoordelingscriteriaTemplate": { "title": "Assessment Criteria Template", "type": "string", "description": "JSON schema defining evaluation criteria" },
+                    "interimReportFrequency": { "title": "Interim Report Frequency", "type": "string", "enum": ["none", "annually", "halfjaarlijks", "on_milestone"], "default": "none", "description": "Interim-report cadence", "facetable": true },
+                    "interimReportTermWeeks": { "title": "Interim Report Deadline Weeks", "type": "integer", "default": 22, "description": "Assessment deadline (weeks) for an interim report" },
+                    "requestTermWeeks": { "title": "Application Deadline Weeks", "type": "integer", "default": 13, "description": "Decision deadline (weeks) on a grant application (AWB 4:13)" },
+                    "determinationTermWeeks": { "title": "Settlement Deadline Weeks", "type": "integer", "default": 22, "description": "Assessment deadline (weeks) for the final settlement" },
+                    "auditorsStatementThreshold": { "title": "Accountant Declaration Threshold", "type": "number", "default": 125000, "description": "EUR amount above which an accountant declaration is mandatory" }
+                }
+            },
+            "subsidieAanvraag": {
+                "slug": "subsidieAanvraag",
+                "icon": "FileDocumentEditOutline",
+                "version": "1.0.0",
+                "x-schema-org": "schema:Application",
+                "title": "Subsidieaanvraag",
+                "description": "A grant application; extends the dossiq case lifecycle.",
+                "type": "object",
+                "required": ["subsidyScheme", "requestedAmount"],
+                "properties": {
+                    "case": { "title": "Case", "type": "string", "format": "uuid", "$ref": "case", "onDelete": "SET_NULL", "description": "Linked dossiq case" },
+                    "aanvraagnummer": { "title": "Application Number", "type": "string", "description": "Auto-generated identifier", "facetable": true },
+                    "subsidyScheme": { "title": "Grant Regulation", "type": "string", "format": "uuid", "$ref": "caseType", "description": "The grant scheme applied under — a caseType, since a scheme IS the blueprint its applications are governed by (see openspec/changes/subsidieregeling-is-a-casetype)" },
+                    "requestedAmount": { "title": "Requested Amount", "type": "number", "description": "Requested grant amount in EUR" },
+                    "projectStartDate": { "title": "Project Start Date", "type": "string", "format": "date", "description": "Project start (may be years in the future)" },
+                    "projectEndDate": { "title": "Project End Date", "type": "string", "format": "date", "description": "Project end" },
+                    "budget": { "title": "Budget", "type": "string", "description": "JSON array of cost items: [{kostenpost, bedrag, eenheid}]" },
+                    "coFinancingList": { "title": "Co-Financing List", "type": "string", "description": "JSON array: [{partij, bedrag, percentage}]" },
+                    "applicantKvkRef": { "title": "Applicant KvK Reference", "type": "string", "description": "KvK number for organisations", "facetable": true },
+                    "applicantBsnRef": { "title": "Applicant BSN Reference", "type": "string", "description": "Masked BSN reference for individuals (special-category data, never stored raw)" },
+                    "handler": { "title": "Handler", "type": "string", "description": "Nextcloud UID of the handler", "facetable": true },
+                    "status": { "title": "Status", "type": "string", "enum": ["received", "in_assessment", "assessed", "decision_prepared", "granted", "rejected", "withdrawn"], "default": "received", "description": "Application status", "facetable": true }
+                }
+            },
+            "subsidieBeoordeling": {
+                "slug": "subsidieBeoordeling",
+                "icon": "ClipboardCheckOutline",
+                "version": "1.0.0",
+                "title": "Subsidiebeoordeling",
+                "description": "Assessment record for a grant application.",
+                "type": "object",
+                "required": ["subsidieaanvraag"],
+                "properties": {
+                    "subsidieaanvraag": { "title": "Grant Application", "type": "string", "format": "uuid", "$ref": "subsidieAanvraag", "onDelete": "CASCADE", "description": "The application being assessed" },
+                    "assessor": { "title": "Assessor", "type": "string", "description": "Nextcloud UID of the assessor" },
+                    "substantiveAssessmentOpinion": { "title": "Substantive Assessment Outcome", "type": "string", "enum": ["voldoende", "onvoldoende", "nader_investigation"], "description": "Substantive assessment outcome" },
+                    "financialAssessmentOpinion": { "title": "Financial Assessment Outcome", "type": "string", "enum": ["acceptabel", "onacceptabel_budget", "onacceptabel_co_financing"], "description": "Financial assessment outcome" },
+                    "scorings": { "title": "Scores", "type": "string", "description": "JSON map criteria_id -> score" },
+                    "advies": { "title": "Recommendation", "type": "string", "description": "Assessment summary and recommendation" },
+                    "adviceSubstantiation": { "title": "Recommendation Substantiation", "type": "string", "description": "Detailed reasoning" },
+                    "stateAidBasis": { "title": "State Aid Legal Basis", "type": "string", "description": "State-aid legal ground (de_minimis / AGVV artikel / notificatieplicht)" },
+                    "beoordelingsdatum": { "title": "Assessment Date", "type": "string", "format": "date-time", "description": "When the assessment was recorded" }
+                }
+            },
+            "subsidieBeschikking": {
+                "slug": "subsidieBeschikking",
+                "icon": "Gavel",
+                "version": "1.0.0",
+                "x-schema-org": "schema:Permit",
+                "title": "Subsidiebeschikking",
+                "description": "Formal grant decision; pivot of the subsidy model.",
+                "type": "object",
+                "required": ["subsidieaanvraag", "grantedAmount"],
+                "properties": {
+                    "subsidieaanvraag": { "title": "Grant Application", "type": "string", "format": "uuid", "$ref": "subsidieAanvraag", "onDelete": "CASCADE", "description": "The application granted" },
+                    "beschikkingnummer": { "title": "Decision Number", "type": "string", "description": "Auto-generated identifier (SUB-YYYY-NNNNNN)", "facetable": true },
+                    "beschikkingtype": { "title": "Decision Type", "type": "string", "enum": ["verleningsbeschikking", "wijzigingsbeschikking", "vaststellingsbeschikking"], "default": "verleningsbeschikking", "description": "Decision type", "facetable": true },
+                    "grantedAmount": { "title": "Granted Amount", "type": "number", "description": "EUR granted (may differ from requested)" },
+                    "termStart": { "title": "Duration Start", "type": "string", "format": "date", "description": "Grant period start" },
+                    "termEnd": { "title": "Duration End", "type": "string", "format": "date", "description": "Grant period end" },
+                    "advanceSchema": { "title": "Advance Payment Schedule", "type": "string", "description": "JSON array: [{datum, bedrag, voorwaarde, status}] — must sum to verleendBedrag" },
+                    "verplichtingen": { "title": "Obligations", "type": "string", "description": "JSON array: [{id, beschrijving, status, bewijsstukkenVereist, deadline}]" },
+                    "legalBasis": { "title": "Legal Basis", "type": "string", "description": "Exact AWB/kaderwet article" },
+                    "stateAidCategory": { "title": "State Aid Category", "type": "string", "enum": ["none", "de_minimis", "agvv", "daeb", "notificatieplicht"], "default": "none", "description": "EU state-aid classification" },
+                    "objectionPeriodEnd": { "title": "Objection Deadline", "type": "string", "format": "date", "description": "6 weeks from publication" },
+                    "drawsInDecision": { "title": "Superseded Decision", "type": "string", "format": "uuid", "$ref": "subsidieBeschikking", "description": "Prior beschikking being superseded" },
+                    "wijzigingsreden": { "title": "Amendment Reason", "type": "string", "description": "Legal justification for a wijzigingsbeschikking" },
+                    "signedBy": { "title": "Signed By", "type": "string", "description": "UID that signed the beschikking" },
+                    "signedOn": { "title": "Signed On", "type": "string", "format": "date-time", "description": "Signing timestamp" },
+                    "decisionDate": { "title": "Decision Date", "type": "string", "format": "date", "description": "Decision date" },
+                    "publicationDate": { "title": "Publication Date", "type": "string", "format": "date", "description": "Publication date" },
+                    "status": { "title": "Status", "type": "string", "enum": ["draft", "granted", "withdrawn"], "default": "draft", "description": "Decision status", "facetable": true }
+                }
+            },
+            "subsidieUitvoering": {
+                "slug": "subsidieUitvoering",
+                "icon": "ProgressClock",
+                "version": "1.0.0",
+                "title": "Subsidie-uitvoering",
+                "description": "Ongoing execution phase of a grant.",
+                "type": "object",
+                "required": ["subsidieaanvraag", "subsidyDecision"],
+                "properties": {
+                    "subsidieaanvraag": { "title": "Grant Application", "type": "string", "format": "uuid", "$ref": "subsidieAanvraag", "onDelete": "CASCADE", "description": "The application" },
+                    "subsidyDecision": { "title": "Grant Decision", "type": "string", "format": "uuid", "$ref": "subsidieBeschikking", "description": "The grant decision" },
+                    "status": { "title": "Status", "type": "string", "enum": ["granted", "in_execution", "interim_report_received", "interim_report_assessed", "determination_requested", "determined", "recovery_gestart", "completed"], "default": "granted", "description": "Execution status", "facetable": true },
+                    "betaaldeVoorschotten": { "title": "Paid Advances", "type": "string", "description": "JSON array: [{datum, bedrag, betaalIdErp}]" },
+                    "outstandingAdvances": { "title": "Outstanding Advances", "type": "string", "description": "JSON array of pending scheduled disbursements" },
+                    "supportingDocumentsIndex": { "title": "Evidence Documents Index", "type": "string", "description": "JSON map verplichting_id -> [bewijsstuk_references]" }
+                }
+            },
+            "interimReport": {
+                "slug": "interimReport",
+                "icon": "FileChartOutline",
+                "version": "1.0.0",
+                "title": "Tussenrapportage",
+                "description": "Interim report (typed sub-case) within a grant execution.",
+                "type": "object",
+                "required": ["subsidieuitvoering"],
+                "properties": {
+                    "subsidieuitvoering": { "title": "Grant Execution", "type": "string", "format": "uuid", "$ref": "subsidieUitvoering", "onDelete": "CASCADE", "description": "The execution this report belongs to" },
+                    "rapportagenummer": { "title": "Report Number", "type": "string", "description": "Auto-generated identifier", "facetable": true },
+                    "rapportagePeriodStart": { "title": "Report Period Start", "type": "string", "format": "date", "description": "Reporting period start" },
+                    "rapportagePeriodEnd": { "title": "Report Period End", "type": "string", "format": "date", "description": "Reporting period end" },
+                    "substantiveProgress": { "title": "Substantive Progress", "type": "string", "description": "Progress narrative" },
+                    "financialAccountability": { "title": "Financial Accountability", "type": "string", "description": "JSON: {uitgavenTotaal, naarBegrotingVergeleken, afwijkingen}" },
+                    "supportingDocuments": { "title": "Evidence Documents", "type": "string", "description": "JSON array of Bewijsstuk references" },
+                    "status": { "title": "Status", "type": "string", "enum": ["expected", "submitted", "in_assessment", "approved", "rejected", "gedeeltelijk_approved"], "default": "expected", "description": "Report lifecycle status", "facetable": true },
+                    "correctionRequest": { "title": "Correction Request", "type": "string", "description": "Required-corrections text for partial approval" },
+                    "amendmentNumerator": { "title": "Amendment Count", "type": "integer", "default": 0, "description": "Resubmission/amendment count" },
+                    "assessor": { "title": "Assessor", "type": "string", "description": "UID of the assessor when approved" },
+                    "beoordelingsdatum": { "title": "Assessment Date", "type": "string", "format": "date-time", "description": "Assessment timestamp" },
+                    "beoordelingsoordeel": { "title": "Assessment Judgment", "type": "string", "description": "Assessment narrative" },
+                    "approvedAmount": { "title": "Approved Amount", "type": "number", "description": "EUR approved (may differ from claimed)" }
+                }
+            },
+            "subsidieVaststelling": {
+                "slug": "subsidieVaststelling",
+                "icon": "FileCheckOutline",
+                "version": "1.0.0",
+                "title": "Subsidievaststelling",
+                "description": "Final settlement of a grant (AWB 4:46).",
+                "type": "object",
+                "required": ["subsidieuitvoering", "actualCostTotal"],
+                "properties": {
+                    "subsidieuitvoering": { "title": "Grant Execution", "type": "string", "format": "uuid", "$ref": "subsidieUitvoering", "onDelete": "CASCADE", "description": "The execution being settled" },
+                    "actualCostTotal": { "title": "Total Actual Costs", "type": "number", "description": "Total actual costs in EUR" },
+                    "actualsCommitments": { "title": "Realised Obligations", "type": "string", "description": "JSON map verplichting_id -> {bewijzen, status, aantekening}" },
+                    "auditorsStatementRequired": { "title": "Accountant Declaration Required", "type": "boolean", "default": false, "description": "Whether an accountant declaration is mandatory" },
+                    "auditorsStatementDocument": { "title": "Accountant Declaration Document", "type": "string", "format": "uuid", "$ref": "bewijsstuk", "description": "Accountant declaration evidence" },
+                    "determinedAmount": { "title": "Settled Amount", "type": "number", "description": "Final EUR amount (may be lower due to unmet conditions)" },
+                    "determinationDate": { "title": "Settlement Date", "type": "string", "format": "date", "description": "Settlement date" },
+                    "vaststellingsbeschikkingGenerated": { "title": "Settlement Decision Generated", "type": "boolean", "default": false, "description": "Whether the settlement decision PDF was generated" },
+                    "recoveryTrigger": { "title": "Recovery Trigger", "type": "boolean", "default": false, "description": "True when vastgesteldBedrag < totaal voorschotten" },
+                    "status": { "title": "Status", "type": "string", "enum": ["draft", "determined"], "default": "draft", "description": "Settlement status", "facetable": true }
+                }
+            },
+            "terugvordering": {
+                "slug": "terugvordering",
+                "icon": "CashRefund",
+                "version": "1.0.0",
+                "title": "Terugvordering",
+                "description": "Clawback case for over-disbursed advances (AWB 4:57).",
+                "type": "object",
+                "required": ["subsidieuitvoering", "amount"],
+                "properties": {
+                    "subsidieuitvoering": { "title": "Grant Execution", "type": "string", "format": "uuid", "$ref": "subsidieUitvoering", "onDelete": "CASCADE", "description": "The execution being clawed back" },
+                    "terugvorderingsnummer": { "title": "Recovery Number", "type": "string", "description": "Auto-generated identifier", "facetable": true },
+                    "amount": { "title": "Amount", "type": "number", "description": "EUR amount to recover" },
+                    "legalBasis": { "title": "Legal Basis", "type": "string", "default": "AWB 4:57", "description": "Legal basis for the clawback" },
+                    "objectionPeriodEnd": { "title": "Objection Deadline", "type": "string", "format": "date", "description": "6 weeks from publication" },
+                    "paymentTermEnd": { "title": "Payment Deadline", "type": "string", "format": "date", "description": "4 weeks from publication" },
+                    "paidAmount": { "title": "Paid Amount", "type": "number", "default": 0, "description": "Amount recovered so far" },
+                    "collectionInterestCalculated": { "title": "Calculated Collection Interest", "type": "number", "description": "EUR rente per AWB 4:97" },
+                    "betaalherinneringenCount": { "title": "Payment Reminders Count", "type": "integer", "default": 0, "description": "Number of payment reminders sent" },
+                    "bailiffsReference": { "title": "Bailiff Reference", "type": "string", "description": "Case ID if escalated to a bailiff" },
+                    "managerGoedgekeurd": { "title": "Manager Approved", "type": "boolean", "default": false, "description": "Manager approval before publication" },
+                    "status": { "title": "Status", "type": "string", "enum": ["draft", "opgelegd", "gedeeltelijk_paid", "paid", "in_invorderingsprocedure", "recovery_completed"], "default": "draft", "description": "Clawback status", "facetable": true }
+                }
+            },
+            "bewijsstuk": {
+                "slug": "bewijsstuk",
+                "icon": "PaperclipCheck",
+                "version": "1.0.0",
+                "title": "Bewijsstuk",
+                "description": "Polymorphic evidence document linked to a subsidy phase.",
+                "type": "object",
+                "required": ["title", "evidenceType", "linkedIn"],
+                "properties": {
+                    "title": { "title": "Title", "type": "string", "maxLength": 255, "description": "Document title" },
+                    "description": { "title": "Description", "type": "string", "description": "Optional description" },
+                    "evidenceType": { "title": "Evidence Document Type", "type": "string", "enum": ["aanvraagdocument", "budget", "projectplan", "cofinancieringsverklaring", "voortgangsrapport", "timesheet", "invoice", "bankafschrift", "auditorsStatement", "eindrapport", "deelnemerslijst", "ander"], "description": "Evidence type", "facetable": true },
+                    "linkedIn": { "title": "Linked To", "type": "string", "enum": ["request", "interimReport", "determination", "verplichtingsbewijs"], "description": "Source phase", "facetable": true },
+                    "gekoppeldObjectRef": { "title": "Linked Object Reference", "type": "string", "format": "uuid", "description": "Actual Aanvraag/Tussenrapportage/Vaststelling reference" },
+                    "linkedCommitmentId": { "title": "Linked Obligation ID", "type": "string", "description": "Verplichting id when type = verplichtingsbewijs" },
+                    "retentionPeriodYears": { "title": "Retention Years", "type": "integer", "default": 7, "description": "Retention years per Selectielijst" },
+                    "retentionPeriodEnd": { "title": "Retention End Date", "type": "string", "format": "date", "description": "Calculated retention end date" },
+                    "archiveStatus": { "title": "Archive Status", "type": "string", "enum": ["active", "archived", "verwijderd"], "default": "active", "description": "Archive status", "facetable": true },
+                    "immutable": { "title": "Immutable", "type": "boolean", "default": false, "description": "Locked once linked to a vaststelling" },
+                    "fileId": { "title": "File ID", "type": "integer", "description": "Nextcloud file id" },
+                    "fileHashSha256": { "title": "File Hash SHA-256", "type": "string", "description": "SHA-256 content hash" }
+                }
+            }
+        },
+        "registers": {
+            "dossiq": {
+                "schemas": [
+                    "subsidieRegeling",
+                    "subsidieAanvraag",
+                    "subsidieBeoordeling",
+                    "subsidieBeschikking",
+                    "subsidieUitvoering",
+                    "interimReport",
+                    "subsidieVaststelling",
+                    "terugvordering",
+                    "bewijsstuk"
+                ]
+            }
+        },
+        "objects": [
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "slug": "zaaktype-innovatiefonds-2026"
+                },
+                "id": "b3c1a000-0000-4000-a000-00000000f001",
+                "uuid": "b3c1a000-0000-4000-a000-00000000f001",
+                "title": "Innovatiefonds 2026",
+                "purpose": "AWB titel 4.2 jo. ASV gemeente artikel 3",
+                "validFrom": "2026-01-01",
+                "validUntil": "2028-12-31",
+                "processingDeadline": "P13W"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-innovatiefonds-2026-plafond"
+                },
+                "name": "plafond",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f001",
+                "propertyType": "number",
+                "defaultValue": "2500000"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-innovatiefonds-2026-targetgroup"
+                },
+                "name": "targetGroup",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f001",
+                "propertyType": "string",
+                "defaultValue": "MKB en kennisinstellingen"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-innovatiefonds-2026-interimreportfrequency"
+                },
+                "name": "interimReportFrequency",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f001",
+                "propertyType": "enum",
+                "defaultValue": "annually",
+                "enumValues": [
+                    "none",
+                    "annually",
+                    "halfjaarlijks",
+                    "on_milestone"
+                ]
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-innovatiefonds-2026-interimreporttermweeks"
+                },
+                "name": "interimReportTermWeeks",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f001",
+                "propertyType": "number",
+                "defaultValue": "22"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-innovatiefonds-2026-determinationtermweeks"
+                },
+                "name": "determinationTermWeeks",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f001",
+                "propertyType": "number",
+                "defaultValue": "22"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-innovatiefonds-2026-auditorsstatementthreshold"
+                },
+                "name": "auditorsStatementThreshold",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f001",
+                "propertyType": "number",
+                "defaultValue": "125000"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "slug": "zaaktype-cultuur-subsidie-2026"
+                },
+                "id": "b3c1a000-0000-4000-a000-00000000f002",
+                "uuid": "b3c1a000-0000-4000-a000-00000000f002",
+                "title": "Cultuursubsidie 2026",
+                "purpose": "AWB titel 4.2 jo. ASV gemeente artikel 7",
+                "validFrom": "2026-01-01",
+                "validUntil": "2026-12-31",
+                "processingDeadline": "P8W"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-cultuur-subsidie-2026-plafond"
+                },
+                "name": "plafond",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f002",
+                "propertyType": "number",
+                "defaultValue": "800000"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-cultuur-subsidie-2026-targetgroup"
+                },
+                "name": "targetGroup",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f002",
+                "propertyType": "string",
+                "defaultValue": "Culturele instellingen en stichtingen"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-cultuur-subsidie-2026-interimreportfrequency"
+                },
+                "name": "interimReportFrequency",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f002",
+                "propertyType": "enum",
+                "defaultValue": "halfjaarlijks",
+                "enumValues": [
+                    "none",
+                    "annually",
+                    "halfjaarlijks",
+                    "on_milestone"
+                ]
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-cultuur-subsidie-2026-interimreporttermweeks"
+                },
+                "name": "interimReportTermWeeks",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f002",
+                "propertyType": "number",
+                "defaultValue": "13"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-cultuur-subsidie-2026-determinationtermweeks"
+                },
+                "name": "determinationTermWeeks",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f002",
+                "propertyType": "number",
+                "defaultValue": "13"
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "propertyDefinition",
+                    "slug": "zaaktype-cultuur-subsidie-2026-auditorsstatementthreshold"
+                },
+                "name": "auditorsStatementThreshold",
+                "caseType": "b3c1a000-0000-4000-a000-00000000f002",
+                "propertyType": "number",
+                "defaultValue": "50000"
+            }
+        ]
+    }
+}

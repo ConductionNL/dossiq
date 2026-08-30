@@ -1,0 +1,133 @@
+{
+    "components": {
+        "schemas": {
+            "decisionTable": {
+                "slug": "decisionTable",
+                "icon": "TableSettings",
+                "version": "1.0.0",
+                "title": "Decision Table",
+                "description": "A DMN-style decision table: inputs, outputs, rules and a hit policy, evaluated by the DecisionEngine.",
+                "type": "object",
+                "required": ["name", "key"],
+                "properties": {
+                    "name": {
+                        "title": "Name",
+                        "type": "string",
+                        "description": "Human readable decision table name"
+                    },
+                    "key": {
+                        "title": "Key",
+                        "type": "string",
+                        "description": "Machine identifier used to invoke this decision from a workflow transition or the evaluate API"
+                    },
+                    "description": {
+                        "title": "Description",
+                        "type": "string",
+                        "description": "Free-form description of what this decision determines"
+                    },
+                    "hitPolicy": {
+                        "title": "Hit Policy",
+                        "type": "string",
+                        "enum": ["UNIQUE", "FIRST", "PRIORITY", "ANY", "COLLECT"],
+                        "default": "UNIQUE",
+                        "description": "DMN hit policy. UNIQUE/FIRST/COLLECT are fully implemented; PRIORITY/ANY are rejected with hit_policy_not_implemented (see design.md)."
+                    },
+                    "inputs": {
+                        "title": "Inputs",
+                        "type": "array",
+                        "description": "Ordered list of decision inputs",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "title": "Input Name",
+                                    "type": "string",
+                                    "description": "Input identifier referenced positionally by rules[].inputEntries"
+                                },
+                                "label": {
+                                    "title": "Input Label",
+                                    "type": "string",
+                                    "description": "Human readable label"
+                                },
+                                "type": {
+                                    "title": "Input Type",
+                                    "type": "string",
+                                    "enum": ["string", "number", "boolean", "date"],
+                                    "description": "Declared type used for expression grammar coercion"
+                                }
+                            }
+                        }
+                    },
+                    "outputs": {
+                        "title": "Outputs",
+                        "type": "array",
+                        "description": "Ordered list of decision outputs",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "title": "Output Name",
+                                    "type": "string",
+                                    "description": "Output identifier referenced positionally by rules[].outputEntries"
+                                },
+                                "label": {
+                                    "title": "Output Label",
+                                    "type": "string",
+                                    "description": "Human readable label"
+                                },
+                                "type": {
+                                    "title": "Output Type",
+                                    "type": "string",
+                                    "enum": ["string", "number", "boolean", "date"],
+                                    "description": "Declared output type"
+                                }
+                            }
+                        }
+                    },
+                    "rules": {
+                        "title": "Rules",
+                        "type": "array",
+                        "description": "Ordered list of decision rules (rows)",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "title": "Rule Id",
+                                    "type": "string",
+                                    "description": "Stable identifier for this rule row"
+                                },
+                                "annotation": {
+                                    "title": "Annotation",
+                                    "type": "string",
+                                    "description": "Free-form comment explaining the rule"
+                                },
+                                "inputEntries": {
+                                    "title": "Input Entries",
+                                    "type": "array",
+                                    "description": "One expression string per input, positionally aligned to inputs[]",
+                                    "items": { "type": "string" }
+                                },
+                                "outputEntries": {
+                                    "title": "Output Entries",
+                                    "type": "array",
+                                    "description": "One literal value per output, positionally aligned to outputs[]"
+                                }
+                            }
+                        }
+                    },
+                    "enabled": {
+                        "title": "Enabled",
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Whether this decision table is available for evaluation"
+                    }
+                }
+            }
+        },
+        "registers": {
+            "dossiq": {
+                "schemas": ["decisionTable"]
+            }
+        }
+    }
+}

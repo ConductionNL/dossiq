@@ -1,3 +1,10 @@
+---
+status: done
+retrofit_extensions:
+  - REQ-CT-17
+  - REQ-CT-18
+---
+
 # Case Type System Specification
 
 ## Purpose
@@ -124,13 +131,14 @@ CaseType
 
 ### REQ-CT-01: Case Type CRUD
 
+The system MUST support creating, reading, updating, and deleting case types. Case types are managed by admins via the Nextcloud admin settings page. See wireframe 3.6 (Admin Settings -- Case Type Management) in DESIGN-REFERENCES.md.
+
 **Feature tier**: MVP
 
-The system MUST support creating, reading, updating, and deleting case types. Case types are managed by admins via the Nextcloud admin settings page. See wireframe 3.6 (Admin Settings -- Case Type Management) in DESIGN-REFERENCES.md.
 
 #### Scenario CT-01a: Create a case type
 
-- GIVEN an admin on the Procest settings page
+- GIVEN an admin on the Dossiq settings page
 - WHEN they click "Add Case Type" and fill in:
   - Title: "Omgevingsvergunning"
   - Purpose: "Beoordelen bouwplannen"
@@ -142,7 +150,7 @@ The system MUST support creating, reading, updating, and deleting case types. Ca
   - Responsible unit: "Afdeling Vergunningen, Gemeente Amsterdam"
   - Valid from: "2026-01-01"
 - AND submits the form
-- THEN the system MUST create an OpenRegister object in the `procest` register with the `caseType` schema
+- THEN the system MUST create an OpenRegister object in the `dossiq` register with the `caseType` schema
 - AND `isDraft` MUST default to `true`
 - AND a unique `identifier` MUST be auto-generated
 
@@ -179,9 +187,10 @@ The system MUST support creating, reading, updating, and deleting case types. Ca
 
 ### REQ-CT-02: Case Type Draft/Published Lifecycle
 
+The system MUST support a draft/published lifecycle for case types. Draft case types MUST NOT be usable for creating cases.
+
 **Feature tier**: MVP
 
-The system MUST support a draft/published lifecycle for case types. Draft case types MUST NOT be usable for creating cases.
 
 #### Scenario CT-02a: New case type defaults to draft
 
@@ -232,9 +241,10 @@ The system MUST support a draft/published lifecycle for case types. Draft case t
 
 ### REQ-CT-03: Case Type Validity Periods
 
+The system MUST support validity windows on case types. Cases can only be created with case types that are within their validity window.
+
 **Feature tier**: MVP
 
-The system MUST support validity windows on case types. Cases can only be created with case types that are within their validity window.
 
 #### Scenario CT-03a: Case type within validity window
 
@@ -275,9 +285,10 @@ The system MUST support validity windows on case types. Cases can only be create
 
 ### REQ-CT-04: Status Type Management
 
+The system MUST support defining ordered status types for each case type. Status types control the lifecycle phases a case can go through. See wireframe 3.7 (Admin Settings -- Case Type Detail) in DESIGN-REFERENCES.md.
+
 **Feature tier**: MVP
 
-The system MUST support defining ordered status types for each case type. Status types control the lifecycle phases a case can go through. See wireframe 3.7 (Admin Settings -- Case Type Detail) in DESIGN-REFERENCES.md.
 
 #### Scenario CT-04a: Add status types to a case type
 
@@ -355,9 +366,10 @@ The system MUST support defining ordered status types for each case type. Status
 
 ### REQ-CT-05: Processing Deadline Configuration
 
+The system MUST support configuring a processing deadline on each case type. The deadline is an ISO 8601 duration that controls automatic deadline calculation on cases.
+
 **Feature tier**: MVP
 
-The system MUST support configuring a processing deadline on each case type. The deadline is an ISO 8601 duration that controls automatic deadline calculation on cases.
 
 #### Scenario CT-05a: Set processing deadline
 
@@ -390,9 +402,10 @@ The system MUST support configuring a processing deadline on each case type. The
 
 ### REQ-CT-06: Extension and Suspension Configuration
 
+The system MUST support configuring extension and suspension rules on case types.
+
 **Feature tier**: MVP (extension), V1 (suspension)
 
-The system MUST support configuring extension and suspension rules on case types.
 
 #### Scenario CT-06a: Enable extension with period
 
@@ -430,9 +443,10 @@ The system MUST support configuring extension and suspension rules on case types
 
 ### REQ-CT-07: Result Type Management
 
+The system SHALL support defining result types with archival rules for each case type. See wireframe 3.7 in DESIGN-REFERENCES.md.
+
 **Feature tier**: V1
 
-The system SHOULD support defining result types with archival rules for each case type. See wireframe 3.7 in DESIGN-REFERENCES.md.
 
 #### Scenario CT-07a: Add result types to a case type
 
@@ -474,9 +488,10 @@ The system SHOULD support defining result types with archival rules for each cas
 
 ### REQ-CT-08: Role Type Management
 
+The system SHALL support defining allowed role types for each case type. See wireframe 3.7 in DESIGN-REFERENCES.md.
+
 **Feature tier**: V1
 
-The system SHOULD support defining allowed role types for each case type. See wireframe 3.7 in DESIGN-REFERENCES.md.
 
 #### Scenario CT-08a: Add role types to a case type
 
@@ -519,9 +534,10 @@ The system SHOULD support defining allowed role types for each case type. See wi
 
 ### REQ-CT-09: Property Definition Management
 
+The system SHALL support defining custom field requirements for each case type. See wireframe 3.7 in DESIGN-REFERENCES.md.
+
 **Feature tier**: V1
 
-The system SHOULD support defining custom field requirements for each case type. See wireframe 3.7 in DESIGN-REFERENCES.md.
 
 #### Scenario CT-09a: Add property definitions
 
@@ -572,9 +588,10 @@ The system SHOULD support defining custom field requirements for each case type.
 
 ### REQ-CT-10: Document Type Management
 
+The system SHALL support defining required document types for each case type. See wireframe 3.7 in DESIGN-REFERENCES.md.
+
 **Feature tier**: V1
 
-The system SHOULD support defining required document types for each case type. See wireframe 3.7 in DESIGN-REFERENCES.md.
 
 #### Scenario CT-10a: Add document types
 
@@ -619,9 +636,10 @@ The system SHOULD support defining required document types for each case type. S
 
 ### REQ-CT-11: Decision Type Management
 
+The system SHALL support defining decision types for each case type.
+
 **Feature tier**: V1
 
-The system SHOULD support defining decision types for each case type.
 
 #### Scenario CT-11a: Add decision types
 
@@ -650,9 +668,10 @@ The system SHOULD support defining decision types for each case type.
 
 ### REQ-CT-12: Confidentiality Default
 
+The system SHALL support confidentiality defaults on case types. Cases inherit the case type's confidentiality level.
+
 **Feature tier**: V1
 
-The system SHOULD support confidentiality defaults on case types. Cases inherit the case type's confidentiality level.
 
 #### Scenario CT-12a: Set confidentiality default
 
@@ -679,9 +698,10 @@ The system SHOULD support confidentiality defaults on case types. Cases inherit 
 
 ### REQ-CT-13: Default Case Type Selection
 
+The system MUST support selecting a default case type in admin settings. The default case type is pre-selected when creating new cases.
+
 **Feature tier**: MVP
 
-The system MUST support selecting a default case type in admin settings. The default case type is pre-selected when creating new cases.
 
 #### Scenario CT-13a: Set default case type
 
@@ -708,9 +728,10 @@ The system MUST support selecting a default case type in admin settings. The def
 
 ### REQ-CT-14: Case Type Validation Rules
 
+The system MUST enforce validation rules when creating or modifying case types.
+
 **Feature tier**: MVP
 
-The system MUST enforce validation rules when creating or modifying case types.
 
 #### Scenario CT-14a: Title is required
 
@@ -760,9 +781,10 @@ The system MUST enforce validation rules when creating or modifying case types.
 
 ### REQ-CT-15: Case Type Admin UI Tabs
 
+The case type edit page MUST be organized into tabs for managing the type and its sub-types. See wireframe 3.7 in DESIGN-REFERENCES.md.
+
 **Feature tier**: MVP (General, Statuses), V1 (Results, Roles, Properties, Docs)
 
-The case type edit page MUST be organized into tabs for managing the type and its sub-types. See wireframe 3.7 in DESIGN-REFERENCES.md.
 
 #### Scenario CT-15a: Tab layout
 
@@ -816,9 +838,10 @@ The case type edit page MUST be organized into tabs for managing the type and it
 
 ### REQ-CT-16: Case Type Error Scenarios
 
+The system MUST handle error scenarios gracefully for case type operations.
+
 **Feature tier**: MVP
 
-The system MUST handle error scenarios gracefully for case type operations.
 
 #### Scenario CT-16a: Publish incomplete case type
 
@@ -855,5 +878,123 @@ The system MUST handle error scenarios gracefully for case type operations.
 ## Dependencies
 
 - **Case Management spec** (`../case-management/spec.md`): Cases reference case types for behavioral controls (statuses, deadlines, confidentiality, document requirements, property requirements, result types, role types).
-- **OpenRegister**: All case type data is stored as OpenRegister objects in the `procest` register under the respective schemas (caseType, statusType, resultType, roleType, propertyDefinition, documentType, decisionType).
-- **Nextcloud Admin Settings**: Case type management is exposed via the Nextcloud admin settings panel (`OCA\Procest\Settings\AdminSettings`).
+- **OpenRegister**: All case type data is stored as OpenRegister objects in the `dossiq` register under the respective schemas (caseType, statusType, resultType, roleType, propertyDefinition, documentType, decisionType).
+- **Nextcloud Admin Settings**: Case type management is exposed via the Nextcloud admin settings panel (`OCA\Dossiq\Settings\AdminSettings`).
+
+### Current Implementation Status
+
+**Substantially implemented (MVP).** Core case type CRUD and status type management are functional.
+
+**Implemented:**
+- Case type CRUD via OpenRegister object store -- create, read, update, delete case types as OpenRegister objects in the `dossiq` register with the `caseType` schema.
+- Case type list display (`src/views/settings/CaseTypeList.vue`) with title, isDraft badge (Draft/Published), processing deadline (formatted via `durationHelpers.js`), validity period, default star icon, delete action, set-as-default action (published only).
+- Case type detail/edit with tabbed interface (`src/views/settings/CaseTypeDetail.vue`) -- General and Statuses tabs implemented. Publish/unpublish buttons with validation error display.
+- General tab (`src/views/settings/tabs/GeneralTab.vue`) with all core fields: title, description, purpose, trigger, subject, processing deadline, service target, extension allowed/period, suspension allowed, origin, confidentiality, publication required/text, valid from, valid until.
+- Statuses tab (`src/views/settings/tabs/StatusesTab.vue`) with ordered status type list, drag-and-drop reorder, inline editing, add/delete, isFinal checkbox, notifyInitiator toggle with notification text.
+- Draft/published lifecycle with publish validation (publish errors displayed in UI).
+- Default case type selection stored via `SettingsService` config key `default_case_type`.
+- Case type validation utilities (`src/utils/caseTypeValidation.js`).
+- All case type sub-entity schemas defined in `dossiq_register.json` and mapped in `SettingsService::SLUG_TO_CONFIG_KEY`: caseType, statusType, resultType, roleType, propertyDefinition, documentType, decisionType.
+- ZGW Catalogi API compatibility via `ZtcController` (`lib/Controller/ZtcController.php`) and `ZgwZtcRulesService` (`lib/Service/ZgwZtcRulesService.php`).
+
+**Not yet implemented (V1):**
+- REQ-CT-07: Result type management tab (schema exists, no UI).
+- REQ-CT-08: Role type management tab (schema exists, no UI).
+- REQ-CT-09: Property definition management tab (schema exists, no UI).
+- REQ-CT-10: Document type management tab (schema exists, no UI).
+- REQ-CT-11: Decision type management (schema exists, no UI).
+- REQ-CT-12: Confidentiality default enforcement on case creation (field exists, enforcement unclear).
+- Backend validation for publish prerequisites (at least one status type, at least one final status, validFrom set).
+- Delete case type blocking when active cases reference it.
+- Status type name uniqueness validation within a case type.
+- Duplicate order number detection and auto-renumbering.
+
+### Standards & References
+
+- **ZGW Catalogi API (VNG)**: Direct mapping to ZaakType, StatusType, ResultaatType, RolType, Eigenschap, InformatieObjectType, BesluitType. The `ZtcController` implements ZGW Catalogi API endpoints.
+- **CMMN 1.1**: CaseDefinition concept for case type, Milestone sequence for status types, TimerEventListener for processing deadlines.
+- **Schema.org**: `PropertyValueSpecification` for property definitions.
+- **ISO 8601**: Duration format for all time-based fields (processingDeadline, extensionPeriod, retentionPeriod, objectionPeriod, publicationPeriod).
+- **GEMMA**: ZaakType configuration follows GEMMA zaakgericht werken reference architecture.
+- **Archiefwet / Selectielijst**: Result types with archiveAction (retain/destroy) and retentionPeriod follow Dutch archiving legislation.
+
+### Specificity Assessment
+
+This is a comprehensive, highly detailed spec that is implementation-ready for both MVP and V1. It includes complete data models with field-level ZGW mappings.
+
+**Strengths:** Exhaustive data model tables with type/required/mapping columns. 16 requirements with detailed scenarios. Clear feature tier separation. Validation rules explicitly specified.
+
+### Requirement: Case Type Pre-Seeded Data
+
+@e2e exclude Bezwaar/Beroep case types are V1 seed data imported via repair step; covered by PHPUnit.
+
+The system SHALL provide pre-seeded case types that are imported via the repair step. In addition to any existing pre-seeded case types, the system SHALL now include Bezwaar and Beroep case types with their associated status types, role types, and workflow templates.
+
+**Feature tier**: V1
+
+The repair step SHALL import the following new case types alongside existing ones:
+
+| Case Type | Processing Deadline | Extension | Suspension | Origin |
+|-----------|-------------------|-----------|------------|--------|
+| Bezwaar | P6W | P6W | Yes | external |
+| Beroep | P26W | No | Yes | external |
+
+Each case type SHALL include its associated:
+- Status types (see bezwaar-lifecycle and beroep-escalation specs)
+- Role types (see bezwaar-lifecycle spec)
+- Workflow template (see workflow-definition-model spec)
+
+#### Scenario: Bezwaar and Beroep case types are available after installation
+
+- **WHEN** the Dossiq app repair step runs for the first time or after an update
+- **THEN** case types "Bezwaar" and "Beroep" SHALL exist in the dossiq register
+- **AND** each SHALL have its complete set of status types, role types, and an active workflow template
+- **AND** existing case types SHALL NOT be affected by the addition
+
+#### Scenario: Pre-seeded case types are not duplicated on re-run
+
+- **WHEN** the repair step runs again on an installation that already has Bezwaar and Beroep case types
+- **THEN** the system SHALL NOT create duplicate case types
+- **AND** existing customizations to the case types SHALL be preserved
+
+---
+
+**Missing/Ambiguous:**
+- No specification of how sub-entity schemas (statusType, resultType, etc.) relate to each other via OpenRegister references (reference resolution mechanics).
+- No specification of bulk operations (e.g., import multiple status types at once).
+- Case type versioning strategy not specified -- can a published type be edited in-place or must it be versioned?
+- No specification of case type search/filter in the admin list.
+
+**Open questions:**
+1. Should editing a published case type require unpublishing first, or can it be edited in-place with a warning?
+2. How should the system handle changes to a case type that affect existing cases (e.g., removing a status type that cases are currently at)?
+3. Should the `subCaseTypes` field enforce a tree structure (no cycles) and how is this validated?
+
+<!-- BEGIN retrofit-2026-05-24-case-types -->
+
+### REQ-CT-17: Dossiq SHALL expose case-definition export endpoints + ZIP package format
+
+@e2e exclude Backend PHP export controller spec; ZIP download and import covered by PHPUnit.
+
+`OCA\Dossiq\Controller\CaseDefinitionController` SHALL provide `GET /api/case-definitions/{id}/export` that returns a ZIP package (via `DataDownloadResponse`) containing the case type and all linked dependencies (workflow templates, role/group mappings, document templates) needed for round-trip portability to another dossiq instance. The ZIP SHALL be produced by `CaseDefinitionExportService::exportCaseDefinition()` and SHALL embed a `manifest.json` describing the package schema version, source instance, and contained object refs.
+
+#### Scenario: Export a published case type
+- **GIVEN** a published case type with workflow templates + roles
+- **WHEN** a behandelaar calls `GET /api/case-definitions/{id}/export`
+- **THEN** the response SHALL be a ZIP download containing `case-type.json`, all linked `workflow-template-*.json` files, role/group mapping definitions, and a top-level `manifest.json`
+
+### REQ-CT-18: Dossiq SHALL validate + import case-definition packages with explicit conflict reporting
+
+@e2e exclude Backend PHP import service spec; package validation and import covered by PHPUnit.
+
+`CaseDefinitionImportService::validatePackage()` SHALL inspect a ZIP package, parse `manifest.json`, and return a structured report of: (a) missing required files, (b) schema-version compatibility, (c) name/slug collisions against existing case types and templates, and (d) cross-reference integrity. Validation SHALL be a pure read — no side effects on the dossiq instance.
+
+`CaseDefinitionImportService::importCaseDefinition()` SHALL run validation first, then create the case type and all linked objects atomically. On collision, the importer SHALL accept a caller-provided `conflictResolution` mode (`reject`, `rename`, `replace`) and SHALL surface its decisions in the response so the admin can audit what was created versus replaced.
+
+`CaseDefinitionController::validate()` SHALL expose validation-only HTTP access (`POST /api/case-definitions/import?dryRun=true`) so admins can review a package before committing.
+
+#### Scenario: Dry-run validates without persisting
+- **WHEN** an admin calls `POST /api/case-definitions/import?dryRun=true` with a ZIP body
+- **THEN** the response SHALL include the structured validation report and no objects SHALL be created
+
+<!-- END retrofit-2026-05-24-case-types -->
