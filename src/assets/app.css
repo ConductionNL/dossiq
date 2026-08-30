@@ -1,0 +1,17 @@
+/**
+ * Global (unscoped) styles for Dossiq.
+ */
+
+/* Make dashboard widget wrappers fill their grid-stack cell so that
+   widget components using height:100% actually stretch to the cell boundary. */
+.grid-stack-item-content > .cn-widget-wrapper,
+.grid-stack-item-content > .cn-widget-wrapper > .cn-widget-wrapper__content {
+	height: 100%;
+}
+
+.open-register-missing {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	min-height: 100% !important;
+}

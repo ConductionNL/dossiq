@@ -1,13 +1,13 @@
-schema: conduction
+schema: spec-driven
 
 context: |
-  Project: Procest
-  Repo: ConductionNL/procest
+  Project: Dossiq
+  Repo: ConductionNL/dossiq
   Type: Nextcloud App (PHP backend + Vue 2 frontend)
   Description: Case management (zaakgericht werken) for Nextcloud — manages cases, tasks, statuses, roles, results, decisions
   Key components: Cases, Tasks, Statuses, Roles, Results, Decisions, Dashboard
   Database: PostgreSQL (via OpenRegister's ObjectService)
-  Mount path: /var/www/html/custom_apps/procest
+  Mount path: /var/www/html/custom_apps/dossiq
 
   Standards:
     Primary: CMMN 1.1 (OMG) + Schema.org for data model
@@ -16,7 +16,7 @@ context: |
     Supplementary: BPMN 2.0 (task patterns), DMN (decision logic)
 
   Architecture:
-    Pattern: Thin client — Procest owns no database tables
+    Pattern: Thin client — Dossiq owns no database tables
     Data layer: OpenRegister (JSON object storage with schema validation)
     Frontend: Vue 2.7 + Pinia stores querying OpenRegister API directly
     Backend: Minimal — SettingsController + ConfigurationService for register setup
@@ -36,30 +36,26 @@ rules:
     - Reference docs/ARCHITECTURE.md for data model and standards decisions
     - Consider impact on Pipelinq (request-to-case bridge)
     - Reference docs/FEATURES.md for feature tier (MVP/V1/Enterprise)
-    - "ADR-011: Check OpenRegister core for existing functionality before proposing new features"
+    - "ADR-011: Before implementing ANY utility (validation, formatting, parsing), search OpenRegister lib/Formats/, lib/Service/, and lib/Handler/ for existing implementations. Common duplications: BSN validation (BsnFormat.php), date formatting, slug generation, UUID handling. If found, reuse via DI or document why duplication is necessary."
   specs:
     - Use CMMN concepts for case lifecycle (CasePlanModel, HumanTask, Milestone)
     - Use Schema.org type annotations for all entities (schema:Project, schema:Action, etc.)
     - Include ZGW mapping column where applicable (Zaak, Rol, Besluit, etc.)
     - Specify which Nextcloud OCP interfaces are used for integration features
     - Reference FEATURES.md tier for each requirement (MVP/V1/Enterprise)
-    - "ADR-009: Include test scenarios for all MUST/SHALL requirements"
   design:
     - Uses OpenRegister API directly from frontend (no own backend CRUD)
-    - Register config in lib/Settings/procest_register.json (OpenAPI 3.0.0 format)
+    - Register config in lib/Settings/dossiq_register.json (OpenAPI 3.0.0 format)
     - Imported via ConfigurationService::importFromApp() in repair step
     - Reference Nextcloud OCP interfaces for all platform integrations
     - Case tasks are OpenRegister objects, NOT Deck cards
-    - "ADR-001: All data MUST be stored via OpenRegister — no custom database tables"
-    - "ADR-012: MUST use @conduction/nextcloud-vue components (CnIndexPage, CnDashboardPage, CnFormDialog, CnDataTable) — do NOT create custom equivalents"
-    - "ADR-008: Follow Controller → Service → Mapper layering pattern"
-    - "ADR-003: MUST use NL Design System tokens via Nextcloud CSS variables — no hardcoded colors"
   tasks:
     - Tag tasks with feature tier (MVP/V1/Enterprise)
     - Test with OpenRegister to verify schema validation works
     - Verify Nextcloud integration features with actual OCP interfaces
     - Test request-to-case bridge with Pipelinq
-    - "ADR-010: MUST include documentation task with browser screenshots using Playwright MCP"
-    - "ADR-009: MUST include unit test tasks — minimum 75% coverage for new code"
-    - "ADR-005: MUST include i18n tasks — Dutch and English translations required"
-    - "ADR-010: Every user-facing feature MUST have docs in docs/features/ with screenshots"
+    - Follow mandatory task categories from ADRs 005, 009, 010, 011
+  archive:
+    - Merge delta specs from the change's specs/ directory into the canonical spec under openspec/specs/
+    # Feature doc creation is handled globally by the opsx:archive command in .claude/commands/opsx/archive.md
+    # Do NOT duplicate feature doc rules here — they apply to all Conduction apps

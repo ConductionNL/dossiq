@@ -1,12 +1,9 @@
-import Vue from 'vue'
-import { PiniaVuePlugin } from 'pinia'
-import pinia from './pinia.js'
+import { createApp } from 'vue'
 import AdminRoot from './views/settings/AdminRoot.vue'
+import pinia from './pinia.js'
 
-Vue.mixin({ methods: { t, n } })
-Vue.use(PiniaVuePlugin)
-
-new Vue({
-	pinia,
-	render: h => h(AdminRoot),
-}).$mount('#procest-settings')
+const app = createApp(AdminRoot)
+app.use(pinia)
+app.config.globalProperties.t = t
+app.config.globalProperties.n = n
+app.mount('#dossiq-settings')

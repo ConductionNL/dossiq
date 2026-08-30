@@ -1,0 +1,325 @@
+{
+  "_note": "Dutch demo case types (Bezwaar/Beroep/Subsidie) DISABLED for the German-federal English demo — the curated English demo is seeded from lib/Settings/register.d/46-demo-cases-english.json instead. SeedDataService reads `caseTypes`, so this data is parked under `_caseTypes_disabled`. Rename that key back to `caseTypes` to re-enable Dutch seeding (SeedBezwaarBeroepData repair step).",
+  "_caseTypes_disabled": [
+    {
+      "id": "b3c1a000-0000-4000-a000-00000000be2a",
+      "uuid": "b3c1a000-0000-4000-a000-00000000be2a",
+      "identifier": "bezwaar",
+      "title": "Bezwaar",
+      "description": "Bezwaarprocedure conform Awb hoofdstuk 6 en 7",
+      "purpose": "Behandeling van bezwaarschriften tegen besluiten",
+      "trigger": "Bezwaarschrift van belanghebbende",
+      "subject": "Bezwaar tegen besluit",
+      "processingDeadline": "P6W",
+      "extensionAllowed": true,
+      "extensionPeriod": "P6W",
+      "suspensionAllowed": true,
+      "internalOrExternal": "extern",
+      "publicationRequired": false,
+      "isDraft": false,
+      "confidentiality": "zaakvertrouwelijk",
+      "statusTypes": [
+        { "name": "Ontvangen", "description": "Bezwaarschrift is ontvangen", "order": 1, "isFinal": false },
+        { "name": "Ontvankelijkheidstoets", "description": "Toetsing op ontvankelijkheid (termijn, belanghebbendheid, besluit-karakter)", "order": 2, "isFinal": false },
+        { "name": "In behandeling", "description": "Inhoudelijke behandeling gestart", "order": 3, "isFinal": false },
+        { "name": "Hoorzitting gepland", "description": "Hoorzitting is ingepland (Awb art. 7:2)", "order": 4, "isFinal": false },
+        { "name": "Hoorzitting afgerond", "description": "Hoorzitting heeft plaatsgevonden", "order": 5, "isFinal": false },
+        { "name": "Advies uitgebracht", "description": "Bezwaarschriftencommissie heeft advies uitgebracht (Awb art. 7:13)", "order": 6, "isFinal": false },
+        { "name": "Beslissing op bezwaar", "description": "Besluit op bezwaar is genomen (Awb art. 7:11, 7:12)", "order": 7, "isFinal": false },
+        { "name": "Afgehandeld", "description": "Bezwaarprocedure is volledig afgerond", "order": 8, "isFinal": true },
+        { "name": "Niet-ontvankelijk", "description": "Bezwaar is niet-ontvankelijk verklaard (Awb art. 6:6)", "order": 90, "isFinal": true },
+        { "name": "Ingetrokken", "description": "Bezwaar is ingetrokken door indiener (Awb art. 6:21)", "order": 91, "isFinal": true }
+      ],
+      "roleTypes": [
+        { "name": "Bezwaarmaker", "description": "De persoon die bezwaar maakt", "genericRole": "initiator" },
+        { "name": "Behandelaar bezwaar", "description": "Ambtenaar die het bezwaar behandelt", "genericRole": "handler" },
+        { "name": "Voorzitter commissie", "description": "Voorzitter bezwaarschriftencommissie", "genericRole": "decision_maker" },
+        { "name": "Lid commissie", "description": "Lid van de bezwaarschriftencommissie", "genericRole": "advisor" },
+        { "name": "Secretaris commissie", "description": "Secretaris van de bezwaarschriftencommissie", "genericRole": "coordinator" },
+        { "name": "Vertegenwoordiger", "description": "Gemachtigde of vertegenwoordiger van bezwaarmaker", "genericRole": "stakeholder" },
+        { "name": "Primair beslisser", "description": "Ambtenaar die het oorspronkelijke besluit nam", "genericRole": "advisor" }
+      ],
+      "workflowTemplate": {
+        "title": "Bezwaar Standaard Workflow",
+        "description": "AWB-compliant bezwaar workflow met hoorzitting, adviescommissie en beslissing op bezwaar",
+        "version": 1,
+        "isActive": true,
+        "isDraft": false,
+        "steps": [
+          { "title": "Registreer bezwaarschrift", "statusName": "Ontvangen", "order": 1, "isRequired": true, "description": "Registreer het bezwaarschrift in het systeem" },
+          { "title": "Controleer volledigheid", "statusName": "Ontvangen", "order": 2, "isRequired": true, "description": "Controleer of het bezwaarschrift alle vereiste gegevens bevat" },
+          { "title": "Bevestig ontvangst", "statusName": "Ontvangen", "order": 3, "isRequired": true, "description": "Stuur ontvangstbevestiging naar bezwaarmaker" },
+          { "title": "Toets termijn", "statusName": "Ontvankelijkheidstoets", "order": 1, "isRequired": true, "description": "Controleer of het bezwaar binnen de 6-weken termijn is ingediend (Awb art. 6:7)" },
+          { "title": "Toets belanghebbendheid", "statusName": "Ontvankelijkheidstoets", "order": 2, "isRequired": true, "description": "Controleer of indiener belanghebbende is" },
+          { "title": "Toets besluit-karakter", "statusName": "Ontvankelijkheidstoets", "order": 3, "isRequired": true, "description": "Controleer of het bestreden handeling een besluit is in de zin van de Awb" },
+          { "title": "Stel dossier samen", "statusName": "In behandeling", "order": 1, "isRequired": true, "description": "Stel het bezwaardossier samen met alle relevante stukken" },
+          { "title": "Informeer primair beslisser", "statusName": "In behandeling", "order": 2, "isRequired": false, "description": "Informeer de ambtenaar die het oorspronkelijke besluit nam" },
+          { "title": "Plan hoorzitting of registreer afzien", "statusName": "In behandeling", "order": 3, "isRequired": true, "description": "Plan een hoorzitting of registreer dat bezwaarmaker afziet van hoorrecht" },
+          { "title": "Verstuur uitnodigingen", "statusName": "Hoorzitting gepland", "order": 1, "isRequired": true, "description": "Verstuur uitnodigingen voor de hoorzitting aan alle partijen" },
+          { "title": "Bereid hoorzitting voor", "statusName": "Hoorzitting gepland", "order": 2, "isRequired": false, "description": "Bereid de hoorzitting voor met agenda en stukken" },
+          { "title": "Maak verslag", "statusName": "Hoorzitting afgerond", "order": 1, "isRequired": true, "description": "Maak een verslag van de hoorzitting (Awb art. 7:7)" },
+          { "title": "Deel verslag met partijen", "statusName": "Hoorzitting afgerond", "order": 2, "isRequired": false, "description": "Deel het verslag met bezwaarmaker en andere partijen" },
+          { "title": "Stel advies op", "statusName": "Advies uitgebracht", "order": 1, "isRequired": true, "description": "De bezwaarschriftencommissie stelt advies op" },
+          { "title": "Deel advies met bestuursorgaan", "statusName": "Advies uitgebracht", "order": 2, "isRequired": true, "description": "Deel het advies van de commissie met het bestuursorgaan" },
+          { "title": "Neem beslissing", "statusName": "Beslissing op bezwaar", "order": 1, "isRequired": true, "description": "Neem de beslissing op het bezwaar (heroverweging art. 7:11)" },
+          { "title": "Stel besluit op", "statusName": "Beslissing op bezwaar", "order": 2, "isRequired": true, "description": "Stel het formele besluit op met motivering" },
+          { "title": "Verstuur besluit met rechtsmiddelenclausule", "statusName": "Beslissing op bezwaar", "order": 3, "isRequired": true, "description": "Verstuur het besluit naar bezwaarmaker inclusief rechtsmiddelenclausule" }
+        ],
+        "transitions": [
+          {
+            "fromStatusName": "Ontvangen",
+            "toStatusName": "Ontvankelijkheidstoets",
+            "label": "Start toets",
+            "guards": [{ "type": "roleGuard", "config": { "roleName": "Behandelaar bezwaar" } }]
+          },
+          {
+            "fromStatusName": "Ontvankelijkheidstoets",
+            "toStatusName": "In behandeling",
+            "label": "Ontvankelijk",
+            "guards": [{ "type": "requiredField", "config": { "field": "isTimely" } }]
+          },
+          {
+            "fromStatusName": "Ontvankelijkheidstoets",
+            "toStatusName": "Niet-ontvankelijk",
+            "label": "Niet-ontvankelijk verklaren",
+            "guards": [{ "type": "requiredField", "config": { "field": "dispositionDetails" } }]
+          },
+          {
+            "fromStatusName": "In behandeling",
+            "toStatusName": "Hoorzitting gepland",
+            "label": "Hoorzitting plannen",
+            "guards": []
+          },
+          {
+            "fromStatusName": "In behandeling",
+            "toStatusName": "Advies uitgebracht",
+            "label": "Hoorrecht afgezien",
+            "guards": [{ "type": "requiredField", "config": { "field": "hearingWaived" } }]
+          },
+          {
+            "fromStatusName": "Hoorzitting gepland",
+            "toStatusName": "Hoorzitting afgerond",
+            "label": "Hoorzitting afronden",
+            "guards": [{ "type": "requiredField", "config": { "field": "minutesSummary" } }]
+          },
+          {
+            "fromStatusName": "Hoorzitting afgerond",
+            "toStatusName": "Advies uitgebracht",
+            "label": "Advies uitbrengen",
+            "guards": [{ "type": "requiredField", "config": { "field": "advisoryReport" } }]
+          },
+          {
+            "fromStatusName": "In behandeling",
+            "toStatusName": "Beslissing op bezwaar",
+            "label": "Direct beslissen",
+            "guards": [{ "type": "roleGuard", "config": { "roleName": "Voorzitter commissie" } }]
+          },
+          {
+            "fromStatusName": "Advies uitgebracht",
+            "toStatusName": "Beslissing op bezwaar",
+            "label": "Beslissing nemen",
+            "guards": [
+              { "type": "requiredField", "config": { "field": "dispositionType" } },
+              { "type": "requiredField", "config": { "field": "dispositionDetails" } }
+            ]
+          },
+          {
+            "fromStatusName": "Beslissing op bezwaar",
+            "toStatusName": "Afgehandeld",
+            "label": "Afronden",
+            "guards": [
+              {
+                "type": "checklist",
+                "config": {
+                  "items": [
+                    { "label": "Besluit verzonden naar bezwaarmaker" },
+                    { "label": "Rechtsmiddelenclausule opgenomen in besluit" }
+                  ]
+                }
+              }
+            ],
+            "automaticActions": [
+              { "type": "notify", "config": { "roleName": "Bezwaarmaker", "message": "Uw bezwaar is afgehandeld" } }
+            ]
+          },
+          {
+            "fromStatusName": "*",
+            "toStatusName": "Ingetrokken",
+            "label": "Intrekken",
+            "guards": [{ "type": "requiredField", "config": { "field": "withdrawalReason" } }]
+          }
+        ]
+      }
+    },
+    {
+      "id": "b3c1a000-0000-4000-a000-00000000be30",
+      "uuid": "b3c1a000-0000-4000-a000-00000000be30",
+      "identifier": "beroep",
+      "title": "Beroep",
+      "description": "Beroepsprocedure bij de bestuursrechter conform Awb hoofdstuk 8",
+      "purpose": "Verwerken van beroepszaken bij de bestuursrechter",
+      "trigger": "Beroepschrift bij de bestuursrechter",
+      "subject": "Beroep tegen beslissing op bezwaar",
+      "processingDeadline": "P26W",
+      "extensionAllowed": false,
+      "suspensionAllowed": true,
+      "internalOrExternal": "extern",
+      "publicationRequired": false,
+      "isDraft": false,
+      "confidentiality": "zaakvertrouwelijk",
+      "statusTypes": [
+        { "name": "Beroep ontvangen", "description": "Beroepschrift ontvangen van rechtbank", "order": 1, "isFinal": false },
+        { "name": "Verweerschrift in voorbereiding", "description": "Gemeente bereidt verweer voor", "order": 2, "isFinal": false },
+        { "name": "Verweerschrift ingediend", "description": "Verweer ingediend bij de rechtbank", "order": 3, "isFinal": false },
+        { "name": "Zitting gepland", "description": "Zitting bij de rechtbank is gepland", "order": 4, "isFinal": false },
+        { "name": "Zitting afgerond", "description": "Zitting bij de rechtbank heeft plaatsgevonden", "order": 5, "isFinal": false },
+        { "name": "Uitspraak ontvangen", "description": "Uitspraak van de rechtbank ontvangen", "order": 6, "isFinal": false },
+        { "name": "Afgehandeld", "description": "Beroepsprocedure is afgerond", "order": 7, "isFinal": true },
+        { "name": "Ingetrokken", "description": "Beroep is ingetrokken", "order": 90, "isFinal": true },
+        { "name": "Schikking", "description": "Zaak geschikt buiten de rechtbank", "order": 91, "isFinal": true }
+      ],
+      "roleTypes": [
+        { "name": "Appellant", "description": "De persoon die beroep instelt", "genericRole": "initiator" },
+        { "name": "Behandelaar beroep", "description": "Ambtenaar die het beroep behandelt namens de gemeente", "genericRole": "handler" },
+        { "name": "Jurist", "description": "Juridisch adviseur voor de beroepsprocedure", "genericRole": "advisor" }
+      ],
+      "workflowTemplate": {
+        "title": "Beroep Standaard Workflow",
+        "description": "Workflow voor het verwerken van beroepszaken bij de bestuursrechter",
+        "version": 1,
+        "isActive": true,
+        "isDraft": false,
+        "steps": [
+          { "title": "Registreer beroepschrift", "statusName": "Beroep ontvangen", "order": 1, "isRequired": true, "description": "Registreer het ontvangen beroepschrift" },
+          { "title": "Stel bezwaardossier samen", "statusName": "Verweerschrift in voorbereiding", "order": 1, "isRequired": true, "description": "Stel alle relevante stukken samen voor het verweerschrift" },
+          { "title": "Stel verweerschrift op", "statusName": "Verweerschrift in voorbereiding", "order": 2, "isRequired": true, "description": "Stel het verweerschrift op" },
+          { "title": "Dien verweerschrift in", "statusName": "Verweerschrift ingediend", "order": 1, "isRequired": true, "description": "Dien het verweerschrift in bij de rechtbank" },
+          { "title": "Bereid zitting voor", "statusName": "Zitting gepland", "order": 1, "isRequired": false, "description": "Bereid de zitting voor (pleitnota, getuigen)" },
+          { "title": "Registreer uitspraak", "statusName": "Uitspraak ontvangen", "order": 1, "isRequired": true, "description": "Registreer de uitspraak van de rechtbank" },
+          { "title": "Beoordeel gevolgen uitspraak", "statusName": "Uitspraak ontvangen", "order": 2, "isRequired": true, "description": "Beoordeel de gevolgen van de uitspraak voor de gemeente" }
+        ],
+        "transitions": [
+          {
+            "fromStatusName": "Beroep ontvangen",
+            "toStatusName": "Verweerschrift in voorbereiding",
+            "label": "Start verweer",
+            "guards": [{ "type": "roleGuard", "config": { "roleName": "Behandelaar beroep" } }]
+          },
+          {
+            "fromStatusName": "Verweerschrift in voorbereiding",
+            "toStatusName": "Verweerschrift ingediend",
+            "label": "Verweer indienen",
+            "guards": [{ "type": "requiredDocument", "config": { "documentType": "Verweerschrift" } }]
+          },
+          {
+            "fromStatusName": "Verweerschrift ingediend",
+            "toStatusName": "Zitting gepland",
+            "label": "Zitting plannen",
+            "guards": []
+          },
+          {
+            "fromStatusName": "Zitting gepland",
+            "toStatusName": "Zitting afgerond",
+            "label": "Zitting afronden",
+            "guards": []
+          },
+          {
+            "fromStatusName": "Zitting afgerond",
+            "toStatusName": "Uitspraak ontvangen",
+            "label": "Uitspraak registreren",
+            "guards": [{ "type": "requiredField", "config": { "field": "rulingOutcome" } }]
+          },
+          {
+            "fromStatusName": "Uitspraak ontvangen",
+            "toStatusName": "Afgehandeld",
+            "label": "Afronden",
+            "guards": []
+          },
+          {
+            "fromStatusName": "*",
+            "toStatusName": "Ingetrokken",
+            "label": "Intrekken",
+            "guards": []
+          },
+          {
+            "fromStatusName": "*",
+            "toStatusName": "Schikking",
+            "label": "Schikking treffen",
+            "guards": [{ "type": "requiredField", "config": { "field": "settlementDetails" } }]
+          }
+        ]
+      }
+    },
+    {
+      "id": "b3c1a000-0000-4000-a000-0000000005ab",
+      "uuid": "b3c1a000-0000-4000-a000-0000000005ab",
+      "identifier": "subsidie",
+      "title": "Subsidie",
+      "description": "Subsidieaanvraag- en verstrekkingsproces conform Awb titel 4.2 en de gemeentelijke subsidieverordening",
+      "purpose": "Behandeling van subsidieaanvragen van ontvangst tot beschikking",
+      "trigger": "Subsidieaanvraag van een aanvrager onder een subsidieregeling",
+      "subject": "Aanvraag tot subsidieverstrekking",
+      "processingDeadline": "P13W",
+      "extensionAllowed": true,
+      "extensionPeriod": "P8W",
+      "suspensionAllowed": true,
+      "internalOrExternal": "extern",
+      "publicationRequired": false,
+      "isDraft": false,
+      "confidentiality": "zaakvertrouwelijk",
+      "initialStatus": "b3c1a000-0000-4000-a000-00005ab50001",
+      "statusTypes": [
+        { "id": "b3c1a000-0000-4000-a000-00005ab50001", "name": "Ontvangen", "description": "Subsidieaanvraag is ontvangen en geregistreerd", "order": 1, "isFinal": false },
+        { "name": "In behandeling", "description": "Aanvraag wordt inhoudelijk beoordeeld (volledigheid, regeling, begroting)", "order": 2, "isFinal": false },
+        { "name": "Beschikt", "description": "Subsidie is verleend bij beschikking (Awb art. 4:29 e.v.)", "order": 3, "isFinal": true },
+        { "name": "Afgewezen", "description": "Subsidieaanvraag is afgewezen", "order": 4, "isFinal": true },
+        { "name": "Ingetrokken", "description": "Aanvraag is ingetrokken door de aanvrager", "order": 90, "isFinal": true }
+      ],
+      "roleTypes": [
+        { "name": "Aanvrager", "description": "De partij die de subsidie aanvraagt", "genericRole": "initiator" },
+        { "name": "Behandelaar subsidie", "description": "Ambtenaar die de subsidieaanvraag behandelt", "genericRole": "handler" },
+        { "name": "Budgethouder", "description": "Verantwoordelijke voor het subsidieplafond en de beschikking", "genericRole": "decision_maker" }
+      ],
+      "workflowTemplate": {
+        "title": "Subsidie Standaard Workflow",
+        "description": "Workflow voor het behandelen van subsidieaanvragen van ontvangst tot beschikking",
+        "version": 1,
+        "isActive": true,
+        "isDraft": false,
+        "steps": [
+          { "title": "Registreer aanvraag", "statusName": "Ontvangen", "order": 1, "isRequired": true, "description": "Registreer de subsidieaanvraag en koppel de subsidieregeling" },
+          { "title": "Bevestig ontvangst", "statusName": "Ontvangen", "order": 2, "isRequired": true, "description": "Stuur een ontvangstbevestiging naar de aanvrager" },
+          { "title": "Toets volledigheid", "statusName": "In behandeling", "order": 1, "isRequired": true, "description": "Controleer of de aanvraag alle vereiste gegevens en bijlagen bevat" },
+          { "title": "Toets aan regeling en plafond", "statusName": "In behandeling", "order": 2, "isRequired": true, "description": "Beoordeel de aanvraag aan de subsidieregeling en het beschikbare plafond" },
+          { "title": "Stel beschikking op", "statusName": "Beschikt", "order": 1, "isRequired": true, "description": "Stel de verleningsbeschikking op met het toegekende bedrag" }
+        ],
+        "transitions": [
+          {
+            "fromStatusName": "Ontvangen",
+            "toStatusName": "In behandeling",
+            "label": "In behandeling nemen",
+            "guards": [{ "type": "roleGuard", "config": { "roleName": "Behandelaar subsidie" } }]
+          },
+          {
+            "fromStatusName": "In behandeling",
+            "toStatusName": "Beschikt",
+            "label": "Subsidie beschikken",
+            "guards": [{ "type": "requiredField", "config": { "field": "beschiktBedrag" } }]
+          },
+          {
+            "fromStatusName": "In behandeling",
+            "toStatusName": "Afgewezen",
+            "label": "Afwijzen",
+            "guards": []
+          },
+          {
+            "fromStatusName": "*",
+            "toStatusName": "Ingetrokken",
+            "label": "Intrekken",
+            "guards": []
+          }
+        ]
+      }
+    }
+  ]
+}

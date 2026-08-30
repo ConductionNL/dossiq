@@ -1,0 +1,41 @@
+{
+  "phase": "apply",
+  "timestamp": "2026-05-11T00:00:00+00:00",
+  "status": "partial",
+  "reason": "Manifest-first apply. Extended workflowTemplate.steps schema description (T01), added pure-function StepConfigValidator (T02), extended existing StepConfigPanel.vue with Geavanceerd sub-panel for sla / requiredFields / escalationRule (T07) and wired read-only via WorkflowEditor.vue isPublished computed (T08). Validator smoke-tested: empty errors on valid config, 4 expected errors on malformed config (out_of_range sla.value, unknown_sla_unit, unknown_action_key, offset_exceeds_sla).",
+  "applied_files": [
+    "lib/Settings/procest_register.json",
+    "lib/Service/StepConfigValidator.php",
+    "src/views/settings/components/StepConfigPanel.vue",
+    "src/views/settings/WorkflowEditor.vue"
+  ],
+  "tasks_complete": [
+    "T01",
+    "T02",
+    "T07",
+    "T08"
+  ],
+  "tasks_deferred": [
+    "T03 — wire StepConfigValidator into WorkflowDefinitionService::publish(); host service does not exist on development yet (sibling spec workflow-definition-model PR #347 referenced by proposal not landed in this tree). Validator is ready; wiring becomes a one-liner once the service lands.",
+    "T04 — StatusTransitionService::getAvailableTransitions() implicit requiredFields guard; host service does not exist (status-transition-engine #352 not landed).",
+    "T05 — step-level autoActions ordering in StatusTransitionService completion handler; same blocker as T04.",
+    "T06 — TaskCreatorService::createForStep() dueAt + escalationAt stamping; host service does not exist.",
+    "T09 — BackfillBezwaarStepConfig migration; depends on WorkflowDefinitionService::clone()+publish() (not landed) and BezwaarLifecycleService constants (not present).",
+    "T10 — flip spec frontmatter status: implemented; deferred until T03–T09 land."
+  ],
+  "validation": {
+    "php_lint": "pass",
+    "jq": "pass",
+    "spdx_present": "pass",
+    "no_getMessage_in_validator": "pass",
+    "smoke_test_validator": "pass",
+    "composer_check_strict": "deferred per watchdog",
+    "i18n": "deferred per watchdog"
+  },
+  "notes": [
+    "Storage: WorkflowStep.config remains an inline sub-object inside the existing JSON-encoded steps[] string on workflowTemplate. No new register schema introduced. Schema version bumped 1.0.0 → 1.1.0 with additive description for the config sub-object.",
+    "No new manifest pages, no new controller, no new entity — config UI is part of the existing per-step panel inside WorkflowEditor.",
+    "readOnly prop wired via WorkflowEditor.isPublished computed (tpl.isDraft === false). Default false preserves the existing create-flow behaviour when no template is loaded yet.",
+    "StepConfigValidator is pure (no DI, no IUserSession, no I/O); accepts an optional actionCatalog override for forward compatibility with automatic-actions catalog injection."
+  ]
+}

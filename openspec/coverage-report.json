@@ -1,0 +1,336 @@
+{
+  "generated_at": "2026-05-24T08:36:00Z",
+  "app": "dossiq",
+  "branch": "development",
+  "scanner_version": "1",
+  "scan_scope": "lib/**/*.php (172 files, 1235 methods). src/**/*.{vue,js,ts} not bucketed in v1 — see notes.",
+  "spec_counts": {
+    "specs_total": 47,
+    "reqs_extracted": 359,
+    "req_id_styles": ["REQ-XX-NN", "Requirement: <title>", "Requirement N: <title>", "ZRC-NNN"]
+  },
+  "buckets": {
+    "annotated": [
+      {"file": "lib/Service/KpiAggregationService.php", "methods_annotated": 11, "methods_total": 11, "spec_tag": "openspec/changes/add-server-side-kpi-aggregation/tasks.md (T01-T12)"},
+      {"file": "lib/Controller/KpiController.php", "methods_annotated": 2, "methods_total": 2, "spec_tag": "openspec/changes/add-server-side-kpi-aggregation/tasks.md"},
+      {"file": "lib/Listener/KpiCacheInvalidationListener.php", "methods_annotated": 2, "methods_total": 2, "spec_tag": "openspec/changes/add-server-side-kpi-aggregation/tasks.md"},
+      {"file": "lib/Controller/ParafeerActieController.php", "methods_annotated": 4, "methods_total": 4, "spec_tag": "openspec/changes/parafering-actions/tasks.md"},
+      {"file": "lib/Controller/ParafeerRouteController.php", "methods_annotated": 5, "methods_total": 8, "spec_tag": "openspec/changes/parafeerroute-engine/tasks.md"},
+      {"file": "lib/Service/ParafeerActieService.php", "methods_annotated": 5, "methods_total": 15, "spec_tag": "openspec/changes/parafering-actions/tasks.md + file-level"},
+      {"file": "lib/Service/ParafeerRouteService.php", "methods_annotated": 6, "methods_total": 16, "spec_tag": "openspec/changes/parafeerroute-engine/tasks.md + file-level"},
+      {"file": "lib/Service/Parafering/AuditTrailService.php", "spec_tag": "openspec/changes/parafering-audit-trail/tasks.md"},
+      {"file": "lib/Listener/ParaferingAuditListener.php", "spec_tag": "openspec/changes/parafering-audit-trail/tasks.md"},
+      {"file": "lib/Controller/ParaferingAuditExportController.php", "spec_tag": "openspec/changes/parafering-audit-trail/tasks.md"},
+      {"file": "lib/Validator/ParaferingAuditAppendOnlyValidator.php", "spec_tag": "openspec/changes/parafering-audit-trail/tasks.md"},
+      {"file": "lib/Event/ParafeerTransitionEvent.php", "spec_tag": "openspec/changes/parafering-actions/specs/parafering-actions/spec.md"},
+      {"file": "lib/Controller/RoutingController.php", "methods_annotated": 2, "methods_total": 4, "spec_tag": "openspec/changes/role-based-step-routing/tasks.md"},
+      {"file": "lib/Service/RoleResolverService.php", "methods_annotated": 1, "methods_total": 10, "spec_tag": "openspec/changes/role-based-step-routing/tasks.md (file-level inherits)"},
+      {"file": "lib/Service/Routing/RoutingStrategyInterface.php", "spec_tag": "openspec/changes/role-based-step-routing/tasks.md"},
+      {"file": "lib/Service/Routing/RoutingStrategyMissingException.php", "spec_tag": "openspec/changes/role-based-step-routing/tasks.md"},
+      {"file": "lib/Service/Routing/StrategyRegistry.php", "spec_tag": "openspec/changes/role-based-step-routing/tasks.md"},
+      {"file": "lib/Service/Routing/Strategy/HierarchicalStrategy.php", "spec_tag": "openspec/changes/role-based-step-routing/tasks.md"},
+      {"file": "lib/Service/Routing/Strategy/LeastLoadedStrategy.php", "spec_tag": "openspec/changes/role-based-step-routing/tasks.md"},
+      {"file": "lib/Service/Routing/Strategy/OrSetStrategy.php", "spec_tag": "openspec/changes/role-based-step-routing/tasks.md"},
+      {"file": "lib/Service/Routing/Strategy/RoundRobinStrategy.php", "spec_tag": "openspec/changes/role-based-step-routing/tasks.md"},
+      {"file": "lib/Service/Routing/Strategy/SingleRoleStrategy.php", "spec_tag": "openspec/changes/role-based-step-routing/tasks.md"},
+      {"file": "lib/Listener/RoleMutationListener.php", "spec_tag": "openspec/changes/role-based-step-routing/tasks.md"},
+      {"file": "lib/Controller/StatusTransitionController.php", "spec_tag": "openspec/changes/status-transition-engine/tasks.md"},
+      {"file": "lib/Service/StatusTransitionService.php", "methods_annotated": 1, "methods_total": 17, "spec_tag": "openspec/changes/status-transition-engine/tasks.md (file-level inherits)"},
+      {"file": "lib/Service/Transitions/ActionHandlerInterface.php", "spec_tag": "openspec/changes/status-transition-engine/tasks.md"},
+      {"file": "lib/Service/Transitions/ActionHandlerRegistry.php", "spec_tag": "openspec/changes/status-transition-engine/tasks.md"},
+      {"file": "lib/Service/Transitions/ActionResult.php", "spec_tag": "openspec/changes/status-transition-engine/tasks.md"},
+      {"file": "lib/Service/Transitions/ChecklistGuard.php", "spec_tag": "openspec/changes/status-transition-engine/tasks.md"},
+      {"file": "lib/Service/Transitions/CreateSubCaseHandler.php", "spec_tag": "openspec/changes/status-transition-engine/tasks.md#T08"},
+      {"file": "lib/Service/Transitions/CreateTaskHandler.php", "spec_tag": "openspec/changes/status-transition-engine/tasks.md"},
+      {"file": "lib/Service/Transitions/GuardEvaluatorInterface.php", "spec_tag": "openspec/changes/status-transition-engine/tasks.md"},
+      {"file": "lib/Service/Transitions/GuardFailedException.php", "spec_tag": "openspec/changes/status-transition-engine/tasks.md"},
+      {"file": "lib/Service/Transitions/GuardRegistry.php", "spec_tag": "openspec/changes/status-transition-engine/tasks.md"},
+      {"file": "lib/Service/Transitions/GuardResult.php", "spec_tag": "openspec/changes/status-transition-engine/tasks.md"},
+      {"file": "lib/Service/Transitions/NotifyHandler.php", "spec_tag": "openspec/changes/status-transition-engine/tasks.md"},
+      {"file": "lib/Service/Transitions/RequiredDocumentGuard.php", "spec_tag": "openspec/changes/status-transition-engine/tasks.md"},
+      {"file": "lib/Service/Transitions/RequiredFieldGuard.php", "spec_tag": "openspec/changes/status-transition-engine/tasks.md"},
+      {"file": "lib/Service/Transitions/RoleGuard.php", "spec_tag": "openspec/changes/status-transition-engine/tasks.md"},
+      {"file": "lib/Service/Transitions/SendEmailHandler.php", "spec_tag": "openspec/changes/status-transition-engine/tasks.md"},
+      {"file": "lib/Service/Transitions/SetFieldHandler.php", "spec_tag": "openspec/changes/status-transition-engine/tasks.md"},
+      {"file": "lib/Service/Transitions/SideEffectDispatcher.php", "spec_tag": "openspec/changes/status-transition-engine/tasks.md"},
+      {"file": "lib/Service/Transitions/WebhookHandler.php", "spec_tag": "openspec/changes/status-transition-engine/tasks.md"},
+      {"file": "lib/Service/Bezwaar/AdvisoryCommitteeService.php", "spec_tag": "openspec/changes/bezwaar-advisory-committee/specs/.../spec.md"},
+      {"file": "lib/Service/Bezwaar/BeroepService.php", "spec_tag": "openspec/changes/beroep-escalation/specs/.../spec.md"},
+      {"file": "lib/Service/Bezwaar/DecisionService.php", "spec_tag": "openspec/changes/bezwaar-decision/specs/.../spec.md"},
+      {"file": "lib/Service/Bezwaar/HearingService.php", "spec_tag": "openspec/changes/bezwaar-hearing/specs/.../spec.md"},
+      {"file": "lib/Listener/BezwaarAdviceRequestedListener.php", "spec_tag": "openspec/changes/bezwaar-advisory-committee/specs/.../spec.md"},
+      {"file": "lib/Listener/BezwaarDecisionListener.php", "spec_tag": "openspec/changes/bezwaar-decision/specs/.../spec.md"},
+      {"file": "lib/Listener/BezwaarHearingScheduledListener.php", "spec_tag": "openspec/changes/bezwaar-hearing/specs/.../spec.md"},
+      {"file": "lib/Listener/BeroepEscalationListener.php", "spec_tag": "openspec/changes/beroep-escalation/specs/.../spec.md"},
+      {"file": "lib/Service/Inspection/ChecklistService.php", "spec_tag": "openspec/changes/inspection-checklists/tasks.md"},
+      {"file": "lib/Listener/ChecklistRunImmutabilityListener.php", "spec_tag": "openspec/changes/inspection-checklists/tasks.md"},
+      {"file": "lib/Repair/SeedLhsMatrix.php", "spec_tag": "openspec/changes/enforcement-lhs/tasks.md"},
+      {"file": "lib/Controller/LhsController.php", "methods_annotated": 3, "methods_total": 3, "spec_tag": "openspec/changes/enforcement-lhs/tasks.md"},
+      {"file": "lib/Service/Vth/LhsRecommendationService.php", "spec_tag": "openspec/changes/enforcement-lhs/tasks.md"},
+      {"file": "lib/Service/ZgwZrcRulesService.php", "methods_annotated": 1, "methods_total": 19, "spec_tag": "openspec/changes/zgw-business-rules-compliance/.../spec.md (only 1/19 methods)"},
+      {"file": "lib/Service/WorkflowTemplateLoader.php", "methods_annotated": 1, "methods_total": 6, "spec_tag": "1 method tagged"}
+    ],
+    "plumbing": [
+      {"file": "lib/AppInfo/Application.php", "reason": "app-bootstrap (register listeners, services, dashboard widgets)"},
+      {"file": "lib/Sections/SettingsSection.php", "reason": "settings section registration"},
+      {"file": "lib/Settings/AdminSettings.php", "reason": "admin settings page registration"},
+      {"file": "lib/Middleware/TenantMiddleware.php", "reason": "generic tenant middleware"},
+      {"file": "lib/Middleware/ZgwAuthException.php", "reason": "exception value object"},
+      {"file": "lib/Listener/DeepLinkRegistrationListener.php", "reason": "single handle() registers deep links"},
+      {"reason_aggregate": "151 __construct methods across all files counted as plumbing"}
+    ],
+    "bucket_1": "[deferred — only 30 method-level annotations exist; the other 277 methods in 'annotated' files inherit file-level @spec but no per-method confidence scoring done. Treat the entire 'annotated' bucket as Bucket-1-equivalent for /opsx-annotate's purposes.]",
+    "bucket_2a": {
+      "zgw-api-mapping": [
+        {"file": "lib/Controller/ZrcController.php", "methods": 39, "observed_behavior": "ZGW Zaakregistratiecomponent (ZRC) API endpoints — case CRUD, status, role, attachment relations under /api/zrc/..."},
+        {"file": "lib/Controller/ZtcController.php", "methods": 21, "observed_behavior": "ZGW Zaaktypecatalogus (ZTC) API endpoints — case-type catalog"},
+        {"file": "lib/Controller/DrcController.php", "methods": 32, "observed_behavior": "ZGW Documentregistratiecomponent (DRC) API endpoints"},
+        {"file": "lib/Controller/BrcController.php", "methods": 18, "observed_behavior": "ZGW Besluitregistratiecomponent (BRC) API endpoints"},
+        {"file": "lib/Controller/NrcController.php", "methods": 10, "observed_behavior": "ZGW Notificatieroutingcomponent (NRC) endpoints"},
+        {"file": "lib/Controller/ZgwMappingController.php", "methods": 6, "observed_behavior": "Mapping CRUD endpoints"},
+        {"file": "lib/Service/ZgwService.php", "methods": 37, "observed_behavior": "ZGW base service — mapping execution, ZGW response shaping"},
+        {"file": "lib/Service/ZgwMappingService.php", "methods": 8, "observed_behavior": "ZGW mapping wiring"},
+        {"file": "lib/Service/ZgwDocumentService.php", "methods": 12, "observed_behavior": "ZGW document operations"},
+        {"file": "lib/Service/ZgwPaginationHelper.php", "methods": 1, "observed_behavior": "ZGW pagination helper"},
+        {"file": "lib/Service/NotificatieService.php", "methods": 5, "observed_behavior": "ZGW NRC notificatie dispatch"},
+        {"file": "lib/Middleware/ZgwAuthMiddleware.php", "methods": 9, "observed_behavior": "Bearer-token + ZGW auth middleware"},
+        {"file": "lib/Repair/LoadDefaultZgwMappings.php", "methods": 36, "observed_behavior": "Seeds default ZGW mapping records on install (one private method per mapping definition)"}
+      ],
+      "zgw-business-rules-compliance": [
+        {"file": "lib/Service/ZgwBrcRulesService.php", "methods": 10, "observed_behavior": "BRC business rules (Besluit)"},
+        {"file": "lib/Service/ZgwBusinessRulesService.php", "methods": 8, "observed_behavior": "Cross-component ZGW business rules"},
+        {"file": "lib/Service/ZgwDrcRulesService.php", "methods": 13, "observed_behavior": "DRC business rules (Document)"},
+        {"file": "lib/Service/ZgwRulesBase.php", "methods": 17, "observed_behavior": "Shared base for ZGW rule services"},
+        {"file": "lib/Service/ZgwZtcRulesService.php", "methods": 16, "observed_behavior": "ZTC business rules"}
+      ],
+      "automatic-actions": [
+        {"file": "lib/Service/Actions/ActionHandlerInterface.php"},
+        {"file": "lib/Service/Actions/ActionRegistry.php", "methods": 7},
+        {"file": "lib/Service/Actions/ActionResult.php"},
+        {"file": "lib/Service/Actions/CallWebhookHandler.php", "methods": 5},
+        {"file": "lib/Service/Actions/CreateDocumentHandler.php", "methods": 4},
+        {"file": "lib/Service/Actions/HandlesTemplates.php", "observed_behavior": "trait shared by template-touching handlers"},
+        {"file": "lib/Service/Actions/MergeTemplateHandler.php", "methods": 4},
+        {"file": "lib/Service/Actions/NotifyRoleHandler.php", "methods": 5},
+        {"file": "lib/Service/Actions/ScheduleReminderHandler.php", "methods": 4},
+        {"file": "lib/Service/Actions/SendEmailHandler.php", "methods": 4, "observed_behavior": "duplicate of lib/Service/Transitions/SendEmailHandler.php — verify which is canonical"}
+      ],
+      "case-management": [
+        {"file": "lib/Controller/CaseSharingController.php", "methods": 5},
+        {"file": "lib/Service/CaseSharingService.php", "methods": 12, "observed_behavior": "share-case-with-user/role logic"},
+        {"file": "lib/Service/CaseTransferService.php", "methods": 5, "observed_behavior": "case transfer/reassign"},
+        {"file": "lib/Service/CaseEmailService.php", "methods": 13, "observed_behavior": "case-email integration"},
+        {"file": "lib/Controller/EmailController.php", "methods": 5, "observed_behavior": "case-email endpoints"},
+        {"file": "lib/Controller/PublicShareController.php", "methods": 6, "observed_behavior": "public case-share endpoints"},
+        {"file": "lib/BackgroundJob/ShareMaintenanceJob.php", "methods": 2, "observed_behavior": "expire/cleanup case shares"}
+      ],
+      "signalering-widgets": [
+        {"file": "lib/Dashboard/DeadlineAlertsWidget.php", "methods": 7},
+        {"file": "lib/Dashboard/OverdueCasesWidget.php", "methods": 7},
+        {"file": "lib/Dashboard/StalledCasesWidget.php", "methods": 7},
+        {"file": "lib/Dashboard/TaskRemindersWidget.php", "methods": 7}
+      ],
+      "dashboard": [
+        {"file": "lib/Dashboard/CasesOverviewWidget.php", "methods": 7},
+        {"file": "lib/Dashboard/MyTasksWidget.php", "methods": 7},
+        {"file": "lib/Dashboard/StartCaseWidget.php", "methods": 7},
+        {"file": "lib/Controller/DashboardController.php", "methods": 2}
+      ],
+      "case-types": [
+        {"file": "lib/Controller/CaseDefinitionController.php", "methods": 4, "observed_behavior": "case-type export/import endpoints"},
+        {"file": "lib/Service/CaseDefinitionExportService.php", "methods": 5, "observed_behavior": "ZIP export of case definitions"},
+        {"file": "lib/Service/CaseDefinitionImportService.php", "methods": 5, "observed_behavior": "ZIP import of case definitions"}
+      ],
+      "workflow-definition-model": [
+        {"file": "lib/Controller/WorkflowDefinitionController.php", "methods": 6},
+        {"file": "lib/Service/WorkflowDefinitionService.php", "methods": 20},
+        {"file": "lib/Repair/MigrateWorkflowDefinitions.php", "methods": 7, "observed_behavior": "data migration helper"}
+      ],
+      "parafering-actions": [
+        {"file": "lib/Controller/ParaferingController.php", "methods": 9, "observed_behavior": "general parafering endpoints (versus action-specific ParafeerActieController)"},
+        {"file": "lib/Service/ParaferingService.php", "methods": 10},
+        {"file": "lib/Service/ParaferingNotificationService.php", "methods": 4}
+      ],
+      "inspection-checklists": [
+        {"file": "lib/Controller/InspectionController.php", "methods": 7},
+        {"file": "lib/Service/InspectionService.php", "methods": 6},
+        {"file": "lib/Service/ChecklistService.php", "methods": 5, "observed_behavior": "top-level Checklist service alongside Service/Inspection/ChecklistService — verify which is canonical"}
+      ],
+      "bezwaar-lifecycle": [
+        {"file": "lib/Listener/BezwaarLifecycleListener.php", "methods": 4},
+        {"file": "lib/Repair/SeedBezwaarBeroepData.php", "methods": 3, "observed_behavior": "seeds bezwaar + beroep reference data; could split"},
+        {"file": "lib/Repair/SeedBezwaarWorkflowDefinition.php", "methods": 7, "observed_behavior": "seeds bezwaar workflow definition"}
+      ],
+      "advice-management": [
+        {"file": "lib/Controller/AdviceController.php", "methods": 4},
+        {"file": "lib/Service/AdviceService.php", "methods": 12},
+        {"file": "lib/BackgroundJob/AdviceDeadlineJob.php", "methods": 2}
+      ],
+      "bezwaar-advisory-committee": [
+        {"file": "lib/Controller/AcController.php", "methods": 16, "observed_behavior": "Adviescommissie (BAC) CRUD + assignment endpoints; 16 methods unannotated despite sibling AdvisoryCommitteeService having file-level @spec"}
+      ],
+      "wms-wfs-layers": [
+        {"file": "lib/Controller/WmsWfsController.php", "methods": 2},
+        {"file": "lib/Service/WmsWfsService.php", "methods": 10}
+      ],
+      "map-component": [
+        {"file": "lib/Controller/GisProxyController.php", "methods": 3},
+        {"file": "lib/Service/GisProxyService.php", "methods": 7}
+      ],
+      "pdok-integration": [
+        {"file": "lib/Service/Pdok/PdokBagService.php", "methods": 10},
+        {"file": "lib/Service/Pdok/PdokLocatieserverService.php", "methods": 12}
+      ],
+      "admin-settings": [
+        {"file": "lib/Controller/SettingsController.php", "methods": 6},
+        {"file": "lib/Service/SettingsService.php", "methods": 9, "observed_behavior": "register resolver + getObjectService() — central to ADR-022 work"}
+      ],
+      "dossiq-app-scaffold": [
+        {"file": "lib/Repair/InitializeSettings.php", "methods": 3},
+        {"file": "lib/Service/SeedDataService.php", "methods": 10}
+      ],
+      "case-location": [
+        {"file": "lib/Service/LocationService.php", "methods": 7}
+      ],
+      "prometheus-metrics": [
+        {"file": "lib/Controller/MetricsController.php", "methods": 13, "observed_behavior": "Prometheus text-exposition endpoint — implements REQ-PROM-001..010 but unannotated"}
+      ],
+      "vth-workflow-templates": [
+        {"file": "lib/Repair/SeedVthWorkflowTemplates.php", "methods": 12}
+      ],
+      "process-step-configuration": [
+        {"file": "lib/Service/StepConfigValidator.php", "methods": 6}
+      ]
+    },
+    "bucket_2b": {
+      "appointment-booking": [
+        {"file": "lib/Controller/AppointmentController.php", "methods": 6},
+        {"file": "lib/Controller/PublicAppointmentController.php", "methods": 3},
+        {"file": "lib/Service/AppointmentService.php", "methods": 9},
+        {"file": "lib/Service/AppointmentBackend/AppointmentBackendInterface.php"},
+        {"file": "lib/Service/AppointmentBackend/JccBackend.php", "methods": 5},
+        {"file": "lib/Service/AppointmentBackend/LocalBackend.php", "methods": 5},
+        {"file": "lib/Service/AppointmentBackend/QmaticBackend.php", "methods": 5},
+        {"file": "lib/BackgroundJob/AppointmentReminderJob.php", "methods": 2}
+      ],
+      "berichtenbox-integration": [
+        {"file": "lib/Controller/BerichtenboxController.php", "methods": 4},
+        {"file": "lib/Service/BerichtenboxService.php", "methods": 8},
+        {"file": "lib/Service/BerichtenboxAdapter/BerichtenboxAdapterInterface.php"},
+        {"file": "lib/Service/BerichtenboxAdapter/MockAdapter.php", "methods": 3},
+        {"file": "lib/BackgroundJob/BerichtenboxReadStatusJob.php", "methods": 2}
+      ],
+      "stuf-integration": [
+        {"file": "lib/Controller/StufController.php", "methods": 11},
+        {"file": "lib/Service/StufFieldMappingService.php", "methods": 14},
+        {"file": "lib/Service/StufMessageBuilder.php", "methods": 7}
+      ],
+      "leges-fees": [
+        {"file": "lib/Controller/LegesController.php", "methods": 6},
+        {"file": "lib/Service/LegesCalculationService.php", "methods": 11},
+        {"file": "lib/Service/LegesExportService.php", "methods": 7}
+      ],
+      "consultation-management": [
+        {"file": "lib/Controller/ConsultationController.php", "methods": 6},
+        {"file": "lib/Service/ConsultationService.php", "methods": 6}
+      ],
+      "milestone-tracking": [
+        {"file": "lib/Controller/MilestoneController.php", "methods": 4},
+        {"file": "lib/Service/MilestoneService.php", "methods": 7}
+      ],
+      "template-library": [
+        {"file": "lib/Controller/TemplateController.php", "methods": 4},
+        {"file": "lib/Service/TemplateLibraryService.php", "methods": 4}
+      ],
+      "multi-tenancy": [
+        {"file": "lib/Controller/TenantController.php", "methods": 5},
+        {"file": "lib/Service/TenantService.php", "methods": 8}
+      ],
+      "ai-assistance": [
+        {"file": "lib/Controller/AiController.php", "methods": 13},
+        {"file": "lib/Service/AiService.php", "methods": 22}
+      ],
+      "mcp-integration": [
+        {"file": "lib/Mcp/DossiqToolProvider.php", "methods": 21, "observed_behavior": "Per-app MCP tool provider (IMcpToolProvider) — registered fleet-wide via openregister AI orchestrator"}
+      ],
+      "dso-omgevingsloket": [
+        {"file": "lib/Service/DsoIntakeService.php", "methods": 3, "observed_behavior": "DSO Omgevingsloket intake — there is an unarchived change `dso-omgevingsloket` but no spec lives in openspec/specs/ yet"}
+      ],
+      "ops-observability": [
+        {"file": "lib/Controller/HealthController.php", "methods": 6, "observed_behavior": "health-check endpoints (/health, /health/db, ...)"}
+      ]
+    },
+    "bucket_3a": [
+      {"req": "doorlooptijd-dashboard#multiple", "evidence": "16+18 matches in removed-lines cache for `slaComplian`/`doorlooptijd`. Frontend in src/views/DoorlooptijdDashboard.vue + src/utils/doorlooptijdHelpers.js + KPI backend (KpiAggregationService); spec is frontend-only but worth verifying SLA-breakdown widgets still render."},
+      {"req": "visual-workflow-editor#all", "evidence": "9 hits for `workflowEditor`; current frontend at src/views/settings/WorkflowEditor.vue + src/components/workflow/. Implemented in Vue, no PHP signal."}
+    ],
+    "bucket_3b": [
+      {"req": "zaaktype-versioning#Workflow-Template-Versioning", "note": "0 hits in removed-lines; not visible in current PHP. Verify if frontend-only or deferred."},
+      {"req": "zaaktype-versioning#Case-to-Workflow-Version-Binding", "note": "0 hits; appears deferred."},
+      {"req": "workflow-import-export#Export-Workflow-Template", "note": "0 hits for `exportWorkflow`; CaseDefinitionExportService exists but exports case definitions, not workflow templates specifically. Verify scope."},
+      {"req": "workflow-import-export#Import-Workflow-Template", "note": "2 hits for `importWorkflow` — likely related to MigrateWorkflowDefinitions but partial."},
+      {"req": "parafering-dashboard#all", "note": "0 hits for `secretariaat`, `Inbox`; appears to be a Vue-only dashboard view not yet implemented."},
+      {"req": "process-step-configuration#both", "note": "Spec has only 2 requirements; StepConfigValidator (6 methods) covers part. Verify against REQ scenarios."},
+      {"req": "voorstel-management#all", "note": "Voorstel domain is implemented as part of parafering (a voorstel is the object being paraffed). 389 voorstel hits in removed-lines indicates active code. Likely Bucket 2a misclassified — folded into parafering-actions during refactor."}
+    ],
+    "bucket_4": {
+      "missing-spec-in-file-docblock": "114 files lack any @spec tag (66% of lib/). See bucket_2a + bucket_2b for the breakdown.",
+      "missing-SPDX-FileCopyrightText": [
+        "lib/Service/ZgwZtcRulesService.php",
+        "lib/Service/SeedDataService.php",
+        "lib/Service/ZgwDrcRulesService.php",
+        "lib/Service/StufFieldMappingService.php",
+        "lib/Service/StufMessageBuilder.php",
+        "lib/Service/ZgwBusinessRulesService.php",
+        "lib/Service/NotificatieService.php",
+        "lib/Service/ZgwMappingService.php",
+        "lib/Service/GisProxyService.php",
+        "lib/Service/ZgwService.php",
+        "lib/Service/ZgwRulesBase.php",
+        "lib/Service/ZgwZrcRulesService.php",
+        "lib/Service/TemplateLibraryService.php",
+        "lib/Service/SettingsService.php",
+        "lib/Service/LegesExportService.php",
+        "lib/Service/MilestoneService.php",
+        "lib/Service/ParaferingNotificationService.php",
+        "lib/Service/ParaferingService.php",
+        "lib/Service/AppointmentService.php",
+        "lib/Service/ZgwPaginationHelper.php",
+        "lib/Service/LegesCalculationService.php",
+        "lib/Service/BerichtenboxService.php",
+        "lib/Service/TenantService.php",
+        "lib/Service/InspectionService.php",
+        "lib/Service/ZgwBrcRulesService.php",
+        "lib/Service/DsoIntakeService.php",
+        "lib/Service/ZgwDocumentService.php",
+        "lib/BackgroundJob/AppointmentReminderJob.php",
+        "lib/BackgroundJob/BerichtenboxReadStatusJob.php",
+        "lib/Controller/BerichtenboxController.php",
+        "lib/Controller/AppointmentController.php",
+        "lib/Controller/PublicAppointmentController.php",
+        "lib/Service/Pdok/PdokLocatieserverService.php",
+        "lib/Service/Pdok/PdokBagService.php",
+        "lib/Service/BerichtenboxAdapter/BerichtenboxAdapterInterface.php",
+        "lib/Service/BerichtenboxAdapter/MockAdapter.php",
+        "lib/Service/AppointmentBackend/LocalBackend.php",
+        "lib/Service/AppointmentBackend/JccBackend.php",
+        "lib/Service/AppointmentBackend/QmaticBackend.php",
+        "lib/Service/AppointmentBackend/AppointmentBackendInterface.php"
+      ],
+      "forbidden-patterns": "0 hits (clean)",
+      "direct-SQL": "0 hits ($this->db->query/prepare not used)",
+      "missing-@license": "0 hits (all files carry @license)",
+      "missing-@copyright": "0 hits (all files carry @copyright)"
+    }
+  },
+  "ignored": 0,
+  "notes": [
+    "Vue/JS/TS sources under src/ (~135 files including views, components, stores) were NOT bucketed in this scan — many specs (visual-workflow-editor, doorlooptijd-dashboard, my-work, parafering-dashboard, task-management, signalering-widgets, dossiq-object-store, dossiq-store-migration) are frontend-only or frontend-primary; their PHP shadow is sometimes nil. A v2 pass should enumerate src/ and re-bucket.",
+    "Bucket-1 vs annotated: this scan does NOT generate per-method confidence-scored Bucket-1 entries beyond what is already annotated. The 58 'annotated' files include 30 method-level + 59 file-level @spec tags; the file-level tags imply every method in that file inherits the tag. /opsx-annotate should treat the unannotated methods in already-tagged files as candidates for explicit per-method annotation.",
+    "Strongest blind spots: (1) the 5 ZGW *Controllers (ZRC/ZTC/DRC/BRC/NRC, 120 methods total) and 4 ZGW Rules services have zero @spec despite mapping directly to zgw-api-mapping (21 reqs) and zgw-business-rules-compliance (13 reqs). High ROI for /opsx-annotate. (2) MetricsController implements REQ-PROM-001..010 (prometheus-metrics has 10 explicit REQs) — straight Bucket 1.",
+    "Watch for duplicates: lib/Service/Actions/SendEmailHandler.php and lib/Service/Transitions/SendEmailHandler.php look like two parallel implementations of the same action. Same for lib/Service/ChecklistService.php (top-level) vs lib/Service/Inspection/ChecklistService.php (subdir, annotated to inspection-checklists). Verify which is canonical before annotating.",
+    "Spec 'voorstel-management' has 5 REQs and zero matching files in lib/Service or lib/Controller, but 389 hits in removed-lines (voorstel == subject of parafering). Almost certainly folded into the parafering-* services during refactor. Either reverse-spec a `voorstel` cluster or mark voorstel-management as moved into parafering-actions.",
+    "Spec parser supports four REQ patterns: REQ-XX-NN (15 specs), `Requirement: <title>` (24 specs), `Requirement N: <title>` (dossiq-case-management), and ZRC-NNN (zgw-business-rules-compliance). Final REQ count = 359 across 46 specs (1 spec, advice-management is delta-only and was counted).",
+    "Removed-lines cache built in 2.6s (46749 lines), under the 30s budget — Bucket 3 reverse-pass is reliable."
+  ]
+}

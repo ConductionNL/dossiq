@@ -1,0 +1,471 @@
+{
+  "components": {
+    "registers": {
+      "dossiq": {
+        "schemas": [
+          "beschikking",
+          "stateMachineLog",
+          "bezwaarTrigger",
+          "mandateArrangement"
+        ]
+      }
+    },
+    "schemas": {
+      "beschikking": {
+        "slug": "beschikking",
+        "icon": "FileCertificateOutline",
+        "version": "1.0.0",
+        "x-schema-org": "schema:GovernmentPermit",
+        "title": "Beschikking",
+        "description": "Formal decision (Awb besluit) with full lifecycle: ontwerp -> akkoord-mandaat -> ondertekend -> verzonden -> ontvangen-bevestiging -> gearchiveerd. Immutable once ondertekend. State transitions are guarded by mandaat-verificatie (akkoord) and TSP-handtekening (onderteken) and logged via stateMachineLog.",
+        "type": "object",
+        "required": [
+          "caseId",
+          "decisionType",
+          "currentStatus"
+        ],
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "title": "Case ID",
+            "description": "Back-reference to the dossiq case this beschikking belongs to",
+            "facetable": true
+          },
+          "caseType": {
+            "type": "string",
+            "title": "Case Type",
+            "description": "Case type slug (e.g. wmo-melding, omgevingsvergunning)",
+            "facetable": true
+          },
+          "decisionType": {
+            "type": "string",
+            "title": "Decision Type",
+            "enum": [
+              "toekenning",
+              "rejection",
+              "amendment",
+              "withdrawal"
+            ],
+            "description": "Type of decision",
+            "facetable": true
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference Mark",
+            "maxLength": 255,
+            "description": "User-visible decision number (e.g. Z/2026/04832/B01)"
+          },
+          "templateId": {
+            "type": "string",
+            "title": "Template ID",
+            "description": "BeschikkingTemplate identifier (Docudesk-bound)"
+          },
+          "draftVersion": {
+            "type": "integer",
+            "title": "Draft Version",
+            "default": 1,
+            "description": "Auto-increment as the draft is re-rendered or field-edited"
+          },
+          "currentStatus": {
+            "type": "string",
+            "title": "Current Status",
+            "enum": [
+              "draft",
+              "approved-mandate",
+              "signed",
+              "sent",
+              "received-confirmation",
+              "archived"
+            ],
+            "default": "draft",
+            "description": "Current state-machine status",
+            "facetable": true
+          },
+          "announcementDate": {
+            "type": "string",
+            "title": "Announcement Date",
+            "format": "date",
+            "description": "Date the beschikking becomes legally effective (Awb 3:41)"
+          },
+          "objectionTermEndDate": {
+            "type": "string",
+            "title": "Objection Period End Date",
+            "format": "date",
+            "description": "End of the 6-week bezwaartermijn (Awb 6:7), computed on verzending"
+          },
+          "reminderDate": {
+            "type": "string",
+            "title": "Reminder Date",
+            "format": "date",
+            "description": "Reminder date, one week before bezwaarTermijnEindDatum"
+          },
+          "feeAmount": {
+            "type": "number",
+            "title": "Levy Amount",
+            "default": 0,
+            "description": "Leges amount associated with the decision"
+          },
+          "rationale": {
+            "type": "string",
+            "title": "Motivation",
+            "description": "Reasoning underpinning the decision",
+            "x-translatable": false
+          },
+          "legalRemediesClause": {
+            "type": "string",
+            "title": "Legal Remedies Clause",
+            "description": "Standard rechtsmiddelen (appeal-rights) clause text"
+          },
+          "compositeContent": {
+            "type": "object",
+            "title": "Composed Content",
+            "description": "Rendered PDF/A-3 composition metadata",
+            "properties": {
+              "format": { "type": "string", "title": "Format", "description": "File format of the rendered document, e.g. pdf-a3", "default": "pdf-a3" },
+              "fileId": { "type": "string", "title": "File ID", "description": "Nextcloud file id of the rendered PDF" },
+              "checksumSha256": { "type": "string", "title": "SHA-256 Checksum", "description": "SHA-256 hash of the rendered file for integrity verification" },
+              "paginas": { "type": "integer", "title": "Page Count", "description": "Number of pages in the rendered document" }
+            }
+          },
+          "addressee": {
+            "type": "object",
+            "title": "Addressee",
+            "description": "Addressee (a citizen or a business). BSN/OIN are special-category identifiers and are masked when logged.",
+            "properties": {
+              "type": { "type": "string", "title": "Addressee Type", "description": "Whether the addressee is a citizen (burger) or a business (bedrijf)", "enum": ["burger", "bedrijf"] },
+              "bsn": { "type": "string", "title": "BSN", "description": "Burger identifier (special category, masked in logs)" },
+              "oin": { "type": "string", "title": "OIN", "description": "Business identifier" },
+              "name": { "type": "string", "title": "Name", "description": "Display name of the addressee" },
+              "messageBoxChannel": { "type": "string", "title": "Message Box Channel", "description": "Delivery channel for berichtenbox dispatch", "enum": ["mijnoverheid", "eherkenning", "print-post"] },
+              "messageBoxConfirmed": { "type": "boolean", "title": "Message Box Confirmed", "description": "Whether the addressee's berichtenbox address has been confirmed", "default": false }
+            }
+          },
+          "decision": {
+            "type": "object",
+            "title": "Decision",
+            "description": "Decision content",
+            "properties": {
+              "kind": { "type": "string", "title": "Decision Sort", "description": "Type of the decision, e.g. toekenning or afwijzing" },
+              "subject": { "type": "string", "title": "Decision Subject", "description": "Subject of the decision" },
+              "size": { "type": "string", "title": "Scope", "description": "Extent or scope of the decision, e.g. number of hours per week" },
+              "effectiveDate": { "type": "string", "title": "Start Date", "description": "Date from which the decision takes effect", "format": "date" },
+              "endDate": { "type": "string", "title": "End Date", "description": "Date on which the decision expires", "format": "date" }
+            }
+          },
+          "mandateGranted": {
+            "type": "object",
+            "title": "Mandate Granted",
+            "description": "Point-in-time mandaat record captured at the akkoord step (ADR design D3)",
+            "properties": {
+              "mandateSchemeId": { "type": "string", "title": "Mandate Regulation ID", "description": "Reference to the mandaatRegeling in effect at the time of approval" },
+              "mandateLevel": { "type": "string", "title": "Mandate Level", "description": "Authorization level used (e.g. consulent, afdelingsmanager)" },
+              "approvedBy": { "type": "string", "title": "Approved By", "description": "Nextcloud UID of the approver" },
+              "approvedDate": { "type": "string", "title": "Approval Date", "description": "Timestamp at which the mandate approval was recorded", "format": "date-time" }
+            }
+          },
+          "signature": {
+            "type": "object",
+            "title": "Signature",
+            "description": "eIDAS-qualified electronic signature metadata; durably retained for future validation",
+            "properties": {
+              "tspProvider": { "type": "string", "title": "TSP Provider", "description": "Name of the Trust Service Provider that issued the signature" },
+              "tspProviderEidasId": { "type": "string", "title": "TSP Provider eIDAS ID", "description": "eIDAS identifier of the TSP provider" },
+              "signatory": { "type": "string", "title": "Signatory", "description": "Nextcloud UID of the person who signed the document" },
+              "signingMoment": { "type": "string", "title": "Signing Timestamp", "description": "Date and time at which the document was signed", "format": "date-time" },
+              "kind": { "type": "string", "title": "Signature Type", "description": "Type of electronic signature, e.g. gekwalificeerde-elektronische-handtekening" },
+              "certificateSerialNumber": { "type": "string", "title": "Certificate Serial Number", "description": "Serial number of the signing certificate" },
+              "validationRapportId": { "type": "string", "title": "Validation Report ID", "description": "Reference to the signature validation report" }
+            }
+          },
+          "dispatch": {
+            "type": "object",
+            "title": "Dispatch",
+            "description": "Berichtenbox delivery record",
+            "properties": {
+              "notificationChannel": { "type": "string", "title": "Dispatch Channel", "description": "Channel used for dispatch, e.g. berichtenbox-mijnoverheid" },
+              "sentOn": { "type": "string", "title": "Sent On", "description": "Timestamp at which the beschikking was sent", "format": "date-time" },
+              "sentBy": { "type": "string", "title": "Sent By", "description": "Actor who sent the beschikking (user id or 'systeem')" },
+              "messageId": { "type": "string", "title": "Message ID", "description": "Berichtenbox message identifier" },
+              "receiptConfirmationOn": { "type": "string", "title": "Receipt Confirmation On", "description": "Timestamp at which receipt was confirmed", "format": "date-time" },
+              "readConfirmationOn": { "type": "string", "title": "Read Confirmation On", "description": "Timestamp at which the message was read by the recipient", "format": "date-time" }
+            }
+          },
+          "archive": {
+            "type": "object",
+            "title": "Archive",
+            "description": "Archival record (TMLO/MDTO) populated when the beschikking is archived via the OpenRegister archival pipeline",
+            "properties": {
+              "archivedOn": { "type": "string", "title": "Archived On", "description": "Timestamp at which the beschikking was archived", "format": "date-time" },
+              "archiveId": { "type": "string", "title": "Archive ID", "description": "Identifier assigned by the archival system" },
+              "tmloMetadata": { "type": "object", "title": "TMLO Metadata", "description": "TMLO-1.2 or MDTO metadata block" },
+              "destructionDate": { "type": "string", "title": "Destruction Date", "description": "Date on which the archived record is scheduled for destruction", "format": "date" }
+            }
+          }
+        }
+      },
+      "stateMachineLog": {
+        "slug": "stateMachineLog",
+        "icon": "History",
+        "version": "1.0.0",
+        "x-schema-org": "schema:Action",
+        "title": "State Machine Log",
+        "description": "Immutable record of a single beschikking state transition, including actor, trigger, and supporting evidence (mandaat reference or TSP rapport).",
+        "type": "object",
+        "required": [
+          "decisionId",
+          "overgang"
+        ],
+        "properties": {
+          "decisionId": {
+            "type": "string",
+            "title": "Decision ID",
+            "description": "The beschikking this transition belongs to",
+            "facetable": true
+          },
+          "overgang": {
+            "type": "object",
+            "title": "Transition",
+            "description": "Transition details",
+            "properties": {
+              "van": { "type": "string", "title": "From Status", "description": "Source status" },
+              "to": { "type": "string", "title": "To Status", "description": "Target status" },
+              "moment": { "type": "string", "title": "Timestamp", "description": "Date and time of the state transition", "format": "date-time" },
+              "actor": { "type": "string", "title": "Actor", "description": "Nextcloud UID or 'systeem'" },
+              "actorType": { "type": "string", "title": "Actor Type", "description": "Whether the actor is a employee or the system", "enum": ["employee", "systeem"] },
+              "trigger": { "type": "string", "title": "Trigger", "description": "Whether the transition was initiated manually or automatically", "enum": ["manual", "automatic"] },
+              "evidenceMaterial": {
+                "type": "object",
+                "title": "Evidence Material",
+                "description": "Supporting evidence for this transition, such as a mandate or signature report",
+                "properties": {
+                  "kind": { "type": "string", "title": "Evidence Type", "description": "Type of evidence, e.g. mandaat or tsp-rapport" },
+                  "rapportId": { "type": "string", "title": "Report ID", "description": "Reference to the evidence report" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "bezwaarTrigger": {
+        "slug": "bezwaarTrigger",
+        "icon": "Alarm",
+        "version": "1.0.0",
+        "x-schema-org": "schema:Schedule",
+        "title": "Bezwaar Trigger",
+        "description": "Scheduling record created when a beschikking is verzonden. Drives the daily BezwaarTermijnJob: when the bezwaartermijn lapses without a bezwaarschrift, archival is triggered.",
+        "type": "object",
+        "required": [
+          "decisionId",
+          "objectionTermEndDate"
+        ],
+        "properties": {
+          "decisionId": {
+            "type": "string",
+            "title": "Decision ID",
+            "description": "The beschikking this trigger belongs to",
+            "facetable": true
+          },
+          "announcementDate": { "type": "string", "title": "Announcement Date", "description": "Date the beschikking was publicly announced", "format": "date" },
+          "objectionTermEndDate": { "type": "string", "title": "Objection Period End Date", "description": "End date of the 6-week bezwaartermijn", "format": "date" },
+          "reminderDate": { "type": "string", "title": "Reminder Date", "description": "Reminder date, one week before the bezwaarTermijnEindDatum", "format": "date" },
+          "objectionReceived": {
+            "type": "boolean",
+            "title": "Objection Received",
+            "default": false,
+            "description": "Whether a bezwaarschrift has been received",
+            "facetable": true
+          },
+          "objectionCaseId": { "type": "string", "title": "Objection Case ID", "description": "Linked bezwaar case, if any" },
+          "archiveTriggerActive": {
+            "type": "boolean",
+            "title": "Archive Trigger Active",
+            "default": true,
+            "description": "Whether the archival trigger is still active",
+            "facetable": true
+          },
+          "archiveDate": {
+            "type": "string",
+            "title": "Archive Date",
+            "format": "date",
+            "description": "Date on which archival becomes due"
+          }
+        }
+      },
+      "mandateArrangement": {
+        "slug": "mandateArrangement",
+        "icon": "AccountTieOutline",
+        "version": "1.0.0",
+        "x-schema-org": "schema:Legislation",
+        "title": "Mandaatregeling",
+        "description": "Defines which approval levels (niveau) may sign which decision types up to which bedrag (Awb 10:3-10:12). Point-in-time: the regeling-id + version is captured on the beschikking at akkoord.",
+        "type": "object",
+        "required": [
+          "name",
+          "mandateGroups"
+        ],
+        "properties": {
+          "name": { "type": "string", "title": "Name", "description": "Human-readable name of the mandate regulation", "maxLength": 255 },
+          "grantedBy": { "type": "string", "title": "Granted By", "description": "Body that granted the mandate, e.g. college-bw" },
+          "grantedDate": { "type": "string", "title": "Grant Date", "description": "Date on which the mandate was granted", "format": "date" },
+          "withdrawalDate": { "type": "string", "title": "Revocation Date", "description": "Date on which the mandate was revoked, if applicable", "format": "date" },
+          "subMandateAllowed": { "type": "boolean", "title": "Sub-mandate Permitted", "description": "Whether delegation to a lower level is permitted", "default": false },
+          "mandateGroups": {
+            "type": "array",
+            "title": "Mandate Groups",
+            "description": "Authorization groups within this regeling",
+            "items": {
+              "type": "object",
+              "properties": {
+                "level": { "type": "string", "title": "Level", "description": "Approval level (e.g. consulent, afdelingsmanager, directeur)" },
+                "to_amount": {
+                  "type": [
+                    "number",
+                    "null"
+                  ], "title": "Up To Amount", "description": "Upper bedrag limit; null means unlimited" },
+                "caseTypes": { "type": "array", "title": "Case Types", "description": "Case types for which this authorization level applies", "items": { "type": "string" } },
+                "decisionTypes": { "type": "array", "title": "Decision Types", "description": "Decision types for which this authorization level applies", "items": { "type": "string" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "objects": [
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "mandateArrangement",
+          "slug": "mr-2024-007-wmo"
+        },
+        "name": "Mandaatregeling WMO toekenningen",
+        "grantedBy": "college-bw",
+        "grantedDate": "2024-03-15",
+        "withdrawalDate": null,
+        "subMandateAllowed": true,
+        "mandateGroups": [
+          { "level": "consulent", "to_amount": 5000, "caseTypes": ["wmo-melding"], "decisionTypes": ["toekenning"] },
+          { "level": "afdelingsmanager", "to_amount": 25000, "caseTypes": ["wmo-melding"], "decisionTypes": ["toekenning", "afwijzing"] },
+          { "level": "directeur", "to_amount": null, "caseTypes": ["wmo-melding"], "decisionTypes": ["toekenning", "afwijzing", "wijziging"] }
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "beschikking",
+          "slug": "besch-2026-04832"
+        },
+        "caseId": "zaak-2026-wmo-04832",
+        "caseType": "wmo-melding",
+        "decisionType": "toekenning",
+        "reference": "Z/2026/04832/B01",
+        "templateId": "tpl-wmo-toekenning-huishoudelijke-hulp-v4",
+        "draftVersion": 1,
+        "currentStatus": "archived",
+        "announcementDate": "2026-04-02",
+        "objectionTermEndDate": "2026-05-14",
+        "reminderDate": "2026-05-07",
+        "addressee": {
+          "type": "burger",
+          "bsn": "123456789",
+          "name": "M.A. Janssen-de Vries",
+          "messageBoxChannel": "mijnoverheid",
+          "messageBoxConfirmed": true
+        },
+        "decision": {
+          "kind": "toekenning",
+          "subject": "huishoudelijke ondersteuning",
+          "size": "4 uur per week",
+          "effectiveDate": "2026-04-01",
+          "endDate": "2027-04-01"
+        },
+        "rationale": "Op basis van het onderzoek van 28 maart 2026 is vastgesteld dat client recht heeft op huishoudelijke ondersteuning.",
+        "mandateGranted": {
+          "mandateSchemeId": "mr-2024-007-wmo",
+          "mandateLevel": "afdelingsmanager",
+          "approvedBy": "afdelingsmanager-wmo-15",
+          "approvedDate": "2026-04-01T14:22:00+02:00"
+        },
+        "signature": {
+          "tspProvider": "kpn-gekwalificeerde-handtekening",
+          "signatory": "afdelingsmanager-wmo-15",
+          "signingMoment": "2026-04-01T14:25:33+02:00",
+          "kind": "gekwalificeerde-elektronische-handtekening",
+          "validationRapportId": "val-2026-99231"
+        },
+        "dispatch": {
+          "notificationChannel": "berichtenbox-mijnoverheid",
+          "sentOn": "2026-04-02T09:00:00+02:00",
+          "sentBy": "systeem",
+          "messageId": "MO-2026-04-02-771234"
+        },
+        "archive": {
+          "archivedOn": "2026-05-15T06:30:00+02:00",
+          "archiveId": "openregister-2026-99231",
+          "destructionDate": "2041-04-02"
+        }
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "beschikking",
+          "slug": "besch-2026-00156"
+        },
+        "caseId": "zaak-2026-omg-00156",
+        "caseType": "omgevingsvergunning",
+        "decisionType": "toekenning",
+        "reference": "Z/2026/00156/B01",
+        "templateId": "tpl-omgevingsvergunning-reguliere-procedure-v3",
+        "draftVersion": 1,
+        "currentStatus": "signed",
+        "addressee": {
+          "type": "bedrijf",
+          "oin": "00000001234567890000",
+          "name": "Bouwbedrijf de Vries B.V.",
+          "messageBoxChannel": "eherkenning",
+          "messageBoxConfirmed": true
+        },
+        "decision": {
+          "kind": "toekenning",
+          "subject": "bouwactiviteiten Kerkstraat 12",
+          "size": "n.v.t.",
+          "effectiveDate": "2026-05-01"
+        },
+        "rationale": "De aanvrager heeft voldaan aan de eisen van de Omgevingswet.",
+        "signature": {
+          "tspProvider": "kpn-gekwalificeerde-handtekening",
+          "signatory": "afdelingsmanager-bouw-23",
+          "signingMoment": "2026-04-22T10:15:42+02:00",
+          "validationRapportId": "val-2026-99405"
+        }
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "beschikking",
+          "slug": "besch-2026-00489"
+        },
+        "caseId": "zaak-2026-sub-00489",
+        "caseType": "subsidieaanvraag",
+        "decisionType": "toekenning",
+        "reference": "Z/2026/00489/B01",
+        "templateId": "tpl-subsidie-v2",
+        "draftVersion": 1,
+        "currentStatus": "draft",
+        "addressee": {
+          "type": "burger",
+          "bsn": "987654321",
+          "name": "J. Pieterse",
+          "messageBoxChannel": "mijnoverheid",
+          "messageBoxConfirmed": false
+        },
+        "decision": {
+          "kind": "toekenning",
+          "subject": "subsidie culturele activiteiten",
+          "size": "2500",
+          "effectiveDate": "2026-06-01",
+          "endDate": "2026-12-31"
+        }
+      }
+    ]
+  }
+}

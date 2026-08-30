@@ -1,0 +1,7 @@
+{
+  "schema_version": 2,
+  "spec_slug": "mandaat-matrix-05-case-decision-integration",
+  "app": "procest",
+  "kind": "code",
+  "depends_on": ["mandaat-matrix-04-decidesk-import"]
+}

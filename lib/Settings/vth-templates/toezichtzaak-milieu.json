@@ -1,0 +1,187 @@
+{
+  "_format": "dossiq-workflow-v1",
+  "title": "Toezichtzaak Milieu",
+  "description": "Workflow voor milieu-inspectie — periodiek of incidenteel toezicht op milieuactiviteiten.",
+  "version": 1,
+  "steps": [
+    {
+      "id": "step-gepland",
+      "label": "Gepland",
+      "status": "Gepland",
+      "isInitial": true,
+      "isFinal": false,
+      "assigneeRole": "Inspecteur",
+      "description": "Inspectie gepland",
+      "checklist": [],
+      "actions": []
+    },
+    {
+      "id": "step-inspectie",
+      "label": "Inspectie",
+      "status": "Inspectie",
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Inspecteur",
+      "description": "Inspectie wordt uitgevoerd",
+      "checklist": [
+        "Inspectiechecklist ingevuld",
+        "Inspectierapport opgesteld"
+      ],
+      "actions": []
+    },
+    {
+      "id": "step-rapport",
+      "label": "Rapport",
+      "status": "Rapport",
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Inspecteur",
+      "description": "Rapportage",
+      "checklist": [],
+      "actions": []
+    },
+    {
+      "id": "step-opvolging",
+      "label": "Opvolging",
+      "status": "Opvolging",
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Inspecteur",
+      "description": "Opvolging afwijkingen",
+      "checklist": [
+        "Hercontrole uitgevoerd"
+      ],
+      "actions": []
+    },
+    {
+      "id": "step-afgehandeld",
+      "label": "Afgehandeld",
+      "status": "Handled",
+      "isInitial": false,
+      "isFinal": true,
+      "assigneeRole": null,
+      "description": "Afgehandeld",
+      "checklist": [],
+      "actions": []
+    }
+  ],
+  "transitions": [
+    {
+      "id": "tr-1",
+      "label": "Start inspectie",
+      "fromStatus": "Gepland",
+      "toStatus": "Inspectie",
+      "allowedRoles": [
+        "Inspecteur"
+      ],
+      "guards": [],
+      "actions": []
+    },
+    {
+      "id": "tr-2",
+      "label": "Rapport opstellen",
+      "fromStatus": "Inspectie",
+      "toStatus": "Rapport",
+      "allowedRoles": [
+        "Inspecteur"
+      ],
+      "guards": [
+        {
+          "type": "checklist",
+          "config": {
+            "message": "Checklist moet zijn ingevuld"
+          }
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "tr-2b",
+      "label": "Herinspectie",
+      "fromStatus": "Inspectie",
+      "toStatus": "Inspectie",
+      "allowedRoles": [
+        "Inspecteur"
+      ],
+      "guards": [],
+      "actions": []
+    },
+    {
+      "id": "tr-3",
+      "label": "Opvolging vereist",
+      "fromStatus": "Rapport",
+      "toStatus": "Opvolging",
+      "allowedRoles": [
+        "Inspecteur"
+      ],
+      "guards": [],
+      "actions": []
+    },
+    {
+      "id": "tr-4",
+      "label": "Zaak afsluiten",
+      "fromStatus": "Rapport",
+      "toStatus": "Afgehandeld",
+      "allowedRoles": [
+        "Inspecteur"
+      ],
+      "guards": [],
+      "actions": []
+    },
+    {
+      "id": "tr-5",
+      "label": "Opvolging afgerond",
+      "fromStatus": "Opvolging",
+      "toStatus": "Afgehandeld",
+      "allowedRoles": [
+        "Inspecteur"
+      ],
+      "guards": [
+        {
+          "type": "checklist",
+          "config": {
+            "message": "Hercontrole moet zijn uitgevoerd"
+          }
+        }
+      ],
+      "actions": []
+    }
+  ],
+  "nodePositions": {
+    "step-gepland": {
+      "x": 100,
+      "y": 200
+    },
+    "step-inspectie": {
+      "x": 350,
+      "y": 200
+    },
+    "step-rapport": {
+      "x": 600,
+      "y": 200
+    },
+    "step-opvolging": {
+      "x": 600,
+      "y": 50
+    },
+    "step-afgehandeld": {
+      "x": 850,
+      "y": 200
+    }
+  },
+  "manifest": {
+    "statusTypes": [
+      "Gepland",
+      "Inspectie",
+      "Rapport",
+      "Opvolging",
+      "Afgehandeld"
+    ],
+    "roleTypes": [
+      "Inspecteur",
+      "Contactpersoon",
+      "Inrichtinghouder"
+    ],
+    "documentTypes": []
+  }
+}

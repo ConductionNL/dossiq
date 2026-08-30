@@ -1,0 +1,124 @@
+{
+  "applied": [
+    {
+      "change": "role-based-step-routing",
+      "appliedAt": "2026-05-11",
+      "tasks": ["T01", "T02", "T03", "T04", "T05", "T07"],
+      "deferred": [
+        {"task": "T06", "reason": "Admin UI for rule editor — manifest-first apps surface routing rule via OpenRegister auto-form; Vue-side specimen tracked separately"},
+        {"task": "V01", "reason": "Unit tests scope follow-up (strict watchdog: lint + jq only)"},
+        {"task": "V02", "reason": "Integration test scope follow-up"},
+        {"task": "V03", "reason": "Newman collection scope follow-up"},
+        {"task": "V04", "reason": "Performance benchmark scope follow-up"}
+      ],
+      "services": [
+        "OCA\\Dossiq\\Service\\RoleResolverService",
+        "OCA\\Dossiq\\Service\\Routing\\StrategyRegistry",
+        "OCA\\Dossiq\\Service\\Routing\\Strategy\\SingleRoleStrategy",
+        "OCA\\Dossiq\\Service\\Routing\\Strategy\\OrSetStrategy",
+        "OCA\\Dossiq\\Service\\Routing\\Strategy\\HierarchicalStrategy",
+        "OCA\\Dossiq\\Service\\Routing\\Strategy\\RoundRobinStrategy",
+        "OCA\\Dossiq\\Service\\Routing\\Strategy\\LeastLoadedStrategy"
+      ],
+      "listeners": ["OCA\\Dossiq\\Listener\\RoleMutationListener"],
+      "controllers": ["OCA\\Dossiq\\Controller\\RoutingController"],
+      "endpoints": [{"verb": "POST", "url": "/api/cases/{id}/reroute", "name": "routing#reroute"}],
+      "schemaChanges": {
+        "role": ["delegate", "delegateFrom", "delegateUntil"],
+        "workflowTemplate": ["routingRule documented inline on steps/transitions JSON description"]
+      }
+    },
+    {
+      "change": "parafering-audit-trail",
+      "appliedAt": "2026-05-11",
+      "tasks": ["T01", "T02", "T03", "T04", "T05", "T06", "T07"],
+      "deferred": [
+        {"task": "T08", "reason": "i18n keys deferred per strict watchdog (no i18n)"},
+        {"task": "V01", "reason": "Pre-commit verification follow-up (strict watchdog: lint + jq only)"},
+        {"task": "V02", "reason": "Static exception-message grep follow-up"},
+        {"task": "V03", "reason": "Manual curl verification follow-up"},
+        {"task": "V04", "reason": "End-to-end transition coverage follow-up"},
+        {"task": "V05", "reason": "Export endpoint integration test follow-up"}
+      ],
+      "schemas": ["paraferingAuditEntry"],
+      "services": [
+        "OCA\\Dossiq\\Service\\Parafering\\AuditTrailService"
+      ],
+      "events": ["OCA\\Dossiq\\Event\\ParafeerTransitionEvent"],
+      "listeners": [
+        "OCA\\Dossiq\\Listener\\ParaferingAuditListener",
+        "OCA\\Dossiq\\Validator\\ParaferingAuditAppendOnlyValidator"
+      ],
+      "controllers": ["OCA\\Dossiq\\Controller\\ParaferingAuditExportController"],
+      "endpoints": [
+        {"verb": "GET", "url": "/api/voorstellen/{id}/audit-trail/export", "name": "parafering_audit_export#export"}
+      ],
+      "manifestPages": [
+        {"slug": "parafering-audit-trail", "type": "index", "path": "/voorstellen/:voorstelId/audit-trail"}
+      ],
+      "registryChanges": {
+        "configKeys": ["parafering_audit_entry_schema"],
+        "slugToConfigKey": {"paraferingAuditEntry": "parafering_audit_entry_schema"}
+      }
+    },
+    {
+      "change": "bezwaar-advisory-committee",
+      "appliedAt": "2026-05-11",
+      "tasks": ["T01", "T02", "T03", "T04", "T05", "T06", "T07"],
+      "deferred": [
+        {"task": "V01", "reason": "openspec validate not part of strict watchdog (php -l + jq only); deferred to opsx-verify"},
+        {"task": "V02", "reason": "deltaCount jq verification covered by openspec validate; deferred"},
+        {"task": "V03", "reason": "Scenario coverage check covered by openspec validate strict; deferred"}
+      ],
+      "schemas": [
+        "bezwaaradviescommissie",
+        "bacAdviceRequest"
+      ],
+      "manifestPages": [
+        "BezwaarCommittees",
+        "BezwaarCommitteeDetail",
+        "BezwaarAdviceRequests",
+        "BezwaarAdviceRequestDetail"
+      ],
+      "menuEntries": [
+        "BezwaarAdviceRequests",
+        "BezwaarCommitteesMenu"
+      ],
+      "services": [
+        "OCA\\Dossiq\\Service\\Bezwaar\\AdvisoryCommitteeService"
+      ],
+      "listeners": [
+        "OCA\\Dossiq\\Listener\\BezwaarAdviceRequestedListener"
+      ],
+      "controllers": [],
+      "endpoints": [],
+      "configKeys": [
+        "bezwaar_schema",
+        "bezwaaradviescommissie_schema",
+        "bac_advice_request_schema",
+        "bac_default_committee"
+      ],
+      "notes": "Manifest-first: CRUD via OpenRegister auto-forms. Independence check (Awb 7:13(3)) + advice lifecycle FSM live in AdvisoryCommitteeService. Listener auto-assigns default committee when bezwaar.status='Hoorzitting gepland'. Builds on bezwaar-lifecycle (bezwaar schema); council-deviation hook exposed via recordCouncilDeviation() for besluit finalisation to call."
+    },
+    {
+      "change": "bezwaar-hearing",
+      "appliedAt": "2026-05-11",
+      "tasks": ["T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09"],
+      "deferred": [
+        {"task": "V01", "reason": "openspec validate not part of strict watchdog (php -l + jq only); deferred to opsx-verify"},
+        {"task": "V02", "reason": "deltaCount jq verification covered by openspec validate; deferred"},
+        {"task": "V03", "reason": "Scenario coverage check covered by openspec validate strict; deferred"},
+        {"task": "V04", "reason": "git diff path scope check covered by PR review; deferred"}
+      ],
+      "schemas": ["hearingSession"],
+      "manifestPages": ["BezwaarHearings", "BezwaarHearingDetail"],
+      "menuEntries": ["BezwaarHearings"],
+      "services": ["OCA\\Dossiq\\Service\\Bezwaar\\HearingService"],
+      "listeners": ["OCA\\Dossiq\\Listener\\BezwaarHearingScheduledListener"],
+      "controllers": [],
+      "endpoints": [],
+      "configKeys": ["hearing_session_schema", "bezwaar_schema", "register"],
+      "notes": "Manifest-first: hearingSession CRUD via OpenRegister auto-forms; BezwaarHearings index + BezwaarHearingDetail with sidebar tabs Overview/Invitations/Attendees/Minutes/Audit. Updated hearingSession schema (v1.1.0) per REQ-BH-1: added inspectionAvailableFrom/inspectionDeadline/attendance/audioRecording/recordingConsent/followUpQuestions/attendanceFrozenAt/auditTrail; required list now matches spec; status enum extended with dossier_beschikbaar; members and invitees converted from JSON-string to native arrays. HearingService owns schedule()/waive()/recordAttendance() (1h grace then correctionReason mandatory)/addMinutes() with audio consent gate. Listener BezwaarHearingScheduledListener seeds a default hearing when bezwaar.status='Hoorzitting gepland' and no hearing exists. Audit tags catalogued via class constants (awb-art-7:2|7:3|7:4|7:6|7:7|7:13, avg-art-6). NO bespoke CRUD controller."
+    }
+  ]
+}

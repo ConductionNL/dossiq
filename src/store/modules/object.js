@@ -1,5 +1,5 @@
 /**
- * Object store for Procest — powered by @conduction/nextcloud-vue.
+ * Object store for Dossiq — powered by @conduction/nextcloud-vue.
  *
  * Uses createObjectStore('object') to maintain the same Pinia store ID
  * that all existing views reference. The full implementation (CRUD,
@@ -7,12 +7,13 @@
  *
  * Plugins add sub-resource support for files, audit trails, and relations.
  */
-import { createObjectStore, filesPlugin, auditTrailsPlugin, relationsPlugin } from '@conduction/nextcloud-vue'
+import {
+	auditTrailsPlugin,
+	createObjectStore,
+	filesPlugin,
+	relationsPlugin,
+} from '@conduction/nextcloud-vue'
 
 export const useObjectStore = createObjectStore('object', {
-	plugins: [
-		filesPlugin(),
-		auditTrailsPlugin(),
-		relationsPlugin(),
-	],
+	plugins: [filesPlugin(), auditTrailsPlugin(), relationsPlugin()],
 })

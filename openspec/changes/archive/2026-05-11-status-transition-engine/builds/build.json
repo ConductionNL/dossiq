@@ -1,0 +1,6 @@
+{
+  "phase": "apply",
+  "timestamp": "2026-05-11T00:00:00+00:00",
+  "scope": "engine + manifest pages",
+  "notes": "Applies status-transition-engine: adds StatusTransitionService engine (PHP), WorkflowTemplateLoader, GuardRegistry with 4 built-in guards (checklist, requiredField, requiredDocument, roleGuard), ActionHandlerRegistry + SideEffectDispatcher with 6 built-in handlers (sendEmail, createTask, createSubCase, webhook, setField, notify), GuardFailedException, REST controller with 4 endpoints, and manifest pages for admin statusRecord browsing/detail. Extends statusRecord schema with transitionLabel, fromStatus, evaluatedGuards, dispatchedActions, noWorkflowTemplate (v1.1.0). Legacy ZgwZrcRulesService::rulesStatussenCreate annotated with engine pointer; full backfill of ZrcController::handleEindstatusEffect deferred to a follow-up to preserve the live ZGW request lifecycle. Strict watchdog (php -l + jq only)."
+}

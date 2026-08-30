@@ -1,0 +1,226 @@
+[
+  {
+    "slug": "visual-workflow-editor",
+    "title": "Visual workflow editor",
+    "title_nl": "Visuele workflow-editor",
+    "summary": "Functional admins change a process on a canvas, no developer needed.",
+    "summary_nl": "Functioneel beheerders passen een proces aan op een canvas, zonder ontwikkelaar.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/visual-workflow-editor/spec.md"
+  },
+  {
+    "slug": "case-types",
+    "title": "Configurable case types",
+    "title_nl": "Configureerbare zaaktypen",
+    "summary": "You model any zaaktype with statuses, deadlines and documents, without code.",
+    "summary_nl": "Je modelleert elk zaaktype met statussen, termijnen en documenten, zonder code.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/case-types/spec.md"
+  },
+  {
+    "slug": "workflow-definition-engine",
+    "title": "Workflow engine with guards and actions",
+    "title_nl": "Workflow-engine met voorwaarden en acties",
+    "summary": "You automate transitions with checks, e-mails, tasks and webhooks.",
+    "summary_nl": "Je automatiseert overgangen met controles, e-mails, taken en webhooks.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/workflow-definition-engine/spec.md"
+  },
+  {
+    "slug": "termijn-binding",
+    "title": "Termijnbewaking",
+    "title_nl": "Termijnbewaking",
+    "summary": "You track statutory deadlines daily, and pause, extend or escalate on time.",
+    "summary_nl": "Je bewaakt wettelijke termijnen dagelijks, en pauzeert, verlengt of escaleert op tijd.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/termijn-binding/spec.md"
+  },
+  {
+    "slug": "dwangsom-calculation",
+    "title": "Dwangsom and ingebrekestelling",
+    "title_nl": "Dwangsom en ingebrekestelling",
+    "summary": "You calculate the dwangsom automatically when a decision runs late.",
+    "summary_nl": "Je berekent de dwangsom automatisch zodra een besluit te laat is.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/dwangsom-calculation/spec.md"
+  },
+  {
+    "slug": "bezwaar-beroep-workflow",
+    "title": "Bezwaar en beroep",
+    "title_nl": "Bezwaar en beroep",
+    "summary": "You handle objections with committee, hearings, decisions and dossier export.",
+    "summary_nl": "Je behandelt bezwaren met commissie, hoorzittingen, besluiten en dossier-export.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/bezwaar-beroep-workflow/spec.md"
+  },
+  {
+    "slug": "vth-module",
+    "title": "VTH met LHS",
+    "title_nl": "VTH met LHS",
+    "summary": "You run permits, supervision and enforcement with LHS classification and beschikkingen.",
+    "summary_nl": "Je voert vergunningen, toezicht en handhaving met LHS-classificatie en beschikkingen.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/vth-module/spec.md"
+  },
+  {
+    "slug": "leges-heffingen",
+    "title": "Leges en heffingen",
+    "title_nl": "Leges en heffingen",
+    "summary": "You calculate fees from your verordening and bill them through Shillinq.",
+    "summary_nl": "Je berekent leges uit je verordening en factureert ze via Shillinq.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/leges-heffingen/spec.md"
+  },
+  {
+    "slug": "parafeerroute-engine",
+    "title": "Parafering en mandaat",
+    "title_nl": "Parafering en mandaat",
+    "summary": "You route sign-offs along the mandate matrix with a hash-chained audit trail.",
+    "summary_nl": "Je routeert paraferingen langs de mandaatmatrix met een hash-geketende audittrail.",
+    "status": "stable",
+    "providedBy": "openregister",
+    "docsUrl": "openspec/specs/parafeerroute-engine/spec.md"
+  },
+  {
+    "slug": "archief-edepot-handover",
+    "title": "Archivering naar e-Depot",
+    "title_nl": "Archivering naar e-Depot",
+    "summary": "You hand over cases to the e-Depot with MDTO metadata and proof of transfer.",
+    "summary_nl": "Je draagt zaken over aan het e-Depot met MDTO-metadata en bewijs van overdracht.",
+    "status": "beta",
+    "reason": "e-Depot submission runs on a mock/log adapter (LogEDepotSubmissionAdapter); nothing is transmitted to a real e-Depot yet",
+    "providedBy": "openregister",
+    "docsUrl": "openspec/specs/archief-edepot-handover/spec.md"
+  },
+  {
+    "slug": "zgw-api-mapping",
+    "title": "ZGW API-koppeling",
+    "title_nl": "ZGW API-koppeling",
+    "summary": "You connect to Zaken, Catalogi, Besluiten and Documenten APIs out of the box.",
+    "summary_nl": "Je koppelt direct aan de Zaken-, Catalogi-, Besluiten- en Documenten-API's.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/zgw-api-mapping/spec.md"
+  },
+  {
+    "slug": "doorlooptijd-dashboard",
+    "title": "Doorlooptijd-dashboards",
+    "title_nl": "Doorlooptijd-dashboards",
+    "summary": "You see throughput times and bottlenecks, and export KPI reports.",
+    "summary_nl": "Je ziet doorlooptijden en knelpunten, en exporteert KPI-rapporten.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/doorlooptijd-dashboard/spec.md"
+  },
+  {
+    "slug": "multi-tenancy",
+    "title": "Multi-tenant SaaS",
+    "title_nl": "Multi-tenant SaaS",
+    "summary": "You host many gemeenten apart, with quota, billing and onboarding per tenant.",
+    "summary_nl": "Je host veel gemeenten apart, met quota, facturatie en onboarding per tenant.",
+    "status": "beta",
+    "reason": "tenant stack is app-local; not yet on the OpenRegister boundary",
+    "docsUrl": "openspec/specs/multi-tenancy/spec.md"
+  },
+  {
+    "slug": "kcc-werkplek-zaaksysteem-bridge",
+    "title": "KCC-werkplek",
+    "title_nl": "KCC-werkplek",
+    "summary": "Medewerkers log contactmomenten, route calls and read cases from het klantcontactcentrum.",
+    "summary_nl": "Medewerkers leggen contactmomenten vast, routeren gesprekken en lezen zaken vanuit het klantcontactcentrum.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md"
+  },
+  {
+    "slug": "zaakportaal-mijngemeente",
+    "title": "Burgerportaal Mijn Zaken",
+    "title_nl": "Burgerportaal Mijn Zaken",
+    "summary": "Citizens follow their case status and get Berichtenbox notifications.",
+    "summary_nl": "Inwoners volgen hun zaakstatus en krijgen Berichtenbox-meldingen.",
+    "status": "beta",
+    "docsUrl": "openspec/specs/zaakportaal-mijngemeente/spec.md"
+  },
+  {
+    "slug": "stuf-zkn-outbound",
+    "title": "StUF-ZKN-koppeling",
+    "title_nl": "StUF-ZKN-koppeling",
+    "summary": "You exchange zaak-messages with systems that still speak StUF.",
+    "summary_nl": "Je wisselt zaakberichten uit met systemen die nog StUF spreken.",
+    "status": "beta",
+    "docsUrl": "openspec/specs/stuf-zkn-outbound/spec.md"
+  },
+  {
+    "slug": "dso-omgevingsloket",
+    "title": "DSO / Omgevingsloket",
+    "title_nl": "DSO / Omgevingsloket",
+    "summary": "You receive Omgevingswet intakes and track their deadlines.",
+    "summary_nl": "Je ontvangt Omgevingswet-aanvragen en bewaakt hun termijnen.",
+    "status": "beta",
+    "reason": "Config-ready seam (integration.dso.baseUrl + dso_lv_auth_token, warn-and-empty when unset); pre-productie (service.pre.omgevingswet.overheid.nl) needs the DSO aansluittraject + PKIoverheid cert — a customer-side track dossiq supports but cannot self-start.",
+    "docsUrl": "openspec/specs/dso-omgevingsloket/spec.md"
+  },
+  {
+    "slug": "case-map-overview",
+    "title": "Kaartweergave met PDOK",
+    "title_nl": "Kaartweergave met PDOK",
+    "summary": "You plot location-bound cases on a map with PDOK and WMS/WFS layers.",
+    "summary_nl": "Je plot locatiegebonden zaken op een kaart met PDOK en WMS/WFS-lagen.",
+    "status": "beta",
+    "docsUrl": "openspec/specs/case-map-overview/spec.md"
+  },
+  {
+    "slug": "appointment-booking",
+    "title": "Afspraken maken",
+    "title_nl": "Afspraken maken",
+    "summary": "Citizens book an appointment through a public link.",
+    "summary_nl": "Inwoners maken een afspraak via een openbare link.",
+    "status": "beta",
+    "docsUrl": "openspec/specs/appointment-booking/spec.md"
+  },
+  {
+    "slug": "ai-assistance",
+    "title": "AI-assistentie",
+    "title_nl": "AI-assistentie",
+    "summary": "You classify, summarize and route documents with your own AI model.",
+    "summary_nl": "Je classificeert, vat samen en routeert documenten met je eigen AI-model.",
+    "status": "beta",
+    "providedBy": "openregister",
+    "docsUrl": "openspec/specs/ai-assistance/spec.md"
+  },
+  {
+    "slug": "dossiq-sociaal-domein-wmo",
+    "title": "Sociaal domein (Wmo, Jeugdwet, Participatiewet)",
+    "title_nl": "Sociaal domein (Wmo, Jeugdwet, Participatiewet)",
+    "summary": "You handle social-domain cases on a shared data model.",
+    "summary_nl": "Je behandelt sociaal-domeinzaken op een gedeeld datamodel.",
+    "status": "soon",
+    "docsUrl": "openspec/specs/dossiq-sociaal-domein-wmo/spec.md"
+  },
+  {
+    "slug": "digid-eherkenning",
+    "title": "DigiD en eHerkenning",
+    "title_nl": "DigiD en eHerkenning",
+    "summary": "Citizens and companies sign in with DigiD and eHerkenning.",
+    "summary_nl": "Inwoners en bedrijven loggen in met DigiD en eHerkenning.",
+    "status": "beta",
+    "reason": "Local login SIMULATOR only (maykinmedia pattern, no real SAML); capped at beta until validated against Logius preproductie with a PKIoverheid certificate. Default tier is log (no external call)."
+  },
+  {
+    "slug": "brp-integration",
+    "title": "BRP-koppeling (Haal Centraal)",
+    "title_nl": "BRP-koppeling (Haal Centraal)",
+    "summary": "You resolve a BSN to a person via the BRP Personen-API.",
+    "summary_nl": "Je zoekt een BSN op tot een persoon via de BRP Personen-API.",
+    "status": "beta",
+    "reason": "Live HaalCentraalBrpAdapter selected by config; contract-tested offline against the ghcr.io/brp-api/personen-mock koppelvlak. Stable pending the proefomgeving X-API-KEY end-to-end. Default tier is log (no external call).",
+    "docsUrl": "docs/admin/integrations.md"
+  },
+  {
+    "slug": "kvk-integration",
+    "title": "KvK-koppeling (Handelsregister)",
+    "title_nl": "KvK-koppeling (Handelsregister)",
+    "summary": "You resolve a KvK number to a company via the Handelsregister Zoeken API.",
+    "summary_nl": "Je zoekt een KvK-nummer op tot een bedrijf via de Handelsregister Zoeken-API.",
+    "status": "beta",
+    "reason": "Live KvkApiAdapter selected by config against api.kvk.nl/test (public test key); contract-tested against the pinned fictitious companies. Stable pending a production KvK contract. Default tier is log (no external call).",
+    "docsUrl": "docs/admin/integrations.md"
+  }
+]

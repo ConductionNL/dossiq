@@ -1,18 +1,21 @@
 <template>
 	<div>
 		<CnIndexPage
-			:title="t('procest', 'Case Types')"
-			:description="t('procest', 'Configure case types')"
+			:title="t('dossiq', 'Case Types')"
+			:description="t('dossiq', 'Configure case types')"
 			:schema="schema"
 			:objects="caseTypes"
 			:loading="loading"
 			:selectable="true"
 			@add="$emit('create')"
 			@refresh="fetchCaseTypes"
-			@row-click="selectCaseType">
+			@rowClick="selectCaseType">
 			<template #column-title="{ row }">
 				<span class="ct-title">
-					<StarIcon v-if="isDefault(row.id)" :size="16" class="default-star" />
+					<StarIcon
+						v-if="isDefault(row.id)"
+						:size="16"
+						class="default-star" />
 					{{ row.title || '\u2014' }}
 				</span>
 			</template>
@@ -21,7 +24,9 @@
 				<span
 					class="ct-badge"
 					:class="row.isDraft ? 'ct-badge--draft' : 'ct-badge--published'">
-					{{ row.isDraft ? t('procest', 'Draft') : t('procest', 'Published') }}
+					{{
+						row.isDraft ? t('dossiq', 'Draft') : t('dossiq', 'Published')
+					}}
 				</span>
 			</template>
 
@@ -40,7 +45,7 @@
 					<NcButton
 						v-if="!row.isDraft"
 						type="tertiary"
-						:title="t('procest', 'Set as default')"
+						:title="t('dossiq', 'Set as default')"
 						@click="setDefault(row)">
 						<template #icon>
 							<StarIcon :size="20" />
@@ -48,7 +53,19 @@
 					</NcButton>
 					<NcButton
 						type="tertiary"
-						:title="t('procest', 'Delete')"
+						:disabled="duplicating === row.id"
+						:title="t('dossiq', 'Duplicate')"
+						@click="duplicate(row)">
+						<template #icon>
+							<NcLoadingIcon
+								v-if="duplicating === row.id"
+								:size="20" />
+							<ContentDuplicateIcon v-else :size="20" />
+						</template>
+					</NcButton>
+					<NcButton
+						type="tertiary"
+						:title="t('dossiq', 'Delete')"
 						@click="confirmDelete(row)">
 						<template #icon>
 							<DeleteIcon :size="20" />
@@ -65,9 +82,13 @@
 </template>
 
 <script>
-import StarIcon from 'vue-material-design-icons/Star.vue'
-import DeleteIcon from 'vue-material-design-icons/Delete.vue'
 import { CnIndexPage } from '@conduction/nextcloud-vue'
+import axios from '@nextcloud/axios'
+import { generateUrl } from '@nextcloud/router'
+import { NcLoadingIcon } from '@nextcloud/vue'
+import ContentDuplicateIcon from 'vue-material-design-icons/ContentDuplicate.vue'
+import DeleteIcon from 'vue-material-design-icons/Delete.vue'
+import StarIcon from 'vue-material-design-icons/Star.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { useSettingsStore } from '../../store/modules/settings.js'
 import { formatDuration } from '../../utils/durationHelpers.js'
@@ -77,37 +98,55 @@ export default {
 	components: {
 		StarIcon,
 		DeleteIcon,
+		ContentDuplicateIcon,
+		NcLoadingIcon,
 		CnIndexPage,
 	},
+
 	data() {
 		return {
 			statusTypeCounts: {},
 			error: '',
 			schema: null,
+			duplicating: null,
 		}
 	},
+
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		settingsStore() {
 			return useSettingsStore()
 		},
+
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		loading() {
 			return this.objectStore.loading.caseType || false
 		},
+
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		caseTypes() {
 			return this.objectStore.collections.caseType || []
 		},
+
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		defaultCaseTypeId() {
 			return this.settingsStore.config?.default_case_type || ''
 		},
 	},
+
+	/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 	async mounted() {
 		this.schema = await this.objectStore.fetchSchema('caseType')
 		await this.fetchCaseTypes()
 	},
+
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		async fetchCaseTypes() {
 			await this.objectStore.fetchCollection('caseType', { _limit: 100 })
 			for (const ct of this.caseTypes) {
@@ -115,12 +154,19 @@ export default {
 			}
 		},
 
+		/**
+		 * @param caseTypeId
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		async loadStatusTypeCount(caseTypeId) {
-			const statusTypes = await this.objectStore.fetchCollection('statusType', {
-				'_filters[caseType]': caseTypeId,
-				_limit: 100,
-			})
-			this.$set(this.statusTypeCounts, caseTypeId, (statusTypes || []).length)
+			const statusTypes = await this.objectStore.fetchCollection(
+				'statusType',
+				{
+					'_filters[caseType]': caseTypeId,
+					_limit: 100,
+				},
+			)
+			this.statusTypeCounts[caseTypeId] = (statusTypes || []).length
 			await this.objectStore.fetchCollection('caseType', { _limit: 100 })
 		},
 
@@ -128,20 +174,38 @@ export default {
 			return this.defaultCaseTypeId === id
 		},
 
+		/**
+		 * @param duration
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		formatDeadline(duration) {
 			return formatDuration(duration)
 		},
 
+		/**
+		 * @param ct
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		formatValidity(ct) {
 			if (!ct.validFrom) return '\u2014'
-			const from = new Date(ct.validFrom).toLocaleDateString('nl-NL', { month: 'short', year: 'numeric' })
+			const from = new Date(ct.validFrom).toLocaleDateString('nl-NL', {
+				month: 'short',
+				year: 'numeric',
+			})
 			if (ct.validUntil) {
-				const until = new Date(ct.validUntil).toLocaleDateString('nl-NL', { month: 'short', year: 'numeric' })
+				const until = new Date(ct.validUntil).toLocaleDateString('nl-NL', {
+					month: 'short',
+					year: 'numeric',
+				})
 				return `${from} \u2014 ${until}`
 			}
-			return t('procest', '{from} \u2014 (no end)', { from })
+			return t('dossiq', '{from} \u2014 (no end)', { from })
 		},
 
+		/**
+		 * @param ct
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		validityClass(ct) {
 			if (!ct.validUntil) return ''
 			const now = new Date()
@@ -150,20 +214,35 @@ export default {
 			return ''
 		},
 
+		/**
+		 * @param row
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		selectCaseType(row) {
 			this.$emit('select', row.id)
 		},
 
+		/**
+		 * @param ct
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		async setDefault(ct) {
 			this.error = ''
 			if (ct.isDraft) {
-				this.error = t('procest', 'Only published case types can be set as default')
+				this.error = t(
+					'dossiq',
+					'Only published case types can be set as default',
+				)
 				return
 			}
 			const config = { ...this.settingsStore.config, default_case_type: ct.id }
 			await this.settingsStore.saveSettings(config)
 		},
 
+		/**
+		 * @param ct
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		async confirmDelete(ct) {
 			this.error = ''
 
@@ -173,7 +252,10 @@ export default {
 					_limit: 1,
 				})
 				if (cases && cases.length > 0) {
-					this.error = t('procest', 'Cannot delete: active cases are using this type')
+					this.error = t(
+						'dossiq',
+						'Cannot delete: active cases are using this type',
+					)
 					await this.fetchCaseTypes()
 					return
 				}
@@ -182,9 +264,16 @@ export default {
 			}
 
 			const statusCount = this.statusTypeCounts[ct.id] || 0
-			const message = statusCount > 0
-				? t('procest', 'This will delete the case type and all {count} status types. Continue?', { count: statusCount })
-				: t('procest', 'Delete case type "{title}"?', { title: ct.title })
+			const message =
+				statusCount > 0
+					? t(
+							'dossiq',
+							'This will delete the case type and all {count} status types. Continue?',
+							{ count: statusCount },
+						)
+					: t('dossiq', 'Delete case type "{title}"?', {
+							title: ct.title,
+						})
 
 			if (!confirm(message)) {
 				await this.fetchCaseTypes()
@@ -192,31 +281,87 @@ export default {
 			}
 
 			if (statusCount > 0) {
-				const statusTypes = await this.objectStore.fetchCollection('statusType', {
-					'_filters[caseType]': ct.id,
-					_limit: 100,
-				})
-				for (const st of (statusTypes || [])) {
-					const ok = await this.objectStore.deleteObject('statusType', st.id)
+				const statusTypes = await this.objectStore.fetchCollection(
+					'statusType',
+					{
+						'_filters[caseType]': ct.id,
+						_limit: 100,
+					},
+				)
+				for (const st of statusTypes || []) {
+					const ok = await this.objectStore.deleteObject(
+						'statusType',
+						st.id,
+					)
 					if (!ok) {
-						this.error = t('procest', 'Failed to delete status type "{name}"', { name: st.name })
+						this.error = t(
+							'dossiq',
+							'Failed to delete status type "{name}"',
+							{ name: st.name },
+						)
 						await this.fetchCaseTypes()
 						return
 					}
 				}
 			}
 
-			const ok = await this.objectStore.deleteObject('caseType', ct.id)
-			if (!ok) {
-				this.error = t('procest', 'Failed to delete case type')
+			try {
+				await axios.delete(
+					generateUrl('/apps/dossiq/api/case-definitions/{id}', {
+						id: ct.id,
+					}),
+				)
+			} catch (err) {
+				this.error =
+					err.response?.status === 409
+						? t(
+								'dossiq',
+								'Cannot delete: unpublish this case type first',
+							)
+						: err.response?.data?.error
+							|| t('dossiq', 'Failed to delete case type')
+				await this.fetchCaseTypes()
+				return
 			}
 
 			if (this.defaultCaseTypeId === ct.id) {
-				const config = { ...this.settingsStore.config, default_case_type: '' }
+				const config = {
+					...this.settingsStore.config,
+					default_case_type: '',
+				}
 				await this.settingsStore.saveSettings(config)
 			}
 
 			await this.fetchCaseTypes()
+		},
+
+		/**
+		 * Deep-copy a case type into a new draft, then navigate to it.
+		 *
+		 * @param ct
+		 * @spec openspec/changes/zaaktype-copy/tasks.md#T09
+		 */
+		async duplicate(ct) {
+			this.error = ''
+			this.duplicating = ct.id
+			try {
+				const response = await axios.post(
+					generateUrl('/apps/dossiq/api/case-definitions/{id}/copy', {
+						id: ct.id,
+					}),
+				)
+				const newId = response.data?.id
+				await this.fetchCaseTypes()
+				if (newId) {
+					this.$emit('select', newId)
+				}
+			} catch (err) {
+				this.error =
+					err.response?.data?.error
+					|| t('dossiq', 'Failed to duplicate case type')
+			} finally {
+				this.duplicating = null
+			}
 		},
 	},
 }

@@ -1,0 +1,287 @@
+<!--
+  SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+  SPDX-License-Identifier: EUPL-1.2
+-->
+<template>
+	<NcModal :name="title" size="normal" @close="$emit('close')">
+		<div class="termijn-definitie-editor">
+			<h2>{{ title }}</h2>
+
+			<div class="form-group">
+				<label class="required" for="td-zaaktype">{{
+					t('dossiq', 'Zaaktype')
+				}}</label>
+				<NcSelect
+					id="td-zaaktype"
+					:modelValue="selectedZaaktype"
+					:options="zaaktypeOptions"
+					:taggable="true"
+					:inputLabel="t('dossiq', 'Zaaktype')"
+					:placeholder="t('dossiq', 'Select or type a zaaktype slug')"
+					@update:modelValue="
+						(v) => (form.case_type = v ? v.id || v.label || v : '')
+					" />
+				<span v-if="errors.case_type" class="field-error">{{
+					errors.case_type
+				}}</span>
+			</div>
+
+			<div class="form-group">
+				<label class="required" for="td-grondslag">{{
+					t('dossiq', 'Legal basis')
+				}}</label>
+				<NcTextField
+					id="td-grondslag"
+					:modelValue="form.basis"
+					:placeholder="t('dossiq', 'e.g. AWB art. 4:13 lid 2')"
+					@update:modelValue="(v) => (form.basis = v)" />
+				<span v-if="errors.basis" class="field-error">{{
+					errors.basis
+				}}</span>
+			</div>
+
+			<div class="form-group">
+				<label class="required" for="td-duur">{{
+					t('dossiq', 'Duration (days)')
+				}}</label>
+				<NcTextField
+					id="td-duur"
+					type="number"
+					:modelValue="String(form.duurDagen)"
+					@update:modelValue="(v) => (form.duurDagen = Number(v) || 0)" />
+				<span v-if="errors.duurDagen" class="field-error">{{
+					errors.duurDagen
+				}}</span>
+			</div>
+
+			<div class="form-group">
+				<label for="td-categorie">{{ t('dossiq', 'Category') }}</label>
+				<NcSelect
+					id="td-categorie"
+					:modelValue="selectedCategorie"
+					:options="categorieOptions"
+					:inputLabel="t('dossiq', 'Category')"
+					@update:modelValue="(v) => (form.category = v ? v.id : '')" />
+			</div>
+
+			<div class="form-group">
+				<label for="td-extendable">{{
+					t('dossiq', 'Extension allowed')
+				}}</label>
+				<NcCheckboxRadioSwitch
+					:modelValue="form.extendable"
+					@update:modelValue="(v) => (form.extendable = v)">
+					{{ t('dossiq', 'Tenant may grant an extension on this term') }}
+				</NcCheckboxRadioSwitch>
+			</div>
+
+			<div v-if="form.extendable" class="form-group">
+				<label for="td-ext-dagen">{{
+					t('dossiq', 'Max extension (days)')
+				}}</label>
+				<NcTextField
+					id="td-ext-dagen"
+					type="number"
+					:modelValue="String(form.maxExtensionDagen)"
+					@update:modelValue="
+						(v) => (form.maxExtensionDagen = Number(v) || 0)
+					" />
+			</div>
+
+			<div class="form-group form-group--note">
+				<p class="termijn-editor__note">
+					{{
+						t(
+							'dossiq',
+							'Saving creates a new version effective tomorrow; the prior version stays valid until end-of-day today. Cases in flight keep the version they started with.',
+						)
+					}}
+				</p>
+			</div>
+
+			<div class="termijn-definitie-editor__actions">
+				<NcButton @click="$emit('close')">
+					{{ t('dossiq', 'Cancel') }}
+				</NcButton>
+				<NcButton type="primary" :disabled="saving" @click="save">
+					<template #icon>
+						<NcLoadingIcon v-if="saving" :size="18" />
+						<ContentSave v-else :size="18" />
+					</template>
+					{{
+						saving
+							? t('dossiq', 'Saving…')
+							: t('dossiq', 'Save new version')
+					}}
+				</NcButton>
+			</div>
+		</div>
+	</NcModal>
+</template>
+
+<script>
+import { translate as t } from '@nextcloud/l10n'
+import {
+	NcButton,
+	NcCheckboxRadioSwitch,
+	NcLoadingIcon,
+	NcModal,
+	NcSelect,
+	NcTextField,
+} from '@nextcloud/vue'
+import ContentSave from 'vue-material-design-icons/ContentSave.vue'
+
+export default {
+	name: 'TermijnDefinitieEditor',
+	components: {
+		NcModal,
+		NcButton,
+		NcTextField,
+		NcSelect,
+		NcCheckboxRadioSwitch,
+		NcLoadingIcon,
+		ContentSave,
+	},
+
+	props: {
+		definition: {
+			type: Object,
+			default: null,
+		},
+
+		zaaktypeOptions: {
+			type: Array,
+			default: () => [],
+		},
+	},
+
+	emits: ['save', 'close'],
+	data() {
+		return {
+			saving: false,
+			errors: {},
+			form: {
+				case_type: this.definition?.case_type || '',
+				basis: this.definition?.basis || '',
+				duurDagen: this.definition?.duurDagen || this.definition?.duur || 0,
+				category: this.definition?.category || 'beslis',
+				extendable: this.definition?.extendable || false,
+				maxExtensionDagen: this.definition?.maxExtensionDagen || 0,
+			},
+		}
+	},
+
+	computed: {
+		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		title() {
+			return this.definition
+				? t('dossiq', 'New version of {z}', {
+						z: this.definition.case_type,
+					})
+				: t('dossiq', 'New term definition')
+		},
+
+		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		selectedZaaktype() {
+			if (!this.form.case_type) return null
+			const hit = this.zaaktypeOptions.find(
+				(o) => o.id === this.form.case_type,
+			)
+			return hit || { id: this.form.case_type, label: this.form.case_type }
+		},
+
+		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		categorieOptions() {
+			return [
+				{ id: 'beslis', label: t('dossiq', 'Decision deadline') },
+				{ id: 'herstel', label: t('dossiq', 'Remediation period') },
+				{
+					id: 'objectionProceeding',
+					label: t('dossiq', 'Objection period'),
+				},
+				{ id: 'beroep', label: t('dossiq', 'Appeal period') },
+			]
+		},
+
+		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		selectedCategorie() {
+			return (
+				this.categorieOptions.find((o) => o.id === this.form.category)
+				|| this.categorieOptions[0]
+			)
+		},
+	},
+
+	methods: {
+		t,
+		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		validate() {
+			const errs = {}
+			if (!this.form.case_type)
+				errs.case_type = t('dossiq', 'Zaaktype is required')
+			if (!this.form.basis)
+				errs.basis = t('dossiq', 'Wettelijke grondslag is required')
+			if (!this.form.duurDagen || this.form.duurDagen < 1) {
+				errs.duurDagen = t('dossiq', 'Duration must be at least 1 day')
+			}
+			this.errors = errs
+			return Object.keys(errs).length === 0
+		},
+
+		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		async save() {
+			if (!this.validate()) return
+			this.saving = true
+			try {
+				this.$emit('save', { ...this.form })
+			} finally {
+				this.saving = false
+			}
+		},
+	},
+}
+</script>
+
+<style scoped>
+.termijn-definitie-editor {
+	padding: 24px;
+	max-width: 560px;
+}
+
+.form-group {
+	margin-bottom: 14px;
+}
+
+.form-group label {
+	display: block;
+	margin-bottom: 4px;
+	font-weight: 500;
+}
+
+.form-group label.required::after {
+	content: ' *';
+	color: var(--color-error);
+}
+
+.field-error {
+	display: block;
+	color: var(--color-error);
+	font-size: 12px;
+	margin-top: 4px;
+}
+
+.termijn-editor__note {
+	font-size: 12px;
+	color: var(--color-text-maxcontrast);
+	background: var(--color-background-dark);
+	padding: 8px 10px;
+	border-radius: 6px;
+}
+
+.termijn-definitie-editor__actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 16px;
+}
+</style>

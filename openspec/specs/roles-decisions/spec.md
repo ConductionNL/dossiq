@@ -1,3 +1,7 @@
+---
+status: done
+---
+
 # Roles & Decisions Specification
 
 ## Purpose
@@ -15,7 +19,7 @@ Together, these three entities govern participation, outcomes, and formal decisi
 
 ### Role Entity
 
-Stored as an OpenRegister object in the `procest` register under the `role` schema.
+Stored as an OpenRegister object in the `dossiq` register under the `role` schema.
 
 | Property | Type | Schema.org/ZGW | Required | Default |
 |----------|------|----------------|----------|---------|
@@ -27,7 +31,7 @@ Stored as an OpenRegister object in the `procest` register under the `role` sche
 
 ### Role Type Entity
 
-Stored as an OpenRegister object in the `procest` register under the `roleType` schema.
+Stored as an OpenRegister object in the `dossiq` register under the `roleType` schema.
 
 | Property | Type | ZGW Mapping | Required |
 |----------|------|-------------|----------|
@@ -52,7 +56,7 @@ These are the fixed set of generic role categories, derived from ZGW but interna
 
 ### Result Entity
 
-Stored as an OpenRegister object in the `procest` register under the `result` schema.
+Stored as an OpenRegister object in the `dossiq` register under the `result` schema.
 
 | Property | Type | Source | Required |
 |----------|------|--------|----------|
@@ -63,7 +67,7 @@ Stored as an OpenRegister object in the `procest` register under the `result` sc
 
 ### Result Type Entity
 
-Stored as an OpenRegister object in the `procest` register under the `resultType` schema.
+Stored as an OpenRegister object in the `dossiq` register under the `resultType` schema.
 
 | Property | Type | ZGW Mapping | Required |
 |----------|------|-------------|----------|
@@ -76,7 +80,7 @@ Stored as an OpenRegister object in the `procest` register under the `resultType
 
 ### Decision Entity
 
-Stored as an OpenRegister object in the `procest` register under the `decision` schema.
+Stored as an OpenRegister object in the `dossiq` register under the `decision` schema.
 
 | Property | Type | Schema.org/ZGW | Required | Default |
 |----------|------|----------------|----------|---------|
@@ -91,7 +95,7 @@ Stored as an OpenRegister object in the `procest` register under the `decision` 
 
 ### Decision Type Entity
 
-Stored as an OpenRegister object in the `procest` register under the `decisionType` schema.
+Stored as an OpenRegister object in the `dossiq` register under the `decisionType` schema.
 
 | Property | Type | ZGW Mapping | Required |
 |----------|------|-------------|----------|
@@ -107,6 +111,10 @@ Stored as an OpenRegister object in the `procest` register under the `decisionTy
 ## Requirements
 
 ### REQ-ROLE-001: Role Assignment on Cases
+
+The system MUST support role assignment on cases.
+
+@e2e exclude Role assignment requires existing cases with access; data-dependent participant assignment flows not testable without pre-seeded cases.
 
 **Tier**: MVP
 
@@ -181,6 +189,10 @@ The system MUST support assigning roles to participants on cases. A role links a
 
 ### REQ-ROLE-002: Role Type Enforcement from Case Type
 
+The system SHALL enforce role types from the case type.
+
+@e2e exclude Role type enforcement is V1; requires case types with configured role types, not present in the current test environment.
+
 **Tier**: V1
 
 The system SHOULD enforce that only role types linked to the case's case type can be assigned. This prevents assigning roles that are not applicable to the case type.
@@ -214,6 +226,10 @@ The system SHOULD enforce that only role types linked to the case's case type ca
 
 ### REQ-ROLE-003: Handler Assignment Shortcut
 
+The system MUST provide a handler assignment shortcut.
+
+@e2e exclude Handler assignment shortcut requires existing cases in the list/detail view; data-dependent user assignment not testable without pre-seeded cases.
+
 **Tier**: MVP
 
 The system MUST provide a convenient handler assignment mechanism that creates the handler role and updates the case's `assignee` field in a single action.
@@ -236,6 +252,10 @@ The system MUST provide a convenient handler assignment mechanism that creates t
 ---
 
 ### REQ-ROLE-004: Role-Based Case Access
+
+The system SHALL support role-based case access.
+
+@e2e exclude Role-based case access is V1; requires multi-user setup with restricted case configurations not available in the current test environment.
 
 **Tier**: V1
 
@@ -266,6 +286,10 @@ The system SHOULD support controlling who can see and edit a case based on their
 ---
 
 ### REQ-RESULT-001: Case Result Recording
+
+The system MUST support case result recording.
+
+@e2e exclude Case result recording requires closing a case with a specific result type; data-dependent result flows not testable without pre-seeded cases.
 
 **Tier**: MVP
 
@@ -335,6 +359,10 @@ The system MUST support recording a result when a case is being completed. Each 
 
 ### REQ-RESULT-002: Result Type Configuration
 
+Admin users MUST be able to configure result types.
+
+@e2e exclude Result type configuration is V1; covered by REQ-ADMIN-009 admin settings tab; not testable separately without a published case type.
+
 **Tier**: V1
 
 Admin users MUST be able to configure result types per case type, including archival rules.
@@ -374,6 +402,10 @@ Admin users MUST be able to configure result types per case type, including arch
 ---
 
 ### REQ-DECISION-001: Decision CRUD
+
+The system SHALL support decision create, read, update, and delete operations.
+
+@e2e exclude Decision CRUD is V1; decision panel on case detail is not yet built in the current Playwright-testable build.
 
 **Tier**: V1
 
@@ -428,9 +460,23 @@ The system SHOULD support creating, reading, updating, and deleting formal decis
 - AND it MUST no longer appear in the case detail
 - AND the audit trail MUST record the deletion
 
+#### Scenario: Create decision from voorstel workflow
+
+- GIVEN the secretariaat clicks "Besluit registreren" on a voorstel with status "geaccordeerd"
+- AND enters: besluit tekst, ingangsdatum, besluittype
+- WHEN the besluit registration is submitted
+- THEN a decision object SHALL be created via the existing decision schema
+- AND the decision SHALL be linked to the parent case of the voorstel
+- AND the voorstel status SHALL change to "besloten"
+- AND the case activity timeline SHALL show: "Besluit vastgesteld: [tekst]"
+
 ---
 
 ### REQ-DECISION-002: Decision Validity Periods
+
+The system SHALL track decision validity periods.
+
+@e2e exclude Decision validity periods are V1; requires decision objects on cases, not testable in the current Playwright-testable build.
 
 **Tier**: V1
 
@@ -481,6 +527,10 @@ The system SHOULD support tracking the validity period of decisions (effectiveDa
 
 ### REQ-DECISION-003: Decision Types from Case Type
 
+The system SHALL support decision types derived from the case type.
+
+@e2e exclude Decision types from case type is V1; requires case types with decision types configured, not available in the current test environment.
+
 **Tier**: V1
 
 The system SHOULD support linking decision types to case types. When creating a decision on a case, only decision types allowed by the case's case type SHOULD be offered.
@@ -511,6 +561,10 @@ The system SHOULD support linking decision types to case types. When creating a 
 ---
 
 ### REQ-DECISION-004: Decision Validation
+
+The system MUST validate decision data.
+
+@e2e exclude Decision validation is V1; decision form is not yet built in the current Playwright-testable build.
 
 **Tier**: V1
 
@@ -547,6 +601,10 @@ The system MUST validate decision data to ensure consistency and completeness.
 ---
 
 ### REQ-ROLE-005: Participant Display on Case Detail
+
+The case detail view MUST display participants grouped by role type.
+
+@e2e exclude Participant display on case detail requires an existing case with/without assigned participants; data-dependent case detail section not testable without pre-seeded cases.
 
 **Tier**: MVP
 
@@ -599,6 +657,10 @@ The case detail view MUST display all assigned participants grouped by role type
 
 ### REQ-ROLE-006: Role Validation
 
+The system MUST validate role assignments.
+
+@e2e exclude Role validation scenarios require submitting invalid role assignments against existing cases; data-dependent validation flows not testable without pre-seeded cases.
+
 **Tier**: MVP
 
 The system MUST validate role assignments to ensure data integrity.
@@ -633,6 +695,10 @@ The system MUST validate role assignments to ensure data integrity.
 ---
 
 ### REQ-DECISION-005: Decisions Section on Case Detail
+
+The case detail view MUST display all decisions linked to the case.
+
+@e2e exclude Decisions section on case detail is V1; decision panel is not yet built in the current Playwright-testable build.
 
 **Tier**: V1
 
@@ -692,3 +758,59 @@ All roles and decisions interfaces MUST comply with WCAG AA:
 - Decision validity calculations MUST be performed client-side (no extra API call)
 - Role and result operations MUST complete within 2 seconds
 - The case detail page MUST load participants, results, and decisions in parallel with other sections
+
+---
+
+### Current Implementation Status
+
+**Roles: Substantially implemented (MVP). Results: Partially implemented. Decisions: Not implemented.**
+
+**Roles -- Implemented (with file paths):**
+- **ParticipantsSection**: `src/views/cases/components/ParticipantsSection.vue` -- displays all roles on a case, grouped by role type name. Resolves participant display names via Nextcloud OCS API (`/ocs/v2.php/cloud/users/{uid}`). Shows initials avatar, role type label, and participant name. Supports "Add Participant" button and "Reassign" action on handler roles. Supports "Remove" action on non-handler roles (REQ-ROLE-001, REQ-ROLE-005).
+- **AddParticipantDialog**: `src/views/cases/components/AddParticipantDialog.vue` -- dialog for adding participants with role type selection and user picker. Supports pre-selecting handler role type (REQ-ROLE-003).
+- **Handler reassignment**: `ParticipantsSection.vue` includes inline reassign UI with NcSelect user picker. Updates both the role object's `participant` and the case's `assignee` field (REQ-ROLE-003).
+- **Role removal**: Supported via delete button with confirmation dialog.
+- **Role schema**: Defined in `lib/Settings/dossiq_register.json` with properties: `name`, `description`, `roleType`, `case`, `participant` (REQ matching the data model).
+- **RoleType schema**: Defined in `dossiq_register.json` with `name`, `caseType`, `genericRole` properties. The `genericRole` enum includes: `initiator`, `handler`, `advisor`, `decision_maker`, `stakeholder`, `coordinator`, `contact`, `co_initiator`.
+- **Data fetching**: Roles fetched via `objectStore.fetchCollection('role', { '_filters[case]': caseId })`. Role types fetched in parallel.
+- **Display name resolution**: `resolveDisplayNames()` method fetches Nextcloud user info per participant UID.
+- **User picker**: `fetchUsers()` fetches available users from `/ocs/v2.php/cloud/users/details`.
+
+**Roles -- Not yet implemented:**
+- **REQ-ROLE-002: Role type enforcement (V1)**: No validation that assigned role types belong to the case's case type. All role types are shown in the picker regardless of case type.
+- **REQ-ROLE-004: Role-based case access (V1)**: No RBAC enforcement based on role assignments. All users with app access can see all cases.
+- **REQ-ROLE-006: Role validation**: Client-side validation exists in the dialog, but server-side validation of participant existence and case reference validity is delegated to OpenRegister schema validation.
+- **Notifications**: No Nextcloud notification sent when a handler is assigned or reassigned.
+- **External contacts**: Only Nextcloud users are supported as participants. No integration with Nextcloud Contacts for external party references.
+
+**Results -- Partially implemented:**
+- **ResultSection**: `src/views/cases/components/ResultSection.vue` -- displays a single result with name, description, and result type. Resolves result type name from the `resultTypes` array.
+- **Result schema**: Defined in `dossiq_register.json` with `name`, `description`, `case`, `resultType` properties.
+- **ResultType schema**: Defined in `dossiq_register.json` with `name`, `description`, `caseType`, `archiveAction`, `retentionPeriod`, `retentionDateSource` properties.
+- **Not implemented**: Result creation UI (selecting from predefined result types during case closure), archival metadata display, result type management in admin settings (REQ-RESULT-002), enforcement of one-result-per-case.
+
+**Decisions -- Not implemented:**
+- **Decision schema**: Defined in `dossiq_register.json` with `title`, `description`, `case`, `decisionType`, `decidedBy`, `decidedAt`, `effectiveDate`, `expiryDate` properties.
+- **DecisionType schema**: Defined in `dossiq_register.json` with `name`, `description`, `category`, `objectionPeriod`, `publicationRequired`, `publicationPeriod` properties.
+- **No UI exists** for creating, viewing, editing, or deleting decisions on cases. No Decisions section on the case detail page. No validity period tracking or expiry indicators.
+- The ZGW BRC (Besluiten) controller (`lib/Controller/BrcController.php`) provides ZGW-compliant decision API endpoints, but no frontend consumes them.
+
+### Standards & References
+
+- **ZGW APIs (VNG Realisatie)**: Roles map to ZGW `Rol` with `omschrijvingGeneriek` for generic role categories. Results map to `Resultaat` with `archiefnominatie` and `archiefactietermijn`. Decisions map to `Besluit` with `ingangsdatum`, `vervaldatum`, `publicatie_indicatie`. ZGW BRC controller fully implemented.
+- **Schema.org**: Roles typed as `schema:Role`, decisions as `schema:ChooseAction` in `dossiq_register.json`.
+- **CMMN 1.1**: Role assignments follow CMMN case participant patterns.
+- **Archivering**: Result types include `archiveAction` (retain/destroy) and `retentionPeriod` (ISO 8601 duration) per Dutch archival standards (Archiefwet).
+- **WCAG 2.1 AA**: ParticipantsSection uses sufficient contrast and text labels. Decision validity indicators (not yet implemented) must not rely solely on color.
+- **Wet open overheid (WOO)**: Decision publication requirements align with WOO transparency obligations.
+
+### Specificity Assessment
+
+- **Roles**: Well-specified and mostly implemented. The MVP scenarios are clear and actionable.
+- **Results**: Well-specified but implementation is incomplete. The result creation flow during case closure needs UI work.
+- **Decisions**: Well-specified but entirely unimplemented in the frontend. The data model exists in the register config, and the ZGW API layer exists, but no Dossiq-native UI exists.
+- **Open questions:**
+  - Should role type enforcement be strict (reject) or advisory (warn)?
+  - How should external contacts (non-Nextcloud users) be represented as participants?
+  - Should decision publication trigger an n8n workflow or a direct API call?
+  - How does the result creation flow interact with case status transitions (must the case transition to a final status after result is recorded)?

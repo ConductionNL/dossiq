@@ -1,0 +1,10 @@
+{
+  "phase": "build",
+  "timestamp": "2026-05-11T00:00:00+00:00",
+  "pr": null,
+  "commit": null,
+  "previous_pr": 135,
+  "previous_commit": "50db73f",
+  "note": "Re-applied on top of manifest-v1 migration; original PR #135 targeted Dashboard.vue which no longer exists as a top-level view. T01 implemented as CasesByType.vue widget + manifest entry + KpiAggregationService.getTypeBreakdown(). T02/T03 already in place, plus fixed .dashboard.index route in 5 sibling widgets (OverdueCases, MyTasks, Stalled, TaskReminders, DeadlineAlerts).",
+  "model": "claude-opus-4-7"
+}

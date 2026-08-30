@@ -1,0 +1,6 @@
+{
+  "phase": "apply",
+  "timestamp": "2026-05-11T00:00:00+00:00",
+  "scope": "spec-only",
+  "notes": "Applies the procest-adopt-or-abstractions spec consolidation: retirement notes added to parafering-actions, parafering-audit-trail, parafeerroute-engine; OR capability citations added to case-location, parafering-dashboard, case-dashboard-view; bezwaar-lifecycle deadline now declared via x-openregister-calculations; case-management gains the consolidated lifecycle section, OR capability citations, migration map, ZGW boundary clarification, manifest sketch, and follow-up code change references. No code modified."
+}

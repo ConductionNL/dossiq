@@ -13,6 +13,10 @@ const DURATION_REGEX = /^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?$/
  * @param {string} value The string to validate
  * @return {boolean}
  */
+/**
+ * @param value
+ * @spec openspec/specs/milestone-tracking/spec.md
+ */
 export function isValidDuration(value) {
 	if (!value || typeof value !== 'string') return false
 	return DURATION_REGEX.test(value) && value !== 'P'
@@ -23,6 +27,10 @@ export function isValidDuration(value) {
  *
  * @param {string} iso ISO 8601 duration string (e.g., "P56D", "P2M", "P1Y6M")
  * @return {{ years: number, months: number, weeks: number, days: number } | null}
+ */
+/**
+ * @param iso
+ * @spec openspec/specs/milestone-tracking/spec.md
  */
 export function parseDuration(iso) {
 	if (!isValidDuration(iso)) return null
@@ -41,6 +49,10 @@ export function parseDuration(iso) {
  * @param {string} iso ISO 8601 duration string
  * @return {string} Human-readable text (e.g., "56 days", "2 months", "1 year, 6 months")
  */
+/**
+ * @param iso
+ * @spec openspec/specs/milestone-tracking/spec.md
+ */
 export function formatDuration(iso) {
 	const parsed = parseDuration(iso)
 	if (!parsed) return iso || ''
@@ -48,27 +60,27 @@ export function formatDuration(iso) {
 	const parts = []
 
 	if (parsed.years === 1) {
-		parts.push(t('procest', '1 year'))
+		parts.push(t('dossiq', '1 year'))
 	} else if (parsed.years > 1) {
-		parts.push(t('procest', '{n} years', { n: parsed.years }))
+		parts.push(t('dossiq', '{n} years', { n: parsed.years }))
 	}
 
 	if (parsed.months === 1) {
-		parts.push(t('procest', '1 month'))
+		parts.push(t('dossiq', '1 month'))
 	} else if (parsed.months > 1) {
-		parts.push(t('procest', '{n} months', { n: parsed.months }))
+		parts.push(t('dossiq', '{n} months', { n: parsed.months }))
 	}
 
 	if (parsed.weeks === 1) {
-		parts.push(t('procest', '1 week'))
+		parts.push(t('dossiq', '1 week'))
 	} else if (parsed.weeks > 1) {
-		parts.push(t('procest', '{n} weeks', { n: parsed.weeks }))
+		parts.push(t('dossiq', '{n} weeks', { n: parsed.weeks }))
 	}
 
 	if (parsed.days === 1) {
-		parts.push(t('procest', '1 day'))
+		parts.push(t('dossiq', '1 day'))
 	} else if (parsed.days > 1) {
-		parts.push(t('procest', '{n} days', { n: parsed.days }))
+		parts.push(t('dossiq', '{n} days', { n: parsed.days }))
 	}
 
 	return parts.length > 0 ? parts.join(', ') : iso
@@ -80,10 +92,17 @@ export function formatDuration(iso) {
  * @param {string} value The value to validate
  * @return {string} Error message or empty string
  */
+/**
+ * @param value
+ * @spec openspec/specs/milestone-tracking/spec.md
+ */
 export function getDurationError(value) {
 	if (!value) return ''
 	if (!isValidDuration(value)) {
-		return t('procest', 'Must be a valid ISO 8601 duration (e.g., P56D for 56 days, P8W for 8 weeks, P2M for 2 months)')
+		return t(
+			'dossiq',
+			'Must be a valid ISO 8601 duration (e.g., P56D for 56 days, P8W for 8 weeks, P2M for 2 months)',
+		)
 	}
 	return ''
 }

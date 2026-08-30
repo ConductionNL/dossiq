@@ -1,14 +1,12 @@
 <?xml version="1.0"?>
 <info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
-    <id>procest</id>
-    <name lang="en">Procest</name>
-    <name lang="nl">Procest</name>
+    <id>dossiq</id>
+    <name lang="en">Dossiq</name>
+    <name lang="nl">Dossiq</name>
     <summary lang="en">Case management with configurable workflows, deadlines, and decisions</summary>
     <summary lang="nl">Zaakafhandeling met configureerbare workflows, deadlines en besluiten</summary>
-    <description lang="en"><![CDATA[> ⚠️ **Active development — not for production use yet.** This app is under active development. Although it may carry a stable release status, **please do not use it in production environments before 17 June 2026.** See the [app page on conduction.nl](https://conduction.nl/apps/procest) for release planning and what this app does.
-
-Procest brings structured case management to Nextcloud. Define case types, track progress through status lifecycles, manage deadlines, and record formal decisions — all within a clean, intuitive interface.
+    <description lang="en"><![CDATA[Dossiq brings structured case management to Nextcloud. Define case types, track progress through status lifecycles, manage deadlines, and record formal decisions — all within a clean, intuitive interface.
 
 **Key Features**
 
@@ -25,11 +23,11 @@ Procest brings structured case management to Nextcloud. Define case types, track
 
 **Requires:** [OpenRegister](https://apps.nextcloud.com/apps/openregister) (install from the [Nextcloud App Store](https://apps.nextcloud.com/apps/openregister)).
 
-Free and open source under the AGPL license.
-    ]]></description>
-    <description lang="nl"><![CDATA[> ⚠️ **In actieve ontwikkeling — nog niet voor productiegebruik.** Deze app is volop in ontwikkeling. Hoewel de app een stabiele release-status kan hebben, **gebruik deze nog niet in productieomgevingen vóór 17 juni 2026.** Zie de [app-pagina op conduction.nl](https://conduction.nl/apps/procest) voor release-planning en het doel van deze app.
+Free and open source under the EUPL-1.2 licence.
 
-Procest brengt gestructureerde zaakafhandeling naar Nextcloud. Definieer zaaktypen, volg voortgang via statuslifecycles, beheer deadlines en leg formele besluiten vast — allemaal in een overzichtelijke, intuitive interface.
+**Support:** For support, contact support@conduction.nl. For a Service Level Agreement (SLA), contact sales@conduction.nl.
+    ]]></description>
+    <description lang="nl"><![CDATA[Dossiq brengt gestructureerde zaakafhandeling naar Nextcloud. Definieer zaaktypen, volg voortgang via statuslifecycles, beheer deadlines en leg formele besluiten vast — allemaal in een overzichtelijke, intuitive interface.
 
 **Belangrijkste functies**
 
@@ -46,49 +44,401 @@ Procest brengt gestructureerde zaakafhandeling naar Nextcloud. Definieer zaaktyp
 
 **Vereist:** [OpenRegister](https://apps.nextcloud.com/apps/openregister) (installeer via de [Nextcloud App Store](https://apps.nextcloud.com/apps/openregister)).
 
-Vrij en open source onder de AGPL-licentie.
+Vrij en open source onder de EUPL-1.2-licentie.
+
+**Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.1.10</version>
-    <licence>agpl</licence>
+    <version>0.3.4-unstable.20260830083819</version>
+    <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
-    <namespace>Procest</namespace>
+    <namespace>Dossiq</namespace>
     <documentation>
-        <user>https://github.com/ConductionNL/procest</user>
-        <admin>https://github.com/ConductionNL/procest</admin>
-        <developer>https://github.com/ConductionNL/procest</developer>
+        <user>https://github.com/ConductionNL/dossiq</user>
+        <admin>https://github.com/ConductionNL/dossiq</admin>
+        <developer>https://github.com/ConductionNL/dossiq</developer>
     </documentation>
     <category>organization</category>
     <category>tools</category>
     <category>workflow</category>
-    <website>https://github.com/ConductionNL/procest</website>
-    <discussion>https://github.com/ConductionNL/procest/discussions</discussion>
-    <bugs>https://github.com/ConductionNL/procest/issues</bugs>
-    <repository>https://github.com/ConductionNL/procest</repository>
+    <website>https://github.com/ConductionNL/dossiq</website>
+    <bugs>https://github.com/ConductionNL/dossiq/issues</bugs>
+    <repository>https://github.com/ConductionNL/dossiq</repository>
 
-    <screenshot>https://raw.githubusercontent.com/ConductionNL/procest/main/img/app-store.svg</screenshot>
+    <screenshot>https://raw.githubusercontent.com/ConductionNL/dossiq/main/img/screenshot-dashboard.png</screenshot>
+    <screenshot>https://raw.githubusercontent.com/ConductionNL/dossiq/main/img/screenshot-cases.png</screenshot>
+    <screenshot>https://raw.githubusercontent.com/ConductionNL/dossiq/main/img/screenshot-admin.png</screenshot>
 
     <dependencies>
-        <nextcloud min-version="28" max-version="33"/>
-        <php min-version="8.1"/>
+        <php min-version="8.3"/>
+        <!--
+        min-version is 32, NOT 28.
+
+        ⚠️ The reason is NOT the one an earlier revision of this comment gave.
+        That text said "openregister declares min-version=32"; measured against
+        the canonical repo on 2026-08-08, ConductionNL/openregister@development
+        declares <nextcloud min-version="32" max-version="34"/>. It was true when
+        written and was undone by openregister#2380. The openconnector#1173 rule
+        — min-version must be >= the max of every <app> dependency's floor — is
+        therefore satisfied by any value here, and imposes no constraint at all.
+        Do not re-derive this floor from openregister's.
+
+        The floor is 32 for two reasons that are true today:
+
+        1. Nothing below 32 is tested, and an untested range is an advertised
+           claim we cannot support. .github/workflows/code-quality.yml pins
+           nextcloud-test-refs to exactly ["stable32"]; the stable31 leg was
+           REMOVED, not merely dropped for coverage.
+        2. This app declares <php min-version="8.3"/> directly above. Nextcloud
+           28 does not support PHP 8.3, so the pair (NC 28, PHP 8.3) that the
+           two lines together advertise is not a configuration that exists.
+
+        max-version stays at 34, which is the fleet-wide value everywhere except
+        openconnector (35).
+        -->
+        <nextcloud min-version="32" max-version="34"/>
+        <!-- THE OPENREGISTER REGISTER SLUG NOW MOVES: `procest` -> `dossiq`
+             (and the `procest-default` sibling -> `dossiq-default`), together
+             with `x-openregister.app`, which for a `type: application`
+             configuration IS a register slug rather than an attribution label
+             (ImportHandler::autoCreateRegisterIfApplication reads
+             `$xOpenregister['app'] ?? $appId` as the slug).
+
+             It moves SAFELY because the rename is a one-column UPDATE on one
+             row. Measured, not assumed: an object is bound to its register by
+             NUMERIC id — every shard table's `_register` column holds the id,
+             and the tables are named
+             `oc_openregister_table_<registerId>_<schemaId>` — so no object,
+             table, schema link or folder is addressed by the slug and none of
+             them has to move. The one thing that must happen first is renaming
+             the ROW, because OpenRegister resolves a register by slug and its
+             not-found branch CREATES a second, empty register rather than
+             failing. `MigrateRegisterSlug` does that, ahead of every step that
+             resolves a register, in both blocks below.
+
+             Still frozen, and for the reason the slug is not: the register
+             `folder` (`Open Registers/Procest`) is a Files path already on
+             disk, and the `procest.parafering.*` / `procest.tenant.*` audit
+             action prefixes are already written into OpenRegister's
+             append-only audit trail. -->
+        <!-- App dependency (not expressible in app-info.xsd): OpenRegister >= 0.2.16
+             (MDM engine: x-openregister-quality / x-openregister-dedup schema support and
+             on-save qualityScore/qualityStatus materialisation, ADR-045 / OR change
+             2026-06-23-mdm-foundation). -->
     </dependencies>
+
+    <background-jobs>
+        <job>OCA\Dossiq\BackgroundJob\AdviceDeadlineJob</job>
+        <job>OCA\Dossiq\BackgroundJob\VergaderingDeadlineJob</job>
+        <job>OCA\Dossiq\BackgroundJob\WOODeadlineCheckJob</job>
+        <job>OCA\Dossiq\BackgroundJob\BezwaarTermijnJob</job>
+        <job>OCA\Dossiq\BackgroundJob\DsoDeadlineJob</job>
+        <job>OCA\Dossiq\BackgroundJob\ResetMonthlyQuotasJob</job>
+        <job>OCA\Dossiq\BackgroundJob\DailyDeadlineScanJob</job>
+        <job>OCA\Dossiq\BackgroundJob\InboundEmailJob</job>
+        <job>OCA\Dossiq\BackgroundJob\EmailPdfRetryJob</job>
+        <job>OCA\Dossiq\BackgroundJob\SentimentAnalysisJob</job>
+        <job>OCA\Dossiq\BackgroundJob\SpecialistBeschikbaarheidRefreshJob</job>
+        <job>OCA\Dossiq\BackgroundJob\BottleneckDetectionJob</job>
+    </background-jobs>
 
     <repair-steps>
         <post-migration>
-            <step>OCA\Procest\Repair\InitializeSettings</step>
+            <!--
+                THE TWO Migrate* STEPS CARRY THE `procest` -> `dossiq` APP-ID
+                RENAME AND MUST RUN FIRST IN BOTH BLOCKS.
+
+                Nextcloud namespaces both `oc_appconfig` and `oc_preferences` by
+                app id. There is no in-place app-id upgrade — the new id is
+                simply a different app — so the rename does not move the stored
+                rows, it makes every previously stored value unreachable. Every
+                reader supplies a default, so nothing errors: the admin settings
+                revert to their defaults, the imported register/schema-id
+                bookkeeping looks absent, and each user's saved UI state comes
+                back blank. Silently.
+
+                ORDER IS LOAD-BEARING. MigrateAppConfigKeys must precede
+                InitializeSettings (and the register import below it), because
+                InitializeSettings writes configuration keys itself. If it ran
+                first those keys would already exist under `dossiq` and the
+                migration would skip them as "already present", stranding the
+                old values under `procest` where nothing reads them.
+
+                Both steps are idempotent, never overwrite a newer value, never
+                delete the old rows (so a rollback still finds its config), and
+                log-and-continue rather than throwing — see their class
+                docblocks for why a throwing repair step is especially bad here.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateAppConfigKeys</step>
+            <step>OCA\Dossiq\Repair\MigrateUserPreferences</step>
+            <!--
+                MUST run before every step below that resolves a register by
+                slug, and before the import InitializeSettings triggers. It
+                renames the register ROW (`procest` -> `dossiq`,
+                `procest-default` -> `dossiq-default`); the import that follows
+                then recognises the register and UPDATES it, instead of taking
+                its not-found branch and creating a second, empty one.
+
+                It moves no data. An object is bound to its register by numeric
+                id, not by slug, so the rename is one column on one row.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateRegisterSlug</step>
+            <!--
+                SIBLING OF MigrateRegisterSlug, AND NEITHER COVERS THE OTHER.
+                OpenRegister resolves the two halves by different keys: a
+                REGISTER by slug alone, a SCHEMA by the PAIR
+                (application, slug) via findByApplicationAndSlug(). This app
+                now passes `appId: Application::APP_ID` = `dossiq`, while every
+                schema it already owns still carries `application = procest` —
+                so the pair matches nothing and the import's not-found branch
+                builds a SECOND, EMPTY schema set while every stored object
+                stays bound to the old rows. Measured before this step existed:
+                180 schemas under `procest`, zero under `dossiq`.
+
+                Runs alongside MigrateRegisterSlug and before the import.
+                Refuses rather than merges where a slug already has a twin
+                under the new application id, never deletes a schema, and never
+                throws.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateSchemaApplicationId</step>
+            <!--
+                The OTHER half of the same problem, on a different column.
+                MigrateRegisterSlug moves `openregister_registers.slug`; this
+                moves `openregister_schemas.application`, which nothing else
+                touches. Schemas are matched by findByApplicationAndSlug() — the
+                PAIR — and their `application` comes from the importing app's own
+                Application::APP_ID, so every schema on an instance that predates
+                the procest -> dossiq app rename still says `procest` and is
+                invisible to the lookup. The import then forks a second, empty
+                set of SCHEMAS exactly as it would fork a second register.
+                Delegates to OpenRegister's SchemaApplicationMigrator
+                (openregister#2811).
+            -->
+            <step>OCA\Dossiq\Repair\MigrateRegisterApplicationId</step>
+            <!--
+                MUST stay first among the SCHEMA steps. OpenRegister's import matches a schema to an
+                existing row by SLUG, so a renamed slug in the register JSON
+                renames nothing: the import finds no match, creates a SECOND
+                schema, and every stored object keeps pointing at the old one —
+                data stranded behind a schema nothing reads, which presents as
+                an app with no records rather than as an error. Renaming the
+                slug on the existing row first makes the import recognise it.
+                Ahead of the import trigger, InitializeSettings.
+            -->
+            <step>OCA\Dossiq\Repair\RenameDutchSchemaSlugs</step>
+            <step>OCA\Dossiq\Repair\InitializeSettings</step>
+            <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
+            <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
+            <step>OCA\Dossiq\Repair\MigrateWorkflowDefinitions</step>
+            <step>OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition</step>
+            <step>OCA\Dossiq\Repair\SeedBesluitvormingTemplates</step>
+            <!--
+                REPLACES RegisterOriRegister. dossiq no longer declares an ORI
+                register (ADR-019/ADR-022: raadsinformatie is decidiq's domain,
+                and `ori` was a parallel Dutch-named duplicate of its Popolo
+                model). Dropping the declaration stops it being re-created; it
+                does nothing about the register already on an existing install,
+                which holds real objects — 115 on the reference instance.
+
+                So this step RETIRES the register only once it is empty, and
+                warns and keeps it otherwise. Removal never outruns migration.
+                Declared in post-migration only: a fresh install never had an
+                ORI register to retire.
+            -->
+            <step>OCA\Dossiq\Repair\RetireOriRegister</step>
+            <!--
+                Post-migration only, for the same reason as RetireOriRegister
+                above: a fresh install has no subsidieRegeling objects to move
+                onto case types. Running it on install would be a no-op that
+                still reports a count, which is the kind of reassuring noise
+                that makes a real zero hard to notice.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateSubsidieRegelingToCaseType</step>
+            <step>OCA\Dossiq\Repair\SeedLhsMatrix</step>
+            <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
+            <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
+            <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
+            <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
+            <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
+            <!--
+                Must run AFTER the register sync that adds the English columns, so it
+                can tell the rename case from the back-fill case. Matches BOTH the
+                dossiq and dossiq-default registers, which each hold live rows —
+                which is why MigrateRegisterSlug renames both siblings and not
+                just the first: this step resolves them by slug PREFIX, and a
+                half-renamed pair would migrate half the install and say so as
+                success. Idempotent, non-destructive, and refuses ambiguous renames.
+            -->
+            <step>OCA\Dossiq\Repair\RenameDutchDeadlineColumns</step>
+            <!--
+                Sibling of the step above, but a VALUE migration rather than a
+                column one: the `direction` column already has the right name,
+                and only the strings inside it move (inkomend/uitgaand/intern ->
+                inbound/outbound/internal).
+
+                Scoped to the `direction` COLUMN on purpose. `intern` is also a
+                value of the statutory ZGW vertrouwelijkheidaanduiding enum,
+                which is exempt from the vocabulary rule; a word-based rewrite
+                would have corrupted every confidentiality field in the install.
+            -->
+            <step>OCA\Dossiq\Repair\RenameDutchDirectionValues</step>
+            <step>OCA\Dossiq\Repair\MigrateArchivalToOpenRegister</step>
+            <step>OCA\Dossiq\Repair\SeedKccWerkplekData</step>
+            <step>OCA\Dossiq\Repair\BackfillInformatieobjectMetadata</step>
+            <step>OCA\Dossiq\Repair\LinkInFlightContractDecisionsRepair</step>
+            <step>OCA\Dossiq\Repair\LinkInFlightRemainingDecisionsRepair</step>
+            <step>OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten</step>
+            <!--
+                Must run AFTER the register sync that adds the English columns, so it
+                can tell a rename from a back-fill. Covers every renamed property
+                together: a register-scoped step that moved some owners and not others
+                would leave the rest silently reading null.
+            -->
+            <step>OCA\Dossiq\Repair\RenameDutchColumns</step>
+            <!--
+                Must run AFTER RenameDutchColumns: that step moves the COLUMNS,
+                this one moves what is IN them, across every mapped property
+                rather than the single `direction` column
+                RenameDutchDirectionValues covers. Once the schema declares
+                `upheld`, a row still holding `gegrond` does not error — a filter
+                on the new value returns null and the caller reads that as
+                "nothing to do".
+
+                The ZGW and StUF vocabularies are deliberately NOT in its map:
+                they are the standard's, they travel on the wire, and the ZGW
+                `vertrouwelijkheidaanduiding` values (openbaar … zeer_geheim) are
+                statutory. Translating them would break the mapping the adapter
+                exists to perform.
+            -->
+            <step>OCA\Dossiq\Repair\RenameDutchValues</step>
+            <!--
+                Hermiq owns the EU AI Act Art. 14 oversight record now, and
+                dossiq's own oversight page is retired. This replays the
+                DECISIONS already in dossiq's audit log through the same event
+                every new decision travels, so old evidence takes the identical
+                path as new evidence and hermiq never reads dossiq's register.
+                Idempotent (stable externalRef per source entry) and non-fatal
+                (a missing hermiq logs and continues) — an upgrade must not fail
+                because an audit projection could not complete, and the local
+                copies remain to replay from. POST-MIGRATION only: a fresh
+                install has no history to move.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateAiOversightToHermiq</step>
+            <!--
+                bacAdviceRequest carried the objection id under the name of the
+                SCHEMA it $refs (`objectionProceeding`) instead of the property
+                the schema declares (`bezwaar`) — so a required property was
+                never written, and BezwaarDetail's advice-request widgets, which
+                filter on `bezwaar`, showed nothing at all. Idempotent (rows that
+                already have `bezwaar` are skipped) and non-fatal.
+            -->
+            <step>OCA\Dossiq\Repair\BackfillAdviceRequestObjection</step>
         </post-migration>
+        <!--
+            FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
+            `Installer::installAppLastSteps()` guards both the pre-migration and
+            post-migration blocks with `if ($previousVersion !== '')`, and only
+            `repair-steps/install` runs unconditionally afterwards. Until this block
+            existed a brand-new Dossiq install ran NONE of the steps above — the
+            register was never imported and not one of the twelve seed steps ran, so
+            a fresh instance had no ZGW mappings, no bezwaar/beroep data, no LHS or
+            VTH matrices and no workflow templates.
+
+            Only baseline-CREATING steps are listed. Deliberately EXCLUDED, because
+            each operates on data a fresh install does not have:
+              MigrateWorkflowDefinitions        one-way migration
+              RenameDutchDeadlineColumns        rename over existing rows
+              RenameDutchDirectionValues        rewrite over existing rows
+              MigrateArchivalToOpenRegister     one-way migration
+              BackfillInformatieobjectMetadata  backfill over existing documents
+              LinkInFlight*DecisionsRepair      link IN-FLIGHT decisions; none exist yet
+        -->
+        <install>
+            <!--
+                THE SAME TWO Migrate* STEPS, AND THE DUPLICATION IS THE POINT.
+                `Installer::installAppLastSteps()` guards BOTH the pre- and
+                post-migration blocks with `if ($previousVersion !== '')`; on a
+                fresh install `installed_version` is still empty, so neither
+                block runs and only `repair-steps/install` executes.
+
+                THIS IS THE PATH THE RENAME ACTUALLY TAKES. Nextcloud discovers
+                `dossiq` as a DIFFERENT app from `procest`, so enabling it IS a
+                fresh install with an empty `installed_version` — the
+                post-migration block above never fires, and the two Migrate*
+                steps would never run at all if they were declared only there.
+                Declared here they run, and on a genuine upgrade whichever block
+                fires first wins while the other is an idempotent no-op.
+
+                They stay ahead of InitializeSettings for the ordering reason
+                given in the post-migration block.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateAppConfigKeys</step>
+            <step>OCA\Dossiq\Repair\MigrateUserPreferences</step>
+            <!--
+                Same reason as in the post-migration block, and the same
+                duplication: enabling `dossiq` is a FRESH install as far as
+                Nextcloud is concerned, so this is the block that actually runs.
+                The register row it renames was created by the previous app id
+                and is still there — the rename has to happen here or the import
+                below forks a second, empty register.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateRegisterSlug</step>
+            <!--
+                SIBLING OF MigrateRegisterSlug, AND NEITHER COVERS THE OTHER.
+                OpenRegister resolves the two halves by different keys: a
+                REGISTER by slug alone, a SCHEMA by the PAIR
+                (application, slug) via findByApplicationAndSlug(). This app
+                now passes `appId: Application::APP_ID` = `dossiq`, while every
+                schema it already owns still carries `application = procest` —
+                so the pair matches nothing and the import's not-found branch
+                builds a SECOND, EMPTY schema set while every stored object
+                stays bound to the old rows. Measured before this step existed:
+                180 schemas under `procest`, zero under `dossiq`.
+
+                Runs alongside MigrateRegisterSlug and before the import.
+                Refuses rather than merges where a slug already has a twin
+                under the new application id, never deletes a schema, and never
+                throws.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateSchemaApplicationId</step>
+            <!-- Schema half of the same rename; see the post-migration block. -->
+            <step>OCA\Dossiq\Repair\MigrateRegisterApplicationId</step>
+            <step>OCA\Dossiq\Repair\InitializeSettings</step>
+            <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
+            <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
+            <step>OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition</step>
+            <step>OCA\Dossiq\Repair\SeedBesluitvormingTemplates</step>
+            <step>OCA\Dossiq\Repair\SeedLhsMatrix</step>
+            <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
+            <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
+            <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
+            <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
+            <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
+            <step>OCA\Dossiq\Repair\SeedKccWerkplekData</step>
+            <step>OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten</step>
+        </install>
     </repair-steps>
+
+    <commands>
+        <command>OCA\Dossiq\Command\BackfillLegalHoldsCommand</command>
+        <command>OCA\Dossiq\Command\MigrateAutomaticActionsToFlowsCommand</command>
+        <command>OCA\Dossiq\Command\MigrateTenantsCommand</command>
+        <command>OCA\Dossiq\Command\SeedBezwaarBeroepCommand</command>
+    </commands>
+
+    <settings>
+        <admin>OCA\Dossiq\Settings\AdminSettings</admin>
+        <admin>OCA\Dossiq\Settings\EmailSettings</admin>
+        <admin-section>OCA\Dossiq\Sections\SettingsSection</admin-section>
+        <personal>OCA\Dossiq\Settings\PersonalSettings</personal>
+        <personal-section>OCA\Dossiq\Sections\PersonalSection</personal-section>
+    </settings>
 
     <navigations>
         <navigation>
-            <id>procest</id>
-            <name>Procest</name>
-            <route>procest.dashboard.page</route>
+            <id>dossiq</id>
+            <name>Dossiq</name>
+            <route>dossiq.dashboard.page</route>
             <icon>app.svg</icon>
         </navigation>
     </navigations>
-
-    <settings>
-        <admin>OCA\Procest\Settings\AdminSettings</admin>
-        <admin-section>OCA\Procest\Sections\SettingsSection</admin-section>
-    </settings>
 </info>

@@ -1,0 +1,8 @@
+{
+  "spec_slug": "kcc-klantcontact-integratie",
+  "title": "KCC Klantcontact Integratie",
+  "app": "procest",
+  "repo": "https://github.com/ConductionNL/procest",
+  "depends_on": [],
+  "issue": null
+}

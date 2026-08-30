@@ -1,0 +1,8 @@
+{
+  "spec_slug": "status-transition-engine",
+  "title": "Status Transition Engine",
+  "app": "procest",
+  "repo": "https://github.com/ConductionNL/procest",
+  "depends_on": ["workflow-definition-model"],
+  "issue": null
+}

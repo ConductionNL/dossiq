@@ -1,0 +1,11 @@
+import { createApp } from 'vue'
+import StalledCasesWidget from './views/widgets/StalledCasesWidget.vue'
+import pinia from './pinia.js'
+
+OCA.Dashboard.register('procest_stalled_cases_widget', async (el, { widget }) => {
+	const app = createApp(StalledCasesWidget, { title: widget.title })
+	app.use(pinia)
+	app.config.globalProperties.t = t
+	app.config.globalProperties.n = n
+	app.mount(el)
+})

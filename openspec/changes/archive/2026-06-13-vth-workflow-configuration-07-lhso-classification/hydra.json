@@ -1,0 +1,7 @@
+{
+  "schema_version": 2,
+  "spec_slug": "vth-workflow-configuration-07-lhso-classification",
+  "app": "procest",
+  "kind": "code",
+  "depends_on": ["vth-workflow-configuration-01-config-foundation"]
+}

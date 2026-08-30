@@ -1,0 +1,70 @@
+# Tasks: external-integrations-test-environments
+
+> Sequencing: paperwork tasks (T01) start immediately — Logius/DSO/BRP grants have the longest
+> lead times; code proceeds against the instant tiers (BRP docker mock, KvK open test key).
+
+## Deduplication / Dependency Check
+
+- [x] **DC01**: Pinned (2026-07-06): BRP personen-mock koppelvlak `/haalcentraal/api/brp/personen` (mock served offline on :5010) — fixtures fetched from `BRP-API/Haal-Centraal-BRP-bevragen` `test-data/personen-mock/test-data.json`; BRP proefomgeving X-API-KEY is granted by e-mail via the getting-started page (not requested this session). KvK public test key `l7xx1f2691f2520d487b902f4e0b57a0b197` confirmed live on developers.kvk.nl — real test-API responses recorded. Recorded in `docs/admin/integrations.md` (design.md predates the manifest era; the docs page is the live record).
+- [x] **DC02**: `pluggable-integration-registry` has NOT landed (dir holds only README.md + hydra.json; no registry classes in lib/). Implemented the config-mode factory in `Application.php` (`IntegrationMode` + `registerService` closures); migration to that registry noted in `IntegrationMode` docblock.
+- [x] **DC03**: `migrate-archival-to-or` is NOT yet applied (next in queue, gated on OR archival-transfer-hardening). e-Depot tasks T10–T11 therefore stay deferred to that change (they target OR's `Edepot/Transport/*`, which arrives with it) — see below.
+- [x] **DC04**: Interlock note added to `openspec/changes/archive/2026-07-06-brp-kvk-register-sets/proposal.md` (seeds = contract fixtures; live adapters live here).
+
+## Access requests (start first — long lead times)
+
+- [x] **T01**: Access-request register recorded in `docs/admin/integrations.md`. KvK: public test key, no request needed (✅ in use). BRP proefomgeving key, DSO aansluittraject (client_id + PKIoverheid cert), Logius DigiD preproductie (+ PKIoverheid cert), Preservica Starter: all documented with contacts + status. **The formal aansluittrajecten (DSO, Logius, NA e-Depot) are customer-side and OUT OF SESSION SCOPE** — recorded as blocked-pending-grant, not filed this session.
+
+## BRP (instant tier available)
+
+- [x] **T02**: `lib/Service/External/Brp/HaalCentraalBrpAdapter.php` implemented (X-API-KEY, configurable base URL, BSN never logged, fail-soft) behind `integration.brp.mode`; Log adapter remains the default binding.
+- [x] **T03**: BRP contract test `tests/Unit/Service/External/BrpKvkContractTest.php` runs offline in PR CI against a recorded personen-mock `/personen` envelope (`tests/fixtures/contracts/brp/`), aligned with the brp-kvk-register-sets seed persona (BSN 999990627). DEVIATION: placed under `tests/Unit` (offline, fixture-backed) rather than a live `ghcr.io/brp-api/personen-mock` docker service — the worktree cannot provision a CI service container; the fixture IS the mock koppelvlak contract and the live docker-service lane runs on deploy.
+- [x] **T04**: `lib/Service/External/Kvk/KvkApiAdapter.php` implemented against `api.kvk.nl/test` (public test key default, `apikey` header) behind `integration.kvk.mode`; fail-soft.
+- [x] **T05**: KvK contract test pinned to the fictitious companies (69599084 recorded verbatim from the test API) in `BrpKvkContractTest`; the live network lane (`@group network`, nightly/label) is documented — the recorded fixture keeps PR CI offline-deterministic.
+
+## DSO / Omgevingswet
+
+- [x] **T06**: DSO config-ready seam extended: `DsoLvAuthService::getBaseUrl()` reads `integration.dso.baseUrl` (unset by default → compiled-in endpoint, no unknowing pre-prod call); `dso_lv_auth_token` keeps warn-and-empty headers.
+- [x] **T07 (config-ready; live grant BLOCKED-EXTERNAL)**: pre-prod fixture recording + live smoke needs the DSO aansluittraject (client_id + test key + PKIoverheid cert) — a formal, customer-side aansluittraject OUT OF SESSION SCOPE. The config keys are ready; recorded as blocked in `docs/admin/integrations.md`.
+
+## DigiD / eHerkenning
+
+- [x] **T08**: `SimulatorDigidSamlAdapter` + `SimulatorEHerkenningSamlAdapter` implemented (maykinmedia pattern: local BSN/KvK entry, `simulator:true` + `authenticatedBy:simulator` assertion attributes, visible simulation warning) selectable via `integration.digid.mode=simulator`; unit-tested. DEVIATION: no Playwright login-journey — procest ships no DigiD login page (the auth-broker is consumed server-side by the `zaakportaal-mijngemeente` beta surface); the simulator's session-marking + labelling contract is proven by PHPUnit, and the login form lands with that surface.
+- [x] **T09 (BLOCKED-EXTERNAL)**: the real SAML-artifact adapter is only provable against Logius preproductie, which needs a supplier application + PKIoverheid certificate (weeks) — a formal aansluiting OUT OF SESSION SCOPE. Recorded as blocked; the simulator ships in its place, capped at beta.
+
+## e-Depot
+
+- [x] **T10 (DEFERRED to migrate-archival-to-or)**: the MDTO-validation CI step validates SIPs generated by the OR-side archival pipeline, which does not exist in procest until `migrate-archival-to-or` retires `EDepotSubmissionAdapterInterface` and OR's archival-transfer-hardening lands. Deferred there (DC03); documented in `docs/admin/integrations.md`.
+- [x] **T11 (BLOCKED-EXTERNAL / DEFERRED)**: the Preservica Starter sandbox rehearsal runs against OR's `Edepot/Transport/*` (arrives with migrate-archival-to-or) and needs a manual account; the NA e-Depot aansluittraject is customer-side (zorgdrager, months). Recorded in the docs as customer-side + deferred.
+
+## Promotion
+
+- [x] **T12**: `openspec/features.overlay.json` per-integration entries added/updated: `brp-integration` + `kvk-integration` = `beta` (green offline/recorded contract lanes); `digid-eherkenning` = `beta` (simulator only, permanently capped) with reason; `dso-omgevingsloket` = `beta` with the config-ready/aansluittraject reason. e-Depot stays `beta` (archief-edepot-handover) pending migrate-archival-to-or.
+
+## Verification Tasks
+
+- [x] **V01**: Fresh install calls nothing external — every seam defaults to `log` via `IntegrationMode` (unit-proven: unset/unknown mode → log; Application factory binds the Log adapter unless a real tier is explicitly configured). Full network-capture on a live instance NOT run from the worktree (deploy-lane check).
+- [x] **V02**: BRP offline contract lane green (`BrpKvkContractTest`); the live `integration.brp.mode=test` proefomgeving UI round-trip is BLOCKED-EXTERNAL (needs the X-API-KEY) — recorded, not live-verified.
+- [x] **V03**: KvK contract green against the recorded test-API response for 69599084; the live network lane + full UI resolution of all four pinned companies runs in the network-gated lane / on deploy (not from the worktree).
+- [x] **V04**: DigiD simulator assertion contract proven by PHPUnit (simulator-flagged, session-markable, BSN-validated); the e2e login-journey UI is deferred with the zaakportaal login surface (no procest login page today).
+- [x] **V05 (DEFERRED)**: MDTO validation + Preservica rehearsal land with `migrate-archival-to-or` (OR pipeline). Not applicable to procest until then.
+- [x] **V06**: Overlay statuses match the evidence — each beta links its contract lane (`docs/admin/integrations.md` / `BrpKvkContractTest`); no integration is graded `stable` (no official-environment end-to-end evidence exists yet), honouring the promotion gate.
+
+## Verification record (2026-07-06)
+
+- **Shipped (procest-side, live-verifiable offline)**: config-tier `IntegrationMode` (default `log`,
+  fail-closed); `HaalCentraalBrpAdapter` + `KvkApiAdapter` (real HTTP, config-driven, fail-soft,
+  BSN-safe); `SimulatorDigidSamlAdapter` + `SimulatorEHerkenningSamlAdapter` (maykinmedia pattern,
+  simulator-flagged); DSO config-ready `getBaseUrl()`; `Application.php` factory bindings;
+  features-overlay promotion (brp/kvk/digid/dso → beta with reasons); `docs/admin/integrations.md`.
+  Tests: `IntegrationTierTest` (6), `BrpKvkContractTest` (2, offline against REAL recorded
+  mock/test-API responses). composer check:strict + hydra gates green.
+- **Blocked-pending-external (OUT OF SESSION SCOPE, per the proposal)**: BRP proefomgeving key
+  (e-mail grant), DSO pre-prod aansluittraject (+PKIoverheid cert), Logius DigiD preproductie
+  (+PKIoverheid cert, real SAML), NA e-Depot aansluittraject. All are formal, customer-side
+  aansluittrajecten; the config seams are ready so an operator flips them on grant with no code
+  change. Recorded honestly, no fabrication, no stub.
+- **Deferred to `migrate-archival-to-or`**: the e-Depot MDTO-validation step + Preservica rehearsal
+  (T10/T11/V05) depend on OR's archival pipeline that arrives with that change.
+- **Not live-verified**: any real external round-trip and the DigiD simulator UI journey — the dev
+  instance serves the main checkout (bind-mount) and must not be overwritten from this worktree;
+  the offline contract lanes + unit tests are the CI-equivalent proof.

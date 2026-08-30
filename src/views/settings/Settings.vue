@@ -1,83 +1,83 @@
 <template>
 	<CnSettingsSection
-		:name="t('procest', 'Configuration')"
-		:description="t('procest', 'Register and schema settings')"
-		doc-url="https://procest.app"
+		:name="t('dossiq', 'Configuration')"
+		:description="t('dossiq', 'Register and schema settings')"
+		docUrl="https://procest.conduction.nl/docs/intro"
 		:loading="loading">
 		<template #actions>
 			<NcButton type="primary" @click="save">
-				{{ t('procest', 'Save') }}
+				{{ t('dossiq', 'Save') }}
 			</NcButton>
 		</template>
 
 		<div class="settings-form">
 			<div class="form-group">
-				<label>{{ t('procest', 'Register') }}</label>
+				<label>{{ t('dossiq', 'Register') }}</label>
 				<NcTextField
-					:value="form.register"
-					:label="t('procest', 'Register')"
-					@update:value="v => form.register = v" />
+					:modelValue="form.register"
+					:label="t('dossiq', 'Register')"
+					@update:modelValue="(v) => (form.register = v)" />
 			</div>
 			<div class="form-group">
-				<label>{{ t('procest', 'Case schema') }}</label>
+				<label>{{ t('dossiq', 'Case schema') }}</label>
 				<NcTextField
-					:value="form.case_schema"
-					:label="t('procest', 'Case schema')"
-					@update:value="v => form.case_schema = v" />
+					:modelValue="form.case_schema"
+					:label="t('dossiq', 'Case schema')"
+					@update:modelValue="(v) => (form.case_schema = v)" />
 			</div>
 			<div class="form-group">
-				<label>{{ t('procest', 'Task schema') }}</label>
+				<label>{{ t('dossiq', 'Task schema') }}</label>
 				<NcTextField
-					:value="form.task_schema"
-					:label="t('procest', 'Task schema')"
-					@update:value="v => form.task_schema = v" />
+					:modelValue="form.task_schema"
+					:label="t('dossiq', 'Task schema')"
+					@update:modelValue="(v) => (form.task_schema = v)" />
 			</div>
 			<div class="form-group">
-				<label>{{ t('procest', 'Status schema') }}</label>
+				<label>{{ t('dossiq', 'Status schema') }}</label>
 				<NcTextField
-					:value="form.status_schema"
-					:label="t('procest', 'Status schema')"
-					@update:value="v => form.status_schema = v" />
+					:modelValue="form.status_schema"
+					:label="t('dossiq', 'Status schema')"
+					@update:modelValue="(v) => (form.status_schema = v)" />
 			</div>
 			<div class="form-group">
-				<label>{{ t('procest', 'Role schema') }}</label>
+				<label>{{ t('dossiq', 'Role schema') }}</label>
 				<NcTextField
-					:value="form.role_schema"
-					:label="t('procest', 'Role schema')"
-					@update:value="v => form.role_schema = v" />
+					:modelValue="form.role_schema"
+					:label="t('dossiq', 'Role schema')"
+					@update:modelValue="(v) => (form.role_schema = v)" />
 			</div>
 			<div class="form-group">
-				<label>{{ t('procest', 'Result schema') }}</label>
+				<label>{{ t('dossiq', 'Result schema') }}</label>
 				<NcTextField
-					:value="form.result_schema"
-					:label="t('procest', 'Result schema')"
-					@update:value="v => form.result_schema = v" />
+					:modelValue="form.result_schema"
+					:label="t('dossiq', 'Result schema')"
+					@update:modelValue="(v) => (form.result_schema = v)" />
 			</div>
 			<div class="form-group">
-				<label>{{ t('procest', 'Decision schema') }}</label>
+				<label>{{ t('dossiq', 'Decision schema') }}</label>
 				<NcTextField
-					:value="form.decision_schema"
-					:label="t('procest', 'Decision schema')"
-					@update:value="v => form.decision_schema = v" />
+					:modelValue="form.decision_schema"
+					:label="t('dossiq', 'Decision schema')"
+					@update:modelValue="(v) => (form.decision_schema = v)" />
 			</div>
 			<div class="form-group">
-				<label>{{ t('procest', 'Case type schema') }}</label>
+				<label>{{ t('dossiq', 'Case type schema') }}</label>
 				<NcTextField
-					:value="form.case_type_schema"
-					:label="t('procest', 'Case type schema')"
-					@update:value="v => form.case_type_schema = v" />
+					:modelValue="form.case_type_schema"
+					:label="t('dossiq', 'Case type schema')"
+					@update:modelValue="(v) => (form.case_type_schema = v)" />
 			</div>
 			<div class="form-group">
-				<label>{{ t('procest', 'Status type schema') }}</label>
+				<label>{{ t('dossiq', 'Status type schema') }}</label>
 				<NcTextField
-					:value="form.status_type_schema"
-					:label="t('procest', 'Status type schema')"
-					@update:value="v => form.status_type_schema = v" />
+					:modelValue="form.status_type_schema"
+					:label="t('dossiq', 'Status type schema')"
+					@update:modelValue="(v) => (form.status_type_schema = v)" />
 			</div>
 		</div>
 
 		<p v-if="saved" class="success-message">
-			{{ t('procest', 'Configuration saved') }}
+			{{ t('dossiq', 'Configuration saved') }}
 		</p>
 	</CnSettingsSection>
 </template>
@@ -94,6 +94,7 @@ export default {
 		NcButton,
 		NcTextField,
 	},
+
 	data() {
 		return {
 			form: {
@@ -107,30 +108,41 @@ export default {
 				case_type_schema: '',
 				status_type_schema: '',
 			},
+
 			saved: false,
 		}
 	},
+
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		settingsStore() {
 			return useSettingsStore()
 		},
+
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		loading() {
 			return this.settingsStore.isLoading
 		},
 	},
+
+	/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 	async mounted() {
 		const config = await this.settingsStore.fetchSettings()
 		if (config) {
 			this.form = { ...this.form, ...config }
 		}
 	},
+
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async save() {
 			this.saved = false
 			const result = await this.settingsStore.saveSettings(this.form)
 			if (result) {
 				this.saved = true
-				setTimeout(() => { this.saved = false }, 3000)
+				setTimeout(() => {
+					this.saved = false
+				}, 3000)
 			}
 		},
 	},

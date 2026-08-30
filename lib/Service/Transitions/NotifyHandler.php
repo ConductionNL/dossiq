@@ -1,0 +1,82 @@
+<?php
+
+/**
+ * Dossiq notify action handler.
+ *
+ * Action config shape: `{type: 'notify', userId?: '<uid>', message?: '<text>'}`.
+ * Dispatches an in-app Nextcloud notification via NotificatieService.
+ *
+ * @category Service
+ * @package  OCA\Dossiq\Service\Transitions
+ *
+ * @author    Conduction Development Team <dev@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://conduction.nl
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Service\Transitions;
+
+use OCA\Dossiq\Service\NotificatieService;
+use Psr\Log\LoggerInterface;
+
+/**
+ * Built-in handler for `notify` automatic actions.
+ *
+ * @spec openspec/changes/status-transition-engine/tasks.md#T08
+ */
+class NotifyHandler implements ActionHandlerInterface {
+	/**
+	 * Constructor.
+	 *
+	 * @param NotificatieService $notificationService Notification dispatcher
+	 * @param LoggerInterface $logger Logger
+	 */
+	public function __construct(
+		private readonly NotificatieService $notificationService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
+
+	/**
+	 * Handle the notify action.
+	 *
+	 * @param array<string, mixed> $actionConfig Action configuration
+	 * @param array<string, mixed> $case Case object
+	 * @param array<string, mixed> $transitionContext Transition context
+	 *
+	 * @return ActionResult
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
+		try {
+			$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
+			$recipient = (string)($actionConfig['userId'] ?? ($case['assignee'] ?? ''));
+			$message = (string)($actionConfig['message'] ?? sprintf('Status gewijzigd: %s', $transitionContext['transitionLabel'] ?? ''));
+
+			if (method_exists($this->notificationService, 'notifyUser') === true && $recipient !== '') {
+				$this->notificationService->notifyUser($recipient, $message, ['caseId' => $caseId]);
+				return new ActionResult(succeeded: true, data: ['userId' => $recipient]);
+			}
+
+			// Fall back to logging — non-fatal.
+			$this->logger->warning('NotifyHandler: NotificatieService::notifyUser missing or recipient empty');
+			return new ActionResult(succeeded: true, data: ['skipped' => true]);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'NotifyHandler failed',
+				['exception' => $e->getMessage(), 'context' => $transitionContext],
+			);
+			return new ActionResult(succeeded: false, error: 'notify_failed');
+		}
+	}//end handle()
+}//end class

@@ -1,0 +1,91 @@
+{
+  "change": "start-case-widget",
+  "project": "procest",
+  "repo": "ConductionNL/procest",
+  "created": "2026-03-24",
+  "tracking_issue": 107,
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Create PHP widget class",
+      "priority": "MVP",
+      "status": "done",
+      "spec_ref": "specs/spec.md#start-case-widget-php",
+      "files_likely_affected": ["lib/Dashboard/StartCaseWidget.php"],
+      "acceptance_criteria": [
+        "Class passes php -l syntax check and follows PSR-12",
+        "Implements OCP\\Dashboard\\IWidget following CasesOverviewWidget pattern"
+      ],
+      "github_issue": 108
+    },
+    {
+      "id": "T2",
+      "title": "Register widget in Application.php",
+      "priority": "MVP",
+      "status": "done",
+      "spec_ref": "specs/spec.md#widget-registration",
+      "files_likely_affected": ["lib/AppInfo/Application.php"],
+      "acceptance_criteria": [
+        "Widget appears in register() method alongside other widgets",
+        "Use statement and registerDashboardWidget call added"
+      ],
+      "github_issue": 109
+    },
+    {
+      "id": "T3",
+      "title": "Create Vue component",
+      "priority": "MVP",
+      "status": "done",
+      "spec_ref": "specs/spec.md#start-case-widget-vue",
+      "files_likely_affected": ["src/views/widgets/StartCaseWidget.vue"],
+      "acceptance_criteria": [
+        "GIVEN a user viewing the dashboard WHEN they add the widget THEN they see available case types",
+        "GIVEN a user clicks a case type THEN a new case is created and they navigate to detail page",
+        "GIVEN no case types configured THEN empty state with admin settings message shown",
+        "GIVEN case types loading THEN loading state shown",
+        "All strings wrapped in t('procest', '...')"
+      ],
+      "github_issue": 110
+    },
+    {
+      "id": "T4",
+      "title": "Create webpack entry point",
+      "priority": "MVP",
+      "status": "done",
+      "spec_ref": "specs/spec.md#webpack-entry",
+      "files_likely_affected": ["src/startCaseWidget.js"],
+      "acceptance_criteria": [
+        "Entry file matches existing widget entry pattern",
+        "Registers via OCA.Dashboard.register('procest_start_case_widget', ...)"
+      ],
+      "github_issue": 111
+    },
+    {
+      "id": "T5",
+      "title": "Add webpack config entry",
+      "priority": "MVP",
+      "status": "done",
+      "spec_ref": "specs/spec.md#webpack-config",
+      "files_likely_affected": ["webpack.config.js"],
+      "acceptance_criteria": [
+        "startCaseWidget entry added alongside other widget entries",
+        "Output filename: procest-startCaseWidget.js"
+      ],
+      "github_issue": 112
+    },
+    {
+      "id": "T6",
+      "title": "Quality checks",
+      "priority": "MVP",
+      "status": "done",
+      "spec_ref": "tasks/tasks.md#T6",
+      "files_likely_affected": [],
+      "acceptance_criteria": [
+        "No syntax errors from php -l",
+        "Pattern consistency verified",
+        "All user-visible strings use t() for i18n"
+      ],
+      "github_issue": 113
+    }
+  ]
+}

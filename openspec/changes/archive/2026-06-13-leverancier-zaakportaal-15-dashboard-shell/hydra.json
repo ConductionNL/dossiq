@@ -1,0 +1,7 @@
+{
+  "schema_version": 2,
+  "spec_slug": "leverancier-zaakportaal-15-dashboard-shell",
+  "app": "procest",
+  "kind": "code",
+  "depends_on": ["leverancier-zaakportaal-14-kpi-frontend"]
+}

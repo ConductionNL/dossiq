@@ -1,0 +1,67 @@
+{
+  "phase": "apply",
+  "timestamp": "2026-05-11T00:00:00+00:00",
+  "status": "applied",
+  "summary": "Added automaticAction register schema, manifest pages (AutomaticActions index + AutomaticActionDetail) at /settings/automatic-actions, ActionRegistry with per-tenant slug lookup and DI-tag-style handler index, SideEffectDispatcher in lib/Service/Transitions/ recognising both {ref:<slug>} references and inline action JSON, and six built-in ActionHandlerInterface implementations (SendEmail, CreateDocument, NotifyRole, CallWebhook, MergeTemplate, ScheduleReminder) — all dry-run-aware, all catch \\Throwable + log + return static error codes. No bespoke CRUD controller (manifest renderer handles list/create/update/delete/view).",
+  "implemented_requirements": [
+    "REQ-AA-1 schema (slug/type/tenantId/title/config/isPublished/active)",
+    "REQ-AA-2 ActionRegistry::resolve + per-request cache + unpublished/unknown logging",
+    "REQ-AA-3 six built-in handlers with static error codes",
+    "REQ-AA-5 SideEffectDispatcher resolves {ref:<slug>} + inline JSON backward-compat",
+    "REQ-AA-6 dry-run honoured in every handler (no live mutation)",
+    "REQ-AA-7 audit array shape (type/ref/ok/error/data) returned per action",
+    "REQ-AA-8 cross-tenant rejection + indistinguishable user-visible miss"
+  ],
+  "manifest_pages_added": [
+    "AutomaticActions (type:index) at /settings/automatic-actions",
+    "AutomaticActionDetail (type:detail) at /settings/automatic-actions/:id",
+    "AutomaticActionsMenu (section:settings) linking to AutomaticActions route"
+  ],
+  "handlers_registered": [
+    "lib/Service/Actions/SendEmailHandler.php",
+    "lib/Service/Actions/CreateDocumentHandler.php",
+    "lib/Service/Actions/NotifyRoleHandler.php",
+    "lib/Service/Actions/CallWebhookHandler.php",
+    "lib/Service/Actions/MergeTemplateHandler.php",
+    "lib/Service/Actions/ScheduleReminderHandler.php"
+  ],
+  "registry_integration": {
+    "registry": "lib/Service/Actions/ActionRegistry.php",
+    "dispatcher": "lib/Service/Transitions/SideEffectDispatcher.php",
+    "interface": "lib/Service/Actions/ActionHandlerInterface.php",
+    "result_value_object": "lib/Service/Actions/ActionResult.php",
+    "template_trait": "lib/Service/Actions/HandlesTemplates.php"
+  },
+  "schema_changes": {
+    "register": "lib/Settings/procest_register.json",
+    "version_bump": "0.6.0 -> 0.7.0",
+    "schema_added": "automaticAction",
+    "settings_service_config_keys": [
+      "automatic_action_schema (lib/Service/SettingsService.php)"
+    ],
+    "settings_service_slug_mapping": "automaticAction => automatic_action_schema"
+  },
+  "deferred": [
+    "REQ-AA-4 admin UI Vue components (slug-autocomplete on TransitionEditor + dry-run preview pane) — pending workflow-definition-model admin UI scaffold",
+    "POST /api/automatic-action/{slug}/dry-run endpoint — pending status-transition-engine landing (handlers already dry-run-aware via $transitionContext['dryRun'])",
+    "Engine integration: SideEffectDispatcher is shipped but only invoked once status-transition-engine StatusTransitionService::execute lands (cross-spec dependency)",
+    "DI tag wiring via $context->registerService — ActionRegistry resolves handlers lazily via container by FQCN as an interim; can be flipped to procest.transition_side_effect_handler tag iteration once status-transition-engine lands",
+    "PHPUnit suite (V02)",
+    "Playwright smoke (V03)"
+  ],
+  "validation": {
+    "php_lint": "pass (all 8 new + 1 changed php files)",
+    "jq": "pass (procest_register.json + manifest.json)",
+    "composer_check_strict": "deferred per strict watchdog",
+    "i18n": "deferred per strict watchdog"
+  },
+  "flags": [
+    "manifest-first: zero bespoke CRUD controller — AutomaticActions index/detail drive list/create/update/delete/view via OpenRegister manifest renderer",
+    "no i18n strings added per watchdog (menu label hard-coded in Dutch matching design.md 'Automatische acties')",
+    "dry-run is engine-driven via $transitionContext['dryRun'] flag — every handler short-circuits before mutating live state",
+    "cross-tenant resolution returns null AND logs both tenants AND surfaces user-visible 'unknown_action_ref' (per REQ-AA-8)",
+    "handlers use static error codes only — never $e->getMessage() in ActionResult.error",
+    "soft-bound to status-transition-engine: SideEffectDispatcher ready to be wired into StatusTransitionService::execute once that change applies (no hard import of engine classes)",
+    "soft-bound to ZgwDocumentService and NotificatieService via lazy container lookup — handlers return static 'service_unavailable' errors instead of fatal-erroring when those services are missing"
+  ]
+}

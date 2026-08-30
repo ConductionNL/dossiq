@@ -1,0 +1,64 @@
+publiccodeYmlVersion: "0.4"
+
+name: Dossiq
+url: "https://github.com/ConductionNL/dossiq"
+softwareVersion: "0.2.2"
+releaseDate: "2026-05-26"
+developmentStatus: beta
+softwareType: "standalone/other"
+
+platforms:
+  - nextcloud
+
+categories:
+  - workflow-management
+  - process-management
+
+description:
+  en:
+    shortDescription: >
+      Business process and workflow management for Nextcloud.
+    longDescription: >
+      Dossiq is a business process and workflow management application for Nextcloud.
+      It enables organisations to model, execute, and monitor business processes and
+      workflows. Built on Open Register, it integrates with the Nextcloud ecosystem
+      and supports process automation and standardisation for both government and
+      commercial organisations.
+    features:
+      - Business process modelling and execution
+      - Workflow automation
+      - Process monitoring and reporting
+      - Integration with Nextcloud collaboration tools
+
+  nl:
+    shortDescription: >
+      Bedrijfsproces- en workflowbeheer voor Nextcloud.
+    longDescription: >
+      Dossiq is een bedrijfsprocesbeheers- en workflowtoepassing voor Nextcloud.
+      Het stelt organisaties in staat bedrijfsprocessen en workflows te modelleren,
+      uit te voeren en te monitoren. Gebouwd op Open Register integreert het met het
+      Nextcloud-ecosysteem en ondersteunt procesautomatisering en -standaardisatie
+      voor zowel overheids- als commerciële organisaties.
+    features:
+      - Bedrijfsprocessen modelleren en uitvoeren
+      - Workflowautomatisering
+      - Procesmonitoring en rapportage
+      - Integratie met Nextcloud-samenwerkingstools
+
+legal:
+  license: EUPL-1.2
+  mainCopyrightOwner: "Conduction B.V."
+  repoOwner: "Conduction B.V."
+
+maintenance:
+  type: community
+  contacts:
+    - name: Conduction B.V.
+      email: info@conduction.nl
+      affiliation: Conduction B.V.
+
+localisation:
+  localisationReady: true
+  availableLanguages:
+    - nl
+    - en

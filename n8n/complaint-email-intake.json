@@ -1,0 +1,156 @@
+{
+  "name": "Dossiq — Complaint Email Intake",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Every 5 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.DOSSIQ_BASE_URL || 'http://nextcloud' }}/index.php/apps/dossiq/api/integration/mail/poll",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "OCS-APIRequest", "value": "true" },
+            { "name": "Accept", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "fetch-inbox",
+      "name": "Fetch klachten@ inbox",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Classify incoming emails as either NEW complaint intake or ATTACHMENT for an\n// existing complaint (matched by complaint number in the subject line).\n//\n// The complaint number pattern is KLA-YYYY-NNNN (see ComplaintService::generateNumber).\n//\n// Input: array of mail objects { messageId, from, subject, body, attachments[] }\n// Output: two branches — `new` and `attachment`.\nconst messages = ($input.first().json.messages) || [];\nconst pattern  = /(KLA-\\d{4}-\\d{4,})/i;\nconst out = { newComplaints: [], attachments: [] };\nfor (const m of messages) {\n  const match = (m.subject || '').match(pattern);\n  if (match) {\n    out.attachments.push({ klachtNummer: match[1].toUpperCase(), message: m });\n  } else {\n    out.newComplaints.push(m);\n  }\n}\nreturn [{ json: out }];"
+      },
+      "id": "classify",
+      "name": "Classify new vs attachment",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "newComplaints",
+        "options": {}
+      },
+      "id": "split-new",
+      "name": "Per new complaint",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [860, 220]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "attachments",
+        "options": {}
+      },
+      "id": "split-att",
+      "name": "Per attachment match",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [860, 380]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DOSSIQ_BASE_URL || 'http://nextcloud' }}/index.php/apps/dossiq/api/complaints",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "OCS-APIRequest", "value": "true" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"ontvangstkanaal\": \"email\",\n  \"omschrijving\": $json.body,\n  \"klager\": { \"email\": $json.from, \"naam\": $json.from },\n  \"onderwerp\": $json.subject,\n  \"externalMessageId\": $json.messageId\n}"
+      },
+      "id": "create-complaint",
+      "name": "POST /api/complaints",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1080, 220]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DOSSIQ_BASE_URL || 'http://nextcloud' }}/index.php/apps/dossiq/api/complaints/{{ $json.klachtNummer }}/attachments",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "OCS-APIRequest", "value": "true" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"attachments\": $json.message.attachments,\n  \"source\": \"email-followup\",\n  \"messageId\": $json.message.messageId\n}"
+      },
+      "id": "link-attachment",
+      "name": "POST /api/complaints/{nr}/attachments",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1080, 380]
+    }
+  ],
+  "connections": {
+    "Every 5 minutes": {
+      "main": [[{ "node": "Fetch klachten@ inbox", "type": "main", "index": 0 }]]
+    },
+    "Fetch klachten@ inbox": {
+      "main": [[{ "node": "Classify new vs attachment", "type": "main", "index": 0 }]]
+    },
+    "Classify new vs attachment": {
+      "main": [[
+        { "node": "Per new complaint", "type": "main", "index": 0 },
+        { "node": "Per attachment match", "type": "main", "index": 0 }
+      ]]
+    },
+    "Per new complaint": {
+      "main": [[{ "node": "POST /api/complaints", "type": "main", "index": 0 }]]
+    },
+    "Per attachment match": {
+      "main": [[{ "node": "POST /api/complaints/{nr}/attachments", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "owner": "dossiq",
+    "spec": "openspec/changes/complaint-management/specs/complaint-management/spec.md#email-intake",
+    "purpose": "Poll the klachten@ inbox, auto-create complaints with ontvangstkanaal=email, link follow-up attachments to existing complaints by KLA-YYYY-NNNN in the subject line."
+  }
+}
