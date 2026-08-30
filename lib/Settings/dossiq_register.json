@@ -449,10 +449,20 @@
                             "boolean",
                             "date",
                             "url",
-                            "email"
+                            "email",
+                            "enum",
+                            "json"
                         ],
-                        "description": "Data type of this property",
+                        "description": "Data type of this property. 'enum' carries its allowed values in enumValues; 'json' carries a JSON Schema in defaultValue and is validated as a document rather than a scalar. Both exist because the alternative — flattening them to 'string' — moves a constraint out of the model and into nobody's hands: a four-value cadence and a JSON schema would both become free text that nothing checks.",
                         "title": "Property Type"
+                    },
+                    "enumValues": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "The allowed values, when propertyType is 'enum'. Ignored for every other type. Without this the 'enum' type would be indistinguishable from 'string' at runtime, which is the flattening it exists to prevent.",
+                        "title": "Enum Values"
                     },
                     "isRequired": {
                         "type": "boolean",
@@ -1014,7 +1024,276 @@
                             "from": "caseType",
                             "field": "initialStatus"
                         }
-                    }
+                    },
+                    "x-openregister-flows": [
+                        {
+                            "name": "Case behandeling",
+                            "app": "dossiq",
+                            "description": "Walks a case from intake to closure: completeness check, an ask to the applicant when something is missing, two employee decisions, a task, the planning commission's approval, the decision document, and closure. Each status move is its own step so the applicant's view is driven by the flow.",
+                            "trigger": "object.created",
+                            "triggerRegister": "dossiq",
+                            "executionMode": "async",
+                            "limits": {
+                                "maxTransitions": 200
+                            },
+                            "nodes": [
+                                {
+                                    "id": "start",
+                                    "type": "openregister.trigger-object",
+                                    "config": {
+                                        "event": "object.created",
+                                        "register": "dossiq",
+                                        "schema": "case"
+                                    }
+                                },
+                                {
+                                    "id": "status-ontvangen",
+                                    "type": "dossiq.setStatus",
+                                    "config": {
+                                        "status": "Ontvangen"
+                                    }
+                                },
+                                {
+                                    "id": "check-complete",
+                                    "type": "openregister.switch",
+                                    "config": {}
+                                },
+                                {
+                                    "id": "count-round",
+                                    "type": "openregister.set-fields",
+                                    "config": {
+                                        "compute": {
+                                            "aanvullingRound": {
+                                                "+": [
+                                                    {
+                                                        "var": "json.aanvullingRound"
+                                                    },
+                                                    1
+                                                ]
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "id": "status-wacht",
+                                    "type": "dossiq.setStatus",
+                                    "config": {
+                                        "status": "Wacht op aanvulling"
+                                    }
+                                },
+                                {
+                                    "id": "ask-indiener",
+                                    "type": "dossiq.askPerson",
+                                    "config": {
+                                        "question": "Vul uw aanvraag aan",
+                                        "details": "Uw aanvraag is nog niet compleet. Vul de ontbrekende gegevens aan zodat wij verder kunnen.",
+                                        "assignee": "{{ case.assignee }}",
+                                        "dueInDays": "14",
+                                        "signalKey": "aanvulling"
+                                    }
+                                },
+                                {
+                                    "id": "status-gestrand",
+                                    "type": "dossiq.setStatus",
+                                    "config": {
+                                        "status": "Gestrand"
+                                    }
+                                },
+                                {
+                                    "id": "end-gestrand",
+                                    "type": "openregister.end",
+                                    "config": {}
+                                },
+                                {
+                                    "id": "status-behandeling",
+                                    "type": "dossiq.setStatus",
+                                    "config": {
+                                        "status": "In behandeling"
+                                    }
+                                },
+                                {
+                                    "id": "decide-register-b",
+                                    "type": "dossiq.requestDecision",
+                                    "config": {
+                                        "question": "Toets de aanvraag aan register B",
+                                        "decisionType": "advice",
+                                        "signalKey": "toetsRegisterB"
+                                    }
+                                },
+                                {
+                                    "id": "decide-tweede-toets",
+                                    "type": "dossiq.requestDecision",
+                                    "config": {
+                                        "question": "Tweede inhoudelijke toets",
+                                        "decisionType": "advice",
+                                        "signalKey": "tweedeToets"
+                                    }
+                                },
+                                {
+                                    "id": "task-behandelaar",
+                                    "type": "dossiq.askPerson",
+                                    "config": {
+                                        "question": "Rond de inhoudelijke voorbereiding af",
+                                        "details": "Controleer het dossier en maak het gereed voor de planningscommissie.",
+                                        "assignee": "behandelaars",
+                                        "dueInDays": "7",
+                                        "signalKey": "voorbereiding"
+                                    }
+                                },
+                                {
+                                    "id": "status-commissie",
+                                    "type": "dossiq.setStatus",
+                                    "config": {
+                                        "status": "Bij commissie"
+                                    }
+                                },
+                                {
+                                    "id": "decide-commissie",
+                                    "type": "dossiq.requestDecision",
+                                    "config": {
+                                        "question": "Definitief besluit van de planningscommissie",
+                                        "decisionType": "report-adoption",
+                                        "signalKey": "commissieBesluit"
+                                    }
+                                },
+                                {
+                                    "id": "route-besluit",
+                                    "type": "openregister.switch",
+                                    "config": {}
+                                },
+                                {
+                                    "id": "besluit-document",
+                                    "type": "dossiq.action.mergeTemplate",
+                                    "config": {
+                                        "template": "besluit",
+                                        "outputName": "besluit.pdf"
+                                    }
+                                },
+                                {
+                                    "id": "status-afgehandeld",
+                                    "type": "dossiq.setStatus",
+                                    "config": {
+                                        "status": "Afgehandeld"
+                                    }
+                                },
+                                {
+                                    "id": "end",
+                                    "type": "openregister.end",
+                                    "config": {}
+                                }
+                            ],
+                            "edges": [
+                                {
+                                    "id": "e-start",
+                                    "from": "start",
+                                    "to": "status-ontvangen"
+                                },
+                                {
+                                    "id": "e-ontvangen",
+                                    "from": "status-ontvangen",
+                                    "to": "check-complete"
+                                },
+                                {
+                                    "id": "e-compleet",
+                                    "from": "check-complete",
+                                    "to": "status-behandeling",
+                                    "label": "compleet",
+                                    "condition": {
+                                        "!!": [
+                                            {
+                                                "var": "json.description"
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": "e-onvolledig",
+                                    "from": "check-complete",
+                                    "to": "status-wacht",
+                                    "label": "onvolledig",
+                                    "condition": {
+                                        "<": [
+                                            {
+                                                "var": "json.aanvullingRound"
+                                            },
+                                            3
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": "e-gestrand",
+                                    "from": "check-complete",
+                                    "to": "status-gestrand"
+                                },
+                                {
+                                    "id": "e-wacht",
+                                    "from": "status-wacht",
+                                    "to": "count-round"
+                                },
+                                {
+                                    "id": "e-count",
+                                    "from": "count-round",
+                                    "to": "ask-indiener"
+                                },
+                                {
+                                    "id": "e-heraanbieding",
+                                    "from": "ask-indiener",
+                                    "to": "check-complete"
+                                },
+                                {
+                                    "id": "e-gestrand-end",
+                                    "from": "status-gestrand",
+                                    "to": "end-gestrand"
+                                },
+                                {
+                                    "id": "e-behandeling",
+                                    "from": "status-behandeling",
+                                    "to": "decide-register-b"
+                                },
+                                {
+                                    "id": "e-toets1",
+                                    "from": "decide-register-b",
+                                    "to": "decide-tweede-toets"
+                                },
+                                {
+                                    "id": "e-toets2",
+                                    "from": "decide-tweede-toets",
+                                    "to": "task-behandelaar"
+                                },
+                                {
+                                    "id": "e-taak",
+                                    "from": "task-behandelaar",
+                                    "to": "status-commissie"
+                                },
+                                {
+                                    "id": "e-commissie",
+                                    "from": "status-commissie",
+                                    "to": "decide-commissie"
+                                },
+                                {
+                                    "id": "e-besluit",
+                                    "from": "decide-commissie",
+                                    "to": "route-besluit"
+                                },
+                                {
+                                    "id": "e-toegekend",
+                                    "from": "route-besluit",
+                                    "to": "besluit-document",
+                                    "label": "besluit genomen"
+                                },
+                                {
+                                    "id": "e-document",
+                                    "from": "besluit-document",
+                                    "to": "status-afgehandeld"
+                                },
+                                {
+                                    "id": "e-end",
+                                    "from": "status-afgehandeld",
+                                    "to": "end"
+                                }
+                            ]
+                        }
+                    ]
                 },
                 "required": [
                     "title",
@@ -1512,6 +1791,24 @@
                         "description": "JSON-encoded array of checklist items ({id, label, checked})",
                         "visible": false,
                         "title": "Checklist"
+                    },
+                    "flowRun": {
+                        "type": "string",
+                        "description": "UUID of the suspended flow run this task is the answer to. Completing the task resumes that run. Distinct from workflowStepId, which names a step in a flow DEFINITION: two cases running the same flow share a workflowStepId and must never resume one another.",
+                        "visible": false,
+                        "title": "Flow Run"
+                    },
+                    "flowNode": {
+                        "type": "string",
+                        "description": "Id of the node within the flow that asked this question. Required alongside flowRun because a run accumulates one awaiting slot PER NODE, so the run alone cannot say which question this task answers.",
+                        "visible": false,
+                        "title": "Flow Node"
+                    },
+                    "blocksCase": {
+                        "type": "boolean",
+                        "description": "Set when a case flow is waiting on this task. Derived — see x-openregister-calculations.",
+                        "title": "Blocks a case",
+                        "facetable": true
                     }
                 },
                 "searchable": true,
@@ -1672,6 +1969,46 @@
                                 "to": "disabled",
                                 "description": "Disable the task."
                             }
+                        }
+                    }
+                },
+                "x-openregister-calculations": {
+                    "blocksCase": {
+                        "type": "boolean",
+                        "materialise": true,
+                        "description": "Whether a case flow is currently WAITING on this task. True when the task records the run that created it and has not yet been answered. This is the half of the relationship a person cannot otherwise see: `case` already says which case the task belongs to, but not that the case has stopped and is waiting for them. Materialised so a work queue can filter on it server-side — a client-side filter over server-paged rows silently drops what it never fetched. Declarative per ADR-031: this is derived state, not a service.",
+                        "expression": {
+                            "and": [
+                                {
+                                    "ne": [
+                                        {
+                                            "coalesce": [
+                                                {
+                                                    "prop": "flowRun"
+                                                },
+                                                ""
+                                            ]
+                                        },
+                                        ""
+                                    ]
+                                },
+                                {
+                                    "ne": [
+                                        {
+                                            "prop": "status"
+                                        },
+                                        "completed"
+                                    ]
+                                },
+                                {
+                                    "ne": [
+                                        {
+                                            "prop": "status"
+                                        },
+                                        "terminated"
+                                    ]
+                                }
+                            ]
                         }
                     }
                 }
@@ -6481,11 +6818,6 @@
                         "description": "Dutch Chamber of Commerce (KvK) number",
                         "title": "KvK Number"
                     },
-                    "contractRef": {
-                        "type": "string",
-                        "description": "Reference to signed contract document (UUID or filename)",
-                        "title": "Contract Ref"
-                    },
                     "status": {
                         "type": "string",
                         "enum": [
@@ -6506,26 +6838,6 @@
                         ],
                         "description": "Service tier — drives quota defaults and feature flags",
                         "title": "Tier"
-                    },
-                    "isolationMode": {
-                        "type": "string",
-                        "enum": [
-                            "schema",
-                            "database"
-                        ],
-                        "default": "schema",
-                        "description": "Physical isolation mode — schema-per-tenant (default) or dedicated database",
-                        "title": "Isolation Mode"
-                    },
-                    "dataResidency": {
-                        "type": "string",
-                        "enum": [
-                            "nl",
-                            "eu"
-                        ],
-                        "default": "nl",
-                        "description": "Data residency region (AVG art. 28)",
-                        "title": "Data Residency"
                     },
                     "createdAt": {
                         "type": "string",

@@ -1,8 +1,16 @@
 ---
-status: done
+status: in-progress
 ---
 
 # Task Management Specification
+
+## OpenSpec changes
+
+- `case-flow-human-steps` (active) — a task may record the flow run and node
+  that created it, and completing such a task resumes that run at that node;
+  both are required because a run holds one awaiting slot PER NODE, so a task
+  naming only its run cannot say which question it answers. A task with no run
+  behaves exactly as before.
 
 ## Purpose
 

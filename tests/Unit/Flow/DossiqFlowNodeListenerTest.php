@@ -29,7 +29,10 @@ use OCA\Dossiq\Flow\DossiqTxSendEmailNode;
 use OCA\Dossiq\Flow\DossiqTxCreateTaskNode;
 use OCA\Dossiq\Flow\DossiqTxCreateSubCaseNode;
 use OCA\Dossiq\Flow\DossiqTxWebhookNode;
+use OCA\Dossiq\Flow\DossiqAskPersonNode;
+use OCA\Dossiq\Flow\DossiqRequestDecisionNode;
 use OCA\Dossiq\Flow\DossiqTxSetFieldNode;
+use OCA\Dossiq\Flow\DossiqTxSetStatusNode;
 use OCA\Dossiq\Flow\DossiqTxNotifyNode;
 use OCA\Dossiq\Flow\DossiqTxBesluitvormingActivateNode;
 use OCA\Dossiq\Flow\DossiqTxBesluitvormingPublishNode;
@@ -62,6 +65,9 @@ class DossiqFlowNodeListenerTest extends TestCase {
         DossiqTxCreateSubCaseNode::class => 'dossiq.createSubCase',
         DossiqTxWebhookNode::class => 'dossiq.webhook',
         DossiqTxSetFieldNode::class => 'dossiq.setField',
+        DossiqTxSetStatusNode::class => 'dossiq.setStatus',
+        DossiqAskPersonNode::class => 'dossiq.askPerson',
+        DossiqRequestDecisionNode::class => 'dossiq.requestDecision',
         DossiqTxNotifyNode::class => 'dossiq.notify',
         DossiqTxBesluitvormingActivateNode::class => 'dossiq.besluitvormingActivate',
         DossiqTxBesluitvormingPublishNode::class => 'dossiq.besluitvormingPublish',
@@ -109,13 +115,17 @@ class DossiqFlowNodeListenerTest extends TestCase {
 
 
     /**
-     * All fifteen actions land on the catalogue — both vocabularies.
+     * Every action lands on the catalogue — both vocabularies.
+     *
+     * Asserted against the fixture rather than a literal count, so adding a node
+     * means adding it in ONE place; a count in the test name goes stale the
+     * first time somebody adds a node and does not notice.
      *
      * @return void
      *
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
-    public function testAllFifteenActionsAreRegistered(): void {
+    public function testEveryActionIsRegistered(): void {
         $event = new RegisterFlowNodesEvent();
         $this->listener()->handle($event);
 
@@ -129,7 +139,7 @@ class DossiqFlowNodeListenerTest extends TestCase {
             $ids
         );
 
-    }//end testAllFifteenActionsAreRegistered()
+    }//end testEveryActionIsRegistered()
 
 
     /**
@@ -150,7 +160,7 @@ class DossiqFlowNodeListenerTest extends TestCase {
     }//end testUnrelatedEventIsIgnored()
 
     /**
-     * One unbuildable node does not cost the other fourteen their place.
+     * One unbuildable node does not cost the others their place.
      *
      * The list-based resolution introduced this branch: if a single node's
      * dependencies cannot be constructed, aborting would empty the whole
@@ -170,7 +180,7 @@ class DossiqFlowNodeListenerTest extends TestCase {
             $event->getRegisteredNodes()
         );
 
-        $this->assertCount(14, $ids);
+        $this->assertCount(17, $ids);
         $this->assertNotContains('dossiq.setField', $ids);
         $this->assertContains('dossiq.sendEmail', $ids);
         $this->assertContains('dossiq.action.sendEmail', $ids);

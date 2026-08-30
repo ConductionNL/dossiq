@@ -102,9 +102,13 @@ test.describe('Subsidies intake page', () => {
 	// intake shell to assert. (/subsidieregelingen renders "Add
 	// Subsidieregeling" correctly and its test passes.)
 	// @e2e openspec/specs/subsidy-intake/spec.md#subsidies-index-renders-list-shell
-	test.fixme('subsidies index renders the subsidy intake list shell', async ({
+	test('subsidies index renders the subsidy intake list shell', async ({
 		page,
 	}) => {
+		test.fixme(
+			true,
+			'FIXME(#719): /subsidies falls back to the GENERIC case index — measured buttons are [Settings, Cards, Table, Add Case, Actions], i.e. "Add Case" rather than any subsidy-specific create control, so there is no subsidy intake shell to assert. (/subsidieregelingen renders "Add Subsidieregeling" correctly and its test passes.)',
+		)
 		const errors = trackDossiqErrors(page)
 		// "Subsidies" is a group header with no label in the subsidie manifest
 		// fragment, so it renders no clickable nav entry — navigate by route.
@@ -123,22 +127,30 @@ test.describe('Subsidies intake page', () => {
 	})
 })
 
-test.describe('Grant schemes page', () => {
-	// @e2e openspec/specs/subsidy-intake/spec.md#grant-schemes-index-renders-list-shell
-	test('grant schemes index renders its list shell', async ({ page }) => {
-		const errors = trackDossiqErrors(page)
-		// The nav label is "Subsidy schemes"; navigate by route so the test does
-		// not depend on the current translation of that menu string.
+test.describe('Grant schemes are administered as case types', () => {
+	// UPDATED BY subsidieregeling-is-a-casetype. This used to assert that
+	// /subsidieregelingen rendered its own index. A grant scheme IS a case type
+	// — four of its properties were caseType fields under another name — so the
+	// bespoke page retired and schemes are administered on the Case types index.
+	//
+	// Asserting BOTH halves. The absence check alone would pass just as happily
+	// on a build where the capability vanished entirely, which is what ADR-044
+	// Decision 5 forbids.
+	//
+	// @e2e openspec/changes/subsidieregeling-is-a-casetype/proposal.md
+	test('the retired scheme index is gone and Case types took it over', async ({
+		page,
+	}) => {
 		await navToRoute(page, '/subsidieregelingen')
-		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible({
-			timeout: 15000,
-		})
-		await expect(page.getByRole('button', { name: 'Table' })).toBeVisible()
 		await expect(
 			page.getByRole('button', { name: 'Add Subsidieregeling' }),
-		).toBeVisible()
+		).toHaveCount(0)
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
-		expect(errors, errors.join('\n')).toEqual([])
+
+		await navToRoute(page, '/settings/case-types')
+		await expect(
+			page.getByRole('button', { name: /Add|New|Create/i }).first(),
+		).toBeVisible({ timeout: 20000 })
 	})
 })
 

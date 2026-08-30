@@ -1,6 +1,6 @@
 {
 	"$schema": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"dependencies": [
 		"openregister"
 	],
@@ -16,6 +16,14 @@
 				"body": "Laten we Dossiq klaarzetten. Initialiseer eerst het register; laad daarna optioneel de Bezwaar & Beroep voorbeelddata."
 			},
 			{
+				"id": "demo-data",
+				"type": "run-action",
+				"action": "install-demo-data",
+				"title": "Demo data (optional)",
+				"required": false,
+				"body": "Load example dossiers, case types and documents so lists, the case timeline and the detail pages show a working product right away. Optional, and safe to run more than once. Skip this on a production install."
+			},
+			{
 				"id": "register-check",
 				"type": "run-action",
 				"title": "Register en schema's initialiseren",
@@ -28,6 +36,25 @@
 				"title": "Bezwaar & Beroep voorbeelddata laden",
 				"action": "seed",
 				"required": false
+			},
+			{
+				"id": "dwangsom-secret",
+				"type": "config-fields",
+				"title": "Dwangsom callback signing secret",
+				"required": false,
+				"configKeys": [
+					"dwangsom_callback_secret"
+				],
+				"schema": {
+					"type": "object",
+					"properties": {
+						"dwangsom_callback_secret": {
+							"type": "string",
+							"title": "Callback signing secret",
+							"description": "Shared secret the payment provider signs its dwangsom payout callbacks with. Until it is set, DwangsomPaymentCallbackController cannot verify that a callback really came from the provider. Only shown while the dwangsom payout integration is configured."
+						}
+					}
+				}
 			},
 			{
 				"id": "done",
@@ -95,6 +122,42 @@
 							"capture": {
 								"caseId": ":id"
 							}
+						}
+					},
+					{
+						"id": "see-case-types",
+						"sinceVersion": "1.2.0",
+						"placement": "right",
+						"optional": true,
+						"allowManualNext": true,
+						"title": "Where case types come from",
+						"body": "Every case follows a case type, its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look; you do not need to make one, 88 ship with the app.",
+						"task": "Open Case types in the menu",
+						"target": {
+							"kind": "nav-item",
+							"ref": "CaseTypes"
+						},
+						"advanceOn": {
+							"type": "route-match",
+							"route": "CaseTypes"
+						}
+					},
+					{
+						"id": "see-flows",
+						"sinceVersion": "1.2.0",
+						"placement": "right",
+						"optional": true,
+						"allowManualNext": true,
+						"title": "Where the automation lives",
+						"body": "Flows are what happens without anyone clicking: a deadline that warns before it passes, a confirmation that goes out on submission. This is where you read and edit them. Nothing to build now.",
+						"task": "Open Flows in the menu",
+						"target": {
+							"kind": "nav-item",
+							"ref": "Flows"
+						},
+						"advanceOn": {
+							"type": "route-match",
+							"route": "Flows"
 						}
 					},
 					{
@@ -2935,14 +2998,6 @@
 						"handler": "navigate",
 						"route": "ParafeerrouteDetail",
 						"type": "handler"
-					},
-					{
-						"key": "edit",
-						"type": "handler"
-					},
-					{
-						"key": "delete",
-						"type": "handler"
 					}
 				],
 				"sidebar": {
@@ -2989,18 +3044,6 @@
 						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "WmsLayerDetail",
-						"type": "handler"
-					},
-					{
-						"key": "create",
-						"type": "handler"
-					},
-					{
-						"key": "edit",
-						"type": "handler"
-					},
-					{
-						"key": "delete",
 						"type": "handler"
 					}
 				],
@@ -3076,7 +3119,7 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "tenant",
-				"_note": "CONFIG/TECHNICAL archetype (multi-tenant provisioning record — legacy, superseded by OR Organisation). Admin-only, no comms. The Data widget carries identity + contract + provisioning clock (slug, displayName, legalName, kvkNumber, contractRef, tier, isolationMode, dataResidency, createdAt, activatedAt, terminatedAt). The Provision + Refresh-usage admin actions are preserved as page actions, and lifecycleActions drive the status (onboarding → active → suspended → terminated). No object-lists or content leaves — a legacy provisioning record carries none. Audit history (provisioning events) is a sidebar tab.",
+				"_note": "CONFIG/TECHNICAL archetype (multi-tenant provisioning record — legacy, superseded by OR Organisation). Admin-only, no comms. The Data widget carries identity + provisioning clock (slug, displayName, legalName, kvkNumber, tier, createdAt, activatedAt, terminatedAt). contractRef, isolationMode and dataResidency were dropped: none had a reader, isolationMode was a pure function of tier and dataResidency a hardcoded constant. The Provision + Refresh-usage admin actions are preserved as page actions, and lifecycleActions drive the status (onboarding → active → suspended → terminated). No object-lists or content leaves — a legacy provisioning record carries none. Audit history (provisioning events) is a sidebar tab.",
 				"actions": [
 					{
 						"id": "provision",
@@ -3244,9 +3287,6 @@
 				],
 				"showViewAction": false,
 				"actions": [
-					"create",
-					"edit",
-					"delete",
 					{
 						"id": "view",
 						"label": "View",
@@ -3504,9 +3544,6 @@
 				],
 				"showViewAction": false,
 				"actions": [
-					"create",
-					"edit",
-					"delete",
 					{
 						"id": "view",
 						"label": "View",
@@ -3728,7 +3765,6 @@
 				],
 				"showViewAction": false,
 				"actions": [
-					"create",
 					{
 						"id": "view",
 						"label": "View",
@@ -4547,9 +4583,6 @@
 				],
 				"showViewAction": false,
 				"actions": [
-					"create",
-					"edit",
-					"delete",
 					{
 						"id": "view",
 						"label": "View",
@@ -4572,7 +4605,10 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "caseType",
-				"sidebar": { "enabled": true, "showMetadata": true },
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
 				"documentationUrl": "https://procest.conduction.nl"
 			},
 			"_note": "The case-type blueprint: identity and classification, the processing deadline and extension rules (AWB terms), the pinned workflowDefinition, sub-case types and decision types. Cases of this type are reached from the Cases index filtered by caseType rather than duplicated here."
@@ -4580,15 +4616,16 @@
 		{
 			"id": "Flows",
 			"route": "/flows",
-			"type": "flows",
+			"type": "index",
 			"title": "Flows",
-			"config": { "app": "dossiq" },
+			"config": {
+				"entitySource": "flows", "app": "dossiq" },
 			"_note": "ADR-110 Decision 4: a flow is app-specific — a dossiq flow operates on cases — so the authoring surface lives here rather than behind a deep link to OpenRegister's list. Custom page rather than type:index because a flow lives in the shared native flow store, not a register/schema, so the object-backed index cannot address it. The body is CnFlowIndexPage semantics scoped app=\"dossiq\" — the same store OpenRegister, integriq and hermiq use, so list/status semantics stay identical fleet-wide. Mirrors openconnector/src/manifest.json:Flows."
 		},
 		{
 			"id": "FlowDetail",
 			"route": "/flows/:id",
-			"type": "flow-detail",
+			"type": "flow",
 			"title": "Flow",
 			"config": { "app": "dossiq" },
 			"sidebarComponent": "FlowDetailSidebar",

@@ -1,6 +1,13 @@
 ---
-status: done
+status: in-progress
 ---
+
+## OpenSpec changes
+
+- `case-flow-human-steps` (active) — a status move performed by a flow is
+  attributable to the node that performed it, and each move in a case flow is
+  its own step rather than a side effect of another one: the status is the
+  applicant-facing signal, so it must be moved deliberately.
 
 ## Purpose
 

@@ -2014,7 +2014,25 @@
         "Publicatie in behandeling": "Objava u obradi",
         "Nu publiceren": "Objavi sada",
         "No DROP/LVBB endpoint has been configured.": "Nije konfigurisan DROP/LVBB endpoint.",
-        "No decision has been recorded to publish yet.": "Još nije evidentirana nijedna odluka za objavu."
+        "No decision has been recorded to publish yet.": "Još nije evidentirana nijedna odluka za objavu.",
+        "Akkoord door": "Odobrio",
+        "De actie kon niet worden uitgevoerd.": "Radnja nije mogla biti izvršena.",
+        "De beschikking is samengesteld als concept.": "Odluka je sastavljena kao nacrt.",
+        "De beschikking kon niet worden opgesteld.": "Odluka nije mogla biti sastavljena.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Adresat još nedostaje i obavezan je.",
+        "De motivering ontbreekt nog en is verplicht.": "Obrazloženje još nedostaje i obavezno je.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Ovaj korak je obavezan i ne može se preskočiti.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Navedite razlog zašto se ovaj korak preskače...",
+        "Geen beschikking gevonden": "Nije pronađena odluka",
+        "Het audit-pakket kon niet worden geexporteerd.": "Revizijski paket nije mogao biti izvezen.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Još nema koraka. Dodajte korak da biste započeli.",
+        "Reden voor overslaan": "Razlog za preskakanje",
+        "Selecteer actor type": "Odaberi tip aktera",
+        "Selecteer een sjabloon": "Odaberi predložak",
+        "Selecteer invoegpositie": "Odaberi poziciju umetanja",
+        "Selecteer type": "Odaberi tip",
+        "Selecteer zaaktype": "Odaberi tip predmeta",
+        "Verplicht": "Obavezno"
     },
     "plurals": ""
 }

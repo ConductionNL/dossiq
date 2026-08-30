@@ -151,9 +151,13 @@ test.describe('Sub-case count badge (deelzaak-support REQ — case list)', () =>
 	// FIXME(#719): data-dependent. Measured on /cases with an unseeded list:
 	// table=0, [role=table]=0, .viewTable=0, [class*=card]=0 — the body
 	// renders an empty state, so there is no table to assert against.
-	test.fixme('the case list renders and may show an "N deelzaken" badge in a single batch', async ({
+	test('the case list renders and may show an "N deelzaken" badge in a single batch', async ({
 		page,
 	}) => {
+		test.fixme(
+			true,
+			'FIXME(#719): data-dependent. Measured on /cases with an unseeded list: table=0, [role=table]=0, .viewTable=0, [class*=card]=0 — the body renders an empty state, so there is no table to assert against.',
+		)
 		const opened = await openCasesListOrSkip(page)
 		if (!opened) return
 
@@ -203,8 +207,17 @@ test.describe('Sub-case orphan deletion (deelzaak-support REQ — deletion prote
 				name: /Delete case|Zaak verwijderen|Delete parent case|Hoofdzaak verwijderen/i,
 			})
 			.first()
-		if ((await deleteBtn.count()) === 0) {
-			test.skip(true, 'Delete-case control not present (deploy mismatch).')
+		// `count()` takes ONE snapshot and cannot retry, so this fired before
+		// the section had painted and then blamed a deployment for it.
+		const present = await deleteBtn
+			.waitFor({ state: 'attached', timeout: 5_000 })
+			.then(() => true)
+			.catch(() => false)
+		if (!present) {
+			test.skip(
+				true,
+				'the delete-case control did not attach within 5s. NOT a deploy gap — "Delete case" appears in 3 files under src/ and "Delete parent case" in 1, so the control ships in this commit. The locator already accepts the Dutch strings. Debug why it does not render on the sub-cases section rather than waiting for a build.',
+			)
 			return
 		}
 		await expect(deleteBtn).toBeVisible({ timeout: 10000 })

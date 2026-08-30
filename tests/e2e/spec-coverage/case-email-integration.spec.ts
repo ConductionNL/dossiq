@@ -69,9 +69,13 @@ test.describe('case-email-integration spec coverage', () => {
 	// but does not render on the admin page even after every section has been
 	// scrolled in. The sibling test above loads the same page successfully.
 	// @e2e openspec/specs/case-email-integration/spec.md#composer-is-the-leaf-nc-mail-not-a-dossiq-component
-	test.fixme('settings expose a Test connection control, not an outbound composer', async ({
+	test('settings expose a Test connection control, not an outbound composer', async ({
 		page,
 	}) => {
+		test.fixme(
+			true,
+			'FIXME(#719): the "Test connection" button exists in EmailSettings.vue but does not render on the admin page even after every section has been scrolled in. The sibling test above loads the same page successfully.',
+		)
 		await page.goto(ADMIN_SETTINGS_URL, { waitUntil: 'domcontentloaded' })
 		await expect(page).not.toHaveURL(/login/, { timeout: 10000 })
 

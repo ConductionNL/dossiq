@@ -303,6 +303,49 @@ if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowNodeRegistry') === fal
 	include_once __DIR__ . '/Stubs/Flow/FlowNodeRegistry.php';
 }
 
+// The flow-run surface the human-step listener reads: the run itself, the
+// mapper that finds it, the service that resumes it, and the assignee rule.
+//
+// ⚠️ The FlowRunAssignee stub PERMITS EVERYTHING by design. The authorization
+// rule belongs to OpenRegister and is tested there; a copy of it here would be
+// a second implementation validated against itself. dossiq's tests inject their
+// own double and assert the listener obeys its answer.
+if (class_exists('\\OCA\\OpenRegister\\Db\\FlowRun') === false) {
+	include_once __DIR__ . '/Stubs/Db/FlowRun.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Db\\FlowRunMapper') === false) {
+	include_once __DIR__ . '/Stubs/Db/FlowRunMapper.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowRunService') === false) {
+	include_once __DIR__ . '/Stubs/Service/Flow/FlowRunService.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowRunAssignee') === false) {
+	include_once __DIR__ . '/Stubs/Service/Flow/FlowRunAssignee.php';
+}
+
+// The suspend/resume vocabulary the two waiting nodes use. FlowSuspension must
+// extend RuntimeException here as it does in the real app: a node suspends by
+// THROWING it, so a stub that did not would make `@throws` tags analyse as
+// not-a-Throwable and any catch in a test meaningless.
+if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowSuspension') === false) {
+	include_once __DIR__ . '/Stubs/Service/Flow/FlowSuspension.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowNodeResumeState') === false) {
+	include_once __DIR__ . '/Stubs/Service/Flow/FlowNodeResumeState.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowRunContext') === false) {
+	include_once __DIR__ . '/Stubs/Service/Flow/FlowRunContext.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowResumeState') === false) {
+	include_once __DIR__ . '/Stubs/Service/Flow/FlowResumeState.php';
+}
+
 // bag-location-save-validation: pre-persist OpenRegister event stubs —
 // loaded when the openregister runtime is absent so
 // LocationBagValidationListenerTest can exercise handle() against real

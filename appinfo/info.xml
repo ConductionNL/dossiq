@@ -48,7 +48,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.2.6-beta.20260820200511</version>
+    <version>0.3.4-unstable.20260830083819</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -245,10 +245,19 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 ORI register to retire.
             -->
             <step>OCA\Dossiq\Repair\RetireOriRegister</step>
+            <!--
+                Post-migration only, for the same reason as RetireOriRegister
+                above: a fresh install has no subsidieRegeling objects to move
+                onto case types. Running it on install would be a no-op that
+                still reports a count, which is the kind of reassuring noise
+                that makes a real zero hard to notice.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateSubsidieRegelingToCaseType</step>
             <step>OCA\Dossiq\Repair\SeedLhsMatrix</step>
             <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
             <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
+            <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
             <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <!--
                 Must run AFTER the register sync that adds the English columns, so it
@@ -402,6 +411,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
             <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
+            <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
             <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <step>OCA\Dossiq\Repair\SeedKccWerkplekData</step>
             <step>OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten</step>

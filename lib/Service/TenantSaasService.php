@@ -82,17 +82,6 @@ class TenantSaasService {
 	private const TIERS = ['basic', 'standard', 'enterprise'];
 
 	/**
-	 * Default isolation mode per tier.
-	 *
-	 * @var array<string, string>
-	 */
-	private const TIER_ISOLATION = [
-		'basic' => 'schema',
-		'standard' => 'schema',
-		'enterprise' => 'database',
-	];
-
-	/**
 	 * Constructor.
 	 *
 	 * @param IAppManager $appManager App manager (for OR availability check).
@@ -170,8 +159,6 @@ class TenantSaasService {
 			'kvkNumber' => $kvkNumber,
 			'status' => 'onboarding',
 			'tier' => $tier,
-			'isolationMode' => self::TIER_ISOLATION[$tier],
-			'dataResidency' => 'nl',
 			'createdAt' => (new DateTimeImmutable('now'))->format(DATE_ATOM),
 		];
 

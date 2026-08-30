@@ -27,22 +27,40 @@ export function sidebarNav(page: Page) {
 }
 
 /**
+ * Close a modal by testid if it is open, tolerating its absence.
+ *
+ * @param page   The page.
+ * @param testid The modal's `data-testid-modal` value.
+ */
+async function closeModalIfOpen(page: Page, testid: string): Promise<void> {
+	const modal = page.locator(`[data-testid-modal="${testid}"]`)
+	if (await modal.isVisible().catch(() => false)) {
+		await modal
+			.getByRole('button', { name: 'Close' })
+			.click()
+			.catch(() => {})
+		await modal.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+	}
+}
+
+/**
  * Dismiss the "Support Dossiq" dialog if it is open. The dialog's
  * modal-mask intercepts pointer events on the navigation, so it must be
  * closed before any nav click.
  * @param page
  */
 export async function dismissSupportDialog(page: Page): Promise<void> {
-	const supportDialog = page.locator('[data-testid-modal="cn-support-dialog"]')
-	if (await supportDialog.isVisible().catch(() => false)) {
-		await supportDialog
-			.getByRole('button', { name: 'Close' })
-			.click()
-			.catch(() => {})
-		await supportDialog
-			.waitFor({ state: 'hidden', timeout: 5000 })
-			.catch(() => {})
-	}
+	await closeModalIfOpen(page, 'cn-support-dialog')
+	// The non-gating first-time-setup wizard mounts the same way and has the
+	// same consequence: its modal-mask subtree swallows every click on the
+	// app behind it. It only started appearing once CnAppRoot learned to tell
+	// "the server reports this optional step as not done" from "the server
+	// never mentioned it" — before that it could not open at all, so no spec
+	// in this suite had ever had to account for it. It is dismissed here
+	// rather than in each spec so a fresh browser profile (which has no
+	// dismissal recorded, so the wizard DOES open) cannot silently redden
+	// every click-driven test in the suite.
+	await closeModalIfOpen(page, 'cn-wizard-dialog')
 }
 
 /**

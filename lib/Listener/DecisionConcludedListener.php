@@ -43,6 +43,9 @@ use OCA\Dossiq\Service\BesluitMaterialisationService;
 use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Db\FlowRunMapper;
+use OCA\OpenRegister\Service\Flow\FlowResumeState;
+use OCA\OpenRegister\Service\Flow\FlowRunService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -82,12 +85,20 @@ class DecisionConcludedListener implements IEventListener {
 	 * @param BesluitMaterialisationService $decisionMaterialiser ZGW Besluit projection from the outcome.
 	 * @param AdvisoryCommitteeService $bacService BAC advice-request audit writer (Awb art. 7:13 lid 7).
 	 * @param LoggerInterface $logger Logger.
+	 * @param FlowRunMapper|null $runs Finds the run suspended on this decision. Nullable
+	 *                                 so adding it breaks no existing construction site;
+	 *                                 absent, no run is resumed, which leaves a flow
+	 *                                 waiting rather than advancing it wrongly.
+	 * @param FlowRunService|null $runner Delivers the resume signal. Nullable for the
+	 *                                    same reason and with the same safe direction.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly BesluitMaterialisationService $decisionMaterialiser,
 		private readonly AdvisoryCommitteeService $bacService,
 		private readonly LoggerInterface $logger,
+		private readonly ?FlowRunMapper $runs = null,
+		private readonly ?FlowRunService $runner = null,
 	) {
 	}//end __construct()
 
@@ -171,6 +182,12 @@ class DecisionConcludedListener implements IEventListener {
 				decisionId: $besluitId,
 				subjectId: $subjectId
 			);
+
+			// A case flow that ASKED for this decision is suspended on it.
+			// Deliberately last: the besluit is materialised before the run is
+			// woken, so the steps after the decision see a case that already
+			// carries its outcome rather than racing the projection.
+			$this->resumeWaitingRun(caseId: $caseId, decisionRef: $decisionId, status: $status);
 		} catch (Throwable $e) {
 			// Never block event delivery on our own derivation failure; never
 			// author a besluit on a failed outcome.
@@ -180,6 +197,115 @@ class DecisionConcludedListener implements IEventListener {
 			);
 		}//end try
 	}//end handle()
+
+	/**
+	 * Wake the case flow that was waiting on this decision, if one was.
+	 *
+	 * 🔑 MATCHED ON THE decisionRef, NOT ON THE CASE. A case has several
+	 * decisions in its life, and a run suspended on the SECOND one must not be
+	 * advanced by the first concluding. Matching on the case would do exactly
+	 * that — and would look correct, because the run does belong to that case.
+	 *
+	 * So the run is only signalled when one of its awaiting node slots records
+	 * this very ref. A run waiting on a different decision is left suspended,
+	 * which is the spec'd behaviour and not an omission.
+	 *
+	 * Never throws into the caller: a decision concludes whether or not a flow
+	 * was listening, and a failure to resume must not undo the besluit that was
+	 * already materialised above.
+	 *
+	 * @param string $caseId      The case the decision belongs to.
+	 * @param string $decisionRef The concluded decision's id.
+	 * @param string $status      The terminal status decidiq reported.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 */
+	private function resumeWaitingRun(string $caseId, string $decisionRef, string $status): void {
+		if ($this->runs === null || $this->runner === null || trim($decisionRef) === '') {
+			return;
+		}
+
+		try {
+			$suspended = $this->runs->findSuspendedBySubject(subjectUuid: $caseId);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: could not look up runs suspended on case ' . $caseId . ': ' . $e->getMessage()
+			);
+			return;
+		}
+
+		foreach ($suspended as $run) {
+			if ($this->awaitsDecision(run: $run, decisionRef: $decisionRef) === false) {
+				continue;
+			}
+
+			try {
+				$this->runner->signal(
+					run: $run,
+					payload: [
+						// Without a `decision` key the resume is a nudge and the
+						// node suspends again — so the outcome is what makes
+						// this an answer, and it is decidiq's word, not ours.
+						'decision' => $status,
+						'decisionRef' => $decisionRef,
+						'caseId' => $caseId,
+					]
+				);
+
+				$this->logger->info(
+					'Dossiq: resumed flow run ' . (string)$run->getUuid() . ' on decision ' . $decisionRef
+				);
+			} catch (Throwable $e) {
+				$this->logger->error(
+					'Dossiq: could not resume flow run on a concluded decision: ' . $e->getMessage(),
+					['run' => $run->getUuid(), 'decisionRef' => $decisionRef]
+				);
+			}//end try
+
+			return;
+		}//end foreach
+	}//end resumeWaitingRun()
+
+	/**
+	 * Whether a suspended run is waiting on this particular decision.
+	 *
+	 * Reads the per-node resume slots the requesting node wrote. A run holds one
+	 * slot per node across its life, so the question is whether ANY slot names
+	 * this ref — not whether the run belongs to the right case, which the
+	 * caller has already established and which is not sufficient.
+	 *
+	 * @param object $run         The suspended run.
+	 * @param string $decisionRef The concluded decision's id.
+	 *
+	 * @return boolean True when a slot records this ref.
+	 *
+	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 */
+	private function awaitsDecision(object $run, string $decisionRef): bool {
+		$context = ($run->getContext() ?? []);
+		if (is_array($context) === false) {
+			return false;
+		}
+
+		$slots = ($context[FlowResumeState::CONTEXT_KEY] ?? []);
+		if (is_array($slots) === false) {
+			return false;
+		}
+
+		foreach ($slots as $slot) {
+			if (is_array($slot) === false) {
+				continue;
+			}
+
+			if (trim((string)($slot['decisionRef'] ?? '')) === trim($decisionRef)) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end awaitsDecision()
 
 	/**
 	 * Resolve the owning case UUID and any existing besluitRef for a decision.

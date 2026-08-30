@@ -1982,6 +1982,24 @@
         "Zaaktype key": "Sagstype-nøgle",
         "Zaaktype key is required": "Sagstype-nøgle er påkrævet",
         "Zienswijze period (days)": "Zienswijze-periode (dage)",
-        "Zoom": "Zoom"
+        "Zoom": "Zoom",
+        "Akkoord door": "Godkendt af",
+        "De actie kon niet worden uitgevoerd.": "Handlingen kunne ikke udføres.",
+        "De beschikking is samengesteld als concept.": "Afgørelsen er udarbejdet som kladde.",
+        "De beschikking kon niet worden opgesteld.": "Afgørelsen kunne ikke udarbejdes.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Modtageren mangler stadig og er påkrævet.",
+        "De motivering ontbreekt nog en is verplicht.": "Begrundelsen mangler stadig og er påkrævet.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Dette trin er obligatorisk og kan ikke springes over.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Angiv en årsag til, at dette trin springes over...",
+        "Geen beschikking gevonden": "Ingen afgørelse fundet",
+        "Het audit-pakket kon niet worden geexporteerd.": "Revisionspakken kunne ikke eksporteres.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Ingen trin endnu. Tilføj et trin for at komme i gang.",
+        "Reden voor overslaan": "Årsag til overspringning",
+        "Selecteer actor type": "Vælg aktørtype",
+        "Selecteer een sjabloon": "Vælg en skabelon",
+        "Selecteer invoegpositie": "Vælg indsætningspunkt",
+        "Selecteer type": "Vælg type",
+        "Selecteer zaaktype": "Vælg sagstype",
+        "Verplicht": "Obligatorisk"
     }
 }

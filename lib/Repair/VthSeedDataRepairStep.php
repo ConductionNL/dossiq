@@ -372,7 +372,22 @@ class VthSeedDataRepairStep implements IRepairStep {
 
 		$slugs = [];
 		foreach ($rows as $row) {
-			$slug = (string)($row['slug'] ?? '');
+			// THE SLUG LIVES IN `@self`, NOT IN THE OBJECT BODY.
+			//
+			// A seeded `slug:` is an import-time identifier OpenRegister keeps
+			// as metadata; it is NOT a stored property. Reading `$row['slug']`
+			// therefore returned '' for every row, so this list came back empty,
+			// so the idempotency check below matched nothing, so every upgrade
+			// re-seeded the whole set. Measured on a live instance: nine
+			// consecutive upgrades left 9 copies each of Omgevingsvergunning
+			// Bouwactiviteit, Sloopmelding, Toezichtzaak Bouw, Toezichtzaak
+			// Milieu, Handhavingszaak and Invorderingszaak — and every run
+			// reported success.
+			//
+			// The body form is kept as a fallback rather than dropped: an
+			// object created by some other path may legitimately carry it.
+			$self = $row['@self'] ?? [];
+			$slug = (string)($self['slug'] ?? $row['slug'] ?? '');
 			if ($slug !== '') {
 				$slugs[] = $slug;
 			}

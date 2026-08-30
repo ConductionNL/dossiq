@@ -282,4 +282,101 @@ class TenantSaasServiceTest extends TestCase {
 		$this->expectExceptionMessage('Invalid tier');
 		$this->service->create(name: 'Test', kvkNumber: '12345678', tier: 'gold');
 	}//end testCreateRejectsInvalidTier()
+
+	/**
+	 * The dropped fields are not written back into a new tenant.
+	 *
+	 * `contractRef`, `isolationMode` and `dataResidency` were removed because
+	 * nothing read them: `isolationMode` was a pure function of `tier`, and
+	 * `dataResidency` was the constant `'nl'`. Writing a field no reader
+	 * consults is invisible — it costs a column, appears in every admin detail
+	 * view as a value somebody might act on, and nothing fails when it drifts.
+	 *
+	 * This asserts the payload rather than the schema, because the schema no
+	 * longer declares them: a write of an undeclared property is exactly the
+	 * kind of thing that gets silently accepted and then queried for later.
+	 *
+	 * @return void
+	 */
+	public function testCreateDoesNotWriteTheDroppedFields(): void {
+		$service = $this->getMockBuilder(TenantSaasService::class)
+			->setConstructorArgs([
+				$this->createMock(IAppManager::class),
+				$this->createMock(ContainerInterface::class),
+				$this->createMock(LoggerInterface::class),
+				$this->makeAudit($this->createMock(LoggerInterface::class)),
+				$this->createMock(IUserSession::class),
+			])
+			->onlyMethods(['slugExists', 'saveTenant'])
+			->getMock();
+		$service->method('slugExists')->willReturn(false);
+
+		$written = null;
+		$service->method('saveTenant')->willReturnCallback(
+			static function (array $tenant, ?string $uuid) use (&$written): array {
+				$written = $tenant;
+
+				return (['id' => 't-1'] + $tenant);
+			}
+		);
+
+		$service->create('Gemeente X', '12345678', 'basic');
+
+		$this->assertIsArray($written);
+		foreach (['contractRef', 'isolationMode', 'dataResidency'] as $dropped) {
+			$this->assertArrayNotHasKey(
+				$dropped,
+				$written,
+				$dropped . ' has no reader and must not be written'
+			);
+		}
+
+		// The fields that DO drive behaviour are still written: `tier` selects
+		// the zaaktype templates to seed and the quota defaults to stamp.
+		$this->assertSame('basic', $written['tier']);
+		$this->assertSame('12345678', $written['kvkNumber']);
+	}//end testCreateDoesNotWriteTheDroppedFields()
+
+	/**
+	 * The tenant schema no longer declares the dropped fields.
+	 *
+	 * Removing the write without removing the declaration would leave three
+	 * properties visible in the admin detail view, permanently empty, looking
+	 * like data that had simply never been filled in.
+	 *
+	 * @return void
+	 */
+	public function testTheTenantSchemaNoLongerDeclaresTheDroppedFields(): void {
+		$register = json_decode(
+			(string) file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'),
+			true
+		);
+		$this->assertIsArray($register);
+
+		$tenant = null;
+		$walk = static function (mixed $node) use (&$walk, &$tenant): void {
+			if (is_array($node) === false || $tenant !== null) {
+				return;
+			}
+
+			if (($node['slug'] ?? null) === 'tenant' && isset($node['properties']) === true) {
+				$tenant = $node;
+				return;
+			}
+
+			foreach ($node as $child) {
+				$walk($child);
+			}
+		};
+		$walk($register);
+
+		$this->assertIsArray($tenant, 'the tenant schema must still exist');
+		foreach (['contractRef', 'isolationMode', 'dataResidency'] as $dropped) {
+			$this->assertArrayNotHasKey($dropped, $tenant['properties']);
+		}
+
+		$this->assertArrayHasKey('tier', $tenant['properties']);
+		$this->assertArrayHasKey('kvkNumber', $tenant['properties']);
+	}//end testTheTenantSchemaNoLongerDeclaresTheDroppedFields()
+
 }//end class

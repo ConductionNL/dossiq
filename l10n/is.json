@@ -2014,7 +2014,25 @@
         "{present}/{total} complete": "{present}/{total} lokið",
         "{reached} of {total} milestones reached": "{reached} af {total} áföngum náð",
         "{within}/{total} within SLA": "{within}/{total} innan SLA",
-        "{years} years": "{years} ár"
+        "{years} years": "{years} ár",
+        "Akkoord door": "Samþykkt af",
+        "De actie kon niet worden uitgevoerd.": "Ekki tókst að framkvæma aðgerðina.",
+        "De beschikking is samengesteld als concept.": "Ákvörðunin hefur verið samin sem drög.",
+        "De beschikking kon niet worden opgesteld.": "Ekki tókst að semja ákvörðunina.",
+        "De geadresseerde ontbreekt nog en is verplicht.": "Viðtakandann vantar enn og hann er nauðsynlegur.",
+        "De motivering ontbreekt nog en is verplicht.": "Rökstuðninginn vantar enn og hann er nauðsynlegur.",
+        "Deze stap is verplicht en kan niet worden overgeslagen.": "Þetta skref er nauðsynlegt og ekki er hægt að sleppa því.",
+        "Geef een reden waarom deze stap wordt overgeslagen...": "Tilgreindu ástæðu þess að þessu skrefi er sleppt ...",
+        "Geen beschikking gevonden": "Engin ákvörðun fannst",
+        "Het audit-pakket kon niet worden geexporteerd.": "Ekki tókst að flytja út endurskoðunarpakkann.",
+        "Nog geen stappen. Voeg een stap toe om te beginnen.": "Engin skref enn. Bættu við skrefi til að byrja.",
+        "Reden voor overslaan": "Ástæða fyrir að sleppa",
+        "Selecteer actor type": "Veldu gerð geranda",
+        "Selecteer een sjabloon": "Veldu sniðmát",
+        "Selecteer invoegpositie": "Veldu innsetningarstað",
+        "Selecteer type": "Veldu gerð",
+        "Selecteer zaaktype": "Veldu málagerð",
+        "Verplicht": "Nauðsynlegt"
     },
     "plurals": ""
 }

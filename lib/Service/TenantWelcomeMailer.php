@@ -49,7 +49,7 @@ class TenantWelcomeMailer {
 	/**
 	 * Send the welcome email to the tenant administrator.
 	 *
-	 * @param array<string,mixed> $tenant Tenant row (must carry adminEmail or contractRef).
+	 * @param array<string,mixed> $tenant Tenant row (must carry adminEmail).
 	 *
 	 * @return bool True when the message was queued.
 	 *
