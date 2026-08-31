@@ -97,10 +97,12 @@ class RoutingRuleService {
 	 * @param string $id The rule id.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	public function deleteRule(string $id): void {
 		[$objectService, $register, $schema] = $this->resolve(schemaKey: 'routing_rule_schema');
-		$objectService->deleteObject($register, $schema, $id);
+		$objectService->deleteObject(uuid: $id, register: $register, schema: $schema);
 	}//end deleteRule()
 
 	/**

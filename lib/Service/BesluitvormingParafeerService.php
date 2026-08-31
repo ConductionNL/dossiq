@@ -24,9 +24,12 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Parafeer\ParafeerrouteDirectory;
+use OCA\Dossiq\Service\Parafeer\ParaferingDelegationService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use Throwable;
 
 /**
  * Orchestrates the parafering chain for besluitvorming voorstellen.
@@ -40,11 +43,15 @@ class BesluitvormingParafeerService {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Settings service for register and schema references.
-	 * @param LoggerInterface $logger Logger.
+	 * @param SettingsService            $settingsService Settings service for register and schema references.
+	 * @param ParafeerrouteDirectory     $routes          Resolves the sign-off route for a case type.
+	 * @param ParaferingDelegationService $delegation     Holds the route in the decision app.
+	 * @param LoggerInterface            $logger          Logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly ParafeerrouteDirectory $routes,
+		private readonly ParaferingDelegationService $delegation,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -91,23 +98,24 @@ class BesluitvormingParafeerService {
 
 		$proposal = $this->toArray(value: $proposalResults[0]);
 
-		// Find the parafeerroute for this voorstel's caseType.
-		$routeSchema = $this->settingsService->getConfigValue('parafeerroute_schema');
-		$routeResults = [];
-		if (empty($routeSchema) === false) {
-			$caseTypeId = $proposal['caseType'] ?? null;
-			$routeResults = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $routeSchema,
-				filters: ['caseType' => $caseTypeId, 'isDefault' => true]
-			);
+		$caseTypeId = (string)($proposal['caseType'] ?? '');
+		$route = $this->routes->localRoute(caseTypeId: $caseTypeId);
+		$routeSnapshot = [];
+		if ($route !== null) {
+			$routeSnapshot = $this->routes->stepsForCaseType(caseTypeId: $caseTypeId);
 		}
 
-		$routeSnapshot = [];
-		if (empty($routeResults) === false) {
-			$route = $this->toArray(value: $routeResults[0]);
-			$routeSnapshot = $route['steps'] ?? [];
+		// 🔴 REFUSED, not carried on with an empty snapshot. Activating without
+		// steps wrote `currentStep: 1, status: in_parafering, routeSnapshot: []`,
+		// and every action after it then failed `Current step not found in route
+		// snapshot` — a message about the snapshot when the fault is a route
+		// nobody configured. The voorstel was parked in parafering with no way
+		// forward and no way back. A voorstel that cannot be routed is not put
+		// into parafering.
+		if ($routeSnapshot === []) {
+			throw new RuntimeException(
+				'No parafeerroute is configured for this case type, so the voorstel cannot enter parafering: ' . $proposalId
+			);
 		}
 
 		// Update the voorstel with route snapshot and initial step.
@@ -116,6 +124,20 @@ class BesluitvormingParafeerService {
 			'status' => 'in_parafering',
 			'routeSnapshot' => $routeSnapshot,
 		];
+
+		// Hold the route in the decision app and start the sign-off chain there.
+		// ADDITIONAL, never required: the decision app is an optional runtime
+		// dependency and a voorstel must still enter parafering without it. What
+		// it resolves to is written onto the voorstel rather than only logged, so
+		// an unmirrored voorstel is something you can query for.
+		$approvalRouteId = $this->holdRouteInDecisionApp(
+			route: $route,
+			proposalId: $proposalId,
+			proposalSchema: $proposalSchema,
+		);
+		if ($approvalRouteId !== '') {
+			$updateData['approvalRouteId'] = $approvalRouteId;
+		}
 
 		$updated = $objectService->saveObject(object: array_merge($proposal, $updateData), register: $register, schema: $proposalSchema);
 
@@ -126,6 +148,48 @@ class BesluitvormingParafeerService {
 
 		return $this->toArray(value: $updated);
 	}//end activate()
+
+	/**
+	 * Ask the decision app to hold this route and start the chain, best effort.
+	 *
+	 * Returns an empty string when the decision app is absent or refuses. The
+	 * caller writes the result onto the voorstel, so "which voorstellen were
+	 * mirrored" stays a query rather than an archaeology exercise over the log.
+	 *
+	 * @param array<string, mixed> $route          The local parafeerroute.
+	 * @param string               $proposalId     The voorstel uuid.
+	 * @param string               $proposalSchema The voorstel schema slug.
+	 *
+	 * @return string The approval-route id, or an empty string.
+	 *
+	 * @spec openspec/changes/parafering-to-decidiq/specs/parafering-to-decidiq/spec.md
+	 */
+	private function holdRouteInDecisionApp(array $route, string $proposalId, string $proposalSchema): string {
+		if ($this->delegation->isAvailable() === false) {
+			return '';
+		}
+
+		try {
+			return $this->delegation->holdRoute(
+				route: $route,
+				actorId: '',
+				subject: $proposalId,
+				subjectSchema: $proposalSchema,
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq parafering: the decision app did not hold the route; the voorstel is unmirrored',
+				[
+					'app' => Application::APP_ID,
+					'proposal' => $proposalId,
+					'error' => $e->getMessage(),
+				]
+			);
+
+			return '';
+		}
+
+	}//end holdRouteInDecisionApp()
 
 	/**
 	 * Handle a paraaf action for a voorstel.

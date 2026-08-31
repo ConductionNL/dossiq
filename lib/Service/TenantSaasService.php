@@ -306,7 +306,7 @@ class TenantSaasService {
 		}
 
 		try {
-			$objectService->deleteObject(register: self::REGISTER, schema: self::SCHEMA_TENANT, id: $tenantId);
+			$objectService->deleteObject(uuid: $tenantId, register: self::REGISTER, schema: self::SCHEMA_TENANT);
 			return true;
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: TenantSaasService::delete failed', ['tenantId' => $tenantId, 'exception' => $e->getMessage()]);

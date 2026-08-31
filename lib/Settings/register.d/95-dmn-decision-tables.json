@@ -6,7 +6,7 @@
                 "icon": "TableSettings",
                 "version": "1.0.0",
                 "title": "Decision Table",
-                "description": "A DMN-style decision table: inputs, outputs, rules and a hit policy, evaluated by the DecisionEngine.",
+                "description": "A DMN-style decision table: inputs, outputs, rules and a hit policy. OpenRegister evaluates it.",
                 "type": "object",
                 "required": ["name", "key"],
                 "properties": {
@@ -30,7 +30,7 @@
                         "type": "string",
                         "enum": ["UNIQUE", "FIRST", "PRIORITY", "ANY", "COLLECT"],
                         "default": "UNIQUE",
-                        "description": "DMN hit policy. UNIQUE/FIRST/COLLECT are fully implemented; PRIORITY/ANY are rejected with hit_policy_not_implemented (see design.md)."
+                        "description": "DMN hit policy. All five work. PRIORITY takes the highest, ANY refuses rules that disagree."
                     },
                     "inputs": {
                         "title": "Inputs",
@@ -111,6 +111,12 @@
                                     "title": "Output Entries",
                                     "type": "array",
                                     "description": "One literal value per output, positionally aligned to outputs[]"
+                                },
+                                "priority": {
+                                    "title": "Priority",
+                                    "type": "integer",
+                                    "default": 0,
+                                    "description": "Rank for the PRIORITY hit policy. The highest number wins. Equal ranks keep declaration order."
                                 }
                             }
                         }

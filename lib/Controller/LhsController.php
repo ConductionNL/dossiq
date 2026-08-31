@@ -8,6 +8,8 @@
  * manifest renderer — this controller only owns the engine actions:
  *   - POST /api/lhs/recommend (matrix lookup + persistence)
  *   - POST /api/lhs/recommendations/{id}/override (apply inspector override)
+ *     Body: recommendationId (or a `recommendation` object, from which only the
+ *     id is read), intervention, justification, and optionally userRole.
  *
  * @category Controller
  * @package  OCA\Dossiq\Controller
@@ -162,6 +164,61 @@ class LhsController extends Controller {
 	}//end recommend()
 
 	/**
+	 * The id of the recommendation an override applies to.
+	 *
+	 * The ID, not the row. The service reads the recommendation back from the
+	 * store, because the escalation guard compares against what the MATRIX
+	 * recommended — a value a request must not be able to supply.
+	 *
+	 * A whole `recommendation` object is still accepted for callers that have
+	 * not been updated, but ONLY its id is read from it; everything else in it
+	 * is ignored.
+	 *
+	 * @return string The id, or an empty string when none was usable.
+	 *
+	 * @spec openspec/specs/enforcement-lhs/spec.md
+	 */
+	private function resolveRecommendationId(): string {
+		$recommendationId = (string)$this->request->getParam('recommendationId', '');
+		if ($recommendationId !== '') {
+			return $recommendationId;
+		}
+
+		$recommendation = $this->request->getParam('recommendation');
+		if (is_array($recommendation) === false) {
+			return '';
+		}
+
+		return (string)($recommendation['id'] ?? ($recommendation['@self']['id'] ?? ''));
+
+	}//end resolveRecommendationId()
+
+	/**
+	 * Map an engine refusal onto its HTTP status.
+	 *
+	 * An escalation refused for want of the manager role is a 403 and not a
+	 * 422: the request was well-formed and the caller simply may not do it, and
+	 * a client that cannot tell those apart will offer a retry that can never
+	 * succeed.
+	 *
+	 * @param RuntimeException $exception The engine's refusal.
+	 *
+	 * @return JSONResponse The mapped response.
+	 *
+	 * @spec openspec/specs/enforcement-lhs/spec.md
+	 */
+	private function overrideRefusal(RuntimeException $exception): JSONResponse {
+		$message = $exception->getMessage();
+		$status = Http::STATUS_UNPROCESSABLE_ENTITY;
+		if ($message === 'Verzwaring vereist managerrol') {
+			$status = Http::STATUS_FORBIDDEN;
+		}
+
+		return new JSONResponse(['error' => $message], $status);
+
+	}//end overrideRefusal()
+
+	/**
 	 * Override an existing LHS recommendation.
 	 *
 	 * Body parameters:
@@ -189,13 +246,13 @@ class LhsController extends Controller {
 			);
 		}
 
-		$recommendation = $this->request->getParam('recommendation');
+		$recommendationId = $this->resolveRecommendationId();
 		$intervention = (string)$this->request->getParam('intervention', '');
 		$justification = (string)$this->request->getParam('justification', '');
-		$hasBlank = in_array('', [$intervention, $justification], true);
-		if (is_array($recommendation) === false || $hasBlank === true) {
+		$hasBlank = in_array('', [$recommendationId, $intervention, $justification], true);
+		if ($hasBlank === true) {
 			return new JSONResponse(
-				['error' => 'recommendation, intervention en justification zijn verplicht'],
+				['error' => 'recommendationId, intervention en justification zijn verplicht'],
 				Http::STATUS_BAD_REQUEST,
 			);
 		}
@@ -209,19 +266,13 @@ class LhsController extends Controller {
 
 		try {
 			$updated = $this->lhsService->override(
-				recommendation: $recommendation,
+				recommendationId: $recommendationId,
 				intervention: $intervention,
 				justification: $justification,
 				userRole: $userRole,
 			);
 		} catch (RuntimeException $e) {
-			$message = $e->getMessage();
-			$status = Http::STATUS_UNPROCESSABLE_ENTITY;
-			if ($message === 'Verzwaring vereist managerrol') {
-				$status = Http::STATUS_FORBIDDEN;
-			}
-
-			return new JSONResponse(['error' => $message], $status);
+			return $this->overrideRefusal(exception: $e);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq LHS override failed: ' . $e->getMessage());
 			return new JSONResponse(

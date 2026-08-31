@@ -5,7 +5,7 @@
  *
  * End-to-end: a transition's `automaticActions[]` entry (decisionKey +
  * input/output mapping) actually invokes DecisionTableService::findByKey()
- * + DecisionEngine::evaluate() and writes the result onto the case via
+ * + DecisionTableEvaluator::evaluate() and writes the result onto the case via
  * ObjectService — proving the DMN capability is reachable from the
  * workflow engine and NOT an orphaned capability.
  *
@@ -28,7 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
-use OCA\Dossiq\Service\Dmn\DecisionEngine;
+use OCA\OpenRegister\Service\Dmn\DecisionEvaluationException;
+use OCA\OpenRegister\Service\Dmn\DecisionTableEvaluator;
 use OCA\Dossiq\Service\Dmn\DecisionTableService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\EvaluateDecisionHandler;
@@ -38,9 +39,9 @@ use Psr\Log\NullLogger;
 /**
  * @covers \OCA\Dossiq\Service\Transitions\EvaluateDecisionHandler
  *
- * @uses \OCA\Dossiq\Service\Dmn\DecisionEngine
- * @uses \OCA\Dossiq\Service\Dmn\DecisionEvaluationException
- * @uses \OCA\Dossiq\Service\Dmn\ExpressionEvaluator
+ * @uses \OCA\OpenRegister\Service\Dmn\DecisionTableEvaluator
+ * @uses \OCA\OpenRegister\Service\Dmn\DecisionEvaluationException
+ * @uses \OCA\OpenRegister\Service\Dmn\UnaryTestEvaluator
  * @uses \OCA\Dossiq\Service\Transitions\ActionResult
  */
 class EvaluateDecisionHandlerTest extends TestCase {
@@ -76,7 +77,7 @@ class EvaluateDecisionHandlerTest extends TestCase {
 	public function testFailsWhenDecisionKeyMissing(): void {
 		$handler = new EvaluateDecisionHandler(
 			tableService: $this->createMock(DecisionTableService::class),
-			engine: new DecisionEngine(),
+			engine: new DecisionTableEvaluator(),
 			settingsService: $this->createMock(SettingsService::class),
 			logger: new NullLogger(),
 		);
@@ -96,7 +97,7 @@ class EvaluateDecisionHandlerTest extends TestCase {
 
 		$handler = new EvaluateDecisionHandler(
 			tableService: $tableService,
-			engine: new DecisionEngine(),
+			engine: new DecisionTableEvaluator(),
 			settingsService: $this->createMock(SettingsService::class),
 			logger: new NullLogger(),
 		);
@@ -112,7 +113,7 @@ class EvaluateDecisionHandlerTest extends TestCase {
 	}//end testFailsWhenDecisionNotFound()
 
 	/**
-	 * End-to-end: transition action config -> handler -> real DecisionEngine
+	 * End-to-end: transition action config -> handler -> real DecisionTableEvaluator
 	 * -> case field written via ObjectService::saveObject, proving the
 	 * workflow hook is real and reachable, not orphaned.
 	 *
@@ -150,7 +151,7 @@ class EvaluateDecisionHandlerTest extends TestCase {
 
 		$handler = new EvaluateDecisionHandler(
 			tableService: $tableService,
-			engine: new DecisionEngine(),
+			engine: $this->evaluatorReturning(['eligible' => true, 'tier' => 'gold']),
 			settingsService: $settings,
 			logger: new NullLogger(),
 		);
@@ -219,7 +220,7 @@ class EvaluateDecisionHandlerTest extends TestCase {
 
 		$handler = new EvaluateDecisionHandler(
 			tableService: $tableService,
-			engine: new DecisionEngine(),
+			engine: $this->evaluatorReturning(['eligible' => true, 'tier' => 'gold']),
 			settingsService: $settings,
 			logger: new NullLogger(),
 		);
@@ -261,7 +262,7 @@ class EvaluateDecisionHandlerTest extends TestCase {
 
 		$handler = new EvaluateDecisionHandler(
 			tableService: $tableService,
-			engine: new DecisionEngine(),
+			engine: $this->evaluatorThrowing('no_rule_matched'),
 			settingsService: $settings,
 			logger: new NullLogger(),
 		);
@@ -275,4 +276,40 @@ class EvaluateDecisionHandlerTest extends TestCase {
 		self::assertFalse($result->succeeded);
 		self::assertSame('no_rule_matched', $result->error);
 	}//end testEvaluationFailureDoesNotWriteCase()
+	/**
+	 * A shared evaluator that returns the given outputs.
+	 *
+	 * The evaluation itself is OpenRegister's contract and is tested there.
+	 * What this suite is for is the handler's own job: mapping inputs in,
+	 * mapping outputs back onto the case, and refusing to write on failure.
+	 *
+	 * @param array<string, mixed> $outputs The outputs to return.
+	 *
+	 * @return DecisionTableEvaluator The configured double.
+	 */
+	private function evaluatorReturning(array $outputs): DecisionTableEvaluator {
+		$evaluator = $this->createMock(DecisionTableEvaluator::class);
+		$evaluator->method('evaluate')->willReturn(
+			['outputs' => $outputs, 'matchedRuleIds' => ['rule-1'], 'hitPolicy' => 'UNIQUE']
+		);
+
+		return $evaluator;
+
+	}//end evaluatorReturning()
+
+	/**
+	 * A shared evaluator that refuses with the given error code.
+	 *
+	 * @param string $errorCode The code to raise.
+	 *
+	 * @return DecisionTableEvaluator The configured double.
+	 */
+	private function evaluatorThrowing(string $errorCode): DecisionTableEvaluator {
+		$evaluator = $this->createMock(DecisionTableEvaluator::class);
+		$evaluator->method('evaluate')->willThrowException(new DecisionEvaluationException($errorCode));
+
+		return $evaluator;
+
+	}//end evaluatorThrowing()
+
 }//end class

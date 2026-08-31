@@ -94,7 +94,7 @@ class ZgwMappingService {
 	/**
 	 * Get the mapping configuration for a specific ZGW resource.
 	 *
-	 * @param string $resourceKey The ZGW resource key (e.g., 'zaak', 'caseType')
+	 * @param string $resourceKey The ZGW resource key (e.g., 'zaak', 'zaaktype')
 	 *
 	 * @return array|null The mapping configuration or null if not found
 	 *
@@ -122,7 +122,7 @@ class ZgwMappingService {
 	/**
 	 * Save the mapping configuration for a specific ZGW resource.
 	 *
-	 * @param string $resourceKey The ZGW resource key (e.g., 'zaak', 'caseType')
+	 * @param string $resourceKey The ZGW resource key (e.g., 'zaak', 'zaaktype')
 	 * @param array $config The mapping configuration
 	 *
 	 * @return void
@@ -167,7 +167,7 @@ class ZgwMappingService {
 	/**
 	 * Delete the mapping configuration for a specific ZGW resource.
 	 *
-	 * @param string $resourceKey The ZGW resource key (e.g., 'zaak', 'caseType')
+	 * @param string $resourceKey The ZGW resource key (e.g., 'zaak', 'zaaktype')
 	 *
 	 * @return void
 	 *

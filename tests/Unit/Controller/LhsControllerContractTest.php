@@ -396,21 +396,27 @@ class LhsControllerContractTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
 		$this->assertSame(
-			['error' => 'recommendation, intervention en justification zijn verplicht'],
+			['error' => 'recommendationId, intervention en justification zijn verplicht'],
 			$response->getData()
 		);
 	}//end testOverrideRejectsAMissingJustificationWith400()
 
 	/**
-	 * A `recommendation` that is not an object is a 400 — the engine expects the
-	 * original row, not an id.
+	 * A `recommendation` that is neither an object nor an id is a 400.
+	 *
+	 * This test used to assert the opposite — that a bare string was refused
+	 * "because the engine expects the original row, not an id". That WAS the
+	 * contract, and it was the vulnerability: the row the caller supplied is
+	 * what the escalation guard compared against. The engine now takes an id
+	 * and reads the row back, so a `recommendationId` is the supported shape and
+	 * only an unusable value is refused.
 	 *
 	 * @return void
 	 */
-	public function testOverrideRejectsANonObjectRecommendationWith400(): void {
+	public function testOverrideRejectsARecommendationWithNoUsableIdWith400(): void {
 		$this->signIn();
 		$this->withParams([
-			'recommendation' => 'rec-1',
+			'recommendation' => ['no' => 'id here'],
 			'intervention' => 'last onder dwangsom',
 			'justification' => 'Gemotiveerde afwijking van de interventieladder.',
 		]);
@@ -419,7 +425,7 @@ class LhsControllerContractTest extends TestCase {
 		$response = $this->controller->override();
 
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-	}//end testOverrideRejectsANonObjectRecommendationWith400()
+	}//end testOverrideRejectsARecommendationWithNoUsableIdWith400()
 
 	/**
 	 * A caller who merely CLAIMS `userRole=manager` is still forwarded to the
@@ -448,7 +454,7 @@ class LhsControllerContractTest extends TestCase {
 			->method('override')
 			->willReturnCallback(
 				static function (
-					array $recommendation,
+					string $recommendationId,
 					string $intervention,
 					string $justification,
 					string $userRole,
@@ -489,7 +495,7 @@ class LhsControllerContractTest extends TestCase {
 			->method('override')
 			->willReturnCallback(
 				static function (
-					array $recommendation,
+					string $recommendationId,
 					string $intervention,
 					string $justification,
 					string $userRole,

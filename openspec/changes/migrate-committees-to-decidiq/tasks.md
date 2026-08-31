@@ -1,13 +1,15 @@
 # Tasks: migrate-committees-to-decidiq
 
-> ⛔ BLOCKED on TWO things, not one.
+> ✅ UNBLOCKED 2026-08-30. Both prerequisites are now in place.
 >
-> 1. decidiq#874 — MERGED. The schema half of the target now exists.
-> 2. A decidiq event/listener pair for creating a governance body — DOES NOT
->    EXIST. Per ADR-041 a cross-app COMMAND travels as a typed event (ADR-066
->    amended that only for collection, and gate-27 enforces it), so the REST
->    write seam #874 added is the wrong door for an in-process migration. That
->    prerequisite is a decidiq change nobody has written.
+> 1. decidiq#874 — MERGED. The schema half of the target exists.
+> 2. The decidiq event/listener pair — LANDED as
+>    `decidiq/openspec/changes/governance-body-events`:
+>    `GovernanceBodyRequestedEvent` + `GovernanceBodyRequestedListener` +
+>    `GovernanceBodyCommandService`, with `GovernanceBodyCreatedEvent` carrying
+>    the correlation back. The seam resolves on (sourceApp, externalReference)
+>    before it writes, so the idempotency this change worried about is answered
+>    on the other side rather than re-implemented here.
 
 ## Implementation Tasks
 
@@ -24,8 +26,8 @@
   - GIVEN a second run THEN nothing is created
   - GIVEN no session THEN the writes still succeed (runAsSystem), and a failure to obtain one FAILS rather than warning
   - GIVEN the test fake THEN it implements `runAsSystem()`, so removing the wrapper breaks the suite
-- [ ] Implement
-- [ ] Test
+- [x] Implement — `lib/Repair/MigrateCommitteesToDecidiq.php`, dispatching through `lib/Service/Bezwaar/CommitteeDelegationService.php`
+- [x] Test
 
 ### Task 2: Roster fan-out
 - **spec_ref**: `...#requirement-req-mcd-002-the-roster-fans-out-to-memberships`
@@ -33,8 +35,8 @@
 - **acceptance_criteria**:
   - GIVEN a committee with N members WHEN migrated THEN N Memberships exist on the new body with correct roles
   - GIVEN a re-run THEN no duplicates
-- [ ] Implement
-- [ ] Test
+- [x] Implement — the roster is built by `CommitteeDelegationService::rosterOf()`; the fan-out to Person + Membership happens in decidiq's `GovernanceBodyCommandService`
+- [x] Test — including the chair-repeated-in-members case, which would otherwise silently demote the chair
 
 ### Task 3: Read path with a permanent fallback
 - **spec_ref**: `...#requirement-req-mcd-003-reads-resolve-from-decidiq-falling-back-locally`
@@ -51,3 +53,16 @@
   - Deferred until the fallback is provably unreachable on supported installs. Retiring it while any install still reads it removes a working feature.
 - [ ] Implement
 - [ ] Test
+
+
+### Task 5: A flow that runs one referral end to end
+
+- **spec_ref**: `openspec/changes/migrate-committees-to-decidiq/specs/migrate-committees-to-decidiq/spec.md#requirement-req-mcd-001-committees-migrate-to-governance-bodies`
+- **files**: `lib/Flow/DossiqEnsureCommitteeNode.php`, `lib/Settings/register.d/72-committees-to-decidiq.json`
+- **acceptance_criteria**:
+  - GIVEN a `bacAdviceRequest` is created THEN the seeded `Bezwaar advies` flow runs, and its FIRST step makes sure the committee is held as a governance body
+  - GIVEN a committee already carrying `governanceBodyId` THEN the node short-circuits and dispatches nothing
+  - GIVEN the decision app is absent THEN the step FAILS and the run stops, rather than referring the objection to a committee in no shared register
+  - GIVEN an advice request naming no committee THEN it passes through untouched, so one flow serves both routes
+- [x] Implement
+- [x] Test

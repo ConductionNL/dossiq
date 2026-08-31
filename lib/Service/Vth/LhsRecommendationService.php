@@ -33,11 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Vth;
 
-use OCA\Dossiq\Service\SettingsService;
 use OCP\IUserSession;
-use Psr\Log\LoggerInterface;
 use RuntimeException;
-use Throwable;
 
 /**
  * LHS recommendation engine.
@@ -75,14 +72,12 @@ class LhsRecommendationService {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Settings bridge
 	 * @param IUserSession $userSession Authenticated user session
-	 * @param LoggerInterface $logger Logger
+	 * @param LhsRecommendationStore $store The OpenRegister reads and writes
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
 		private readonly IUserSession $userSession,
-		private readonly LoggerInterface $logger,
+		private readonly LhsRecommendationStore $store,
 	) {
 	}//end __construct()
 
@@ -122,7 +117,7 @@ class LhsRecommendationService {
 			throw new RuntimeException('Authenticatie vereist voor LHS-aanbeveling');
 		}
 
-		$matrix = $this->loadMatrix(version: $lhsVersion);
+		$matrix = $this->store->loadMatrix(version: $lhsVersion);
 		$cellIndex = $this->indexCells(cells: ($matrix['cells'] ?? []));
 		$key = $severity . ':' . $behaviour . ':' . $actorType;
 
@@ -150,7 +145,7 @@ class LhsRecommendationService {
 			unset($recommendation['inspection']);
 		}
 
-		return $this->persistRecommendation(row: $recommendation);
+		return $this->store->persistRecommendation(row: $recommendation);
 	}//end recommend()
 
 	/**
@@ -159,11 +154,23 @@ class LhsRecommendationService {
 	 * Override-down (selecting an intervention of equal or lower severity than
 	 * the recommendation) is allowed for any inspector with a justification of
 	 * at least 20 non-whitespace characters. Override-up (harsher than the
-	 * recommendation) requires the caller to declare the manager role and is
-	 * persisted with `overrideAuthority = "manager"`.
+	 * recommendation) requires the manager role and is persisted with
+	 * `overrideAuthority = "manager"`.
 	 *
-	 * @param array<string, mixed> $recommendation Original recommendation row
-	 *                                             (must include id, recommendedInterventie)
+	 * 🔴 THE STORED ROW IS THE ONLY SOURCE. This method takes an ID and reads
+	 * the recommendation back from OpenRegister; it does NOT accept the row
+	 * from the caller.
+	 *
+	 * It used to. The caller passed the whole recommendation array, and the
+	 * escalation guard compared the requested intervention against the
+	 * `recommendedIntervention` IN THAT ARRAY. So an inspector could post a body
+	 * claiming the matrix had already recommended `bestuursdwang`, "override
+	 * down" to anything, and never meet the manager gate — while the same
+	 * array_merge also let them rewrite `severity`, `behaviour`, `matrixVersion`
+	 * and `recommendedBy` on the persisted row. The audit record of what the
+	 * matrix said would then agree with them.
+	 *
+	 * @param string $recommendationId Id of the stored recommendation
 	 * @param string $intervention Chosen intervention (enum value)
 	 * @param string $justification Mandatory justification (>= 20 chars)
 	 * @param string $userRole Caller role: "inspector" or "manager"
@@ -175,7 +182,7 @@ class LhsRecommendationService {
 	 * @spec openspec/specs/enforcement-lhs/spec.md
 	 */
 	public function override(
-		array $recommendation,
+		string $recommendationId,
 		string $intervention,
 		string $justification,
 		string $userRole,
@@ -191,6 +198,15 @@ class LhsRecommendationService {
 				'Motivatie afwijking moet minimaal 20 tekens bevatten'
 			);
 		}
+
+		$recommendationId = trim($recommendationId);
+		if ($recommendationId === '') {
+			throw new RuntimeException('Recommendation ID ontbreekt voor override');
+		}
+
+		// Read back, never trust. The escalation guard below compares against
+		// what the MATRIX said, so that value has to come from the store.
+		$recommendation = $this->store->loadRecommendation(recommendationId: $recommendationId);
 
 		$recommended = (string)($recommendation['recommendedIntervention'] ?? '');
 		$recSeverity = self::INTERVENTIE_SEVERITY[$recommended] ?? 0;
@@ -211,11 +227,11 @@ class LhsRecommendationService {
 			throw new RuntimeException('Verzwaring vereist managerrol');
 		}
 
-		$recommendationId = (string)($recommendation['id'] ?? ($recommendation['@self']['id'] ?? ''));
-		if ($recommendationId === '') {
-			throw new RuntimeException('Recommendation ID ontbreekt voor override');
-		}
-
+		// Only the override fields are written. The stored row supplies
+		// everything else, so a request cannot rewrite `severity`, `behaviour`,
+		// `matrixVersion` or `recommendedBy` on its way past the guard — which
+		// would leave the audit record of what the matrix said agreeing with
+		// whoever overrode it.
 		$updated = array_merge(
 			$recommendation,
 			[
@@ -227,103 +243,12 @@ class LhsRecommendationService {
 			]
 		);
 
-		return $this->persistRecommendation(row: $updated, id: $recommendationId);
+		return $this->store->persistRecommendation(row: $updated, id: $recommendationId);
 	}//end override()
 
-	/**
-	 * Load the LHS matrix to use for the lookup.
-	 *
-	 * Without an explicit version, returns the matrix flagged `active = true`.
-	 * With an explicit version, returns the matching versioned snapshot —
-	 * used by historical recommendations that must remain stable across
-	 * subsequent matrix edits (REQ-LHS-8).
-	 *
-	 * @param int|null $version Explicit matrix version, or null for active
-	 *
-	 * @return array<string, mixed> The matrix row
-	 *
-	 * @throws RuntimeException When no matrix is available.
-	 */
-	private function loadMatrix(?int $version): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is niet beschikbaar');
-		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('lhs_matrix_schema');
-		if ($register === '' || $schema === '') {
-			throw new RuntimeException('LHS-matrix register/schema is niet geconfigureerd');
-		}
 
-		$filters = ['active' => true];
-		if ($version !== null) {
-			$filters = ['version' => $version];
-		}
 
-		try {
-			$results = $objectService->findAll(
-				[
-					'filters' => (['register' => $register, 'schema' => $schema] + $filters),
-					'limit' => 1,
-				],
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq LHS: matrix lookup failed: ' . $e->getMessage(),
-			);
-			throw new RuntimeException('LHS-matrix lookup mislukt');
-		}
-
-		$row = $this->firstRow(results: $results);
-		if ($row === null) {
-			throw new RuntimeException('Geen actieve LHS-matrix gevonden');
-		}
-
-		return $this->toArray(value: $row);
-	}//end loadMatrix()
-
-	/**
-	 * Persist an lhsRecommendation row through ObjectService.
-	 *
-	 * @param array<string, mixed> $row Row to persist
-	 * @param string|null $id Existing id when updating; null for create
-	 *
-	 * @return array<string, mixed> Persisted row
-	 *
-	 * @throws RuntimeException On save failure.
-	 */
-	private function persistRecommendation(array $row, ?string $id = null): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is niet beschikbaar');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('lhs_recommendation_schema');
-		if ($register === '' || $schema === '') {
-			throw new RuntimeException('LHS-recommendation register/schema is niet geconfigureerd');
-		}
-
-		try {
-			if ($id !== null) {
-				$row['id'] = $id;
-			}
-
-			$saved = $objectService->saveObject(
-				register: $register,
-				schema: $schema,
-				object: $row,
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq LHS: failed to save lhsRecommendation: ' . $e->getMessage(),
-			);
-			throw new RuntimeException('Opslaan LHS-aanbeveling mislukt');
-		}
-
-		return $this->toArray(value: $saved);
-	}//end persistRecommendation()
 
 	/**
 	 * Build an in-memory dictionary of cells keyed `severity:behaviour:actorType`.
@@ -363,60 +288,5 @@ class LhsRecommendationService {
 		return $index;
 	}//end indexCells()
 
-	/**
-	 * Pluck the first row from any ObjectService result shape.
-	 *
-	 * @param mixed $results ObjectService::getObjects() return
-	 *
-	 * @return mixed|null
-	 */
-	private function firstRow(mixed $results): mixed {
-		if (is_array($results) === true) {
-			if (isset($results[0]) === true) {
-				return $results[0];
-			}
 
-			if (isset($results['results']) === true
-				&& is_array($results['results']) === true
-				&& count($results['results']) > 0
-			) {
-				return $results['results'][0];
-			}
-		}
-
-		return null;
-	}//end firstRow()
-
-	/**
-	 * Coerce an ObjectService return value to an associative array.
-	 *
-	 * @param mixed $value The value
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true) {
-			if (method_exists($value, 'jsonSerialize') === true) {
-				$serialised = $value->jsonSerialize();
-				if (is_array($serialised) === true) {
-					return $serialised;
-				}
-			}
-
-			if (method_exists($value, 'toArray') === true) {
-				$arr = $value->toArray();
-				if (is_array($arr) === true) {
-					return $arr;
-				}
-			}
-
-			return (array)$value;
-		}
-
-		return [];
-	}//end toArray()
 }//end class

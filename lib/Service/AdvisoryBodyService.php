@@ -202,7 +202,7 @@ class AdvisoryBodyService {
 			throw new RuntimeException('Advisory body schema not configured');
 		}
 
-		$objectService->deleteObject($register, $schema, $id);
+		$objectService->deleteObject(uuid: $id, register: $register, schema: $schema);
 
 		$this->logger->info(
 			'Advisory body deleted: ' . $id,
