@@ -2352,7 +2352,7 @@
             }
           }
         },
-        "icon": "BriefcaseOutline",
+        "icon": "FolderAccountOutline",
         "version": "1.9.0",
         "x-schema-org": "schema:Project",
         "x-zgw-equivalent": "Zaak",
@@ -3764,7 +3764,7 @@
       },
       "caseType": {
         "slug": "caseType",
-        "icon": "BriefcaseVariantOutline",
+        "icon": "FolderCogOutline",
         "version": "1.2.0",
         "x-schema-org": "schema:Project",
         "x-zgw-equivalent": "ZaakType",
@@ -4577,7 +4577,7 @@
       },
       "consultation": {
         "slug": "consultation",
-        "icon": "MessageAlertOutline",
+        "icon": "CommentQuestionOutline",
         "version": "1.0.0",
         "x-schema-org": "schema:AskAction",
         "title": "Consultation",
@@ -9209,7 +9209,7 @@
       },
       "mapLayer": {
         "slug": "mapLayer",
-        "icon": "MapOutline",
+        "icon": "LayersOutline",
         "version": "1.0.0",
         "title": "Map Layer",
         "description": "GIS map layer configuration for case maps — defines tile, WMS, WFS, or GeoJSON layers that can be displayed on case map views",
@@ -9693,7 +9693,7 @@
       },
       "objection": {
         "slug": "objection",
-        "icon": "FileDocumentAlertOutline",
+        "icon": "FileAlertOutline",
         "version": "1.0.0",
         "x-schema-org": "schema:Message",
         "x-zgw-equivalent": "Bezwaarschrift",
@@ -11671,7 +11671,7 @@
       },
       "role": {
         "slug": "role",
-        "icon": "AccountHardHat",
+        "icon": "AccountKeyOutline",
         "version": "1.1.0",
         "x-schema-org": "schema:Role",
         "x-zgw-equivalent": "Rol",
@@ -12775,7 +12775,7 @@
       },
       "substitution": {
         "slug": "substitution",
-        "icon": "AccountSwitch",
+        "icon": "AccountSwitchOutline",
         "version": "1.0.0",
         "title": "Substitution",
         "description": "Vervanging/waarneming registration — who covers an absent handler's workload, when, and for what scope. Domain data on top of OpenRegister RBAC; grants no permissions of its own (handler-vervanging-waarneming spec).",
@@ -13512,7 +13512,7 @@
             }
           }
         },
-        "icon": "CheckboxMarkedOutline",
+        "icon": "CheckboxMarkedCircleOutline",
         "version": "1.2.0",
         "x-schema-org": "schema:Action",
         "x-zgw-equivalent": "Taak",

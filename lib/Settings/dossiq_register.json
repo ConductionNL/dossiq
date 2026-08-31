@@ -16,7 +16,7 @@
         "schemas": {
             "caseType": {
                 "slug": "caseType",
-                "icon": "BriefcaseVariantOutline",
+                "icon": "FolderCogOutline",
                 "version": "1.2.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
@@ -699,7 +699,7 @@
                         }
                     }
                 },
-                "icon": "BriefcaseOutline",
+                "icon": "FolderAccountOutline",
                 "version": "1.9.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
@@ -1693,7 +1693,7 @@
                         }
                     }
                 },
-                "icon": "CheckboxMarkedOutline",
+                "icon": "CheckboxMarkedCircleOutline",
                 "version": "1.2.0",
                 "x-schema-org": "schema:Action",
                 "x-zgw-equivalent": "Taak",
@@ -2015,7 +2015,7 @@
             },
             "role": {
                 "slug": "role",
-                "icon": "AccountHardHat",
+                "icon": "AccountKeyOutline",
                 "version": "1.1.0",
                 "x-schema-org": "schema:Role",
                 "x-zgw-equivalent": "Rol",
@@ -4037,7 +4037,7 @@
             },
             "objection": {
                 "slug": "objection",
-                "icon": "FileDocumentAlertOutline",
+                "icon": "FileAlertOutline",
                 "version": "1.0.0",
                 "x-schema-org": "schema:Message",
                 "x-zgw-equivalent": "Bezwaarschrift",
@@ -4929,7 +4929,7 @@
             },
             "mapLayer": {
                 "slug": "mapLayer",
-                "icon": "MapOutline",
+                "icon": "LayersOutline",
                 "version": "1.0.0",
                 "title": "Map Layer",
                 "description": "GIS map layer configuration for case maps — defines tile, WMS, WFS, or GeoJSON layers that can be displayed on case map views",
@@ -5207,7 +5207,7 @@
             },
             "consultation": {
                 "slug": "consultation",
-                "icon": "MessageAlertOutline",
+                "icon": "CommentQuestionOutline",
                 "version": "1.0.0",
                 "x-schema-org": "schema:AskAction",
                 "title": "Consultation",
