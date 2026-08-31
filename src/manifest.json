@@ -1519,7 +1519,7 @@
 						"icon": "Earth",
 						"content": {
 							"register": "dossiq",
-							"schema": "location",
+							"schema": "case-location",
 							"filter": {
 								"case": "@objectId"
 							},
