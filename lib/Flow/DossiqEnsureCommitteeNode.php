@@ -322,7 +322,7 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
 
         try {
             $objectService->saveObject(
-                object: ($committee + ['governanceBodyId' => $bodyId]),
+                object: array_merge($committee, ['governanceBodyId' => $bodyId]),
                 register: $register,
                 schema: $schema,
                 uuid: $id,
