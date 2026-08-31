@@ -181,3 +181,121 @@ test.describe('parafering activation', () => {
 		).not.toBe(200)
 	})
 })
+
+test.describe('decision tables evaluated by OpenRegister', () => {
+	// dossiq deleted its own DMN engine and now injects
+	// `OCA\OpenRegister\Service\Dmn\DecisionTableEvaluator`. Unit tests cannot
+	// prove that resolves: dossiq's suite autoloads `OCA\OpenRegister\` from
+	// tests/Stubs, so it asserts the delegation against a stub by construction.
+	// Only a live instance, where both apps are installed, can say whether the
+	// class is there and whether the container can inject it.
+	test('a PRIORITY table decides, where the old engine refused it', async ({
+		page,
+	}) => {
+		await page.goto(`${BASE_URL}/apps/dossiq/`)
+		await page.waitForLoadState('domcontentloaded')
+
+		const outcome = await page.evaluate(async () => {
+			const token = (window as any).OC?.requestToken ?? ''
+			const headers = {
+				requesttoken: token,
+				'Content-Type': 'application/json',
+			}
+
+			// PRIORITY is the point. dossiq's own engine answered
+			// `hit_policy_not_implemented` for this table, while its schema
+			// offered PRIORITY in the enum the whole time.
+			const table = {
+				// `key` is required by the create endpoint; without it this is a
+				// 400 and the test fails at the fixture rather than the claim.
+				key: `e2e-priority-${Date.now()}`,
+				name: 'e2e priority table',
+				hitPolicy: 'PRIORITY',
+				inputs: [{ name: 'severity', type: 'string' }],
+				outputs: [{ name: 'intervention', type: 'string' }],
+				rules: [
+					{
+						id: 'low',
+						inputEntries: ['gering'],
+						outputEntries: ['brief'],
+						priority: 1,
+					},
+					{
+						id: 'high',
+						inputEntries: ['gering'],
+						outputEntries: ['fine'],
+						priority: 10,
+					},
+				],
+			}
+
+			const created = await fetch('/apps/dossiq/api/decisions', {
+				method: 'POST',
+				headers,
+				body: JSON.stringify(table),
+			})
+			if (!created.ok) {
+				return {
+					stage: 'create',
+					status: created.status,
+					body: await created.text(),
+				}
+			}
+
+			const row = await created.json()
+			const id = row.id ?? row.uuid ?? row['@self']?.id
+			if (!id)
+				return {
+					stage: 'create',
+					status: 200,
+					body: 'no id in the created row',
+				}
+
+			const res = await fetch(`/apps/dossiq/api/decisions/${id}/evaluate`, {
+				method: 'POST',
+				headers,
+				body: JSON.stringify({ severity: 'gering' }),
+			})
+			const body = await res.text()
+
+			// This suite runs against the shared development instance, so the
+			// fixture is removed rather than left behind for the next reader to
+			// wonder about.
+			await fetch(`/apps/dossiq/api/decisions/${id}`, {
+				method: 'DELETE',
+				headers,
+			})
+
+			return { stage: 'evaluate', status: res.status, body }
+		})
+
+		expect(
+			outcome.stage,
+			`could not create the decision table: ${outcome.body}`,
+		).toBe('evaluate')
+
+		// 🔴 What would make this pass wrongly: nothing quiet. If the shared
+		// evaluator were unresolvable the container would fail to build the
+		// controller and this would be a 500; if PRIORITY were still refused it
+		// would be a 4xx carrying `hit_policy_not_implemented`. Both are asserted
+		// against explicitly rather than inferred from a truthy response.
+		expect(outcome.body, 'PRIORITY must no longer be refused').not.toContain(
+			'hit_policy_not_implemented',
+		)
+		expect(
+			outcome.status,
+			`evaluate answered ${outcome.status}: ${outcome.body}`,
+		).toBe(200)
+
+		const decided = JSON.parse(outcome.body)
+
+		// The higher priority wins. Asserting the VALUE, not merely that
+		// something came back, is what separates this from a smoke test: a
+		// delegation that returned the first rule instead would still be a 200.
+		expect(
+			decided.outputs?.intervention,
+			'the rule with priority 10 must win, not the first in declaration order',
+		).toBe('fine')
+		expect(decided.hitPolicy).toBe('PRIORITY')
+	})
+})

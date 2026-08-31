@@ -109,7 +109,11 @@ class DecisionTableService {
 	 */
 	public function deleteTable(string $id): void {
 		[$objectService, $register, $schema] = $this->resolve();
-		$objectService->deleteObject($register, $schema, $id);
+		// Named, like every other call in this class. OpenRegister's signature is
+		// deleteObject(uuid, register, schema); passing them positionally in
+		// register/schema/id order transposed all three, so this looked up a
+		// register whose id was really the schema's and 500'd every time.
+		$objectService->deleteObject(uuid: $id, register: $register, schema: $schema);
 	}//end deleteTable()
 
 	/**
@@ -255,6 +259,8 @@ class DecisionTableService {
 	 * @return array<int, array<string, mixed>> The validated rules.
 	 *
 	 * @throws OCSBadRequestException When a rule's entry counts don't align with inputs/outputs.
+	 *
+	 * @spec openspec/specs/dmn-decision-tables/spec.md
 	 */
 	private function validateRules(mixed $raw, int $inputCount, int $outputCount): array {
 		if (is_array($raw) === false) {
@@ -289,12 +295,21 @@ class DecisionTableService {
 				throw new OCSBadRequestException('Rule ' . $index . ' outputEntries count (' . $got . ') must match outputs count (' . $outputCount . ')');
 			}
 
-			$rules[] = [
+			$built = [
 				'id' => trim((string)($rule['id'] ?? ('r' . ($index + 1)))),
 				'annotation' => trim((string)($rule['annotation'] ?? '')),
 				'inputEntries' => array_map(static fn (mixed $entry): string => (string)$entry, $inputEntries),
 				'outputEntries' => $outputEntries,
 			];
+
+			// PRIORITY ranks by this, and it is only carried when the author
+			// supplied it: writing a default 0 onto every rule of every table
+			// would put a meaningless field on the tables that do not use it.
+			if (array_key_exists('priority', $rule) === true) {
+				$built['priority'] = (int)$rule['priority'];
+			}
+
+			$rules[] = $built;
 		}//end foreach
 
 		return $rules;
