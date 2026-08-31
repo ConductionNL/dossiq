@@ -5,7 +5,7 @@
  *
  * Loads and persists decisionTable definitions from OpenRegister, and
  * structurally validates them before save. Evaluation itself is delegated
- * to the pure {@see DecisionEngine} — this service never contains
+ * to the pure {@see \OCA\OpenRegister\Service\Dmn\DecisionTableEvaluator} — this service never contains
  * evaluation logic, mirroring the `RoutingRuleService` / `RoutingEngine`
  * split already used for KCC routing.
  *
@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Dmn;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Dmn\UnaryTestEvaluator;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 
 /**
@@ -230,7 +231,7 @@ class DecisionTableService {
 			}
 
 			$type = (string)($field['type'] ?? 'string');
-			if (in_array($type, ExpressionEvaluator::VALID_TYPES, true) === false) {
+			if (in_array($type, UnaryTestEvaluator::VALID_TYPES, true) === false) {
 				throw new OCSBadRequestException('Invalid type for ' . $label . ' entry "' . $name . '": ' . $type);
 			}
 

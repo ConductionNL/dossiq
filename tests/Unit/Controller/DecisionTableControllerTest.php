@@ -26,8 +26,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DecisionTableController;
-use OCA\Dossiq\Service\Dmn\DecisionEngine;
-use OCA\Dossiq\Service\Dmn\DecisionEvaluationException;
+use OCA\OpenRegister\Service\Dmn\DecisionTableEvaluator;
+use OCA\OpenRegister\Service\Dmn\DecisionEvaluationException;
 use OCA\Dossiq\Service\Dmn\DecisionTableService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\OCS\OCSBadRequestException;
@@ -41,7 +41,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \OCA\Dossiq\Controller\DecisionTableController
  *
- * @uses \OCA\Dossiq\Service\Dmn\DecisionEvaluationException
+ * @uses \OCA\OpenRegister\Service\Dmn\DecisionEvaluationException
  */
 class DecisionTableControllerTest extends TestCase {
 
@@ -56,9 +56,9 @@ class DecisionTableControllerTest extends TestCase {
 	private DecisionTableService $tableService;
 
 	/**
-	 * @var DecisionEngine&MockObject
+	 * @var DecisionTableEvaluator&MockObject
 	 */
-	private DecisionEngine $engine;
+	private DecisionTableEvaluator $engine;
 
 	/**
 	 * @var IUserSession&MockObject
@@ -77,7 +77,7 @@ class DecisionTableControllerTest extends TestCase {
 		parent::setUp();
 		$this->request = $this->createMock(IRequest::class);
 		$this->tableService = $this->createMock(DecisionTableService::class);
-		$this->engine = $this->createMock(DecisionEngine::class);
+		$this->engine = $this->createMock(DecisionTableEvaluator::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->groupManager = $this->createMock(IGroupManager::class);
 	}//end setUp()
