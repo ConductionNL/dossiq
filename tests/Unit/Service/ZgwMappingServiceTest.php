@@ -230,7 +230,11 @@ class ZgwMappingServiceTest extends TestCase {
 		$this->assertArrayHasKey('zaak', $mappings);
 		$this->assertArrayHasKey('zaaktype', $mappings);
 		$this->assertSame(['title' => 'omschrijving'], $mappings['zaak']);
-		$this->assertNull($mappings['caseType']);
+		// `caseType` is the English alias for `zaaktype`, and is deliberately
+		// NOT one of RESOURCE_KEYS. Asserting it is null read as a contract but
+		// was reading an absent key, so it passed on a PHP warning rather than
+		// on the service agreeing with it.
+		$this->assertArrayNotHasKey('caseType', $mappings);
 
 	}//end testListMappingsReturnsAllKeys()
 
