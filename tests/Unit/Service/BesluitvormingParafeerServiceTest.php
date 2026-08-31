@@ -21,6 +21,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\BesluitvormingParafeerService;
+use OCA\Dossiq\Service\Parafeer\ParafeerrouteDirectory;
+use OCA\Dossiq\Service\Parafeer\ParaferingDelegationService;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -82,6 +84,20 @@ class BesluitvormingParafeerServiceTest extends TestCase {
 	private BesluitvormingParafeerService $service;
 
 	/**
+	 * Resolves the sign-off route for a case type.
+	 *
+	 * @var ParafeerrouteDirectory&\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private $routes;
+
+	/**
+	 * Holds the route in the decision app.
+	 *
+	 * @var ParaferingDelegationService&\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private $delegation;
+
+	/**
 	 * Set up test fixtures.
 	 *
 	 * @return void
@@ -89,9 +105,13 @@ class BesluitvormingParafeerServiceTest extends TestCase {
 	protected function setUp(): void {
 		$this->settingsService = $this->createMock(SettingsService::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->routes = $this->createMock(ParafeerrouteDirectory::class);
+		$this->delegation = $this->createMock(ParaferingDelegationService::class);
 
 		$this->service = new BesluitvormingParafeerService(
 			$this->settingsService,
+			$this->routes,
+			$this->delegation,
 			$this->logger,
 		);
 
@@ -148,11 +168,128 @@ class BesluitvormingParafeerServiceTest extends TestCase {
 			->method('getConfigValue')
 			->willReturn('test-value');
 
+		// A route must resolve, or activation is refused. Before this change the
+		// directory did not exist and activate() carried on with an EMPTY
+		// snapshot; this test passed on exactly that path, which is why it had
+		// to change with the behaviour rather than be made to keep passing.
+		$this->routes->method('localRoute')->willReturn(['id' => 'pr-1', 'name' => 'Route']);
+		$this->routes->method('stepsForCaseType')->willReturn(
+			[['order' => 1, 'type' => 'parafering', 'actor' => 'alice']]
+		);
+		$this->delegation->method('isAvailable')->willReturn(false);
+
 		$result = $this->service->activate(proposalId: 'voorstel-uuid-1');
 
 		$this->assertIsArray($result);
 
 	}//end testActivateReturnsArrayWhenVoorstelFound()
+
+	/**
+	 * A voorstel whose case type has no route is NOT put into parafering.
+	 *
+	 * Before this change activate() wrote `currentStep: 1, status:
+	 * in_parafering, routeSnapshot: []` and returned happily. Every action after
+	 * it then failed `Current step not found in route snapshot` — a message
+	 * about the snapshot when the fault is a route nobody configured — and the
+	 * voorstel was parked with no way forward and no way back.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-to-decidiq/specs/parafering-to-decidiq/spec.md
+	 */
+	public function testActivateIsRefusedWhenNoRouteIsConfigured(): void {
+		$proposalObj = new \stdClass();
+		$proposalObj->id = 'voorstel-uuid-1';
+		$proposalObj->status = 'draft';
+
+		$objectServiceMock = $this->createMock(BvwParafeerObjectServiceStub::class);
+		$objectServiceMock->method('searchObjectsBySlug')->willReturn([$proposalObj]);
+		// The refusal must land BEFORE any write. A save here means the voorstel
+		// was already parked in parafering by the time we refused.
+		$objectServiceMock->expects($this->never())->method('saveObject');
+
+		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
+		$this->settingsService->method('getConfigValue')->willReturn('test-value');
+		$this->routes->method('localRoute')->willReturn(null);
+
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessageMatches('/No parafeerroute is configured/');
+
+		$this->service->activate(proposalId: 'voorstel-uuid-1');
+
+	}//end testActivateIsRefusedWhenNoRouteIsConfigured()
+
+	/**
+	 * A route that resolves to no steps is refused for the same reason.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-to-decidiq/specs/parafering-to-decidiq/spec.md
+	 */
+	public function testActivateIsRefusedWhenTheRouteHasNoSteps(): void {
+		$proposalObj = new \stdClass();
+		$proposalObj->id = 'voorstel-uuid-1';
+
+		$objectServiceMock = $this->createMock(BvwParafeerObjectServiceStub::class);
+		$objectServiceMock->method('searchObjectsBySlug')->willReturn([$proposalObj]);
+		$objectServiceMock->expects($this->never())->method('saveObject');
+
+		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
+		$this->settingsService->method('getConfigValue')->willReturn('test-value');
+		$this->routes->method('localRoute')->willReturn(['id' => 'pr-1', 'name' => 'Leeg']);
+		$this->routes->method('stepsForCaseType')->willReturn([]);
+
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessageMatches('/No parafeerroute is configured/');
+
+		$this->service->activate(proposalId: 'voorstel-uuid-1');
+
+	}//end testActivateIsRefusedWhenTheRouteHasNoSteps()
+
+	/**
+	 * The decision app refusing does not stop a voorstel entering parafering.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-to-decidiq/specs/parafering-to-decidiq/spec.md
+	 */
+	public function testDecisionAppRefusalDoesNotBlockActivation(): void {
+		$proposalObj = new \stdClass();
+		$proposalObj->id = 'voorstel-uuid-1';
+
+		$saved = [];
+		$objectServiceMock = $this->createMock(BvwParafeerObjectServiceStub::class);
+		$objectServiceMock->method('searchObjectsBySlug')->willReturn([$proposalObj]);
+		$objectServiceMock->method('saveObject')->willReturnCallback(
+			static function (array $object) use (&$saved): \stdClass {
+				$saved = $object;
+				$out = new \stdClass();
+				$out->id = 'voorstel-uuid-1';
+
+				return $out;
+			}
+		);
+
+		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
+		$this->settingsService->method('getConfigValue')->willReturn('test-value');
+		$this->routes->method('localRoute')->willReturn(['id' => 'pr-1', 'name' => 'Route']);
+		$this->routes->method('stepsForCaseType')->willReturn(
+            [['order' => 1, 'type' => 'parafering', 'actor' => 'alice']]
+        );
+		$this->delegation->method('isAvailable')->willReturn(true);
+		$this->delegation->method('holdRoute')->willThrowException(new \RuntimeException('decision app down'));
+
+		$result = $this->service->activate(proposalId: 'voorstel-uuid-1');
+
+		$this->assertIsArray($result);
+		$this->assertSame('in_parafering', $saved['status']);
+		$this->assertArrayNotHasKey(
+			'approvalRouteId',
+			$saved,
+			'an unmirrored voorstel is found by its EMPTY approvalRouteId, not by reading the log'
+		);
+
+	}//end testDecisionAppRefusalDoesNotBlockActivation()
 
 	/**
 	 * Test that allParafenCollected() returns false when no parafen exist.

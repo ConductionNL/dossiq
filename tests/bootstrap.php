@@ -274,7 +274,7 @@ if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
 // proved the class_exists() call always false — reporting the resilient lookup
 // as dead code. Both must be resolvable for the resolution to analyse as real.
 foreach (['Decidiq', 'Decidesk'] as $stubNamespace) {
-	foreach (['DecisionRequestedEvent', 'DecisionConcludedEvent', 'GovernanceBodyRequestedEvent'] as $stubEvent) {
+	foreach (['DecisionRequestedEvent', 'DecisionConcludedEvent', 'GovernanceBodyRequestedEvent', 'ApprovalRouteRequestedEvent'] as $stubEvent) {
 		if (class_exists('\\OCA\\' . $stubNamespace . '\\Event\\' . $stubEvent) === false) {
 			include_once __DIR__ . '/Stubs/' . $stubNamespace . '/Event/' . $stubEvent . '.php';
 		}
