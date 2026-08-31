@@ -430,11 +430,6 @@
 						"register": "dossiq",
 						"schema": "case",
 						"onSuccessRoute": "CaseDetail"
-					},
-					{
-						"id": "dashboard-refresh",
-						"type": "refresh",
-						"label": "Refresh"
 					}
 				],
 				"dateRange": {
