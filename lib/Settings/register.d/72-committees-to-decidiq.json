@@ -1,0 +1,131 @@
+{
+    "components": {
+        "schemas": {
+            "bezwaaradviescommissie": {
+                "properties": {
+                    "governanceBodyId": {
+                        "type": "string",
+                        "title": "Governance body",
+                        "maxLength": 255,
+                        "description": "Id of the GovernanceBody the decision app holds for this committee. Written once the committee has been raised there; empty until then. This is the mapping record that makes the migration auditable and lets a re-run skip the dispatch."
+                    }
+                }
+            },
+            "bacAdviceRequest": {
+                "configuration": {
+                    "x-openregister-flows": [
+                        {
+                            "name": "Bezwaar advies",
+                            "app": "dossiq",
+                            "description": "Walks one referral of a bezwaar to its advisory committee, from assignment to issued advice. The first step makes sure the committee is held as a governance body in the decision app, so the objection is never referred to a committee that exists in no shared register. The two human steps are the secretary opening deliberation and the chair issuing the signed advice.",
+                            "trigger": "object.created",
+                            "triggerRegister": "dossiq",
+                            "executionMode": "async",
+                            "limits": {
+                                "maxTransitions": 50
+                            },
+                            "nodes": [
+                                {
+                                    "id": "start",
+                                    "type": "openregister.trigger-object",
+                                    "config": {
+                                        "event": "object.created",
+                                        "register": "dossiq",
+                                        "schema": "bacAdviceRequest"
+                                    }
+                                },
+                                {
+                                    "id": "ensure-committee",
+                                    "type": "dossiq.ensureCommittee",
+                                    "config": {
+                                        "committeeField": "committee",
+                                        "outputKey": "governanceBodyId"
+                                    }
+                                },
+                                {
+                                    "id": "open-deliberation",
+                                    "type": "dossiq.askPerson",
+                                    "config": {
+                                        "question": "Open de beraadslaging",
+                                        "details": "De commissie heeft dit bezwaar toegewezen gekregen. Bevestig dat de beraadslaging is gestart zodra de zitting is belegd.",
+                                        "dueInDays": "14",
+                                        "signalKey": "beraadslagingGestart"
+                                    }
+                                },
+                                {
+                                    "id": "status-deliberation",
+                                    "type": "openregister.object-write",
+                                    "config": {
+                                        "register": "dossiq",
+                                        "schema": "bacAdviceRequest",
+                                        "fields": {
+                                            "status": "in-deliberation"
+                                        }
+                                    }
+                                },
+                                {
+                                    "id": "issue-advice",
+                                    "type": "dossiq.askPerson",
+                                    "config": {
+                                        "question": "Breng het advies uit",
+                                        "details": "Leg de bevindingen, de juridische beoordeling en de aanbeveling vast en onderteken het advies. Awb art. 7:13 lid 7.",
+                                        "dueInDays": "84",
+                                        "signalKey": "adviesUitgebracht"
+                                    }
+                                },
+                                {
+                                    "id": "status-issued",
+                                    "type": "openregister.object-write",
+                                    "config": {
+                                        "register": "dossiq",
+                                        "schema": "bacAdviceRequest",
+                                        "fields": {
+                                            "status": "advice-issued"
+                                        }
+                                    }
+                                },
+                                {
+                                    "id": "end",
+                                    "type": "openregister.end",
+                                    "config": {}
+                                }
+                            ],
+                            "edges": [
+                                {
+                                    "id": "e-start",
+                                    "from": "start",
+                                    "to": "ensure-committee"
+                                },
+                                {
+                                    "id": "e-committee",
+                                    "from": "ensure-committee",
+                                    "to": "open-deliberation"
+                                },
+                                {
+                                    "id": "e-opened",
+                                    "from": "open-deliberation",
+                                    "to": "status-deliberation"
+                                },
+                                {
+                                    "id": "e-deliberating",
+                                    "from": "status-deliberation",
+                                    "to": "issue-advice"
+                                },
+                                {
+                                    "id": "e-advised",
+                                    "from": "issue-advice",
+                                    "to": "status-issued"
+                                },
+                                {
+                                    "id": "e-end",
+                                    "from": "status-issued",
+                                    "to": "end"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}

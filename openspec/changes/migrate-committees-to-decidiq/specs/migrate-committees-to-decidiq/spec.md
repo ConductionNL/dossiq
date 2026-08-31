@@ -1,6 +1,6 @@
 # migrate-committees-to-decidiq Specification
 
-**Status**: planned (BLOCKED on decidiq#874)
+**Status**: in progress (unblocked 2026-08-30 by decidiq governance-body-events)
 **Scope**: dossiq
 
 ## Purpose

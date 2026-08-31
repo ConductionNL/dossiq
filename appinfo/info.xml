@@ -260,6 +260,18 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
             <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <!--
+                Raises each local bezwaaradviescommissie as a GovernanceBody in
+                the decision app and notes the id back on the local row.
+                Idempotent twice over: it skips a committee that already carries
+                an id, and the seam it dispatches to resolves on
+                (sourceApp, externalReference) before writing, so even a lost
+                note costs one redundant dispatch rather than a duplicate body.
+                Skips cleanly when the decision app is not installed — it is an
+                optional runtime dependency and an install without it keeps
+                working on its local committees.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateCommitteesToDecidiq</step>
+            <!--
                 Must run AFTER the register sync that adds the English columns, so it
                 can tell the rename case from the back-fill case. Matches BOTH the
                 dossiq and dossiq-default registers, which each hold live rows —

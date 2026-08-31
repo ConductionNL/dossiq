@@ -50,6 +50,25 @@ This was originally scoped as "move the schema" and could not be done that way. 
 
 ## Status
 
-**BLOCKED**, and on more than first thought. decidiq#874 is merged, so the SCHEMA half of the target exists. But the command seam does not: per ADR-041 this migration must dispatch a typed event, and decidiq has no event/listener pair for creating a governance body. That prerequisite is a decidiq change which does not yet exist.
+**UNBLOCKED 2026-08-30.** Both halves of the target now exist. decidiq#874
+merged the schema half; the command seam this proposal said "does not yet
+exist" landed as decidiq's `governance-body-events` change —
+`GovernanceBodyRequestedEvent`, a listener, `GovernanceBodyCommandService`, and
+`GovernanceBodyCreatedEvent` carrying the correlation back.
 
-Written now so the shape is agreed — including the correction above, which was found by reading ADR-041/ADR-066 rather than by assuming the REST seam was the answer.
+The correction in Scope 1 above stands and was followed: the command travels as
+a typed event, not over the REST seam.
+
+One thing moved from this change to that one. The idempotency risk
+— "a fan-out migration is not idempotent by default", listed under Risks above — is answered on the
+decidiq side rather than re-implemented here: the seam resolves the body on
+(sourceApp, externalReference) and each seat on (person, governanceBody) BEFORE
+it writes, and writes the body before the memberships. dossiq still records the
+returned id locally, but as a short-circuit rather than as the only thing
+standing between a re-run and a duplicated roster.
+
+Delivered here so far: the delegation service, the repair-step migration, the
+`dossiq.ensureCommittee` flow node and the seeded `Bezwaar advies` flow
+(tasks 1, 2 and 5). Still open: the read path with a permanent fallback
+(task 3), and retirement of the local schema (task 4, deliberately deferred
+until the fallback is provably unreachable).
