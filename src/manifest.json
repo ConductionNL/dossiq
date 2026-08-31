@@ -366,14 +366,6 @@
 			"permission": "admin"
 		},
 		{
-			"id": "LhsRecommendationsMenu",
-			"label": "LHS recommendations",
-			"icon": "CommentOutline",
-			"route": "LhsRecommendations",
-			"section": "settings",
-			"order": 97
-		},
-		{
 			"id": "BezwaarCommitteesMenu",
 			"label": "Objection advisory committees",
 			"icon": "FileAlertOutline",
