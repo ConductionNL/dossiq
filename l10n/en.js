@@ -3404,7 +3404,9 @@ OC.L10N.register(
         "Open Flows in the menu": "Open Flows in the menu",
         "Shared secret the payment provider signs its dwangsom payout callbacks with. Until it is set, DwangsomPaymentCallbackController cannot verify that a callback really came from the provider. Only shown while the dwangsom payout integration is configured.": "Shared secret the payment provider signs its dwangsom payout callbacks with. Until it is set, DwangsomPaymentCallbackController cannot verify that a callback really came from the provider. Only shown while the dwangsom payout integration is configured.",
         "Where case types come from": "Where case types come from",
-        "Where the automation lives": "Where the automation lives"
+        "Where the automation lives": "Where the automation lives",
+        "Assigned to me": "Assigned to me",
+        "All issues": "All issues"
     },
     "nplurals=2; plural=(n != 1);"
 )

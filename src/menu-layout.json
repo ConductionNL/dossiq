@@ -17,6 +17,8 @@
 	},
 	"relocations": {
 		"MyWork": "WorkGroup",
+    "Cases": "WorkGroup",
+    "Tasks": "WorkGroup",
 		"WorkflowBoard": "WorkGroup",
 		"Analytics": "AnalyticsGroup",
 		"TermijnDashboardMenu": "AnalyticsGroup",

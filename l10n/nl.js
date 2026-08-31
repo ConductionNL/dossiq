@@ -3404,7 +3404,9 @@ OC.L10N.register(
         "Open Case types in the menu": "Open Zaaktypen in het menu",
         "Where the automation lives": "Waar de automatisering zit",
         "Flows are what happens without anyone clicking: a deadline that warns before it passes, a confirmation that goes out on submission. This is where you read and edit them. Nothing to build now.": "Flows zijn wat er gebeurt zonder dat iemand klikt: een termijn die waarschuwt voordat die verstrijkt, een bevestiging die bij indiening uitgaat. Hier leest en bewerkt u ze. U hoeft nu niets te bouwen.",
-        "Open Flows in the menu": "Open Flows in het menu"
+        "Open Flows in the menu": "Open Flows in het menu",
+        "Assigned to me": "Aan mij toegewezen",
+        "All issues": "Alle zaken"
     },
     "nplurals=2; plural=(n != 1);"
 )
