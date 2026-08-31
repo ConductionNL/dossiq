@@ -29,8 +29,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Dmn\DecisionEngine;
-use OCA\Dossiq\Service\Dmn\DecisionEvaluationException;
+use OCA\OpenRegister\Service\Dmn\DecisionTableEvaluator;
+use OCA\OpenRegister\Service\Dmn\DecisionEvaluationException;
 use OCA\Dossiq\Service\Dmn\DecisionTableService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
@@ -71,14 +71,14 @@ class DecisionTableController extends Controller {
 	 *
 	 * @param IRequest $request The request object.
 	 * @param DecisionTableService $tableService The decision-table storage service.
-	 * @param DecisionEngine $engine The pure evaluation engine.
+	 * @param DecisionTableEvaluator $engine The pure evaluation engine.
 	 * @param IUserSession $userSession The user session.
 	 * @param IGroupManager $groupManager The group manager.
 	 */
 	public function __construct(
 		IRequest $request,
 		private DecisionTableService $tableService,
-		private DecisionEngine $engine,
+		private DecisionTableEvaluator $engine,
 		private IUserSession $userSession,
 		private IGroupManager $groupManager,
 	) {

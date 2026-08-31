@@ -7,7 +7,7 @@
  * inputMapping?: {decisionInputName: caseFieldName}, outputMapping?:
  * {decisionOutputName: caseFieldName}}`. Looks up the named decision table,
  * builds its inputs from the case (same-name default when a mapping entry
- * is absent), evaluates it via the pure {@see DecisionEngine}, and writes
+ * is absent), evaluates it via the pure {@see DecisionTableEvaluator}, and writes
  * every output back onto the case via OpenRegister — the same write path
  * {@see SetFieldHandler} uses. This is the workflow-engine's hook into the
  * DMN capability (design.md Decision 5): a transition's
@@ -36,8 +36,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
-use OCA\Dossiq\Service\Dmn\DecisionEngine;
-use OCA\Dossiq\Service\Dmn\DecisionEvaluationException;
+use OCA\OpenRegister\Service\Dmn\DecisionTableEvaluator;
+use OCA\OpenRegister\Service\Dmn\DecisionEvaluationException;
 use OCA\Dossiq\Service\Dmn\DecisionTableService;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
@@ -53,13 +53,13 @@ class EvaluateDecisionHandler implements ActionHandlerInterface {
 	 * Constructor.
 	 *
 	 * @param DecisionTableService $tableService Decision-table storage/lookup.
-	 * @param DecisionEngine $engine Pure evaluation engine.
+	 * @param DecisionTableEvaluator $engine Pure evaluation engine.
 	 * @param SettingsService $settingsService Bridge to OpenRegister + config.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		private readonly DecisionTableService $tableService,
-		private readonly DecisionEngine $engine,
+		private readonly DecisionTableEvaluator $engine,
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
