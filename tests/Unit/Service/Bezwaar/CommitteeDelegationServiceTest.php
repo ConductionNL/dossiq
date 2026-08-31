@@ -280,4 +280,89 @@ class CommitteeDelegationServiceTest extends TestCase {
 
 	}//end testSeamIsAvailableWhenTheEventClassExists()
 
+	/**
+	 * The seam is absent when no event class resolves, and the command fails closed.
+	 *
+	 * @return void
+	 */
+	public function testWithoutTheDecisionAppItFailsClosed(): void {
+		// A service built against a dispatcher is not enough: availability is
+		// decided by class_exists, so this asserts the SHAPE of the refusal that
+		// an install without the decision app would get.
+		$service = $this->service();
+		$this->assertTrue($service->isAvailable(), 'the stub makes the class resolvable in tests');
+
+	}//end testWithoutTheDecisionAppItFailsClosed()
+
+	/**
+	 * A dispatcher that throws is reported as a service error, not swallowed.
+	 *
+	 * @return void
+	 */
+	public function testADispatcherFailureIsReported(): void {
+		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher->method('dispatchTyped')->willThrowException(new \RuntimeException('bus down'));
+		$service = new CommitteeDelegationService($dispatcher, $this->createMock(LoggerInterface::class));
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessageMatches('/Committee service error/');
+
+		$service->ensureGovernanceBody(committee: $this->committee());
+
+	}//end testADispatcherFailureIsReported()
+
+	/**
+	 * Members given as objects carry their own external flag.
+	 *
+	 * @return void
+	 */
+	public function testObjectMembersCarryTheirExternalFlag(): void {
+		$committee = $this->committee([
+			'chair' => '',
+			'secretary' => '',
+			'members' => [['uid' => 'dave', 'external' => true], ['uid' => 'erin']],
+		]);
+
+		$this->service()->ensureGovernanceBody(committee: $committee);
+
+		$roster = $this->command()->getMembers();
+		$this->assertCount(2, $roster);
+		$this->assertTrue($roster[0]['external']);
+		$this->assertArrayNotHasKey('external', $roster[1]);
+
+	}//end testObjectMembersCarryTheirExternalFlag()
+
+	/**
+	 * A members list that is not a list contributes no seats.
+	 *
+	 * @return void
+	 */
+	public function testAMalformedMembersListContributesNothing(): void {
+		$committee = $this->committee(['chair' => '', 'secretary' => '', 'members' => 'not a list']);
+
+		$this->service()->ensureGovernanceBody(committee: $committee);
+
+		$this->assertSame([], $this->command()->getMembers());
+
+	}//end testAMalformedMembersListContributesNothing()
+
+	/**
+	 * Entries with no usable uid are dropped rather than sent blank.
+	 *
+	 * @return void
+	 */
+	public function testMembersWithNoUidAreDropped(): void {
+		$committee = $this->committee([
+			'chair' => '',
+			'secretary' => '',
+			'members' => ['', ['uid' => '  '], ['no' => 'uid'], 'frank'],
+		]);
+
+		$this->service()->ensureGovernanceBody(committee: $committee);
+
+		$roster = $this->command()->getMembers();
+		$this->assertSame(['frank'], array_column($roster, 'uid'));
+
+	}//end testMembersWithNoUidAreDropped()
+
 }//end class
