@@ -12,14 +12,14 @@
 		"SubsidiesGroup": "Cases",
 		"CaseMap": "Cases",
 		"Advice": "CaseDetail",
-		"BesluitvormingAgenda": "decidesk:MeetingDetail"
+		"BesluitvormingAgenda": "decidesk:MeetingDetail",
+		"Analytics": "Reports",
+		"TermijnDashboardMenu": "Reports",
+		"ProcessMiningDashboardMenu": "Reports"
 	},
 	"relocations": {
 		"MyWork": "WorkGroup",
-		"WorkflowBoard": "WorkGroup",
-		"Analytics": "AnalyticsGroup",
-		"TermijnDashboardMenu": "AnalyticsGroup",
-		"ProcessMiningDashboardMenu": "AnalyticsGroup"
+		"WorkflowBoard": "WorkGroup"
 	},
 	"removals": [
 		"BezwaarBeroepGroup",
@@ -29,7 +29,10 @@
 		"CaseMap",
 		"Voorstellen",
 		"Advice",
-		"BesluitvormingAgenda"
+		"BesluitvormingAgenda",
+		"Analytics",
+		"TermijnDashboardMenu",
+		"ProcessMiningDashboardMenu"
 	],
 	"settingsSection": [
 		"PartnersMenu",
