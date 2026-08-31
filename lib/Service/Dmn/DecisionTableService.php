@@ -259,6 +259,8 @@ class DecisionTableService {
 	 * @return array<int, array<string, mixed>> The validated rules.
 	 *
 	 * @throws OCSBadRequestException When a rule's entry counts don't align with inputs/outputs.
+	 *
+	 * @spec openspec/specs/dmn-decision-tables/spec.md
 	 */
 	private function validateRules(mixed $raw, int $inputCount, int $outputCount): array {
 		if (is_array($raw) === false) {

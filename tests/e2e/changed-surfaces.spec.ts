@@ -235,12 +235,21 @@ test.describe('decision tables evaluated by OpenRegister', () => {
 				body: JSON.stringify(table),
 			})
 			if (!created.ok) {
-				return { stage: 'create', status: created.status, body: await created.text() }
+				return {
+					stage: 'create',
+					status: created.status,
+					body: await created.text(),
+				}
 			}
 
 			const row = await created.json()
 			const id = row.id ?? row.uuid ?? row['@self']?.id
-			if (!id) return { stage: 'create', status: 200, body: 'no id in the created row' }
+			if (!id)
+				return {
+					stage: 'create',
+					status: 200,
+					body: 'no id in the created row',
+				}
 
 			const res = await fetch(`/apps/dossiq/api/decisions/${id}/evaluate`, {
 				method: 'POST',
@@ -270,10 +279,9 @@ test.describe('decision tables evaluated by OpenRegister', () => {
 		// controller and this would be a 500; if PRIORITY were still refused it
 		// would be a 4xx carrying `hit_policy_not_implemented`. Both are asserted
 		// against explicitly rather than inferred from a truthy response.
-		expect(
-			outcome.body,
-			'PRIORITY must no longer be refused',
-		).not.toContain('hit_policy_not_implemented')
+		expect(outcome.body, 'PRIORITY must no longer be refused').not.toContain(
+			'hit_policy_not_implemented',
+		)
 		expect(
 			outcome.status,
 			`evaluate answered ${outcome.status}: ${outcome.body}`,
