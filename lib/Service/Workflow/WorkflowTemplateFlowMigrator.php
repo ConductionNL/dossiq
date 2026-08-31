@@ -18,6 +18,7 @@ namespace OCA\Dossiq\Service\Workflow;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ProjectsOntoFlows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUser;
 use Psr\Container\ContainerInterface;
@@ -49,6 +50,7 @@ use Throwable;
 class WorkflowTemplateFlowMigrator {
 
 	use SearchesObjects;
+	use ProjectsOntoFlows;
 
 	/**
 	 * Provenance marker prefix written into the flow's notes.
@@ -61,12 +63,6 @@ class WorkflowTemplateFlowMigrator {
 	 */
 	private const MARKER_PREFIX = 'dossiq:workflowTemplate:';
 
-	/**
-	 * Flows read per page when scanning for existing markers.
-	 *
-	 * @var integer
-	 */
-	private const FLOW_PAGE = 100;
 
 	/**
 	 * Templates read per pass.
@@ -121,27 +117,6 @@ class WorkflowTemplateFlowMigrator {
 
 	}//end migrate()
 
-	/**
-	 * Resolve OpenRegister's FlowService by name, or null when absent.
-	 *
-	 * By name and not by type-hint: dossiq must install and boot on an instance
-	 * without OpenRegister, where the class does not exist to hint against.
-	 *
-	 * @return object|null The FlowService, or null.
-	 */
-	private function flowService(): ?object {
-		try {
-			return $this->container->get('OCA\OpenRegister\Service\Flow\FlowService');
-		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: FlowService could not be resolved',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
-			);
-
-			return null;
-		}
-
-	}//end flowService()
 
 	/**
 	 * A summary describing a run that could not start.
@@ -315,36 +290,6 @@ class WorkflowTemplateFlowMigrator {
 
 	}//end nodeId()
 
-	/**
-	 * Decode a field the schema stores as a JSON-encoded string.
-	 *
-	 * `steps` and `transitions` are declared as strings holding JSON, which is
-	 * ADR-065's named cost of this model: they are opaque to OpenRegister. Rows
-	 * written before that were stored as native arrays, so both are accepted.
-	 *
-	 * @param mixed $value The stored value.
-	 *
-	 * @return array<int, array<string, mixed>> The decoded list.
-	 */
-	private function decodeList(mixed $value): array {
-		if (is_string($value) === true) {
-			$value = json_decode($value, true);
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		$out = [];
-		foreach ($value as $entry) {
-			if (is_array($entry) === true) {
-				$out[] = $entry;
-			}
-		}
-
-		return $out;
-
-	}//end decodeList()
 
 	/**
 	 * The flow document to store.
@@ -432,83 +377,7 @@ class WorkflowTemplateFlowMigrator {
 
 	}//end fetchTemplates()
 
-	/**
-	 * Map every already-projected flow by its provenance marker.
-	 *
-	 * @param object $flowService OpenRegister's FlowService.
-	 *
-	 * @return array<string, string> Marker to flow uuid.
-	 */
-	private function existingByMarker(object $flowService): array {
-		$map = [];
-		$offset = 0;
 
-		while (true) {
-			$page = $flowService->findAll(Application::APP_ID, null, null, self::FLOW_PAGE, $offset);
-			if (is_array($page) === false || $page === []) {
-				return $map;
-			}
 
-			foreach ($page as $flow) {
-				$notes = (string)($flow->getNotes() ?? '');
-				if (str_starts_with($notes, self::MARKER_PREFIX) === true) {
-					$map[$notes] = (string)$flow->getUuid();
-				}
-			}
-
-			if (count($page) < self::FLOW_PAGE) {
-				return $map;
-			}
-
-			$offset += self::FLOW_PAGE;
-		}
-
-	}//end existingByMarker()
-
-	/**
-	 * Write one flow, never letting a single failure abort the rest.
-	 *
-	 * @param object               $flowService OpenRegister's FlowService.
-	 * @param array<string, mixed> $document    The flow document.
-	 * @param string               $marker      The provenance marker.
-	 * @param string|null          $uuid        The existing flow uuid, or null to create.
-	 *
-	 * @return array{outcome: string, marker: string, detail: string} The outcome row.
-	 */
-	private function writeFlow(object $flowService, array $document, string $marker, ?string $uuid): array {
-		try {
-			$flow = $flowService->save($document, $uuid);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: could not project a workflow definition onto a flow',
-				['app' => Application::APP_ID, 'marker' => $marker, 'exception' => $e->getMessage()]
-			);
-
-			return ['outcome' => 'failed', 'marker' => $marker, 'detail' => $e->getMessage()];
-		}
-
-		return [
-			'outcome' => $this->outcomeFor(uuid: $uuid),
-			'marker' => $marker,
-			'detail' => ('flow ' . (string)$flow->getUuid()),
-		];
-
-	}//end writeFlow()
-
-	/**
-	 * Whether writing against this uuid counts as a create or an update.
-	 *
-	 * @param string|null $uuid The existing flow uuid, or null.
-	 *
-	 * @return string Either `created` or `updated`.
-	 */
-	private function outcomeFor(?string $uuid): string {
-		if ($uuid === null) {
-			return 'created';
-		}
-
-		return 'updated';
-
-	}//end outcomeFor()
 
 }//end class
