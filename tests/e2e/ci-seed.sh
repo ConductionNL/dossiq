@@ -371,4 +371,56 @@ if [ "$DEMO_CODE" != "200" ]; then
 	echo "::warning::skip-demo-data returned HTTP ${DEMO_CODE}; if this app declares a demo-data step, the setup wizard will cover the SPA in every spec."
 fi
 
+# ─────────────────────────────────────────────────────────────────────────────
+# PROJECT THE WORKFLOW DEFINITIONS ONTO FLOWS.
+#
+# `changed-surfaces.spec.ts` asserts that every projected flow exists and is
+# DISABLED — the invariant the migration exists to protect, since an enabled
+# projection would move every case a second time on each status change. The
+# projection is not created by installing the app; it is created by running
+# the migration, and nothing here ran it. So the spec failed with the message
+# it had written for exactly this case:
+#
+#   no projected flow found — run `occ dossiq:workflows:migrate-to-flows
+#   --user=admin` first
+#
+# The seed is where "first" belongs. `playwright-seed-command` runs this from
+# the server root (`bash apps/dossiq/tests/e2e/ci-seed.sh`), so `./occ` is on
+# hand; the guard keeps the script usable from a checkout where it is not.
+if [ -f ./occ ]; then
+	echo "[ci-seed] projecting workflow definitions onto flows…"
+	php ./occ dossiq:workflows:migrate-to-flows --user="${USER_NAME}" || {
+		echo "[ci-seed] ERROR: dossiq:workflows:migrate-to-flows failed." >&2
+		exit 1
+	}
+
+	# ASSERT THE PROJECTION, NOT THE EXIT CODE. A migration with nothing to
+	# migrate exits 0 and leaves the suite in exactly the state that just cost
+	# a red run — see the sibling `skip-demo-data` note above for how a
+	# tolerated non-answer hides for weeks. The marker is the one the spec
+	# reads, so this checks the same thing the assertion will.
+	FLOW_COUNT="$(curl -sS --max-time 120 \
+		-u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' \
+		"${BASE}/index.php/apps/openregister/api/flows?limit=200" 2>/dev/null \
+		| python3 -c 'import json,sys
+try:
+    d = json.load(sys.stdin)
+except Exception:
+    print(0); raise SystemExit
+# Same shapes the spec accepts: {results:[…]}, {items:[…]}, or a bare list.
+if isinstance(d, list):
+    items = d
+elif isinstance(d, dict):
+    items = d.get("results") or d.get("items") or []
+else:
+    items = []
+print(sum(1 for f in items if str((f or {}).get("notes") or "").startswith("dossiq:workflowTemplate:")))' 2>/dev/null || echo 0)"
+	echo "[ci-seed] projected flows: ${FLOW_COUNT}"
+	if [ "${FLOW_COUNT:-0}" -lt 1 ]; then
+		echo "::warning::the migration ran but projected no flows; changed-surfaces.spec.ts will fail on an empty projection, not on a regression."
+	fi
+else
+	echo "::warning::./occ not found, so workflow definitions were not projected onto flows; changed-surfaces.spec.ts needs the projection."
+fi
+
 echo "[ci-seed] done."
