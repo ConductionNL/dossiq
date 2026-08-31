@@ -444,6 +444,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
     <commands>
         <command>OCA\Dossiq\Command\BackfillLegalHoldsCommand</command>
         <command>OCA\Dossiq\Command\MigrateAutomaticActionsToFlowsCommand</command>
+        <command>OCA\Dossiq\Command\MigrateWorkflowDefinitionsToFlowsCommand</command>
         <command>OCA\Dossiq\Command\MigrateTenantsCommand</command>
         <command>OCA\Dossiq\Command\SeedBezwaarBeroepCommand</command>
     </commands>
