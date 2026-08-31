@@ -8659,7 +8659,7 @@
           }
         }
       },
-      "location": {
+      "case-location": {
         "slug": "case-location",
         "icon": "MapMarker",
         "version": "1.0.0",
