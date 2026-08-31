@@ -128,23 +128,24 @@ test.describe('LHS override authorisation', () => {
 			.first()
 			.click()
 
-		// THE CONTROL, and it earned its place: the first version of this test
-		// asserted only the absence, and would have passed against a navigation
-		// that had not rendered at all. The sibling entry must be present, in
-		// the instance's own language, before the absence below means anything.
-		//
-		// Labels are the Dutch ones the app actually renders. Asserting the
-		// English source strings passed nothing and looked like the feature was
-		// broken rather than the test.
+		// THE CONTROL, and it earned its place twice. The first version asserted
+		// only the absence and would have passed against a navigation that never
+		// rendered. The second hard-coded the Dutch labels and broke the moment the
+		// instance served English — a test that depends on the session locale tells
+		// you about the locale, not the feature. Both languages are accepted.
 		await expect(
-			nav.getByRole('link', { name: 'Handhavingsstrategie', exact: true }),
+			nav.getByRole('link', {
+				name: /^(Enforcement strategy|Handhavingsstrategie)$/,
+			}),
 			'the sibling settings entry must render, or an absence proves nothing',
 		).toBeVisible({ timeout: 30000 })
 
 		// The assertion: a recommendation is a per-enforcement audit record, not
 		// configuration, so it no longer has a settings entry.
 		await expect(
-			nav.getByRole('link', { name: 'LHS-aanbevelingen', exact: true }),
+			nav.getByRole('link', {
+				name: /^(LHS recommendations|LHS-aanbevelingen)$/,
+			}),
 		).toHaveCount(0)
 	})
 })
