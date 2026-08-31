@@ -42,6 +42,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\CaseReassignmentController;
 use OCA\Dossiq\Service\CaseReassignmentService;
+use OCA\Dossiq\Service\SelectionReassignmentService;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -71,6 +72,11 @@ class CaseReassignmentControllerContractTest extends TestCase {
 	 * @var CaseReassignmentService|MockObject
 	 */
 	private CaseReassignmentService $reassignmentService;
+
+	/**
+	 * @var SelectionReassignmentService|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private $selectionService;
 
 	/**
 	 * The user session mock — source of the caller and of `actorId`.
@@ -114,10 +120,12 @@ class CaseReassignmentControllerContractTest extends TestCase {
 		$this->groupManager = $this->createMock(IGroupManager::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 
+		$this->selectionService = $this->createMock(SelectionReassignmentService::class);
 		$this->controller = new CaseReassignmentController(
 			appName: 'dossiq',
 			request: $this->request,
 			reassignmentService: $this->reassignmentService,
+			selectionService: $this->selectionService,
 			userSession: $this->userSession,
 			groupManager: $this->groupManager,
 			logger: $this->logger,
