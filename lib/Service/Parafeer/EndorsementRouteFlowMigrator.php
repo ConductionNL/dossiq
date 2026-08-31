@@ -144,8 +144,13 @@ class EndorsementRouteFlowMigrator {
 		$routes = $this->fetchRoutes();
 		$existing = $this->existingByMarker(flowService: $flowService);
 
-		$summary = ['created' => 0, 'updated' => 0, 'skipped' => 0, 'failed' => 0, 'rows' => []];
-		$summary['total'] = count($routes);
+		// Counts and rows are kept apart deliberately. Incrementing
+		// `$summary[$row['outcome']]` against a mixed-value array reads as
+		// "add 1 to whatever is at that key", and nothing stops the key being
+		// `rows` — psalm said so, and it was right: an outcome named `rows`
+		// would append to the row list instead of counting.
+		$counts = ['created' => 0, 'updated' => 0, 'skipped' => 0, 'failed' => 0];
+		$rows = [];
 
 		foreach ($routes as $route) {
 			$row = $this->migrateOne(
@@ -154,11 +159,16 @@ class EndorsementRouteFlowMigrator {
 				flowService: $flowService,
 				dryRun: $dryRun,
 			);
-			$summary[$row['outcome']] = ($summary[$row['outcome']] + 1);
-			$summary['rows'][] = $row;
+
+			$outcome = $row['outcome'];
+			if (array_key_exists($outcome, $counts) === true) {
+				$counts[$outcome] = ($counts[$outcome] + 1);
+			}
+
+			$rows[] = $row;
 		}
 
-		return $summary;
+		return ($counts + ['total' => count($routes), 'rows' => $rows]);
 
 	}//end migrateAll()
 
