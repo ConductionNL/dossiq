@@ -51,6 +51,20 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 	private ?array $saved = null;
 
 	/**
+	 * Whether the fake register throws on read.
+	 *
+	 * @var boolean
+	 */
+	private bool $readThrows = false;
+
+	/**
+	 * Whether the fake register throws on write.
+	 *
+	 * @var boolean
+	 */
+	private bool $saveThrows = false;
+
+	/**
 	 * Build the node.
 	 *
 	 * @param CommitteeDelegationService|null $delegation A delegation double, or null for a default.
@@ -61,13 +75,22 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 	private function node(?CommitteeDelegationService $delegation = null, bool $withStore = true): DossiqEnsureCommitteeNode {
 		$rows = &$this->rows;
 		$saved = &$this->saved;
+		$readThrows = &$this->readThrows;
+		$saveThrows = &$this->saveThrows;
 
-		$objectService = new class($rows, $saved) {
+		$objectService = new class($rows, $saved, $readThrows, $saveThrows) {
 			/**
-			 * @param array<string, array<string, mixed>> $rows  Stored rows.
-			 * @param array<string, mixed>|null           $saved Last save.
+			 * @param array<string, mixed> $rows       Stored rows.
+			 * @param array<string, mixed>|null $saved Last save.
+			 * @param boolean $readThrows             Whether reads throw.
+			 * @param boolean $saveThrows             Whether writes throw.
 			 */
-			public function __construct(private array &$rows, private ?array &$saved) {
+			public function __construct(
+				private array &$rows,
+				private ?array &$saved,
+				private bool &$readThrows,
+				private bool &$saveThrows,
+			) {
 			}
 
 			/**
@@ -77,7 +100,11 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The row.
 			 */
-			public function find(string $id, string $register = '', string $schema = ''): ?array {
+			public function find(string $id, string $register = '', string $schema = ''): mixed {
+				if ($this->readThrows === true) {
+					throw new RuntimeException('register unavailable');
+				}
+
 				return ($this->rows[$id] ?? null);
 			}
 
@@ -90,6 +117,10 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 			 * @return array<string, mixed> The stored row.
 			 */
 			public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): array {
+				if ($this->saveThrows === true) {
+					throw new RuntimeException('write refused');
+				}
+
 				$this->saved = $object;
 
 				return $object;
@@ -319,5 +350,92 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 		$this->assertSame(['not-an-array'], $out);
 
 	}//end testANonArrayItemPassesThrough()
+
+	/**
+	 * The node is offered in the admin and user scopes, and nowhere else.
+	 *
+	 * @return void
+	 */
+	public function testItIsOfferedInTheExpectedScopes(): void {
+		$node = $this->node();
+
+		$this->assertTrue($node->isAvailableForScope(\OCP\WorkflowEngine\IManager::SCOPE_ADMIN));
+		$this->assertTrue($node->isAvailableForScope(\OCP\WorkflowEngine\IManager::SCOPE_USER));
+		$this->assertFalse($node->isAvailableForScope(999));
+
+	}//end testItIsOfferedInTheExpectedScopes()
+
+	/**
+	 * An entity-shaped committee is normalised before it is read.
+	 *
+	 * OpenRegister hands a row back as an entity when the read did not flatten
+	 * it; reading it as an array would find nothing and report the committee as
+	 * missing.
+	 *
+	 * @return void
+	 */
+	public function testAnEntityShapedCommitteeIsNormalised(): void {
+		$this->rows['cmte-1'] = new class {
+			/**
+			 * @return array<string, mixed> The row.
+			 */
+			public function jsonSerialize(): array {
+				return ['id' => 'cmte-1', 'name' => 'BAC', 'active' => true, 'governanceBodyId' => 'gb-entity'];
+			}
+		};
+
+		$out = $this->node()->execute($this->items('cmte-1'), [], []);
+
+		$this->assertSame('gb-entity', $out[0]['json']['governanceBodyId']);
+
+	}//end testAnEntityShapedCommitteeIsNormalised()
+
+	/**
+	 * A read that throws is reported as a failure naming the committee.
+	 *
+	 * @return void
+	 */
+	public function testAFailingReadIsReported(): void {
+		$this->readThrows = true;
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessageMatches('/Could not read committee/');
+
+		$this->node()->execute($this->items('cmte-1'), [], []);
+
+	}//end testAFailingReadIsReported()
+
+	/**
+	 * Recording the mapping is BEST EFFORT: a failed write must not undo work
+	 * the decision app has already done.
+	 *
+	 * @return void
+	 */
+	public function testAFailedMappingWriteDoesNotFailTheStep(): void {
+		$this->seed();
+		$this->saveThrows = true;
+		$delegation = $this->createMock(CommitteeDelegationService::class);
+		$delegation->method('ensureGovernanceBody')->willReturn('gb-9');
+
+		$out = $this->node($delegation)->execute($this->items('cmte-1'), [], []);
+
+		$this->assertSame('gb-9', $out[0]['json']['governanceBodyId'], 'the id is still handed on');
+
+	}//end testAFailedMappingWriteDoesNotFailTheStep()
+
+	/**
+	 * A relation that is neither a scalar nor a reference resolves to nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnUnusableRelationIsTreatedAsAbsent(): void {
+		$delegation = $this->createMock(CommitteeDelegationService::class);
+		$delegation->expects($this->never())->method('ensureGovernanceBody');
+
+		$out = $this->node($delegation)->execute($this->items(new \stdClass()), [], []);
+
+		$this->assertArrayNotHasKey('governanceBodyId', $out[0]['json']);
+
+	}//end testAnUnusableRelationIsTreatedAsAbsent()
 
 }//end class

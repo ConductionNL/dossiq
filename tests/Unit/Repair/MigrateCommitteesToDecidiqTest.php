@@ -372,4 +372,122 @@ class MigrateCommitteesToDecidiqTest extends TestCase {
 
 	}//end testACommitteeWithNoIdIsCountedAsFailed()
 
+	/**
+	 * A read that throws is warned about, and the run still completes.
+	 *
+	 * @return void
+	 */
+	public function testAFailingListIsWarnedAbout(): void {
+		$rows = &$this->rows;
+		$saved = &$this->saved;
+		$objectService = new class($rows, $saved) {
+			/**
+			 * @param array<int, array<string, mixed>> $rows  Rows.
+			 * @param array<int, array<string, mixed>> $saved Saves.
+			 */
+			public function __construct(private array &$rows, private array &$saved) {
+			}
+
+			/**
+			 * @param callable $operation The operation.
+			 *
+			 * @return mixed The result.
+			 */
+			public function runAsSystem(callable $operation): mixed {
+				return $operation();
+			}
+
+			/**
+			 * @param string               $register The register slug.
+			 * @param string               $schema   The schema slug.
+			 * @param array<string, mixed> $filters  The filters.
+			 *
+			 * @return array<int, array<string, mixed>> The rows.
+			 */
+			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+				throw new RuntimeException('register unavailable');
+			}
+
+			/**
+			 * @param array<string, mixed> $object   The object.
+			 * @param string               $register The register.
+			 * @param string               $schema   The schema.
+			 * @param string|null          $uuid     The uuid.
+			 *
+			 * @return array<string, mixed> The stored row.
+			 */
+			public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): array {
+				$this->saved[] = $object;
+
+				return $object;
+			}
+		};
+
+		$this->step(objectService: $objectService)->run($this->recordingOutput());
+
+		$this->assertStringContainsString('could not list committees', $this->said());
+		$this->assertSame([], $this->saved);
+
+	}//end testAFailingListIsWarnedAbout()
+
+	/**
+	 * A body raised but not recorded locally is counted as FAILED, so the
+	 * summary reports a partial run as partial.
+	 *
+	 * Harmless to retry: the other side resolves on
+	 * (sourceApp, externalReference) and matches the body it already has.
+	 *
+	 * @return void
+	 */
+	public function testABodyRaisedButNotRecordedCountsAsFailed(): void {
+		$this->rows = [['id' => 'cmte-1', 'name' => 'BAC', 'active' => true]];
+
+		$rows = &$this->rows;
+		$objectService = new class($rows) {
+			/**
+			 * @param array<int, array<string, mixed>> $rows Rows.
+			 */
+			public function __construct(private array &$rows) {
+			}
+
+			/**
+			 * @param callable $operation The operation.
+			 *
+			 * @return mixed The result.
+			 */
+			public function runAsSystem(callable $operation): mixed {
+				return $operation();
+			}
+
+			/**
+			 * @param string               $register The register slug.
+			 * @param string               $schema   The schema slug.
+			 * @param array<string, mixed> $filters  The filters.
+			 *
+			 * @return array<int, array<string, mixed>> The rows.
+			 */
+			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+				return $this->rows;
+			}
+
+			/**
+			 * @param array<string, mixed> $object   The object.
+			 * @param string               $register The register.
+			 * @param string               $schema   The schema.
+			 * @param string|null          $uuid     The uuid.
+			 *
+			 * @return array<string, mixed> The stored row.
+			 */
+			public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): array {
+				throw new RuntimeException('local write refused');
+			}
+		};
+
+		$this->step(objectService: $objectService)->run($this->recordingOutput());
+
+		$this->assertStringContainsString('but could not record it', $this->said());
+		$this->assertStringContainsString('1 failed', $this->said());
+
+	}//end testABodyRaisedButNotRecordedCountsAsFailed()
+
 }//end class
