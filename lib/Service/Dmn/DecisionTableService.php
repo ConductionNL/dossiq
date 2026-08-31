@@ -289,12 +289,21 @@ class DecisionTableService {
 				throw new OCSBadRequestException('Rule ' . $index . ' outputEntries count (' . $got . ') must match outputs count (' . $outputCount . ')');
 			}
 
-			$rules[] = [
+			$built = [
 				'id' => trim((string)($rule['id'] ?? ('r' . ($index + 1)))),
 				'annotation' => trim((string)($rule['annotation'] ?? '')),
 				'inputEntries' => array_map(static fn (mixed $entry): string => (string)$entry, $inputEntries),
 				'outputEntries' => $outputEntries,
 			];
+
+			// PRIORITY ranks by this, and it is only carried when the author
+			// supplied it: writing a default 0 onto every rule of every table
+			// would put a meaningless field on the tables that do not use it.
+			if (array_key_exists('priority', $rule) === true) {
+				$built['priority'] = (int)$rule['priority'];
+			}
+
+			$rules[] = $built;
 		}//end foreach
 
 		return $rules;
