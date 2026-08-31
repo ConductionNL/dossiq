@@ -20,7 +20,9 @@ import { BASE_URL } from './base-url'
 const FLOW_MARKER = 'dossiq:workflowTemplate:'
 
 test.describe('workflow definitions projected onto flows', () => {
-	test('the projected flows are listed, and every one is disabled', async ({ page }) => {
+	test('the projected flows are listed, and every one is disabled', async ({
+		page,
+	}) => {
 		await page.goto(`${BASE_URL}/apps/dossiq/flows`)
 		await page.waitForLoadState('domcontentloaded')
 
@@ -35,10 +37,17 @@ test.describe('workflow definitions projected onto flows', () => {
 			return res.json()
 		})
 
-		expect(flows, 'the flow API must answer; a failure here is not "no flows"').not.toHaveProperty('error')
+		expect(
+			flows,
+			'the flow API must answer; a failure here is not "no flows"',
+		).not.toHaveProperty('error')
 
-		const items = (flows.results ?? flows.items ?? flows) as Array<Record<string, unknown>>
-		const projected = items.filter((f) => String(f.notes ?? '').startsWith(FLOW_MARKER))
+		const items = (flows.results ?? flows.items ?? flows) as Array<
+			Record<string, unknown>
+		>
+		const projected = items.filter((f) =>
+			String(f.notes ?? '').startsWith(FLOW_MARKER),
+		)
 
 		expect(
 			projected.length,
@@ -57,7 +66,9 @@ test.describe('workflow definitions projected onto flows', () => {
 })
 
 test.describe('LHS override authorisation', () => {
-	test('an inspector cannot escalate by claiming a harsher recommendation', async ({ page }) => {
+	test('an inspector cannot escalate by claiming a harsher recommendation', async ({
+		page,
+	}) => {
 		await page.goto(`${BASE_URL}/apps/dossiq/`)
 		await page.waitForLoadState('domcontentloaded')
 
@@ -78,7 +89,8 @@ test.describe('LHS override authorisation', () => {
 						severity: 'ernstig',
 					},
 					intervention: 'last_under_penaltypayment',
-					justification: 'Gemotiveerde afwijking van de interventieladder.',
+					justification:
+						'Gemotiveerde afwijking van de interventieladder.',
 				}),
 			})
 			return { status: res.status, body: await res.text() }
@@ -93,12 +105,17 @@ test.describe('LHS override authorisation', () => {
 		).not.toBe(200)
 	})
 
-	test('the LHS recommendations entry is gone from the settings menu', async ({ page }) => {
+	test('the LHS recommendations entry is gone from the settings menu', async ({
+		page,
+	}) => {
 		await page.goto(`${BASE_URL}/apps/dossiq/`)
 		await page.waitForLoadState('domcontentloaded')
 
 		const nav = page.locator('[id^="app-navigation"]').first()
-		await expect(nav, 'the app navigation must render, or this asserts nothing').toBeVisible({
+		await expect(
+			nav,
+			'the app navigation must render, or this asserts nothing',
+		).toBeVisible({
 			timeout: 30000,
 		})
 
@@ -106,7 +123,10 @@ test.describe('LHS override authorisation', () => {
 		// (NcAppNavigationSettings), so they are in the DOM but not visible
 		// until it is opened. Opening it is part of what a user does to see
 		// them, so the test does it too.
-		await nav.getByRole('button', { name: 'Settings', exact: true }).first().click()
+		await nav
+			.getByRole('button', { name: 'Settings', exact: true })
+			.first()
+			.click()
 
 		// THE CONTROL, and it earned its place: the first version of this test
 		// asserted only the absence, and would have passed against a navigation
@@ -130,19 +150,24 @@ test.describe('LHS override authorisation', () => {
 })
 
 test.describe('parafering activation', () => {
-	test('a voorstel whose case type has no route is refused, not parked', async ({ page }) => {
+	test('a voorstel whose case type has no route is refused, not parked', async ({
+		page,
+	}) => {
 		await page.goto(`${BASE_URL}/apps/dossiq/`)
 		await page.waitForLoadState('domcontentloaded')
 
 		const outcome = await page.evaluate(async () => {
-			const res = await fetch('/apps/dossiq/api/besluitvorming/parafering/activate', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					requesttoken: (window as any).OC?.requestToken ?? '',
+			const res = await fetch(
+				'/apps/dossiq/api/besluitvorming/parafering/activate',
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						requesttoken: (window as any).OC?.requestToken ?? '',
+					},
+					body: JSON.stringify({ proposalId: 'no-such-voorstel' }),
 				},
-				body: JSON.stringify({ proposalId: 'no-such-voorstel' }),
-			})
+			)
 			return { status: res.status, body: await res.text() }
 		})
 
