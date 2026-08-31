@@ -100,7 +100,7 @@ class RoutingRuleService {
 	 */
 	public function deleteRule(string $id): void {
 		[$objectService, $register, $schema] = $this->resolve(schemaKey: 'routing_rule_schema');
-		$objectService->deleteObject($register, $schema, $id);
+		$objectService->deleteObject(uuid: $id, register: $register, schema: $schema);
 	}//end deleteRule()
 
 	/**

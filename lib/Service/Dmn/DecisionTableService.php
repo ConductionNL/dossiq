@@ -109,7 +109,11 @@ class DecisionTableService {
 	 */
 	public function deleteTable(string $id): void {
 		[$objectService, $register, $schema] = $this->resolve();
-		$objectService->deleteObject($register, $schema, $id);
+		// Named, like every other call in this class. OpenRegister's signature is
+		// deleteObject(uuid, register, schema); passing them positionally in
+		// register/schema/id order transposed all three, so this looked up a
+		// register whose id was really the schema's and 500'd every time.
+		$objectService->deleteObject(uuid: $id, register: $register, schema: $schema);
 	}//end deleteTable()
 
 	/**

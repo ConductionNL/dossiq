@@ -241,7 +241,7 @@ class MilestoneService {
 		foreach ($records as $record) {
 			$recordId = $record['id'] ?? $record['uuid'] ?? '';
 			if ($recordId !== '') {
-				$objectService->deleteObject($register, $schema, $recordId);
+				$objectService->deleteObject(uuid: $recordId, register: $register, schema: $schema);
 			}
 		}
 
