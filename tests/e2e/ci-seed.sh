@@ -258,6 +258,27 @@ done
 
 echo "[ci-seed] Dossiq register + schemas provisioned."
 
+# ── 2b. Project the workflow definitions onto flows ─────────────────────
+# `changed-surfaces.spec.ts` asserts the PROJECTION: that every workflow
+# definition has a flow, and that every one of them arrived DISABLED. Nothing
+# in the import creates those flows, so without this the spec fails with
+# "no projected flow found" — which reads as a broken projection when in fact
+# the migration simply never ran.
+#
+# It has to come AFTER section 2: the migration reads the workflow definitions
+# the register import just created, so on an empty register it would succeed
+# having projected nothing, and the spec would still fail.
+#
+# The command is idempotent by design, and it deliberately creates the flows
+# DISABLED — the definitions still drive cases, and an enabled projection would
+# move every case a second time on each status change. That invariant is what
+# the spec checks, so seeding must not enable them.
+if ! php occ dossiq:workflows:migrate-to-flows --user="${USER_NAME}"; then
+	echo "::error::dossiq:workflows:migrate-to-flows failed. changed-surfaces.spec.ts asserts the projected flows exist, so it will fail naming the missing projection rather than this step."
+	exit 1
+fi
+echo "[ci-seed] workflow definitions projected onto flows (disabled)."
+
 # ── 3. Warm the SPA so the first spec doesn't pay the cold start ─────────────
 # The shared workflow serves Nextcloud with `php -S 0.0.0.0:8080`. It sets
 # PHP_CLI_SERVER_WORKERS=8, but the first hit still pays a cold opcache and the
