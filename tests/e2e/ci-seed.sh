@@ -371,4 +371,27 @@ if [ "$DEMO_CODE" != "200" ]; then
 	echo "::warning::skip-demo-data returned HTTP ${DEMO_CODE}; if this app declares a demo-data step, the setup wizard will cover the SPA in every spec."
 fi
 
+# Project the workflow definitions onto flows.
+#
+# `changed-surfaces.spec.ts` asserts that every workflow definition appears as
+# a DISABLED projected flow, carrying the `dossiq:workflowTemplate:` marker.
+# Nothing here produced them and the app does not project on install -- it is a
+# one-shot migration, and the spec says so in its own failure:
+#
+#   Error: no projected flow found - run `occ dossiq:workflows:migrate-to-flows`
+#
+# The spec still passed most of the time, which is the part worth naming: the
+# flows were arriving incidentally from whatever else had touched the instance
+# first. A precondition that holds by accident is a test that fails on ordering
+# rather than on the behaviour it claims to check.
+#
+# `php occ` bare, matching the other seeds in the fleet: the shared workflow
+# invokes this script with cwd at the Nextcloud server root. Idempotent -- a
+# second run re-projects the same definitions rather than duplicating them.
+if php occ dossiq:workflows:migrate-to-flows >/dev/null 2>&1; then
+	echo "[ci-seed] projected workflow definitions onto flows"
+else
+	echo "::warning::dossiq:workflows:migrate-to-flows failed; changed-surfaces.spec.ts will report no projected flows."
+fi
+
 echo "[ci-seed] done."
