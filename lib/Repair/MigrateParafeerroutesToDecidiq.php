@@ -236,7 +236,7 @@ class MigrateParafeerroutesToDecidiq implements IRepairStep {
 
 		try {
 			$objectService->saveObject(
-				object: ($route + ['approvalRouteId' => $routeId]),
+				object: array_merge($route, ['approvalRouteId' => $routeId]),
 				register: $register,
 				schema: $schema,
 				uuid: $id,
