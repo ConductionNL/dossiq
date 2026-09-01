@@ -19,12 +19,12 @@
 
 // --- Surviving custom pages — see design.md "Custom-fallback inventory". ---
 import { createApp } from 'vue'
-import ReassignSelectionDialog from './dialogs/ReassignSelectionDialog.vue'
 import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // --- Detail-tab custom components (one per cross-schema relation). ---
 // Stubs for v1 — full implementations follow in `procest-case-relation-tabs`.
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
+import ReassignSelectionDialog from './dialogs/ReassignSelectionDialog.vue'
 // --- Case-email sidebar tab (leaf-first per ADR-022). ---
 // @spec openspec/changes/case-email-integration/tasks.md#T12
 import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
