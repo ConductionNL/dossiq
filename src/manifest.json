@@ -4517,7 +4517,7 @@
 						"id": "TermijnDashboard",
 						"label": "Deadline monitoring",
 						"description": "Statutory terms, and which cases are close to breaching one.",
-						"icon": "CalendarClockOutline",
+						"icon": "ClockAlertOutline",
 						"category": "throughput",
 						"route": "TermijnDashboard"
 					},
@@ -4525,7 +4525,7 @@
 						"id": "ProcessMiningDashboard",
 						"label": "Process mining",
 						"description": "The paths cases actually take, against the paths they were meant to.",
-						"icon": "SitemapOutline",
+						"icon": "ChartSankey",
 						"category": "process",
 						"route": "ProcessMiningDashboard"
 					}
