@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Parafeer\ParafeerrouteDirectory;
 use OCA\Dossiq\Service\Parafeer\ParaferingDelegationService;
+use OCA\Dossiq\Service\Parafeer\ParaferingFlowGateway;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -43,15 +44,17 @@ class BesluitvormingParafeerService {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService            $settingsService Settings service for register and schema references.
-	 * @param ParafeerrouteDirectory     $routes          Resolves the sign-off route for a case type.
-	 * @param ParaferingDelegationService $delegation     Holds the route in the decision app.
-	 * @param LoggerInterface            $logger          Logger.
+	 * @param SettingsService             $settingsService Settings service for register and schema references.
+	 * @param ParafeerrouteDirectory      $routes          Resolves the sign-off route for a case type.
+	 * @param ParaferingDelegationService $delegation      Holds the route in the decision app.
+	 * @param ParaferingFlowGateway       $flows           Starts the projected flow, when it is enabled.
+	 * @param LoggerInterface             $logger          Logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly ParafeerrouteDirectory $routes,
 		private readonly ParaferingDelegationService $delegation,
+		private readonly ParaferingFlowGateway $flows,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -139,11 +142,31 @@ class BesluitvormingParafeerService {
 			$updateData['approvalRouteId'] = $approvalRouteId;
 		}
 
+		// 🔴 THE DUAL PATH.
+		//
+		// A route whose projected flow is ENABLED drives parafering through the
+		// engine, and the voorstel records which run. Every other voorstel gets
+		// no run id and finishes on the route snapshot above, which is what
+		// keeps anything already mid-parafering from being stranded: a hard
+		// cutover would leave those voorstellen waiting on a run nobody started.
+		//
+		// The projections ship disabled, so today this is inert. Enabling one
+		// flow is what moves one route onto the engine, and this is the line
+		// that reads that decision.
+		$flowRunId = $this->flows->startForRoute(
+			routeId: (string)($route['id'] ?? ''),
+			subjectId: $proposalId,
+			context: ['caseType' => $caseTypeId],
+		);
+		if ($flowRunId !== '') {
+			$updateData['flowRunId'] = $flowRunId;
+		}
+
 		$updated = $objectService->saveObject(object: array_merge($proposal, $updateData), register: $register, schema: $proposalSchema);
 
 		$this->logger->info(
 			'Besluitvorming parafering activated for proposal: ' . $proposalId,
-			['app' => Application::APP_ID]
+			['app' => Application::APP_ID, 'flowRun' => $flowRunId]
 		);
 
 		return $this->toArray(value: $updated);
