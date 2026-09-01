@@ -160,6 +160,8 @@ class SelectionReassignmentService {
 	 * @param string $id            The case id.
 	 *
 	 * @return array<string, mixed>|null The case.
+	 *
+	 * @spec openspec/changes/reassignment-is-a-bulk-action/specs/reassignment-bulk-action/spec.md
 	 */
 	private function readCase(object $objectService, string $register, string $schema, string $id): ?array {
 		try {

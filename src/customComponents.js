@@ -19,7 +19,7 @@
 
 // --- Surviving custom pages — see design.md "Custom-fallback inventory". ---
 import { createApp } from 'vue'
-import ReassignSelectionDialog from './components/ReassignSelectionDialog.vue'
+import ReassignSelectionDialog from './dialogs/ReassignSelectionDialog.vue'
 import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // --- Detail-tab custom components (one per cross-schema relation). ---
