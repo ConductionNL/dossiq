@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, voorstel, parafeerroute, parafeeractie, automaticAction, and their instance counterparts.",
-        "version": "0.13.2"
+        "version": "0.14.0"
     },
     "x-openregister": {
         "type": "application",
@@ -45,13 +45,7 @@
                         "description": "Auto-generated identifier",
                         "title": "Identifier"
                     },
-                    "catalog": {
-                        "type": "string",
-                        "format": "uuid",
-                        "$ref": "catalog",
-                        "description": "Reference to the parent catalog",
-                        "title": "Catalog"
-                    },
+
                     "purpose": {
                         "type": "string",
                         "description": "The purpose or goal of this case type",
@@ -503,13 +497,7 @@
                         "x-translatable": true,
                         "title": "Description"
                     },
-                    "catalog": {
-                        "type": "string",
-                        "format": "uuid",
-                        "$ref": "catalog",
-                        "description": "Reference to the parent catalog",
-                        "title": "Catalog"
-                    },
+
                     "caseType": {
                         "type": "string",
                         "format": "uuid",
@@ -594,13 +582,7 @@
                         "x-translatable": true,
                         "title": "Description"
                     },
-                    "catalog": {
-                        "type": "string",
-                        "format": "uuid",
-                        "$ref": "catalog",
-                        "description": "Reference to the parent catalog",
-                        "title": "Catalog"
-                    },
+
                     "caseType": {
                         "type": "string",
                         "format": "uuid",
@@ -2597,51 +2579,7 @@
                     }
                 }
             },
-            "catalog": {
-                "slug": "catalog",
-                "icon": "BookOpenPageVariant",
-                "version": "1.0.0",
-                "x-schema-org": "schema:DataCatalog",
-                "x-zgw-equivalent": "Catalogus",
-                "title": "Catalog",
-                "description": "A catalogus groups case types, decision types, and document types",
-                "type": "object",
-                "required": [
-                    "domain"
-                ],
-                "properties": {
-                    "domain": {
-                        "type": "string",
-                        "maxLength": 5,
-                        "description": "Abbreviated domain name (max 5 characters)",
-                        "title": "Domain"
-                    },
-                    "rsin": {
-                        "type": "string",
-                        "maxLength": 9,
-                        "description": "RSIN of the responsible organisation",
-                        "title": "RSIN"
-                    },
-                    "contactPersonManagementName": {
-                        "type": "string",
-                        "maxLength": 40,
-                        "description": "Name of the management contact",
-                        "title": "Management Contact Name"
-                    },
-                    "contactPersonManagementPhoneNumber": {
-                        "type": "string",
-                        "maxLength": 20,
-                        "description": "Phone number of the management contact",
-                        "title": "Management Contact Phone"
-                    },
-                    "contactPersonManagementEmailAddress": {
-                        "type": "string",
-                        "maxLength": 254,
-                        "description": "Email of the management contact",
-                        "title": "Management Contact Email"
-                    }
-                }
-            },
+
             "zaaktypeInformatieobjecttype": {
                 "slug": "zaaktypeInformatieobjecttype",
                 "icon": "LinkVariant",
@@ -5125,8 +5063,8 @@
                     }
                 }
             },
-            "location": {
-                "slug": "location",
+            "case-location": {
+                "slug": "case-location",
                 "icon": "MapMarker",
                 "version": "1.0.0",
                 "x-schema-org": "schema:Place",
@@ -9553,7 +9491,6 @@
                     "decision",
                     "document",
                     "documentLink",
-                    "catalog",
                     "zaaktypeInformatieobjecttype",
                     "caseProperty",
                     "caseDocument",
@@ -9574,7 +9511,7 @@
                     "parafeeractie",
                     "paraferingAuditEntry",
                     "mapLayer",
-                    "location",
+                    "case-location",
                     "inspectieRapport",
                     "handhavingsactie",
                     "lhsMatrix",
