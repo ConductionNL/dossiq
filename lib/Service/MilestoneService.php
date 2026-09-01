@@ -86,6 +86,35 @@ class MilestoneService {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
+	/**
+	 * Progress for a case whose type the caller does not know.
+	 *
+	 * Resolves the case's own type, then delegates. This exists so a client does
+	 * not have to pass a value the server can read for itself: requiring it made
+	 * the caller's first render, before its record has loaded, send an empty
+	 * path segment and 404.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<string, mixed> Progress data, or an empty shape when the
+	 *                              case has no resolvable type.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function getCaseProgressForCase(string $caseId): array {
+		$caseTypeId = $this->repository->findCaseTypeId(caseId: $caseId);
+		if ($caseTypeId === null) {
+			return [
+				'milestones' => [],
+				'reached' => 0,
+				'total' => 0,
+				'percentage' => 0,
+			];
+		}
+
+		return $this->getCaseProgress($caseId, $caseTypeId);
+	}//end getCaseProgressForCase()
+
 	public function getCaseProgress(string $caseId, string $caseTypeId): array {
 		$definitions = $this->getMilestones(caseTypeId: $caseTypeId);
 		if (count($definitions) === 0) {

@@ -130,15 +130,31 @@ async function openSubCasesSectionOrSkip(page) {
 	// Retrying assertion rather than a fixed pause: the detail page mounts its
 	// widgets asynchronously, and a `waitForTimeout` either wastes time or
 	// races, depending on the runner's load.
-	const section = page
-		.locator('.cn-widget-wrapper, section, [class*="widget"]')
-		.filter({ hasText: /Sub-cases/i })
-		.first()
-	await expect(
-		section,
-		'CaseDetail must render the "Sub-cases" section (deelzaak-support: '
-			+ '"Sub-cases section on parent case detail")',
-	).toBeVisible({ timeout: 15_000 })
+	// The sub-cases section now lives in the case-detail tabs widget rather than
+	// as its own card on the grid. The requirement is unchanged — the detail view
+	// still displays the section — but reaching it takes a click, and the panel is
+	// LAZY, so its table does not exist in the DOM until the tab is opened.
+	// Asserting the container alone would pass while the list below never renders.
+	const tab = page.getByRole('tab', { name: /Sub-cases/i }).first()
+	if ((await tab.count()) > 0) {
+		await expect(
+			tab,
+			'CaseDetail must offer the "Sub-cases" section (deelzaak-support: '
+				+ '"Sub-cases section on parent case detail")',
+		).toBeVisible({ timeout: 15_000 })
+		await tab.click()
+	} else {
+		// Pre-tabs layout: the section is a card on the grid.
+		const section = page
+			.locator('.cn-widget-wrapper, section, [class*="widget"]')
+			.filter({ hasText: /Sub-cases/i })
+			.first()
+		await expect(
+			section,
+			'CaseDetail must render the "Sub-cases" section (deelzaak-support: '
+				+ '"Sub-cases section on parent case detail")',
+		).toBeVisible({ timeout: 15_000 })
+	}
 
 	await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	return true

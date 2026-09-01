@@ -69,6 +69,40 @@ class MilestoneController extends Controller {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
+	/**
+	 * Get milestone progress for a case, resolving its type server-side.
+	 *
+	 * The two-segment form requires the caller to already know the case's type.
+	 * A manifest tile builds its URL from the loaded record, and on first render
+	 * that record is not there, so the type collapsed to an empty path segment
+	 * and the request 404'd before the corrected one followed. The server knows
+	 * the case's type; asking the client for it was redundant.
+	 *
+	 * @param string $caseId The case UUID
+	 *
+	 * @return JSONResponse Milestone progress data
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function caseProgress(string $caseId): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
+
+		try {
+			return new JSONResponse($this->milestoneService->getCaseProgressForCase($caseId));
+		} catch (\RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], 500);
+		}
+	}//end caseProgress()
+
 	public function progress(string $caseId, string $caseTypeId): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {

@@ -21,12 +21,11 @@
 
 import { expect, test } from '@playwright/test'
 import {
-	createObject,
 	getRequestToken,
+	listObjects,
 	objectId,
 	REGISTER,
 	seedCase,
-	tryDeleteObject,
 } from './helpers/fixtures'
 import { trackDossiqErrors } from './helpers/nav'
 
@@ -34,57 +33,56 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 	test.setTimeout(180_000)
 
 	let caseId = ''
-	let caseTypeId = ''
-	const created: Array<[string, string]> = []
+	let caseTypeTitle = ''
 
 	test.beforeAll(async ({ playwright, baseURL }) => {
 		const api = await playwright.request.newContext({ baseURL })
 		const token = await getRequestToken(api)
 
-		// A case type with a title we can assert the KPI resolved TO, rather
-		// than asserting "not a uuid" and calling that a pass.
-		// `processingDeadline` matters: `case.deadline` is COMPUTED by
-		// OpenRegister from the case type's duration, so a case whose type
-		// declares none has no deadline and the countdown correctly shows a
-		// dash. Seeding the case's `deadline` directly does not substitute.
-		const caseType = await createObject(api, token, 'caseType', {
-			title: 'E2E Omgevingsvergunning',
-			identifier: `E2E-CT-${Date.now().toString(36)}`,
-			processingDeadline: 'P30D',
-		})
-		caseTypeId = objectId(caseType)
-		created.push(['caseType', caseTypeId])
-
-		// A deadline far enough out that the wording is stable: any same-day
-		// boundary would make "Due today" vs "1 day left" a clock race.
-		const deadline = new Date()
-		deadline.setDate(deadline.getDate() + 30)
+		// REUSE a seeded case type; do not create one.
+		//
+		// The `case` schema is archival (x-openregister-archival), so a
+		// user-driven DELETE is refused with 403 by design — Dutch archiving law,
+		// not a bug. An earlier version of this spec created its own case type,
+		// and cleanup then deleted that type while the undeletable case still
+		// pointed at it. Every leftover case carried a dangling `caseType`, the
+		// dashboard 404'd resolving it, and FIFTEEN unrelated specs went red:
+		// settings pages, the workflow board, the case map, cases CRUD. A fixture
+		// that cannot clean up after itself breaks its neighbours.
+		//
+		// `processingDeadline` is what makes the countdown testable: `case.deadline`
+		// is COMPUTED by OpenRegister from the type's duration, so a type without
+		// one yields no deadline and the tile correctly shows a dash.
+		const caseTypes = await listObjects(api, 'caseType')
+		const withDeadline = caseTypes.filter((ct: any) => ct.processingDeadline)
+		const chosen = withDeadline[0] ?? caseTypes[0]
+		expect(chosen, 'the instance must ship at least one case type').toBeTruthy()
+		caseTypeTitle = String(chosen.title ?? chosen.name ?? '')
 
 		const seeded = await seedCase(api, token, {
-			title: 'E2E Dakkapel',
-			caseType: caseTypeId,
+			title: `E2E KPI case ${Date.now().toString(36)}`,
+			caseType: objectId(chosen),
 			startDate: new Date().toISOString().slice(0, 10),
-			deadline: deadline.toISOString().slice(0, 10),
 		})
 		caseId = objectId(seeded)
-		created.push(['case', caseId])
 
 		await api.dispose()
 	})
 
-	test.afterAll(async ({ playwright, baseURL }) => {
-		const api = await playwright.request.newContext({ baseURL })
-		const token = await getRequestToken(api)
-		for (const [schema, id] of created.reverse()) {
-			await tryDeleteObject(api, token, schema, id)
-		}
-		await api.dispose()
-	})
+	// No afterAll. The case cannot be deleted (archival, 403) and the case type
+	// is not ours to remove, so there is nothing to tear down — and nothing is
+	// left dangling either, which is the point.
 
 	test('the KPI row headlines time left, case type and completion', async ({
 		page,
 	}) => {
 		const errors = trackDossiqErrors(page)
+		const milestoneCalls: string[] = []
+		page.on('response', (r) => {
+			if (r.url().includes('milestones/progress')) {
+				milestoneCalls.push(`${r.status()} ${r.url()}`)
+			}
+		})
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 
 		const kpis = page.locator('.cn-kpi-card')
@@ -101,17 +99,34 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		// The case type field holds a uuid. Showing the uuid would be a pass for
 		// "renders something" and a failure for the feature.
 		const caseTypeCard = kpis.filter({ hasText: 'Case type' })
-		await expect(caseTypeCard).toContainText('E2E Omgevingsvergunning', {
+		await expect(caseTypeCard).toContainText(caseTypeTitle, {
 			timeout: 20_000,
 		})
-		await expect(caseTypeCard).not.toContainText(caseTypeId)
+		// A uuid is 36 chars with four dashes; the tile must show a NAME.
+		await expect(caseTypeCard).not.toContainText(
+			/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/,
+		)
 
 		// Completion comes from the milestone endpoint. 0% is the honest answer
-		// for a case type with no milestones; the assertion is that it RESOLVED,
-		// not that it is non-zero.
+		// for a case type with no milestones, so asserting the NUMBER would prove
+		// nothing: a failed fetch renders 0% too. The request itself is asserted
+		// below, which is the part that can actually break.
 		await expect(kpis.filter({ hasText: 'Completed' })).toContainText(/%/, {
 			timeout: 20_000,
 		})
+
+		// The milestone request must actually succeed. It used to fire twice: once
+		// with an empty `@object.caseType` path segment before the record loaded
+		// (404), then correctly. The tile showed 0% throughout, so only the
+		// request tells the two apart.
+		expect(
+			milestoneCalls.length,
+			`milestone requests: ${milestoneCalls.join(', ')}`,
+		).toBeGreaterThan(0)
+		expect(
+			milestoneCalls.every((c) => Number(c.split(' ')[0]) < 400),
+			`milestone requests: ${milestoneCalls.join(', ')}`,
+		).toBe(true)
 
 		// The CMMN panel probes whether this case is CMMN-managed and gets a 409
 		// for a BPMN-managed one, which is the app answering "no" rather than

@@ -1632,12 +1632,12 @@
 						"type": "stat",
 						"title": "Completed",
 						"icon": "PercentOutline",
-						"_note": "Milestone progress, from MilestoneService::getCaseProgress through the routed milestone#progress endpoint. That service and its route already existed with NO frontend consumer: the percentage was computed on every call and shown nowhere. Reads 0% for a case type with no milestones configured, which is honest, because nothing has been declared to reach.",
+						"_note": "Milestone progress, from MilestoneService::getCaseProgress through the routed milestone#progress endpoint. That service and its route already existed with NO frontend consumer: the percentage was computed on every call and shown nowhere. Reads 0% for a case type with no milestones configured, which is honest, because nothing has been declared to reach. The endpoint resolves the case's type SERVER-SIDE: the two-segment form needed `@object.caseType`, which is empty on the first render because the record has not loaded, so every page load fired a 404 before the corrected request followed.",
 						"content": {
 							"label": "Completed",
 							"icon": "PercentOutline",
 							"format": { "style": "percent", "decimals": 0 },
-							"endpointSource": { "url": "/apps/dossiq/api/cases/@objectId/milestones/progress/@object.caseType" },
+							"endpointSource": { "url": "/apps/dossiq/api/cases/@objectId/milestones/progress" },
 							"valueField": "percentage"
 						}
 					},
