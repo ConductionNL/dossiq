@@ -33,9 +33,11 @@
  *
  * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
  */
-import { test, expect, type APIRequestContext, type Page } from '@playwright/test'
-import { navToRoute } from './helpers/nav'
-import { listObjects, objectId } from './helpers/fixtures'
+import type { APIRequestContext, Page } from '@playwright/test'
+
+import { expect, test } from '@playwright/test'
+import { listObjects, objectId } from './helpers/fixtures.ts'
+import { navToRoute } from './helpers/nav.ts'
 
 /** The seeded case that is INCOMPLETE, and should carry the applicant loop's run. */
 const INCOMPLETE_CASE = 'Schuur Molenweg 3'
@@ -61,8 +63,12 @@ const LIMIT = 5
  * Goes through the org-wide list because the question is which cases have
  * runs AT ALL, before any one case is opened.
  */
-async function allRuns(api: APIRequestContext): Promise<Array<Record<string, unknown>>> {
-	const response = await api.get('/index.php/apps/openregister/api/flow-runs?limit=50')
+async function allRuns(
+	api: APIRequestContext,
+): Promise<Array<Record<string, unknown>>> {
+	const response = await api.get(
+		'/index.php/apps/openregister/api/flow-runs?limit=50',
+	)
 	expect(response.ok(), 'The flow-runs surface must answer.').toBeTruthy()
 	const body = await response.json()
 	return (body?.results ?? []) as Array<Record<string, unknown>>
@@ -72,7 +78,10 @@ async function allRuns(api: APIRequestContext): Promise<Array<Record<string, unk
  * The runs the subject-scoped endpoints return for one case: what the
  * widget is specified to render, live and finished.
  */
-async function runsForSubject(api: APIRequestContext, subject: string): Promise<number> {
+async function runsForSubject(
+	api: APIRequestContext,
+	subject: string,
+): Promise<number> {
 	let total = 0
 	for (const surface of ['active', 'completed']) {
 		const response = await api.get(
@@ -93,16 +102,23 @@ async function openCase(page: Page, uuid: string) {
 	await navToRoute(page, `/cases/${uuid}`)
 	await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	const widget = page.locator(WIDGET)
-	await expect(widget, 'The flow runs widget must render on the case detail page.').toBeVisible({
+	await expect(
+		widget,
+		'The flow runs widget must render on the case detail page.',
+	).toBeVisible({
 		timeout: 15000,
 	})
 	// The loading spinner is the only state that is not an answer.
-	await expect(widget.locator('.cn-flow-runs-widget__loading')).toHaveCount(0, { timeout: 15000 })
+	await expect(widget.locator('.cn-flow-runs-widget__loading')).toHaveCount(0, {
+		timeout: 15000,
+	})
 	return widget
 }
 
 test.describe('Case detail — flow runs widget', () => {
-	test('the case detail page renders the runs widget under its title', async ({ page }) => {
+	test('the case detail page renders the runs widget under its title', async ({
+		page,
+	}) => {
 		await navToRoute(page, '/cases')
 
 		const body = page.locator('body')
@@ -120,7 +136,7 @@ test.describe('Case detail — flow runs widget', () => {
 		await expect(page.getByRole('heading', { name: TITLE })).toBeVisible()
 	})
 
-	test('a case with a run lists exactly its own runs, and not another case\'s', async ({
+	test("a case with a run lists exactly its own runs, and not another case's", async ({
 		page,
 	}) => {
 		const runs = await allRuns(page.request)
@@ -140,7 +156,10 @@ test.describe('Case detail — flow runs widget', () => {
 		// Prefer a case that leaves other cases' runs to be wrongly included.
 		const [subject] = [...bySubject.entries()].sort((a, b) => a[1] - b[1])[0]
 		const expected = Math.min(await runsForSubject(page.request, subject), LIMIT)
-		expect(expected, 'the subject-scoped reads must see the run the org-wide list saw').toBeGreaterThan(0)
+		expect(
+			expected,
+			'the subject-scoped reads must see the run the org-wide list saw',
+		).toBeGreaterThan(0)
 
 		const widget = await openCase(page, subject)
 
@@ -160,7 +179,10 @@ test.describe('Case detail — flow runs widget', () => {
 		const withRuns = new Set(runs.map((run) => String(run.subjectUuid ?? '')))
 
 		const cases = await listObjects(page.request, 'case')
-		expect(cases.length, 'No cases on this instance: nothing to open.').toBeGreaterThan(0)
+		expect(
+			cases.length,
+			'No cases on this instance: nothing to open.',
+		).toBeGreaterThan(0)
 
 		const quiet = cases.find((c) => !withRuns.has(objectId(c)))
 		expect(
@@ -170,10 +192,14 @@ test.describe('Case detail — flow runs widget', () => {
 
 		const widget = await openCase(page, objectId(quiet))
 
-		await expect(widget.locator('.cn-flow-runs-widget__empty')).toContainText(NEVER_RAN)
+		await expect(widget.locator('.cn-flow-runs-widget__empty')).toContainText(
+			NEVER_RAN,
+		)
 		await expect(widget.locator(ROW)).toHaveCount(0)
 		// Distinct from "nothing running now": that line only belongs to a
 		// case whose history is non-empty.
-		await expect(widget).not.toContainText(/No flow is running for this case|Er loopt op dit moment geen flow/)
+		await expect(widget).not.toContainText(
+			/No flow is running for this case|Er loopt op dit moment geen flow/,
+		)
 	})
 })
