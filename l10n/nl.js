@@ -3411,7 +3411,11 @@ OC.L10N.register(
         "Every case follows a case type, its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look; you do not need to make one, 88 ship with the app.": "Elke zaak volgt een zaaktype, de blauwdruk. Het zaaktype bepaalt welke statussen een zaak doorloopt, hoe lang die mag duren, wie hem behandelt en wat er besloten mag worden. Kijk gerust rond; u hoeft er geen te maken, er zijn er 88 meegeleverd.",
         "Open Case types in the menu": "Open Zaaktypen in het menu",
         "Flows are what happens without anyone clicking: a deadline that warns before it passes, a confirmation that goes out on submission. This is where you read and edit them. Nothing to build now.": "Flows zijn wat er gebeurt zonder dat iemand klikt: een termijn die waarschuwt voordat die verstrijkt, een bevestiging die bij indiening uitgaat. Hier leest en bewerkt u ze. U hoeft nu niets te bouwen.",
-        "Open Flows in the menu": "Open Flows in het menu"
+        "Open Flows in the menu": "Open Flows in het menu",
+        "A case is waiting on this task": "Een zaak wacht op deze taak",
+        "Complete the task and the case moves on.": "Rond de taak af, dan gaat de zaak verder.",
+        "Open the case": "Open de zaak",
+        "Waiting case": "Wachtende zaak"
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -3411,7 +3411,11 @@ OC.L10N.register(
         "Reassigned {moved} case(s).": "Reassigned {moved} case(s).",
         "Reassigned {moved} of {asked} cases.": "Reassigned {moved} of {asked} cases.",
         "The reassignment failed.": "The reassignment failed.",
-        "User id of the receiving handler": "User id of the receiving handler"
+        "User id of the receiving handler": "User id of the receiving handler",
+        "A case is waiting on this task": "A case is waiting on this task",
+        "Complete the task and the case moves on.": "Complete the task and the case moves on.",
+        "Open the case": "Open the case",
+        "Waiting case": "Waiting case"
     },
     "nplurals=2; plural=(n != 1);"
 )
