@@ -278,4 +278,235 @@ class ParaferingFlowGatewayTest extends TestCase {
 
 	}//end testWithoutOpenRegisterItStartsNothing()
 
+	/**
+	 * Build the gateway over a FlowService that behaves as told.
+	 *
+	 * @param array<int, object>|string $pages   Flows, or 'throw' to fail findAll.
+	 * @param string                    $runMode 'ok', 'throw', or 'no-uuid'.
+	 *
+	 * @return ParaferingFlowGateway The gateway.
+	 */
+	private function gatewayBehaving(array|string $pages, string $runMode='ok'): ParaferingFlowGateway {
+		$started = &$this->started;
+
+		$flowService = new class($pages, $runMode, $started) {
+
+			/**
+			 * @param array<int, object>|string        $pages   The flows.
+			 * @param string                           $runMode The run behaviour.
+			 * @param array<int, array<string, mixed>> $started Sink.
+			 */
+			public function __construct(private array|string $pages, private string $runMode, private array &$started) {
+			}
+
+			/**
+			 * @param string  $app    The app id.
+			 * @param mixed   $one    Unused.
+			 * @param mixed   $two    Unused.
+			 * @param integer $limit  Page size.
+			 * @param integer $offset Page offset.
+			 *
+			 * @return array<int, object> The page.
+			 */
+			public function findAll(string $app, mixed $one=null, mixed $two=null, int $limit=100, int $offset=0): array {
+				if (is_string($this->pages) === true) {
+					throw new \RuntimeException('the flow store is unreachable');
+				}
+
+				return array_slice($this->pages, $offset, $limit);
+			}
+
+			/**
+			 * @param string               $uuid    The flow.
+			 * @param array<string, mixed> $subject The subject.
+			 * @param array<string, mixed> $context The context.
+			 * @param boolean              $sync    Inline.
+			 * @param string               $trigger The trigger.
+			 *
+			 * @return object The run.
+			 */
+			public function run(string $uuid, array $subject=[], array $context=[], bool $sync=false, string $trigger='manual'): object {
+				$this->started[] = ['flow' => $uuid];
+
+				if ($this->runMode === 'throw') {
+					throw new \RuntimeException('the engine refused');
+				}
+
+				if ($this->runMode === 'no-uuid') {
+					return new class {
+					};
+				}
+
+				return new class {
+
+					/**
+					 * @return string The run uuid.
+					 */
+					public function getUuid(): string {
+						return 'run-1';
+					}
+
+				};
+			}
+
+		};
+
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($flowService);
+
+		return new ParaferingFlowGateway($container, $this->createMock(LoggerInterface::class));
+
+	}//end gatewayBehaving()
+
+	/**
+	 * 🔴 An engine that refuses does not fail activation.
+	 *
+	 * A voorstel that cannot start a run takes the route path. Letting this
+	 * throw would make the flow engine's health decide whether a voorstel can
+	 * enter parafering at all.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	public function testAnEngineThatRefusesDoesNotFailActivation(): void {
+		$gateway = $this->gatewayBehaving(
+			[$this->flow('dossiq:endorsementRoute:route-1', true, 'flow-1')],
+			'throw'
+		);
+
+		$this->assertSame('', $gateway->startForRoute(routeId: 'route-1', subjectId: 'voorstel-1'));
+
+	}//end testAnEngineThatRefusesDoesNotFailActivation()
+
+	/**
+	 * 🔴 A run that reports no id is not recorded.
+	 *
+	 * The voorstel references the run by id. Recording an empty one would
+	 * leave a voorstel that claims to be flow-driven and names nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	public function testARunWithNoIdIsNotRecorded(): void {
+		$gateway = $this->gatewayBehaving(
+			[$this->flow('dossiq:endorsementRoute:route-1', true, 'flow-1')],
+			'no-uuid'
+		);
+
+		$this->assertSame('', $gateway->startForRoute(routeId: 'route-1', subjectId: 'voorstel-1'));
+
+	}//end testARunWithNoIdIsNotRecorded()
+
+	/**
+	 * An unreachable flow store starts nothing and does not throw.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	public function testAnUnreachableFlowStoreStartsNothing(): void {
+		$this->assertSame(
+			'',
+			$this->gatewayBehaving('throw')->startForRoute(routeId: 'route-1', subjectId: 'voorstel-1')
+		);
+		$this->assertSame([], $this->started);
+
+	}//end testAnUnreachableFlowStoreStartsNothing()
+
+	/**
+	 * An app with no flows at all starts nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnAppWithNoFlowsStartsNothing(): void {
+		$this->assertSame(
+			'',
+			$this->gatewayBehaving([])->startForRoute(routeId: 'route-1', subjectId: 'voorstel-1')
+		);
+
+	}//end testAnAppWithNoFlowsStartsNothing()
+
+	/**
+	 * 🔴 The flow is found on a later page, not only the first.
+	 *
+	 * The projection writes one flow per route, and an app with more than a
+	 * page of them would otherwise stop looking after 100 and put every
+	 * voorstel on the old path without saying so.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	public function testTheFlowIsFoundOnALaterPage(): void {
+		$filler = [];
+		for ($i = 0; $i < 100; $i++) {
+			$filler[] = $this->flow('dossiq:endorsementRoute:other-' . $i, true, 'flow-other-' . $i);
+		}
+
+		$filler[] = $this->flow('dossiq:endorsementRoute:route-1', true, 'flow-1');
+
+		$runId = $this->gatewayBehaving($filler)->startForRoute(routeId: 'route-1', subjectId: 'voorstel-1');
+
+		$this->assertSame('run-1', $runId);
+		$this->assertSame('flow-1', $this->started[0]['flow']);
+
+	}//end testTheFlowIsFoundOnALaterPage()
+
+	/**
+	 * A flow that carries no notes at all is skipped, not matched.
+	 *
+	 * @return void
+	 */
+	public function testAFlowWithNoNotesIsSkipped(): void {
+		$mute = new class {
+
+			/**
+			 * @return string The uuid.
+			 */
+			public function getUuid(): string {
+				return 'flow-mute';
+			}
+
+		};
+
+		$this->assertSame(
+			'',
+			$this->gatewayBehaving([$mute])->startForRoute(routeId: 'route-1', subjectId: 'voorstel-1')
+		);
+
+	}//end testAFlowWithNoNotesIsSkipped()
+
+	/**
+	 * A matching, enabled flow that cannot report a uuid starts nothing.
+	 *
+	 * @return void
+	 */
+	public function testAFlowWithNoUuidStartsNothing(): void {
+		$noUuid = new class {
+
+			/**
+			 * @return string The notes.
+			 */
+			public function getNotes(): string {
+				return 'dossiq:endorsementRoute:route-1';
+			}
+
+			/**
+			 * @return boolean Enabled.
+			 */
+			public function getEnabled(): bool {
+				return true;
+			}
+
+		};
+
+		$this->assertSame(
+			'',
+			$this->gatewayBehaving([$noUuid])->startForRoute(routeId: 'route-1', subjectId: 'voorstel-1')
+		);
+
+	}//end testAFlowWithNoUuidStartsNothing()
+
 }//end class
