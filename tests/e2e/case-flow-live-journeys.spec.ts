@@ -148,6 +148,19 @@ async function shoot(page: Page, name: string): Promise<void> {
 	await page.screenshot({ path: path.join(SCREENS, name), fullPage: true })
 }
 
+/**
+ * The cases list, reached the way a person reaches it. A hard load of
+ * `/cases` has been seen to land on the dashboard while the SPA boots under
+ * load, so after the load the sidebar entry is clicked: that is deterministic
+ * where the deep link is not, and it is what a person does.
+ */
+async function openCasesList(page: Page): Promise<void> {
+	await page.goto('/index.php/apps/dossiq/cases', { waitUntil: 'domcontentloaded' })
+	const nav = page.getByRole('link', { name: 'Cases', exact: true }).first()
+	await nav.waitFor({ state: 'visible', timeout: 20_000 })
+	await nav.click()
+}
+
 async function openCase(page: Page, caseId: string, title: string): Promise<void> {
 	await page.goto(`/index.php/apps/dossiq/cases/${caseId}`, { waitUntil: 'domcontentloaded' })
 	await expect(page.locator('body')).toContainText(title, { timeout: 20_000 })
@@ -218,7 +231,7 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 			.toBe(1)
 		incompleteRun = String((await runsForCase(api, incompleteCase))[0].uuid)
 
-		await page.goto('/index.php/apps/dossiq/cases', { waitUntil: 'domcontentloaded' })
+		await openCasesList(page)
 		await expect(page.locator('body')).toContainText(`${RUN_PREFIX} Carport Molenweg 5`, { timeout: 20_000 })
 		await shoot(page, '01-incomplete-case-filed.png')
 	})
