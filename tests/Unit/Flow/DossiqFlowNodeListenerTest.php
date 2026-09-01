@@ -23,6 +23,7 @@ use OCA\Dossiq\Flow\DossiqCreateDocumentNode;
 use OCA\Dossiq\Flow\DossiqFlowNodeListener;
 use OCA\Dossiq\Flow\DossiqMergeTemplateNode;
 use OCA\Dossiq\Flow\DossiqNotifyRoleNode;
+use OCA\Dossiq\Flow\DossiqSetVoorstelStatusNode;
 use OCA\Dossiq\Flow\DossiqScheduleReminderNode;
 use OCA\Dossiq\Flow\DossiqSendEmailNode;
 use OCA\Dossiq\Flow\DossiqTxSendEmailNode;
@@ -70,6 +71,7 @@ class DossiqFlowNodeListenerTest extends TestCase {
         DossiqTxSetStatusNode::class => 'dossiq.setStatus',
         DossiqAskPersonNode::class => 'dossiq.askPerson',
         DossiqAskParaafNode::class => 'dossiq.askParaaf',
+        DossiqSetVoorstelStatusNode::class => 'dossiq.setVoorstelStatus',
         DossiqRequestDecisionNode::class => 'dossiq.requestDecision',
         DossiqEnsureCommitteeNode::class => 'dossiq.ensureCommittee',
         DossiqTxNotifyNode::class => 'dossiq.notify',

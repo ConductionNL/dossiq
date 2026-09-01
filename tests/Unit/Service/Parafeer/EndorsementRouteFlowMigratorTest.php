@@ -234,9 +234,15 @@ class EndorsementRouteFlowMigratorTest extends TestCase {
 		$nodes = $this->written[0]['nodes'];
 
 		$this->assertSame(
-			['dossiq.askParaaf', 'dossiq.askParaaf', 'dossiq.requestDecision'],
+			[
+				'dossiq.askParaaf',
+				'dossiq.askParaaf',
+				'dossiq.requestDecision',
+				'dossiq.setVoorstelStatus',
+				'dossiq.setVoorstelStatus',
+			],
 			array_column($nodes, 'type'),
-			'a route is paraaf steps followed by the decision they gate'
+			'a route is paraaf steps, the decision they gate, and the two ways it ends'
 		);
 
 		// Declared out of order in the fixture on purpose: the flow must follow
@@ -251,6 +257,10 @@ class EndorsementRouteFlowMigratorTest extends TestCase {
 	/**
 	 * The steps are chained, so step two waits for step one.
 	 *
+	 * The chain is the UNCONDITIONED edges: the engine takes an edge without a
+	 * condition as the else, so those are the path a paraaf that is not a
+	 * return follows. The conditioned ones are asserted separately.
+	 *
 	 * @return void
 	 */
 	public function testTheStepsAreChainedInSequence(): void {
@@ -258,28 +268,115 @@ class EndorsementRouteFlowMigratorTest extends TestCase {
 
 		$this->migrator()->migrate($this->user(), false);
 
-		$edges = $this->written[0]['edges'];
-		$this->assertSame([['step-1'], ['step-2']], array_column($edges, 'from'));
-		$this->assertSame([['step-2'], ['decision']], array_column($edges, 'to'));
+		$chain = array_values(
+			array_filter(
+				$this->written[0]['edges'],
+				static fn (array $e): bool => isset($e['condition']) === false
+			)
+		);
+
+		$this->assertSame(
+			[['step-1'], ['step-2'], ['decision']],
+			array_column($chain, 'from')
+		);
+		$this->assertSame(
+			[['step-2'], ['decision'], ['accorded']],
+			array_column($chain, 'to')
+		);
 
 	}//end testTheStepsAreChainedInSequence()
 
 	/**
-	 * The projection arrives disabled.
+	 * 🔴 The projection arrives ENABLED, now that the chain is complete.
 	 *
-	 * The route still drives parafering through BesluitvormingParafeerService.
-	 * An enabled projection would ask every approver a second time.
+	 * It shipped disabled for two reasons, and both are closed:
+	 * BesluitvormingParafeerService stands aside for a voorstel carrying a
+	 * flow run, so the two no longer both drive; and the chain writes the
+	 * voorstel's status itself, so a flow-driven voorstel no longer collects
+	 * every paraaf and then sits in `in_parafering` forever.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
 	 */
-	public function testTheProjectionArrivesDisabled(): void {
+	public function testTheProjectionArrivesEnabled(): void {
 		$this->routes = [$this->route()];
 
 		$this->migrator()->migrate($this->user(), false);
 
-		$this->assertFalse($this->written[0]['enabled']);
+		$this->assertTrue($this->written[0]['enabled']);
 
-	}//end testTheProjectionArrivesDisabled()
+	}//end testTheProjectionArrivesEnabled()
+
+	/**
+	 * 🔴 A returned paraaf leaves the chain instead of walking on.
+	 *
+	 * The engine chooses an outgoing edge by evaluating each edge's condition
+	 * and takes the unconditioned one as the else, so the branch lives on the
+	 * edges. Without it a linear projection would carry a rejected voorstel
+	 * past every remaining approver — the same shape as dossiq#1609, where a
+	 * `returned` action fell through and read as an approval.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	public function testAReturnedParaafBranchesOutOfTheChain(): void {
+		$this->routes = [$this->route()];
+
+		$this->migrator()->migrate($this->user(), false);
+
+		$edges = $this->written[0]['edges'];
+		$returned = array_values(
+			array_filter($edges, static fn (array $e): bool => ($e['to'][0] ?? '') === 'returned')
+		);
+
+		// One per step, so no approver's rejection is the one that walks on.
+		$this->assertCount(2, $returned);
+		$this->assertSame(
+			['==' => [['var' => 'json.step1.decision'], 'returned']],
+			$returned[0]['condition'],
+		);
+
+	}//end testAReturnedParaafBranchesOutOfTheChain()
+
+	/**
+	 * 🔴 The chain writes the voorstel's status itself.
+	 *
+	 * Until it did, a flow-driven voorstel collected every paraaf and then sat
+	 * in `in_parafering`: the transitions lived in the service the flow had
+	 * replaced, and the projection never reached them.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	public function testTheChainClosesTheVoorstel(): void {
+		$this->routes = [$this->route()];
+
+		$this->migrator()->migrate($this->user(), false);
+
+		$byId = [];
+		foreach ($this->written[0]['nodes'] as $node) {
+			$byId[$node['id']] = $node;
+		}
+
+		$this->assertSame('dossiq.setVoorstelStatus', $byId['returned']['type']);
+		$this->assertSame('teruggestuurd', $byId['returned']['config']['status']);
+		$this->assertSame('dossiq.setVoorstelStatus', $byId['accorded']['type']);
+		$this->assertSame('geaccordeerd', $byId['accorded']['config']['status']);
+
+		// Both are statuses the proposal schema declares; a flow that wrote an
+		// undeclared one would fail its save far from the node that chose it.
+		$register = json_decode(
+			file_get_contents(__DIR__ . '/../../../../lib/Settings/dossiq_register.json'),
+			true
+		);
+		$allowed = $register['components']['schemas']['proposal']['properties']['status']['enum'];
+		$this->assertContains('teruggestuurd', $allowed);
+		$this->assertContains('geaccordeerd', $allowed);
+
+	}//end testTheChainClosesTheVoorstel()
 
 	/**
 	 * A step with no actor refuses the whole route.
