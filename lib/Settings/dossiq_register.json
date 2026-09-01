@@ -3339,6 +3339,16 @@
                         "type": "string",
                         "description": "Mandate reference (for delegate actions)",
                         "title": "Mandate"
+                    },
+                    "flowRun": {
+                        "type": "string",
+                        "description": "The flow run this paraaf answers, when parafering is driven by a flow. Empty for a paraaf raised by the legacy route walker.",
+                        "title": "Flow Run"
+                    },
+                    "flowNode": {
+                        "type": "string",
+                        "description": "The node within that run. Both are needed to resume: a run alone cannot say which of its awaiting nodes a paraaf answers.",
+                        "title": "Flow Node"
                     }
                 }
             },

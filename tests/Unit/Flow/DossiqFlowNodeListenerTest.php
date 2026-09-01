@@ -29,6 +29,7 @@ use OCA\Dossiq\Flow\DossiqTxSendEmailNode;
 use OCA\Dossiq\Flow\DossiqTxCreateTaskNode;
 use OCA\Dossiq\Flow\DossiqTxCreateSubCaseNode;
 use OCA\Dossiq\Flow\DossiqTxWebhookNode;
+use OCA\Dossiq\Flow\DossiqAskParaafNode;
 use OCA\Dossiq\Flow\DossiqAskPersonNode;
 use OCA\Dossiq\Flow\DossiqEnsureCommitteeNode;
 use OCA\Dossiq\Flow\DossiqRequestDecisionNode;
@@ -68,6 +69,7 @@ class DossiqFlowNodeListenerTest extends TestCase {
         DossiqTxSetFieldNode::class => 'dossiq.setField',
         DossiqTxSetStatusNode::class => 'dossiq.setStatus',
         DossiqAskPersonNode::class => 'dossiq.askPerson',
+        DossiqAskParaafNode::class => 'dossiq.askParaaf',
         DossiqRequestDecisionNode::class => 'dossiq.requestDecision',
         DossiqEnsureCommitteeNode::class => 'dossiq.ensureCommittee',
         DossiqTxNotifyNode::class => 'dossiq.notify',
