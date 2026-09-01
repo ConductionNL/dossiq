@@ -54,6 +54,12 @@ use UnexpectedValueException;
  * AwaitSignalNode guards its own request record.
  *
  * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) One over the threshold, and
+ *     every dependency is load-bearing: the node speaks OpenRegister's whole
+ *     suspend/resume vocabulary (suspension, resume slot, run context, signal
+ *     key, value template) AND dossiq's own storage seam. Splitting a class to
+ *     shed an import would separate the ask from the wait it exists to pair.
  */
 class DossiqAskPersonNode implements IFlowNode {
 
@@ -357,6 +363,10 @@ class DossiqAskPersonNode implements IFlowNode {
      * @return string The rendered assignee.
      *
      * @throws RuntimeException When the assignee renders empty or unresolved.
+     *
+     * @SuppressWarnings(PHPMD.StaticAccess) FlowValueTemplate is the engine's
+     *     canonical rendering API and is published as a static, final class —
+     *     there is no instance to inject.
      *
      * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
      */
