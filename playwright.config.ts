@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test'
 import path from 'path'
+import { BASE_URL } from './tests/e2e/base-url'
 
 const STORAGE_STATE = path.join(__dirname, 'tests/e2e/.auth/user.json')
 
@@ -32,7 +33,13 @@ export default defineConfig({
 	globalSetup: './tests/e2e/global-setup.ts',
 
 	use: {
-		baseURL: process.env.NEXTCLOUD_URL || 'http://localhost:8080',
+		// ONE resolver (tests/e2e/base-url.ts). This line used to read
+		// `NEXTCLOUD_URL || 'http://localhost:8080'` on its own, so a run with
+		// only PLAYWRIGHT_BASE_URL set (the variable every runbook uses) went to
+		// the SHARED dev container: global-setup takes the first project's
+		// baseURL, and the suite logged in and read from 8080 while reporting
+		// on the instance the operator named. Measured 2026-09-01.
+		baseURL: BASE_URL,
 		storageState: STORAGE_STATE,
 		trace: 'retain-on-failure',
 		screenshot: 'only-on-failure',
