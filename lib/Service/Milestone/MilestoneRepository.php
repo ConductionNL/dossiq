@@ -145,9 +145,22 @@ class MilestoneRepository {
 		$data = $case->getObject();
 		$caseTypeId = ($data['caseType'] ?? null);
 
-		return (is_string($caseTypeId) === true && $caseTypeId !== '') ? $caseTypeId : null;
+		if (is_string($caseTypeId) === false || $caseTypeId === '') {
+			return null;
+		}
+
+		return $caseTypeId;
 	}//end findCaseTypeId()
 
+	/**
+	 * Get the milestone records recorded against a case.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<int, array<string, mixed>> Milestone records.
+	 *
+	 * @spec openspec/specs/milestone-tracking/spec.md
+	 */
 	public function findRecords(string $caseId): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {

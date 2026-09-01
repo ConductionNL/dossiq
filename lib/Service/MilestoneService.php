@@ -112,7 +112,7 @@ class MilestoneService {
 			];
 		}
 
-		return $this->getCaseProgress($caseId, $caseTypeId);
+		return $this->getCaseProgress(caseId: $caseId, caseTypeId: $caseTypeId);
 	}//end getCaseProgressForCase()
 
 	public function getCaseProgress(string $caseId, string $caseTypeId): array {
