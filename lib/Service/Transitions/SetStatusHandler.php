@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
@@ -53,11 +54,13 @@ class SetStatusHandler implements ActionHandlerInterface {
 	 *
 	 * @param SettingsService $settingsService Resolves the object service and the configured schemas.
 	 * @param StatusTypeLookup $statuses       Resolves a status name to its id within a case type.
+	 * @param FlowRunAsScope  $runAsScope      Scopes the resolve-and-write to the run's acting identity.
 	 * @param LoggerInterface $logger          The logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly StatusTypeLookup $statuses,
+		private readonly FlowRunAsScope $runAsScope,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -98,9 +101,44 @@ class SetStatusHandler implements ActionHandlerInterface {
 				return new ActionResult(succeeded: false, error: 'case_has_no_case_type');
 			}
 
-			$statusId = $this->statuses->idForName(
-				caseTypeId: $caseTypeId,
-				statusName: $statusName
+			$objectService = $this->settingsService->getObjectService();
+			if ($objectService === null) {
+				return new ActionResult(succeeded: false, error: 'storage_unavailable');
+			}
+
+			$register = $this->settingsService->getConfigValue(key: 'register');
+			$caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
+			if ($register === '' || $caseSchema === '') {
+				return new ActionResult(succeeded: false, error: 'case_schema_not_configured');
+			}
+
+			// The RESOLVE and the WRITE run under one identity: the run's
+			// `runAs` when the flow engine hands one, the ambient session
+			// otherwise. A bare saveObject() here is what stranded every case
+			// under FlowRunWorker — the permission gate reads the session
+			// user, which a cron worker does not have, so the write was
+			// refused as 'Anonymous' while the run context named an acting
+			// user all along. The lookup sits inside the same scope because
+			// it is a read that decides what the write then touches; running
+			// the two under different subjects is how a status resolves that
+			// the write is not allowed to stamp.
+			$statusId = (string) $this->runAsScope->call(
+				context: $transitionContext,
+				operation: function () use ($caseTypeId, $statusName, $case, $objectService, $register, $caseSchema): string {
+					$statusId = $this->statuses->idForName(
+						caseTypeId: $caseTypeId,
+						statusName: $statusName
+					);
+
+					if ($statusId === '') {
+						return '';
+					}
+
+					$case['status'] = $statusId;
+					$objectService->saveObject(object: $case, register: $register, schema: $caseSchema);
+
+					return $statusId;
+				}
 			);
 
 			if ($statusId === '') {
@@ -114,20 +152,6 @@ class SetStatusHandler implements ActionHandlerInterface {
 
 				return new ActionResult(succeeded: false, error: 'status_not_found_on_case_type');
 			}
-
-			$objectService = $this->settingsService->getObjectService();
-			if ($objectService === null) {
-				return new ActionResult(succeeded: false, error: 'storage_unavailable');
-			}
-
-			$register = $this->settingsService->getConfigValue(key: 'register');
-			$caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
-			if ($register === '' || $caseSchema === '') {
-				return new ActionResult(succeeded: false, error: 'case_schema_not_configured');
-			}
-
-			$case['status'] = $statusId;
-			$objectService->saveObject(object: $case, register: $register, schema: $caseSchema);
 
 			return new ActionResult(
 				succeeded: true,

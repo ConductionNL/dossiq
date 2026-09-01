@@ -18,6 +18,7 @@ namespace OCA\Dossiq\Flow;
 
 use DateTime;
 use OCA\Dossiq\Service\ContractDecisionDelegationService;
+use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\OpenRegister\Service\Flow\FlowNodeResumeState;
 use OCA\OpenRegister\Service\Flow\FlowRunService;
 use OCA\OpenRegister\Service\Flow\FlowSuspension;
@@ -76,6 +77,7 @@ class DossiqRequestDecisionNode implements IFlowNode {
      * Constructor.
      *
      * @param ContractDecisionDelegationService $delegation Raises the decision in decidiq.
+     * @param FlowRunAsScope                    $runAsScope Scopes the raise to the run's acting identity.
      * @param IL10N                             $l10n       The localisation service.
      * @param LoggerInterface                   $logger     The logger.
      *
@@ -85,6 +87,7 @@ class DossiqRequestDecisionNode implements IFlowNode {
      */
     public function __construct(
         private readonly ContractDecisionDelegationService $delegation,
+        private readonly FlowRunAsScope $runAsScope,
         private readonly IL10N $l10n,
         private readonly LoggerInterface $logger,
     ) {
@@ -270,19 +273,30 @@ class DossiqRequestDecisionNode implements IFlowNode {
         }
 
         try {
-            $ref = $this->delegation->raiseDecision(
-                decisionType: $decisionType,
-                externalReference: $caseId,
-                subject: [
-                    'subjectRegister' => 'dossiq',
-                    'subjectSchema'   => 'case',
-                    'subjectId'       => $caseId,
-                    'subjectLabel'    => (string) ($case['title'] ?? ''),
-                ],
-                context: [
-                    'question' => trim((string) ($config['question'] ?? '')),
-                    'advisor'  => trim((string) ($config['advisor'] ?? '')),
-                ],
+            // The raise runs under the flow run's `runAs` identity. The
+            // delegation dispatches decidiq's DecisionRequestedEvent, whose
+            // listener writes the decision object synchronously through the
+            // object store — and that write answers to the AMBIENT SESSION
+            // user, which under FlowRunWorker is nobody. A bare raise was
+            // refused as 'Anonymous' live while the run context named an
+            // acting user, so the whole dispatch is scoped, not just a write
+            // of dossiq's own.
+            $ref = (string) $this->runAsScope->call(
+                context: $context,
+                operation: fn (): string => $this->delegation->raiseDecision(
+                    decisionType: $decisionType,
+                    externalReference: $caseId,
+                    subject: [
+                        'subjectRegister' => 'dossiq',
+                        'subjectSchema'   => 'case',
+                        'subjectId'       => $caseId,
+                        'subjectLabel'    => (string) ($case['title'] ?? ''),
+                    ],
+                    context: [
+                        'question' => trim((string) ($config['question'] ?? '')),
+                        'advisor'  => trim((string) ($config['advisor'] ?? '')),
+                    ],
+                )
             );
         } catch (Throwable $e) {
             // NOT swallowed. The delegation fails closed when decidiq is
