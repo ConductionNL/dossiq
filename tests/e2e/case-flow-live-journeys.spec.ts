@@ -140,6 +140,33 @@ async function updateObject(
 	return (await res.json()) as Json
 }
 
+/**
+ * Complete a task the dossiq way: an object update that walks the CMMN
+ * lifecycle the task schema enforces (x-openregister-lifecycle on
+ * dossiq/task).
+ *
+ * The walk is available → active → completed. A one-step PUT to `completed`
+ * is refused with 422 lifecycle-invalid-transition, and that refusal is the
+ * contract: REQ-TASK-002 (openspec/specs/task-management/spec.md) requires a
+ * task to be `active` before it can be `completed`. So this helper claims the
+ * task first when it is still `available`. The intermediate update resumes
+ * nothing; TaskCompletionResumeListener fires only on the transition INTO
+ * `completed`, so the run is still signalled exactly once.
+ *
+ * KNOWN FOLLOW-UP (ADR-098): dossiq tasks are OR objects in dossiq's own
+ * register, so openregister's POST /api/flow-tasks/{uuid}/complete answers
+ * 404 for them. When dossiq migrates onto openregister's task entity,
+ * completion moves to that endpoint; until then this object update IS the
+ * completion API.
+ */
+async function completeTask(api: APIRequestContext, taskId: string): Promise<void> {
+	const current = await getJson(api, `${OR}/objects/dossiq/task/${taskId}`)
+	if (String(current.status ?? '') === 'available') {
+		await updateObject(api, 'task', taskId, { status: 'active' })
+	}
+	await updateObject(api, 'task', taskId, { status: 'completed' })
+}
+
 async function runsForCase(api: APIRequestContext, caseId: string): Promise<Json[]> {
 	const runs = await results(api, `${OR}/flow-runs?limit=100`)
 	return runs.filter((r) => String(r.subjectUuid ?? '') === caseId)
@@ -372,7 +399,7 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 		await updateObject(api, 'case', incompleteCase, {
 			description: SUPPLIED_DESCRIPTION,
 		})
-		await updateObject(api, 'task', applicantTask, { status: 'completed' })
+		await completeTask(api, applicantTask)
 
 		workerPass()
 
@@ -527,7 +554,7 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 		await shoot(page, '06-employee-task.png')
 
 		// The admin is a member of `behandelaars`, so may complete it.
-		await updateObject(api, 'task', String(tasks[0].id), { status: 'completed' })
+		await completeTask(api, String(tasks[0].id))
 		workerPass()
 
 		await openCase(page, completeCase, 'Dakkapel Kerkstraat 14')

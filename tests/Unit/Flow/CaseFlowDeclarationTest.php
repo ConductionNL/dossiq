@@ -697,6 +697,90 @@ class CaseFlowDeclarationTest extends TestCase {
 	}//end testTheDocumentStepConfigMatchesItsNodeAndItsSchema()
 
 	/**
+	 * Every field the flow writes to the case is a declared case property.
+	 *
+	 * THE CLASS-CATCHING CHECK. OpenRegister drops any property the schema
+	 * does not declare, silently: the save answers 200 and returns the object,
+	 * minus the field. That is how `aanvullingRound` was lost — the loop
+	 * counter reset to null on every save, so the completeness cap never
+	 * engaged — and how `actionResult` vanished after the document step.
+	 * Checking those two names would only catch those two names; this test
+	 * instead walks the declaration and collects EVERY field a node writes:
+	 *
+	 *  - `openregister.set-fields`: the keys of `set` and `compute`, and the
+	 *    new names in `rename` (SetFieldsNode's config vocabulary);
+	 *  - `dossiq.setStatus`: `status`;
+	 *  - `dossiq.action.*`: the config's `targetField`, plus the output key
+	 *    DossiqFlowNodeBase merges the handler result under, which defaults
+	 *    to `actionResult` when the step names none.
+	 *
+	 * A new node writing a new field fails here before it fails silently in
+	 * production.
+	 *
+	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 */
+	public function testTheCaseSchemaDeclaresEveryFieldTheFlowWrites(): void {
+		$path = __DIR__ . '/../../../lib/Settings/dossiq_register.json';
+		$register = json_decode((string)file_get_contents($path), true);
+		$caseProperties = ($register['components']['schemas']['case']['properties'] ?? []);
+		$this->assertNotSame([], $caseProperties, 'The case schema must declare properties.');
+
+		$written = [];
+		foreach ($this->flow['nodes'] as $node) {
+			$type = (string)($node['type'] ?? '');
+			$config = (array)($node['config'] ?? []);
+
+			if ($type === 'openregister.set-fields') {
+				foreach (array_keys((array)($config['set'] ?? [])) as $field) {
+					$written[(string)$field] = $node['id'];
+				}
+
+				foreach (array_keys((array)($config['compute'] ?? [])) as $field) {
+					$written[(string)$field] = $node['id'];
+				}
+
+				foreach ((array)($config['rename'] ?? []) as $newName) {
+					$written[(string)$newName] = $node['id'];
+				}
+			}
+
+			if ($type === 'dossiq.setStatus') {
+				$written['status'] = $node['id'];
+			}
+
+			if (str_starts_with($type, 'dossiq.action.') === true) {
+				$target = trim((string)($config['targetField'] ?? ''));
+				if ($target !== '') {
+					$written[$target] = $node['id'];
+				}
+
+				// DossiqFlowNodeBase::execute() merges the handler result
+				// under config `output`, defaulting to `actionResult`.
+				$written[trim((string)($config['output'] ?? '')) !== ''
+					? (string)$config['output'] : 'actionResult'] = $node['id'];
+			}
+		}//end foreach
+
+		$this->assertNotSame([], $written, 'The flow must write at least one case field.');
+
+		foreach ($written as $field => $nodeId) {
+			// A dotted path writes into the property named by its first segment.
+			$declared = explode('.', (string)$field)[0];
+			$this->assertArrayHasKey(
+				$declared,
+				$caseProperties,
+				sprintf(
+					'Node "%s" writes "%s", which the case schema does not declare. '
+					. 'OpenRegister strips undeclared properties on save, so the write '
+					. 'reports success and the value is silently gone.',
+					$nodeId,
+					$field
+				)
+			);
+		}
+	}//end testTheCaseSchemaDeclaresEveryFieldTheFlowWrites()
+
+	/**
 	 * The task schema declares the two fields that tie a task to its run.
 	 *
 	 * DossiqAskPersonNode stamps `flowRun` and `flowNode` onto the task it
