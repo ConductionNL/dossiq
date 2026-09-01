@@ -15,21 +15,25 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import {
-	caseRouteFor,
-	waitingCaseIdFrom,
-} from '../../src/utils/flowTaskHelpers.js'
+import { caseRouteFor, waitingCaseIdFrom } from '../../src/utils/flowTaskHelpers.js'
 
 describe('waitingCaseIdFrom', () => {
 	it('names the case for a flow task with a string case reference', () => {
 		expect(
-			waitingCaseIdFrom({ flowRun: 'run-1', flowNode: 'ask-indiener', case: 'case-9' }),
+			waitingCaseIdFrom({
+				flowRun: 'run-1',
+				flowNode: 'ask-indiener',
+				case: 'case-9',
+			}),
 		).toBe('case-9')
 	})
 
 	it('reads an expanded case reference by id', () => {
 		expect(
-			waitingCaseIdFrom({ flowRun: 'run-1', case: { id: 'case-9', title: 'Schuur' } }),
+			waitingCaseIdFrom({
+				flowRun: 'run-1',
+				case: { id: 'case-9', title: 'Schuur' },
+			}),
 		).toBe('case-9')
 	})
 
@@ -41,7 +45,10 @@ describe('waitingCaseIdFrom', () => {
 
 	it('reads an entity-shaped reference via @self', () => {
 		expect(
-			waitingCaseIdFrom({ flowRun: 'run-1', case: { '@self': { id: 'case-9' } } }),
+			waitingCaseIdFrom({
+				flowRun: 'run-1',
+				case: { '@self': { id: 'case-9' } },
+			}),
 		).toBe('case-9')
 	})
 

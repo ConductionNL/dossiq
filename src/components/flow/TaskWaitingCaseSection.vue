@@ -108,7 +108,8 @@ export default {
 			}
 
 			try {
-				this.task = (await this.objectStore.fetchObject('task', taskId)) || null
+				this.task =
+					(await this.objectStore.fetchObject('task', taskId)) || null
 			} catch {
 				// An unreadable task renders nothing, same as a non-flow task.
 				this.task = null
