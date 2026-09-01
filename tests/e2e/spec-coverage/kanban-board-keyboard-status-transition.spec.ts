@@ -38,24 +38,19 @@
  * reach the same board, and that test passes.
  */
 
+import type { APIRequestContext, Locator, Page } from '@playwright/test'
+import type { StateMachine } from '../helpers/fixtures.ts'
+
+import { expect, request, test } from '@playwright/test'
+import { STORAGE_STATE } from '../helpers/auth.ts'
 import {
-	test,
-	expect,
-	request,
-	type APIRequestContext,
-	type Locator,
-	type Page,
-} from '@playwright/test'
-import { STORAGE_STATE } from '../helpers/auth'
-import { dismissSupportDialog } from '../helpers/nav'
-import {
-	RUN_PREFIX,
 	cleanupRunObjects,
 	getRequestToken,
+	RUN_PREFIX,
 	seedCase,
 	seedStateMachine,
-	type StateMachine,
-} from '../helpers/fixtures'
+} from '../helpers/fixtures.ts'
+import { dismissSupportDialog } from '../helpers/nav.ts'
 
 /** Title of the card both tests drive. Carries RUN_PREFIX for isolation. */
 const CARD_TITLE = `${RUN_PREFIX} Kanban card`

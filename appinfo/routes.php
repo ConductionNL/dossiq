@@ -716,6 +716,7 @@ $extra = [
     ['name' => 'substitution#revoke',          'url' => '/api/substitutions/{id}/revoke',     'verb' => 'POST'],
     ['name' => 'caseReassignment#reassignPreview', 'url' => '/api/reassignments/preview',      'verb' => 'POST'],
     ['name' => 'caseReassignment#reassignExecute', 'url' => '/api/reassignments/execute',      'verb' => 'POST'],
+    ['name' => 'caseReassignment#reassignSelection', 'url' => '/api/reassignments/selection',  'verb' => 'POST'],
 
         // ── Termijnbewaking + dwangsom engine (AWB 4:13/4:14/4:17) ─────────
         // Public webhook for openconnector/ERP payment confirmation callbacks.

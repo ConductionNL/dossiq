@@ -129,6 +129,26 @@ class ObjectEntity implements \OCA\OpenRegister\Contract\ObjectEntityInterface {
 	}//end setSchemaId()
 
 	/**
+	 * 🔴 THE NAME THE REAL CLASS USES.
+	 *
+	 * OCA\OpenRegister\Db\ObjectEntity declares `setSchema(?string)`; this
+	 * stub only had `setSchemaId()`, a name the real class does not carry.
+	 * That divergence runs the dangerous way round: anything written against
+	 * the stub would be green here and fatal against OpenRegister. Nothing in
+	 * lib/ does, checked — but two listener tests were SKIPPING rather than
+	 * running, so nothing here would have said so either.
+	 *
+	 * `setSchemaId()` stays because existing tests call it.
+	 *
+	 * @param string|null $schema Schema identifier.
+	 *
+	 * @return void
+	 */
+	public function setSchema(?string $schema): void {
+		$this->schemaId = $schema;
+	}//end setSchema()
+
+	/**
 	 * Minimal stand-in for the real ObjectEntity::jsonSerialize() — merges
 	 * the raw object data with an `@self.schema` (and `@self.id`) envelope,
 	 * matching the fields dossiq listeners actually read.
@@ -141,6 +161,21 @@ class ObjectEntity implements \OCA\OpenRegister\Contract\ObjectEntityInterface {
 			'schema' => $this->schemaId,
 			'id' => $this->uuid,
 		];
+
+		// 🔴 TOP-LEVEL id, because the real class guarantees one.
+		//
+		// OCA\OpenRegister\Db\ObjectEntity::jsonSerialize() sets
+		// `$object['id'] = $this->uuid` under a comment reading "Ensure id is
+		// always accessible at top level (not just in @self)". This stub put
+		// it only in @self, so VergunningaanvraagCreatedListener — which reads
+		// `$object['id']`, correctly — found none and returned early.
+		//
+		// The test that would have caught it was SKIPPING, because
+		// ObjectCreatedEvent had no stub and `class_exists()` said so. A skip
+		// cannot tell "not applicable" from "broken".
+		if ($this->uuid !== null && isset($data['id']) === false) {
+			$data['id'] = $this->uuid;
+		}
 
 		return $data;
 	}//end jsonSerialize()

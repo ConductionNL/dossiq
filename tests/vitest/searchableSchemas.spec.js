@@ -11,9 +11,9 @@
  * @spec openspec/changes/case-search-via-or-unified-search/specs/case-search-via-or-unified-search/spec.md
  */
 
-import { describe, it, expect } from 'vitest'
 import fs from 'fs'
 import path from 'path'
+import { describe, expect, it } from 'vitest'
 
 const REGISTER_PATH = path.resolve(
 	__dirname,

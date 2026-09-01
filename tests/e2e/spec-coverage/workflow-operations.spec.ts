@@ -10,11 +10,11 @@
  * primary control) independently of seeded data.
  */
 
-import { test, expect } from '@playwright/test'
-import { navTo, navToRoute, trackDossiqErrors } from '../helpers/nav'
+import { expect, test } from '@playwright/test'
+import { navToRoute, trackDossiqErrors } from '../helpers/nav.ts'
 // Routes named after the component that renders them, so this spec states
 // WHICH screen it covers in executable code rather than in a comment.
-import { CasesOnMapView, WorkflowBoard } from '../helpers/page-components'
+import { CasesOnMapView, WorkflowBoard } from '../helpers/page-components.ts'
 
 test.describe('Workflow Board page', () => {
 	// @e2e openspec/specs/workflow-board/spec.md#workflow-board-renders-kanban-shell

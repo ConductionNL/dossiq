@@ -9,7 +9,7 @@
  * so the Vue history-mode router can resolve the route correctly.
  */
 
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 test.describe('Task Management spec coverage', () => {
 	// @e2e openspec/specs/task-management/spec.md#view-the-global-task-list

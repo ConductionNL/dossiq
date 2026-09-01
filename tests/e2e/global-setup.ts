@@ -12,12 +12,14 @@
  * from the canonical journeydoc template in hydra/templates/journeydoc/.
  */
 
-import { chromium, request, type FullConfig } from '@playwright/test'
+import type { FullConfig } from '@playwright/test'
+
+import { chromium, request } from '@playwright/test'
 import { execSync } from 'child_process'
-import * as path from 'path'
 import * as fs from 'fs'
-import { STORAGE_STATE } from './helpers/auth'
-import { BASE_URL } from './base-url'
+import * as path from 'path'
+import { BASE_URL } from './base-url.ts'
+import { STORAGE_STATE } from './helpers/auth.ts'
 
 const APP_ROOT = path.resolve(__dirname, '..', '..')
 const BUNDLE_PATH = path.join(APP_ROOT, 'js', 'dossiq-main.js')
@@ -33,7 +35,7 @@ function ensureBundleBuilt(): void {
 	if (fs.existsSync(BUNDLE_PATH)) {
 		return
 	}
-	// eslint-disable-next-line no-console
+
 	console.log(
 		`[playwright globalSetup] bundle missing at ${BUNDLE_PATH}; running 'npm run build' once…`,
 	)
@@ -167,7 +169,7 @@ async function globalSetup(config: FullConfig): Promise<void> {
 						'1',
 					)
 				}
-			} catch (e) {
+			} catch {
 				// localStorage unavailable — tour dismissal falls back to helper clicks.
 			}
 		})

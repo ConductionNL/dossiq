@@ -20,8 +20,8 @@
  * actionability until the whole 60s test budget was gone.
  */
 
-import { test, expect } from '@playwright/test'
-import { navTo, navToRoute, trackDossiqErrors } from '../helpers/nav'
+import { expect, test } from '@playwright/test'
+import { navTo, navToRoute, trackDossiqErrors } from '../helpers/nav.ts'
 
 test.describe('Dashboard page render', () => {
 	// @e2e openspec/specs/dashboard/spec.md#dashboard-page-renders-heading-and-widget-grid

@@ -68,6 +68,20 @@ class EndorsementRouteFlowMigrator {
 	public const MARKER_PREFIX = 'dossiq:endorsementRoute:';
 
 	/**
+	 * The node every returned paraaf branches to.
+	 *
+	 * @var string
+	 */
+	private const RETURNED_NODE = 'returned';
+
+	/**
+	 * The node that closes a chain every approver signed.
+	 *
+	 * @var string
+	 */
+	private const ACCORDED_NODE = 'accorded';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService    $settingsService Register/schema configuration.
@@ -218,12 +232,19 @@ class EndorsementRouteFlowMigrator {
 	/**
 	 * Build the flow's nodes and edges from the route's steps.
 	 *
-	 * Each step becomes a `dossiq.askPerson` node, not a bare
-	 * `openregister.awaitSignal`. The difference is the one that matters to an
-	 * approver: askPerson raises a real dossiq TASK against them and waits for
-	 * the answer in the same node, so the step lands in the work queue they
-	 * already read. A raw await signal waits for an answer nobody was asked
-	 * for.
+	 * Each step becomes a `dossiq.askParaaf` node.
+	 *
+	 * NOT `dossiq.askPerson`, which was this migrator's first answer and was
+	 * wrong. askPerson raises a generic TASK, and a task cannot hold what a
+	 * paraaf legally is: `parafeeractie` carries `onBehalfOf` and `mandate` —
+	 * who signed on whose behalf, under which mandate — plus `advice`,
+	 * `actorType` and `step`. Enabling a projection built on askPerson would
+	 * have put generic tasks in approvers' queues, left the parafering screens
+	 * empty because they read `parafeeractie`, and stopped recording the
+	 * mandate chain. That is a loss of record dressed as an engine change.
+	 *
+	 * NOT `openregister.awaitSignal` either: a raw await waits for an answer
+	 * nobody was asked for, so the step never reaches anybody's queue.
 	 *
 	 * The steps are chained in `order`, because an approval route is a
 	 * sequence: step two is not asked until step one has answered.
@@ -257,7 +278,7 @@ class EndorsementRouteFlowMigrator {
 
 			$assignee = trim((string)($step['actor'] ?? ''));
 			if ($assignee === '') {
-				// `dossiq.askPerson` refuses an empty assignee, and rightly: a
+				// `dossiq.askParaaf` refuses an empty actor, and rightly: a
 				// sign-off with nobody to give it is not a step. Refusing the
 				// whole route is the honest outcome, because projecting the
 				// rest would silently drop an approval somebody expects.
@@ -266,10 +287,15 @@ class EndorsementRouteFlowMigrator {
 
 			$nodes[] = [
 				'id' => $id,
-				'type' => 'dossiq.askPerson',
+				'type' => 'dossiq.askParaaf',
 				'config' => [
 					'question' => $this->question(step: $step, position: $position),
-					'assignee' => $assignee,
+					'actor' => $assignee,
+					'actorType' => trim((string)($step['actorType'] ?? 'user')),
+					// The route's own step number, not the position in the
+					// chain: a parafeeractie's `step` is read back by the
+					// parafering screens and must mean what the route meant.
+					'step' => (int)($step['order'] ?? $position),
 					'signalKey' => ('step' . $position),
 				],
 			];
@@ -277,6 +303,29 @@ class EndorsementRouteFlowMigrator {
 			if ($previous !== null) {
 				$edges[] = ['id' => ('e-' . $position), 'from' => [$previous], 'to' => [$id], 'label' => ''];
 			}
+
+			// 🔴 A RETURNED PARAAF LEAVES THE CHAIN. It does not fall through
+			// to the next approver.
+			//
+			// The engine picks an outgoing edge by evaluating each edge's
+			// `condition` and takes the unconditioned one as the else, so the
+			// branch lives on the edges rather than in a switch node. Without
+			// this, a linear projection would walk a rejected voorstel past
+			// every remaining approver — the same shape as the bug fixed in
+			// dossiq#1609, where a `returned` action fell through to the
+			// advance and read as an approval.
+			$edges[] = [
+				'id' => ('e-' . $position . '-returned'),
+				'from' => [$id],
+				'to' => [self::RETURNED_NODE],
+				'label' => 'returned',
+				'condition' => [
+					'==' => [
+						['var' => ('json.step' . $position . '.decision')],
+						'returned',
+					],
+				],
+			];
 
 			$previous = $id;
 		}//end foreach
@@ -291,9 +340,49 @@ class EndorsementRouteFlowMigrator {
 		];
 		$edges[] = ['id' => 'e-decision', 'from' => [$previous], 'to' => ['decision'], 'label' => ''];
 
+		$this->appendTerminals(nodes: $nodes, edges: $edges);
+
 		return ['nodes' => $nodes, 'edges' => $edges];
 
 	}//end graphOf()
+
+	/**
+	 * Append the two ways a chain ends.
+	 *
+	 * The chain has to write the voorstel's status itself now that it, and not
+	 * BesluitvormingParafeerService, is driving. Until this existed a
+	 * flow-driven voorstel collected every paraaf and then sat in
+	 * `in_parafering`, because the transitions lived in the service the flow
+	 * had replaced.
+	 *
+	 * @param array<int, array<string, mixed>> $nodes The nodes so far.
+	 * @param array<int, array<string, mixed>> $edges The edges so far.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	private function appendTerminals(array &$nodes, array &$edges): void {
+		$nodes[] = [
+			'id' => self::RETURNED_NODE,
+			'type' => 'dossiq.setVoorstelStatus',
+			'config' => ['status' => 'teruggestuurd'],
+		];
+
+		$nodes[] = [
+			'id' => self::ACCORDED_NODE,
+			'type' => 'dossiq.setVoorstelStatus',
+			'config' => ['status' => 'geaccordeerd'],
+		];
+
+		$edges[] = [
+			'id' => 'e-accorded',
+			'from' => ['decision'],
+			'to' => [self::ACCORDED_NODE],
+			'label' => '',
+		];
+
+	}//end appendTerminals()
 
 	/**
 	 * What the approver is actually being asked.
@@ -332,10 +421,11 @@ class EndorsementRouteFlowMigrator {
 			'name' => (string)($route['name'] ?? 'Approval route'),
 			'description' => $this->description(route: $route),
 			'app' => Application::APP_ID,
-			// DISABLED, like its sibling. The route still drives parafering
-			// through BesluitvormingParafeerService; a projection that ran too
-			// would ask every approver twice.
-			'enabled' => false,
+			// ENABLED. The chain is complete: it asks each approver in turn,
+			// leaves the chain on a returned paraaf, and writes the voorstel's
+			// status itself. BesluitvormingParafeerService steps aside for a
+			// voorstel carrying a flow run, so the two no longer both drive.
+			'enabled' => true,
 			'trigger' => 'manual',
 			'notes' => $marker,
 			'nodes' => $graph['nodes'],

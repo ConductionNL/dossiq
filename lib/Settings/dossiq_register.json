@@ -1038,7 +1038,34 @@
                                 {
                                     "id": "check-complete",
                                     "type": "openregister.switch",
-                                    "config": {}
+                                    "config": {},
+                                    "_note": "The conditions live HERE, on exits[], because that is the engine's contract: FlowTokenRouter reads a node's exits and follows edges by fromExit. They used to sit on the edges themselves, where the engine never looks. Every enabled transition then appeared unconditional, the first one won, and a COMPLETE case was routed to 'Wacht op aanvulling'. Exits are tried in declaration order; the one without a condition is the required else.",
+                                    "exits": [
+                                        {
+                                            "id": "compleet",
+                                            "condition": {
+                                                "!!": [
+                                                    {
+                                                        "var": "json.description"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": "onvolledig",
+                                            "condition": {
+                                                "<": [
+                                                    {
+                                                        "var": "json.aanvullingRound"
+                                                    },
+                                                    3
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": "gestrand"
+                                        }
+                                    ]
                                 },
                                 {
                                     "id": "count-round",
@@ -1180,34 +1207,23 @@
                                 {
                                     "id": "e-compleet",
                                     "from": "check-complete",
+                                    "fromExit": "compleet",
                                     "to": "status-behandeling",
-                                    "label": "compleet",
-                                    "condition": {
-                                        "!!": [
-                                            {
-                                                "var": "json.description"
-                                            }
-                                        ]
-                                    }
+                                    "label": "compleet"
                                 },
                                 {
                                     "id": "e-onvolledig",
                                     "from": "check-complete",
+                                    "fromExit": "onvolledig",
                                     "to": "status-wacht",
-                                    "label": "onvolledig",
-                                    "condition": {
-                                        "<": [
-                                            {
-                                                "var": "json.aanvullingRound"
-                                            },
-                                            3
-                                        ]
-                                    }
+                                    "label": "onvolledig"
                                 },
                                 {
                                     "id": "e-gestrand",
                                     "from": "check-complete",
-                                    "to": "status-gestrand"
+                                    "fromExit": "gestrand",
+                                    "to": "status-gestrand",
+                                    "label": "gestrand"
                                 },
                                 {
                                     "id": "e-wacht",
@@ -3041,6 +3057,12 @@
                         "visible": false,
                         "title": "Route Snapshot"
                     },
+                    "flowRunId": {
+                        "type": "string",
+                        "description": "The OpenRegister flow run driving this voorstel's parafering, when a flow drives it rather than the route snapshot. Empty on a voorstel that started before its route was enabled as a flow: those finish the way they started, because a hard cutover would strand whatever is mid-parafering.",
+                        "visible": false,
+                        "title": "Flow Run"
+                    },
                     "currentStep": {
                         "type": "integer",
                         "default": 0,
@@ -3339,6 +3361,16 @@
                         "type": "string",
                         "description": "Mandate reference (for delegate actions)",
                         "title": "Mandate"
+                    },
+                    "flowRun": {
+                        "type": "string",
+                        "description": "The flow run this paraaf answers, when parafering is driven by a flow. Empty for a paraaf raised by the legacy route walker.",
+                        "title": "Flow Run"
+                    },
+                    "flowNode": {
+                        "type": "string",
+                        "description": "The node within that run. Both are needed to resume: a run alone cannot say which of its awaiting nodes a paraaf answers.",
+                        "title": "Flow Node"
                     }
                 }
             },

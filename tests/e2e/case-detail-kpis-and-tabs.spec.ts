@@ -222,7 +222,11 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 
 		for (const title of [
 			'Hours booked',
-			'Runs',
+			// Development added this widget independently while this branch was
+			// open (#1615) and titles it "Flow runs". Its definition supersedes
+			// the `case-runs` one this branch had; only the placement here is
+			// ours, in the right column beside Hours.
+			'Flow runs',
 			'Tasks',
 			'Decisions',
 			'Locations',
