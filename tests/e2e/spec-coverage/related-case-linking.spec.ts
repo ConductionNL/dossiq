@@ -19,6 +19,8 @@
  * in the spec.
  */
 
+import type { Page } from '@playwright/test'
+
 import { expect, test } from '@playwright/test'
 import { dismissSupportDialog, navTo } from '../helpers/nav.ts'
 
@@ -51,6 +53,25 @@ async function openFirstCaseOrSkip(page) {
 	return true
 }
 
+/**
+ * The "Related cases" tab in the CaseDetail SIDEBAR.
+ *
+ * Scoped to the sidebar on purpose. The case detail body now carries a tabs
+ * widget whose panels include one ALSO labelled "Related cases", so a bare
+ * `getByRole('tab', …).first()` picks whichever comes first in the DOM — the
+ * body strip — and this spec would then be driving a different surface while
+ * still passing or failing under the sidebar's name.
+ *
+ * @param page The Playwright page.
+ * @return A locator for the sidebar's Related cases tab.
+ */
+function sidebarTab(page: Page) {
+	return page
+		.locator('aside.app-sidebar, [role="complementary"]')
+		.getByRole('tab', { name: /Related cases|Gerelateerde zaken/i })
+		.first()
+}
+
 test.describe('Related cases section (related-case-linking)', () => {
 	// @e2e openspec/specs/related-case-linking/spec.md#section-lists-relations-with-navigation
 	test('the Related cases tab renders its section heading and link control', async ({
@@ -61,9 +82,7 @@ test.describe('Related cases section (related-case-linking)', () => {
 
 		// The "Related cases" sidebar tab is registered on CaseDetail. If the
 		// deployed build predates this change the tab is absent → skip.
-		const tab = page
-			.getByRole('tab', { name: /Related cases|Gerelateerde zaken/i })
-			.first()
+		const tab = sidebarTab(page)
 		// `count()` takes ONE snapshot and cannot retry, so this fired the
 		// instant the sidebar had not painted yet — and then blamed a
 		// deployment for it. Wait for the tab to attach before concluding it
@@ -100,9 +119,7 @@ test.describe('Related cases section (related-case-linking)', () => {
 		const opened = await openFirstCaseOrSkip(page)
 		if (!opened) return
 
-		const tab = page
-			.getByRole('tab', { name: /Related cases|Gerelateerde zaken/i })
-			.first()
+		const tab = sidebarTab(page)
 		// `count()` takes ONE snapshot and cannot retry, so this fired the
 		// instant the sidebar had not painted yet — and then blamed a
 		// deployment for it. Wait for the tab to attach before concluding it
@@ -142,9 +159,7 @@ test.describe('Related cases section (related-case-linking)', () => {
 		const opened = await openFirstCaseOrSkip(page)
 		if (!opened) return
 
-		const tab = page
-			.getByRole('tab', { name: /Related cases|Gerelateerde zaken/i })
-			.first()
+		const tab = sidebarTab(page)
 		// `count()` takes ONE snapshot and cannot retry, so this fired the
 		// instant the sidebar had not painted yet — and then blamed a
 		// deployment for it. Wait for the tab to attach before concluding it
