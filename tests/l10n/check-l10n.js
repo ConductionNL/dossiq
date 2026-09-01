@@ -142,7 +142,7 @@ function unescape (s) {
 const used = new Map()
 
 function record (key, file, idx, content) {
-	if (key == null) {
+	if ((key === null || key === undefined)) {
 		return
 	}
 	const k = unescape(key)
@@ -271,7 +271,11 @@ if (fs.existsSync(nlFile)) {
 	for (const key of Object.keys(translations)) {
 		if (!Object.hasOwn(nlTranslations, key)) {
 			parityMissingInNl.push(key)
-		} else if (nlTranslations[key] === '' || nlTranslations[key] == null) {
+		} else if (
+			nlTranslations[key] === ''
+			|| nlTranslations[key] === null
+			|| nlTranslations[key] === undefined
+		) {
 			parityEmptyNl.push(key)
 		}
 	}

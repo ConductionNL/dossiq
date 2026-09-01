@@ -44,8 +44,8 @@
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
 
-import { test, expect } from '@playwright/test'
-import { BASE_URL } from './base-url'
+import { expect, test } from '@playwright/test'
+import { BASE_URL } from './base-url.ts'
 
 const API_HEADERS = { 'OCS-APIRequest': 'true' }
 

@@ -1,3 +1,5 @@
+import type { Page } from '@playwright/test'
+
 /**
  * The case flow, end to end: a case that pauses for a person and moves when
  * they answer.
@@ -20,7 +22,7 @@
  *
  * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
  */
-import { test, expect, type Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 /** The case type the flow ships against. */
 const CASE_TYPE = 'Omgevingsvergunning kleine bouwactiviteit'

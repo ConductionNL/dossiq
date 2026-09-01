@@ -1,3 +1,5 @@
+import type { APIRequestContext, Page } from '@playwright/test'
+
 /*
  * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
@@ -35,24 +37,18 @@
  *   dossiq's App.vue now hosting the CnObjectSidebar in CnAppRoot's #sidebar
  *   slot. It is now LIVE + green too.
  */
+import { expect, request, test } from '@playwright/test'
+import { STORAGE_STATE } from '../helpers/auth.ts'
 import {
-	test,
-	expect,
-	request,
-	type APIRequestContext,
-	type Page,
-} from '@playwright/test'
-import { STORAGE_STATE } from '../helpers/auth'
-import { dismissSupportDialog } from '../helpers/nav'
-import {
-	RUN_PREFIX,
-	getRequestToken,
-	ensureCaseType,
-	seedCase,
-	objectId,
 	cleanupRunObjects,
 	deleteObject,
-} from '../helpers/fixtures'
+	ensureCaseType,
+	getRequestToken,
+	objectId,
+	RUN_PREFIX,
+	seedCase,
+} from '../helpers/fixtures.ts'
+import { dismissSupportDialog } from '../helpers/nav.ts'
 
 let api: APIRequestContext
 let token: string

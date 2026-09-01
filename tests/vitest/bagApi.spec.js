@@ -14,8 +14,8 @@
  * @spec openspec/changes/bag-register-adapter/proposal.md
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
 import axios from '@nextcloud/axios'
+import { beforeEach, describe, expect, it } from 'vitest'
 import {
 	lookupAddress,
 	lookupPand,

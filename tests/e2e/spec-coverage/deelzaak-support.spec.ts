@@ -20,15 +20,17 @@
  * navigate there and skip cleanly when the surface is not present.
  */
 
-import { test, expect, request, type APIRequestContext } from '@playwright/test'
-import { navTo, dismissSupportDialog } from '../helpers/nav'
-import { STORAGE_STATE } from '../helpers/auth'
+import type { APIRequestContext } from '@playwright/test'
+
+import { expect, request, test } from '@playwright/test'
+import { STORAGE_STATE } from '../helpers/auth.ts'
 import {
-	getRequestToken,
 	ensureCaseType,
-	seedCase,
+	getRequestToken,
 	objectId,
-} from '../helpers/fixtures'
+	seedCase,
+} from '../helpers/fixtures.ts'
+import { dismissSupportDialog, navTo } from '../helpers/nav.ts'
 
 /** OpenRegister's object API for this app's own register. */
 const CASES_API = '/index.php/apps/openregister/api/objects/dossiq/case'
