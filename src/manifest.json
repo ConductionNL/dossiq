@@ -1281,17 +1281,18 @@
 						"type": "stats-block",
 						"title": "Hours booked",
 						"icon": "History",
+						"_note": "Hours live in humaniq, per ADR-107 decision 6: 'Hours logged on a case are hrmq time entries carrying the case reference.' This tile used to sum shillinq UrenRegistratie on subjectApp/subjectId, which contradicted that ADR and, worse, could only ever read zero: a fleet-wide grep found NO writer for subjectApp anywhere, so the tile reported 0 hours on every case in every install and looked correct doing it. The retirement of the shillinq path is tracked in shillinq openspec/changes/hours-to-humaniq. `dossiq:case` is the `<app>:<schema>` literal humaniq documents; it is the app <id> in appinfo/info.xml, and dossiq is the first writer of it in the fleet.",
 						"content": {
 							"entries": [
 								{
 									"title": "Hours booked",
-									"register": "shillinq",
-									"schema": "UrenRegistratie",
+									"register": "humaniq",
+									"schema": "TimeEntry",
 									"metric": "sum",
 									"field": "hours",
 									"filter": {
-										"subjectApp": "dossiq",
-										"subjectId": "@objectId"
+										"domainObjectType": "dossiq:case",
+										"domainObjectRef": "@objectId"
 									}
 								}
 							]
@@ -1596,153 +1597,224 @@
 						"title": "Adaptive case plan",
 						"icon": "Sitemap",
 						"_note": "CMMN adaptive case-plan panel (cmmn-adaptive-case). Resolved via page slots (widget-cmmn-case-plan -> CmmnCasePlanPanel); the CMMN counterpart to the BPMN status-transition engine, for caseTypes with handlingModel = 'cmmn'. Renders nothing when this case's caseType is BPMN-managed."
+					},
+					{
+						"id": "case-kpi-time-left",
+						"type": "countdown",
+						"title": "Time left",
+						"icon": "ClockAlertOutline",
+						"_note": "Counts down to the case deadline. Reads `deadline` off the record the page has already loaded, so it costs no request. The thresholds follow the handling rhythm rather than round numbers: at two weeks a handler still has room to act, at five days they do not. An overdue case reads as an alert whether or not thresholds are set.",
+						"content": {
+							"label": "Time left",
+							"field": "deadline",
+							"icon": "ClockAlertOutline",
+							"thresholds": { "warn": 14, "danger": 5 },
+							"showDate": true
+						}
+					},
+					{
+						"id": "case-kpi-casetype",
+						"type": "stat",
+						"title": "Case type",
+						"icon": "FileTreeOutline",
+						"_note": "`case.caseType` holds a uuid, which is not something to show a person, so `resolve` looks the case type's title up through the shared object store (cached per schema, deduplicated in flight). An id that cannot be resolved keeps showing the raw value rather than blanking: a blank KPI says nothing at all.",
+						"content": {
+							"label": "Case type",
+							"icon": "FileTreeOutline",
+							"objectField": {
+								"field": "caseType",
+								"resolve": { "register": "dossiq", "schema": "caseType", "labelField": "title" }
+							}
+						}
+					},
+					{
+						"id": "case-kpi-progress",
+						"type": "stat",
+						"title": "Completed",
+						"icon": "PercentOutline",
+						"_note": "Milestone progress, from MilestoneService::getCaseProgress through the routed milestone#progress endpoint. That service and its route already existed with NO frontend consumer: the percentage was computed on every call and shown nowhere. Reads 0% for a case type with no milestones configured, which is honest, because nothing has been declared to reach.",
+						"content": {
+							"label": "Completed",
+							"icon": "PercentOutline",
+							"format": { "style": "percent", "decimals": 0 },
+							"endpointSource": { "url": "/apps/dossiq/api/cases/@objectId/milestones/progress/@object.caseType" },
+							"valueField": "percentage"
+						}
+					},
+					{
+						"id": "case-email",
+						"type": "integration",
+						"integrationId": "email",
+						"title": "Mail & messages",
+						"icon": "EmailOutline",
+						"_note": "The mail leaf as a body widget so it can be a tab. The sidebar CaseEmailTab stays: the sidebar is for reading alongside the case, the tab is for working in it."
+					},
+					{
+						"id": "case-runs",
+						"type": "flow-runs",
+						"title": "Runs",
+						"icon": "Sitemap",
+						"_note": "Flow runs on THIS case. `subject: @objectId` narrows the live list server-side and adds the case's finished runs below it, so a flow that already completed does not look like nothing ever happened. Both halves shipped before this page needed them: openregister's flow-runs-subject-scope and the widget's own subject mode.",
+						"content": {
+							"subject": "@objectId",
+							"limit": 6,
+							"pollSeconds": 15,
+							"emptyText": "No flows have run on this case yet"
+						}
+					},
+					{
+						"id": "case-panels",
+						"type": "tabs",
+						"title": "Case panels",
+						"icon": "ViewDashboard",
+						"_note": "Six panels describing one case used to be six cards stacked down the page, each with its own header and Actions menu, only one of them ever being read. The strip takes over the title and the card, the children render bare, and the Actions menu is hoisted into the bar where it rebinds to whichever tab is open. The six children stay in `widgets` and are DELIBERATELY absent from `layout`: the tabs widget renders them, so a layout entry would render each one twice.",
+						"content": {
+							"ariaLabel": "Case details",
+							"tabs": [
+								{ "widgetId": "case-notes", "label": "Notes" },
+								{ "widgetId": "case-files", "label": "Files" },
+								{ "widgetId": "case-related", "label": "Related cases" },
+								{ "widgetId": "case-sub-cases", "label": "Sub-cases" },
+								{ "widgetId": "case-email", "label": "Mail" },
+								{ "widgetId": "case-calendar", "label": "Appointments" }
+							]
+						}
 					}
 				],
 				"layout": [
 					{
-						"id": "1",
-						"widgetId": "case-core",
+						"id": "30",
+						"widgetId": "case-kpi-time-left",
 						"gridX": 0,
 						"gridY": 0,
-						"gridWidth": 8,
-						"gridHeight": 5,
+						"gridWidth": 4,
+						"gridHeight": 2,
 						"showTitle": false
 					},
 					{
-						"id": "15",
-						"widgetId": "case-kpis-open-tasks",
+						"id": "31",
+						"widgetId": "case-kpi-casetype",
+						"gridX": 4,
+						"gridY": 0,
+						"gridWidth": 4,
+						"gridHeight": 2,
+						"showTitle": false
+					},
+					{
+						"id": "32",
+						"widgetId": "case-kpi-progress",
 						"gridX": 8,
 						"gridY": 0,
 						"gridWidth": 4,
-						"gridHeight": 2
+						"gridHeight": 2,
+						"showTitle": false
 					},
 					{
-						"id": "16",
-						"widgetId": "case-kpis-documents",
-						"gridX": 8,
+						"id": "1",
+						"widgetId": "case-core",
+						"gridX": 0,
 						"gridY": 2,
-						"gridWidth": 4,
-						"gridHeight": 2
-					},
-					{
-						"id": "17",
-						"widgetId": "case-kpis-decisions",
-						"gridX": 8,
-						"gridY": 4,
-						"gridWidth": 4,
-						"gridHeight": 2
-					},
-					{
-						"id": "18",
-						"widgetId": "case-kpis-sub-cases",
-						"gridX": 8,
-						"gridY": 6,
-						"gridWidth": 4,
-						"gridHeight": 2
-					},
-					{
-						"id": "3",
-						"widgetId": "case-related",
-						"gridX": 8,
-						"gridY": 8,
-						"gridWidth": 4,
-						"gridHeight": 7
+						"gridWidth": 8,
+						"gridHeight": 5,
+						"showTitle": false
 					},
 					{
 						"id": "4",
 						"widgetId": "case-process",
 						"gridX": 0,
-						"gridY": 5,
+						"gridY": 7,
 						"gridWidth": 8,
 						"gridHeight": 5,
 						"showTitle": false
 					},
 					{
-						"id": "5",
-						"widgetId": "initiator",
+						"id": "33",
+						"widgetId": "case-panels",
 						"gridX": 0,
 						"gridY": 12,
 						"gridWidth": 8,
-						"gridHeight": 3,
-						"showTitle": true
+						"gridHeight": 8,
+						"showTitle": false
+					},
+					{
+						"id": "22",
+						"widgetId": "case-kpis-hours",
+						"gridX": 8,
+						"gridY": 2,
+						"gridWidth": 4,
+						"gridHeight": 2,
+						"showTitle": false
+					},
+					{
+						"id": "34",
+						"widgetId": "case-runs",
+						"gridX": 8,
+						"gridY": 4,
+						"gridWidth": 4,
+						"gridHeight": 4
 					},
 					{
 						"id": "8",
 						"widgetId": "case-tasks",
-						"gridX": 0,
-						"gridY": 15,
-						"gridWidth": 6,
-						"gridHeight": 4
-					},
-					{
-						"id": "9",
-						"widgetId": "case-documents",
-						"gridX": 6,
-						"gridY": 15,
-						"gridWidth": 6,
+						"gridX": 8,
+						"gridY": 8,
+						"gridWidth": 4,
 						"gridHeight": 4
 					},
 					{
 						"id": "10",
 						"widgetId": "case-decisions",
+						"gridX": 8,
+						"gridY": 12,
+						"gridWidth": 4,
+						"gridHeight": 4
+					},
+					{
+						"id": "12",
+						"widgetId": "case-locaties",
+						"gridX": 8,
+						"gridY": 16,
+						"gridWidth": 4,
+						"gridHeight": 4
+					},
+					{
+						"id": "5",
+						"widgetId": "initiator",
 						"gridX": 0,
-						"gridY": 19,
+						"gridY": 20,
+						"gridWidth": 12,
+						"gridHeight": 3,
+						"showTitle": true
+					},
+					{
+						"id": "9",
+						"widgetId": "case-documents",
+						"gridX": 0,
+						"gridY": 23,
 						"gridWidth": 6,
-						"gridHeight": 3
+						"gridHeight": 4
 					},
 					{
 						"id": "11",
 						"widgetId": "case-voorstellen",
 						"gridX": 6,
-						"gridY": 19,
+						"gridY": 23,
 						"gridWidth": 6,
-						"gridHeight": 3
-					},
-					{
-						"id": "12",
-						"widgetId": "case-locaties",
-						"gridX": 0,
-						"gridY": 22,
-						"gridWidth": 12,
-						"gridHeight": 3
-					},
-					{
-						"id": "13",
-						"widgetId": "case-files",
-						"gridX": 0,
-						"gridY": 25,
-						"gridWidth": 6,
-						"gridHeight": 3
-					},
-					{
-						"id": "14",
-						"widgetId": "case-calendar",
-						"gridX": 6,
-						"gridY": 25,
-						"gridWidth": 6,
-						"gridHeight": 3
+						"gridHeight": 4
 					},
 					{
 						"id": "6",
 						"widgetId": "case-contacts",
 						"gridX": 0,
-						"gridY": 28,
+						"gridY": 27,
 						"gridWidth": 6,
 						"gridHeight": 3
-					},
-					{
-						"id": "7",
-						"widgetId": "case-notes",
-						"gridX": 6,
-						"gridY": 28,
-						"gridWidth": 6,
-						"gridHeight": 4
 					},
 					{
 						"id": "19",
 						"widgetId": "case-decidesk-decisions",
 						"gridX": 0,
-						"gridY": 32,
+						"gridY": 30,
 						"gridWidth": 12,
 						"gridHeight": 4
 					},
@@ -1750,7 +1822,7 @@
 						"id": "20",
 						"widgetId": "case-assistant",
 						"gridX": 0,
-						"gridY": 36,
+						"gridY": 34,
 						"gridWidth": 12,
 						"gridHeight": 5,
 						"showTitle": true
@@ -1759,29 +1831,59 @@
 						"id": "21",
 						"widgetId": "cmmn-case-plan",
 						"gridX": 0,
-						"gridY": 41,
+						"gridY": 39,
 						"gridWidth": 12,
 						"gridHeight": 6,
 						"showTitle": true
 					},
 					{
-						"_note": "A widget declared in `widgets` but absent from `layout` never renders — this grid is explicit, not inferred. Adding case-sub-cases to `widgets` alone produced no section at all, and the e2e failed on exactly that. Appended below the last row (cmmn-case-plan ends at y=47) rather than placed beside the sub-case KPI: these coordinates are absolute, so a mid-page insert would mean re-flowing every widget beneath it — a layout change this requirement does not ask for.",
-						"id": "23",
-						"widgetId": "case-sub-cases",
+						"id": "15",
+						"widgetId": "case-kpis-open-tasks",
 						"gridX": 0,
-						"gridY": 47,
-						"gridWidth": 12,
-						"gridHeight": 4,
-						"showTitle": true
+						"gridY": 45,
+						"gridWidth": 3,
+						"gridHeight": 2
 					},
 					{
-						"id": "22",
-						"widgetId": "case-kpis-hours",
-						"gridX": 0,
-						"gridY": 10,
-						"gridWidth": 4,
-						"gridHeight": 2,
-						"showTitle": false
+						"id": "16",
+						"widgetId": "case-kpis-documents",
+						"gridX": 3,
+						"gridY": 45,
+						"gridWidth": 3,
+						"gridHeight": 2
+					},
+					{
+						"id": "17",
+						"widgetId": "case-kpis-decisions",
+						"gridX": 6,
+						"gridY": 45,
+						"gridWidth": 3,
+						"gridHeight": 2
+					},
+					{
+						"id": "18",
+						"widgetId": "case-kpis-sub-cases",
+						"gridX": 9,
+						"gridY": 45,
+						"gridWidth": 3,
+						"gridHeight": 2
+					}
+				],
+				"headerActions": [
+					{
+						"id": "log-hours",
+						"type": "open-form",
+						"label": "Log hours",
+						"icon": "ClockPlusOutline",
+						"register": "humaniq",
+						"schema": "TimeEntry",
+						"successMessage": "Hours logged on this case.",
+						"_note": "Books time against THIS case. `props` are seed values, not fields the person fills in: humaniq keeps domainObjectRef and domainObjectType out of every includeFields allowlist on purpose, because they are written by integrations rather than typed by an employee. `@objectId` resolves through the same token grammar the filters use. Gated on humaniq being installed, so an install without it sees no button rather than a form that saves nowhere.",
+						"props": {
+							"domainObjectRef": "@objectId",
+							"domainObjectType": "dossiq:case"
+						},
+						"visibleWhen": { "appInstalled": "humaniq" }
 					}
 				],
 				"lifecycleActions": {
