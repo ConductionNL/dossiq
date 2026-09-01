@@ -234,17 +234,17 @@ class EndorsementRouteFlowMigratorTest extends TestCase {
 		$nodes = $this->written[0]['nodes'];
 
 		$this->assertSame(
-			['dossiq.askPerson', 'dossiq.askPerson', 'dossiq.requestDecision'],
+			['dossiq.askParaaf', 'dossiq.askParaaf', 'dossiq.requestDecision'],
 			array_column($nodes, 'type'),
-			'a route is manual steps followed by the decision they gate'
+			'a route is paraaf steps followed by the decision they gate'
 		);
 
 		// Declared out of order in the fixture on purpose: the flow must follow
 		// `order`, not the order the steps happen to be stored in.
 		$this->assertSame('Paraaf behandelaar', $nodes[0]['config']['question']);
-		$this->assertSame('behandelaar', $nodes[0]['config']['assignee']);
+		$this->assertSame('behandelaar', $nodes[0]['config']['actor']);
 		$this->assertSame('Akkoord teamlead', $nodes[1]['config']['question']);
-		$this->assertSame('teamlead', $nodes[1]['config']['assignee']);
+		$this->assertSame('teamlead', $nodes[1]['config']['actor']);
 
 	}//end testStepsBecomeAskPersonNodesInOrder()
 
@@ -480,5 +480,37 @@ class EndorsementRouteFlowMigratorTest extends TestCase {
 		);
 
 	}//end testItAsksTheContainerForTheRealFlowServiceId()
+
+	/**
+	 * The paraaf carries the ROUTE's step number, and the actor's type.
+	 *
+	 * A parafeeractie's `step` is read back by the parafering screens, so it
+	 * has to mean what the route meant rather than where the node happens to
+	 * sit in the chain. The two differ the moment a route numbers its steps
+	 * from anything but one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	public function testTheParaafCarriesTheRoutesOwnStepNumber(): void {
+		$this->routes = [
+			[
+				'id' => 'r-9',
+				'name' => 'Route met eigen nummering',
+				'steps' => json_encode([
+					['order' => 10, 'type' => 'parafering', 'actor' => 'behandelaar', 'actorType' => 'user'],
+					['order' => 20, 'type' => 'accordering', 'actor' => 'directie', 'actorType' => 'group'],
+				]),
+			],
+		];
+
+		$this->migrator()->migrate($this->user(), false);
+
+		$nodes = $this->written[0]['nodes'];
+		$this->assertSame([10, 20], [$nodes[0]['config']['step'], $nodes[1]['config']['step']]);
+		$this->assertSame(['user', 'group'], [$nodes[0]['config']['actorType'], $nodes[1]['config']['actorType']]);
+
+	}//end testTheParaafCarriesTheRoutesOwnStepNumber()
 
 }//end class

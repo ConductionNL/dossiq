@@ -218,12 +218,19 @@ class EndorsementRouteFlowMigrator {
 	/**
 	 * Build the flow's nodes and edges from the route's steps.
 	 *
-	 * Each step becomes a `dossiq.askPerson` node, not a bare
-	 * `openregister.awaitSignal`. The difference is the one that matters to an
-	 * approver: askPerson raises a real dossiq TASK against them and waits for
-	 * the answer in the same node, so the step lands in the work queue they
-	 * already read. A raw await signal waits for an answer nobody was asked
-	 * for.
+	 * Each step becomes a `dossiq.askParaaf` node.
+	 *
+	 * NOT `dossiq.askPerson`, which was this migrator's first answer and was
+	 * wrong. askPerson raises a generic TASK, and a task cannot hold what a
+	 * paraaf legally is: `parafeeractie` carries `onBehalfOf` and `mandate` —
+	 * who signed on whose behalf, under which mandate — plus `advice`,
+	 * `actorType` and `step`. Enabling a projection built on askPerson would
+	 * have put generic tasks in approvers' queues, left the parafering screens
+	 * empty because they read `parafeeractie`, and stopped recording the
+	 * mandate chain. That is a loss of record dressed as an engine change.
+	 *
+	 * NOT `openregister.awaitSignal` either: a raw await waits for an answer
+	 * nobody was asked for, so the step never reaches anybody's queue.
 	 *
 	 * The steps are chained in `order`, because an approval route is a
 	 * sequence: step two is not asked until step one has answered.
@@ -257,7 +264,7 @@ class EndorsementRouteFlowMigrator {
 
 			$assignee = trim((string)($step['actor'] ?? ''));
 			if ($assignee === '') {
-				// `dossiq.askPerson` refuses an empty assignee, and rightly: a
+				// `dossiq.askParaaf` refuses an empty actor, and rightly: a
 				// sign-off with nobody to give it is not a step. Refusing the
 				// whole route is the honest outcome, because projecting the
 				// rest would silently drop an approval somebody expects.
@@ -266,10 +273,15 @@ class EndorsementRouteFlowMigrator {
 
 			$nodes[] = [
 				'id' => $id,
-				'type' => 'dossiq.askPerson',
+				'type' => 'dossiq.askParaaf',
 				'config' => [
 					'question' => $this->question(step: $step, position: $position),
-					'assignee' => $assignee,
+					'actor' => $assignee,
+					'actorType' => trim((string)($step['actorType'] ?? 'user')),
+					// The route's own step number, not the position in the
+					// chain: a parafeeractie's `step` is read back by the
+					// parafering screens and must mean what the route meant.
+					'step' => (int)($step['order'] ?? $position),
 					'signalKey' => ('step' . $position),
 				],
 			];
