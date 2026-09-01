@@ -66,18 +66,19 @@
  * carries.
  */
 
-import { test, expect, request, type APIRequestContext } from '@playwright/test'
+import type { APIRequestContext } from '@playwright/test'
 
-import { STORAGE_STATE } from '../helpers/auth'
+import { expect, request, test } from '@playwright/test'
+import { STORAGE_STATE } from '../helpers/auth.ts'
 import {
-	RUN_PREFIX,
 	createObject,
 	deleteObject,
 	getRequestToken,
 	objectId,
-} from '../helpers/fixtures'
-import { navToRoute } from '../helpers/nav'
-import { ExternalConsultationResponsePage } from '../helpers/page-components'
+	RUN_PREFIX,
+} from '../helpers/fixtures.ts'
+import { navToRoute } from '../helpers/nav.ts'
+import { ExternalConsultationResponsePage } from '../helpers/page-components.ts'
 
 /** The app-relative public endpoint the page reads on mount. */
 const PUBLIC_CONSULTATION_API = '/index.php/apps/dossiq/api/public/consultations'

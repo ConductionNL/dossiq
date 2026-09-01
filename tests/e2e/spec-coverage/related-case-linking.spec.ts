@@ -19,8 +19,8 @@
  * in the spec.
  */
 
-import { test, expect } from '@playwright/test'
-import { navTo, dismissSupportDialog } from '../helpers/nav'
+import { expect, test } from '@playwright/test'
+import { dismissSupportDialog, navTo } from '../helpers/nav.ts'
 
 /**
  * Open the first case in the case list, or skip when none exists / the list

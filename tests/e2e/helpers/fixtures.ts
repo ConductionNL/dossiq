@@ -27,7 +27,9 @@
  * every object this run produced.
  */
 
-import { APIRequestContext, expect } from '@playwright/test'
+import type { APIRequestContext } from '@playwright/test'
+
+import { expect } from '@playwright/test'
 
 /** OpenRegister register slug that owns every dossiq object. */
 export const REGISTER = 'dossiq'
@@ -450,7 +452,7 @@ export async function cleanupRunObjects(
 	schemas: string[],
 ): Promise<void> {
 	for (const schema of schemas) {
-		let rows: any[] = []
+		let rows: any[]
 		try {
 			rows = await listObjects(api, schema)
 		} catch {
