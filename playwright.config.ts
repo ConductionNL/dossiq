@@ -43,8 +43,29 @@ export default defineConfig({
 		// PR pipelines don't reshoot screenshots on every push.
 		{
 			name: 'chromium',
-			testIgnore: ['**/docs-screenshots.spec.ts', '**/visual/**'],
+			testIgnore: [
+				'**/docs-screenshots.spec.ts',
+				'**/visual/**',
+				// Needs the case flow ENABLED, which the shared instance must never be.
+				'**/case-flow-live-journeys.spec.ts',
+			],
 			use: { ...devices['Desktop Chrome'] },
+		},
+
+		// Live case-flow journeys (case-flow-human-steps tasks 7.1/7.2). Opt-in,
+		// for a DISPOSABLE instance on which the operator enabled the flow:
+		//
+		//   PLAYWRIGHT_BASE_URL=http://localhost:8614 \
+		//   FLOW_WORKER_CMD='docker exec -u www-data <container> php occ background-job:execute <id> --force-execute' \
+		//   npx playwright test --project live-journeys
+		//
+		// Never part of the default project: it creates cases that start runs.
+		{
+			name: 'live-journeys',
+			testMatch: /case-flow-live-journeys\.spec\.ts$/,
+			use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } },
+			timeout: 180_000,
+			retries: 0,
 		},
 
 		// Documentation capture project (ADR-030). Opt-in run:
