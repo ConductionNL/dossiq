@@ -17,11 +17,14 @@
 //   - openspec/changes/procest-manifest-v1/design.md
 //   - @conduction/nextcloud-vue → docs/migrating-to-manifest.md
 
+// --- Surviving custom pages — see design.md "Custom-fallback inventory". ---
+import { createApp } from 'vue'
 import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // --- Detail-tab custom components (one per cross-schema relation). ---
 // Stubs for v1 — full implementations follow in `procest-case-relation-tabs`.
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
+import ReassignSelectionDialog from './dialogs/ReassignSelectionDialog.vue'
 // --- Case-email sidebar tab (leaf-first per ADR-022). ---
 // @spec openspec/changes/case-email-integration/tasks.md#T12
 import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
@@ -47,7 +50,6 @@ import DtCaseTypeFilter from './views/doorlooptijd/widgets/DtCaseTypeFilter.vue'
 import DtChartsWidget from './views/doorlooptijd/widgets/DtChartsWidget.vue'
 import DtKpiWidget from './views/doorlooptijd/widgets/DtKpiWidget.vue'
 import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
-// --- Surviving custom pages — see design.md "Custom-fallback inventory". ---
 import MyWorkView from './views/MyWorkCards.vue'
 import PmBottleneckTableWidget from './views/processMining/PmBottleneckTableWidget.vue'
 import PmCaseTypeFilter from './views/processMining/PmCaseTypeFilter.vue'
@@ -132,8 +134,56 @@ async function voorstelReminder({ actionId, item }) {
 	}
 }
 
+/**
+ * Bulk-action handler for the Cases index: reassign the selected cases.
+ *
+ * CnIndexPage calls a function-typed `customComponents[handler]` with
+ * `{ actionId, selectedIds, count }`, so the SELECTION arrives as an argument.
+ * That matters: a handler that went and re-read the selection itself would be
+ * one re-render away from acting on a different set than the user saw
+ * highlighted.
+ *
+ * The dialog is mounted here rather than declared in the manifest because the
+ * library's declarative modal path emits `open-modal` and nothing consumes it.
+ *
+ * @param {{actionId: string, selectedIds: Array<string>, count: number}} scope The selection.
+ * @return {void}
+ */
+function reassignSelection({ selectedIds }) {
+	const ids = Array.isArray(selectedIds) ? selectedIds : []
+	if (ids.length === 0) {
+		return
+	}
+
+	const host = document.createElement('div')
+	document.body.appendChild(host)
+
+	const app = createApp(ReassignSelectionDialog, {
+		open: true,
+		selectedIds: ids,
+		'onUpdate:open': (open) => {
+			if (open === false) {
+				app.unmount()
+				host.remove()
+			}
+		},
+		onReassigned: () => {
+			// The index has to re-read: the rows the user just moved are no
+			// longer theirs, and leaving them on screen invites a second
+			// reassignment of cases that already moved.
+			window.dispatchEvent(new CustomEvent('dossiq:cases-changed'))
+		},
+	})
+	app.mount(host)
+}
+
 export default {
 	// --- Genuine exceptions: no abstract analogue. ---
+	// The Cases page's `reassign` bulk action. A FUNCTION handler, not the
+	// manifest's declarative `handler: "open-modal"` path: that path emits an
+	// `open-modal` event and nothing in the library listens for it yet, so
+	// declaring it would ship a bulk action that does nothing when clicked.
+	reassignSelection,
 	MyWorkView, // current-user case index (assignee=uid) in card view — CnIndexPage wrapper
 	// CaseMapView removed — see import comment above.
 

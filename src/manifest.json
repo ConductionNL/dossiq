@@ -1053,6 +1053,14 @@
 			"title": "Cases",
 			"actionsComponent": "CaseListExportAction",
 			"config": {
+				"bulkActions": [
+					{
+						"id": "reassign",
+						"label": "Reassign",
+						"icon": "AccountSwitchOutline",
+						"handler": "reassignSelection"
+					}
+				],
 				"register": "dossiq",
 				"schema": "case",
 				"allowSavedViews": true,
