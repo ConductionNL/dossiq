@@ -31,27 +31,6 @@ use OCP\Notification\INotification;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
-if (interface_exists(SubstitutionObjectServiceStub::class) === false) {
-	/**
-	 * Mockable ObjectService surface used by the substitution services.
-	 */
-	interface SubstitutionObjectServiceStub {
-		/** @param int|string $id @param mixed ...$args @return mixed */
-		public function find(int|string $id, ...$args): mixed;
-
-		/** @param array<string,mixed> $query @return array<int,mixed>|int */
-		public function searchObjects(array $query = []): array|int;
-
-		/** @param string $r @param string $s @param array<string,mixed> $f @return array<int,mixed>|int */
-		public function searchObjectsBySlug(string $r, string $s, array $f = []): array|int;
-
-		/** @param mixed ...$args @return mixed */
-		public function saveObject(...$args): mixed;
-
-		/** @param mixed ...$args @return mixed */
-		public function updateObject(...$args): mixed;
-	}//end interface
-}//end if
 
 /**
  * Unit tests for CaseReassignmentService.

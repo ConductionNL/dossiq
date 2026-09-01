@@ -240,4 +240,109 @@ class SelectionReassignmentServiceTest extends TestCase {
 		return new SelectionReassignmentService($this->settingsService, $this->logger);
 
 	}//end selectionService()
+	/**
+	 * A write failure is reported per case, not swallowed and not fatal.
+	 *
+	 * One case that cannot be written must not abort the rest of the
+	 * selection: the user ticked them all, and a silent stop leaves them
+	 * believing every one moved.
+	 *
+	 * @return void
+	 */
+	public function testAWriteFailureIsReportedAndDoesNotAbortTheRest(): void {
+		$os = $this->objectServiceMock();
+		$os->method('find')->willReturnCallback(
+			static fn (int|string $id, ...$args): array => ['id' => (string)$id, 'assignee' => 'jan']
+		);
+		$os->method('updateObject')->willReturnCallback(
+			static function (string $r, string $s, string $id, array $item): array {
+				if ($id === 'c1') {
+					throw new \RuntimeException('write refused');
+				}
+
+				return $item;
+			}
+		);
+
+		$result = $this->selectionService($os)->executeForCases(['c1', 'c2'], 'piet', 'admin');
+
+		$this->assertSame(2, $result['requested']);
+		$this->assertSame(1, $result['succeeded']);
+		$this->assertFalse($result['results'][0]['success']);
+		$this->assertTrue($result['results'][1]['success']);
+
+	}//end testAWriteFailureIsReportedAndDoesNotAbortTheRest()
+
+	/**
+	 * Without a receiving handler the call is refused.
+	 *
+	 * @return void
+	 */
+	public function testItRefusesWithoutAReceiver(): void {
+		$service = $this->selectionService($this->objectServiceMock());
+
+		$this->expectException(\InvalidArgumentException::class);
+		$this->expectExceptionMessage('toUser is required');
+
+		$service->executeForCases(['c1'], '  ', 'admin');
+
+	}//end testItRefusesWithoutAReceiver()
+
+	/**
+	 * Without OpenRegister the call refuses rather than reporting a clean run.
+	 *
+	 * @return void
+	 */
+	public function testItRefusesWhenOpenRegisterIsUnavailable(): void {
+		$service = $this->selectionService(null);
+
+		$this->expectException(\RuntimeException::class);
+
+		$service->executeForCases(['c1'], 'piet', 'admin');
+
+	}//end testItRefusesWhenOpenRegisterIsUnavailable()
+
+	/**
+	 * A case the store returns as an entity, not an array, is still read.
+	 *
+	 * OpenRegister's find() returns an ObjectEntity in production and an array
+	 * in some code paths; a reader that handled only one shape would report
+	 * every case "not found" against the other.
+	 *
+	 * @return void
+	 */
+	public function testACaseReturnedAsAnEntityIsRead(): void {
+		$written = [];
+		$os = $this->objectServiceMock();
+		$os->method('find')->willReturnCallback(
+			static fn (int|string $id, ...$args): object => new class((string)$id) {
+				/**
+				 * @param string $id The id.
+				 */
+				public function __construct(private string $id) {
+				}
+
+				/**
+				 * @return array<string, mixed> The object.
+				 */
+				public function getObject(): array {
+					return ['id' => $this->id, 'assignee' => 'jan'];
+				}
+			}
+		);
+		$os->method('updateObject')->willReturnCallback(
+			static function (string $r, string $s, string $id, array $item) use (&$written): array {
+				$written[$id] = $item;
+
+				return $item;
+			}
+		);
+
+		$result = $this->selectionService($os)->executeForCases(['c1'], 'piet', 'admin');
+
+		$this->assertSame(1, $result['succeeded']);
+		$this->assertSame('piet', $written['c1']['assignee']);
+
+	}//end testACaseReturnedAsAnEntityIsRead()
+
 }//end class
