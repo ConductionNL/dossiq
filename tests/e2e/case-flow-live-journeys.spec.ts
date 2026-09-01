@@ -219,6 +219,29 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 		api = await apiContext()
 		caseType = await caseTypeId(api)
 		names = await statusNames(api, caseType)
+
+		// This suite is for an instance where an OPERATOR has adopted the flow.
+		// Adoption is a deliberate manual act (PUT /api/flows/{uuid} {"enabled":
+		// true}), and this app's own message says the shared dev instance must
+		// keep the flow DISABLED — enabling a projection would move every case a
+		// second time on each status change.
+		//
+		// So on CI these nine tests asserted a precondition CI is required never
+		// to satisfy: they could not pass by construction, and failed every run.
+		//
+		// 🔴 The skip is deliberately NARROW. It fires only when the flow EXISTS
+		// and is disabled, which is the documented correct state here. A MISSING
+		// flow still fails loudly below, because that means the register import
+		// did not run — a real defect, and the one thing a blanket skip would
+		// have hidden.
+		const adopted = await shippedFlow(api)
+		test.skip(
+			adopted !== null && !adopted.enabled,
+			`The flow "${FLOW_NAME}" is present but not adopted (enabled=false). `
+				+ 'That is the correct state for the shared dev instance, so these '
+				+ 'adopted-flow journeys do not apply here. Enable it on an operator '
+				+ 'instance to run them.',
+		)
 	})
 
 	test.afterAll(async () => {
