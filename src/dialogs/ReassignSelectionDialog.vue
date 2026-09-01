@@ -73,12 +73,20 @@ export default {
 	},
 
 	computed: {
-		/** @return {string} The dialog title. */
+		/**
+		 * @return {string} The dialog title.
+		 *
+		 * @spec openspec/changes/reassignment-is-a-bulk-action/specs/reassignment-bulk-action/spec.md#REQ-RBA-004
+		 */
 		title() {
 			return t('dossiq', 'Reassign cases')
 		},
 
-		/** @return {string} What is about to happen, with the count. */
+		/**
+		 * @return {string} What is about to happen, with the count.
+		 *
+		 * @spec openspec/changes/reassignment-is-a-bulk-action/specs/reassignment-bulk-action/spec.md#REQ-RBA-004
+		 */
 		lead() {
 			return t(
 				'dossiq',
@@ -97,6 +105,8 @@ export default {
 		 * Send the selection to the reassignment endpoint.
 		 *
 		 * @return {Promise<void>} Resolves when the request settles.
+		 *
+		 * @spec openspec/changes/reassignment-is-a-bulk-action/specs/reassignment-bulk-action/spec.md#REQ-RBA-001
 		 */
 		async submit() {
 			this.busy = true
