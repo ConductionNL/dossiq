@@ -154,9 +154,15 @@ class TaskCompletionResumeListenerTest extends TestCase {
 		);
 	}//end listener()
 
+	/**
+	 * The old state is `active`, not `available`: the task schema's CMMN
+	 * lifecycle (REQ-TASK-002) refuses a one-step available → completed
+	 * update, so the only completion event the store can emit comes from an
+	 * active task. The seeded states here mirror that.
+	 */
 	public function testCompletingAFlowTaskResumesItsRun(): void {
 		$this->listener()->handle(
-			$this->event($this->task(), $this->task(['status' => 'available']))
+			$this->event($this->task(), $this->task(['status' => 'active']))
 		);
 
 		$this->assertCount(1, $this->signals);
@@ -176,7 +182,7 @@ class TaskCompletionResumeListenerTest extends TestCase {
 		$this->mayAnswer = false;
 
 		$this->listener(uid: 'mallory')->handle(
-			$this->event($this->task(), $this->task(['status' => 'available']))
+			$this->event($this->task(), $this->task(['status' => 'active']))
 		);
 
 		$this->assertSame([], $this->signals, 'The run must not advance for somebody who was not asked.');
@@ -186,7 +192,7 @@ class TaskCompletionResumeListenerTest extends TestCase {
 		$this->listener()->handle(
 			$this->event(
 				$this->task(['flowRun' => '', 'flowNode' => '']),
-				$this->task(['flowRun' => '', 'flowNode' => '', 'status' => 'available'])
+				$this->task(['flowRun' => '', 'flowNode' => '', 'status' => 'active'])
 			)
 		);
 
@@ -201,7 +207,7 @@ class TaskCompletionResumeListenerTest extends TestCase {
 		$this->listener()->handle(
 			$this->event(
 				$this->task(['flowNode' => '']),
-				$this->task(['flowNode' => '', 'status' => 'available'])
+				$this->task(['flowNode' => '', 'status' => 'active'])
 			)
 		);
 
@@ -282,7 +288,7 @@ class TaskCompletionResumeListenerTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class)
 		);
 
-		$listener->handle($this->event($this->task(), $this->task(['status' => 'available'])));
+		$listener->handle($this->event($this->task(), $this->task(['status' => 'active'])));
 
 		$this->assertSame([], $this->signals);
 	}//end testATaskWhoseRunHasGoneStillCompletesQuietly()
