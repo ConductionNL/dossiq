@@ -3431,7 +3431,13 @@ OC.L10N.register(
         "Statutory terms, and which cases are close to breaching one.": "Statutory terms, and which cases are close to breaching one.",
         "The paths cases actually take, against the paths they were meant to.": "The paths cases actually take, against the paths they were meant to.",
         "Throughput and deadlines": "Throughput and deadlines",
-        "Process analysis": "Process analysis"
+        "Process analysis": "Process analysis",
+        "Case panels": "Case panels",
+        "Files": "Files",
+        "Log hours": "Log hours",
+        "Mail": "Mail",
+        "Mail & messages": "Mail & messages",
+        "Time left": "Time left"
     },
     "nplurals=2; plural=(n != 1);"
 )

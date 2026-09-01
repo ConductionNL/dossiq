@@ -3431,7 +3431,13 @@ OC.L10N.register(
         "Statutory terms, and which cases are close to breaching one.": "Wettelijke termijnen, en welke zaken bijna een termijn overschrijden.",
         "The paths cases actually take, against the paths they were meant to.": "De routes die zaken in de praktijk afleggen, tegenover de bedoelde routes.",
         "Throughput and deadlines": "Doorlooptijd en termijnen",
-        "Process analysis": "Procesanalyse"
+        "Process analysis": "Procesanalyse",
+        "Time left": "Resterende tijd",
+        "Case panels": "Zaakpanelen",
+        "Files": "Bestanden",
+        "Mail": "Mail",
+        "Mail & messages": "Mail en berichten",
+        "Log hours": "Uren boeken"
     },
     "nplurals=2; plural=(n != 1);"
 )

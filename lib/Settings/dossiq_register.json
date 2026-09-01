@@ -9526,7 +9526,7 @@
             "dossiq": {
                 "slug": "dossiq",
                 "title": "Dossiq",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "description": "Case management (zaakgericht werken) register for Dossiq — manages case types, status types, cases, tasks, roles, results, and decisions.",
                 "schemas": [
                     "caseType",
