@@ -153,18 +153,30 @@ async function updateObject(
 }
 
 /**
- * Complete a task the way the lifecycle allows: claim it, then complete it.
+ * Complete a task the dossiq way: an object update that walks the CMMN
+ * lifecycle the task schema enforces (x-openregister-lifecycle on
+ * dossiq/task).
  *
- * The task schema declares a CMMN HumanTask lifecycle
- * (x-openregister-lifecycle): the only transition into `completed` is
- * `complete`, and it runs from `active` alone. Writing `completed` straight
- * onto an `available` task 422s with "No transition allows moving status from
- * available to completed" — measured live on the proof rig 2026-09-01. This is
- * the same claim → complete two-step the UI walks.
+ * The walk is available → active → completed. A one-step PUT to `completed`
+ * is refused with 422 lifecycle-invalid-transition, and that refusal is the
+ * contract: REQ-TASK-002 (openspec/specs/task-management/spec.md) requires a
+ * task to be `active` before it can be `completed`. So this helper claims the
+ * task first when it is still `available`. The intermediate update resumes
+ * nothing; TaskCompletionResumeListener fires only on the transition INTO
+ * `completed`, so the run is still signalled exactly once.
+ *
+ * KNOWN FOLLOW-UP (ADR-098): dossiq tasks are OR objects in dossiq's own
+ * register, so openregister's POST /api/flow-tasks/{uuid}/complete answers
+ * 404 for them. When dossiq migrates onto openregister's task entity,
+ * completion moves to that endpoint; until then this object update IS the
+ * completion API.
  */
-async function completeTask(api: APIRequestContext, id: string): Promise<void> {
-	await updateObject(api, 'task', id, { status: 'active' })
-	await updateObject(api, 'task', id, { status: 'completed' })
+async function completeTask(api: APIRequestContext, taskId: string): Promise<void> {
+	const current = await getJson(api, `${OR}/objects/dossiq/task/${taskId}`)
+	if (String(current.status ?? '') === 'available') {
+		await updateObject(api, 'task', taskId, { status: 'active' })
+	}
+	await updateObject(api, 'task', taskId, { status: 'completed' })
 }
 
 async function runsForCase(api: APIRequestContext, caseId: string): Promise<Json[]> {

@@ -682,7 +682,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.9.0",
+                "version": "1.10.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1482,6 +1482,19 @@
                         "description": "Number of deadline extensions applied",
                         "visible": false,
                         "title": "Extension Count"
+                    },
+                    "aanvullingRound": {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Counts how often the applicant was asked to supplement this case. The flow's completeness check increments it and strands the case after three rounds. Declared because the store strips what the schema does not declare: without it the counter reset on every save and the loop never ended.",
+                        "visible": false,
+                        "title": "Supplement round"
+                    },
+                    "actionResult": {
+                        "type": "object",
+                        "description": "The result payload of the last flow action step that ran on this case. DossiqFlowNodeBase merges it onto the case under this key (or the step's own output key). Declared because the store strips undeclared fields, so the result would silently vanish on save.",
+                        "visible": false,
+                        "title": "Action result"
                     },
                     "sourceOrganisation": {
                         "type": "string",
