@@ -57,14 +57,33 @@ async function shippedFlow(page: Page): Promise<Record<string, unknown> | null> 
 
 test.describe('Case flow — human steps', () => {
 	test('the shipped flow imports, and imports INERT', async ({ page }) => {
-		const flow = await shippedFlow(page)
+		const response = await page.request.get(
+			'/index.php/apps/openregister/api/flows?limit=200',
+		)
+		expect(response.ok(), 'The flow store must answer.').toBeTruthy()
+
+		const body = await response.json()
+		const flows = (body?.results ?? body ?? []) as Array<Record<string, unknown>>
+		const copies = flows.filter(
+			(f) => String(f.name ?? '') === 'Case behandeling',
+		)
 
 		expect(
-			flow,
+			copies.length,
 			'The case flow was not found in the flow store. It is declared as '
 				+ 'x-openregister-flows on the case schema, so its absence means the register '
 				+ 'import did not run or the declaration was rejected.',
-		).not.toBeNull()
+		).toBeGreaterThan(0)
+
+		// This instance has imported the register on every app upgrade, so a
+		// re-import that CREATED instead of UPDATED would show here as a
+		// second copy. Exactly one is the proof of idempotence.
+		expect(
+			copies.length,
+			'Re-importing the register must update the shipped flow, not create another copy.',
+		).toBe(1)
+
+		const flow = copies[0]
 
 		// Shipping a flow is not an operator volunteering to run it as
 		// themselves. It must arrive disabled and unowned.

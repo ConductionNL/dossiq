@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "dossiq demo data",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Demo data covering every schema this app supplies, offered as the first step of the app's setup walkthrough. Generated from the schemas themselves, so every object satisfies the schema that will validate it."
   },
   "x-openregister": {
@@ -2352,7 +2352,7 @@
             }
           }
         },
-        "icon": "BriefcaseOutline",
+        "icon": "FolderAccountOutline",
         "version": "1.9.0",
         "x-schema-org": "schema:Project",
         "x-zgw-equivalent": "Zaak",
@@ -3764,7 +3764,7 @@
       },
       "caseType": {
         "slug": "caseType",
-        "icon": "BriefcaseVariantOutline",
+        "icon": "FolderCogOutline",
         "version": "1.2.0",
         "x-schema-org": "schema:Project",
         "x-zgw-equivalent": "ZaakType",
@@ -3793,13 +3793,7 @@
             "description": "Auto-generated identifier",
             "title": "Identifier"
           },
-          "catalog": {
-            "type": "string",
-            "format": "uuid",
-            "$ref": "catalog",
-            "description": "Reference to the parent catalog",
-            "title": "Catalog"
-          },
+
           "purpose": {
             "type": "string",
             "description": "The purpose or goal of this case type",
@@ -4126,51 +4120,7 @@
           }
         }
       },
-      "catalog": {
-        "slug": "catalog",
-        "icon": "BookOpenPageVariant",
-        "version": "1.0.0",
-        "x-schema-org": "schema:DataCatalog",
-        "x-zgw-equivalent": "Catalogus",
-        "title": "Catalog",
-        "description": "A catalogus groups case types, decision types, and document types",
-        "type": "object",
-        "required": [
-          "domain"
-        ],
-        "properties": {
-          "domain": {
-            "type": "string",
-            "maxLength": 5,
-            "description": "Abbreviated domain name (max 5 characters)",
-            "title": "Domain"
-          },
-          "rsin": {
-            "type": "string",
-            "maxLength": 9,
-            "description": "RSIN of the responsible organisation",
-            "title": "RSIN"
-          },
-          "contactPersonManagementName": {
-            "type": "string",
-            "maxLength": 40,
-            "description": "Name of the management contact",
-            "title": "Management Contact Name"
-          },
-          "contactPersonManagementPhoneNumber": {
-            "type": "string",
-            "maxLength": 20,
-            "description": "Phone number of the management contact",
-            "title": "Management Contact Phone"
-          },
-          "contactPersonManagementEmailAddress": {
-            "type": "string",
-            "maxLength": 254,
-            "description": "Email of the management contact",
-            "title": "Management Contact Email"
-          }
-        }
-      },
+
       "checklistItem": {
         "slug": "checklistItem",
         "icon": "CheckboxOutline",
@@ -4577,7 +4527,7 @@
       },
       "consultation": {
         "slug": "consultation",
-        "icon": "MessageAlertOutline",
+        "icon": "CommentQuestionOutline",
         "version": "1.0.0",
         "x-schema-org": "schema:AskAction",
         "title": "Consultation",
@@ -5558,13 +5508,7 @@
             "x-translatable": true,
             "title": "Description"
           },
-          "catalog": {
-            "type": "string",
-            "format": "uuid",
-            "$ref": "catalog",
-            "description": "Reference to the parent catalog",
-            "title": "Catalog"
-          },
+
           "caseType": {
             "type": "string",
             "format": "uuid",
@@ -5912,13 +5856,7 @@
             "x-translatable": true,
             "title": "Description"
           },
-          "catalog": {
-            "type": "string",
-            "format": "uuid",
-            "$ref": "catalog",
-            "description": "Reference to the parent catalog",
-            "title": "Catalog"
-          },
+
           "caseType": {
             "type": "string",
             "format": "uuid",
@@ -8721,8 +8659,8 @@
           }
         }
       },
-      "location": {
-        "slug": "location",
+      "case-location": {
+        "slug": "case-location",
         "icon": "MapMarker",
         "version": "1.0.0",
         "x-schema-org": "schema:Place",
@@ -9209,7 +9147,7 @@
       },
       "mapLayer": {
         "slug": "mapLayer",
-        "icon": "MapOutline",
+        "icon": "LayersOutline",
         "version": "1.0.0",
         "title": "Map Layer",
         "description": "GIS map layer configuration for case maps — defines tile, WMS, WFS, or GeoJSON layers that can be displayed on case map views",
@@ -9693,7 +9631,7 @@
       },
       "objection": {
         "slug": "objection",
-        "icon": "FileDocumentAlertOutline",
+        "icon": "FileAlertOutline",
         "version": "1.0.0",
         "x-schema-org": "schema:Message",
         "x-zgw-equivalent": "Bezwaarschrift",
@@ -11671,7 +11609,7 @@
       },
       "role": {
         "slug": "role",
-        "icon": "AccountHardHat",
+        "icon": "AccountKeyOutline",
         "version": "1.1.0",
         "x-schema-org": "schema:Role",
         "x-zgw-equivalent": "Rol",
@@ -12775,7 +12713,7 @@
       },
       "substitution": {
         "slug": "substitution",
-        "icon": "AccountSwitch",
+        "icon": "AccountSwitchOutline",
         "version": "1.0.0",
         "title": "Substitution",
         "description": "Vervanging/waarneming registration — who covers an absent handler's workload, when, and for what scope. Domain data on top of OpenRegister RBAC; grants no permissions of its own (handler-vervanging-waarneming spec).",
@@ -13512,7 +13450,7 @@
             }
           }
         },
-        "icon": "CheckboxMarkedOutline",
+        "icon": "CheckboxMarkedCircleOutline",
         "version": "1.2.0",
         "x-schema-org": "schema:Action",
         "x-zgw-equivalent": "Taak",
@@ -17090,42 +17028,6 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "catalog",
-          "slug": "catalog-catalog-1-1"
-        },
-        "domain": "Voorb",
-        "rsin": "Voorbeeld",
-        "contactPersonManagementName": "Voorbeeld Contactpersonmanagementname 1",
-        "contactPersonManagementPhoneNumber": "Voorbeeld Contactper",
-        "contactPersonManagementEmailAddress": "Voorbeeld Contactpersonmanagementemailaddress 1"
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "catalog",
-          "slug": "catalog-catalog-2-2"
-        },
-        "domain": "Voorb",
-        "rsin": "Voorbeeld",
-        "contactPersonManagementName": "Voorbeeld Contactpersonmanagementname 2",
-        "contactPersonManagementPhoneNumber": "Voorbeeld Contactper",
-        "contactPersonManagementEmailAddress": "Voorbeeld Contactpersonmanagementemailaddress 2"
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "catalog",
-          "slug": "catalog-catalog-3-3"
-        },
-        "domain": "Voorb",
-        "rsin": "Voorbeeld",
-        "contactPersonManagementName": "Voorbeeld Contactpersonmanagementname 3",
-        "contactPersonManagementPhoneNumber": "Voorbeeld Contactper",
-        "contactPersonManagementEmailAddress": "Voorbeeld Contactpersonmanagementemailaddress 3"
-      },
-      {
-        "@self": {
-          "register": "dossiq",
           "schema": "checklistItem",
           "slug": "checklistitem-checklistitem-1-1"
         },
@@ -19973,7 +19875,7 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "location",
+          "schema": "case-location",
           "slug": "location-location-1-1"
         },
         "case": "00000000-0000-4000-8000-000000000000",
@@ -19989,7 +19891,7 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "location",
+          "schema": "case-location",
           "slug": "location-location-2-2"
         },
         "case": "00000000-0000-4000-8000-000000000001",
@@ -20005,7 +19907,7 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "location",
+          "schema": "case-location",
           "slug": "location-location-3-3"
         },
         "case": "00000000-0000-4000-8000-000000000002",

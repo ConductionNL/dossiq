@@ -18,6 +18,7 @@ import AccountClock from 'vue-material-design-icons/AccountClock.vue'
 import AccountGroup from 'vue-material-design-icons/AccountGroup.vue'
 import AccountGroupOutline from 'vue-material-design-icons/AccountGroupOutline.vue'
 import AccountHardHat from 'vue-material-design-icons/AccountHardHat.vue'
+import AccountKeyOutline from 'vue-material-design-icons/AccountKeyOutline.vue'
 import AccountMultipleOutline from 'vue-material-design-icons/AccountMultipleOutline.vue'
 import AccountOutline from 'vue-material-design-icons/AccountOutline.vue'
 import AccountPlusOutline from 'vue-material-design-icons/AccountPlusOutline.vue'
@@ -174,6 +175,7 @@ export default {
 	AccountGroup,
 	AccountGroupOutline,
 	AccountHardHat,
+	AccountKeyOutline,
 	AccountMultipleOutline,
 	AccountOutline,
 	AccountPlusOutline,
