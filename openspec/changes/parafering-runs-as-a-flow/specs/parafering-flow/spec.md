@@ -144,3 +144,48 @@ cannot start a run takes the route path, which is what the dual path is for.
 - **GIVEN** an instance where the flow engine cannot be resolved
 - **WHEN** a voorstel is activated
 - **THEN** activation MUST succeed on the route path
+
+### Requirement: REQ-PRF-008 A given paraaf resumes the run it answers
+
+When a `parafeeractie` is created for a voorstel driven by a flow run, the
+system SHALL record `flowRun` and `flowNode` on it and resume that run.
+
+The signal SHALL carry the approver's own decision, not a bare completion. The
+steps after a paraaf branch on WHICH way it went, and a returned voorstel must
+not read as an approved one.
+
+#### Scenario: The run resumes with the decision that was given
+
+- **GIVEN** a voorstel driven by a run awaiting a paraaf
+- **WHEN** a paraaf is created against it
+- **THEN** the run MUST be signalled with that paraaf's action
+
+#### Scenario: The paraaf records which node it answered
+
+- **GIVEN** a paraaf that resumed a run
+- **THEN** it MUST carry the run id and the awaiting node's id
+
+#### Scenario: A voorstel on the route path resumes nothing
+
+- **GIVEN** a voorstel carrying no flow run
+- **WHEN** a paraaf is created against it
+- **THEN** nothing MUST be signalled
+
+### Requirement: REQ-PRF-009 Only the assignee may sign the step
+
+The system SHALL refuse to resume a run when the user who gave the paraaf is
+not the assignee of the awaiting step.
+
+`FlowRunService::signal()` is reachable without OpenRegister's HTTP resume
+endpoint, so that endpoint's assignee guard is NOT inherited. A paraaf is a
+signature: without this check, any user who can write a `parafeeractie` could
+sign off somebody else's step, and nothing about the resulting run would look
+wrong.
+
+The refusal SHALL NOT undo the paraaf. It is already saved; what is withheld
+is the resume, and that is recorded.
+
+#### Scenario: A non-assignee cannot advance the run
+
+- **GIVEN** a paraaf given by somebody who is not the awaiting step's assignee
+- **THEN** the run MUST NOT be signalled, and the linkage MUST NOT be stamped

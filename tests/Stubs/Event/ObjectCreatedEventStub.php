@@ -28,13 +28,29 @@ if (class_exists(ObjectCreatedEvent::class) === false) {
 	 * Mirrors the getObject() signature used by VergunningaanvraagCreatedListener.
 	 */
 	class ObjectCreatedEvent extends Event {
+
 		/**
-		 * Returns the created object payload.
+		 * 🔴 MIRRORS THE REAL SIGNATURE, WHICH THIS STUB USED NOT TO.
 		 *
-		 * @return array<string, mixed>
+		 * The real ObjectCreatedEvent::getObject() returns an ObjectEntity.
+		 * This stub declared `: array` and returned `[]`, so a listener
+		 * written against the real contract fataled here while working in
+		 * production, and one written against the stub would have done the
+		 * reverse. VergunningaanvraagCreatedListener carries a comment about
+		 * exactly this divergence and normalises both shapes to survive it.
+		 *
+		 * @param ObjectEntity|null $object The created object.
 		 */
-		public function getObject(): array {
-			return [];
+		public function __construct(private $object = null) {
+		}//end __construct()
+
+		/**
+		 * Returns the created object.
+		 *
+		 * @return mixed The ObjectEntity, or null when the stub was built bare.
+		 */
+		public function getObject() {
+			return $this->object;
 		}//end getObject()
 	}//end class
 }//end if

@@ -364,6 +364,7 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatingEvent') === false) {
 // handle() — including the probe's call shape, which is what silently broke.
 if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatedEvent') === false) {
 	include_once __DIR__ . '/Stubs/Event/ObjectUpdatedEventStub.php';
+	include_once __DIR__ . '/Stubs/Event/ObjectCreatedEventStub.php';
 }
 
 // REQ-SUB-007 bewijsstuk immutability: the pre-persist delete counterpart, so
