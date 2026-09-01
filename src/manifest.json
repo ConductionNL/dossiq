@@ -4501,8 +4501,8 @@
 			"config": {
 				"description": "Every report Dossiq offers, in one place. Pick a report to open it.",
 				"categories": {
-					"throughput": "Doorlooptijd en termijnen",
-					"process": "Procesanalyse"
+					"throughput": "Throughput and deadlines",
+					"process": "Process analysis"
 				},
 				"cards": [
 					{

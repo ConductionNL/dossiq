@@ -3408,7 +3408,13 @@ OC.L10N.register(
         "A case is waiting on this task": "A case is waiting on this task",
         "Complete the task and the case moves on.": "Complete the task and the case moves on.",
         "Open the case": "Open the case",
-        "Waiting case": "Waiting case"
+        "Waiting case": "Waiting case",
+        "Every report Dossiq offers, in one place. Pick a report to open it.": "Every report Dossiq offers, in one place. Pick a report to open it.",
+        "How long cases take, per case type.": "How long cases take, per case type.",
+        "Statutory terms, and which cases are close to breaching one.": "Statutory terms, and which cases are close to breaching one.",
+        "The paths cases actually take, against the paths they were meant to.": "The paths cases actually take, against the paths they were meant to.",
+        "Throughput and deadlines": "Throughput and deadlines",
+        "Process analysis": "Process analysis"
     },
     "nplurals=2; plural=(n != 1);"
 )
