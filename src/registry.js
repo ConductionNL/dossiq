@@ -31,6 +31,9 @@ import BezwaarBeroepOverview from './components/bezwaar/BezwaarBeroepOverview.vu
 // export-leaf URL client-side; no dossiq-side serialization (ADR-022).
 // @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
 import CaseListExportAction from './components/export/CaseListExportAction.vue'
+// The task half of the flow waiting relationship (case-flow-human-steps 6.1).
+// @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+import TaskWaitingCaseSection from './components/flow/TaskWaitingCaseSection.vue'
 // Initiator (indiener) selection + display — brp-kvk-register-sets.
 // @spec openspec/specs/initiator-selection/spec.md
 import InitiatorPicker from './components/initiator/InitiatorPicker.vue'
@@ -217,6 +220,14 @@ const registry = {
 		kind: 'widget',
 		component: InitiatorSection,
 		_note: 'CaseDetail overview widget: initiator name + type + source id deep-linking to the seeded brpPerson/kvkCompany record in OpenRegister. Renders nothing when the case has no initiator.',
+	},
+
+	// --- The task half of the flow waiting relationship (case-flow-human-steps 6.1). ---
+	// @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+	TaskWaitingCaseSection: {
+		kind: 'widget',
+		component: TaskWaitingCaseSection,
+		_note: 'TaskDetail section: names the case a suspended flow run is holding on this task and links to it. Renders NOTHING for a task without a flowRun, so pre-existing tasks are unchanged. The case half (run + stage on CaseDetail) is deliberately absent: it waits on the fleet-generic subject-scoped runs widget (openregister flow-runs-subject-scope).',
 	},
 
 	// --- Case assistant via Hermiq (case-assistant-via-hermiq). ---

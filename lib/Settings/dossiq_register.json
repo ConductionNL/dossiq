@@ -1164,9 +1164,11 @@
                                 {
                                     "id": "besluit-document",
                                     "type": "dossiq.action.mergeTemplate",
+                                    "_note": "The keys are the ones DossiqMergeTemplateNode REQUIRES (templateSlug + targetField); the first shipped config said template/outputName, which validateConfig refuses at execute(), so every run stranded here and no case could ever close. The `template` key carries the inline template text (HandlesTemplates::renderTemplate reads it first and treats it as the template itself, not a lookup key). targetField must be a property the case schema declares, or the store silently strips the rendered document on save.",
                                     "config": {
-                                        "template": "besluit",
-                                        "outputName": "besluit.pdf"
+                                        "templateSlug": "besluit",
+                                        "template": "Besluit op de aanvraag {{case.title}} ({{case.identifier}}). De planningscommissie heeft de aanvraag beoordeeld. Uitkomst: {{case.commissieBesluit.decision}}. Dit besluit is vastgelegd bij afronding van de behandeling.",
+                                        "targetField": "besluitDocument"
                                     }
                                 },
                                 {
@@ -1666,6 +1668,12 @@
                         },
                         "referenceType": "decision",
                         "x-allow-create": true
+                    },
+                    "besluitDocument": {
+                        "type": "string",
+                        "title": "Decision document",
+                        "description": "The rendered decision text the case flow's document step (besluit-document, dossiq.action.mergeTemplate) writes before the case reaches its final status. Declared here because the store strips what the schema does not declare: without this property the merge would report success while the document silently never persisted, and the case would close undocumented. Empty for cases the flow has not decided.",
+                        "visible": false
                     }
                 },
                 "searchable": true
