@@ -11,7 +11,7 @@
 -->
 <template>
 	<NcDialog
-:name="title"
+		:name="title"
 		:open="open"
 		size="normal"
 		data-testid="reassign-selection-dialog"
@@ -22,7 +22,7 @@
 			</p>
 
 			<NcTextField
-v-model="handler"
+				v-model="handler"
 				:label="t('dossiq', 'Reassign to')"
 				:placeholder="t('dossiq', 'User id of the receiving handler')"
 				data-testid="reassign-selection-handler" />
@@ -37,7 +37,7 @@ v-model="handler"
 				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 			<NcButton
-variant="primary"
+				variant="primary"
 				:disabled="busy || handler.trim() === ''"
 				data-testid="reassign-selection-submit"
 				@click="submit">
@@ -80,9 +80,13 @@ export default {
 
 		/** @return {string} What is about to happen, with the count. */
 		lead() {
-			return t('dossiq', 'Reassign {count} selected case(s) to another handler.', {
-				count: this.selectedIds.length,
-			})
+			return t(
+				'dossiq',
+				'Reassign {count} selected case(s) to another handler.',
+				{
+					count: this.selectedIds.length,
+				},
+			)
 		},
 	},
 
@@ -109,15 +113,24 @@ export default {
 				const moved = Number(data?.succeeded ?? 0)
 				const asked = Number(data?.requested ?? this.selectedIds.length)
 				if (moved < asked) {
-					showError(t('dossiq', 'Reassigned {moved} of {asked} cases.', { moved, asked }))
+					showError(
+						t('dossiq', 'Reassigned {moved} of {asked} cases.', {
+							moved,
+							asked,
+						}),
+					)
 				} else {
-					showSuccess(t('dossiq', 'Reassigned {moved} case(s).', { moved }))
+					showSuccess(
+						t('dossiq', 'Reassigned {moved} case(s).', { moved }),
+					)
 				}
 
 				this.$emit('reassigned', data)
 				this.$emit('update:open', false)
 			} catch (e) {
-				this.error = e?.response?.data?.error || t('dossiq', 'The reassignment failed.')
+				this.error =
+					e?.response?.data?.error
+					|| t('dossiq', 'The reassignment failed.')
 			} finally {
 				this.busy = false
 			}
