@@ -30,6 +30,7 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
+use OCA\Dossiq\Listener\ParaafResumeListener;
 use OCA\Dossiq\Listener\TaskCompletionResumeListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
@@ -155,6 +156,13 @@ class WorkflowListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectUpdatedEvent::class,
 			listener: TaskCompletionResumeListener::class
+		);
+
+		// A paraaf is CREATED with its action, where a task is UPDATED to
+		// completed, so the two human steps close on different events.
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: ParaafResumeListener::class
 		);
 	}//end registerHumanStepListeners()
 }//end class
