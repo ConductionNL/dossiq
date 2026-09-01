@@ -24,7 +24,9 @@
 		class="task-waiting-case"
 		data-testid="task-waiting-case">
 		<div class="task-waiting-case__row">
-			<TimerSandComplete :size="20" class="task-waiting-case__icon" />
+			<CheckboxMarkedCircleOutline
+				:size="20"
+				class="task-waiting-case__icon" />
 			<span class="task-waiting-case__label">{{
 				t('dossiq', 'A case is waiting on this task')
 			}}</span>
@@ -42,7 +44,7 @@
 </template>
 
 <script>
-import TimerSandComplete from 'vue-material-design-icons/TimerSandComplete.vue'
+import CheckboxMarkedCircleOutline from 'vue-material-design-icons/CheckboxMarkedCircleOutline.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 import { caseRouteFor, waitingCaseIdFrom } from '../../utils/flowTaskHelpers.js'
@@ -50,7 +52,7 @@ import { caseRouteFor, waitingCaseIdFrom } from '../../utils/flowTaskHelpers.js'
 export default {
 	name: 'TaskWaitingCaseSection',
 	components: {
-		TimerSandComplete,
+		CheckboxMarkedCircleOutline,
 	},
 
 	data() {
@@ -82,6 +84,11 @@ export default {
 		},
 	},
 
+	/**
+	 * Resolve the stores, then load the task and its waiting case.
+	 *
+	 * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+	 */
 	async mounted() {
 		// CnAppRoot mounts manifest slot widgets before App.vue's
 		// initializeStores() has resolved the app-config, so the 'task'

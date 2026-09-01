@@ -225,6 +225,7 @@ const registry = {
 	// --- The task half of the flow waiting relationship (case-flow-human-steps 6.1). ---
 	// @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
 	TaskWaitingCaseSection: {
+		// @custom-widget-ratchet exclude a conditional cross-object link: it renders only when task.flowRun is set and links to the CASE, and no built-in fits (banner visibleWhen fetches by endpoint/source and its route is a page id without the case param; data/object-list cannot hide on a field)
 		kind: 'widget',
 		component: TaskWaitingCaseSection,
 		_note: 'TaskDetail section: names the case a suspended flow run is holding on this task and links to it. Renders NOTHING for a task without a flowRun, so pre-existing tasks are unchanged. The case half (run + stage on CaseDetail) is deliberately absent: it waits on the fleet-generic subject-scoped runs widget (openregister flow-runs-subject-scope).',

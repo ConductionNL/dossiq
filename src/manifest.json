@@ -430,11 +430,6 @@
 						"register": "dossiq",
 						"schema": "case",
 						"onSuccessRoute": "CaseDetail"
-					},
-					{
-						"id": "dashboard-refresh",
-						"type": "refresh",
-						"label": "Refresh"
 					}
 				],
 				"dateRange": {
@@ -2376,7 +2371,7 @@
 						"id": "task-waiting-case",
 						"type": "custom",
 						"title": "Waiting case",
-						"icon": "TimerSandComplete",
+						"icon": "CheckboxMarkedCircleOutline",
 						"_note": "The task half of the flow waiting relationship (case-flow-human-steps 6.1). Resolved via page slots (widget-task-waiting-case -> TaskWaitingCaseSection); names the case whose suspended run this task blocks and links to it. Renders NOTHING for a task without a flowRun, so pre-existing tasks are unchanged. showTitle stays false: an empty titled box on every ordinary task would be exactly the clutter the null render avoids."
 					}
 				],
