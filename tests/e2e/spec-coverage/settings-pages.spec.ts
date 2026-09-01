@@ -49,11 +49,19 @@ const SETTINGS_PAGES: Array<{ name: string; route: string; addBtn: string }> = [
 	// was retired from Dossiq in Wave 1 of the case-model consolidation
 	// (ADR-003). Fees are now Pipelinq products referenced from a case type's
 	// productsOrServices; Dossiq owns no fee settings entries.
-	{
-		name: 'Approval routes',
-		route: '/settings/parafeerroutes',
-		addBtn: 'Add Endorsement Route',
-	},
+	// Approval routes lost their settings ENTRY in dossiq#1632, which enabled
+	// the projected routes: an approval route is a flow now, and the route
+	// object is what a flow was generated FROM rather than what drives
+	// parafering. Editing one no longer reaches the running flow unless
+	// somebody re-runs the projection, which would overwrite whatever was
+	// authored on the canvas — so the design screen left the menu.
+	//
+	// The pages stay ROUTABLE, deliberately: a reader can still open a legacy
+	// route to see what a flow came from. What this table asserts, though, is
+	// that a settings page is REACHABLE AND OFFERS ITS CREATE CONTROL, and
+	// creating a route is exactly the thing that no longer does anything on
+	// its own. Flows are authored at /flows, covered by flows.spec.ts.
+
 	// Automatic actions was retired by page-topology-cleanup (C2). The
 	// `automaticAction` objects it administered were never executed by anything
 	// — SideEffectDispatcher runs a separate vocabulary — so the page was a
