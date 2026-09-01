@@ -126,18 +126,45 @@ async function createCase(api: APIRequestContext, body: Json): Promise<Json> {
 	return (await res.json()) as Json
 }
 
+/**
+ * PUT a partial update onto an existing object, merged over its current body.
+ *
+ * OpenRegister's PUT is a full replace validated against the schema, so a
+ * bare partial body 400s on every required property the patch does not carry
+ * ("The required properties (title, caseType) are missing"). Measured live on
+ * the proof rig 2026-09-01. Same pattern as `helpers/fixtures.ts#updateObject`.
+ */
 async function updateObject(
 	api: APIRequestContext,
 	schema: string,
 	id: string,
 	body: Json,
+	register = 'dossiq',
 ): Promise<Json> {
-	const res = await api.put(`${OR}/objects/dossiq/${schema}/${id}`, { data: body })
+	const current = await getJson(api, `${OR}/objects/${register}/${schema}/${id}`)
+	const res = await api.put(`${OR}/objects/${register}/${schema}/${id}`, {
+		data: { ...current, ...body },
+	})
 	expect(
 		res.ok(),
 		`Updating ${schema} ${id} answered ${res.status()}: ${await res.text()}`,
 	).toBeTruthy()
 	return (await res.json()) as Json
+}
+
+/**
+ * Complete a task the way the lifecycle allows: claim it, then complete it.
+ *
+ * The task schema declares a CMMN HumanTask lifecycle
+ * (x-openregister-lifecycle): the only transition into `completed` is
+ * `complete`, and it runs from `active` alone. Writing `completed` straight
+ * onto an `available` task 422s with "No transition allows moving status from
+ * available to completed" — measured live on the proof rig 2026-09-01. This is
+ * the same claim → complete two-step the UI walks.
+ */
+async function completeTask(api: APIRequestContext, id: string): Promise<void> {
+	await updateObject(api, 'task', id, { status: 'active' })
+	await updateObject(api, 'task', id, { status: 'completed' })
 }
 
 async function runsForCase(api: APIRequestContext, caseId: string): Promise<Json[]> {
@@ -372,7 +399,7 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 		await updateObject(api, 'case', incompleteCase, {
 			description: SUPPLIED_DESCRIPTION,
 		})
-		await updateObject(api, 'task', applicantTask, { status: 'completed' })
+		await completeTask(api, applicantTask)
 
 		workerPass()
 
@@ -476,13 +503,35 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 			// Record the outcome, then walk the lifecycle to `decided` through
 			// decidiq's own transition endpoint: that is what emits the
 			// DecisionConcludedEvent the run is waiting for.
-			await api.put(`${OR}/objects/decidiq/decision/${decision.id}`, {
-				data: {
+			//
+			// `text` is what the clerk types when recording the outcome, and it
+			// is also load-bearing here for a reason worth naming: decidiq's
+			// decision schema requires (title, text, decisionType), yet the
+			// flow's delegate-decision step CREATES the decision without
+			// `text` — the create path skips required-property validation that
+			// every later PUT then enforces, so the stored object cannot be
+			// updated at all until someone supplies it. Measured live on the
+			// proof rig 2026-09-01 (decision 7f2dc8f4, schema 33).
+			await updateObject(
+				api,
+				'decision',
+				String(decision.id),
+				{
+					text: `Toets uitgevoerd: ${question}. Geen bezwaren.`,
 					outcome: 'adopted',
-					decisionDate: new Date().toISOString().slice(0, 10),
+					decisionDate: new Date().toISOString(),
 				},
-			})
-			for (const action of ['propose', 'deliberate', 'decide']) {
+				'decidiq',
+			)
+			// `openVoting` is in the walk because it is the only schema-legal
+			// route to `decided`: decidiq's PHP guard advertises deliberating →
+			// decided (`allowDecideWithoutVote`, operations domain), but the
+			// decision schema's x-openregister-lifecycle declares no such
+			// edge — only voting → decided — so the guard-approved write is
+			// then rejected by OpenRegister's lifecycle validation ("No
+			// transition allows moving lifecycle from deliberating to
+			// decided"). Measured live on the proof rig 2026-09-01.
+			for (const action of ['propose', 'deliberate', 'openVoting', 'decide']) {
 				const res = await api.post(
 					`/index.php/apps/decidiq/api/decisions/${decision.id}/transition`,
 					{ data: { action } },
@@ -527,7 +576,7 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 		await shoot(page, '06-employee-task.png')
 
 		// The admin is a member of `behandelaars`, so may complete it.
-		await updateObject(api, 'task', String(tasks[0].id), { status: 'completed' })
+		await completeTask(api, String(tasks[0].id))
 		workerPass()
 
 		await openCase(page, completeCase, 'Dakkapel Kerkstraat 14')
@@ -561,13 +610,22 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 		).toBeGreaterThanOrEqual(1)
 		const decision = open[0]
 
-		await api.put(`${OR}/objects/decidiq/decision/${decision.id}`, {
-			data: {
+		// `text` also fills the required property the flow's create step left
+		// out — see the note on the first decision above.
+		await updateObject(
+			api,
+			'decision',
+			String(decision.id),
+			{
+				text: 'De commissie stemt in met het voorgenomen besluit.',
 				outcome: 'adopted',
-				decisionDate: new Date().toISOString().slice(0, 10),
+				decisionDate: new Date().toISOString(),
 			},
-		})
-		for (const action of ['propose', 'deliberate', 'decide']) {
+			'decidiq',
+		)
+		// `openVoting` for the same reason as the first decision: the schema's
+		// lifecycle map only reaches `decided` through `voting`.
+		for (const action of ['propose', 'deliberate', 'openVoting', 'decide']) {
 			await api.post(
 				`/index.php/apps/decidiq/api/decisions/${decision.id}/transition`,
 				{ data: { action } },
