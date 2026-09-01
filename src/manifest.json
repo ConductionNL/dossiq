@@ -2361,11 +2361,18 @@
 					{
 						"id": "task-data",
 						"type": "data",
-						"title": "Taak",
+						"title": "Task",
 						"icon": "ClipboardCheckOutline",
 						"content": {
 							"columns": 2
 						}
+					},
+					{
+						"id": "task-waiting-case",
+						"type": "custom",
+						"title": "Waiting case",
+						"icon": "CheckboxMarkedCircleOutline",
+						"_note": "The task half of the flow waiting relationship (case-flow-human-steps 6.1). Resolved via page slots (widget-task-waiting-case -> TaskWaitingCaseSection); names the case whose suspended run this task blocks and links to it. Renders NOTHING for a task without a flowRun, so pre-existing tasks are unchanged. showTitle stays false: an empty titled box on every ordinary task would be exactly the clutter the null render avoids."
 					}
 				],
 				"layout": [
@@ -2376,6 +2383,15 @@
 						"gridY": 0,
 						"gridWidth": 12,
 						"gridHeight": 6,
+						"showTitle": false
+					},
+					{
+						"id": "2",
+						"widgetId": "task-waiting-case",
+						"gridX": 0,
+						"gridY": 6,
+						"gridWidth": 12,
+						"gridHeight": 2,
 						"showTitle": false
 					}
 				],
@@ -2404,6 +2420,9 @@
 						}
 					]
 				}
+			},
+			"slots": {
+				"widget-task-waiting-case": "TaskWaitingCaseSection"
 			}
 		},
 		{

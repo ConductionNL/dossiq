@@ -472,4 +472,93 @@ class CaseFlowDeclarationTest extends TestCase {
 			);
 		}
 	}//end testEveryTerminalPathEndsDeliberately()
+
+	/**
+	 * The document step's config is one its node class accepts and can persist.
+	 *
+	 * Found broken: the shipped config said `template`/`outputName`, while
+	 * DossiqMergeTemplateNode::requiredConfigKeys() demands `templateSlug` and
+	 * `targetField` — so validateConfig() threw at execute() and EVERY run
+	 * stranded at besluit-document, meaning no case could ever close. Nothing
+	 * else could catch it: import accepts any config, and the node's own tests
+	 * run against configs the tests invent.
+	 *
+	 * The second half is the quieter failure: `targetField` must name a
+	 * property the case schema declares, because the object store strips
+	 * undeclared fields on save — the merge would succeed while the document
+	 * silently never persisted.
+	 *
+	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 */
+	public function testTheDocumentStepConfigMatchesItsNodeAndItsSchema(): void {
+		$path = __DIR__ . '/../../../lib/Settings/dossiq_register.json';
+		$register = json_decode((string)file_get_contents($path), true);
+		$caseProperties = ($register['components']['schemas']['case']['properties'] ?? []);
+
+		$mergeNodes = array_filter(
+			$this->flow['nodes'],
+			static fn (array $n): bool => (string)($n['type'] ?? '') === 'dossiq.action.mergeTemplate'
+		);
+		$this->assertNotSame([], $mergeNodes, 'The flow must carry its document step.');
+
+		foreach ($mergeNodes as $node) {
+			$config = (array)($node['config'] ?? []);
+
+			// The keys DossiqMergeTemplateNode::requiredConfigKeys() refuses to
+			// run without.
+			foreach (['templateSlug', 'targetField'] as $key) {
+				$this->assertNotSame(
+					'',
+					trim((string)($config[$key] ?? '')),
+					sprintf(
+						'Node "%s" omits "%s": validateConfig() throws at execute() and the run strands here.',
+						$node['id'],
+						$key
+					)
+				);
+			}
+
+			$this->assertArrayHasKey(
+				(string)$config['targetField'],
+				$caseProperties,
+				sprintf(
+					'Node "%s" writes to "%s", which the case schema does not declare — '
+					. 'the store would strip it and the case would close without its document.',
+					$node['id'],
+					$config['targetField']
+				)
+			);
+		}
+	}//end testTheDocumentStepConfigMatchesItsNodeAndItsSchema()
+
+	/**
+	 * The task schema declares the two fields that tie a task to its run.
+	 *
+	 * DossiqAskPersonNode stamps `flowRun` and `flowNode` onto the task it
+	 * creates, and TaskCompletionResumeListener reads them back to wake the
+	 * run. Both sides are tested against doubles, so dropping the fields from
+	 * the schema would break the round-trip while every other test stayed
+	 * green: the object store strips what the schema does not declare.
+	 *
+	 * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+	 */
+	public function testTheTaskSchemaDeclaresItsRunAndNodeFields(): void {
+		$path = __DIR__ . '/../../../lib/Settings/dossiq_register.json';
+		$register = json_decode((string)file_get_contents($path), true);
+
+		$properties = ($register['components']['schemas']['task']['properties'] ?? []);
+
+		foreach (['flowRun', 'flowNode'] as $field) {
+			$this->assertArrayHasKey(
+				$field,
+				$properties,
+				sprintf(
+					'task.%s is missing: the ask node would stamp a field the store strips, '
+					. 'and no completed task could ever resume its run.',
+					$field
+				)
+			);
+			$this->assertSame('string', ($properties[$field]['type'] ?? null));
+		}
+	}//end testTheTaskSchemaDeclaresItsRunAndNodeFields()
 }//end class
