@@ -89,11 +89,13 @@ class LhsMatrixDecisionTableMigrator {
 	public function migrate(IUser $user, bool $dryRun): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
-			return ['note' => 'OpenRegister is not available.', 'created' => 0, 'updated' => 0, 'skipped' => 0, 'failed' => 0, 'rows' => []];
+			return $this->emptySummary(note: 'OpenRegister is not available.');
 		}
 
+		// The whole migration runs AS the given user: a written table inherits
+		// its owner and organisation from whoever wrote it, permanently.
 		if (method_exists($objectService, 'runAs') === false) {
-			return ['note' => 'OpenRegister exposes no runAs(); the migration needs an owner.', 'created' => 0, 'updated' => 0, 'skipped' => 0, 'failed' => 0, 'rows' => []];
+			return $this->emptySummary(note: 'OpenRegister exposes no runAs(); the migration needs an owner for the tables it writes.');
 		}
 
 		return $objectService->runAs(
@@ -102,6 +104,20 @@ class LhsMatrixDecisionTableMigrator {
 		);
 
 	}//end migrate()
+
+	/**
+	 * An empty summary carrying the reason nothing happened.
+	 *
+	 * @param string $note Why the run did nothing.
+	 *
+	 * @return array<string, mixed> The summary.
+	 *
+	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 */
+	private function emptySummary(string $note): array {
+		return ['note' => $note, 'created' => 0, 'updated' => 0, 'skipped' => 0, 'failed' => 0, 'rows' => []];
+
+	}//end emptySummary()
 
 	/**
 	 * Project every matrix, returning the summary.
