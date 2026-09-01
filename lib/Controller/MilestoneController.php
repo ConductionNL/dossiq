@@ -58,18 +58,6 @@ class MilestoneController extends Controller {
 	}//end __construct()
 
 	/**
-	 * Get milestone progress for a case.
-	 *
-	 * @param string $caseId The case UUID
-	 * @param string $caseTypeId The case type UUID
-	 *
-	 * @return JSONResponse Milestone progress data
-	 *
-	 * @NoAdminRequired
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 */
-	/**
 	 * Get milestone progress for a case, resolving its type server-side.
 	 *
 	 * The two-segment form requires the caller to already know the case's type.
@@ -103,6 +91,18 @@ class MilestoneController extends Controller {
 		}
 	}//end caseProgress()
 
+	/**
+	 * Get milestone progress for a case whose type the caller already holds.
+	 *
+	 * @param string $caseId The case UUID
+	 * @param string $caseTypeId The case type UUID
+	 *
+	 * @return JSONResponse Milestone progress data
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
 	public function progress(string $caseId, string $caseTypeId): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
