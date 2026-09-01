@@ -19,13 +19,28 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
+use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\SetStatusHandler;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
+use OCA\OpenRegister\Db\ObjectEntity;
+use OCP\IUser;
+use OCP\IUserManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
 class SetStatusHandlerTest extends TestCase {
+
+	/**
+	 * The uids the object service's runAs seam was asked to act as.
+	 *
+	 * @var string[]
+	 */
+	private array $actedAs = [];
+
+	protected function setUp(): void {
+		$this->actedAs = [];
+	}//end setUp()
 
 	/**
 	 * A lookup that resolves one name to one id.
@@ -44,19 +59,34 @@ class SetStatusHandlerTest extends TestCase {
 	/**
 	 * Settings wired to a recording object service.
 	 *
+	 * The fake's saveObject returns an ObjectEntity BECAUSE THE REAL ONE DOES.
+	 * A fake returning the caller's array encodes the caller's assumption and
+	 * can never fail it — which is exactly how the ask node's "could not
+	 * identify the task it created" shipped green.
+	 *
 	 * @param array|null $saved Receives the saved case.
 	 *
 	 * @return SettingsService The settings double.
 	 */
 	private function settings(?array &$saved): SettingsService {
-		$objectService = new class($saved) {
-			public function __construct(private ?array &$sink) {
+		$objectService = new class($saved, $this->actedAs) {
+			public function __construct(private ?array &$sink, private array &$actedAs) {
 			}
 
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object, string $register, string $schema): ObjectEntity {
 				$this->sink = $object;
 
-				return $object;
+				$entity = new ObjectEntity();
+				$entity->setUuid('case-entity-uuid');
+				$entity->setObject($object);
+
+				return $entity;
+			}
+
+			public function runAs(IUser $user, callable $operation): mixed {
+				$this->actedAs[] = $user->getUID();
+
+				return $operation();
 			}
 		};
 
@@ -69,13 +99,42 @@ class SetStatusHandlerTest extends TestCase {
 		return $settings;
 	}//end settings()
 
+	/**
+	 * A runAs scope over these settings, resolving the one named user.
+	 *
+	 * @param SettingsService $settings The settings the scope resolves through.
+	 * @param string          $knownUid The only uid that resolves to an account.
+	 *
+	 * @return FlowRunAsScope The scope.
+	 */
+	private function scope(SettingsService $settings, string $knownUid = 'admin'): FlowRunAsScope {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn($knownUid);
+		$user->method('isEnabled')->willReturn(true);
+
+		$users = $this->createMock(IUserManager::class);
+		$users->method('get')->willReturnCallback(
+			static fn (string $uid): ?IUser => ($uid === $knownUid) ? $user : null
+		);
+
+		return new FlowRunAsScope($settings, $users);
+	}//end scope()
+
+	/**
+	 * A handler over these settings and this lookup.
+	 *
+	 * @param SettingsService $settings The settings double.
+	 * @param StatusTypeLookup $lookup  The lookup double.
+	 *
+	 * @return SetStatusHandler The handler under test.
+	 */
+	private function handler(SettingsService $settings, StatusTypeLookup $lookup): SetStatusHandler {
+		return new SetStatusHandler($settings, $lookup, $this->scope($settings), new NullLogger());
+	}//end handler()
+
 	public function testTheCaseIsMovedToTheResolvedStatus(): void {
 		$saved = null;
-		$handler = new SetStatusHandler(
-			$this->settings($saved),
-			$this->lookup('status-uuid-3'),
-			new NullLogger()
-		);
+		$handler = $this->handler($this->settings($saved), $this->lookup('status-uuid-3'));
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'setStatus', 'status' => 'In behandeling'],
@@ -93,11 +152,7 @@ class SetStatusHandlerTest extends TestCase {
 	 */
 	public function testAnUnknownStatusFailsTheStep(): void {
 		$saved = null;
-		$handler = new SetStatusHandler(
-			$this->settings($saved),
-			$this->lookup(''),
-			new NullLogger()
-		);
+		$handler = $this->handler($this->settings($saved), $this->lookup(''));
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'setStatus', 'status' => 'Verzonnen'],
@@ -112,7 +167,7 @@ class SetStatusHandlerTest extends TestCase {
 
 	public function testAStepWithNoStatusNamedFails(): void {
 		$saved = null;
-		$handler = new SetStatusHandler($this->settings($saved), $this->lookup('x'), new NullLogger());
+		$handler = $this->handler($this->settings($saved), $this->lookup('x'));
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'setStatus'],
@@ -129,7 +184,7 @@ class SetStatusHandlerTest extends TestCase {
 	 */
 	public function testACaseWithoutACaseTypeFails(): void {
 		$saved = null;
-		$handler = new SetStatusHandler($this->settings($saved), $this->lookup('x'), new NullLogger());
+		$handler = $this->handler($this->settings($saved), $this->lookup('x'));
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'setStatus', 'status' => 'Ontvangen'],
@@ -145,7 +200,7 @@ class SetStatusHandlerTest extends TestCase {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn(null);
 
-		$handler = new SetStatusHandler($settings, $this->lookup('status-1'), new NullLogger());
+		$handler = $this->handler($settings, $this->lookup('status-1'));
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'setStatus', 'status' => 'Ontvangen'],
@@ -168,7 +223,7 @@ class SetStatusHandlerTest extends TestCase {
 		$settings->method('getObjectService')->willReturn($objectService);
 		$settings->method('getConfigValue')->willReturn('');
 
-		$handler = new SetStatusHandler($settings, $this->lookup('status-1'), new NullLogger());
+		$handler = $this->handler($settings, $this->lookup('status-1'));
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'setStatus', 'status' => 'Ontvangen'],
@@ -180,9 +235,58 @@ class SetStatusHandlerTest extends TestCase {
 		self::assertSame('case_schema_not_configured', $result->error);
 	}//end testFailsWhenTheCaseSchemaIsNotConfigured()
 
+	/**
+	 * 🔴 A CONTEXT THAT NAMES AN ACTING IDENTITY IS OBEYED.
+	 *
+	 * Under FlowRunWorker the ambient session carries nobody, so a bare
+	 * saveObject() is refused as 'Anonymous' — measured live, with the run
+	 * context carrying `runAs: admin` the whole time. The write (and the
+	 * status lookup that decides it) must go through the object service's
+	 * runAs seam as that user. Remove the wrap in the handler and this test
+	 * goes red: the seam is never asked, and $actedAs stays empty.
+	 */
+	public function testTheWriteRunsAsTheRunsActingIdentity(): void {
+		$saved = null;
+		$handler = $this->handler($this->settings($saved), $this->lookup('status-uuid-3'));
+
+		$result = $handler->handle(
+			actionConfig: ['type' => 'setStatus', 'status' => 'In behandeling'],
+			case: ['id' => 'case-1', 'caseType' => 'ct-1'],
+			transitionContext: ['runAs' => 'admin']
+		);
+
+		self::assertTrue($result->succeeded);
+		self::assertSame(
+			['admin'],
+			$this->actedAs,
+			'The resolve-and-write must run through the object service\'s runAs seam, as the run\'s acting identity.'
+		);
+		self::assertSame('status-uuid-3', $saved['status']);
+	}//end testTheWriteRunsAsTheRunsActingIdentity()
+
+	/**
+	 * An acting identity that resolves to nobody fails the step — it must not
+	 * quietly fall back to the ambient session, which under a worker is the
+	 * exact anonymous write this seam exists to prevent.
+	 */
+	public function testAnUnresolvableActingIdentityFailsTheStep(): void {
+		$saved = null;
+		$handler = $this->handler($this->settings($saved), $this->lookup('status-uuid-3'));
+
+		$result = $handler->handle(
+			actionConfig: ['type' => 'setStatus', 'status' => 'In behandeling'],
+			case: ['id' => 'case-1', 'caseType' => 'ct-1'],
+			transitionContext: ['runAs' => 'nobody-by-this-name']
+		);
+
+		self::assertFalse($result->succeeded);
+		self::assertSame('set_status_failed', $result->error);
+		self::assertNull($saved, 'Nothing may be written under an identity that does not resolve.');
+	}//end testAnUnresolvableActingIdentityFailsTheStep()
+
 	public function testTheActionIdIsSetStatus(): void {
 		$saved = null;
-		$handler = new SetStatusHandler($this->settings($saved), $this->lookup('x'), new NullLogger());
+		$handler = $this->handler($this->settings($saved), $this->lookup('x'));
 
 		self::assertSame('setStatus', $handler->type());
 	}//end testTheActionIdIsSetStatus()

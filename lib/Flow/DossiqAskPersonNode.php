@@ -17,11 +17,13 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Flow;
 
 use DateTime;
+use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Service\Flow\FlowNodeResumeState;
 use OCA\OpenRegister\Service\Flow\FlowRunContext;
 use OCA\OpenRegister\Service\Flow\FlowRunService;
 use OCA\OpenRegister\Service\Flow\FlowSuspension;
+use OCA\OpenRegister\Service\Flow\FlowValueTemplate;
 use OCA\OpenRegister\Service\Flow\IFlowNode;
 use OCP\IL10N;
 use OCP\WorkflowEngine\IManager;
@@ -52,6 +54,12 @@ use UnexpectedValueException;
  * AwaitSignalNode guards its own request record.
  *
  * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) One over the threshold, and
+ *     every dependency is load-bearing: the node speaks OpenRegister's whole
+ *     suspend/resume vocabulary (suspension, resume slot, run context, signal
+ *     key, value template) AND dossiq's own storage seam. Splitting a class to
+ *     shed an import would separate the ask from the wait it exists to pair.
  */
 class DossiqAskPersonNode implements IFlowNode {
 
@@ -78,6 +86,7 @@ class DossiqAskPersonNode implements IFlowNode {
      * Constructor.
      *
      * @param SettingsService $settingsService Resolves the object service and configured schemas.
+     * @param FlowRunAsScope  $runAsScope      Scopes the task write to the run's acting identity.
      * @param IL10N           $l10n            The localisation service.
      * @param LoggerInterface $logger          The logger.
      *
@@ -87,6 +96,7 @@ class DossiqAskPersonNode implements IFlowNode {
      */
     public function __construct(
         private readonly SettingsService $settingsService,
+        private readonly FlowRunAsScope $runAsScope,
         private readonly IL10N $l10n,
         private readonly LoggerInterface $logger,
     ) {
@@ -268,9 +278,11 @@ class DossiqAskPersonNode implements IFlowNode {
             return;
         }
 
-        $caseId = $this->caseIdFrom(items: $items);
-        $taskId = $this->persistTask(
-            task: $this->buildTask(caseId: $caseId, config: $config, context: $context, resume: $resume)
+        $caseId   = $this->caseIdFrom(items: $items);
+        $assignee = $this->renderedAssignee(config: $config, items: $items);
+        $taskId   = $this->persistTask(
+            task: $this->buildTask(caseId: $caseId, assignee: $assignee, config: $config, context: $context, resume: $resume),
+            context: $context
         );
 
         $resume->merge(
@@ -279,8 +291,11 @@ class DossiqAskPersonNode implements IFlowNode {
                 'askedAt'  => (new DateTime())->format('c'),
                 'question' => trim((string) ($config['question'] ?? '')),
                 // Read back by OpenRegister's resume guard, which refuses a
-                // signal from anyone but this person or their group.
-                'assignee' => trim((string) ($config['assignee'] ?? '')),
+                // signal from anyone but this person or their group. The
+                // RENDERED name, never the raw template: the guard compares
+                // this against real uids and group ids, so a stored literal
+                // "{{ case.assignee }}" would refuse every real user.
+                'assignee' => $assignee,
             ]
         );
 
@@ -321,24 +336,88 @@ class DossiqAskPersonNode implements IFlowNode {
 
 
     /**
+     * The assignee this ask resolves to, rendered against the case.
+     *
+     * A declared flow cannot name a real person: the uid differs per case, so
+     * the shipped declaration says `{{ case.assignee }}` and somebody must
+     * render it. The engine does not — it templates only inside its own
+     * set-fields and object-read nodes — so a node that stamps authored values
+     * onto storage renders them itself, exactly as OpenRegister's own
+     * value-bearing nodes do through FlowValueTemplate. Storing the literal is
+     * what orphaned every applicant task live: FlowRunAssignee compared real
+     * uids against the un-rendered placeholder and refused all of them.
+     *
+     * 🔴 AN EMPTY RENDERING REFUSES LOUDLY. A template that resolves to
+     * nothing would create an UNASSIGNED task, and OpenRegister's resume guard
+     * deliberately lets anyone answer a step that names no assignee — so a
+     * quiet fallback here would open the case's progress to any authenticated
+     * user. Failing the step is the safe direction.
+     *
+     * The case is offered under both its own keys and a `case.` prefix,
+     * because the declarations write `{{ case.assignee }}` — the same spelling
+     * dossiq's template nodes already use — while the item's json IS the case.
+     *
+     * @param array $config The step configuration.
+     * @param array $items  The input items; the first carries the case.
+     *
+     * @return string The rendered assignee.
+     *
+     * @throws RuntimeException When the assignee renders empty or unresolved.
+     *
+     * @SuppressWarnings(PHPMD.StaticAccess) FlowValueTemplate is the engine's
+     *     canonical rendering API and is published as a static, final class —
+     *     there is no instance to inject.
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     */
+    private function renderedAssignee(array $config, array $items): string {
+        $raw = trim((string) ($config['assignee'] ?? ''));
+
+        $case  = [];
+        $first = ($items[0] ?? null);
+        if (is_array($first) === true) {
+            $case = (array) ($first['json'] ?? []);
+        }
+
+        $rendered = FlowValueTemplate::renderTracked(value: $raw, json: array_merge($case, ['case' => $case]));
+
+        $value = $rendered['value'];
+        if (is_array($value) === true || trim((string) $value) === '' || $rendered['unresolved'] !== []) {
+            $detail = '';
+            if ($rendered['unresolved'] !== []) {
+                $detail = ' (unresolved: ' . implode(', ', $rendered['unresolved']) . ')';
+            }
+
+            throw new RuntimeException(
+                sprintf('dossiq.askPerson could not resolve the assignee "%s" against the case%s', $raw, $detail)
+            );
+        }
+
+        return trim((string) $value);
+
+    }//end renderedAssignee()
+
+
+    /**
      * The task record this step asks somebody to complete.
      *
-     * @param string              $caseId  The case the task belongs to.
-     * @param array               $config  The step configuration.
-     * @param array               $context Run-level metadata.
-     * @param FlowNodeResumeState $resume  This node's resume slot, which knows its id.
+     * @param string              $caseId   The case the task belongs to.
+     * @param string              $assignee The RENDERED assignee, never the raw template.
+     * @param array               $config   The step configuration.
+     * @param array               $context  Run-level metadata.
+     * @param FlowNodeResumeState $resume   This node's resume slot, which knows its id.
      *
      * @return array The task to persist.
      *
      * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
      */
-    private function buildTask(string $caseId, array $config, array $context, FlowNodeResumeState $resume): array {
+    private function buildTask(string $caseId, string $assignee, array $config, array $context, FlowNodeResumeState $resume): array {
         $task = [
             'title'       => trim((string) ($config['question'] ?? '')),
             'description' => trim((string) ($config['details'] ?? '')),
             'case'        => $caseId,
             'status'      => 'available',
-            'assignee'    => trim((string) ($config['assignee'] ?? '')),
+            'assignee'    => $assignee,
             // The two fields that make this task an answer to a specific
             // question rather than a loose to-do. Both are required to resume:
             // the run alone cannot say which of its awaiting nodes this is for.
@@ -359,7 +438,13 @@ class DossiqAskPersonNode implements IFlowNode {
     /**
      * Write the task and return the id the run must remember.
      *
-     * @param array $task The task to persist.
+     * The write runs under the flow run's `runAs` identity: under
+     * FlowRunWorker the ambient session carries nobody, so a bare save is
+     * refused as 'Anonymous' however legitimate the run — the exact failure
+     * that stopped the seeded case flow live.
+     *
+     * @param array $task    The task to persist.
+     * @param array $context Run-level metadata, carrying the acting identity.
      *
      * @return string The created task's id.
      *
@@ -368,7 +453,7 @@ class DossiqAskPersonNode implements IFlowNode {
      *
      * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
      */
-    private function persistTask(array $task): string {
+    private function persistTask(array $task, array $context): string {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
             throw new RuntimeException('storage_unavailable');
@@ -380,13 +465,12 @@ class DossiqAskPersonNode implements IFlowNode {
             throw new RuntimeException('task_schema_not_configured');
         }
 
-        $created = $objectService->saveObject(object: $task, register: $register, schema: $taskSchema);
+        $created = $this->runAsScope->call(
+            context: $context,
+            operation: static fn (): mixed => $objectService->saveObject(object: $task, register: $register, schema: $taskSchema)
+        );
 
-        $taskId = '';
-        if (is_array($created) === true) {
-            $taskId = (string) ($created['id'] ?? ($created['uuid'] ?? ''));
-        }
-
+        $taskId = $this->createdTaskId(created: $created);
         if ($taskId === '') {
             // A task that was written but cannot be identified is worse than
             // none: the slot would stay empty, so the next heartbeat writes
@@ -397,6 +481,49 @@ class DossiqAskPersonNode implements IFlowNode {
         return $taskId;
 
     }//end persistTask()
+
+
+    /**
+     * The id of the task the object service reports having written.
+     *
+     * `ObjectService::saveObject()` returns an ObjectEntity — it always has.
+     * This method used to accept only an array, so every successful save was
+     * followed by "could not identify the task it created": the task existed,
+     * the run STOPPED instead of suspending, no resume slot was written, and
+     * the task sat orphaned in somebody's list with no way to wake anything.
+     * The entity's uuid is the id every read surface serves back, so it is
+     * the one the resume slot must remember.
+     *
+     * The array shape is still accepted because the service is duck-typed
+     * (SettingsService resolves it as `?object`), and refusing a shape that
+     * carries a perfectly good id would recreate this bug for the other
+     * shape.
+     *
+     * @param mixed $created Whatever the object service returned.
+     *
+     * @return string The task id, or '' when the result names none.
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     */
+    private function createdTaskId(mixed $created): string {
+        if (is_object($created) === true && method_exists($created, 'getUuid') === true) {
+            $uuid = (string) ($created->getUuid() ?? '');
+            if ($uuid !== '') {
+                return $uuid;
+            }
+        }
+
+        if (is_object($created) === true && ($created instanceof \JsonSerializable) === true) {
+            $created = (array) $created->jsonSerialize();
+        }
+
+        if (is_array($created) === true) {
+            return (string) ($created['id'] ?? ($created['uuid'] ?? ''));
+        }
+
+        return '';
+
+    }//end createdTaskId()
 
 
     /**

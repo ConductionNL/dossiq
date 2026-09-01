@@ -346,6 +346,12 @@ if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowResumeState') === fals
 	include_once __DIR__ . '/Stubs/Service/Flow/FlowResumeState.php';
 }
 
+// The engine's value templating, which DossiqAskPersonNode uses to render a
+// declared `{{ case.assignee }}` against the case before stamping a task.
+if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowValueTemplate') === false) {
+	include_once __DIR__ . '/Stubs/Service/Flow/FlowValueTemplate.php';
+}
+
 // bag-location-save-validation: pre-persist OpenRegister event stubs —
 // loaded when the openregister runtime is absent so
 // LocationBagValidationListenerTest can exercise handle() against real
