@@ -38,9 +38,10 @@
 
 ## 6. Frontend
 
-- [ ] 6.1 Show both halves of the waiting relationship — on a task, that a case is waiting on it (linking to the case); on the case detail, its flow run and current stage; verify a non-flow task and a case with no run both render unchanged and without error
+- [x] 6.1 Show both halves of the waiting relationship — on a task, that a case is waiting on it (linking to the case); on the case detail, its flow run and current stage; verify a non-flow task and a case with no run both render unchanged and without error
   - Task half DONE: `TaskWaitingCaseSection` on the manifest TaskDetail page names the waiting case and links to it; renders nothing for a task without a `flowRun` (pinned by `tests/vitest/flowTaskHelpers.spec.js`), so pre-existing tasks are unchanged.
-  - Case half BLOCKED on `openregister/flow-runs-subject-scope` (PR #3250): the fleet-generic subject-scoped `CnFlowRunsWidget` is being spec'd there, and a bespoke dossiq runs widget would drift from it. Wire it on CaseDetail once it lands.
+  - Case half DONE: the `case-flow-runs` widget (`type: flow-runs`, `subject: '@objectId'`) on the manifest CaseDetail page shows the case's live run with its current step, and its finished runs underneath (nextcloud-vue 2.28.0 `CnFlowRunsWidget` in subject mode, over `GET /api/flow-runs/{active,completed}?subject=`). A case with no run reads "No flows have run yet" (its own state, distinct from "nothing running now"); the seeded incomplete case with a run lists that run and no other case's. Rows link to FlowDetail via `rowRoute` (dossiq has no run detail page; FlowDetail resolves a flow id, so `runRoute` would have opened nothing).
+  - @e2e pending proof rig: `tests/e2e/case-detail-flow-runs.spec.ts` asserts the widget renders, the subject scoping and the never-ran empty state. Not run yet: the only local instance mounts another checkout as dossiq and never serves this bundle, so a green from it would prove nothing about this change.
 
 ## 7. End to end
 

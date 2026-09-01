@@ -1,10 +1,10 @@
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import {
-	navTo,
-	navToRoute,
 	dismissSupportDialog,
 	loadAllAdminSections,
-} from './helpers/nav'
+	navTo,
+	navToRoute,
+} from './helpers/nav.ts'
 
 test.describe('Dashboard', () => {
 	// FIXME(#427): under the CI env (bare `php -S`, no mod_rewrite) CnDashboardPage

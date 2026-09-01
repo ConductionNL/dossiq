@@ -36,31 +36,27 @@
  * the engine REST calls are fixture-level correctness checks (per the prompt).
  */
 
+import type { APIRequestContext, Page } from '@playwright/test'
+import type { StateMachine } from '../helpers/fixtures.ts'
+
+import { expect, request, test } from '@playwright/test'
+import { STORAGE_STATE } from '../helpers/auth.ts'
 import {
-	test,
-	expect,
-	request,
-	type APIRequestContext,
-	type Page,
-} from '@playwright/test'
-import { STORAGE_STATE } from '../helpers/auth'
-import { dismissSupportDialog, navTo } from '../helpers/nav'
-import {
-	RUN_PREFIX,
-	getRequestToken,
-	seedStateMachine,
-	seedCase,
-	showObject,
-	updateObject,
+	cleanupRunObjects,
 	deleteObject,
+	executeTransition,
+	getAvailableTransitions,
+	getRequestToken,
+	getTransitionHistory,
 	listObjects,
 	objectId,
-	cleanupRunObjects,
-	getAvailableTransitions,
-	executeTransition,
-	getTransitionHistory,
-	type StateMachine,
-} from '../helpers/fixtures'
+	RUN_PREFIX,
+	seedCase,
+	seedStateMachine,
+	showObject,
+	updateObject,
+} from '../helpers/fixtures.ts'
+import { dismissSupportDialog } from '../helpers/nav.ts'
 
 let api: APIRequestContext
 let token: string

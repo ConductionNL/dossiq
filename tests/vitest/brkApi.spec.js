@@ -14,8 +14,8 @@
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
 import axios from '@nextcloud/axios'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { lookupParcel, lookupParcelById } from '../../src/services/brkApi.js'
 
 const BASE = '/index.php/apps/dossiq/api/external/brk'

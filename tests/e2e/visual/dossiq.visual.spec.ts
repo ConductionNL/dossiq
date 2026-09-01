@@ -1,3 +1,5 @@
+import type { APIRequestContext } from '@playwright/test'
+
 /*
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  * SPDX-License-Identifier: EUPL-1.2
@@ -13,17 +15,17 @@
  * NOTE: dossiq serves its SPA at /apps/dossiq/index (the bare
  * /apps/dossiq/ route 404s), so navigation targets the /index entrypoint.
  */
-import { test, request, type APIRequestContext } from '@playwright/test'
-import { shootSurface, shootByNav } from './_visual-helpers'
-import { STORAGE_STATE } from '../helpers/auth'
+import { request, test } from '@playwright/test'
+import { STORAGE_STATE } from '../helpers/auth.ts'
 import {
-	getRequestToken,
-	ensureCaseType,
-	seedCase,
-	objectId,
 	cleanupRunObjects,
 	deleteObject,
-} from '../helpers/fixtures'
+	ensureCaseType,
+	getRequestToken,
+	objectId,
+	seedCase,
+} from '../helpers/fixtures.ts'
+import { shootByNav, shootSurface } from './_visual-helpers.ts'
 
 const APP = '/index.php/apps/dossiq/index'
 

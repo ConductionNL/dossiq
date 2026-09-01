@@ -13,8 +13,8 @@
  * than by clicking a nav label.
  */
 
-import { test, expect } from '@playwright/test'
-import { navToRoute, trackDossiqErrors } from '../helpers/nav'
+import { expect, test } from '@playwright/test'
+import { navToRoute, trackDossiqErrors } from '../helpers/nav.ts'
 
 // name (for the test title), the ROUTE the settings page lives at, and the
 // view-specific create control it must render.

@@ -18,10 +18,10 @@
  * spec → code → test traceability chain is closed.
  */
 
-import { test, expect, request } from '@playwright/test'
-import { readFileSync, existsSync } from 'node:fs'
+import { expect, request, test } from '@playwright/test'
+import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { BASE_URL } from '../base-url'
+import { BASE_URL } from '../base-url.ts'
 
 const OR_API = '/index.php/apps/openregister/api'
 const REPO_ROOT = resolve(__dirname, '../../..')

@@ -28,27 +28,23 @@
  * generic-dialog issue (#427) — see the inline note on that test.
  */
 
+import type { APIRequestContext, Page } from '@playwright/test'
+
+import { expect, request, test } from '@playwright/test'
+import { STORAGE_STATE } from '../helpers/auth.ts'
 import {
-	test,
-	expect,
-	request,
-	type APIRequestContext,
-	type Page,
-} from '@playwright/test'
-import { STORAGE_STATE } from '../helpers/auth'
-import { dismissSupportDialog, navTo } from '../helpers/nav'
-import {
-	RUN_PREFIX,
-	getRequestToken,
-	ensureCaseType,
-	seedCase,
-	showObject,
+	cleanupRunObjects,
 	deleteObject,
-	tryDeleteObject,
+	ensureCaseType,
+	getRequestToken,
 	listObjects,
 	objectId,
-	cleanupRunObjects,
-} from '../helpers/fixtures'
+	RUN_PREFIX,
+	seedCase,
+	showObject,
+	tryDeleteObject,
+} from '../helpers/fixtures.ts'
+import { dismissSupportDialog, navTo } from '../helpers/nav.ts'
 
 let api: APIRequestContext
 let token: string

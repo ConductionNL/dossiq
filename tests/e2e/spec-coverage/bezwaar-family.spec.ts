@@ -18,8 +18,8 @@
  * were removed); their obsolete scenarios were dropped here accordingly.
  */
 
-import { test, expect } from '@playwright/test'
-import { navToRoute, trackDossiqErrors } from '../helpers/nav'
+import { expect, test } from '@playwright/test'
+import { navToRoute, trackDossiqErrors } from '../helpers/nav.ts'
 
 test.describe('Beroepen (appeals) index page', () => {
 	// @e2e openspec/specs/bezwaar-lifecycle/spec.md#beroepen-index-page-renders-list-shell

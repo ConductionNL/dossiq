@@ -22,7 +22,7 @@ const path = require('path')
 let sfc
 try {
 	sfc = require('@vue/compiler-sfc')
-} catch (e) {
+} catch {
 	console.error('[vue3-compile-sweep] @vue/compiler-sfc not found — install the Vue 3 toolchain first (npm i -D @vue/compiler-sfc@^3.5).')
 	process.exit(2)
 }
@@ -30,6 +30,11 @@ try {
 const root = path.resolve(__dirname, '..', 'src')
 const compat = { compatConfig: { MODE: 2, COMPILER_FILTERS: true } }
 
+/**
+ *
+ * @param dir
+ * @param out
+ */
 function walk(dir, out = []) {
 	for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
 		const p = path.join(dir, e.name)

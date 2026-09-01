@@ -1,4 +1,6 @@
-import { test, expect, Page } from '@playwright/test'
+import type { Page } from '@playwright/test'
+
+import { expect, test } from '@playwright/test'
 
 const sidebarNav = (page: Page) => page.locator('[id^="app-navigation"]').first()
 
@@ -18,9 +20,9 @@ test.describe('Sidebar Navigation', () => {
 		// links and the assertion could only ever fail.
 		//
 		// Only "Dashboard" and "Cases" are top-level VISIBLE leaves. The rest
-		// render inside collapsed groups ("Work queue", "Reports", "Personal
-		// settings"), so they are present in the DOM but `display:none` until
-		// their group is expanded — asserted separately below.
+		// render inside collapsed groups ("Work queue", "Personal settings"),
+		// so they are present in the DOM but `display:none` until their group
+		// is expanded — asserted separately below.
 		for (const label of ['Dashboard', 'Cases']) {
 			await expect(
 				nav.getByRole('link', { name: label, exact: true }),
@@ -31,16 +33,36 @@ test.describe('Sidebar Navigation', () => {
 		// group is expanded. They must be matched by CSS, NOT by getByRole —
 		// `display:none` removes an element from the accessibility tree, so
 		// `getByRole` resolves to 0 elements even under `toHaveCount`.
-		for (const href of ['/my-work', '/workflow-board', '/doorlooptijd']) {
+		//
+		// `/doorlooptijd` USED TO BE HERE and is deliberately gone (ADR-112,
+		// dossiq#1583). Reports are no longer a nav group with one leaf per
+		// report; they are one page of cards, reached from the footer. The
+		// page stays routable — every other spec still reaches it with a
+		// direct GET — but it no longer has a navigation entry of its own,
+		// and asserting one is asserting the IA we retired.
+		for (const href of ['/my-work', '/workflow-board']) {
 			await expect(nav.locator(`a[href$="${href}"]`)).toHaveCount(1)
 		}
 
-		// And the group headers themselves are visible toggles.
-		for (const group of ['Work queue', 'Reports']) {
+		// And the group headers themselves are visible toggles. "Reports" is
+		// NOT among them any more: it is a footer link to the reports page,
+		// asserted below.
+		for (const group of ['Work queue']) {
 			await expect(
 				nav.getByRole('link', { name: group, exact: true }),
 			).toBeVisible()
 		}
+
+		// The reports page itself, in the footer between Documentation and
+		// Features & roadmap. This is the entry the three retired report
+		// leaves were replaced BY, so its absence would mean the reports
+		// became unreachable rather than regrouped.
+		//
+		// Matched by TEXT, like the Documentation footer link below it and for
+		// the same measured reason: a `section: "footer"` entry does not
+		// render as a plain top-level `<a>` the way a nav leaf does, so an
+		// href locator is the wrong instrument here.
+		await expect(nav.getByText('Reports', { exact: true })).toHaveCount(1)
 
 		// The Documentation footer link is present in the navigation DOM.
 		await expect(nav.getByText('Documentation', { exact: true })).toHaveCount(1)
