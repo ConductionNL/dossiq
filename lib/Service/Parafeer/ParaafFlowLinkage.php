@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service\Parafeer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -96,6 +97,95 @@ class ParaafFlowLinkage {
 
 		return trim((string)($first['flowRunId'] ?? ''));
 	}//end runDriving()
+
+	/**
+	 * Statuses a voorstel may hold, as the proposal schema declares them.
+	 *
+	 * Kept here so a flow cannot write a status the schema rejects. OpenRegister
+	 * runs hard validation by default, so an undeclared value fails the save far
+	 * from the node that chose it, and dossiq#1609 is what that looks like when
+	 * it goes unnoticed: two of three outcomes could not be written at all.
+	 *
+	 * @var array<int, string>
+	 */
+	private const VOORSTEL_STATUSES = [
+		'draft',
+		'in_parafering',
+		'ter_accordering',
+		'geaccordeerd',
+		'aangeboden',
+		'besloten',
+		'archived',
+		'teruggestuurd',
+	];
+
+	/**
+	 * Move a voorstel to a status.
+	 *
+	 * @param string $proposalId The voorstel.
+	 * @param string $status     The status to write.
+	 *
+	 * @return boolean True when the voorstel was moved.
+	 *
+	 * @throws RuntimeException When the status is not one the schema declares.
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	public function setStatus(string $proposalId, string $status): bool {
+		if (in_array($status, self::VOORSTEL_STATUSES, true) === false) {
+			// Refused here rather than at the save, so the message names the
+			// status and the node that chose it instead of surfacing as a
+			// validation error three layers down.
+			throw new RuntimeException('not a voorstel status: ' . $status);
+		}
+
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return false;
+		}
+
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('voorstel_schema');
+		if ($register === '' || $schema === '') {
+			return false;
+		}
+
+		try {
+			$rows = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: ['id' => $proposalId],
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: could not load the voorstel to set its status',
+				['voorstel' => $proposalId, 'error' => $e->getMessage()],
+			);
+			return false;
+		}
+
+		$voorstel = ($rows[0] ?? null);
+		if (is_array($voorstel) === false) {
+			return false;
+		}
+
+		try {
+			$objectService->saveObject(
+				object: array_merge($voorstel, ['status' => $status]),
+				register: $register,
+				schema: $schema,
+			);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: could not move the voorstel to ' . $status,
+				['voorstel' => $proposalId, 'error' => $e->getMessage()],
+			);
+			return false;
+		}
+
+		return true;
+	}//end setStatus()
 
 	/**
 	 * Record which run and node a paraaf answers.

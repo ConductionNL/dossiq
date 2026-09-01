@@ -12,4 +12,12 @@
 - [x] `flowRunId` on the proposal schema
 - [x] `ParaferingFlowGateway`: start a run only for an ENABLED projected flow
 - [x] Dual-path activate(): record the run, or fall through to the route snapshot
-- [ ] Only then: enable the projections and retire parafeerroute, its page, and decidiq's ApprovalRoute
+- [x] `dossiq.setVoorstelStatus`, refusing a status the proposal schema does not declare
+- [x] Branch out of the chain on a returned paraaf, so a rejection does not walk on
+- [x] Close the chain: `geaccordeerd` after the decision, `teruggestuurd` on a return
+- [x] `handleParaafAction()` stands aside for a voorstel carrying a flow run
+- [x] Enable the approval-route projection
+- [ ] Retire parafeerroute, its settings page, and decidiq's ApprovalRoute
+- [ ] The workflow-template projection stays DISABLED: StatusTransitionService,
+      WorkflowEngineService and BezwaarLifecycleListener still drive those
+      transitions, so enabling it would run each one twice

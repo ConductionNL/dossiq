@@ -272,4 +272,110 @@ class ParaafFlowLinkageTest extends TestCase {
 
 	}//end testAnUnconfiguredSchemaStampsNothing()
 
+	/**
+	 * 🔴 setStatus moves the voorstel and keeps its other fields.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	public function testSetStatusMovesTheVoorstel(): void {
+		$linkage = $this->linkage([['id' => 'voorstel-1', 'subject' => 'Een voorstel', 'status' => 'in_parafering']]);
+
+		$this->assertTrue($linkage->setStatus(proposalId: 'voorstel-1', status: 'geaccordeerd'));
+		$this->assertCount(1, $this->saved);
+		$this->assertSame('geaccordeerd', $this->saved[0]['status']);
+		$this->assertSame('Een voorstel', $this->saved[0]['subject']);
+
+	}//end testSetStatusMovesTheVoorstel()
+
+	/**
+	 * 🔴 A status the proposal schema does not declare is refused, loudly.
+	 *
+	 * `proposal.status` is a closed enum and OpenRegister runs hard validation
+	 * by default, so an undeclared value fails the save far from the node that
+	 * chose it. dossiq#1609 is what that looks like unnoticed.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	public function testAnUndeclaredStatusIsRefused(): void {
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('not a voorstel status');
+
+		$this->linkage()->setStatus(proposalId: 'voorstel-1', status: 'gereed_voor_agendering');
+
+	}//end testAnUndeclaredStatusIsRefused()
+
+	/**
+	 * 🔴 Every status it accepts is one the schema declares.
+	 *
+	 * The list lives in PHP and the enum lives in the register JSON, edited by
+	 * different hands. Nothing else compares them, and a drift either way is
+	 * silent: a status dropped from the list stops being writable, and one
+	 * dropped from the schema starts failing on save.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	public function testItsStatusListMatchesTheSchema(): void {
+		$register = json_decode(
+			file_get_contents(__DIR__ . '/../../../../lib/Settings/dossiq_register.json'),
+			true
+		);
+		$allowed = $register['components']['schemas']['proposal']['properties']['status']['enum'];
+
+		$reflected = new \ReflectionClass(ParaafFlowLinkage::class);
+		$declared = $reflected->getConstant('VOORSTEL_STATUSES');
+
+		$this->assertSame(
+			[],
+			array_diff($declared, $allowed),
+			'the linkage accepts a status the proposal schema does not declare'
+		);
+		$this->assertSame(
+			[],
+			array_diff($allowed, $declared),
+			'the proposal schema declares a status the linkage would refuse'
+		);
+
+	}//end testItsStatusListMatchesTheSchema()
+
+	/**
+	 * Without OpenRegister nothing is moved, and nothing throws.
+	 *
+	 * @return void
+	 */
+	public function testSetStatusWithoutOpenRegisterMovesNothing(): void {
+		$this->assertFalse(
+			$this->linkage([], available: false)->setStatus(proposalId: 'voorstel-1', status: 'geaccordeerd')
+		);
+
+	}//end testSetStatusWithoutOpenRegisterMovesNothing()
+
+	/**
+	 * A voorstel that cannot be found is not moved.
+	 *
+	 * @return void
+	 */
+	public function testSetStatusOnAnUnknownVoorstelMovesNothing(): void {
+		$this->assertFalse($this->linkage([])->setStatus(proposalId: 'voorstel-1', status: 'geaccordeerd'));
+		$this->assertSame([], $this->saved);
+
+	}//end testSetStatusOnAnUnknownVoorstelMovesNothing()
+
+	/**
+	 * A failed save is reported, not raised.
+	 *
+	 * @return void
+	 */
+	public function testSetStatusReportsAFailedSave(): void {
+		$linkage = $this->linkage([['id' => 'voorstel-1']], saveThrows: true);
+
+		$this->assertFalse($linkage->setStatus(proposalId: 'voorstel-1', status: 'geaccordeerd'));
+
+	}//end testSetStatusReportsAFailedSave()
+
 }//end class

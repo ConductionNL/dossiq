@@ -696,4 +696,68 @@ class BesluitvormingParafeerServiceTest extends TestCase {
 
 	}//end activatingService()
 
+	/**
+	 * 🔴 A flow-driven voorstel is left alone by the route snapshot.
+	 *
+	 * The paraaf the approver gave is picked up by ParaafResumeListener, which
+	 * signals the run; the run's own nodes ask the next approver and write the
+	 * status. Advancing the snapshot here as well would ask every approver
+	 * twice and race the flow to the final status — which is exactly why the
+	 * projections could not be enabled before this guard existed.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	public function testAFlowDrivenVoorstelIsNotAdvancedHere(): void {
+		$saved = [];
+		$service = $this->serviceRecording(
+			[
+				'id' => 'voorstel-uuid-1',
+				'status' => 'in_parafering',
+				'currentStep' => 1,
+				'flowRunId' => 'run-1',
+				'routeSnapshot' => [['order' => 1], ['order' => 2]],
+			],
+			'parafered',
+			$saved
+		);
+
+		$service->handleParaafAction(proposalId: 'voorstel-uuid-1', parafeeractieId: 'actie-uuid-1');
+
+		$this->assertSame([], $saved, 'the flow owns this voorstel; nothing may be written here');
+
+	}//end testAFlowDrivenVoorstelIsNotAdvancedHere()
+
+	/**
+	 * A voorstel on the route snapshot is still advanced, as it always was.
+	 *
+	 * The other arm of the same guard: every voorstel already mid-parafering
+	 * when a route is enabled carries no run, and must finish the way it
+	 * started rather than stall waiting for a flow nobody started for it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	public function testAVoorstelWithNoRunIsStillAdvancedHere(): void {
+		$saved = [];
+		$service = $this->serviceRecording(
+			[
+				'id' => 'voorstel-uuid-1',
+				'status' => 'in_parafering',
+				'currentStep' => 1,
+				'routeSnapshot' => [['order' => 1], ['order' => 2]],
+			],
+			'parafered',
+			$saved
+		);
+
+		$service->handleParaafAction(proposalId: 'voorstel-uuid-1', parafeeractieId: 'actie-uuid-1');
+
+		$this->assertCount(1, $saved);
+		$this->assertSame(2, $saved[0]['currentStep']);
+
+	}//end testAVoorstelWithNoRunIsStillAdvancedHere()
+
 }//end class

@@ -189,3 +189,60 @@ is the resume, and that is recorded.
 
 - **GIVEN** a paraaf given by somebody who is not the awaiting step's assignee
 - **THEN** the run MUST NOT be signalled, and the linkage MUST NOT be stamped
+
+### Requirement: REQ-PRF-010 A projected route drives parafering end to end
+
+A projected approval route SHALL be enabled, and SHALL own the voorstel from
+the first paraaf to its final status.
+
+It was disabled for two reasons, and both had to close before it could run:
+
+1. `BesluitvormingParafeerService` advanced the route snapshot regardless, so
+   both drivers ran and every approver would have been asked twice.
+2. The projection wrote no status, so a flow-driven voorstel collected every
+   paraaf and then stayed `in_parafering` forever.
+
+#### Scenario: The chain closes the voorstel
+
+- **GIVEN** a projected route whose approvers have all signed
+- **THEN** the chain MUST move the voorstel to `geaccordeerd`
+
+#### Scenario: A returned paraaf leaves the chain
+
+- **GIVEN** an approver who returns the voorstel
+- **THEN** the chain MUST move it to `teruggestuurd`, and MUST NOT ask the
+  remaining approvers
+
+### Requirement: REQ-PRF-011 The flow drives, or the route snapshot does
+
+The system SHALL NOT advance the route snapshot for a voorstel carrying a flow
+run, and SHALL continue to advance it for every voorstel without one.
+
+A voorstel already mid-parafering when a route is enabled carries no run. It
+has to finish the way it started; a hard cutover would leave it waiting on a
+run nobody started for it.
+
+#### Scenario: A flow-driven voorstel is left alone
+
+- **GIVEN** a voorstel carrying a flow run
+- **WHEN** a paraaf is given
+- **THEN** the route snapshot MUST NOT be advanced
+
+#### Scenario: A snapshot voorstel still advances
+
+- **GIVEN** a voorstel carrying no flow run
+- **WHEN** a paraaf is given
+- **THEN** its step MUST advance exactly as before
+
+### Requirement: REQ-PRF-012 A status a flow writes is one the schema declares
+
+The system SHALL refuse a voorstel status that `proposal.status` does not
+declare, rather than attempting the save.
+
+`proposal.status` is a closed enum and OpenRegister runs hard validation by
+default, so an undeclared value fails far from the node that chose it.
+
+#### Scenario: An undeclared status is refused
+
+- **GIVEN** a flow configured to write a status the schema does not declare
+- **THEN** the node MUST refuse it rather than leave the voorstel where it was

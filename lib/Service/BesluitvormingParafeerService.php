@@ -258,6 +258,10 @@ class BesluitvormingParafeerService {
 
 		$proposal = $this->toArray(value: $proposalResults[0]);
 
+		if ($this->flowDrivesThis(proposal: $proposal, proposalId: $proposalId) === true) {
+			return $proposal;
+		}
+
 		// Load parafeeractie.
 		$action = $this->resolveParaafActionType(
 			objectService: $objectService,
@@ -325,6 +329,41 @@ class BesluitvormingParafeerService {
 
 		return $this->toArray(value: $updated);
 	}//end handleParaafAction()
+
+	/**
+	 * 🔴 THE FLOW DRIVES, OR THIS DOES. NEVER BOTH.
+	 *
+	 * A voorstel carrying a flow run is advanced by that run: the paraaf the
+	 * approver just gave is picked up by ParaafResumeListener, which signals
+	 * the run, and the run's own nodes ask the next approver and write the
+	 * final status. Advancing the route snapshot here as well would ask every
+	 * approver twice and race the flow to the status.
+	 *
+	 * Every other voorstel — all of them until an operator enables a route's
+	 * projected flow, and all of the ones already mid-parafering afterwards —
+	 * finishes exactly as it started, on the snapshot.
+	 *
+	 * @param array<string, mixed> $proposal   The voorstel.
+	 * @param string               $proposalId Its id, for the log line.
+	 *
+	 * @return boolean True when the flow owns this voorstel.
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	private function flowDrivesThis(array $proposal, string $proposalId): bool {
+		$runId = trim((string)($proposal['flowRunId'] ?? ''));
+		if ($runId === '') {
+			return false;
+		}
+
+		$this->logger->info(
+			'Besluitvorming: voorstel ' . $proposalId . ' is driven by a flow run, so the route snapshot stands aside',
+			['app' => Application::APP_ID, 'flowRun' => $runId]
+		);
+
+		return true;
+
+	}//end flowDrivesThis()
 
 	/**
 	 * Resolve the action recorded on a parafeeractie, defaulting to approval.
