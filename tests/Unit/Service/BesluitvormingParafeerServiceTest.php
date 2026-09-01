@@ -23,6 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\BesluitvormingParafeerService;
 use OCA\Dossiq\Service\Parafeer\ParafeerrouteDirectory;
 use OCA\Dossiq\Service\Parafeer\ParaferingDelegationService;
+use OCA\Dossiq\Service\Parafeer\ParaferingFlowGateway;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -98,6 +99,13 @@ class BesluitvormingParafeerServiceTest extends TestCase {
 	private $delegation;
 
 	/**
+	 * Starts the projected flow when one is enabled.
+	 *
+	 * @var ParaferingFlowGateway&\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private $flows;
+
+	/**
 	 * Set up test fixtures.
 	 *
 	 * @return void
@@ -108,10 +116,16 @@ class BesluitvormingParafeerServiceTest extends TestCase {
 		$this->routes = $this->createMock(ParafeerrouteDirectory::class);
 		$this->delegation = $this->createMock(ParaferingDelegationService::class);
 
+		$this->flows = $this->createMock(ParaferingFlowGateway::class);
+		// No enabled projected flow by default, which is every route today:
+		// the projections ship disabled, so activation takes the route path.
+		$this->flows->method('startForRoute')->willReturn('');
+
 		$this->service = new BesluitvormingParafeerService(
 			$this->settingsService,
 			$this->routes,
 			$this->delegation,
+			$this->flows,
 			$this->logger,
 		);
 
@@ -563,5 +577,123 @@ class BesluitvormingParafeerServiceTest extends TestCase {
 		}
 
 	}//end testEveryStatusItWritesIsOneTheSchemaAllows()
+
+	/**
+	 * 🔴 A voorstel records the run when its route's flow is enabled.
+	 *
+	 * This is the switch. EndorsementRouteFlowMigrator ships every projected
+	 * flow disabled, so enabling one is the act that moves one route onto the
+	 * engine, and `flowRunId` is how the voorstel says which run drives it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	public function testAnEnabledFlowIsRecordedOnTheVoorstel(): void {
+		$saved = [];
+		$service = $this->activatingService($saved, 'run-uuid-1');
+
+		$service->activate(proposalId: 'voorstel-uuid-1');
+
+		$this->assertNotSame([], $saved);
+		$this->assertSame('run-uuid-1', $saved[0]['flowRunId']);
+
+	}//end testAnEnabledFlowIsRecordedOnTheVoorstel()
+
+	/**
+	 * 🔴 With no enabled flow the voorstel carries no run, and takes the route.
+	 *
+	 * The other half of the dual path, and the one every voorstel takes today.
+	 * A voorstel that started before its route was enabled has to finish the
+	 * way it started; a hard cutover would strand whatever is mid-parafering.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	public function testWithoutAnEnabledFlowTheVoorstelTakesTheRoute(): void {
+		$saved = [];
+		$service = $this->activatingService($saved, '');
+
+		$service->activate(proposalId: 'voorstel-uuid-1');
+
+		$this->assertNotSame([], $saved);
+		$this->assertArrayNotHasKey('flowRunId', $saved[0]);
+		// The route snapshot is what drives it instead.
+		$this->assertSame(1, $saved[0]['currentStep']);
+		$this->assertSame('in_parafering', $saved[0]['status']);
+
+	}//end testWithoutAnEnabledFlowTheVoorstelTakesTheRoute()
+
+	/**
+	 * `flowRunId` is a property the schema declares.
+	 *
+	 * OpenRegister runs hard validation by default, so a field the service
+	 * writes and the schema does not declare is one the save rejects.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	public function testTheSchemaDeclaresTheFlowRunField(): void {
+		$register = json_decode(
+			file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'),
+			true
+		);
+
+		$this->assertArrayHasKey(
+			'flowRunId',
+			$register['components']['schemas']['proposal']['properties']
+		);
+
+	}//end testTheSchemaDeclaresTheFlowRunField()
+
+	/**
+	 * Build a service whose activate() reaches the save, recording what it wrote.
+	 *
+	 * @param array<int, mixed> $saved     Sink for saved objects.
+	 * @param string            $flowRunId What the gateway reports.
+	 *
+	 * @return BesluitvormingParafeerService The service.
+	 */
+	private function activatingService(array &$saved, string $flowRunId): BesluitvormingParafeerService {
+		$proposalObj = (object)[
+			'id' => 'voorstel-uuid-1',
+			'status' => 'draft',
+			'caseType' => 'casetype-1',
+		];
+
+		$objectService = $this->createMock(BvwParafeerObjectServiceStub::class);
+		$objectService->method('searchObjectsBySlug')->willReturn([$proposalObj]);
+		$objectService
+			->method('saveObject')
+			->willReturnCallback(
+				static function (array $object) use (&$saved): object {
+					$saved[] = $object;
+
+					return (object)$object;
+				}
+			);
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$settings->method('getConfigValue')->willReturn('test-value');
+
+		$routes = $this->createMock(ParafeerrouteDirectory::class);
+		$routes->method('localRoute')->willReturn(['id' => 'route-1', 'name' => 'Standaard']);
+		$routes->method('stepsForCaseType')->willReturn([['order' => 1, 'actor' => 'behandelaar']]);
+
+		$flows = $this->createMock(ParaferingFlowGateway::class);
+		$flows->method('startForRoute')->willReturn($flowRunId);
+
+		return new BesluitvormingParafeerService(
+			$settings,
+			$routes,
+			$this->createMock(ParaferingDelegationService::class),
+			$flows,
+			$this->logger,
+		);
+
+	}//end activatingService()
 
 }//end class

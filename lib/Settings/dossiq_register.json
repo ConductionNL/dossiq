@@ -3041,6 +3041,12 @@
                         "visible": false,
                         "title": "Route Snapshot"
                     },
+                    "flowRunId": {
+                        "type": "string",
+                        "description": "The OpenRegister flow run driving this voorstel's parafering, when a flow drives it rather than the route snapshot. Empty on a voorstel that started before its route was enabled as a flow: those finish the way they started, because a hard cutover would strand whatever is mid-parafering.",
+                        "visible": false,
+                        "title": "Flow Run"
+                    },
                     "currentStep": {
                         "type": "integer",
                         "default": 0,

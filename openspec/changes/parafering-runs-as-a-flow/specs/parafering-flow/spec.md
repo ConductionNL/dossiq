@@ -92,3 +92,55 @@ two differ the moment a route numbers its steps from anything but one.
 
 - **GIVEN** a route whose steps declare `order` 10 and 20
 - **THEN** the projected nodes MUST carry `step` 10 and 20
+
+### Requirement: REQ-PRF-006 Only an enabled projection takes over
+
+The system SHALL start a flow run for a voorstel only when the flow projected
+from its approval route is ENABLED, and SHALL record the run on the voorstel.
+
+Every projection ships disabled, because the route still drives parafering and
+running both would ask every approver twice. Enabling one flow is therefore the
+act that moves one route onto the engine, and it is the only thing that does.
+
+A flow that cannot report its enabled state SHALL be treated as disabled. An
+unreadable flag is not permission to run.
+
+#### Scenario: An enabled projection starts a run
+
+- **GIVEN** a route whose projected flow is enabled
+- **WHEN** a voorstel is activated
+- **THEN** a run MUST start and the voorstel MUST record its id
+
+#### Scenario: A disabled projection starts nothing
+
+- **GIVEN** a route whose projected flow is disabled
+- **WHEN** a voorstel is activated
+- **THEN** no run MUST start
+
+#### Scenario: Another route's flow is not this route's flow
+
+- **GIVEN** an enabled flow projected from a different route
+- **THEN** it MUST NOT be started for this one
+
+### Requirement: REQ-PRF-007 A voorstel finishes the way it started
+
+A voorstel carrying no flow run SHALL be driven by its route snapshot.
+
+A hard cutover would strand whatever is mid-parafering: those voorstellen would
+be waiting on a run nobody started. The dev instance cannot show this because
+it holds zero voorstellen; production can.
+
+The engine being absent or failing SHALL NOT fail activation. A voorstel that
+cannot start a run takes the route path, which is what the dual path is for.
+
+#### Scenario: No enabled flow means the route drives it
+
+- **GIVEN** a route with no enabled projection
+- **WHEN** a voorstel is activated
+- **THEN** it MUST carry no run id, and MUST be on step 1 of its route snapshot
+
+#### Scenario: OpenRegister absent does not fail activation
+
+- **GIVEN** an instance where the flow engine cannot be resolved
+- **WHEN** a voorstel is activated
+- **THEN** activation MUST succeed on the route path

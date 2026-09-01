@@ -8,5 +8,7 @@
 - [x] Treat a resume without a decision as a nudge, not a sign-off
 - [x] Emit `dossiq.askParaaf` from the route projection, carrying the route's own step number
 - [ ] Stamp `flowRun`/`flowNode` onto the paraaf the approver creates, and resume the run from it
-- [ ] Dual-path BesluitvormingParafeerService: finish snapshot voorstellen, start new ones as runs
+- [x] `flowRunId` on the proposal schema
+- [x] `ParaferingFlowGateway`: start a run only for an ENABLED projected flow
+- [x] Dual-path activate(): record the run, or fall through to the route snapshot
 - [ ] Only then: enable the projections and retire parafeerroute, its page, and decidiq's ApprovalRoute
