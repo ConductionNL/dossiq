@@ -367,6 +367,94 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$this->node()->execute([['json' => []]], $this->config(), $this->context(new FlowNodeResumeState('n')));
 	}//end testWithNoCaseItRefuses()
 
+	/**
+	 * A node over an object service whose saveObject returns whatever the
+	 * test says, so the OTHER result shapes createdTaskId() accepts stay
+	 * honest: each shape below is one a duck-typed service can legitimately
+	 * hand back, and each must still identify the task.
+	 *
+	 * @param mixed $result What saveObject returns.
+	 *
+	 * @return DossiqAskPersonNode The node under test.
+	 */
+	private function nodeReturning(mixed $result): DossiqAskPersonNode {
+		$objectService = new class($this->written, $result) {
+			public function __construct(private array &$sink, private mixed $result) {
+			}
+
+			public function saveObject(array $object, string $register, string $schema): mixed {
+				$this->sink[] = $object;
+
+				return $this->result;
+			}
+		};
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => ($key === 'register' ? 'dossiq' : 'task')
+		);
+
+		$users = $this->createMock(IUserManager::class);
+
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnArgument(0);
+
+		return new DossiqAskPersonNode($settings, new FlowRunAsScope($settings, $users), $l10n, new NullLogger());
+	}//end nodeReturning()
+
+	/**
+	 * A LEGACY ARRAY result still identifies the task. The service is
+	 * duck-typed, and refusing a shape that carries a perfectly good id
+	 * would recreate the orphaned-task bug for the other shape.
+	 */
+	public function testALegacyArraySaveResultStillIdentifiesTheTask(): void {
+		$resume = new FlowNodeResumeState('ask-indiener');
+		$node = $this->nodeReturning(['id' => 'legacy-task-7']);
+
+		try {
+			$node->execute($this->items(), $this->config(), $this->context($resume));
+		} catch (FlowSuspension $e) {
+			// expected: the task is outstanding
+		}
+
+		self::assertSame('legacy-task-7', $resume->get('taskId'));
+	}//end testALegacyArraySaveResultStillIdentifiesTheTask()
+
+	/**
+	 * An entity with NO uuid falls back to its serialised form, which the
+	 * real ObjectEntity guarantees carries a top-level id.
+	 */
+	public function testAnEntityWithoutAUuidFallsBackToItsSerialisedId(): void {
+		$entity = new ObjectEntity();
+		$entity->setObject(['id' => 'serialised-task-9', 'title' => 'x']);
+
+		$resume = new FlowNodeResumeState('ask-indiener');
+		$node = $this->nodeReturning($entity);
+
+		try {
+			$node->execute($this->items(), $this->config(), $this->context($resume));
+		} catch (FlowSuspension $e) {
+			// expected: the task is outstanding
+		}
+
+		self::assertSame('serialised-task-9', $resume->get('taskId'));
+	}//end testAnEntityWithoutAUuidFallsBackToItsSerialisedId()
+
+	/**
+	 * A result that names NOTHING refuses: an unidentifiable task means an
+	 * empty resume slot, so the next heartbeat would write a duplicate.
+	 */
+	public function testAResultNamingNoIdRefuses(): void {
+		$resume = new FlowNodeResumeState('ask-indiener');
+		$node = $this->nodeReturning('not-a-result-shape');
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('could not identify');
+
+		$node->execute($this->items(), $this->config(), $this->context($resume));
+	}//end testAResultNamingNoIdRefuses()
+
 	public function testItAnnouncesItsIdentity(): void {
 		$node = $this->node();
 
