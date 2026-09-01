@@ -3408,7 +3408,15 @@ OC.L10N.register(
         "A case is waiting on this task": "Een zaak wacht op deze taak",
         "Complete the task and the case moves on.": "Rond de taak af, dan gaat de zaak verder.",
         "Open the case": "Open de zaak",
-        "Waiting case": "Wachtende zaak"
+        "Waiting case": "Wachtende zaak",
+        "Time left": "Resterende tijd",
+        "Case panels": "Zaakpanelen",
+        "Files": "Bestanden",
+        "Mail": "Mail",
+        "Mail & messages": "Mail en berichten",
+        "Runs": "Runs",
+        "No flows have run on this case yet": "Er zijn nog geen flows uitgevoerd op deze zaak",
+        "Log hours": "Uren boeken"
     },
     "nplurals=2; plural=(n != 1);"
 )

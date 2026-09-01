@@ -3407,7 +3407,15 @@
         "A case is waiting on this task": "A case is waiting on this task",
         "Complete the task and the case moves on.": "Complete the task and the case moves on.",
         "Open the case": "Open the case",
-        "Waiting case": "Waiting case"
+        "Waiting case": "Waiting case",
+        "Case panels": "Case panels",
+        "Files": "Files",
+        "Log hours": "Log hours",
+        "Mail": "Mail",
+        "Mail & messages": "Mail & messages",
+        "No flows have run on this case yet": "No flows have run on this case yet",
+        "Runs": "Runs",
+        "Time left": "Time left"
     },
     "plurals": ""
 }

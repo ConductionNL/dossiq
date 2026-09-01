@@ -1281,7 +1281,7 @@
 						"type": "stats-block",
 						"title": "Hours booked",
 						"icon": "History",
-						"_note": "Hours live in humaniq, per ADR-107 decision 6: 'Hours logged on a case are hrmq time entries carrying the case reference.' This tile used to sum shillinq UrenRegistratie on subjectApp/subjectId, which contradicted that ADR and, worse, could only ever read zero: a fleet-wide grep found NO writer for subjectApp anywhere, so the tile reported 0 hours on every case in every install and looked correct doing it. The retirement of the shillinq path is tracked in shillinq openspec/changes/hours-to-humaniq. `dossiq:case` is the `<app>:<schema>` literal humaniq documents; it is the app <id> in appinfo/info.xml, and dossiq is the first writer of it in the fleet.",
+						"_note": "The Log hours header action books time against THIS case; its `props` are seed values rather than fields a person fills in, because humaniq keeps domainObjectRef and domainObjectType out of every includeFields allowlist on purpose (they are written by integrations, not typed by an employee). Hours live in humaniq, per ADR-107 decision 6: 'Hours logged on a case are hrmq time entries carrying the case reference.' This tile used to sum shillinq UrenRegistratie on subjectApp/subjectId, which contradicted that ADR and, worse, could only ever read zero: a fleet-wide grep found NO writer for subjectApp anywhere, so the tile reported 0 hours on every case in every install and looked correct doing it. The retirement of the shillinq path is tracked in shillinq openspec/changes/hours-to-humaniq. `dossiq:case` is the `<app>:<schema>` literal humaniq documents; it is the app <id> in appinfo/info.xml, and dossiq is the first writer of it in the fleet.",
 						"content": {
 							"entries": [
 								{
@@ -1878,7 +1878,6 @@
 						"register": "humaniq",
 						"schema": "TimeEntry",
 						"successMessage": "Hours logged on this case.",
-						"_note": "Books time against THIS case. `props` are seed values, not fields the person fills in: humaniq keeps domainObjectRef and domainObjectType out of every includeFields allowlist on purpose, because they are written by integrations rather than typed by an employee. `@objectId` resolves through the same token grammar the filters use. Gated on humaniq being installed, so an install without it sees no button rather than a form that saves nowhere.",
 						"props": {
 							"domainObjectRef": "@objectId",
 							"domainObjectType": "dossiq:case"
