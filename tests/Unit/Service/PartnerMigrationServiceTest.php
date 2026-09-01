@@ -89,8 +89,11 @@ class PartnerMigrationServiceTest extends TestCase {
 			 * Organisations this mapper was asked to insert.
 			 *
 			 * A public property rather than a by-reference constructor
-			 * argument: promoted properties cannot be by-reference, so the
-			 * sink silently stayed empty and every assertion read null.
+			 * argument. Either works, but reading the sink off the mapper
+			 * keeps the failure legible: when this list is empty it means
+			 * insert() was never reached, which is the shape a throw inside
+			 * migrateOne()'s try produces. That is exactly what happened
+			 * while tests/Stubs/Db/Organisation.php was missing setType().
 			 *
 			 * @var array<int, object>
 			 */
