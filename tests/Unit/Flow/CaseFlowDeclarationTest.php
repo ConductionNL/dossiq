@@ -75,6 +75,41 @@ class CaseFlowDeclarationTest extends TestCase {
 		return array_map(static fn (array $n): string => (string)$n['id'], $this->flow['nodes']);
 	}//end nodeIds()
 
+	/**
+	 * The declared node with this id.
+	 *
+	 * @param string $id The node id.
+	 *
+	 * @return array<string, mixed> The node.
+	 */
+	private function nodeById(string $id): array {
+		foreach ($this->flow['nodes'] as $node) {
+			if ((string)($node['id'] ?? '') === $id) {
+				return $node;
+			}
+		}
+
+		$this->fail(sprintf('The flow declares no node "%s".', $id));
+	}//end nodeById()
+
+	/**
+	 * Where the edge leaving this node through this exit points.
+	 *
+	 * @param string $nodeId The branching node.
+	 * @param string $exitId The exit the edge must name in `fromExit`.
+	 *
+	 * @return string The target node id.
+	 */
+	private function edgeTargetForExit(string $nodeId, string $exitId): string {
+		foreach ($this->flow['edges'] as $edge) {
+			if (($edge['from'] ?? '') === $nodeId && (string)($edge['fromExit'] ?? '') === $exitId) {
+				return (string)($edge['to'] ?? '');
+			}
+		}
+
+		$this->fail(sprintf('No edge leaves "%s" through exit "%s".', $nodeId, $exitId));
+	}//end edgeTargetForExit()
+
 	public function testTheFlowNamesItselfAndItsTrigger(): void {
 		$this->assertNotSame('', trim((string)($this->flow['name'] ?? '')), 'A declared flow with no name is refused at import.');
 		$this->assertSame('object.created', $this->flow['trigger']);
@@ -196,17 +231,13 @@ class CaseFlowDeclarationTest extends TestCase {
 	 * person's desk.
 	 */
 	public function testTheApplicantLoopHasAnUnconditionalExit(): void {
-		$fromCheck = array_values(
-			array_filter(
-				$this->flow['edges'],
-				static fn (array $e): bool => ($e['from'] ?? '') === 'check-complete'
-			)
-		);
+		$check = $this->nodeById('check-complete');
+		$exits = (array)($check['exits'] ?? []);
 
-		$this->assertGreaterThanOrEqual(3, count($fromCheck), 'complete / under-cap / at-cap are three distinct exits.');
+		$this->assertGreaterThanOrEqual(3, count($exits), 'complete / under-cap / at-cap are three distinct exits.');
 
 		$unconditional = array_values(
-			array_filter($fromCheck, static fn (array $e): bool => isset($e['condition']) === false)
+			array_filter($exits, static fn (array $e): bool => isset($e['condition']) === false)
 		);
 
 		$this->assertCount(
@@ -217,10 +248,60 @@ class CaseFlowDeclarationTest extends TestCase {
 
 		$this->assertSame(
 			'status-gestrand',
-			$unconditional[0]['to'],
+			$this->edgeTargetForExit(nodeId: 'check-complete', exitId: (string)$unconditional[0]['id']),
 			'The else must be the stalled route, so an unanswered case ends deliberately.'
 		);
 	}//end testTheApplicantLoopHasAnUnconditionalExit()
+
+	/**
+	 * 🔴 EVERY EXIT REACHES AN EDGE, AND EVERY BRANCHING EDGE NAMES AN EXIT.
+	 *
+	 * The two halves of the exits[] contract. An exit no edge references is a
+	 * branch that silently goes nowhere (`placesForExit` returns nothing and
+	 * the token skips it); an edge leaving a branching node WITHOUT `fromExit`
+	 * never matches any exit, so the branch it draws can never be taken.
+	 */
+	public function testEveryExitAndEveryBranchingEdgePairUp(): void {
+		foreach ($this->flow['nodes'] as $node) {
+			$exits = (array)($node['exits'] ?? []);
+			if ($exits === []) {
+				continue;
+			}
+
+			$exitIds = array_map(static fn (array $e): string => (string)$e['id'], $exits);
+			$fromExits = [];
+			foreach ($this->flow['edges'] as $edge) {
+				if (($edge['from'] ?? '') !== $node['id']) {
+					continue;
+				}
+
+				$fromExit = trim((string)($edge['fromExit'] ?? ''));
+				$this->assertNotSame(
+					'',
+					$fromExit,
+					sprintf(
+						'Edge "%s" leaves branching node "%s" without a fromExit, so it matches no exit and can never be taken.',
+						$edge['id'],
+						$node['id']
+					)
+				);
+				$this->assertContains(
+					$fromExit,
+					$exitIds,
+					sprintf('Edge "%s" names an exit "%s" that node "%s" does not declare.', $edge['id'], $fromExit, $node['id'])
+				);
+				$fromExits[] = $fromExit;
+			}
+
+			foreach ($exitIds as $exitId) {
+				$this->assertContains(
+					$exitId,
+					$fromExits,
+					sprintf('Exit "%s" of node "%s" is referenced by no edge: that branch silently goes nowhere.', $exitId, $node['id'])
+				);
+			}
+		}//end foreach
+	}//end testEveryExitAndEveryBranchingEdgePairUp()
 
 	/**
 	 * 🔴 THE CAP COUNTS SOMETHING THAT IS ACTUALLY WRITTEN.
@@ -232,9 +313,9 @@ class CaseFlowDeclarationTest extends TestCase {
 	 */
 	public function testTheLoopCounterIsIncrementedInsideTheLoop(): void {
 		$capped = null;
-		foreach ($this->flow['edges'] as $edge) {
-			if (($edge['from'] ?? '') === 'check-complete' && isset($edge['condition']['<']) === true) {
-				$capped = $edge;
+		foreach ((array)($this->nodeById('check-complete')['exits'] ?? []) as $exit) {
+			if (isset($exit['condition']['<']) === true) {
+				$capped = $exit;
 				break;
 			}
 		}
@@ -262,6 +343,90 @@ class CaseFlowDeclarationTest extends TestCase {
 		);
 		$this->assertNotEmpty($intoWriter, 'The counter node must be reachable.');
 	}//end testTheLoopCounterIsIncrementedInsideTheLoop()
+
+	/**
+	 * 🔴 NO SHIPPED FLOW MAY PUT A `condition` ON AN EDGE. EVER.
+	 *
+	 * The engine's contract is exits[]: FlowTokenRouter reads conditions from
+	 * the node's `exits` and follows edges by `fromExit`. A condition written
+	 * on the edge itself is INVISIBLE to it — not rejected, not warned about,
+	 * simply never read — so every enabled transition looks unconditional and
+	 * the first one wins. That is how a COMPLETE case was routed to "Wacht op
+	 * aanvulling" live: the completeness check carried both its conditions in
+	 * the shape the engine does not have.
+	 *
+	 * Scans EVERY flow declaration the app ships, not just the case flow, so
+	 * the wrong shape cannot come back anywhere: the failure mode is a class,
+	 * not an instance.
+	 */
+	public function testNoShippedFlowPutsAConditionOnAnEdge(): void {
+		$declarationFiles = array_merge(
+			[__DIR__ . '/../../../lib/Settings/dossiq_register.json'],
+			(glob(__DIR__ . '/../../../lib/Settings/register.d/*.json') ?: [])
+		);
+
+		$flowsSeen = 0;
+		foreach ($declarationFiles as $file) {
+			$document = json_decode((string)file_get_contents($file), true);
+			$this->assertIsArray($document, basename($file) . ' must be valid JSON.');
+
+			foreach ($this->flowDeclarationsIn($document) as $flow) {
+				$flowsSeen++;
+				foreach ((array)($flow['edges'] ?? []) as $edge) {
+					$this->assertArrayNotHasKey(
+						'condition',
+						(array)$edge,
+						sprintf(
+							'%s: flow "%s" puts a condition on edge "%s". The engine reads conditions from the '
+							. 'declaring node\'s exits[] (matched by the edge\'s fromExit) and NEVER from the edge, '
+							. 'so this condition would silently not exist and the first enabled transition would win.',
+							basename($file),
+							(string)($flow['name'] ?? '?'),
+							(string)($edge['id'] ?? '?')
+						)
+					);
+				}
+			}
+		}//end foreach
+
+		$this->assertGreaterThan(0, $flowsSeen, 'The scan found no flow declarations at all: the query, not the fleet, is broken.');
+	}//end testNoShippedFlowPutsAConditionOnAnEdge()
+
+	/**
+	 * Every `x-openregister-flows` declaration in a decoded document.
+	 *
+	 * Walks the whole tree rather than one known path, so a flow declared on
+	 * another schema — or a schema added later — cannot dodge the scan.
+	 *
+	 * @param array $document The decoded JSON document.
+	 *
+	 * @return array<int, array<string, mixed>> The declared flows.
+	 */
+	private function flowDeclarationsIn(array $document): array {
+		$flows = [];
+		$walk = static function (array $node) use (&$walk, &$flows): void {
+			foreach ($node as $key => $value) {
+				if (is_array($value) === false) {
+					continue;
+				}
+
+				if ($key === 'x-openregister-flows') {
+					foreach ($value as $flow) {
+						if (is_array($flow) === true) {
+							$flows[] = $flow;
+						}
+					}
+
+					continue;
+				}
+
+				$walk($value);
+			}
+		};
+		$walk($document);
+
+		return $flows;
+	}//end flowDeclarationsIn()
 
 	/**
 	 * Each human step names an assignee.
