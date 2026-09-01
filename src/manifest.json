@@ -1596,6 +1596,20 @@
 						"title": "Adaptive case plan",
 						"icon": "Sitemap",
 						"_note": "CMMN adaptive case-plan panel (cmmn-adaptive-case). Resolved via page slots (widget-cmmn-case-plan -> CmmnCasePlanPanel); the CMMN counterpart to the BPMN status-transition engine, for caseTypes with handlingModel = 'cmmn'. Renders nothing when this case's caseType is BPMN-managed."
+					},
+					{
+						"id": "case-flow-runs",
+						"type": "flow-runs",
+						"title": "Flow runs",
+						"icon": "Sitemap",
+						"_note": "case-flow-human-steps 6.1, the case half: this case's own flow run and the step it sits on, with its finished runs underneath (nextcloud-vue CnFlowRunsWidget in subject mode). `subject: '@objectId'` binds the current case, so OpenRegister filters the active and completed reads to it server-side. `rowRoute` and not `runRoute` on purpose: dossiq has no run detail page, and FlowDetail (/flows/:id) resolves a FLOW id, so a click opens the flow whose sidebar lists its runs. Pointing runRoute at FlowDetail would push a run uuid into a flow route and open nothing.",
+						"content": {
+							"subject": "@objectId",
+							"limit": 5,
+							"pollSeconds": 15,
+							"rowRoute": "FlowDetail",
+							"emptyText": "No flow is running for this case"
+						}
 					}
 				],
 				"layout": [
@@ -1782,6 +1796,15 @@
 						"gridWidth": 4,
 						"gridHeight": 2,
 						"showTitle": false
+					},
+					{
+						"_note": "The one open cell above the fold: beside Hours booked (x0 y10 4x2), under Process, above Initiator (y12) and left of the Related column (x8). A caseworker reads where the case stands right after its process data, without scrolling past it, and no other widget moves.",
+						"id": "24",
+						"widgetId": "case-flow-runs",
+						"gridX": 4,
+						"gridY": 10,
+						"gridWidth": 4,
+						"gridHeight": 2
 					}
 				],
 				"lifecycleActions": {
