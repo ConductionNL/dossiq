@@ -1039,7 +1039,7 @@
                                     "id": "check-complete",
                                     "type": "openregister.switch",
                                     "config": {},
-                                    "_note": "The conditions live HERE, on exits[], because that is the engine's contract: FlowTokenRouter reads a node's exits and follows edges by fromExit. They used to sit on the edges themselves, where the engine never looks — so every enabled transition appeared unconditional, the first one won, and a COMPLETE case was routed to 'Wacht op aanvulling'. Exits are tried in declaration order; the one without a condition is the required else.",
+                                    "_note": "The conditions live HERE, on exits[], because that is the engine's contract: FlowTokenRouter reads a node's exits and follows edges by fromExit. They used to sit on the edges themselves, where the engine never looks. Every enabled transition then appeared unconditional, the first one won, and a COMPLETE case was routed to 'Wacht op aanvulling'. Exits are tried in declaration order; the one without a condition is the required else.",
                                     "exits": [
                                         {
                                             "id": "compleet",
