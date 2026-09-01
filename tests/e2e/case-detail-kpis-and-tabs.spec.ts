@@ -26,8 +26,41 @@ import {
 	objectId,
 	REGISTER,
 	seedCase,
-} from './helpers/fixtures'
-import { trackDossiqErrors } from './helpers/nav'
+} from './helpers/fixtures.ts'
+import { trackDossiqErrors } from './helpers/nav.ts'
+
+/**
+ * Every title this spec matches, in either locale the instance may run.
+ *
+ * Nothing forces the language of the E2E instance, and the sibling
+ * case-detail-flow-runs spec already guards its title the same way. An exact
+ * English string here would pass or fail on the instance's locale rather than
+ * on the feature, which is the least useful thing a test can assert.
+ */
+const TAB_LABELS = [
+	/Notes|Notities/,
+	/Files|Bestanden/,
+	/Related cases|Gerelateerde zaken/,
+	/Sub-cases|Deelzaken/,
+	/Mail/,
+	/Appointments|Afspraken/,
+]
+
+/**
+ * The right column, top to bottom.
+ *
+ * `Flow runs` is development's widget, added independently while this branch
+ * was open (#1615); it supersedes the `case-runs` this branch had. Only the
+ * PLACEMENT is ours — the right column beside Hours, rather than the middle
+ * cell it shipped in.
+ */
+const COLUMN_TITLES = [
+	/Hours booked|Geboekte uren/,
+	/Flow runs|Flow-uitvoeringen/,
+	/Tasks|Taken/,
+	/Decisions|Besluiten/,
+	/Locations|Locaties/,
+]
 
 test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 	test.setTimeout(180_000)
@@ -90,7 +123,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 
 		// Time left is COMPUTED from the deadline, not printed from it.
 		await expect(page.locator('.cn-countdown-widget')).toContainText(
-			/day(s)? left/,
+			/day(s)? left|dag(en)? te gaan/,
 			{
 				timeout: 15_000,
 			},
@@ -98,7 +131,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 
 		// The case type field holds a uuid. Showing the uuid would be a pass for
 		// "renders something" and a failure for the feature.
-		const caseTypeCard = kpis.filter({ hasText: 'Case type' })
+		const caseTypeCard = kpis.filter({ hasText: /Case type|Zaaktype/ })
 		await expect(caseTypeCard).toContainText(caseTypeTitle, {
 			timeout: 20_000,
 		})
@@ -111,9 +144,12 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		// for a case type with no milestones, so asserting the NUMBER would prove
 		// nothing: a failed fetch renders 0% too. The request itself is asserted
 		// below, which is the part that can actually break.
-		await expect(kpis.filter({ hasText: 'Completed' })).toContainText(/%/, {
-			timeout: 20_000,
-		})
+		await expect(kpis.filter({ hasText: /Completed|Afgerond/ })).toContainText(
+			/%/,
+			{
+				timeout: 20_000,
+			},
+		)
 
 		// The milestone request must actually succeed. It used to fire twice: once
 		// with an empty `@object.caseType` path segment before the record loaded
@@ -149,14 +185,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		const strip = page.locator('.cn-tabs-widget')
 		await expect(strip).toBeVisible({ timeout: 30_000 })
 
-		for (const label of [
-			'Notes',
-			'Files',
-			'Related cases',
-			'Sub-cases',
-			'Mail',
-			'Appointments',
-		]) {
+		for (const label of TAB_LABELS) {
 			await expect(strip.getByRole('tab', { name: label })).toBeVisible({
 				timeout: 15_000,
 			})
@@ -203,12 +232,12 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 
 		await expect.poll(mounted, { timeout: 15_000 }).toBe(1)
 
-		await strip.getByRole('tab', { name: 'Sub-cases' }).click()
+		await strip.getByRole('tab', { name: /Sub-cases|Deelzaken/ }).click()
 		await expect.poll(mounted, { timeout: 15_000 }).toBe(2)
 
 		// Switching back must not tear the first panel down, or every switch
 		// refetches.
-		await strip.getByRole('tab', { name: 'Notes' }).click()
+		await strip.getByRole('tab', { name: /Notes|Notities/ }).click()
 		await expect.poll(mounted, { timeout: 15_000 }).toBe(2)
 	})
 
@@ -220,22 +249,10 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			timeout: 30_000,
 		})
 
-		for (const title of [
-			'Hours booked',
-			// Development added this widget independently while this branch was
-			// open (#1615) and titles it "Flow runs". Its definition supersedes
-			// the `case-runs` one this branch had; only the placement here is
-			// ours, in the right column beside Hours.
-			'Flow runs',
-			'Tasks',
-			'Decisions',
-			'Locations',
-		]) {
-			await expect(page.getByText(title, { exact: true }).first()).toBeVisible(
-				{
-					timeout: 20_000,
-				},
-			)
+		for (const title of COLUMN_TITLES) {
+			await expect(page.getByText(title).first()).toBeVisible({
+				timeout: 20_000,
+			})
 		}
 	})
 
