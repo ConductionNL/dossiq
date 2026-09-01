@@ -115,6 +115,16 @@ class MilestoneService {
 		return $this->getCaseProgress(caseId: $caseId, caseTypeId: $caseTypeId);
 	}//end getCaseProgressForCase()
 
+	/**
+	 * Get milestone progress for a specific case.
+	 *
+	 * @param string $caseId The case UUID
+	 * @param string $caseTypeId The case type UUID
+	 *
+	 * @return array<string, mixed> Progress data with milestones, reached count, total, percentage
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
 	public function getCaseProgress(string $caseId, string $caseTypeId): array {
 		$definitions = $this->getMilestones(caseTypeId: $caseTypeId);
 		if (count($definitions) === 0) {
