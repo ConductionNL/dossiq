@@ -9,59 +9,64 @@ generic task.
 
 ### Requirement: REQ-PRF-001 A flow asks for a paraaf, not a task
 
-The system SHALL provide a `dossiq.askParaaf` flow node that raises a
-`parafeeractie` against an actor and suspends until it is answered.
+The system SHALL provide a `dossiq.askParaaf` flow node that records who is
+being asked for a paraaf and suspends until one is given.
 
-The paraaf SHALL carry the fields the parafering surfaces and the
-administrative record depend on: the proposal, the step, the actor and its
-type, and on answering, the mandate and on-whose-behalf the signer gave.
+The node SHALL NOT create the `parafeeractie`.
 
-A generic task carries none of these, so a route projected onto task-raising
-nodes cannot drive parafering without losing the record.
+A `parafeeractie` declares `action` among its required properties, and its
+enum carries no value meaning "not yet signed". A paraaf raised without one
+cannot be saved, and inventing a placeholder would put an unsigned signature
+into an administrative-law record. The record is what somebody signed, not a
+request that they sign.
 
-#### Scenario: The node raises a parafeeractie and waits
+The awaiting step SHALL record the proposal, the step, the question, the actor
+and the actor type, so the run can say what is being asked of whom.
+
+#### Scenario: The node records the ask and waits
 
 - **GIVEN** a step naming an actor
 - **WHEN** the node runs with no answer yet
-- **THEN** exactly one `parafeeractie` MUST be written and the run MUST suspend
+- **THEN** the run MUST suspend, and MUST NOT create a `parafeeractie`
 
-#### Scenario: The paraaf carries the domain fields
+#### Scenario: The awaiting step says what it is asking
 
-- **GIVEN** a raised paraaf
-- **THEN** it MUST carry the proposal, the step, the actor and the actor type
+- **GIVEN** a suspended paraaf step
+- **THEN** its slot MUST carry the proposal, the step, the question and the actor
 
 ### Requirement: REQ-PRF-002 A paraaf names the run and the node it answers
 
-The `parafeeractie` SHALL record `flowRun` and `flowNode`.
+The `parafeeractie` schema SHALL carry `flowRun` and `flowNode`, and a paraaf
+given against an awaiting flow step SHALL record both.
 
 A run holds one awaiting slot per node and cannot say which of them a signal
 answers, so naming the run alone is not enough to resume.
 
-#### Scenario: Both linkage fields are written
+#### Scenario: Both linkage fields exist to be written
 
-- **GIVEN** a paraaf raised by a flow
+- **GIVEN** a paraaf answering an awaiting flow step
 - **THEN** it MUST carry the run id and the node id
 
-### Requirement: REQ-PRF-003 Asking is idempotent
+### Requirement: REQ-PRF-003 Asking is recorded once
 
 However often the run wakes while a paraaf is outstanding, the system SHALL
-raise exactly one.
+record the ask once and not restate it.
 
 The node suspends with a heartbeat so a lost signal costs a wake rather than
-the flow. Without idempotence that safety net would raise a fresh demand
-against the same person every time it fired.
+the flow.
 
-#### Scenario: A heartbeat re-asks rather than re-raising
+#### Scenario: A heartbeat does not restate the question
 
-- **GIVEN** a node that has already raised its paraaf
+- **GIVEN** a step that has already recorded its ask
 - **WHEN** the run wakes twice more
-- **THEN** still exactly one paraaf MUST exist
+- **THEN** the recorded ask MUST be unchanged
 
 #### Scenario: Without a resume slot the node refuses
 
 - **GIVEN** a run offering no resume slot
-- **THEN** the node MUST refuse, because a step that cannot be made idempotent
-  must not run at all
+- **THEN** the node MUST refuse, because the slot is where the assignee is
+  recorded and an awaiting step that cannot say who may answer it is one
+  anybody can answer
 
 ### Requirement: REQ-PRF-004 A resume without a decision is not a sign-off
 

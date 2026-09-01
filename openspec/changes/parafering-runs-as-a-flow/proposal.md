@@ -44,3 +44,23 @@ The remaining step, deliberately separate, is a dual-path service: a voorstel
 carrying a `routeSnapshot` and no flow run finishes the way it started, while
 new ones start a run. A hard cutover strands whatever is mid-parafering, and
 the dev instance cannot show that — it holds zero voorstellen. Production can.
+
+## Correction, 2026-09-01
+
+The node first shipped creating the `parafeeractie` up front, as a standing
+request. That could not work and the tests could not see it.
+
+`parafeeractie` declares `action` among its required properties and
+OpenRegister runs hard validation by default, so a paraaf raised without one is
+rejected on save. The node's unit tests passed because their fake accepted
+whatever it was handed; teaching that fake the schema's required properties
+turned five of eighteen red at once.
+
+The schema was right and the node was wrong. A `parafeeractie` is the record of
+a sign-off somebody gave, not a request that they give one, and no enum value
+should be invented to let a blank one stand for "awaiting".
+
+So the node records the ask in the run's own awaiting slot, which already
+carries the assignee OpenRegister's resume guard consults, and creates nothing.
+The approver signs through the ordinary parafering surfaces, which create the
+parafeeractie with its action.

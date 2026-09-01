@@ -243,10 +243,22 @@ class BesluitvormingParafeerService {
 			parafeeractieId: $parafeeractieId,
 		);
 
-		// Handle retour: set voorstel status to retour.
-		if ($action === 'retour') {
+		// 🔴 'returned', not 'retour', and 'teruggestuurd', not 'retour'.
+		//
+		// A parafeeractie's `action` is a closed enum: parafered, returned,
+		// advised, skipped, accorded. 'retour' is not in it, so this branch
+		// could never be reached by a paraaf that passed validation — and an
+		// approver who sent a voorstel back fell through to the advance below,
+		// moving it FORWARD to the next approver. A rejection read as an
+		// approval.
+		//
+		// The status it then wrote was equally unreachable: the voorstel status
+		// enum has no 'retour' either. openspec/specs/parafering-actions
+		// spells both out — action 'returned' sets status 'teruggestuurd' —
+		// and src/utils/parafeerEngine.js has had it right all along.
+		if ($action === 'returned') {
 			$updated = $objectService->saveObject(
-				object: array_merge($proposal, ['status' => 'retour']),
+				object: array_merge($proposal, ['status' => 'teruggestuurd']),
 				register: $register,
 				schema: $proposalSchema
 			);
@@ -260,8 +272,12 @@ class BesluitvormingParafeerService {
 		);
 
 		if ($nextStep === null) {
-			// All steps complete: transition case to gereed voor agendering.
-			$updateData = ['status' => 'gereed_voor_agendering', 'currentStep' => 0];
+			// 'geaccordeerd', the enum's own word for it. 'gereed_voor_agendering'
+			// is not a voorstel status and never was, so the moment every paraaf
+			// was collected wrote a value the schema rejects and the UI cannot
+			// render. getStatusAfterAdvance() in src/utils/parafeerEngine.js
+			// returns 'geaccordeerd' for exactly this transition.
+			$updateData = ['status' => 'geaccordeerd', 'currentStep' => 0];
 			$updated = $objectService->saveObject(
 				object: array_merge($proposal, $updateData),
 				register: $register,
@@ -304,7 +320,7 @@ class BesluitvormingParafeerService {
 		string $parafeeractieId,
 	): string {
 		if (empty($actionSchema) === true) {
-			return 'approved';
+			return 'parafered';
 		}
 
 		$actionResults = $this->searchObjectsAsArrays(
@@ -315,12 +331,12 @@ class BesluitvormingParafeerService {
 		);
 
 		if (empty($actionResults) === true) {
-			return 'approved';
+			return 'parafered';
 		}
 
 		$action = $this->toArray(value: $actionResults[0]);
 
-		return (string)($action['action'] ?? 'approved');
+		return (string)($action['action'] ?? 'parafered');
 	}//end resolveParaafActionType()
 
 	/**

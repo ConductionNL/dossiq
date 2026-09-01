@@ -384,4 +384,184 @@ class BesluitvormingParafeerServiceTest extends TestCase {
 
 	}//end testHandleParaafActionReturnsArrayWithStatus()
 
+	/**
+	 * Build the service over an object service that RECORDS what it is asked
+	 * to save.
+	 *
+	 * The older tests mock `saveObject` with `willReturn($canned)` and then
+	 * assert on the canned value, so they pass whatever the service writes.
+	 * These assert the argument instead, which is the only way a wrong status
+	 * can fail a test.
+	 *
+	 * @param array<string, mixed> $proposal The stored voorstel.
+	 * @param string               $action   The action on the parafeeractie.
+	 * @param array<int, mixed>    $saved    Sink for saved objects.
+	 *
+	 * @return BesluitvormingParafeerService The service.
+	 */
+	private function serviceRecording(array $proposal, string $action, array &$saved): BesluitvormingParafeerService {
+		$proposalObj = (object)$proposal;
+		$actionObj = (object)['id' => 'actie-uuid-1', 'action' => $action];
+
+		$objectService = $this->createMock(BvwParafeerObjectServiceStub::class);
+		$objectService
+			->method('searchObjectsBySlug')
+			->willReturnCallback(
+				static function (string $register, string $schema, array $params) use ($proposalObj, $actionObj): array {
+					if (isset($params['id']) === true && $params['id'] === 'actie-uuid-1') {
+						return [$actionObj];
+					}
+
+					return [$proposalObj];
+				}
+			);
+		$objectService
+			->method('saveObject')
+			->willReturnCallback(
+				static function (array $object) use (&$saved): object {
+					$saved[] = $object;
+
+					return (object)$object;
+				}
+			);
+
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+		$this->settingsService->method('getConfigValue')->willReturn('test-value');
+
+		return $this->service;
+
+	}//end serviceRecording()
+
+	/**
+	 * 🔴 A returned paraaf sends the voorstel back, it does not advance it.
+	 *
+	 * The action enum is (parafered, returned, advised, skipped, accorded).
+	 * The service compared against 'retour', which is not in it, so a returned
+	 * voorstel fell through to the advance below and moved FORWARD to the next
+	 * approver. A rejection was read as an approval.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/parafering-actions/spec.md
+	 */
+	public function testAReturnedParaafSendsTheVoorstelBack(): void {
+		$saved = [];
+		$service = $this->serviceRecording(
+			[
+				'id' => 'voorstel-uuid-1',
+				'status' => 'in_parafering',
+				'currentStep' => 1,
+				'routeSnapshot' => [['order' => 1], ['order' => 2]],
+			],
+			'returned',
+			$saved
+		);
+
+		$service->handleParaafAction(proposalId: 'voorstel-uuid-1', parafeeractieId: 'actie-uuid-1');
+
+		$this->assertCount(1, $saved);
+		$this->assertSame('teruggestuurd', $saved[0]['status']);
+		// The step must NOT have moved: the voorstel goes back to its steller,
+		// not on to approver two.
+		$this->assertSame(1, $saved[0]['currentStep']);
+
+	}//end testAReturnedParaafSendsTheVoorstelBack()
+
+	/**
+	 * 🔴 The last paraaf accords the voorstel.
+	 *
+	 * The service wrote 'gereed_voor_agendering', which is not a voorstel
+	 * status and never was, so the moment every paraaf was collected wrote a
+	 * value the schema rejects and the UI cannot render.
+	 * `getStatusAfterAdvance()` in src/utils/parafeerEngine.js returns
+	 * 'geaccordeerd' for this same transition.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/parafering-actions/spec.md
+	 */
+	public function testTheLastParaafAccordsTheVoorstel(): void {
+		$saved = [];
+		$service = $this->serviceRecording(
+			[
+				'id' => 'voorstel-uuid-1',
+				'status' => 'in_parafering',
+				'currentStep' => 2,
+				'routeSnapshot' => [['order' => 1], ['order' => 2]],
+			],
+			'parafered',
+			$saved
+		);
+
+		$service->handleParaafAction(proposalId: 'voorstel-uuid-1', parafeeractieId: 'actie-uuid-1');
+
+		$this->assertCount(1, $saved);
+		$this->assertSame('geaccordeerd', $saved[0]['status']);
+		$this->assertSame(0, $saved[0]['currentStep']);
+
+	}//end testTheLastParaafAccordsTheVoorstel()
+
+	/**
+	 * A paraaf that is not a return advances to the next step.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/parafering-actions/spec.md
+	 */
+	public function testAParaafedVoorstelAdvancesToTheNextStep(): void {
+		$saved = [];
+		$service = $this->serviceRecording(
+			[
+				'id' => 'voorstel-uuid-1',
+				'status' => 'in_parafering',
+				'currentStep' => 1,
+				'routeSnapshot' => [['order' => 1], ['order' => 2]],
+			],
+			'parafered',
+			$saved
+		);
+
+		$service->handleParaafAction(proposalId: 'voorstel-uuid-1', parafeeractieId: 'actie-uuid-1');
+
+		$this->assertCount(1, $saved);
+		$this->assertSame(2, $saved[0]['currentStep']);
+		$this->assertSame('in_parafering', $saved[0]['status']);
+
+	}//end testAParaafedVoorstelAdvancesToTheNextStep()
+
+	/**
+	 * 🔴 Every status literal the service writes is one the schema allows.
+	 *
+	 * This is the test that would have caught the two above as a class rather
+	 * than one at a time. The service and the register JSON are edited by
+	 * different hands at different times, and nothing else compares them: a
+	 * status the schema does not declare is rejected on save, and the failure
+	 * surfaces far from the line that wrote it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/parafering-actions/spec.md
+	 */
+	public function testEveryStatusItWritesIsOneTheSchemaAllows(): void {
+		$register = json_decode(
+			file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'),
+			true
+		);
+		$allowed = $register['components']['schemas']['proposal']['properties']['status']['enum'];
+
+		$source = file_get_contents(__DIR__ . '/../../../lib/Service/BesluitvormingParafeerService.php');
+		preg_match_all("/'status' => '([a-z_]+)'/", $source, $matches);
+		$written = array_unique($matches[1]);
+
+		$this->assertNotEmpty($written, 'the service must write at least one status');
+		foreach ($written as $status) {
+			$this->assertContains(
+				$status,
+				$allowed,
+				sprintf('BesluitvormingParafeerService writes status %s, which the proposal schema does not allow', $status)
+			);
+		}
+
+	}//end testEveryStatusItWritesIsOneTheSchemaAllows()
+
 }//end class
