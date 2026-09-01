@@ -1,3 +1,5 @@
+import type { APIRequestContext, Page } from '@playwright/test'
+
 /**
  * The case flow, LIVE: the journeys tasks 7.1 (second half) and 7.2 of
  * `openspec/changes/case-flow-human-steps` could not run on the shared dev
@@ -37,25 +39,28 @@
  *
  * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
  */
-import { test, expect, request, type APIRequestContext, type Page } from '@playwright/test'
+import { expect, request, test } from '@playwright/test'
 import { execSync } from 'child_process'
 import * as fs from 'fs'
 import * as path from 'path'
-import { BASE_URL } from './base-url'
+import { BASE_URL } from './base-url.ts'
 
 test.describe.configure({ mode: 'serial' })
 
 const FLOW_NAME = 'Case behandeling'
 const CASE_TYPE = 'Omgevingsvergunning kleine bouwactiviteit'
 const RUN_PREFIX = `E2ELIVE-${Date.now().toString(36)}`
-const SCREENS = process.env.PROOF_SCREENS_DIR ?? path.join(__dirname, '..', '..', 'test-results', 'proof-screens')
+const SCREENS =
+	process.env.PROOF_SCREENS_DIR
+	?? path.join(__dirname, '..', '..', 'test-results', 'proof-screens')
 const WORKER_CMD = process.env.FLOW_WORKER_CMD ?? ''
 const ADMIN_USER = process.env.ADMIN_USER ?? process.env.NC_ADMIN_USER ?? 'admin'
 const ADMIN_PASS = process.env.ADMIN_PASSWORD ?? process.env.NC_ADMIN_PASS ?? 'admin'
 const OR = '/index.php/apps/openregister/api'
 
 /** Copy the applicant supplies when asked to complete their case. */
-const SUPPLIED_DESCRIPTION = 'Aanvulling: bouwtekening, constructieberekening en situatieschets zijn nu bijgevoegd.'
+const SUPPLIED_DESCRIPTION =
+	'Aanvulling: bouwtekening, constructieberekening en situatieschets zijn nu bijgevoegd.'
 
 type Json = Record<string, any>
 
@@ -91,25 +96,47 @@ async function shippedFlow(api: APIRequestContext): Promise<Json | null> {
 async function caseTypeId(api: APIRequestContext): Promise<string> {
 	const types = await results(api, `${OR}/objects/dossiq/caseType?_limit=100`)
 	const type = types.find((t) => String(t.title ?? t.name ?? '') === CASE_TYPE)
-	expect(type, `The seeded case type "${CASE_TYPE}" is missing; the flow has nothing to run against.`).toBeTruthy()
+	expect(
+		type,
+		`The seeded case type "${CASE_TYPE}" is missing; the flow has nothing to run against.`,
+	).toBeTruthy()
 	return String(type!.id)
 }
 
 /** Status uuid → name, within the case type. The flow moves BY NAME. */
-async function statusNames(api: APIRequestContext, caseType: string): Promise<Map<string, string>> {
-	const statuses = await results(api, `${OR}/objects/dossiq/statusType?_limit=100&caseType=${caseType}`)
-	return new Map(statuses.map((s) => [String(s.id), String(s.title ?? s.name ?? '')]))
+async function statusNames(
+	api: APIRequestContext,
+	caseType: string,
+): Promise<Map<string, string>> {
+	const statuses = await results(
+		api,
+		`${OR}/objects/dossiq/statusType?_limit=100&caseType=${caseType}`,
+	)
+	return new Map(
+		statuses.map((s) => [String(s.id), String(s.title ?? s.name ?? '')]),
+	)
 }
 
 async function createCase(api: APIRequestContext, body: Json): Promise<Json> {
 	const res = await api.post(`${OR}/objects/dossiq/case`, { data: body })
-	expect(res.status(), `Creating a case answered ${res.status()}: ${await res.text()}`).toBe(201)
+	expect(
+		res.status(),
+		`Creating a case answered ${res.status()}: ${await res.text()}`,
+	).toBe(201)
 	return (await res.json()) as Json
 }
 
-async function updateObject(api: APIRequestContext, schema: string, id: string, body: Json): Promise<Json> {
+async function updateObject(
+	api: APIRequestContext,
+	schema: string,
+	id: string,
+	body: Json,
+): Promise<Json> {
 	const res = await api.put(`${OR}/objects/dossiq/${schema}/${id}`, { data: body })
-	expect(res.ok(), `Updating ${schema} ${id} answered ${res.status()}: ${await res.text()}`).toBeTruthy()
+	expect(
+		res.ok(),
+		`Updating ${schema} ${id} answered ${res.status()}: ${await res.text()}`,
+	).toBeTruthy()
 	return (await res.json()) as Json
 }
 
@@ -118,7 +145,10 @@ async function runsForCase(api: APIRequestContext, caseId: string): Promise<Json
 	return runs.filter((r) => String(r.subjectUuid ?? '') === caseId)
 }
 
-async function tasksForCase(api: APIRequestContext, caseId: string): Promise<Json[]> {
+async function tasksForCase(
+	api: APIRequestContext,
+	caseId: string,
+): Promise<Json[]> {
 	return results(api, `${OR}/objects/dossiq/task?_limit=50&case=${caseId}`)
 }
 
@@ -139,7 +169,10 @@ function workerPass(): void {
 async function describeRun(api: APIRequestContext, uuid: string): Promise<string> {
 	const run = await getJson(api, `${OR}/flow-runs/${uuid}`)
 	const log = (run.log ?? []) as Json[]
-	const steps = log.map((s) => `${s.transition}:${s.status}${s.error ? `(${String(s.error).slice(0, 80)})` : ''}`)
+	const steps = log.map(
+		(s) =>
+			`${s.transition}:${s.status}${s.error ? `(${String(s.error).slice(0, 80)})` : ''}`,
+	)
 	return `run ${uuid} is ${run.status}${run.error ? ` (${run.error})` : ''}; steps: ${steps.join(' → ') || 'none'}`
 }
 
@@ -155,14 +188,18 @@ async function shoot(page: Page, name: string): Promise<void> {
  * where the deep link is not, and it is what a person does.
  */
 async function openCasesList(page: Page): Promise<void> {
-	await page.goto('/index.php/apps/dossiq/cases', { waitUntil: 'domcontentloaded' })
+	await page.goto('/index.php/apps/dossiq/cases', {
+		waitUntil: 'domcontentloaded',
+	})
 	const nav = page.getByRole('link', { name: 'Cases', exact: true }).first()
 	await nav.waitFor({ state: 'visible', timeout: 20_000 })
 	await nav.click()
 }
 
 async function openCase(page: Page, caseId: string, title: string): Promise<void> {
-	await page.goto(`/index.php/apps/dossiq/cases/${caseId}`, { waitUntil: 'domcontentloaded' })
+	await page.goto(`/index.php/apps/dossiq/cases/${caseId}`, {
+		waitUntil: 'domcontentloaded',
+	})
 	await expect(page.locator('body')).toContainText(title, { timeout: 20_000 })
 }
 
@@ -188,9 +225,14 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 		await api?.dispose()
 	})
 
-	test('Given: the operator has adopted the flow, so it is enabled and has an owner', async ({ page }) => {
+	test('Given: the operator has adopted the flow, so it is enabled and has an owner', async ({
+		page,
+	}) => {
 		const flow = await shippedFlow(api)
-		expect(flow, `The flow "${FLOW_NAME}" is not in the flow store; the register import did not run.`).toBeTruthy()
+		expect(
+			flow,
+			`The flow "${FLOW_NAME}" is not in the flow store; the register import did not run.`,
+		).toBeTruthy()
 
 		expect(
 			flow!.enabled,
@@ -207,13 +249,24 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 		// two views must agree, or the editor shows an operator a flow that
 		// is not the one running.
 		const seen = await page.request.get(`${OR}/flows/${flow!.uuid}`)
-		expect(seen.ok(), 'The flow must be readable in the browser session.').toBeTruthy()
+		expect(
+			seen.ok(),
+			'The flow must be readable in the browser session.',
+		).toBeTruthy()
 		const inSession = (await seen.json()) as Json
-		expect(inSession.enabled, 'The browser session sees the flow as disabled while the API sees it enabled.').toBe(flow!.enabled)
-		expect(inSession.owner ?? null, 'The browser session sees a different owner than the API.').toBe(flow!.owner ?? null)
+		expect(
+			inSession.enabled,
+			'The browser session sees the flow as disabled while the API sees it enabled.',
+		).toBe(flow!.enabled)
+		expect(
+			inSession.owner ?? null,
+			'The browser session sees a different owner than the API.',
+		).toBe(flow!.owner ?? null)
 	})
 
-	test('When an incomplete case is filed, exactly one run starts for it', async ({ page }) => {
+	test('When an incomplete case is filed, exactly one run starts for it', async ({
+		page,
+	}) => {
 		const created = await createCase(api, {
 			title: `${RUN_PREFIX} Carport Molenweg 5`,
 			caseType,
@@ -225,18 +278,24 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 
 		await expect
 			.poll(async () => (await runsForCase(api, incompleteCase)).length, {
-				message: 'Creating a case must start its run (object.created trigger on dossiq/case).',
+				message:
+					'Creating a case must start its run (object.created trigger on dossiq/case).',
 				timeout: 15_000,
 			})
 			.toBe(1)
 		incompleteRun = String((await runsForCase(api, incompleteCase))[0].uuid)
 
 		await openCasesList(page)
-		await expect(page.locator('body')).toContainText(`${RUN_PREFIX} Carport Molenweg 5`, { timeout: 20_000 })
+		await expect(page.locator('body')).toContainText(
+			`${RUN_PREFIX} Carport Molenweg 5`,
+			{ timeout: 20_000 },
+		)
 		await shoot(page, '01-incomplete-case-filed.png')
 	})
 
-	test('Then one worker pass gives the applicant a task and the case says "Wacht op aanvulling"', async ({ page }) => {
+	test('Then one worker pass gives the applicant a task and the case says "Wacht op aanvulling"', async ({
+		page,
+	}) => {
 		workerPass()
 
 		// What the applicant reads, captured BEFORE the assertions so a
@@ -245,10 +304,16 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 		await shoot(page, '02-applicant-waiting-case.png')
 
 		const run = await getJson(api, `${OR}/flow-runs/${incompleteRun}`)
-		expect(run.status, `After the worker pass the run must be suspended on the applicant. ${await describeRun(api, incompleteRun)}`).toBe('suspended')
+		expect(
+			run.status,
+			`After the worker pass the run must be suspended on the applicant. ${await describeRun(api, incompleteRun)}`,
+		).toBe('suspended')
 
 		const tasks = await tasksForCase(api, incompleteCase)
-		expect(tasks, 'The incomplete case must have exactly one task for the applicant.').toHaveLength(1)
+		expect(
+			tasks,
+			'The incomplete case must have exactly one task for the applicant.',
+		).toHaveLength(1)
 		const task = tasks[0]
 		applicantTask = String(task.id)
 		expect(String(task.title)).toBe('Vul uw aanvraag aan')
@@ -258,19 +323,32 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 		// not the placeholder, or nobody is allowed to answer it.
 		expect(String(task.assignee ?? '')).toBe(ADMIN_USER)
 
-		const status = names.get(String((await getJson(api, `${OR}/objects/dossiq/case/${incompleteCase}`)).status))
+		const status = names.get(
+			String(
+				(await getJson(api, `${OR}/objects/dossiq/case/${incompleteCase}`))
+					.status,
+			),
+		)
 		expect(status).toBe('Wacht op aanvulling')
 		await expect(page.locator('body')).toContainText('Wacht op aanvulling')
 
-		await page.goto(`/index.php/apps/dossiq/tasks/${applicantTask}`, { waitUntil: 'domcontentloaded' })
-		await expect(page.locator('body')).toContainText('Vul uw aanvraag aan', { timeout: 20_000 })
+		await page.goto(`/index.php/apps/dossiq/tasks/${applicantTask}`, {
+			waitUntil: 'domcontentloaded',
+		})
+		await expect(page.locator('body')).toContainText('Vul uw aanvraag aan', {
+			timeout: 20_000,
+		})
 		// The task says WHICH case is waiting on it.
 		await expect(page.locator('body')).toContainText('Carport Molenweg 5')
 		await shoot(page, '03-applicant-task.png')
 	})
 
-	test('When the applicant supplies what was missing and completes the task, the case moves to "In behandeling"', async ({ page }) => {
-		await updateObject(api, 'case', incompleteCase, { description: SUPPLIED_DESCRIPTION })
+	test('When the applicant supplies what was missing and completes the task, the case moves to "In behandeling"', async ({
+		page,
+	}) => {
+		await updateObject(api, 'case', incompleteCase, {
+			description: SUPPLIED_DESCRIPTION,
+		})
 		await updateObject(api, 'task', applicantTask, { status: 'completed' })
 
 		workerPass()
@@ -278,8 +356,16 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 		await openCase(page, incompleteCase, 'Carport Molenweg 5')
 		await shoot(page, '04-case-after-applicant-answered.png')
 
-		const status = names.get(String((await getJson(api, `${OR}/objects/dossiq/case/${incompleteCase}`)).status))
-		expect(status, `Completing the applicant task must resume the run at the step that asked and re-check completeness. ${await describeRun(api, incompleteRun)}`).toBe('In behandeling')
+		const status = names.get(
+			String(
+				(await getJson(api, `${OR}/objects/dossiq/case/${incompleteCase}`))
+					.status,
+			),
+		)
+		expect(
+			status,
+			`Completing the applicant task must resume the run at the step that asked and re-check completeness. ${await describeRun(api, incompleteRun)}`,
+		).toBe('In behandeling')
 		await expect(page.locator('body')).toContainText('In behandeling')
 
 		// It is the SAME run that continues, now waiting on the first decision.
@@ -287,17 +373,24 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 		expect(run.status, await describeRun(api, incompleteRun)).toBe('suspended')
 	})
 
-	test('When a complete case is filed, it is not asked for anything and goes straight to handling', async ({ page }) => {
+	test('When a complete case is filed, it is not asked for anything and goes straight to handling', async ({
+		page,
+	}) => {
 		const created = await createCase(api, {
 			title: `${RUN_PREFIX} Dakkapel Kerkstraat 14`,
-			description: 'Compleet ingediend: bouwtekening, constructieberekening en situatieschets zijn bijgevoegd.',
+			description:
+				'Compleet ingediend: bouwtekening, constructieberekening en situatieschets zijn bijgevoegd.',
 			caseType,
 			intakeChannel: 'website',
 			assignee: ADMIN_USER,
 		})
 		completeCase = String(created.id)
 
-		await expect.poll(async () => (await runsForCase(api, completeCase)).length, { timeout: 15_000 }).toBe(1)
+		await expect
+			.poll(async () => (await runsForCase(api, completeCase)).length, {
+				timeout: 15_000,
+			})
+			.toBe(1)
 		completeRun = String((await runsForCase(api, completeCase))[0].uuid)
 
 		workerPass()
@@ -306,35 +399,81 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 		await shoot(page, '05-complete-case-in-handling.png')
 
 		const tasks = await tasksForCase(api, completeCase)
-		expect(tasks.filter((t) => String(t.title) === 'Vul uw aanvraag aan'), 'A complete case must never be asked for more.').toHaveLength(0)
+		expect(
+			tasks.filter((t) => String(t.title) === 'Vul uw aanvraag aan'),
+			'A complete case must never be asked for more.',
+		).toHaveLength(0)
 
-		const status = names.get(String((await getJson(api, `${OR}/objects/dossiq/case/${completeCase}`)).status))
-		expect(status, `A complete case must pass the completeness check. ${await describeRun(api, completeRun)}`).toBe('In behandeling')
+		const status = names.get(
+			String(
+				(await getJson(api, `${OR}/objects/dossiq/case/${completeCase}`))
+					.status,
+			),
+		)
+		expect(
+			status,
+			`A complete case must pass the completeness check. ${await describeRun(api, completeRun)}`,
+		).toBe('In behandeling')
 		await expect(page.locator('body')).not.toContainText('Wacht op aanvulling')
 	})
 
 	test('Then two decisions are raised in decidiq, and concluding each moves the run on', async () => {
 		// decidiq keeps decisions as objects in its own register; a delegated
 		// decision carries the case as externalReference.
-		const decisions = await results(api, `${OR}/objects/decidiq/decision?_limit=50&externalReference=${completeCase}`)
-		expect(decisions.length, `The run must have raised a decision in decidiq for the case. ${await describeRun(api, completeRun)}`).toBeGreaterThanOrEqual(1)
+		const decisions = await results(
+			api,
+			`${OR}/objects/decidiq/decision?_limit=50&externalReference=${completeCase}`,
+		)
+		expect(
+			decisions.length,
+			`The run must have raised a decision in decidiq for the case. ${await describeRun(api, completeRun)}`,
+		).toBeGreaterThanOrEqual(1)
 
-		for (const question of ['Toets de aanvraag aan register B', 'Tweede inhoudelijke toets']) {
-			const open = (await results(api, `${OR}/objects/decidiq/decision?_limit=50&externalReference=${completeCase}`))
-				.filter((d) => !['decided', 'enacted', 'archived'].includes(String(d.lifecycle ?? d.status ?? '')))
-			expect(open.length, `Expected an open decision for "${question}".`).toBeGreaterThanOrEqual(1)
+		for (const question of [
+			'Toets de aanvraag aan register B',
+			'Tweede inhoudelijke toets',
+		]) {
+			const open = (
+				await results(
+					api,
+					`${OR}/objects/decidiq/decision?_limit=50&externalReference=${completeCase}`,
+				)
+			).filter(
+				(d) =>
+					!['decided', 'enacted', 'archived'].includes(
+						String(d.lifecycle ?? d.status ?? ''),
+					),
+			)
+			expect(
+				open.length,
+				`Expected an open decision for "${question}".`,
+			).toBeGreaterThanOrEqual(1)
 			const decision = open[0]
 
 			// Record the outcome, then walk the lifecycle to `decided` through
 			// decidiq's own transition endpoint: that is what emits the
 			// DecisionConcludedEvent the run is waiting for.
-			await api.put(`${OR}/objects/decidiq/decision/${decision.id}`, { data: { outcome: 'adopted', decisionDate: new Date().toISOString().slice(0, 10) } })
+			await api.put(`${OR}/objects/decidiq/decision/${decision.id}`, {
+				data: {
+					outcome: 'adopted',
+					decisionDate: new Date().toISOString().slice(0, 10),
+				},
+			})
 			for (const action of ['propose', 'deliberate', 'decide']) {
-				const res = await api.post(`/index.php/apps/decidiq/api/decisions/${decision.id}/transition`, { data: { action } })
+				const res = await api.post(
+					`/index.php/apps/decidiq/api/decisions/${decision.id}/transition`,
+					{ data: { action } },
+				)
 				expect([200, 422]).toContain(res.status())
 			}
-			const after = await getJson(api, `${OR}/objects/decidiq/decision/${decision.id}`)
-			expect(String(after.lifecycle ?? after.status ?? ''), `Decision ${decision.id} must reach "decided".`).toBe('decided')
+			const after = await getJson(
+				api,
+				`${OR}/objects/decidiq/decision/${decision.id}`,
+			)
+			expect(
+				String(after.lifecycle ?? after.status ?? ''),
+				`Decision ${decision.id} must reach "decided".`,
+			).toBe('decided')
 
 			workerPass()
 		}
@@ -343,13 +482,25 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 		expect(run.status, await describeRun(api, completeRun)).toBe('suspended')
 	})
 
-	test('Then the employee gets a preparation task; completing it puts the case before the commission', async ({ page }) => {
-		const tasks = (await tasksForCase(api, completeCase)).filter((t) => String(t.title) === 'Rond de inhoudelijke voorbereiding af')
-		expect(tasks, `The employee task must exist after both decisions. ${await describeRun(api, completeRun)}`).toHaveLength(1)
+	test('Then the employee gets a preparation task; completing it puts the case before the commission', async ({
+		page,
+	}) => {
+		const tasks = (await tasksForCase(api, completeCase)).filter(
+			(t) => String(t.title) === 'Rond de inhoudelijke voorbereiding af',
+		)
+		expect(
+			tasks,
+			`The employee task must exist after both decisions. ${await describeRun(api, completeRun)}`,
+		).toHaveLength(1)
 		expect(String(tasks[0].assignee)).toBe('behandelaars')
 
-		await page.goto(`/index.php/apps/dossiq/tasks/${tasks[0].id}`, { waitUntil: 'domcontentloaded' })
-		await expect(page.locator('body')).toContainText('Rond de inhoudelijke voorbereiding af', { timeout: 20_000 })
+		await page.goto(`/index.php/apps/dossiq/tasks/${tasks[0].id}`, {
+			waitUntil: 'domcontentloaded',
+		})
+		await expect(page.locator('body')).toContainText(
+			'Rond de inhoudelijke voorbereiding af',
+			{ timeout: 20_000 },
+		)
 		await shoot(page, '06-employee-task.png')
 
 		// The admin is a member of `behandelaars`, so may complete it.
@@ -358,27 +509,60 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 
 		await openCase(page, completeCase, 'Dakkapel Kerkstraat 14')
 		await shoot(page, '07-case-before-commission.png')
-		const status = names.get(String((await getJson(api, `${OR}/objects/dossiq/case/${completeCase}`)).status))
+		const status = names.get(
+			String(
+				(await getJson(api, `${OR}/objects/dossiq/case/${completeCase}`))
+					.status,
+			),
+		)
 		expect(status, await describeRun(api, completeRun)).toBe('Bij commissie')
 	})
 
-	test('When the commission approves, the decision document is attached and the case is closed', async ({ page }) => {
-		const open = (await results(api, `${OR}/objects/decidiq/decision?_limit=50&externalReference=${completeCase}`))
-			.filter((d) => !['decided', 'enacted', 'archived'].includes(String(d.lifecycle ?? d.status ?? '')))
-		expect(open.length, `The commission decision must be open in decidiq. ${await describeRun(api, completeRun)}`).toBeGreaterThanOrEqual(1)
+	test('When the commission approves, the decision document is attached and the case is closed', async ({
+		page,
+	}) => {
+		const open = (
+			await results(
+				api,
+				`${OR}/objects/decidiq/decision?_limit=50&externalReference=${completeCase}`,
+			)
+		).filter(
+			(d) =>
+				!['decided', 'enacted', 'archived'].includes(
+					String(d.lifecycle ?? d.status ?? ''),
+				),
+		)
+		expect(
+			open.length,
+			`The commission decision must be open in decidiq. ${await describeRun(api, completeRun)}`,
+		).toBeGreaterThanOrEqual(1)
 		const decision = open[0]
 
-		await api.put(`${OR}/objects/decidiq/decision/${decision.id}`, { data: { outcome: 'adopted', decisionDate: new Date().toISOString().slice(0, 10) } })
+		await api.put(`${OR}/objects/decidiq/decision/${decision.id}`, {
+			data: {
+				outcome: 'adopted',
+				decisionDate: new Date().toISOString().slice(0, 10),
+			},
+		})
 		for (const action of ['propose', 'deliberate', 'decide']) {
-			await api.post(`/index.php/apps/decidiq/api/decisions/${decision.id}/transition`, { data: { action } })
+			await api.post(
+				`/index.php/apps/decidiq/api/decisions/${decision.id}/transition`,
+				{ data: { action } },
+			)
 		}
 		workerPass()
 
 		await openCase(page, completeCase, 'Dakkapel Kerkstraat 14')
 		await shoot(page, '08-closed-case-with-document.png')
 
-		const closed = await getJson(api, `${OR}/objects/dossiq/case/${completeCase}`)
-		expect(String(closed.besluitDocument ?? ''), `The case must carry its decision document before it closes. ${await describeRun(api, completeRun)}`).toContain('Besluit op de aanvraag')
+		const closed = await getJson(
+			api,
+			`${OR}/objects/dossiq/case/${completeCase}`,
+		)
+		expect(
+			String(closed.besluitDocument ?? ''),
+			`The case must carry its decision document before it closes. ${await describeRun(api, completeRun)}`,
+		).toContain('Besluit op de aanvraag')
 		expect(names.get(String(closed.status))).toBe('Afgehandeld')
 		await expect(page.locator('body')).toContainText('Afgehandeld')
 
@@ -388,18 +572,31 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 
 	test('And the run reports the objects it touched, grouped by node (7.3)', async () => {
 		const uuid = incompleteRun || completeRun
-		expect(uuid, 'No run to read; the journeys above did not start one.').not.toBe('')
+		expect(
+			uuid,
+			'No run to read; the journeys above did not start one.',
+		).not.toBe('')
 
 		const touched = await getJson(api, `${OR}/flow-runs/${uuid}/objects`)
 		expect(touched).toHaveProperty('run', uuid)
 		const nodes = (touched.nodes ?? []) as Json[]
-		expect(nodes.length, 'A run that moved a status must report at least the node that moved it.').toBeGreaterThan(0)
+		expect(
+			nodes.length,
+			'A run that moved a status must report at least the node that moved it.',
+		).toBeGreaterThan(0)
 
 		// The status step names the CASE it updated, so the case's history can
 		// say which node moved each status.
 		const statusNode = nodes.find((n) => String(n.node) === 'status-ontvangen')
-		expect(statusNode, 'The first status step must appear in the traceability read.').toBeTruthy()
-		const updates = ((statusNode!.objects ?? []) as Json[]).filter((o) => String(o.action) === 'update')
-		expect(updates.map((o) => String(o.objectUuid))).toContain(incompleteRun ? incompleteCase : completeCase)
+		expect(
+			statusNode,
+			'The first status step must appear in the traceability read.',
+		).toBeTruthy()
+		const updates = ((statusNode!.objects ?? []) as Json[]).filter(
+			(o) => String(o.action) === 'update',
+		)
+		expect(updates.map((o) => String(o.objectUuid))).toContain(
+			incompleteRun ? incompleteCase : completeCase,
+		)
 	})
 })

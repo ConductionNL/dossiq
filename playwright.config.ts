@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test'
 import path from 'path'
-import { BASE_URL } from './tests/e2e/base-url'
+import { BASE_URL } from './tests/e2e/base-url.ts'
 
 const STORAGE_STATE = path.join(__dirname, 'tests/e2e/.auth/user.json')
 
@@ -70,7 +70,10 @@ export default defineConfig({
 		{
 			name: 'live-journeys',
 			testMatch: /case-flow-live-journeys\.spec\.ts$/,
-			use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } },
+			use: {
+				...devices['Desktop Chrome'],
+				viewport: { width: 1280, height: 800 },
+			},
 			timeout: 180_000,
 			retries: 0,
 		},
