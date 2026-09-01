@@ -193,6 +193,51 @@ test.describe('Case flow — human steps', () => {
 		)
 	})
 
+	test('a deep link to a case survives a hard reload, under both URL forms', async ({
+		page,
+	}) => {
+		// The RELOAD of a deep link is the test. Sidebar navigation stays
+		// inside the loaded SPA and never re-derives the router base, so it
+		// worked even while every hard load of `/apps/dossiq/cases/<id>`
+		// answered 200 from the server and was rewritten client-side to
+		// `/apps/dossiq/` — the catch-all redirect, fired because the base
+		// came from generateUrl() while the page was served under the other
+		// URL form. Reach a case the supported way first, then hard-load the
+		// URL the browser ended up on.
+		await page.goto('/index.php/apps/dossiq/cases')
+		await expect(
+			page.locator('body'),
+			`The seeded case "${INCOMPLETE_CASE}" is missing.`,
+		).toContainText(INCOMPLETE_CASE, { timeout: 15000 })
+		await page.getByText(INCOMPLETE_CASE).first().click()
+		await expect(page).toHaveURL(/\/cases\/[^/?#]+$/, { timeout: 15000 })
+
+		const deepLink = new URL(page.url())
+
+		// Form 1: exactly the URL the browser shows. A hard load must land on
+		// the case, not the dashboard.
+		await page.goto(deepLink.pathname)
+		await expect(page.locator('body')).toContainText(INCOMPLETE_CASE, {
+			timeout: 15000,
+		})
+		expect(
+			new URL(page.url()).pathname,
+			'The deep link must survive: a rewrite to the app root is the catch-all eating it.',
+		).toMatch(/\/cases\/[^/?#]+$/)
+
+		// Form 2: the SAME resource under the other server-accepted spelling
+		// (with the front-controller prefix stripped or added). The server
+		// answers 200 for both; the SPA must render the case for both.
+		const altPath = deepLink.pathname.includes('/index.php/')
+			? deepLink.pathname.replace('/index.php', '')
+			: deepLink.pathname.replace('/apps/dossiq', '/index.php/apps/dossiq')
+		await page.goto(altPath)
+		await expect(page.locator('body')).toContainText(INCOMPLETE_CASE, {
+			timeout: 15000,
+		})
+		expect(new URL(page.url()).pathname).toMatch(/\/cases\/[^/?#]+$/)
+	})
+
 	test('a complete case is not asked for anything', async ({ page }) => {
 		await page.goto('/index.php/apps/dossiq/cases')
 
