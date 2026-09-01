@@ -17,9 +17,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Flow;
 
 use DateTime;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Service\Flow\FlowNodeResumeState;
-use OCA\OpenRegister\Service\Flow\FlowRunContext;
 use OCA\OpenRegister\Service\Flow\FlowRunService;
 use OCA\OpenRegister\Service\Flow\FlowSuspension;
 use OCA\OpenRegister\Service\Flow\IFlowNode;
@@ -42,11 +40,31 @@ use RuntimeException;
  * mandate chain. That is a loss of record dressed as an engine change, so the
  * flow gets a node that speaks the domain instead.
  *
- * WHY `flowRun` AND `flowNode` ARE WRITTEN ONTO THE PARAAF. Resuming needs to
- * name the node, not just the run: a run holds one awaiting slot per node and
- * cannot say which of them a signal answers. `askPerson` records those two on
- * its task for exactly this reason; `parafeeractie` gained the same two fields
- * so a paraaf can resume the run that asked for it.
+ * 🔴 THE NODE DOES NOT CREATE THE PARAFEERACTIE. It records who is being
+ * asked and waits.
+ *
+ * It used to create one up front, as a standing request. That cannot work and
+ * never could: `parafeeractie` declares `action` among its required
+ * properties, OpenRegister runs hard validation by default, and there is no
+ * enum value meaning "not yet signed". A paraaf raised with no action is
+ * rejected on save, so the node could not raise anything on a real instance —
+ * the unit tests passed only because their fake accepted whatever it was
+ * handed. openspec/specs/parafering-actions says the same thing from the other
+ * side: the schema SHALL enforce voorstel, step, actor, action.
+ *
+ * Which is the model telling us what a parafeeractie IS. It is the record of a
+ * sign-off somebody gave, not a request for one. Writing a blank one to stand
+ * for "awaiting" would put an unsigned signature in an administrative-law
+ * record, and no enum value should be invented to let it.
+ *
+ * So the request lives where a request belongs: in the run's own awaiting
+ * slot, which already carries the assignee OpenRegister's resume guard
+ * consults. The approver signs through the ordinary parafering surfaces, which
+ * create the parafeeractie WITH its action, and the run is resumed from there.
+ *
+ * `flowRun` and `flowNode` stay on the schema, and stay necessary: a run holds
+ * one awaiting slot per node and cannot say which of them a paraaf answers, so
+ * whatever resumes the run has to name the node, not just the run.
  *
  * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
  */
@@ -62,14 +80,12 @@ class DossiqAskParaafNode implements IFlowNode {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Register/schema configuration.
-	 * @param IL10N           $l10n            Translations.
-	 * @param LoggerInterface $logger          The logger.
+	 * @param IL10N           $l10n   Translations.
+	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {
@@ -188,7 +204,7 @@ class DossiqAskParaafNode implements IFlowNode {
 
 		$signal = $this->answerFrom(context: $context);
 		if ($signal === null) {
-			$this->ensureParaaf(items: $items, config: $config, context: $context);
+			$this->recordTheAsk(items: $items, config: $config, context: $context);
 
 			throw new FlowSuspension(
 				resumeAt: $this->heartbeatAt(config: $config),
@@ -245,7 +261,11 @@ class DossiqAskParaafNode implements IFlowNode {
 	}//end answerFrom()
 
 	/**
-	 * Write the parafeeractie once, and remember that it exists.
+	 * Record who is being asked, so the run can say it and the guard can check it.
+	 *
+	 * This writes nothing outside the run. The parafeeractie is created by the
+	 * person who signs, carrying the action they took; see the class docblock
+	 * for why a blank one must not stand in for "awaiting".
 	 *
 	 * @param array<int, mixed>    $items   The input items.
 	 * @param array<string, mixed> $config  The node config.
@@ -257,35 +277,34 @@ class DossiqAskParaafNode implements IFlowNode {
 	 *
 	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
 	 */
-	private function ensureParaaf(array $items, array $config, array $context): void {
+	private function recordTheAsk(array $items, array $config, array $context): void {
 		$resume = ($context[FlowNodeResumeState::CONTEXT_KEY] ?? null);
 		if (($resume instanceof FlowNodeResumeState) === false) {
-			// Without a slot there is nowhere to record that the paraaf exists,
-			// so every heartbeat would raise another one against the same
-			// person. A step that cannot be made idempotent must not run.
+			// The slot is where the assignee lives, and the assignee is what
+			// OpenRegister's resume guard consults before letting a signal
+			// through. A step that cannot record who may answer it must not
+			// run: without it, anyone could sign for anyone.
 			throw new RuntimeException('dossiq.askParaaf requires a node resume slot');
 		}
 
-		if ($resume->has(key: 'parafeeractieId') === true) {
+		// Refuses a run with no voorstel here rather than later: a paraaf is a
+		// sign-off ON something, and a step that cannot name what it is asking
+		// about has nothing to ask.
+		$proposalId = $this->proposalIdFrom(items: $items);
+
+		if ($resume->has(key: 'askedAt') === true) {
+			// Already asked. The heartbeat is a safety net for a lost signal,
+			// not a reason to restate the question.
 			return;
 		}
 
-		$paraafId = $this->persist(
-			paraaf: [
-				'proposal' => $this->proposalIdFrom(items: $items),
-				'step' => (int)($config['step'] ?? 0),
-				'actor' => trim((string)($config['actor'] ?? '')),
-				'actorType' => trim((string)($config['actorType'] ?? 'user')),
-				'flowRun' => (string)($context[FlowRunContext::CONTEXT_RUN] ?? ''),
-				'flowNode' => $resume->nodeId(),
-			]
-		);
-
 		$resume->merge(
 			values: [
-				'parafeeractieId' => $paraafId,
+				'proposal' => $proposalId,
+				'step' => (int)($config['step'] ?? 0),
 				'askedAt' => (new DateTime())->format('c'),
 				'question' => trim((string)($config['question'] ?? '')),
+				'actorType' => trim((string)($config['actorType'] ?? 'user')),
 				// Read back by OpenRegister's resume guard, which refuses a
 				// signal from anyone but this actor or their group.
 				'assignee' => trim((string)($config['actor'] ?? '')),
@@ -293,11 +312,11 @@ class DossiqAskParaafNode implements IFlowNode {
 		);
 
 		$this->logger->info(
-			'Dossiq askParaaf: raised parafeeractie ' . $paraafId . ' and suspended the run',
-			['app' => 'dossiq']
+			'Dossiq askParaaf: awaiting a paraaf on voorstel ' . $proposalId,
+			['app' => 'dossiq', 'actor' => trim((string)($config['actor'] ?? ''))]
 		);
 
-	}//end ensureParaaf()
+	}//end recordTheAsk()
 
 	/**
 	 * The voorstel the paraaf belongs to.
@@ -325,48 +344,6 @@ class DossiqAskParaafNode implements IFlowNode {
 		return $id;
 
 	}//end proposalIdFrom()
-
-	/**
-	 * Store the parafeeractie and return its id.
-	 *
-	 * @param array<string, mixed> $paraaf The paraaf to persist.
-	 *
-	 * @return string The created id.
-	 *
-	 * @throws RuntimeException When storage is unavailable or unconfigured.
-	 *
-	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
-	 */
-	private function persist(array $paraaf): string {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('openregister_unavailable');
-		}
-
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('parafeeractie_schema');
-		if ($schema === '') {
-			throw new RuntimeException('parafeeractie_schema_not_configured');
-		}
-
-		$created = $objectService->saveObject(object: $paraaf, register: $register, schema: $schema);
-		$stored = $created;
-		if (is_object($created) === true && method_exists($created, 'getObject') === true) {
-			$stored = $created->getObject();
-		}
-
-		$id = '';
-		if (is_array($stored) === true) {
-			$id = (string)($stored['id'] ?? ($stored['uuid'] ?? ''));
-		}
-
-		if ($id === '') {
-			throw new RuntimeException('parafeeractie_not_identifiable');
-		}
-
-		return $id;
-
-	}//end persist()
 
 	/**
 	 * When to wake and re-ask whether the paraaf has arrived.
