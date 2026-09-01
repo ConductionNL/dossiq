@@ -137,7 +137,10 @@ async function openSubCasesSectionOrSkip(page) {
 	// still displays the section — but reaching it takes a click, and the panel is
 	// LAZY, so its table does not exist in the DOM until the tab is opened.
 	// Asserting the container alone would pass while the list below never renders.
-	const tab = page.getByRole('tab', { name: /Sub-cases/i }).first()
+	const tab = page
+		.locator('.cn-tabs-widget')
+		.getByRole('tab', { name: /Sub-cases|Deelzaken/i })
+		.first()
 	if ((await tab.count()) > 0) {
 		await expect(
 			tab,
@@ -145,6 +148,29 @@ async function openSubCasesSectionOrSkip(page) {
 				+ '"Sub-cases section on parent case detail")',
 		).toBeVisible({ timeout: 15_000 })
 		await tab.click()
+
+		// WAIT for the panel to fill. The panel is lazy, so the click starts a
+		// mount AND a fetch, and the caller's `count()` takes one snapshot that
+		// cannot retry — it fired against an empty panel and reported the
+		// section missing. Same trap the comment above guards for the tab
+		// itself; making the panel lazy moved it one step later.
+		const panel = page.locator('.cn-tabs-widget [role="tabpanel"]:not([hidden])')
+		await expect
+			.poll(
+				async () =>
+					(await panel.locator('.viewTable, table').count())
+					+ (await panel
+						.getByText(
+							/No sub-cases yet|Nog geen deelzaken|geen deelzaken/i,
+						)
+						.count()),
+				{
+					timeout: 20_000,
+					message:
+						'the Sub-cases panel rendered neither a table nor an empty state within 20s',
+				},
+			)
+			.toBeGreaterThan(0)
 	} else {
 		// Pre-tabs layout: the section is a card on the grid.
 		const section = page

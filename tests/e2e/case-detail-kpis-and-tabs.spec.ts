@@ -111,9 +111,13 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 	}) => {
 		const errors = trackDossiqErrors(page)
 		const milestoneCalls: string[] = []
+		const failures: Array<{ status: number; url: string }> = []
 		page.on('response', (r) => {
 			if (r.url().includes('milestones/progress')) {
 				milestoneCalls.push(`${r.status()} ${r.url()}`)
+			}
+			if (r.status() >= 400) {
+				failures.push({ status: r.status(), url: r.url() })
 			}
 		})
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
@@ -164,14 +168,66 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			`milestone requests: ${milestoneCalls.join(', ')}`,
 		).toBe(true)
 
+		// Assert on the RESPONSES, not on the console text.
+		//
+		// The console message for a failed fetch is "Failed to load resource: the
+		// server responded with a status of 404" with no URL in it, so a console
+		// assertion can say only THAT something 404'd, never WHAT. That is not
+		// enough to tell the defect this guard exists for — a dossiq query whose
+		// slug is wrong, which renders as an empty state — apart from an optional
+		// app that is simply not installed on this instance, where 404 is the
+		// correct answer.
+		//
+		// So: nothing may 5xx, and nothing dossiq owns may 4xx. Requests to apps
+		// this instance does not have are allowed, and named rather than matched
+		// loosely, so installing one of them here turns its failures back on.
+		const ABSENT_APPS = /\/apps\/(hermiq|humaniq)\//
+		const OWN = /\/apps\/dossiq\/|\/objects\/dossiq\//
+		const serverErrors = failures.filter((f) => f.status >= 500)
+		// The CMMN panel probes whether this case is CMMN-managed and is answered
+		// 409 for a BPMN-managed one. That is the app saying "no", not failing,
+		// and it is a dossiq URL — so it has to be excluded HERE, not only from
+		// the console list, or this assertion fails on correct behaviour.
+		const ownClientErrors = failures.filter(
+			(f) =>
+				f.status >= 400
+				&& f.status < 500
+				&& OWN.test(f.url)
+				&& !(f.status === 409 || /cmmn-plan/.test(f.url)),
+		)
+		expect(
+			serverErrors,
+			`5xx: ${serverErrors.map((f) => `${f.status} ${f.url}`).join(' | ')}`,
+		).toEqual([])
+		expect(
+			ownClientErrors,
+			`dossiq 4xx: ${ownClientErrors.map((f) => `${f.status} ${f.url}`).join(' | ')}`,
+		).toEqual([])
+
+		// KNOWN GAP, deliberately not asserted away. The hours tile queries
+		// humaniq's register, so on an instance without humaniq it 404s and
+		// renders 0 — indistinguishable from a real zero. The `Log hours` action
+		// beside it IS gated on `visibleWhen: { appInstalled: "humaniq" }`; the
+		// tile cannot be, because the manifest schema allows `visibleWhen` on
+		// actions and fields but not on a widget or a layout cell. Closing it
+		// needs that gating in nextcloud-vue's CnDetailPage, not a change here.
+		const absent = failures.filter((f) => ABSENT_APPS.test(f.url))
+		if (absent.length > 0) {
+			// eslint-disable-next-line no-console
+			console.log(
+				`absent-app requests (expected on this instance): ${absent
+					.map((f) => `${f.status} ${f.url}`)
+					.join(' | ')}`,
+			)
+		}
+
 		// The CMMN panel probes whether this case is CMMN-managed and gets a 409
 		// for a BPMN-managed one, which is the app answering "no" rather than
-		// failing. Pre-existing and unrelated to this page's widgets; everything
-		// else must be silent.
-		const unexpected = errors.filter((e) => !/\b409\b|cmmn-plan/.test(e))
-		expect(unexpected, `console/5xx errors: ${unexpected.join(' | ')}`).toEqual(
-			[],
+		// failing.
+		const unexpected = errors.filter(
+			(e) => !/\b409\b|cmmn-plan|Failed to load resource/.test(e),
 		)
+		expect(unexpected, `console errors: ${unexpected.join(' | ')}`).toEqual([])
 	})
 
 	test('the tabs widget renders one tab per configured panel', async ({
