@@ -91,5 +91,39 @@ if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowNodeResumeState', fals
         public function all(): array {
             return $this->values;
         }
+
+        /**
+         * Write one value.
+         *
+         * Present because the real class has it. A stub missing a method the
+         * real class carries lets a call site that uses it look fine here and
+         * fatal against OpenRegister.
+         *
+         * @param string $key   The key.
+         * @param mixed  $value The value.
+         *
+         * @return void
+         */
+        public function set(string $key, mixed $value): void {
+            $this->values[$key] = $value;
+        }
+
+        /**
+         * Whether this node is resuming rather than starting.
+         *
+         * @return boolean True when the slot holds anything.
+         */
+        public function isResuming(): bool {
+            return ($this->values !== []);
+        }
+
+        /**
+         * Drop this node's progress.
+         *
+         * @return void
+         */
+        public function clear(): void {
+            $this->values = [];
+        }
     }
 }
