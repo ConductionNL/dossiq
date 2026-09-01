@@ -3415,7 +3415,13 @@ OC.L10N.register(
         "A case is waiting on this task": "Een zaak wacht op deze taak",
         "Complete the task and the case moves on.": "Rond de taak af, dan gaat de zaak verder.",
         "Open the case": "Open de zaak",
-        "Waiting case": "Wachtende zaak"
+        "Waiting case": "Wachtende zaak",
+        "Every report Dossiq offers, in one place. Pick a report to open it.": "Elke rapportage die Dossiq biedt, op één plek. Kies een rapportage om die te openen.",
+        "How long cases take, per case type.": "Hoe lang zaken duren, per zaaktype.",
+        "Statutory terms, and which cases are close to breaching one.": "Wettelijke termijnen, en welke zaken bijna een termijn overschrijden.",
+        "The paths cases actually take, against the paths they were meant to.": "De routes die zaken in de praktijk afleggen, tegenover de bedoelde routes.",
+        "Throughput and deadlines": "Doorlooptijd en termijnen",
+        "Process analysis": "Procesanalyse"
     },
     "nplurals=2; plural=(n != 1);"
 )

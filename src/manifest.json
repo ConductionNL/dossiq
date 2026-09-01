@@ -247,7 +247,9 @@
 			"id": "AnalyticsGroup",
 			"label": "Reports",
 			"icon": "ChartBoxOutline",
-			"order": 55
+			"route": "Reports",
+			"order": 95,
+			"section": "footer"
 		},
 		{
 			"id": "Analytics",
@@ -4496,6 +4498,46 @@
 						}
 					]
 				}
+			}
+		},
+		{
+			"id": "Reports",
+			"route": "/reports",
+			"type": "reports",
+			"title": "Reports",
+			"_note": "ADR-112: one page of cards rather than a Reports submenu. The three report pages stay routable — deep links, e2e specs and these cards all address them by route NAME — they simply leave the navigation. Their menu entries are retired in src/menu-layout.json under `removals`.",
+			"config": {
+				"description": "Every report Dossiq offers, in one place. Pick a report to open it.",
+				"categories": {
+					"throughput": "Throughput and deadlines",
+					"process": "Process analysis"
+				},
+				"cards": [
+					{
+						"id": "Doorlooptijd",
+						"label": "Processing time",
+						"description": "How long cases take, per case type.",
+						"icon": "ChartLine",
+						"category": "throughput",
+						"route": "Doorlooptijd"
+					},
+					{
+						"id": "TermijnDashboard",
+						"label": "Deadline monitoring",
+						"description": "Statutory terms, and which cases are close to breaching one.",
+						"icon": "ClockAlertOutline",
+						"category": "throughput",
+						"route": "TermijnDashboard"
+					},
+					{
+						"id": "ProcessMiningDashboard",
+						"label": "Process mining",
+						"description": "The paths cases actually take, against the paths they were meant to.",
+						"icon": "ChartSankey",
+						"category": "process",
+						"route": "ProcessMiningDashboard"
+					}
+				]
 			}
 		},
 		{
