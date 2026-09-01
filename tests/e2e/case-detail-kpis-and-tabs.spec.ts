@@ -81,7 +81,9 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		await api.dispose()
 	})
 
-	test('the KPI row headlines time left, case type and completion', async ({ page }) => {
+	test('the KPI row headlines time left, case type and completion', async ({
+		page,
+	}) => {
 		const errors = trackDossiqErrors(page)
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 
@@ -89,14 +91,19 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		await expect(kpis.first()).toBeVisible({ timeout: 30_000 })
 
 		// Time left is COMPUTED from the deadline, not printed from it.
-		await expect(page.locator('.cn-countdown-widget')).toContainText(/day(s)? left/, {
-			timeout: 15_000,
-		})
+		await expect(page.locator('.cn-countdown-widget')).toContainText(
+			/day(s)? left/,
+			{
+				timeout: 15_000,
+			},
+		)
 
 		// The case type field holds a uuid. Showing the uuid would be a pass for
 		// "renders something" and a failure for the feature.
 		const caseTypeCard = kpis.filter({ hasText: 'Case type' })
-		await expect(caseTypeCard).toContainText('E2E Omgevingsvergunning', { timeout: 20_000 })
+		await expect(caseTypeCard).toContainText('E2E Omgevingsvergunning', {
+			timeout: 20_000,
+		})
 		await expect(caseTypeCard).not.toContainText(caseTypeId)
 
 		// Completion comes from the milestone endpoint. 0% is the honest answer
@@ -111,46 +118,73 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		// failing. Pre-existing and unrelated to this page's widgets; everything
 		// else must be silent.
 		const unexpected = errors.filter((e) => !/\b409\b|cmmn-plan/.test(e))
-		expect(unexpected, `console/5xx errors: ${unexpected.join(' | ')}`).toEqual([])
+		expect(unexpected, `console/5xx errors: ${unexpected.join(' | ')}`).toEqual(
+			[],
+		)
 	})
 
-	test('the tabs widget renders one tab per configured panel', async ({ page }) => {
+	test('the tabs widget renders one tab per configured panel', async ({
+		page,
+	}) => {
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
-		await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
 
 		const strip = page.locator('.cn-tabs-widget')
 		await expect(strip).toBeVisible({ timeout: 30_000 })
 
-		for (const label of ['Notes', 'Files', 'Related cases', 'Sub-cases', 'Mail', 'Appointments']) {
-			await expect(strip.getByRole('tab', { name: label })).toBeVisible({ timeout: 15_000 })
+		for (const label of [
+			'Notes',
+			'Files',
+			'Related cases',
+			'Sub-cases',
+			'Mail',
+			'Appointments',
+		]) {
+			await expect(strip.getByRole('tab', { name: label })).toBeVisible({
+				timeout: 15_000,
+			})
 		}
 	})
 
-	test('the Actions menu sits beside the strip, not inside the tablist', async ({ page }) => {
+	test('the Actions menu sits beside the strip, not inside the tablist', async ({
+		page,
+	}) => {
 		// A control nested in role="tablist" is announced as one of the tabs, so
 		// a reader counting six tabs would hear seven.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
-		await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
 
 		const strip = page.locator('.cn-tabs-widget')
 		await expect(strip).toBeVisible({ timeout: 30_000 })
 		await expect(strip.locator('.cn-tabs__nav-end')).toBeVisible()
-		await expect(strip.locator('[role="tablist"] .cn-tabs__nav-end')).toHaveCount(0)
+		await expect(
+			strip.locator('[role="tablist"] .cn-tabs__nav-end'),
+		).toHaveCount(0)
 	})
 
-	test('only the open tab mounts, and a switched-to tab stays mounted', async ({ page }) => {
+	test('only the open tab mounts, and a switched-to tab stays mounted', async ({
+		page,
+	}) => {
 		// Six eager panels would fire six requests on load to answer five
 		// questions nobody asked. This is the assertion that keeps them lazy.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
-		await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
 
 		const strip = page.locator('.cn-tabs-widget')
 		await expect(strip).toBeVisible({ timeout: 30_000 })
 
 		const mounted = () =>
-			strip.locator('[role="tabpanel"]').evaluateAll(
-				(panels) => panels.filter((p) => p.children.length > 0).length,
-			)
+			strip
+				.locator('[role="tabpanel"]')
+				.evaluateAll(
+					(panels) => panels.filter((p) => p.children.length > 0).length,
+				)
 
 		await expect.poll(mounted, { timeout: 15_000 }).toBe(1)
 
@@ -163,14 +197,26 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		await expect.poll(mounted, { timeout: 15_000 }).toBe(2)
 	})
 
-	test('the right column carries the case collections with their own chrome', async ({ page }) => {
+	test('the right column carries the case collections with their own chrome', async ({
+		page,
+	}) => {
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
-		await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
 
-		for (const title of ['Hours booked', 'Runs', 'Tasks', 'Decisions', 'Locations']) {
-			await expect(page.getByText(title, { exact: true }).first()).toBeVisible({
-				timeout: 20_000,
-			})
+		for (const title of [
+			'Hours booked',
+			'Runs',
+			'Tasks',
+			'Decisions',
+			'Locations',
+		]) {
+			await expect(page.getByText(title, { exact: true }).first()).toBeVisible(
+				{
+					timeout: 20_000,
+				},
+			)
 		}
 	})
 
@@ -180,15 +226,21 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		// look identical, so assert the REQUEST, not the text.
 		const responses: number[] = []
 		page.on('response', (r) => {
-			if (r.url().includes('/objects/dossiq/case-location')) responses.push(r.status())
+			if (r.url().includes('/objects/dossiq/case-location'))
+				responses.push(r.status())
 		})
 
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
-		await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
 
 		await expect
 			.poll(() => responses.length, { timeout: 20_000 })
 			.toBeGreaterThan(0)
-		expect(responses.every((s) => s < 400), `statuses: ${responses.join(',')}`).toBe(true)
+		expect(
+			responses.every((s) => s < 400),
+			`statuses: ${responses.join(',')}`,
+		).toBe(true)
 	})
 })
