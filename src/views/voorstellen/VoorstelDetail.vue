@@ -44,8 +44,7 @@
 
 			<!-- Parafering history (recorded from the decision app's conclusion). -->
 			<CnDetailCard :title="t('dossiq', 'Parafering history')">
-				<ParafeerActieTimeline
-					:voorstelId="voorstel.id || voorstelId" />
+				<ParafeerActieTimeline :voorstelId="voorstel.id || voorstelId" />
 			</CnDetailCard>
 
 			<!-- Returned notice for the steller -->

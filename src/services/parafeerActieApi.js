@@ -35,7 +35,9 @@ export async function listActions(voorstelId) {
 	})
 	const results = Array.isArray(response.data?.results)
 		? response.data.results
-		: (Array.isArray(response.data) ? response.data : [])
+		: Array.isArray(response.data)
+			? response.data
+			: []
 	return results.slice().sort((a, b) => {
 		const aKey = a.createdAt || a.created || a['@self']?.created || ''
 		const bKey = b.createdAt || b.created || b['@self']?.created || ''
