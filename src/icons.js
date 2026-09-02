@@ -107,6 +107,7 @@ import FolderCogOutline from 'vue-material-design-icons/FolderCogOutline.vue'
 import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 import FolderTextOutline from 'vue-material-design-icons/FolderTextOutline.vue'
 import FormatListBulletedType from 'vue-material-design-icons/FormatListBulletedType.vue'
+import FormatListChecks from 'vue-material-design-icons/FormatListChecks.vue'
 import Forum from 'vue-material-design-icons/Forum.vue'
 import Gauge from 'vue-material-design-icons/Gauge.vue'
 import GaugeFull from 'vue-material-design-icons/GaugeFull.vue'
@@ -267,6 +268,7 @@ export default {
 	FolderOutline,
 	FolderTextOutline,
 	FormatListBulletedType,
+	FormatListChecks,
 	Forum,
 	Gauge,
 	GaugeFull,
