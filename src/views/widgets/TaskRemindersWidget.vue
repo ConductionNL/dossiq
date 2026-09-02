@@ -141,8 +141,11 @@ export default {
 			this.loading = true
 			try {
 				const currentUser = getCurrentUser()?.uid || ''
+				// Bare field names, not `_filters[x]`: that form is inert and this
+				// widget was reading every user's tasks. See MyTasksWidget.
 				const tasks = await this.objectStore.fetchCollection('task', {
-					'_filters[assignee]': currentUser,
+					assignee: currentUser,
+					isTerminalStatus: false,
 					_limit: 100,
 				})
 				const activeTasks = (tasks || []).filter(
