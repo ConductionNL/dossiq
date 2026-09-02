@@ -75,5 +75,19 @@ class ListenerRegistrar {
 				\OCA\Dossiq\Flow\DossiqFlowNodeListener::class
 			);
 		}
+
+		// ADR-041 delivery seam: integriq concludes a besluit-publication
+		// delivery this app requested (PublicationService) with a terminal
+		// DeliveryConcludedEvent; the listener projects the outcome onto the
+		// case's publication record. FQN string, not ::class — integriq is an
+		// optional runtime dependency and a cross-app event class name is a
+		// runtime lookup this app can only follow (see the decidesk→decidiq
+		// rename incident in WorkflowListenerRegistrar).
+		if (class_exists('\\OCA\\Integriq\\Event\\DeliveryConcludedEvent') === true) {
+			$context->registerEventListener(
+				'OCA\Integriq\Event\DeliveryConcludedEvent',
+				\OCA\Dossiq\Listener\DeliveryConcludedListener::class
+			);
+		}
 	}//end register()
 }//end class

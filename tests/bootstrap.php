@@ -286,6 +286,18 @@ foreach (['Decidiq', 'Decidesk'] as $stubNamespace) {
 	}
 }
 
+// Integriq's ADR-041 delivery-seam contract (absorb-dossiq-deliveries).
+// PublicationService dispatches DeliveryRequestedEvent and
+// DeliveryConcludedListener consumes DeliveryConcludedEvent; both resolve the
+// classes by name so dossiq stays installable without integriq. The stubs
+// mirror integriq's real constructor signatures verbatim and no-op when the
+// real classes are present.
+foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent'] as $stubEvent) {
+	if (class_exists('\\OCA\\Integriq\\Event\\' . $stubEvent) === false) {
+		include_once __DIR__ . '/Stubs/Integriq/Event/' . $stubEvent . '.php';
+	}
+}
+
 // Hermiq's oversight contract. procest resolves it by name so it stays
 // installable without hermiq, which means the contract is only exercised in
 // tests if something supplies the class.
