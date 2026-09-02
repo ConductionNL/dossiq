@@ -14,7 +14,12 @@
 <template>
 	<div class="store-settings">
 		<NcNoteCard type="info">
-			{{ t('dossiq', 'A store registry is another OpenRegister instance that publishes case configuration. Leave the address empty to keep dossiq offline: nothing is requested from the network until one is set.') }}
+			{{
+				t(
+					'dossiq',
+					'A store registry is another OpenRegister instance that publishes case configuration. Leave the address empty to keep dossiq offline: nothing is requested from the network until one is set.',
+				)
+			}}
 		</NcNoteCard>
 
 		<NcTextField
@@ -34,7 +39,12 @@
 			data-testid="store-registry-token" />
 
 		<p class="store-settings__hint">
-			{{ t('dossiq', 'The token is never shown again after saving. Leave it empty to keep the one already stored.') }}
+			{{
+				t(
+					'dossiq',
+					'The token is never shown again after saving. Leave it empty to keep the one already stored.',
+				)
+			}}
 		</p>
 
 		<NcButton variant="primary" :disabled="saving" @click="save">
@@ -101,9 +111,12 @@ export default {
 		 */
 		async load() {
 			try {
-				const response = await fetch(generateUrl('/apps/dossiq/api/store/settings'), {
-					headers: { requesttoken: window.OC?.requestToken },
-				})
+				const response = await fetch(
+					generateUrl('/apps/dossiq/api/store/settings'),
+					{
+						headers: { requesttoken: window.OC?.requestToken },
+					},
+				)
 				if (response.ok !== true) {
 					return
 				}
@@ -127,18 +140,21 @@ export default {
 		async save() {
 			this.saving = true
 			try {
-				const response = await fetch(generateUrl('/apps/dossiq/api/store/settings'), {
-					method: 'PUT',
-					headers: {
-						'Content-Type': 'application/json',
-						requesttoken: window.OC?.requestToken,
+				const response = await fetch(
+					generateUrl('/apps/dossiq/api/store/settings'),
+					{
+						method: 'PUT',
+						headers: {
+							'Content-Type': 'application/json',
+							requesttoken: window.OC?.requestToken,
+						},
+						body: JSON.stringify({
+							registryUrl: this.registryUrl,
+							registryRegister: this.registryRegister,
+							registryToken: this.registryToken,
+						}),
 					},
-					body: JSON.stringify({
-						registryUrl: this.registryUrl,
-						registryRegister: this.registryRegister,
-						registryToken: this.registryToken,
-					}),
-				})
+				)
 
 				if (response.ok !== true) {
 					showError(t('dossiq', 'The store settings could not be saved.'))

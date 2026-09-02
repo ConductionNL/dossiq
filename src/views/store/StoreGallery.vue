@@ -24,7 +24,12 @@
 				{{ t('dossiq', 'Store') }}
 			</h2>
 			<p class="store-gallery__intro">
-				{{ t('dossiq', 'Install case types, workflows and enforcement tables that other organisations have published.') }}
+				{{
+					t(
+						'dossiq',
+						'Install case types, workflows and enforcement tables that other organisations have published.',
+					)
+				}}
 			</p>
 		</div>
 
@@ -36,7 +41,10 @@
 				data-testid="store-search"
 				@update:modelValue="onSearchInput" />
 
-			<div class="store-gallery__kinds" role="group" :aria-label="t('dossiq', 'Filter by kind')">
+			<div
+				class="store-gallery__kinds"
+				role="group"
+				:aria-label="t('dossiq', 'Filter by kind')">
 				<NcButton
 					v-for="option in kindOptions"
 					:key="option.value"
@@ -54,22 +62,37 @@
 			v-else-if="offline"
 			type="info"
 			data-testid="store-not-configured">
-			{{ t('dossiq', 'No store registry is configured, so nothing was requested from the network. An administrator can connect one under Administration settings. The templates below ship with dossiq.') }}
+			{{
+				t(
+					'dossiq',
+					'No store registry is configured, so nothing was requested from the network. An administrator can connect one under Administration settings. The templates below ship with dossiq.',
+				)
+			}}
 		</NcNoteCard>
 
 		<NcNoteCard
 			v-else-if="unreachable"
 			type="warning"
 			data-testid="store-unreachable">
-			{{ t('dossiq', 'The store registry did not answer. The templates below ship with dossiq.') }}
+			{{
+				t(
+					'dossiq',
+					'The store registry did not answer. The templates below ship with dossiq.',
+				)
+			}}
 		</NcNoteCard>
 
 		<NcEmptyContent
 			v-else-if="cards.length === 0"
 			:name="t('dossiq', 'Nothing matches that search')"
-			:description="t('dossiq', 'Try a different term, or clear the kind filter.')" />
+			:description="
+				t('dossiq', 'Try a different term, or clear the kind filter.')
+			" />
 
-		<ul v-if="!loading && cards.length > 0" class="store-gallery__grid" data-testid="store-results">
+		<ul
+			v-if="!loading && cards.length > 0"
+			class="store-gallery__grid"
+			data-testid="store-results">
 			<li v-for="card in cards" :key="card.slug" class="store-gallery__card">
 				<h3 class="store-gallery__card-title">
 					{{ card.title || card.slug }}
@@ -89,7 +112,11 @@
 						variant="primary"
 						:disabled="installing === card.slug"
 						@click="install(card)">
-						{{ installing === card.slug ? t('dossiq', 'Installing…') : t('dossiq', 'Install') }}
+						{{
+							installing === card.slug
+								? t('dossiq', 'Installing…')
+								: t('dossiq', 'Install')
+						}}
 					</NcButton>
 				</div>
 			</li>
@@ -100,7 +127,10 @@
 				{{ t('dossiq', 'Included with dossiq') }}
 			</h3>
 			<ul class="store-gallery__grid" data-testid="store-builtin">
-				<li v-for="item in builtIn" :key="item.slug" class="store-gallery__card">
+				<li
+					v-for="item in builtIn"
+					:key="item.slug"
+					class="store-gallery__card">
 					<h4 class="store-gallery__card-title">
 						{{ item.title }}
 					</h4>
@@ -111,7 +141,10 @@
 			</ul>
 		</div>
 
-		<NcNoteCard v-if="report" :type="report.type" data-testid="store-install-report">
+		<NcNoteCard
+			v-if="report"
+			:type="report.type"
+			data-testid="store-install-report">
 			{{ report.message }}
 		</NcNoteCard>
 	</div>
@@ -122,7 +155,13 @@ import { getCurrentUser } from '@nextcloud/auth'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import { NcButton, NcEmptyContent, NcLoadingIcon, NcNoteCard, NcTextField } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcEmptyContent,
+	NcLoadingIcon,
+	NcNoteCard,
+	NcTextField,
+} from '@nextcloud/vue'
 
 /**
  * The kinds a dossiq store item can declare (ADR-080 Decision 5). A `kind`
@@ -178,7 +217,10 @@ export default {
 		 * @spec openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
 		 */
 		unreachable() {
-			return this.outcome === 'store_unreachable' || this.outcome === 'store_invalid_response'
+			return (
+				this.outcome === 'store_unreachable'
+				|| this.outcome === 'store_invalid_response'
+			)
 		},
 
 		/**
@@ -227,17 +269,26 @@ export default {
 				{
 					slug: 'vth-handhavingstraject',
 					title: t('dossiq', 'Enforcement track (VTH)'),
-					description: t('dossiq', 'Awb 5:24 enforcement procedure with a recovery period and re-inspection.'),
+					description: t(
+						'dossiq',
+						'Awb 5:24 enforcement procedure with a recovery period and re-inspection.',
+					),
 				},
 				{
 					slug: 'bezwaar',
 					title: t('dossiq', 'Objection procedure'),
-					description: t('dossiq', 'Objection intake, hearing, advisory committee and decision.'),
+					description: t(
+						'dossiq',
+						'Objection intake, hearing, advisory committee and decision.',
+					),
 				},
 				{
 					slug: 'subsidie',
 					title: t('dossiq', 'Grant application'),
-					description: t('dossiq', 'Application, assessment, award and accountability.'),
+					description: t(
+						'dossiq',
+						'Application, assessment, award and accountability.',
+					),
 				},
 			]
 		},
@@ -314,9 +365,12 @@ export default {
 				}
 
 				const suffix = params.toString() ? `?${params.toString()}` : ''
-				const response = await fetch(generateUrl(`/apps/dossiq/api/store/items${suffix}`), {
-					headers: { requesttoken: window.OC?.requestToken },
-				})
+				const response = await fetch(
+					generateUrl(`/apps/dossiq/api/store/items${suffix}`),
+					{
+						headers: { requesttoken: window.OC?.requestToken },
+					},
+				)
 				const body = await response.json()
 
 				this.outcome = body.outcome ?? 'store_invalid_response'
@@ -348,7 +402,9 @@ export default {
 
 			try {
 				const response = await fetch(
-					generateUrl(`/apps/dossiq/api/store/items/${encodeURIComponent(card.slug)}/install`),
+					generateUrl(
+						`/apps/dossiq/api/store/items/${encodeURIComponent(card.slug)}/install`,
+					),
 					{
 						method: 'POST',
 						headers: {
@@ -360,11 +416,16 @@ export default {
 				const body = await response.json()
 
 				if (response.ok !== true) {
-					showError(body.message ?? t('dossiq', 'The item could not be installed.'))
+					showError(
+						body.message
+							?? t('dossiq', 'The item could not be installed.'),
+					)
 					return
 				}
 
-				const refused = (body.components ?? []).filter((c) => c.status !== 'installed')
+				const refused = (body.components ?? []).filter(
+					(c) => c.status !== 'installed',
+				)
 				if (refused.length === 0) {
 					showSuccess(t('dossiq', 'Installed.'))
 					this.report = null
@@ -373,9 +434,13 @@ export default {
 
 				this.report = {
 					type: body.success === true ? 'info' : 'warning',
-					message: t('dossiq', 'Some parts were not installed: {schemas}', {
-						schemas: refused.map((c) => c.schema).join(', '),
-					}),
+					message: t(
+						'dossiq',
+						'Some parts were not installed: {schemas}',
+						{
+							schemas: refused.map((c) => c.schema).join(', '),
+						},
+					),
 				}
 			} catch {
 				showError(t('dossiq', 'The item could not be installed.'))

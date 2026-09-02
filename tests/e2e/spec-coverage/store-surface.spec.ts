@@ -47,14 +47,20 @@ test.describe('Store surface', () => {
 			.allInnerTexts()
 			.then((texts) => texts.map((entry) => entry.trim()))
 
-		const documentation = labels.findIndex((label) => /^Documentation$/i.test(label))
+		const documentation = labels.findIndex((label) =>
+			/^Documentation$/i.test(label),
+		)
 		const store = labels.findIndex((label) => /^Store$/i.test(label))
 		const reports = labels.findIndex((label) => /^Reports$/i.test(label))
 
-		expect(documentation, 'Documentation must be in the footer').toBeGreaterThan(-1)
+		expect(documentation, 'Documentation must be in the footer').toBeGreaterThan(
+			-1,
+		)
 		expect(store, 'Store must be in the footer').toBeGreaterThan(-1)
 		expect(reports, 'Reports must be in the footer').toBeGreaterThan(-1)
-		expect(store, 'Store must follow Documentation').toBeGreaterThan(documentation)
+		expect(store, 'Store must follow Documentation').toBeGreaterThan(
+			documentation,
+		)
 		expect(store, 'Store must precede Reports').toBeLessThan(reports)
 	})
 
