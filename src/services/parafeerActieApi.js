@@ -27,6 +27,7 @@ const OR_BASE = 'apps/openregister/api/objects/dossiq/parafeeractie'
  *
  * @param {string} voorstelId The voorstel UUID.
  * @return {Promise<Array<object>>} The parafeeractie array, oldest first.
+ * @spec openspec/changes/parafering-runtime-to-decidiq/specs/parafering-runtime-to-decidiq/spec.md
  */
 export async function listActions(voorstelId) {
 	const response = await axios.get(generateUrl(`/${OR_BASE}`), {
