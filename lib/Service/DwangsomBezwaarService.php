@@ -85,18 +85,28 @@ class DwangsomBezwaarService {
 		);
 
 		try {
-			$calculation = $objectService->find($calculationId, register: $register, schema: $bSchema);
+			$calculation = $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $bSchema,
+				id: $calculationId
+			);
 		} catch (\Throwable $e) {
 			throw new RuntimeException('DwangsomBerekening lookup failed: ' . $e->getMessage());
 		}
 
-		if (is_array($calculation) === false) {
+		if ($calculation === null) {
 			throw new RuntimeException('DwangsomBerekening not found: ' . $calculationId);
 		}
 
 		$calculation['status'] = 'objection-bevroren';
 		try {
-			$calculation = $objectService->saveObject($register, $bSchema, $calculation);
+			$calculation = ($this->saveObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $bSchema,
+				object: $calculation
+			) ?? $calculation);
 		} catch (\Throwable $e) {
 			throw new RuntimeException('DwangsomBerekening persist failed: ' . $e->getMessage());
 		}
@@ -112,7 +122,7 @@ class DwangsomBezwaarService {
 		foreach ($uitbetalingen as $u) {
 			$u['status'] = 'on-hold-objection';
 			try {
-				$objectService->saveObject($register, $uSchema, $u);
+				$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $uSchema, object: $u);
 			} catch (\Throwable $e) {
 				$this->logger->warning('Bezwaar freeze on uitbetaling failed', ['id' => $u['id'] ?? '', 'error' => $e->getMessage()]);
 			}
@@ -131,11 +141,7 @@ class DwangsomBezwaarService {
 		}
 
 		$this->logger->info('Dwangsom bezwaar registered', ['berekening' => $calculationId]);
-		if (is_array($calculation) === true) {
-			return $calculation;
-		}
-
-		return [];
+		return $calculation;
 	}//end registerBezwaar()
 
 	/**
@@ -168,19 +174,29 @@ class DwangsomBezwaarService {
 		);
 
 		try {
-			$calculation = $objectService->find($calculationId, register: $register, schema: $bSchema);
+			$calculation = $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $bSchema,
+				id: $calculationId
+			);
 		} catch (\Throwable $e) {
 			throw new RuntimeException('DwangsomBerekening lookup failed: ' . $e->getMessage());
 		}
 
-		if (is_array($calculation) === false) {
+		if ($calculation === null) {
 			throw new RuntimeException('DwangsomBerekening not found: ' . $calculationId);
 		}
 
 		$calculation['definitiveAmount'] = $newAmountCents;
 		$calculation['status'] = 'completed';
 		try {
-			$calculation = $objectService->saveObject($register, $bSchema, $calculation);
+			$calculation = ($this->saveObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $bSchema,
+				object: $calculation
+			) ?? $calculation);
 		} catch (\Throwable $e) {
 			throw new RuntimeException('DwangsomBerekening persist failed: ' . $e->getMessage());
 		}
@@ -196,7 +212,7 @@ class DwangsomBezwaarService {
 			$u['amount'] = $newAmountCents;
 			$u['status'] = 'voorbereid';
 			try {
-				$objectService->saveObject($register, $uSchema, $u);
+				$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $uSchema, object: $u);
 			} catch (\Throwable $e) {
 				$this->logger->warning('Bezwaar resolve on uitbetaling failed', ['id' => $u['id'] ?? '', 'error' => $e->getMessage()]);
 			}
@@ -214,11 +230,7 @@ class DwangsomBezwaarService {
 		}
 
 		$this->logger->info('Dwangsom bezwaar resolved', ['berekening' => $calculationId, 'newBedrag' => $newAmountCents]);
-		if (is_array($calculation) === true) {
-			return $calculation;
-		}
-
-		return [];
+		return $calculation;
 	}//end resolveBezwaar()
 
 	/**

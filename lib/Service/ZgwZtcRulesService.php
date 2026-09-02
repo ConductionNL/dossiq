@@ -690,22 +690,21 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 * @return array<string, mixed> The case type row, or an empty array.
 	 */
 	private function loadCaseTypeRow(object $objectService, string $register, string $schema, string $caseTypeId): array {
+		// A top-level `['id' => $caseTypeId]` filter does not resolve in
+		// OpenRegister (ids are metadata, not schema properties) and silently
+		// matches nothing. The get-by-uuid path resolves the id directly.
 		try {
-			$caseTypes = $this->searchObjectsAsArrays(
+			$caseType = $this->findObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				filters: ['id' => $caseTypeId],
+				id: $caseTypeId
 			);
 		} catch (\Throwable $e) {
 			return [];
 		}
 
-		if (count($caseTypes) > 0 && is_array($caseTypes[0]) === true) {
-			return $caseTypes[0];
-		}
-
-		return [];
+		return ($caseType ?? []);
 	}//end loadCaseTypeRow()
 
 	/**

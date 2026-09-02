@@ -107,7 +107,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		);
 
 		// Seed AWB-default Wmo definition.
-		$this->objects->saveObject('dossiq', 'deadlineDefinition', [
+		$this->objects->seed('deadlineDefinition', [
 			'id' => 'td-ov',
 			'caseType' => 'omgevingsvergunning-regulier',
 			'wettelijkeGrondslag' => 'Wabo 3.9 lid 1',
@@ -198,7 +198,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		// Seed an overdue but still-lopend instance; the ENGINE's breach
 		// rung (slaBreached:0), consumed by the fired-listener, is what
 		// flips it to exceeded now that the daily scan is retired.
-		$instance = $this->objects->saveObject('dossiq', 'deadlineInstance', [
+		$instance = $this->objects->seed('deadlineInstance', [
 			'case' => 'Z/2026/S4',
 			'deadlineDefinition' => 'td-ov',
 			'startDate' => '2026-01-01T10:00:00+00:00',
@@ -283,13 +283,13 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 	 */
 	public function testScenario5Bezwaar(): void {
 		// Stand up a stopped berekening + linked uitbetaling.
-		$this->objects->saveObject('dossiq', 'penaltyPaymentCalculation', [
+		$this->objects->seed('penaltyPaymentCalculation', [
 			'id' => 'b-s5',
 			'deadlineInstance' => 'ti-s5',
 			'status' => 'gestopt-wegens-decision',
 			'definitiveAmount' => 50000,
 		]);
-		$this->objects->saveObject('dossiq', 'dwangsomUitbetaling', [
+		$this->objects->seed('dwangsomUitbetaling', [
 			'id' => 'u-s5',
 			'penaltyPaymentCalculation' => 'b-s5',
 			'amount' => 50000,

@@ -71,7 +71,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 	 * @return void
 	 */
 	private function seedCalculation(string $id, array $overrides = []): void {
-		$this->objects->saveObject('dossiq', 'penaltyPaymentCalculation', array_merge([
+		$this->objects->seed('penaltyPaymentCalculation', array_merge([
 			'id' => $id,
 			'noticeOfDefault' => 'ig-1',
 			'deadlineInstance' => 'ti-1',
@@ -214,13 +214,13 @@ class DwangsomCalculationServiceTest extends TestCase {
 	 */
 	public function testCustomRegimeUsesDefinitionTariff(): void {
 		// Seed Woo definition + instance.
-		$this->objects->saveObject('dossiq', 'deadlineDefinition', [
+		$this->objects->seed('deadlineDefinition', [
 			'id' => 'td-woo',
 			'caseType' => 'woo-verzoek',
 			'deviatingPenaltyPaymentRegime' => ['dailyTariff' => 1500, 'plafond' => 50000, 'grace' => 14],
 			'validFrom' => '2026-01-01',
 		]);
-		$this->objects->saveObject('dossiq', 'deadlineInstance', [
+		$this->objects->seed('deadlineInstance', [
 			'id' => 'ti-woo',
 			'deadlineDefinition' => 'td-woo',
 		]);
