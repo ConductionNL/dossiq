@@ -55,6 +55,7 @@ class SchemaKeyReconciler {
 	 * @param IAppConfig $appConfig The app configuration service.
 	 * @param ContainerInterface $container The DI container.
 	 * @param LoggerInterface $logger The logger interface.
+	 * @param SchemaSlugResolver $slugResolver Resolves a slug inside our own register.
 	 *
 	 * @return void
 	 */
@@ -62,6 +63,7 @@ class SchemaKeyReconciler {
 		private IAppConfig $appConfig,
 		private ContainerInterface $container,
 		private LoggerInterface $logger,
+		private SchemaSlugResolver $slugResolver,
 	) {
 	}//end __construct()
 
@@ -91,15 +93,12 @@ class SchemaKeyReconciler {
 			return 0;
 		}
 
-		$registerSchemaIds = $this->registerSchemaIds();
-
 		$written = 0;
 		foreach (SchemaSlugMap::SLUG_TO_CONFIG_KEY as $slug => $configKey) {
 			$written += $this->reconcileSingleSchemaKey(
 				schemaMapper: $schemaMapper,
 				slug: (string)$slug,
-				configKey: $configKey,
-				registerSchemaIds: $registerSchemaIds
+				configKey: $configKey
 			);
 		}
 
@@ -205,23 +204,13 @@ class SchemaKeyReconciler {
 	 * @param object $schemaMapper The OpenRegister SchemaMapper.
 	 * @param string $slug The schema slug (e.g. 'caseType').
 	 * @param string $configKey The Dossiq appconfig key to write.
-	 * @param int[] $registerSchemaIds The ids Dossiq's own register references.
 	 *
 	 * @return int 1 when the key was (re)written, 0 otherwise.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function reconcileSingleSchemaKey(
-		object $schemaMapper,
-		string $slug,
-		string $configKey,
-		array $registerSchemaIds,
-	): int {
-		$schemaId = $this->resolveSchemaId(
-			schemaMapper: $schemaMapper,
-			slug: $slug,
-			registerSchemaIds: $registerSchemaIds
-		);
+	private function reconcileSingleSchemaKey(object $schemaMapper, string $slug, string $configKey): int {
+		$schemaId = $this->resolveSchemaId(schemaMapper: $schemaMapper, slug: $slug);
 
 		if ($schemaId === '') {
 			return 0;
@@ -261,90 +250,24 @@ class SchemaKeyReconciler {
 	/**
 	 * Resolve one schema slug to a live schema id.
 	 *
-	 * Two steps, and the ORDER is the whole point:
-	 *
-	 * 1. Match the slug among the schemas Dossiq's own register references.
-	 *    When our register carries this slug, that schema is the answer, even
-	 *    if other apps carry the same slug.
-	 * 2. Only when our register carries NO schema with this slug, fall back to
-	 *    the unscoped lookup.
-	 *
-	 * 🔴 STEP 2 IS NOT DEAD CODE AND MUST NOT BECOME A HARD FAILURE. Dossiq
-	 * deliberately points three keys at schemas outside its own register
-	 * (`appointment`, `location`, `catalog` are owned by other apps and shared).
-	 * Those slugs are unique instance-wide, so the unscoped lookup is correct
-	 * for them. Dropping the fallback would blank all three.
+	 * Delegates to {@see SchemaSlugResolver}, which resolves inside Dossiq's own
+	 * register first. The rule lives there because the annotation reconciler
+	 * needs exactly the same answer, and two copies of it drifted apart once
+	 * already.
 	 *
 	 * @param object $schemaMapper The OpenRegister SchemaMapper.
 	 * @param string $slug The schema slug.
-	 * @param int[] $registerSchemaIds The ids Dossiq's own register references.
 	 *
 	 * @return string The live schema id, or '' when the slug does not resolve.
 	 */
-	private function resolveSchemaId(object $schemaMapper, string $slug, array $registerSchemaIds): string {
-		if ($registerSchemaIds !== [] && method_exists($schemaMapper, 'findBySlugInIds') === true) {
-			try {
-				$scoped = $schemaMapper->findBySlugInIds($slug, $registerSchemaIds);
-				if ($scoped !== null) {
-					return (string)$scoped->getId();
-				}
-			} catch (\Throwable $e) {
-				// Fall through to the unscoped lookup below.
-				$this->logger->debug(
-					'Dossiq: Register-scoped schema lookup failed, falling back',
-					['slug' => $slug, 'exception' => $e->getMessage()]
-				);
-			}
-		}
-
-		try {
-			// Slug-aware lookup with RBAC + multi-tenancy disabled: the repair
-			// step runs in a system context that has no active organisation,
-			// and the schema set is app-owned config, not tenant data.
-			// Signature is find($id, $_extend, $_rbac, $_multitenancy).
-			$schema = $schemaMapper->find($slug, [], false, false);
-			return (string)$schema->getId();
-		} catch (\Throwable $e) {
-			// Slug not present in this OpenRegister instance, so skip it.
+	private function resolveSchemaId(object $schemaMapper, string $slug): string {
+		$schema = $this->slugResolver->resolve(schemaMapper: $schemaMapper, slug: $slug);
+		if ($schema === null) {
 			return '';
 		}
+
+		return (string)$schema->getId();
 	}//end resolveSchemaId()
-
-	/**
-	 * The schema ids Dossiq's own register references.
-	 *
-	 * Returns an empty list when the register is not configured yet or
-	 * OpenRegister cannot be reached, which makes {@see resolveSchemaId()}
-	 * behave exactly as it did before the register scoping was added.
-	 *
-	 * @return int[] The register's schema ids, or [] when unknown.
-	 */
-	private function registerSchemaIds(): array {
-		$registerId = $this->appConfig->getValueString(Application::APP_ID, 'register', '');
-		if ($registerId === '') {
-			return [];
-		}
-
-		try {
-			$registerMapper = $this->container->get('OCA\OpenRegister\Db\RegisterMapper');
-			$register = $registerMapper->find($registerId, false, false);
-		} catch (\Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: Could not read the register schema list for scoping',
-				['register' => $registerId, 'exception' => $e->getMessage()]
-			);
-			return [];
-		}
-
-		$ids = [];
-		foreach ($register->getSchemas() as $candidate) {
-			if (is_numeric($candidate) === true && (int)$candidate > 0) {
-				$ids[] = (int)$candidate;
-			}
-		}
-
-		return $ids;
-	}//end registerSchemaIds()
 
 	/**
 	 * Resolve OpenRegister's SchemaMapper, or null when it is unavailable.

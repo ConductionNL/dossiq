@@ -40,6 +40,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Settings;
 
 use OCA\Dossiq\Service\Settings\SchemaKeyReconciler;
+use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -308,7 +309,9 @@ final class SchemaKeyReconcilerTest extends TestCase {
 			}
 		);
 
-		return new SchemaKeyReconciler($appConfig, $container, new NullLogger());
+		$resolver = new SchemaSlugResolver($appConfig, $container, new NullLogger());
+
+		return new SchemaKeyReconciler($appConfig, $container, new NullLogger(), $resolver);
 	}
 
 	/**
