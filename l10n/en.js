@@ -3437,7 +3437,9 @@ OC.L10N.register(
         "Log hours": "Log hours",
         "Mail": "Mail",
         "Mail & messages": "Mail & messages",
-        "Time left": "Time left"
+        "Time left": "Time left",
+        "Assigned to me": "Assigned to me",
+        "All issues": "All issues"
     },
     "nplurals=2; plural=(n != 1);"
 )

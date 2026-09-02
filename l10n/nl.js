@@ -3437,7 +3437,9 @@ OC.L10N.register(
         "Files": "Bestanden",
         "Mail": "Mail",
         "Mail & messages": "Mail en berichten",
-        "Log hours": "Uren boeken"
+        "Log hours": "Uren boeken",
+        "Assigned to me": "Aan mij toegewezen",
+        "All issues": "Alle zaken"
     },
     "nplurals=2; plural=(n != 1);"
 )
