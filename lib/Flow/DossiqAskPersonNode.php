@@ -17,7 +17,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Flow;
 
 use DateTime;
-use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Service\Flow\FlowNodeResumeState;
 use OCA\OpenRegister\Service\Flow\FlowRunContext;
@@ -86,7 +85,6 @@ class DossiqAskPersonNode implements IFlowNode {
      * Constructor.
      *
      * @param SettingsService $settingsService Resolves the object service and configured schemas.
-     * @param FlowRunAsScope  $runAsScope      Scopes the task write to the run's acting identity.
      * @param IL10N           $l10n            The localisation service.
      * @param LoggerInterface $logger          The logger.
      *
@@ -96,7 +94,6 @@ class DossiqAskPersonNode implements IFlowNode {
      */
     public function __construct(
         private readonly SettingsService $settingsService,
-        private readonly FlowRunAsScope $runAsScope,
         private readonly IL10N $l10n,
         private readonly LoggerInterface $logger,
     ) {
@@ -281,8 +278,7 @@ class DossiqAskPersonNode implements IFlowNode {
         $caseId   = $this->caseIdFrom(items: $items);
         $assignee = $this->renderedAssignee(config: $config, items: $items);
         $taskId   = $this->persistTask(
-            task: $this->buildTask(caseId: $caseId, assignee: $assignee, config: $config, context: $context, resume: $resume),
-            context: $context
+            task: $this->buildTask(caseId: $caseId, assignee: $assignee, config: $config, context: $context, resume: $resume)
         );
 
         $resume->merge(
@@ -438,13 +434,12 @@ class DossiqAskPersonNode implements IFlowNode {
     /**
      * Write the task and return the id the run must remember.
      *
-     * The write runs under the flow run's `runAs` identity: under
-     * FlowRunWorker the ambient session carries nobody, so a bare save is
-     * refused as 'Anonymous' however legitimate the run — the exact failure
-     * that stopped the seeded case flow live.
+     * The write runs under the flow run's `runAs` identity because the
+     * engine's RegistryStepDispatcher executes every contributed node inside
+     * `ObjectService::runAs()` (openregister#3332) — the seam that fixed the
+     * 'Anonymous' refusal which stopped the seeded case flow live.
      *
-     * @param array $task    The task to persist.
-     * @param array $context Run-level metadata, carrying the acting identity.
+     * @param array $task The task to persist.
      *
      * @return string The created task's id.
      *
@@ -453,7 +448,7 @@ class DossiqAskPersonNode implements IFlowNode {
      *
      * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
      */
-    private function persistTask(array $task, array $context): string {
+    private function persistTask(array $task): string {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
             throw new RuntimeException('storage_unavailable');
@@ -465,10 +460,7 @@ class DossiqAskPersonNode implements IFlowNode {
             throw new RuntimeException('task_schema_not_configured');
         }
 
-        $created = $this->runAsScope->call(
-            context: $context,
-            operation: static fn (): mixed => $objectService->saveObject(object: $task, register: $register, schema: $taskSchema)
-        );
+        $created = $objectService->saveObject(object: $task, register: $register, schema: $taskSchema);
 
         $taskId = $this->createdTaskId(created: $created);
         if ($taskId === '') {

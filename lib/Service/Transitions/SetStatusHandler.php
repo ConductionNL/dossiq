@@ -40,7 +40,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\CaseFieldWriter;
-use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
@@ -55,14 +54,12 @@ class SetStatusHandler implements ActionHandlerInterface {
 	 *
 	 * @param SettingsService $settingsService Resolves the object service and the configured schemas.
 	 * @param StatusTypeLookup $statuses       Resolves a status name to its id within a case type.
-	 * @param FlowRunAsScope  $runAsScope      Scopes the resolve-and-write to the run's acting identity.
 	 * @param CaseFieldWriter $caseWriter      Applies ONLY this handler's field to the stored case.
 	 * @param LoggerInterface $logger          The logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly StatusTypeLookup $statuses,
-		private readonly FlowRunAsScope $runAsScope,
 		private readonly CaseFieldWriter $caseWriter,
 		private readonly LoggerInterface $logger,
 	) {
@@ -115,16 +112,13 @@ class SetStatusHandler implements ActionHandlerInterface {
 				return new ActionResult(succeeded: false, error: 'case_schema_not_configured');
 			}
 
-			// The RESOLVE and the WRITE run under one identity: the run's
-			// `runAs` when the flow engine hands one, the ambient session
-			// otherwise. A bare saveObject() here is what stranded every case
-			// under FlowRunWorker — the permission gate reads the session
-			// user, which a cron worker does not have, so the write was
-			// refused as 'Anonymous' while the run context named an acting
-			// user all along. The lookup sits inside the same scope because
-			// it is a read that decides what the write then touches; running
-			// the two under different subjects is how a status resolves that
-			// the write is not allowed to stamp.
+			// The RESOLVE and the WRITE run under one identity. On the flow
+			// path that identity is the run's acting identity: the engine's
+			// RegistryStepDispatcher executes this handler inside
+			// `ObjectService::runAs()` (openregister#3332), which is what
+			// un-stranded the cases FlowRunWorker refused as 'Anonymous'. On
+			// the interactive path the ambient session user answers the
+			// permission checks. No local runAs wrap is needed here any more.
 			//
 			// ONLY `status` is written. `$case` is a SNAPSHOT of the flow
 			// item, not the stored case; full-saving it here is what erased
@@ -132,29 +126,20 @@ class SetStatusHandler implements ActionHandlerInterface {
 			// (measured live: case a53cfc92/dc16d6dd, audits 512→515 and
 			// 725→728, same second). The writer applies this handler's field
 			// to the STORED case and touches nothing else.
-			$statusId = (string) $this->runAsScope->call(
-				context: $transitionContext,
-				operation: function () use ($caseTypeId, $statusName, $case, $objectService, $register, $caseSchema): string {
-					$statusId = $this->statuses->idForName(
-						caseTypeId: $caseTypeId,
-						statusName: $statusName
-					);
-
-					if ($statusId === '') {
-						return '';
-					}
-
-					$this->caseWriter->write(
-						objectService: $objectService,
-						register: $register,
-						schema: $caseSchema,
-						case: $case,
-						changes: ['status' => $statusId]
-					);
-
-					return $statusId;
-				}
+			$statusId = $this->statuses->idForName(
+				caseTypeId: $caseTypeId,
+				statusName: $statusName
 			);
+
+			if ($statusId !== '') {
+				$this->caseWriter->write(
+					objectService: $objectService,
+					register: $register,
+					schema: $caseSchema,
+					case: $case,
+					changes: ['status' => $statusId]
+				);
+			}
 
 			if ($statusId === '') {
 				// Named, not generic: an operator reading the run history has to

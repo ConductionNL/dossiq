@@ -3441,6 +3441,7 @@ OC.L10N.register(
         "Log hours": "Uren boeken",
         "Assigned to me": "Aan mij toegewezen",
         "All issues": "Alle zaken",
+        "This proposal has been returned. Adjust the document; it re-enters parafering through the case workflow.": "Dit voorstel is teruggestuurd. Pas het document aan; het gaat opnieuw in parafering via de zaakworkflow.",
         "Always required": "Altijd verplicht",
         "Choice from a list": "Keuze uit een lijst",
         "Email address": "E-mailadres",

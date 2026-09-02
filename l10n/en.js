@@ -3441,6 +3441,7 @@ OC.L10N.register(
         "Time left": "Time left",
         "Assigned to me": "Assigned to me",
         "All issues": "All issues",
+        "This proposal has been returned. Adjust the document; it re-enters parafering through the case workflow.": "This proposal has been returned. Adjust the document; it re-enters parafering through the case workflow.",
         "Always required": "Always required",
         "Choice from a list": "Choice from a list",
         "Email address": "Email address",

@@ -21,9 +21,15 @@
  *    schema: 'decision') must sit in ALLOWED_DECISION_WRITERS with the reason
  *    it may. Everything else raises in decidiq instead.
  * 2. EVALUATION. A file importing OpenRegister's DecisionTableEvaluator must
- *    sit in ALLOWED_EVALUATOR_CONSUMERS. That list is deprecated stock: it
- *    shrinks to empty when openregister's flow-decision-tables lands, and it
- *    never grows.
+ *    sit in ALLOWED_EVALUATOR_CONSUMERS. The list distinguishes two kinds of
+ *    entry: DEPRECATED STOCK — the case-decision surfaces that shrink to
+ *    empty when openregister's flow-decision-tables lands — and SANCTIONED
+ *    non-decision consumers, which evaluate rules that were never decidiq's
+ *    (kcc-routing-onto-or-decision-tables): consuming the SHARED engine for
+ *    those is the fleet-consolidation destination, and refusing it would
+ *    push the rule back into a private matcher, the exact thing wave 4
+ *    retires. What may never ship is a consumer that computes a case VERDICT
+ *    locally — that is decidiq's, whatever engine it borrows.
  *
  * WHAT THIS CANNOT SEE. The check is per file and lexical. A writer that
  * hides the schema binding behind indirection passes; the per-surface unit
@@ -95,15 +101,19 @@ class LocalDecisionAuthoringTest extends TestCase {
 	];
 
 	/**
-	 * The CLOSED allowlist of DecisionTableEvaluator consumers. Deprecated
-	 * stock (dossiq-decisions-to-decidiq): shrinks to empty when openregister
-	 * flow-decision-tables lands, and never grows.
+	 * The CLOSED allowlist of DecisionTableEvaluator consumers. The first two
+	 * are deprecated stock (dossiq-decisions-to-decidiq) and shrink to empty
+	 * when openregister flow-decision-tables lands; the KCC entry is a
+	 * sanctioned non-decision consumer and stays. A new entry needs the same
+	 * argument the KCC one made: rules that are not case verdicts, evaluated
+	 * on the SHARED engine with the domain dialect kept app-side.
 	 *
 	 * @var array<string, string>
 	 */
 	private const ALLOWED_EVALUATOR_CONSUMERS = [
 		'lib/Service/Transitions/EvaluateDecisionHandler.php' => 'The live evaluateDecision transition action, until flow-decision-tables lands in OpenRegister.',
 		'lib/Controller/DecisionTableController.php' => 'The standalone /api/decisions/{id}/evaluate endpoint, until flow-decision-tables lands in OpenRegister.',
+		'lib/Service/Kcc/RoutingTableEvaluator.php' => 'SANCTIONED, not deprecated stock: KCC contact-moment routing compiled onto the shared evaluator (kcc-routing-onto-or-decision-tables). Routing a call is triage, not a case verdict; the alternative to this consumer is the private matcher wave 4 retires.',
 	];
 
 
