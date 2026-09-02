@@ -133,9 +133,14 @@ test.describe('LHS override authorisation', () => {
 		// rendered. The second hard-coded the Dutch labels and broke the moment the
 		// instance served English — a test that depends on the session locale tells
 		// you about the locale, not the feature. Both languages are accepted.
+		// The control was 'Enforcement strategy', which has since been retired:
+		// the LHS matrix is a decision table, OpenRegister evaluates it, and
+		// authoring moved to the Decision Tables admin tab. A control has to be
+		// an entry that still exists, so it is now Case types — still a
+		// settings leaf, still inside the same collapsed group.
 		await expect(
 			nav.getByRole('link', {
-				name: /^(Enforcement strategy|Handhavingsstrategie)$/,
+				name: /^(Case types|Zaaktypen)$/,
 			}),
 			'the sibling settings entry must render, or an absence proves nothing',
 		).toBeVisible({ timeout: 30000 })

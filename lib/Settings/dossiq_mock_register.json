@@ -8624,7 +8624,7 @@
             "enum": [
               "burger",
               "bedrijf",
-              "government",
+              "overheid",
               "recidivist"
             ],
             "description": "Actor type of the violator (LHS actorType axis)",
@@ -19897,7 +19897,7 @@
         "case": "00000000-0000-4000-8000-000000000002",
         "severity": "ernstig",
         "behaviour": "calculerend",
-        "actorType": "government",
+        "actorType": "overheid",
         "matrixVersion": 3,
         "recommendedIntervention": "last_under_penaltypayment",
         "recommendedBy": "Voorbeeld Recommendedby 3",

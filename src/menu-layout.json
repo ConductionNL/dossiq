@@ -44,11 +44,9 @@
 		"BezwaarCommitteesMenu"
 	],
 	"settingsSection": [
-		"PartnersMenu",
 		"TenantsMenu",
 		"WmsLayersMenu",
 		"WorkflowDefinitionsMenu",
-		"LhsMatricesMenu",
 		"LhsRecommendationsMenu",
 		"BezwaarCommitteesMenu",
 		"SubstitutionAdminMenu"

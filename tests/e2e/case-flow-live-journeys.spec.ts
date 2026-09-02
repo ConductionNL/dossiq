@@ -244,7 +244,7 @@ async function openCasesListFilteredByTitle(
 	for (let attempt = 0; attempt < 3; attempt++) {
 		await page.goto(url, { waitUntil: 'domcontentloaded' })
 		const nav = page
-			.getByRole('link', { name: /^(All issues|Alle zaken)$/ })
+			.getByRole('link', { name: /^(All cases|Alle zaken)$/ })
 			.first()
 		await nav.waitFor({ state: 'visible', timeout: 20_000 })
 		if (page.url().includes('/cases')) return

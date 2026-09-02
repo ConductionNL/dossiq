@@ -35,7 +35,20 @@ test.describe('Dossiq — visual baselines', () => {
 	})
 
 	test('cases list', async ({ page }) => {
-		await shootByNav(page, `${APP}#/`, 'Cases', 'cases.png')
+		// The label is 'All cases', NOT 'Cases'. dossiq#1646 renamed this entry
+		// and shootByNav resolves the label behind `if (isVisible)`, so a stale
+		// label does not fail: it silently skips the click and shoots the
+		// DASHBOARD under the name cases.png. The baseline was that dashboard.
+		await shootByNav(page, `${APP}#/`, 'All cases', 'cases.png')
+	})
+
+	// Baselines src/views/store/StoreGallery.vue, the manifest's `Store` page.
+	test('store (StoreGallery)', async ({ page }) => {
+		// Shot with no registry configured, which is the state a fresh install
+		// is in: the not-configured note plus the built-in templates.
+		// A PATH: dossiq is on createWebHistory, so `#/store` would shoot the
+		// Dashboard under this baseline's name.
+		await shootSurface(page, '/index.php/apps/dossiq/store', 'StoreGallery.png')
 	})
 
 	// The "verwerkingen overview (AVG)" baseline was retired with the page it

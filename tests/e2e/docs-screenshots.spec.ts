@@ -291,7 +291,14 @@ test.describe('docs: user track', () => {
 		// configuration + recommendations live under settings; cases need
 		// an LHS-enabled type. Capture the settings + recommendations
 		// surfaces as structural stand-ins until seed data lands.
-		await go(page, '/settings/lhs-matrices')
+		//
+		// The matrix's own settings page is RETIRED: the LHS matrix is a
+		// decision table, OpenRegister evaluates it, and authoring moved to the
+		// Decision Tables (DMN) section of the ADMIN settings — which is a
+		// Nextcloud core route, not an app route, so it cannot go through go().
+		await page.goto('/index.php/settings/admin/dossiq', {
+			waitUntil: 'domcontentloaded',
+		})
 		await shoot(page, 'user', '08-inspection-checklist-01.png')
 		await shoot(page, 'user', '08-inspection-checklist-02.png')
 		await shoot(page, 'user', '08-inspection-checklist-03.png')

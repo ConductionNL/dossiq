@@ -40,7 +40,7 @@ test.describe('Dashboard', () => {
 test.describe('Cases page', () => {
 	// @e2e openspec/specs/case-management/spec.md#cases-index-page-renders-list-shell
 	test('renders list view with correct controls', async ({ page }) => {
-		await navTo(page, /^(All issues|Alle zaken)$/)
+		await navTo(page, /^(All cases|Alle zaken)$/)
 		// The view switcher renders as BUTTONS, not a radio group — measured on
 		// a CI runner (2026-08-04): the page exposes zero `radio` roles, so the
 		// old `getByRole('radio', …)` assertions could never pass.
@@ -88,7 +88,7 @@ test.describe('Cases page', () => {
 	})
 
 	test('sidebar has search and filter controls', async ({ page }) => {
-		await navTo(page, /^(All issues|Alle zaken)$/)
+		await navTo(page, /^(All cases|Alle zaken)$/)
 		await page.getByRole('button', { name: /^Add (Item|Case|Task)$/ }).click()
 		await page.getByRole('button', { name: 'Cancel' }).click()
 		// Sidebar should have filter comboboxes
