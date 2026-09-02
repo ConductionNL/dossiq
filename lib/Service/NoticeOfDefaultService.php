@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -41,6 +42,8 @@ use RuntimeException;
  * AWB 4:17 ingebrekestelling registration + DwangsomBerekening creation.
  */
 class NoticeOfDefaultService {
+	use SearchesObjects;
+
 	public const TARIFF_AWB_PLAFOND = 144200;
 	public const TARIFF_AWB_GRACE = 14;
 
@@ -229,12 +232,12 @@ class NoticeOfDefaultService {
 		}
 
 		try {
-			$def = $objectService->find($defId, register: $register, schema: $schema);
+			$def = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $defId);
 		} catch (\Throwable $e) {
 			return ['plafond' => self::TARIFF_AWB_PLAFOND, 'grace' => self::TARIFF_AWB_GRACE, 'custom' => false];
 		}
 
-		if (is_array($def) === false) {
+		if ($def === null) {
 			return ['plafond' => self::TARIFF_AWB_PLAFOND, 'grace' => self::TARIFF_AWB_GRACE, 'custom' => false];
 		}
 
@@ -268,12 +271,13 @@ class NoticeOfDefaultService {
 		}
 
 		try {
-			$saved = $objectService->saveObject($register, $schema, $object);
-			if (is_array($saved) === true) {
-				return $saved;
-			}
-
-			return $object;
+			$saved = $this->saveObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				object: $object
+			);
+			return ($saved ?? $object);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'NoticeOfDefaultService persist failed',

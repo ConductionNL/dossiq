@@ -221,18 +221,35 @@ async function shoot(page: Page, name: string): Promise<void> {
 }
 
 /**
- * The cases list, reached the way a person reaches it. A hard load of
- * `/cases` has been seen to land on the dashboard while the SPA boots under
- * load, so after the load the sidebar entry is clicked: that is deterministic
- * where the deep link is not, and it is what a person does.
+ * The cases list filtered to one exact title, via the deep-link filter
+ * contract (non-underscore query keys become equality filters on the
+ * fetch — CnIndexPage `resolveQueryFilters`).
+ *
+ * The unfiltered list sorts identifier-asc and pages at 20, so on any
+ * rig carrying more than 20 cases a just-created case lands on the LAST
+ * page and a bare `toContainText` against page one is pagination-blind:
+ * it passes on an empty rig and fails on a lived-in one. Filtering pins
+ * the assertion to the created case regardless of rig size.
+ *
+ * A hard load of `/cases` has been seen to land on the dashboard while
+ * the SPA boots under load, and a sidebar fallback click would drop the
+ * query — so the filtered deep link is retried until the router holds
+ * the /cases route.
  */
-async function openCasesList(page: Page): Promise<void> {
-	await page.goto('/index.php/apps/dossiq/cases', {
-		waitUntil: 'domcontentloaded',
-	})
-	const nav = page.getByRole('link', { name: /^(All cases|Alle zaken)$/ }).first()
-	await nav.waitFor({ state: 'visible', timeout: 20_000 })
-	await nav.click()
+async function openCasesListFilteredByTitle(
+	page: Page,
+	title: string,
+): Promise<void> {
+	const url = `/index.php/apps/dossiq/cases?title=${encodeURIComponent(title)}`
+	for (let attempt = 0; attempt < 3; attempt++) {
+		await page.goto(url, { waitUntil: 'domcontentloaded' })
+		const nav = page
+			.getByRole('link', { name: /^(All cases|Alle zaken)$/ })
+			.first()
+		await nav.waitFor({ state: 'visible', timeout: 20_000 })
+		if (page.url().includes('/cases')) return
+	}
+	throw new Error('The SPA never settled on the filtered cases route.')
 }
 
 async function openCase(page: Page, caseId: string, title: string): Promise<void> {
@@ -347,7 +364,7 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 			.toBe(1)
 		incompleteRun = String((await runsForCase(api, incompleteCase))[0].uuid)
 
-		await openCasesList(page)
+		await openCasesListFilteredByTitle(page, `${RUN_PREFIX} Carport Molenweg 5`)
 		await expect(page.locator('body')).toContainText(
 			`${RUN_PREFIX} Carport Molenweg 5`,
 			{ timeout: 20_000 },

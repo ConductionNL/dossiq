@@ -108,13 +108,26 @@ class RealignLhsActorTypeVocabularyTest extends TestCase {
 			}
 
 			/**
+			 * Real ObjectService::saveObject() signature: `$object` FIRST,
+			 * then `$extend`, `$register`, `$schema`, `$uuid`. A caller
+			 * still using the retired positional order fatals here as it
+			 * does against the live service.
+			 *
 			 * @param array<string, mixed> $object   The object.
-			 * @param string               $register The register.
-			 * @param string               $schema   The schema.
+			 * @param array|null           $extend   Relations to expand (ignored).
+			 * @param string|int|null      $register The register.
+			 * @param string|int|null      $schema   The schema.
+			 * @param string|null          $uuid     The uuid to update.
 			 *
 			 * @return array<string, mixed> The stored row.
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = ''): array {
+			public function saveObject(
+				array $object,
+				?array $extend = [],
+				string|int|null $register = null,
+				string|int|null $schema = null,
+				?string $uuid = null,
+			): array {
 				$this->written[] = $object;
 
 				return $object;

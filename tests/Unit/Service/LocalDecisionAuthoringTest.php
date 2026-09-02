@@ -58,7 +58,7 @@ class LocalDecisionAuthoringTest extends TestCase {
 	 *
 	 * @var string
 	 */
-	private const STORAGE_CALL_PATTERN = '/->\s*(saveObject|updateObject)\s*\(/';
+	private const STORAGE_CALL_PATTERN = '/->\s*(saveObject|saveObjectAsArray|updateObject)\s*\(/';
 
 	/**
 	 * A decision schema binding. `decision_schema` also covers

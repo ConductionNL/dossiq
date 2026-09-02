@@ -81,7 +81,7 @@ class ArmTermijnEngineTimersTest extends TestCase {
 			$logger
 		);
 
-		$this->objects->saveObject('dossiq', 'deadlineDefinition', [
+		$this->objects->seed('deadlineDefinition', [
 			'id' => 'td-ov',
 			'caseType' => 'omgevingsvergunning-regulier',
 			'standardDurationDays' => 56,
@@ -99,7 +99,7 @@ class ArmTermijnEngineTimersTest extends TestCase {
 	 * @return void
 	 */
 	private function seedInstance(string $id, array $overrides = []): void {
-		$this->objects->saveObject('dossiq', 'deadlineInstance', array_merge([
+		$this->objects->seed('deadlineInstance', array_merge([
 			'id' => $id,
 			'case' => 'Z/2026/' . $id,
 			'deadlineDefinition' => 'td-ov',

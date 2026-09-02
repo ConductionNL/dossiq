@@ -179,12 +179,12 @@ class TermijnService {
 		}
 
 		try {
-			$row = $objectService->find($termInstanceId, register: $register, schema: $schema);
-			if (is_array($row) === true) {
-				return $row;
-			}
-
-			return null;
+			return $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				id: $termInstanceId
+			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'TermijnService.getTermijnInstance failed',
@@ -445,12 +445,12 @@ class TermijnService {
 		}
 
 		try {
-			$saved = $objectService->saveObject($register, $schema, $object);
-			if (is_array($saved) === true) {
-				return $saved;
-			}
-
-			return null;
+			return $this->saveObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				object: $object
+			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'TermijnService persist failed',

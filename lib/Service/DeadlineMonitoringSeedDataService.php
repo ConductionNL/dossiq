@@ -123,7 +123,7 @@ class DeadlineMonitoringSeedDataService {
 			}
 
 			try {
-				$objectService->saveObject($register, $schema, $row);
+				$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $row);
 				$counts['definities']++;
 			} catch (\Throwable $e) {
 				$this->logger->warning(

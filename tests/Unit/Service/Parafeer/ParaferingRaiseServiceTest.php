@@ -72,6 +72,12 @@ class ParaferingRaiseServiceTest extends TestCase {
 			/**
 			 * The slug-path read the SearchesObjects trait uses for slug ids.
 			 *
+			 * Pinned to the REAL OpenRegister contract: a top-level
+			 * `'id' => …` / `'uuid' => …` filter addresses a schema
+			 * property no schema declares and silently matches ZERO rows.
+			 * The old fake resolved it, so the dead voorstel lookup in
+			 * ParaferingRaiseService stayed green for months.
+			 *
 			 * @param string $register The register slug.
 			 * @param string $schema The schema slug.
 			 * @param array<string, mixed> $filters The filters.
@@ -79,22 +85,77 @@ class ParaferingRaiseServiceTest extends TestCase {
 			 * @return array<int, array<string, mixed>> The rows.
 			 */
 			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
-				$id = ($filters['id'] ?? null);
+				unset($filters['@self'], $filters['_limit'], $filters['_offset']);
+				if (array_key_exists('id', $filters) === true || array_key_exists('uuid', $filters) === true) {
+					return [];
+				}
 
-				return array_values(array_filter(
-					$this->rows,
-					static fn (array $r): bool => ($id === null || ($r['id'] ?? null) === $id)
-				));
+				return array_values($this->rows);
 			}
 
 			/**
+			 * The real get-by-id path — ObjectService::find() argument
+			 * order, DoesNotExistException on a miss, entity-shaped return.
+			 *
+			 * @param int|string $id The object id.
+			 * @param array|null $_extend Relations to expand (ignored).
+			 * @param bool $files Include file metadata (ignored).
+			 * @param string|int|null $register The register slug (ignored).
+			 * @param string|int|null $schema The schema slug (ignored).
+			 *
+			 * @return object The stored row, entity-shaped.
+			 *
+			 * @throws \OCP\AppFramework\Db\DoesNotExistException When the id is unknown.
+			 */
+			public function find(
+				int|string $id,
+				?array $_extend = [],
+				bool $files = false,
+				string|int|null $register = null,
+				string|int|null $schema = null,
+			): object {
+				foreach ($this->rows as $row) {
+					if (($row['id'] ?? null) === (string)$id) {
+						return new class ($row) implements \JsonSerializable {
+							/**
+							 * @param array<string, mixed> $row The row.
+							 */
+							public function __construct(private readonly array $row) {
+							}
+
+							/**
+							 * @return array<string, mixed> The row.
+							 */
+							public function jsonSerialize(): array {
+								return $this->row;
+							}
+						};
+					}
+				}
+
+				throw new \OCP\AppFramework\Db\DoesNotExistException('Object ' . $id . ' does not exist');
+			}
+
+			/**
+			 * Real ObjectService::saveObject() signature: `$object` FIRST.
+			 * A caller still using the retired `($register, $schema,
+			 * $object)` order fatals here as it does live.
+			 *
 			 * @param array<string, mixed> $object The object.
-			 * @param string $register The register.
-			 * @param string $schema The schema.
+			 * @param array|null $extend Relations to expand (ignored).
+			 * @param string|int|null $register The register.
+			 * @param string|int|null $schema The schema.
+			 * @param string|null $uuid The uuid to update.
 			 *
 			 * @return array<string, mixed> The saved object.
 			 */
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(
+				array $object,
+				?array $extend = [],
+				string|int|null $register = null,
+				string|int|null $schema = null,
+				?string $uuid = null,
+			): array {
 				$this->saved[] = $object;
 
 				return $object;
