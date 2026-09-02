@@ -100,13 +100,15 @@ class SetFieldHandler implements ActionHandlerInterface {
 			// measured live on the closure rig).
 			$this->runAsScope->call(
 				context: $transitionContext,
-				operation: fn (): mixed => $this->caseWriter->write(
-					objectService: $objectService,
-					register: $register,
-					schema: $caseSchema,
-					case: $case,
-					changes: [$field => $value]
-				)
+				operation: function () use ($objectService, $register, $caseSchema, $case, $field, $value): void {
+					$this->caseWriter->write(
+						objectService: $objectService,
+						register: $register,
+						schema: $caseSchema,
+						case: $case,
+						changes: [$field => $value]
+					);
+				}
 			);
 
 			return new ActionResult(

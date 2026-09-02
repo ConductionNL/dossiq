@@ -139,13 +139,15 @@ class MergeTemplateHandler implements ActionHandlerInterface {
 			// declare (the commissieBesluit silent-drop, measured live).
 			$this->runAsScope->call(
 				context: $transitionContext,
-				operation: fn (): mixed => $this->caseWriter->write(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					case: $case,
-					changes: [$targetField => $rendered]
-				)
+				operation: function () use ($objectService, $register, $schema, $case, $targetField, $rendered): void {
+					$this->caseWriter->write(
+						objectService: $objectService,
+						register: $register,
+						schema: $schema,
+						case: $case,
+						changes: [$targetField => $rendered]
+					);
+				}
 			);
 
 			// The rendered document ALSO travels on the result, so the flow
