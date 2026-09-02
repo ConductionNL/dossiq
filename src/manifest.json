@@ -536,6 +536,7 @@
                 "schema": "case",
                 "metric": "count",
                 "filter": {
+                  "isFinalStatus": false,
                   "deadline": {
                     "lt": "@today"
                   },
@@ -673,6 +674,9 @@
               "source": {
                 "register": "dossiq",
                 "schema": "case",
+                "filter": {
+                  "isFinalStatus": false
+                },
                 "order": {
                   "startDate": "desc"
                 },
