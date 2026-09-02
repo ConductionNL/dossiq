@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Parafeer\ParafeerrouteDirectory;
 use OCA\Dossiq\Service\Parafeer\ParaferingDelegationService;
+use OCA\Dossiq\Service\Parafeer\ParaferingFlowGateway;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -43,15 +44,17 @@ class BesluitvormingParafeerService {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService            $settingsService Settings service for register and schema references.
-	 * @param ParafeerrouteDirectory     $routes          Resolves the sign-off route for a case type.
-	 * @param ParaferingDelegationService $delegation     Holds the route in the decision app.
-	 * @param LoggerInterface            $logger          Logger.
+	 * @param SettingsService             $settingsService Settings service for register and schema references.
+	 * @param ParafeerrouteDirectory      $routes          Resolves the sign-off route for a case type.
+	 * @param ParaferingDelegationService $delegation      Holds the route in the decision app.
+	 * @param ParaferingFlowGateway       $flows           Starts the projected flow, when it is enabled.
+	 * @param LoggerInterface             $logger          Logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly ParafeerrouteDirectory $routes,
 		private readonly ParaferingDelegationService $delegation,
+		private readonly ParaferingFlowGateway $flows,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -139,11 +142,31 @@ class BesluitvormingParafeerService {
 			$updateData['approvalRouteId'] = $approvalRouteId;
 		}
 
+		// 🔴 THE DUAL PATH.
+		//
+		// A route whose projected flow is ENABLED drives parafering through the
+		// engine, and the voorstel records which run. Every other voorstel gets
+		// no run id and finishes on the route snapshot above, which is what
+		// keeps anything already mid-parafering from being stranded: a hard
+		// cutover would leave those voorstellen waiting on a run nobody started.
+		//
+		// The projections ship disabled, so today this is inert. Enabling one
+		// flow is what moves one route onto the engine, and this is the line
+		// that reads that decision.
+		$flowRunId = $this->flows->startForRoute(
+			routeId: (string)($route['id'] ?? ''),
+			subjectId: $proposalId,
+			context: ['caseType' => $caseTypeId],
+		);
+		if ($flowRunId !== '') {
+			$updateData['flowRunId'] = $flowRunId;
+		}
+
 		$updated = $objectService->saveObject(object: array_merge($proposal, $updateData), register: $register, schema: $proposalSchema);
 
 		$this->logger->info(
 			'Besluitvorming parafering activated for proposal: ' . $proposalId,
-			['app' => Application::APP_ID]
+			['app' => Application::APP_ID, 'flowRun' => $flowRunId]
 		);
 
 		return $this->toArray(value: $updated);
@@ -235,6 +258,10 @@ class BesluitvormingParafeerService {
 
 		$proposal = $this->toArray(value: $proposalResults[0]);
 
+		if ($this->flowDrivesThis(proposal: $proposal, proposalId: $proposalId) === true) {
+			return $proposal;
+		}
+
 		// Load parafeeractie.
 		$action = $this->resolveParaafActionType(
 			objectService: $objectService,
@@ -243,10 +270,22 @@ class BesluitvormingParafeerService {
 			parafeeractieId: $parafeeractieId,
 		);
 
-		// Handle retour: set voorstel status to retour.
-		if ($action === 'retour') {
+		// 🔴 'returned', not 'retour', and 'teruggestuurd', not 'retour'.
+		//
+		// A parafeeractie's `action` is a closed enum: parafered, returned,
+		// advised, skipped, accorded. 'retour' is not in it, so this branch
+		// could never be reached by a paraaf that passed validation — and an
+		// approver who sent a voorstel back fell through to the advance below,
+		// moving it FORWARD to the next approver. A rejection read as an
+		// approval.
+		//
+		// The status it then wrote was equally unreachable: the voorstel status
+		// enum has no 'retour' either. openspec/specs/parafering-actions
+		// spells both out — action 'returned' sets status 'teruggestuurd' —
+		// and src/utils/parafeerEngine.js has had it right all along.
+		if ($action === 'returned') {
 			$updated = $objectService->saveObject(
-				object: array_merge($proposal, ['status' => 'retour']),
+				object: array_merge($proposal, ['status' => 'teruggestuurd']),
 				register: $register,
 				schema: $proposalSchema
 			);
@@ -260,8 +299,12 @@ class BesluitvormingParafeerService {
 		);
 
 		if ($nextStep === null) {
-			// All steps complete: transition case to gereed voor agendering.
-			$updateData = ['status' => 'gereed_voor_agendering', 'currentStep' => 0];
+			// 'geaccordeerd', the enum's own word for it. 'gereed_voor_agendering'
+			// is not a voorstel status and never was, so the moment every paraaf
+			// was collected wrote a value the schema rejects and the UI cannot
+			// render. getStatusAfterAdvance() in src/utils/parafeerEngine.js
+			// returns 'geaccordeerd' for exactly this transition.
+			$updateData = ['status' => 'geaccordeerd', 'currentStep' => 0];
 			$updated = $objectService->saveObject(
 				object: array_merge($proposal, $updateData),
 				register: $register,
@@ -288,6 +331,41 @@ class BesluitvormingParafeerService {
 	}//end handleParaafAction()
 
 	/**
+	 * 🔴 THE FLOW DRIVES, OR THIS DOES. NEVER BOTH.
+	 *
+	 * A voorstel carrying a flow run is advanced by that run: the paraaf the
+	 * approver just gave is picked up by ParaafResumeListener, which signals
+	 * the run, and the run's own nodes ask the next approver and write the
+	 * final status. Advancing the route snapshot here as well would ask every
+	 * approver twice and race the flow to the status.
+	 *
+	 * Every other voorstel — all of them until an operator enables a route's
+	 * projected flow, and all of the ones already mid-parafering afterwards —
+	 * finishes exactly as it started, on the snapshot.
+	 *
+	 * @param array<string, mixed> $proposal   The voorstel.
+	 * @param string               $proposalId Its id, for the log line.
+	 *
+	 * @return boolean True when the flow owns this voorstel.
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	private function flowDrivesThis(array $proposal, string $proposalId): bool {
+		$runId = trim((string)($proposal['flowRunId'] ?? ''));
+		if ($runId === '') {
+			return false;
+		}
+
+		$this->logger->info(
+			'Besluitvorming: voorstel ' . $proposalId . ' is driven by a flow run, so the route snapshot stands aside',
+			['app' => Application::APP_ID, 'flowRun' => $runId]
+		);
+
+		return true;
+
+	}//end flowDrivesThis()
+
+	/**
 	 * Resolve the action recorded on a parafeeractie, defaulting to approval.
 	 *
 	 * @param object $objectService The OpenRegister object service.
@@ -304,7 +382,7 @@ class BesluitvormingParafeerService {
 		string $parafeeractieId,
 	): string {
 		if (empty($actionSchema) === true) {
-			return 'approved';
+			return 'parafered';
 		}
 
 		$actionResults = $this->searchObjectsAsArrays(
@@ -315,12 +393,12 @@ class BesluitvormingParafeerService {
 		);
 
 		if (empty($actionResults) === true) {
-			return 'approved';
+			return 'parafered';
 		}
 
 		$action = $this->toArray(value: $actionResults[0]);
 
-		return (string)($action['action'] ?? 'approved');
+		return (string)($action['action'] ?? 'parafered');
 	}//end resolveParaafActionType()
 
 	/**

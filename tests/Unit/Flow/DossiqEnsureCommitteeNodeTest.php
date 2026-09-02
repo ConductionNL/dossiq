@@ -18,9 +18,11 @@ namespace OCA\Dossiq\Tests\Unit\Flow;
 
 use OCA\Dossiq\Flow\DossiqEnsureCommitteeNode;
 use OCA\Dossiq\Service\Bezwaar\CommitteeDelegationService;
+use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
+use OCP\IUserManager;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use UnexpectedValueException;
@@ -33,6 +35,10 @@ use UnexpectedValueException;
  * decision app cannot hold the committee (rather than letting the run continue
  * past it), and it short-circuits on a committee already mapped so a heartbeat
  * does not re-dispatch on every pass.
+ *
+ * @covers \OCA\Dossiq\Flow\DossiqEnsureCommitteeNode
+ *
+ * @uses \OCA\Dossiq\Service\FlowRunAsScope
  */
 class DossiqEnsureCommitteeNodeTest extends TestCase {
 
@@ -137,6 +143,7 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 		return new DossiqEnsureCommitteeNode(
 			($delegation ?? $this->createMock(CommitteeDelegationService::class)),
 			$settings,
+			$this->bareScope(),
 			$l10n,
 			$this->createMock(LoggerInterface::class),
 		);
@@ -438,4 +445,19 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 
 	}//end testAnUnusableRelationIsTreatedAsAbsent()
 
+
+	/**
+	 * A runAs scope that runs bare for an empty context.
+	 *
+	 * These tests hand contexts naming no acting identity, so the scope never
+	 * resolves one and the class under test behaves as before the wrap.
+	 *
+	 * @return FlowRunAsScope The scope.
+	 */
+	private function bareScope(): FlowRunAsScope {
+		return new FlowRunAsScope(
+			$this->createMock(SettingsService::class),
+			$this->createMock(IUserManager::class),
+		);
+	}//end bareScope()
 }//end class

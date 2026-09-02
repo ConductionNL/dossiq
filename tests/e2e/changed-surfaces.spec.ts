@@ -13,8 +13,8 @@
  * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
  * @spec openspec/specs/enforcement-lhs/spec.md
  */
-import { test, expect } from '@playwright/test'
-import { BASE_URL } from './base-url'
+import { expect, test } from '@playwright/test'
+import { BASE_URL } from './base-url.ts'
 
 /** The provenance marker the workflow projection writes into a flow's notes. */
 const FLOW_MARKER = 'dossiq:workflowTemplate:'

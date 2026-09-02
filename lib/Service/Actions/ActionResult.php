@@ -45,6 +45,10 @@ final class ActionResult {
 	 * @param string|null $error Static error code on failure, null on success.
 	 * @param array $data Handler-specific data (messageId, documentId,
 	 *                    rendered preview payload, etc.).
+	 * @param array $caseChanges The case fields this action wrote to storage,
+	 *                           so the caller can stamp them onto its outgoing
+	 *                           case snapshot. Without this a downstream step
+	 *                           holds a snapshot that predates the write.
 	 *
 	 * @return void
 	 */
@@ -52,6 +56,7 @@ final class ActionResult {
 		public readonly bool $succeeded,
 		public readonly ?string $error = null,
 		public readonly array $data = [],
+		public readonly array $caseChanges = [],
 	) {
 	}//end __construct()
 

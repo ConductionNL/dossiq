@@ -23,6 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\BesluitvormingParafeerService;
 use OCA\Dossiq\Service\Parafeer\ParafeerrouteDirectory;
 use OCA\Dossiq\Service\Parafeer\ParaferingDelegationService;
+use OCA\Dossiq\Service\Parafeer\ParaferingFlowGateway;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -98,6 +99,13 @@ class BesluitvormingParafeerServiceTest extends TestCase {
 	private $delegation;
 
 	/**
+	 * Starts the projected flow when one is enabled.
+	 *
+	 * @var ParaferingFlowGateway&\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private $flows;
+
+	/**
 	 * Set up test fixtures.
 	 *
 	 * @return void
@@ -108,10 +116,16 @@ class BesluitvormingParafeerServiceTest extends TestCase {
 		$this->routes = $this->createMock(ParafeerrouteDirectory::class);
 		$this->delegation = $this->createMock(ParaferingDelegationService::class);
 
+		$this->flows = $this->createMock(ParaferingFlowGateway::class);
+		// No enabled projected flow by default, which is every route today:
+		// the projections ship disabled, so activation takes the route path.
+		$this->flows->method('startForRoute')->willReturn('');
+
 		$this->service = new BesluitvormingParafeerService(
 			$this->settingsService,
 			$this->routes,
 			$this->delegation,
+			$this->flows,
 			$this->logger,
 		);
 
@@ -383,5 +397,367 @@ class BesluitvormingParafeerServiceTest extends TestCase {
 		$this->assertIsArray($result);
 
 	}//end testHandleParaafActionReturnsArrayWithStatus()
+
+	/**
+	 * Build the service over an object service that RECORDS what it is asked
+	 * to save.
+	 *
+	 * The older tests mock `saveObject` with `willReturn($canned)` and then
+	 * assert on the canned value, so they pass whatever the service writes.
+	 * These assert the argument instead, which is the only way a wrong status
+	 * can fail a test.
+	 *
+	 * @param array<string, mixed> $proposal The stored voorstel.
+	 * @param string               $action   The action on the parafeeractie.
+	 * @param array<int, mixed>    $saved    Sink for saved objects.
+	 *
+	 * @return BesluitvormingParafeerService The service.
+	 */
+	private function serviceRecording(array $proposal, string $action, array &$saved): BesluitvormingParafeerService {
+		$proposalObj = (object)$proposal;
+		$actionObj = (object)['id' => 'actie-uuid-1', 'action' => $action];
+
+		$objectService = $this->createMock(BvwParafeerObjectServiceStub::class);
+		$objectService
+			->method('searchObjectsBySlug')
+			->willReturnCallback(
+				static function (string $register, string $schema, array $params) use ($proposalObj, $actionObj): array {
+					if (isset($params['id']) === true && $params['id'] === 'actie-uuid-1') {
+						return [$actionObj];
+					}
+
+					return [$proposalObj];
+				}
+			);
+		$objectService
+			->method('saveObject')
+			->willReturnCallback(
+				static function (array $object) use (&$saved): object {
+					$saved[] = $object;
+
+					return (object)$object;
+				}
+			);
+
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+		$this->settingsService->method('getConfigValue')->willReturn('test-value');
+
+		return $this->service;
+
+	}//end serviceRecording()
+
+	/**
+	 * 🔴 A returned paraaf sends the voorstel back, it does not advance it.
+	 *
+	 * The action enum is (parafered, returned, advised, skipped, accorded).
+	 * The service compared against 'retour', which is not in it, so a returned
+	 * voorstel fell through to the advance below and moved FORWARD to the next
+	 * approver. A rejection was read as an approval.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/parafering-actions/spec.md
+	 */
+	public function testAReturnedParaafSendsTheVoorstelBack(): void {
+		$saved = [];
+		$service = $this->serviceRecording(
+			[
+				'id' => 'voorstel-uuid-1',
+				'status' => 'in_parafering',
+				'currentStep' => 1,
+				'routeSnapshot' => [['order' => 1], ['order' => 2]],
+			],
+			'returned',
+			$saved
+		);
+
+		$service->handleParaafAction(proposalId: 'voorstel-uuid-1', parafeeractieId: 'actie-uuid-1');
+
+		$this->assertCount(1, $saved);
+		$this->assertSame('teruggestuurd', $saved[0]['status']);
+		// The step must NOT have moved: the voorstel goes back to its steller,
+		// not on to approver two.
+		$this->assertSame(1, $saved[0]['currentStep']);
+
+	}//end testAReturnedParaafSendsTheVoorstelBack()
+
+	/**
+	 * 🔴 The last paraaf accords the voorstel.
+	 *
+	 * The service wrote 'gereed_voor_agendering', which is not a voorstel
+	 * status and never was, so the moment every paraaf was collected wrote a
+	 * value the schema rejects and the UI cannot render.
+	 * `getStatusAfterAdvance()` in src/utils/parafeerEngine.js returns
+	 * 'geaccordeerd' for this same transition.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/parafering-actions/spec.md
+	 */
+	public function testTheLastParaafAccordsTheVoorstel(): void {
+		$saved = [];
+		$service = $this->serviceRecording(
+			[
+				'id' => 'voorstel-uuid-1',
+				'status' => 'in_parafering',
+				'currentStep' => 2,
+				'routeSnapshot' => [['order' => 1], ['order' => 2]],
+			],
+			'parafered',
+			$saved
+		);
+
+		$service->handleParaafAction(proposalId: 'voorstel-uuid-1', parafeeractieId: 'actie-uuid-1');
+
+		$this->assertCount(1, $saved);
+		$this->assertSame('geaccordeerd', $saved[0]['status']);
+		$this->assertSame(0, $saved[0]['currentStep']);
+
+	}//end testTheLastParaafAccordsTheVoorstel()
+
+	/**
+	 * A paraaf that is not a return advances to the next step.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/parafering-actions/spec.md
+	 */
+	public function testAParaafedVoorstelAdvancesToTheNextStep(): void {
+		$saved = [];
+		$service = $this->serviceRecording(
+			[
+				'id' => 'voorstel-uuid-1',
+				'status' => 'in_parafering',
+				'currentStep' => 1,
+				'routeSnapshot' => [['order' => 1], ['order' => 2]],
+			],
+			'parafered',
+			$saved
+		);
+
+		$service->handleParaafAction(proposalId: 'voorstel-uuid-1', parafeeractieId: 'actie-uuid-1');
+
+		$this->assertCount(1, $saved);
+		$this->assertSame(2, $saved[0]['currentStep']);
+		$this->assertSame('in_parafering', $saved[0]['status']);
+
+	}//end testAParaafedVoorstelAdvancesToTheNextStep()
+
+	/**
+	 * 🔴 Every status literal the service writes is one the schema allows.
+	 *
+	 * This is the test that would have caught the two above as a class rather
+	 * than one at a time. The service and the register JSON are edited by
+	 * different hands at different times, and nothing else compares them: a
+	 * status the schema does not declare is rejected on save, and the failure
+	 * surfaces far from the line that wrote it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/parafering-actions/spec.md
+	 */
+	public function testEveryStatusItWritesIsOneTheSchemaAllows(): void {
+		$register = json_decode(
+			file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'),
+			true
+		);
+		$allowed = $register['components']['schemas']['proposal']['properties']['status']['enum'];
+
+		$source = file_get_contents(__DIR__ . '/../../../lib/Service/BesluitvormingParafeerService.php');
+		preg_match_all("/'status' => '([a-z_]+)'/", $source, $matches);
+		$written = array_unique($matches[1]);
+
+		$this->assertNotEmpty($written, 'the service must write at least one status');
+		foreach ($written as $status) {
+			$this->assertContains(
+				$status,
+				$allowed,
+				sprintf('BesluitvormingParafeerService writes status %s, which the proposal schema does not allow', $status)
+			);
+		}
+
+	}//end testEveryStatusItWritesIsOneTheSchemaAllows()
+
+	/**
+	 * 🔴 A voorstel records the run when its route's flow is enabled.
+	 *
+	 * This is the switch. EndorsementRouteFlowMigrator ships every projected
+	 * flow disabled, so enabling one is the act that moves one route onto the
+	 * engine, and `flowRunId` is how the voorstel says which run drives it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	public function testAnEnabledFlowIsRecordedOnTheVoorstel(): void {
+		$saved = [];
+		$service = $this->activatingService($saved, 'run-uuid-1');
+
+		$service->activate(proposalId: 'voorstel-uuid-1');
+
+		$this->assertNotSame([], $saved);
+		$this->assertSame('run-uuid-1', $saved[0]['flowRunId']);
+
+	}//end testAnEnabledFlowIsRecordedOnTheVoorstel()
+
+	/**
+	 * 🔴 With no enabled flow the voorstel carries no run, and takes the route.
+	 *
+	 * The other half of the dual path, and the one every voorstel takes today.
+	 * A voorstel that started before its route was enabled has to finish the
+	 * way it started; a hard cutover would strand whatever is mid-parafering.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	public function testWithoutAnEnabledFlowTheVoorstelTakesTheRoute(): void {
+		$saved = [];
+		$service = $this->activatingService($saved, '');
+
+		$service->activate(proposalId: 'voorstel-uuid-1');
+
+		$this->assertNotSame([], $saved);
+		$this->assertArrayNotHasKey('flowRunId', $saved[0]);
+		// The route snapshot is what drives it instead.
+		$this->assertSame(1, $saved[0]['currentStep']);
+		$this->assertSame('in_parafering', $saved[0]['status']);
+
+	}//end testWithoutAnEnabledFlowTheVoorstelTakesTheRoute()
+
+	/**
+	 * `flowRunId` is a property the schema declares.
+	 *
+	 * OpenRegister runs hard validation by default, so a field the service
+	 * writes and the schema does not declare is one the save rejects.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	public function testTheSchemaDeclaresTheFlowRunField(): void {
+		$register = json_decode(
+			file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'),
+			true
+		);
+
+		$this->assertArrayHasKey(
+			'flowRunId',
+			$register['components']['schemas']['proposal']['properties']
+		);
+
+	}//end testTheSchemaDeclaresTheFlowRunField()
+
+	/**
+	 * Build a service whose activate() reaches the save, recording what it wrote.
+	 *
+	 * @param array<int, mixed> $saved     Sink for saved objects.
+	 * @param string            $flowRunId What the gateway reports.
+	 *
+	 * @return BesluitvormingParafeerService The service.
+	 */
+	private function activatingService(array &$saved, string $flowRunId): BesluitvormingParafeerService {
+		$proposalObj = (object)[
+			'id' => 'voorstel-uuid-1',
+			'status' => 'draft',
+			'caseType' => 'casetype-1',
+		];
+
+		$objectService = $this->createMock(BvwParafeerObjectServiceStub::class);
+		$objectService->method('searchObjectsBySlug')->willReturn([$proposalObj]);
+		$objectService
+			->method('saveObject')
+			->willReturnCallback(
+				static function (array $object) use (&$saved): object {
+					$saved[] = $object;
+
+					return (object)$object;
+				}
+			);
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$settings->method('getConfigValue')->willReturn('test-value');
+
+		$routes = $this->createMock(ParafeerrouteDirectory::class);
+		$routes->method('localRoute')->willReturn(['id' => 'route-1', 'name' => 'Standaard']);
+		$routes->method('stepsForCaseType')->willReturn([['order' => 1, 'actor' => 'behandelaar']]);
+
+		$flows = $this->createMock(ParaferingFlowGateway::class);
+		$flows->method('startForRoute')->willReturn($flowRunId);
+
+		return new BesluitvormingParafeerService(
+			$settings,
+			$routes,
+			$this->createMock(ParaferingDelegationService::class),
+			$flows,
+			$this->logger,
+		);
+
+	}//end activatingService()
+
+	/**
+	 * 🔴 A flow-driven voorstel is left alone by the route snapshot.
+	 *
+	 * The paraaf the approver gave is picked up by ParaafResumeListener, which
+	 * signals the run; the run's own nodes ask the next approver and write the
+	 * status. Advancing the snapshot here as well would ask every approver
+	 * twice and race the flow to the final status — which is exactly why the
+	 * projections could not be enabled before this guard existed.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	public function testAFlowDrivenVoorstelIsNotAdvancedHere(): void {
+		$saved = [];
+		$service = $this->serviceRecording(
+			[
+				'id' => 'voorstel-uuid-1',
+				'status' => 'in_parafering',
+				'currentStep' => 1,
+				'flowRunId' => 'run-1',
+				'routeSnapshot' => [['order' => 1], ['order' => 2]],
+			],
+			'parafered',
+			$saved
+		);
+
+		$service->handleParaafAction(proposalId: 'voorstel-uuid-1', parafeeractieId: 'actie-uuid-1');
+
+		$this->assertSame([], $saved, 'the flow owns this voorstel; nothing may be written here');
+
+	}//end testAFlowDrivenVoorstelIsNotAdvancedHere()
+
+	/**
+	 * A voorstel on the route snapshot is still advanced, as it always was.
+	 *
+	 * The other arm of the same guard: every voorstel already mid-parafering
+	 * when a route is enabled carries no run, and must finish the way it
+	 * started rather than stall waiting for a flow nobody started for it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
+	 */
+	public function testAVoorstelWithNoRunIsStillAdvancedHere(): void {
+		$saved = [];
+		$service = $this->serviceRecording(
+			[
+				'id' => 'voorstel-uuid-1',
+				'status' => 'in_parafering',
+				'currentStep' => 1,
+				'routeSnapshot' => [['order' => 1], ['order' => 2]],
+			],
+			'parafered',
+			$saved
+		);
+
+		$service->handleParaafAction(proposalId: 'voorstel-uuid-1', parafeeractieId: 'actie-uuid-1');
+
+		$this->assertCount(1, $saved);
+		$this->assertSame(2, $saved[0]['currentStep']);
+
+	}//end testAVoorstelWithNoRunIsStillAdvancedHere()
 
 }//end class

@@ -29,6 +29,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Actions;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\CaseFieldWriter;
+use OCA\Dossiq\Service\FlowRunAsScope;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -46,6 +48,10 @@ class MergeTemplateHandler implements ActionHandlerInterface {
 	 *                                      OpenRegister ObjectService.
 	 * @param IAppConfig $appConfig App config — supplies register +
 	 *                              case_schema keys for the save.
+	 * @param FlowRunAsScope $runAsScope Scopes the case write to the run's
+	 *                                   acting identity.
+	 * @param CaseFieldWriter $caseWriter Applies ONLY the target field to the
+	 *                                    stored case.
 	 * @param LoggerInterface $logger PSR-3 logger.
 	 *
 	 * @return void
@@ -53,6 +59,8 @@ class MergeTemplateHandler implements ActionHandlerInterface {
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly IAppConfig $appConfig,
+		private readonly FlowRunAsScope $runAsScope,
+		private readonly CaseFieldWriter $caseWriter,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -118,11 +126,39 @@ class MergeTemplateHandler implements ActionHandlerInterface {
 				return new ActionResult(succeeded: false, error: 'case_schema_unconfigured', data: $preview);
 			}
 
-			$updated = array_merge($case, [$targetField => $rendered]);
+			// The write runs under the flow run's `runAs` identity: under
+			// FlowRunWorker the ambient session carries nobody, so a bare
+			// saveObject() is refused as 'Anonymous' however legitimate the
+			// run — measured live as `merge_template_failed` stopping the
+			// seeded case flow at its decision document.
+			//
+			// ONLY the target field is written. `$case` is a snapshot of the
+			// flow item; full-saving `array_merge($case, ...)` here wrote the
+			// document over whatever other writers had stored since the
+			// snapshot, and dropped every snapshot field the schema does not
+			// declare (the commissieBesluit silent-drop, measured live).
+			$this->runAsScope->call(
+				context: $transitionContext,
+				operation: function () use ($objectService, $register, $schema, $case, $targetField, $rendered): void {
+					$this->caseWriter->write(
+						objectService: $objectService,
+						register: $register,
+						schema: $schema,
+						case: $case,
+						changes: [$targetField => $rendered]
+					);
+				}
+			);
 
-			$objectService->saveObject(object: $updated, register: $register, schema: $schema);
-
-			return new ActionResult(succeeded: true, data: $preview);
+			// The rendered document ALSO travels on the result, so the flow
+			// node can stamp it onto the outgoing item: the next step's
+			// snapshot must already carry what this step just stored, or that
+			// step reasons from a case that predates its own flow.
+			return new ActionResult(
+				succeeded: true,
+				data: $preview,
+				caseChanges: [$targetField => $rendered]
+			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'MergeTemplateHandler: failed to merge template',

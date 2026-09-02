@@ -195,7 +195,12 @@ abstract class DossiqFlowNodeBase implements IFlowNode {
                 );
             }
 
-            $item['json'] = array_merge($case, [$outKey => $result->data]);
+            // The handler's own case writes travel with the item, so the NEXT
+            // step's snapshot already carries what this step just stored.
+            // Without this, the document step wrote `besluitDocument` to
+            // storage while the outgoing item still lacked it — and one hop
+            // later a stale snapshot was all the status step had.
+            $item['json'] = array_merge($case, $result->caseChanges, [$outKey => $result->data]);
             $out[]        = $item;
         }//end foreach
 

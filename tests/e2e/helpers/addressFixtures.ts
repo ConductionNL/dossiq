@@ -23,7 +23,9 @@
  * against the rendered DOM in the spec files (Playwright = UI-only).
  */
 
-import { APIRequestContext, expect } from '@playwright/test'
+import type { APIRequestContext } from '@playwright/test'
+
+import { expect } from '@playwright/test'
 
 /** OpenRegister register slug that owns address objects. */
 export const ADDRESSES_REGISTER = 'addresses'

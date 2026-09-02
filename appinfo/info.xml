@@ -48,7 +48,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.3.10-unstable.20260831161807</version>
+    <version>0.3.11-unstable.20260901211251</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -446,7 +446,9 @@ Vrij en open source onder de EUPL-1.2-licentie.
         <command>OCA\Dossiq\Command\MigrateAutomaticActionsToFlowsCommand</command>
         <command>OCA\Dossiq\Command\MigrateWorkflowDefinitionsToFlowsCommand</command>
         <command>OCA\Dossiq\Command\MigrateApprovalRoutesToFlowsCommand</command>
+        <command>OCA\Dossiq\Command\MigrateLhsToDecisionTablesCommand</command>
         <command>OCA\Dossiq\Command\MigrateTenantsCommand</command>
+        <command>OCA\Dossiq\Command\MigratePartnersCommand</command>
         <command>OCA\Dossiq\Command\SeedBezwaarBeroepCommand</command>
     </commands>
 

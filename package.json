@@ -19,9 +19,10 @@
     "test:l10n": "node tests/l10n/check-l10n.js",
     "test:l10n:write": "node tests/l10n/check-l10n.js --write",
     "build": "NODE_ENV=production webpack --config webpack.config.js --progress",
+    "postbuild": "node scripts/check-single-dexie.js",
     "dev": "NODE_ENV=development webpack --config webpack.config.js --progress",
     "watch": "NODE_ENV=development webpack --config webpack.config.js --progress --watch",
-    "lint": "eslint src",
+    "lint": "eslint src tests scripts",
     "lint-fix": "npm run lint -- --fix",
     "stylelint": "stylelint \"{src,css}/**/*.{vue,scss,css}\"",
     "stylelint-fix": "stylelint 'src/**/*.vue' 'src/**/*.scss' 'src/**/*.css' --fix",
@@ -32,6 +33,7 @@
     "test:e2e:docs": "playwright test --project docs-capture",
     "test:e2e:install": "playwright install chromium",
     "check:vue3-compile": "node scripts/vue3-compile-sweep.cjs",
+    "check:dexie": "node scripts/check-single-dexie.js",
     "format": "prettier --check \"**/*.{js,ts,vue,css,scss}\"",
     "format:fix": "prettier --write \"**/*.{js,ts,vue,css,scss}\"",
     "prepare": "git config core.hooksPath .githooks || true"
@@ -40,7 +42,7 @@
     "extends @nextcloud/browserslist-config"
   ],
   "dependencies": {
-    "@conduction/nextcloud-vue": "^2.24.3",
+    "@conduction/nextcloud-vue": "^2.29.0",
     "@nextcloud/auth": "^2.6.0",
     "@nextcloud/axios": "~2.5.2",
     "@nextcloud/capabilities": "^1.2.1",

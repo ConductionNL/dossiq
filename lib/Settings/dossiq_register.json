@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, voorstel, parafeerroute, parafeeractie, automaticAction, and their instance counterparts.",
-        "version": "0.13.2"
+        "version": "0.14.0"
     },
     "x-openregister": {
         "type": "application",
@@ -16,7 +16,7 @@
         "schemas": {
             "caseType": {
                 "slug": "caseType",
-                "icon": "BriefcaseVariantOutline",
+                "icon": "FolderCogOutline",
                 "version": "1.2.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
@@ -45,13 +45,7 @@
                         "description": "Auto-generated identifier",
                         "title": "Identifier"
                     },
-                    "catalog": {
-                        "type": "string",
-                        "format": "uuid",
-                        "$ref": "catalog",
-                        "description": "Reference to the parent catalog",
-                        "title": "Catalog"
-                    },
+
                     "purpose": {
                         "type": "string",
                         "description": "The purpose or goal of this case type",
@@ -503,13 +497,7 @@
                         "x-translatable": true,
                         "title": "Description"
                     },
-                    "catalog": {
-                        "type": "string",
-                        "format": "uuid",
-                        "$ref": "catalog",
-                        "description": "Reference to the parent catalog",
-                        "title": "Catalog"
-                    },
+
                     "caseType": {
                         "type": "string",
                         "format": "uuid",
@@ -594,13 +582,7 @@
                         "x-translatable": true,
                         "title": "Description"
                     },
-                    "catalog": {
-                        "type": "string",
-                        "format": "uuid",
-                        "$ref": "catalog",
-                        "description": "Reference to the parent catalog",
-                        "title": "Catalog"
-                    },
+
                     "caseType": {
                         "type": "string",
                         "format": "uuid",
@@ -699,8 +681,8 @@
                         }
                     }
                 },
-                "icon": "BriefcaseOutline",
-                "version": "1.9.0",
+                "icon": "FolderAccountOutline",
+                "version": "1.10.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1056,7 +1038,34 @@
                                 {
                                     "id": "check-complete",
                                     "type": "openregister.switch",
-                                    "config": {}
+                                    "config": {},
+                                    "_note": "The conditions live HERE, on exits[], because that is the engine's contract: FlowTokenRouter reads a node's exits and follows edges by fromExit. They used to sit on the edges themselves, where the engine never looks. Every enabled transition then appeared unconditional, the first one won, and a COMPLETE case was routed to 'Wacht op aanvulling'. Exits are tried in declaration order; the one without a condition is the required else.",
+                                    "exits": [
+                                        {
+                                            "id": "compleet",
+                                            "condition": {
+                                                "!!": [
+                                                    {
+                                                        "var": "json.description"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": "onvolledig",
+                                            "condition": {
+                                                "<": [
+                                                    {
+                                                        "var": "json.aanvullingRound"
+                                                    },
+                                                    3
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": "gestrand"
+                                        }
+                                    ]
                                 },
                                 {
                                     "id": "count-round",
@@ -1164,9 +1173,11 @@
                                 {
                                     "id": "besluit-document",
                                     "type": "dossiq.action.mergeTemplate",
+                                    "_note": "The keys are the ones DossiqMergeTemplateNode REQUIRES (templateSlug + targetField); the first shipped config said template/outputName, which validateConfig refuses at execute(), so every run stranded here and no case could ever close. The `template` key carries the inline template text (HandlesTemplates::renderTemplate reads it first and treats it as the template itself, not a lookup key). targetField must be a property the case schema declares, or the store silently strips the rendered document on save.",
                                     "config": {
-                                        "template": "besluit",
-                                        "outputName": "besluit.pdf"
+                                        "templateSlug": "besluit",
+                                        "template": "Besluit op de aanvraag {{case.title}} ({{case.identifier}}). De planningscommissie heeft de aanvraag beoordeeld. Uitkomst: {{case.commissieBesluit.decision}}. Dit besluit is vastgelegd bij afronding van de behandeling.",
+                                        "targetField": "besluitDocument"
                                     }
                                 },
                                 {
@@ -1196,34 +1207,23 @@
                                 {
                                     "id": "e-compleet",
                                     "from": "check-complete",
+                                    "fromExit": "compleet",
                                     "to": "status-behandeling",
-                                    "label": "compleet",
-                                    "condition": {
-                                        "!!": [
-                                            {
-                                                "var": "json.description"
-                                            }
-                                        ]
-                                    }
+                                    "label": "compleet"
                                 },
                                 {
                                     "id": "e-onvolledig",
                                     "from": "check-complete",
+                                    "fromExit": "onvolledig",
                                     "to": "status-wacht",
-                                    "label": "onvolledig",
-                                    "condition": {
-                                        "<": [
-                                            {
-                                                "var": "json.aanvullingRound"
-                                            },
-                                            3
-                                        ]
-                                    }
+                                    "label": "onvolledig"
                                 },
                                 {
                                     "id": "e-gestrand",
                                     "from": "check-complete",
-                                    "to": "status-gestrand"
+                                    "fromExit": "gestrand",
+                                    "to": "status-gestrand",
+                                    "label": "gestrand"
                                 },
                                 {
                                     "id": "e-wacht",
@@ -1483,6 +1483,19 @@
                         "visible": false,
                         "title": "Extension Count"
                     },
+                    "aanvullingRound": {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Counts how often the applicant was asked to supplement this case. The flow's completeness check increments it and strands the case after three rounds. Declared because the store strips what the schema does not declare: without it the counter reset on every save and the loop never ended.",
+                        "visible": false,
+                        "title": "Supplement round"
+                    },
+                    "actionResult": {
+                        "type": "object",
+                        "description": "The result payload of the last flow action step that ran on this case. DossiqFlowNodeBase merges it onto the case under this key (or the step's own output key). Declared because the store strips undeclared fields, so the result would silently vanish on save.",
+                        "visible": false,
+                        "title": "Action result"
+                    },
                     "sourceOrganisation": {
                         "type": "string",
                         "maxLength": 9,
@@ -1666,6 +1679,42 @@
                         },
                         "referenceType": "decision",
                         "x-allow-create": true
+                    },
+                    "besluitDocument": {
+                        "type": "string",
+                        "title": "Decision document",
+                        "description": "The rendered decision text the case flow's document step (besluit-document, dossiq.action.mergeTemplate) writes before the case reaches its final status. Declared here because the store strips what the schema does not declare: without this property the merge would report success while the document silently never persisted, and the case would close undocumented. Empty for cases the flow has not decided.",
+                        "visible": false
+                    },
+                    "aanvulling": {
+                        "type": "object",
+                        "title": "Supplement answer",
+                        "description": "The signal payload of the applicant's supplement task (ask-indiener, signalKey aanvulling). The flow stamps it onto the case when the task completes. Declared because the store strips what the schema does not declare: an undeclared signal field is silently gone the moment any writer saves the case.",
+                        "visible": false
+                    },
+                    "voorbereiding": {
+                        "type": "object",
+                        "title": "Preparation answer",
+                        "description": "The signal payload of the employee's preparation task (task-behandelaar, signalKey voorbereiding). Declared because the store strips what the schema does not declare.",
+                        "visible": false
+                    },
+                    "toetsRegisterB": {
+                        "type": "object",
+                        "title": "Register B review",
+                        "description": "The outcome Decidiq returns for the register B review (decide-register-b, signalKey toetsRegisterB). Declared because the store strips what the schema does not declare.",
+                        "visible": false
+                    },
+                    "tweedeToets": {
+                        "type": "object",
+                        "title": "Second review",
+                        "description": "The outcome Decidiq returns for the second substantive review (decide-tweede-toets, signalKey tweedeToets). Declared because the store strips what the schema does not declare.",
+                        "visible": false
+                    },
+                    "commissieBesluit": {
+                        "type": "object",
+                        "title": "Commission decision",
+                        "description": "The outcome Decidiq returns for the planning commission's final decision (decide-commissie, signalKey commissieBesluit). The document step's template reads its decision field. Declared because the store strips what the schema does not declare: this field was measured being silently dropped on the closure rig while the run reported success.",
+                        "visible": false
                     }
                 },
                 "searchable": true
@@ -1693,7 +1742,7 @@
                         }
                     }
                 },
-                "icon": "CheckboxMarkedOutline",
+                "icon": "CheckboxMarkedCircleOutline",
                 "version": "1.2.0",
                 "x-schema-org": "schema:Action",
                 "x-zgw-equivalent": "Taak",
@@ -2015,7 +2064,7 @@
             },
             "role": {
                 "slug": "role",
-                "icon": "AccountHardHat",
+                "icon": "AccountKeyOutline",
                 "version": "1.1.0",
                 "x-schema-org": "schema:Role",
                 "x-zgw-equivalent": "Rol",
@@ -2597,51 +2646,7 @@
                     }
                 }
             },
-            "catalog": {
-                "slug": "catalog",
-                "icon": "BookOpenPageVariant",
-                "version": "1.0.0",
-                "x-schema-org": "schema:DataCatalog",
-                "x-zgw-equivalent": "Catalogus",
-                "title": "Catalog",
-                "description": "A catalogus groups case types, decision types, and document types",
-                "type": "object",
-                "required": [
-                    "domain"
-                ],
-                "properties": {
-                    "domain": {
-                        "type": "string",
-                        "maxLength": 5,
-                        "description": "Abbreviated domain name (max 5 characters)",
-                        "title": "Domain"
-                    },
-                    "rsin": {
-                        "type": "string",
-                        "maxLength": 9,
-                        "description": "RSIN of the responsible organisation",
-                        "title": "RSIN"
-                    },
-                    "contactPersonManagementName": {
-                        "type": "string",
-                        "maxLength": 40,
-                        "description": "Name of the management contact",
-                        "title": "Management Contact Name"
-                    },
-                    "contactPersonManagementPhoneNumber": {
-                        "type": "string",
-                        "maxLength": 20,
-                        "description": "Phone number of the management contact",
-                        "title": "Management Contact Phone"
-                    },
-                    "contactPersonManagementEmailAddress": {
-                        "type": "string",
-                        "maxLength": 254,
-                        "description": "Email of the management contact",
-                        "title": "Management Contact Email"
-                    }
-                }
-            },
+
             "zaaktypeInformatieobjecttype": {
                 "slug": "zaaktypeInformatieobjecttype",
                 "icon": "LinkVariant",
@@ -3095,6 +3100,12 @@
                         "visible": false,
                         "title": "Route Snapshot"
                     },
+                    "flowRunId": {
+                        "type": "string",
+                        "description": "The OpenRegister flow run driving this voorstel's parafering, when a flow drives it rather than the route snapshot. Empty on a voorstel that started before its route was enabled as a flow: those finish the way they started, because a hard cutover would strand whatever is mid-parafering.",
+                        "visible": false,
+                        "title": "Flow Run"
+                    },
                     "currentStep": {
                         "type": "integer",
                         "default": 0,
@@ -3393,6 +3404,16 @@
                         "type": "string",
                         "description": "Mandate reference (for delegate actions)",
                         "title": "Mandate"
+                    },
+                    "flowRun": {
+                        "type": "string",
+                        "description": "The flow run this paraaf answers, when parafering is driven by a flow. Empty for a paraaf raised by the legacy route walker.",
+                        "title": "Flow Run"
+                    },
+                    "flowNode": {
+                        "type": "string",
+                        "description": "The node within that run. Both are needed to resume: a run alone cannot say which of its awaiting nodes a paraaf answers.",
+                        "title": "Flow Node"
                     }
                 }
             },
@@ -4037,7 +4058,7 @@
             },
             "objection": {
                 "slug": "objection",
-                "icon": "FileDocumentAlertOutline",
+                "icon": "FileAlertOutline",
                 "version": "1.0.0",
                 "x-schema-org": "schema:Message",
                 "x-zgw-equivalent": "Bezwaarschrift",
@@ -4929,7 +4950,7 @@
             },
             "mapLayer": {
                 "slug": "mapLayer",
-                "icon": "MapOutline",
+                "icon": "LayersOutline",
                 "version": "1.0.0",
                 "title": "Map Layer",
                 "description": "GIS map layer configuration for case maps — defines tile, WMS, WFS, or GeoJSON layers that can be displayed on case map views",
@@ -5125,8 +5146,8 @@
                     }
                 }
             },
-            "location": {
-                "slug": "location",
+            "case-location": {
+                "slug": "case-location",
                 "icon": "MapMarker",
                 "version": "1.0.0",
                 "x-schema-org": "schema:Place",
@@ -5207,7 +5228,7 @@
             },
             "consultation": {
                 "slug": "consultation",
-                "icon": "MessageAlertOutline",
+                "icon": "CommentQuestionOutline",
                 "version": "1.0.0",
                 "x-schema-org": "schema:AskAction",
                 "title": "Consultation",
@@ -9535,7 +9556,7 @@
             "dossiq": {
                 "slug": "dossiq",
                 "title": "Dossiq",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "description": "Case management (zaakgericht werken) register for Dossiq — manages case types, status types, cases, tasks, roles, results, and decisions.",
                 "schemas": [
                     "caseType",
@@ -9553,7 +9574,6 @@
                     "decision",
                     "document",
                     "documentLink",
-                    "catalog",
                     "zaaktypeInformatieobjecttype",
                     "caseProperty",
                     "caseDocument",
@@ -9574,7 +9594,7 @@
                     "parafeeractie",
                     "paraferingAuditEntry",
                     "mapLayer",
-                    "location",
+                    "case-location",
                     "inspectieRapport",
                     "handhavingsactie",
                     "lhsMatrix",

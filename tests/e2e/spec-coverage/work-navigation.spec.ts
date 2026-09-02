@@ -18,7 +18,7 @@
  * visibility assertion fails on a perfectly correct menu.
  */
 
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 test.describe('Work navigation', () => {
 	// The dossiq shell mounts a large manifest and queries OpenRegister on

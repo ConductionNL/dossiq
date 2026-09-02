@@ -18,6 +18,7 @@ import AccountClock from 'vue-material-design-icons/AccountClock.vue'
 import AccountGroup from 'vue-material-design-icons/AccountGroup.vue'
 import AccountGroupOutline from 'vue-material-design-icons/AccountGroupOutline.vue'
 import AccountHardHat from 'vue-material-design-icons/AccountHardHat.vue'
+import AccountKeyOutline from 'vue-material-design-icons/AccountKeyOutline.vue'
 import AccountMultipleOutline from 'vue-material-design-icons/AccountMultipleOutline.vue'
 import AccountOutline from 'vue-material-design-icons/AccountOutline.vue'
 import AccountPlusOutline from 'vue-material-design-icons/AccountPlusOutline.vue'
@@ -66,6 +67,7 @@ import ClipboardPulseOutline from 'vue-material-design-icons/ClipboardPulseOutli
 import ClipboardSearchOutline from 'vue-material-design-icons/ClipboardSearchOutline.vue'
 import ClipboardTextOutline from 'vue-material-design-icons/ClipboardTextOutline.vue'
 import ClockAlertOutline from 'vue-material-design-icons/ClockAlertOutline.vue'
+import ClockPlusOutline from 'vue-material-design-icons/ClockPlusOutline.vue'
 import Close from 'vue-material-design-icons/Close.vue'
 import CloudUploadOutline from 'vue-material-design-icons/CloudUploadOutline.vue'
 import Cog from 'vue-material-design-icons/Cog.vue'
@@ -133,6 +135,7 @@ import NoteTextOutline from 'vue-material-design-icons/NoteTextOutline.vue'
 import OfficeBuilding from 'vue-material-design-icons/OfficeBuilding.vue'
 import OfficeBuildingOutline from 'vue-material-design-icons/OfficeBuildingOutline.vue'
 import PaperclipCheck from 'vue-material-design-icons/PaperclipCheck.vue'
+import PercentOutline from 'vue-material-design-icons/PercentOutline.vue'
 import PhoneForward from 'vue-material-design-icons/PhoneForward.vue'
 import PhoneInTalk from 'vue-material-design-icons/PhoneInTalk.vue'
 import PhoneReturn from 'vue-material-design-icons/PhoneReturn.vue'
@@ -165,6 +168,7 @@ import TimerOutline from 'vue-material-design-icons/TimerOutline.vue'
 import TimerSandFull from 'vue-material-design-icons/TimerSandFull.vue'
 import Tune from 'vue-material-design-icons/Tune.vue'
 import ViewColumnOutline from 'vue-material-design-icons/ViewColumnOutline.vue'
+import ViewDashboard from 'vue-material-design-icons/ViewDashboard.vue'
 import ViewDashboardOutline from 'vue-material-design-icons/ViewDashboardOutline.vue'
 
 export default {
@@ -174,6 +178,7 @@ export default {
 	AccountGroup,
 	AccountGroupOutline,
 	AccountHardHat,
+	AccountKeyOutline,
 	AccountMultipleOutline,
 	AccountOutline,
 	AccountPlusOutline,
@@ -222,6 +227,7 @@ export default {
 	ClipboardSearchOutline,
 	ClipboardTextOutline,
 	ClockAlertOutline,
+	ClockPlusOutline,
 	Close,
 	CloudUploadOutline,
 	Cog,
@@ -289,6 +295,7 @@ export default {
 	OfficeBuilding,
 	OfficeBuildingOutline,
 	PaperclipCheck,
+	PercentOutline,
 	PhoneForward,
 	PhoneInTalk,
 	PhoneReturn,
@@ -321,5 +328,6 @@ export default {
 	TimerSandFull,
 	Tune,
 	ViewColumnOutline,
+	ViewDashboard,
 	ViewDashboardOutline,
 }

@@ -22,27 +22,23 @@
  * (`navTo`), support dialog dismissed. Playwright = UI for assertions.
  */
 
+import type { APIRequestContext, Page } from '@playwright/test'
+
+import { expect, request, test } from '@playwright/test'
+import { STORAGE_STATE } from '../helpers/auth.ts'
 import {
-	test,
-	expect,
-	request,
-	type APIRequestContext,
-	type Page,
-} from '@playwright/test'
-import { STORAGE_STATE } from '../helpers/auth'
-import { dismissSupportDialog, navTo } from '../helpers/nav'
-import {
-	RUN_PREFIX,
-	getRequestToken,
-	ensureCaseType,
-	seedCase,
-	createObject,
-	updateObject,
-	showObject,
-	deleteObject,
-	objectId,
 	cleanupRunObjects,
-} from '../helpers/fixtures'
+	createObject,
+	deleteObject,
+	ensureCaseType,
+	getRequestToken,
+	objectId,
+	RUN_PREFIX,
+	seedCase,
+	showObject,
+	updateObject,
+} from '../helpers/fixtures.ts'
+import { dismissSupportDialog } from '../helpers/nav.ts'
 
 let api: APIRequestContext
 let token: string

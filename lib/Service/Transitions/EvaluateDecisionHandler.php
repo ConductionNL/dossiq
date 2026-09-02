@@ -38,7 +38,9 @@ namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\OpenRegister\Service\Dmn\DecisionTableEvaluator;
 use OCA\OpenRegister\Service\Dmn\DecisionEvaluationException;
+use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\Dmn\DecisionTableService;
+use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -55,12 +57,16 @@ class EvaluateDecisionHandler implements ActionHandlerInterface {
 	 * @param DecisionTableService $tableService Decision-table storage/lookup.
 	 * @param DecisionTableEvaluator $engine Pure evaluation engine.
 	 * @param SettingsService $settingsService Bridge to OpenRegister + config.
+	 * @param FlowRunAsScope $runAsScope Scopes the table lookup and case write to the run's acting identity.
+	 * @param CaseFieldWriter $caseWriter Applies ONLY the decision's outputs to the stored case.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		private readonly DecisionTableService $tableService,
 		private readonly DecisionTableEvaluator $engine,
 		private readonly SettingsService $settingsService,
+		private readonly FlowRunAsScope $runAsScope,
+		private readonly CaseFieldWriter $caseWriter,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -83,42 +89,54 @@ class EvaluateDecisionHandler implements ActionHandlerInterface {
 				return new ActionResult(succeeded: false, error: 'evaluate_decision_missing_key');
 			}
 
-			$table = $this->tableService->findByKey(key: $decisionKey);
-			if ($table === null) {
-				return new ActionResult(succeeded: false, error: 'decision_not_found');
-			}
+			// The LOOKUP and the WRITE run under one identity: the run's
+			// `runAs` when the flow engine hands one, the ambient session
+			// otherwise. Under FlowRunWorker that session carries nobody, so
+			// a bare saveObject() is refused as 'Anonymous' — and the table
+			// lookup sits inside the same scope because it is a read that
+			// decides what the write then stamps on the case.
+			return $this->runAsScope->call(
+				context: $transitionContext,
+				operation: function () use ($actionConfig, $case, $decisionKey): ActionResult {
+					$table = $this->tableService->findByKey(key: $decisionKey);
+					if ($table === null) {
+						return new ActionResult(succeeded: false, error: 'decision_not_found');
+					}
 
-			$inputMapping = [];
-			if (is_array($actionConfig['inputMapping'] ?? null) === true) {
-				$inputMapping = $actionConfig['inputMapping'];
-			}
+					$inputMapping = [];
+					if (is_array($actionConfig['inputMapping'] ?? null) === true) {
+						$inputMapping = $actionConfig['inputMapping'];
+					}
 
-			$outputMapping = [];
-			if (is_array($actionConfig['outputMapping'] ?? null) === true) {
-				$outputMapping = $actionConfig['outputMapping'];
-			}
+					$outputMapping = [];
+					if (is_array($actionConfig['outputMapping'] ?? null) === true) {
+						$outputMapping = $actionConfig['outputMapping'];
+					}
 
-			$inputs = $this->buildInputs(table: $table, case: $case, inputMapping: $inputMapping);
+					$inputs = $this->buildInputs(table: $table, case: $case, inputMapping: $inputMapping);
 
-			try {
-				$result = $this->engine->evaluate(decisionTable: $table, inputs: $inputs);
-			} catch (DecisionEvaluationException $e) {
-				$this->logger->info(
-					'EvaluateDecisionHandler: evaluation failed',
-					['errorCode' => $e->getErrorCode(), 'details' => $e->getDetails(), 'decisionKey' => $decisionKey],
-				);
-				return new ActionResult(succeeded: false, error: $e->getErrorCode());
-			}
+					try {
+						$result = $this->engine->evaluate(decisionTable: $table, inputs: $inputs);
+					} catch (DecisionEvaluationException $e) {
+						$this->logger->info(
+							'EvaluateDecisionHandler: evaluation failed',
+							['errorCode' => $e->getErrorCode(), 'details' => $e->getDetails(), 'decisionKey' => $decisionKey],
+						);
+						return new ActionResult(succeeded: false, error: $e->getErrorCode());
+					}
 
-			$this->writeOutputs(table: $table, case: $case, outputs: $result['outputs'], outputMapping: $outputMapping);
+					$changes = $this->writeOutputs(table: $table, case: $case, outputs: $result['outputs'], outputMapping: $outputMapping);
 
-			return new ActionResult(
-				succeeded: true,
-				data: [
-					'decisionKey' => $decisionKey,
-					'outputs' => $result['outputs'],
-					'matchedRuleIds' => $result['matchedRuleIds'],
-				],
+					return new ActionResult(
+						succeeded: true,
+						data: [
+							'decisionKey' => $decisionKey,
+							'outputs' => $result['outputs'],
+							'matchedRuleIds' => $result['matchedRuleIds'],
+						],
+						caseChanges: $changes,
+					);
+				}
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
@@ -164,25 +182,33 @@ class EvaluateDecisionHandler implements ActionHandlerInterface {
 	}//end buildInputs()
 
 	/**
-	 * Write the decision's outputs back onto the case, applying
+	 * Write the decision's outputs to the stored case, applying
 	 * `outputMapping` (decisionOutputName => caseFieldName) with a
-	 * same-name default, then persist via ObjectService.
+	 * same-name default.
+	 *
+	 * ONLY the mapped outputs are written. `$case` is a snapshot of the flow
+	 * item; full-saving it here erased whatever other writers stored after
+	 * the snapshot was taken (the besluitDocument clobber, measured live on
+	 * the closure rig). The writer applies the outputs to the STORED case.
 	 *
 	 * @param array<string, mixed> $table The decision table definition.
-	 * @param array<string, mixed> $case The case object (pre-mutation).
+	 * @param array<string, mixed> $case The case snapshot; only its identity is used.
 	 * @param array<string, mixed> $outputs The evaluated outputs, keyed by decision output name.
 	 * @param array<string, mixed> $outputMapping Optional decisionOutputName => caseFieldName map.
 	 *
-	 * @return void
+	 * @return array<string, mixed> The case fields written, for the caller's outgoing snapshot.
 	 *
 	 * @throws \RuntimeException When OpenRegister/case schema is unavailable.
+	 *
+	 * @spec openspec/specs/dmn-decision-tables/spec.md
 	 */
-	private function writeOutputs(array $table, array $case, array $outputs, array $outputMapping): void {
+	private function writeOutputs(array $table, array $case, array $outputs, array $outputMapping): array {
 		$declared = [];
 		if (is_array($table['outputs'] ?? null) === true) {
 			$declared = $table['outputs'];
 		}
 
+		$changes = [];
 		foreach ($declared as $outputDef) {
 			if (is_array($outputDef) === false) {
 				continue;
@@ -194,7 +220,7 @@ class EvaluateDecisionHandler implements ActionHandlerInterface {
 			}
 
 			$caseField = (string)($outputMapping[$name] ?? $name);
-			$case[$caseField] = ($outputs[$name] ?? null);
+			$changes[$caseField] = ($outputs[$name] ?? null);
 		}
 
 		$objectService = $this->settingsService->getObjectService();
@@ -208,6 +234,14 @@ class EvaluateDecisionHandler implements ActionHandlerInterface {
 			throw new RuntimeException('case_schema_not_configured');
 		}
 
-		$objectService->saveObject(object: $case, register: $register, schema: $caseSchema);
+		$this->caseWriter->write(
+			objectService: $objectService,
+			register: $register,
+			schema: $caseSchema,
+			case: $case,
+			changes: $changes
+		);
+
+		return $changes;
 	}//end writeOutputs()
 }//end class

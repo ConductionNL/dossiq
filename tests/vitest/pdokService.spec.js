@@ -13,16 +13,16 @@
  * @spec openspec/changes/migrate-pdok-to-openconnector/specs/pdok-consumer/spec.md
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
 import axios from '@nextcloud/axios'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-	suggest,
-	lookup,
-	free,
-	reverse,
 	extractCoordinates,
 	formatAddress,
+	free,
 	lastWarning,
+	lookup,
+	reverse,
+	suggest,
 } from '../../src/services/pdokService.js'
 
 const BASE = '/index.php/apps/openconnector/api/pdok'

@@ -22,8 +22,10 @@
  * SetupControllerStatusTest here).
  */
 
-import { test, expect, type Page } from '@playwright/test'
-import { dismissSupportDialog } from './helpers/nav'
+import type { Page } from '@playwright/test'
+
+import { expect, test } from '@playwright/test'
+import { dismissSupportDialog } from './helpers/nav.ts'
 
 /**
  * Open the case-types index by ROUTE, not by sidebar label.
@@ -283,7 +285,7 @@ test.describe('Setup — the sample-data step is reachable', () => {
 						`cn-setup-wizard-dismissed:dossiq:${v}`,
 					)
 				}
-			} catch (e) {
+			} catch {
 				/* blocked storage */
 			}
 		})
@@ -409,7 +411,7 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 		await page.evaluate(() => {
 			try {
 				window.localStorage.removeItem('cn-walkthrough-seen:dossiq')
-			} catch (e) {
+			} catch {
 				/* blocked storage */
 			}
 		})
