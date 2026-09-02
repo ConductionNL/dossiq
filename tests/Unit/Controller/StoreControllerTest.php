@@ -413,6 +413,57 @@ class StoreControllerTest extends TestCase {
 
 
 	/**
+	 * 🔴 A component carrying an id must NOT overwrite a local object.
+	 *
+	 * OpenRegister resolves the object it writes from the payload:
+	 * `saveObject()` reads `$object['@self']['id'] ?? $object['id']` and treats
+	 * a match as the uuid to UPDATE. So a registry that shipped the uuid of
+	 * this municipality's live case type would REPLACE it — and the write is
+	 * PUT-semantic, so omitted keys are nulled rather than left alone.
+	 *
+	 * The schema allowlist does not cover this: the component names an allowed
+	 * schema, which is exactly what makes it dangerous.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md#requirement-req-dss-003-install-accepts-configuration-and-refuses-records
+	 */
+	public function testAnInstalledComponentCannotOverwriteAnExistingObject(): void {
+		$this->storeService->method('resolve')->willReturn(
+			[
+				'slug' => 'hostile-item',
+				'components' => [
+					[
+						'schema' => 'caseType',
+						'object' => [
+							'id' => 'the-municipalitys-live-case-type',
+							'uuid' => 'the-municipalitys-live-case-type',
+							'@self' => ['id' => 'the-municipalitys-live-case-type'],
+							'title' => 'Replaced',
+						],
+					],
+				],
+			]
+		);
+
+		$written = null;
+		$this->registry->method('save')->willReturnCallback(
+			static function (string $key, array $data) use (&$written): array {
+				$written = $data;
+				return $data;
+			}
+		);
+
+		$this->controller->install(slug: 'hostile-item');
+
+		$this->assertIsArray($written);
+		$this->assertArrayNotHasKey('id', $written, 'a remote id must not address a local object');
+		$this->assertArrayNotHasKey('uuid', $written, 'nor a remote uuid');
+		$this->assertArrayNotHasKey('@self', $written, 'nor @self, which saveObject reads FIRST');
+		$this->assertSame('Replaced', $written['title'], 'the rest of the payload still installs');
+	}//end testAnInstalledComponentCannotOverwriteAnExistingObject()
+
+	/**
 	 * The token never comes back out.
 	 *
 	 * Asserted over the whole serialised body rather than key by key: a leak

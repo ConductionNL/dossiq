@@ -148,3 +148,31 @@ icon, in the footer section between Documentation and Reports.
 - **THEN** the entry labelled `Store` MUST declare `icon: "StoreOutline"`
 - **AND** it MUST sit in the `footer` section with an order between
   Documentation and Reports
+
+### Requirement: REQ-DSS-007 An install creates, and can never replace
+
+The install action SHALL strip every identity key the remote payload carries
+(`id`, `uuid`, `@self`) before writing, so an installed component is always a
+NEW local object.
+
+OpenRegister resolves the object it writes from the payload itself: `saveObject`
+reads `@self.id` first and `id` second, and treats a match as the uuid to
+UPDATE. The write is PUT-semantic, so keys the payload omits are nulled rather
+than left alone. A store item carrying the uuid of a live case type would
+therefore not merely change it, it would gut it.
+
+The schema allowlist does NOT cover this. It governs which schema a component
+may write, never whether the write creates or replaces, so a component naming a
+perfectly legitimate configuration schema is the attack.
+
+Identity is not a remote registry's to supply. If install ever needs to be
+idempotent it SHALL key on something dossiq controls.
+
+@e2e exclude Server-side, and the property is the ABSENCE of an addressed object. A browser sees an install succeed either way; only the payload handed to the write reveals which object it addressed. Proven by StoreControllerTest with a negative control: removing the strip makes the assertion fail.
+
+#### Scenario: A component carrying an id installs as a new object
+
+- **GIVEN** a store item whose component object carries `id`, `uuid` and `@self`
+- **WHEN** it is installed
+- **THEN** none of those keys MUST reach the write
+- **AND** the rest of the component MUST still install
