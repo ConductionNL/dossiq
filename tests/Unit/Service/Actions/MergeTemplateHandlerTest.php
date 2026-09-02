@@ -36,6 +36,7 @@ use Psr\Log\NullLogger;
 /**
  * @covers \OCA\Dossiq\Service\Actions\MergeTemplateHandler
  *
+ * @uses \OCA\Dossiq\Service\CaseFieldWriter
  * @uses \OCA\Dossiq\Service\FlowRunAsScope
  * @uses \OCA\Dossiq\Service\Actions\ActionResult
  */

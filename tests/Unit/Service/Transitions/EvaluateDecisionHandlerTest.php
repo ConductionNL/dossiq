@@ -42,6 +42,8 @@ use Psr\Log\NullLogger;
 /**
  * @covers \OCA\Dossiq\Service\Transitions\EvaluateDecisionHandler
  *
+ * @uses \OCA\Dossiq\Service\CaseFieldWriter
+ *
  * @uses \OCA\Dossiq\Service\FlowRunAsScope
  *
  * @uses \OCA\OpenRegister\Service\Dmn\DecisionTableEvaluator

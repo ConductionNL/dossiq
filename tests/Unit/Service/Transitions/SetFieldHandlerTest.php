@@ -38,6 +38,8 @@ use RuntimeException;
 /**
  * @covers \OCA\Dossiq\Service\Transitions\SetFieldHandler
  *
+ * @uses \OCA\Dossiq\Service\CaseFieldWriter
+ *
  * @uses \OCA\Dossiq\Service\FlowRunAsScope
  *
  * @uses \OCA\Dossiq\Service\Transitions\ActionResult
