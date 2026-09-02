@@ -16,14 +16,19 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Flow;
 
 use OCA\Dossiq\Flow\DossiqSetVoorstelStatusNode;
+use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\Parafeer\ParaafFlowLinkage;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\IL10N;
+use OCP\IUserManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Flow\DossiqSetVoorstelStatusNode
+ *
+ * @uses \OCA\Dossiq\Service\FlowRunAsScope
  */
 class DossiqSetVoorstelStatusNodeTest extends TestCase {
 
@@ -60,7 +65,7 @@ class DossiqSetVoorstelStatusNodeTest extends TestCase {
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
-		return new DossiqSetVoorstelStatusNode($linkage, $l10n, $this->createMock(LoggerInterface::class));
+		return new DossiqSetVoorstelStatusNode($linkage, $this->bareScope(), $l10n, $this->createMock(LoggerInterface::class));
 
 	}//end node()
 
@@ -181,4 +186,19 @@ class DossiqSetVoorstelStatusNodeTest extends TestCase {
 
 	}//end testItDescribesItselfForTheEditor()
 
+
+	/**
+	 * A runAs scope that runs bare for an empty context.
+	 *
+	 * These tests hand contexts naming no acting identity, so the scope never
+	 * resolves one and the class under test behaves as before the wrap.
+	 *
+	 * @return FlowRunAsScope The scope.
+	 */
+	private function bareScope(): FlowRunAsScope {
+		return new FlowRunAsScope(
+			$this->createMock(SettingsService::class),
+			$this->createMock(IUserManager::class),
+		);
+	}//end bareScope()
 }//end class

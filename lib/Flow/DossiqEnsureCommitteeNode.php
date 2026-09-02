@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Bezwaar\CommitteeDelegationService;
+use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Service\Flow\IFlowNode;
 use OCP\IL10N;
@@ -71,6 +72,7 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
      *
      * @param CommitteeDelegationService $delegation Raises the body in the decision app.
      * @param SettingsService            $settings   Resolves OpenRegister and the schema slugs.
+     * @param FlowRunAsScope             $runAsScope Scopes the committee read and write to the run's acting identity.
      * @param IL10N                      $l10n       The localisation service.
      * @param LoggerInterface            $logger     The logger.
      *
@@ -81,6 +83,7 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
     public function __construct(
         private readonly CommitteeDelegationService $delegation,
         private readonly SettingsService $settings,
+        private readonly FlowRunAsScope $runAsScope,
         private readonly IL10N $l10n,
         private readonly LoggerInterface $logger,
     ) {
@@ -194,7 +197,6 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
      * @spec openspec/changes/migrate-committees-to-decidiq/specs/migrate-committees-to-decidiq/spec.md
      */
     public function execute(array $items, array $config, array $context): array {
-        unset($context);
         $this->validateConfig(config: $config);
 
         $field     = $this->configString(config: $config, key: 'committeeField', fallback: self::DEFAULT_COMMITTEE_FIELD);
@@ -218,7 +220,14 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
                 continue;
             }
 
-            $json[$outputKey] = $this->resolveBodyId(committeeId: $committeeId);
+            // The committee READ and the mapping WRITE run under the flow
+            // run's `runAs` identity: under FlowRunWorker the ambient session
+            // carries nobody, so bare storage work here is refused as
+            // 'Anonymous' however legitimate the run.
+            $json[$outputKey] = (string) $this->runAsScope->call(
+                context: $context,
+                operation: fn (): string => $this->resolveBodyId(committeeId: $committeeId)
+            );
             $item['json']     = $json;
             $out[]            = $item;
         }//end foreach

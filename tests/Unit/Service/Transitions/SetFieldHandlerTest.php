@@ -26,14 +26,18 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
+use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\SetFieldHandler;
 use PHPUnit\Framework\TestCase;
+use OCP\IUserManager;
 use Psr\Log\NullLogger;
 use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\Transitions\SetFieldHandler
+ *
+ * @uses \OCA\Dossiq\Service\FlowRunAsScope
  *
  * @uses \OCA\Dossiq\Service\Transitions\ActionResult
  */
@@ -44,6 +48,7 @@ class SetFieldHandlerTest extends TestCase {
 	public function testFailsWhenFieldMissing(): void {
 		$handler = new SetFieldHandler(
 			settingsService: $this->createMock(SettingsService::class),
+			runAsScope: $this->bareScope(),
 			logger: new NullLogger(),
 		);
 
@@ -64,7 +69,7 @@ class SetFieldHandlerTest extends TestCase {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn(null);
 
-		$handler = new SetFieldHandler($settings, new NullLogger());
+		$handler = new SetFieldHandler($settings, $this->bareScope(), new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'setField', 'field' => 'endDate'],
@@ -106,7 +111,7 @@ class SetFieldHandlerTest extends TestCase {
 			}
 		);
 
-		$handler = new SetFieldHandler($settings, new NullLogger());
+		$handler = new SetFieldHandler($settings, $this->bareScope(), new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'setField', 'field' => 'result', 'value' => 'toegewezen'],
@@ -149,7 +154,7 @@ class SetFieldHandlerTest extends TestCase {
 			}
 		);
 
-		$handler = new SetFieldHandler($settings, new NullLogger());
+		$handler = new SetFieldHandler($settings, $this->bareScope(), new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'setField', 'field' => 'endDate', 'value' => '__now__'],
@@ -186,7 +191,7 @@ class SetFieldHandlerTest extends TestCase {
 			}
 		);
 
-		$handler = new SetFieldHandler($settings, new NullLogger());
+		$handler = new SetFieldHandler($settings, $this->bareScope(), new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'setField', 'field' => 'x', 'value' => 'y'],
@@ -197,4 +202,19 @@ class SetFieldHandlerTest extends TestCase {
 		self::assertFalse($result->succeeded);
 		self::assertSame('set_field_failed', $result->error);
 	}//end testCatchesExceptionFromObjectService()
+
+	/**
+	 * A runAs scope that runs bare for an empty context.
+	 *
+	 * These tests hand contexts naming no acting identity, so the scope never
+	 * resolves one and the class under test behaves as before the wrap.
+	 *
+	 * @return FlowRunAsScope The scope.
+	 */
+	private function bareScope(): FlowRunAsScope {
+		return new FlowRunAsScope(
+			$this->createMock(SettingsService::class),
+			$this->createMock(IUserManager::class),
+		);
+	}//end bareScope()
 }//end class

@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
@@ -40,10 +41,12 @@ class SetFieldHandler implements ActionHandlerInterface {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister + config
+	 * @param FlowRunAsScope $runAsScope Scopes the case write to the run's acting identity
 	 * @param LoggerInterface $logger Logger
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly FlowRunAsScope $runAsScope,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -85,7 +88,14 @@ class SetFieldHandler implements ActionHandlerInterface {
 			}
 
 			$case[$field] = $value;
-			$objectService->saveObject(object: $case, register: $register, schema: $caseSchema);
+
+			// Under FlowRunWorker the ambient session carries nobody, so a
+			// bare saveObject() is refused as 'Anonymous'; the write runs as
+			// the run's `runAs` identity when the context names one.
+			$this->runAsScope->call(
+				context: $transitionContext,
+				operation: static fn (): mixed => $objectService->saveObject(object: $case, register: $register, schema: $caseSchema)
+			);
 
 			return new ActionResult(succeeded: true, data: ['field' => $field]);
 		} catch (\Throwable $e) {
