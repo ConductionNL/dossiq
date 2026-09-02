@@ -338,7 +338,10 @@ class StoreController extends Controller {
 			$configKey = SchemaSlugMap::SLUG_TO_CONFIG_KEY[$slug];
 
 			try {
-				$this->registry->save(schemaConfigKey: $configKey, data: $object);
+				$this->registry->save(
+					schemaConfigKey: $configKey,
+					data: $this->asNewObject(object: $object)
+				);
 				$report[] = ['schema' => $slug, 'status' => 'installed', 'message' => ''];
 			} catch (Throwable $e) {
 				$failed = true;
@@ -356,6 +359,39 @@ class StoreController extends Controller {
 
 		return ['success' => ($failed === false && $report !== []), 'components' => $report];
 	}//end installComponents()
+
+	/**
+	 * Strip every identity the remote payload carries, so an install CREATES.
+	 *
+	 * 🔴 WITHOUT THIS, "Install" IS AN OVERWRITE PRIMITIVE.
+	 *
+	 * OpenRegister's `saveObject()` resolves the object it is writing from the
+	 * payload itself: `extractUuidAndNormalizeObject()` reads
+	 * `$object['@self']['id'] ?? $object['id']` and treats a match as the uuid
+	 * to UPDATE. So a store item whose component carried the uuid of this
+	 * municipality's live case type would replace it rather than add one — and
+	 * the write is PUT-semantic, so keys the payload omits are nulled, not left
+	 * alone. The case type would not merely change, it would be gutted.
+	 *
+	 * The schema allowlist does not cover this. It governs WHICH schema a
+	 * component may write, never whether the write creates or replaces, so an
+	 * entirely legitimate `caseType` component is the attack.
+	 *
+	 * Identity is not the registry's to supply. An installed item is a NEW
+	 * local object, and if install ever needs to be idempotent it must key on
+	 * something dossiq controls rather than on a remote id.
+	 *
+	 * @param array<string, mixed> $object The component's object.
+	 *
+	 * @return array<string, mixed> The object with every identity key removed.
+	 *
+	 * @spec openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
+	 */
+	private function asNewObject(array $object): array {
+		unset($object['id'], $object['uuid'], $object['@self']);
+
+		return $object;
+	}//end asNewObject()
 
 	/**
 	 * Read the registry connection.
