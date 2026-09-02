@@ -112,6 +112,28 @@ test.describe('New case dialog', () => {
 	})
 
 	/**
+	 * Choose this run's case type in the picker.
+	 *
+	 * The click has to land on the combobox itself: `[data-cn-field]` is the
+	 * field WRAPPER, and clicking a wrapper leaves NcSelect closed, so the
+	 * failure surfaces later as a missing option rather than as a missed click.
+	 *
+	 * @param page The Playwright page.
+	 * @param dialog The dialog root.
+	 */
+	async function chooseCaseType(page, dialog) {
+		const combo = dialog.getByRole('combobox', { name: /Case type/ })
+		await combo.click()
+		// The picker preloads only the first 20 case types, and this run's is
+		// newer than all of them. Typing is both what a handler does with a
+		// couple of dozen types and what puts the search term on the wire.
+		await combo.pressSequentially(RUN_PREFIX, { delay: 20 })
+		const option = page.getByRole('option', { name: CASE_TYPE_TITLE })
+		await expect(option).toBeVisible({ timeout: 20000 })
+		await option.click()
+	}
+
+	/**
 	 * Open the dialog from the dashboard's New case button.
 	 * @param page The Playwright page.
 	 */
@@ -119,11 +141,12 @@ test.describe('New case dialog', () => {
 		await page.goto(DASHBOARD_URL)
 		await expect(page).not.toHaveURL(/login/, { timeout: 15000 })
 		await page.getByRole('button', { name: 'New case', exact: true }).click()
-		const dialog = page
-			.locator(
-				'[data-testid-modal="cn-form-dialog"], [data-testid="cn-modal"]',
-			)
-			.first()
+		// The dialog ROOT, not the phase div that carries the testid: NcDialog
+		// renders its buttons in a footer slot beside that div, so a locator
+		// scoped to the testid finds the fields but never Create or Cancel.
+		const dialog = page.getByRole('dialog').filter({
+			has: page.locator('[data-testid-modal="cn-form-dialog"]'),
+		})
 		await expect(dialog).toBeVisible({ timeout: 20000 })
 		return dialog
 	}
@@ -175,8 +198,7 @@ test.describe('New case dialog', () => {
 		// Nothing before a case type is chosen: the questions belong to a type.
 		await expect(dialog.getByText(CEILING)).toHaveCount(0)
 
-		await dialog.locator('[data-cn-field="caseType"]').click()
-		await page.getByRole('option', { name: CASE_TYPE_TITLE }).click()
+		await chooseCaseType(page, dialog)
 
 		await expect(dialog.getByText(CEILING)).toBeVisible({ timeout: 15000 })
 		await expect(dialog.getByText(AUDIENCE)).toBeVisible()
@@ -191,8 +213,7 @@ test.describe('New case dialog', () => {
 			.locator('[data-cn-field="title"]')
 			.getByRole('textbox')
 			.fill(title)
-		await dialog.locator('[data-cn-field="caseType"]').click()
-		await page.getByRole('option', { name: CASE_TYPE_TITLE }).click()
+		await chooseCaseType(page, dialog)
 		await expect(dialog.getByText(CEILING)).toBeVisible({ timeout: 15000 })
 
 		const ceilingField = dialog

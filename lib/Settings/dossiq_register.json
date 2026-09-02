@@ -1320,7 +1320,6 @@
                     "description": {
                         "type": "string",
                         "description": "Detailed description of this case",
-                        "visible": false,
                         "title": "Description",
                         "order": 3
                     },
@@ -1392,7 +1391,6 @@
                             "case": "@objectId"
                         },
                         "description": "Reference to the result record (set on completion)",
-                        "visible": false,
                         "title": "Result",
                         "order": 13
                     },
@@ -1400,7 +1398,6 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date the case was started",
-                        "visible": false,
                         "title": "Start Date",
                         "order": 9
                     },
@@ -1408,7 +1405,6 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date the case was completed",
-                        "visible": false,
                         "title": "End Date",
                         "order": 12
                     },
@@ -1416,7 +1412,6 @@
                         "type": "string",
                         "format": "date",
                         "description": "Planned end date",
-                        "visible": false,
                         "title": "Planned End Date",
                         "order": 10
                     },
@@ -1528,7 +1523,6 @@
                         "type": "integer",
                         "default": 0,
                         "description": "Number of deadline extensions applied",
-                        "visible": false,
                         "title": "Extension Count"
                     },
                     "aanvullingRound": {
@@ -1614,13 +1608,11 @@
                             "caseType": "@object.caseType"
                         },
                         "description": "Reference to the bound workflow template",
-                        "visible": false,
                         "title": "Workflow Template"
                     },
                     "workflowVersion": {
                         "type": "integer",
                         "description": "Version number of the bound workflow template",
-                        "visible": false,
                         "title": "Workflow Version"
                     },
                     "permitApplicationRef": {
