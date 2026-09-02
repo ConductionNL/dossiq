@@ -21,15 +21,12 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Flow;
 
 use OCA\Dossiq\Flow\DossiqAskPersonNode;
-use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Service\Flow\FlowNodeResumeState;
 use OCA\OpenRegister\Service\Flow\FlowRunContext;
 use OCA\OpenRegister\Service\Flow\FlowSuspension;
 use OCP\IL10N;
-use OCP\IUser;
-use OCP\IUserManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -44,16 +41,8 @@ class DossiqAskPersonNodeTest extends TestCase {
 	 */
 	private array $written = [];
 
-	/**
-	 * The uids the object service's runAs seam was asked to act as.
-	 *
-	 * @var string[]
-	 */
-	private array $actedAs = [];
-
 	protected function setUp(): void {
 		$this->written = [];
-		$this->actedAs = [];
 	}//end setUp()
 
 	/**
@@ -69,8 +58,8 @@ class DossiqAskPersonNodeTest extends TestCase {
 	 * @return DossiqAskPersonNode The node under test.
 	 */
 	private function node(): DossiqAskPersonNode {
-		$objectService = new class($this->written, $this->actedAs) {
-			public function __construct(private array &$sink, private array &$actedAs) {
+		$objectService = new class($this->written) {
+			public function __construct(private array &$sink) {
 			}
 
 			public function saveObject(array $object, string $register, string $schema): ObjectEntity {
@@ -82,12 +71,6 @@ class DossiqAskPersonNodeTest extends TestCase {
 
 				return $entity;
 			}
-
-			public function runAs(IUser $user, callable $operation): mixed {
-				$this->actedAs[] = $user->getUID();
-
-				return $operation();
-			}
 		};
 
 		$settings = $this->createMock(SettingsService::class);
@@ -96,19 +79,10 @@ class DossiqAskPersonNodeTest extends TestCase {
 			static fn (string $key): string => ($key === 'register' ? 'dossiq' : 'task')
 		);
 
-		$adminUser = $this->createMock(IUser::class);
-		$adminUser->method('getUID')->willReturn('admin');
-		$adminUser->method('isEnabled')->willReturn(true);
-
-		$users = $this->createMock(IUserManager::class);
-		$users->method('get')->willReturnCallback(
-			static fn (string $uid): ?IUser => ($uid === 'admin') ? $adminUser : null
-		);
-
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
-		return new DossiqAskPersonNode($settings, new FlowRunAsScope($settings, $users), $l10n, new NullLogger());
+		return new DossiqAskPersonNode($settings, $l10n, new NullLogger());
 	}//end node()
 
 	/**
@@ -188,44 +162,12 @@ class DossiqAskPersonNodeTest extends TestCase {
 		self::assertSame('task-1', $resume->get('taskId'), 'The remembered id is the saved entity\'s uuid.');
 	}//end testTheSavedTaskIsIdentifiedByItsEntityUuid()
 
-	/**
-	 * 🔴 THE TASK IS WRITTEN AS THE RUN'S ACTING IDENTITY.
-	 *
-	 * Under FlowRunWorker the ambient session carries nobody, so a bare
-	 * saveObject() is refused as 'Anonymous' — measured live while the run
-	 * context carried `runAs: admin`. Remove the runAs wrap in persistTask()
-	 * and this goes red: the seam is never asked and $actedAs stays empty.
-	 */
-	public function testTheTaskIsWrittenAsTheRunsActingIdentity(): void {
-		$resume = new FlowNodeResumeState('ask-indiener');
-		$context = array_merge($this->context($resume), ['runAs' => 'admin']);
-
-		try {
-			$this->node()->execute($this->items(), $this->config(), $context);
-		} catch (FlowSuspension $e) {
-			// expected: the task is outstanding
-		}
-
-		self::assertSame(['admin'], $this->actedAs, 'The write must run through the object service\'s runAs seam.');
-		self::assertCount(1, $this->written, 'And the task must actually have been written under it.');
-	}//end testTheTaskIsWrittenAsTheRunsActingIdentity()
-
-	/**
-	 * An acting identity that resolves to nobody refuses the step rather than
-	 * falling back to an anonymous write.
-	 */
-	public function testAnUnresolvableActingIdentityRefuses(): void {
-		$resume = new FlowNodeResumeState('ask-indiener');
-		$context = array_merge($this->context($resume), ['runAs' => 'ghost']);
-
-		$this->expectException(RuntimeException::class);
-
-		try {
-			$this->node()->execute($this->items(), $this->config(), $context);
-		} finally {
-			self::assertSame([], $this->written, 'Nothing may be written under an identity that does not resolve.');
-		}
-	}//end testAnUnresolvableActingIdentityRefuses()
+	// The runAs tests retired with dossiq's FlowRunAsScope: the engine's
+	// RegistryStepDispatcher executes every contributed node inside
+	// ObjectService::runAs() as the run's validated acting identity
+	// (openregister#3332, proven by its RegistryStepDispatcherRunAsTest), so a
+	// local wrap — and a test demanding one — would re-encode the retired
+	// requirement.
 
 	/**
 	 * 🔴 A TEMPLATED ASSIGNEE IS RENDERED AGAINST THE CASE.
@@ -395,12 +337,10 @@ class DossiqAskPersonNodeTest extends TestCase {
 			static fn (string $key): string => ($key === 'register' ? 'dossiq' : 'task')
 		);
 
-		$users = $this->createMock(IUserManager::class);
-
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
-		return new DossiqAskPersonNode($settings, new FlowRunAsScope($settings, $users), $l10n, new NullLogger());
+		return new DossiqAskPersonNode($settings, $l10n, new NullLogger());
 	}//end nodeReturning()
 
 	/**

@@ -32,11 +32,9 @@ use OCA\OpenRegister\Service\Dmn\DecisionEvaluationException;
 use OCA\OpenRegister\Service\Dmn\DecisionTableEvaluator;
 use OCA\Dossiq\Service\Dmn\DecisionTableService;
 use OCA\Dossiq\Service\CaseFieldWriter;
-use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\EvaluateDecisionHandler;
 use PHPUnit\Framework\TestCase;
-use OCP\IUserManager;
 use Psr\Log\NullLogger;
 
 /**
@@ -44,7 +42,6 @@ use Psr\Log\NullLogger;
  *
  * @uses \OCA\Dossiq\Service\CaseFieldWriter
  *
- * @uses \OCA\Dossiq\Service\FlowRunAsScope
  *
  * @uses \OCA\OpenRegister\Service\Dmn\DecisionTableEvaluator
  * @uses \OCA\OpenRegister\Service\Dmn\DecisionEvaluationException
@@ -86,7 +83,6 @@ class EvaluateDecisionHandlerTest extends TestCase {
 			tableService: $this->createMock(DecisionTableService::class),
 			engine: new DecisionTableEvaluator(),
 			settingsService: $this->createMock(SettingsService::class),
-			runAsScope: $this->bareScope(),
 			caseWriter: new CaseFieldWriter(),
 			logger: new NullLogger(),
 		);
@@ -108,7 +104,6 @@ class EvaluateDecisionHandlerTest extends TestCase {
 			tableService: $tableService,
 			engine: new DecisionTableEvaluator(),
 			settingsService: $this->createMock(SettingsService::class),
-			runAsScope: $this->bareScope(),
 			caseWriter: new CaseFieldWriter(),
 			logger: new NullLogger(),
 		);
@@ -169,7 +164,6 @@ class EvaluateDecisionHandlerTest extends TestCase {
 			tableService: $tableService,
 			engine: $this->evaluatorReturning(['eligible' => true, 'tier' => 'gold']),
 			settingsService: $settings,
-			runAsScope: $this->bareScope(),
 			caseWriter: new CaseFieldWriter(),
 			logger: new NullLogger(),
 		);
@@ -250,7 +244,6 @@ class EvaluateDecisionHandlerTest extends TestCase {
 			tableService: $tableService,
 			engine: $this->evaluatorReturning(['eligible' => true, 'tier' => 'gold']),
 			settingsService: $settings,
-			runAsScope: $this->bareScope(),
 			caseWriter: new CaseFieldWriter(),
 			logger: new NullLogger(),
 		);
@@ -296,7 +289,6 @@ class EvaluateDecisionHandlerTest extends TestCase {
 			tableService: $tableService,
 			engine: $this->evaluatorThrowing('no_rule_matched'),
 			settingsService: $settings,
-			runAsScope: $this->bareScope(),
 			caseWriter: new CaseFieldWriter(),
 			logger: new NullLogger(),
 		);
@@ -346,19 +338,4 @@ class EvaluateDecisionHandlerTest extends TestCase {
 
 	}//end evaluatorThrowing()
 
-
-	/**
-	 * A runAs scope that runs bare for an empty context.
-	 *
-	 * These tests hand contexts naming no acting identity, so the scope never
-	 * resolves one and the class under test behaves as before the wrap.
-	 *
-	 * @return FlowRunAsScope The scope.
-	 */
-	private function bareScope(): FlowRunAsScope {
-		return new FlowRunAsScope(
-			$this->createMock(SettingsService::class),
-			$this->createMock(IUserManager::class),
-		);
-	}//end bareScope()
 }//end class

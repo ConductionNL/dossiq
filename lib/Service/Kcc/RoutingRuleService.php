@@ -4,8 +4,11 @@
  * Dossiq KCC Routing Rule Service
  *
  * Loads and persists KCC routing rules and KCC agents from OpenRegister, and
- * orchestrates the pure {@see RoutingEngine} to produce a routing decision
- * plus ranked agent suggestions for a contact moment.
+ * produces a routing decision plus ranked agent suggestions for a contact
+ * moment. Rule evaluation goes through {@see RoutingTableEvaluator} — the
+ * rules compiled onto OpenRegister's shared decision-table evaluator
+ * (openregister#3329) — while agent ranking stays on the pure
+ * {@see RoutingEngine}, which is KCC domain logic, not a rule engine.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Kcc
@@ -41,11 +44,16 @@ class RoutingRuleService {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings service.
-	 * @param RoutingEngine $routingEngine The pure routing engine.
+	 * @param RoutingEngine $routingEngine The pure agent-ranking engine (and the
+	 *                                     parity oracle for rule evaluation
+	 *                                     during its staged retirement).
+	 * @param RoutingTableEvaluator $tableRouting Rule evaluation on the shared
+	 *                                            decision-table engine.
 	 */
 	public function __construct(
 		private SettingsService $settingsService,
 		private RoutingEngine $routingEngine,
+		private RoutingTableEvaluator $tableRouting,
 	) {
 	}//end __construct()
 
@@ -112,10 +120,12 @@ class RoutingRuleService {
 	 * @param \DateTimeImmutable|null $now Reference time.
 	 *
 	 * @return array<string, mixed> The routing decision plus agent suggestions.
+	 *
+	 * @spec openspec/changes/kcc-routing-onto-or-decision-tables/specs/kcc-routing/spec.md#requirement-routing-rules-evaluate-through-the-shared-decision-table-engine
 	 */
 	public function route(array $contactMoment, ?\DateTimeImmutable $now = null): array {
 		$rules = $this->listRules();
-		$routing = $this->routingEngine->evaluate(rules: $rules, contactMoment: $contactMoment, now: $now);
+		$routing = $this->tableRouting->route(rules: $rules, contactMoment: $contactMoment, now: $now);
 
 		if ($routing === null) {
 			return ['matched' => false, 'suggestedAgents' => []];

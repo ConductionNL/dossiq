@@ -44,6 +44,13 @@ class RoutingEngine {
 	 * whose conditions all match wins. Returns the matched rule plus the
 	 * resolved domain/team, or null when nothing matches.
 	 *
+	 * DEPRECATED (kcc-routing-onto-or-decision-tables): runtime routing goes
+	 * through {@see RoutingTableEvaluator}, which compiles these rules onto
+	 * OpenRegister's shared decision-table evaluator. This method stays ONLY
+	 * as the parity oracle — KccRoutingParityTest drives both paths over one
+	 * fixture matrix — until the staged retirement in that change's tasks.
+	 * Do not add new callers. Agent ranking below is NOT deprecated.
+	 *
 	 * @param array<int, array<string, mixed>> $rules Routing rules.
 	 * @param array<string, mixed> $contactMoment The contact moment.
 	 * @param \DateTimeImmutable|null $now Reference time (for time-of-day rules).
