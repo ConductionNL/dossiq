@@ -29,7 +29,6 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\Dmn\DecisionTableService;
-use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Actions\MergeTemplateHandler;
 use OCA\Dossiq\Service\Transitions\EvaluateDecisionHandler;
@@ -39,7 +38,6 @@ use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Service\Dmn\DecisionTableEvaluator;
 use OCP\IAppConfig;
-use OCP\IUserManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
@@ -168,18 +166,6 @@ class FlowHandlerSnapshotClobberTest extends TestCase {
 	}//end settingsOver()
 
 	/**
-	 * A runAs scope that runs bare: these contexts name no acting identity.
-	 *
-	 * @return FlowRunAsScope The scope.
-	 */
-	private function bareScope(): FlowRunAsScope {
-		return new FlowRunAsScope(
-			$this->createMock(SettingsService::class),
-			$this->createMock(IUserManager::class),
-		);
-	}//end bareScope()
-
-	/**
 	 * Both fields must be on the stored case afterwards.
 	 *
 	 * @param object               $store The object service double.
@@ -216,7 +202,6 @@ class FlowHandlerSnapshotClobberTest extends TestCase {
 		$handler = new SetStatusHandler(
 			$this->settingsOver($store),
 			$lookup,
-			$this->bareScope(),
 			new CaseFieldWriter(),
 			new NullLogger()
 		);
@@ -236,7 +221,6 @@ class FlowHandlerSnapshotClobberTest extends TestCase {
 
 		$handler = new SetFieldHandler(
 			$this->settingsOver($store),
-			$this->bareScope(),
 			new CaseFieldWriter(),
 			new NullLogger()
 		);
@@ -274,7 +258,6 @@ class FlowHandlerSnapshotClobberTest extends TestCase {
 			tableService: $tableService,
 			engine: $engine,
 			settingsService: $this->settingsOver($store),
-			runAsScope: $this->bareScope(),
 			caseWriter: new CaseFieldWriter(),
 			logger: new NullLogger(),
 		);
@@ -312,7 +295,6 @@ class FlowHandlerSnapshotClobberTest extends TestCase {
 		$handler = new MergeTemplateHandler(
 			container: $container,
 			appConfig: $appConfig,
-			runAsScope: $this->bareScope(),
 			caseWriter: new CaseFieldWriter(),
 			logger: new NullLogger(),
 		);

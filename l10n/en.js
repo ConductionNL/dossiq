@@ -3471,7 +3471,9 @@ OC.L10N.register(
         "The store settings could not be saved.": "The store settings could not be saved.",
         "The token is never shown again after saving. Leave it empty to keep the one already stored.": "The token is never shown again after saving. Leave it empty to keep the one already stored.",
         "Try a different term, or clear the kind filter.": "Try a different term, or clear the kind filter.",
-        "Could not load partner organisations": "Could not load partner organisations"
+        "Could not load partner organisations": "Could not load partner organisations",
+        "All issues": "All issues",
+        "This proposal has been returned. Adjust the document; it re-enters parafering through the case workflow.": "This proposal has been returned. Adjust the document; it re-enters parafering through the case workflow."
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -1,55 +1,50 @@
 // SPDX-License-Identifier: EUPL-1.2
 // SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl>
 /**
- * Parafeer Actie API service.
+ * Parafeeractie read service.
  *
- * Wraps the dossiq /api/parafeer-actie endpoints. All HTTP traffic uses
- * @nextcloud/axios for CSRF + auth interop. Never use raw fetch().
+ * The sign-off RUNTIME moved to the decision app (parafering-runtime-to-decidiq):
+ * an approver no longer records a parafeeractie through a dossiq endpoint that
+ * advances a local chain — they sign in the decision app, and dossiq records
+ * the outcome from its conclusion event. What remains here is the READ the case
+ * detail shows: the parafeeracties the conclusion recorder wrote, listed
+ * straight from OpenRegister's object API. There is no recordAction() any more.
  *
- * @spec openspec/changes/parafering-actions/tasks.md#T06
+ * All HTTP traffic uses @nextcloud/axios for CSRF + auth interop. Never raw fetch().
+ *
+ * @spec openspec/changes/parafering-runtime-to-decidiq/specs/parafering-runtime-to-decidiq/spec.md
  */
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-const ENDPOINT = generateUrl('/apps/dossiq/api/parafeer-actie')
-
-/**
- * Record a parafering action for a voorstel's current step.
- *
- * @param {object}  data            The action payload.
- * @param {string}  data.proposal   The voorstel UUID (required).
- * @param {string}  data.action     One of: 'advised', 'parafered', 'accorded', 'returned'.
- * @param {string} [data.comment]   Optional comment (mandatory when action='returned').
- * @param {string} [data.advice]    Advice text (mandatory when action='advised').
- * @param {string} [data.onBehalfOf] Principal UID when acting as delegate.
- * @param {string} [data.mandate]   Mandate reference when acting as delegate.
- * @return {Promise<object>} The created parafeeractie and updated voorstel.
- */
-/**
- * @param data
- * @spec openspec/specs/parafering-actions/spec.md
- */
-export async function recordAction(data) {
-	const response = await axios.post(ENDPOINT, data)
-	return response.data
-}
+const OR_BASE = 'apps/openregister/api/objects/dossiq/parafeeractie'
 
 /**
  * List all parafeeracties for a voorstel, sorted chronologically.
  *
+ * Reads OpenRegister's auto-exposed object API, filtered to the voorstel, so
+ * the case detail can show who initialled what when without a dossiq endpoint.
+ *
  * @param {string} voorstelId The voorstel UUID.
- * @return {Promise<Array<object>>} The parafeeractie array.
- */
-/**
- * @param voorstelId
- * @spec openspec/specs/parafering-actions/spec.md
+ * @return {Promise<Array<object>>} The parafeeractie array, oldest first.
+ * @spec openspec/changes/parafering-runtime-to-decidiq/specs/parafering-runtime-to-decidiq/spec.md
  */
 export async function listActions(voorstelId) {
-	const response = await axios.get(ENDPOINT, { params: { proposal: voorstelId } })
-	return Array.isArray(response.data) ? response.data : []
+	const response = await axios.get(generateUrl(`/${OR_BASE}`), {
+		params: { proposal: voorstelId, _limit: 500 },
+	})
+	const results = Array.isArray(response.data?.results)
+		? response.data.results
+		: Array.isArray(response.data)
+			? response.data
+			: []
+	return results.slice().sort((a, b) => {
+		const aKey = a.createdAt || a.created || a['@self']?.created || ''
+		const bKey = b.createdAt || b.created || b['@self']?.created || ''
+		return String(aKey).localeCompare(String(bKey))
+	})
 }
 
 export default {
-	recordAction,
 	listActions,
 }

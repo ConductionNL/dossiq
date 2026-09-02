@@ -3471,7 +3471,9 @@ OC.L10N.register(
         "The store settings could not be saved.": "De store-instellingen konden niet worden opgeslagen.",
         "The token is never shown again after saving. Leave it empty to keep the one already stored.": "Het token wordt na opslaan nooit meer getoond. Laat het leeg om het opgeslagen token te behouden.",
         "Try a different term, or clear the kind filter.": "Probeer een andere term of wis het filter op soort.",
-        "Could not load partner organisations": "Kon partnerorganisaties niet laden"
+        "Could not load partner organisations": "Kon partnerorganisaties niet laden",
+        "All issues": "Alle zaken",
+        "This proposal has been returned. Adjust the document; it re-enters parafering through the case workflow.": "Dit voorstel is teruggestuurd. Pas het document aan; het gaat opnieuw in parafering via de zaakworkflow."
     },
     "nplurals=2; plural=(n != 1);"
 )

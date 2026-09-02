@@ -234,6 +234,43 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		expect(unexpected, `console errors: ${unexpected.join(' | ')}`).toEqual([])
 	})
 
+	test('a KPI tile shows its label once, without widget chrome', async ({
+		page,
+	}) => {
+		// The KPI cells carry `showTitle: false`, because a KPI tile already
+		// renders its own label inside the card. Without the flag the grid draws
+		// a CnWidgetWrapper header on top — the title twice, and an Actions menu
+		// on a read-only tile, which the Cards-vs-Widgets split says a card must
+		// not have.
+		//
+		// This regressed once already: rebuilding the layout from a list of
+		// tuples silently dropped the flag from five cells, and nothing failed.
+		// Every gate passed and the E2E passed, because no assertion described
+		// what a KPI tile is supposed to look like. This is that assertion.
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		const timeLeft = page.locator('.cn-countdown-widget')
+		await expect(timeLeft).toBeVisible({ timeout: 20_000 })
+
+		// The label appears exactly once in the tile's own cell.
+		const cell = page
+			.locator('.cn-widget-grid__item, .grid-stack-item')
+			.filter({ has: page.locator('.cn-countdown-widget') })
+			.first()
+		const labelCount = await cell
+			.getByText(/^(Time left|Resterende tijd)$/)
+			.count()
+		expect(labelCount, 'the KPI label must render once, not twice').toBe(1)
+
+		// And a read-only tile carries no Actions menu of its own.
+		await expect(
+			cell.getByRole('button', { name: /^(Actions|Acties)$/ }),
+		).toHaveCount(0)
+	})
+
 	test('the tabs widget renders one tab per configured panel', async ({
 		page,
 	}) => {

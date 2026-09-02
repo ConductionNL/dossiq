@@ -339,6 +339,14 @@ if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowRunService') === false
 	include_once __DIR__ . '/Stubs/Service/Flow/FlowRunService.php';
 }
 
+if (class_exists('\\OCA\\OpenRegister\\Exception\\FlowSignalRefused') === false) {
+	include_once __DIR__ . '/Stubs/Exception/FlowSignalRefused.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowRunSignalService') === false) {
+	include_once __DIR__ . '/Stubs/Service/Flow/FlowRunSignalService.php';
+}
+
 if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowRunAssignee') === false) {
 	include_once __DIR__ . '/Stubs/Service/Flow/FlowRunAssignee.php';
 }
