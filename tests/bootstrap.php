@@ -249,6 +249,11 @@ if ($ncBaseLoaded === false) {
 // to require that file first).
 require_once __DIR__ . '/Unit/Fixtures/FakeTermijnStore.php';
 
+// Shared engine fake for the termijn timer mapping tests. Mirrors the REAL
+// FlowTimerService signatures; references the FlowTimer stub lazily, so the
+// load order relative to the stub block below does not matter.
+require_once __DIR__ . '/Unit/Fixtures/FlowTimerEngineFake.php';
+
 // OCP\Http\Client interface stubs — the vendored nextcloud/ocp does not ship
 // the OCP\Http\Client namespace, so services depending on IClientService
 // (PublicationService, MandaatValidationService) cannot be mocked without these.
@@ -377,6 +382,18 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatedEvent') === false) {
 // BewijsstukImmutabilityListenerTest can exercise the reject path on delete.
 if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletingEvent') === false) {
 	include_once __DIR__ . '/Stubs/Event/ObjectDeletingEventStub.php';
+}
+
+// termijnbewaking-op-engine-timers: the business-timer surface the termijn
+// mapping arms and the fired-listener consumes. The event stub mirrors the
+// REAL engine constructor signature — a stub that agrees with the caller
+// cannot fail — and needs the FlowTimer stub declared first.
+if (class_exists('\\OCA\\OpenRegister\\Db\\FlowTimer') === false) {
+	include_once __DIR__ . '/Stubs/Db/FlowTimer.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Event\\FlowTimerFiredEvent') === false) {
+	include_once __DIR__ . '/Stubs/Event/FlowTimerFiredEventStub.php';
 }
 
 // OpenRegister AppHost stubs (ADR-040) — loaded when the openregister runtime

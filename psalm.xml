@@ -77,6 +77,9 @@
                 <referencedClass name="OCA\OpenRegister\Event\ObjectUpdatedEvent"/>
                 <referencedClass name="OCA\OpenRegister\Event\ObjectDeletedEvent"/>
                 <referencedClass name="OCA\OpenRegister\Event\ObjectDeletingEvent"/>
+                <!-- flow-business-timers (termijnbewaking-op-engine-timers) -->
+                <referencedClass name="OCA\OpenRegister\Event\FlowTimerFiredEvent"/>
+                <referencedClass name="OCA\OpenRegister\Db\FlowTimer"/>
                 <referencedClass name="OCA\OpenRegister\Exception\LockedException"/>
                 <referencedClass name="OCA\OpenRegister\Service\ObjectService"/>
                 <referencedClass name="OCA\OpenRegister\Service\ConfigurationService"/>
