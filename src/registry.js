@@ -145,7 +145,6 @@ import { leafTab } from './integrations/leafTabs.js'
  * @type {Record<string, { kind: string, component: object }>}
  */
 const registry = {
-
 	// --- Case-list CSV/Excel export via the OR export leaf. ---
 	// @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
 	CaseListExportAction: {
