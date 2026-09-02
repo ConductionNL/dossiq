@@ -484,15 +484,13 @@
           {
             "id": "kpi-open-cases",
             "type": "stat",
-            "title": "New cases",
+            "title": "Open Cases",
+            "_note": "openspec/specs/dashboard/spec.md DASH-001a: this card counts every case whose status is not final, and is deliberately NOT scoped to the dashboard date range. It used to be titled \"New cases\" and counted startDate inside the picker window, which answers a different question and left the dashboard with no headline for open workload at all. The spec\u2019s \"+3 today\" sub-label is not expressible here: CnStatWidget interpolates a caption only in endpointSource mode, so a second count needs a Dossiq KPI endpoint.",
             "content": {
-              "label": "New cases",
-              "caption": "newly opened",
+              "label": "Open Cases",
+              "caption": "not yet closed",
               "route": {
-                "name": "Cases",
-                "query": {
-                  "startDate[gte]": "@monthStart"
-                }
+                "name": "Cases"
               },
               "icon": "FolderOutline",
               "format": {
@@ -504,10 +502,7 @@
                 "schema": "case",
                 "metric": "count",
                 "filter": {
-                  "startDate": {
-                    "gte": "@workspace.dateFrom?",
-                    "lte": "@workspace.dateTo?"
-                  }
+                  "isFinalStatus": false
                 }
               }
             }
@@ -518,7 +513,7 @@
             "title": "Overdue",
             "content": {
               "label": "Overdue",
-              "caption": "past deadline",
+              "caption": "action needed",
               "route": {
                 "name": "Cases",
                 "query": {
@@ -539,10 +534,6 @@
                   "isFinalStatus": false,
                   "deadline": {
                     "lt": "@today"
-                  },
-                  "startDate": {
-                    "gte": "@workspace.dateFrom?",
-                    "lte": "@workspace.dateTo?"
                   }
                 }
               }
@@ -586,7 +577,7 @@
             "title": "My Tasks",
             "content": {
               "label": "My Tasks",
-              "caption": "assigned to me",
+              "caption": "open and assigned to me",
               "route": {
                 "name": "Tasks",
                 "query": {
@@ -604,10 +595,7 @@
                 "metric": "count",
                 "filter": {
                   "assignee": "@me",
-                  "dueDate": {
-                    "gte": "@workspace.dateFrom?",
-                    "lte": "@workspace.dateTo?"
-                  }
+                  "isTerminalStatus": false
                 }
               }
             }
