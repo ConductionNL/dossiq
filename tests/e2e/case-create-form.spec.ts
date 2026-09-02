@@ -124,11 +124,17 @@ test.describe('New case dialog', () => {
 	async function chooseCaseType(page, dialog) {
 		const combo = dialog.getByRole('combobox', { name: /Case type/ })
 		await combo.click()
-		// The picker preloads a capped first page, so a freshly seeded type is
-		// not guaranteed to be in it. Typing is what a handler does with a
-		// couple of dozen types, and it puts the search term on the wire.
-		await combo.pressSequentially(RUN_PREFIX, { delay: 20 })
 		const option = page.getByRole('option', { name: CASE_TYPE_TITLE })
+
+		// Opening the picker preloads a capped first page. Type ONLY when this
+		// run's type is not in it: typing sends the term to the server and
+		// REPLACES the preloaded options with whatever comes back, so typing
+		// unconditionally can turn a list that already held the answer into an
+		// empty one. That is what it did on CI.
+		if (!(await option.isVisible().catch(() => false))) {
+			await combo.pressSequentially(RUN_PREFIX, { delay: 30 })
+		}
+
 		await expect(option).toBeVisible({ timeout: 20000 })
 		await option.click()
 	}
