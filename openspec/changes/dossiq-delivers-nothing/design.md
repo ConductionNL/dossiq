@@ -69,7 +69,8 @@ The publication entry's `delivery` block is the single home:
 }
 ```
 
-`DeliveryConcludedListener` matches by `correlationId` (channel as fallback), is idempotent on a
+`DeliveryConcludedListener` matches by `correlationId` (every conclusion originates from a
+dispatched request, which always carried one), is idempotent on a
 repeated terminal state, and never advances on a non-terminal status. A replayed integriq message
 that later succeeds simply supersedes `abandoned` with `delivered` — last terminal state wins,
 which matches integriq's replay semantics.

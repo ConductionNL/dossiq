@@ -36,16 +36,22 @@ use OCP\EventDispatcher\Event;
 class DeliveryRequestedEvent extends Event {
 	/**
 	 * Whether an Integriq listener handled the request.
+	 *
+	 * @var bool
 	 */
 	private bool $handled = false;
 
 	/**
 	 * Uuid of the persisted CloudEvent `event` object, once handled.
+	 *
+	 * @var string|null
 	 */
 	private ?string $resultId = null;
 
 	/**
 	 * How many active event subscriptions matched the delivery request.
+	 *
+	 * @var int
 	 */
 	private int $matchedSubscriptions = 0;
 

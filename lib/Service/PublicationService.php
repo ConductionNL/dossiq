@@ -39,6 +39,8 @@ use Throwable;
 
 /**
  * Service for besluitvorming publication.
+ *
+ * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
 class PublicationService {
 	/**
