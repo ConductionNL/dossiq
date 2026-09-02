@@ -329,7 +329,11 @@ class RoutingTableEvaluator {
 		$value = (string)($condition['value'] ?? '');
 
 		if (array_key_exists($type, self::EQUALITY_COLUMNS) === true) {
-			$literal = ($type === 'day_of_week') ? strtolower($value) : $value;
+			$literal = $value;
+			if ($type === 'day_of_week') {
+				// The legacy comparison lower-cases both sides.
+				$literal = strtolower($value);
+			}
 
 			return $this->recordEquality(equalities: $equalities, column: self::EQUALITY_COLUMNS[$type], value: $literal);
 		}
