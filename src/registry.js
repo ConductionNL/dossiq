@@ -42,7 +42,6 @@ import InitiatorSection from './components/initiator/InitiatorSection.vue'
 // an OR integration leaf (decidesk-decisions) on the case-detail sidebar.
 // @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
 import BesluitvormingLeafTab from './components/tabs/BesluitvormingLeafTab.vue'
-import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
@@ -295,11 +294,10 @@ const registry = {
 		component: CaseTasksTab,
 		_note: 'Tasks where task.case === parent.id',
 	},
-	CaseDecisionsTab: {
-		kind: 'page',
-		component: CaseDecisionsTab,
-		_note: 'Decisions where decision.case === parent.id',
-	},
+	// CaseDecisionsTab was retired by dossiq-decisions-to-decidiq: it offered
+	// create/edit/delete of local decision records while mounted on no page.
+	// Decisions are authored in decidiq (besluitvorming leaf); the read-only
+	// case-decisions widget displays the outcomes stored on the case.
 	CaseDocumentsTab: {
 		kind: 'page',
 		component: CaseDocumentsTab,
