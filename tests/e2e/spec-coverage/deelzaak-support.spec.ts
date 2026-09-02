@@ -88,7 +88,11 @@ async function ensureCaseId(page): Promise<string | null> {
 
 /** Open the Cases list, or skip when it does not render. */
 async function openCasesListOrSkip(page) {
-	await navTo(page, /^(All issues|Alle zaken)$/).catch(() => {})
+	// NOT wrapped in `.catch(() => {})`. A missing sidebar label is a rename
+	// this suite has to notice, and swallowing it here would run every test
+	// below against whatever the Dashboard happens to render — green, and
+	// asserting nothing. The skip below is for absent DATA, not a broken menu.
+	await navTo(page, /^(All cases|Alle zaken)$/)
 	await dismissSupportDialog(page).catch(() => {})
 	const caseId = await ensureCaseId(page)
 	if (!caseId) return false

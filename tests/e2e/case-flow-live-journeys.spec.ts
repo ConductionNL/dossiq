@@ -230,7 +230,7 @@ async function openCasesList(page: Page): Promise<void> {
 	await page.goto('/index.php/apps/dossiq/cases', {
 		waitUntil: 'domcontentloaded',
 	})
-	const nav = page.getByRole('link', { name: /^(All issues|Alle zaken)$/ }).first()
+	const nav = page.getByRole('link', { name: /^(All cases|Alle zaken)$/ }).first()
 	await nav.waitFor({ state: 'visible', timeout: 20_000 })
 	await nav.click()
 }

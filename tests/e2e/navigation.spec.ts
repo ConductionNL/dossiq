@@ -21,7 +21,7 @@ test.describe('Sidebar Navigation', () => {
 		//
 		// "Dashboard" is now the ONLY top-level visible leaf. dossiq#1646
 		// gathered the work surfaces under a "My work" GROUP, and "Cases" moved
-		// into it as "All issues" — so it is rendered but `display:none` until
+		// into it as "All cases" — so it is rendered but `display:none` until
 		// the group is expanded, and is asserted with the other collapsed
 		// leaves below. The rest render inside collapsed groups too.
 		for (const label of ['Dashboard']) {
@@ -92,7 +92,7 @@ test.describe('Sidebar Navigation', () => {
 			await expect(link).toHaveCount(1)
 			await expect(link).toHaveText(new RegExp(label))
 		}
-		await byHref('/index.php/apps/dossiq/cases', 'All issues')
+		await byHref('/index.php/apps/dossiq/cases', 'All cases')
 		await byHref('/index.php/apps/dossiq/my-work', 'Assigned to me')
 		await byHref('/index.php/apps/dossiq/workflow-board', 'Workflow board')
 	})
@@ -126,7 +126,7 @@ test.describe('Sidebar Navigation', () => {
 
 		const nav = sidebarNav(page)
 
-		// "All issues" (formerly "Cases") now sits INSIDE the collapsed "My
+		// "All cases" (formerly "Cases", briefly "All issues") now sits INSIDE the collapsed "My
 		// work" group, so it cannot be clicked until the group is expanded:
 		// Playwright waits for actionability on a `display:none` element and
 		// then fails with a timeout naming the element rather than the cause.
@@ -137,7 +137,7 @@ test.describe('Sidebar Navigation', () => {
 		await nav.getByRole('link', { name: 'My work', exact: true }).click()
 
 		const casesLink = nav.getByRole('link', {
-			name: /^(All issues|Alle zaken)$/,
+			name: /^(All cases|Alle zaken)$/,
 		})
 		await expect(casesLink).toBeVisible({ timeout: 15_000 })
 		await casesLink.click()

@@ -41,6 +41,18 @@ class LhsMatrixDecisionTableMigratorTest extends TestCase {
 	private array $written = [];
 
 	/**
+	 * Decision tables the fake register already holds.
+	 *
+	 * Separate from $matrices because the migrator reads TWO schemas and the
+	 * guard it grew depends on telling them apart. A fake that answered both
+	 * with the same rows could not express "a table already exists", which is
+	 * exactly the state the overwrite guard exists for.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private array $tables = [];
+
+	/**
 	 * Build the migrator over a fake object service.
 	 *
 	 * @param boolean $withRunAs Whether the store can scope to a user.
@@ -50,8 +62,9 @@ class LhsMatrixDecisionTableMigratorTest extends TestCase {
 	private function migrator(bool $withRunAs = true): LhsMatrixDecisionTableMigrator {
 		$matrices = &$this->matrices;
 		$written = &$this->written;
+		$tables = &$this->tables;
 
-		$objectService = new class($matrices, $written, $withRunAs) {
+		$objectService = new class($matrices, $written, $tables, $withRunAs) {
 			/**
 			 * @param array<int, array<string, mixed>> $matrices  Matrices.
 			 * @param array<int, array<string, mixed>> $written   Writes.
@@ -60,6 +73,7 @@ class LhsMatrixDecisionTableMigratorTest extends TestCase {
 			public function __construct(
 				private array &$matrices,
 				private array &$written,
+				private array &$tables,
 				private bool $withRunAs,
 			) {
 			}
@@ -82,6 +96,14 @@ class LhsMatrixDecisionTableMigratorTest extends TestCase {
 			 * @return array<int, array<string, mixed>> The rows.
 			 */
 			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+				// SCHEMA-AWARE on purpose. The migrator reads matrices from one
+				// schema and existing decision tables from another; a fake that
+				// returned the same rows for both would hand the overwrite
+				// guard a list of matrices and it would never fire.
+				if ($schema === 'decisionTable') {
+					return $this->tables;
+				}
+
 				return $this->matrices;
 			}
 
@@ -189,18 +211,107 @@ class LhsMatrixDecisionTableMigratorTest extends TestCase {
 	}//end testTheTableDeclaresUnique()
 
 	/**
-	 * The projection arrives disabled.
+	 * The projection arrives ENABLED.
+	 *
+	 * INVERTED, not deleted. This test used to assert `enabled === false`, and
+	 * it was correct when written: phase 1 projected the table while the matrix
+	 * was still the lookup, and a table that also answered would have been a
+	 * second source of truth for an enforcement decision.
+	 *
+	 * Phase 2 removed that condition. `LhsRecommendationService` now evaluates
+	 * the table and reads the matrix only where no projection exists, so a
+	 * disabled table is not the cautious choice: it silently means the matrix
+	 * answers instead, and the migration becomes a no-op that reports success.
+	 *
+	 * The test is kept rather than dropped because the flag still matters. It
+	 * just matters the other way round now.
 	 *
 	 * @return void
 	 */
-	public function testTheProjectionArrivesDisabled(): void {
+	public function testTheProjectionArrivesEnabled(): void {
 		$this->matrices = [$this->matrix()];
 
 		$this->migrator()->migrate($this->user(), false);
 
-		$this->assertFalse($this->written[0]['enabled']);
+		$this->assertTrue($this->written[0]['enabled']);
 
-	}//end testTheProjectionArrivesDisabled()
+	}//end testTheProjectionArrivesEnabled()
+
+	/**
+	 * The projected table, as the fake register would hold it after a run.
+	 *
+	 * @param array<int, array<string, mixed>>|null $rules Override the rules.
+	 *
+	 * @return array<string, mixed> The stored table.
+	 */
+	private function storedTable(?array $rules = null): array {
+		$this->matrices = [$this->matrix()];
+		$this->migrator()->migrate($this->user(), false);
+		$table = $this->written[0];
+		$this->written = [];
+
+		$table['id'] = 'table-1';
+		if ($rules !== null) {
+			$table['rules'] = $rules;
+		}
+
+		return $table;
+
+	}//end storedTable()
+
+	/**
+	 * A re-run UPDATES the existing table instead of writing a second one.
+	 *
+	 * The migrator used to saveObject() with no id, so every run minted
+	 * another table carrying the same provenance marker. The lookup resolves a
+	 * table BY that marker and takes the first match, so which of the
+	 * duplicates answered an enforcement question was arbitrary.
+	 *
+	 * @return void
+	 */
+	public function testARerunUpdatesTheExistingTable(): void {
+		$existing = $this->storedTable();
+		$this->tables = [$existing];
+		$this->matrices = [$this->matrix()];
+
+		$summary = $this->migrator()->migrate($this->user(), false);
+
+		$this->assertCount(1, $this->written, 'a re-run must not mint a second table');
+		$this->assertSame('table-1', $this->written[0]['id'], 'the write must target the existing table');
+		$this->assertSame(1, $summary['updated']);
+		$this->assertSame(0, $summary['created']);
+
+	}//end testARerunUpdatesTheExistingTable()
+
+	/**
+	 * 🔴 A table whose rules were edited is NOT overwritten.
+	 *
+	 * The projection is one-way, and the matrix no longer has a settings page.
+	 * A re-run that rewrote edited rules would replace an administrator's work
+	 * with a source they cannot even read.
+	 *
+	 * @return void
+	 */
+	public function testAnEditedTableIsRefusedRatherThanOverwritten(): void {
+		$edited = $this->storedTable(
+			rules: [
+				[
+					'id' => 'gering:goedwillend:burger',
+					'inputEntries' => ['gering', 'goedwillend', 'burger'],
+					'outputEntries' => ['prosecute'],
+				],
+			]
+		);
+		$this->tables = [$edited];
+		$this->matrices = [$this->matrix()];
+
+		$summary = $this->migrator()->migrate($this->user(), false);
+
+		$this->assertSame([], $this->written, 'an edited table must not be written over');
+		$this->assertSame(1, $summary['skipped']);
+		$this->assertStringContainsString('edited', $summary['rows'][0]['detail']);
+
+	}//end testAnEditedTableIsRefusedRatherThanOverwritten()
 
 	/**
 	 * 🔴 A cell naming a value absent from its axis refuses the whole matrix.
