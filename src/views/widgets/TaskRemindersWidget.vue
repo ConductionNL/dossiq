@@ -27,6 +27,14 @@ import { initializeStores } from '../../store/store.js'
 import { getTaskDueReminders } from '../../utils/dashboardHelpers.js'
 import { navigateTo, SIGNAL_COLUMNS } from './signalTable.js'
 
+/**
+ * How many rows the widget shows. Large enough that overdue tasks, which are
+ * listed first, cannot crowd out every task that is merely due soon.
+ *
+ * @type {number}
+ */
+const MAX_REMINDERS = 10
+
 export default {
 	name: 'TaskRemindersWidget',
 	components: {
@@ -86,7 +94,9 @@ export default {
 							}),
 				targetUrl: generateUrl(`/apps/dossiq/tasks/${item.id}`),
 			}))
-			return [...overdueItems, ...dueSoonItems].slice(0, 5)
+			// Same cap rule as DeadlineAlertsWidget: overdue tasks are listed
+			// first, so too small a cap hides every task that is merely due soon.
+			return [...overdueItems, ...dueSoonItems].slice(0, MAX_REMINDERS)
 		},
 	},
 
