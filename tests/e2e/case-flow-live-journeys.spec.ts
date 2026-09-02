@@ -659,8 +659,15 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 		expect(names.get(String(closed.status))).toBe('Afgehandeld')
 		await expect(page.locator('body')).toContainText('Afgehandeld')
 
+		// `stopped` is the platform's word for a run that reached its end
+		// node: `openregister.end` (EndNode) throws FlowStop when items reach
+		// it, and FlowEngine maps FlowStop to STATUS_STOPPED. STATUS_COMPLETED
+		// only marks a run whose marking drained without any stop node, which
+		// this flow, ending deliberately at `end`, never does. Asserting
+		// `completed` here contradicted that contract and failed a run that
+		// had in fact closed the case correctly.
 		const run = await getJson(api, `${OR}/flow-runs/${completeRun}`)
-		expect(run.status, await describeRun(api, completeRun)).toBe('completed')
+		expect(run.status, await describeRun(api, completeRun)).toBe('stopped')
 	})
 
 	test('And the run reports the objects it touched, grouped by node (7.3)', async () => {

@@ -19,6 +19,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
+use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\SetStatusHandler;
@@ -76,9 +77,19 @@ class SetStatusHandlerTest extends TestCase {
 			public function saveObject(array $object, string $register, string $schema): ObjectEntity {
 				$this->sink = $object;
 
+				return $this->entity();
+			}
+
+			public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): ObjectEntity {
+				$this->sink = array_merge(($this->sink ?? []), $data);
+
+				return $this->entity();
+			}
+
+			private function entity(): ObjectEntity {
 				$entity = new ObjectEntity();
 				$entity->setUuid('case-entity-uuid');
-				$entity->setObject($object);
+				$entity->setObject(($this->sink ?? []));
 
 				return $entity;
 			}
@@ -129,7 +140,7 @@ class SetStatusHandlerTest extends TestCase {
 	 * @return SetStatusHandler The handler under test.
 	 */
 	private function handler(SettingsService $settings, StatusTypeLookup $lookup): SetStatusHandler {
-		return new SetStatusHandler($settings, $lookup, $this->scope($settings), new NullLogger());
+		return new SetStatusHandler($settings, $lookup, $this->scope($settings), new CaseFieldWriter(), new NullLogger());
 	}//end handler()
 
 	public function testTheCaseIsMovedToTheResolvedStatus(): void {

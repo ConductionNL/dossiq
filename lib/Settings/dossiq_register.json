@@ -1685,6 +1685,36 @@
                         "title": "Decision document",
                         "description": "The rendered decision text the case flow's document step (besluit-document, dossiq.action.mergeTemplate) writes before the case reaches its final status. Declared here because the store strips what the schema does not declare: without this property the merge would report success while the document silently never persisted, and the case would close undocumented. Empty for cases the flow has not decided.",
                         "visible": false
+                    },
+                    "aanvulling": {
+                        "type": "object",
+                        "title": "Supplement answer",
+                        "description": "The signal payload of the applicant's supplement task (ask-indiener, signalKey aanvulling). The flow stamps it onto the case when the task completes. Declared because the store strips what the schema does not declare: an undeclared signal field is silently gone the moment any writer saves the case.",
+                        "visible": false
+                    },
+                    "voorbereiding": {
+                        "type": "object",
+                        "title": "Preparation answer",
+                        "description": "The signal payload of the employee's preparation task (task-behandelaar, signalKey voorbereiding). Declared because the store strips what the schema does not declare.",
+                        "visible": false
+                    },
+                    "toetsRegisterB": {
+                        "type": "object",
+                        "title": "Register B review",
+                        "description": "The outcome Decidiq returns for the register B review (decide-register-b, signalKey toetsRegisterB). Declared because the store strips what the schema does not declare.",
+                        "visible": false
+                    },
+                    "tweedeToets": {
+                        "type": "object",
+                        "title": "Second review",
+                        "description": "The outcome Decidiq returns for the second substantive review (decide-tweede-toets, signalKey tweedeToets). Declared because the store strips what the schema does not declare.",
+                        "visible": false
+                    },
+                    "commissieBesluit": {
+                        "type": "object",
+                        "title": "Commission decision",
+                        "description": "The outcome Decidiq returns for the planning commission's final decision (decide-commissie, signalKey commissieBesluit). The document step's template reads its decision field. Declared because the store strips what the schema does not declare: this field was measured being silently dropped on the closure rig while the run reported success.",
+                        "visible": false
                     }
                 },
                 "searchable": true

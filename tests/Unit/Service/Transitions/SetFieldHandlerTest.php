@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
+use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\SetFieldHandler;
@@ -49,6 +50,7 @@ class SetFieldHandlerTest extends TestCase {
 		$handler = new SetFieldHandler(
 			settingsService: $this->createMock(SettingsService::class),
 			runAsScope: $this->bareScope(),
+			caseWriter: new CaseFieldWriter(),
 			logger: new NullLogger(),
 		);
 
@@ -69,7 +71,7 @@ class SetFieldHandlerTest extends TestCase {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn(null);
 
-		$handler = new SetFieldHandler($settings, $this->bareScope(), new NullLogger());
+		$handler = new SetFieldHandler($settings, $this->bareScope(), new CaseFieldWriter(), new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'setField', 'field' => 'endDate'],
@@ -98,6 +100,11 @@ class SetFieldHandlerTest extends TestCase {
 				$this->recorded = $object;
 				return $object;
 			}
+
+			public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): array {
+				$this->recorded = array_merge((array) $this->recorded, $data);
+				return $this->recorded;
+			}
 		};
 
 		$settings = $this->createMock(SettingsService::class);
@@ -111,7 +118,7 @@ class SetFieldHandlerTest extends TestCase {
 			}
 		);
 
-		$handler = new SetFieldHandler($settings, $this->bareScope(), new NullLogger());
+		$handler = new SetFieldHandler($settings, $this->bareScope(), new CaseFieldWriter(), new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'setField', 'field' => 'result', 'value' => 'toegewezen'],
@@ -141,6 +148,11 @@ class SetFieldHandlerTest extends TestCase {
 				$this->recorded = $object;
 				return $object;
 			}
+
+			public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): array {
+				$this->recorded = array_merge((array) $this->recorded, $data);
+				return $this->recorded;
+			}
 		};
 
 		$settings = $this->createMock(SettingsService::class);
@@ -154,7 +166,7 @@ class SetFieldHandlerTest extends TestCase {
 			}
 		);
 
-		$handler = new SetFieldHandler($settings, $this->bareScope(), new NullLogger());
+		$handler = new SetFieldHandler($settings, $this->bareScope(), new CaseFieldWriter(), new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'setField', 'field' => 'endDate', 'value' => '__now__'],
@@ -178,6 +190,10 @@ class SetFieldHandlerTest extends TestCase {
 			public function saveObject(array $object, string $register, string $schema): array {
 				throw new RuntimeException('boom');
 			}
+
+			public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): array {
+				throw new RuntimeException('boom');
+			}
 		};
 
 		$settings = $this->createMock(SettingsService::class);
@@ -191,7 +207,7 @@ class SetFieldHandlerTest extends TestCase {
 			}
 		);
 
-		$handler = new SetFieldHandler($settings, $this->bareScope(), new NullLogger());
+		$handler = new SetFieldHandler($settings, $this->bareScope(), new CaseFieldWriter(), new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'setField', 'field' => 'x', 'value' => 'y'],
