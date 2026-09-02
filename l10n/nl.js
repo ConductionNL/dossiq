@@ -3437,7 +3437,15 @@ OC.L10N.register(
         "Files": "Bestanden",
         "Mail": "Mail",
         "Mail & messages": "Mail en berichten",
-        "Log hours": "Uren boeken"
+        "Log hours": "Uren boeken",
+        "Always required": "Altijd verplicht",
+        "Choice from a list": "Keuze uit een lijst",
+        "Email address": "E-mailadres",
+        "Required from {status}": "Verplicht vanaf {status}",
+        "Required from a later status": "Verplicht vanaf een latere status",
+        "Required from status": "Verplicht vanaf status",
+        "Structured data": "Gestructureerde gegevens",
+        "Yes or no": "Ja of nee"
     },
     "nplurals=2; plural=(n != 1);"
 )

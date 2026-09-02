@@ -90,7 +90,8 @@
 											:value="editForm.propertyType"
 											class="format-select"
 											@change="
-												editForm.propertyType = $event.target.value
+												editForm.propertyType =
+													$event.target.value
 											">
 											<option value="string">
 												{{ t('dossiq', 'Text') }}
@@ -111,7 +112,9 @@
 												{{ t('dossiq', 'Link') }}
 											</option>
 											<option value="enum">
-												{{ t('dossiq', 'Choice from a list') }}
+												{{
+													t('dossiq', 'Choice from a list')
+												}}
 											</option>
 											<option value="json">
 												{{ t('dossiq', 'Structured data') }}
@@ -218,7 +221,9 @@
 								<select
 									:value="newForm.propertyType"
 									class="format-select"
-									@change="newForm.propertyType = $event.target.value">
+									@change="
+										newForm.propertyType = $event.target.value
+									">
 									<option value="string">
 										{{ t('dossiq', 'Text') }}
 									</option>
@@ -313,14 +318,27 @@
 </template>
 
 <script>
-import { NcButton, NcCheckboxRadioSwitch, NcLoadingIcon, NcTextField } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcCheckboxRadioSwitch,
+	NcLoadingIcon,
+	NcTextField,
+} from '@nextcloud/vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
 import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 
 export default {
 	name: 'PropertiesTab',
-	components: { NcButton, NcCheckboxRadioSwitch, NcLoadingIcon, NcTextField, PencilIcon, DeleteIcon },
+	components: {
+		NcButton,
+		NcCheckboxRadioSwitch,
+		NcLoadingIcon,
+		NcTextField,
+		PencilIcon,
+		DeleteIcon,
+	},
+
 	props: {
 		caseTypeId: { type: String, default: null },
 		isCreate: { type: Boolean, default: false },
@@ -440,7 +458,9 @@ export default {
 		requiredLabel(pd) {
 			if (pd.isRequired) return t('dossiq', 'Always required')
 			if (!pd.requiredAtStatus) return t('dossiq', 'Optional')
-			const status = this.statusTypes.find((st) => st.id === pd.requiredAtStatus)
+			const status = this.statusTypes.find(
+				(st) => st.id === pd.requiredAtStatus,
+			)
 			return status
 				? t('dossiq', 'Required from {status}', { status: status.name })
 				: t('dossiq', 'Required from a later status')

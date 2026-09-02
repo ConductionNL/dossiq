@@ -3437,7 +3437,15 @@ OC.L10N.register(
         "Log hours": "Log hours",
         "Mail": "Mail",
         "Mail & messages": "Mail & messages",
-        "Time left": "Time left"
+        "Time left": "Time left",
+        "Always required": "Always required",
+        "Choice from a list": "Choice from a list",
+        "Email address": "Email address",
+        "Required from {status}": "Required from {status}",
+        "Required from a later status": "Required from a later status",
+        "Required from status": "Required from status",
+        "Structured data": "Structured data",
+        "Yes or no": "Yes or no"
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -33,12 +33,24 @@ const DASHBOARD_URL = '/apps/dossiq/'
 
 /** The nine fields the New case action declares in the manifest. */
 const CREATE_FIELDS = [
-	'caseType', 'title', 'description', 'assignee', 'priority',
-	'confidentiality', 'intakeChannel', 'startDate', 'plannedEndDate',
+	'caseType',
+	'title',
+	'description',
+	'assignee',
+	'priority',
+	'confidentiality',
+	'intakeChannel',
+	'startDate',
+	'plannedEndDate',
 ]
 
 /** Properties the schema marks `visible: false`; no surface may render them. */
-const HIDDEN_FIELDS = ['qualityScore', 'casePlanState', 'statusHistory', 'portalSubject']
+const HIDDEN_FIELDS = [
+	'qualityScore',
+	'casePlanState',
+	'statusHistory',
+	'portalSubject',
+]
 
 const CASE_TYPE_TITLE = `${RUN_PREFIX} Subsidie`
 const CEILING = `${RUN_PREFIX} Plafond`
@@ -90,7 +102,12 @@ test.describe('New case dialog', () => {
 		if (!api) return
 		// caseProperty before propertyDefinition before caseType: a value row
 		// references both, and deleting the definition first leaves it dangling.
-		await cleanupRunObjects(api, token, ['caseProperty', 'case', 'propertyDefinition', 'caseType'])
+		await cleanupRunObjects(api, token, [
+			'caseProperty',
+			'case',
+			'propertyDefinition',
+			'caseType',
+		])
 		await api.dispose()
 	})
 
@@ -102,13 +119,19 @@ test.describe('New case dialog', () => {
 		await page.goto(DASHBOARD_URL)
 		await expect(page).not.toHaveURL(/login/, { timeout: 15000 })
 		await page.getByRole('button', { name: 'New case', exact: true }).click()
-		const dialog = page.locator('[data-testid-modal="cn-form-dialog"], [data-testid="cn-modal"]').first()
+		const dialog = page
+			.locator(
+				'[data-testid-modal="cn-form-dialog"], [data-testid="cn-modal"]',
+			)
+			.first()
 		await expect(dialog).toBeVisible({ timeout: 20000 })
 		return dialog
 	}
 
 	// @e2e openspec/changes/friendly-case-create-form/tasks.md
-	test('opens the plain form, not the properties and JSON table', async ({ page }) => {
+	test('opens the plain form, not the properties and JSON table', async ({
+		page,
+	}) => {
 		const dialog = await openDialog(page)
 
 		// The advanced dialog's tell is its tab strip. A handler filing a case
@@ -130,7 +153,12 @@ test.describe('New case dialog', () => {
 		}
 		// The 44 the button does not ask for, sampled at the ones that made the
 		// old dialog unreadable.
-		for (const key of [...HIDDEN_FIELDS, 'archiveNomination', 'workflowTemplate', 'result']) {
+		for (const key of [
+			...HIDDEN_FIELDS,
+			'archiveNomination',
+			'workflowTemplate',
+			'result',
+		]) {
 			await expect(
 				dialog.locator(`[data-cn-field="${key}"]`),
 				`${key} is not a create-time field`,
@@ -139,7 +167,9 @@ test.describe('New case dialog', () => {
 	})
 
 	// @e2e openspec/changes/friendly-case-create-form/tasks.md
-	test('adds the chosen case type own questions, and drops them again on a change', async ({ page }) => {
+	test('adds the chosen case type own questions, and drops them again on a change', async ({
+		page,
+	}) => {
 		const dialog = await openDialog(page)
 
 		// Nothing before a case type is chosen: the questions belong to a type.
@@ -157,7 +187,10 @@ test.describe('New case dialog', () => {
 		const dialog = await openDialog(page)
 		const title = `${RUN_PREFIX} Aanvraag`
 
-		await dialog.locator('[data-cn-field="title"]').getByRole('textbox').fill(title)
+		await dialog
+			.locator('[data-cn-field="title"]')
+			.getByRole('textbox')
+			.fill(title)
 		await dialog.locator('[data-cn-field="caseType"]').click()
 		await page.getByRole('option', { name: CASE_TYPE_TITLE }).click()
 		await expect(dialog.getByText(CEILING)).toBeVisible({ timeout: 15000 })
@@ -184,7 +217,10 @@ test.describe('New case dialog', () => {
 				case: objectId(created),
 				_limit: '50',
 			})
-			expect(answers.length, 'the case type answer should have been written').toBeGreaterThan(0)
+			expect(
+				answers.length,
+				'the case type answer should have been written',
+			).toBeGreaterThan(0)
 			expect(String(answers[0].value)).toBe('50000')
 		}).toPass({ timeout: 30000 })
 	})
