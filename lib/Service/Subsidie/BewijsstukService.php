@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Service\Subsidie;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -44,6 +45,9 @@ use Throwable;
  * @spec openspec/changes/subsidieverlening-keten/specs.md
  */
 class BewijsstukService {
+
+	use SearchesObjects;
+
 	/**
 	 * Allowed bewijsstuk types per source phase (REQ-SUB-007).
 	 *
@@ -188,7 +192,7 @@ class BewijsstukService {
 		}
 
 		try {
-			return $objectService->saveObject(object: $record, register: $register, schema: $schema);
+			return ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $record) ?? $record);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq subsidie: bewijsstuk create failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon bewijsstuk niet opslaan');

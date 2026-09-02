@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Service\Subsidie;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -49,6 +50,9 @@ use Throwable;
  * @spec openspec/changes/subsidieverlening-keten/specs.md
  */
 class SubsidieService {
+
+	use SearchesObjects;
+
 	/**
 	 * Canonical aanvraag status values.
 	 *
@@ -240,7 +244,7 @@ class SubsidieService {
 		}
 
 		try {
-			return $objectService->saveObject(object: $record, register: $register, schema: $schema);
+			return ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $record) ?? $record);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq subsidie: createAanvraag failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon subsidieaanvraag niet aanmaken');
@@ -266,8 +270,8 @@ class SubsidieService {
 			throw new OCSBadRequestException('Onbekende status: ' . $toStatus);
 		}
 
-		$current = $objectService->find($id, register: $register, schema: $schema);
-		if (is_array($current) === false) {
+		$current = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: (string)$id);
+		if ($current === null) {
 			throw new OCSBadRequestException('Subsidieaanvraag niet gevonden');
 		}
 
@@ -277,7 +281,13 @@ class SubsidieService {
 		}
 
 		try {
-			return $objectService->saveObject(object: ['status' => $toStatus], register: $register, schema: $schema, uuid: (string)$id);
+			return ($this->saveObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				object: ['status' => $toStatus],
+				uuid: (string)$id
+			) ?? array_merge($current, ['status' => $toStatus]));
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq subsidie: transitionAanvraag failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon status niet bijwerken');

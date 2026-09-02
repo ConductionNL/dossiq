@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service\Subsidie;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -43,6 +44,9 @@ use Throwable;
  * @spec openspec/changes/subsidieverlening-keten/specs.md
  */
 class TerugvorderingService {
+
+	use SearchesObjects;
+
 	/**
 	 * Default bezwaartermijn (objection window) in weeks (AWB 6:7).
 	 */
@@ -177,7 +181,7 @@ class TerugvorderingService {
 		];
 
 		try {
-			return $objectService->saveObject(object: $record, register: $register, schema: $schema);
+			return ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $record) ?? $record);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq subsidie: createClawbackCase failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon terugvordering niet aanmaken');
