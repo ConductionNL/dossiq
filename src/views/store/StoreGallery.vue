@@ -247,6 +247,13 @@ export default {
 		this.search()
 	},
 
+	/**
+	 * Cancel a pending debounced search.
+	 *
+	 * @return {void}
+	 *
+	 * @spec openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
+	 */
 	beforeUnmount() {
 		if (this.searchTimer !== null) {
 			clearTimeout(this.searchTimer)

@@ -366,15 +366,6 @@
       "order": 96
     },
     {
-      "id": "LhsMatricesMenu",
-      "label": "Enforcement strategy",
-      "icon": "Tune",
-      "route": "LhsMatrices",
-      "section": "settings",
-      "order": 96,
-      "permission": "admin"
-    },
-    {
       "id": "BezwaarCommitteesMenu",
       "label": "Objection advisory committees",
       "icon": "FileAlertOutline",
@@ -3465,96 +3456,6 @@
             "gridY": 0,
             "gridWidth": 4,
             "gridHeight": 5
-          }
-        ],
-        "sidebar": {
-          "enabled": true,
-          "showMetadata": true,
-          "tabs": [
-            {
-              "id": "audit",
-              "label": "History",
-              "icon": "History",
-              "widgets": [
-                {
-                  "type": "audit"
-                }
-              ]
-            },
-            {
-              "id": "version-history",
-              "label": "Version history",
-              "icon": "FileCompare",
-              "component": "VersionHistoryLeafTab"
-            }
-          ]
-        }
-      }
-    },
-    {
-      "id": "LhsMatrices",
-      "route": "/settings/lhs-matrices",
-      "type": "index",
-      "title": "Enforcement strategy",
-      "permission": "admin",
-      "config": {
-        "register": "dossiq",
-        "schema": "lhsMatrix",
-        "columns": [
-          "name",
-          "version",
-          "active",
-          "createdAt"
-        ],
-        "showViewAction": false,
-        "actions": [
-          {
-            "id": "view",
-            "label": "View",
-            "icon": "EyeOutline",
-            "handler": "navigate",
-            "route": "LhsMatrixDetail",
-            "type": "handler"
-          }
-        ],
-        "sidebar": {
-          "enabled": true,
-          "showMetadata": true
-        },
-        "documentationUrl": "https://procest.conduction.nl"
-      }
-    },
-    {
-      "id": "LhsMatrixDetail",
-      "route": "/settings/lhs-matrices/:id",
-      "type": "detail",
-      "title": "LHS Matrix",
-      "permission": "admin",
-      "config": {
-        "register": "dossiq",
-        "schema": "lhsMatrix",
-        "_note": "CONFIG/TECHNICAL archetype (Landelijke Handhavingsstrategie intervention matrix — versioned, immutable enforcement policy). Admin-only, no comms/documents. The Data widget carries header + axes + substance in one form (name, version, active, ernstAxis, gedragAxis, actorTypeAxis, createdAt, the cells[] grid ernst×gedrag×actorType→interventie, and the domain auditTrail[] of per-version actor/notes). lhsRecommendation records reference this matrix by version, not a FK, so no object-list is scoped here. No content leaves, no status lifecycle (active is a boolean). Register-level audit history is a sidebar tab.",
-        "documentationUrl": "https://procest.conduction.nl",
-        "widgets": [
-          {
-            "id": "lhsmatrix-data",
-            "type": "data",
-            "title": "LHS Matrix",
-            "icon": "TableColumn",
-            "content": {
-              "columns": 2
-            }
-          }
-        ],
-        "layout": [
-          {
-            "id": "1",
-            "widgetId": "lhsmatrix-data",
-            "gridX": 0,
-            "gridY": 0,
-            "gridWidth": 12,
-            "gridHeight": 5,
-            "showTitle": false
           }
         ],
         "sidebar": {

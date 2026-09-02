@@ -73,11 +73,12 @@ const SETTINGS_PAGES: Array<{ name: string; route: string; addBtn: string }> = [
 	// same single engine. That surface has its own spec — flows.spec.ts — rather
 	// than an entry here, because its create control is a canvas action, not the
 	// "Add X" button every row in this table asserts on.
-	{
-		name: 'Enforcement strategy',
-		route: '/settings/lhs-matrices',
-		addBtn: 'Add LHS Matrix',
-	},
+	// 'Enforcement strategy' (/settings/lhs-matrices) is RETIRED. The LHS
+	// matrix is a three-axis lookup yielding one value, which is a decision
+	// table, and OpenRegister already carries one evaluator for those.
+	// LhsRecommendationService now evaluates the projected table and falls back
+	// to the matrix only where no projection exists; authoring lives in the
+	// Decision Tables (DMN) admin tab.
 	{
 		name: 'LHS recommendations',
 		route: '/settings/lhs-recommendations',

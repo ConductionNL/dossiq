@@ -191,4 +191,49 @@ class LhsAxisVocabularyTest extends TestCase {
 			);
 		}
 	}//end testTheRenameMapLeavesTheActorTypeAxisAlone()
+
+	/**
+	 * The DEMO objects use the axis vocabulary too.
+	 *
+	 * The third declaration site, and the one this file originally missed.
+	 * Two were fixed by hand and gate-101 found the third: a seeded
+	 * `lhsRecommendation` still carried `government`, so a fresh instance
+	 * shipped a demo record the enforcement lookup could never resolve.
+	 *
+	 * One fix is not the class. This asserts every site rather than the two
+	 * that happened to be noticed.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 */
+	public function testDemoRecommendationsUseTheAxisVocabulary(): void {
+		$axis = $this->settingsJson('seed/lhs-matrix-2024.json')['actorTypeAxis'];
+		$mock = $this->settingsJson('dossiq_mock_register.json');
+
+		$checked = 0;
+		foreach (($mock['components']['objects'] ?? []) as $object) {
+			if (is_array($object) === false
+				|| (($object['@self']['schema'] ?? null) !== 'lhsRecommendation')
+			) {
+				continue;
+			}
+
+			$checked++;
+			$this->assertContains(
+				($object['actorType'] ?? null),
+				$axis,
+				'a demo lhsRecommendation carries an actorType the LHS matrix axis does not, '
+				. 'so the enforcement lookup could never resolve it'
+			);
+		}
+
+		$this->assertGreaterThan(
+			0,
+			$checked,
+			'no demo lhsRecommendation was inspected — a test that checks nothing passes for '
+			. 'the wrong reason, so the shape of the mock register has moved'
+		);
+
+	}//end testDemoRecommendationsUseTheAxisVocabulary()
 }//end class

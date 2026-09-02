@@ -40,9 +40,17 @@ use Throwable;
  * decision table cannot hide that the same way: its inputs are declared, and
  * the evaluator refuses a table it cannot resolve rather than silently missing.
  *
- * 🔴 THE PROJECTION ARRIVES DISABLED, like its two siblings. The matrix still
- * drives recommendations through LhsRecommendationService; a table that also
- * answered would be a second source of truth for an enforcement decision.
+ * 🔴 THE PROJECTION NOW ARRIVES ENABLED, which is what phase 2 means and where
+ * this parts company with its two siblings. `LhsRecommendationService` asks the
+ * table first and falls back to the matrix only where no projection exists, so
+ * a disabled table would not be cautious: it would make the migration a no-op
+ * that reports success.
+ *
+ * A re-run RESOLVES the existing table by marker and updates it, rather than
+ * writing a second one. If its rules have been edited since projection the run
+ * REFUSES rather than overwriting: the projection is one-way, and the matrix no
+ * longer has a settings page, so an overwrite would replace an administrator's
+ * work with a source they cannot even read.
  *
  * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
  */
@@ -188,8 +196,40 @@ class LhsMatrixDecisionTableMigrator {
 			return ['outcome' => 'skipped', 'marker' => $marker, 'detail' => 'a cell names a value that is not on its axis'];
 		}
 
+		$existing = $this->existingTable(
+			objectService: $objectService,
+			register: $register,
+			tableSchema: $tableSchema,
+			marker: $marker
+		);
+
+		$outcome = 'created';
+		if ($existing !== null) {
+			// 🔴 AN EDITED TABLE IS NOT OVERWRITTEN.
+			//
+			// The projection is ONE-WAY. Once the table is the surface an
+			// administrator authors enforcement through, a re-run that rewrote
+			// its rules would silently discard their work and replace it with
+			// whatever the legacy matrix still says — and the matrix no longer
+			// has a settings page, so they could not even see what it said.
+			//
+			// Rules that differ from the projection mean somebody changed them.
+			// Refuse, name it, and let a human decide.
+			if ($this->rulesDiffer(existing: $existing, projected: $table) === true) {
+				return [
+					'outcome' => 'skipped',
+					'marker' => $marker,
+					'detail' => 'the projected table has been edited since it was created; '
+						. 'refusing to overwrite it',
+				];
+			}
+
+			$outcome = 'updated';
+			$table['id'] = (string)($existing['id'] ?? '');
+		}
+
 		if ($dryRun === true) {
-			return ['outcome' => 'created', 'marker' => $marker, 'detail' => sprintf('%d rule(s)', count($table['rules']))];
+			return ['outcome' => $outcome, 'marker' => $marker, 'detail' => sprintf('%d rule(s)', count($table['rules']))];
 		}
 
 		try {
@@ -203,9 +243,116 @@ class LhsMatrixDecisionTableMigrator {
 			return ['outcome' => 'failed', 'marker' => $marker, 'detail' => $e->getMessage()];
 		}
 
-		return ['outcome' => 'created', 'marker' => $marker, 'detail' => sprintf('%d rule(s)', count($table['rules']))];
+		return ['outcome' => $outcome, 'marker' => $marker, 'detail' => sprintf('%d rule(s)', count($table['rules']))];
 
 	}//end migrateOne()
+
+	/**
+	 * Find the table already projected from this matrix, if any.
+	 *
+	 * Resolved by the provenance MARKER, never by name or key: both are
+	 * editable in the decision-table editor, and matching on one would mint a
+	 * second table the moment somebody renamed the first.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register      The register.
+	 * @param string $tableSchema   The decision-table schema.
+	 * @param string $marker        The provenance marker.
+	 *
+	 * @return array<string, mixed>|null The existing table.
+	 *
+	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 */
+	private function existingTable(object $objectService, string $register, string $tableSchema, string $marker): ?array {
+		try {
+			$rows = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $tableSchema,
+				filters: ['_limit' => 200],
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: could not read existing decision tables',
+				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+			);
+
+			return null;
+		}
+
+		foreach ($rows as $row) {
+			if (str_contains((string)($row['description'] ?? ''), $marker) === true) {
+				return $row;
+			}
+		}
+
+		return null;
+
+	}//end existingTable()
+
+	/**
+	 * Whether an existing table's rules differ from the projection.
+	 *
+	 * Compares the DECISION each rule encodes: its id, its inputs and its
+	 * outputs. Not the annotation, which is a note rather than a decision, and
+	 * not the surrounding table, because a renamed table or a reworded
+	 * description is an administrator's business.
+	 *
+	 * 🔴 IT CANNOT BE A BYTE COMPARISON, and the first version was.
+	 * OpenRegister DROPS an empty-string property on save, so a rule projected
+	 * with `annotation: ""` comes back with no `annotation` key at all. A
+	 * json_encode comparison therefore called every table edited the moment it
+	 * had been stored once — measured against a running instance, all 48 rules
+	 * "differed" immediately after the run that wrote them. A guard that
+	 * refuses every re-run is not cautious, it is broken, and it would have
+	 * read to an administrator as the migration being permanently stuck.
+	 *
+	 * Keyed by rule id and sorted, so a reordering that preserves every
+	 * decision is not an edit either.
+	 *
+	 * @param array<string, mixed> $existing  The stored table.
+	 * @param array<string, mixed> $projected The freshly projected table.
+	 *
+	 * @return boolean True when the stored rules decide differently.
+	 *
+	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 */
+	private function rulesDiffer(array $existing, array $projected): bool {
+		$stored = $this->comparableRules(rules: $this->decode(value: ($existing['rules'] ?? null)));
+		$fresh = $this->comparableRules(rules: $projected['rules']);
+
+		return $stored !== $fresh;
+
+	}//end rulesDiffer()
+
+	/**
+	 * Reduce rules to the decisions they encode, keyed by id and sorted.
+	 *
+	 * @param array<int, mixed> $rules The rules.
+	 *
+	 * @return array<string, array<int, array<int, string>>> The comparable form.
+	 *
+	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 */
+	private function comparableRules(array $rules): array {
+		$comparable = [];
+
+		foreach ($rules as $rule) {
+			if (is_array($rule) === false) {
+				continue;
+			}
+
+			$comparable[(string)($rule['id'] ?? '')] = [
+				array_map(strval(...), (array)($rule['inputEntries'] ?? [])),
+				array_map(strval(...), (array)($rule['outputEntries'] ?? [])),
+			];
+		}
+
+		ksort($comparable);
+
+		return $comparable;
+
+	}//end comparableRules()
 
 	/**
 	 * Build the decision table for one matrix, or null when it is inconsistent.
@@ -254,9 +401,10 @@ class LhsMatrixDecisionTableMigrator {
 			'name' => (string)($matrix['name'] ?? 'LHS'),
 			'key' => ('lhs-matrix-' . $version),
 			'description' => sprintf(
-				'Projected from the LHS matrix "%s" (version %s). %s It arrives disabled: the matrix '
-				. 'still drives recommendations, and a table that also answered would be a second '
-				. 'source of truth for an enforcement decision.',
+				'Projected from the LHS matrix "%s" (version %s). %s This table IS the enforcement '
+				. 'lookup: LhsRecommendationService evaluates it and only falls back to the matrix '
+				. 'where no projection exists. Edit it here; a re-run of the projection refuses to '
+				. 'overwrite changed rules rather than discarding them.',
 				(string)($matrix['name'] ?? ''),
 				$version,
 				$marker
@@ -273,7 +421,13 @@ class LhsMatrixDecisionTableMigrator {
 			],
 			'outputs' => [['name' => 'intervention', 'type' => 'string']],
 			'rules' => $rules,
-			'enabled' => false,
+			// ENABLED. Phase 1 shipped these disabled because the matrix was
+			// still the lookup and a second answering table would have been a
+			// second source of truth. That is no longer the shape: the
+			// evaluator IS the lookup, and a disabled table means the matrix
+			// answers instead. Shipping it disabled would make the projection
+			// a no-op that reports success.
+			'enabled' => true,
 		];
 
 	}//end tableFor()
