@@ -128,7 +128,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
     <background-jobs>
         <job>OCA\Dossiq\BackgroundJob\AdviceDeadlineJob</job>
-        <job>OCA\Dossiq\BackgroundJob\VergaderingDeadlineJob</job>
+        <!--
+            VergaderingDeadlineJob is RETIRED as dead machinery: it scanned
+            for cases with a literal status 'planned', which case.status
+            (a statusType reference) can never hold, and the only writer of
+            such cases was removed earlier. Nothing migrated to a timer.
+            See openspec/changes/case-status-onto-engine-lifecycle.
+        -->
         <job>OCA\Dossiq\BackgroundJob\WOODeadlineCheckJob</job>
         <job>OCA\Dossiq\BackgroundJob\BezwaarTermijnJob</job>
         <job>OCA\Dossiq\BackgroundJob\DsoDeadlineJob</job>
