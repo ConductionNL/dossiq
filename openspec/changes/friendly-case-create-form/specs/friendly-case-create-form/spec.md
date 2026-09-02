@@ -9,7 +9,7 @@ The New case dialog asks a case handler for the fields a case handler fills. The
 
 ## ADDED Requirements
 
-### Requirement: REQ-FCF-001 — The New Case Dialog Is The Plain Form
+### Requirement: REQ-FCF-001 The New Case Dialog Is The Plain Form
 
 The `new-case` header action SHALL open the plain schema-driven form, never the properties-and-JSON table. The action SHALL declare `includeFields` naming exactly the fields collected at create time: `caseType`, `title`, `description`, `assignee`, `priority`, `confidentiality`, `intakeChannel`, `startDate`, `plannedEndDate`. The case detail page remains the surface for every other property.
 
@@ -26,7 +26,7 @@ The `new-case` header action SHALL open the plain schema-driven form, never the 
 - **THEN** it SHALL render a field for each of the nine declared `includeFields`
 - **AND** it SHALL render no field for `result`, `workflowTemplate`, `archiveNomination`, `qualityScore`, `casePlanState`, `statusHistory` or `portalSubject`
 
-### Requirement: REQ-FCF-002 — The Schema States Which Properties A Person Deals With
+### Requirement: REQ-FCF-002 The Schema States Which Properties A Person Deals With
 
 The `case` schema SHALL carry an `order` on every property a handler reads or edits, and `visible: false` on every property written by an engine, computed by OpenRegister, or carried as a flow signal payload.
 
@@ -38,7 +38,7 @@ A property that carries an `order`, or that a manifest `include`/`columns` list 
 - **THEN** none of those properties SHALL be `visible: false`
 - **AND** the case `description`, carrying `order: 3`, SHALL render on the create form, the detail data widget and the table
 
-### Requirement: REQ-FCF-003 — A Case Type Brings Its Own Questions
+### Requirement: REQ-FCF-003 A Case Type Brings Its Own Questions
 
 `case.caseType` SHALL declare `x-openregister-extends-form`, naming `propertyDefinition` as the definitions schema filtered by the chosen case type, and `caseProperty` as the values schema keyed `case` / `propertyDefinition` / `value`.
 
@@ -57,7 +57,7 @@ When a case type is chosen, the form SHALL render one field per property definit
 - **THEN** the case SHALL be created without any dynamic key among its own properties
 - **AND** one `caseProperty` row SHALL exist referencing the created case, the property definition, and the answer
 
-### Requirement: REQ-FCF-004 — The Properties Tab Writes What The Schema Declares
+### Requirement: REQ-FCF-004 The Properties Tab Writes What The Schema Declares
 
 The case-type properties tab SHALL write only fields the `propertyDefinition` schema declares. It SHALL write the data type as `propertyType`, using that schema's own enum, and SHALL offer a Required toggle writing `isRequired`. `maxLength` and `requiredAtStatus` SHALL be declared on the schema; `requiredAtStatus` SHALL store a status reference and be resolved back to a name for display.
 

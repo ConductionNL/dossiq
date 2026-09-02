@@ -1,6 +1,6 @@
 # Proposal: friendly-case-create-form
 
-kind: code — the New case dialog is aimed at a case handler filing a case, not at someone inspecting the case schema. The schema says which of its properties a person deals with, the button narrows to what somebody filing a case types, and a chosen case type brings its own questions with it.
+kind: code. The New case dialog is aimed at a case handler filing a case, not at someone inspecting the case schema. The schema says which of its properties a person deals with, the button narrows to what somebody filing a case types, and a chosen case type brings its own questions with it.
 
 ## Why
 
@@ -27,8 +27,8 @@ Two things underneath it were also wrong, and neither is cosmetic.
 
 ## Impact
 
-- **Schema**: `lib/Settings/dossiq_register.json` — `case` ordering/visibility plus the `x-openregister-extends-form` declaration (1.10.0 → 1.11.0); `propertyDefinition` gains `maxLength` and `requiredAtStatus` (1.0.0 → 1.1.0).
-- **Manifest**: `src/manifest.json` — `includeFields` on the `new-case` action.
+- **Schema**: `lib/Settings/dossiq_register.json`, `case` ordering/visibility plus the `x-openregister-extends-form` declaration (1.10.0 → 1.11.0); `propertyDefinition` gains `maxLength` and `requiredAtStatus` (1.0.0 → 1.1.0).
+- **Manifest**: `src/manifest.json`, `includeFields` on the `new-case` action.
 - **Frontend**: `src/views/settings/tabs/PropertiesTab.vue`.
 - **Tests**: `tests/e2e/case-create-form.spec.ts` (new).
 - Depends on `@conduction/nextcloud-vue` 2.31.0, which carries the plain-form `open-form` dialog, the `x-openregister-extends-form` mechanism, and the manifest-schema keys that let an action narrow itself.
