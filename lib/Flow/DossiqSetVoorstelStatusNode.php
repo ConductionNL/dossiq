@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Flow;
 
+use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\Parafeer\ParaafFlowLinkage;
 use OCA\OpenRegister\Service\Flow\IFlowNode;
 use OCP\IL10N;
@@ -53,12 +54,14 @@ class DossiqSetVoorstelStatusNode implements IFlowNode {
 	/**
 	 * Constructor.
 	 *
-	 * @param ParaafFlowLinkage $linkage Writes the status, and refuses one the schema does not declare.
-	 * @param IL10N             $l10n    Translations.
-	 * @param LoggerInterface   $logger  The logger.
+	 * @param ParaafFlowLinkage $linkage    Writes the status, and refuses one the schema does not declare.
+	 * @param FlowRunAsScope    $runAsScope Scopes the status write to the run's acting identity.
+	 * @param IL10N             $l10n       Translations.
+	 * @param LoggerInterface   $logger     The logger.
 	 */
 	public function __construct(
 		private readonly ParaafFlowLinkage $linkage,
+		private readonly FlowRunAsScope $runAsScope,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {
@@ -159,9 +162,6 @@ class DossiqSetVoorstelStatusNode implements IFlowNode {
 	 * @throws RuntimeException When the config names no status, or one the schema rejects.
 	 *
 	 * @spec openspec/changes/parafering-runs-as-a-flow/specs/parafering-flow/spec.md
-	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The run context is part of
-	 * IFlowNode's contract; this node reads the voorstel from its items.
 	 */
 	public function execute(array $items, array $config, array $context): array {
 		$this->validateConfig(config: $config);
@@ -190,7 +190,14 @@ class DossiqSetVoorstelStatusNode implements IFlowNode {
 			// declare, and that refusal is deliberately NOT caught here: a flow asking
 			// for an impossible status is an authoring error, and swallowing it
 			// would leave the voorstel silently where it was.
-			$moved = $this->linkage->setStatus(proposalId: $proposalId, status: $status);
+			// The write runs under the flow run's `runAs` identity: under
+			// FlowRunWorker the ambient session carries nobody, so a bare
+			// save inside the linkage is refused as 'Anonymous' however
+			// legitimate the run.
+			$moved = (bool) $this->runAsScope->call(
+				context: $context,
+				operation: fn (): bool => $this->linkage->setStatus(proposalId: $proposalId, status: $status)
+			);
 
 			$this->logger->info(
 				'Dossiq setVoorstelStatus: voorstel ' . $proposalId . ' → ' . $status,

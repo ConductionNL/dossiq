@@ -26,14 +26,18 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
+use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\CreateSubCaseHandler;
 use PHPUnit\Framework\TestCase;
+use OCP\IUserManager;
 use Psr\Log\NullLogger;
 use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\Transitions\CreateSubCaseHandler
+ *
+ * @uses \OCA\Dossiq\Service\FlowRunAsScope
  *
  * @uses \OCA\Dossiq\Service\Transitions\ActionResult
  */
@@ -45,7 +49,7 @@ class CreateSubCaseHandlerTest extends TestCase {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn(null);
 
-		$handler = new CreateSubCaseHandler($settings, new NullLogger());
+		$handler = new CreateSubCaseHandler($settings, $this->bareScope(), new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'createSubCase', 'caseType' => 'ct-2'],
@@ -71,7 +75,7 @@ class CreateSubCaseHandlerTest extends TestCase {
 		$settings->method('getObjectService')->willReturn($objectService);
 		$settings->method('getConfigValue')->willReturn('');
 
-		$handler = new CreateSubCaseHandler($settings, new NullLogger());
+		$handler = new CreateSubCaseHandler($settings, $this->bareScope(), new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'createSubCase'],
@@ -113,7 +117,7 @@ class CreateSubCaseHandlerTest extends TestCase {
 			}
 		);
 
-		$handler = new CreateSubCaseHandler($settings, new NullLogger());
+		$handler = new CreateSubCaseHandler($settings, $this->bareScope(), new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'createSubCase', 'caseType' => 'ct-9', 'title' => 'Onderzoek BAG'],
@@ -149,7 +153,7 @@ class CreateSubCaseHandlerTest extends TestCase {
 			}
 		);
 
-		$handler = new CreateSubCaseHandler($settings, new NullLogger());
+		$handler = new CreateSubCaseHandler($settings, $this->bareScope(), new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'createSubCase'],
@@ -160,4 +164,19 @@ class CreateSubCaseHandlerTest extends TestCase {
 		self::assertFalse($result->succeeded);
 		self::assertSame('create_sub_case_failed', $result->error);
 	}//end testCatchesExceptionFromObjectService()
+
+	/**
+	 * A runAs scope that runs bare for an empty context.
+	 *
+	 * These tests hand contexts naming no acting identity, so the scope never
+	 * resolves one and the class under test behaves as before the wrap.
+	 *
+	 * @return FlowRunAsScope The scope.
+	 */
+	private function bareScope(): FlowRunAsScope {
+		return new FlowRunAsScope(
+			$this->createMock(SettingsService::class),
+			$this->createMock(IUserManager::class),
+		);
+	}//end bareScope()
 }//end class

@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Actions;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\FlowRunAsScope;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -46,6 +47,8 @@ class MergeTemplateHandler implements ActionHandlerInterface {
 	 *                                      OpenRegister ObjectService.
 	 * @param IAppConfig $appConfig App config — supplies register +
 	 *                              case_schema keys for the save.
+	 * @param FlowRunAsScope $runAsScope Scopes the case write to the run's
+	 *                                   acting identity.
 	 * @param LoggerInterface $logger PSR-3 logger.
 	 *
 	 * @return void
@@ -53,6 +56,7 @@ class MergeTemplateHandler implements ActionHandlerInterface {
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly IAppConfig $appConfig,
+		private readonly FlowRunAsScope $runAsScope,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -120,7 +124,15 @@ class MergeTemplateHandler implements ActionHandlerInterface {
 
 			$updated = array_merge($case, [$targetField => $rendered]);
 
-			$objectService->saveObject(object: $updated, register: $register, schema: $schema);
+			// The write runs under the flow run's `runAs` identity: under
+			// FlowRunWorker the ambient session carries nobody, so a bare
+			// saveObject() is refused as 'Anonymous' however legitimate the
+			// run — measured live as `merge_template_failed` stopping the
+			// seeded case flow at its decision document.
+			$this->runAsScope->call(
+				context: $transitionContext,
+				operation: static fn (): mixed => $objectService->saveObject(object: $updated, register: $register, schema: $schema)
+			);
 
 			return new ActionResult(succeeded: true, data: $preview);
 		} catch (\Throwable $e) {
