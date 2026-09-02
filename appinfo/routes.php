@@ -68,9 +68,12 @@ $extra = [
     ['name' => 'assistant#availability', 'url' => '/api/assistant/availability', 'verb' => 'GET'],
     ['name' => 'assistant#converse',     'url' => '/api/assistant/converse',     'verb' => 'POST'],
 
-        // Parafering Actions (must precede any wildcard routes).
-    ['name' => 'parafeerActie#create', 'url' => '/api/parafeer-actie', 'verb' => 'POST'],
-    ['name' => 'parafeerActie#index',  'url' => '/api/parafeer-actie', 'verb' => 'GET'],
+        // Parafering actions RETIRED with the local runtime. An approver no
+        // longer signs through a dossiq endpoint that records-and-advances a
+        // local chain: the decision app runs the chain (parafering moved there
+        // the way decisions did), and dossiq records the outcome from the
+        // conclusion event. The parafeeractie objects the case keeps are
+        // read through OpenRegister's auto-exposed object API for display.
 
         // KCC Klantcontact (kcc-klantcontact-integratie).
         // Static/verb routes precede the {id} wildcard routes.

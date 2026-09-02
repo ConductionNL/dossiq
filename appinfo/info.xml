@@ -271,6 +271,21 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\MigrateParafeerroutesToDecidiq</step>
             <!--
+                Re-raises every voorstel still in parafering (in_parafering /
+                ter_accordering) in the decision app, so the engine that now
+                owns the runtime has a chain to finish. Runs AFTER
+                MigrateParafeerroutesToDecidiq: a subject can only travel a
+                route the decision app already holds. post-migration ONLY —
+                a fresh install has no in-flight voorstellen. Idempotent (the
+                decision app leaves a subject that already has stages alone),
+                and it FAILS rather than no-ops when it can establish no
+                system identity. The chain resumes from the start there: a
+                partial local history the retired runtime never sent cannot be
+                imported, which is the honest cost of moving the runtime after
+                voorstellen were already travelling.
+            -->
+            <step>OCA\Dossiq\Repair\RaiseInFlightParaferingenInDecidiq</step>
+            <!--
                 Raises each local bezwaaradviescommissie as a GovernanceBody in
                 the decision app and notes the id back on the local row.
                 Idempotent twice over: it skips a committee that already carries
@@ -445,7 +460,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
         <command>OCA\Dossiq\Command\BackfillLegalHoldsCommand</command>
         <command>OCA\Dossiq\Command\MigrateAutomaticActionsToFlowsCommand</command>
         <command>OCA\Dossiq\Command\MigrateWorkflowDefinitionsToFlowsCommand</command>
-        <command>OCA\Dossiq\Command\MigrateApprovalRoutesToFlowsCommand</command>
         <command>OCA\Dossiq\Command\MigrateLhsToDecisionTablesCommand</command>
         <command>OCA\Dossiq\Command\MigrateTenantsCommand</command>
         <command>OCA\Dossiq\Command\MigratePartnersCommand</command>

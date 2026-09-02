@@ -3439,7 +3439,8 @@ OC.L10N.register(
         "Mail & messages": "Mail en berichten",
         "Log hours": "Uren boeken",
         "Assigned to me": "Aan mij toegewezen",
-        "All issues": "Alle zaken"
+        "All issues": "Alle zaken",
+        "This proposal has been returned. Adjust the document; it re-enters parafering through the case workflow.": "Dit voorstel is teruggestuurd. Pas het document aan; het gaat opnieuw in parafering via de zaakworkflow."
     },
     "nplurals=2; plural=(n != 1);"
 )
