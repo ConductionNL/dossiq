@@ -341,6 +341,15 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			timeout: 30_000,
 		})
 
+		// Locations moved into the tab strip, and tab panels are LAZY — the
+		// widget does not mount, so it does not query, until its tab is opened.
+		// Without this click the poll below times out on zero responses and
+		// reads as "the schema 404s again", which is the very thing this spec
+		// exists to tell apart from an empty state.
+		const strip = page.locator('.cn-tabs-widget')
+		await expect(strip).toBeVisible({ timeout: 30_000 })
+		await strip.getByRole('tab', { name: /Locations|Locaties/ }).click()
+
 		await expect
 			.poll(() => responses.length, { timeout: 20_000 })
 			.toBeGreaterThan(0)
