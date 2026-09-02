@@ -1172,33 +1172,13 @@
                 "identifier",
                 "description",
                 "caseType",
+                "status",
                 "assignee",
                 "requester",
                 "priority",
                 "confidentiality",
                 "deadline",
                 "startDate"
-              ]
-            }
-          },
-          {
-            "id": "case-process",
-            "type": "data",
-            "title": "Process",
-            "icon": "Cog",
-            "content": {
-              "columns": 2,
-              "include": [
-                "status",
-                "procedureType",
-                "workflowTemplate",
-                "workflowVersion",
-                "result",
-                "plannedEndDate",
-                "endDate",
-                "extensionCount",
-                "handoffSource",
-                "intakeChannel"
               ],
               "overrides": {
                 "status": {
@@ -1241,25 +1221,6 @@
                   "title": "Documents",
                   "register": "dossiq",
                   "schema": "caseDocument",
-                  "metric": "count",
-                  "filter": {
-                    "case": "@objectId"
-                  }
-                }
-              ]
-            }
-          },
-          {
-            "id": "case-kpis-decisions",
-            "type": "stats-block",
-            "title": "Decisions",
-            "icon": "Gauge",
-            "content": {
-              "entries": [
-                {
-                  "title": "Decisions",
-                  "register": "dossiq",
-                  "schema": "decision",
                   "metric": "count",
                   "filter": {
                     "case": "@objectId"
@@ -1411,118 +1372,6 @@
             }
           },
           {
-            "id": "case-documents",
-            "type": "object-list",
-            "title": "Documents",
-            "icon": "FolderOutline",
-            "content": {
-              "register": "dossiq",
-              "schema": "caseDocument",
-              "filter": {
-                "case": "@objectId"
-              },
-              "sort": {
-                "field": "registrationDate",
-                "dir": "desc"
-              },
-              "limit": 25,
-              "columns": [
-                {
-                  "key": "title",
-                  "label": "Title"
-                },
-                {
-                  "key": "description",
-                  "label": "Description"
-                },
-                {
-                  "key": "registrationDate",
-                  "label": "Registered"
-                }
-              ],
-              "emptyText": "No documents registered on this case yet"
-            }
-          },
-          {
-            "id": "case-decisions",
-            "type": "object-list",
-            "title": "Decisions",
-            "icon": "ScaleBalance",
-            "content": {
-              "register": "dossiq",
-              "schema": "decision",
-              "filter": {
-                "case": "@objectId"
-              },
-              "sort": {
-                "field": "decisionDate",
-                "dir": "desc"
-              },
-              "limit": 25,
-              "columns": [
-                {
-                  "key": "title",
-                  "label": "Title"
-                },
-                {
-                  "key": "decisionType",
-                  "label": "Type"
-                },
-                {
-                  "key": "decisionDate",
-                  "label": "Decision date"
-                },
-                {
-                  "key": "effectiveDate",
-                  "label": "Effective"
-                }
-              ],
-              "emptyText": "No decisions taken on this case yet"
-            }
-          },
-          {
-            "id": "case-voorstellen",
-            "type": "object-list",
-            "title": "Proposals",
-            "icon": "ClipboardList",
-            "content": {
-              "register": "dossiq",
-              "schema": "proposal",
-              "filter": {
-                "case": "@objectId"
-              },
-              "sort": {
-                "field": "order",
-                "dir": "asc"
-              },
-              "limit": 25,
-              "columns": [
-                {
-                  "key": "onderwerp",
-                  "label": "Subject"
-                },
-                {
-                  "key": "type",
-                  "label": "Type"
-                },
-                {
-                  "key": "status",
-                  "label": "Status"
-                },
-                {
-                  "key": "currentStep",
-                  "label": "Current step"
-                }
-              ],
-              "rowRoute": "VoorstelDetail",
-              "viewAllRoute": "Voorstellen",
-              "viewAllQuery": {
-                "case": "@objectId"
-              },
-              "emptyText": "No proposals for this case"
-            }
-          },
-          {
             "id": "case-locaties",
             "type": "object-list",
             "title": "Locations",
@@ -1597,20 +1446,6 @@
             "integrationId": "decidesk-decisions",
             "title": "Besluitvorming",
             "icon": "Gavel"
-          },
-          {
-            "id": "case-assistant",
-            "type": "custom",
-            "title": "Case assistant",
-            "icon": "Lightbulb",
-            "_note": "Case-assistant chat panel (case-assistant-via-hermiq). Resolved via page slots (widget-case-assistant -> CaseAssistantPanel); conversational assistance is delegated to Hermiq (fleet rule: AI lives in Hermiq), dossiq only enriches with case context the current user may read. Availability-gated: renders nothing when the hermiq app is not installed/enabled."
-          },
-          {
-            "id": "cmmn-case-plan",
-            "type": "custom",
-            "title": "Adaptive case plan",
-            "icon": "Sitemap",
-            "_note": "CMMN adaptive case-plan panel (cmmn-adaptive-case). Resolved via page slots (widget-cmmn-case-plan -> CmmnCasePlanPanel); the CMMN counterpart to the BPMN status-transition engine, for caseTypes with handlingModel = 'cmmn'. Renders nothing when this case's caseType is BPMN-managed."
           },
           {
             "id": "case-flow-runs",
@@ -1721,6 +1556,18 @@
                 {
                   "widgetId": "case-calendar",
                   "label": "Appointments"
+                },
+                {
+                  "widgetId": "case-decidesk-decisions",
+                  "label": "Decisions"
+                },
+                {
+                  "widgetId": "case-contacts",
+                  "label": "Contacts"
+                },
+                {
+                  "widgetId": "case-locaties",
+                  "label": "Locations"
                 }
               ]
             }
@@ -1728,70 +1575,55 @@
         ],
         "layout": [
           {
-            "id": "30",
+            "id": "1",
             "widgetId": "case-kpi-time-left",
             "gridX": 0,
             "gridY": 0,
             "gridWidth": 4,
-            "gridHeight": 2,
-            "showTitle": false
+            "gridHeight": 2
           },
           {
-            "id": "31",
+            "id": "2",
             "widgetId": "case-kpi-casetype",
             "gridX": 4,
             "gridY": 0,
             "gridWidth": 4,
-            "gridHeight": 2,
-            "showTitle": false
+            "gridHeight": 2
           },
           {
-            "id": "32",
+            "id": "3",
             "widgetId": "case-kpi-progress",
             "gridX": 8,
             "gridY": 0,
             "gridWidth": 4,
-            "gridHeight": 2,
-            "showTitle": false
+            "gridHeight": 2
           },
           {
-            "id": "1",
+            "id": "4",
             "widgetId": "case-core",
             "gridX": 0,
             "gridY": 2,
             "gridWidth": 8,
-            "gridHeight": 5,
-            "showTitle": false
+            "gridHeight": 6
           },
           {
-            "id": "4",
-            "widgetId": "case-process",
-            "gridX": 0,
-            "gridY": 7,
-            "gridWidth": 8,
-            "gridHeight": 5,
-            "showTitle": false
-          },
-          {
-            "id": "33",
+            "id": "5",
             "widgetId": "case-panels",
             "gridX": 0,
-            "gridY": 12,
+            "gridY": 8,
             "gridWidth": 8,
-            "gridHeight": 8,
-            "showTitle": false
+            "gridHeight": 8
           },
           {
-            "id": "22",
+            "id": "6",
             "widgetId": "case-kpis-hours",
             "gridX": 8,
             "gridY": 2,
             "gridWidth": 4,
-            "gridHeight": 2,
-            "showTitle": false
+            "gridHeight": 2
           },
           {
-            "id": "34",
+            "id": "7",
             "widgetId": "case-flow-runs",
             "gridX": 8,
             "gridY": 4,
@@ -1807,110 +1639,35 @@
             "gridHeight": 4
           },
           {
-            "id": "10",
-            "widgetId": "case-decisions",
-            "gridX": 8,
-            "gridY": 12,
-            "gridWidth": 4,
-            "gridHeight": 4
-          },
-          {
-            "id": "12",
-            "widgetId": "case-locaties",
-            "gridX": 8,
-            "gridY": 16,
-            "gridWidth": 4,
-            "gridHeight": 4
-          },
-          {
-            "id": "5",
+            "id": "9",
             "widgetId": "initiator",
             "gridX": 0,
-            "gridY": 20,
+            "gridY": 16,
             "gridWidth": 12,
-            "gridHeight": 3,
-            "showTitle": true
-          },
-          {
-            "id": "9",
-            "widgetId": "case-documents",
-            "gridX": 0,
-            "gridY": 23,
-            "gridWidth": 6,
-            "gridHeight": 4
-          },
-          {
-            "id": "11",
-            "widgetId": "case-voorstellen",
-            "gridX": 6,
-            "gridY": 23,
-            "gridWidth": 6,
-            "gridHeight": 4
-          },
-          {
-            "id": "6",
-            "widgetId": "case-contacts",
-            "gridX": 0,
-            "gridY": 27,
-            "gridWidth": 6,
             "gridHeight": 3
           },
           {
-            "id": "19",
-            "widgetId": "case-decidesk-decisions",
-            "gridX": 0,
-            "gridY": 30,
-            "gridWidth": 12,
-            "gridHeight": 4
-          },
-          {
-            "id": "20",
-            "widgetId": "case-assistant",
-            "gridX": 0,
-            "gridY": 34,
-            "gridWidth": 12,
-            "gridHeight": 5,
-            "showTitle": true
-          },
-          {
-            "id": "21",
-            "widgetId": "cmmn-case-plan",
-            "gridX": 0,
-            "gridY": 39,
-            "gridWidth": 12,
-            "gridHeight": 6,
-            "showTitle": true
-          },
-          {
-            "id": "15",
+            "id": "10",
             "widgetId": "case-kpis-open-tasks",
             "gridX": 0,
-            "gridY": 45,
-            "gridWidth": 3,
+            "gridY": 19,
+            "gridWidth": 4,
             "gridHeight": 2
           },
           {
-            "id": "16",
+            "id": "11",
             "widgetId": "case-kpis-documents",
-            "gridX": 3,
-            "gridY": 45,
-            "gridWidth": 3,
+            "gridX": 4,
+            "gridY": 19,
+            "gridWidth": 4,
             "gridHeight": 2
           },
           {
-            "id": "17",
-            "widgetId": "case-kpis-decisions",
-            "gridX": 6,
-            "gridY": 45,
-            "gridWidth": 3,
-            "gridHeight": 2
-          },
-          {
-            "id": "18",
+            "id": "12",
             "widgetId": "case-kpis-sub-cases",
-            "gridX": 9,
-            "gridY": 45,
-            "gridWidth": 3,
+            "gridX": 8,
+            "gridY": 19,
+            "gridWidth": 4,
             "gridHeight": 2
           }
         ],

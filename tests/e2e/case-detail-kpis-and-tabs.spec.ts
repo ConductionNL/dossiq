@@ -44,6 +44,12 @@ const TAB_LABELS = [
 	/Sub-cases|Deelzaken/,
 	/Mail/,
 	/Appointments|Afspraken/,
+	// Decisions is decidiq's widget, not dossiq's own list — dossiq no longer
+	// renders its `decision` schema at all. Contacts and Locations moved in
+	// from the page body, so the case's collections all live in one strip.
+	/Decisions|Besluiten|Besluitvorming/,
+	/Contacts|Contacten/,
+	/Locations|Locaties/,
 ]
 
 /**
@@ -58,8 +64,6 @@ const COLUMN_TITLES = [
 	/Hours booked|Geboekte uren/,
 	/Flow runs|Flow-uitvoeringen/,
 	/Tasks|Taken/,
-	/Decisions|Besluiten/,
-	/Locations|Locaties/,
 ]
 
 test.describe('Case detail — KPI row, tabbed panels, right column', () => {
@@ -309,6 +313,16 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			await expect(page.getByText(title).first()).toBeVisible({
 				timeout: 20_000,
 			})
+		}
+
+		// Decisions and Locations MOVED into the tab strip. Asserting only that
+		// the column shows three things would still pass if they had stayed and
+		// the page simply grew, so assert they are gone from the body: their
+		// only remaining owner is a tab.
+		for (const gone of [/Decisions|Besluiten/, /Locations|Locaties/]) {
+			await expect(
+				page.locator('.cn-widget-wrapper').filter({ hasText: gone }),
+			).toHaveCount(0)
 		}
 	})
 
