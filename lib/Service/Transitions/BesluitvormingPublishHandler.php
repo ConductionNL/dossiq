@@ -32,7 +32,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
-use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\PublicationService;
 use Psr\Log\LoggerInterface;
 
@@ -46,14 +45,12 @@ class BesluitvormingPublishHandler implements ActionHandlerInterface {
 	 * Constructor.
 	 *
 	 * @param PublicationService $publicationService The DROP/LVBB dispatcher.
-	 * @param FlowRunAsScope $runAsScope Scopes the dispatcher's case write to the run's acting identity.
 	 * @param LoggerInterface $logger Logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly PublicationService $publicationService,
-		private readonly FlowRunAsScope $runAsScope,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -79,13 +76,12 @@ class BesluitvormingPublishHandler implements ActionHandlerInterface {
 			}
 
 			// The dispatcher records its outcome on the case via
-			// ObjectService, so under FlowRunWorker a bare call is refused as
-			// 'Anonymous'; it runs as the run's `runAs` identity when the
-			// context names one.
-			$result = $this->runAsScope->call(
-				context: $transitionContext,
-				operation: fn (): array => $this->publicationService->publish($caseId, ['channel' => 'website'])
-			);
+			// ObjectService. On the flow path the engine's
+			// RegistryStepDispatcher already runs this handler inside
+			// `ObjectService::runAs()` as the run's acting identity
+			// (openregister#3332); on the interactive path the ambient session
+			// user answers the permission checks. No local wrap needed.
+			$result = $this->publicationService->publish($caseId, ['channel' => 'website']);
 			if (($result['ok'] ?? false) === true) {
 				return new ActionResult(succeeded: true, data: $result);
 			}

@@ -25,18 +25,15 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
-use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\CreateTaskHandler;
 use PHPUnit\Framework\TestCase;
-use OCP\IUserManager;
 use Psr\Log\NullLogger;
 use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\Transitions\CreateTaskHandler
  *
- * @uses \OCA\Dossiq\Service\FlowRunAsScope
  *
  * @uses \OCA\Dossiq\Service\Transitions\ActionResult
  */
@@ -48,7 +45,7 @@ class CreateTaskHandlerTest extends TestCase {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn(null);
 
-		$handler = new CreateTaskHandler($settings, $this->bareScope(), new NullLogger());
+		$handler = new CreateTaskHandler($settings, new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Doe X'],
@@ -78,7 +75,7 @@ class CreateTaskHandlerTest extends TestCase {
 			}
 		);
 
-		$handler = new CreateTaskHandler($settings, $this->bareScope(), new NullLogger());
+		$handler = new CreateTaskHandler($settings, new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'createTask'],
@@ -121,7 +118,7 @@ class CreateTaskHandlerTest extends TestCase {
 			}
 		);
 
-		$handler = new CreateTaskHandler($settings, $this->bareScope(), new NullLogger());
+		$handler = new CreateTaskHandler($settings, new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Review docs', 'assignee' => 'alice'],
@@ -168,7 +165,7 @@ class CreateTaskHandlerTest extends TestCase {
 			}
 		);
 
-		$handler = new CreateTaskHandler($settings, $this->bareScope(), new NullLogger());
+		$handler = new CreateTaskHandler($settings, new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'createTask'],
@@ -179,19 +176,4 @@ class CreateTaskHandlerTest extends TestCase {
 		self::assertFalse($result->succeeded);
 		self::assertSame('create_task_failed', $result->error);
 	}//end testCatchesExceptionFromObjectService()
-
-	/**
-	 * A runAs scope that runs bare for an empty context.
-	 *
-	 * These tests hand contexts naming no acting identity, so the scope never
-	 * resolves one and the class under test behaves as before the wrap.
-	 *
-	 * @return FlowRunAsScope The scope.
-	 */
-	private function bareScope(): FlowRunAsScope {
-		return new FlowRunAsScope(
-			$this->createMock(SettingsService::class),
-			$this->createMock(IUserManager::class),
-		);
-	}//end bareScope()
 }//end class
