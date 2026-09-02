@@ -124,9 +124,9 @@ test.describe('New case dialog', () => {
 	async function chooseCaseType(page, dialog) {
 		const combo = dialog.getByRole('combobox', { name: /Case type/ })
 		await combo.click()
-		// The picker preloads only the first 20 case types, and this run's is
-		// newer than all of them. Typing is both what a handler does with a
-		// couple of dozen types and what puts the search term on the wire.
+		// The picker preloads a capped first page, so a freshly seeded type is
+		// not guaranteed to be in it. Typing is what a handler does with a
+		// couple of dozen types, and it puts the search term on the wire.
 		await combo.pressSequentially(RUN_PREFIX, { delay: 20 })
 		const option = page.getByRole('option', { name: CASE_TYPE_TITLE })
 		await expect(option).toBeVisible({ timeout: 20000 })
@@ -151,7 +151,7 @@ test.describe('New case dialog', () => {
 		return dialog
 	}
 
-	// @e2e openspec/changes/friendly-case-create-form/tasks.md
+	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-001-the-new-case-dialog-is-the-plain-form
 	test('opens the plain form, not the properties and JSON table', async ({
 		page,
 	}) => {
@@ -164,7 +164,7 @@ test.describe('New case dialog', () => {
 		await expect(dialog.getByRole('button', { name: 'Create' })).toBeVisible()
 	})
 
-	// @e2e openspec/changes/friendly-case-create-form/tasks.md
+	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-001-the-new-case-dialog-is-the-plain-form
 	test('asks only for the fields a handler fills', async ({ page }) => {
 		const dialog = await openDialog(page)
 
@@ -189,7 +189,7 @@ test.describe('New case dialog', () => {
 		}
 	})
 
-	// @e2e openspec/changes/friendly-case-create-form/tasks.md
+	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-003-a-case-type-brings-its-own-questions
 	test('adds the chosen case type own questions, and drops them again on a change', async ({
 		page,
 	}) => {
@@ -204,7 +204,7 @@ test.describe('New case dialog', () => {
 		await expect(dialog.getByText(AUDIENCE)).toBeVisible()
 	})
 
-	// @e2e openspec/changes/friendly-case-create-form/tasks.md
+	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-003-a-case-type-brings-its-own-questions
 	test('files a case with its case type answers', async ({ page }) => {
 		const dialog = await openDialog(page)
 		const title = `${RUN_PREFIX} Aanvraag`
