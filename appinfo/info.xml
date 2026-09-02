@@ -128,12 +128,23 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
     <background-jobs>
         <job>OCA\Dossiq\BackgroundJob\AdviceDeadlineJob</job>
-        <job>OCA\Dossiq\BackgroundJob\VergaderingDeadlineJob</job>
+        <!--
+            VergaderingDeadlineJob is RETIRED as dead machinery: it scanned
+            for cases with a literal status 'planned', which case.status
+            (a statusType reference) can never hold, and the only writer of
+            such cases was removed earlier. Nothing migrated to a timer.
+            See openspec/changes/case-status-onto-engine-lifecycle.
+        -->
         <job>OCA\Dossiq\BackgroundJob\WOODeadlineCheckJob</job>
         <job>OCA\Dossiq\BackgroundJob\BezwaarTermijnJob</job>
         <job>OCA\Dossiq\BackgroundJob\DsoDeadlineJob</job>
         <job>OCA\Dossiq\BackgroundJob\ResetMonthlyQuotasJob</job>
-        <job>OCA\Dossiq\BackgroundJob\DailyDeadlineScanJob</job>
+        <!--
+            The daily termijn scan (DailyDeadlineScanJob) is RETIRED: the
+            OpenRegister FlowTimerWorker sweep fires the armed termijn
+            timers, and TermijnTimerFiredListener does the domain side.
+            See openspec/changes/termijnbewaking-op-engine-timers.
+        -->
         <job>OCA\Dossiq\BackgroundJob\InboundEmailJob</job>
         <job>OCA\Dossiq\BackgroundJob\EmailPdfRetryJob</job>
         <job>OCA\Dossiq\BackgroundJob\SentimentAnalysisJob</job>
@@ -271,6 +282,21 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\MigrateParafeerroutesToDecidiq</step>
             <!--
+                Re-raises every voorstel still in parafering (in_parafering /
+                ter_accordering) in the decision app, so the engine that now
+                owns the runtime has a chain to finish. Runs AFTER
+                MigrateParafeerroutesToDecidiq: a subject can only travel a
+                route the decision app already holds. post-migration ONLY —
+                a fresh install has no in-flight voorstellen. Idempotent (the
+                decision app leaves a subject that already has stages alone),
+                and it FAILS rather than no-ops when it can establish no
+                system identity. The chain resumes from the start there: a
+                partial local history the retired runtime never sent cannot be
+                imported, which is the honest cost of moving the runtime after
+                voorstellen were already travelling.
+            -->
+            <step>OCA\Dossiq\Repair\RaiseInFlightParaferingenInDecidiq</step>
+            <!--
                 Raises each local bezwaaradviescommissie as a GovernanceBody in
                 the decision app and notes the id back on the local row.
                 Idempotent twice over: it skips a committee that already carries
@@ -355,6 +381,17 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 already have `bezwaar` are skipped) and non-fatal.
             -->
             <step>OCA\Dossiq\Repair\BackfillAdviceRequestObjection</step>
+            <!--
+                One clock: arms an OpenRegister FlowTimer for every in-flight
+                TermijnInstance that does not carry one yet (engineTimerId),
+                suspending the timer for paused rows. Idempotent, skips
+                terminal rows, and never throws — an unreachable engine is a
+                warning plus a failed count, not a broken upgrade. Catch-up
+                rung fires after migration are absorbed by the
+                notificatiesVerstuurd dedup in TermijnTimerFiredListener.
+                POST-MIGRATION only: a fresh install has no instances to arm.
+            -->
+            <step>OCA\Dossiq\Repair\ArmTermijnEngineTimers</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
@@ -445,7 +482,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
         <command>OCA\Dossiq\Command\BackfillLegalHoldsCommand</command>
         <command>OCA\Dossiq\Command\MigrateAutomaticActionsToFlowsCommand</command>
         <command>OCA\Dossiq\Command\MigrateWorkflowDefinitionsToFlowsCommand</command>
-        <command>OCA\Dossiq\Command\MigrateApprovalRoutesToFlowsCommand</command>
         <command>OCA\Dossiq\Command\MigrateLhsToDecisionTablesCommand</command>
         <command>OCA\Dossiq\Command\MigrateTenantsCommand</command>
         <command>OCA\Dossiq\Command\MigratePartnersCommand</command>

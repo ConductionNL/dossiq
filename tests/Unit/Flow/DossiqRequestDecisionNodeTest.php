@@ -23,13 +23,9 @@ namespace OCA\Dossiq\Tests\Unit\Flow;
 
 use OCA\Dossiq\Flow\DossiqRequestDecisionNode;
 use OCA\Dossiq\Service\ContractDecisionDelegationService;
-use OCA\Dossiq\Service\FlowRunAsScope;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Service\Flow\FlowNodeResumeState;
 use OCA\OpenRegister\Service\Flow\FlowSuspension;
 use OCP\IL10N;
-use OCP\IUser;
-use OCP\IUserManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -44,32 +40,8 @@ class DossiqRequestDecisionNodeTest extends TestCase {
 	 */
 	private int $raised = 0;
 
-	/**
-	 * The uids the object service's runAs seam was asked to act as.
-	 *
-	 * @var string[]
-	 */
-	private array $actedAs = [];
-
-	/**
-	 * Whether the runAs seam's callable is currently executing.
-	 *
-	 * @var boolean
-	 */
-	private bool $insideRunAs = false;
-
-	/**
-	 * Whether the raise happened INSIDE the runAs seam's callable.
-	 *
-	 * @var boolean
-	 */
-	private bool $raisedInsideRunAs = false;
-
 	protected function setUp(): void {
 		$this->raised = 0;
-		$this->actedAs = [];
-		$this->insideRunAs = false;
-		$this->raisedInsideRunAs = false;
 	}//end setUp()
 
 	/**
@@ -94,7 +66,6 @@ class DossiqRequestDecisionNodeTest extends TestCase {
 			$delegation->method('raiseDecision')->willReturnCallback(
 				function () use ($ref): string {
 					$this->raised++;
-					$this->raisedInsideRunAs = $this->insideRunAs;
 
 					return $ref;
 				}
@@ -104,57 +75,8 @@ class DossiqRequestDecisionNodeTest extends TestCase {
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
-		return new DossiqRequestDecisionNode($delegation, $this->scope(), $l10n, new NullLogger());
+		return new DossiqRequestDecisionNode($delegation, $l10n, new NullLogger());
 	}//end node()
-
-	/**
-	 * A runAs scope over an object service that records the seam being used.
-	 *
-	 * @return FlowRunAsScope The scope.
-	 */
-	private function scope(): FlowRunAsScope {
-		$test = $this;
-		$objectService = new class($this->actedAs, $test) {
-			public function __construct(private array &$actedAs, private DossiqRequestDecisionNodeTest $test) {
-			}
-
-			public function runAs(IUser $user, callable $operation): mixed {
-				$this->actedAs[] = $user->getUID();
-				$this->test->markInsideRunAs(true);
-
-				try {
-					return $operation();
-				} finally {
-					$this->test->markInsideRunAs(false);
-				}
-			}
-		};
-
-		$settings = $this->createMock(SettingsService::class);
-		$settings->method('getObjectService')->willReturn($objectService);
-
-		$adminUser = $this->createMock(IUser::class);
-		$adminUser->method('getUID')->willReturn('admin');
-		$adminUser->method('isEnabled')->willReturn(true);
-
-		$users = $this->createMock(IUserManager::class);
-		$users->method('get')->willReturnCallback(
-			static fn (string $uid): ?IUser => ($uid === 'admin') ? $adminUser : null
-		);
-
-		return new FlowRunAsScope($settings, $users);
-	}//end scope()
-
-	/**
-	 * Toggle the inside-runAs marker (called by the anonymous seam fake).
-	 *
-	 * @param bool $inside Whether the seam's callable is executing.
-	 *
-	 * @return void
-	 */
-	public function markInsideRunAs(bool $inside): void {
-		$this->insideRunAs = $inside;
-	}//end markInsideRunAs()
 
 	/**
 	 * One item carrying a case.
@@ -188,60 +110,13 @@ class DossiqRequestDecisionNodeTest extends TestCase {
 		self::assertSame('decision-1', $resume->get('decisionRef'));
 	}//end testItRaisesTheDecisionAndSuspends()
 
-	/**
-	 * 🔴 THE RAISE RUNS AS THE RUN'S ACTING IDENTITY.
-	 *
-	 * The delegation dispatches decidiq's DecisionRequestedEvent, whose
-	 * listener writes the decision object synchronously under the AMBIENT
-	 * SESSION user — under FlowRunWorker, nobody. Measured live: the raise
-	 * was refused as 'Anonymous' while the run context carried `runAs: admin`.
-	 * The whole dispatch must therefore execute INSIDE the object service's
-	 * runAs seam. Remove the wrap and this goes red twice over: $actedAs
-	 * stays empty and the raise records itself as outside the seam.
-	 */
-	public function testTheDecisionIsRaisedAsTheRunsActingIdentity(): void {
-		$resume = new FlowNodeResumeState('decide-register-b');
-
-		try {
-			$this->node()->execute(
-				$this->items(),
-				$this->config(),
-				[
-					FlowNodeResumeState::CONTEXT_KEY => $resume,
-					'runAs' => 'admin',
-				]
-			);
-		} catch (FlowSuspension $e) {
-			// expected: the decision is outstanding
-		}
-
-		self::assertSame(1, $this->raised);
-		self::assertSame(['admin'], $this->actedAs, 'The raise must go through the object service\'s runAs seam.');
-		self::assertTrue($this->raisedInsideRunAs, 'And the dispatch itself must happen INSIDE that scope, not next to it.');
-	}//end testTheDecisionIsRaisedAsTheRunsActingIdentity()
-
-	/**
-	 * An acting identity that resolves to nobody refuses the step: falling
-	 * back to the ambient session would recreate the anonymous raise.
-	 */
-	public function testAnUnresolvableActingIdentityRefuses(): void {
-		$resume = new FlowNodeResumeState('decide-register-b');
-
-		$this->expectException(RuntimeException::class);
-
-		try {
-			$this->node()->execute(
-				$this->items(),
-				$this->config(),
-				[
-					FlowNodeResumeState::CONTEXT_KEY => $resume,
-					'runAs' => 'ghost',
-				]
-			);
-		} finally {
-			self::assertSame(0, $this->raised, 'Nothing may be raised under an identity that does not resolve.');
-		}
-	}//end testAnUnresolvableActingIdentityRefuses()
+	// The runAs tests retired with dossiq's FlowRunAsScope: the engine's
+	// RegistryStepDispatcher executes every contributed node inside
+	// ObjectService::runAs() as the run's validated acting identity
+	// (openregister#3332, proven by its RegistryStepDispatcherRunAsTest), so
+	// the whole dispatch — including decidiq's synchronous listener write — is
+	// scoped without a local wrap, and a test demanding one would re-encode
+	// the retired requirement.
 
 	/**
 	 * 🔴 A heartbeat must not raise a SECOND decision.

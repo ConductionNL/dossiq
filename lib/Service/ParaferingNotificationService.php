@@ -147,7 +147,7 @@ class ParaferingNotificationService {
 	 * app that detects an overdue parafering step, so the reminder had no
 	 * trigger. The live notifications on this service
 	 * (`notifyVoorstelReturned` and its siblings) are driven by
-	 * `ApprovalStepNotificationListener` and `ParafeerActieService`; the
+	 * `ApprovalStepNotificationListener` and the parafering conclusion recorder; the
 	 * reminder is the one with no producer. Adding a job to fire it is a
 	 * feature, not dead-code removal.
 	 */

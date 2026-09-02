@@ -29,7 +29,7 @@ import { dismissSupportDialog, navTo } from '../helpers/nav.ts'
  * does not render (unseeded register or deploy mismatch).
  */
 async function openFirstCaseOrSkip(page) {
-	await navTo(page, 'Cases').catch(() => {})
+	await navTo(page, /^(All issues|Alle zaken)$/).catch(() => {})
 	await dismissSupportDialog(page).catch(() => {})
 	const row = page.locator('.viewTableRow, tr[role="row"], .list-item').first()
 	// This gate gives the WHOLE FILE its verdict, and it used `count()` — one

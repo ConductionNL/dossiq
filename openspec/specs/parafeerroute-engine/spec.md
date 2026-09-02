@@ -57,22 +57,22 @@ The system SHALL execute parafeerroute steps in sequential order. Each step SHAL
 
 ### Requirement: Admin parafeerroute configuration
 
-The system SHALL provide an authoring UI for creating and managing approval routes. Routes SHALL be linkable to case types and voorstel types.
+Approval routes SHALL be authored in the decision app. dossiq raises a voorstel's
+chain there and records the outcome, and SHALL NOT offer a local authoring surface.
 
-AMENDED 2026-09-02. That UI is the flow canvas at `/flows` and `/flows/:id`, not a
-bespoke route designer. dossiq#1632 enabled the projection, so an approval route is
-a flow: the route object is what a flow was generated FROM, and the flow is what
-drives parafering. The `/settings/parafeerroutes` index page is retired because
-editing there does not reach the running flow unless somebody re-runs
-`occ dossiq:migrate-approval-routes-to-flows`, which would overwrite whatever was
-authored on the canvas. `/settings/parafeerroutes/:id` stays registered for reading
-a legacy route.
+AMENDED 2026-09-02. dossiq#1666 moved the parafering RUNTIME to decidiq and retired
+the local engine with no facade, including the dossiq-side flow projection that
+dossiq#1632 had introduced. So there is no dossiq authoring surface left to keep,
+and the `/settings/parafeerroutes` index page is retired with it: editing a route
+object here would reach nothing that runs. `/settings/parafeerroutes/:id` stays
+registered so a reader can still open a legacy route object, and so the frozen
+`procest.parafering.*` audit trail that names `parafeerrouteId` keeps resolving.
 
 **Feature tier**: V1
 
 #### Scenario: Create a new approval route
 
-- **WHEN** the beheerder opens `/flows` and creates a flow
+- **WHEN** the beheerder authors the approval route in the decision app
 - **THEN** the beheerder SHALL be able to create a new route with a name
 - **AND** the beheerder SHALL be able to add steps with: step type (advies/parafering/accordering), actor type (user/group/role), actor selection, mandatory flag
 - **AND** the beheerder SHALL be able to reorder steps on the canvas

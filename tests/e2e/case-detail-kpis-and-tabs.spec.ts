@@ -44,6 +44,12 @@ const TAB_LABELS = [
 	/Sub-cases|Deelzaken/,
 	/Mail/,
 	/Appointments|Afspraken/,
+	// Decisions is decidiq's widget, not dossiq's own list — dossiq no longer
+	// renders its `decision` schema at all. Contacts and Locations moved in
+	// from the page body, so the case's collections all live in one strip.
+	/Decisions|Besluiten|Besluitvorming/,
+	/Contacts|Contacten/,
+	/Locations|Locaties/,
 ]
 
 /**
@@ -58,8 +64,6 @@ const COLUMN_TITLES = [
 	/Hours booked|Geboekte uren/,
 	/Flow runs|Flow-uitvoeringen/,
 	/Tasks|Taken/,
-	/Decisions|Besluiten/,
-	/Locations|Locaties/,
 ]
 
 test.describe('Case detail — KPI row, tabbed panels, right column', () => {
@@ -230,6 +234,43 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		expect(unexpected, `console errors: ${unexpected.join(' | ')}`).toEqual([])
 	})
 
+	test('a KPI tile shows its label once, without widget chrome', async ({
+		page,
+	}) => {
+		// The KPI cells carry `showTitle: false`, because a KPI tile already
+		// renders its own label inside the card. Without the flag the grid draws
+		// a CnWidgetWrapper header on top — the title twice, and an Actions menu
+		// on a read-only tile, which the Cards-vs-Widgets split says a card must
+		// not have.
+		//
+		// This regressed once already: rebuilding the layout from a list of
+		// tuples silently dropped the flag from five cells, and nothing failed.
+		// Every gate passed and the E2E passed, because no assertion described
+		// what a KPI tile is supposed to look like. This is that assertion.
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		const timeLeft = page.locator('.cn-countdown-widget')
+		await expect(timeLeft).toBeVisible({ timeout: 20_000 })
+
+		// The label appears exactly once in the tile's own cell.
+		const cell = page
+			.locator('.cn-widget-grid__item, .grid-stack-item')
+			.filter({ has: page.locator('.cn-countdown-widget') })
+			.first()
+		const labelCount = await cell
+			.getByText(/^(Time left|Resterende tijd)$/)
+			.count()
+		expect(labelCount, 'the KPI label must render once, not twice').toBe(1)
+
+		// And a read-only tile carries no Actions menu of its own.
+		await expect(
+			cell.getByRole('button', { name: /^(Actions|Acties)$/ }),
+		).toHaveCount(0)
+	})
+
 	test('the tabs widget renders one tab per configured panel', async ({
 		page,
 	}) => {
@@ -310,6 +351,16 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 				timeout: 20_000,
 			})
 		}
+
+		// Decisions and Locations MOVED into the tab strip. Asserting only that
+		// the column shows three things would still pass if they had stayed and
+		// the page simply grew, so assert they are gone from the body: their
+		// only remaining owner is a tab.
+		for (const gone of [/Decisions|Besluiten/, /Locations|Locaties/]) {
+			await expect(
+				page.locator('.cn-widget-wrapper').filter({ hasText: gone }),
+			).toHaveCount(0)
+		}
 	})
 
 	test('the Locations widget can actually query its schema', async ({ page }) => {
@@ -326,6 +377,15 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
 		})
+
+		// Locations moved into the tab strip, and tab panels are LAZY — the
+		// widget does not mount, so it does not query, until its tab is opened.
+		// Without this click the poll below times out on zero responses and
+		// reads as "the schema 404s again", which is the very thing this spec
+		// exists to tell apart from an empty state.
+		const strip = page.locator('.cn-tabs-widget')
+		await expect(strip).toBeVisible({ timeout: 30_000 })
+		await strip.getByRole('tab', { name: /Locations|Locaties/ }).click()
 
 		await expect
 			.poll(() => responses.length, { timeout: 20_000 })

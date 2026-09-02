@@ -87,9 +87,10 @@ Neither SHALL be added to the `SettingsGroup` relocations.
 Every page whose nav leaf is relocated SHALL remain reachable by its existing route after the change.
 
 AMENDED 2026-09-02. One exception: the `/settings/parafeerroutes` INDEX page is retired outright.
-An approval route is a flow now, so the design screen invited edits that never reach the running
-flow. `/settings/parafeerroutes/:id` stays registered, so a reader can still open a legacy route and
-see what a flow was generated from, and the audit context naming `parafeerrouteId` keeps resolving.
+dossiq#1666 moved parafering to the decision app and retired the local engine, so the design screen
+invited edits that reach nothing that runs. `/settings/parafeerroutes/:id` stays registered, so a
+reader can still open a legacy route object, and the audit context naming `parafeerrouteId` keeps
+resolving.
 dossiq SHALL NOT change any page `id`, `route`, `type` or `component` as part of this relocation; the
 change SHALL touch only the menu structure (`src/manifest.json#menu`, `src/menu-layout.json`) and the
 `Legesberekeningen` section flag.

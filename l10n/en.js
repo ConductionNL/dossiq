@@ -1,6 +1,7 @@
 OC.L10N.register(
     "dossiq",
     {
+        "Contacts": "Contacts",
         "— choose —": "— choose —",
         "'Valid from' date must be set": "'Valid from' date must be set",
         "'Valid until' must be after 'Valid from'": "'Valid until' must be after 'Valid from'",
@@ -3439,7 +3440,19 @@ OC.L10N.register(
         "Mail & messages": "Mail & messages",
         "Time left": "Time left",
         "Assigned to me": "Assigned to me",
-        "All issues": "All issues"
+        "All issues": "All issues",
+        "This proposal has been returned. Adjust the document; it re-enters parafering through the case workflow.": "This proposal has been returned. Adjust the document; it re-enters parafering through the case workflow.",
+        "Always required": "Always required",
+        "Choice from a list": "Choice from a list",
+        "Email address": "Email address",
+        "Required from {status}": "Required from {status}",
+        "Required from a later status": "Required from a later status",
+        "Required from status": "Required from status",
+        "Structured data": "Structured data",
+        "Yes or no": "Yes or no",
+        "Maximum length": "Maximum length",
+        "Longest value this property accepts.": "Longest value this property accepts.",
+        "The status from which this property must be answered.": "The status from which this property must be answered."
     },
     "nplurals=2; plural=(n != 1);"
 )

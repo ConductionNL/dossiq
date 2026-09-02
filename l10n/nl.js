@@ -1,6 +1,7 @@
 OC.L10N.register(
     "dossiq",
     {
+        "Contacts": "Contacten",
         "— choose —": "— kies —",
         "'Valid from' date must be set": "Datum 'Geldig vanaf' moet worden ingevuld",
         "'Valid until' must be after 'Valid from'": "'Geldig tot' moet na 'Geldig vanaf' liggen",
@@ -3439,7 +3440,19 @@ OC.L10N.register(
         "Mail & messages": "Mail en berichten",
         "Log hours": "Uren boeken",
         "Assigned to me": "Aan mij toegewezen",
-        "All issues": "Alle zaken"
+        "All issues": "Alle zaken",
+        "This proposal has been returned. Adjust the document; it re-enters parafering through the case workflow.": "Dit voorstel is teruggestuurd. Pas het document aan; het gaat opnieuw in parafering via de zaakworkflow.",
+        "Always required": "Altijd verplicht",
+        "Choice from a list": "Keuze uit een lijst",
+        "Email address": "E-mailadres",
+        "Required from {status}": "Verplicht vanaf {status}",
+        "Required from a later status": "Verplicht vanaf een latere status",
+        "Required from status": "Verplicht vanaf status",
+        "Structured data": "Gestructureerde gegevens",
+        "Yes or no": "Ja of nee",
+        "Maximum length": "Maximale lengte",
+        "Longest value this property accepts.": "De langste waarde die deze eigenschap accepteert.",
+        "The status from which this property must be answered.": "De status vanaf wanneer deze eigenschap ingevuld moet zijn."
     },
     "nplurals=2; plural=(n != 1);"
 )

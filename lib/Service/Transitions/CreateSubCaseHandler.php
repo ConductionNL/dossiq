@@ -25,7 +25,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
-use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
@@ -39,12 +38,10 @@ class CreateSubCaseHandler implements ActionHandlerInterface {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister + config
-	 * @param FlowRunAsScope $runAsScope Scopes the sub-case write to the run's acting identity
 	 * @param LoggerInterface $logger Logger
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly FlowRunAsScope $runAsScope,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -80,13 +77,11 @@ class CreateSubCaseHandler implements ActionHandlerInterface {
 				'hoofdzaak' => $parentId,
 			];
 
-			// Under FlowRunWorker the ambient session carries nobody, so a
-			// bare saveObject() is refused as 'Anonymous'; the write runs as
-			// the run's `runAs` identity when the context names one.
-			$created = $this->runAsScope->call(
-				context: $transitionContext,
-				operation: static fn (): mixed => $objectService->saveObject(object: $subCase, register: $register, schema: $caseSchema)
-			);
+			// On the flow path the engine's RegistryStepDispatcher already runs
+			// this handler inside `ObjectService::runAs()` as the run's acting
+			// identity (openregister#3332); on the interactive path the ambient
+			// session user answers the permission checks. No local wrap needed.
+			$created = $objectService->saveObject(object: $subCase, register: $register, schema: $caseSchema);
 			$subId = '';
 			if (is_array($created) === true) {
 				$subId = (string)($created['id'] ?? '');
