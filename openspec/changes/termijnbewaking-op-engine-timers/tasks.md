@@ -57,8 +57,12 @@
       per DSO-zaak and a `FlowTimerFiredEvent` consumer that drives the SAME
       `StatusTransitionService` path a user action takes (no cron-only transition code). Retire
       the job; remove its allowlist entry.
-- [ ] 2.4 **Vergadering** — `VergaderingDeadlineJob` likewise: timer per vergadering deadline,
-      listener drives the transition. Retire the job; remove its allowlist entry.
+- [x] 2.4 **Vergadering** — DELIVERED BY RETIREMENT, not by migration: the wave-5 status sweep
+      (`openspec/changes/case-status-onto-engine-lifecycle`) found the engine dead — the job
+      scanned for cases with a literal `status: 'planned'`, which `case.status` (a statusType
+      reference) can never hold, and the only writer of such cases was removed earlier. The job,
+      `VergaderingCaseService`, their tests and the allowlist entry are gone; there was nothing
+      to arm a timer for.
 - [ ] 2.5 **Advice** — `AdviceDeadlineJob` (the fifth sibling, found during phase 1's structural
       sweep): advice-request deadlines onto armed timers; retire the job; remove its allowlist
       entry.

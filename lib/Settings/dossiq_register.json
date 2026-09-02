@@ -7998,44 +7998,64 @@
                         "title": "Hearing Waiver"
                     }
                 },
-                "x-openregister-lifecycle": {
-                    "transitions": [
-                        {
-                            "from": "ontvangen",
-                            "to": "ontvangst_bevestigd",
-                            "label": "Ontvangstbevestiging verzonden"
-                        },
-                        {
-                            "from": "ontvangst_bevestigd",
-                            "to": "in_behandeling",
-                            "label": "In behandeling genomen"
-                        },
-                        {
-                            "from": "in_behandeling",
-                            "to": "hoorgesprek_gepland",
-                            "label": "Hoorgesprek gepland"
-                        },
-                        {
-                            "from": "hoorgesprek_gepland",
-                            "to": "hoorgesprek_afgerond",
-                            "label": "Hoorgesprek afgerond"
-                        },
-                        {
-                            "from": "hoorgesprek_afgerond",
-                            "to": "afgehandeld",
-                            "label": "Klacht afgehandeld"
-                        },
-                        {
-                            "from": "in_behandeling",
-                            "to": "afgehandeld",
-                            "label": "Afgehandeld (zonder hoorgesprek)"
-                        },
-                        {
-                            "from": "*",
-                            "to": "withdrawn",
-                            "label": "Klacht ingetrokken"
+                "configuration": {
+                    "x-openregister-lifecycle": {
+                        "field": "status",
+                        "initial": "received",
+                        "final": [
+                            "handled",
+                            "withdrawn"
+                        ],
+                        "transitions": {
+                            "confirmReceipt": {
+                                "from": [
+                                    "received"
+                                ],
+                                "to": "receipt_confirmed",
+                                "description": "Send the receipt confirmation (Awb 9:6)."
+                            },
+                            "startHandling": {
+                                "from": [
+                                    "receipt_confirmed"
+                                ],
+                                "to": "in_handling",
+                                "description": "Take the complaint into handling."
+                            },
+                            "planHoorgesprek": {
+                                "from": [
+                                    "in_handling"
+                                ],
+                                "to": "hoorgesprek_planned",
+                                "description": "Plan the hoorgesprek (Awb 9:10)."
+                            },
+                            "completeHoorgesprek": {
+                                "from": [
+                                    "hoorgesprek_planned"
+                                ],
+                                "to": "hoorgesprek_completed",
+                                "description": "Record the completed hoorgesprek."
+                            },
+                            "handle": {
+                                "from": [
+                                    "in_handling",
+                                    "hoorgesprek_completed"
+                                ],
+                                "to": "handled",
+                                "description": "Close the complaint with a disposition, with or without a hoorgesprek."
+                            },
+                            "withdraw": {
+                                "from": [
+                                    "received",
+                                    "receipt_confirmed",
+                                    "in_handling",
+                                    "hoorgesprek_planned",
+                                    "hoorgesprek_completed"
+                                ],
+                                "to": "withdrawn",
+                                "description": "The complainant withdraws the complaint."
+                            }
                         }
-                    ]
+                    }
                 }
             },
             "hearing": {
