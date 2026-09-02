@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
@@ -55,12 +56,14 @@ class SetStatusHandler implements ActionHandlerInterface {
 	 * @param SettingsService $settingsService Resolves the object service and the configured schemas.
 	 * @param StatusTypeLookup $statuses       Resolves a status name to its id within a case type.
 	 * @param FlowRunAsScope  $runAsScope      Scopes the resolve-and-write to the run's acting identity.
+	 * @param CaseFieldWriter $caseWriter      Applies ONLY this handler's field to the stored case.
 	 * @param LoggerInterface $logger          The logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly StatusTypeLookup $statuses,
 		private readonly FlowRunAsScope $runAsScope,
+		private readonly CaseFieldWriter $caseWriter,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -122,6 +125,13 @@ class SetStatusHandler implements ActionHandlerInterface {
 			// it is a read that decides what the write then touches; running
 			// the two under different subjects is how a status resolves that
 			// the write is not allowed to stamp.
+			//
+			// ONLY `status` is written. `$case` is a SNAPSHOT of the flow
+			// item, not the stored case; full-saving it here is what erased
+			// `besluitDocument` one step after the document step wrote it
+			// (measured live: case a53cfc92/dc16d6dd, audits 512→515 and
+			// 725→728, same second). The writer applies this handler's field
+			// to the STORED case and touches nothing else.
 			$statusId = (string) $this->runAsScope->call(
 				context: $transitionContext,
 				operation: function () use ($caseTypeId, $statusName, $case, $objectService, $register, $caseSchema): string {
@@ -134,8 +144,13 @@ class SetStatusHandler implements ActionHandlerInterface {
 						return '';
 					}
 
-					$case['status'] = $statusId;
-					$objectService->saveObject(object: $case, register: $register, schema: $caseSchema);
+					$this->caseWriter->write(
+						objectService: $objectService,
+						register: $register,
+						schema: $caseSchema,
+						case: $case,
+						changes: ['status' => $statusId]
+					);
 
 					return $statusId;
 				}
@@ -155,7 +170,8 @@ class SetStatusHandler implements ActionHandlerInterface {
 
 			return new ActionResult(
 				succeeded: true,
-				data: ['status' => $statusId, 'statusName' => $statusName]
+				data: ['status' => $statusId, 'statusName' => $statusName],
+				caseChanges: ['status' => $statusId]
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
