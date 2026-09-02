@@ -5,7 +5,7 @@
  *
  * Resolves the (register, voorstel schema, parafeeractie schema) triple the
  * parafering action recorder works against, and loads a single voorstel by
- * UUID. Split out of ParafeerActieService so that service keeps action
+ * UUID. Split out of the retired parafering action service so callers keep action
  * recording and step advancement while the configuration lookup and the load
  * that must fail as a bad request live here.
  *

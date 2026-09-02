@@ -5,8 +5,8 @@
  *
  * Wires the besluitvorming parafering chain into the workflow engine. When a
  * case enters the "Parafering" status step, this auto-action resolves the
- * case's active voorstel and invokes BesluitvormingParafeerService::activate()
- * to snapshot the parafeerroute and open the first paraaf task.
+ * case's active voorstel and invokes ParaferingRaiseService::activate() to raise
+ * the parafeerroute's chain in the decision app.
  *
  * Action config shape: `{type: 'besluitvormingActivate'}`. The voorstel is
  * resolved from the case rather than caller-supplied data.
@@ -32,8 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
-use OCA\Dossiq\Service\BesluitvormingParafeerService;
 use OCA\Dossiq\Service\FlowRunAsScope;
+use OCA\Dossiq\Service\Parafeer\ParaferingRaiseService;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
@@ -46,7 +46,7 @@ class BesluitvormingActivateHandler implements ActionHandlerInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param BesluitvormingParafeerService $parafeerService The parafering chain orchestrator.
+	 * @param ParaferingRaiseService $parafeerService Raises the parafering chain in the decision app.
 	 * @param SettingsService $settingsService Bridge to OpenRegister + config.
 	 * @param FlowRunAsScope $runAsScope Scopes the voorstel lookup and the chain's writes to the run's acting identity.
 	 * @param LoggerInterface $logger Logger.
@@ -54,7 +54,7 @@ class BesluitvormingActivateHandler implements ActionHandlerInterface {
 	 * @return void
 	 */
 	public function __construct(
-		private readonly BesluitvormingParafeerService $parafeerService,
+		private readonly ParaferingRaiseService $parafeerService,
 		private readonly SettingsService $settingsService,
 		private readonly FlowRunAsScope $runAsScope,
 		private readonly LoggerInterface $logger,
