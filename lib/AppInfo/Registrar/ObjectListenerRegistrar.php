@@ -32,8 +32,10 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 use OCA\Dossiq\Listener\KpiCacheInvalidationListener;
 use OCA\Dossiq\Listener\LocationBagValidationListener;
 use OCA\Dossiq\Listener\RoleMutationListener;
+use OCA\Dossiq\Listener\TermijnTimerFiredListener;
 use OCA\Dossiq\Listener\VergunningaanvraagCreatedListener;
 use OCA\Dossiq\Notification\Notifier;
+use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
@@ -66,6 +68,16 @@ class ObjectListenerRegistrar {
 
 		$this->registerCacheInvalidationListeners(context: $context);
 		$this->registerIntakeListeners(context: $context);
+
+		// One clock (termijnbewaking-op-engine-timers): the engine sweep
+		// fires the armed termijn timers; this listener does the domain
+		// side (threshold bookkeeping, breach flip, dwangsom accrual sync,
+		// pause expiry). The ::class reference does not autoload, so
+		// registration is safe when OpenRegister is absent.
+		$context->registerEventListener(
+			event: FlowTimerFiredEvent::class,
+			listener: TermijnTimerFiredListener::class
+		);
 	}//end register()
 
 	/**

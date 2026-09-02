@@ -57,7 +57,10 @@
       the job; remove its allowlist entry.
 - [ ] 2.4 **Vergadering** — `VergaderingDeadlineJob` likewise: timer per vergadering deadline,
       listener drives the transition. Retire the job; remove its allowlist entry.
-- [ ] 2.5 Shared: extend `TermijnTimerFiredListener` (or split per engine) on `metadata.kind`;
+- [ ] 2.5 **Advice** — `AdviceDeadlineJob` (the fifth sibling, found during phase 1's structural
+      sweep): advice-request deadlines onto armed timers; retire the job; remove its allowlist
+      entry.
+- [ ] 2.6 Shared: extend `TermijnTimerFiredListener` (or split per engine) on `metadata.kind`;
       each retirement carries its own fixture pair for the date arithmetic that moves.
 
 ## Phase 3: milestones (staged)

@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -98,18 +99,26 @@ class DwangsomCalculationService {
 	}//end dailyTariffAwb()
 
 	/**
-	 * Advance one calculation day on a DwangsomBerekening.
+	 * Settle a DwangsomBerekening's accrual through a moment in time.
 	 *
-	 * Reads the berekening, computes the next day's tariff (per regime),
-	 * adds it to cumulatievBedrag (capped at plafond), and persists.
+	 * Derives the day count from the berekening's `startDate` (receipt +
+	 * grace, per AWB 4:17) to `$now` and applies the identical per-day
+	 * tier step for every not-yet-accrued day, capped at the plafond.
+	 * Idempotent per day and catch-up-safe: it replaces the retired
+	 * cron-tick accrual, which advanced one day per scan run and so
+	 * under-accrued on missed runs, over-accrued on doubled runs, and
+	 * accrued during the grace window. The timers consult this
+	 * calculation; nothing schedules it.
 	 *
 	 * @param string $calculationId Berekening id.
+	 * @param DateTimeImmutable|null $now The clock (defaults to now).
 	 *
-	 * @return array<string, mixed>|null
+	 * @return array<string, mixed>|null The settled row.
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-06-dwangsom-calculation/tasks.md
+	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
 	 */
-	public function calculateDaily(string $calculationId): ?array {
+	public function accrueThrough(string $calculationId, ?DateTimeImmutable $now = null): ?array {
+		$now = ($now ?? new DateTimeImmutable());
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$schema = (string)$this->settingsService->getConfigValue('dwangsom_berekening_schema');
@@ -131,7 +140,14 @@ class DwangsomCalculationService {
 			return $row;
 		}
 
-		$row = $this->applyDailyAccrual(row: $row);
+		$targetDay = $this->elapsedAccrualDays(row: $row, now: $now);
+		if ((int)($row['currentDag'] ?? 0) >= $targetDay) {
+			return $row;
+		}
+
+		while ((int)($row['currentDag'] ?? 0) < $targetDay && ($row['plafondBereikt'] ?? false) === false) {
+			$row = $this->applyDailyAccrual(row: $row);
+		}
 
 		return $this->persistCalculation(
 			objectService: $objectService,
@@ -140,7 +156,36 @@ class DwangsomCalculationService {
 			row: $row,
 			calculationId: $calculationId
 		);
-	}//end calculateDaily()
+	}//end accrueThrough()
+
+	/**
+	 * The number of accrual days elapsed between the berekening's start
+	 * and a moment, at day granularity, never negative.
+	 *
+	 * @param array<string, mixed> $row Berekening row.
+	 * @param DateTimeImmutable $now The clock.
+	 *
+	 * @return int Whole accrual days elapsed (0 while inside the grace window).
+	 */
+	private function elapsedAccrualDays(array $row, DateTimeImmutable $now): int {
+		$start = (string)($row['startDate'] ?? '');
+		if ($start === '') {
+			return 0;
+		}
+
+		try {
+			$startDay = new DateTimeImmutable((new DateTimeImmutable($start))->format('Y-m-d'));
+			$today = new DateTimeImmutable($now->format('Y-m-d'));
+		} catch (\Throwable $e) {
+			return 0;
+		}
+
+		if ($today <= $startDay) {
+			return 0;
+		}
+
+		return (int)$startDay->diff($today)->days;
+	}//end elapsedAccrualDays()
 
 	/**
 	 * Fetch a DwangsomBerekening row, logging and swallowing lookup failures.
@@ -246,15 +291,20 @@ class DwangsomCalculationService {
 	/**
 	 * Stop a DwangsomBerekening because the beschikking was filed.
 	 *
-	 * Sets status=gestopt-wegens-beschikking and locks definitievBedrag.
+	 * Settles the accrual through the stop moment FIRST — the legally
+	 * binding `definitiveAmount` reflects the elapsed days, not the last
+	 * time anything happened to sync — then sets
+	 * status=gestopt-wegens-beschikking and locks definitievBedrag.
 	 *
 	 * @param string $calculationId Berekening id.
+	 * @param DateTimeImmutable|null $now The stop moment (defaults to now).
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-06-dwangsom-calculation/tasks.md
+	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
 	 */
-	public function stopForBeschikking(string $calculationId): ?array {
+	public function stopForBeschikking(string $calculationId, ?DateTimeImmutable $now = null): ?array {
+		$this->accrueThrough($calculationId, $now);
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$schema = (string)$this->settingsService->getConfigValue('dwangsom_berekening_schema');

@@ -133,7 +133,12 @@ Vrij en open source onder de EUPL-1.2-licentie.
         <job>OCA\Dossiq\BackgroundJob\BezwaarTermijnJob</job>
         <job>OCA\Dossiq\BackgroundJob\DsoDeadlineJob</job>
         <job>OCA\Dossiq\BackgroundJob\ResetMonthlyQuotasJob</job>
-        <job>OCA\Dossiq\BackgroundJob\DailyDeadlineScanJob</job>
+        <!--
+            The daily termijn scan (DailyDeadlineScanJob) is RETIRED: the
+            OpenRegister FlowTimerWorker sweep fires the armed termijn
+            timers, and TermijnTimerFiredListener does the domain side.
+            See openspec/changes/termijnbewaking-op-engine-timers.
+        -->
         <job>OCA\Dossiq\BackgroundJob\InboundEmailJob</job>
         <job>OCA\Dossiq\BackgroundJob\EmailPdfRetryJob</job>
         <job>OCA\Dossiq\BackgroundJob\SentimentAnalysisJob</job>
@@ -355,6 +360,17 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 already have `bezwaar` are skipped) and non-fatal.
             -->
             <step>OCA\Dossiq\Repair\BackfillAdviceRequestObjection</step>
+            <!--
+                One clock: arms an OpenRegister FlowTimer for every in-flight
+                TermijnInstance that does not carry one yet (engineTimerId),
+                suspending the timer for paused rows. Idempotent, skips
+                terminal rows, and never throws — an unreachable engine is a
+                warning plus a failed count, not a broken upgrade. Catch-up
+                rung fires after migration are absorbed by the
+                notificatiesVerstuurd dedup in TermijnTimerFiredListener.
+                POST-MIGRATION only: a fresh install has no instances to arm.
+            -->
+            <step>OCA\Dossiq\Repair\ArmTermijnEngineTimers</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
