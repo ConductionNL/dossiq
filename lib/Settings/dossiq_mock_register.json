@@ -3076,6 +3076,22 @@
             "title": "DSO Explanation",
             "description": "Decision motivation or rejection reasoning for DSO transparency",
             "visible": false
+          },
+          "publications": {
+            "type": "array",
+            "title": "Publications",
+            "description": "Besluit publication records written by PublicationService, one per channel: channel, publishedAt, notes, and the delivery record integriq reports back through the ADR-041 delivery seam. Mirrors the real register so the mock does not diverge from what the store persists.",
+            "items": {
+              "type": "object"
+            },
+            "visible": false
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Published at",
+            "description": "Timestamp of the most recent besluit publication on any channel. Mirrors the real register.",
+            "visible": false
           }
         },
         "searchable": true

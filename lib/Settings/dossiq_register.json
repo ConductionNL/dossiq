@@ -1715,6 +1715,22 @@
                         "title": "Commission decision",
                         "description": "The outcome Decidiq returns for the planning commission's final decision (decide-commissie, signalKey commissieBesluit). The document step's template reads its decision field. Declared because the store strips what the schema does not declare: this field was measured being silently dropped on the closure rig while the run reported success.",
                         "visible": false
+                    },
+                    "publications": {
+                        "type": "array",
+                        "title": "Publications",
+                        "description": "Besluit publication records written by PublicationService, one per channel: channel, publishedAt, notes, and the delivery record integriq reports back through the ADR-041 delivery seam (status, correlationId, eventId, attempts, error, concludedAt). Declared because the store strips what the schema does not declare: PublicationService wrote this field from the day it shipped and it was silently dropped on every save.",
+                        "items": {
+                            "type": "object"
+                        },
+                        "visible": false
+                    },
+                    "publishedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Published at",
+                        "description": "Timestamp of the most recent besluit publication on any channel. Declared because the store strips what the schema does not declare.",
+                        "visible": false
                     }
                 },
                 "searchable": true
