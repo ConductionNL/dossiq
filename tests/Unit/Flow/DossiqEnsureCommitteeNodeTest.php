@@ -35,6 +35,10 @@ use UnexpectedValueException;
  * decision app cannot hold the committee (rather than letting the run continue
  * past it), and it short-circuits on a committee already mapped so a heartbeat
  * does not re-dispatch on every pass.
+ *
+ * @covers \OCA\Dossiq\Flow\DossiqEnsureCommitteeNode
+ *
+ * @uses \OCA\Dossiq\Service\FlowRunAsScope
  */
 class DossiqEnsureCommitteeNodeTest extends TestCase {
 
