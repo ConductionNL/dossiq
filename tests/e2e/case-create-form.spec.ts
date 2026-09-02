@@ -102,14 +102,19 @@ test.describe('New case dialog', () => {
 
 	test.afterAll(async () => {
 		if (!api) return
-		// caseProperty before propertyDefinition before caseType: a value row
-		// references both, and deleting the definition first leaves it dangling.
-		await cleanupRunObjects(api, token, [
-			'caseProperty',
-			'case',
-			'propertyDefinition',
-			'caseType',
-		])
+		// Cases and their answers go; the case TYPE and its definitions stay.
+		//
+		// Deleting the case type is what a tidy fixture would do and it breaks
+		// the neighbours: anything still holding that id — a case another spec
+		// filed, a dashboard table resolving `caseType` for a label — then
+		// fetches an object that is gone. On CI that surfaced as
+		// `ui-pages.spec.ts` failing on a 404 console error, a spec that has
+		// nothing to do with this one, on an assertion about the DASHBOARD.
+		//
+		// The instance CI seeds is thrown away after the run, so a leftover
+		// case type costs nothing. A dangling reference costs a red suite
+		// pointing at the wrong file.
+		await cleanupRunObjects(api, token, ['caseProperty', 'case'])
 		await api.dispose()
 	})
 
