@@ -175,7 +175,7 @@ class DemoCaseloadSeedDataService {
 			return '';
 		}
 
-		$created = $this->gateway->create(
+		return $this->gateway->create(
 			objectService: $objectService,
 			registerId: $ids['register'],
 			schemaId: $ids['case'],
@@ -186,12 +186,6 @@ class DemoCaseloadSeedDataService {
 				now: $now
 			)
 		);
-
-		if ($created === null) {
-			return '';
-		}
-
-		return $this->gateway->idOf(object: $created);
 	}//end createCase()
 
 	/**
@@ -260,14 +254,14 @@ class DemoCaseloadSeedDataService {
 		$created = 0;
 
 		foreach ($tasks as $taskSeed) {
-			$object = $this->gateway->create(
+			$id = $this->gateway->create(
 				objectService: $objectService,
 				registerId: $ids['register'],
 				schemaId: $ids['task'],
 				data: $this->taskPayload(taskSeed: $taskSeed, caseId: $caseId, now: $now)
 			);
 
-			if ($object !== null) {
+			if ($id !== '') {
 				$created++;
 			}
 		}

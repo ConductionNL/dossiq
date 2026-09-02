@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\DemoCaseloadGateway;
 use OCA\Dossiq\Service\DemoCaseloadSeedDataService;
+use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -574,7 +575,10 @@ final class DemoCaseloadSeedDataServiceTest extends TestCase {
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturn($objectService);
 
-		$gateway = new DemoCaseloadGateway($appConfig, $container, new NullLogger());
+		$appManager = $this->createMock(IAppManager::class);
+		$appManager->method('isInstalled')->willReturn(true);
+
+		$gateway = new DemoCaseloadGateway($appConfig, $container, new NullLogger(), $appManager);
 
 		return new DemoCaseloadSeedDataService($gateway, new NullLogger());
 	}

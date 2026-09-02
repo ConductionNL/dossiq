@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -49,6 +50,7 @@ class DemoCaseloadGateway {
 	 * @param IAppConfig $appConfig The app configuration service.
 	 * @param ContainerInterface $container The DI container.
 	 * @param LoggerInterface $logger The logger interface.
+	 * @param IAppManager $appManager Used to establish that OpenRegister is present.
 	 *
 	 * @return void
 	 */
@@ -56,6 +58,7 @@ class DemoCaseloadGateway {
 		private IAppConfig $appConfig,
 		private ContainerInterface $container,
 		private LoggerInterface $logger,
+		private IAppManager $appManager,
 	) {
 	}//end __construct()
 
@@ -90,33 +93,56 @@ class DemoCaseloadGateway {
 	/**
 	 * OpenRegister's ObjectService.
 	 *
-	 * 🔴 A CROSS-APP CLASS IS A RUNTIME LOOKUP. Asking the container for a class
-	 * from an app that is not installed raises something the caller cannot act
-	 * on, so name the missing app instead.
+	 * 🔴 A CROSS-APP CLASS IS A RUNTIME LOOKUP, AND THE APP IS OPTIONAL. It
+	 * cannot be a typed constructor property (ADR-083 rule 1): naming a class
+	 * from an app that may not be installed makes PHP resolve it whenever this
+	 * service is constructed, so an instance without OpenRegister fails with an
+	 * error about a class nobody mentioned instead of the message below.
 	 *
-	 * @return object The ObjectService.
+	 * Establish availability FIRST, then look it up. Checking `isInstalled`
+	 * separates "OpenRegister is not here" from "OpenRegister is here and would
+	 * not construct", which are different problems for whoever ran the seed.
 	 *
-	 * @throws RuntimeException When OpenRegister is not available.
+	 * @return object The ObjectService, an OCA\OpenRegister\Service\ObjectService.
+	 *
+	 * @psalm-return \OCA\OpenRegister\Service\ObjectService
+	 *
+	 * @throws RuntimeException When OpenRegister is not installed or cannot be resolved.
 	 *
 	 * @spec openspec/specs/dossiq-app-scaffold/spec.md
 	 */
 	public function objectService(): object {
+		if ($this->appManager->isInstalled('openregister') === false) {
+			throw new RuntimeException('The demo caseload needs OpenRegister, which is not installed.');
+		}
+
 		try {
 			return $this->container->get('OCA\OpenRegister\Service\ObjectService');
 		} catch (\Throwable $e) {
-			throw new RuntimeException('The demo caseload needs OpenRegister, which is not available.');
+			throw new RuntimeException(
+				'OpenRegister is installed but its ObjectService could not be resolved: ' . $e->getMessage()
+			);
 		}
 	}//end objectService()
 
 	/**
-	 * Create an object in OpenRegister.
+	 * Create an object and return the id it was given.
+	 *
+	 * Returns the ID rather than the entity because that is the only thing
+	 * either caller wants: the seeder needs a case's id to hang its tasks off,
+	 * and needs nothing at all from a created task beyond whether it worked.
+	 * Handing back the entity made every call site follow it with {@see idOf()}.
+	 *
+	 * A failure is reported as '' rather than raised: one case that will not
+	 * save should not abandon the rest of the seed, and the failure is logged
+	 * with the title so it is identifiable.
 	 *
 	 * @param object $objectService The OpenRegister ObjectService.
 	 * @param string $registerId The register id.
 	 * @param string $schemaId The schema id.
 	 * @param array $data The object data.
 	 *
-	 * @return object|null The created object, or null on failure.
+	 * @return string The new object's id, or '' when it could not be created.
 	 *
 	 * @spec openspec/specs/dossiq-app-scaffold/spec.md
 	 */
@@ -125,9 +151,9 @@ class DemoCaseloadGateway {
 		string $registerId,
 		string $schemaId,
 		array $data,
-	): ?object {
+	): string {
 		try {
-			return $objectService->saveObject(
+			$created = $objectService->saveObject(
 				register: $registerId,
 				schema: $schemaId,
 				object: $data,
@@ -137,8 +163,10 @@ class DemoCaseloadGateway {
 				'Dossiq: Demo seed could not create an object',
 				['schema' => $schemaId, 'title' => ($data['title'] ?? ''), 'exception' => $e->getMessage()]
 			);
-			return null;
+			return '';
 		}
+
+		return $this->idOf(object: $created);
 	}//end create()
 
 	/**
