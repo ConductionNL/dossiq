@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Actions;
 
 use OCA\Dossiq\Service\Actions\MergeTemplateHandler;
+use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IAppConfig;
@@ -35,6 +36,7 @@ use Psr\Log\NullLogger;
 /**
  * @covers \OCA\Dossiq\Service\Actions\MergeTemplateHandler
  *
+ * @uses \OCA\Dossiq\Service\CaseFieldWriter
  * @uses \OCA\Dossiq\Service\FlowRunAsScope
  * @uses \OCA\Dossiq\Service\Actions\ActionResult
  */
@@ -86,6 +88,22 @@ class MergeTemplateHandlerTest extends TestCase {
 				$this->sink = $object;
 
 				return $object;
+			}
+
+			/**
+			 * PATCH-semantic, like the real seam the handler now writes through.
+			 *
+			 * @param string               $objectId The case id.
+			 * @param array<string, mixed> $data     The partial payload.
+			 * @param string|null          $register The register.
+			 * @param string|null          $schema   The schema.
+			 *
+			 * @return array<string, mixed> The written fields so far.
+			 */
+			public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): array {
+				$this->sink = array_merge(($this->sink ?? []), $data);
+
+				return $this->sink;
 			}
 
 			/**
@@ -142,6 +160,7 @@ class MergeTemplateHandlerTest extends TestCase {
 			container: $container,
 			appConfig: $appConfig,
 			runAsScope: new FlowRunAsScope($settings, $users),
+			caseWriter: new CaseFieldWriter(),
 			logger: new NullLogger(),
 		);
 	}//end handler()

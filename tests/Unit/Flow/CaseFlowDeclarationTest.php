@@ -710,9 +710,21 @@ class CaseFlowDeclarationTest extends TestCase {
 	 *  - `openregister.set-fields`: the keys of `set` and `compute`, and the
 	 *    new names in `rename` (SetFieldsNode's config vocabulary);
 	 *  - `dossiq.setStatus`: `status`;
-	 *  - `dossiq.action.*`: the config's `targetField`, plus the output key
+	 *  - `dossiq.setField`: the config's `field`;
+	 *  - `dossiq.evaluateDecision`: the case fields its `outputMapping` names;
+	 *  - any dossiq node with a `targetField`: that field (mergeTemplate and
+	 *    kin), plus — for `dossiq.action.*` — the output key
 	 *    DossiqFlowNodeBase merges the handler result under, which defaults
-	 *    to `actionResult` when the step names none.
+	 *    to `actionResult` when the step names none;
+	 *  - any node with a `signalKey`: that field. An ask or decision node
+	 *    stamps the signal payload onto the case snapshot when the run
+	 *    resumes, and a snapshot field is a case field the moment any writer
+	 *    persists it.
+	 *
+	 * The first version of this walk covered only the first three shapes, and
+	 * that is exactly how `commissieBesluit` slipped through: its writer is
+	 * the decision node's signal, not a set-fields step, so the walk never saw
+	 * it and the store silently dropped it on every save.
 	 *
 	 * A new node writing a new field fails here before it fails silently in
 	 * production.
@@ -748,16 +760,41 @@ class CaseFlowDeclarationTest extends TestCase {
 				$written['status'] = $node['id'];
 			}
 
-			if (str_starts_with($type, 'dossiq.action.') === true) {
+			if ($type === 'dossiq.setField') {
+				$field = trim((string)($config['field'] ?? ''));
+				if ($field !== '') {
+					$written[$field] = $node['id'];
+				}
+			}
+
+			if ($type === 'dossiq.evaluateDecision') {
+				foreach ((array)($config['outputMapping'] ?? []) as $caseField) {
+					$written[(string)$caseField] = $node['id'];
+				}
+			}
+
+			// A targetField is a case write on ANY dossiq node that carries
+			// one, not only the action catalogue's.
+			if (str_starts_with($type, 'dossiq.') === true) {
 				$target = trim((string)($config['targetField'] ?? ''));
 				if ($target !== '') {
 					$written[$target] = $node['id'];
 				}
+			}
 
+			if (str_starts_with($type, 'dossiq.action.') === true) {
 				// DossiqFlowNodeBase::execute() merges the handler result
 				// under config `output`, defaulting to `actionResult`.
 				$written[trim((string)($config['output'] ?? '')) !== ''
 					? (string)$config['output'] : 'actionResult'] = $node['id'];
+			}
+
+			// The resumed signal payload: DossiqAskPersonNode and
+			// DossiqRequestDecisionNode write it onto the case under the
+			// step's signalKey.
+			$signalKey = trim((string)($config['signalKey'] ?? ''));
+			if ($signalKey !== '') {
+				$written[$signalKey] = $node['id'];
 			}
 		}//end foreach
 
