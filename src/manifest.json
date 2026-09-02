@@ -204,23 +204,30 @@
     },
     {
       "id": "MyWork",
-      "label": "My work",
+      "label": "Assigned to me",
       "icon": "ClipboardAccountOutline",
       "route": "MyWork",
       "order": 20
     },
     {
       "id": "WorkGroup",
-      "label": "Work queue",
+      "label": "My work",
       "icon": "ClipboardAccountOutline",
       "order": 20
     },
     {
       "id": "Cases",
-      "label": "Cases",
+      "label": "All issues",
       "icon": "FolderAccountOutline",
       "route": "Cases",
       "order": 30
+    },
+    {
+      "id": "Tasks",
+      "label": "Tasks",
+      "icon": "FormatListChecks",
+      "route": "Tasks",
+      "order": 32
     },
     {
       "id": "WorkflowBoard",

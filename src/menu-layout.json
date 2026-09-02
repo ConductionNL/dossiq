@@ -23,6 +23,8 @@
 	},
 	"relocations": {
 		"MyWork": "WorkGroup",
+		"Cases": "WorkGroup",
+		"Tasks": "WorkGroup",
 		"WorkflowBoard": "WorkGroup"
 	},
 	"removals": [

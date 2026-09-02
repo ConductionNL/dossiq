@@ -19,7 +19,6 @@
 
 // --- Surviving custom pages — see design.md "Custom-fallback inventory". ---
 import { createApp } from 'vue'
-import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // --- Detail-tab custom components (one per cross-schema relation). ---
 // Stubs for v1 — full implementations follow in `procest-case-relation-tabs`.
@@ -226,7 +225,9 @@ export default {
 
 	// --- Detail-tab components (one per case-detail cross-schema relation). ---
 	CaseTasksTab, // tasks where task.case === parent.id
-	CaseDecisionsTab, // decisions where decision.case === parent.id
+	// CaseDecisionsTab was retired by dossiq-decisions-to-decidiq: decisions
+	// are authored in decidiq (besluitvorming leaf); the read-only
+	// case-decisions widget displays the outcomes stored on the case.
 	CaseDocumentsTab, // documents where document.case === parent.id
 
 	// --- Deelzaak (sub-case) views (manifest /cases/:id/deelzaken[/...]). ---

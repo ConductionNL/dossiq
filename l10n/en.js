@@ -3438,6 +3438,8 @@ OC.L10N.register(
         "Mail": "Mail",
         "Mail & messages": "Mail & messages",
         "Time left": "Time left",
+        "Assigned to me": "Assigned to me",
+        "All issues": "All issues",
         "Always required": "Always required",
         "Choice from a list": "Choice from a list",
         "Email address": "Email address",

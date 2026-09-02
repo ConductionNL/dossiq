@@ -3438,6 +3438,8 @@ OC.L10N.register(
         "Mail": "Mail",
         "Mail & messages": "Mail en berichten",
         "Log hours": "Uren boeken",
+        "Assigned to me": "Aan mij toegewezen",
+        "All issues": "Alle zaken",
         "Always required": "Altijd verplicht",
         "Choice from a list": "Keuze uit een lijst",
         "Email address": "E-mailadres",
