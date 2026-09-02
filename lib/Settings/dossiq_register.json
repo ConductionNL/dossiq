@@ -453,7 +453,7 @@
                         "type": "integer",
                         "minimum": 1,
                         "title": "Maximum length",
-                        "description": "Longest value accepted, for a text property. The properties tab has always offered this and OpenRegister has always discarded it, because the schema did not declare it: a 200-character cap read back as no cap at all."
+                        "description": "Longest value this property accepts."
                     },
                     "enumValues": {
                         "type": "array",
@@ -474,7 +474,7 @@
                         "format": "uuid",
                         "$ref": "statusType",
                         "title": "Required from status",
-                        "description": "The status from which this property must be answered, for a property that is not required at intake. Distinct from isRequired, which demands an answer straight away. Declared because the properties tab already collects it and the store strips what the schema does not declare."
+                        "description": "The status from which this property must be answered."
                     },
                     "defaultValue": {
                         "type": "string",

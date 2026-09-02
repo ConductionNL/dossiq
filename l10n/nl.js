@@ -3448,7 +3448,10 @@ OC.L10N.register(
         "Required from a later status": "Verplicht vanaf een latere status",
         "Required from status": "Verplicht vanaf status",
         "Structured data": "Gestructureerde gegevens",
-        "Yes or no": "Ja of nee"
+        "Yes or no": "Ja of nee",
+        "Maximum length": "Maximale lengte",
+        "Longest value this property accepts.": "De langste waarde die deze eigenschap accepteert.",
+        "The status from which this property must be answered.": "De status vanaf wanneer deze eigenschap ingevuld moet zijn."
     },
     "nplurals=2; plural=(n != 1);"
 )

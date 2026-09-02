@@ -3448,7 +3448,10 @@ OC.L10N.register(
         "Required from a later status": "Required from a later status",
         "Required from status": "Required from status",
         "Structured data": "Structured data",
-        "Yes or no": "Yes or no"
+        "Yes or no": "Yes or no",
+        "Maximum length": "Maximum length",
+        "Longest value this property accepts.": "Longest value this property accepts.",
+        "The status from which this property must be answered.": "The status from which this property must be answered."
     },
     "nplurals=2; plural=(n != 1);"
 )
