@@ -118,18 +118,15 @@ class DwangsomCalculationService {
 	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function accrueThrough(string $calculationId, ?DateTimeImmutable $now = null): ?array {
-		$now = ($now ?? new DateTimeImmutable());
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('dwangsom_berekening_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$store = $this->calculationStore();
+		if ($store === null) {
 			return null;
 		}
 
 		$row = $this->fetchCalculationRow(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+			objectService: $store['objects'],
+			register: $store['register'],
+			schema: $store['schema'],
 			calculationId: $calculationId
 		);
 		if ($row === null) {
@@ -140,23 +137,57 @@ class DwangsomCalculationService {
 			return $row;
 		}
 
+		$settled = $this->settle(row: $row, now: ($now ?? new DateTimeImmutable()));
+		if ($settled === null) {
+			return $row;
+		}
+
+		return $this->persistCalculation(
+			objectService: $store['objects'],
+			register: $store['register'],
+			schema: $store['schema'],
+			row: $settled,
+			calculationId: $calculationId
+		);
+	}//end accrueThrough()
+
+	/**
+	 * Apply the per-day tier step for every not-yet-accrued day up to the
+	 * moment, or null when the row is already settled for that day.
+	 *
+	 * @param array<string, mixed> $row Berekening row (status lopend, below plafond).
+	 * @param DateTimeImmutable $now The clock.
+	 *
+	 * @return array<string, mixed>|null The settled row, or null when nothing accrued.
+	 */
+	private function settle(array $row, DateTimeImmutable $now): ?array {
 		$targetDay = $this->elapsedAccrualDays(row: $row, now: $now);
 		if ((int)($row['currentDag'] ?? 0) >= $targetDay) {
-			return $row;
+			return null;
 		}
 
 		while ((int)($row['currentDag'] ?? 0) < $targetDay && ($row['plafondBereikt'] ?? false) === false) {
 			$row = $this->applyDailyAccrual(row: $row);
 		}
 
-		return $this->persistCalculation(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			row: $row,
-			calculationId: $calculationId
-		);
-	}//end accrueThrough()
+		return $row;
+	}//end settle()
+
+	/**
+	 * The berekening store coordinates, or null when unconfigured.
+	 *
+	 * @return array{objects: object, register: string, schema: string}|null The store.
+	 */
+	private function calculationStore(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('dwangsom_berekening_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return ['objects' => $objectService, 'register' => $register, 'schema' => $schema];
+	}//end calculationStore()
 
 	/**
 	 * The number of accrual days elapsed between the berekening's start
@@ -304,37 +335,32 @@ class DwangsomCalculationService {
 	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function stopForBeschikking(string $calculationId, ?DateTimeImmutable $now = null): ?array {
-		$this->accrueThrough($calculationId, $now);
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('dwangsom_berekening_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$this->accrueThrough(calculationId: $calculationId, now: $now);
+		$store = $this->calculationStore();
+		if ($store === null) {
 			return null;
 		}
 
-		try {
-			$row = $objectService->find($calculationId, register: $register, schema: $schema);
-		} catch (\Throwable $e) {
-			return null;
-		}
-
-		if (is_array($row) === false) {
+		$row = $this->fetchCalculationRow(
+			objectService: $store['objects'],
+			register: $store['register'],
+			schema: $store['schema'],
+			calculationId: $calculationId
+		);
+		if ($row === null) {
 			return null;
 		}
 
 		$row['status'] = 'gestopt-wegens-decision';
 		$row['definitiveAmount'] = (int)($row['cumulativeAmount'] ?? 0);
 
-		try {
-			$saved = $objectService->saveObject($register, $schema, $row);
-			if (is_array($saved) === true) {
-				return $saved;
-			}
-
-			return $row;
-		} catch (\Throwable $e) {
-			return $row;
-		}
+		return $this->persistCalculation(
+			objectService: $store['objects'],
+			register: $store['register'],
+			schema: $store['schema'],
+			row: $row,
+			calculationId: $calculationId
+		);
 	}//end stopForBeschikking()
 
 	/**
