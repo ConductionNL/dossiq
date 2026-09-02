@@ -782,6 +782,15 @@ $extra = [
         // from a different app is worse than one that stops, because a
         // subscriber cannot tell it has moved.
 
+        // Case-configuration store (ADR-080). Consume-only: dossiq browses a
+        // remote OpenRegister registry through AppHost's GenericStoreService and
+        // installs locally. It never publishes, and it builds no registry URL of
+        // its own — discovery belongs to the engine.
+    ['name' => 'store#search',       'url' => '/api/store/items',                 'verb' => 'GET'],
+    ['name' => 'store#install',      'url' => '/api/store/items/{slug}/install',  'verb' => 'POST', 'requirements' => ['slug' => '[a-z0-9][a-z0-9-]*[a-z0-9]']],
+    ['name' => 'store#getSettings',  'url' => '/api/store/settings',              'verb' => 'GET'],
+    ['name' => 'store#saveSettings', 'url' => '/api/store/settings',              'verb' => 'PUT'],
+
         // NOTE: dashboard#page (`/`) and the SPA catch-all (`/{path}`,
         // dashboard#catchAll) are supplied by Routes::standard(); both resolve to
         // dossiq's DashboardController, which implements them locally.

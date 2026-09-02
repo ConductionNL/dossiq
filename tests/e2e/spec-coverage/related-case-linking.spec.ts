@@ -29,7 +29,11 @@ import { dismissSupportDialog, navTo } from '../helpers/nav.ts'
  * does not render (unseeded register or deploy mismatch).
  */
 async function openFirstCaseOrSkip(page) {
-	await navTo(page, /^(All issues|Alle zaken)$/).catch(() => {})
+	// NOT wrapped in `.catch(() => {})`. A missing sidebar label is a rename
+	// this suite has to notice, and swallowing it here would run every test
+	// below against whatever the Dashboard happens to render — green, and
+	// asserting nothing. The skip below is for absent DATA, not a broken menu.
+	await navTo(page, /^(All cases|Alle zaken)$/)
 	await dismissSupportDialog(page).catch(() => {})
 	const row = page.locator('.viewTableRow, tr[role="row"], .list-item').first()
 	// This gate gives the WHOLE FILE its verdict, and it used `count()` — one

@@ -6047,7 +6047,7 @@
                         "enum": [
                             "burger",
                             "bedrijf",
-                            "government",
+                            "overheid",
                             "recidivist"
                         ],
                         "description": "Actor type of the violator (LHS actorType axis)",

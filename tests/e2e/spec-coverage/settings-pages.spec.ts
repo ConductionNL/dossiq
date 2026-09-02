@@ -83,11 +83,11 @@ const SETTINGS_PAGES: Array<{ name: string; route: string; addBtn: string }> = [
 		route: '/settings/lhs-recommendations',
 		addBtn: 'Add LHS Recommendation',
 	},
-	{
-		name: 'Partner organisations',
-		route: '/settings/partners',
-		addBtn: 'Add Partner organization',
-	},
+	// 'Partner organisations' (/settings/partners) is RETIRED. A ketenpartner
+	// is an organisation, and OpenRegister owns Organisation, so dossiq no
+	// longer keeps a private second answer to "which organisations does this
+	// system know about". Rows moved by `occ dossiq:migrate-partners`,
+	// preserving each partner's uuid so existing case shares keep resolving.
 	{
 		name: 'Map layers',
 		route: '/settings/wms-layers',

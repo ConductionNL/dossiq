@@ -15,9 +15,18 @@
  * onto a model that cannot hold what the source held, and the answer is a
  * silent loss of record. Here the target is a superset, field for field.
  *
- * Idempotent by slug, like TenantMigrationService: an Organisation already
- * owning a partner's slug is left alone, so a repeated run is a no-op rather
- * than a duplicate.
+ * Idempotent by the partner's own UUID, and this is where it differs from
+ * TenantMigrationService, which keys on the slug. `partnerOrganization`
+ * requires only `name` and `contactEmail`, so a slug-less partner is ordinary
+ * data and keying on the slug would fail the migration on exactly the rows it
+ * exists to move. Deriving a slug from the name is worse still: two partners
+ * sharing a name derive one slug, and the second is then skipped as already
+ * migrated, silently merging two organisations into one.
+ *
+ * This docblock previously claimed slug idempotency, which the code has never
+ * done — see the marked comment at the resolution site. A docblock that
+ * contradicts its own function is worse than none: it is what a reader checks
+ * instead of the code.
  *
  * WHAT THIS DOES NOT DO. It does not retire the `partnerOrganization` schema or
  * the Partners settings page. Rows have to move before the surface that writes

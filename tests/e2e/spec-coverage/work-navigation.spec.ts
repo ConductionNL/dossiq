@@ -7,7 +7,9 @@
  * "Work queue" is now "My work", and it gathers the four surfaces a handler
  * actually works from: the cases assigned to them, every case, their tasks, and
  * the workflow board. "Cases" is no longer a separate top-level entry — it
- * lives in the group as "All issues".
+ * lives in the group as "All cases". It was briefly "All issues"; dossiq talks
+ * about cases everywhere else, and one surface calling them issues was the only
+ * place the vocabulary broke.
  *
  * The page that used to be labelled "My work" is now "Assigned to me". Both
  * could not keep that name once the GROUP took it, and a sidebar reading
@@ -38,7 +40,7 @@ test.describe('Work navigation', () => {
 		for (const label of [
 			/^\s*(My work|Mijn werk)\s*$/i,
 			/^\s*(Assigned to me|Aan mij toegewezen)\s*$/i,
-			/^\s*(All issues|Alle zaken)\s*$/i,
+			/^\s*(All cases|Alle zaken)\s*$/i,
 			/^\s*(Tasks|Taken)\s*$/i,
 		]) {
 			await expect(
@@ -63,7 +65,11 @@ test.describe('Work navigation', () => {
 		).toHaveCount(0)
 		await expect(
 			nav.getByText(/^\s*(Cases|Zaken)\s*$/i),
-			'"Cases" must not survive alongside "All issues"',
+			'"Cases" must not survive alongside "All cases"',
+		).toHaveCount(0)
+		await expect(
+			nav.getByText(/^\s*(All issues)\s*$/i),
+			'"All issues" must not survive alongside "All cases"',
 		).toHaveCount(0)
 	})
 
@@ -72,11 +78,23 @@ test.describe('Work navigation', () => {
 		// Relabelling and relocating a menu entry must not move its ROUTE.
 		// Bookmarks, shared links and the other specs in this suite all target
 		// /cases, and none of them would notice until they broke.
-		await page.goto('/apps/dossiq/#/cases')
+		//
+		// A PATH, not `#/cases`. dossiq runs on createWebHistory: a hash deep
+		// link navigates NOWHERE and throws nothing, so this went to the app
+		// root and rendered the DASHBOARD. `[data-testid="cn-page"]` is present
+		// there too, so the test passed for years while proving nothing about
+		// /cases. The heading assertion below is the other half of the fix: a
+		// page-shell locator alone cannot tell these two pages apart.
+		await page.goto('/index.php/apps/dossiq/cases')
 
 		await expect(
 			page.locator('[data-testid="cn-page"]'),
 			'the cases page must still render for a deep link',
 		).toBeVisible({ timeout: 60_000 })
+
+		await expect(
+			page.getByRole('heading', { name: /^(Cases|Zaken)$/i }).first(),
+			'the deep link must land on the CASES page, not whatever the shell defaults to',
+		).toBeVisible({ timeout: 30_000 })
 	})
 })
