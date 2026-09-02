@@ -43,6 +43,8 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\VoorstelBesluitController;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Unit\Service\FakeStoredObject;
+use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -63,15 +65,17 @@ use Psr\Log\LoggerInterface;
  */
 interface VoorstelBesluitControllerContractObjectService {
 	/**
-	 * Find a single object.
+	 * Find a single object — real ObjectService argument order.
 	 *
 	 * @param int|string $id The object id.
-	 * @param string $register The register slug.
-	 * @param string $schema The schema slug.
+	 * @param array|null $_extend Relations to expand.
+	 * @param bool $files Include file metadata.
+	 * @param string|int|null $register The register slug.
+	 * @param string|int|null $schema The schema slug.
 	 *
-	 * @return mixed The object.
+	 * @return mixed The object (an entity-shaped object, never an array).
 	 */
-	public function find(int|string $id, string $register = '', string $schema = ''): mixed;
+	public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): mixed;
 }//end interface
 
 /**
@@ -430,13 +434,24 @@ class VoorstelBesluitControllerContractTest extends TestCase {
 	/**
 	 * Install an ObjectService that resolves the voorstel to the given record.
 	 *
-	 * @param array<string,mixed>|null $proposal The voorstel record, or null.
+	 * Pinned to the real contract: find() answers an entity-shaped object
+	 * (never an array) and THROWS DoesNotExistException for a missing
+	 * voorstel — the shapes the live ObjectService actually produces.
+	 *
+	 * @param array<string,mixed>|null $proposal The voorstel record, or null for a miss.
 	 *
 	 * @return void
 	 */
 	private function withProposal(?array $proposal): void {
 		$objectService = $this->createMock(VoorstelBesluitControllerContractObjectService::class);
-		$objectService->method('find')->willReturn($proposal);
+		if ($proposal === null) {
+			$objectService->method('find')->willThrowException(
+				new DoesNotExistException('Object does not exist')
+			);
+		} else {
+			$objectService->method('find')->willReturn(new FakeStoredObject($proposal));
+		}
+
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
 	}//end withProposal()
 
