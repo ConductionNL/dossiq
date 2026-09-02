@@ -130,7 +130,7 @@ class ApprovalStepNotificationListener implements IEventListener {
 		$nextStep = $event->getNextStep();
 		if ($nextStep === null) {
 			// Final step approved — chain complete; the steller is notified by
-			// the accordering path in ParafeerActieService.
+			// the accordering path in the parafering conclusion recorder.
 			return;
 		}
 

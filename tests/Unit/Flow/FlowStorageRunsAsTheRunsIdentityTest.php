@@ -76,9 +76,7 @@ class FlowStorageRunsAsTheRunsIdentityTest extends TestCase {
 	 * @var string[]
 	 */
 	private const STORAGE_COLLABORATORS = [
-		'ParaafFlowLinkage',
 		'PublicationService',
-		'BesluitvormingParafeerService',
 		'CaseStatusStore',
 		'StatusTypeLookup',
 		'DecisionTableService',
