@@ -48,6 +48,10 @@ parameters:
         # dead code — turning a fix for a real outage into a CI failure.
         - tests/Stubs/Decidiq
         - tests/Stubs/Decidesk
+        # Integriq's ADR-041 delivery-seam contract (DeliveryRequestedEvent /
+        # DeliveryConcludedEvent), same declaration-only-stub discipline as
+        # the decision-app namespaces above.
+        - tests/Stubs/Integriq
 
     typeAliases:
         # OCP declares `@psalm-type DataResponseType = ...` in the DataResponse

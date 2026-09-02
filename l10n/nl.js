@@ -1,6 +1,7 @@
 OC.L10N.register(
     "dossiq",
     {
+        "Contacts": "Contacten",
         "— choose —": "— kies —",
         "'Valid from' date must be set": "Datum 'Geldig vanaf' moet worden ingevuld",
         "'Valid until' must be after 'Valid from'": "'Geldig tot' moet na 'Geldig vanaf' liggen",
