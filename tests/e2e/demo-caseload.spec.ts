@@ -179,5 +179,4 @@ test.describe('Demo caseload surfaces', () => {
 			'the task detail page must show the seeded task',
 		).toBeVisible({ timeout: 20000 })
 	})
-
 })
