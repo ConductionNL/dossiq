@@ -2,8 +2,10 @@
 
 ## Phase 1: core termijn engine (implemented in this change)
 
-- [x] 1.1 `SettingsService::getFlowTimerService()` — lazy container resolve of
-      `OCA\OpenRegister\Service\Flow\Timer\FlowTimerService`, null on absence (D-7).
+- [x] 1.1 Lazy engine resolution: the existing generic
+      `SettingsService::getOpenRegisterClass()` resolves
+      `OCA\OpenRegister\Service\Flow\Timer\FlowTimerService` at call time, null on absence
+      (D-7) — no new resolver needed.
 - [x] 1.2 `lib/Service/TermijnTimerService.php` — the arm mapping (D-1): `armBeslistermijn()`,
       `armHersteltermijn()`, `suspendBeslistermijn()` (basis `Awb 4:5`), `resumeBeslistermijn()`,
       `extendBeslistermijn()` (standard → `extend()`, supervisor → `extendWithOverride()`),
