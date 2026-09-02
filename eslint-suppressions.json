@@ -923,14 +923,8 @@
     }
   },
   "src/views/settings/tabs/PropertiesTab.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 5
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
-    },
-    "jsdoc/require-param-type": {
-      "count": 2
     }
   },
   "src/views/settings/tabs/ResultsTab.vue": {

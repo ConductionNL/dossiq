@@ -438,11 +438,23 @@
           {
             "id": "new-case",
             "type": "open-form",
-            "label": "New Case",
+            "label": "New case",
             "icon": "Plus",
             "register": "dossiq",
             "schema": "case",
-            "onSuccessRoute": "CaseDetail"
+            "onSuccessRoute": "CaseDetail",
+            "includeFields": [
+              "caseType",
+              "title",
+              "description",
+              "assignee",
+              "priority",
+              "confidentiality",
+              "intakeChannel",
+              "startDate",
+              "plannedEndDate"
+            ],
+            "successMessage": "Case created."
           }
         ],
         "dateRange": {
