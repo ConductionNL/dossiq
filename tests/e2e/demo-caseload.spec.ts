@@ -61,8 +61,12 @@ const OPEN_TASK = `${RUN_PREFIX} Open task`
 /** A COMPLETED task, which must appear nowhere that filters on open work. */
 const DONE_TASK = `${RUN_PREFIX} Completed task`
 
-/** Schemas this run writes to, torn down in afterAll. */
-const SEEDED_SCHEMAS = ['task', 'case']
+/**
+ * Schemas this run tears down. Tasks only: a case cannot be deleted (see the
+ * archival note in beforeAll), so listing `case` here would be a cleanup that
+ * quietly fails every run.
+ */
+const SEEDED_SCHEMAS = ['task']
 
 /**
  * Days from today, as the ISO date-time the task schema stores.
@@ -85,13 +89,28 @@ test.describe('Demo caseload surfaces', () => {
 		api = context.request
 		token = await getRequestToken(api)
 
-		const caseType = await ensureCaseType(api, token)
-		const seeded = await seedCase(api, token, {
-			title: CASE_TITLE,
-			caseType: caseType.id,
-			assignee: 'admin',
-		})
-		caseId = objectId(seeded)
+		// 🔴 HANG THE TASKS OFF AN EXISTING CASE RATHER THAN SEEDING ONE. The case
+		// schema declares `x-openregister-archival`, so OpenRegister REFUSES a
+		// user-driven delete: a case this spec creates can never be cleaned up
+		// again, and every run would leave one behind forever. Measured on the dev
+		// instance: 17 of its 37 cases were exactly that residue. Tasks carry no
+		// such rule and are removed in afterAll.
+		const cases = await listObjects(api, 'case', { _limit: '1' })
+		if (cases.length > 0) {
+			caseId = objectId(cases[0])
+		} else {
+			// Only where the register is genuinely empty. This one case is
+			// permanent, and that is better than the spec having nothing to attach
+			// to and failing for a reason unrelated to what it tests.
+			const caseType = await ensureCaseType(api, token)
+			caseId = objectId(
+				await seedCase(api, token, {
+					title: CASE_TITLE,
+					caseType: caseType.id,
+					assignee: 'admin',
+				}),
+			)
+		}
 
 		const open = await createObject(api, token, 'task', {
 			title: OPEN_TASK,
