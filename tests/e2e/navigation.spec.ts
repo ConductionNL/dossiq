@@ -19,11 +19,12 @@ test.describe('Sidebar Navigation', () => {
 		// removed when the "Cases" GROUP IA was reverted, so it matched zero
 		// links and the assertion could only ever fail.
 		//
-		// Only "Dashboard" and "Cases" are top-level VISIBLE leaves. The rest
-		// render inside collapsed groups ("Work queue", "Personal settings"),
-		// so they are present in the DOM but `display:none` until their group
-		// is expanded — asserted separately below.
-		for (const label of ['Dashboard', 'Cases']) {
+		// "Dashboard" is now the ONLY top-level visible leaf. dossiq#1646
+		// gathered the work surfaces under a "My work" GROUP, and "Cases" moved
+		// into it as "All issues" — so it is rendered but `display:none` until
+		// the group is expanded, and is asserted with the other collapsed
+		// leaves below. The rest render inside collapsed groups too.
+		for (const label of ['Dashboard']) {
 			await expect(
 				nav.getByRole('link', { name: label, exact: true }),
 			).toBeVisible()
@@ -40,14 +41,17 @@ test.describe('Sidebar Navigation', () => {
 		// page stays routable — every other spec still reaches it with a
 		// direct GET — but it no longer has a navigation entry of its own,
 		// and asserting one is asserting the IA we retired.
-		for (const href of ['/my-work', '/workflow-board']) {
+		for (const href of ['/my-work', '/workflow-board', '/cases']) {
 			await expect(nav.locator(`a[href$="${href}"]`)).toHaveCount(1)
 		}
 
-		// And the group headers themselves are visible toggles. "Reports" is
-		// NOT among them any more: it is a footer link to the reports page,
-		// asserted below.
-		for (const group of ['Work queue']) {
+		// And the group headers themselves are visible toggles. "Work queue" is
+		// NOT among them any more — dossiq#1646 renamed the group to "My work"
+		// after the surfaces it gathers, and renamed the PAGE that held that
+		// name to "Assigned to me" so the sidebar does not read
+		// "My work > My work". "Reports" is not among them either: it is a
+		// footer link to the reports page, asserted below.
+		for (const group of ['My work']) {
 			await expect(
 				nav.getByRole('link', { name: group, exact: true }),
 			).toBeVisible()
@@ -77,20 +81,19 @@ test.describe('Sidebar Navigation', () => {
 		// this spec used to assert never matched what the nav actually emits.
 		// "Tasks" is not a top-level nav entry; its /tasks route stays
 		// deep-linkable and is covered by pages.spec.ts.
-		// "Cases" is a visible top-level leaf, so it can be matched by role.
-		await expect(
-			nav.getByRole('link', { name: 'Cases', exact: true }),
-		).toHaveAttribute('href', '/index.php/apps/dossiq/cases')
-
-		// The rest live in collapsed groups and are therefore absent from the
-		// accessibility tree — assert their href wiring via the DOM, checking
+		//
+		// Every entry below now lives in a collapsed group and is therefore
+		// absent from the accessibility tree — `display:none` removes an
+		// element from it, so `getByRole` resolves to zero even under
+		// `toHaveCount`. Assert their href wiring via the DOM instead, checking
 		// the label text travels with the expected link.
 		const byHref = async (href: string, label: string) => {
 			const link = nav.locator(`a[href="${href}"]`)
 			await expect(link).toHaveCount(1)
 			await expect(link).toHaveText(new RegExp(label))
 		}
-		await byHref('/index.php/apps/dossiq/my-work', 'My work')
+		await byHref('/index.php/apps/dossiq/cases', 'All issues')
+		await byHref('/index.php/apps/dossiq/my-work', 'Assigned to me')
 		await byHref('/index.php/apps/dossiq/workflow-board', 'Workflow board')
 	})
 
@@ -122,9 +125,22 @@ test.describe('Sidebar Navigation', () => {
 		}
 
 		const nav = sidebarNav(page)
-		// "Cases" is a flat, visible, directly-navigating leaf — the "All
-		// cases" label this used to click does not exist in the rendered nav.
-		await nav.getByRole('link', { name: 'Cases', exact: true }).click()
+
+		// "All issues" (formerly "Cases") now sits INSIDE the collapsed "My
+		// work" group, so it cannot be clicked until the group is expanded:
+		// Playwright waits for actionability on a `display:none` element and
+		// then fails with a timeout naming the element rather than the cause.
+		//
+		// Expanding first is what makes this a real click-path test. Navigating
+		// straight to the href would pass without the group ever opening, which
+		// is precisely the interaction a reader depends on.
+		await nav.getByRole('link', { name: 'My work', exact: true }).click()
+
+		const casesLink = nav.getByRole('link', {
+			name: /^(All issues|Alle zaken)$/,
+		})
+		await expect(casesLink).toBeVisible({ timeout: 15_000 })
+		await casesLink.click()
 		await expect(page).toHaveURL(/.*cases/)
 	})
 })

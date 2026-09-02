@@ -88,7 +88,7 @@ async function ensureCaseId(page): Promise<string | null> {
 
 /** Open the Cases list, or skip when it does not render. */
 async function openCasesListOrSkip(page) {
-	await navTo(page, 'Cases').catch(() => {})
+	await navTo(page, /^(All issues|Alle zaken)$/).catch(() => {})
 	await dismissSupportDialog(page).catch(() => {})
 	const caseId = await ensureCaseId(page)
 	if (!caseId) return false

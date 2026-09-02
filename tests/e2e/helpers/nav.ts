@@ -110,16 +110,33 @@ async function readNavLinks(
  *
  * Resolving the label to its `href` and navigating directly is immune to
  * collapsed groups, needs no group-expansion bookkeeping, and is faster.
+ * ## Why a RegExp is accepted
+ *
+ * A pinned exact label is a standing tripwire. dossiq#1646 regrouped the work
+ * surfaces and renamed three at once — `Cases` became `All issues`, the `My
+ * work` PAGE became `Assigned to me` once the GROUP took that name, and
+ * `Voorstellen` became `Proposals` — and every call site naming the old string
+ * broke together. Three of them wrapped the call in `.catch(() => {})`, so they
+ * did not break loudly: they carried on against whatever the Dashboard renders.
+ *
+ * Passing a RegExp lets a call site accept the label in either locale, and
+ * survive a rename that keeps the meaning, without giving up the fail-fast
+ * behaviour below.
+ *
  * @param page
- * @param label exact sidebar label, e.g. 'Cases', 'My work'
+ * @param label exact sidebar label, or a RegExp matching it — e.g. 'Dashboard'
+ *              or `/^(All issues|Alle zaken)$/`
  */
-export async function navTo(page: Page, label: string): Promise<void> {
+export async function navTo(page: Page, label: string | RegExp): Promise<void> {
 	await page.goto('/index.php/apps/dossiq')
 	await dismissSupportDialog(page)
 
+	const matches = (l: string) =>
+		typeof label === 'string' ? l === label : label.test(l)
+
 	const links = await readNavLinks(page)
 	// Prefer a real navigating entry; a group header renders as href="#".
-	const target = links.find((l) => l.label === label && l.href && l.href !== '#')
+	const target = links.find((l) => matches(l.label) && l.href && l.href !== '#')
 
 	if (!target || !target.href) {
 		// Fail FAST and by NAME. The old code swallowed this into two
@@ -130,7 +147,7 @@ export async function navTo(page: Page, label: string): Promise<void> {
 			.filter((l) => l.href && l.href !== '#')
 			.map((l) => l.label)
 		throw new Error(
-			`[dossiq e2e] navTo('${label}'): no navigating sidebar link with that exact label.\n`
+			`[dossiq e2e] navTo(${String(label)}): no navigating sidebar link matches.\n`
 				+ `Available navigating labels: ${JSON.stringify(available)}`,
 		)
 	}
