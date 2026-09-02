@@ -59,6 +59,7 @@ const AUDIENCE = `${RUN_PREFIX} Doelgroep`
 let api: APIRequestContext
 let token: string
 let caseTypeId: string
+let ceilingDefId: string
 
 test.describe('New case dialog', () => {
 	test.setTimeout(180_000)
@@ -82,13 +83,14 @@ test.describe('New case dialog', () => {
 		})
 		caseTypeId = objectId(caseType)
 
-		await createObject(api, token, 'propertyDefinition', {
+		const ceiling = await createObject(api, token, 'propertyDefinition', {
 			name: CEILING,
 			caseType: caseTypeId,
 			propertyType: 'number',
 			isRequired: true,
 			definition: 'The grant ceiling for this scheme.',
 		})
+		ceilingDefId = objectId(ceiling)
 		await createObject(api, token, 'propertyDefinition', {
 			name: AUDIENCE,
 			caseType: caseTypeId,
@@ -124,7 +126,14 @@ test.describe('New case dialog', () => {
 	async function chooseCaseType(page, dialog) {
 		const combo = dialog.getByRole('combobox', { name: /Case type/ })
 		await combo.click()
-		const option = page.getByRole('option', { name: CASE_TYPE_TITLE })
+
+		// Matched by TEXT, not by accessible name. vue-select splits an option
+		// label into adjacent spans, and the accessible-name computation joins
+		// those with a space — so `E2EZAAK-…-4944 Subsidie` computes as
+		// `E2EZAAK-…-494 4 Subsidie` and an exact name match never hits, while
+		// the option is plainly on screen. textContent concatenates without the
+		// separator, so hasText sees the label the way a reader does.
+		const option = page.getByRole('option').filter({ hasText: CASE_TYPE_TITLE })
 
 		// Opening the picker preloads a capped first page. Type ONLY when this
 		// run's type is not in it: typing sends the term to the server and
@@ -248,7 +257,18 @@ test.describe('New case dialog', () => {
 				answers.length,
 				'the case type answer should have been written',
 			).toBeGreaterThan(0)
-			expect(String(answers[0].value)).toBe('50000')
+			// Name the row, do not index it. Both questions are answered (the
+			// enum carries a default), and the API does not promise an order —
+			// asserting on answers[0] read back the enum's 'Sport' and looked
+			// like the ceiling had not been written at all.
+			const ceilingRow = answers.find(
+				(a) => String(a.propertyDefinition) === ceilingDefId,
+			)
+			expect(
+				ceilingRow,
+				'the ceiling answer should have been written',
+			).toBeTruthy()
+			expect(String(ceilingRow.value)).toBe('50000')
 		}).toPass({ timeout: 30000 })
 	})
 })
