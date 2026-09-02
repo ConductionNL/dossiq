@@ -4815,9 +4815,10 @@
       "title": "Flows",
       "config": {
         "entitySource": "flows",
-        "app": "dossiq"
+        "app": "dossiq",
+        "rowRoute": "FlowDetail"
       },
-      "_note": "ADR-110 Decision 4: a flow is app-specific — a dossiq flow operates on cases — so the authoring surface lives here rather than behind a deep link to OpenRegister's list. Custom page rather than type:index because a flow lives in the shared native flow store, not a register/schema, so the object-backed index cannot address it. The body is CnFlowIndexPage semantics scoped app=\"dossiq\" — the same store OpenRegister, integriq and hermiq use, so list/status semantics stay identical fleet-wide. Mirrors openconnector/src/manifest.json:Flows."
+      "_note": "ADR-110 Decision 4: a flow is app-specific — a dossiq flow operates on cases — so the authoring surface lives here rather than behind a deep link to OpenRegister's list. An ordinary index over the NAMED flows source: a flow lives in the shared native flow store, not a register/schema, so the object-backed index cannot address it. Scoped app=\"dossiq\" — the same store OpenRegister, integriq and hermiq use, so list/status semantics stay identical fleet-wide. rowRoute names the FlowDetail page (a route NAME, not a path): a named-source page has no register+schema, so CnPageRenderer cannot infer a detail page, and without an explicit target the row click and the Edit action fall back to the source's /flows path rather than the page this manifest declares. Mirrors openregister/src/manifest.json:flows."
     },
     {
       "id": "FlowDetail",
