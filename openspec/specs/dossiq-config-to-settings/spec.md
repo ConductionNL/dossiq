@@ -85,6 +85,11 @@ Neither SHALL be added to the `SettingsGroup` relocations.
 ### Requirement: REQ-PCTS-004 — Relocated Pages Stay Routable
 
 Every page whose nav leaf is relocated SHALL remain reachable by its existing route after the change.
+
+AMENDED 2026-09-02. One exception: the `/settings/parafeerroutes` INDEX page is retired outright.
+An approval route is a flow now, so the design screen invited edits that never reach the running
+flow. `/settings/parafeerroutes/:id` stays registered, so a reader can still open a legacy route and
+see what a flow was generated from, and the audit context naming `parafeerrouteId` keeps resolving.
 dossiq SHALL NOT change any page `id`, `route`, `type` or `component` as part of this relocation; the
 change SHALL touch only the menu structure (`src/manifest.json#menu`, `src/menu-layout.json`) and the
 `Legesberekeningen` section flag.
@@ -92,7 +97,7 @@ change SHALL touch only the menu structure (`src/manifest.json#menu`, `src/menu-
 #### Scenario: Deep links to relocated config pages still resolve
 
 - **GIVEN** the configuration leaves have been relocated under `SettingsGroup`
-- **WHEN** a user navigates directly to `/settings/tenants`, `/settings/parafeerroutes`,
+- **WHEN** a user navigates directly to `/settings/tenants`, `/settings/parafeerroutes/:id`,
   `/settings/wms-layers`, `/settings/workflow-definitions`, `/settings/automatic-actions`,
   `/settings/lhs-matrices`, `/legesverordeningen`, `/tenant-onboarding`, `/leges/verordeningen` or `/settings`
 - **THEN** each route SHALL resolve to its existing page

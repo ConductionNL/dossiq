@@ -55,18 +55,27 @@ The system SHALL execute parafeerroute steps in sequential order. Each step SHAL
 - **AND** the step 4 actor SHALL receive a Nextcloud notification
 - **AND** the voorstel updatedAt SHALL be refreshed
 
-### Requirement: Admin Parafeerroute Configuration
+### Requirement: Admin parafeerroute configuration
 
-The system SHALL provide an admin UI for creating and managing parafeerroutes. Routes SHALL be linkable to case types and voorstel types.
+The system SHALL provide an authoring UI for creating and managing approval routes. Routes SHALL be linkable to case types and voorstel types.
+
+AMENDED 2026-09-02. That UI is the flow canvas at `/flows` and `/flows/:id`, not a
+bespoke route designer. dossiq#1632 enabled the projection, so an approval route is
+a flow: the route object is what a flow was generated FROM, and the flow is what
+drives parafering. The `/settings/parafeerroutes` index page is retired because
+editing there does not reach the running flow unless somebody re-runs
+`occ dossiq:migrate-approval-routes-to-flows`, which would overwrite whatever was
+authored on the canvas. `/settings/parafeerroutes/:id` stays registered for reading
+a legacy route.
 
 **Feature tier**: V1
 
-#### Scenario: Create a new parafeerroute
+#### Scenario: Create a new approval route
 
-- **WHEN** the beheerder navigates to admin settings and opens the "Parafeerroutes" tab
+- **WHEN** the beheerder opens `/flows` and creates a flow
 - **THEN** the beheerder SHALL be able to create a new route with a name
 - **AND** the beheerder SHALL be able to add steps with: step type (advies/parafering/accordering), actor type (user/group/role), actor selection, mandatory flag
-- **AND** the beheerder SHALL be able to reorder steps via drag-and-drop
+- **AND** the beheerder SHALL be able to reorder steps on the canvas
 
 #### Scenario: Link route to case type
 
