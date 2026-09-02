@@ -52,7 +52,6 @@ import AdviesPanel from './views/cases/components/AdviesPanel.vue'
 // Case-assistant chat panel — conversational assistance delegated to Hermiq
 // (fleet rule: AI functionality lives in Hermiq; dossiq is a thin consumer).
 // @spec openspec/specs/case-assistant-via-hermiq/spec.md
-import CaseAssistantPanel from './views/cases/components/CaseAssistantPanel.vue'
 // Case-email integration — leaf-first per ADR-022. The sidebar tab
 // wraps the EmailThread component (display only), reuses NC Mail as
 // the email engine, and triggers prefillDraft via the case-email API.
@@ -65,7 +64,6 @@ import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
 // CMMN adaptive case-plan panel — sibling to the BPMN status-transition
 // engine, for caseTypes with handlingModel = 'cmmn' (cmmn-adaptive-case).
 // @spec openspec/specs/cmmn-adaptive-case/spec.md
-import CmmnCasePlanPanel from './views/cases/components/CmmnCasePlanPanel.vue'
 import InspectionChecklistPanel from './views/cases/components/InspectionChecklistPanel.vue'
 import InspectionPanel from './views/cases/components/InspectionPanel.vue'
 // Related-case linking — typed peer relations (relevanteAndereZaken) sidebar tab.
@@ -232,19 +230,9 @@ const registry = {
 
 	// --- Case assistant via Hermiq (case-assistant-via-hermiq). ---
 	// @spec openspec/specs/case-assistant-via-hermiq/spec.md
-	CaseAssistantPanel: {
-		kind: 'widget',
-		component: CaseAssistantPanel,
-		_note: 'CaseDetail chat panel delegating conversational assistance to Hermiq (fleet rule: AI lives in Hermiq; dossiq only enriches with authorized case context). Availability-gated: renders NOTHING when the hermiq app is not installed/enabled.',
-	},
 
 	// --- CMMN adaptive case plan (cmmn-adaptive-case). ---
 	// @spec openspec/specs/cmmn-adaptive-case/spec.md
-	CmmnCasePlanPanel: {
-		kind: 'widget',
-		component: CmmnCasePlanPanel,
-		_note: 'CaseDetail adaptive case-plan panel — the CMMN counterpart to the BPMN status-transition header actions. Renders items grouped by stage with state badges and enable/complete/terminate actions. Renders NOTHING when the case\'s caseType is not CMMN-managed (handlingModel !== "cmmn").',
-	},
 
 	// --- Migration cost: deferred to a follow-up. ---
 	VoorstelDetailView: {

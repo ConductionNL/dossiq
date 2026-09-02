@@ -44,6 +44,12 @@ const TAB_LABELS = [
 	/Sub-cases|Deelzaken/,
 	/Mail/,
 	/Appointments|Afspraken/,
+	// Decisions is decidiq's widget, not dossiq's own list — dossiq no longer
+	// renders its `decision` schema at all. Contacts and Locations moved in
+	// from the page body, so the case's collections all live in one strip.
+	/Decisions|Besluiten|Besluitvorming/,
+	/Contacts|Contacten/,
+	/Locations|Locaties/,
 ]
 
 /**
@@ -58,8 +64,6 @@ const COLUMN_TITLES = [
 	/Hours booked|Geboekte uren/,
 	/Flow runs|Flow-uitvoeringen/,
 	/Tasks|Taken/,
-	/Decisions|Besluiten/,
-	/Locations|Locaties/,
 ]
 
 test.describe('Case detail — KPI row, tabbed panels, right column', () => {
@@ -310,6 +314,16 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 				timeout: 20_000,
 			})
 		}
+
+		// Decisions and Locations MOVED into the tab strip. Asserting only that
+		// the column shows three things would still pass if they had stayed and
+		// the page simply grew, so assert they are gone from the body: their
+		// only remaining owner is a tab.
+		for (const gone of [/Decisions|Besluiten/, /Locations|Locaties/]) {
+			await expect(
+				page.locator('.cn-widget-wrapper').filter({ hasText: gone }),
+			).toHaveCount(0)
+		}
 	})
 
 	test('the Locations widget can actually query its schema', async ({ page }) => {
@@ -326,6 +340,15 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
 		})
+
+		// Locations moved into the tab strip, and tab panels are LAZY — the
+		// widget does not mount, so it does not query, until its tab is opened.
+		// Without this click the poll below times out on zero responses and
+		// reads as "the schema 404s again", which is the very thing this spec
+		// exists to tell apart from an empty state.
+		const strip = page.locator('.cn-tabs-widget')
+		await expect(strip).toBeVisible({ timeout: 30_000 })
+		await strip.getByRole('tab', { name: /Locations|Locaties/ }).click()
 
 		await expect
 			.poll(() => responses.length, { timeout: 20_000 })
