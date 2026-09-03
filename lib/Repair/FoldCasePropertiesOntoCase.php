@@ -148,16 +148,62 @@ class FoldCasePropertiesOntoCase implements IRepairStep {
 			return;
 		}
 
-		// Definition names are read once and looked up per answer. Reading them
-		// per answer would be one request per row for a value that repeats.
+		$names = $this->definitionNames(objectService: $objectService, register: $register, schema: $defSchema);
+		$byCase = $this->groupByCase(values: $values, names: $names);
+
+		$tally = ['written' => 0, 'skipped' => 0, 'failed' => 0];
+		foreach ($byCase as $caseId => $entries) {
+			$result = $this->foldOne(
+				objectService: $objectService,
+				caseSchema: $caseSchema,
+				caseId: (string) $caseId,
+				entries: $entries,
+			);
+			$tally[$result]++;
+		}
+
+		$output->info(
+			sprintf(
+				'Case properties folded: %d written, %d skipped, %d failed.',
+				$tally['written'],
+				$tally['skipped'],
+				$tally['failed']
+			)
+		);
+	}//end backfill()
+
+	/**
+	 * Read the definition names once, keyed by id.
+	 *
+	 * Reading them per answer would be one request for a value that repeats.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $register      The register id.
+	 * @param string $schema        The propertyDefinition schema id.
+	 *
+	 * @return array<string, string> Definition id to name.
+	 */
+	private function definitionNames(object $objectService, string $register, string $schema): array {
 		$names = [];
-		foreach ($this->readAll(objectService: $objectService, register: $register, schema: $defSchema) as $def) {
+		foreach ($this->readAll(objectService: $objectService, register: $register, schema: $schema) as $def) {
 			$id = (string) ($def['id'] ?? $def['uuid'] ?? '');
 			if ($id !== '') {
 				$names[$id] = (string) ($def['name'] ?? '');
 			}
 		}
 
+		return $names;
+	}//end definitionNames()
+
+	/**
+	 * Group the answer rows into one entry list per case.
+	 *
+	 * @param array<int, array<string, mixed>> $values The caseProperty rows.
+	 * @param array<string, string>            $names  Definition id to name.
+	 *
+	 * @return array<string, array<int, array<string, string>>> Entries per case.
+	 */
+	private function groupByCase(array $values, array $names): array {
 		$byCase = [];
 		foreach ($values as $row) {
 			$caseId = (string) ($row['case'] ?? '');
@@ -173,52 +219,48 @@ class FoldCasePropertiesOntoCase implements IRepairStep {
 			];
 		}
 
-		$tally = ['written' => 0, 'skipped' => 0, 'failed' => 0];
-		foreach ($byCase as $caseId => $entries) {
-			try {
-				$case = $objectService->find($caseId, ['_rbac' => false, '_multitenancy' => false]);
-				if (is_object($case) === true && method_exists($case, 'jsonSerialize') === true) {
-					$case = $case->jsonSerialize();
-				}
+		return $byCase;
+	}//end groupByCase()
 
-				if (is_array($case) === false) {
-					$tally['skipped']++;
-					continue;
-				}
+	/**
+	 * Write one case's properties array.
+	 *
+	 * @param object                            $objectService OpenRegister's ObjectService.
+	 * @param string                            $caseSchema    The case schema id.
+	 * @param string                            $caseId        The case to write.
+	 * @param array<int, array<string, string>> $entries       The entries to store.
+	 *
+	 * @return string One of `written`, `skipped` or `failed`.
+	 */
+	private function foldOne(object $objectService, string $caseSchema, string $caseId, array $entries): string {
+		try {
+			$case = $objectService->find($caseId, ['_rbac' => false, '_multitenancy' => false]);
+			if (is_object($case) === true && method_exists($case, 'jsonSerialize') === true) {
+				$case = $case->jsonSerialize();
+			}
 
-				// An existing array is the newer truth: it was either written by
-				// the form or by an earlier run of this step. Overwriting it
-				// with a projection of the old rows would undo a real edit.
-				if (empty($case['properties']) === false) {
-					$tally['skipped']++;
-					continue;
-				}
+			if (is_array($case) === false) {
+				return 'skipped';
+			}
 
-				$case['properties'] = $entries;
-				$objectService->saveObject(
-					$caseSchema,
-					$case,
-					['_rbac' => false, '_multitenancy' => false]
-				);
-				$tally['written']++;
-			} catch (Throwable $e) {
-				$tally['failed']++;
-				$this->logger->warning(
-					'Dossiq: could not fold case properties onto a case',
-					['case' => $caseId, 'exception' => $e]
-				);
-			}//end try
-		}
+			// An existing array is the newer truth: it was written either by the
+			// form or by an earlier run. Overwriting it with a projection of the
+			// old rows would undo a real edit.
+			if (empty($case['properties']) === false) {
+				return 'skipped';
+			}
 
-		$output->info(
-			sprintf(
-				'Case properties folded: %d written, %d skipped, %d failed.',
-				$tally['written'],
-				$tally['skipped'],
-				$tally['failed']
-			)
-		);
-	}//end backfill()
+			$case['properties'] = $entries;
+			$objectService->saveObject($caseSchema, $case, ['_rbac' => false, '_multitenancy' => false]);
+			return 'written';
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: could not fold case properties onto a case',
+				['case' => $caseId, 'exception' => $e]
+			);
+			return 'failed';
+		}//end try
+	}//end foldOne()
 
 	/**
 	 * Read every object of one schema as plain arrays.
