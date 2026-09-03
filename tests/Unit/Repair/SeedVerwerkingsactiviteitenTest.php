@@ -133,9 +133,9 @@ class SeedVerwerkingsactiviteitenTest extends TestCase {
 		$default = $this->mapper->findByCode(code: 'zaakafhandeling');
 		$this->assertNotNull($default, 'the default attribution activity must be seeded');
 		$this->assertSame('draft', $default->getStatus(), 'seeded activities are drafts for FG review');
-		$this->assertNotEmpty($default->getNaam());
-		$this->assertNotEmpty($default->getDoelbinding());
-		$this->assertContains($default->getRechtsgrond(), Verwerkingsactiviteit::RECHTSGROND_VOCABULARY);
+		$this->assertNotEmpty($default->getName());
+		$this->assertNotEmpty($default->getPurpose());
+		$this->assertContains($default->getLegalBasis(), Verwerkingsactiviteit::RECHTSGROND_VOCABULARY);
 
 	}//end testFreshRunInsertsCatalogueAsDrafts()
 
@@ -153,14 +153,14 @@ class SeedVerwerkingsactiviteitenTest extends TestCase {
 		$this->step->run($this->createMock(IOutput::class));
 		$published = $this->mapper->findByCode(code: 'zaakafhandeling');
 		$published->setStatus('published');
-		$published->setNaam('FG-renamed');
+		$published->setName('FG-renamed');
 
 		// Second run (app upgrade) refreshes fields, preserves status.
 		$this->step->run($this->createMock(IOutput::class));
 
 		$after = $this->mapper->findByCode(code: 'zaakafhandeling');
 		$this->assertSame('published', $after->getStatus(), 'FG activation must survive dossiq upgrades');
-		$this->assertNotSame('FG-renamed', $after->getNaam(), 'descriptive fields refresh from the catalogue');
+		$this->assertNotSame('FG-renamed', $after->getName(), 'descriptive fields refresh from the catalogue');
 		$this->assertGreaterThan(0, $this->mapper->updates);
 
 	}//end testRerunPreservesFgActivatedStatus()

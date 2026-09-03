@@ -178,6 +178,131 @@ class ParaferingDelegationServiceTest extends TestCase {
 	}//end testUnknownStepTypeBecomesEndorsement()
 
 	/**
+	 * Local actor types are translated into the decision app's vocabulary.
+	 *
+	 * The decision app's step schema accepts ONLY person|body|role, and its
+	 * store refuses the whole route on anything else. `group` was copied
+	 * verbatim, so all three shipped demo routes with a group actor came back
+	 * "not handled" on every fresh install. A group resolves the way a role
+	 * does (by the consuming context, at completion time), so it travels as
+	 * `role`; a local `user` names a person directly.
+	 *
+	 * @return void
+	 */
+	public function testActorTypesAreTranslatedIntoTheDecisionAppVocabulary(): void {
+		$route = $this->route();
+		$route['steps'] = [
+			['order' => 1, 'type' => 'advice', 'actorType' => 'group', 'actor' => 'juridische-dienst'],
+			['order' => 2, 'type' => 'parafering', 'actorType' => 'user', 'actor' => 'j.bakker'],
+			['order' => 3, 'type' => 'accordering', 'actorType' => 'role', 'actor' => 'portefeuillehouder'],
+			['order' => 4, 'type' => 'accordering', 'actorType' => 'body', 'actor' => 'college'],
+		];
+
+		$this->service()->holdRoute(route: $route);
+
+		$this->assertSame(
+			['role', 'person', 'role', 'body'],
+			array_column($this->command()->getSteps(), 'actorType')
+		);
+
+	}//end testActorTypesAreTranslatedIntoTheDecisionAppVocabulary()
+
+	/**
+	 * The schema's own `advice` spelling maps to advisory, not the fallback.
+	 *
+	 * The parafeerroute schema enum says `advice`; the mapping table only knew
+	 * the Dutch `advies`, so every shipped advice step travelled as a generic
+	 * endorsement.
+	 *
+	 * @return void
+	 */
+	public function testAdviceStepTypeMapsToAdvisory(): void {
+		$route = $this->route();
+		$route['steps'] = [['order' => 1, 'type' => 'advice', 'actor' => 'planologisch-adviseur']];
+
+		$this->service()->holdRoute(route: $route);
+
+		$this->assertSame('advisory', $this->command()->getSteps()[0]['stageType']);
+
+	}//end testAdviceStepTypeMapsToAdvisory()
+
+	/**
+	 * Every SHIPPED parafeerroute maps into what the decision app accepts.
+	 *
+	 * Drives the real service over the demo routes dossiq ships (register
+	 * seed and bvw bundles alike) and asserts each mapped step lands inside
+	 * the decision app's frozen step vocabulary. The enums are the decision
+	 * app's ApprovalRoute step schema (decidiq lib/Settings/register.d/
+	 * 69-approval-routes.json); a value outside them makes the store refuse
+	 * the route, which the producer sees only as "not handled".
+	 *
+	 * @return void
+	 */
+	public function testEveryShippedParafeerrouteMapsIntoTheAcceptedVocabulary(): void {
+		$acceptedStageTypes = ['preparatory', 'advisory', 'endorsement', 'decisive', 'ratifying'];
+		$acceptedActorTypes = ['person', 'body', 'role'];
+
+		foreach ($this->shippedParafeerroutes() as $label => $route) {
+			$this->dispatched = [];
+			$route['id'] = ($route['id'] ?? ('shipped-' . md5($label)));
+
+			$this->service()->holdRoute(route: $route);
+
+			$steps = $this->command()->getSteps();
+			$this->assertNotEmpty($steps, $label . ' mapped to zero steps');
+			foreach ($steps as $index => $step) {
+				$this->assertContains(
+					(string)($step['stageType'] ?? ''),
+					$acceptedStageTypes,
+					sprintf('%s step[%d] maps to a stageType the decision app refuses', $label, (int)$index)
+				);
+				if (isset($step['actorType']) === true) {
+					$this->assertContains(
+						(string)$step['actorType'],
+						$acceptedActorTypes,
+						sprintf('%s step[%d] maps to an actorType the decision app refuses', $label, (int)$index)
+					);
+				}
+			}
+		}//end foreach
+
+	}//end testEveryShippedParafeerrouteMapsIntoTheAcceptedVocabulary()
+
+	/**
+	 * Every parafeerroute dossiq ships, keyed by a human-readable label.
+	 *
+	 * @return array<string, array<string, mixed>> The shipped routes.
+	 */
+	private function shippedParafeerroutes(): array {
+		$routes = [];
+
+		$register = json_decode(
+			(string)file_get_contents(__DIR__ . '/../../../../lib/Settings/dossiq_register.json'),
+			true
+		);
+		foreach ((array)(((array)($register['components'] ?? []))['objects'] ?? []) as $object) {
+			$self = (array)(((array)$object)['@self'] ?? []);
+			if ((string)($self['schema'] ?? '') === 'parafeerroute') {
+				$routes['dossiq_register.json ' . (string)($self['slug'] ?? '?')] = (array)$object;
+			}
+		}
+
+		foreach ((array)glob(__DIR__ . '/../../../../lib/Settings/templates/bvw-*.json') as $file) {
+			$bundle = json_decode((string)file_get_contents((string)$file), true);
+			$route = (array)(((array)(((array)$bundle)['caseType'] ?? []))['parafeerroute']
+				?? (((array)$bundle)['parafeerroute'] ?? []));
+			if ($route !== []) {
+				$routes[basename((string)$file)] = $route;
+			}
+		}
+
+		$this->assertNotEmpty($routes, 'The sweep found no shipped parafeerroutes at all — the query is broken, not the data clean');
+
+		return $routes;
+
+	}//end shippedParafeerroutes()
+
+	/**
 	 * A step with no order gets its position, so the sequence is never lost.
 	 *
 	 * @return void

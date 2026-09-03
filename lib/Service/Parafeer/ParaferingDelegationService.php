@@ -70,23 +70,51 @@ class ParaferingDelegationService {
 	/**
 	 * Local step fields that map onto an approval-route step unchanged.
 	 *
+	 * `actorType` is deliberately NOT here: the two apps speak different
+	 * actor vocabularies, so it is translated in mapStep() instead of copied.
+	 *
 	 * @var array<int, string>
 	 */
-	private const STEP_FIELDS = ['order', 'actor', 'actorType', 'mandatory', 'label'];
+	private const STEP_FIELDS = ['order', 'actor', 'mandatory', 'label'];
 
 	/**
 	 * Local parafeerroute step types, mapped to the approval-route vocabulary.
 	 *
-	 * A step type that is not in this map travels as `endorsement`, which is
-	 * what an unrecognised signing step is: somebody has to sign, and no
-	 * stronger claim is made about what their signature means.
+	 * `advice` is the parafeerroute schema's own enum spelling
+	 * (lib/Settings/dossiq_register.json); `advies` is kept for rows written
+	 * before that enum settled. A step type that is not in this map travels as
+	 * `endorsement`, which is what an unrecognised signing step is: somebody
+	 * has to sign, and no stronger claim is made about what their signature
+	 * means.
 	 *
 	 * @var array<string, string>
 	 */
 	private const STAGE_TYPES = [
+		'advice' => 'advisory',
 		'advies' => 'advisory',
 		'parafering' => 'endorsement',
 		'accordering' => 'decisive',
+	];
+
+	/**
+	 * Local actorType values, mapped to the approval-route vocabulary.
+	 *
+	 * The decision app's ApprovalRoute step schema accepts ONLY
+	 * `person` | `body` | `role`, and its store REFUSES the whole route on an
+	 * unknown value — which is how every shipped demo route with a `group`
+	 * actor came back "not handled" on a fresh install. A Nextcloud group,
+	 * like a role, is resolved by the consuming context at completion time
+	 * (the assignee gate checks membership), so `group` travels as `role`.
+	 * Values already in the decision app's vocabulary pass through unchanged.
+	 *
+	 * @var array<string, string>
+	 */
+	private const ACTOR_TYPES = [
+		'user' => 'person',
+		'group' => 'role',
+		'role' => 'role',
+		'person' => 'person',
+		'body' => 'body',
 	];
 
 	/**
@@ -269,6 +297,11 @@ class ParaferingDelegationService {
 			if ($value !== null && $value !== '') {
 				$mapped[$field] = $value;
 			}
+		}
+
+		$actorType = trim((string)($step['actorType'] ?? ''));
+		if ($actorType !== '') {
+			$mapped['actorType'] = (self::ACTOR_TYPES[$actorType] ?? 'role');
 		}
 
 		// A step with no `order` would collapse the sequence on the other side,

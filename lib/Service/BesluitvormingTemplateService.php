@@ -123,6 +123,7 @@ class BesluitvormingTemplateService {
 		}
 
 		$bundle = $this->loadBundle(slug: $slug);
+		$this->warnOnStepLevelActions(bundle: $bundle, slug: $slug);
 
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
@@ -208,6 +209,50 @@ class BesluitvormingTemplateService {
 
 		return $decoded;
 	}//end loadBundle()
+
+	/**
+	 * Warn loudly when a bundle declares actions where the engine never reads.
+	 *
+	 * The transition engine dispatches ONLY the automaticActions declared on a
+	 * TRANSITION (TransitionSpecReader::extractActions() is its sole action
+	 * source). An action declared on a step is silently inert: the transition
+	 * succeeds, `dispatchedActions` stays empty and nothing is logged — which
+	 * is exactly how a shipped besluitvormingActivate never armed the
+	 * parafering seam on any fresh install. This makes the no-op loud at
+	 * activation time.
+	 *
+	 * @param array<string, mixed> $bundle The decoded template bundle.
+	 * @param string $slug The template slug (for logging).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/besluitvorming-workflow/spec.md
+	 */
+	private function warnOnStepLevelActions(array $bundle, string $slug): void {
+		$workflow = (array)(((array)($bundle['caseType'] ?? []))['workflowTemplate'] ?? []);
+		foreach ((array)($workflow['steps'] ?? []) as $index => $step) {
+			if (is_array($step) === false) {
+				continue;
+			}
+
+			foreach (['automaticActions', 'actions'] as $key) {
+				if (isset($step[$key]) === true && is_array($step[$key]) === true && $step[$key] !== []) {
+					$this->logger->warning(
+						'Dossiq: besluitvorming template declares automatic actions on a STEP, a position the '
+						. 'transition engine never reads; these actions will never run. Move them to the '
+						. 'transition entering the step\'s status.',
+						[
+							'slug' => $slug,
+							'step' => (int)$index,
+							'statusName' => (string)($step['statusName'] ?? ''),
+							'key' => $key,
+							'app' => Application::APP_ID,
+						],
+					);
+				}
+			}
+		}
+	}//end warnOnStepLevelActions()
 
 	/**
 	 * Resolve the schema ids needed to seed a bundle.

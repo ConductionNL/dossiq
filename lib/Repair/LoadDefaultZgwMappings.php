@@ -41,6 +41,9 @@ use Psr\Log\LoggerInterface;
  * @SuppressWarnings(PHPMD.ExcessiveClassLength)
  * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
  * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ *
+ * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 class LoadDefaultZgwMappings implements IRepairStep {
 	/**
@@ -71,6 +74,8 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * Get the name of this repair step.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function getName(): string {
 		return 'Load default ZGW API mapping configurations for Dossiq';
@@ -113,11 +118,26 @@ class LoadDefaultZgwMappings implements IRepairStep {
 		// Patch existing mappings that have known bugs (e.g., Twig renders false as "").
 		$this->patchExistingMappings(defaults: $defaults, output: $output);
 
-		// Create default test applicaties via ConsumerMapper.
-		$this->createDefaultApplicaties(output: $output);
+		// The two seeding phases below are conveniences, and a repair step
+		// that THROWS aborts the whole install. On a fresh install the schema
+		// settings this register was configured with can still be empty, and a
+		// lookup against an empty schema context throws — so each phase warns
+		// and continues instead of taking the install down with it.
+		try {
+			// Create default test applicaties via ConsumerMapper.
+			$this->createDefaultApplicaties(output: $output);
+		} catch (\Throwable $e) {
+			$output->warning('Could not create default applicaties: ' . $e->getMessage());
+			$this->logger->warning('Dossiq: default applicaties seed failed', ['exception' => $e->getMessage()]);
+		}
 
-		// Create default notification channels.
-		$this->createDefaultKanalen(output: $output);
+		try {
+			// Create default notification channels.
+			$this->createDefaultKanalen(output: $output);
+		} catch (\Throwable $e) {
+			$output->warning('Could not create default notification channels: ' . $e->getMessage());
+			$this->logger->warning('Dossiq: default kanalen seed failed', ['exception' => $e->getMessage()]);
+		}
 
 		$this->logger->info(
 			'Dossiq: Default ZGW mappings loaded',
@@ -1576,6 +1596,16 @@ class LoadDefaultZgwMappings implements IRepairStep {
 		);
 		if ($channelMapping === null) {
 			$output->info('Kanaal mapping not configured. Skipping default channels.');
+			return;
+		}
+
+		// On a fresh install the schema settings can still be empty when this
+		// step runs; a search against an empty schema context throws and would
+		// abort the install. Skip by name instead.
+		if ((string)($channelMapping['sourceRegister'] ?? '') === ''
+			|| (string)($channelMapping['sourceSchema'] ?? '') === ''
+		) {
+			$output->info('Kanaal mapping has no register/schema configured yet. Skipping default channels.');
 			return;
 		}
 

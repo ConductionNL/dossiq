@@ -4,6 +4,7 @@
     "deprecationNote": "Decision types are now managed by decidesk (procest-delegate-contract-decision). These templates are kept for historical read access until sunset.",
     "caseType": {
         "identifier": "bvw-mandaatbesluit",
+        "initialStatusName": "Voorstel opstellen",
         "title": "Mandaatbesluit",
         "description": "Besluit genomen op basis van ambtelijk of politiek mandaat",
         "purpose": "Vastleggen van besluiten binnen gedelegeerde bevoegdheden",
@@ -43,9 +44,9 @@
             { "name": "Besluitdocument", "description": "Het ondertekende mandaatbesluit", "isRequired": true }
         ],
         "resultTypes": [
-            { "name": "Besluit genomen", "description": "Mandaatbesluit is genomen en vastgelegd", "archivalPeriod": "P10Y", "archivalAction": "destroy" },
-            { "name": "Aangehouden", "description": "Besluit is aangehouden", "archivalPeriod": "P5Y", "archivalAction": "destroy" },
-            { "name": "Ingetrokken", "description": "Voorstel is ingetrokken", "archivalPeriod": "P5Y", "archivalAction": "destroy" }
+            { "name": "Besluit genomen", "description": "Mandaatbesluit is genomen en vastgelegd", "archivalPeriod": "P10Y", "archivalAction": "vernietigen" },
+            { "name": "Aangehouden", "description": "Besluit is aangehouden", "archivalPeriod": "P5Y", "archivalAction": "vernietigen" },
+            { "name": "Ingetrokken", "description": "Voorstel is ingetrokken", "archivalPeriod": "P5Y", "archivalAction": "vernietigen" }
         ],
         "workflowTemplate": {
             "title": "Mandaatbesluit workflow v1",
@@ -56,7 +57,7 @@
             "steps": [
                 { "title": "Voorstel opstellen", "statusName": "Voorstel opstellen", "order": 1, "isRequired": true, "description": "Steller stelt het DT-advies op" },
                 { "title": "Ambtelijk advies", "statusName": "Ambtelijk advies", "order": 2, "isRequired": true, "description": "Inhoudelijk advies" },
-                { "title": "Parafering", "statusName": "Parafering", "order": 3, "isRequired": true, "description": "Verkorte parafeerroute", "automaticActions": [{ "type": "besluitvormingActivate" }] },
+                { "title": "Parafering", "statusName": "Parafering", "order": 3, "isRequired": true, "description": "Verkorte parafeerroute" },
                 { "title": "Gereed voor agendering", "statusName": "Gereed voor agendering", "order": 4, "isRequired": true, "description": "Klaar voor mandaatbesluit" },
                 { "title": "Geagendeerd", "statusName": "Geagendeerd", "order": 5, "isRequired": true, "description": "Opgevoerd voor besluit" },
                 { "title": "Vergadering", "statusName": "Vergadering", "order": 6, "isRequired": true, "description": "Behandeling binnen mandaat" },
@@ -65,7 +66,10 @@
             ],
             "transitions": [
                 { "fromStatusName": "Voorstel opstellen", "toStatusName": "Ambtelijk advies", "label": "Naar advies" },
-                { "fromStatusName": "Ambtelijk advies", "toStatusName": "Parafering", "label": "Start parafering" },
+                {
+                    "fromStatusName": "Ambtelijk advies", "toStatusName": "Parafering", "label": "Start parafering",
+                    "automaticActions": [{ "type": "besluitvormingActivate" }]
+                },
                 {
                     "fromStatusName": "Parafering", "toStatusName": "Gereed voor agendering", "label": "Parafering compleet",
                     "guards": [{ "type": "requiredField", "config": { "field": "paraferingCompleet" } }]
