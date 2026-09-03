@@ -126,14 +126,14 @@ if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowResumeState', false) =
         }
 
         /**
-         * What the run should persist, given whether it suspended.
+         * What the run should persist, given whether the run is still live.
          *
-         * @param boolean $suspended Whether the run suspended.
+         * @param boolean $live Whether the run is still live.
          *
          * @return array<string, array<string, mixed>>|null The slots, or null.
          */
-        public function storableWhen(bool $suspended): ?array {
-            if ($suspended === false || $this->byNode === []) {
+        public function storableWhen(bool $live): ?array {
+            if ($live === false || $this->byNode === []) {
                 return null;
             }
 
