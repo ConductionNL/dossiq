@@ -1319,6 +1319,7 @@
                     },
                     "description": {
                         "type": "string",
+                        "format": "textarea",
                         "description": "Detailed description of this case",
                         "title": "Description",
                         "order": 3

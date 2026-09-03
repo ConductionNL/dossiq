@@ -405,6 +405,21 @@ test.describe('New case dialog', () => {
 				.map((n) => Math.round(n.getBoundingClientRect().left)),
 		)
 		expect(new Set(lefts).size).toBe(2)
+
+		// The description is prose, so it takes the full width rather than
+		// half of it. Measured, not inferred from the class: the class is what
+		// ASKS for the span, the width is whether it happened.
+		const widths = await dialog.evaluate((root) => {
+			const form = root.querySelector('[data-testid-modal="cn-form-dialog"]')
+			const desc = root.querySelector('[data-cn-field="description"]')
+			const title = root.querySelector('[data-cn-field="title"]')
+			return {
+				form: form.getBoundingClientRect().width,
+				description: desc.getBoundingClientRect().width,
+				title: title.getBoundingClientRect().width,
+			}
+		})
+		expect(widths.description).toBeGreaterThan(widths.title * 1.5)
 	})
 
 	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-006-the-dialog-reads-as-a-form-not-a-schema
