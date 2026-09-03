@@ -99,10 +99,11 @@ final class StubApiDriftTest extends TestCase {
 		// real default is `concept`. That is not stub drift to tidy away: the
 		// SHIPPED catalogue writes the Dutch values, OR's mapper throws
 		// InvalidArgumentException on every one of them, and the seed step
-		// swallows it per row. The English-vocabulary migration owns the stub,
-		// the catalogue and the assertions together; splitting it across two
-		// changes would leave the tree half-migrated.
-		'Db\\Verwerkingsactiviteit' => 'the English legal-basis vocabulary migration owns this stub and its catalogue',
+		// swallows it per row. The fix owns the stub, the catalogue and the
+		// assertions together; splitting it across two changes would leave the
+		// tree half-migrated. Tracked as dossiq#1763.
+		'Db\\Verwerkingsactiviteit' => 'dossiq#1763: the catalogue writes Dutch legal bases OR rejects; '
+			. 'stub, catalogue and assertions move together',
 	];
 
 	/**
