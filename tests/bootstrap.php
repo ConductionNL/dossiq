@@ -254,6 +254,12 @@ require_once __DIR__ . '/Unit/Fixtures/FakeTermijnStore.php';
 // load order relative to the stub block below does not matter.
 require_once __DIR__ . '/Unit/Fixtures/FlowTimerEngineFake.php';
 
+// Schema-aware stand-in for StufRegisterAccess. Reproduces the two live object
+// store behaviours a hand-written mock hides — a save drops what the schema
+// does not declare, and a filter on an undeclared property matches zero rows —
+// so the StUF tests cannot agree with a caller that has drifted off contract.
+require_once __DIR__ . '/Unit/Fixtures/SchemaAwareStufRegister.php';
+
 // OCP\Http\Client interface stubs — the vendored nextcloud/ocp does not ship
 // the OCP\Http\Client namespace, so services depending on IClientService
 // (PublicationService, MandaatValidationService) cannot be mocked without these.

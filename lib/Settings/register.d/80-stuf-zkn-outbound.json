@@ -474,7 +474,7 @@
                     "caseId": {
                         "type": "string",
                         "title": "Case",
-                        "description": "Dossiq case id this mapping relates to (set for case mappings; mirrors bronId for bronEntiteit=case).",
+                        "description": "Dossiq case id this mapping relates to (set for case mappings; mirrors sourceId for sourceEntity=case).",
                         "maxLength": 128
                     },
                     "externalEntity": {
@@ -515,32 +515,6 @@
                             "geannuleerd",
                             "wacht"
                         ]
-                    },
-                    "openstaandeWijzigingen": {
-                        "type": "array",
-                        "title": "Pending changes",
-                        "description": "Pending changes not yet sent to the zaaksysteem.",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "veld": {
-                                    "type": "string",
-                                    "title": "Field",
-                                    "description": "The field waiting to be sent."
-                                },
-                                "value": {
-                                    "type": "string",
-                                    "title": "Value",
-                                    "description": "The value waiting to be sent."
-                                },
-                                "geplandOp": {
-                                    "type": "string",
-                                    "title": "Planned for",
-                                    "description": "When this change is due to be sent.",
-                                    "format": "date-time"
-                                }
-                            }
-                        }
                     }
                 }
             }
