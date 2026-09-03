@@ -41,6 +41,12 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Besluitvorming\TemplateBundleSeeder
  * @covers \OCA\Dossiq\Service\SeedDataService
  *
+ * `RegisterFragmentMerger` is declared as USED, not covered: the test reads a
+ * merged register to know which properties a schema declares, so it executes
+ * the merger without asserting anything about it. Without the tag, PHPUnit's
+ * strict-coverage mode marks the test risky, which only shows up under a
+ * coverage driver and so is green locally and red in CI.
+ *
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class SeedPayloadSchemaConformanceTest extends TestCase {
