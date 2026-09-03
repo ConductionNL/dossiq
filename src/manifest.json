@@ -403,6 +403,17 @@
             "label": "New case",
             "size": "large",
             "columns": 2,
+            "includeFields": [
+              "caseType",
+              "title",
+              "description",
+              "assignee",
+              "priority",
+              "confidentiality",
+              "intakeChannel",
+              "startDate",
+              "plannedEndDate"
+            ],
             "fieldOverrides": {
                 "description": { "widget": "textarea" }
             },
