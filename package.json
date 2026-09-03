@@ -44,7 +44,7 @@
   "dependencies": {
     "@conduction/nextcloud-vue": "^2.33.0",
     "@nextcloud/auth": "^2.6.0",
-    "@nextcloud/axios": "~2.5.2",
+    "@nextcloud/axios": "~2.6.0",
     "@nextcloud/capabilities": "^1.2.1",
     "@nextcloud/dialogs": "^7.4.1",
     "@nextcloud/initial-state": "^2.2.0",
