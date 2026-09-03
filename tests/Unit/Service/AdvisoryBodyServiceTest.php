@@ -87,7 +87,11 @@ interface AdvisoryObjectServiceStub {
 	 *
 	 * @return void
 	 */
-	public function deleteObject(string $register, string $schema, string $id): void;
+	// OpenRegister's real signature is deleteObject(uuid, register, schema). This
+	// fake declared (register, schema, id), so it accepted the transposed
+	// positional call the service was making and no test could ever see the bug.
+	// A fake that agrees with the caller instead of with the callee cannot fail.
+	public function deleteObject(string $uuid, ?string $register = null, ?string $schema = null): void;
 }//end interface
 
 /**
@@ -195,5 +199,46 @@ class AdvisoryBodyServiceTest extends TestCase {
 		$this->service->save(data: ['name' => 'Test'], id: '');
 
 	}//end testSaveThrowsWhenObjectServiceUnavailable()
+
+	/**
+	 * Delete passes the UUID as the uuid, not as the register.
+	 *
+	 * This is the assertion the suite was missing. The service called
+	 * `deleteObject($register, $schema, $id)` positionally against a signature
+	 * of `(uuid, register, schema)`, so all three arguments were transposed and
+	 * every delete looked up a register whose id was really a schema's. It
+	 * 500'd on a live instance every time, and the fake above accepted it
+	 * because the fake had been written to match the caller rather than
+	 * OpenRegister.
+	 *
+	 * The same defect shipped in four other services. InspectionChecklistService
+	 * carries a docblock describing it, found the same way and never swept.
+	 *
+	 * @return void
+	 */
+	public function testDeletePassesTheUuidAsTheUuid(): void {
+		$received = [];
+
+		$objectService = $this->createMock(AdvisoryObjectServiceStub::class);
+		$objectService->method('deleteObject')->willReturnCallback(
+			function (string $uuid, ?string $register = null, ?string $schema = null) use (&$received): void {
+				$received = ['uuid' => $uuid, 'register' => $register, 'schema' => $schema];
+			}
+		);
+
+		$this->settings->method('getObjectService')->willReturn($objectService);
+		$this->settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => ['register' => 'reg-1', 'advisory_body_schema' => 'schema-9'][$key] ?? ''
+		);
+
+		$this->service->delete('body-uuid-1');
+
+		$this->assertSame(
+			['uuid' => 'body-uuid-1', 'register' => 'reg-1', 'schema' => 'schema-9'],
+			$received,
+			'a transposed positional call would put the register in the uuid slot'
+		);
+
+	}//end testDeletePassesTheUuidAsTheUuid()
 
 }//end class
