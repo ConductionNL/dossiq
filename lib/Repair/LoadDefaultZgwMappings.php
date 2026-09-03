@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use DateTime;
+use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwMappingService;
 use OCP\Migration\IOutput;
@@ -46,6 +47,8 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 class LoadDefaultZgwMappings implements IRepairStep {
+	use RunsUnderSystemIdentity;
+
 	/**
 	 * Twig template prefix: replace path segment and append UUID variable.
 	 *
@@ -1621,25 +1624,62 @@ class LoadDefaultZgwMappings implements IRepairStep {
 
 		$defaults = $this->getDefaultKanalen();
 		$created = 0;
+		$refused = [];
 
-		foreach ($defaults as $channel) {
-			// Check if kanaal already exists.
-			$query = $objectService->buildSearchQuery(
-				requestParams: ['name' => $channel['name']],
-				register: $channelMapping['sourceRegister'],
-				schema: $channelMapping['sourceSchema']
-			);
-			$existing = $objectService->searchObjectsPaginated(query: $query);
-			if (($existing['total'] ?? 0) > 0) {
-				continue;
+		// A REPAIR STEP HAS NO SESSION, SO OPENREGISTER SEES 'Anonymous'.
+		// This loop is what the acceptance proof caught: every fresh install
+		// logged `User 'Anonymous' does not have permission to 'create' objects
+		// in schema 'Notification Channel'`, the FIRST channel threw, run()'s
+		// try/catch turned it into one warning, and the remaining three were
+		// never attempted. So the whole ZGW notification surface shipped with
+		// no channels while the step's own line never printed a zero.
+		//
+		// The elevation is the same one every other writing step already uses;
+		// the per-row try is the other half, so one refused channel no longer
+		// takes the other three with it and the count names what is missing.
+		$this->withSystemIdentity(
+			objectService: $objectService,
+			work: function () use ($objectService, $channelMapping, $defaults, &$created, &$refused): void {
+				foreach ($defaults as $channel) {
+					try {
+						// Check if kanaal already exists.
+						$query = $objectService->buildSearchQuery(
+							requestParams: ['name' => $channel['name']],
+							register: $channelMapping['sourceRegister'],
+							schema: $channelMapping['sourceSchema']
+						);
+						$existing = $objectService->searchObjectsPaginated(query: $query);
+						if (($existing['total'] ?? 0) > 0) {
+							continue;
+						}
+
+						$objectService->saveObject(
+							register: $channelMapping['sourceRegister'],
+							schema: $channelMapping['sourceSchema'],
+							object: $channel
+						);
+						$created++;
+					} catch (\Throwable $e) {
+						$refused[] = (string)$channel['name'];
+						$this->logger->error(
+							'Dossiq: default notification channel refused',
+							['channel' => $channel['name'], 'exception' => $e->getMessage()]
+						);
+					}//end try
+				}//end foreach
 			}
+		);
 
-			$objectService->saveObject(
-				register: $channelMapping['sourceRegister'],
-				schema: $channelMapping['sourceSchema'],
-				object: $channel
+		if ($refused !== []) {
+			$output->warning(
+				sprintf(
+					'Created %d default notification channels; %d REFUSED (%s). ZGW notifications on those channels cannot be delivered.',
+					$created,
+					count($refused),
+					implode(', ', $refused)
+				)
 			);
-			$created++;
+			return;
 		}
 
 		$output->info("Created {$created} default notification channels.");
