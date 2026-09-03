@@ -130,6 +130,64 @@ class ParaferingRaiseService {
 			proposalId: $proposalId,
 		);
 
+		$updateData = $this->raiseFields(
+			proposal: $proposal,
+			proposalId: $proposalId,
+			proposalSchema: (string)$proposalSchema
+		);
+
+		// A re-raise reloads a voorstel whose stored `routeSnapshot` came back
+		// DECODED, so the merge goes through JsonEncodedStringProperties even
+		// though this update replaces that property outright — the guarantee
+		// must not depend on which fields today's update happens to name.
+		$updated = $objectService->saveObject(
+			object: $this->jsonProperties->mergeForWrite(
+				stored: $proposal,
+				updates: $updateData,
+				schemaSlug: self::SCHEMA_SLUG,
+			),
+			register: $register,
+			schema: $proposalSchema
+		);
+
+		$this->logger->info(
+			'Dossiq parafering raised at the decision app for proposal: ' . $proposalId,
+			['app' => Application::APP_ID, 'approvalRouteId' => $updateData['approvalRouteId']]
+		);
+
+		return $this->normalizer->toArray(value: $updated);
+	}//end activate()
+
+	/**
+	 * Raise the chain and return the fields that record it, WITHOUT saving.
+	 *
+	 * Extracted from `activate()` so the same raise can happen on a save that
+	 * is already in flight. OpenRegister's `LifecycleActionListener` runs a
+	 * declared action on `ObjectUpdatingEvent` — inside the save, before it is
+	 * written — and threads the handler's return value into the payload being
+	 * stored. A handler that called `activate()` there would open a SECOND,
+	 * nested save of the same object while the outer one was still assembling
+	 * its own payload, and the outer write would then land last, without the
+	 * fields the nested one had just recorded. Returning the fields lets the
+	 * save that is already happening carry them.
+	 *
+	 * Everything that makes the raise fail closed is here rather than in either
+	 * caller: an unroutable voorstel and an absent decision app both throw, so
+	 * neither path can park a voorstel in `in_parafering` with no engine to
+	 * move it.
+	 *
+	 * @param array<string, mixed> $proposal The voorstel payload.
+	 * @param string $proposalId The voorstel uuid.
+	 * @param string $proposalSchema The voorstel schema identifier.
+	 *
+	 * @return array<string, mixed> The fields recording the raise.
+	 *
+	 * @throws RuntimeException When the voorstel cannot be routed, or the
+	 *         decision app is absent or refuses.
+	 *
+	 * @spec openspec/changes/parafering-runtime-to-decidiq/specs/parafering-runtime-to-decidiq/spec.md
+	 */
+	public function raiseFields(array $proposal, string $proposalId, string $proposalSchema): array {
 		// The voorstel schema declares no caseType, and OpenRegister never
 		// returns undeclared properties — the type is derived from the
 		// voorstel's linked case, where the schema actually holds it.
@@ -167,34 +225,13 @@ class ParaferingRaiseService {
 
 		// The schema declares routeSnapshot as a string ("JSON-encoded
 		// array"), so the frozen record is written in the declared shape.
-		$updateData = [
+		return [
 			'status' => 'in_parafering',
 			'currentStep' => 1,
 			'routeSnapshot' => (string)json_encode($routeSnapshot),
 			'approvalRouteId' => $approvalRouteId,
 		];
-
-		// A re-raise reloads a voorstel whose stored `routeSnapshot` came back
-		// DECODED, so the merge goes through JsonEncodedStringProperties even
-		// though this update replaces that property outright — the guarantee
-		// must not depend on which fields today's update happens to name.
-		$updated = $objectService->saveObject(
-			object: $this->jsonProperties->mergeForWrite(
-				stored: $proposal,
-				updates: $updateData,
-				schemaSlug: self::SCHEMA_SLUG,
-			),
-			register: $register,
-			schema: $proposalSchema
-		);
-
-		$this->logger->info(
-			'Dossiq parafering raised at the decision app for proposal: ' . $proposalId,
-			['app' => Application::APP_ID, 'approvalRouteId' => $approvalRouteId]
-		);
-
-		return $this->normalizer->toArray(value: $updated);
-	}//end activate()
+	}//end raiseFields()
 
 	/**
 	 * Load the voorstel, refusing the unknown.

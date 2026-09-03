@@ -3102,7 +3102,7 @@
             "proposal": {
                 "slug": "proposal",
                 "icon": "FileDocumentEditOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:CreativeWork",
                 "title": "Proposal",
                 "description": "A B&W voorstel (proposal) for decision-making in a case",
@@ -3257,7 +3257,12 @@
                                 ],
                                 "to": "in_parafering",
                                 "requires": "OCA\\Dossiq\\Lifecycle\\VoorstelSubmitGuard",
-                                "description": "Start initialing route. Rejected when the required onderwerp or type fields are empty."
+                                "actions": [
+                                    {
+                                        "action": "OCA\\Dossiq\\Lifecycle\\RaiseParaferingAction"
+                                    }
+                                ],
+                                "description": "Start initialing route. Rejected when the required onderwerp or type fields are empty, and when the parafering chain cannot be raised at the decision app: the action holds the route and records it on the voorstel, so a voorstel never reaches in_parafering with no engine to move it on."
                             },
                             "paraferingDone": {
                                 "from": [

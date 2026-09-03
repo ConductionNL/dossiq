@@ -7,13 +7,22 @@ description: The Nextcloud groups the shipped case flows assign work to, why Dos
 
 # Groups Dossiq expects
 
-The shipped case flow assigns its behandelaar step to the Nextcloud group `behandelaars`. Dossiq creates that group at install and on every upgrade. The step is idempotent: an existing group is left alone.
+The shipped case flow assigns its behandelaar step to the Nextcloud group `behandelaars`. Dossiq creates that group at install and on every upgrade. The step is idempotent: an existing group is left alone, membership included.
 
-Membership stays yours. Dossiq never adds users to the group. Add your case handlers yourself:
+## Who is in it at install
+
+An empty group is no better than a missing one. The completion gate asks "is this user a member", and an empty group answers no for everybody. Measured on a fresh install: the group existed, the shipped journey still could not be walked.
+
+So when Dossiq creates the group, it puts your administrators in it. That is the one membership an install can know, and it makes the shipped journey completable on day one.
+
+Replace them with your real case handlers:
 
 ```bash
 occ group:adduser behandelaars <user>
+occ group:removeuser behandelaars admin
 ```
+
+Dossiq touches membership only for a group it just created. A group you already manage is never changed.
 
 ## When the group is missing
 
