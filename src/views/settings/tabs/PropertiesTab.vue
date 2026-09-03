@@ -327,7 +327,7 @@ export default {
 				const result = await this.objectStore.fetchCollection(
 					'propertyDefinition',
 					{
-						'_filters[caseType]': this.caseTypeId,
+						caseType: this.caseTypeId,
 						_limit: 100,
 					},
 				)
@@ -342,7 +342,7 @@ export default {
 		async fetchStatusTypes() {
 			try {
 				const result = await this.objectStore.fetchCollection('statusType', {
-					'_filters[caseType]': this.caseTypeId,
+					caseType: this.caseTypeId,
 					_limit: 100,
 				})
 				this.statusTypes = result || []

@@ -142,7 +142,7 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 
 				// Load objection.
 				const objections = await objectStore.fetchCollection('objection', {
-					'_filters[case]': caseId,
+					case: caseId,
 					_limit: 1,
 				})
 				this.currentObjection = objections?.[0] || null
@@ -151,14 +151,14 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 				const hearings = await objectStore.fetchCollection(
 					'hearingSession',
 					{
-						'_filters[case]': caseId,
+						case: caseId,
 					},
 				)
 				this.hearingSessions = hearings || []
 
 				// Load advisory report.
 				const reports = await objectStore.fetchCollection('advisoryReport', {
-					'_filters[case]': caseId,
+					case: caseId,
 					_limit: 1,
 				})
 				this.currentAdvisoryReport = reports?.[0] || null
@@ -167,7 +167,7 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 				const decisions = await objectStore.fetchCollection(
 					'appealDecision',
 					{
-						'_filters[case]': caseId,
+						case: caseId,
 						_limit: 1,
 					},
 				)
@@ -570,7 +570,7 @@ export const useBezwaarStore = defineStore('objectionProceeding', {
 
 				// Find the Beroep case type.
 				const caseTypes = await objectStore.fetchCollection('caseType', {
-					'_filters[identifier]': 'beroep',
+					identifier: 'beroep',
 					_limit: 1,
 				})
 				const beroepCaseType = caseTypes?.[0]

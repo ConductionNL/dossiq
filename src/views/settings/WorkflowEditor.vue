@@ -234,7 +234,7 @@ export default {
 			// Load status types for this case type
 			this.statusNodes =
 				(await this.objectStore.fetchCollection('statusType', {
-					'_filters[caseType]': this.caseTypeId,
+					caseType: this.caseTypeId,
 					_limit: 100,
 					_order: { order: 'asc' },
 				})) || []
@@ -242,14 +242,14 @@ export default {
 			// Load role types
 			this.roleTypes =
 				(await this.objectStore.fetchCollection('roleType', {
-					'_filters[caseType]': this.caseTypeId,
+					caseType: this.caseTypeId,
 					_limit: 100,
 				})) || []
 
 			// Load document types
 			this.documentTypes =
 				(await this.objectStore.fetchCollection('documentType', {
-					'_filters[caseType]': this.caseTypeId,
+					caseType: this.caseTypeId,
 					_limit: 100,
 				})) || []
 

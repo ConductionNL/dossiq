@@ -86,7 +86,7 @@ export const useInspectionStore = defineStore('inspection', {
 				const response = await objectStore.fetchCollection(
 					'inspectieChecklist',
 					{
-						'_filters[caseType]': caseTypeId,
+						caseType: caseTypeId,
 						limit: 100,
 					},
 				)
@@ -204,7 +204,7 @@ export const useInspectionStore = defineStore('inspection', {
 				const response = await objectStore.fetchCollection(
 					'inspectieRapport',
 					{
-						'_filters[case]': caseId,
+						case: caseId,
 						limit: 100,
 					},
 				)

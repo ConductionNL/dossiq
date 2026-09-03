@@ -187,7 +187,7 @@ export default {
 			this.loading = true
 			const objectStore = useObjectStore()
 			const results = await objectStore.fetchCollection('documentType', {
-				'_filters[caseType]': this.caseTypeId,
+				caseType: this.caseTypeId,
 				_limit: 100,
 			})
 			this.items = results || []

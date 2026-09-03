@@ -286,7 +286,7 @@ export default {
 			// Count active cases of this type
 			try {
 				const cases = await this.objectStore.fetchCollection('case', {
-					'_filters[caseType]': this.caseTypeId,
+					caseType: this.caseTypeId,
 					_limit: 1,
 				})
 				this.activeCaseCount = cases?.length || 0
@@ -356,7 +356,7 @@ export default {
 			const statusTypes = await this.objectStore.fetchCollection(
 				'statusType',
 				{
-					'_filters[caseType]': this.caseTypeId,
+					caseType: this.caseTypeId,
 					_limit: 100,
 				},
 			)

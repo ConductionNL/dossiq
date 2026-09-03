@@ -147,7 +147,7 @@ export default {
 			this.loading = true
 			try {
 				const results = await this.objectStore.fetchCollection('task', {
-					'_filters[case]': this.resolvedCaseId,
+					case: this.resolvedCaseId,
 					_limit: 50,
 				})
 				this.tasks = results || []

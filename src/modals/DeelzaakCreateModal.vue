@@ -267,7 +267,7 @@ export default {
 				const results = await this.objectStore.fetchCollection(
 					'statusType',
 					{
-						'_filters[caseType]': caseType.id,
+						caseType: caseType.id,
 						_order: JSON.stringify({ order: 'asc' }),
 						_limit: 100,
 					},

@@ -105,7 +105,7 @@ export const useAdviceStore = defineStore('advice', {
 				const response = await objectStore.fetchCollection(
 					'adviesAanvraag',
 					{
-						'_filters[case]': caseId,
+						case: caseId,
 						limit: 100,
 					},
 				)

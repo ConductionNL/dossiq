@@ -126,7 +126,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 				const response = await objectStore.fetchCollection(
 					'handhavingsactie',
 					{
-						'_filters[case]': caseId,
+						case: caseId,
 						limit: 100,
 					},
 				)

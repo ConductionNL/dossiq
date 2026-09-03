@@ -189,7 +189,7 @@ export default {
 				const results = await this.objectStore.fetchCollection(
 					'caseDocument',
 					{
-						'_filters[case]': this.resolvedCaseId,
+						case: this.resolvedCaseId,
 						_limit: 100,
 					},
 				)
