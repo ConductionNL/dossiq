@@ -257,6 +257,23 @@ class ParaferingRaiseServiceTest extends TestCase {
 	}
 
 	/**
+	 * An unknown voorstel is refused before anything else happens.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownVoorstelIsRefused(): void {
+		$this->rows = [];
+
+		try {
+			$this->service(route: null)->activate('v-gone');
+			$this->fail('An unknown voorstel must be refused.');
+		} catch (RuntimeException $e) {
+			$this->assertStringContainsString('Voorstel not found', $e->getMessage());
+			$this->assertSame([], $this->saved);
+		}
+	}
+
+	/**
 	 * A voorstel whose case type has no route is refused, and nothing is saved.
 	 *
 	 * @return void

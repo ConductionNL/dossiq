@@ -446,10 +446,11 @@ class VoorstelBesluitControllerContractTest extends TestCase {
 	 *
 	 * @param array<string,mixed>|null $proposal The voorstel record, or null for a miss.
 	 * @param array<string,mixed>|null $case The linked case record served by id, if any.
+	 * @param bool $caseLookupThrows Whether any non-voorstel lookup fails hard.
 	 *
 	 * @return void
 	 */
-	private function withProposal(?array $proposal, ?array $case = null): void {
+	private function withProposal(?array $proposal, ?array $case = null, bool $caseLookupThrows = false): void {
 		$objectService = $this->createMock(VoorstelBesluitControllerContractObjectService::class);
 		if ($proposal === null) {
 			$objectService->method('find')->willThrowException(
@@ -459,9 +460,13 @@ class VoorstelBesluitControllerContractTest extends TestCase {
 			$storedProposal = ShippedRegisterSchema::asStored(row: $proposal, slug: 'proposal');
 			$storedCase = ($case === null) ? null : ShippedRegisterSchema::asStored(row: $case, slug: 'case');
 			$objectService->method('find')->willReturnCallback(
-				static function (int|string $id) use ($storedProposal, $storedCase): mixed {
+				static function (int|string $id) use ($storedProposal, $storedCase, $caseLookupThrows): mixed {
 					if ((string)$id === 'voorstel-1') {
 						return new FakeStoredObject($storedProposal);
+					}
+
+					if ($caseLookupThrows === true) {
+						throw new \RuntimeException('register briefly unavailable');
 					}
 
 					if ($storedCase !== null && (string)$id === (string)($storedCase['id'] ?? '')) {
@@ -562,6 +567,82 @@ class VoorstelBesluitControllerContractTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_ACCEPTED, $response->getStatus());
 	}//end testRegisterBesluitAdmitsTheCaseAssigneeAndNotOnlyTheOwner()
+
+	/**
+	 * The voorstel's AUTHOR (the steller) may register too.
+	 *
+	 * @return void
+	 */
+	public function testRegisterBesluitAdmitsTheVoorstelAuthor(): void {
+		$this->signIn('steller');
+		$this->withProposal(
+			proposal: ['@self' => ['owner' => 'iemand-anders'], 'author' => 'steller', 'case' => 'zaak-5'],
+		);
+
+		$this->adviceDelegation->expects($this->once())
+			->method('raiseVoorstelBesluit')
+			->willReturn('decidesk:decision:abc');
+
+		$response = $this->controller()->registerBesluit(proposalId: 'voorstel-1');
+
+		$this->assertSame(Http::STATUS_ACCEPTED, $response->getStatus());
+	}//end testRegisterBesluitAdmitsTheVoorstelAuthor()
+
+	/**
+	 * An EXTENDED case relation (object instead of uuid) still resolves the
+	 * behandelaar arm.
+	 *
+	 * @return void
+	 */
+	public function testRegisterBesluitResolvesAnExtendedCaseRelation(): void {
+		$this->signIn('behandelaar');
+		$this->withProposal(
+			proposal: ['@self' => ['owner' => 'iemand-anders'], 'case' => ['id' => 'zaak-5']],
+			case: ['id' => 'zaak-5', 'assignee' => 'behandelaar'],
+		);
+
+		$this->adviceDelegation->expects($this->once())
+			->method('raiseVoorstelBesluit')
+			->willReturn('decidesk:decision:abc');
+
+		$response = $this->controller()->registerBesluit(proposalId: 'voorstel-1');
+
+		$this->assertSame(Http::STATUS_ACCEPTED, $response->getStatus());
+	}//end testRegisterBesluitResolvesAnExtendedCaseRelation()
+
+	/**
+	 * A failing CASE lookup fails closed: no behandelaar to admit, 403, and
+	 * nothing raised in decidesk.
+	 *
+	 * @return void
+	 */
+	public function testRegisterBesluitFailsClosedWhenTheCaseLookupFails(): void {
+		$this->signIn('behandelaar');
+		$this->withProposal(
+			proposal: ['@self' => ['owner' => 'iemand-anders'], 'case' => 'zaak-5'],
+			caseLookupThrows: true,
+		);
+		$this->adviceDelegation->expects($this->never())->method('raiseVoorstelBesluit');
+
+		$response = $this->controller()->registerBesluit(proposalId: 'voorstel-1');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+	}//end testRegisterBesluitFailsClosedWhenTheCaseLookupFails()
+
+	/**
+	 * A voorstel without a linked case has no behandelaar arm at all.
+	 *
+	 * @return void
+	 */
+	public function testRegisterBesluitRefusesWhenTheVoorstelHasNoCase(): void {
+		$this->signIn('behandelaar');
+		$this->withProposal(proposal: ['@self' => ['owner' => 'iemand-anders']]);
+		$this->adviceDelegation->expects($this->never())->method('raiseVoorstelBesluit');
+
+		$response = $this->controller()->registerBesluit(proposalId: 'voorstel-1');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+	}//end testRegisterBesluitRefusesWhenTheVoorstelHasNoCase()
 
 	/**
 	 * REQ-PDRD-002: when decidesk is unavailable the endpoint FAILS CLOSED

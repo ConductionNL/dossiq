@@ -142,16 +142,20 @@ class RaiseInFlightParaferingenInDecidiqTest extends TestCase {
 	 *
 	 * @return RaiseInFlightParaferingenInDecidiq The step.
 	 */
-	private function step(?object $objectService, bool $available = true, ?array $route = ['id' => 'r-1', 'steps' => [['order' => 1]]]): RaiseInFlightParaferingenInDecidiq {
+	private function step(?object $objectService, bool $available = true, ?array $route = ['id' => 'r-1', 'steps' => [['order' => 1]]], bool $holds = true): RaiseInFlightParaferingenInDecidiq {
 		$delegation = $this->createMock(ParaferingDelegationService::class);
 		$delegation->method('isAvailable')->willReturn($available);
-		$delegation->method('holdRoute')->willReturnCallback(
-			function (array $r, string $actorId = '', string $subject = '', string $subjectSchema = ''): string {
-				$this->raised[] = $subject;
+		if ($holds === false) {
+			$delegation->method('holdRoute')->willThrowException(new RuntimeException('the decision app refused'));
+		} else {
+			$delegation->method('holdRoute')->willReturnCallback(
+				function (array $r, string $actorId = '', string $subject = '', string $subjectSchema = ''): string {
+					$this->raised[] = $subject;
 
-				return 'ar-1';
-			}
-		);
+					return 'ar-1';
+				}
+			);
+		}
 
 		$routes = $this->createMock(ParafeerrouteDirectory::class);
 		// The voorstel schema declares no caseType: the type is derived from
@@ -233,6 +237,25 @@ class RaiseInFlightParaferingenInDecidiqTest extends TestCase {
 		$this->step(objectService: $this->objectService(), route: null)->run($this->migrationOutput());
 
 		$this->assertSame([], $this->raised);
+	}
+
+	/**
+	 * A voorstel the decision app refuses is counted failed and named, not
+	 * silently dropped.
+	 *
+	 * @return void
+	 */
+	public function testARefusedReRaiseIsCountedAndReported(): void {
+		$this->rows = [['id' => 'v-1', 'status' => 'in_parafering', 'case' => 'c-1']];
+
+		$this->step(objectService: $this->objectService(), holds: false)->run($this->migrationOutput());
+
+		$this->assertSame([], $this->raised);
+		$this->assertNotSame(
+			[],
+			array_filter($this->reported, static fn (string $line): bool => str_contains($line, 'v-1')),
+			'The failed voorstel is named in the migration output.'
+		);
 	}
 
 	/**

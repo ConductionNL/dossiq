@@ -112,11 +112,16 @@ class VoorstelBesluitController extends Controller {
 
 		$body = $this->getRequestBody();
 
+		$caseId = $this->caseIdOf(proposal: $proposal);
+		if ($caseId === '') {
+			$caseId = $proposalId;
+		}
+
 		try {
 			$decisionRef = $this->adviceDelegation->raiseVoorstelBesluit(
 				proposalId: $proposalId,
 				payload: [
-					'externalReference' => (string)($proposal['case'] ?? $proposalId),
+					'externalReference' => $caseId,
 					'subjectLabel' => (string)($body['title'] ?? ($proposal['subject'] ?? '')),
 					'title' => (string)($body['title'] ?? ''),
 					'governingBody' => (string)($body['governingBody'] ?? ''),
@@ -223,16 +228,7 @@ class VoorstelBesluitController extends Controller {
 	 * @return string The case assignee UID, or ''.
 	 */
 	private function caseAssigneeOf(array $proposal): string {
-		$caseRef = ($proposal['case'] ?? null);
-		$caseId = '';
-		if (is_scalar($caseRef) === true) {
-			$caseId = trim((string)$caseRef);
-		}
-
-		if (is_array($caseRef) === true) {
-			$caseId = (string)($caseRef['id'] ?? ($caseRef['uuid'] ?? ($caseRef['@self']['id'] ?? '')));
-		}
-
+		$caseId = $this->caseIdOf(proposal: $proposal);
 		if ($caseId === '') {
 			return '';
 		}
@@ -265,6 +261,28 @@ class VoorstelBesluitController extends Controller {
 
 		return (string)($case['assignee'] ?? '');
 	}//end caseAssigneeOf()
+
+	/**
+	 * The id of the case the voorstel links to, whichever relation shape
+	 * OpenRegister returned — a uuid string when unextended, the related
+	 * object itself when extended.
+	 *
+	 * @param array<string,mixed> $proposal The voorstel record.
+	 *
+	 * @return string The case id, or ''.
+	 */
+	private function caseIdOf(array $proposal): string {
+		$caseRef = ($proposal['case'] ?? null);
+		if (is_array($caseRef) === true) {
+			return (string)($caseRef['id'] ?? ($caseRef['uuid'] ?? ($caseRef['@self']['id'] ?? '')));
+		}
+
+		if (is_scalar($caseRef) === true) {
+			return trim((string)$caseRef);
+		}
+
+		return '';
+	}//end caseIdOf()
 
 	/**
 	 * Decode the JSON request body safely.

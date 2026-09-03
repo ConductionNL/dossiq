@@ -341,4 +341,46 @@ class ParafeerrouteDirectoryTest extends TestCase {
 
 	}//end testACaseWithoutATypeDerivesNothing()
 
+	/**
+	 * Without OpenRegister the derivation reports nothing rather than throwing.
+	 *
+	 * @return void
+	 */
+	public function testDerivationWithoutOpenRegisterReportsNothing(): void {
+		$this->assertSame('', $this->directory(withStore: false)->caseTypeOfVoorstel(['case' => 'c-1']));
+
+	}//end testDerivationWithoutOpenRegisterReportsNothing()
+
+	/**
+	 * An unconfigured register/case schema derives nothing.
+	 *
+	 * @return void
+	 */
+	public function testDerivationWithAnUnconfiguredRegisterReportsNothing(): void {
+		$this->assertSame('', $this->directory(configured: false)->caseTypeOfVoorstel(['case' => 'c-1']));
+
+	}//end testDerivationWithAnUnconfiguredRegisterReportsNothing()
+
+	/**
+	 * A failing case read is logged and derives nothing, not propagated.
+	 *
+	 * @return void
+	 */
+	public function testAFailingCaseReadDerivesNothing(): void {
+		$this->throws = true;
+
+		$this->assertSame('', $this->directory()->caseTypeOfVoorstel(['case' => 'c-1']));
+
+	}//end testAFailingCaseReadDerivesNothing()
+
+	/**
+	 * A relation value that is neither scalar nor array derives nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnUnusableCaseRelationDerivesNothing(): void {
+		$this->assertSame('', $this->directory()->caseTypeOfVoorstel(['case' => (object)['id' => 'c-1']]));
+
+	}//end testAnUnusableCaseRelationDerivesNothing()
+
 }//end class
