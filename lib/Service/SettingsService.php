@@ -641,6 +641,26 @@ class SettingsService {
 			$configuredCount = $this->schemaKeys->autoConfigureAfterImport(importResult: $importResult);
 			$this->reconcileSchemaConfig();
 
+			// 🔴 THE DECLARATIVE ANNOTATIONS TOO, and this is a SECOND reconcile.
+			//
+			// `reconcileSchemaConfig()` above maps schema KEYS. It does not write
+			// the `x-openregister-*` annotation blocks, and those are what carry
+			// the calculations (`isTerminalStatus`, `daysUntilDue`), the status
+			// engine's config and the reference resolver's.
+			//
+			// Until now that second reconcile ran from exactly one place —
+			// `Repair\InitializeSettings` — so it happened on `occ upgrade` and
+			// NOWHERE ELSE. This method is the HTTP import path: it is what
+			// `POST /api/settings/load` calls, what the CI e2e seed uses
+			// precisely BECAUSE the repair path is RBAC-denied as anonymous, and
+			// what an administrator triggers from the settings screen.
+			//
+			// So an instance provisioned through the API imported the register
+			// and silently got no calculations: completed tasks kept appearing
+			// in open-work filters and every due-date column rendered blank.
+			// That is what reddened demo-caseload.spec.ts on development.
+			$this->reconcileSchemaDeclarativeConfig();
+
 			$this->logger->info(
 				'Dossiq: Configuration imported and reconciled',
 				['version' => $configVersion, 'configured' => $configuredCount]
