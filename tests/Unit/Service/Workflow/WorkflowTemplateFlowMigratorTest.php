@@ -47,6 +47,17 @@ class WorkflowTemplateFlowMigratorTest extends TestCase {
 	private array $templates = [];
 
 	/**
+	 * statusType rows the fake register holds.
+	 *
+	 * Separate from $templates because the migrator reads TWO schemas, and the
+	 * uuid-to-name resolution under test depends on telling them apart. A fake
+	 * answering both alike cannot express it.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private array $statusTypes = [];
+
+	/**
 	 * Flow documents the migrator wrote.
 	 *
 	 * @var array<int, array<string, mixed>>
@@ -77,15 +88,16 @@ class WorkflowTemplateFlowMigratorTest extends TestCase {
 	 */
 	private function migrator(bool $withFlowService = true, bool $withStore = true): WorkflowTemplateFlowMigrator {
 		$templates = &$this->templates;
+		$statusTypes = &$this->statusTypes;
 		$written = &$this->written;
 		$existing = &$this->existingFlows;
 		$throws = &$this->saveThrows;
 
-		$objectService = new class($templates) {
+		$objectService = new class($templates, $statusTypes) {
 			/**
 			 * @param array<int, array<string, mixed>> $templates Templates.
 			 */
-			public function __construct(private array &$templates) {
+			public function __construct(private array &$templates, private array &$statusTypes) {
 			}
 
 			/**
@@ -106,6 +118,10 @@ class WorkflowTemplateFlowMigratorTest extends TestCase {
 			 * @return array<int, array<string, mixed>> The rows.
 			 */
 			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+				if ($schema === 'statusType') {
+					return $this->statusTypes;
+				}
+
 				return $this->templates;
 			}
 		};
@@ -168,7 +184,14 @@ class WorkflowTemplateFlowMigratorTest extends TestCase {
 
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($withStore === true ? $objectService : null);
-		$settings->method('getConfigValue')->willReturn('configured');
+		$settings->method('getConfigValue')->willReturnCallback(
+			static function (string $key, string $default = ''): string {
+				// The statusType schema must be DISTINGUISHABLE from the
+				// template schema, or the fake register answers both with the
+				// same rows and the resolution under test cannot be seen.
+				return ($key === 'status_type_schema' ? 'statusType' : 'configured');
+			}
+		);
 
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
@@ -446,5 +469,92 @@ class WorkflowTemplateFlowMigratorTest extends TestCase {
 		$this->assertSame('dossiq:workflowTemplate:wt-1', $this->written[0]['notes']);
 
 	}//end testTheFlowCarriesItsProvenanceMarker()
+
+	/**
+	 * 🔴 A STORED template carries statusType UUIDs, and the node needs NAMES.
+	 *
+	 * `DossiqTxSetStatusNode` says so in its own description: it moves a case to
+	 * a status of its case type "named rather than referenced by id", because a
+	 * statusType uuid is minted per installation.
+	 *
+	 * The SEED files store names, which is what this migrator was written
+	 * against. The STORED objects do not — the seeder resolves those names to
+	 * uuids on import — so on a live instance every transition endpoint is a
+	 * uuid. Measured on a running instance: 9 of 9.
+	 *
+	 * The projection was therefore writing uuids into a node that resolves
+	 * names, and the flows it produced could not have moved a case. Nothing
+	 * caught it because they arrive DISABLED: a disabled flow never runs, and
+	 * the e2e asserts only that they exist and are switched off.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+	 */
+	public function testStoredStatusUuidsProjectAsNames(): void {
+		$this->statusTypes = [
+			['id' => 'uuid-ontvangen', 'name' => 'Ontvangen'],
+			['id' => 'uuid-toets', 'name' => 'Ontvankelijkheidstoets'],
+		];
+		$this->templates = [
+			[
+				'id' => 'wt-uuid',
+				'title' => 'Bezwaar',
+				'transitions' => [
+					[
+						'slug' => 'a',
+						'fromStatus' => 'uuid-ontvangen',
+						'toStatus' => 'uuid-toets',
+						'label' => 'Start toets',
+					],
+				],
+			],
+		];
+
+		$this->migrator()->migrate($this->user(), false);
+
+		$nodes = ($this->written[0]['nodes'] ?? []);
+		$statuses = array_map(static fn (array $n): string => (string)($n['config']['status'] ?? ''), $nodes);
+		sort($statuses);
+
+		$this->assertSame(
+			['Ontvangen', 'Ontvankelijkheidstoets'],
+			$statuses,
+			'the projection must emit status NAMES; a uuid here cannot be resolved by dossiq.setStatus'
+		);
+	}//end testStoredStatusUuidsProjectAsNames()
+
+	/**
+	 * A SEED-shaped template, whose endpoints are already names, is unchanged.
+	 *
+	 * The resolution passes an unresolvable value through, so adding it must
+	 * not rewrite the case it was built to preserve.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+	 */
+	public function testASeedShapedTemplateStillProjectsItsNames(): void {
+		$this->statusTypes = [['id' => 'uuid-ontvangen', 'name' => 'Ontvangen']];
+		$this->templates = [
+			[
+				'id' => 'wt-uuid',
+				'title' => 'Bezwaar',
+				'transitions' => [
+					['slug' => 'a', 'fromStatus' => 'Ontvangen', 'toStatus' => 'In behandeling', 'label' => 'Start'],
+				],
+			],
+		];
+
+		$this->migrator()->migrate($this->user(), false);
+
+		$statuses = array_map(
+			static fn (array $n): string => (string)($n['config']['status'] ?? ''),
+			($this->written[0]['nodes'] ?? [])
+		);
+		sort($statuses);
+
+		$this->assertSame(['In behandeling', 'Ontvangen'], $statuses);
+	}//end testASeedShapedTemplateStillProjectsItsNames()
 
 }//end class
