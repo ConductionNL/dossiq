@@ -493,11 +493,27 @@ test.describe('New case dialog', () => {
 			/\/cases\/[^/?#]+$/,
 			{ timeout: 20000 },
 		)
-		await expect(page.getByText('Core case data')).toBeVisible({
-			timeout: 20000,
-		})
+		// The detail page is NOT the create dialog and shares none of its
+		// markup. Measured from a CI trace and confirmed against a running
+		// instance: it renders ZERO `data-cn-field` attributes, and the
+		// widget's `title` ("Core case data") never reaches the DOM — the
+		// heading reads "Data". Both of my first two attempts asserted things
+		// that are not on this page.
+		//
+		// What IS stable is the widget's own id: CnDetailPage gives each widget
+		// `role="group"` with `aria-label` set to the manifest widget id, so
+		// `case-core` identifies it without depending on any visible text.
+		const coreWidget = page.locator('[aria-label="case-core"]')
 		await expect(
-			page.locator('[data-cn-field="parentCase"]').first(),
-		).toBeVisible({ timeout: 15000 })
+			coreWidget,
+			'the case detail page should render the core data widget',
+		).toBeVisible({ timeout: 20000 })
+
+		// Scoped to that widget, so this cannot pass on the words appearing
+		// somewhere else on a busy page.
+		await expect(
+			coreWidget,
+			'parent case should be editable on the case, though not on the create form',
+		).toContainText('Parent case', { timeout: 15000 })
 	})
 })
