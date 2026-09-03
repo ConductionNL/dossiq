@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -48,6 +49,9 @@ use Throwable;
  * Controller for the voorstel besluit-registration delegation node.
  */
 class VoorstelBesluitController extends Controller {
+
+	use SearchesObjects;
+
 	/**
 	 * Constructor.
 	 *
@@ -157,7 +161,12 @@ class VoorstelBesluitController extends Controller {
 		}
 
 		try {
-			$proposal = $objectService->find($proposalId, register: $register, schema: $proposalSchema);
+			return $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $proposalSchema,
+				id: $proposalId
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: voorstel lookup failed during IDOR gate: ' . $e->getMessage(),
@@ -165,12 +174,6 @@ class VoorstelBesluitController extends Controller {
 			);
 			return null;
 		}
-
-		if (is_array($proposal) === true) {
-			return $proposal;
-		}
-
-		return null;
 	}//end loadVoorstel()
 
 	/**

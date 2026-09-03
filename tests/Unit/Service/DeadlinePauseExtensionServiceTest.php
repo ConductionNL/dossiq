@@ -78,7 +78,7 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 		$this->extService = new DeadlineExtensionService($this->termService, $timerService);
 
 		// Seed an Omgevingsvergunning definition (max 1 extension).
-		$this->objects->saveObject('dossiq', 'deadlineDefinition', [
+		$this->objects->seed('deadlineDefinition', [
 			'id' => 'td-ov',
 			'caseType' => 'omgevingsvergunning-regulier',
 			'wettelijkeGrondslag' => 'Wabo 3.9 lid 1',

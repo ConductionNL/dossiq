@@ -21,7 +21,7 @@
  *
  * Navigation: a deep-link `goto('/apps/dossiq/cases')` resets the
  * history-mode router to the Dashboard and the index never fetches its data,
- * so every test lands via `navTo(page, /^(All issues|Alle zaken)$/)` (sidebar click). The
+ * so every test lands via `navTo(page, /^(All cases|Alle zaken)$/)` (sidebar click). The
  * "Support Dossiq" dialog is dismissed before each interaction.
  *
  * The CREATE-via-UI leg is split out into its own test guarded by the known
@@ -76,7 +76,7 @@ test.describe('Cases — full CRUD with persistence', () => {
 	 * @param page The page.
 	 */
 	async function openCasesList(page: Page): Promise<void> {
-		await navTo(page, /^(All issues|Alle zaken)$/)
+		await navTo(page, /^(All cases|Alle zaken)$/)
 		await expect(
 			page.getByRole('button', { name: /^Add (Item|Case|Task)$/ }),
 		).toBeVisible({ timeout: 15000 })

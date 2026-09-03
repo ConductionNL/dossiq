@@ -84,9 +84,9 @@ class StufEnvelopeInspector {
 		}
 
 		if ($headerEndpointId !== '') {
-			return $this->register->findOne(
+			return $this->register->findById(
 				schema: StufRegisterAccess::SCHEMA_ENDPOINT,
-				filters: ['id' => $headerEndpointId]
+				id: $headerEndpointId
 			);
 		}
 

@@ -37,12 +37,15 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
  * Daily-accruing dwangsom calculator.
  */
 class DwangsomCalculationService {
+	use SearchesObjects;
+
 	/**
 	 * AWB-default tier 1 daily tariff in EUR cents (days 1-14).
 	 */
@@ -235,7 +238,7 @@ class DwangsomCalculationService {
 		string $calculationId,
 	): ?array {
 		try {
-			$row = $objectService->find($calculationId, register: $register, schema: $schema);
+			return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $calculationId);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'DwangsomCalculation lookup failed',
@@ -243,12 +246,6 @@ class DwangsomCalculationService {
 			);
 			return null;
 		}
-
-		if (is_array($row) === false) {
-			return null;
-		}
-
-		return $row;
 	}//end fetchBerekeningRow()
 
 	/**
@@ -304,12 +301,13 @@ class DwangsomCalculationService {
 		string $calculationId,
 	): array {
 		try {
-			$saved = $objectService->saveObject($register, $schema, $row);
-			if (is_array($saved) === true) {
-				return $saved;
-			}
-
-			return $row;
+			$saved = $this->saveObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				object: $row
+			);
+			return ($saved ?? $row);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'DwangsomCalculation persist failed',
@@ -419,12 +417,12 @@ class DwangsomCalculationService {
 		string $instanceId,
 	): string {
 		try {
-			$instance = $objectService->find($instanceId, register: $register, schema: $schema);
+			$instance = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $instanceId);
 		} catch (\Throwable $e) {
 			return '';
 		}
 
-		if (is_array($instance) === false) {
+		if ($instance === null) {
 			return '';
 		}
 
@@ -448,12 +446,12 @@ class DwangsomCalculationService {
 		string $definitieId,
 	): int {
 		try {
-			$def = $objectService->find($definitieId, register: $register, schema: $schema);
+			$def = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $definitieId);
 		} catch (\Throwable $e) {
 			return self::AWB_TIER_1_CENTS;
 		}
 
-		if (is_array($def) === false) {
+		if ($def === null) {
 			return self::AWB_TIER_1_CENTS;
 		}
 

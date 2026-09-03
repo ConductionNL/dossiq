@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service\Subsidie;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -44,6 +45,9 @@ use Throwable;
  * @spec openspec/changes/subsidieverlening-keten/specs.md
  */
 class BeschikkingService {
+
+	use SearchesObjects;
+
 	/**
 	 * Bezwaartermijn (objection window) in weeks (AWB 6:7).
 	 */
@@ -134,7 +138,7 @@ class BeschikkingService {
 		unset($record['signedBy'], $record['signedOn'], $record['publicationDate']);
 
 		try {
-			return $objectService->saveObject(object: $record, register: $register, schema: $schema);
+			return ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $record) ?? $record);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq subsidie: createDraft beschikking failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon beschikking niet aanmaken');
@@ -168,7 +172,13 @@ class BeschikkingService {
 		];
 
 		try {
-			return $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string)$decisionId);
+			return ($this->saveObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				object: $patch,
+				uuid: (string)$decisionId
+			) ?? $patch);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq subsidie: sign beschikking failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon beschikking niet ondertekenen');
@@ -196,13 +206,13 @@ class BeschikkingService {
 		// message no caller could ever receive. sign(), directly below, has
 		// always wrapped its call and answers a clean 400; this now matches it.
 		try {
-			$current = $objectService->find($decisionId, register: $register, schema: $schema);
+			$current = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $decisionId);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq subsidie: publish beschikking lookup failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Beschikking niet gevonden');
 		}
 
-		if (is_array($current) === false) {
+		if ($current === null) {
 			throw new OCSBadRequestException('Beschikking niet gevonden');
 		}
 
@@ -218,7 +228,13 @@ class BeschikkingService {
 		];
 
 		try {
-			return $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string)$decisionId);
+			return ($this->saveObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				object: $patch,
+				uuid: (string)$decisionId
+			) ?? array_merge($current, $patch));
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq subsidie: publish beschikking failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon beschikking niet publiceren');

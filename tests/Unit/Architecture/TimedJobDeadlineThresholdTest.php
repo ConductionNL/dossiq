@@ -78,7 +78,6 @@ class TimedJobDeadlineThresholdTest extends TestCase {
 		'WOODeadlineCheckJob' => 'WOO deadline engine; moves to armed FlowTimers in phase 2 of openspec/changes/termijnbewaking-op-engine-timers (tasks 2.1)',
 		'BezwaarTermijnJob' => 'bezwaartermijn scheduler; moves to anchor-shaped FlowTimers in phase 2 of openspec/changes/termijnbewaking-op-engine-timers (tasks 2.2)',
 		'DsoDeadlineJob' => 'DSO deadline engine advancing case status from cron; becomes a FlowTimerFiredEvent consumer in phase 2 of openspec/changes/termijnbewaking-op-engine-timers (tasks 2.3)',
-		'VergaderingDeadlineJob' => 'vergadering deadline engine advancing case status from cron; becomes a FlowTimerFiredEvent consumer in phase 2 of openspec/changes/termijnbewaking-op-engine-timers (tasks 2.4)',
 		'BottleneckDetectionJob' => 'stalled-milestone detector; moves to businessDays FlowTimers in phase 3 of openspec/changes/termijnbewaking-op-engine-timers (tasks 3.1)',
 	];
 

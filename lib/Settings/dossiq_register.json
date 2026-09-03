@@ -45,7 +45,6 @@
                         "description": "Auto-generated identifier",
                         "title": "Identifier"
                     },
-
                     "purpose": {
                         "type": "string",
                         "description": "The purpose or goal of this case type",
@@ -401,7 +400,7 @@
             "propertyDefinition": {
                 "slug": "propertyDefinition",
                 "icon": "FormatListBulletedType",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:PropertyValueSpecification",
                 "x-zgw-equivalent": "Eigenschap",
                 "title": "Property Definition",
@@ -450,6 +449,12 @@
                         "description": "Data type of this property. 'enum' carries its allowed values in enumValues; 'json' carries a JSON Schema in defaultValue and is validated as a document rather than a scalar. Both exist because the alternative — flattening them to 'string' — moves a constraint out of the model and into nobody's hands: a four-value cadence and a JSON schema would both become free text that nothing checks.",
                         "title": "Property Type"
                     },
+                    "maxLength": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "title": "Maximum length",
+                        "description": "Longest value this property accepts."
+                    },
                     "enumValues": {
                         "type": "array",
                         "items": {
@@ -463,6 +468,13 @@
                         "default": false,
                         "description": "Whether this property is required on cases",
                         "title": "Is Required"
+                    },
+                    "requiredAtStatus": {
+                        "type": "string",
+                        "format": "uuid",
+                        "$ref": "statusType",
+                        "title": "Required from status",
+                        "description": "The status from which this property must be answered."
                     },
                     "defaultValue": {
                         "type": "string",
@@ -497,7 +509,6 @@
                         "x-translatable": true,
                         "title": "Description"
                     },
-
                     "caseType": {
                         "type": "string",
                         "format": "uuid",
@@ -582,7 +593,6 @@
                         "x-translatable": true,
                         "title": "Description"
                     },
-
                     "caseType": {
                         "type": "string",
                         "format": "uuid",
@@ -682,7 +692,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.10.0",
+                "version": "1.11.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1304,13 +1314,14 @@
                         "type": "string",
                         "maxLength": 255,
                         "description": "Title of this case",
-                        "title": "Title"
+                        "title": "Title",
+                        "order": 2
                     },
                     "description": {
                         "type": "string",
                         "description": "Detailed description of this case",
-                        "visible": false,
-                        "title": "Description"
+                        "title": "Description",
+                        "order": 3
                     },
                     "identifier": {
                         "type": "string",
@@ -1324,7 +1335,32 @@
                         "$ref": "caseType",
                         "description": "Reference to the case type",
                         "title": "Case type",
-                        "facetable": true
+                        "facetable": true,
+                        "x-openregister-extends-form": {
+                            "definitions": {
+                                "schema": "propertyDefinition",
+                                "filter": {
+                                    "caseType": "$value"
+                                }
+                            },
+                            "map": {
+                                "title": "name",
+                                "definition": "definition",
+                                "description": "description",
+                                "type": "propertyType",
+                                "maxLength": "maxLength",
+                                "enum": "enumValues",
+                                "required": "isRequired",
+                                "default": "defaultValue"
+                            },
+                            "values": {
+                                "schema": "caseProperty",
+                                "objectRef": "case",
+                                "definitionRef": "propertyDefinition",
+                                "valueKey": "value"
+                            }
+                        },
+                        "order": 1
                     },
                     "status": {
                         "type": "string",
@@ -1335,7 +1371,8 @@
                         },
                         "description": "Reference to the current status type. Initialised declaratively to the case type's initial status by OpenRegister (x-openregister-lifecycle.initial); user-editable thereafter because OR's transition engine only supports STATIC from/to state values and cannot express dossiq's per-caseType statusType graph yet — revert to readOnly + lifecycle transitions once OR supports FK-based status graphs. x-relation-filter scopes the picker to the case's own type's statuses.",
                         "title": "Status",
-                        "facetable": true
+                        "facetable": true,
+                        "order": 4
                     },
                     "isFinalStatus": {
                         "type": "boolean",
@@ -1354,36 +1391,37 @@
                             "case": "@objectId"
                         },
                         "description": "Reference to the result record (set on completion)",
-                        "visible": false,
-                        "title": "Result"
+                        "title": "Result",
+                        "order": 13
                     },
                     "startDate": {
                         "type": "string",
                         "format": "date",
                         "description": "Date the case was started",
-                        "visible": false,
-                        "title": "Start Date"
+                        "title": "Start Date",
+                        "order": 9
                     },
                     "endDate": {
                         "type": "string",
                         "format": "date",
                         "description": "Date the case was completed",
-                        "visible": false,
-                        "title": "End Date"
+                        "title": "End Date",
+                        "order": 12
                     },
                     "plannedEndDate": {
                         "type": "string",
                         "format": "date",
                         "description": "Planned end date",
-                        "visible": false,
-                        "title": "Planned End Date"
+                        "title": "Planned End Date",
+                        "order": 10
                     },
                     "deadline": {
                         "type": "string",
                         "format": "date",
                         "readOnly": true,
                         "description": "Processing deadline. Computed declaratively by OpenRegister as startDate + the case type's processingDeadline (x-openregister-calculations.deadline).",
-                        "title": "Deadline"
+                        "title": "Deadline",
+                        "order": 11
                     },
                     "confidentiality": {
                         "type": "string",
@@ -1399,14 +1437,16 @@
                         ],
                         "description": "Confidentiality level",
                         "title": "Confidentiality",
-                        "facetable": true
+                        "facetable": true,
+                        "order": 7
                     },
                     "assignee": {
                         "type": "string",
                         "referenceType": "nextcloud-user",
                         "description": "Nextcloud user ID of the primary handler",
                         "title": "Assignee",
-                        "facetable": true
+                        "facetable": true,
+                        "order": 5
                     },
                     "intakeChannel": {
                         "type": "string",
@@ -1423,7 +1463,8 @@
                         "default": "manual",
                         "description": "The channel through which this case was intaken (REQ-INTAKE-08b, REQ-INTAKE-11a)",
                         "title": "Intake channel",
-                        "facetable": true
+                        "facetable": true,
+                        "order": 8
                     },
                     "priority": {
                         "type": "string",
@@ -1436,7 +1477,8 @@
                         "default": "normal",
                         "description": "Case priority",
                         "title": "Priority",
-                        "facetable": true
+                        "facetable": true,
+                        "order": 6
                     },
                     "parentCase": {
                         "type": "string",
@@ -1444,7 +1486,8 @@
                         "$ref": "case",
                         "title": "Parent case",
                         "description": "Reference to parent case (for sub-cases)",
-                        "visible": true
+                        "visible": true,
+                        "order": 14
                     },
                     "relatedCases": {
                         "type": "string",
@@ -1480,7 +1523,6 @@
                         "type": "integer",
                         "default": 0,
                         "description": "Number of deadline extensions applied",
-                        "visible": false,
                         "title": "Extension Count"
                     },
                     "aanvullingRound": {
@@ -1566,13 +1608,11 @@
                             "caseType": "@object.caseType"
                         },
                         "description": "Reference to the bound workflow template",
-                        "visible": false,
                         "title": "Workflow Template"
                     },
                     "workflowVersion": {
                         "type": "integer",
                         "description": "Version number of the bound workflow template",
-                        "visible": false,
                         "title": "Workflow Version"
                     },
                     "permitApplicationRef": {
@@ -1597,7 +1637,8 @@
                         "type": "string",
                         "format": "date",
                         "description": "Computed legal deadline (indieningsdatum + procedure working days)",
-                        "title": "Deadline Date"
+                        "title": "Deadline Date",
+                        "visible": false
                     },
                     "competentAuthority": {
                         "type": "string",
@@ -1617,7 +1658,8 @@
                         "description": "Per-object quality score 0-1 materialised by OpenRegister from the x-openregister-quality annotation (completeness/format/freshness).",
                         "minimum": 0,
                         "maximum": 1,
-                        "facetable": true
+                        "facetable": true,
+                        "visible": false
                     },
                     "qualityStatus": {
                         "type": "string",
@@ -1628,7 +1670,8 @@
                             "fair",
                             "poor"
                         ],
-                        "facetable": true
+                        "facetable": true,
+                        "visible": false
                     },
                     "initiatorType": {
                         "type": "string",
@@ -1643,12 +1686,14 @@
                     "initiatorSourceId": {
                         "type": "string",
                         "title": "Initiator source id",
-                        "description": "Identifying number/reference of the initiator in its source: BSN (person), KvK-nummer (company), or contact URI (contact). Display projection — the canonical requester reference is owned by semantic-case-intake."
+                        "description": "Identifying number/reference of the initiator in its source: BSN (person), KvK-nummer (company), or contact URI (contact). Display projection — the canonical requester reference is owned by semantic-case-intake.",
+                        "visible": false
                     },
                     "initiatorDisplayName": {
                         "type": "string",
                         "title": "Initiator display name",
-                        "description": "Human-readable name of the case initiator, denormalised at selection time for list and detail rendering."
+                        "description": "Human-readable name of the case initiator, denormalised at selection time for list and detail rendering.",
+                        "visible": false
                     },
                     "requester": {
                         "type": "string",
@@ -1666,7 +1711,8 @@
                     "portalSubject": {
                         "type": "string",
                         "title": "Portal subject reference",
-                        "description": "Pseudonymous, one-way subject reference (never a raw BSN/KvK) of the citizen this case belongs to in the external Portaliq portal (ADR-046 citizen audience). Server-stamped from the authenticated portal identity; the sole IDOR-safe scope key for a citizen's 'Mijn gemeente' cases. Empty for cases with no external citizen owner."
+                        "description": "Pseudonymous, one-way subject reference (never a raw BSN/KvK) of the citizen this case belongs to in the external Portaliq portal (ADR-046 citizen audience). Server-stamped from the authenticated portal identity; the sole IDOR-safe scope key for a citizen's 'Mijn gemeente' cases. Empty for cases with no external citizen owner.",
+                        "visible": false
                     },
                     "decisions": {
                         "type": "array",
@@ -2662,7 +2708,6 @@
                     }
                 }
             },
-
             "zaaktypeInformatieobjecttype": {
                 "slug": "zaaktypeInformatieobjecttype",
                 "icon": "LinkVariant",
@@ -6047,7 +6092,7 @@
                         "enum": [
                             "burger",
                             "bedrijf",
-                            "government",
+                            "overheid",
                             "recidivist"
                         ],
                         "description": "Actor type of the violator (LHS actorType axis)",
@@ -7998,44 +8043,64 @@
                         "title": "Hearing Waiver"
                     }
                 },
-                "x-openregister-lifecycle": {
-                    "transitions": [
-                        {
-                            "from": "ontvangen",
-                            "to": "ontvangst_bevestigd",
-                            "label": "Ontvangstbevestiging verzonden"
-                        },
-                        {
-                            "from": "ontvangst_bevestigd",
-                            "to": "in_behandeling",
-                            "label": "In behandeling genomen"
-                        },
-                        {
-                            "from": "in_behandeling",
-                            "to": "hoorgesprek_gepland",
-                            "label": "Hoorgesprek gepland"
-                        },
-                        {
-                            "from": "hoorgesprek_gepland",
-                            "to": "hoorgesprek_afgerond",
-                            "label": "Hoorgesprek afgerond"
-                        },
-                        {
-                            "from": "hoorgesprek_afgerond",
-                            "to": "afgehandeld",
-                            "label": "Klacht afgehandeld"
-                        },
-                        {
-                            "from": "in_behandeling",
-                            "to": "afgehandeld",
-                            "label": "Afgehandeld (zonder hoorgesprek)"
-                        },
-                        {
-                            "from": "*",
-                            "to": "withdrawn",
-                            "label": "Klacht ingetrokken"
+                "configuration": {
+                    "x-openregister-lifecycle": {
+                        "field": "status",
+                        "initial": "received",
+                        "final": [
+                            "handled",
+                            "withdrawn"
+                        ],
+                        "transitions": {
+                            "confirmReceipt": {
+                                "from": [
+                                    "received"
+                                ],
+                                "to": "receipt_confirmed",
+                                "description": "Send the receipt confirmation (Awb 9:6)."
+                            },
+                            "startHandling": {
+                                "from": [
+                                    "receipt_confirmed"
+                                ],
+                                "to": "in_handling",
+                                "description": "Take the complaint into handling."
+                            },
+                            "planHoorgesprek": {
+                                "from": [
+                                    "in_handling"
+                                ],
+                                "to": "hoorgesprek_planned",
+                                "description": "Plan the hoorgesprek (Awb 9:10)."
+                            },
+                            "completeHoorgesprek": {
+                                "from": [
+                                    "hoorgesprek_planned"
+                                ],
+                                "to": "hoorgesprek_completed",
+                                "description": "Record the completed hoorgesprek."
+                            },
+                            "handle": {
+                                "from": [
+                                    "in_handling",
+                                    "hoorgesprek_completed"
+                                ],
+                                "to": "handled",
+                                "description": "Close the complaint with a disposition, with or without a hoorgesprek."
+                            },
+                            "withdraw": {
+                                "from": [
+                                    "received",
+                                    "receipt_confirmed",
+                                    "in_handling",
+                                    "hoorgesprek_planned",
+                                    "hoorgesprek_completed"
+                                ],
+                                "to": "withdrawn",
+                                "description": "The complainant withdraws the complaint."
+                            }
                         }
-                    ]
+                    }
                 }
             },
             "hearing": {

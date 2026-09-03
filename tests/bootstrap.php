@@ -339,6 +339,14 @@ if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowRunService') === false
 	include_once __DIR__ . '/Stubs/Service/Flow/FlowRunService.php';
 }
 
+if (class_exists('\\OCA\\OpenRegister\\Exception\\FlowSignalRefused') === false) {
+	include_once __DIR__ . '/Stubs/Exception/FlowSignalRefused.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowRunSignalService') === false) {
+	include_once __DIR__ . '/Stubs/Service/Flow/FlowRunSignalService.php';
+}
+
 if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowRunAssignee') === false) {
 	include_once __DIR__ . '/Stubs/Service/Flow/FlowRunAssignee.php';
 }
@@ -419,6 +427,19 @@ if (class_exists('\\OCA\\OpenRegister\\AppHost\\Bootstrap') === false) {
 
 if (class_exists('\\OCA\\OpenRegister\\AppHost\\Controller\\GenericDashboardController') === false) {
 	include_once __DIR__ . '/Stubs/AppHost/Controller/GenericDashboardController.php';
+}
+
+// Store plane (ADR-080): OpenRegister owns discovery, dossiq owns install.
+// StoreController injects both types, so both have to resolve when the
+// openregister runtime is absent. The stubs answer "not_configured" and
+// nothing else — a stub that invented cards would let StoreControllerTest
+// pass against behaviour no engine actually provides.
+if (class_exists('\\OCA\\OpenRegister\\AppHost\\Service\\StoreDescriptor') === false) {
+	include_once __DIR__ . '/Stubs/AppHost/Service/StoreDescriptor.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\AppHost\\Service\\GenericStoreService') === false) {
+	include_once __DIR__ . '/Stubs/AppHost/Service/GenericStoreService.php';
 }
 
 if (defined('OC_CONSOLE') === false && class_exists('\OC_App') === true) {

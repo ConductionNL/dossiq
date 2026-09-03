@@ -181,18 +181,21 @@ class ParaferingRaiseService {
 		string $proposalSchema,
 		string $proposalId,
 	): array {
-		$results = $this->searchObjectsAsArrays(
+		// A top-level `['id' => $proposalId]` filter does not resolve in
+		// OpenRegister (ids are metadata, not schema properties) and silently
+		// matches nothing. The get-by-uuid path resolves the id directly.
+		$voorstel = $this->findObjectAsArray(
 			objectService: $objectService,
 			register: $register,
 			schema: $proposalSchema,
-			filters: ['id' => $proposalId]
+			id: $proposalId
 		);
 
-		if (empty($results) === true) {
+		if ($voorstel === null) {
 			throw new RuntimeException('Voorstel not found: ' . $proposalId);
 		}
 
-		return $this->normalizer->toArray(value: $results[0]);
+		return $this->normalizer->toArray(value: $voorstel);
 	}//end loadVoorstel()
 
 }//end class

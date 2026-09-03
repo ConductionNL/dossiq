@@ -246,7 +246,7 @@ class KccRoutingController extends Controller {
 	 */
 	private function bodyParams(): array {
 		$params = $this->request->getParams();
-		unset($params['id'], $params['_route']);
+		unset($params['id'], $params['uuid'], $params['@self'], $params['_route']);
 		return $params;
 	}//end bodyParams()
 

@@ -128,7 +128,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
     <background-jobs>
         <job>OCA\Dossiq\BackgroundJob\AdviceDeadlineJob</job>
-        <job>OCA\Dossiq\BackgroundJob\VergaderingDeadlineJob</job>
+        <!--
+            VergaderingDeadlineJob is RETIRED as dead machinery: it scanned
+            for cases with a literal status 'planned', which case.status
+            (a statusType reference) can never hold, and the only writer of
+            such cases was removed earlier. Nothing migrated to a timer.
+            See openspec/changes/case-status-onto-engine-lifecycle.
+        -->
         <job>OCA\Dossiq\BackgroundJob\WOODeadlineCheckJob</job>
         <job>OCA\Dossiq\BackgroundJob\BezwaarTermijnJob</job>
         <job>OCA\Dossiq\BackgroundJob\DsoDeadlineJob</job>
@@ -325,6 +331,16 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\RenameDutchDirectionValues</step>
             <step>OCA\Dossiq\Repair\MigrateArchivalToOpenRegister</step>
+            <!--
+                A ketenpartner is an organisation, and OpenRegister owns
+                Organisation. This moves the rows BEFORE the Partners settings
+                page that used to write them is gone, which is why it is a
+                repair step and not the occ command it also ships as: an
+                administrator who never ran the command would be left with rows
+                behind a surface that no longer exists. Idempotent by the
+                partner's own uuid, so re-running an upgrade adds nothing.
+            -->
+            <step>OCA\Dossiq\Repair\MigratePartnersToOrganisations</step>
             <step>OCA\Dossiq\Repair\SeedKccWerkplekData</step>
             <step>OCA\Dossiq\Repair\BackfillInformatieobjectMetadata</step>
             <step>OCA\Dossiq\Repair\LinkInFlightContractDecisionsRepair</step>
@@ -353,6 +369,24 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 exists to perform.
             -->
             <step>OCA\Dossiq\Repair\RenameDutchValues</step>
+            <!--
+                dossiq#1596, and it runs immediately AFTER the rename above
+                because that is the step whose output it repairs.
+
+                RenameDutchValues translated ONE member of the LHS actorType
+                axis (overheid -> government). It could not reach the matrix
+                cells, which live inside a JSON column rather than a column of
+                their own, so the vocabulary split down the middle: the
+                recommendation schema offered `government` while every cell
+                said `overheid`. A quarter of the national enforcement strategy
+                became unreachable, and it presented as "Geen LHS-cel gevonden"
+                — which reads like bad input rather than a broken axis.
+
+                The mapping is removed at source, so a fresh instance cannot
+                acquire this. This step is for the instances that already ran
+                it, and it is idempotent: a repaired row no longer matches.
+            -->
+            <step>OCA\Dossiq\Repair\RealignLhsActorTypeVocabulary</step>
             <!--
                 Hermiq owns the EU AI Act Art. 14 oversight record now, and
                 dossiq's own oversight page is retired. This replays the

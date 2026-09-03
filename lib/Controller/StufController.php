@@ -202,9 +202,9 @@ class StufController extends Controller {
 			return new JSONResponse(['error' => $this->l10n->t('endpointId and berichtNaam are required')], Http::STATUS_BAD_REQUEST);
 		}
 
-		$endpoint = $this->stuf->register->findOne(
+		$endpoint = $this->stuf->register->findById(
 			schema: StufRegisterAccess::SCHEMA_ENDPOINT,
-			filters: ['id' => $endpointId]
+			id: $endpointId
 		);
 		if ($endpoint === null) {
 			return new JSONResponse(['error' => $this->l10n->t('Endpoint not found')], Http::STATUS_NOT_FOUND);

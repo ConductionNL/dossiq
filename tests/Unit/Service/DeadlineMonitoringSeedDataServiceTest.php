@@ -119,13 +119,26 @@ class FakeTermijnObjectService {
 	public array $store = [];
 
 	/**
-	 * @param string $register Register id.
-	 * @param string $schema Schema id.
+	 * Real ObjectService::saveObject() signature: `$object` FIRST. A caller
+	 * still using the retired `($register, $schema, $object)` order fatals
+	 * here as it does live.
+	 *
 	 * @param array<string, mixed> $object Object.
+	 * @param array|null $extend Relations to expand (ignored).
+	 * @param string|int|null $register Register id.
+	 * @param string|int|null $schema Schema id.
+	 * @param string|null $uuid UUID to update, null to create.
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(string $register, string $schema, array $object): array {
-		$id = (string)($object['id'] ?? ('row-' . count($this->store[$schema] ?? [])));
+	public function saveObject(
+		array $object,
+		?array $extend = [],
+		string|int|null $register = null,
+		string|int|null $schema = null,
+		?string $uuid = null,
+	): array {
+		$schema = (string)$schema;
+		$id = (string)($uuid ?? $object['id'] ?? ('row-' . count($this->store[$schema] ?? [])));
 		$object['id'] = $id;
 		$this->store[$schema][$id] = $object;
 		return $object;

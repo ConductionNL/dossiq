@@ -32,7 +32,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
-use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\Parafeer\ParaferingRaiseService;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
@@ -48,7 +47,6 @@ class BesluitvormingActivateHandler implements ActionHandlerInterface {
 	 *
 	 * @param ParaferingRaiseService $parafeerService Raises the parafering chain in the decision app.
 	 * @param SettingsService $settingsService Bridge to OpenRegister + config.
-	 * @param FlowRunAsScope $runAsScope Scopes the voorstel lookup and the chain's writes to the run's acting identity.
 	 * @param LoggerInterface $logger Logger.
 	 *
 	 * @return void
@@ -56,7 +54,6 @@ class BesluitvormingActivateHandler implements ActionHandlerInterface {
 	public function __construct(
 		private readonly ParaferingRaiseService $parafeerService,
 		private readonly SettingsService $settingsService,
-		private readonly FlowRunAsScope $runAsScope,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -77,23 +74,19 @@ class BesluitvormingActivateHandler implements ActionHandlerInterface {
 	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
 		try {
 			// The voorstel LOOKUP and the parafering chain's WRITES run under
-			// one identity: the run's `runAs` when the flow engine hands one,
-			// the ambient session otherwise. Under FlowRunWorker that session
-			// carries nobody, so the bare storage work inside activate() is
-			// refused as 'Anonymous' however legitimate the run.
-			return $this->runAsScope->call(
-				context: $transitionContext,
-				operation: function () use ($case): ActionResult {
-					$proposalId = $this->resolveProposalId(case: $case);
-					if ($proposalId === '') {
-						return new ActionResult(succeeded: false, error: 'no_active_voorstel');
-					}
+			// one identity. On the flow path the engine's
+			// RegistryStepDispatcher executes this handler inside
+			// `ObjectService::runAs()` as the run's acting identity
+			// (openregister#3332); on the interactive path the ambient session
+			// user answers the permission checks. No local wrap needed.
+			$proposalId = $this->resolveProposalId(case: $case);
+			if ($proposalId === '') {
+				return new ActionResult(succeeded: false, error: 'no_active_voorstel');
+			}
 
-					$this->parafeerService->activate($proposalId);
+			$this->parafeerService->activate($proposalId);
 
-					return new ActionResult(succeeded: true, data: ['proposal' => $proposalId]);
-				}
-			);
+			return new ActionResult(succeeded: true, data: ['proposal' => $proposalId]);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'BesluitvormingActivateHandler failed',
