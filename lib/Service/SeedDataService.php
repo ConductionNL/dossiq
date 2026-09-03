@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -37,6 +38,22 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class SeedDataService {
+	use SearchesObjects;
+
+	/**
+	 * Object writes this seed call could not perform.
+	 *
+	 * Reset at the start of every {@see seedBezwaarBeroepData()} call and
+	 * incremented by {@see createObject()}. It exists because every failure
+	 * here used to be logged and then dropped: `createObject()` answered null,
+	 * the caller returned its untouched counts, and the summary reported
+	 * `success: true, caseTypes: 0` — the same line an already-seeded instance
+	 * produces. A seed that seeded nothing must not be shaped like a no-op.
+	 *
+	 * @var int
+	 */
+	private int $failed = 0;
+
 	/**
 	 * Constructor for the SeedDataService.
 	 *
@@ -101,24 +118,47 @@ class SeedDataService {
 			'roleTypes' => 0,
 			'workflows' => 0,
 			'skipped' => 0,
+			'failed' => 0,
 		];
 
-		foreach (($seedData['caseTypes'] ?? []) as $caseTypeData) {
-			$result = $this->seedCaseType(
-				objectService: $objectService,
-				caseTypeData: $caseTypeData,
-				registerId: $registerId,
-				caseTypeSchema: $caseTypeSchema,
-				statusTypeSchema: $statusTypeSchema,
-				roleTypeSchema: $roleTypeSchema,
-				workflowSchema: $workflowSchema,
-			);
+		$this->failed = 0;
 
-			$summary['caseTypes'] += $result['caseTypes'];
-			$summary['statusTypes'] += $result['statusTypes'];
-			$summary['roleTypes'] += $result['roleTypes'];
-			$summary['workflows'] += $result['workflows'];
-			$summary['skipped'] += $result['skipped'];
+		// A REPAIR STEP HAS NO SESSION, SO OPENREGISTER RESOLVES THE ACTOR AS
+		// 'Anonymous' AND REFUSES EVERY WRITE. `SeedBezwaarBeroepData` calls
+		// this from `<install>` and `<post-migration>`; the setup wizard and
+		// the occ command call it from a real session, where the elevation is
+		// a no-op because the inputs are the app's own shipped seed file
+		// either way. Same mechanism its sibling seeds already use.
+		$this->runAsSystemIfAvailable(
+			objectService: $objectService,
+			operation: function () use ($seedData, $objectService, $registerId, $caseTypeSchema, $statusTypeSchema, $roleTypeSchema, $workflowSchema, &$summary): void {
+				foreach (($seedData['caseTypes'] ?? []) as $caseTypeData) {
+					$result = $this->seedCaseType(
+						objectService: $objectService,
+						caseTypeData: $caseTypeData,
+						registerId: $registerId,
+						caseTypeSchema: $caseTypeSchema,
+						statusTypeSchema: $statusTypeSchema,
+						roleTypeSchema: $roleTypeSchema,
+						workflowSchema: $workflowSchema,
+					);
+
+					$summary['caseTypes'] += $result['caseTypes'];
+					$summary['statusTypes'] += $result['statusTypes'];
+					$summary['roleTypes'] += $result['roleTypes'];
+					$summary['workflows'] += $result['workflows'];
+					$summary['skipped'] += $result['skipped'];
+				}
+			}
+		);
+
+		$summary['failed'] = $this->failed;
+		if ($this->failed > 0) {
+			$summary['success'] = false;
+			$summary['message'] = $this->failed . ' object write(s) refused; see the log for each refusal';
+			$this->logger->error('Dossiq: Seed data refused writes', $summary);
+
+			return $summary;
 		}
 
 		$this->logger->info('Dossiq: Seed data complete', $summary);
@@ -524,7 +564,12 @@ class SeedDataService {
 				schema: $schemaId,
 				object: $data,
 			);
-		} catch (\Exception $e) {
+		} catch (\Throwable $e) {
+			// \Throwable, not \Exception: an OpenRegister refusal can surface
+			// as a PHP `Error` (a TypeError on a shifted signature, say), which
+			// `catch (\Exception)` does not catch — the seed would then abort
+			// the whole install instead of counting one refused row.
+			$this->failed++;
 			$this->logger->error(
 				'Dossiq: Failed to create seed object',
 				[
