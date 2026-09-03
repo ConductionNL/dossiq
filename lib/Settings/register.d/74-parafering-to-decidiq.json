@@ -19,6 +19,19 @@
                         "maxLength": 255,
                         "description": "Id of the ApprovalRoute the decision app materialised this voorstel's sign-off chain against. Empty when the decision app was absent or refused at activation, which is how an unmirrored voorstel is found: a best-effort step whose only trace is a log line is one nobody can audit."
                     }
+                },
+                "configuration": {
+                    "x-openregister-lifecycle": {
+                        "transitions": {
+                            "concludeParafering": {
+                                "from": [
+                                    "in_parafering"
+                                ],
+                                "to": "geaccordeerd",
+                                "description": "The decision app concluded the sign-off chain. Its decisive stage IS the accord decision, so a concluded route lands the voorstel directly on geaccordeerd; ter_accordering remains only for voorstellen the retired local runtime left mid-route. Written by the parafering conclusion recorder."
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -226,7 +226,9 @@ class RaiseInFlightParaferingenInDecidiq implements IRepairStep {
 			return;
 		}
 
-		$route = $this->routes->localRoute(caseTypeId: (string)($voorstel['caseType'] ?? ''));
+		// The voorstel schema declares no caseType, so the type is derived
+		// from the voorstel's linked case — a direct read is always ''.
+		$route = $this->routes->localRoute(caseTypeId: $this->routes->caseTypeOfVoorstel(voorstel: $voorstel));
 		if ($route === null) {
 			// No route resolves for this voorstel's case type, so there is
 			// nothing to travel. Named, so a stranded voorstel is visible.

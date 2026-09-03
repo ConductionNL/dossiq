@@ -18,6 +18,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Parafeer;
 
 use OCA\Dossiq\Service\Parafeer\ParafeerrouteDirectory;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Unit\Fixtures\ShippedRegisterSchema;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -41,6 +42,13 @@ class ParafeerrouteDirectoryTest extends TestCase {
 	private array $rows = [];
 
 	/**
+	 * Case rows the fake register serves by id, already schema-stripped.
+	 *
+	 * @var array<string, array<string, mixed>>
+	 */
+	private array $caseRows = [];
+
+	/**
 	 * Whether the fake register throws on read.
 	 *
 	 * @var boolean
@@ -57,14 +65,16 @@ class ParafeerrouteDirectoryTest extends TestCase {
 	 */
 	private function directory(bool $withStore = true, bool $configured = true): ParafeerrouteDirectory {
 		$rows = &$this->rows;
+		$caseRows = &$this->caseRows;
 		$throws = &$this->throws;
 
-		$objectService = new class($rows, $throws) {
+		$objectService = new class($rows, $caseRows, $throws) {
 			/**
-			 * @param array<int, array<string, mixed>> $rows   Rows.
-			 * @param boolean                          $throws Whether to throw.
+			 * @param array<int, array<string, mixed>>    $rows     Rows.
+			 * @param array<string, array<string, mixed>> $caseRows Case rows by id.
+			 * @param boolean                             $throws   Whether to throw.
 			 */
-			public function __construct(private array &$rows, private bool &$throws) {
+			public function __construct(private array &$rows, private array &$caseRows, private bool &$throws) {
 			}
 
 			/**
@@ -80,6 +90,37 @@ class ParafeerrouteDirectoryTest extends TestCase {
 				}
 
 				return $this->rows;
+			}
+
+			/**
+			 * The get-by-id path the case-type derivation reads the case over.
+			 *
+			 * @param int|string      $id       The object id.
+			 * @param array|null      $_extend  Relations to expand (ignored).
+			 * @param bool            $files    Include file metadata (ignored).
+			 * @param string|int|null $register The register slug (ignored).
+			 * @param string|int|null $schema   The schema slug (ignored).
+			 *
+			 * @return array<string, mixed> The stored case row.
+			 *
+			 * @throws \OCP\AppFramework\Db\DoesNotExistException When the id is unknown.
+			 */
+			public function find(
+				int|string $id,
+				?array $_extend = [],
+				bool $files = false,
+				string|int|null $register = null,
+				string|int|null $schema = null,
+			): array {
+				if ($this->throws === true) {
+					throw new RuntimeException('register unavailable');
+				}
+
+				if (isset($this->caseRows[(string)$id]) === false) {
+					throw new \OCP\AppFramework\Db\DoesNotExistException('Object ' . $id . ' does not exist');
+				}
+
+				return $this->caseRows[(string)$id];
 			}
 		};
 
@@ -212,5 +253,134 @@ class ParafeerrouteDirectoryTest extends TestCase {
 		$this->assertNull($this->directory()->localRoute('ct-1'));
 
 	}//end testAFailingReadReportsNothing()
+
+	/**
+	 * An empty case type matches no route, whatever rows the store holds.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptyCaseTypeResolvesNoRoute(): void {
+		$this->rows = [['id' => 'pr-1', 'steps' => [['order' => 1]]]];
+
+		$this->assertNull($this->directory()->localRoute(''));
+
+	}//end testAnEmptyCaseTypeResolvesNoRoute()
+
+	/**
+	 * The case type is derived from the voorstel's linked case.
+	 *
+	 * Both rows travel through the SHIPPED schema's declared-property filter,
+	 * so this reds if the voorstel schema ever loses `case`, if the case
+	 * schema loses `caseType`, or if the derivation goes back to reading a
+	 * `caseType` the voorstel schema does not declare.
+	 *
+	 * @return void
+	 */
+	public function testTheCaseTypeIsDerivedFromTheLinkedCase(): void {
+		$voorstel = ShippedRegisterSchema::asStored(
+			row: ['id' => 'v-1', 'case' => 'c-1', 'caseType' => 'a-read-that-must-not-work'],
+			slug: 'proposal'
+		);
+		$this->assertArrayNotHasKey('caseType', $voorstel, 'The voorstel schema declares no caseType.');
+
+		$this->caseRows = [
+			'c-1' => ShippedRegisterSchema::asStored(row: ['id' => 'c-1', 'caseType' => 'ct-9'], slug: 'case'),
+		];
+
+		$this->assertSame('ct-9', $this->directory()->caseTypeOfVoorstel($voorstel));
+
+	}//end testTheCaseTypeIsDerivedFromTheLinkedCase()
+
+	/**
+	 * An extended relation (object instead of uuid) still derives.
+	 *
+	 * @return void
+	 */
+	public function testAnExtendedCaseRelationStillDerives(): void {
+		$this->caseRows = [
+			'c-1' => ['id' => 'c-1', 'caseType' => ['id' => 'ct-9', 'title' => 'Bezwaar']],
+		];
+
+		$caseType = $this->directory()->caseTypeOfVoorstel(['id' => 'v-1', 'case' => ['id' => 'c-1']]);
+
+		$this->assertSame('ct-9', $caseType);
+
+	}//end testAnExtendedCaseRelationStillDerives()
+
+	/**
+	 * A voorstel without a linked case derives nothing.
+	 *
+	 * @return void
+	 */
+	public function testAVoorstelWithoutACaseDerivesNothing(): void {
+		$this->assertSame('', $this->directory()->caseTypeOfVoorstel(['id' => 'v-1']));
+
+	}//end testAVoorstelWithoutACaseDerivesNothing()
+
+	/**
+	 * A case that cannot be found derives nothing rather than throwing.
+	 *
+	 * @return void
+	 */
+	public function testAMissingCaseDerivesNothing(): void {
+		$this->caseRows = [];
+
+		$this->assertSame('', $this->directory()->caseTypeOfVoorstel(['id' => 'v-1', 'case' => 'c-gone']));
+
+	}//end testAMissingCaseDerivesNothing()
+
+	/**
+	 * A case without a type derives nothing.
+	 *
+	 * @return void
+	 */
+	public function testACaseWithoutATypeDerivesNothing(): void {
+		$this->caseRows = ['c-1' => ['id' => 'c-1']];
+
+		$this->assertSame('', $this->directory()->caseTypeOfVoorstel(['id' => 'v-1', 'case' => 'c-1']));
+
+	}//end testACaseWithoutATypeDerivesNothing()
+
+	/**
+	 * Without OpenRegister the derivation reports nothing rather than throwing.
+	 *
+	 * @return void
+	 */
+	public function testDerivationWithoutOpenRegisterReportsNothing(): void {
+		$this->assertSame('', $this->directory(withStore: false)->caseTypeOfVoorstel(['case' => 'c-1']));
+
+	}//end testDerivationWithoutOpenRegisterReportsNothing()
+
+	/**
+	 * An unconfigured register/case schema derives nothing.
+	 *
+	 * @return void
+	 */
+	public function testDerivationWithAnUnconfiguredRegisterReportsNothing(): void {
+		$this->assertSame('', $this->directory(configured: false)->caseTypeOfVoorstel(['case' => 'c-1']));
+
+	}//end testDerivationWithAnUnconfiguredRegisterReportsNothing()
+
+	/**
+	 * A failing case read is logged and derives nothing, not propagated.
+	 *
+	 * @return void
+	 */
+	public function testAFailingCaseReadDerivesNothing(): void {
+		$this->throws = true;
+
+		$this->assertSame('', $this->directory()->caseTypeOfVoorstel(['case' => 'c-1']));
+
+	}//end testAFailingCaseReadDerivesNothing()
+
+	/**
+	 * A relation value that is neither scalar nor array derives nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnUnusableCaseRelationDerivesNothing(): void {
+		$this->assertSame('', $this->directory()->caseTypeOfVoorstel(['case' => (object)['id' => 'c-1']]));
+
+	}//end testAnUnusableCaseRelationDerivesNothing()
 
 }//end class

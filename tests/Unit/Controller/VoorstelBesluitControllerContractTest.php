@@ -43,6 +43,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\VoorstelBesluitController;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Unit\Fixtures\ShippedRegisterSchema;
 use OCA\Dossiq\Tests\Unit\Service\FakeStoredObject;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Http;
@@ -336,6 +337,7 @@ class VoorstelBesluitControllerContractRequestStub implements IRequest {
  * Wire-contract tests for VoorstelBesluitController::registerBesluit().
  *
  * @covers \OCA\Dossiq\Controller\VoorstelBesluitController
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class VoorstelBesluitControllerContractTest extends TestCase {
 
@@ -393,6 +395,7 @@ class VoorstelBesluitControllerContractTest extends TestCase {
 				return match ($key) {
 					'register' => 'dossiq',
 					'voorstel_schema' => 'voorstel',
+					'case_schema' => 'case',
 					default => '',
 				};
 			}
@@ -435,22 +438,45 @@ class VoorstelBesluitControllerContractTest extends TestCase {
 	 * Install an ObjectService that resolves the voorstel to the given record.
 	 *
 	 * Pinned to the real contract: find() answers an entity-shaped object
-	 * (never an array) and THROWS DoesNotExistException for a missing
-	 * voorstel — the shapes the live ObjectService actually produces.
+	 * (never an array), THROWS DoesNotExistException for a missing voorstel,
+	 * and — the fake-agrees-with-caller lesson — returns ONLY the properties
+	 * the SHIPPED schema declares. The old fake fed an `assignee` and an
+	 * `onderwerp` the voorstel schema never declared, so the behandelaar arm
+	 * of the IDOR gate stayed green while it was dead in production.
 	 *
 	 * @param array<string,mixed>|null $proposal The voorstel record, or null for a miss.
+	 * @param array<string,mixed>|null $case The linked case record served by id, if any.
+	 * @param bool $caseLookupThrows Whether any non-voorstel lookup fails hard.
 	 *
 	 * @return void
 	 */
-	private function withProposal(?array $proposal): void {
+	private function withProposal(?array $proposal, ?array $case = null, bool $caseLookupThrows = false): void {
 		$objectService = $this->createMock(VoorstelBesluitControllerContractObjectService::class);
 		if ($proposal === null) {
 			$objectService->method('find')->willThrowException(
 				new DoesNotExistException('Object does not exist')
 			);
 		} else {
-			$objectService->method('find')->willReturn(new FakeStoredObject($proposal));
-		}
+			$storedProposal = ShippedRegisterSchema::asStored(row: $proposal, slug: 'proposal');
+			$storedCase = ($case === null) ? null : ShippedRegisterSchema::asStored(row: $case, slug: 'case');
+			$objectService->method('find')->willReturnCallback(
+				static function (int|string $id) use ($storedProposal, $storedCase, $caseLookupThrows): mixed {
+					if ((string)$id === 'voorstel-1') {
+						return new FakeStoredObject($storedProposal);
+					}
+
+					if ($caseLookupThrows === true) {
+						throw new \RuntimeException('register briefly unavailable');
+					}
+
+					if ($storedCase !== null && (string)$id === (string)($storedCase['id'] ?? '')) {
+						return new FakeStoredObject($storedCase);
+					}
+
+					throw new DoesNotExistException('Object ' . $id . ' does not exist');
+				}
+			);
+		}//end if
 
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
 	}//end withProposal()
@@ -495,7 +521,10 @@ class VoorstelBesluitControllerContractTest extends TestCase {
 	 */
 	public function testRegisterBesluitRefusesAnUnrelatedCallerWithoutBecomingAnExistenceOracle(): void {
 		$this->signIn('buitenstaander');
-		$this->withProposal(['@self' => ['owner' => 'eigenaar'], 'assignee' => 'behandelaar']);
+		$this->withProposal(
+			proposal: ['@self' => ['owner' => 'eigenaar'], 'author' => 'steller', 'case' => 'zaak-5'],
+			case: ['id' => 'zaak-5', 'assignee' => 'behandelaar'],
+		);
 		$this->adviceDelegation->expects($this->never())->method('raiseVoorstelBesluit');
 
 		$response = $this->controller()->registerBesluit(proposalId: 'voorstel-1');
@@ -509,19 +538,26 @@ class VoorstelBesluitControllerContractTest extends TestCase {
 	}//end testRegisterBesluitRefusesAnUnrelatedCallerWithoutBecomingAnExistenceOracle()
 
 	/**
-	 * The recorded ASSIGNEE may register, not only the owner — a gate wired
-	 * solely to `@self.owner` would lock out the actual handler.
+	 * The CASE's assignee may register, not only the owner — a gate wired
+	 * solely to `@self.owner` would lock out the actual behandelaar.
+	 *
+	 * The voorstel schema declares no assignee of its own (the fake strips the
+	 * one seeded below, exactly as the live store would), so the behandelaar
+	 * is the `assignee` the linked CASE schema declares.
 	 *
 	 * @return void
 	 */
-	public function testRegisterBesluitAdmitsTheRecordedAssigneeAndNotOnlyTheOwner(): void {
+	public function testRegisterBesluitAdmitsTheCaseAssigneeAndNotOnlyTheOwner(): void {
 		$this->signIn('behandelaar');
-		$this->withProposal([
-			'@self' => ['owner' => 'iemand-anders'],
-			'assignee' => 'behandelaar',
-			'case' => 'zaak-5',
-			'onderwerp' => 'Vaststelling jaarrekening',
-		]);
+		$this->withProposal(
+			proposal: [
+				'@self' => ['owner' => 'iemand-anders'],
+				'assignee' => 'behandelaar',
+				'case' => 'zaak-5',
+				'subject' => 'Vaststelling jaarrekening',
+			],
+			case: ['id' => 'zaak-5', 'assignee' => 'behandelaar'],
+		);
 
 		$this->adviceDelegation->expects($this->once())
 			->method('raiseVoorstelBesluit')
@@ -530,7 +566,83 @@ class VoorstelBesluitControllerContractTest extends TestCase {
 		$response = $this->controller()->registerBesluit(proposalId: 'voorstel-1');
 
 		$this->assertSame(Http::STATUS_ACCEPTED, $response->getStatus());
-	}//end testRegisterBesluitAdmitsTheRecordedAssigneeAndNotOnlyTheOwner()
+	}//end testRegisterBesluitAdmitsTheCaseAssigneeAndNotOnlyTheOwner()
+
+	/**
+	 * The voorstel's AUTHOR (the steller) may register too.
+	 *
+	 * @return void
+	 */
+	public function testRegisterBesluitAdmitsTheVoorstelAuthor(): void {
+		$this->signIn('steller');
+		$this->withProposal(
+			proposal: ['@self' => ['owner' => 'iemand-anders'], 'author' => 'steller', 'case' => 'zaak-5'],
+		);
+
+		$this->adviceDelegation->expects($this->once())
+			->method('raiseVoorstelBesluit')
+			->willReturn('decidesk:decision:abc');
+
+		$response = $this->controller()->registerBesluit(proposalId: 'voorstel-1');
+
+		$this->assertSame(Http::STATUS_ACCEPTED, $response->getStatus());
+	}//end testRegisterBesluitAdmitsTheVoorstelAuthor()
+
+	/**
+	 * An EXTENDED case relation (object instead of uuid) still resolves the
+	 * behandelaar arm.
+	 *
+	 * @return void
+	 */
+	public function testRegisterBesluitResolvesAnExtendedCaseRelation(): void {
+		$this->signIn('behandelaar');
+		$this->withProposal(
+			proposal: ['@self' => ['owner' => 'iemand-anders'], 'case' => ['id' => 'zaak-5']],
+			case: ['id' => 'zaak-5', 'assignee' => 'behandelaar'],
+		);
+
+		$this->adviceDelegation->expects($this->once())
+			->method('raiseVoorstelBesluit')
+			->willReturn('decidesk:decision:abc');
+
+		$response = $this->controller()->registerBesluit(proposalId: 'voorstel-1');
+
+		$this->assertSame(Http::STATUS_ACCEPTED, $response->getStatus());
+	}//end testRegisterBesluitResolvesAnExtendedCaseRelation()
+
+	/**
+	 * A failing CASE lookup fails closed: no behandelaar to admit, 403, and
+	 * nothing raised in decidesk.
+	 *
+	 * @return void
+	 */
+	public function testRegisterBesluitFailsClosedWhenTheCaseLookupFails(): void {
+		$this->signIn('behandelaar');
+		$this->withProposal(
+			proposal: ['@self' => ['owner' => 'iemand-anders'], 'case' => 'zaak-5'],
+			caseLookupThrows: true,
+		);
+		$this->adviceDelegation->expects($this->never())->method('raiseVoorstelBesluit');
+
+		$response = $this->controller()->registerBesluit(proposalId: 'voorstel-1');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+	}//end testRegisterBesluitFailsClosedWhenTheCaseLookupFails()
+
+	/**
+	 * A voorstel without a linked case has no behandelaar arm at all.
+	 *
+	 * @return void
+	 */
+	public function testRegisterBesluitRefusesWhenTheVoorstelHasNoCase(): void {
+		$this->signIn('behandelaar');
+		$this->withProposal(proposal: ['@self' => ['owner' => 'iemand-anders']]);
+		$this->adviceDelegation->expects($this->never())->method('raiseVoorstelBesluit');
+
+		$response = $this->controller()->registerBesluit(proposalId: 'voorstel-1');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+	}//end testRegisterBesluitRefusesWhenTheVoorstelHasNoCase()
 
 	/**
 	 * REQ-PDRD-002: when decidesk is unavailable the endpoint FAILS CLOSED
@@ -571,7 +683,7 @@ class VoorstelBesluitControllerContractTest extends TestCase {
 		$this->withProposal([
 			'@self' => ['owner' => 'eigenaar'],
 			'case' => 'zaak-5',
-			'onderwerp' => 'Vaststelling jaarrekening',
+			'subject' => 'Vaststelling jaarrekening',
 		]);
 
 		$this->adviceDelegation->expects($this->once())

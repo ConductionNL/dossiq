@@ -21,6 +21,7 @@ use OCA\Dossiq\Service\Parafeer\ParaferingDelegationService;
 use OCA\Dossiq\Service\Parafeer\ParaferingRaiseService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ObjectArrayNormalizer;
+use OCA\Dossiq\Tests\Unit\Fixtures\ShippedRegisterSchema;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -116,6 +117,12 @@ class ParaferingRaiseServiceTest extends TestCase {
 			): object {
 				foreach ($this->rows as $row) {
 					if (($row['id'] ?? null) === (string)$id) {
+						// The store returns ONLY declared properties, and the
+						// declared set is read from the SHIPPED register JSON:
+						// a fake feeding a `caseType` the voorstel schema does
+						// not declare kept a dead read green for months.
+						$row = ShippedRegisterSchema::asStored(row: $row, slug: 'proposal');
+
 						return new class ($row) implements \JsonSerializable {
 							/**
 							 * @param array<string, mixed> $row The row.
@@ -173,8 +180,26 @@ class ParaferingRaiseServiceTest extends TestCase {
 		);
 
 		$routes = $this->createMock(ParafeerrouteDirectory::class);
-		$routes->method('localRoute')->willReturn($route);
-		$routes->method('stepsForCaseType')->willReturn($route === null ? [] : ($route['steps'] ?? []));
+		// The case type comes from the voorstel's linked case — the voorstel
+		// schema declares no caseType, so a regression back to reading one off
+		// the voorstel derives '' and the ct-1-keyed route lookups below miss.
+		$routes->method('caseTypeOfVoorstel')->willReturnCallback(
+			function (array $voorstel): string {
+				$this->assertArrayNotHasKey(
+					'caseType',
+					$voorstel,
+					'The stored voorstel carries no caseType; the schema does not declare one.'
+				);
+
+				return ((string)($voorstel['case'] ?? '') === 'c-1') ? 'ct-1' : '';
+			}
+		);
+		$routes->method('localRoute')->willReturnCallback(
+			static fn (string $caseTypeId): ?array => ($caseTypeId === 'ct-1') ? $route : null
+		);
+		$routes->method('stepsForCaseType')->willReturnCallback(
+			static fn (string $caseTypeId): array => ($caseTypeId === 'ct-1' && $route !== null) ? ($route['steps'] ?? []) : []
+		);
 
 		$delegation = $this->createMock(ParaferingDelegationService::class);
 		$delegation->method('isAvailable')->willReturn($available);
@@ -199,7 +224,7 @@ class ParaferingRaiseServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testARoutedVoorstelEntersParaferingAndRecordsTheRouteId(): void {
-		$this->rows = ['v-1' => ['id' => 'v-1', 'caseType' => 'ct-1', 'status' => 'draft']];
+		$this->rows = ['v-1' => ['id' => 'v-1', 'case' => 'c-1', 'status' => 'draft']];
 		$route = ['id' => 'route-1', 'steps' => [['order' => 1, 'type' => 'parafering', 'actor' => 'alice']]];
 
 		$result = $this->service(route: $route)->activate('v-1');
@@ -207,6 +232,45 @@ class ParaferingRaiseServiceTest extends TestCase {
 		$this->assertSame('in_parafering', $result['status']);
 		$this->assertSame(1, $result['currentStep']);
 		$this->assertSame('ar-1', $result['approvalRouteId']);
+		$this->assertIsString(
+			$result['routeSnapshot'],
+			'The schema declares routeSnapshot as a JSON-encoded string, so that is what is written.'
+		);
+		$this->assertSame($route['steps'], json_decode($result['routeSnapshot'], true));
+	}
+
+	/**
+	 * A voorstel with no linked case cannot resolve a case type and is refused.
+	 *
+	 * @return void
+	 */
+	public function testAVoorstelWithoutACaseIsRefused(): void {
+		$this->rows = ['v-1' => ['id' => 'v-1', 'status' => 'draft']];
+		$route = ['id' => 'route-1', 'steps' => [['order' => 1, 'type' => 'parafering', 'actor' => 'alice']]];
+
+		try {
+			$this->service(route: $route)->activate('v-1');
+			$this->fail('A voorstel without a derivable case type must be refused.');
+		} catch (RuntimeException) {
+			$this->assertSame([], $this->saved, 'A refused raise writes nothing.');
+		}
+	}
+
+	/**
+	 * An unknown voorstel is refused before anything else happens.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownVoorstelIsRefused(): void {
+		$this->rows = [];
+
+		try {
+			$this->service(route: null)->activate('v-gone');
+			$this->fail('An unknown voorstel must be refused.');
+		} catch (RuntimeException $e) {
+			$this->assertStringContainsString('Voorstel not found', $e->getMessage());
+			$this->assertSame([], $this->saved);
+		}
 	}
 
 	/**
@@ -215,7 +279,7 @@ class ParaferingRaiseServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnroutableVoorstelIsRefused(): void {
-		$this->rows = ['v-1' => ['id' => 'v-1', 'caseType' => 'ct-none', 'status' => 'draft']];
+		$this->rows = ['v-1' => ['id' => 'v-1', 'case' => 'c-1', 'status' => 'draft']];
 
 		try {
 			$this->service(route: null)->activate('v-1');
@@ -234,7 +298,7 @@ class ParaferingRaiseServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheRaiseFailsClosedWhenTheDecisionAppRefuses(): void {
-		$this->rows = ['v-1' => ['id' => 'v-1', 'caseType' => 'ct-1', 'status' => 'draft']];
+		$this->rows = ['v-1' => ['id' => 'v-1', 'case' => 'c-1', 'status' => 'draft']];
 		$route = ['id' => 'route-1', 'steps' => [['order' => 1, 'type' => 'parafering', 'actor' => 'alice']]];
 
 		try {

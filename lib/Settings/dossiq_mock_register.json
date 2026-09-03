@@ -11364,6 +11364,13 @@
                 "to": "geaccordeerd",
                 "description": "Accord the proposal."
               },
+              "concludeParafering": {
+                "from": [
+                  "in_parafering"
+                ],
+                "to": "geaccordeerd",
+                "description": "The decision app concluded the sign-off chain. Its decisive stage IS the accord decision, so a concluded route lands the voorstel directly on geaccordeerd. Written by the parafering conclusion recorder."
+              },
               "submit": {
                 "from": [
                   "geaccordeerd"
