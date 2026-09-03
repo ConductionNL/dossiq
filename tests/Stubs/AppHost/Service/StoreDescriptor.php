@@ -46,6 +46,7 @@ final class StoreDescriptor {
 			'category' => 'category',
 			'version' => 'version',
 		],
+		public readonly array $types = [],
 	) {
 	}//end __construct()
 }//end class
