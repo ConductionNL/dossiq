@@ -67,5 +67,8 @@
 
 Per the project rule that pre-existing quality issues are fixed when encountered.
 
-- [ ] 9.1 NOT FIXED, and deliberately. `StubApiDriftTest` compares `tests/Stubs/` against a SIBLING CHECKOUT at `../openregister`, and in a shared dev workspace that is another session's live working tree. It reported `StoreDescriptor` drift (a fifth constructor parameter), was red on clean `development` too, and then reported the drift in the OPPOSITE direction twenty minutes later, because the sibling checkout switched branch mid-run. Editing the stub to match would pin it to whatever branch someone else happens to have open. CI clones openregister fresh, so its verdict is the one that counts; this workspace cannot reproduce it. Left untouched.
+- [x] 9.1 `tests/Stubs/AppHost/Service/StoreDescriptor.php` had drifted from the real OpenRegister class, which gained a fifth constructor parameter (`array $types = []`). Added it.
+
+  Recorded because getting here took two wrong turns. `StubApiDriftTest` compares `tests/Stubs/` against a SIBLING CHECKOUT at `../openregister`, and in a shared dev workspace that is another session's live working tree. It reported the drift, was red on clean `development` too, and then reported it in the OPPOSITE direction twenty minutes later when that checkout switched to a feature branch without the parameter. Reading that as noise, the fix was reverted. CI then failed on it, because CI clones openregister FRESH. Checked against the canonical remote (`gh api .../openregister/contents/...?ref=development`), the real class does take five. The sibling checkout is not evidence about anything; the remote is.
+
 - [x] 9.2 `SetupControllerStatusTest` fed `install()` a narrower array than `DemoDataService` actually returns, so the controller read two undefined keys and PHPUnit reported two warnings. The double now carries the real shape, and the test asserts the counts it was named for.
