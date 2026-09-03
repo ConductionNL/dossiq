@@ -237,7 +237,7 @@
     }
   ],
   "lhsMatrix": {
-    "description": "Default Landelijke Handhavingsstrategie (LHS) matrix — ernst x gedrag = interventie",
+    "description": "Default Landelijke Handhavingsstrategie (LHS) matrix: ernst x gedrag = interventie",
     "ernstLevels": ["gering", "aanzienlijk", "ernstig"],
     "gedragLevels": ["goedwillend", "onverschillig", "calculerend", "crimineel"],
     "matrix": {
