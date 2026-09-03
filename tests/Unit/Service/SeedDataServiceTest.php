@@ -46,7 +46,15 @@ interface SeedObjectServiceStub {
 /**
  * Unit tests for SeedDataService.
  *
+ * SeedSummary is DECLARED, not covered. The service builds one and the
+ * assertions read it, so strict coverage counts it as executed; without this
+ * `@uses` PHPUnit reports "executed code that is not listed as code to be
+ * covered" and the run goes risky. That only happens where a coverage driver
+ * is loaded, which is CI and not a plain local run — the six red PHPUnit cells
+ * had zero failures.
+ *
  * @covers \OCA\Dossiq\Service\SeedDataService
+ * @uses   \OCA\Dossiq\Service\Support\SeedSummary
  */
 class SeedDataServiceTest extends TestCase {
 
