@@ -428,6 +428,11 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 POST-MIGRATION only: a fresh install has no instances to arm.
             -->
             <step>OCA\Dossiq\Repair\ArmTermijnEngineTimers</step>
+            <!--
+                LAST, AND A REPORT RATHER THAN AN ACTION — see the identical
+                entry in the <install> block below for why it cannot adopt.
+            -->
+            <step>OCA\Dossiq\Repair\ReportShippedFlowAdoption</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
@@ -552,10 +557,21 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <step>OCA\Dossiq\Repair\SeedKccWerkplekData</step>
             <step>OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten</step>
+            <!--
+                LAST, AND A REPORT RATHER THAN AN ACTION. The two flows dossiq
+                ships are imported by OpenRegister while the register above is,
+                and they arrive `owner = NULL, enabled = false` by that engine's
+                design — so nothing runs, and the install says nothing about it.
+                This step cannot adopt them (adoption writes the CALLING user's
+                uid and an upgrade runs as nobody); it names what is outstanding
+                and the command that completes it. It never throws.
+            -->
+            <step>OCA\Dossiq\Repair\ReportShippedFlowAdoption</step>
         </install>
     </repair-steps>
 
     <commands>
+        <command>OCA\Dossiq\Command\AdoptShippedFlowsCommand</command>
         <command>OCA\Dossiq\Command\BackfillLegalHoldsCommand</command>
         <command>OCA\Dossiq\Command\MigrateAutomaticActionsToFlowsCommand</command>
         <command>OCA\Dossiq\Command\MigrateWorkflowDefinitionsToFlowsCommand</command>
