@@ -557,4 +557,76 @@ class WorkflowTemplateFlowMigratorTest extends TestCase {
 		$this->assertSame(['In behandeling', 'Ontvangen'], $statuses);
 	}//end testASeedShapedTemplateStillProjectsItsNames()
 
+	/**
+	 * With no statusType rows the references pass through unchanged.
+	 *
+	 * An instance whose statusTypes cannot be read must still project SOMETHING
+	 * rather than dropping the flow: passthrough is the documented degradation,
+	 * and it is what keeps a seed-shaped template working.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+	 */
+	public function testAnEmptyStatusIndexPassesReferencesThrough(): void {
+		$this->statusTypes = [];
+		$this->templates = [
+			[
+				'id' => 'wt-uuid',
+				'title' => 'Bezwaar',
+				'transitions' => [
+					['slug' => 'a', 'fromStatus' => 'uuid-x', 'toStatus' => 'uuid-y', 'label' => 'Start'],
+				],
+			],
+		];
+
+		$this->migrator()->migrate($this->user(), false);
+
+		$statuses = array_map(
+			static fn (array $n): string => (string)($n['config']['status'] ?? ''),
+			($this->written[0]['nodes'] ?? [])
+		);
+		sort($statuses);
+
+		$this->assertSame(['uuid-x', 'uuid-y'], $statuses);
+	}//end testAnEmptyStatusIndexPassesReferencesThrough()
+
+	/**
+	 * A statusType row missing its name is skipped, not indexed as empty.
+	 *
+	 * Indexing it would map the uuid to an EMPTY name, and an empty status is
+	 * worse than an unresolved one: `dossiq.setStatus` would be handed nothing
+	 * to resolve instead of something it can refuse.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+	 */
+	public function testAStatusTypeWithoutANameIsNotIndexed(): void {
+		$this->statusTypes = [
+			['id' => 'uuid-x', 'name' => ''],
+			['id' => 'uuid-y', 'name' => 'Afgehandeld'],
+		];
+		$this->templates = [
+			[
+				'id' => 'wt-uuid',
+				'title' => 'Bezwaar',
+				'transitions' => [
+					['slug' => 'a', 'fromStatus' => 'uuid-x', 'toStatus' => 'uuid-y', 'label' => 'Start'],
+				],
+			],
+		];
+
+		$this->migrator()->migrate($this->user(), false);
+
+		$statuses = array_map(
+			static fn (array $n): string => (string)($n['config']['status'] ?? ''),
+			($this->written[0]['nodes'] ?? [])
+		);
+		sort($statuses);
+
+		// uuid-x stays itself rather than becoming '', uuid-y resolves.
+		$this->assertSame(['Afgehandeld', 'uuid-x'], $statuses);
+	}//end testAStatusTypeWithoutANameIsNotIndexed()
+
 }//end class
