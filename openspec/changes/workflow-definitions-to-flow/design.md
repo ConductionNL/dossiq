@@ -91,6 +91,36 @@ OpenRegister before the projection is written, not after:
    `dueAt`/`expiresAt`, or armed by something else?
 2. How does a node or flow name the `escalation-ladder` it escalates through?
 
+### ANSWERED 2026-09-03, and the answer is "nothing does"
+
+`FlowTimerService::arm(array $config, ...)` takes exactly what a dossiq step
+holds: `sla {value, unit}`, `calendar`, `ladder`, `escalationRules`, plus
+`purpose` (due|expiry), `legalEffect`, `onExpiry` and `extensionMax`, bound to a
+`subjectType`/`subjectUuid` with optional `runUuid`/`nodeId`. Field for field,
+the model fits.
+
+**But `arm()` has NO production caller.** Measured across OpenRegister's whole
+tree: every reference to `->arm(` lives in
+`tests/Unit/Service/Flow/Timer/FlowTimerServiceTest.php`. Not `UserTaskNode`,
+not the flow engine, not a listener, and there is no DI registration in
+`AppInfo`. The capability is built, tested, and unwired.
+
+So the SLA CANNOT be carried by writing flow JSON, because nothing reads an SLA
+off a node and arms a timer. There are two ways it ever could:
+
+- **OpenRegister wires it** — `UserTaskNode` arms a timer from its own config
+  when the task opens, and cancels it on completion. This is the right home
+  (ADR-065: the engine is OpenRegister's), and it is an upstream dependency.
+- **dossiq arms it** — a listener calls `arm()` when a projected user task
+  opens. That puts timer orchestration back in a leaf app, which is the thing
+  this whole change exists to stop.
+
+**Consequence for sequencing.** Step 1 below carries every other field and
+leaves `config.sla` and `config.escalationRule` on the template. Step 4
+(retiring `workflowTemplate`) therefore CANNOT complete until the timer is
+wired upstream — retiring the only home of a per-step SLA while nothing else
+can hold it is the exact forgetting this document opens by warning about.
+
 Until those have answers, **step 1 can carry every other field and must leave
 the SLA on the template.** A projection that silently drops the escalation
 ladder while reporting success is worse than one that has not been written.
