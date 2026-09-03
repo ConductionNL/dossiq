@@ -1161,70 +1161,6 @@
             }
           },
           {
-            "id": "case-kpis-open-tasks",
-            "type": "stats-block",
-            "title": "Open tasks",
-            "icon": "Gauge",
-            "content": {
-              "entries": [
-                {
-                  "title": "Open tasks",
-                  "register": "dossiq",
-                  "schema": "task",
-                  "metric": "count",
-                  "filter": {
-                    "case": "@objectId",
-                    "status": "active"
-                  },
-                  "route": {
-                    "name": "Tasks"
-                  }
-                }
-              ]
-            }
-          },
-          {
-            "id": "case-kpis-documents",
-            "type": "stats-block",
-            "title": "Documents",
-            "icon": "Gauge",
-            "content": {
-              "entries": [
-                {
-                  "title": "Documents",
-                  "register": "dossiq",
-                  "schema": "caseDocument",
-                  "metric": "count",
-                  "filter": {
-                    "case": "@objectId"
-                  }
-                }
-              ]
-            }
-          },
-          {
-            "id": "case-kpis-sub-cases",
-            "type": "stats-block",
-            "title": "Sub-cases",
-            "icon": "Gauge",
-            "content": {
-              "entries": [
-                {
-                  "title": "Sub-cases",
-                  "register": "dossiq",
-                  "schema": "case",
-                  "metric": "count",
-                  "filter": {
-                    "parentCase": "@objectId"
-                  },
-                  "route": {
-                    "name": "Cases"
-                  }
-                }
-              ]
-            }
-          },
-          {
             "id": "case-kpis-hours",
             "type": "stats-block",
             "title": "Hours booked",
@@ -1626,30 +1562,6 @@
             "gridWidth": 12,
             "gridHeight": 3,
             "showTitle": true
-          },
-          {
-            "id": "10",
-            "widgetId": "case-kpis-open-tasks",
-            "gridX": 0,
-            "gridY": 19,
-            "gridWidth": 4,
-            "gridHeight": 2
-          },
-          {
-            "id": "11",
-            "widgetId": "case-kpis-documents",
-            "gridX": 4,
-            "gridY": 19,
-            "gridWidth": 4,
-            "gridHeight": 2
-          },
-          {
-            "id": "12",
-            "widgetId": "case-kpis-sub-cases",
-            "gridX": 8,
-            "gridY": 19,
-            "gridWidth": 4,
-            "gridHeight": 2
           }
         ],
         "lifecycleActions": {
