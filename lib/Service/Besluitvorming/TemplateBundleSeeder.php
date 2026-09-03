@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Besluitvorming;
 
+use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -50,12 +51,14 @@ class TemplateBundleSeeder {
 	 *
 	 * @param LoggerInterface $logger Logger.
 	 * @param WorkflowReferenceResolver $workflowResolver Name→id rewriter for the workflow payload.
+	 * @param JsonEncodedStringProperties $jsonProperties Restores the declared string shape of JSON-encoded properties.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly LoggerInterface $logger,
 		private readonly WorkflowReferenceResolver $workflowResolver,
+		private readonly JsonEncodedStringProperties $jsonProperties,
 	) {
 	}//end __construct()
 
@@ -339,10 +342,17 @@ class TemplateBundleSeeder {
 		}
 
 		try {
+			// `referenceProcess` and `relatedCaseTypes` are declared strings
+			// but come back from a read DECODED, so a bare array_merge writes
+			// arrays into them and OpenRegister refuses the save.
 			$objectService->saveObject(
 				register: $register,
 				schema: $schema,
-				object: array_merge($caseTypeData, ['initialStatus' => $statusId]),
+				object: $this->jsonProperties->mergeForWrite(
+					stored: $caseTypeData,
+					updates: ['initialStatus' => $statusId],
+					schemaSlug: 'caseType',
+				),
 				uuid: $caseTypeId,
 			);
 		} catch (\Throwable $e) {

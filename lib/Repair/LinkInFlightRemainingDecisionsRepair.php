@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Repair;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\BezwaarDecisionDelegationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TenantSaasService;
 use OCP\Migration\IOutput;
@@ -52,6 +53,24 @@ use Throwable;
  * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-006-in-flight-remaining-decision-cases-are-migrated-without-data-loss
  */
 class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
+
+	/**
+	 * Each surface's schema SLUG, keyed by the config key holding its id.
+	 *
+	 * The config value is the schema IDENTIFIER — a numeric id on a live
+	 * install — which is what the register calls address. The slug is a
+	 * separate fact, and it is the key {@see JsonEncodedStringProperties}
+	 * needs to know that a loaded `proposal` carries a `routeSnapshot` the
+	 * schema declares as a string.
+	 *
+	 * @var array<string, string>
+	 */
+	private const SURFACE_SCHEMA_SLUGS = [
+		'bezwaar_decision_schema' => 'bezwaarDecision',
+		'advies_aanvraag_schema' => 'adviesAanvraag',
+		'consultation_schema' => 'consultation',
+		'voorstel_schema' => 'proposal',
+	];
 
 	use SearchesObjects;
 
@@ -83,12 +102,14 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 	 * @param BezwaarDecisionDelegationService $objectionDelegation Bezwaar decision delegation service.
 	 * @param AdviceDelegationService $adviceDelegation Advice/voorstel delegation service.
 	 * @param SettingsService $settingsService Settings / ObjectService resolver.
+	 * @param JsonEncodedStringProperties $jsonProperties Restores the declared string shape of JSON-encoded properties.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		private readonly BezwaarDecisionDelegationService $objectionDelegation,
 		private readonly AdviceDelegationService $adviceDelegation,
 		private readonly SettingsService $settingsService,
+		private readonly JsonEncodedStringProperties $jsonProperties,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -265,6 +286,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 				objectService: $objectService,
 				output: $output,
 				schema: $schema,
+				schemaSlug: (self::SURFACE_SCHEMA_SLUGS[$configKey] ?? ''),
 				raise: $raise,
 				obj: $obj,
 			);
@@ -281,7 +303,8 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 	 *
 	 * @param object $objectService The OpenRegister object service.
 	 * @param IOutput $output The migration output interface.
-	 * @param string $schema The surface schema slug.
+	 * @param string $schema The surface schema identifier the register calls address.
+	 * @param string $schemaSlug The surface schema's slug in dossiq's register.
 	 * @param callable $raise Callback raising the decidesk Decision.
 	 * @param array<string, mixed> $obj The object row to link.
 	 *
@@ -292,6 +315,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 		object $objectService,
 		IOutput $output,
 		string $schema,
+		string $schemaSlug,
 		callable $raise,
 		array $obj,
 	): string {
@@ -315,8 +339,15 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 
 			// Persist the decisionRef so the outcome can complete in
 			// decidesk. Merge the existing object — no field is dropped.
+			// A loaded voorstel carries `routeSnapshot` DECODED while the
+			// schema still declares it a string, so a bare array_merge writes
+			// an array into it and OpenRegister refuses the save outright.
 			$objectService->saveObject(
-				object: array_merge($obj, ['decisionRef' => $newRef]),
+				object: $this->jsonProperties->mergeForWrite(
+					stored: $obj,
+					updates: ['decisionRef' => $newRef],
+					schemaSlug: $schemaSlug,
+				),
 				register: TenantSaasService::REGISTER,
 				schema: $schema,
 				uuid: $objUuid,

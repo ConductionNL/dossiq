@@ -49,6 +49,7 @@ namespace OCA\Dossiq\Service\Parafeer;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
 use OCA\Dossiq\Service\Support\ObjectArrayNormalizer;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -64,12 +65,24 @@ class ParaferingRaiseService {
 	use SearchesObjects;
 
 	/**
+	 * The voorstel schema's slug in dossiq's register.
+	 *
+	 * The save addresses the schema by its configured identifier, which is a
+	 * numeric id on a live install; the slug is what
+	 * {@see JsonEncodedStringProperties} keys its map by.
+	 *
+	 * @var string
+	 */
+	private const SCHEMA_SLUG = 'proposal';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService             $settingsService Register/schema configuration.
 	 * @param ParafeerrouteDirectory      $routes          Resolves the sign-off route for a case type.
 	 * @param ParaferingDelegationService $delegation      Holds the route and starts the chain in the decision app.
 	 * @param ObjectArrayNormalizer       $normalizer      Collapses OpenRegister's array-or-entity shape.
+	 * @param JsonEncodedStringProperties $jsonProperties  Restores the declared string shape of JSON-encoded properties.
 	 * @param LoggerInterface             $logger          Logger.
 	 */
 	public function __construct(
@@ -77,6 +90,7 @@ class ParaferingRaiseService {
 		private readonly ParafeerrouteDirectory $routes,
 		private readonly ParaferingDelegationService $delegation,
 		private readonly ObjectArrayNormalizer $normalizer,
+		private readonly JsonEncodedStringProperties $jsonProperties,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -160,8 +174,16 @@ class ParaferingRaiseService {
 			'approvalRouteId' => $approvalRouteId,
 		];
 
+		// A re-raise reloads a voorstel whose stored `routeSnapshot` came back
+		// DECODED, so the merge goes through JsonEncodedStringProperties even
+		// though this update replaces that property outright — the guarantee
+		// must not depend on which fields today's update happens to name.
 		$updated = $objectService->saveObject(
-			object: array_merge($proposal, $updateData),
+			object: $this->jsonProperties->mergeForWrite(
+				stored: $proposal,
+				updates: $updateData,
+				schemaSlug: self::SCHEMA_SLUG,
+			),
 			register: $register,
 			schema: $proposalSchema
 		);

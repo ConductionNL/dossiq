@@ -444,9 +444,29 @@ Vrij en open source onder de EUPL-1.2-licentie.
               MigrateWorkflowDefinitions        one-way migration
               RenameDutchDeadlineColumns        rename over existing rows
               RenameDutchDirectionValues        rewrite over existing rows
+              RenameDutchColumns                rename over existing rows
+              RenameDutchValues                 rewrite over existing rows
+              RealignLhsActorTypeVocabulary     repairs rows an earlier rename touched
               MigrateArchivalToOpenRegister     one-way migration
+              MigratePartnersToOrganisations    moves existing ketenpartner rows
+              MigrateSubsidieRegelingToCaseType moves existing subsidieRegeling rows
+              MigrateAiOversightToHermiq        replays existing audit history
+              MigrateParafeerroutesToDecidiq    holds existing local routes; none are seeded
+              MigrateCommitteesToDecidiq        raises existing committees; none are seeded
+              RaiseInFlightParaferingenInDecidiq  re-raises IN-FLIGHT voorstellen; none exist yet
+              ArmTermijnEngineTimers            arms existing TermijnInstances; none exist yet
+              RetireOriRegister                 retires a register a fresh install never had
+              FoldCasePropertiesOntoCase        backfill over existing cases
               BackfillInformatieobjectMetadata  backfill over existing documents
+              BackfillAdviceRequestObjection    backfill over existing bacAdviceRequests
               LinkInFlight*DecisionsRepair      link IN-FLIGHT decisions; none exist yet
+
+            THE LIST ABOVE IS NOT PROSE. RepairStepRegistrationTest parses this file,
+            sweeps every post-migration step, and fails on any step that is neither
+            declared in <install> below nor named in its exemption table with a
+            reason. ProvisionAssignedGroups shipped registered in post-migration only
+            and was invisible to a fresh install for exactly as long as that sweep
+            did not exist.
         -->
         <install>
             <!--
@@ -498,7 +518,28 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\MigrateSchemaApplicationId</step>
             <!-- Schema half of the same rename; see the post-migration block. -->
             <step>OCA\Dossiq\Repair\MigrateRegisterApplicationId</step>
+            <!--
+                SAME ARGUMENT AS THE THREE STEPS ABOVE, AND IT WAS MISSING.
+                Enabling `dossiq` is a fresh install as far as Nextcloud is
+                concerned, so this is the block that runs on an instance that
+                already holds `procest` schemas under their old Dutch slugs.
+                Declared post-migration only, the rename never happened on that
+                path and the import forked a second schema set. It must stay
+                ahead of InitializeSettings for the reason given there.
+            -->
+            <step>OCA\Dossiq\Repair\RenameDutchSchemaSlugs</step>
             <step>OCA\Dossiq\Repair\InitializeSettings</step>
+            <!--
+                BASELINE-CREATING, AND ONLY A FRESH INSTALL NEEDS IT MOST.
+                The shipped case flow assigns its behandelaar step to the
+                Nextcloud group `behandelaars`, and membership of a group that
+                does not exist is false for everyone — so the completion signal
+                is refused fail-closed and the shipped journey cannot be walked
+                at all. Declared post-migration only (dossiq#1729), it never ran
+                on the one path that had no group to begin with. Ahead of every
+                seed below, which is where that data lands.
+            -->
+            <step>OCA\Dossiq\Repair\ProvisionAssignedGroups</step>
             <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition</step>
