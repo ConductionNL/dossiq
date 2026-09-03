@@ -19,6 +19,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 use OCA\Dossiq\Repair\ProvisionAssignedGroups;
 use OCP\IGroup;
 use OCP\IGroupManager;
+use OCP\IUser;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -38,16 +39,35 @@ use Psr\Log\NullLogger;
 class ProvisionAssignedGroupsTest extends TestCase {
 
 	/**
-	 * A missing group is created and reported.
+	 * A missing group is created AND given its first members.
+	 *
+	 * 🔴 CREATING IT IS NOT ENOUGH, WHICH IS WHAT THIS TEST USED TO ACCEPT. On
+	 * two fresh rigs the group existed with zero members, the employee-task
+	 * completion signal was refused exactly as it had been with no group at
+	 * all, and the live-journey suite sat at 6 of 9 until a single
+	 * `occ group:adduser behandelaars admin`. An empty group answers "is this
+	 * user a member" with false for everyone — the same answer a missing group
+	 * gives — so asserting only that createGroup() was called asserts the half
+	 * of the fix that does not unblock anything.
 	 *
 	 * @return void
 	 */
-	public function testCreatesEveryMissingAssignedGroup(): void {
+	public function testCreatesEveryMissingAssignedGroupAndSeedsIt(): void {
+		$administrator = $this->createMock(IUser::class);
+		$administrator->method('getUID')->willReturn('admin');
+
+		$adminGroup = $this->createMock(IGroup::class);
+		$adminGroup->method('getUsers')->willReturn([$administrator]);
+
+		$created = $this->createMock(IGroup::class);
+		$created->expects($this->once())->method('addUser')->with($administrator);
+
 		$groupManager = $this->createMock(IGroupManager::class);
 		$groupManager->method('groupExists')->willReturn(false);
+		$groupManager->method('get')->with('admin')->willReturn($adminGroup);
 		$groupManager->expects($this->exactly(count(ProvisionAssignedGroups::ASSIGNED_GROUPS)))
 			->method('createGroup')
-			->willReturn($this->createMock(IGroup::class));
+			->willReturn($created);
 
 		$output = $this->createMock(IOutput::class);
 		$output->expects($this->atLeastOnce())->method('info');
@@ -58,13 +78,44 @@ class ProvisionAssignedGroupsTest extends TestCase {
 	}
 
 	/**
-	 * An existing group is left alone — the step is idempotent.
+	 * A group that is created and stays empty is reported, not called done.
+	 *
+	 * This is the exact state the previous implementation left behind and
+	 * described as success.
 	 *
 	 * @return void
 	 */
-	public function testLeavesAnExistingGroupAlone(): void {
+	public function testWarnsWhenACreatedGroupEndsUpEmpty(): void {
+		$groupManager = $this->createMock(IGroupManager::class);
+		$groupManager->method('groupExists')->willReturn(false);
+		$groupManager->method('get')->willReturn(null);
+		$groupManager->method('createGroup')->willReturn($this->createMock(IGroup::class));
+
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->atLeastOnce())
+			->method('warning')
+			->with($this->stringContains('has no members'));
+
+		$step = new ProvisionAssignedGroups(groupManager: $groupManager, logger: new NullLogger());
+		$step->run($output);
+	}
+
+	/**
+	 * An existing group is left alone — membership included.
+	 *
+	 * The seeding is bounded by the same condition as the creation. A group an
+	 * administrator already curates is never touched, or an upgrade would put
+	 * administrators back into a group they had deliberately emptied.
+	 *
+	 * @return void
+	 */
+	public function testLeavesAnExistingGroupAndItsMembershipAlone(): void {
+		$adminGroup = $this->createMock(IGroup::class);
+		$adminGroup->expects($this->never())->method('getUsers');
+
 		$groupManager = $this->createMock(IGroupManager::class);
 		$groupManager->method('groupExists')->willReturn(true);
+		$groupManager->method('get')->willReturn($adminGroup);
 		$groupManager->expects($this->never())->method('createGroup');
 
 		$step = new ProvisionAssignedGroups(groupManager: $groupManager, logger: new NullLogger());

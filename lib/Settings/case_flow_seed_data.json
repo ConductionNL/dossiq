@@ -9,7 +9,7 @@
             "processingDeadline": "P56D",
             "suspensionAllowed": true,
             "extensionAllowed": true,
-            "extensionDuration": "P42D",
+            "extensionPeriod": "P42D",
             "confidentiality": "openbaar",
             "origin": "aanvragen",
             "statusTypes": [
