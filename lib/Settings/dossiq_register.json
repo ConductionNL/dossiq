@@ -692,7 +692,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.11.0",
+                "version": "1.12.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1336,6 +1336,13 @@
                         "description": "Reference to the case type",
                         "title": "Case type",
                         "facetable": true,
+                        "x-openregister-prefill": {
+                            "fields": {
+                                "title": "title",
+                                "status": "initialStatus",
+                                "assignee": "defaultAssignee"
+                            }
+                        },
                         "x-openregister-extends-form": {
                             "definitions": {
                                 "schema": "propertyDefinition",
@@ -1398,7 +1405,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date the case was started",
-                        "title": "Start Date",
+                        "title": "Start date",
                         "order": 9
                     },
                     "endDate": {
@@ -1412,7 +1419,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Planned end date",
-                        "title": "Planned End Date",
+                        "title": "Planned end date",
                         "order": 10
                     },
                     "deadline": {
@@ -1724,7 +1731,8 @@
                             "$ref": "decision"
                         },
                         "referenceType": "decision",
-                        "x-allow-create": true
+                        "x-allow-create": true,
+                        "visible": false
                     },
                     "besluitDocument": {
                         "type": "string",

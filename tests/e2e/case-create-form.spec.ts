@@ -53,6 +53,14 @@ const HIDDEN_FIELDS = [
 ]
 
 const CASE_TYPE_TITLE = `${RUN_PREFIX} Subsidie`
+const START_STATUS = `${RUN_PREFIX} Ontvangen`
+/**
+ * A definition named the way real dossiq seed data names them. The form is
+ * expected to render it in sentence case rather than verbatim.
+ */
+const IDENTIFIER_DEF = 'auditorsStatementThreshold'
+const IDENTIFIER_LABEL = 'Auditors statement threshold'
+const DEFAULT_ASSIGNEE = 'admin'
 const CEILING = `${RUN_PREFIX} Plafond`
 const AUDIENCE = `${RUN_PREFIX} Doelgroep`
 
@@ -60,6 +68,7 @@ let api: APIRequestContext
 let token: string
 let caseTypeId: string
 let ceilingDefId: string
+let startStatusId: string
 
 test.describe('New case dialog', () => {
 	test.setTimeout(180_000)
@@ -76,10 +85,20 @@ test.describe('New case dialog', () => {
 		// A case type of this run's own, never a reused one: attaching
 		// property definitions to a shared case type would add required
 		// questions to every other spec's cases.
+		// The status a case of this type starts in, so the prefill has a real
+		// record to copy from rather than a literal the test invented.
+		const status = await createObject(api, token, 'statusType', {
+			name: START_STATUS,
+			description: 'Throwaway starting status for the New case dialog spec.',
+		})
+		startStatusId = objectId(status)
+
 		const caseType = await createObject(api, token, 'caseType', {
 			title: CASE_TYPE_TITLE,
 			identifier: `${RUN_PREFIX.toLowerCase()}-subsidie`,
 			description: 'Throwaway case type for the New case dialog spec.',
+			initialStatus: startStatusId,
+			defaultAssignee: DEFAULT_ASSIGNEE,
 		})
 		caseTypeId = objectId(caseType)
 
@@ -97,6 +116,12 @@ test.describe('New case dialog', () => {
 			propertyType: 'enum',
 			enumValues: ['Cultuur', 'Sport'],
 			defaultValue: 'Sport',
+		})
+		await createObject(api, token, 'propertyDefinition', {
+			name: IDENTIFIER_DEF,
+			caseType: caseTypeId,
+			propertyType: 'number',
+			definition: 'Seeded with an identifier-shaped name on purpose.',
 		})
 	})
 
@@ -275,5 +300,124 @@ test.describe('New case dialog', () => {
 			).toBeTruthy()
 			expect(String(ceilingRow.value)).toBe('50000')
 		}).toPass({ timeout: 30000 })
+	})
+	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-005-the-form-answers-what-the-case-type-already-knows
+	test('fills the title and assignee the chosen case type already answers', async ({
+		page,
+	}) => {
+		const dialog = await openDialog(page)
+
+		// Nothing is assumed about the empty form beyond the fields being
+		// blank: a prefill that fired on open would make this assertion pass
+		// for the wrong reason later.
+		const titleInput = dialog.locator('[data-cn-field="title"]').getByRole('textbox')
+		await expect(titleInput).toHaveValue('')
+
+		await chooseCaseType(page, dialog)
+
+		// The case type's own title becomes the case title, which is what a
+		// handler would have typed anyway.
+		await expect(titleInput).toHaveValue(CASE_TYPE_TITLE, { timeout: 15000 })
+	})
+
+	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-005-the-form-answers-what-the-case-type-already-knows
+	test('leaves a title the handler typed alone', async ({ page }) => {
+		const dialog = await openDialog(page)
+		const typed = `${RUN_PREFIX} Mijn eigen titel`
+
+		const titleInput = dialog.locator('[data-cn-field="title"]').getByRole('textbox')
+		await titleInput.fill(typed)
+		await chooseCaseType(page, dialog)
+
+		// The case type's questions arriving is the signal that the prefill
+		// ran; without waiting for it this asserts on a form that has not
+		// changed yet and passes whatever the prefill would have done.
+		await expect(dialog.getByText(CEILING)).toBeVisible({ timeout: 15000 })
+		await expect(titleInput).toHaveValue(typed)
+	})
+
+	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-005-the-form-answers-what-the-case-type-already-knows
+	test('stores the case type starting status without asking for it', async ({
+		page,
+	}) => {
+		const dialog = await openDialog(page)
+		const title = `${RUN_PREFIX} Startstatus`
+
+		await dialog.locator('[data-cn-field="title"]').getByRole('textbox').fill(title)
+		await chooseCaseType(page, dialog)
+		await expect(dialog.getByText(CEILING)).toBeVisible({ timeout: 15000 })
+
+		// A handler filing a case does not choose its status, so the form must
+		// not show one.
+		await expect(dialog.locator('[data-cn-field="status"]')).toHaveCount(0)
+
+		const ceilingField = dialog
+			.locator('[data-cn-field]')
+			.filter({ hasText: CEILING })
+			.locator('input')
+			.first()
+		await ceilingField.fill('50000')
+		await dialog.getByRole('button', { name: 'Create' }).click()
+
+		await expect(async () => {
+			const cases = await listObjects(api, 'case', { _limit: '200' })
+			const created = cases.find((c) => String(c.title ?? '') === title)
+			expect(created, 'the case should have been created').toBeTruthy()
+			expect(String(created.status)).toBe(startStatusId)
+		}).toPass({ timeout: 30000 })
+	})
+
+	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-003-a-case-type-brings-its-own-questions
+	test('keeps Create disabled until a required case type question is answered', async ({
+		page,
+	}) => {
+		const dialog = await openDialog(page)
+		const create = dialog.getByRole('button', { name: 'Create' })
+
+		// Title prefills from the case type, so once a type is chosen the only
+		// unanswered required field left is the type's own required question.
+		await chooseCaseType(page, dialog)
+		await expect(dialog.getByText(CEILING)).toBeVisible({ timeout: 15000 })
+		await expect(create).toBeDisabled()
+
+		const ceilingField = dialog
+			.locator('[data-cn-field]')
+			.filter({ hasText: CEILING })
+			.locator('input')
+			.first()
+		await ceilingField.fill('50000')
+		await expect(create).toBeEnabled()
+	})
+
+	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-006-the-dialog-reads-as-a-form-not-a-schema
+	test('lays the fields out in two columns', async ({ page }) => {
+		const dialog = await openDialog(page)
+
+		const form = dialog.locator('[data-testid-modal="cn-form-dialog"]')
+		await expect(form).toHaveClass(/cn-form-dialog__form--two-column/)
+
+		// Two columns means two distinct left edges among the single-line
+		// fields. Asserting on the class alone would pass even if the CSS
+		// never applied, which is exactly the failure worth catching.
+		const lefts = await dialog.locator('[data-cn-field]').evaluateAll(
+			(nodes) => nodes
+				.filter((n) => !n.className.includes('--wide'))
+				.map((n) => Math.round(n.getBoundingClientRect().left)),
+		)
+		expect(new Set(lefts).size).toBe(2)
+	})
+
+	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-006-the-dialog-reads-as-a-form-not-a-schema
+	test('labels a case type question in words, not as an identifier', async ({
+		page,
+	}) => {
+		const dialog = await openDialog(page)
+		await chooseCaseType(page, dialog)
+		await expect(dialog.getByText(CEILING)).toBeVisible({ timeout: 15000 })
+
+		// The identifier-shaped definition seeded below renders in sentence
+		// case. Real dossiq data carries names like auditorsStatementThreshold,
+		// which used to reach the form verbatim.
+		await expect(dialog.getByText(IDENTIFIER_LABEL, { exact: true })).toBeVisible()
 	})
 })
