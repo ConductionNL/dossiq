@@ -1369,6 +1369,32 @@
                         },
                         "order": 1
                     },
+                    "properties": {
+                        "type": "array",
+                        "title": "Properties",
+                        "description": "Extra properties this case answers, as decided by its case type. Each entry holds the definition it answers, that definition's name, and the value. Cases of different types carry different entries here, and a case whose type declares none carries an empty array.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "propertyDefinition": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "title": "Property definition",
+                                    "description": "The propertyDefinition this entry answers"
+                                },
+                                "name": {
+                                    "type": "string",
+                                    "title": "Name",
+                                    "description": "The definition's name, stored beside the value so a case can be read without resolving every definition first"
+                                },
+                                "value": {
+                                    "type": "string",
+                                    "title": "Value",
+                                    "description": "The answer, as text. A non-scalar answer is stored JSON-encoded"
+                                }
+                            }
+                        }
+                    },
                     "status": {
                         "type": "string",
                         "format": "uuid",

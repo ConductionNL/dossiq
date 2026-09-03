@@ -276,6 +276,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
             <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
+            <step>OCA\Dossiq\Repair\FoldCasePropertiesOntoCase</step>
             <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <!--
                 Holds each local parafeerroute as an ApprovalRoute in the
