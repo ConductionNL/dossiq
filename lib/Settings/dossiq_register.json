@@ -1361,9 +1361,10 @@
                                 "default": "defaultValue"
                             },
                             "values": {
-                                "schema": "caseProperty",
-                                "objectRef": "case",
+                                "mode": "array",
+                                "arrayKey": "properties",
                                 "definitionRef": "propertyDefinition",
+                                "nameKey": "name",
                                 "valueKey": "value"
                             }
                         },
