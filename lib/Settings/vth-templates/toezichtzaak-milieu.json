@@ -88,9 +88,7 @@
       "guards": [
         {
           "type": "checklist",
-          "config": {
-            "message": "Checklist moet zijn ingevuld"
-          }
+          "message": "Checklist moet zijn ingevuld"
         }
       ],
       "actions": []
@@ -139,9 +137,7 @@
       "guards": [
         {
           "type": "checklist",
-          "config": {
-            "message": "Hercontrole moet zijn uitgevoerd"
-          }
+          "message": "Hercontrole moet zijn uitgevoerd"
         }
       ],
       "actions": []

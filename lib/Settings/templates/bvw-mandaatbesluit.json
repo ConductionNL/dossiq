@@ -72,22 +72,22 @@
                 },
                 {
                     "fromStatusName": "Parafering", "toStatusName": "Gereed voor agendering", "label": "Parafering compleet",
-                    "guards": [{ "type": "requiredField", "config": { "field": "paraferingCompleet" } }]
+                    "guards": [{ "type": "voorstelStatus", "allowedStatuses": ["geaccordeerd", "aangeboden", "besloten", "archived"] }]
                 },
                 { "fromStatusName": "Gereed voor agendering", "toStatusName": "Geagendeerd", "label": "Agenderen" },
                 { "fromStatusName": "Geagendeerd", "toStatusName": "Vergadering", "label": "Naar behandeling" },
                 {
                     "fromStatusName": "Vergadering", "toStatusName": "Besluit genomen", "label": "Mandaatbesluit vastleggen",
                     "guards": [
-                        { "type": "requiredField", "config": { "field": "stemuitslag" } },
-                        { "type": "mandaatGuard", "config": {} }
+                        { "type": "requiredField", "field": "stemuitslag" },
+                        { "type": "mandaatGuard" }
                     ]
                 },
                 {
                     "fromStatusName": "Besluit genomen", "toStatusName": "Gearchiveerd", "label": "Archiveren",
                     "guards": [
-                        { "type": "requiredDocument", "config": { "documentType": "DT-advies" } },
-                        { "type": "requiredDocument", "config": { "documentType": "Besluitdocument" } }
+                        { "type": "requiredDocument", "documentType": "DT-advies" },
+                        { "type": "requiredDocument", "documentType": "Besluitdocument" }
                     ],
                     "automaticActions": [
                         { "type": "setField", "field": "archiveStatus", "value": "gearchiveerd" }

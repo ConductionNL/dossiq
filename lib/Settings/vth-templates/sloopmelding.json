@@ -41,10 +41,8 @@
       "actions": [
         {
           "type": "notification",
-          "config": {
-            "message": "Sloopmelding akkoord",
-            "targetRole": "Melder"
-          }
+          "message": "Sloopmelding akkoord",
+          "targetRole": "Melder"
         }
       ]
     },
@@ -83,9 +81,7 @@
       "guards": [
         {
           "type": "checklist",
-          "config": {
-            "message": "Beoordeling moet zijn afgerond"
-          }
+          "message": "Beoordeling moet zijn afgerond"
         }
       ],
       "actions": []
