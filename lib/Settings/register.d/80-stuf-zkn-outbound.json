@@ -37,13 +37,13 @@
                 "properties": {
                     "id": {
                         "type": "string",
-                        "title": "Identifier",
+                        "title": "Endpoint ID",
                         "description": "Stable identifier of this endpoint (e.g. stuf-ep-amersfoort-key2zaken).",
                         "maxLength": 128
                     },
                     "name": {
                         "type": "string",
-                        "title": "Name",
+                        "title": "Endpoint name",
                         "description": "Human-readable endpoint name shown in the admin UI.",
                         "maxLength": 255
                     },
@@ -127,8 +127,8 @@
                         "properties": {
                             "type": {
                                 "type": "string",
-                                "title": "Type",
-                                "description": "How this endpoint authenticates: none, basic, WSS or mTLS.",
+                                "title": "Authentication type",
+                                "description": "How this endpoint authenticates. WSSE UsernameToken is the StUF default.",
                                 "enum": [
                                     "wsse-usernametoken"
                                 ]
@@ -136,7 +136,7 @@
                             "username": {
                                 "type": "string",
                                 "title": "Username",
-                                "description": "Username for basic or WSS authentication. The password is held in the credential store, not here.",
+                                "description": "The user name sent in the WSSE token. The password lives in the vault, never here.",
                                 "maxLength": 255
                             },
                             "passwordVaultRef": {
@@ -149,13 +149,13 @@
                     },
                     "tlsClientCertRef": {
                         "type": "string",
-                        "title": "TLS client certificate reference",
+                        "title": "Client certificate reference",
                         "description": "Vault reference for the mutual-TLS client certificate (PEM).",
                         "maxLength": 512
                     },
                     "caseIdentificationStrategy": {
                         "type": "string",
-                        "title": "Case identification strategy",
+                        "title": "Case ID strategy",
                         "description": "Zaak ID allocation strategy (vooraf = pre-allocate via Du01; achteraf = server allocates on Lk01).",
                         "enum": [
                             "vooraf",
@@ -164,7 +164,7 @@
                     },
                     "zaaktypeMappings": {
                         "type": "object",
-                        "title": "Zaaktype mappings",
+                        "title": "Case type mappings",
                         "description": "Map from dossiq case.type (slug) to the zaaksysteem's zkn:zaaktype.omschrijving used in Lk01 builds.",
                         "additionalProperties": {
                             "type": "string"
@@ -172,7 +172,7 @@
                     },
                     "freeMessagesTemplates": {
                         "type": "array",
-                        "title": "Free-message templates",
+                        "title": "Free message templates",
                         "description": "Registered free-message templates per endpoint.",
                         "items": {
                             "type": "object",
@@ -183,13 +183,13 @@
                             "properties": {
                                 "name": {
                                     "type": "string",
-                                    "title": "Name",
-                                    "description": "Name of the free-message template, as chosen by the administrator."
+                                    "title": "Template name",
+                                    "description": "The name this free-message template is chosen by."
                                 },
                                 "verplichteVelden": {
                                     "type": "array",
-                                    "title": "Verplichte velden",
-                                    "description": "Fields the template requires before it can be sent.",
+                                    "title": "Required fields",
+                                    "description": "Fields a sender fills before this template can go out.",
                                     "items": {
                                         "type": "string"
                                     }
@@ -230,13 +230,13 @@
                 "properties": {
                     "id": {
                         "type": "string",
-                        "title": "Identifier",
+                        "title": "Message ID",
                         "description": "Stable identifier (e.g. stuf-msg-2026-05-21-08-44-12-a7c3).",
                         "maxLength": 128
                     },
                     "endpointId": {
                         "type": "string",
-                        "title": "Endpoint ID",
+                        "title": "Endpoint",
                         "description": "Reference to the StufEndpoint used.",
                         "maxLength": 128
                     },
@@ -266,13 +266,13 @@
                     },
                     "entiteittype": {
                         "type": "string",
-                        "title": "Entiteittype",
+                        "title": "Entity type",
                         "description": "Entity type (ZAK, NPS, NNP).",
                         "maxLength": 32
                     },
                     "role": {
                         "type": "string",
-                        "title": "Role",
+                        "title": "StUF function",
                         "description": "StUF functie (e.g. creeerZaak, actualiseerZaak, geefZaakDetails, zetStatus, genereerZaakIdentificatie).",
                         "maxLength": 128
                     },
@@ -284,7 +284,7 @@
                     },
                     "crossRefnummer": {
                         "type": "string",
-                        "title": "Cross refnummer",
+                        "title": "Cross reference number",
                         "description": "crossRefnummer set by inbound responses to refer back to a referentienummer.",
                         "maxLength": 64
                     },
@@ -296,50 +296,50 @@
                     },
                     "envelopeXml": {
                         "type": "string",
-                        "title": "Envelope XML",
+                        "title": "Request envelope",
                         "description": "Full SOAP envelope XML (request).",
                         "maxLength": 33554432
                     },
                     "responseEnvelopeXml": {
                         "type": "string",
-                        "title": "Response envelope XML",
+                        "title": "Response envelope",
                         "description": "Full SOAP envelope XML (response).",
                         "maxLength": 33554432
                     },
                     "httpStatus": {
                         "type": "integer",
-                        "title": "Http status",
+                        "title": "HTTP status",
                         "description": "HTTP response status code."
                     },
                     "durationMs": {
                         "type": "integer",
-                        "title": "Duration ms",
+                        "title": "Duration in ms",
                         "description": "Wall-clock duration in milliseconds."
                     },
                     "fout": {
                         "type": "object",
-                        "title": "Fout",
+                        "title": "Error",
                         "description": "Error details if the call failed.",
                         "properties": {
                             "code": {
                                 "type": "string",
-                                "title": "Code",
-                                "description": "Fault code returned by the receiving system."
+                                "title": "Error code",
+                                "description": "The code the zaaksysteem returned."
                             },
                             "omschrijving": {
                                 "type": "string",
-                                "title": "Omschrijving",
-                                "description": "Human-readable description of the fault."
+                                "title": "Error description",
+                                "description": "What the zaaksysteem said went wrong."
                             },
                             "details": {
                                 "type": "string",
-                                "title": "Details",
-                                "description": "Raw fault detail from the response, kept for diagnosis."
+                                "title": "Error details",
+                                "description": "Extra detail the zaaksysteem supplied, if any."
                             },
                             "kind": {
                                 "type": "string",
-                                "title": "Kind",
-                                "description": "What kind of fault this is, which decides whether a retry can help.",
+                                "title": "Error kind",
+                                "description": "Which layer the error came from.",
                                 "enum": [
                                     "transient",
                                     "permanent"
@@ -361,7 +361,7 @@
                     },
                     "relatedCaseId": {
                         "type": "string",
-                        "title": "Related case ID",
+                        "title": "Related case",
                         "description": "Zaak identificatie this message is related to, if applicable.",
                         "maxLength": 128
                     },
@@ -405,28 +405,28 @@
                                 "attempt": {
                                     "type": "integer",
                                     "title": "Attempt",
-                                    "description": "Attempt number, counting from one."
+                                    "description": "Which retry this was, counting from one."
                                 },
                                 "timestamp": {
                                     "type": "string",
-                                    "title": "Timestamp",
-                                    "description": "When this attempt was made.",
+                                    "title": "Attempted on",
+                                    "description": "When this retry ran.",
                                     "format": "date-time"
                                 },
                                 "httpStatus": {
                                     "type": "integer",
-                                    "title": "Http status",
-                                    "description": "HTTP status the attempt received."
+                                    "title": "HTTP status",
+                                    "description": "The status this retry received."
                                 },
                                 "durationMs": {
                                     "type": "integer",
-                                    "title": "Duration ms",
-                                    "description": "How long the attempt took, in milliseconds."
+                                    "title": "Duration in ms",
+                                    "description": "How long this retry took."
                                 },
                                 "fout": {
                                     "type": "object",
-                                    "title": "Fout",
-                                    "description": "The fault this attempt returned, when it failed."
+                                    "title": "Error",
+                                    "description": "What this retry failed with, if it failed."
                                 }
                             }
                         }
@@ -452,7 +452,7 @@
                 "properties": {
                     "id": {
                         "type": "string",
-                        "title": "Identifier",
+                        "title": "Mapping ID",
                         "description": "Stable identifier (e.g. map-evenement-tour-amersfoort).",
                         "maxLength": 128
                     },
@@ -473,7 +473,7 @@
                     },
                     "caseId": {
                         "type": "string",
-                        "title": "Case ID",
+                        "title": "Case",
                         "description": "Dossiq case id this mapping relates to (set for case mappings; mirrors bronId for bronEntiteit=case).",
                         "maxLength": 128
                     },
@@ -489,19 +489,19 @@
                     },
                     "externalIdentification": {
                         "type": "string",
-                        "title": "External identification",
+                        "title": "External identifier",
                         "description": "External identifier (zaak ID or betrokkene ID).",
                         "maxLength": 128
                     },
                     "endpointId": {
                         "type": "string",
-                        "title": "Endpoint ID",
+                        "title": "Endpoint",
                         "description": "Reference to the StufEndpoint used.",
                         "maxLength": 128
                     },
                     "lastSynchronisation": {
                         "type": "string",
-                        "title": "Last synchronisation",
+                        "title": "Last synchronised",
                         "format": "date-time",
                         "description": "Timestamp of last successful sync."
                     },
@@ -518,25 +518,25 @@
                     },
                     "openstaandeWijzigingen": {
                         "type": "array",
-                        "title": "Openstaande wijzigingen",
+                        "title": "Pending changes",
                         "description": "Pending changes not yet sent to the zaaksysteem.",
                         "items": {
                             "type": "object",
                             "properties": {
                                 "veld": {
                                     "type": "string",
-                                    "title": "Veld",
-                                    "description": "Field the pending change applies to."
+                                    "title": "Field",
+                                    "description": "The field waiting to be sent."
                                 },
                                 "value": {
                                     "type": "string",
                                     "title": "Value",
-                                    "description": "Value the field will be set to."
+                                    "description": "The value waiting to be sent."
                                 },
                                 "geplandOp": {
                                     "type": "string",
-                                    "title": "Gepland op",
-                                    "description": "When the change is scheduled to be applied.",
+                                    "title": "Planned for",
+                                    "description": "When this change is due to be sent.",
                                     "format": "date-time"
                                 }
                             }
