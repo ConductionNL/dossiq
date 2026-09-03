@@ -123,6 +123,55 @@ class SeedDataServiceTest extends TestCase {
 	}//end testSeedBezwaarBeroepDataFailsWithoutObjectService()
 
 	/**
+	 * The summary carries a refusal count, and the parked file refuses nothing.
+	 *
+	 * WHAT THIS PINS, AND WHAT IT DOES NOT. `createObject()` answered null on
+	 * failure and the caller returned its untouched counts, so a seed whose
+	 * every write OpenRegister refused came back `success: true, caseTypes: 0`
+	 * — indistinguishable from an already-seeded instance. This service runs
+	 * from `<install>` and `<post-migration>`, where there is no session and
+	 * refusal is the DEFAULT outcome, so that is not a corner case.
+	 *
+	 * It cannot be driven to a refusal here, and that is a fact about the
+	 * shipped data rather than a gap in the test: dossiq#1748 parked the Dutch
+	 * case types under `_caseTypes_disabled`, the seed file path is a constant,
+	 * and with no case types offered nothing is ever written. So this asserts
+	 * the shape — a `failed` key that exists and is a true zero — which is what
+	 * un-parking the profile must not quietly lose. The elevation half is
+	 * swept mechanically by `SeedWriteIdentityTest`, which reads this service
+	 * as `SeedBezwaarBeroepData`'s write surface.
+	 *
+	 * @return void
+	 */
+	public function testTheSummaryCarriesARefusalCountAndTheParkedFileRefusesNothing(): void {
+		$this->appConfig
+			->method('getValueString')
+			->willReturnCallback(
+				static function (string $app, string $key): string {
+					return ($key === 'register') ? 'register-uuid-1' : 'schema-uuid-1';
+				}
+			);
+
+		$objectServiceMock = $this->createMock(SeedObjectServiceStub::class);
+		$objectServiceMock->method('findAll')->willReturn([]);
+		$objectServiceMock
+			->method('saveObject')
+			->willThrowException(
+				new \RuntimeException("User 'Anonymous' does not have permission to 'create' objects in schema 'Case Type'")
+			);
+
+		$this->container->method('get')->willReturn($objectServiceMock);
+
+		$result = $this->service->seedBezwaarBeroepData();
+
+		$this->assertArrayHasKey('failed', $result, 'the summary must carry a refusal count');
+		$this->assertSame(0, $result['failed'], 'the parked seed file offers no case types, so nothing is attempted');
+		$this->assertTrue($result['success']);
+		$this->assertSame(0, $result['caseTypes'], 'the shipped case types are parked under _caseTypes_disabled');
+
+	}//end testTheSummaryCarriesARefusalCountAndTheParkedFileRefusesNothing()
+
+	/**
 	 * Test that seedBezwaarBeroepData returns failure when register is not configured.
 	 *
 	 * @return void
