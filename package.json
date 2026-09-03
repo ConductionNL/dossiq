@@ -42,7 +42,7 @@
     "extends @nextcloud/browserslist-config"
   ],
   "dependencies": {
-    "@conduction/nextcloud-vue": "^2.35.5",
+    "@conduction/nextcloud-vue": "https://registry.npmjs.org/@conduction/nextcloud-vue/-/nextcloud-vue-2.36.1.tgz",
     "@nextcloud/auth": "^2.6.0",
     "@nextcloud/axios": "~2.6.0",
     "@nextcloud/capabilities": "^1.2.1",
