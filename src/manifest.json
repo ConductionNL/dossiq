@@ -407,13 +407,19 @@
               "plannedEndDate"
             ],
             "fieldOverrides": {
-                "description": { "widget": "textarea" }
+              "description": {
+                "widget": "textarea"
+              }
             },
             "icon": "Plus",
             "register": "dossiq",
             "schema": "case",
             "onSuccessRoute": "CaseDetail",
-            "successMessage": "Case created."
+            "successMessage": "Case created.",
+            "props": {
+              "assignee": "@me",
+              "confidentiality": "vertrouwelijk"
+            }
           }
         ],
         "dateRange": {
@@ -1468,6 +1474,10 @@
                   "label": "Sub-cases"
                 },
                 {
+                  "widgetId": "case-tasks",
+                  "label": "Tasks"
+                },
+                {
                   "widgetId": "case-email",
                   "label": "Mail"
                 },
@@ -1551,14 +1561,6 @@
             "widgetId": "case-flow-runs",
             "gridX": 8,
             "gridY": 4,
-            "gridWidth": 4,
-            "gridHeight": 4
-          },
-          {
-            "id": "8",
-            "widgetId": "case-tasks",
-            "gridX": 8,
-            "gridY": 8,
             "gridWidth": 4,
             "gridHeight": 4
           },
