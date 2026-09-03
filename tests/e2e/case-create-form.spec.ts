@@ -300,13 +300,36 @@ test.describe('New case dialog', () => {
 			const created = cases.find((c) => String(c.title ?? '') === title)
 			expect(created, 'the case should have been created').toBeTruthy()
 
-			const answers = await listObjects(api, 'caseProperty', {
-				case: objectId(created),
-				_limit: '50',
-			})
+			// EITHER STORE, because both are live during the transition.
+			// 7882afdc moved these answers onto the case as a `properties`
+			// array, so they save in the same write as the case instead of a
+			// second write that can be left behind. FoldCasePropertiesOntoCase
+			// backfills that array and deliberately leaves the old
+			// `caseProperty` rows in place.
+			//
+			// Which store a given instance uses depends on whether its `case`
+			// schema carries the array, and that is NOT uniform: 7882afdc added
+			// the property without bumping the schema's version (1.12.0 before
+			// and after), and OpenRegister's importer gates on version, so a
+			// fresh install has the array and an upgraded one does not. This
+			// test failed on CI and passed locally for exactly that reason.
+			//
+			// Reading both is not the same as asserting nothing: if the answer
+			// is written to neither, this still fails, which is the defect
+			// worth catching. The `value` assertions below are unchanged.
+			const onCase = Array.isArray(created.properties)
+				? created.properties
+				: []
+			const answers =
+				onCase.length > 0
+					? onCase
+					: await listObjects(api, 'caseProperty', {
+							case: objectId(created),
+							_limit: '50',
+						})
 			expect(
 				answers.length,
-				'the case type answer should have been written',
+				'the case type answer should have been written, on the case or as a caseProperty row',
 			).toBeGreaterThan(0)
 			// Name the row, do not index it. Both questions are answered (the
 			// enum carries a default), and the API does not promise an order —
