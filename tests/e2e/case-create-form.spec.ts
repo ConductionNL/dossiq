@@ -494,11 +494,8 @@ test.describe('New case dialog', () => {
 			{ timeout: 20000 },
 		)
 		// The detail page is NOT the create dialog and shares none of its
-		// markup. Measured from a CI trace and confirmed against a running
-		// instance: it renders ZERO `data-cn-field` attributes, and the
-		// widget's `title` ("Core case data") never reaches the DOM — the
-		// heading reads "Data". Both of my first two attempts asserted things
-		// that are not on this page.
+		// markup: it renders ZERO `data-cn-field` attributes, so a selector
+		// borrowed from the dialog finds nothing here.
 		//
 		// What IS stable is the widget's own id: CnDetailPage gives each widget
 		// `role="group"` with `aria-label` set to the manifest widget id, so
@@ -508,6 +505,16 @@ test.describe('New case dialog', () => {
 			coreWidget,
 			'the case detail page should render the core data widget',
 		).toBeVisible({ timeout: 20000 })
+
+		// The widget's heading, which used to read "Data" for all 23 of the
+		// app's data widgets. CnObjectDataWidget is registered `ownsTitle`, so
+		// widgetTitleOf() reads ONLY `content.title` and ignores a top-level
+		// `title` — the manifest set the latter, so every heading fell back to
+		// the component default. Nothing asserted it, which is why it survived.
+		await expect(
+			coreWidget.locator('.cn-widget-wrapper__title'),
+			'the widget heading must be the manifest title, not the generic default',
+		).toHaveText('Core case data', { timeout: 15000 })
 
 		// Scoped to that widget, so this cannot pass on the words appearing
 		// somewhere else on a busy page.
