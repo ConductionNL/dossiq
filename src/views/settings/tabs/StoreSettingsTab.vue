@@ -48,7 +48,9 @@
 		</p>
 
 		<NcButton variant="primary" :disabled="saving" @click="save">
-			{{ saving ? t('dossiq', 'Saving…') : t('dossiq', 'Save') }}
+			{{
+				saving ? t('dossiq', 'Saving…') : t('dossiq', 'Save store settings')
+			}}
 		</NcButton>
 	</div>
 </template>
