@@ -237,20 +237,6 @@
       "order": 35
     },
     {
-      "id": "Bezwaren",
-      "label": "Objections",
-      "icon": "FileAlertOutline",
-      "route": "Bezwaren",
-      "order": 45
-    },
-    {
-      "id": "Beroepen",
-      "label": "Appeals",
-      "icon": "ScaleBalance",
-      "route": "Beroepen",
-      "order": 46
-    },
-    {
       "id": "AnalyticsGroup",
       "label": "Reports",
       "icon": "ChartBoxOutline",
@@ -287,13 +273,6 @@
       "order": 70
     },
     {
-      "id": "Advice",
-      "label": "Advice",
-      "icon": "CommentOutline",
-      "route": "Advice",
-      "order": 75
-    },
-    {
       "id": "SettingsGroup",
       "label": "Settings",
       "icon": "CogOutline",
@@ -323,14 +302,6 @@
       "section": "settings",
       "order": 98,
       "permission": "admin"
-    },
-    {
-      "id": "ParafeerroutesMenu",
-      "label": "Approval routes",
-      "icon": "SitemapOutline",
-      "route": "Parafeerroutes",
-      "section": "settings",
-      "order": 96
     },
     {
       "id": "WmsLayersMenu",
@@ -1782,47 +1753,6 @@
       }
     },
     {
-      "id": "Bezwaren",
-      "route": "/bezwaren",
-      "type": "index",
-      "title": "Bezwaren",
-      "config": {
-        "register": "dossiq",
-        "schema": "case",
-        "allowSavedViews": true,
-        "filter": {
-          "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
-        },
-        "showViewAction": false,
-        "actions": [
-          {
-            "id": "view",
-            "label": "View",
-            "icon": "EyeOutline",
-            "handler": "navigate",
-            "route": "CaseDetail",
-            "type": "handler"
-          }
-        ],
-        "columns": [
-          "identifier",
-          "title",
-          {
-            "key": "status",
-            "label": "Status",
-            "formatter": "statusTypeName"
-          },
-          "assignee",
-          "deadline"
-        ],
-        "sidebar": {
-          "enabled": true,
-          "showMetadata": true
-        },
-        "documentationUrl": "https://procest.conduction.nl"
-      }
-    },
-    {
       "id": "BezwaarDetail",
       "route": "/bezwaren/:id",
       "type": "detail",
@@ -2506,41 +2436,6 @@
       }
     },
     {
-      "id": "Advice",
-      "route": "/advice",
-      "type": "index",
-      "title": "Advice requests",
-      "config": {
-        "register": "dossiq",
-        "schema": "adviesAanvraag",
-        "allowSavedViews": true,
-        "showViewAction": false,
-        "actions": [
-          {
-            "id": "view",
-            "label": "View",
-            "icon": "EyeOutline",
-            "handler": "navigate",
-            "route": "AdviceDetail",
-            "type": "handler"
-          }
-        ],
-        "columns": [
-          "onderwerp",
-          "case",
-          "adviseur",
-          "type",
-          "status",
-          "deadline"
-        ],
-        "sidebar": {
-          "enabled": true,
-          "showMetadata": true
-        },
-        "documentationUrl": "https://procest.conduction.nl"
-      }
-    },
-    {
       "id": "AdviceDetail",
       "route": "/advice/:id",
       "type": "detail",
@@ -2882,46 +2777,6 @@
             "permission": "admin",
             "handler": "navigate",
             "route": "TenantDetail",
-            "type": "handler"
-          }
-        ],
-        "sidebar": {
-          "enabled": true,
-          "showMetadata": true
-        },
-        "documentationUrl": "https://procest.conduction.nl"
-      }
-    },
-    {
-      "id": "Parafeerroutes",
-      "route": "/settings/parafeerroutes",
-      "type": "index",
-      "title": "Parafeerroutes",
-      "config": {
-        "register": "dossiq",
-        "schema": "parafeerroute",
-        "columns": [
-          {
-            "key": "name"
-          },
-          {
-            "key": "proposalType"
-          },
-          {
-            "key": "caseType"
-          },
-          {
-            "key": "isDefault"
-          }
-        ],
-        "showViewAction": false,
-        "actions": [
-          {
-            "id": "view",
-            "label": "View",
-            "icon": "EyeOutline",
-            "handler": "navigate",
-            "route": "ParafeerrouteDetail",
             "type": "handler"
           }
         ],
@@ -3998,47 +3853,6 @@
             }
           ]
         }
-      }
-    },
-    {
-      "id": "Beroepen",
-      "route": "/beroepen",
-      "type": "index",
-      "title": "Beroepen",
-      "config": {
-        "register": "dossiq",
-        "schema": "case",
-        "allowSavedViews": true,
-        "filter": {
-          "caseType": "b3c1a000-0000-4000-a000-00000000be30"
-        },
-        "columns": [
-          "identifier",
-          "title",
-          {
-            "key": "status",
-            "label": "Status",
-            "formatter": "statusTypeName"
-          },
-          "assignee",
-          "deadline"
-        ],
-        "showViewAction": false,
-        "actions": [
-          {
-            "id": "view",
-            "label": "View",
-            "icon": "EyeOutline",
-            "handler": "navigate",
-            "route": "CaseDetail",
-            "type": "handler"
-          }
-        ],
-        "sidebar": {
-          "enabled": true,
-          "showMetadata": true
-        },
-        "documentationUrl": "https://procest.conduction.nl"
       }
     },
     {

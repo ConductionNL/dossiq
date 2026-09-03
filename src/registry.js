@@ -25,7 +25,6 @@
 //   a pass-through.
 
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
-import BezwaarBeroepOverview from './components/bezwaar/BezwaarBeroepOverview.vue'
 // Case-list CSV/Excel export via the OR export leaf — actions-slot component
 // on the Cases page (manifest `pages[].actionsComponent`). Builds the OR
 // export-leaf URL client-side; no dossiq-side serialization (ADR-022).
@@ -143,14 +142,6 @@ import { leafTab } from './integrations/leafTabs.js'
  * @type {Record<string, { kind: string, component: object }>}
  */
 const registry = {
-	// --- Bezwaar & Beroep cards-collapse landing page (bezwaar-beroep-cards-collapse). ---
-	// @spec openspec/changes/bezwaar-beroep-cards-collapse/specs/navigation/spec.md
-	BezwaarBeroepOverview: {
-		kind: 'page',
-		component: BezwaarBeroepOverview,
-		_note: 'Card-grid landing page replacing the BezwaarBeroepGroup four-leaf nav (ADR-044 cards-collapse). Four former leaves stay routable as deep links.',
-	},
-
 	// --- Case-list CSV/Excel export via the OR export leaf. ---
 	// @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
 	CaseListExportAction: {

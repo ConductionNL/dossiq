@@ -46,13 +46,17 @@ let caseTypeId: string
 let caseTypeSeeded = false
 let caseId: string
 
-// BLOCKED on procest#675 — the Bezwaren index page filters cases by the retired
-// bezwaar caseType (b3c1a000-…-be2a, now under `_caseTypes_disabled` in
-// bezwaar_seed_data.json), while these specs seed `bezwaar`-schema objects that
-// the case-based page never shows. The complaint model is mid-migration to the
-// unified-case `citizen-complaint` caseType (ADR-044); until it settles, this
-// describe cannot pass on any matched instance. Flip back to `test.describe`
-// once the manifest filter + fixtures target the canonical caseType.
+// BLOCKED on procest#675. These specs seed `objectionProceeding` objects while
+// the list they assert against renders `case` objects, so the seeded row can
+// never appear. The complaint model is mid-migration to the unified-case
+// `citizen-complaint` caseType (ADR-044); until it settles, this describe cannot
+// pass on any matched instance. Flip back to `test.describe` once the fixtures
+// seed a case of the canonical caseType.
+//
+// The Bezwaren index page these specs used to drive was RETIRED on 2026-09-02,
+// not hidden: it filtered `case` on the disabled bezwaar caseType
+// (b3c1a000-…-be2a, under `_caseTypes_disabled` in bezwaar_seed_data.json) and
+// so listed nothing at all. Objections are cases, so the list is Cases now.
 test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () => {
 	test.describe.configure({ mode: 'serial' })
 
@@ -90,17 +94,13 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 	}
 
 	/**
-	 * Open the Bezwaren list via the sidebar and wait for its rows to load.
+	 * Open the case list and wait for its rows to load.
 	 * @param page The page.
 	 */
 	async function openBezwaren(page: Page): Promise<void> {
-		// The "Bezwaren" sidebar entry was retired in the nav-dedup pass
-		// (menu-layout.json `removals`), but its index page stays routable for
-		// deep-links and e2e. navTo(page,'Bezwaren') therefore matches no nav link
-		// and strands on the Dashboard — reach the list by a BARE deep-link instead
-		// (a /index.php-prefixed one resets the history-mode router to the
-		// Dashboard; the bare path resolves the /bezwaren route directly).
-		await page.goto('/index.php/apps/dossiq/bezwaren')
+		// Objections are cases, and the standalone /bezwaren index is retired, so
+		// the list to drive is Cases.
+		await page.goto('/index.php/apps/dossiq/cases')
 		await dismissSupportDialog(page)
 		await expect(page.locator('tbody tr').first()).toBeVisible({
 			timeout: 15000,
