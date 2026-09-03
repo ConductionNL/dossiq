@@ -99,7 +99,14 @@ class SetupController extends Controller {
 		$registerDone = $this->settingsService->isOpenRegisterAvailable() === true
 			&& $this->config(key: 'register') !== ''
 			&& $this->config(key: 'case_type_schema') !== '';
-		$seedDone = $this->config(key: 'setup_seed_done') === '1';
+		// NO `seed` KEY. The wizard no longer declares that step, and the
+		// payload is its step contract: reporting a step no manifest renders
+		// gives CnSetupWizard something it can never prompt for, and
+		// `testEveryActionableManifestStepIsReported` compares the two sets
+		// in both directions for exactly that reason. `setup_seed_done` is
+		// still written by the `seed` action below, so an operator who runs it
+		// over the API keeps a record that it ran.
+		//
 		// DEALT WITH, not "demo objects exist". An operator who declines demo
 		// data has finished the step; re-offering it every visit would make
 		// "no thanks" impossible to express.
@@ -123,7 +130,6 @@ class SetupController extends Controller {
 			'steps' => [
 				'demo-data' => ['done' => $demoDecided],
 				'register-check' => ['done' => $registerDone],
-				'seed' => ['done' => $seedDone],
 				// Reported unconditionally so the wizard can tell "configured"
 				// from "never mentioned" — an unreported step is UNKNOWN to
 				// CnAppRoot and never prompts.
@@ -219,6 +225,15 @@ class SetupController extends Controller {
 			// register.d fragment. So one click reported "Seeded 0 case types,
 			// 0 status types, 0 role types (0 skipped)" as a success, recorded
 			// the step as complete, and the wizard never offered it again.
+			//
+			// 🔴 THE WIZARD NO LONGER OFFERS THIS ACTION AT ALL. Reporting the
+			// dead end honestly still left a step whose every click was a 422,
+			// and CnSetupWizard renders `manifest.setup.steps[]` verbatim with
+			// no way to hide one at runtime — so the step went, not the answer.
+			// The action stays reachable here on purpose: it is the API path
+			// for an operator who un-parks the Dutch profile, and it is what
+			// makes re-adding the manifest step a one-line change on that day.
+			// See lib/Settings/bezwaar_seed_data.json for why it is parked.
 			$touched = (int)($result['caseTypes'] ?? 0)
 				+ (int)($result['statusTypes'] ?? 0)
 				+ (int)($result['roleTypes'] ?? 0)

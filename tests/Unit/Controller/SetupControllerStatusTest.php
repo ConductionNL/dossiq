@@ -128,25 +128,31 @@ class SetupControllerStatusTest extends TestCase {
 	}//end provisioned()
 
 	/**
-	 * The optional seed step must be reported as not done, not omitted.
+	 * The retired seed step is not reported at all.
 	 *
-	 * This is the exact payload observed on a clean install: the required step
-	 * auto-satisfies on app-enable, so `completed` is true, while the demo
-	 * data has never been loaded. The wizard offering `seed` is the app's only
-	 * demo-data affordance, so an omitted or misreported step here is the
-	 * difference between an app that can be filled and one that cannot.
+	 * It used to be reported as "not done", which was the honest answer to the
+	 * wrong question. The step ran the `seed` action over
+	 * `lib/Settings/bezwaar_seed_data.json`, whose case types are parked under
+	 * `_caseTypes_disabled`, so every click answered 422 and the step could
+	 * never become done. The manifest no longer declares it, and this payload
+	 * is the wizard's step contract: a step reported here but declared nowhere
+	 * is one CnSetupWizard can never prompt for.
+	 *
+	 * The demo-data offer, which is what actually shows a new reader the app
+	 * working, is asserted alongside so this cannot pass on a payload that
+	 * simply lost its steps.
 	 *
 	 * @return void
 	 */
-	public function testSeedIsReportedAsNotDoneOnACleanInstall(): void {
+	public function testTheRetiredSeedStepIsNotReported(): void {
 		$data = $this->controller($this->provisioned())->status()->getData();
 
 		$this->assertTrue($data['completed'], 'completed describes REQUIRED steps, and the required one is done');
-		$this->assertArrayHasKey('seed', $data['steps'], 'an omitted step is invisible to the wizard');
-		$this->assertFalse($data['steps']['seed']['done']);
+		$this->assertArrayNotHasKey('seed', $data['steps'], 'the wizard declares no seed step to report on');
+		$this->assertArrayHasKey('demo-data', $data['steps'], 'an omitted step is invisible to the wizard');
 		$this->assertTrue($data['steps']['register-check']['done']);
 
-	}//end testSeedIsReportedAsNotDoneOnACleanInstall()
+	}//end testTheRetiredSeedStepIsNotReported()
 
 	/**
 	 * Every step the manifest declares must appear in the payload.
@@ -178,16 +184,21 @@ class SetupControllerStatusTest extends TestCase {
 	}//end testEveryActionableManifestStepIsReported()
 
 	/**
-	 * The seed step flips to done once the seeder has run.
+	 * A recorded seed does not resurrect the step in the payload.
+	 *
+	 * `setup_seed_done` is still written by the `seed` action, which stays
+	 * reachable over the API for an operator who un-parks the Dutch profile.
+	 * That record must not put a step back into the wizard's contract: the
+	 * manifest decides which steps exist, and app-config decides nothing.
 	 *
 	 * @return void
 	 */
-	public function testSeedIsDoneOnceItHasRun(): void {
+	public function testARecordedSeedDoesNotResurrectTheStep(): void {
 		$data = $this->controller($this->provisioned() + ['setup_seed_done' => '1'])->status()->getData();
 
-		$this->assertTrue($data['steps']['seed']['done']);
+		$this->assertArrayNotHasKey('seed', $data['steps']);
 
-	}//end testSeedIsDoneOnceItHasRun()
+	}//end testARecordedSeedDoesNotResurrectTheStep()
 
 	/**
 	 * An unprovisioned register blocks the app.
