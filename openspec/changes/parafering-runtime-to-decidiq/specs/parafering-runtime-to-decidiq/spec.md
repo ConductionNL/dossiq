@@ -21,6 +21,13 @@ The raise SHALL fail closed: with the local runtime retired there is no engine
 to fall back to, so a voorstel is never put into parafering when the decision
 app is absent or will not hold the route.
 
+The route SHALL resolve against the case type of the voorstel's linked case.
+The voorstel schema declares no `caseType` of its own, and OpenRegister never
+returns undeclared properties, so a direct read off the voorstel is '' for
+every voorstel and would refuse every raise as unroutable. A voorstel whose
+case type cannot be derived (no linked case, or a case without a type) is
+refused the same way an unroutable one is.
+
 #### Scenario: A routed voorstel is raised and records the route id
 
 - **GIVEN** a case type with a default route and the decision app installed
@@ -59,6 +66,29 @@ replayed conclusion and a re-recorded sign-off, and SHALL keep raising the
 not split.
 
 Events for any other consuming app SHALL be ignored.
+
+Every status the recorder writes SHALL be reachable through a transition the
+shipped proposal lifecycle declares, from every status the voorstel can hold
+when a conclusion arrives (`in_parafering`, and `ter_accordering` for
+voorstellen the retired local runtime left mid-route). The decision app's
+decisive stage IS the accord decision — nothing in dossiq accords after it —
+so the lifecycle declares the direct `in_parafering → geaccordeerd` edge
+(`concludeParafering`) rather than the recorder faking a pass through
+`ter_accordering` it never took. Without the declared edge OpenRegister's
+lifecycle validation refuses the write, the refusal is swallowed as a warning,
+and the voorstel stays in `in_parafering` forever while its parafeeracties
+record a concluded chain.
+
+#### Scenario: Every recorded final status is a declared lifecycle transition
+
+- **GIVEN** the proposal lifecycle shipped in the register configuration
+- **WHEN** the recorder writes any final status from any status a voorstel can
+  hold at conclusion time
+- **THEN** that (from, to) pair is an edge the shipped lifecycle declares
+
+`@e2e exclude` a schema-conformance invariant over the shipped register JSON;
+pinned by ParaferingLifecycleConformanceTest, which parses the register
+configuration (base plus fragments) so lifecycle drift reds it.
 
 #### Scenario: The sign-off record survives the move
 

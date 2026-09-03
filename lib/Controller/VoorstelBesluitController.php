@@ -75,8 +75,9 @@ class VoorstelBesluitController extends Controller {
 
 	/**
 	 * Register a besluit on a voorstel by raising a decidesk `report-adoption`
-	 * Decision. IDOR-guarded: only the voorstel owner / case assignee or an
-	 * admin may register the besluit. FAILS CLOSED when decidesk is unavailable.
+	 * Decision. IDOR-guarded: only the voorstel owner, its author, the linked
+	 * case's assignee or an admin may register the besluit. FAILS CLOSED when
+	 * decidesk is unavailable.
 	 *
 	 * @param string $proposalId The voorstel UUID.
 	 *
@@ -116,7 +117,7 @@ class VoorstelBesluitController extends Controller {
 				proposalId: $proposalId,
 				payload: [
 					'externalReference' => (string)($proposal['case'] ?? $proposalId),
-					'subjectLabel' => (string)($body['title'] ?? ($proposal['onderwerp'] ?? '')),
+					'subjectLabel' => (string)($body['title'] ?? ($proposal['subject'] ?? '')),
 					'title' => (string)($body['title'] ?? ''),
 					'governingBody' => (string)($body['governingBody'] ?? ''),
 					'explanation' => (string)($body['explanation'] ?? ''),
@@ -180,7 +181,11 @@ class VoorstelBesluitController extends Controller {
 	 * Whether the caller may register a besluit on the voorstel.
 	 *
 	 * Admins always may. Otherwise the caller must be the voorstel owner
-	 * (@self.owner) or its recorded assignee / behandelaar.
+	 * (@self.owner), its author (the steller), or the assignee of the case the
+	 * voorstel belongs to. The voorstel schema declares no assignee or handler
+	 * of its own — a read of either yields '' for every voorstel, which
+	 * silently locked the behandelaar out — so the behandelaar arm reads the
+	 * `assignee` the CASE schema actually declares.
 	 *
 	 * @param array<string,mixed> $proposal The voorstel record.
 	 * @param string $uid The caller UID.
@@ -193,10 +198,73 @@ class VoorstelBesluitController extends Controller {
 		}
 
 		$owner = (string)($proposal['@self']['owner'] ?? '');
-		$assignee = (string)($proposal['assignee'] ?? ($proposal['handler'] ?? ''));
+		if ($owner !== '' && $owner === $uid) {
+			return true;
+		}
 
-		return ($owner !== '' && $owner === $uid) || ($assignee !== '' && $assignee === $uid);
+		$author = (string)($proposal['author'] ?? '');
+		if ($author !== '' && $author === $uid) {
+			return true;
+		}
+
+		$assignee = $this->caseAssigneeOf(proposal: $proposal);
+
+		return ($assignee !== '' && $assignee === $uid);
 	}//end callerMayRegister()
+
+	/**
+	 * The assignee of the case the voorstel belongs to.
+	 *
+	 * Fails closed: when the case cannot be resolved there is no behandelaar
+	 * to admit, and the owner/author/admin arms still stand.
+	 *
+	 * @param array<string,mixed> $proposal The voorstel record.
+	 *
+	 * @return string The case assignee UID, or ''.
+	 */
+	private function caseAssigneeOf(array $proposal): string {
+		$caseRef = ($proposal['case'] ?? null);
+		$caseId = '';
+		if (is_scalar($caseRef) === true) {
+			$caseId = trim((string)$caseRef);
+		}
+
+		if (is_array($caseRef) === true) {
+			$caseId = (string)($caseRef['id'] ?? ($caseRef['uuid'] ?? ($caseRef['@self']['id'] ?? '')));
+		}
+
+		if ($caseId === '') {
+			return '';
+		}
+
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
+		if ($objectService === null || $register === '' || $caseSchema === '') {
+			return '';
+		}
+
+		try {
+			$case = $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $caseSchema,
+				id: $caseId
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: case lookup failed during the besluit IDOR gate: ' . $e->getMessage(),
+				['app' => Application::APP_ID]
+			);
+			return '';
+		}
+
+		if ($case === null) {
+			return '';
+		}
+
+		return (string)($case['assignee'] ?? '');
+	}//end caseAssigneeOf()
 
 	/**
 	 * Decode the JSON request body safely.

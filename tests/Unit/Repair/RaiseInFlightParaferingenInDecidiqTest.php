@@ -154,7 +154,23 @@ class RaiseInFlightParaferingenInDecidiqTest extends TestCase {
 		);
 
 		$routes = $this->createMock(ParafeerrouteDirectory::class);
-		$routes->method('localRoute')->willReturn($route);
+		// The voorstel schema declares no caseType: the type is derived from
+		// the linked case, and the route lookup is keyed to the derived id so
+		// a regression back to reading `caseType` off the voorstel misses.
+		$routes->method('caseTypeOfVoorstel')->willReturnCallback(
+			function (array $voorstel): string {
+				$this->assertArrayNotHasKey(
+					'caseType',
+					$voorstel,
+					'The stored voorstel carries no caseType; the schema does not declare one.'
+				);
+
+				return ((string)($voorstel['case'] ?? '') !== '') ? 'ct-1' : '';
+			}
+		);
+		$routes->method('localRoute')->willReturnCallback(
+			static fn (string $caseTypeId): ?array => ($caseTypeId === 'ct-1') ? $route : null
+		);
 
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objectService);
@@ -181,10 +197,10 @@ class RaiseInFlightParaferingenInDecidiqTest extends TestCase {
 	 */
 	public function testItReRaisesOnlyInFlightVoorstellen(): void {
 		$this->rows = [
-			['id' => 'v-1', 'status' => 'in_parafering', 'caseType' => 'ct-1'],
-			['id' => 'v-2', 'status' => 'ter_accordering', 'caseType' => 'ct-1'],
-			['id' => 'v-3', 'status' => 'geaccordeerd', 'caseType' => 'ct-1'],
-			['id' => 'v-4', 'status' => 'draft', 'caseType' => 'ct-1'],
+			['id' => 'v-1', 'status' => 'in_parafering', 'case' => 'c-1'],
+			['id' => 'v-2', 'status' => 'ter_accordering', 'case' => 'c-1'],
+			['id' => 'v-3', 'status' => 'geaccordeerd', 'case' => 'c-1'],
+			['id' => 'v-4', 'status' => 'draft', 'case' => 'c-1'],
 		];
 
 		$this->step(objectService: $this->objectService())->run($this->migrationOutput());
@@ -198,7 +214,7 @@ class RaiseInFlightParaferingenInDecidiqTest extends TestCase {
 	 * @return void
 	 */
 	public function testWithNoDecisionAppItReRaisesNothing(): void {
-		$this->rows = [['id' => 'v-1', 'status' => 'in_parafering', 'caseType' => 'ct-1']];
+		$this->rows = [['id' => 'v-1', 'status' => 'in_parafering', 'case' => 'c-1']];
 
 		$this->step(objectService: $this->objectService(), available: false)->run($this->migrationOutput());
 
@@ -212,7 +228,7 @@ class RaiseInFlightParaferingenInDecidiqTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnroutableVoorstelIsSkipped(): void {
-		$this->rows = [['id' => 'v-1', 'status' => 'in_parafering', 'caseType' => 'ct-none']];
+		$this->rows = [['id' => 'v-1', 'status' => 'in_parafering', 'case' => 'c-1']];
 
 		$this->step(objectService: $this->objectService(), route: null)->run($this->migrationOutput());
 
@@ -225,7 +241,7 @@ class RaiseInFlightParaferingenInDecidiqTest extends TestCase {
 	 * @return void
 	 */
 	public function testItFailsWithoutASystemIdentity(): void {
-		$this->rows = [['id' => 'v-1', 'status' => 'in_parafering', 'caseType' => 'ct-1']];
+		$this->rows = [['id' => 'v-1', 'status' => 'in_parafering', 'case' => 'c-1']];
 
 		$this->expectException(exception: RuntimeException::class);
 		$this->step(objectService: $this->objectService(withRunAsSystem: false))->run($this->migrationOutput());

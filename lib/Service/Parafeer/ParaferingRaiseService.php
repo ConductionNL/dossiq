@@ -116,7 +116,16 @@ class ParaferingRaiseService {
 			proposalId: $proposalId,
 		);
 
-		$caseTypeId = (string)($proposal['caseType'] ?? '');
+		// The voorstel schema declares no caseType, and OpenRegister never
+		// returns undeclared properties — the type is derived from the
+		// voorstel's linked case, where the schema actually holds it.
+		$caseTypeId = $this->routes->caseTypeOfVoorstel(voorstel: $proposal);
+		if ($caseTypeId === '') {
+			throw new RuntimeException(
+				'The voorstel is not linked to a case with a case type, so no parafeerroute can resolve: ' . $proposalId
+			);
+		}
+
 		$route = $this->routes->localRoute(caseTypeId: $caseTypeId);
 		$routeSnapshot = [];
 		if ($route !== null) {
@@ -142,10 +151,12 @@ class ParaferingRaiseService {
 			subjectSchema: $proposalSchema,
 		);
 
+		// The schema declares routeSnapshot as a string ("JSON-encoded
+		// array"), so the frozen record is written in the declared shape.
 		$updateData = [
 			'status' => 'in_parafering',
 			'currentStep' => 1,
-			'routeSnapshot' => $routeSnapshot,
+			'routeSnapshot' => (string)json_encode($routeSnapshot),
 			'approvalRouteId' => $approvalRouteId,
 		];
 
