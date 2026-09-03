@@ -453,7 +453,13 @@ test.describe('New case dialog', () => {
 			title: `${RUN_PREFIX} Moederzaak`,
 			caseType: caseTypeId,
 		})
-		await page.goto(`/apps/dossiq/cases/${objectId(seeded)}`)
+		// `/index.php/...`, not `/apps/...`: a hard load of the bare form
+		// answers 200 and is rewritten client-side to the dashboard by the SPA
+		// catch-all, so the assertions below would run against the wrong page
+		// and fail naming the field rather than the navigation.
+		await page.goto(`/index.php/apps/dossiq/cases/${objectId(seeded)}`)
+		await expect(page, 'the deep link should stay on the case')
+			.toHaveURL(/\/cases\/[^/?#]+$/, { timeout: 20000 })
 		await expect(page.getByText('Core case data')).toBeVisible({ timeout: 20000 })
 		await expect(
 			page.locator('[data-cn-field="parentCase"]').first(),
