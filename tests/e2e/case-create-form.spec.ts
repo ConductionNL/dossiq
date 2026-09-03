@@ -28,6 +28,7 @@ import {
 	objectId,
 	RUN_PREFIX,
 	seedCase,
+	updateObject,
 } from './helpers/fixtures.ts'
 
 const DASHBOARD_URL = '/apps/dossiq/'
@@ -86,22 +87,41 @@ test.describe('New case dialog', () => {
 		// A case type of this run's own, never a reused one: attaching
 		// property definitions to a shared case type would add required
 		// questions to every other spec's cases.
-		// The status a case of this type starts in, so the prefill has a real
-		// record to copy from rather than a literal the test invented.
-		const status = await createObject(api, token, 'statusType', {
-			name: START_STATUS,
-			description: 'Throwaway starting status for the New case dialog spec.',
-		})
-		startStatusId = objectId(status)
-
+		//
+		// The case type comes FIRST even though it is the thing that points at
+		// the status. A statusType belongs to a case type: the deployed schema
+		// requires `caseType` and `order`, so the status cannot exist before
+		// the type does. The reference is then closed with an update.
 		const caseType = await createObject(api, token, 'caseType', {
 			title: CASE_TYPE_TITLE,
 			identifier: `${RUN_PREFIX.toLowerCase()}-subsidie`,
 			description: 'Throwaway case type for the New case dialog spec.',
-			initialStatus: startStatusId,
 			defaultAssignee: DEFAULT_ASSIGNEE,
 		})
 		caseTypeId = objectId(caseType)
+
+		// The status a case of this type starts in, so the prefill has a real
+		// record to copy from rather than a literal the test invented.
+		//
+		// `name` + `caseType` + `order` + `isFinal` is the DEPLOYED statusType
+		// shape, which the helper docblock in fixtures.ts records and which
+		// differs from lib/Settings/dossiq_register.json. Sending only `name`
+		// answers 400 "The required properties (caseType, order) are missing",
+		// and because that happens in beforeAll it fails the first test and
+		// SKIPS the other ten, so the report reads "1 failed" for a fixture
+		// defect that stopped the whole file.
+		const status = await createObject(api, token, 'statusType', {
+			name: START_STATUS,
+			caseType: caseTypeId,
+			order: 1,
+			isFinal: false,
+			description: 'Throwaway starting status for the New case dialog spec.',
+		})
+		startStatusId = objectId(status)
+
+		await updateObject(api, token, 'caseType', caseTypeId, {
+			initialStatus: startStatusId,
+		})
 
 		const ceiling = await createObject(api, token, 'propertyDefinition', {
 			name: CEILING,
