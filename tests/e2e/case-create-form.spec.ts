@@ -323,9 +323,16 @@ test.describe('New case dialog', () => {
 		}).toPass({ timeout: 30000 })
 	})
 	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-005-the-form-answers-what-the-case-type-already-knows
-	test('fills the title and assignee the chosen case type already answers', async ({
+	test('fills the title the chosen case type already answers', async ({
 		page,
 	}) => {
+		// Title only, deliberately. The name used to say "and assignee" while
+		// the body never asserted one, and #1723 has since made that assertion
+		// impossible to write: the action's `props` seeds `assignee: "@me"`,
+		// prefill only fills EMPTY fields, so a case type's `defaultAssignee`
+		// can no longer reach the form. That is a reasonable product call (the
+		// person filing a case usually handles it) but it means the mechanism
+		// is exercised through `title` and `status`, not `assignee`.
 		const dialog = await openDialog(page)
 
 		// Nothing is assumed about the empty form beyond the fields being
