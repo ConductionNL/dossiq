@@ -641,6 +641,19 @@ class SettingsService {
 			$configuredCount = $this->schemaKeys->autoConfigureAfterImport(importResult: $importResult);
 			$this->reconcileSchemaConfig();
 
+			// 🔴 THE IMPORT DOES NOT CARRY THE DECLARATIVE ANNOTATION BLOCKS, SO
+			// MERGE THEM HERE. Importing the register creates the schemas, but the
+			// `x-openregister-*` blocks declared alongside them in
+			// dossiq_register.json do not survive onto the live schema. Without
+			// this call a FRESH instance never gets them: `isTerminalStatus` never
+			// materialises, so every completed task keeps reading false and the
+			// widgets filtering on it keep showing finished work, and
+			// `daysUntilDue` does not exist to extend, so due-date columns render
+			// blank. Both failures are silent. The e2e suite caught it on a clean
+			// CI install after passing on a dev box where the reconcile had been
+			// run by hand. Idempotent, so it is safe on every import.
+			$this->reconcileSchemaDeclarativeConfig();
+
 			$this->logger->info(
 				'Dossiq: Configuration imported and reconciled',
 				['version' => $configVersion, 'configured' => $configuredCount]
