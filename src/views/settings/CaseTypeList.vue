@@ -162,7 +162,7 @@ export default {
 			const statusTypes = await this.objectStore.fetchCollection(
 				'statusType',
 				{
-					'_filters[caseType]': caseTypeId,
+					caseType: caseTypeId,
 					_limit: 100,
 				},
 			)
@@ -248,7 +248,7 @@ export default {
 
 			try {
 				const cases = await this.objectStore.fetchCollection('case', {
-					'_filters[caseType]': ct.id,
+					caseType: ct.id,
 					_limit: 1,
 				})
 				if (cases && cases.length > 0) {
@@ -284,7 +284,7 @@ export default {
 				const statusTypes = await this.objectStore.fetchCollection(
 					'statusType',
 					{
-						'_filters[caseType]': ct.id,
+						caseType: ct.id,
 						_limit: 100,
 					},
 				)

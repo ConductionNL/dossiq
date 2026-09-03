@@ -131,7 +131,7 @@ export const useWorkflowStore = defineStore('workflow', {
 				const results = await objectStore.fetchCollection(
 					'workflowTemplate',
 					{
-						'_filters[caseType]': caseTypeId,
+						caseType: caseTypeId,
 						_limit: 100,
 						_order: { version: 'desc' },
 					},
@@ -193,9 +193,9 @@ export const useWorkflowStore = defineStore('workflow', {
 				const results = await objectStore.fetchCollection(
 					'workflowTemplate',
 					{
-						'_filters[caseType]': caseTypeId,
-						'_filters[isActive]': true,
-						'_filters[isDraft]': false,
+						caseType: caseTypeId,
+						isActive: true,
+						isDraft: false,
 						_limit: 1,
 					},
 				)

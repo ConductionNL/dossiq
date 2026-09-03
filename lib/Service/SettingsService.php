@@ -30,6 +30,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler;
 use OCA\Dossiq\Service\Settings\SchemaKeyReconciler;
+use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
 use OCA\Dossiq\Service\Settings\SchemaSlugMap;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
@@ -404,15 +405,27 @@ class SettingsService {
 		private LoggerInterface $logger,
 	) {
 		$this->fragments = new RegisterFragmentMerger();
-		$this->schemaKeys = new SchemaKeyReconciler(
+
+		// One resolver, shared by both reconcilers. They must agree on which
+		// schema a slug means: when they disagreed, the config keys pointed at
+		// one `task` schema while the calculations were merged onto another.
+		$slugResolver = new SchemaSlugResolver(
 			appConfig: $appConfig,
 			container: $container,
 			logger: $logger
 		);
+
+		$this->schemaKeys = new SchemaKeyReconciler(
+			appConfig: $appConfig,
+			container: $container,
+			logger: $logger,
+			slugResolver: $slugResolver
+		);
 		$this->schemaAnnotations = new SchemaAnnotationReconciler(
 			container: $container,
 			fragments: $this->fragments,
-			logger: $logger
+			logger: $logger,
+			slugResolver: $slugResolver
 		);
 	}//end __construct()
 

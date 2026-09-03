@@ -120,8 +120,15 @@ export default {
 			this.loading = true
 			try {
 				const currentUser = getCurrentUser()?.uid || ''
+				// 🔴 `_filters[x]` IS INERT. The store passes params straight to the
+				// query string, and OpenRegister reads a BARE field name; measured
+				// against the live API, `_filters[assignee]=rbac-editor` returned all
+				// 32 tasks while `assignee=rbac-editor` returned the 2 that match. So
+				// this widget was fetching EVERY user's tasks and filtering only by
+				// status, which is not what a widget called "My Tasks" may show.
 				const results = await this.objectStore.fetchCollection('task', {
-					'_filters[assignee]': currentUser,
+					assignee: currentUser,
+					isTerminalStatus: false,
 					_limit: 7,
 				})
 				// Filter to active/available tasks only.

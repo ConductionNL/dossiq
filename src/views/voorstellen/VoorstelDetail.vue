@@ -276,7 +276,7 @@ export default {
 				const results = await this.objectStore.fetchCollection(
 					'parafeeractie',
 					{
-						'_filters[voorstel]': this.voorstelId,
+						voorstel: this.voorstelId,
 						_limit: 100,
 						_order: '_self.created',
 						_direction: 'asc',
