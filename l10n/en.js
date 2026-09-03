@@ -2,6 +2,8 @@ OC.L10N.register(
     "dossiq",
     {
         "Contacts": "Contacts",
+        "Generic Role": "Generic Role",
+        "The generic role this case-type role plays, so routing rules and reports can speak about \"the handler\" without knowing every case type's own naming. Maps to the ZGW RolType field omschrijvingGeneriek. Set from the Roles tab in case-type settings, and shipped by the bezwaar and besluitvorming seed data.": "The generic role this case-type role plays, so routing rules and reports can speak about \"the handler\" without knowing every case type's own naming. Maps to the ZGW RolType field omschrijvingGeneriek. Set from the Roles tab in case-type settings, and shipped by the bezwaar and besluitvorming seed data.",
         "— choose —": "— choose —",
         "'Valid from' date must be set": "'Valid from' date must be set",
         "'Valid until' must be after 'Valid from'": "'Valid until' must be after 'Valid from'",

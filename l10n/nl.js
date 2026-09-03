@@ -2,6 +2,8 @@ OC.L10N.register(
     "dossiq",
     {
         "Contacts": "Contacten",
+        "Generic Role": "Generieke rol",
+        "The generic role this case-type role plays, so routing rules and reports can speak about \"the handler\" without knowing every case type's own naming. Maps to the ZGW RolType field omschrijvingGeneriek. Set from the Roles tab in case-type settings, and shipped by the bezwaar and besluitvorming seed data.": "De generieke rol die deze zaaktyperol speelt, zodat routeringsregels en rapportages over \"de behandelaar\" kunnen spreken zonder de eigen benaming van elk zaaktype te kennen. Komt overeen met het ZGW-veld omschrijvingGeneriek op RolType. Wordt gezet op het tabblad Rollen in de zaaktype-instellingen, en meegeleverd door de bezwaar- en besluitvormingsseeds.",
         "— choose —": "— kies —",
         "'Valid from' date must be set": "Datum 'Geldig vanaf' moet worden ingevuld",
         "'Valid until' must be after 'Valid from'": "'Geldig tot' moet na 'Geldig vanaf' liggen",
