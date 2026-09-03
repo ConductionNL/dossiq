@@ -1,7 +1,7 @@
 {
   "_format": "dossiq-workflow-v1",
   "title": "Toezichtzaak Milieu",
-  "description": "Workflow voor milieu-inspectie — periodiek of incidenteel toezicht op milieuactiviteiten.",
+  "description": "Workflow voor milieu-inspectie: periodiek of incidenteel toezicht op milieuactiviteiten.",
   "version": 1,
   "steps": [
     {

@@ -1,7 +1,7 @@
 {
   "_format": "dossiq-workflow-v1",
   "title": "Omgevingsvergunning Bouwactiviteit (uitgebreid)",
-  "description": "Workflow voor uitgebreide omgevingsvergunning — 26 weken beslistermijn. Bevat extra stappen voor ontwerp-besluit en zienswijzetermijn conform Omgevingswet uitgebreide procedure.",
+  "description": "Workflow voor uitgebreide omgevingsvergunning: 26 weken beslistermijn. Bevat extra stappen voor ontwerp-besluit en zienswijzetermijn conform Omgevingswet uitgebreide procedure.",
   "version": 1,
   "steps": [
     {

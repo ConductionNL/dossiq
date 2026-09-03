@@ -21,7 +21,7 @@
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
-                "description": "Case type definition — defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
+                "description": "Case type definition: defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
                 "type": "object",
                 "required": [
                     "title"
@@ -446,7 +446,7 @@
                             "enum",
                             "json"
                         ],
-                        "description": "Data type of this property. 'enum' carries its allowed values in enumValues; 'json' carries a JSON Schema in defaultValue and is validated as a document rather than a scalar. Both exist because the alternative — flattening them to 'string' — moves a constraint out of the model and into nobody's hands: a four-value cadence and a JSON schema would both become free text that nothing checks.",
+                        "description": "Data type of this property. 'enum' carries its allowed values in enumValues; 'json' carries a JSON Schema in defaultValue and is validated as a document rather than a scalar. Both exist because the alternative: flattening them to 'string'. Moves a constraint out of the model and into nobody's hands: a four-value cadence and a JSON schema would both become free text that nothing checks.",
                         "title": "Property Type"
                     },
                     "maxLength": {
@@ -979,7 +979,7 @@
                         "daysSinceActivity": {
                             "type": "integer",
                             "materialise": false,
-                            "description": "Whole days since the object was last modified (falls back to creation date). v1 sources @self.updated — the case.activity log is a JSON-encoded string and OpenRegister's calculation engine has no JSON/array operators to read it. Virtual (materialise:false): a save-time value would always be 0 at the moment of saving; computed fresh at read time via _extend=calculations.",
+                            "description": "Whole days since the object was last modified (falls back to creation date). V1 sources @self.updated: the case.activity log is a JSON-encoded string and OpenRegister's calculation engine has no JSON/array operators to read it. Virtual (materialise:false): a save-time value would always be 0 at the moment of saving; computed fresh at read time via _extend=calculations.",
                             "expression": {
                                 "dateDiff": {
                                     "from": {
@@ -1403,7 +1403,7 @@
                         "x-relation-filter": {
                             "caseType": "@object.caseType"
                         },
-                        "description": "Reference to the current status type. Initialised declaratively to the case type's initial status by OpenRegister (x-openregister-lifecycle.initial); user-editable thereafter because OR's transition engine only supports STATIC from/to state values and cannot express dossiq's per-caseType statusType graph yet — revert to readOnly + lifecycle transitions once OR supports FK-based status graphs. x-relation-filter scopes the picker to the case's own type's statuses.",
+                        "description": "Reference to the current status type. Initialised declaratively to the case type's initial status by OpenRegister (x-openregister-lifecycle.initial); user-editable thereafter because OR's transition engine only supports STATIC from/to state values and cannot express dossiq's per-caseType statusType graph yet: revert to readOnly + lifecycle transitions once OR supports FK-based status graphs. X-relation-filter scopes the picker to the case's own type's statuses.",
                         "title": "Status",
                         "facetable": true,
                         "order": 4
@@ -1715,12 +1715,12 @@
                             "contact"
                         ],
                         "title": "Initiator type",
-                        "description": "Type of the case initiator (indiener): person (BRP natuurlijk persoon), company (KvK niet-natuurlijk persoon), or contact (Nextcloud contact). Display projection of the canonical ADR-048 requester semantic reference (semantic-case-intake) — optional, additive."
+                        "description": "Type of the case initiator (indiener): person (BRP natuurlijk persoon), company (KvK niet-natuurlijk persoon), or contact (Nextcloud contact). Display projection of the canonical ADR-048 requester semantic reference (semantic-case-intake): optional, additive."
                     },
                     "initiatorSourceId": {
                         "type": "string",
                         "title": "Initiator source id",
-                        "description": "Identifying number/reference of the initiator in its source: BSN (person), KvK-nummer (company), or contact URI (contact). Display projection — the canonical requester reference is owned by semantic-case-intake.",
+                        "description": "Identifying number/reference of the initiator in its source: BSN (person), KvK-nummer (company), or contact URI (contact). Display projection: the canonical requester reference is owned by semantic-case-intake.",
                         "visible": false
                     },
                     "initiatorDisplayName": {
@@ -1734,7 +1734,7 @@
                         "format": "uuid",
                         "referenceSemanticType": "https://openregister.app/ns#Requester",
                         "title": "Requester",
-                        "description": "Canonical ADR-048 semantic reference (UUID) to the party who requested this case, set when the case arrives via the ns#Case semantic handoff. The initiatorType/initiatorSourceId/initiatorDisplayName fields are the display projection of this reference — one write path."
+                        "description": "Canonical ADR-048 semantic reference (UUID) to the party who requested this case, set when the case arrives via the ns#Case semantic handoff. The initiatorType/initiatorSourceId/initiatorDisplayName fields are the display projection of this reference: one write path."
                     },
                     "handoffSource": {
                         "type": "string",
@@ -1952,7 +1952,7 @@
                     },
                     "blocksCase": {
                         "type": "boolean",
-                        "description": "Set when a case flow is waiting on this task. Derived — see x-openregister-calculations.",
+                        "description": "Set when a case flow is waiting on this task. Derived: see x-openregister-calculations.",
                         "title": "Blocks a case",
                         "facetable": true
                     }
@@ -1963,7 +1963,7 @@
                         "isTerminalStatus": {
                             "type": "boolean",
                             "materialise": true,
-                            "description": "True when the task status is terminal (completed/terminated/disabled — mirrors x-openregister-lifecycle.final). Materialised on every save so task lists can filter isTerminalStatus=false server-side for open tasks.",
+                            "description": "True when the task status is terminal (completed/terminated/disabled: mirrors x-openregister-lifecycle.final). Materialised on every save so task lists can filter isTerminalStatus=false server-side for open tasks.",
                             "expression": {
                                 "or": [
                                     {
@@ -2122,7 +2122,7 @@
                     "blocksCase": {
                         "type": "boolean",
                         "materialise": true,
-                        "description": "Whether a case flow is currently WAITING on this task. True when the task records the run that created it and has not yet been answered. This is the half of the relationship a person cannot otherwise see: `case` already says which case the task belongs to, but not that the case has stopped and is waiting for them. Materialised so a work queue can filter on it server-side — a client-side filter over server-paged rows silently drops what it never fetched. Declarative per ADR-031: this is derived state, not a service.",
+                        "description": "Whether a case flow is currently WAITING on this task. True when the task records the run that created it and has not yet been answered. This is the half of the relationship a person cannot otherwise see: `case` already says which case the task belongs to, but not that the case has stopped and is waiting for them. Materialised so a work queue can filter on it server-side: a client-side filter over server-paged rows silently drops what it never fetched. Declarative per ADR-031: this is derived state, not a service.",
                         "expression": {
                             "and": [
                                 {
@@ -3520,7 +3520,7 @@
                 "x-schema-org": "schema:HowTo",
                 "x-cmmn-equivalent": "CasePlanModel",
                 "title": "Workflow Template",
-                "description": "A workflow definition for a case type — defines process steps, status transitions, guards, and automatic actions. v1.1: each step entry MAY carry an additive `config` sub-object ({sla, requiredFields, autoActions, escalationRule}); absent config preserves v1 behaviour (see process-step-configuration spec).",
+                "description": "A workflow definition for a case type: defines process steps, status transitions, guards, and automatic actions. V1.1: each step entry MAY carry an additive `config` sub-object ({sla, requiredFields, autoActions, escalationRule}); absent config preserves v1 behaviour (see process-step-configuration spec).",
                 "type": "object",
                 "required": [
                     "title",
@@ -3577,12 +3577,12 @@
                     },
                     "steps": {
                         "type": "string",
-                        "description": "JSON-encoded array of WorkflowStep objects. Each step has: id (UUID), title, description, status (UUID ref to statusType), order (integer), assigneeRole (UUID ref to roleType, optional — legacy, normalised on read to routingRule.single-role), routingRule (optional object {strategy: single-role|or-set|hierarchical|round-robin|least-loaded, roleType: UUID, roleTypes: [UUID], fallback: UUID}), isRequired (boolean), checklist (array of {id, label, description}), automaticActions (array of ActionRef). v1.1 additive: optional `config` sub-object = {sla:{value:int 1-10000, unit:hours|businessDays|calendarDays}, requiredFields:string[] (case-field property paths), autoActions:ActionRef[] fired before transition-level actions on step completion, escalationRule:{trigger:preBreach|slaBreached, offset:int, offsetUnit:hours|businessDays, notifyRole:UUID, escalateToRole:UUID, openIncident:boolean} — requires sla present; preBreach offset must be <= sla.value}. Absent config preserves v1 behaviour.",
+                        "description": "JSON-encoded array of WorkflowStep objects. Each step has: id (UUID), title, description, status (UUID ref to statusType), order (integer), assigneeRole (UUID ref to roleType, optional. Legacy, normalised on read to routingRule.single-role), routingRule (optional object {strategy: single-role|or-set|hierarchical|round-robin|least-loaded, roleType: UUID, roleTypes: [UUID], fallback: UUID}), isRequired (boolean), checklist (array of {id, label, description}), automaticActions (array of ActionRef). V1.1 additive: optional `config` sub-object = {sla:{value:int 1-10000, unit:hours|businessDays|calendarDays}, requiredFields:string[] (case-field property paths), autoActions:ActionRef[] fired before transition-level actions on step completion, escalationRule:{trigger:preBreach|slaBreached, offset:int, offsetUnit:hours|businessDays, notifyRole:UUID, escalateToRole:UUID, openIncident:boolean}. Requires sla present; preBreach offset must be <= sla.value}. Absent config preserves v1 behaviour.",
                         "title": "Steps"
                     },
                     "transitions": {
                         "type": "string",
-                        "description": "JSON-encoded array of StatusTransition objects. Each transition has: id (UUID), fromStatus (UUID), toStatus (UUID), label (string), guards (array of Guard), automaticActions (array of ActionRef), allowedRoles (array of UUID — legacy, normalised on read to routingRule.or-set), routingRule (optional object same shape as workflowStep.routingRule). Guard types: checklist, requiredField, requiredDocument, roleGuard. Action types: sendEmail, createTask, createSubCase, webhook, setField, notify",
+                        "description": "JSON-encoded array of StatusTransition objects. Each transition has: id (UUID), fromStatus (UUID), toStatus (UUID), label (string), guards (array of Guard), automaticActions (array of ActionRef), allowedRoles (array of UUID. Legacy, normalised on read to routingRule.or-set), routingRule (optional object same shape as workflowStep.routingRule). Guard types: checklist, requiredField, requiredDocument, roleGuard. Action types: sendEmail, createTask, createSubCase, webhook, setField, notify",
                         "title": "Transitions"
                     },
                     "nodePositions": {
@@ -3691,7 +3691,7 @@
                 "version": "1.0.0",
                 "x-schema-org": "schema:Action",
                 "title": "Automatic Action",
-                "description": "Declarative automatic action. HISTORICAL: this description used to say the slug was referenced from transitions[].automaticActions[].ref and resolved at dispatch time — it never was. SideEffectDispatcher runs a separate vocabulary keyed on an inline `type`, and nothing has ever read these objects at run time. They are migrated to OpenRegister flows by `occ dossiq:actions:migrate-to-flows`, where each becomes a flow around the matching dossiq.action.* node; the flow is what executes. Kept for the migration and for reading historical configuration.",
+                "description": "Declarative automatic action. HISTORICAL: this description used to say the slug was referenced from transitions[].automaticActions[].ref and resolved at dispatch time: it never was. SideEffectDispatcher runs a separate vocabulary keyed on an inline `type`, and nothing has ever read these objects at run time. They are migrated to OpenRegister flows by `occ dossiq:actions:migrate-to-flows`, where each becomes a flow around the matching dossiq.action.* node; the flow is what executes. Kept for the migration and for reading historical configuration.",
                 "type": "object",
                 "required": [
                     "slug",
@@ -3716,14 +3716,14 @@
                             "mergeTemplate",
                             "scheduleReminder"
                         ],
-                        "description": "Action handler type — must match a registered ActionHandlerInterface implementation",
+                        "description": "Action handler type: must match a registered ActionHandlerInterface implementation",
                         "title": "Type"
                     },
                     "tenantId": {
                         "type": "string",
                         "format": "uuid",
                         "$ref": "tenant",
-                        "description": "Owning tenant — cross-tenant resolution is rejected by the registry",
+                        "description": "Owning tenant: cross-tenant resolution is rejected by the registry",
                         "title": "Tenant ID"
                     },
                     "title": {
@@ -3751,7 +3751,7 @@
                     "isPublished": {
                         "type": "boolean",
                         "default": false,
-                        "description": "Legacy publish flag. It never gated anything: SideEffectDispatcher does not read these objects at all. The migration to OpenRegister flows ignores it — enable or disable the resulting flow instead.",
+                        "description": "Legacy publish flag. It never gated anything: SideEffectDispatcher does not read these objects at all. The migration to OpenRegister flows ignores it: enable or disable the resulting flow instead.",
                         "title": "Is Published"
                     },
                     "active": {
@@ -3769,7 +3769,7 @@
                 "x-schema-org": "schema:LegalCase",
                 "x-zgw-equivalent": "Bezwaarzaak",
                 "title": "Objection",
-                "description": "Bezwaar lifecycle entity — captures the AWB objection case state, statutory deadlines, hearing waiver, and dwangsom accrual. Status transitions flow through the status-transition-engine; deadlines are computed declaratively via x-openregister-calculations (ADR-022). NO bespoke deadline service.",
+                "description": "Bezwaar lifecycle entity: captures the AWB objection case state, statutory deadlines, hearing waiver, and dwangsom accrual. Status transitions flow through the status-transition-engine; deadlines are computed declaratively via x-openregister-calculations (ADR-022). NO bespoke deadline service.",
                 "type": "object",
                 "required": [
                     "case",
@@ -3807,7 +3807,7 @@
                             "Withdrawn"
                         ],
                         "default": "Received",
-                        "description": "Bezwaar lifecycle status — drives the status-transition-engine state machine",
+                        "description": "Bezwaar lifecycle status: drives the status-transition-engine state machine",
                         "facetable": true,
                         "title": "Status"
                     },
@@ -3843,7 +3843,7 @@
                     "suspensionEnd": {
                         "type": "string",
                         "format": "date",
-                        "description": "Opschorting end date — adds (end - start) days to decisionDeadline",
+                        "description": "Opschorting end date: adds (end - start) days to decisionDeadline",
                         "title": "Suspension End"
                     },
                     "suspension": {
@@ -3866,19 +3866,19 @@
                     "noticeOfDefault": {
                         "type": "string",
                         "format": "date",
-                        "description": "Date the bezwaarmaker submitted an ingebrekestelling per AWB 4:17 — starts the 14-day grace clock",
+                        "description": "Date the bezwaarmaker submitted an ingebrekestelling per AWB 4:17. Starts the 14-day grace clock",
                         "title": "Notice of Default"
                     },
                     "penaltyPayment": {
                         "type": "number",
                         "default": 0,
-                        "description": "Accrued dwangsom liability in euros — computed declaratively, capped at €1442 (AWB 4:17 lid 2)",
+                        "description": "Accrued dwangsom liability in euros: computed declaratively, capped at €1442 (AWB 4:17 lid 2)",
                         "title": "Penalty Amount"
                     },
                     "decisionDeadline": {
                         "type": "string",
                         "format": "date",
-                        "description": "Statutory deadline for the beslissing op bezwaar — computed as ontvangstdatum + 6 weeks + verdagingsperiode + opschorting (AWB 7:10)",
+                        "description": "Statutory deadline for the beslissing op bezwaar: computed as ontvangstdatum + 6 weeks + verdagingsperiode + opschorting (AWB 7:10)",
                         "title": "Decision Deadline"
                     }
                 },
@@ -3887,7 +3887,7 @@
                     "decisionDeadline": {
                         "type": "date",
                         "materialise": true,
-                        "description": "Statutory beslistermijn op bezwaar (AWB 7:10 lid 1, 3, 4): ontvangstdatum + 6 weeks + verdagingsperiode (days, AWB 7:10 lid 3) + opschorting (days, AWB 7:10 lid 4). Materialised (server-side filterable); recomputed on every bezwaar save. Replaces the pre-2026-07 inert array-form string-DSL declaration (addWeeks/addDays), which OpenRegister's calculation engine never honoured — it accepts only a field-keyed map of AST expressions. verdagingsperiode/opschorting are coalesced to 0: OpenRegister's dateAdd returns NULL for a non-numeric amount, so a bare prop ref would null the entire statutory deadline on any bezwaar saved without those optional fields (schema defaults do not protect the PUT-semantic update path).",
+                        "description": "Statutory beslistermijn op bezwaar (AWB 7:10 lid 1, 3, 4): ontvangstdatum + 6 weeks + verdagingsperiode (days, AWB 7:10 lid 3) + opschorting (days, AWB 7:10 lid 4). Materialised (server-side filterable); recomputed on every bezwaar save. Replaces the pre-2026-07 inert array-form string-DSL declaration (addWeeks/addDays), which OpenRegister's calculation engine never honoured: it accepts only a field-keyed map of AST expressions. Verdagingsperiode/opschorting are coalesced to 0: OpenRegister's dateAdd returns NULL for a non-numeric amount, so a bare prop ref would null the entire statutory deadline on any bezwaar saved without those optional fields (schema defaults do not protect the PUT-semantic update path).",
                         "expression": {
                             "dateAdd": {
                                 "date": {
@@ -4159,7 +4159,7 @@
                 "x-schema-org": "schema:Message",
                 "x-zgw-equivalent": "Bezwaarschrift",
                 "title": "Objection",
-                "description": "Bezwaarschrift (objection letter) — captures the formal objection content linked to a bezwaar case and the contested decision",
+                "description": "Bezwaarschrift (objection letter): captures the formal objection content linked to a bezwaar case and the contested decision",
                 "type": "object",
                 "required": [
                     "case",
@@ -4241,7 +4241,7 @@
                 "x-schema-org": "schema:Event",
                 "x-zgw-equivalent": "Hoorzitting",
                 "title": "Hearing Session",
-                "description": "Hoorzitting (hearing) — manages scheduling, invitations, inspection-of-file, attendance, minutes and audit hooks for bezwaar hearings per Awb art. 7:2-7:7",
+                "description": "Hoorzitting (hearing): manages scheduling, invitations, inspection-of-file, attendance, minutes and audit hooks for bezwaar hearings per Awb art. 7:2-7:7",
                 "type": "object",
                 "required": [
                     "case",
@@ -4452,7 +4452,7 @@
                 "x-schema-org": "schema:Report",
                 "x-zgw-equivalent": "AdviesBezwaarschriftencommissie",
                 "title": "Advisory Report",
-                "description": "Advisory committee report (advies bezwaarschriftencommissie) — records the committee's advice on a bezwaar case per Awb art. 7:13",
+                "description": "Advisory committee report (advies bezwaarschriftencommissie): records the committee's advice on a bezwaar case per Awb art. 7:13",
                 "type": "object",
                 "required": [
                     "case",
@@ -4545,7 +4545,7 @@
                 "x-schema-org": "schema:LegalForceStatus",
                 "x-zgw-equivalent": "BeslissingOpBezwaar",
                 "title": "Appeal Decision",
-                "description": "Beslissing op bezwaar (decision on objection) — formal decision recording with disposition, motivation, and rechtsmiddelenclausule per Awb art. 7:11-7:12",
+                "description": "Beslissing op bezwaar (decision on objection): formal decision recording with disposition, motivation, and rechtsmiddelenclausule per Awb art. 7:11-7:12",
                 "type": "object",
                 "required": [
                     "case",
@@ -4658,7 +4658,7 @@
                 "x-schema-org": "schema:Action",
                 "x-zgw-equivalent": "BeslissingOpBezwaar",
                 "title": "Objection Decision",
-                "description": "Beslissing op bezwaar — canonical decision entity per Awb art. 7:11/7:12 with the 5-value disposition enum, structured rechtsmiddelenclausule, proceskostenvergoeding, and publication flow",
+                "description": "Beslissing op bezwaar: canonical decision entity per Awb art. 7:11/7:12 with the 5-value disposition enum, structured rechtsmiddelenclausule, proceskostenvergoeding, and publication flow",
                 "type": "object",
                 "required": [
                     "bezwaar",
@@ -4684,7 +4684,7 @@
                             "upheld_revoke",
                             "upheld_amend"
                         ],
-                        "description": "Awb art. 7:11 canonical outcome — drives mandatory fields, replacement besluit, and proceskosten eligibility",
+                        "description": "Awb art. 7:11 canonical outcome. Drives mandatory fields, replacement besluit, and proceskosten eligibility",
                         "title": "Disposition Type"
                     },
                     "reasoning": {
@@ -4718,12 +4718,12 @@
                         "type": "string",
                         "format": "uuid",
                         "$ref": "decision",
-                        "description": "New besluit replacing the primair besluit — required when dispositionType is gegrond_wijzigen, optional for gegrond_herroepen, MUST NOT be set otherwise",
+                        "description": "New besluit replacing the primair besluit: required when dispositionType is gegrond_wijzigen, optional for gegrond_herroepen, MUST NOT be set otherwise",
                         "title": "Replacement Decision"
                     },
                     "appealNotice": {
                         "type": "object",
-                        "description": "Structured rechtsmiddelenclausule — replaces free-form prose; every required sub-field MUST be filled before publication",
+                        "description": "Structured rechtsmiddelenclausule: replaces free-form prose; every required sub-field MUST be filled before publication",
                         "properties": {
                             "competentCourt": {
                                 "type": "string",
@@ -4777,7 +4777,7 @@
                     },
                     "legalCostsCompensation": {
                         "type": "object",
-                        "description": "Awb art. 7:15 cost award — awardable only when dispositionType is gegrond_herroepen or gegrond_wijzigen, the bezwaarmaker requested it, and the herroeping is attributable to onrechtmatigheid van het primair besluit; totalAmount is calculated as awardedPoints * pointValue",
+                        "description": "Awb art. 7:15 cost award. Awardable only when dispositionType is gegrond_herroepen or gegrond_wijzigen, the bezwaarmaker requested it, and the herroeping is attributable to onrechtmatigheid van het primair besluit; totalAmount is calculated as awardedPoints * pointValue",
                         "properties": {
                             "requested": {
                                 "type": "boolean",
@@ -4879,7 +4879,7 @@
                 "version": "1.0.0",
                 "x-schema-org": "schema:LegalAction",
                 "title": "Appeal",
-                "description": "Beroep escalation envelope — the municipality's tracking record around a citizen's appeal of a beslissing op bezwaar at the administrative court (rechtbank, Awb hoofdstuk 8). Dossiq does NOT run the court process; this schema captures filing window, court reference, chamber, file-inspection requests (Awb 8:42), judgment outcome, and cascade back into the bezwaar workflow. Immutability after appellantFilingDate is enforced by BeroepService; OpenRegister provides the per-save audit trail.",
+                "description": "Beroep escalation envelope: the municipality's tracking record around a citizen's appeal of a beslissing op bezwaar at the administrative court (rechtbank, Awb hoofdstuk 8). Dossiq does NOT run the court process; this schema captures filing window, court reference, chamber, file-inspection requests (Awb 8:42), judgment outcome, and cascade back into the bezwaar workflow. Immutability after appellantFilingDate is enforced by BeroepService; OpenRegister provides the per-save audit trail.",
                 "type": "object",
                 "required": [
                     "case",
@@ -4900,14 +4900,14 @@
                         "type": "string",
                         "format": "uuid",
                         "$ref": "objectionProceeding",
-                        "description": "The bezwaar lifecycle record that escalated to beroep — immutable after appellantFilingDate is set",
+                        "description": "The bezwaar lifecycle record that escalated to beroep: immutable after appellantFilingDate is set",
                         "title": "Source Objection"
                     },
                     "contestedDecision": {
                         "type": "string",
                         "format": "uuid",
                         "$ref": "bezwaarDecision",
-                        "description": "The beslissing op bezwaar being contested — immutable after appellantFilingDate is set",
+                        "description": "The beslissing op bezwaar being contested: immutable after appellantFilingDate is set",
                         "title": "Contested Decision"
                     },
                     "courtReference": {
@@ -4959,7 +4959,7 @@
                     "latefilingNotice": {
                         "type": "boolean",
                         "default": false,
-                        "description": "Computed: true when appellantFilingDate > filingDeadline. Informational only — only the rechtbank weighs verschoonbare termijnoverschrijding.",
+                        "description": "Computed: true when appellantFilingDate > filingDeadline. Informational only: only the rechtbank weighs verschoonbare termijnoverschrijding.",
                         "title": "Late Filing Notice"
                     },
                     "fileInspectionRequests": {
@@ -5049,7 +5049,7 @@
                 "icon": "LayersOutline",
                 "version": "1.0.0",
                 "title": "Map Layer",
-                "description": "GIS map layer configuration for case maps — defines tile, WMS, WFS, or GeoJSON layers that can be displayed on case map views",
+                "description": "GIS map layer configuration for case maps: defines tile, WMS, WFS, or GeoJSON layers that can be displayed on case map views",
                 "type": "object",
                 "required": [
                     "title",
@@ -5177,7 +5177,7 @@
                     "url": {
                         "type": "string",
                         "format": "uri",
-                        "description": "Service base URL — MUST match an entry in the GIS proxy allowlist",
+                        "description": "Service base URL: MUST match an entry in the GIS proxy allowlist",
                         "title": "URL"
                     },
                     "layerName": {
@@ -5196,7 +5196,7 @@
                         "minimum": 0,
                         "maximum": 1,
                         "default": 0.7,
-                        "description": "Default overlay opacity (0.0 transparent — 1.0 opaque)",
+                        "description": "Default overlay opacity (0.0 transparent: 1.0 opaque)",
                         "title": "Opacity"
                     },
                     "attribution": {
@@ -5248,7 +5248,7 @@
                 "version": "1.0.0",
                 "x-schema-org": "schema:Place",
                 "title": "Case Location",
-                "description": "A geographic location attached to a case (BAG nummeraanduiding, parcel, or free address) — 0..N locations per case via back-reference on `case`.",
+                "description": "A geographic location attached to a case (BAG nummeraanduiding, parcel, or free address): 0..N locations per case via back-reference on `case`.",
                 "type": "object",
                 "required": [
                     "case",
@@ -5292,7 +5292,7 @@
                     "addressDesignationId": {
                         "type": "string",
                         "maxLength": 32,
-                        "description": "BAG nummeraanduiding identifier (16-digit) — MUST be present when source = bag",
+                        "description": "BAG nummeraanduiding identifier (16-digit): MUST be present when source = bag",
                         "title": "Address Designation ID"
                     },
                     "parcelId": {
@@ -5328,7 +5328,7 @@
                 "version": "1.0.0",
                 "x-schema-org": "schema:AskAction",
                 "title": "Consultation",
-                "description": "Inter-departmental consultation (adviesaanvraag) — a first-class entity linked to a parent case with its own lifecycle, structured response, and deadline enforcement per Awb 3:5-3:9",
+                "description": "Inter-departmental consultation (adviesaanvraag): a first-class entity linked to a parent case with its own lifecycle, structured response, and deadline enforcement per Awb 3:5-3:9",
                 "type": "object",
                 "required": [
                     "parentCase",
@@ -6473,7 +6473,7 @@
                     "name": {
                         "type": "string",
                         "maxLength": 255,
-                        "description": "Template label, e.g. 'Bouwtoezicht — Fundering'",
+                        "description": "Template label, e.g. 'Bouwtoezicht: Fundering'",
                         "title": "Name"
                     },
                     "caseType": {
@@ -6709,13 +6709,13 @@
                     },
                     "templateSnapshot": {
                         "type": "object",
-                        "description": "Frozen JSON copy of the template sections+items at run start — hidden from default API output",
+                        "description": "Frozen JSON copy of the template sections+items at run start: hidden from default API output",
                         "additionalProperties": true,
                         "title": "Template Snapshot"
                     },
                     "inspector": {
                         "type": "string",
-                        "description": "NC user UID — server-derived from IUserSession, never accepted from body",
+                        "description": "NC user UID: server-derived from IUserSession, never accepted from body",
                         "title": "Inspector"
                     },
                     "assignedInspectorRef": {
@@ -6866,7 +6866,7 @@
                             "non_conform",
                             "partly_conform"
                         ],
-                        "description": "Aggregate result — derived on submit by ChecklistService::aggregateResult; user-supplied values are ignored",
+                        "description": "Aggregate result: derived on submit by ChecklistService::aggregateResult; user-supplied values are ignored",
                         "title": "Overall Result"
                     },
                     "syncState": {
@@ -6943,7 +6943,7 @@
                             "suspended",
                             "terminated"
                         ],
-                        "description": "Lifecycle status — drives access enforcement in TenantMiddleware",
+                        "description": "Lifecycle status: drives access enforcement in TenantMiddleware",
                         "title": "Status"
                     },
                     "tier": {
@@ -6953,7 +6953,7 @@
                             "standard",
                             "enterprise"
                         ],
-                        "description": "Service tier — drives quota defaults and feature flags",
+                        "description": "Service tier: drives quota defaults and feature flags",
                         "title": "Tier"
                     },
                     "createdAt": {
@@ -7781,7 +7781,7 @@
                     "deadline": {
                         "type": "string",
                         "format": "date",
-                        "description": "Target advice date — defaults to assignedAt + 12 weeks (Awb Art. 7:24(1))",
+                        "description": "Target advice date: defaults to assignedAt + 12 weeks (Awb Art. 7:24(1))",
                         "title": "Deadline"
                     },
                     "advice": {
@@ -7896,7 +7896,7 @@
                 "version": "1.0.0",
                 "x-schema-org": "schema:Action",
                 "title": "Complaint",
-                "description": "Klacht (complaint) entity — tracks citizen complaints per Awb chapter 9 with lifecycle, Awb deadlines, hearing, disposition, and escalation support.",
+                "description": "Klacht (complaint) entity: tracks citizen complaints per Awb chapter 9 with lifecycle, Awb deadlines, hearing, disposition, and escalation support.",
                 "type": "object",
                 "required": [
                     "subject",
@@ -8143,7 +8143,7 @@
                 "icon": "AccountVoice",
                 "version": "1.0.0",
                 "title": "Hearing",
-                "description": "Hoorgesprek (hearing) linked to a complaint — captures scheduling, participants, outcome, and video/calendar integration.",
+                "description": "Hoorgesprek (hearing) linked to a complaint: captures scheduling, participants, outcome, and video/calendar integration.",
                 "type": "object",
                 "required": [
                     "complaint",
@@ -8315,7 +8315,7 @@
                 "icon": "TagOutline",
                 "version": "1.0.0",
                 "title": "Complaint Category",
-                "description": "Configurable complaint category per tenant — defines default handler, SLA override, and routing for complaints.",
+                "description": "Configurable complaint category per tenant: defines default handler, SLA override, and routing for complaints.",
                 "type": "object",
                 "required": [
                     "name"
@@ -8357,7 +8357,7 @@
                 "icon": "Cog",
                 "version": "1.0.0",
                 "title": "Tenant Configuration",
-                "description": "Per-tenant configuration — branding, locale, and feature flags. 1:1 with Tenant.",
+                "description": "Per-tenant configuration: branding, locale, and feature flags. 1:1 with Tenant.",
                 "type": "object",
                 "required": [
                     "tenantRef"
@@ -8372,7 +8372,7 @@
                     },
                     "branding": {
                         "type": "object",
-                        "description": "Branding payload — logo URL, primaryColor, secondaryColor, fontFamily, customCSS",
+                        "description": "Branding payload: logo URL, primaryColor, secondaryColor, fontFamily, customCSS",
                         "properties": {
                             "logo": {
                                 "type": "string",
@@ -8446,7 +8446,7 @@
                 "icon": "GaugeFull",
                 "version": "1.0.0",
                 "title": "Tenant Quota",
-                "description": "Per-tenant quota — one row per quota type. Tracks limit, current usage, and enforcement policy.",
+                "description": "Per-tenant quota: one row per quota type. Tracks limit, current usage, and enforcement policy.",
                 "type": "object",
                 "required": [
                     "tenantRef",
@@ -8512,7 +8512,7 @@
                 "icon": "AccountOutline",
                 "version": "1.0.0",
                 "title": "Tenant User",
-                "description": "Per-tenant user membership — maps a Nextcloud user to a tenant with role + eHerkenning level.",
+                "description": "Per-tenant user membership: maps a Nextcloud user to a tenant with role + eHerkenning level.",
                 "type": "object",
                 "required": [
                     "tenantRef",
@@ -8571,7 +8571,7 @@
                 "icon": "FileSign",
                 "version": "1.0.0",
                 "title": "Tenant Mandate",
-                "description": "Signed mandate authorising a tenant to act on behalf of the issuing authority — backs ketenmachtiging (chain-mandate) flows.",
+                "description": "Signed mandate authorising a tenant to act on behalf of the issuing authority: backs ketenmachtiging (chain-mandate) flows.",
                 "type": "object",
                 "required": [
                     "tenantRef"
@@ -8619,7 +8619,7 @@
                 "version": "1.0.0",
                 "x-insert-only": true,
                 "title": "Tenant Billing Event",
-                "description": "Insert-only billing event — every billable action emits one row. Consumed by shillinq for invoicing.",
+                "description": "Insert-only billing event: every billable action emits one row. Consumed by shillinq for invoicing.",
                 "type": "object",
                 "required": [
                     "tenantRef",
@@ -8736,7 +8736,7 @@
                     "threshold": 0.7
                 },
                 "title": "Supplier",
-                "description": "Leverancier / vendor — represents a single supplier organisation that interacts with the municipality through the supplier portal.",
+                "description": "Leverancier / vendor: represents a single supplier organisation that interacts with the municipality through the supplier portal.",
                 "type": "object",
                 "required": [
                     "kvkNumber",
@@ -8747,7 +8747,7 @@
                     "kvkNumber": {
                         "type": "string",
                         "maxLength": 20,
-                        "description": "Dutch Chamber of Commerce (KvK) number — natural key",
+                        "description": "Dutch Chamber of Commerce (KvK) number: natural key",
                         "title": "KvK Number"
                     },
                     "legalName": {
@@ -8778,7 +8778,7 @@
                     },
                     "iban": {
                         "type": "string",
-                        "description": "IBAN — masked at the API layer",
+                        "description": "IBAN: masked at the API layer",
                         "title": "IBAN"
                     },
                     "sbiCodes": {
@@ -8829,7 +8829,7 @@
                 "icon": "AccountOutline",
                 "version": "1.0.0",
                 "title": "Supplier User",
-                "description": "Supplier-side portal user — eHerkenning-authenticated person acting on behalf of a supplier.",
+                "description": "Supplier-side portal user: eHerkenning-authenticated person acting on behalf of a supplier.",
                 "type": "object",
                 "required": [
                     "supplierRef",
@@ -9154,7 +9154,7 @@
                 "version": "1.0.0",
                 "x-insert-only": true,
                 "title": "Supplier Message",
-                "description": "Write-once message between municipality and supplier — immutable audit trail.",
+                "description": "Write-once message between municipality and supplier: immutable audit trail.",
                 "type": "object",
                 "required": [
                     "supplierRef",
@@ -9277,7 +9277,7 @@
                 "icon": "CheckboxMarkedCircleOutline",
                 "version": "1.0.0",
                 "title": "Tenant Onboarding Task",
-                "description": "One step of the tenant onboarding workflow — drives the onboarding checklist UI.",
+                "description": "One step of the tenant onboarding workflow: drives the onboarding checklist UI.",
                 "type": "object",
                 "required": [
                     "tenantRef",
@@ -9673,7 +9673,7 @@
                 "slug": "dossiq",
                 "title": "Dossiq",
                 "version": "1.1.0",
-                "description": "Case management (zaakgericht werken) register for Dossiq — manages case types, status types, cases, tasks, roles, results, and decisions.",
+                "description": "Case management (zaakgericht werken) register for Dossiq: manages case types, status types, cases, tasks, roles, results, and decisions.",
                 "schemas": [
                     "caseType",
                     "statusType",
@@ -9810,7 +9810,7 @@
                 "register": "dossiq",
                 "path": "/leverancier",
                 "component": "LeverancierDashboard",
-                "description": "Supplier portal operator-side dashboard shell — 4 cards (tenders, invoices, contracts, KPI) bound to SupplierDashboardService::buildSummary(). Each card is a router-link into its feature view. Chain member 15."
+                "description": "Supplier portal operator-side dashboard shell: 4 cards (tenders, invoices, contracts, KPI) bound to SupplierDashboardService::buildSummary(). Each card is a router-link into its feature view. Chain member 15."
             },
             {
                 "slug": "leverancier-tenders",
@@ -9819,7 +9819,7 @@
                 "register": "dossiq",
                 "path": "/leverancier/tenders",
                 "component": "TenderList",
-                "description": "Supplier tender list — sortable/filterable, status badge from TenderViewModelService. Chain member 06 frontend."
+                "description": "Supplier tender list: sortable/filterable, status badge from TenderViewModelService. Chain member 06 frontend."
             },
             {
                 "slug": "leverancier-tender-detail",
@@ -9828,7 +9828,7 @@
                 "register": "dossiq",
                 "path": "/leverancier/tenders/:id",
                 "component": "TenderDetail",
-                "description": "Supplier tender detail — conditional award/rejection/withdrawal sections from visibilityFlags(). Chain member 06 frontend."
+                "description": "Supplier tender detail: conditional award/rejection/withdrawal sections from visibilityFlags(). Chain member 06 frontend."
             },
             {
                 "slug": "leverancier-invoices",
@@ -9837,7 +9837,7 @@
                 "register": "dossiq",
                 "path": "/leverancier/facturen",
                 "component": "InvoiceList",
-                "description": "Supplier invoice list — overdue90Plus flag + status badge from LeverancierViewModelService. Chain member 08 frontend."
+                "description": "Supplier invoice list: overdue90Plus flag + status badge from LeverancierViewModelService. Chain member 08 frontend."
             },
             {
                 "slug": "leverancier-contracts",
@@ -9846,7 +9846,7 @@
                 "register": "dossiq",
                 "path": "/leverancier/contracten",
                 "component": "ContractList",
-                "description": "Supplier contract list — expiring-soon highlighting from ContractRenewalService. Chain member 10 frontend."
+                "description": "Supplier contract list: expiring-soon highlighting from ContractRenewalService. Chain member 10 frontend."
             },
             {
                 "slug": "leverancier-kpi",
@@ -9855,7 +9855,7 @@
                 "register": "dossiq",
                 "path": "/leverancier/kpi",
                 "component": "KpiView",
-                "description": "Supplier KPI summary — payment days, on-time pct, dispute rate, compliance score. Chain member 14 frontend."
+                "description": "Supplier KPI summary: payment days, on-time pct, dispute rate, compliance score. Chain member 14 frontend."
             },
             {
                 "slug": "leverancier-profile",
@@ -9864,7 +9864,7 @@
                 "register": "dossiq",
                 "path": "/leverancier/profiel",
                 "component": "ProfileForm",
-                "description": "Supplier profile form — address + contact (immediate) + IBAN-change (4-eyes via Dossiq case). Chain member 12."
+                "description": "Supplier profile form: address + contact (immediate) + IBAN-change (4-eyes via Dossiq case). Chain member 12."
             },
             {
                 "slug": "leverancier-messages",
