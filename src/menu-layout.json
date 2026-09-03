@@ -34,7 +34,6 @@
 	"settingsSection": [
 		"TenantsMenu",
 		"WmsLayersMenu",
-		"WorkflowDefinitionsMenu",
 		"LhsRecommendationsMenu",
 		"BezwaarCommitteesMenu",
 		"SubstitutionAdminMenu"

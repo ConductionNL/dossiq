@@ -313,14 +313,6 @@
       "permission": "admin"
     },
     {
-      "id": "WorkflowDefinitionsMenu",
-      "label": "Workflow definitions",
-      "icon": "SitemapOutline",
-      "route": "WorkflowDefinitions",
-      "section": "settings",
-      "order": 97
-    },
-    {
       "id": "CaseTypesMenu",
       "label": "Case types",
       "icon": "FormatListBulletedType",
@@ -401,11 +393,6 @@
             "id": "new-case",
             "type": "open-form",
             "label": "New case",
-            "size": "large",
-            "columns": 2,
-            "fieldOverrides": {
-                "description": { "widget": "textarea" }
-            },
             "icon": "Plus",
             "register": "dossiq",
             "schema": "case",
