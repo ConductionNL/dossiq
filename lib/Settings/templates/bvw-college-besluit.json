@@ -18,7 +18,7 @@
         "statusTypes": [
             { "name": "Voorstel opstellen", "order": 1, "isFinal": false, "description": "Ambtenaar stelt het collegeadvies op" },
             { "name": "Ambtelijk advies", "order": 2, "isFinal": false, "description": "Inhoudelijk advies door beleidsadviseur" },
-            { "name": "Parafering", "order": 3, "isFinal": false, "description": "Sequentiele goedkeuring via parafeerroute" },
+            { "name": "Parafering", "order": 3, "isFinal": false, "description": "Sequentiele goedkeuring door de gemandateerde functionarissen" },
             { "name": "Gereed voor agendering", "order": 4, "isFinal": false, "description": "Alle parafen verzameld, klaar voor planning vergadering" },
             { "name": "Geagendeerd", "order": 5, "isFinal": false, "description": "Opgevoerd op de agenda van een vergadering" },
             { "name": "Vergadering", "order": 6, "isFinal": false, "description": "Behandeling tijdens de vergadering" },
@@ -70,14 +70,8 @@
             ],
             "transitions": [
                 { "fromStatusName": "Voorstel opstellen", "toStatusName": "Ambtelijk advies", "label": "Naar advies" },
-                {
-                    "fromStatusName": "Ambtelijk advies", "toStatusName": "Parafering", "label": "Start parafering",
-                    "automaticActions": [{ "type": "besluitvormingActivate" }]
-                },
-                {
-                    "fromStatusName": "Parafering", "toStatusName": "Gereed voor agendering", "label": "Parafering compleet",
-                    "guards": [{ "type": "voorstelStatus", "allowedStatuses": ["geaccordeerd", "aangeboden", "besloten", "archived"] }]
-                },
+                { "fromStatusName": "Ambtelijk advies", "toStatusName": "Parafering", "label": "Start parafering" },
+                { "fromStatusName": "Parafering", "toStatusName": "Gereed voor agendering", "label": "Parafering compleet" },
                 { "fromStatusName": "Gereed voor agendering", "toStatusName": "Geagendeerd", "label": "Agenderen" },
                 { "fromStatusName": "Geagendeerd", "toStatusName": "Vergadering", "label": "Naar vergadering" },
                 {
@@ -100,17 +94,6 @@
                         { "type": "setField", "field": "archiveStatus", "value": "gearchiveerd" }
                     ]
                 }
-            ]
-        },
-        "parafeerroute": {
-            "name": "Collegeadvies standaard - 3 stappen",
-            "proposalType": "collegeadvies",
-            "isDefault": true,
-            "description": "Standaard parafeerketen voor collegeadviezen: beleidsadviseur -> afdelingshoofd -> gemeentesecretaris",
-            "steps": [
-                { "order": 1, "type": "parafering", "actor": "Beleidsadviseur", "actorType": "role", "mandatory": true },
-                { "order": 2, "type": "parafering", "actor": "Afdelingshoofd", "actorType": "role", "mandatory": true },
-                { "order": 3, "type": "parafering", "actor": "Gemeentesecretaris", "actorType": "role", "mandatory": true }
             ]
         }
     }

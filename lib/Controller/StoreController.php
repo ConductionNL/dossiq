@@ -106,7 +106,6 @@ class StoreController extends Controller {
 		'inspectionChecklistTemplate',
 		'automaticAction',
 		'lhsMatrix',
-		'parafeerroute',
 	];
 
 	/**

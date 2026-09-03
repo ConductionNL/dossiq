@@ -6,9 +6,9 @@
  * Seeds the pre-configured bestuurlijke-besluitvorming zaaktype bundles
  * (College-besluit, Raadsbesluit, Mandaatbesluit) into OpenRegister. Each
  * bundle activates a caseType plus its statusType, propertyDefinition,
- * roleType, documentType, resultType, workflowTemplate, and default
- * parafeerroute records. Activation is idempotent — re-running it does not
- * duplicate records (existing caseTypes are detected by identifier).
+ * roleType, documentType, resultType and workflowTemplate records.
+ * Activation is idempotent — re-running it does not duplicate records
+ * (existing caseTypes are detected by identifier).
  *
  * This class is the activation orchestrator only: which slugs exist, which
  * bundle file backs each one, which schemas the write needs, and the
@@ -149,7 +149,7 @@ class BesluitvormingTemplateService {
 		// otherwise fail-closed by OpenRegister RBAC (#1955) on every boot.
 		return $this->runAsSystemIfAvailable(
 			objectService: $objectService,
-			operation: function () use ($objectService, $register, $schemas, $slug, $caseTypeData, $bundle, $identifier): array {
+			operation: function () use ($objectService, $register, $schemas, $slug, $caseTypeData, $identifier): array {
 				// Idempotency: skip if a caseType with this identifier already exists.
 				$existing = $this->seeder->findByIdentifier(
 					objectService: $objectService,
@@ -165,18 +165,12 @@ class BesluitvormingTemplateService {
 					return ['success' => true, 'skipped' => true, 'slug' => $slug];
 				}
 
-				// The default parafeerroute lives either at the bundle top level or
-				// nested under caseType; accept both shapes.
-				$parafeerroute = (array)($bundle['parafeerroute'] ?? ($caseTypeData['parafeerroute'] ?? []));
-				unset($caseTypeData['parafeerroute']);
-
 				return $this->seeder->seedBundle(
 					objectService: $objectService,
 					register: $register,
 					schemas: $schemas,
 					slug: $slug,
 					caseTypeData: $caseTypeData,
-					parafeerroute: $parafeerroute,
 				);
 			}
 		);
@@ -217,9 +211,8 @@ class BesluitvormingTemplateService {
 	 * TRANSITION (TransitionSpecReader::extractActions() is its sole action
 	 * source). An action declared on a step is silently inert: the transition
 	 * succeeds, `dispatchedActions` stays empty and nothing is logged — which
-	 * is exactly how a shipped besluitvormingActivate never armed the
-	 * parafering seam on any fresh install. This makes the no-op loud at
-	 * activation time.
+	 * is exactly how a shipped besluitvormingActivate never armed anything on
+	 * any fresh install. This makes the no-op loud at activation time.
 	 *
 	 * @param array<string, mixed> $bundle The decoded template bundle.
 	 * @param string $slug The template slug (for logging).
@@ -268,7 +261,6 @@ class BesluitvormingTemplateService {
 			'documentType' => $this->settingsService->getConfigValue(key: 'document_type_schema'),
 			'resultType' => $this->settingsService->getConfigValue(key: 'result_type_schema'),
 			'workflowTemplate' => $this->settingsService->getConfigValue(key: 'workflow_template_schema'),
-			'parafeerroute' => $this->settingsService->getConfigValue(key: 'parafeerroute_schema'),
 		];
 	}//end resolveSchemas()
 }//end class

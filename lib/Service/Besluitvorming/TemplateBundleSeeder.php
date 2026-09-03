@@ -6,7 +6,7 @@
  * The OpenRegister write path behind besluitvorming template activation:
  * given a decoded bundle it creates the caseType, its five child collections
  * (statusTypes, roleTypes, propertyDefinitions, documentTypes, resultTypes),
- * the workflowTemplate and the default parafeerroute — tallying what it
+ * and the workflowTemplate — tallying what it
  * created as it goes. It also owns the idempotency probe that decides whether
  * any of that should happen at all.
  *
@@ -70,7 +70,6 @@ class TemplateBundleSeeder {
 	 * @param array<string, string> $schemas Map of schema-key => schema id.
 	 * @param string $slug The template slug.
 	 * @param array<string, mixed> $caseTypeData The caseType payload (with nested arrays).
-	 * @param array<string, mixed> $parafeerroute The default parafeerroute payload.
 	 *
 	 * @return array<string, mixed> Creation counts.
 	 *
@@ -82,7 +81,6 @@ class TemplateBundleSeeder {
 		array $schemas,
 		string $slug,
 		array $caseTypeData,
-		array $parafeerroute,
 	): array {
 		$counts = [
 			'success' => true,
@@ -94,7 +92,6 @@ class TemplateBundleSeeder {
 			'documentTypes' => 0,
 			'resultTypes' => 0,
 			'workflowTemplate' => 0,
-			'parafeerroute' => 0,
 		];
 
 		$split = $this->splitBundle(caseTypeData: $caseTypeData);
@@ -142,15 +139,6 @@ class TemplateBundleSeeder {
 			schemas: $schemas,
 			workflowData: $workflowData,
 			nameMaps: $nameMaps,
-			caseTypeId: $caseTypeId,
-			counts: $counts,
-		);
-
-		$this->seedParafeerroute(
-			objectService: $objectService,
-			register: $register,
-			schemas: $schemas,
-			parafeerroute: $parafeerroute,
 			caseTypeId: $caseTypeId,
 			counts: $counts,
 		);
@@ -407,44 +395,6 @@ class TemplateBundleSeeder {
 			$counts['workflowTemplate']++;
 		}
 	}//end seedWorkflowTemplate()
-
-	/**
-	 * Seed the default parafeerroute for a caseType.
-	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register The register slug.
-	 * @param array<string, string> $schemas Map of schema-key => schema id.
-	 * @param array<string, mixed> $parafeerroute The default parafeerroute payload.
-	 * @param string $caseTypeId The owning caseType id.
-	 * @param array<string, mixed> $counts Counts accumulator (by reference).
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/besluitvorming-workflow/spec.md
-	 */
-	private function seedParafeerroute(
-		object $objectService,
-		string $register,
-		array $schemas,
-		array $parafeerroute,
-		string $caseTypeId,
-		array &$counts,
-	): void {
-		if (empty($parafeerroute) === true || $schemas['parafeerroute'] === '') {
-			return;
-		}
-
-		$parafeerroute['caseType'] = $caseTypeId;
-		$createdRoute = $this->createObject(
-			objectService: $objectService,
-			register: $register,
-			schema: $schemas['parafeerroute'],
-			data: $parafeerroute,
-		);
-		if ($createdRoute !== null) {
-			$counts['parafeerroute']++;
-		}
-	}//end seedParafeerroute()
 
 	/**
 	 * Seed a list of child records linked to a caseType, returning a name->id map.

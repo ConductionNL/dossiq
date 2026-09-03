@@ -8,7 +8,7 @@
  * and parses — see OpenRegister's `Service\Object\SchemaTypeConverter::
  * convertString()`, which does this deliberately for schemas that historically
  * declared `type: string` while storing array/object data. Dossiq's register
- * has fifteen such properties (`case.statusHistory`, `proposal.routeSnapshot`,
+ * declares them on fourteen schemas (`case.statusHistory`,
  * `caseType.referenceProcess`, …): every one of them is written JSON-encoded
  * and read back DECODED.
  *
@@ -85,7 +85,6 @@ class JsonEncodedStringProperties {
 		'mapLayer' => ['style'],
 		'notificationChannel' => ['filters'],
 		'objection' => ['attachments'],
-		'proposal' => ['routeSnapshot'],
 		'resultType' => ['sourceDateArchiveProcedure'],
 		'task' => ['checklist'],
 		'workflowTemplate' => ['nodePositions', 'steps', 'transitions'],

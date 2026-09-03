@@ -66,8 +66,8 @@ export default {
 			// CnObjectSidebar via CnAppRoot's #sidebar slot).
 			objectSidebarState: this.objectSidebarState,
 			// Legacy alias kept for any existing custom components that
-			// inject `sidebarState` (CaseList / TaskList / VoorstelList /
-			// AdminRoot referenced this name in the pre-manifest shell).
+			// inject `sidebarState` (CaseList / TaskList / AdminRoot
+			// referenced this name in the pre-manifest shell).
 			sidebarState: this.objectSidebarState,
 		}
 	},

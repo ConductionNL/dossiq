@@ -11,8 +11,6 @@
 // Recognised kinds: page, modal, widget, form-field, cell-renderer
 //
 // Migration notes:
-// - `voorstelReminder` is a function (row-action handler), not a component.
-//   It cannot be a registry entry and stays in customComponents.js.
 // - The visual workflow editor (`WorkflowEditor.vue`) is not a registry entry
 //   — it is a plain child component mounted by `WorkflowTab.vue` inside the
 //   case-type detail page's "Workflow" tab, not a manifest `type:"custom"`
@@ -83,7 +81,6 @@ import MyWorkView from './views/MyWorkCards.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
-import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
 import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
 import { leafTab } from './integrations/leafTabs.js'
 
@@ -220,13 +217,6 @@ const registry = {
 
 	// --- CMMN adaptive case plan (cmmn-adaptive-case). ---
 	// @spec openspec/specs/cmmn-adaptive-case/spec.md
-
-	// --- Migration cost: deferred to a follow-up. ---
-	VoorstelDetailView: {
-		kind: 'page',
-		component: VoorstelDetailView,
-		_note: 'Parafeerroute multi-step approver flow; complex enough to defer.',
-	},
 
 	// --- Besluitvorming workflow views. ---
 	// The agenda compiler and the vergadering detail view were retired: decidiq
@@ -365,7 +355,7 @@ const registry = {
 	// subjectId back-reference. The wrapper resolves the registered provider's
 	// tab at render time and forwards the case `{ register, schema, objectId }`
 	// context that CnObjectSidebar injects. Retires dossiq's former standalone
-	// Voorstellen/Advies/Agenda nav (those pages stay routable for deep links).
+	// Voorstellen/Advies/Agenda nav.
 	// @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
 	BesluitvormingLeafTab: {
 		kind: 'page',
