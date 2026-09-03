@@ -3484,6 +3484,11 @@
         "Maximum length": "Maximale lengte",
         "Longest value this property accepts.": "De langste waarde die deze eigenschap accepteert.",
         "The status from which this property must be answered.": "De status vanaf wanneer deze eigenschap ingevuld moet zijn.",
-        "Save store settings": "Store-instellingen opslaan"
+        "Save store settings": "Store-instellingen opslaan",
+        "Extra properties this case answers, as decided by its case type. Each entry holds the definition it answers, that definition's name, and the value. Cases of different types carry different entries here, and a case whose type declares none carries an empty array.": "Extra eigenschappen die deze zaak beantwoordt, bepaald door het zaaktype. Elke regel bevat de definitie die beantwoord wordt, de naam van die definitie en de waarde. Zaken van verschillende typen bevatten hier dus verschillende regels, en een zaak waarvan het type er geen declareert bevat een lege lijst.",
+        "Property definition": "Eigenschapdefinitie",
+        "The propertyDefinition this entry answers": "De propertyDefinition die deze regel beantwoordt",
+        "The definition's name, stored beside the value so a case can be read without resolving every definition first": "De naam van de definitie, opgeslagen naast de waarde zodat een zaak gelezen kan worden zonder eerst elke definitie op te halen",
+        "The answer, as text. A non-scalar answer is stored JSON-encoded": "Het antwoord, als tekst. Een niet-scalair antwoord wordt JSON-gecodeerd opgeslagen"
     }
 }

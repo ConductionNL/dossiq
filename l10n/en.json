@@ -3484,7 +3484,12 @@
         "Maximum length": "Maximum length",
         "Longest value this property accepts.": "Longest value this property accepts.",
         "The status from which this property must be answered.": "The status from which this property must be answered.",
-        "Save store settings": "Save store settings"
+        "Save store settings": "Save store settings",
+        "Extra properties this case answers, as decided by its case type. Each entry holds the definition it answers, that definition's name, and the value. Cases of different types carry different entries here, and a case whose type declares none carries an empty array.": "Extra properties this case answers, as decided by its case type. Each entry holds the definition it answers, that definition's name, and the value. Cases of different types carry different entries here, and a case whose type declares none carries an empty array.",
+        "Property definition": "Property definition",
+        "The propertyDefinition this entry answers": "The propertyDefinition this entry answers",
+        "The definition's name, stored beside the value so a case can be read without resolving every definition first": "The definition's name, stored beside the value so a case can be read without resolving every definition first",
+        "The answer, as text. A non-scalar answer is stored JSON-encoded": "The answer, as text. A non-scalar answer is stored JSON-encoded"
     },
     "plurals": ""
 }
