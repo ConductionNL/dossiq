@@ -260,6 +260,90 @@ require_once __DIR__ . '/Unit/Fixtures/FlowTimerEngineFake.php';
 // Guarded by interface_exists() so they no-op under a real Nextcloud runtime.
 require_once __DIR__ . '/Stubs/HttpClientStubs.php';
 
+// ── The REAL flow engine, whenever OpenRegister sits next to this app ─────
+//
+// Everything below this line STUBS OpenRegister so the suite runs on a machine
+// without it. A stub is honest about a node's own arithmetic and useless about
+// the one property heartbeat recovery depends on: what the ENGINE does to a
+// parked node's resume slot between passes, and what it hands back to the node
+// when it re-enters it on a timer. openregister#3362 measured that class — 30
+// of 32 added statements uncovered, because every recovery test mocked the
+// seam it was meant to exercise.
+//
+// So when OpenRegister's source sits beside this app, register it and let every
+// guard below resolve the REAL class. That layout is not hypothetical: the
+// shared PHPUnit job clones openregister to `server/apps/openregister`, beside
+// `server/apps/dossiq`, before it runs this bootstrap.
+//
+// ALL OR NOTHING, deliberately. A run holding the real FlowRunService and a
+// stub FlowSuspension would be a third engine agreeing with neither, and its
+// green would mean less than either.
+//
+// ⚠️ IT MUST GO IN FRONT OF tests/Stubs, AND ADDING A PSR-4 PATH CANNOT DO
+// THAT. composer.json's autoload-dev maps `OCA\OpenRegister\` at tests/Stubs
+// and the generated CLASSMAP names every stub file outright — a classmap hit
+// is answered before PSR-4 is consulted at all, so both `addPsr4` and
+// `setPsr4` leave the stub winning. Only a loader registered AHEAD of
+// Composer's own decides first, which is what `register(true)` does. It knows
+// exactly one prefix and returns nothing for anything else, so every other
+// class still resolves exactly as before, and a class the real app does not
+// have still falls through to its stub.
+// ⚠️ ITS OWN DEPENDENCIES COUNT AS PART OF "PRESENT". The flow engine builds
+// on symfony/workflow, which lives in OpenRegister's vendor and nowhere in
+// this app's. Registering the source without them would produce classes that
+// load and then fail mid-run — the worst of the three states, because it looks
+// like the real engine and behaves like nothing. So an uninstalled sibling
+// counts as absent and the stubs stay.
+//
+// The dependency loader is APPENDED, and OCP / NCU / OCA are filtered out of
+// it. Composer's own generated autoloader PREPENDS itself, which is precisely
+// how a sibling app's older `nextcloud/ocp` has shadowed the running one
+// before (see the multi-pass OCP preload above, which exists for that). Taking
+// only the third-party half, behind this app's own resolution, cannot do that.
+$dossiqOpenRegisterLib = realpath(__DIR__ . '/../../openregister/lib');
+$dossiqOpenRegisterVendor = realpath(__DIR__ . '/../../openregister/vendor/composer');
+if (getenv('DOSSIQ_REAL_FLOW_ENGINE') === '1'
+	&& $dossiqOpenRegisterLib !== false
+	&& $dossiqOpenRegisterVendor !== false
+	&& is_dir($dossiqOpenRegisterLib) === true
+) {
+	$dossiqEngineDeps = new \Composer\Autoload\ClassLoader();
+	$dossiqNotNextcloud = static function (string $name): bool {
+		foreach (['OCP\\', 'NCU\\', 'OCA\\', 'OC\\'] as $reserved) {
+			if (strncmp($name, $reserved, strlen($reserved)) === 0) {
+				return false;
+			}
+		}
+
+		return true;
+	};
+
+	$dossiqEnginePsr4 = @include $dossiqOpenRegisterVendor . '/autoload_psr4.php';
+	if (is_array($dossiqEnginePsr4) === true) {
+		foreach ($dossiqEnginePsr4 as $dossiqPrefix => $dossiqPaths) {
+			if ($dossiqNotNextcloud($dossiqPrefix) === true) {
+				$dossiqEngineDeps->addPsr4($dossiqPrefix, $dossiqPaths);
+			}
+		}
+	}
+
+	$dossiqEngineMap = @include $dossiqOpenRegisterVendor . '/autoload_classmap.php';
+	if (is_array($dossiqEngineMap) === true) {
+		$dossiqEngineDeps->addClassMap(array_filter($dossiqEngineMap, $dossiqNotNextcloud, ARRAY_FILTER_USE_KEY));
+	}
+
+	$dossiqEngineDeps->register(false);
+
+	// The app's own source goes IN FRONT of everything, including the stubs.
+	$dossiqEngineLoader = new \Composer\Autoload\ClassLoader();
+	$dossiqEngineLoader->addPsr4('OCA\\OpenRegister\\', $dossiqOpenRegisterLib . '/');
+	$dossiqEngineLoader->register(true);
+
+	unset($dossiqEngineDeps, $dossiqEngineLoader, $dossiqEnginePsr4, $dossiqEngineMap, $dossiqNotNextcloud, $dossiqPrefix, $dossiqPaths);
+}
+
+unset($dossiqOpenRegisterLib, $dossiqOpenRegisterVendor);
+
 // IMcpToolProvider stub — loaded when the openregister runtime (PR #1466,
 // ai-chat-companion-orchestrator) is absent. DossiqToolProvider implements
 // OCA\OpenRegister\Mcp\IMcpToolProvider; the stub no-ops when the real

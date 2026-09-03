@@ -26,6 +26,7 @@ use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Service\Flow\FlowNodeResumeState;
 use OCA\OpenRegister\Service\Flow\FlowRunContext;
 use OCA\OpenRegister\Service\Flow\FlowSuspension;
+use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -41,8 +42,24 @@ class DossiqAskPersonNodeTest extends TestCase {
 	 */
 	private array $written = [];
 
+	/**
+	 * The task rows the store holds, by id — what a re-entry reads back.
+	 *
+	 * @var array<string, array<string, mixed>>
+	 */
+	private array $stored = [];
+
+	/**
+	 * Set to make every read fail, standing in for an unreachable store.
+	 *
+	 * @var boolean
+	 */
+	private bool $readsFail = false;
+
 	protected function setUp(): void {
 		$this->written = [];
+		$this->stored = [];
+		$this->readsFail = false;
 	}//end setUp()
 
 	/**
@@ -58,16 +75,50 @@ class DossiqAskPersonNodeTest extends TestCase {
 	 * @return DossiqAskPersonNode The node under test.
 	 */
 	private function node(): DossiqAskPersonNode {
-		$objectService = new class($this->written) {
-			public function __construct(private array &$sink) {
+		$objectService = new class($this->written, $this->stored, $this->readsFail) {
+			public function __construct(private array &$sink, private array &$store, private bool &$readsFail) {
 			}
 
 			public function saveObject(array $object, string $register, string $schema): ObjectEntity {
 				$this->sink[] = $object;
+				$uuid = 'task-' . count($this->sink);
 
 				$entity = new ObjectEntity();
-				$entity->setUuid('task-' . count($this->sink));
+				$entity->setUuid($uuid);
 				$entity->setObject($object);
+
+				// A written task is READABLE afterwards, because a real one is.
+				// A fake that took writes and served no reads would have let
+				// the node's re-entry path be "tested" against nothing.
+				$this->store[$uuid] = $object;
+
+				return $entity;
+			}
+
+			/**
+			 * The real signature, so the node's named arguments bind the same
+			 * way they do against ObjectService — and so a MISS raises what a
+			 * miss really raises, rather than returning a tidy null the node
+			 * would read as "the row is gone" for every failure alike.
+			 */
+			public function find(
+				int|string $id,
+				?array $_extend = [],
+				bool $files = false,
+				mixed $register = null,
+				mixed $schema = null
+			): ?ObjectEntity {
+				if ($this->readsFail === true) {
+					throw new \RuntimeException('the store is unreachable');
+				}
+
+				if (isset($this->store[(string)$id]) === false) {
+					throw new DoesNotExistException(sprintf('No task %s', $id));
+				}
+
+				$entity = new ObjectEntity();
+				$entity->setUuid((string)$id);
+				$entity->setObject($this->store[(string)$id]);
 
 				return $entity;
 			}
@@ -252,6 +303,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 	 */
 	public function testAnAnswerIsCarriedOntoTheItems(): void {
 		$resume = new FlowNodeResumeState('ask-indiener', ['taskId' => 'task-1', 'askedAt' => 'now']);
+		$this->stored['task-1'] = ['status' => 'completed', 'case' => 'case-1'];
 
 		$context = array_merge(
 			$this->context($resume),
@@ -262,20 +314,92 @@ class DossiqAskPersonNodeTest extends TestCase {
 
 		self::assertCount(1, $out);
 		self::assertSame('completed', $out[0]['json']['aanvulling']['decision']);
+		self::assertSame('alice', $out[0]['json']['aanvulling']['completedBy'], 'The wake still contributes who answered.');
+		self::assertFalse($out[0]['json']['aanvulling']['recovered'], 'This answer arrived by signal, not by heartbeat.');
 		self::assertSame([], $this->written, 'Answering must not write another task.');
 	}//end testAnAnswerIsCarriedOntoTheItems()
 
 	/**
-	 * A resume with no decision is a NUDGE, not an answer.
+	 * 🔴 THE RECOVERY, WHICH IS THE WHOLE POINT OF THE HEARTBEAT.
+	 *
+	 * A completion whose signal was refused or lost leaves the run parked with
+	 * NOTHING in `context.signal`. The node used to read only that slot, so
+	 * every wake re-suspended and `resume_at` rolled forever over a task that
+	 * had been answered. Reading the task is what turns the timer into a
+	 * delivery.
 	 */
-	public function testAResumeWithNoDecisionSuspendsAgain(): void {
+	public function testAHeartbeatDeliversAnAnswerWhoseSignalNeverArrived(): void {
 		$resume = new FlowNodeResumeState('ask-indiener', ['taskId' => 'task-1', 'askedAt' => 'now']);
+		$this->stored['task-1'] = ['status' => 'completed', 'case' => 'case-1', 'completedDate' => '2026-09-03T10:00:00+00:00'];
 
-		$context = array_merge($this->context($resume), ['signal' => ['note' => 'just poking']]);
+		$out = $this->node()->execute(
+			$this->items(),
+			array_merge($this->config(), ['signalKey' => 'aanvulling']),
+			$this->context($resume)
+		);
+
+		self::assertSame('completed', $out[0]['json']['aanvulling']['decision']);
+		self::assertTrue($out[0]['json']['aanvulling']['recovered'], 'A run that advanced without its wake must say so.');
+		self::assertSame('task-1', $out[0]['json']['aanvulling']['taskId']);
+		self::assertSame([], $this->written, 'Recovery must never create a task.');
+	}//end testAHeartbeatDeliversAnAnswerWhoseSignalNeverArrived()
+
+	/**
+	 * A signal is a WAKE, not an answer: the task decides.
+	 *
+	 * `context.signal` is one slot per RUN, so a flow with two asks would have
+	 * the second read the answer given to the first. Reading the row removes
+	 * the race instead of guarding it.
+	 */
+	public function testASignalCannotAnswerForATaskThatIsStillOpen(): void {
+		$resume = new FlowNodeResumeState('ask-indiener', ['taskId' => 'task-1', 'askedAt' => 'now']);
+		$this->stored['task-1'] = ['status' => 'available', 'case' => 'case-1'];
+
+		$context = array_merge($this->context($resume), ['signal' => ['decision' => 'completed']]);
 
 		$this->expectException(FlowSuspension::class);
 		$this->node()->execute($this->items(), $this->config(), $context);
-	}//end testAResumeWithNoDecisionSuspendsAgain()
+	}//end testASignalCannotAnswerForATaskThatIsStillOpen()
+
+	/**
+	 * A withdrawn ask is not an answer, and it is not a wait either.
+	 *
+	 * Carrying on would move the case past a question nobody answered;
+	 * suspending would wait for one that can never come.
+	 */
+	public function testATerminatedTaskFailsTheStepRatherThanInventingAnAnswer(): void {
+		$resume = new FlowNodeResumeState('ask-indiener', ['taskId' => 'task-1', 'askedAt' => 'now']);
+		$this->stored['task-1'] = ['status' => 'terminated', 'case' => 'case-1'];
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessageMatches('/never be answered/');
+		$this->node()->execute($this->items(), $this->config(), $this->context($resume));
+	}//end testATerminatedTaskFailsTheStepRatherThanInventingAnAnswer()
+
+	/**
+	 * The row this run was waiting on is gone: waiting further waits forever.
+	 */
+	public function testATaskThatNoLongerExistsFailsTheStep(): void {
+		$resume = new FlowNodeResumeState('ask-indiener', ['taskId' => 'task-gone', 'askedAt' => 'now']);
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessageMatches('/no longer exists/');
+		$this->node()->execute($this->items(), $this->config(), $this->context($resume));
+	}//end testATaskThatNoLongerExistsFailsTheStep()
+
+	/**
+	 * An unreachable store is NOT a missing task. Concluding "gone" from a
+	 * hiccup would fail a case whose task is sitting there answered, so the
+	 * node buys one more heartbeat instead.
+	 */
+	public function testAnUnreadableStoreParksAgainInsteadOfFailing(): void {
+		$resume = new FlowNodeResumeState('ask-indiener', ['taskId' => 'task-1', 'askedAt' => 'now']);
+		$this->stored['task-1'] = ['status' => 'completed', 'case' => 'case-1'];
+		$this->readsFail = true;
+
+		$this->expectException(FlowSuspension::class);
+		$this->node()->execute($this->items(), $this->config(), $this->context($resume));
+	}//end testAnUnreadableStoreParksAgainInsteadOfFailing()
 
 	/**
 	 * 🔴 An unassigned question would be answerable by ANYONE, because
