@@ -24,6 +24,7 @@ use OCA\Dossiq\Flow\DossiqAskPersonNode;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Service\Flow\FlowNodeResumeState;
+use OCA\OpenRegister\Service\Flow\FlowResumeState;
 use OCA\OpenRegister\Service\Flow\FlowRunContext;
 use OCA\OpenRegister\Service\Flow\FlowSuspension;
 use OCP\AppFramework\Db\DoesNotExistException;
@@ -172,8 +173,32 @@ class DossiqAskPersonNodeTest extends TestCase {
 		];
 	}//end context()
 
+	/**
+	 * One node's resume slot, built the way the ENGINE builds it.
+	 *
+	 * A `FlowNodeResumeState` is not constructible on its own: it is a scoped
+	 * VIEW onto the run-level `FlowResumeState`, and its real constructor takes
+	 * that parent plus the node id. Tests here used to call
+	 * `new FlowNodeResumeState('ask-indiener', [...])` — a two-argument shape
+	 * the real class has never had — so 21 of them fataled against a real
+	 * OpenRegister while passing against the stub.
+	 *
+	 * @param string               $nodeId The node the slot belongs to.
+	 * @param array<string, mixed> $values What the slot already holds.
+	 *
+	 * @return FlowNodeResumeState The scoped handle the engine would hand the node.
+	 */
+	private static function resumeSlot(string $nodeId, array $values = []): FlowNodeResumeState {
+		$slots = [];
+		if ($values !== []) {
+			$slots[$nodeId] = $values;
+		}
+
+		return (new FlowResumeState($slots))->forNode($nodeId);
+	}//end resumeSlot()
+
 	public function testItCreatesTheTaskAndSuspends(): void {
-		$resume = new FlowNodeResumeState('ask-indiener');
+		$resume = self::resumeSlot('ask-indiener');
 
 		try {
 			$this->node()->execute($this->items(), $this->config(), $this->context($resume));
@@ -200,7 +225,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 	 * carrying the entity's uuid so the completed task can wake the run.
 	 */
 	public function testTheSavedTaskIsIdentifiedByItsEntityUuid(): void {
-		$resume = new FlowNodeResumeState('ask-indiener');
+		$resume = self::resumeSlot('ask-indiener');
 
 		try {
 			$this->node()->execute($this->items(), $this->config(), $this->context($resume));
@@ -230,7 +255,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 	 * compared real uids against the placeholder text and refused all of them.
 	 */
 	public function testATemplatedAssigneeIsRenderedAgainstTheCase(): void {
-		$resume = new FlowNodeResumeState('ask-indiener');
+		$resume = self::resumeSlot('ask-indiener');
 		$items = [['json' => ['id' => 'case-1', 'title' => 'Dakkapel', 'assignee' => 'alice']]];
 		$config = array_merge($this->config(), ['assignee' => '{{ case.assignee }}']);
 
@@ -251,7 +276,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 	 * OpenRegister's resume guard treats silence as "no restriction".
 	 */
 	public function testAnAssigneeTemplateThatResolvesToNothingRefuses(): void {
-		$resume = new FlowNodeResumeState('ask-indiener');
+		$resume = self::resumeSlot('ask-indiener');
 		$config = array_merge($this->config(), ['assignee' => '{{ case.assignee }}']);
 
 		$this->expectException(RuntimeException::class);
@@ -268,7 +293,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 	 * 🔑 The task names the run AND the node — both are needed to resume.
 	 */
 	public function testTheTaskCarriesTheRunAndTheNodeThatAskedIt(): void {
-		$resume = new FlowNodeResumeState('ask-indiener');
+		$resume = self::resumeSlot('ask-indiener');
 
 		try {
 			$this->node()->execute($this->items(), $this->config(), $this->context($resume));
@@ -284,7 +309,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 	 * 🔴 THE HEARTBEAT MUST NOT CREATE A SECOND TASK.
 	 */
 	public function testAHeartbeatDoesNotCreateAnotherTask(): void {
-		$resume = new FlowNodeResumeState('ask-indiener');
+		$resume = self::resumeSlot('ask-indiener');
 		$node = $this->node();
 
 		foreach ([1, 2, 3] as $ignored) {
@@ -302,7 +327,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 	 * An answer passes through and lands on every item.
 	 */
 	public function testAnAnswerIsCarriedOntoTheItems(): void {
-		$resume = new FlowNodeResumeState('ask-indiener', ['taskId' => 'task-1', 'askedAt' => 'now']);
+		$resume = self::resumeSlot('ask-indiener', ['taskId' => 'task-1', 'askedAt' => 'now']);
 		$this->stored['task-1'] = ['status' => 'completed', 'case' => 'case-1'];
 
 		$context = array_merge(
@@ -329,7 +354,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 	 * delivery.
 	 */
 	public function testAHeartbeatDeliversAnAnswerWhoseSignalNeverArrived(): void {
-		$resume = new FlowNodeResumeState('ask-indiener', ['taskId' => 'task-1', 'askedAt' => 'now']);
+		$resume = self::resumeSlot('ask-indiener', ['taskId' => 'task-1', 'askedAt' => 'now']);
 		$this->stored['task-1'] = ['status' => 'completed', 'case' => 'case-1', 'completedDate' => '2026-09-03T10:00:00+00:00'];
 
 		$out = $this->node()->execute(
@@ -352,7 +377,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 	 * the race instead of guarding it.
 	 */
 	public function testASignalCannotAnswerForATaskThatIsStillOpen(): void {
-		$resume = new FlowNodeResumeState('ask-indiener', ['taskId' => 'task-1', 'askedAt' => 'now']);
+		$resume = self::resumeSlot('ask-indiener', ['taskId' => 'task-1', 'askedAt' => 'now']);
 		$this->stored['task-1'] = ['status' => 'available', 'case' => 'case-1'];
 
 		$context = array_merge($this->context($resume), ['signal' => ['decision' => 'completed']]);
@@ -368,7 +393,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 	 * suspending would wait for one that can never come.
 	 */
 	public function testATerminatedTaskFailsTheStepRatherThanInventingAnAnswer(): void {
-		$resume = new FlowNodeResumeState('ask-indiener', ['taskId' => 'task-1', 'askedAt' => 'now']);
+		$resume = self::resumeSlot('ask-indiener', ['taskId' => 'task-1', 'askedAt' => 'now']);
 		$this->stored['task-1'] = ['status' => 'terminated', 'case' => 'case-1'];
 
 		$this->expectException(RuntimeException::class);
@@ -380,7 +405,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 	 * The row this run was waiting on is gone: waiting further waits forever.
 	 */
 	public function testATaskThatNoLongerExistsFailsTheStep(): void {
-		$resume = new FlowNodeResumeState('ask-indiener', ['taskId' => 'task-gone', 'askedAt' => 'now']);
+		$resume = self::resumeSlot('ask-indiener', ['taskId' => 'task-gone', 'askedAt' => 'now']);
 
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessageMatches('/no longer exists/');
@@ -393,7 +418,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 	 * node buys one more heartbeat instead.
 	 */
 	public function testAnUnreadableStoreParksAgainInsteadOfFailing(): void {
-		$resume = new FlowNodeResumeState('ask-indiener', ['taskId' => 'task-1', 'askedAt' => 'now']);
+		$resume = self::resumeSlot('ask-indiener', ['taskId' => 'task-1', 'askedAt' => 'now']);
 		$this->stored['task-1'] = ['status' => 'completed', 'case' => 'case-1'];
 		$this->readsFail = true;
 
@@ -430,7 +455,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 	public function testWithNoCaseItRefuses(): void {
 		$this->expectException(RuntimeException::class);
 
-		$this->node()->execute([['json' => []]], $this->config(), $this->context(new FlowNodeResumeState('n')));
+		$this->node()->execute([['json' => []]], $this->config(), $this->context(self::resumeSlot('n')));
 	}//end testWithNoCaseItRefuses()
 
 	/**
@@ -473,7 +498,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 	 * would recreate the orphaned-task bug for the other shape.
 	 */
 	public function testALegacyArraySaveResultStillIdentifiesTheTask(): void {
-		$resume = new FlowNodeResumeState('ask-indiener');
+		$resume = self::resumeSlot('ask-indiener');
 		$node = $this->nodeReturning(['id' => 'legacy-task-7']);
 
 		try {
@@ -493,7 +518,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$entity = new ObjectEntity();
 		$entity->setObject(['id' => 'serialised-task-9', 'title' => 'x']);
 
-		$resume = new FlowNodeResumeState('ask-indiener');
+		$resume = self::resumeSlot('ask-indiener');
 		$node = $this->nodeReturning($entity);
 
 		try {
@@ -510,7 +535,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 	 * empty resume slot, so the next heartbeat would write a duplicate.
 	 */
 	public function testAResultNamingNoIdRefuses(): void {
-		$resume = new FlowNodeResumeState('ask-indiener');
+		$resume = self::resumeSlot('ask-indiener');
 		$node = $this->nodeReturning('not-a-result-shape');
 
 		$this->expectException(RuntimeException::class);

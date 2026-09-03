@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Flow;
 use OCA\Dossiq\Flow\DossiqRequestDecisionNode;
 use OCA\Dossiq\Service\ContractDecisionDelegationService;
 use OCA\OpenRegister\Service\Flow\FlowNodeResumeState;
+use OCA\OpenRegister\Service\Flow\FlowResumeState;
 use OCA\OpenRegister\Service\Flow\FlowSuspension;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
@@ -96,8 +97,32 @@ class DossiqRequestDecisionNodeTest extends TestCase {
 		return ['question' => 'Toets aan register B'];
 	}//end config()
 
+	/**
+	 * One node's resume slot, built the way the ENGINE builds it.
+	 *
+	 * A `FlowNodeResumeState` is not constructible on its own: it is a scoped
+	 * VIEW onto the run-level `FlowResumeState`, and its real constructor takes
+	 * that parent plus the node id. Tests here used to call
+	 * `new FlowNodeResumeState('ask-indiener', [...])` — a two-argument shape
+	 * the real class has never had — so 21 of them fataled against a real
+	 * OpenRegister while passing against the stub.
+	 *
+	 * @param string               $nodeId The node the slot belongs to.
+	 * @param array<string, mixed> $values What the slot already holds.
+	 *
+	 * @return FlowNodeResumeState The scoped handle the engine would hand the node.
+	 */
+	private static function resumeSlot(string $nodeId, array $values = []): FlowNodeResumeState {
+		$slots = [];
+		if ($values !== []) {
+			$slots[$nodeId] = $values;
+		}
+
+		return (new FlowResumeState($slots))->forNode($nodeId);
+	}//end resumeSlot()
+
 	public function testItRaisesTheDecisionAndSuspends(): void {
-		$resume = new FlowNodeResumeState('decide-register-b');
+		$resume = self::resumeSlot('decide-register-b');
 
 		try {
 			$this->node()->execute($this->items(), $this->config(), [FlowNodeResumeState::CONTEXT_KEY => $resume]);
@@ -122,7 +147,7 @@ class DossiqRequestDecisionNodeTest extends TestCase {
 	 * 🔴 A heartbeat must not raise a SECOND decision.
 	 */
 	public function testAHeartbeatDoesNotRaiseTheDecisionAgain(): void {
-		$resume = new FlowNodeResumeState('decide-register-b');
+		$resume = self::resumeSlot('decide-register-b');
 		$node = $this->node();
 
 		foreach ([1, 2, 3] as $ignored) {
@@ -144,7 +169,7 @@ class DossiqRequestDecisionNodeTest extends TestCase {
 	 * patience and is really a case that can never advance.
 	 */
 	public function testAnUnavailableDecisionServiceFailsTheStep(): void {
-		$resume = new FlowNodeResumeState('decide-register-b');
+		$resume = self::resumeSlot('decide-register-b');
 
 		try {
 			$this->node(ref: null)->execute(
@@ -169,12 +194,12 @@ class DossiqRequestDecisionNodeTest extends TestCase {
 		$this->node(ref: '  ')->execute(
 			$this->items(),
 			$this->config(),
-			[FlowNodeResumeState::CONTEXT_KEY => new FlowNodeResumeState('n')]
+			[FlowNodeResumeState::CONTEXT_KEY => self::resumeSlot('n')]
 		);
 	}//end testARaiseWithoutAReferenceFails()
 
 	public function testTheOutcomeIsCarriedOntoTheItems(): void {
-		$resume = new FlowNodeResumeState('decide-register-b', ['decisionRef' => 'decision-1', 'askedAt' => 'now']);
+		$resume = self::resumeSlot('decide-register-b', ['decisionRef' => 'decision-1', 'askedAt' => 'now']);
 
 		$out = $this->node()->execute(
 			$this->items(),
