@@ -15,7 +15,6 @@
         "internalOrExternal": "intern",
         "isDraft": false,
         "confidentiality": "intern",
-        "mandateGuard": true,
         "statusTypes": [
             { "name": "Voorstel opstellen", "order": 1, "isFinal": false, "description": "Steller stelt het DT-advies op" },
             { "name": "Ambtelijk advies", "order": 2, "isFinal": false, "description": "Inhoudelijk advies" },
