@@ -197,11 +197,97 @@ final class KpiAggregationServiceTest extends TestCase {
 	}
 
 	/**
+	 * A failing count reports 0 for that metric and lets the rest through.
+	 *
+	 * This is the path the old implementation lived on permanently: every query
+	 * threw and every catch returned 0. Reporting 0 is still the only sane answer
+	 * for a single metric, but it must not take the whole payload down with it,
+	 * and it is logged at WARNING now rather than debug.
+	 *
+	 * @return void
+	 */
+	public function testAFailingCountReportsZeroWithoutLosingTheRest(): void {
+		$kpis = $this->service(objectService: $this->objectService(countThrows: true))->computeKpis('admin');
+
+		$this->assertSame(0, $kpis['openCount'], 'a count that throws reports 0 for its own metric.');
+		$this->assertSame(
+			3,
+			$kpis['completedCount'],
+			'the metrics that fold ROWS are unaffected by a failing count.'
+		);
+	}
+
+	/**
+	 * A failing read reports an empty set rather than a partial one.
+	 *
+	 * @return void
+	 */
+	public function testAFailingReadReportsAnEmptySet(): void {
+		$kpis = $this->service(objectService: $this->objectService(findAllThrows: true))->computeKpis('admin');
+
+		$this->assertSame([], $kpis['statusBreakdown']);
+		$this->assertSame(0, $kpis['completedCount']);
+		$this->assertNull($kpis['avgProcessingDays']);
+		$this->assertSame(16, $kpis['openCount'], 'counts still answer when the reads fail.');
+	}
+
+	/**
+	 * With OpenRegister absent nothing is attempted and the empty shape comes
+	 * back, rather than an error about a class the operator never mentioned.
+	 *
+	 * @return void
+	 */
+	public function testOpenRegisterAbsentYieldsTheEmptyShape(): void {
+		$kpis = $this->service(openRegisterInstalled: false)->computeKpis('admin');
+
+		$this->assertSame(0, $kpis['openCount']);
+		$this->assertSame(0, $kpis['taskCount']);
+		$this->assertSame([], $kpis['typeBreakdown']);
+		$this->assertNull($kpis['slaCompliance']);
+	}
+
+	/**
+	 * Rows arriving as entities rather than arrays are read through whichever
+	 * accessor they expose.
+	 *
+	 * @return void
+	 */
+	public function testEntityRowsAreReadThroughTheirAccessors(): void {
+		$kpis = $this->service(objectService: $this->objectService(asEntities: true))->computeKpis('admin');
+
+		$this->assertSame(3, $kpis['completedCount'], 'entity rows fold the same as array rows.');
+		$this->assertSame(12.0, $kpis['avgProcessingDays']);
+	}
+
+	/**
+	 * A case whose dates cannot be read is left out of the average instead of
+	 * counting as zero days.
+	 *
+	 * @return void
+	 */
+	public function testUnreadableDatesAreExcludedFromTheAverage(): void {
+		$closed = [
+			['startDate' => '2026-09-01', 'endDate' => '2026-09-11', 'deadline' => '2026-09-30'],
+			['startDate' => 'not-a-date', 'endDate' => 'also-not-a-date'],
+			['endDate' => '2026-09-05'],
+		];
+
+		$kpis = $this->service(closedCases: $closed)->computeKpis('admin');
+
+		$this->assertSame(
+			10.0,
+			$kpis['avgProcessingDays'],
+			'only the one readable pair counts, so the mean is its own duration.'
+		);
+	}
+
+	/**
 	 * Build the service against a fake ObjectService.
 	 *
 	 * @param object|null $objectService A prepared fake, or null to build one.
 	 * @param array|null $closedCases Override the cases closed this month.
 	 * @param boolean $configured Whether the register ids are set.
+	 * @param boolean $openRegisterInstalled Whether OpenRegister is present.
 	 *
 	 * @return KpiAggregationService The service under test.
 	 */
@@ -209,6 +295,7 @@ final class KpiAggregationServiceTest extends TestCase {
 		?object $objectService = null,
 		?array $closedCases = null,
 		bool $configured = true,
+		bool $openRegisterInstalled = true,
 	): KpiAggregationService {
 		$objectService = ($objectService ?? $this->objectService(closedCases: $closedCases));
 
@@ -229,7 +316,7 @@ final class KpiAggregationServiceTest extends TestCase {
 		);
 
 		$appManager = $this->createMock(IAppManager::class);
-		$appManager->method('isInstalled')->willReturn(true);
+		$appManager->method('isInstalled')->willReturn($openRegisterInstalled);
 
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturn($objectService);
@@ -243,10 +330,18 @@ final class KpiAggregationServiceTest extends TestCase {
 	 * and that `findAll()` overwrites that context.
 	 *
 	 * @param array|null $closedCases Override the cases closed this month.
+	 * @param boolean $countThrows Make every count() raise, as the old SQL did.
+	 * @param boolean $findAllThrows Make every findAll() raise.
+	 * @param boolean $asEntities Return rows as entities rather than arrays.
 	 *
 	 * @return object The fake.
 	 */
-	private function objectService(?array $closedCases = null): object {
+	private function objectService(
+		?array $closedCases = null,
+		bool $countThrows = false,
+		bool $findAllThrows = false,
+		bool $asEntities = false,
+	): object {
 		$closed = ($closedCases ?? [
 			['startDate' => '2026-09-01', 'endDate' => '2026-09-11', 'deadline' => '2026-09-12'],
 			['startDate' => '2026-09-01', 'endDate' => '2026-09-21', 'deadline' => '2026-09-30'],
@@ -259,7 +354,7 @@ final class KpiAggregationServiceTest extends TestCase {
 			['status' => 'in-behandeling', 'caseType' => 'subsidieaanvraag'],
 		];
 
-		return new class($closed, $open, $this->today) {
+		return new class($closed, $open, $this->today, $countThrows, $findAllThrows, $asEntities) {
 			/**
 			 * How many times findAll ran, so a test can prove the ordering it claims.
 			 *
@@ -286,7 +381,14 @@ final class KpiAggregationServiceTest extends TestCase {
 			 * @param array $open The open cases.
 			 * @param string $today Today, as Y-m-d.
 			 */
-			public function __construct(private array $closed, private array $open, private string $today) {
+			public function __construct(
+				private array $closed,
+				private array $open,
+				private string $today,
+				private bool $countThrows = false,
+				private bool $findAllThrows = false,
+				private bool $asEntities = false,
+			) {
 			}
 
 			/**
@@ -319,6 +421,10 @@ final class KpiAggregationServiceTest extends TestCase {
 			 * @return int The count.
 			 */
 			public function count(array $config = []): int {
+				if ($this->countThrows === true) {
+					throw new \RuntimeException('SQLSTATE[42883]: undefined function');
+				}
+
 				$f = ($config['filters'] ?? []);
 
 				if ($this->schema === '172') {
@@ -353,16 +459,64 @@ final class KpiAggregationServiceTest extends TestCase {
 			 * @return array The results envelope.
 			 */
 			public function findAll(array $config = []): array {
+				if ($this->findAllThrows === true) {
+					throw new \RuntimeException('SQLSTATE[42883]: undefined function');
+				}
+
 				$this->findAllCalls++;
 				$f = ($config['filters'] ?? []);
 				$this->register = (string)($f['register'] ?? '');
 				$this->schema = (string)($f['schema'] ?? '');
 
+				$rows = $this->open;
 				if (isset($f['endDate']) === true) {
-					return ['results' => $this->closed];
+					$rows = $this->closed;
 				}
 
-				return ['results' => $this->open];
+				if ($this->asEntities === true) {
+					$i = 0;
+					$rows = array_map(
+						static function (array $row) use (&$i): object {
+							$i++;
+							// Alternate the two accessors OpenRegister entities
+							// expose, so both branches of toArray() are exercised.
+							if (($i % 2) === 0) {
+								return new class($row) {
+									/**
+									 * @param array $row The row data.
+									 */
+									public function __construct(private array $row) {
+									}
+
+									/**
+									 * @return array The object data.
+									 */
+									public function getObject(): array {
+										return $this->row;
+									}
+								};
+							}
+
+							return new class($row) {
+								/**
+								 * @param array $row The row data.
+								 */
+								public function __construct(private array $row) {
+								}
+
+								/**
+								 * @return array The object data.
+								 */
+								public function jsonSerialize(): array {
+									return $this->row;
+								}
+							};
+						},
+						$rows
+					);
+				}
+
+				return ['results' => $rows];
 			}
 		};
 	}
