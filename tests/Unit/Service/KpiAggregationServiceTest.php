@@ -333,6 +333,23 @@ final class KpiAggregationServiceTest extends TestCase {
 	}
 
 	/**
+	 * A results envelope that is not a list folds to nothing.
+	 *
+	 * OpenRegister returns either a bare list or a `{results: [...]}` envelope,
+	 * and this service accepts both. Anything else is unusable, and reporting an
+	 * empty metric is better than iterating a scalar.
+	 *
+	 * @return void
+	 */
+	public function testAMalformedResultsEnvelopeFoldsToNothing(): void {
+		$kpis = $this->service(objectService: $this->objectService(malformedEnvelope: true))->computeKpis('admin');
+
+		$this->assertSame([], $kpis['statusBreakdown']);
+		$this->assertSame(0, $kpis['completedCount']);
+		$this->assertNull($kpis['avgProcessingDays']);
+	}
+
+	/**
 	 * Build the service against a fake ObjectService.
 	 *
 	 * @param object|null $objectService A prepared fake, or null to build one.
@@ -392,6 +409,7 @@ final class KpiAggregationServiceTest extends TestCase {
 	 * @param boolean $asEntities Return rows as entities rather than arrays.
 	 * @param boolean $unreadableRows Return rows with no readable accessor.
 	 * @param array|null $openRows Override the open cases.
+	 * @param boolean $malformedEnvelope Return an envelope whose results is not a list.
 	 *
 	 * @return object The fake.
 	 */
@@ -402,6 +420,7 @@ final class KpiAggregationServiceTest extends TestCase {
 		bool $asEntities = false,
 		bool $unreadableRows = false,
 		?array $openRows = null,
+		bool $malformedEnvelope = false,
 	): object {
 		$closed = ($closedCases ?? [
 			['startDate' => '2026-09-01', 'endDate' => '2026-09-11', 'deadline' => '2026-09-12'],
@@ -415,7 +434,7 @@ final class KpiAggregationServiceTest extends TestCase {
 			['status' => 'in-behandeling', 'caseType' => 'subsidieaanvraag'],
 		]);
 
-		return new class($closed, $open, $this->today, $countThrows, $findAllThrows, $asEntities, $unreadableRows) {
+		return new class($closed, $open, $this->today, $countThrows, $findAllThrows, $asEntities, $unreadableRows, $malformedEnvelope) {
 			/**
 			 * How many times findAll ran, so a test can prove the ordering it claims.
 			 *
@@ -450,6 +469,7 @@ final class KpiAggregationServiceTest extends TestCase {
 				private bool $findAllThrows = false,
 				private bool $asEntities = false,
 				private bool $unreadableRows = false,
+				private bool $malformedEnvelope = false,
 			) {
 			}
 
@@ -533,6 +553,10 @@ final class KpiAggregationServiceTest extends TestCase {
 				$rows = $this->open;
 				if (isset($f['endDate']) === true) {
 					$rows = $this->closed;
+				}
+
+				if ($this->malformedEnvelope === true) {
+					return ['results' => 'not-a-list'];
 				}
 
 				if ($this->unreadableRows === true) {
