@@ -86,12 +86,31 @@ class DemoDataServiceTest extends TestCase {
 	/**
 	 * A stand-in for OpenRegister's importer that records how it was called.
 	 *
+	 * 🔴 IT ANSWERS IN THE IMPORTER'S REAL SHAPE, AND THAT IS THE POINT. The
+	 * first version of this fake returned `registers` and `schemas` and NO
+	 * `objects` key at all, while the assertion below expected five objects.
+	 * A fake written from the call site encodes the caller's bug: the only
+	 * reason those two agreed is that the service was reading its object count
+	 * out of the FILE. `ImportHandler::importFromJson()` returns
+	 * `objects: array<ObjectEntity>` — what it created or updated — alongside
+	 * `skipped: array{objects: int, ...}` — what it refused.
+	 *
+	 * @param integer $landed  Objects the importer says it created or updated.
+	 * @param integer $refused Objects the importer says it refused.
+	 *
 	 * @return object The fake.
 	 */
-	private function importerSpy(): object {
-		return new class {
+	private function importerSpy(int $landed = 2, int $refused = 0): object {
+		return new class($landed, $refused) {
 			/** @var array<string, mixed> */
 			public array $seen = [];
+
+			/**
+			 * @param integer $landed  Objects created or updated.
+			 * @param integer $refused Objects refused.
+			 */
+			public function __construct(private readonly int $landed, private readonly int $refused) {
+			}
 
 			/**
 			 * @param string               $appId   Config identity.
@@ -103,21 +122,124 @@ class DemoDataServiceTest extends TestCase {
 			 */
 			public function importFromApp(string $appId, array $data, string $version, bool $force): array {
 				$this->seen = ['appId' => $appId, 'version' => $version, 'force' => $force];
-				return ['registers' => ['dossiq'], 'schemas' => ['Thing']];
+				return [
+					'registers' => ['dossiq'],
+					'schemas'   => ['Thing'],
+					'objects'   => array_fill(0, $this->landed, 'entity'),
+					'skipped'   => ['registers' => 0, 'schemas' => 0, 'objects' => $this->refused],
+				];
 			}
 		};
 	}
 
 	public function testItImportsTheDescriptorAndReportsTheCounts(): void {
 		$this->shipDescriptor(objects: 5);
-		$spy = $this->importerSpy();
+		$spy = $this->importerSpy(landed: 5);
 		$this->container->method('get')->willReturn($spy);
 
 		$result = $this->service->install();
 
 		$this->assertSame(5, $result['objects']);
+		$this->assertSame(5, $result['requested']);
+		$this->assertSame(0, $result['refused']);
 		$this->assertSame(1, $result['registers']);
 		$this->assertSame(1, $result['schemas']);
+	}
+
+	/**
+	 * 🔴 THE COUNT IS WHAT LANDED, NOT WHAT WAS ASKED FOR.
+	 *
+	 * `install()` used to count `components.objects` in the shipped file and
+	 * report that number as the import's result, with a comment saying the
+	 * number reported is "the number ASKED FOR". So a descriptor carrying 456
+	 * objects reported "456 objects" whether the importer stored 456, 3 or
+	 * none — and the ten undeclared demo keys of #1782 were stripped on the
+	 * way in under exactly that green message. The ask and the landing are two
+	 * different numbers and the service must report both.
+	 */
+	public function testTheObjectCountComesFromTheImporterNotFromTheFile(): void {
+		$this->shipDescriptor(objects: 9);
+		// The file asks for nine; the importer says it stored three and refused two.
+		$this->container->method('get')->willReturn($this->importerSpy(landed: 3, refused: 2));
+
+		$result = $this->service->install();
+
+		$this->assertSame(3, $result['objects'], 'the count must be the importer\'s reply, not the file\'s length');
+		$this->assertSame(9, $result['requested']);
+		$this->assertSame(2, $result['refused'], 'a refusal is a real outcome and must be counted');
+	}
+
+	/**
+	 * 🔴 AN IMPORT THAT STORES NOTHING IS NOT A SUCCESS.
+	 *
+	 * Same shape as the seed steps of #1767 and #1769: a step that touched
+	 * nothing reported `success: true` with every counter at zero, was recorded
+	 * as done, and was never offered again. With the count read from the file
+	 * this state was unreachable — zero landed still printed the file's length
+	 * — so there was nothing for a caller to test against.
+	 */
+	public function testAnImportThatStoresNothingThrowsRatherThanReportingSuccess(): void {
+		$this->shipDescriptor(objects: 4);
+		$this->container->method('get')->willReturn($this->importerSpy(landed: 0));
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessageMatches('/0 of 4/');
+		$this->service->install();
+	}
+
+	/**
+	 * The refusal count is what tells an operator WHY nothing landed, so it has
+	 * to survive into the message rather than being folded into a bare zero.
+	 */
+	public function testWhenEveryObjectIsRefusedTheMessageSaysSo(): void {
+		$this->shipDescriptor(objects: 4);
+		$this->container->method('get')->willReturn($this->importerSpy(landed: 0, refused: 4));
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessageMatches('/4 refused/');
+		$this->service->install();
+	}
+
+	/**
+	 * An importer that answers without an `objects` key has told us nothing
+	 * about objects. Reading that absence as "zero landed" is right; reading it
+	 * as "as many as the file asked for" is the defect.
+	 */
+	public function testAnImporterReplyWithNoObjectsKeyCountsAsNothingLanded(): void {
+		$this->shipDescriptor(objects: 3);
+		$mute = new class {
+			/**
+			 * @param string               $appId   Config identity.
+			 * @param array<string, mixed> $data    Descriptor.
+			 * @param string               $version App version.
+			 * @param boolean              $force   Whether the version gate is bypassed.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function importFromApp(string $appId, array $data, string $version, bool $force): array {
+				return ['registers' => ['dossiq'], 'schemas' => ['Thing']];
+			}
+		};
+		$this->container->method('get')->willReturn($mute);
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessageMatches('/0 of 3/');
+		$this->service->install();
+	}
+
+	/**
+	 * A descriptor with no objects at all is a different condition from an
+	 * import that lost them, and must not be turned into a failure: registers
+	 * and schemas are a legitimate thing to ship on their own.
+	 */
+	public function testADescriptorThatShipsNoObjectsIsNotTreatedAsALostImport(): void {
+		$this->shipDescriptor(objects: 0);
+		$this->container->method('get')->willReturn($this->importerSpy(landed: 0));
+
+		$result = $this->service->install();
+
+		$this->assertSame(0, $result['objects']);
+		$this->assertSame(0, $result['requested']);
 	}
 
 	/**

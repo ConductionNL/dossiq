@@ -105,9 +105,20 @@ class DemoDataService {
 	 * outcome to an operator who just asked for this, so "nothing happened"
 	 * must not be presentable as success.
 	 *
-	 * @return array{objects: integer, registers: integer, schemas: integer} What was imported.
+	 * 🔴 AND THE COUNT IS WHAT LANDED, NOT WHAT WAS ASKED FOR. This method used
+	 * to count `components.objects` in the shipped file and report that as the
+	 * result, with a comment saying the number reported is "the number ASKED
+	 * FOR". The ask is not an outcome: a descriptor of 456 objects reported
+	 * "456 objects" whether the importer stored 456, three or none, so the ten
+	 * demo keys no schema declared (#1782) were stripped on the way in under a
+	 * green message that could not have said otherwise. `importFromJson()`
+	 * answers with `objects` — the entities it created or updated — and
+	 * `skipped.objects` — the ones it refused. Both are read here, and both are
+	 * returned, so a caller can print the landing next to the ask.
 	 *
-	 * @throws RuntimeException When the descriptor is missing, unreadable, or OpenRegister is absent.
+	 * @return array{objects: integer, requested: integer, refused: integer, registers: integer, schemas: integer} What was asked for and what landed.
+	 *
+	 * @throws RuntimeException When the descriptor is missing or unreadable, OpenRegister is absent, or the import stored nothing.
 	 *
 	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
 	 */
@@ -127,13 +138,12 @@ class DemoDataService {
 			throw new RuntimeException('The demo dataset is not valid JSON: ' . $path);
 		}
 
-		// Counted from the file rather than from the importer's reply, so the
-		// number reported is the number ASKED FOR. A discrepancy between this
-		// and what lands is a real condition an operator should be able to see.
-		$objects = 0;
+		// The ASK: how many objects the shipped descriptor carries. Kept, but
+		// as one half of a comparison rather than as the answer.
+		$requested = 0;
 		$components = ($data['components'] ?? []);
 		if (is_array($components) === true && is_array(($components['objects'] ?? null)) === true) {
-			$objects = count($components['objects']);
+			$requested = count($components['objects']);
 		}
 
 		$result = $this->configurationService()->importFromApp(
@@ -143,19 +153,52 @@ class DemoDataService {
 			force: true
 		);
 
+		// The LANDING. An importer reply with no `objects` key has said nothing
+		// about objects, and nothing is zero — never "as many as we asked for".
+		$skipped  = (array)($result['skipped'] ?? []);
 		$imported = [
-			'objects'   => $objects,
+			'objects'   => count((array)($result['objects'] ?? [])),
+			'requested' => $requested,
+			'refused'   => (int)($skipped['objects'] ?? 0),
 			'registers' => count((array)($result['registers'] ?? [])),
 			'schemas'   => count((array)($result['schemas'] ?? [])),
 		];
 
+		// 🔴 AN IMPORT THAT STORED NOTHING IS NOT A SUCCESS, and this is the
+		// only place that can tell. Same shape as the seed steps of #1767 and
+		// #1769, which reported `success: true` with every counter at zero and
+		// recorded themselves as done. A descriptor that ships no objects at
+		// all is a different condition and stays a success: registers and
+		// schemas are a legitimate thing to ship on their own.
+		if ($requested > 0 && $imported['objects'] === 0) {
+			throw new RuntimeException(
+				'The demo import stored 0 of ' . $requested . ' object(s) ('
+				. $imported['refused'] . ' refused by OpenRegister). Nothing was written, so this is not '
+				. 'an install. Check the OpenRegister log for the refusals, and note that an object whose '
+				. 'version has not moved is left alone: re-importing an already-imported demo set lands nothing.'
+			);
+		}
+
 		$this->logger->info(
 			'[DemoDataService] imported demo data: '
-			. $imported['objects'] . ' object(s), '
+			. $imported['objects'] . ' of ' . $requested . ' object(s) stored, '
+			. $imported['refused'] . ' refused, '
 			. $imported['registers'] . ' register(s), '
 			. $imported['schemas'] . ' schema(s).',
 			['app' => Application::APP_ID]
 		);
+
+		if ($imported['objects'] < $requested) {
+			// Partial. Louder than info on purpose: some of what the app ships
+			// did not survive the import, and the message above is the only
+			// place the difference is visible.
+			$this->logger->warning(
+				'[DemoDataService] the demo import lost ' . ($requested - $imported['objects'])
+				. ' of ' . $requested . ' object(s) — ' . $imported['refused'] . ' refused, the rest were '
+				. 'left unchanged because an object of the same version already exists.',
+				['app' => Application::APP_ID]
+			);
+		}
 
 		return $imported;
 	}//end install()

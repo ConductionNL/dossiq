@@ -83,6 +83,8 @@ class VthSeedDataRepairStep implements IRepairStep {
 	 * Get the repair-step display name.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/vth-workflow-configuration-01-config-foundation/tasks.md
 	 */
 	public function getName(): string {
 		return 'Seed VTH case types and inspection-checklist templates for Dossiq';
@@ -291,6 +293,11 @@ class VthSeedDataRepairStep implements IRepairStep {
 			schema: $schema
 		);
 
+		$caseTypeIds = $this->caseTypeIdsBySlug(
+			objectService: $objectService,
+			register: $register
+		);
+
 		$seeded = 0;
 		$skipped = 0;
 		foreach ($checklists as $checklist) {
@@ -312,7 +319,7 @@ class VthSeedDataRepairStep implements IRepairStep {
 				$objectService->saveObject(
 					register: $register,
 					schema: $schema,
-					object: $checklist
+					object: $this->bindCaseType(checklist: $checklist, caseTypeIds: $caseTypeIds)
 				);
 				$seeded++;
 			} catch (Throwable $e) {
@@ -345,6 +352,84 @@ class VthSeedDataRepairStep implements IRepairStep {
 		);
 		return $caseType;
 	}//end stripChildren()
+
+	/**
+	 * Bind a checklist template to its case type, by slug.
+	 *
+	 * The seed names its case type by slug because that is the only stable
+	 * identifier a shipped file can carry: the uuid is minted at install. The
+	 * schema declares `caseType` (a uuid `$ref`) and declares no `caseTypeSlug`,
+	 * so shipping the slug straight through wrote a key OpenRegister answers 200
+	 * to and stores nowhere, and every checklist installed unbound.
+	 *
+	 * An unresolvable slug drops the binding rather than the template: a
+	 * checklist with no case type is still usable, `caseType` is optional
+	 * ("null means any case type"), and a `caseTypeSlug` left in the payload
+	 * would only be discarded again.
+	 *
+	 * @param array<string, mixed> $checklist The shipped checklist payload.
+	 * @param array<string, string> $caseTypeIds Case-type uuid keyed by slug.
+	 *
+	 * @return array<string, mixed> The payload as OpenRegister should receive it.
+	 */
+	private function bindCaseType(array $checklist, array $caseTypeIds): array {
+		$slug = (string)($checklist['caseTypeSlug'] ?? '');
+		unset($checklist['caseTypeSlug']);
+
+		$caseTypeId = (string)($caseTypeIds[$slug] ?? '');
+		if ($slug !== '' && $caseTypeId === '') {
+			$this->logger->warning(
+				'Dossiq VTH checklist seed could not resolve its case type',
+				['checklist' => ($checklist['slug'] ?? ''), 'caseTypeSlug' => $slug]
+			);
+			return $checklist;
+		}
+
+		if ($caseTypeId !== '') {
+			$checklist['caseType'] = $caseTypeId;
+		}
+
+		return $checklist;
+	}//end bindCaseType()
+
+	/**
+	 * Map every seeded case type's slug to its OpenRegister uuid.
+	 *
+	 * The slug lives in `@self`, the same place `existingSlugs()` reads it from.
+	 *
+	 * @param object $objectService OpenRegister ObjectService.
+	 * @param string $register Register slug.
+	 *
+	 * @return array<string, string> Case-type uuid keyed by slug.
+	 */
+	private function caseTypeIdsBySlug(object $objectService, string $register): array {
+		$schema = (string)$this->settingsService->getConfigValue('case_type_schema');
+		if ($schema === '') {
+			return [];
+		}
+
+		try {
+			$rows = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema
+			);
+		} catch (Throwable) {
+			return [];
+		}
+
+		$ids = [];
+		foreach ($rows as $row) {
+			$self = ($row['@self'] ?? []);
+			$slug = (string)($self['slug'] ?? $row['slug'] ?? '');
+			$id = (string)($self['id'] ?? $row['id'] ?? '');
+			if ($slug !== '' && $id !== '') {
+				$ids[$slug] = $id;
+			}
+		}
+
+		return $ids;
+	}//end caseTypeIdsBySlug()
 
 	/**
 	 * Read existing slugs for idempotency.
