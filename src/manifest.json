@@ -401,6 +401,11 @@
             "id": "new-case",
             "type": "open-form",
             "label": "New case",
+            "size": "large",
+            "columns": 2,
+            "fieldOverrides": {
+                "description": { "widget": "textarea" }
+            },
             "icon": "Plus",
             "register": "dossiq",
             "schema": "case",
@@ -1140,7 +1145,8 @@
                 "priority",
                 "confidentiality",
                 "deadline",
-                "startDate"
+                "startDate",
+                "parentCase"
               ],
               "overrides": {
                 "status": {
