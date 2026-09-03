@@ -370,6 +370,18 @@ foreach (['Decidiq', 'Decidesk'] as $stubNamespace) {
 	}
 }
 
+// The READ half of the same contract (decidiq#1118), which
+// ContractDecisionDelegationService::readDecisionState() dispatches so a
+// waiting flow node can ask what became of a decision it raised.
+//
+// NOT in the loop above, because it has exactly ONE spelling. It was added
+// after the OCA\Decidesk -> OCA\Decidiq rename, so `OCA\Decidesk\Event\
+// DecisionStateRequestedEvent` has never existed and stubbing it would teach
+// static analysis that a class nobody ships is resolvable.
+if (class_exists('\\OCA\\Decidiq\\Event\\DecisionStateRequestedEvent') === false) {
+	include_once __DIR__ . '/Stubs/Decidiq/Event/DecisionStateRequestedEvent.php';
+}
+
 // Integriq's ADR-041 delivery-seam contract (absorb-dossiq-deliveries).
 // PublicationService dispatches DeliveryRequestedEvent and
 // DeliveryConcludedListener consumes DeliveryConcludedEvent; both resolve the
