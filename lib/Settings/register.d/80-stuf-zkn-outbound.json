@@ -37,7 +37,7 @@
                 "properties": {
                     "id": {
                         "type": "string",
-                        "title": "Endpoint id",
+                        "title": "Endpoint ID",
                         "description": "Stable identifier of this endpoint (e.g. stuf-ep-amersfoort-key2zaken).",
                         "maxLength": 128
                     },
@@ -155,7 +155,7 @@
                     },
                     "caseIdentificationStrategy": {
                         "type": "string",
-                        "title": "Case id strategy",
+                        "title": "Case ID strategy",
                         "description": "Zaak ID allocation strategy (vooraf = pre-allocate via Du01; achteraf = server allocates on Lk01).",
                         "enum": [
                             "vooraf",
@@ -230,7 +230,7 @@
                 "properties": {
                     "id": {
                         "type": "string",
-                        "title": "Message id",
+                        "title": "Message ID",
                         "description": "Stable identifier (e.g. stuf-msg-2026-05-21-08-44-12-a7c3).",
                         "maxLength": 128
                     },
@@ -376,7 +376,7 @@
                     },
                     "sourceId": {
                         "type": "string",
-                        "title": "Source id",
+                        "title": "Source ID",
                         "description": "Identifier of the dossiq source entity that triggered this message.",
                         "maxLength": 128
                     },
@@ -452,7 +452,7 @@
                 "properties": {
                     "id": {
                         "type": "string",
-                        "title": "Mapping id",
+                        "title": "Mapping ID",
                         "description": "Stable identifier (e.g. map-evenement-tour-amersfoort).",
                         "maxLength": 128
                     },
@@ -467,7 +467,7 @@
                     },
                     "sourceId": {
                         "type": "string",
-                        "title": "Source id",
+                        "title": "Source ID",
                         "description": "Identifier of the dossiq entity (case id or contact id).",
                         "maxLength": 128
                     },
