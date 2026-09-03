@@ -303,7 +303,7 @@ export default {
 			this.loading = true
 			try {
 				const result = await this.objectStore.fetchCollection('resultType', {
-					'_filters[caseType]': this.caseTypeId,
+					caseType: this.caseTypeId,
 					_limit: 100,
 				})
 				this.resultTypes = result || []

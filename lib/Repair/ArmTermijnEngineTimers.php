@@ -212,8 +212,13 @@ class ArmTermijnEngineTimers implements IRepairStep {
 		}
 
 		try {
-			$def = $objectService->find($defId, register: $register, schema: $schema);
-			if (is_array($def) === true) {
+			$def = $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				id: $defId
+			);
+			if ($def !== null) {
 				return $def;
 			}
 		} catch (\Throwable $e) {

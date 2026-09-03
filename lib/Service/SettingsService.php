@@ -30,6 +30,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler;
 use OCA\Dossiq\Service\Settings\SchemaKeyReconciler;
+use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
 use OCA\Dossiq\Service\Settings\SchemaSlugMap;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
@@ -404,15 +405,27 @@ class SettingsService {
 		private LoggerInterface $logger,
 	) {
 		$this->fragments = new RegisterFragmentMerger();
-		$this->schemaKeys = new SchemaKeyReconciler(
+
+		// One resolver, shared by both reconcilers. They must agree on which
+		// schema a slug means: when they disagreed, the config keys pointed at
+		// one `task` schema while the calculations were merged onto another.
+		$slugResolver = new SchemaSlugResolver(
 			appConfig: $appConfig,
 			container: $container,
 			logger: $logger
 		);
+
+		$this->schemaKeys = new SchemaKeyReconciler(
+			appConfig: $appConfig,
+			container: $container,
+			logger: $logger,
+			slugResolver: $slugResolver
+		);
 		$this->schemaAnnotations = new SchemaAnnotationReconciler(
 			container: $container,
 			fragments: $this->fragments,
-			logger: $logger
+			logger: $logger,
+			slugResolver: $slugResolver
 		);
 	}//end __construct()
 
@@ -627,6 +640,19 @@ class SettingsService {
 
 			$configuredCount = $this->schemaKeys->autoConfigureAfterImport(importResult: $importResult);
 			$this->reconcileSchemaConfig();
+
+			// 🔴 THE IMPORT DOES NOT CARRY THE DECLARATIVE ANNOTATION BLOCKS, SO
+			// MERGE THEM HERE. Importing the register creates the schemas, but the
+			// `x-openregister-*` blocks declared alongside them in
+			// dossiq_register.json do not survive onto the live schema. Without
+			// this call a FRESH instance never gets them: `isTerminalStatus` never
+			// materialises, so every completed task keeps reading false and the
+			// widgets filtering on it keep showing finished work, and
+			// `daysUntilDue` does not exist to extend, so due-date columns render
+			// blank. Both failures are silent. The e2e suite caught it on a clean
+			// CI install after passing on a dev box where the reconcile had been
+			// run by hand. Idempotent, so it is safe on every import.
+			$this->reconcileSchemaDeclarativeConfig();
 
 			$this->logger->info(
 				'Dossiq: Configuration imported and reconciled',

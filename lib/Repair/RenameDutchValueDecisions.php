@@ -268,8 +268,25 @@ class RenameDutchValueDecisions {
 			'waarschuwing' => 'warning',
 			'last_onder_dwangsom' => 'last_under_penaltypayment',
 		],
+		// 🔴 `overheid` => `government` IS DELIBERATELY ABSENT (dossiq#1596).
+		//
+		// actorType is not free vocabulary: it is one AXIS of the Landelijke
+		// Handhavingsstrategie matrix, and the matrix's 48 cells are keyed
+		// `severity:behaviour:actorType`. Translating one member of that axis
+		// and not the cells split the vocabulary in half. The recommendation
+		// schema then offered `government` while every cell said `overheid`,
+		// so `LhsRecommendationService::recommend()` threw
+		// "Geen LHS-cel gevonden" for a quarter of the matrix — twelve of the
+		// forty-eight cells were unreachable, and nothing reported it because
+		// the throw looks like bad input rather than a broken vocabulary.
+		//
+		// The other three axis values (burger, bedrijf, recidivist) were never
+		// translated, which is the tell: this was a single-word rename applied
+		// to a member of a set, not a translation of the set.
+		//
+		// Restoring it here would re-break the axis on the next upgrade.
+		// `RealignLhsActorTypeVocabulary` repairs instances that already ran it.
 		'actorType' => [
-			'overheid' => 'government',
 			'medewerker' => 'employee',
 		],
 		'recommendedIntervention' => [

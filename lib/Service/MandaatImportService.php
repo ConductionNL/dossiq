@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Mandaat\MandaatCsvParser;
 use OCA\Dossiq\Service\Mandaat\MandaatRepository;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
 
 /**
@@ -47,6 +48,8 @@ use RuntimeException;
  * decision — new vs changed vs removed — and the approval state machine.
  */
 class MandaatImportService {
+	use SearchesObjects;
+
 	/**
 	 * Columns an import CSV must carry.
 	 *
@@ -316,8 +319,18 @@ class MandaatImportService {
 		$bSchema = $context['bSchema'];
 		$mSchema = $context['mSchema'];
 
-		$decision = $objectService->find($decisionId, register: $register, schema: $bSchema);
-		if (is_array($decision) === false) {
+		try {
+			$decision = $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $bSchema,
+				id: $decisionId
+			);
+		} catch (\Throwable $e) {
+			$decision = null;
+		}
+
+		if ($decision === null) {
 			throw new RuntimeException('Besluit not found: ' . $decisionId);
 		}
 
@@ -328,7 +341,12 @@ class MandaatImportService {
 		$now = (new DateTimeImmutable())->format('Y-m-d');
 		$decision['status'] = 'determined';
 		$decision['effectiveFrom'] = ($decision['effectiveFrom'] ?? $now);
-		$decision = $objectService->saveObject($register, $bSchema, $decision);
+		$decision = ($this->saveObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $bSchema,
+			object: $decision
+		) ?? $decision);
 
 		// Flip mandaten to active.
 		$this->repository->activateMandatenForBesluit(
@@ -347,7 +365,7 @@ class MandaatImportService {
 		if ($prior !== null) {
 			$prior['status'] = 'lapsed';
 			$prior['expiryDate'] = $now;
-			$objectService->saveObject($register, $bSchema, $prior);
+			$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $bSchema, object: $prior);
 		}
 
 		return $decision;

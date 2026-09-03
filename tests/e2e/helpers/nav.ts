@@ -113,7 +113,7 @@ async function readNavLinks(
  * ## Why a RegExp is accepted
  *
  * A pinned exact label is a standing tripwire. dossiq#1646 regrouped the work
- * surfaces and renamed three at once — `Cases` became `All issues`, the `My
+ * surfaces and renamed three at once — `Cases` became `All issues`, and later `All cases`, the `My
  * work` PAGE became `Assigned to me` once the GROUP took that name, and
  * `Voorstellen` became `Proposals` — and every call site naming the old string
  * broke together. Three of them wrapped the call in `.catch(() => {})`, so they
@@ -125,7 +125,7 @@ async function readNavLinks(
  *
  * @param page
  * @param label exact sidebar label, or a RegExp matching it — e.g. 'Dashboard'
- *              or `/^(All issues|Alle zaken)$/`
+ *              or `/^(All cases|Alle zaken)$/`
  */
 export async function navTo(page: Page, label: string | RegExp): Promise<void> {
 	await page.goto('/index.php/apps/dossiq')

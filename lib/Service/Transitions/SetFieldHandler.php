@@ -28,7 +28,6 @@ namespace OCA\Dossiq\Service\Transitions;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseFieldWriter;
-use OCA\Dossiq\Service\FlowRunAsScope;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
@@ -42,13 +41,11 @@ class SetFieldHandler implements ActionHandlerInterface {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister + config
-	 * @param FlowRunAsScope $runAsScope Scopes the case write to the run's acting identity
 	 * @param CaseFieldWriter $caseWriter Applies ONLY this handler's field to the stored case
 	 * @param LoggerInterface $logger Logger
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly FlowRunAsScope $runAsScope,
 		private readonly CaseFieldWriter $caseWriter,
 		private readonly LoggerInterface $logger,
 	) {
@@ -90,25 +87,22 @@ class SetFieldHandler implements ActionHandlerInterface {
 				return new ActionResult(succeeded: false, error: 'case_schema_not_configured');
 			}
 
-			// Under FlowRunWorker the ambient session carries nobody, so a
-			// bare saveObject() is refused as 'Anonymous'; the write runs as
-			// the run's `runAs` identity when the context names one.
+			// On the flow path the engine's RegistryStepDispatcher already runs
+			// this handler inside `ObjectService::runAs()` as the run's acting
+			// identity (openregister#3332), and on the interactive path the
+			// ambient session user answers the permission checks — so no local
+			// runAs wrap is needed here any more.
 			//
 			// ONLY the configured field is written. `$case` is a snapshot of
 			// the flow item, and full-saving a snapshot erases whatever other
 			// writers stored after it was taken (the besluitDocument clobber,
 			// measured live on the closure rig).
-			$this->runAsScope->call(
-				context: $transitionContext,
-				operation: function () use ($objectService, $register, $caseSchema, $case, $field, $value): void {
-					$this->caseWriter->write(
-						objectService: $objectService,
-						register: $register,
-						schema: $caseSchema,
-						case: $case,
-						changes: [$field => $value]
-					);
-				}
+			$this->caseWriter->write(
+				objectService: $objectService,
+				register: $register,
+				schema: $caseSchema,
+				case: $case,
+				changes: [$field => $value]
 			);
 
 			return new ActionResult(

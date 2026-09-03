@@ -25,7 +25,7 @@ use RuntimeException;
 /**
  * Covers the sign-off route lookup.
  *
- * This was inline in BesluitvormingParafeerService::activate(), which carried on
+ * This was inline in the retired parafering activate(), which carried on
  * with an EMPTY step list when it found nothing — parking the voorstel in
  * `in_parafering` at step 1 with nothing to travel. Pulling it out makes "no
  * route" a value the caller has to handle, so these tests are mostly about the

@@ -59,9 +59,11 @@ class CaseFieldWriter {
 	/**
 	 * Apply these changes to the stored case.
 	 *
-	 * Call this INSIDE the handler's FlowRunAsScope operation: the read that
-	 * decides what is saved and the save itself must run under the same acting
-	 * identity, for the same reason the handlers already scope their writes.
+	 * The read that decides what is saved and the save itself run under one
+	 * acting identity: on the flow path the engine's RegistryStepDispatcher
+	 * executes the calling handler inside `ObjectService::runAs()`
+	 * (openregister#3332), and on the interactive path the ambient session
+	 * user answers the permission checks.
 	 *
 	 * @param object               $objectService The resolved OpenRegister ObjectService.
 	 * @param string               $register      The register holding the case.

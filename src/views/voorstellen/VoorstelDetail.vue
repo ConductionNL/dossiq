@@ -32,55 +32,22 @@
 					:acties="acties" />
 			</CnDetailCard>
 
-			<!-- Actions for active parafeerder -->
-			<CnDetailCard
-				v-if="isActiveActor && !isTerminalStatus"
-				:title="t('dossiq', 'Take action')">
-				<NcButton type="primary" @click="actieDialogOpen = true">
-					{{ t('dossiq', 'Take action') }}
-				</NcButton>
-			</CnDetailCard>
+			<!--
+				The SIGN-OFF SURFACE retired with the local runtime
+				(parafering-runtime-to-decidiq). An approver no longer initials,
+				skips or returns through a dossiq dialog that advances a local
+				chain — the decision app runs the chain, and this page shows
+				what it recorded. The sign-off happens in the approver's work
+				queue (the decision app projects each step onto a task) and in
+				the decision app's own surfaces.
+			-->
 
-			<ParafeerActieDialog
-				v-if="isActiveActor && !isTerminalStatus && currentStepInfo"
-				v-model:open="actieDialogOpen"
-				:voorstelId="voorstel.id"
-				:step="currentStepInfo"
-				:mandates="mandates"
-				@actionRecorded="onActionCompleted" />
-
-			<!-- Parafering History (action history timeline). -->
+			<!-- Parafering history (recorded from the decision app's conclusion). -->
 			<CnDetailCard :title="t('dossiq', 'Parafering history')">
-				<ParafeerActieTimeline
-					ref="actieTimeline"
-					:voorstelId="voorstel.id || voorstelId" />
+				<ParafeerActieTimeline :voorstelId="voorstel.id || voorstelId" />
 			</CnDetailCard>
 
-			<!-- Manager override controls -->
-			<CnDetailCard
-				v-if="canOverrideRoute"
-				:title="t('dossiq', 'Route-aanpassing (manager)')">
-				<div class="voorstel-detail__override-actions">
-					<!--
-						"Stap toevoegen" was removed with the parafeer-route API it
-						called. Adding a step mid-route has no equivalent in the live
-						parafeeractie vocabulary, and the endpoint behind the button
-						answered 400 on every click, so it never added one.
-					-->
-					<NcButton :disabled="!currentStepInfo" @click="openSkipDialog">
-						{{ t('dossiq', 'Stap overslaan') }}
-					</NcButton>
-				</div>
-			</CnDetailCard>
-
-			<SkipStepDialog
-				:open="showSkipDialog"
-				:voorstelId="voorstel.id || voorstelId"
-				:step="currentStepInfo"
-				@skipped="onOverrideCompleted"
-				@close="showSkipDialog = false" />
-
-			<!-- Resubmit for steller -->
+			<!-- Returned notice for the steller -->
 			<CnDetailCard
 				v-if="voorstel.status === 'teruggestuurd' && isSteller"
 				:title="t('dossiq', 'Returned')">
@@ -88,13 +55,10 @@
 					{{
 						t(
 							'dossiq',
-							'This proposal has been returned. Adjust the document and resubmit it.',
+							'This proposal has been returned. Adjust the document; it re-enters parafering through the case workflow.',
 						)
 					}}
 				</p>
-				<NcButton type="primary" @click="resubmit">
-					{{ t('dossiq', 'Resubmit') }}
-				</NcButton>
 			</CnDetailCard>
 
 			<!-- Voorstel Information -->
@@ -193,8 +157,6 @@ import { CnDetailCard, CnDetailPage } from '@conduction/nextcloud-vue'
 import { getCurrentUser } from '@nextcloud/auth'
 import { NcButton } from '@nextcloud/vue'
 import BesluitRegistration from '../../dialogs/BesluitRegistration.vue'
-import ParafeerActieDialog from '../../dialogs/ParafeerActieDialog.vue'
-import SkipStepDialog from '../../dialogs/SkipStepDialog.vue'
 import AuditTrail from './components/AuditTrail.vue'
 import ParafeerActieTimeline from './components/ParafeerActieTimeline.vue'
 import ProgressTimeline from './components/ProgressTimeline.vue'
@@ -225,11 +187,9 @@ export default {
 		CnDetailPage,
 		CnDetailCard,
 		ProgressTimeline,
-		ParafeerActieDialog,
 		ParafeerActieTimeline,
 		AuditTrail,
 		BesluitRegistration,
-		SkipStepDialog,
 	},
 
 	props: {
@@ -246,9 +206,6 @@ export default {
 			proposal: {},
 			acties: [],
 			showBesluitDialog: false,
-			actieDialogOpen: false,
-			mandates: [],
-			showSkipDialog: false,
 		}
 	},
 
@@ -273,56 +230,17 @@ export default {
 		},
 
 		/** @spec openspec/specs/parafering-actions/spec.md */
-		currentStepInfo() {
-			if (!this.proposal.currentStep || !this.steps.length) return null
-			return (
-				this.steps.find((s) => s.order === this.proposal.currentStep) || null
-			)
-		},
-
-		/** @spec openspec/specs/parafering-actions/spec.md */
 		currentUserId() {
 			return getCurrentUser()?.uid || ''
-		},
-
-		/** @spec openspec/specs/parafering-actions/spec.md */
-		isActiveActor() {
-			if (!this.currentStepInfo) return false
-			return this.currentStepInfo.actor === this.currentUserId
 		},
 
 		isSteller() {
 			return this.proposal.author === this.currentUserId
 		},
 
-		isTerminalStatus() {
-			return ['besloten', 'archived'].includes(this.proposal.status)
-		},
-
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		canRegisterBesluit() {
 			return ['geaccordeerd', 'aangeboden'].includes(this.proposal.status)
-		},
-
-		/** @spec openspec/specs/parafering-actions/spec.md */
-		canOverrideRoute() {
-			if (
-				this.proposal.status !== 'in_parafering'
-				&& this.proposal.status !== 'ter_accordering'
-			) {
-				return false
-			}
-			const user = getCurrentUser()
-			if (!user) return false
-			// Group membership is server-enforced; we surface the controls to admins
-			// and to the steller so they can request additional advice.
-			const groups = user.groups || []
-			return (
-				groups.includes('admin')
-				|| groups.includes('manager')
-				|| groups.includes('secretariaat')
-				|| this.isSteller
-			)
 		},
 	},
 
@@ -358,7 +276,7 @@ export default {
 				const results = await this.objectStore.fetchCollection(
 					'parafeeractie',
 					{
-						'_filters[voorstel]': this.voorstelId,
+						voorstel: this.voorstelId,
 						_limit: 100,
 						_order: '_self.created',
 						_direction: 'asc',
@@ -389,42 +307,6 @@ export default {
 		 */
 		formatStatus(status) {
 			return t('dossiq', STATUS_LABELS[status] || status || '-')
-		},
-
-		/** @spec openspec/specs/parafering-actions/spec.md */
-		async onActionCompleted() {
-			this.actieDialogOpen = false
-			await Promise.all([this.loadVoorstel(), this.loadActies()])
-			// Reload the timeline component (it loads on mount).
-			if (this.$refs.actieTimeline?.load) {
-				await this.$refs.actieTimeline.load()
-			}
-		},
-
-		/** @spec openspec/specs/parafering-actions/spec.md */
-		openSkipDialog() {
-			this.showSkipDialog = true
-		},
-
-		/** @spec openspec/specs/parafering-actions/spec.md */
-		async onOverrideCompleted() {
-			this.showSkipDialog = false
-			await Promise.all([this.loadVoorstel(), this.loadActies()])
-		},
-
-		/** @spec openspec/specs/parafering-actions/spec.md */
-		async resubmit() {
-			try {
-				const resumeStep = this.proposal.returnedFromStep || 1
-				await this.objectStore.saveObject('proposal', {
-					...this.proposal,
-					status: 'in_parafering',
-					currentStep: resumeStep,
-				})
-				await this.loadVoorstel()
-			} catch (error) {
-				console.error('Failed to resubmit proposal:', error)
-			}
 		},
 
 		/** @spec openspec/specs/parafering-actions/spec.md */

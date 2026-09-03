@@ -1,36 +1,34 @@
 <?php
 
 /**
- * The class-catching test for the runAs defect family.
+ * The class-catching test for the runAs defect family — inverted.
  *
- * THE DEFECT CLASS. OpenRegister's permission gate reads the AMBIENT SESSION
- * user, not any parameter, and under FlowRunWorker that session carries
- * nobody. So every flow handler or node that touches ObjectService storage
- * without routing through {@see \OCA\Dossiq\Service\FlowRunAsScope} is
- * refused as "User 'Anonymous' does not have permission" the moment a flow
- * runs on the worker — however legitimate the run's declared identity. This
- * shipped four separate times: SetStatusHandler, DossiqAskPersonNode and
- * DossiqRequestDecisionNode were fixed by DQ#1625, and MergeTemplateHandler
- * still stopped the seeded case flow at `besluit-document` (run f087ae22).
- * Fixing instances one by one is how the fourth one shipped, so this test
- * asserts the INVARIANT over every file in the three flow-facing directories.
+ * THE DEFECT CLASS, THEN. OpenRegister's permission gate reads the AMBIENT
+ * SESSION user, and under FlowRunWorker that session carries nobody, so every
+ * flow handler or node that touched ObjectService storage bare was refused as
+ * "User 'Anonymous' does not have permission". dossiq answered with a local
+ * `FlowRunAsScope` and this test asserted that every storage-performing flow
+ * file wrapped its work in it — because the defect shipped four separate times
+ * before the invariant existed.
  *
- * THE RULE. A file under lib/Flow, lib/Service/Transitions or
- * lib/Service/Actions that performs storage work — directly through
- * ObjectService, or by delegating to a collaborator known to write through
- * it — must reference `runAsScope->call(`, or sit in the closed allowlist
- * below with a reason that names why the worker never executes it.
+ * THE DEFECT CLASS, NOW. openregister#3332 moved that duty into the engine:
+ * `RegistryStepDispatcher` executes every CONTRIBUTED node inside
+ * `ObjectService::runAs()` as the run's validated acting identity, so dossiq's
+ * nodes — and the transition/action handlers they delegate to — are scoped
+ * before their first line runs. The local wrapper is deleted. The invariant
+ * therefore INVERTS: a flow file that reintroduces a manual runAs wrap is now
+ * the defect, because it re-creates the per-consumer copy of an engine rule
+ * (the copy that drifts is the one nobody looks at), and because the deleted
+ * class it would reach for no longer exists to fail loudly at review time.
  *
- * WHAT THIS CANNOT SEE. The check is per file: a file that wraps one storage
- * call and ships a second bare one still passes. The per-handler regression
- * tests (e.g. MergeTemplateHandlerTest, SetStatusHandlerTest) carry that
- * finer assertion; this test exists so a NEW handler cannot ship with no
- * scope at all.
+ * A test that encodes an old requirement goes red when the requirement moves;
+ * this is that test, inverted rather than deleted, so the HISTORY of the
+ * defect class keeps a guard pointing in the direction that is now correct.
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+ * @spec openspec/changes/adopt-flow-engine-consumer-seams/specs/case-flow-human-steps/spec.md
  */
 
 declare(strict_types=1);
@@ -62,131 +60,81 @@ class FlowStorageRunsAsTheRunsIdentityTest extends TestCase {
 
 	/**
 	 * Direct storage work: calls that reach OpenRegister's ObjectService.
+	 * Used only as the detector's self-check — proof the sweep still scans
+	 * a tree where the invariant has something to protect.
 	 *
 	 * @var string
 	 */
 	private const STORAGE_CALL_PATTERN = '/->\s*(saveObject|updateObject|deleteObject|find|findAll|searchObjectsPaginated|buildSearchQuery|getObjectService)\s*\(/';
 
 	/**
-	 * Collaborators that perform ObjectService storage on the caller's
-	 * behalf. A flow file that hands its work to one of these performs
-	 * storage just as surely as one calling saveObject() itself — the
-	 * BesluitvormingPublishHandler variant of the defect.
+	 * The manual-scoping fingerprints a flow file must NOT carry any more.
+	 *
+	 * `FlowRunAsScope` is the deleted local wrapper; `runAsScope->call(` is
+	 * how every wrap invoked it. A direct `ObjectService::runAs()` call is
+	 * deliberately NOT forbidden: the occ-driven migrators under these
+	 * directories scope their own writes legitimately, because the dispatcher
+	 * never executes them.
 	 *
 	 * @var string[]
 	 */
-	private const STORAGE_COLLABORATORS = [
-		'ParaafFlowLinkage',
-		'PublicationService',
-		'BesluitvormingParafeerService',
-		'CaseStatusStore',
-		'StatusTypeLookup',
-		'DecisionTableService',
+	private const FORBIDDEN_WRAP_FINGERPRINTS = [
+		'FlowRunAsScope',
+		'runAsScope->call(',
 	];
 
 	/**
-	 * The CLOSED allowlist of storage-performing flow files that run bare,
-	 * each with the reason the worker never executes it. An entry here is a
-	 * claim to re-verify when the file's callers change — and an entry whose
-	 * file stops matching (or disappears) fails the suite, so the list
-	 * cannot rot silently.
+	 * 🔴 NO FLOW FILE WRAPS ITS STORAGE WORK IN A LOCAL runAs SCOPE.
 	 *
-	 * @var array<string, string>
+	 * The engine's dispatcher scopes every contributed node natively
+	 * (openregister#3332); a manual wrap here is the defect now. Add one and
+	 * this goes red naming the file.
 	 */
-	private const ALLOWED_BARE = [
-		'lib/Service/Transitions/CaseStatusStore.php' => 'Called only by StatusTransitionService on the interactive request path, where the logged-in session user is the acting identity.',
-		'lib/Service/Transitions/StatusTypeLookup.php' => 'A read helper that runs inside its caller\'s scope: SetStatusHandler invokes it within its own runAsScope->call().',
-		'lib/Service/Transitions/ChecklistGuard.php' => 'A transition guard evaluated by GuardRegistry on the interactive transition path (StatusTransitionService / WorkflowEngineService), never by a flow node.',
-		'lib/Service/Actions/AutomaticActionFlowMigrator.php' => 'A one-shot migration run from the occ command (MigrateAutomaticActionsToFlowsCommand), an admin CLI context with an operator at the keyboard.',
-	];
-
-	/**
-	 * 🔴 EVERY STORAGE-PERFORMING FLOW FILE ROUTES THROUGH FlowRunAsScope.
-	 *
-	 * Unwrap any wrapped handler — delete its `runAsScope->call(` — and this
-	 * goes red naming the file. Add a new handler with a bare saveObject()
-	 * and it goes red before the handler ever meets the worker.
-	 */
-	public function testEveryStoragePerformingFlowFileRoutesThroughTheRunAsScope(): void {
-		$bare = [];
-		$flagged = [];
+	public function testNoFlowFileWrapsRunAsManually(): void {
+		$wrapped = [];
+		$storagePerforming = 0;
 
 		foreach ($this->flowFiles() as $relative => $source) {
-			if ($this->performsStorage(source: $source) === false) {
-				continue;
+			if (preg_match(self::STORAGE_CALL_PATTERN, $source) === 1) {
+				$storagePerforming++;
 			}
 
-			$flagged[] = $relative;
-
-			if (str_contains($source, 'runAsScope->call(') === true) {
-				continue;
+			foreach (self::FORBIDDEN_WRAP_FINGERPRINTS as $fingerprint) {
+				if (str_contains($source, $fingerprint) === true) {
+					$wrapped[] = $relative . ' (' . $fingerprint . ')';
+				}
 			}
+		}
 
-			if (array_key_exists($relative, self::ALLOWED_BARE) === true) {
-				continue;
-			}
-
-			$bare[] = $relative;
-		}//end foreach
-
-		self::assertNotSame(
-			[],
-			$flagged,
-			'The sweep found no storage-performing flow files at all: the detector is broken, not the tree clean.'
+		self::assertGreaterThan(
+			0,
+			$storagePerforming,
+			'The sweep found no storage-performing flow files at all: the detector is scanning the wrong tree, not a clean one.'
 		);
 
 		self::assertSame(
 			[],
-			$bare,
-			"These flow files perform ObjectService storage without routing through FlowRunAsScope. Under FlowRunWorker their work is refused as 'Anonymous' no matter whose rights the run declares. Wrap the storage work in \$this->runAsScope->call(context: ..., operation: ...) the way SetStatusHandler does, or — only when the worker truly never executes the file — add it to ALLOWED_BARE with the reason:\n - "
-			. implode("\n - ", $bare)
+			$wrapped,
+			"These flow files scope their storage work manually. The engine's RegistryStepDispatcher already executes every contributed node inside ObjectService::runAs() as the run's acting identity (openregister#3332), so a local wrap re-creates the per-consumer copy of an engine rule and nests a second scope inside the dispatcher's. Delete the wrap:\n - "
+			. implode("\n - ", $wrapped)
 		);
-	}//end testEveryStoragePerformingFlowFileRoutesThroughTheRunAsScope()
+	}//end testNoFlowFileWrapsRunAsManually()
 
 	/**
-	 * The allowlist stays honest: every entry still names a file that exists
-	 * AND still performs storage. A stale entry is a claim nobody is
-	 * checking any more, so it fails rather than lingers.
-	 */
-	public function testTheAllowlistCarriesNoStaleEntries(): void {
-		$files = $this->flowFiles();
-
-		foreach (self::ALLOWED_BARE as $relative => $reason) {
-			self::assertNotSame('', trim($reason), 'An allowlist entry must carry its reason: ' . $relative);
-			self::assertArrayHasKey(
-				$relative,
-				$files,
-				'Allowlisted file no longer exists — remove the entry: ' . $relative
-			);
-			self::assertTrue(
-				$this->performsStorage(source: $files[$relative]),
-				'Allowlisted file no longer performs storage — remove the entry: ' . $relative
-			);
-		}
-	}//end testTheAllowlistCarriesNoStaleEntries()
-
-	/**
-	 * Whether a source file performs storage work, directly or by delegating
-	 * to a collaborator that writes through ObjectService.
+	 * The deleted wrapper stays deleted.
 	 *
-	 * @param string $source The file's source code.
-	 *
-	 * @return bool True when the file performs storage work.
+	 * `lib/Service/FlowRunAsScope.php` was the local copy of the engine's
+	 * scoping rule. Resurrecting the file is the first step of resurrecting
+	 * the pattern, so its absence is asserted by name.
 	 */
-	private function performsStorage(string $source): bool {
-		if (preg_match(self::STORAGE_CALL_PATTERN, $source) === 1) {
-			return true;
-		}
+	public function testTheLocalRunAsScopeStaysDeleted(): void {
+		$root = dirname(__DIR__, 3);
 
-		foreach (self::STORAGE_COLLABORATORS as $collaborator) {
-			// The import line, so a docblock mention alone does not flag.
-			if (preg_match('/^use .*\\\\' . preg_quote($collaborator, '/') . ';$/m', $source) === 1) {
-				return true;
-			}
-		}
-
-		return false;
-	}//end performsStorage()
+		self::assertFileDoesNotExist(
+			$root . '/lib/Service/FlowRunAsScope.php',
+			'lib/Service/FlowRunAsScope.php is back. The engine scopes contributed nodes natively (openregister#3332); dossiq must not keep a second implementation of that rule.'
+		);
+	}//end testTheLocalRunAsScopeStaysDeleted()
 
 	/**
 	 * Every PHP source file in the flow-facing directories.

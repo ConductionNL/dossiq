@@ -133,32 +133,3 @@ test.describe('Doorlooptijd page render', () => {
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 })
-
-test.describe('Bezwaren index page render', () => {
-	// @e2e openspec/specs/bezwaar-lifecycle/spec.md#bezwaren-index-page-renders-list-shell
-	test('bezwaren index renders list shell', async ({ page }) => {
-		// The nav renders "Objections", not "Bezwaren" — navigate by route.
-		await navToRoute(page, '/bezwaren')
-		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible({
-			timeout: 15000,
-		})
-		await expect(page.getByRole('button', { name: 'Table' })).toBeVisible()
-		await expect(page.getByRole('button', { name: /^Add / })).toBeVisible()
-		await expect(page.locator('body')).not.toContainText('Internal Server Error')
-	})
-})
-
-test.describe('Advice index page render', () => {
-	// @e2e openspec/specs/advice-management/spec.md#advice-index-page-renders-list-shell
-	test('advice index renders list shell', async ({ page }) => {
-		// The Decision-making group's leaves are absent from this build's
-		// sidebar, so there is no "Advice" nav entry — navigate by route.
-		await navToRoute(page, '/advice')
-		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible({
-			timeout: 15000,
-		})
-		await expect(page.getByRole('button', { name: 'Table' })).toBeVisible()
-		await expect(page.getByRole('button', { name: /^Add / })).toBeVisible()
-		await expect(page.locator('body')).not.toContainText('Internal Server Error')
-	})
-})

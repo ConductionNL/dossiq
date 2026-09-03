@@ -375,18 +375,18 @@ class StufAdapterService {
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
 	 */
 	public function retrySend(string $stufMessageId): void {
-		$msg = $this->register->findOne(
+		$msg = $this->register->findById(
 			schema: StufRegisterAccess::SCHEMA_MESSAGE,
-			filters: ['id' => $stufMessageId]
+			id: $stufMessageId
 		);
 		if ($msg === null) {
 			$this->logger->warning(message: 'StUF retry: message {id} not found', context: ['id' => $stufMessageId]);
 			return;
 		}
 
-		$endpoint = $this->register->findOne(
+		$endpoint = $this->register->findById(
 			schema: StufRegisterAccess::SCHEMA_ENDPOINT,
-			filters: ['id' => (string)($msg['endpointId'] ?? '')]
+			id: (string)($msg['endpointId'] ?? '')
 		);
 		if ($endpoint === null) {
 			$this->logger->warning(message: 'StUF retry: endpoint {id} not found', context: ['id' => ($msg['endpointId'] ?? '')]);

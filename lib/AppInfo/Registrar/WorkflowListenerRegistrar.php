@@ -30,7 +30,7 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
-use OCA\Dossiq\Listener\ParaafResumeListener;
+use OCA\Dossiq\Listener\ParaferingConcludedListener;
 use OCA\Dossiq\Listener\TaskCompletionResumeListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
@@ -61,6 +61,21 @@ class WorkflowListenerRegistrar {
 	];
 
 	/**
+	 * Every spelling of the approval-route-concluded event, newest first.
+	 *
+	 * The parafering twin of DECISION_CONCLUDED_EVENTS, and for the same reason:
+	 * a cross-app event class is a runtime lookup this app can only follow, the
+	 * decision app renamed its namespace with no alias, and naming one spelling
+	 * silently stops the listener registering on an install that ships the other.
+	 *
+	 * @var array<int, string>
+	 */
+	private const APPROVAL_ROUTE_CONCLUDED_EVENTS = [
+		'OCA\Decidiq\Event\ApprovalRouteConcludedEvent',
+		'OCA\Decidesk\Event\ApprovalRouteConcludedEvent',
+	];
+
+	/**
 	 * Register the termijn and decision listeners.
 	 *
 	 * @param IRegistrationContext $context The registration context.
@@ -72,8 +87,35 @@ class WorkflowListenerRegistrar {
 	public function register(IRegistrationContext $context): void {
 		$this->registerTermListeners(context: $context);
 		$this->registerDecisionListeners(context: $context);
+		$this->registerParaferingListeners(context: $context);
 		$this->registerHumanStepListeners(context: $context);
 	}//end register()
+
+	/**
+	 * Register the decision app's parafering-conclusion listener.
+	 *
+	 * The runtime moved: dossiq raises a voorstel's chain in the decision app
+	 * and hears it finish through `ApprovalRouteConcludedEvent`, which
+	 * {@see \OCA\Dossiq\Listener\ParaferingConcludedListener} projects onto the
+	 * case file. Registered by FQN string against both namespace spellings and
+	 * only when the class exists, so dossiq carries no compile-time dependency
+	 * on the optional decision app — the same shape as the decision listener.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parafering-runtime-to-decidiq/specs/parafering-runtime-to-decidiq/spec.md
+	 */
+	private function registerParaferingListeners(IRegistrationContext $context): void {
+		foreach (self::APPROVAL_ROUTE_CONCLUDED_EVENTS as $event) {
+			if (class_exists('\\' . $event) === false) {
+				continue;
+			}
+
+			$context->registerEventListener(event: $event, listener: ParaferingConcludedListener::class);
+		}
+	}//end registerParaferingListeners()
 
 	/**
 	 * Register termijnbewaking (AWB deadline engine) listeners.
@@ -158,11 +200,9 @@ class WorkflowListenerRegistrar {
 			listener: TaskCompletionResumeListener::class
 		);
 
-		// A paraaf is CREATED with its action, where a task is UPDATED to
-		// completed, so the two human steps close on different events.
-		$context->registerEventListener(
-			event: ObjectCreatedEvent::class,
-			listener: ParaafResumeListener::class
-		);
+		// The paraaf-resume listener retired with the local parafering runtime.
+		// A paraaf is no longer a dossiq-local flow signal: the decision app
+		// runs the chain and announces its conclusion, which
+		// registerParaferingListeners() above binds.
 	}//end registerHumanStepListeners()
 }//end class

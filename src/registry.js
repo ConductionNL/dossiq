@@ -25,7 +25,6 @@
 //   a pass-through.
 
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
-import BezwaarBeroepOverview from './components/bezwaar/BezwaarBeroepOverview.vue'
 // Case-list CSV/Excel export via the OR export leaf — actions-slot component
 // on the Cases page (manifest `pages[].actionsComponent`). Builds the OR
 // export-leaf URL client-side; no dossiq-side serialization (ADR-022).
@@ -66,10 +65,6 @@ import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
 // @spec openspec/specs/cmmn-adaptive-case/spec.md
 import InspectionChecklistPanel from './views/cases/components/InspectionChecklistPanel.vue'
 import InspectionPanel from './views/cases/components/InspectionPanel.vue'
-// Related-case linking — typed peer relations (relevanteAndereZaken) sidebar tab.
-// Modal isolation per ADR-004: AddCaseRelationModal lives in src/modals/.
-// @spec openspec/specs/related-case-linking/spec.md
-import RelatedCasesSection from './views/cases/components/RelatedCasesSection.vue'
 import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 // Deelzaak (sub-case) full-page views — wired via manifest routes
 // /cases/:id/deelzaken (list) and /cases/:parentId/deelzaken/:id (detail).
@@ -143,14 +138,6 @@ import { leafTab } from './integrations/leafTabs.js'
  * @type {Record<string, { kind: string, component: object }>}
  */
 const registry = {
-	// --- Bezwaar & Beroep cards-collapse landing page (bezwaar-beroep-cards-collapse). ---
-	// @spec openspec/changes/bezwaar-beroep-cards-collapse/specs/navigation/spec.md
-	BezwaarBeroepOverview: {
-		kind: 'page',
-		component: BezwaarBeroepOverview,
-		_note: 'Card-grid landing page replacing the BezwaarBeroepGroup four-leaf nav (ADR-044 cards-collapse). Four former leaves stay routable as deep links.',
-	},
-
 	// --- Case-list CSV/Excel export via the OR export leaf. ---
 	// @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
 	CaseListExportAction: {
@@ -384,14 +371,6 @@ const registry = {
 		kind: 'page',
 		component: BesluitvormingLeafTab,
 		_note: 'decidesk decisions integration leaf (decidesk-decisions) surfaced on the case detail; replaces the standalone Besluitvorming nav (ADR-019/ADR-022).',
-	},
-
-	// --- Related-case linking sidebar tab. ---
-	// @spec openspec/specs/related-case-linking/spec.md
-	RelatedCasesSection: {
-		kind: 'page',
-		component: RelatedCasesSection,
-		_note: 'Typed peer relations (relevanteAndereZaken) on the case detail; add/view/remove typed links with RBAC-safe masking.',
 	},
 
 	// --- VTH module: case detail sidebar tabs. ---

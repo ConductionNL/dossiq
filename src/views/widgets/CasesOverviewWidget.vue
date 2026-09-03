@@ -117,7 +117,14 @@ export default {
 		async fetchData() {
 			this.loading = true
 			try {
+				// Open cases only. Without this the widget listed CLOSED cases
+				// too, and since it orders by startDate desc a burst of recently
+				// created-and-closed rows (an e2e run leaves them behind: cases
+				// are archival-immutable and cannot be cleaned up) pushed every
+				// live case out of all 7 slots. Every sibling case widget already
+				// filters on the materialised isFinalStatus.
 				const results = await this.objectStore.fetchCollection('case', {
+					isFinalStatus: false,
 					_limit: 7,
 					_order: { startDate: 'desc' },
 				})

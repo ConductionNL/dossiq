@@ -68,9 +68,12 @@ $extra = [
     ['name' => 'assistant#availability', 'url' => '/api/assistant/availability', 'verb' => 'GET'],
     ['name' => 'assistant#converse',     'url' => '/api/assistant/converse',     'verb' => 'POST'],
 
-        // Parafering Actions (must precede any wildcard routes).
-    ['name' => 'parafeerActie#create', 'url' => '/api/parafeer-actie', 'verb' => 'POST'],
-    ['name' => 'parafeerActie#index',  'url' => '/api/parafeer-actie', 'verb' => 'GET'],
+        // Parafering actions RETIRED with the local runtime. An approver no
+        // longer signs through a dossiq endpoint that records-and-advances a
+        // local chain: the decision app runs the chain (parafering moved there
+        // the way decisions did), and dossiq records the outcome from the
+        // conclusion event. The parafeeractie objects the case keeps are
+        // read through OpenRegister's auto-exposed object API for display.
 
         // KCC Klantcontact (kcc-klantcontact-integratie).
         // Static/verb routes precede the {id} wildcard routes.
@@ -781,6 +784,15 @@ $extra = [
         // Deliberately no proxy and no redirect — a feed that silently answers
         // from a different app is worse than one that stops, because a
         // subscriber cannot tell it has moved.
+
+        // Case-configuration store (ADR-080). Consume-only: dossiq browses a
+        // remote OpenRegister registry through AppHost's GenericStoreService and
+        // installs locally. It never publishes, and it builds no registry URL of
+        // its own — discovery belongs to the engine.
+    ['name' => 'store#search',       'url' => '/api/store/items',                 'verb' => 'GET'],
+    ['name' => 'store#install',      'url' => '/api/store/items/{slug}/install',  'verb' => 'POST', 'requirements' => ['slug' => '[a-z0-9][a-z0-9-]*[a-z0-9]']],
+    ['name' => 'store#getSettings',  'url' => '/api/store/settings',              'verb' => 'GET'],
+    ['name' => 'store#saveSettings', 'url' => '/api/store/settings',              'verb' => 'PUT'],
 
         // NOTE: dashboard#page (`/`) and the SPA catch-all (`/{path}`,
         // dashboard#catchAll) are supplied by Routes::standard(); both resolve to

@@ -65,6 +65,11 @@ import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 // Remote-org accept/reject for a federated zaakoverdracht (federated-case-collaboration).
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
+// --- Store (ADR-080). A store item is a REMOTE object, so the manifest's
+//     object-backed index renderer — which resolves a local register+schema —
+//     cannot address it. Discovery itself is the engine's, not this file's.
+// @spec openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
+import StoreGallery from './views/store/StoreGallery.vue'
 // --- Termijnbewaking + Tenant dashboards (chain-builds 06/2026). ---
 // Archief dashboard retired (migrate-archival-to-or, ADR-022): the archivist
 // views are owned by OpenRegister.
@@ -184,6 +189,7 @@ export default {
 	// declaring it would ship a bulk action that does nothing when clicked.
 	reassignSelection,
 	MyWorkView, // current-user case index (assignee=uid) in card view — CnIndexPage wrapper
+	StoreGallery, // remote store cards — index renderer cannot address a REMOTE object
 	// CaseMapView removed — see import comment above.
 
 	// --- Lib gaps: would migrate once lib gains the missing primitive. ---

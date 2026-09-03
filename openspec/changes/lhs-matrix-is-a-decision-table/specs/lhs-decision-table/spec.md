@@ -68,3 +68,67 @@ second source of truth for an enforcement decision.
 
 - **GIVEN** any projected matrix
 - **THEN** the table MUST carry `enabled: false`
+
+### Requirement: REQ-LDT-005 The evaluator is the lookup
+
+`LhsRecommendationService::recommend()` SHALL resolve the prescribed
+intervention by evaluating the projected decision table through OpenRegister,
+and SHALL read the matrix directly only when this instance has no enabled
+projection for it.
+
+The projection SHALL arrive ENABLED. With the evaluator as the lookup, a
+disabled table does not withhold a second opinion, it silently hands the
+question back to the matrix and makes the migration a no-op that reports
+success.
+
+The matrix path SHALL be retained. Projecting a table needs an owner for the
+object it writes, so it is a command a person runs rather than something an
+upgrade performs; an instance that has not run it must still be able to
+enforce.
+
+@e2e exclude Server-side resolution between two lookup paths. Which of them answered is not observable in a browser: both produce the same recommendation row for a consistent matrix, and that identity is the point. Covered by LhsOverrideAuthorizationTest, which pins the matrix path by injecting a lookup that answers null, and by the migrator suite for the table path.
+
+#### Scenario: An enabled projection answers
+
+- **GIVEN** a matrix with an enabled projected decision table
+- **WHEN** a recommendation is requested for a triple the table covers
+- **THEN** the intervention MUST come from the evaluator
+
+#### Scenario: No projection falls back to the matrix
+
+- **GIVEN** an instance where the projection has never been run
+- **WHEN** a recommendation is requested
+- **THEN** the intervention MUST be read from the matrix cells
+
+#### Scenario: A disabled projection is not consulted
+
+- **GIVEN** a projected table an administrator has switched off
+- **THEN** the matrix MUST answer instead
+
+### Requirement: REQ-LDT-006 A re-run updates, and refuses an edited table
+
+A re-run SHALL resolve the existing table by its provenance marker and update
+it, rather than writing a second table carrying the same marker.
+
+A re-run SHALL REFUSE a table whose rules differ from the projection, and
+report the refusal. The projection is one-way and the matrix no longer has an
+authoring surface, so overwriting edited rules would replace an
+administrator's work with a source they cannot read.
+
+Only the rules SHALL be compared. A renamed table, a reworded description or a
+toggled enabled flag are an administrator's business.
+
+@e2e exclude A property of the occ migration, which has no browser surface at all. Covered by LhsMatrixDecisionTableMigratorTest over a schema-aware fake register: a fake answering both schemas alike could not express "a table already exists" and the guard would never fire.
+
+#### Scenario: A re-run does not duplicate
+
+- **GIVEN** a matrix already projected once
+- **WHEN** the migration runs again
+- **THEN** exactly one table MUST exist, and the write MUST target it
+
+#### Scenario: An edited table is refused
+
+- **GIVEN** a projected table whose rules have been changed
+- **WHEN** the migration runs again
+- **THEN** nothing MUST be written for it
+- **AND** the run MUST report it as skipped, naming the edit

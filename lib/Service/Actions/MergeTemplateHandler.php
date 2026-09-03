@@ -30,7 +30,6 @@ namespace OCA\Dossiq\Service\Actions;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseFieldWriter;
-use OCA\Dossiq\Service\FlowRunAsScope;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -48,8 +47,6 @@ class MergeTemplateHandler implements ActionHandlerInterface {
 	 *                                      OpenRegister ObjectService.
 	 * @param IAppConfig $appConfig App config — supplies register +
 	 *                              case_schema keys for the save.
-	 * @param FlowRunAsScope $runAsScope Scopes the case write to the run's
-	 *                                   acting identity.
 	 * @param CaseFieldWriter $caseWriter Applies ONLY the target field to the
 	 *                                    stored case.
 	 * @param LoggerInterface $logger PSR-3 logger.
@@ -59,7 +56,6 @@ class MergeTemplateHandler implements ActionHandlerInterface {
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly IAppConfig $appConfig,
-		private readonly FlowRunAsScope $runAsScope,
 		private readonly CaseFieldWriter $caseWriter,
 		private readonly LoggerInterface $logger,
 	) {
@@ -126,28 +122,24 @@ class MergeTemplateHandler implements ActionHandlerInterface {
 				return new ActionResult(succeeded: false, error: 'case_schema_unconfigured', data: $preview);
 			}
 
-			// The write runs under the flow run's `runAs` identity: under
-			// FlowRunWorker the ambient session carries nobody, so a bare
-			// saveObject() is refused as 'Anonymous' however legitimate the
-			// run — measured live as `merge_template_failed` stopping the
-			// seeded case flow at its decision document.
+			// On the flow path the engine's RegistryStepDispatcher already
+			// runs this handler inside `ObjectService::runAs()` as the run's
+			// acting identity (openregister#3332) — the seam that unstuck the
+			// seeded case flow FlowRunWorker refused as 'Anonymous'. On the
+			// interactive path the ambient session user answers the permission
+			// checks. No local runAs wrap is needed here any more.
 			//
 			// ONLY the target field is written. `$case` is a snapshot of the
 			// flow item; full-saving `array_merge($case, ...)` here wrote the
 			// document over whatever other writers had stored since the
 			// snapshot, and dropped every snapshot field the schema does not
 			// declare (the commissieBesluit silent-drop, measured live).
-			$this->runAsScope->call(
-				context: $transitionContext,
-				operation: function () use ($objectService, $register, $schema, $case, $targetField, $rendered): void {
-					$this->caseWriter->write(
-						objectService: $objectService,
-						register: $register,
-						schema: $schema,
-						case: $case,
-						changes: [$targetField => $rendered]
-					);
-				}
+			$this->caseWriter->write(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				case: $case,
+				changes: [$targetField => $rendered]
 			);
 
 			// The rendered document ALSO travels on the result, so the flow

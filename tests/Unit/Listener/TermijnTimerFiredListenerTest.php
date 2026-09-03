@@ -91,7 +91,7 @@ class TermijnTimerFiredListenerTest extends TestCase {
 	 * @return string
 	 */
 	private function seedInstance(array $overrides = []): string {
-		$row = $this->objects->saveObject('dossiq', 'deadlineInstance', array_merge([
+		$row = $this->objects->seed('deadlineInstance', array_merge([
 			'case' => 'Z/2026/L1',
 			'deadlineDefinition' => 'td-ov',
 			'startDate' => '2026-06-01T10:00:00+00:00',
@@ -223,7 +223,7 @@ class TermijnTimerFiredListenerTest extends TestCase {
 	public function testFireSyncsRunningPenaltyCalculations(): void {
 		$id = $this->seedInstance(['status' => 'exceeded']);
 		$start = (new \DateTimeImmutable('today'))->modify('-5 days');
-		$this->objects->saveObject('dossiq', 'penaltyPaymentCalculation', [
+		$this->objects->seed('penaltyPaymentCalculation', [
 			'id' => 'b-l1',
 			'deadlineInstance' => $id,
 			'startDate' => $start->format('Y-m-d'),
