@@ -313,14 +313,6 @@
       "permission": "admin"
     },
     {
-      "id": "WorkflowDefinitionsMenu",
-      "label": "Workflow definitions",
-      "icon": "SitemapOutline",
-      "route": "WorkflowDefinitions",
-      "section": "settings",
-      "order": 97
-    },
-    {
       "id": "CaseTypesMenu",
       "label": "Case types",
       "icon": "FormatListBulletedType",

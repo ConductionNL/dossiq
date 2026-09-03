@@ -94,11 +94,19 @@ const SETTINGS_PAGES: Array<{ name: string; route: string; addBtn: string }> = [
 		route: '/settings/wms-layers',
 		addBtn: 'Add WMS/WFS Layer',
 	},
-	{
-		name: 'Workflow definitions',
-		route: '/settings/workflow-definitions',
-		addBtn: 'Add Workflow Template',
-	},
+	// 'Workflow definitions' (/settings/workflow-definitions) lost its settings
+	// ENTRY, for the same reason Approval routes did above: a workflow is a flow
+	// now, and the definition is what a flow was generated FROM. Two adjacent
+	// settings entries at orders 96 and 97, called Flows and Workflow
+	// definitions, wearing Sitemap and SitemapOutline, read as one feature
+	// listed twice — and editing the definition does not reach the running
+	// flow unless somebody re-runs the projection, which would overwrite
+	// whatever was authored on the canvas.
+	//
+	// The page stays ROUTABLE so a reader can still open a legacy link and see
+	// what a flow came from. Flows are authored at /flows, covered by
+	// flows.spec.ts, whose create control is a canvas action rather than the
+	// "Add X" button every row in this table asserts on.
 	{ name: 'Organisations', route: '/settings/tenants', addBtn: 'Add Tenant' },
 	// The standalone "Status history" (StatusRecords) settings page was retired
 	// by retire-status-history-page — change history is now the CaseDetail

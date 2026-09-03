@@ -20,6 +20,15 @@ import { BASE_URL } from './base-url.ts'
 const FLOW_MARKER = 'dossiq:workflowTemplate:'
 
 test.describe('workflow definitions projected onto flows', () => {
+	// The dossiq shell mounts a large manifest and queries OpenRegister on
+	// load, which on a cold instance eats most of a 30s budget before the nav
+	// is interactive. The menu test below timed out at 30s with the Settings
+	// group already expanded and the Flows link already rendered — it ran out
+	// of budget, it did not disagree with the page. work-navigation.spec.ts
+	// sets the same explicit budget for the same reason; a bare timeout that
+	// reads as breakage is exactly what this avoids.
+	test.setTimeout(300_000)
+
 	test('the projected flows are listed, and every one is disabled', async ({
 		page,
 	}) => {
@@ -63,9 +72,70 @@ test.describe('workflow definitions projected onto flows', () => {
 			).toBeFalsy()
 		}
 	})
+
+	test('the settings menu offers Flows once, not Flows and Workflow definitions', async ({
+		page,
+	}) => {
+		await page.goto(`${BASE_URL}/apps/dossiq/`)
+		await page.waitForLoadState('domcontentloaded')
+
+		const nav = page.locator('[id^="app-navigation"]').first()
+		await expect(
+			nav,
+			'the app navigation must render, or this asserts nothing',
+		).toBeVisible({ timeout: 30000 })
+
+		// The settings leaves sit in a collapsed foldout, so they are in the DOM
+		// but hidden until it is opened. Opening it is what a user does to see
+		// them, so the test does it too.
+		await nav
+			.getByRole('button', { name: 'Settings', exact: true })
+			.first()
+			.click()
+
+		// THE CONTROL. Without it an absence proves only that the menu failed to
+		// render, which is exactly how this assertion would pass wrongly.
+		await expect(
+			nav.getByRole('link', { name: /^(Flows|Stromen)$/ }),
+			'Flows must be the surviving entry, or the absence below proves nothing',
+		).toBeVisible({ timeout: 30000 })
+
+		// The assertion. Both entries sat adjacent at orders 96 and 97 wearing
+		// Sitemap and SitemapOutline, which reads as one feature listed twice.
+		await expect(
+			nav.getByRole('link', {
+				name: /^(Workflow definitions|Workflowdefinities)$/,
+			}),
+		).toHaveCount(0)
+	})
+
+	test('the retired definitions page is still reachable by direct link', async ({
+		page,
+	}) => {
+		// Losing a menu entry is not the same as losing the page. The definition
+		// is what a projected flow was generated FROM, so a reader following a
+		// legacy link must still land on it rather than on the dashboard.
+		//
+		// A PATH, not `#/settings/workflow-definitions`: dossiq runs on
+		// createWebHistory, where a hash deep link navigates NOWHERE and throws
+		// nothing, so this would silently render the dashboard and pass.
+		await page.goto(
+			`${BASE_URL}/index.php/apps/dossiq/settings/workflow-definitions`,
+		)
+
+		await expect(
+			page
+				.getByRole('button', { name: 'Add Workflow Template', exact: true })
+				.first(),
+			'the definitions page must still render for a deep link',
+		).toBeVisible({ timeout: 60000 })
+	})
 })
 
 test.describe('LHS override authorisation', () => {
+	// Same budget, same reason: the second test here drives the navigation.
+	test.setTimeout(300_000)
+
 	test('an inspector cannot escalate by claiming a harsher recommendation', async ({
 		page,
 	}) => {
