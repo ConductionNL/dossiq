@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
+use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -170,6 +171,30 @@ class DeadlineCaseCreatedShippedDataTest extends TestCase {
 	}//end listener()
 
 	/**
+	 * The ObjectEntity OpenRegister hands to a create listener.
+	 *
+	 * Built as an `ObjectEntity` because that is the only thing
+	 * `ObjectCreatedEvent::__construct()` accepts. These two call sites used to
+	 * pass a bare `FakeStoredObject`, which the stub event took because its
+	 * parameter was untyped and optional — so both fataled against a real
+	 * OpenRegister and passed here. `caseType` goes in the OBJECT and the
+	 * schema in `@self`, because that is where the entity itself puts them.
+	 *
+	 * @param string $caseId     The case uuid.
+	 * @param string $caseTypeId The case type this case references.
+	 *
+	 * @return ObjectEntity The created case.
+	 */
+	private static function createdCase(string $caseId, string $caseTypeId): ObjectEntity {
+		$entity = new ObjectEntity();
+		$entity->setUuid($caseId);
+		$entity->setSchema('case');
+		$entity->setObject(['caseType' => $caseTypeId]);
+
+		return $entity;
+	}//end createdCase()
+
+	/**
 	 * A case of a shipped case type binds a term and arms a timer.
 	 *
 	 * @return void
@@ -180,11 +205,7 @@ class DeadlineCaseCreatedShippedDataTest extends TestCase {
 		// The payload OpenRegister hands over: caseType is a UUID, because
 		// the case schema declares it `format: uuid, $ref: caseType`.
 		$listener->handle(
-			new ObjectCreatedEvent(
-				new \OCA\Dossiq\Tests\Unit\Service\FakeStoredObject(
-					['id' => 'case-1', 'caseType' => $caseTypeId, '@self' => ['schema' => 'case']]
-				)
-			)
+			new ObjectCreatedEvent(self::createdCase('case-1', $caseTypeId))
 		);
 
 		$instances = array_values($this->objects->store['deadlineInstance'] ?? []);
@@ -254,11 +275,7 @@ class DeadlineCaseCreatedShippedDataTest extends TestCase {
 		);
 
 		$listener->handle(
-			new ObjectCreatedEvent(
-				new \OCA\Dossiq\Tests\Unit\Service\FakeStoredObject(
-					['id' => 'case-2', 'caseType' => (string)$caseType['id'], '@self' => ['schema' => 'case']]
-				)
-			)
+			new ObjectCreatedEvent(self::createdCase('case-2', (string)$caseType['id']))
 		);
 
 		self::assertSame([], ($this->objects->store['deadlineInstance'] ?? []), 'No definition means no term, which is a valid outcome — it just must not be silent.');

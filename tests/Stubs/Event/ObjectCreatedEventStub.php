@@ -19,6 +19,7 @@ declare(strict_types=1);
 
 namespace OCA\OpenRegister\Event;
 
+use OCA\OpenRegister\Db\ObjectEntity;
 use OCP\EventDispatcher\Event;
 
 if (class_exists(ObjectCreatedEvent::class) === false) {
@@ -39,17 +40,24 @@ if (class_exists(ObjectCreatedEvent::class) === false) {
 		 * reverse. VergunningaanvraagCreatedListener carries a comment about
 		 * exactly this divergence and normalises both shapes to survive it.
 		 *
-		 * @param ObjectEntity|null $object The created object.
+		 * 🔴 AND THE PARAMETER IS TYPED AND REQUIRED, WHICH IT ALSO WAS NOT.
+		 *
+		 * `private $object = null` accepted anything, so two listener tests
+		 * handed it a plain fixture object and passed. The real constructor
+		 * takes `ObjectEntity $object` and nothing else, so both call sites
+		 * fataled against a real OpenRegister while staying green here.
+		 *
+		 * @param ObjectEntity $object The created object.
 		 */
-		public function __construct(private $object = null) {
+		public function __construct(private ObjectEntity $object) {
 		}//end __construct()
 
 		/**
 		 * Returns the created object.
 		 *
-		 * @return mixed The ObjectEntity, or null when the stub was built bare.
+		 * @return ObjectEntity The created object.
 		 */
-		public function getObject() {
+		public function getObject(): ObjectEntity {
 			return $this->object;
 		}//end getObject()
 	}//end class
