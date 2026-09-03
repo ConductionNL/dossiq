@@ -311,7 +311,9 @@ test.describe('New case dialog', () => {
 		// Nothing is assumed about the empty form beyond the fields being
 		// blank: a prefill that fired on open would make this assertion pass
 		// for the wrong reason later.
-		const titleInput = dialog.locator('[data-cn-field="title"]').getByRole('textbox')
+		const titleInput = dialog
+			.locator('[data-cn-field="title"]')
+			.getByRole('textbox')
 		await expect(titleInput).toHaveValue('')
 
 		await chooseCaseType(page, dialog)
@@ -326,7 +328,9 @@ test.describe('New case dialog', () => {
 		const dialog = await openDialog(page)
 		const typed = `${RUN_PREFIX} Mijn eigen titel`
 
-		const titleInput = dialog.locator('[data-cn-field="title"]').getByRole('textbox')
+		const titleInput = dialog
+			.locator('[data-cn-field="title"]')
+			.getByRole('textbox')
 		await titleInput.fill(typed)
 		await chooseCaseType(page, dialog)
 
@@ -344,7 +348,10 @@ test.describe('New case dialog', () => {
 		const dialog = await openDialog(page)
 		const title = `${RUN_PREFIX} Startstatus`
 
-		await dialog.locator('[data-cn-field="title"]').getByRole('textbox').fill(title)
+		await dialog
+			.locator('[data-cn-field="title"]')
+			.getByRole('textbox')
+			.fill(title)
 		await chooseCaseType(page, dialog)
 		await expect(dialog.getByText(CEILING)).toBeVisible({ timeout: 15000 })
 
@@ -400,11 +407,13 @@ test.describe('New case dialog', () => {
 		// Two columns means two distinct left edges among the single-line
 		// fields. Asserting on the class alone would pass even if the CSS
 		// never applied, which is exactly the failure worth catching.
-		const lefts = await dialog.locator('[data-cn-field]').evaluateAll(
-			(nodes) => nodes
-				.filter((n) => !n.className.includes('--wide'))
-				.map((n) => Math.round(n.getBoundingClientRect().left)),
-		)
+		const lefts = await dialog
+			.locator('[data-cn-field]')
+			.evaluateAll((nodes) =>
+				nodes
+					.filter((n) => !n.className.includes('--wide'))
+					.map((n) => Math.round(n.getBoundingClientRect().left)),
+			)
 		expect(new Set(lefts).size).toBe(2)
 
 		// The description is prose, so it takes the full width rather than
@@ -434,7 +443,9 @@ test.describe('New case dialog', () => {
 		// The identifier-shaped definition seeded below renders in sentence
 		// case. Real dossiq data carries names like auditorsStatementThreshold,
 		// which used to reach the form verbatim.
-		await expect(dialog.getByText(IDENTIFIER_LABEL, { exact: true })).toBeVisible()
+		await expect(
+			dialog.getByText(IDENTIFIER_LABEL, { exact: true }),
+		).toBeVisible()
 	})
 	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-007-a-field-kept-off-the-create-form-stays-reachable-on-the-case
 	test('keeps parent case off the create form and on the case itself', async ({
@@ -458,9 +469,13 @@ test.describe('New case dialog', () => {
 		// catch-all, so the assertions below would run against the wrong page
 		// and fail naming the field rather than the navigation.
 		await page.goto(`/index.php/apps/dossiq/cases/${objectId(seeded)}`)
-		await expect(page, 'the deep link should stay on the case')
-			.toHaveURL(/\/cases\/[^/?#]+$/, { timeout: 20000 })
-		await expect(page.getByText('Core case data')).toBeVisible({ timeout: 20000 })
+		await expect(page, 'the deep link should stay on the case').toHaveURL(
+			/\/cases\/[^/?#]+$/,
+			{ timeout: 20000 },
+		)
+		await expect(page.getByText('Core case data')).toBeVisible({
+			timeout: 20000,
+		})
 		await expect(
 			page.locator('[data-cn-field="parentCase"]').first(),
 		).toBeVisible({ timeout: 15000 })
