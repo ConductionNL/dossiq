@@ -3484,7 +3484,8 @@ OC.L10N.register(
         "Yes or no": "Ja of nee",
         "Maximum length": "Maximale lengte",
         "Longest value this property accepts.": "De langste waarde die deze eigenschap accepteert.",
-        "The status from which this property must be answered.": "De status vanaf wanneer deze eigenschap ingevuld moet zijn."
+        "The status from which this property must be answered.": "De status vanaf wanneer deze eigenschap ingevuld moet zijn.",
+        "Save store settings": "Store-instellingen opslaan"
     },
     "nplurals=2; plural=(n != 1);"
 )

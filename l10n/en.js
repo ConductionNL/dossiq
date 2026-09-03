@@ -3484,7 +3484,8 @@ OC.L10N.register(
         "Yes or no": "Yes or no",
         "Maximum length": "Maximum length",
         "Longest value this property accepts.": "Longest value this property accepts.",
-        "The status from which this property must be answered.": "The status from which this property must be answered."
+        "The status from which this property must be answered.": "The status from which this property must be answered.",
+        "Save store settings": "Save store settings"
     },
     "nplurals=2; plural=(n != 1);"
 )
