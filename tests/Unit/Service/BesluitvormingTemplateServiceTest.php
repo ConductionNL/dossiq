@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\Besluitvorming\TemplateBundleSeeder;
 use OCA\Dossiq\Service\Besluitvorming\WorkflowReferenceResolver;
 use OCA\Dossiq\Service\BesluitvormingTemplateService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -99,7 +100,7 @@ class BesluitvormingTemplateServiceTest extends TestCase {
 		$this->service = new BesluitvormingTemplateService(
 			$this->settingsService,
 			$this->logger,
-			new TemplateBundleSeeder($this->logger, new WorkflowReferenceResolver()),
+			new TemplateBundleSeeder($this->logger, new WorkflowReferenceResolver(), new JsonEncodedStringProperties()),
 		);
 	}//end setUp()
 

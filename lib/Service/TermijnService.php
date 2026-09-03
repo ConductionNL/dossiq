@@ -35,12 +35,15 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
  * Server-authoritative TermijnInstance lifecycle.
+ *
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
@@ -77,12 +80,16 @@ class TermijnService {
 	 * matching definition exists (REQ-TERM-001-A).
 	 *
 	 * @param string $caseId The case id.
-	 * @param string $caseType The zaaktype slug.
+	 * @param string $caseType The zaaktype SLUG. A `case` object carries its
+	 *        case type as a uuid, so a caller holding one must convert it
+	 *        through {@see CaseTypeSlugResolver} first — a uuid matches no
+	 *        definition and the term silently never starts.
 	 * @param DateTimeImmutable|null $startDate Optional start (defaults to now).
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @throws RuntimeException When no TermijnDefinitie matches the zaaktype.
+	 * @throws NoTermijnDefinitieException When no TermijnDefinitie matches the zaaktype.
+	 * @throws RuntimeException When the instance cannot be persisted.
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
@@ -90,8 +97,11 @@ class TermijnService {
 		$startDate = ($startDate ?? new DateTimeImmutable());
 		$definitie = $this->getTermijnDefinitie(caseType: $caseType);
 		if ($definitie === null) {
-			throw new RuntimeException(
-				'No active TermijnDefinitie configured for zaaktype "' . $caseType . '" (REQ-TERM-001-A)'
+			// A DISTINCT type, because this is the one refusal a caller can
+			// act on and the one that must not be swallowed at debug level:
+			// it means no statutory clock started for this case at all.
+			throw new NoTermijnDefinitieException(
+				message: 'No active TermijnDefinitie configured for zaaktype "' . $caseType . '" (REQ-TERM-001-A)'
 			);
 		}
 

@@ -23,6 +23,7 @@ use OCA\Dossiq\Service\Parafeer\ParaferingDelegationService;
 use OCA\Dossiq\Service\Parafeer\ParaferingRaiseService;
 use OCA\Dossiq\Service\ParaferingNotificationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
 use OCA\Dossiq\Service\Support\ObjectArrayNormalizer;
 use OCA\Dossiq\Tests\Unit\Fixtures\ShippedRegisterSchema;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -51,6 +52,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Parafeer\ParaferingConclusionService
  * @covers \OCA\Dossiq\Service\Parafeer\ParaferingRaiseService
  * @uses \OCA\Dossiq\Service\Support\ObjectArrayNormalizer
+ * @uses \OCA\Dossiq\Service\Support\JsonEncodedStringProperties
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Event\ParafeerTransitionEvent
  */
@@ -129,6 +131,7 @@ class ParaferingLifecycleConformanceTest extends TestCase {
 			$this->createMock(IRootFolder::class),
 			$this->createMock(IEventDispatcher::class),
 			new ObjectArrayNormalizer(),
+			new JsonEncodedStringProperties(),
 			$this->createMock(LoggerInterface::class),
 		);
 	}
@@ -309,6 +312,7 @@ class ParaferingLifecycleConformanceTest extends TestCase {
 			$routes,
 			$delegation,
 			new ObjectArrayNormalizer(),
+			new JsonEncodedStringProperties(),
 			$this->createMock(LoggerInterface::class),
 		);
 

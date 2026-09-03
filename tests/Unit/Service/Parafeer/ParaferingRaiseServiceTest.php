@@ -20,6 +20,7 @@ use OCA\Dossiq\Service\Parafeer\ParafeerrouteDirectory;
 use OCA\Dossiq\Service\Parafeer\ParaferingDelegationService;
 use OCA\Dossiq\Service\Parafeer\ParaferingRaiseService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
 use OCA\Dossiq\Service\Support\ObjectArrayNormalizer;
 use OCA\Dossiq\Tests\Unit\Fixtures\ShippedRegisterSchema;
 use PHPUnit\Framework\TestCase;
@@ -214,6 +215,7 @@ class ParaferingRaiseServiceTest extends TestCase {
 			$routes,
 			$delegation,
 			new ObjectArrayNormalizer(),
+			new JsonEncodedStringProperties(),
 			$this->createMock(LoggerInterface::class),
 		);
 	}

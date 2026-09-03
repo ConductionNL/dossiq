@@ -20,6 +20,7 @@ use OCA\Dossiq\Event\ParafeerTransitionEvent;
 use OCA\Dossiq\Service\Parafeer\ParafeerVoorstelRepository;
 use OCA\Dossiq\Service\Parafeer\ParaferingConclusionService;
 use OCA\Dossiq\Service\ParaferingNotificationService;
+use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
 use OCA\Dossiq\Service\Support\ObjectArrayNormalizer;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -128,6 +129,7 @@ class ParaferingConclusionServiceTest extends TestCase {
 			$this->createMock(IRootFolder::class),
 			$dispatcher,
 			new ObjectArrayNormalizer(),
+			new JsonEncodedStringProperties(),
 			$this->createMock(LoggerInterface::class),
 		);
 	}
@@ -162,6 +164,48 @@ class ParaferingConclusionServiceTest extends TestCase {
 		}
 
 		return $patch;
+	}
+
+	/**
+	 * The conclusion write keeps routeSnapshot in its declared string shape.
+	 *
+	 * OpenRegister hands back a `type: string` property DECODED when its text
+	 * parses as JSON, and this write merges the loaded voorstel with the final
+	 * status — so before the fix the payload carried an ARRAY into a property
+	 * the schema declares a string, OpenRegister refused the save, and the
+	 * voorstel stayed on `in_parafering` / `currentStep: 1` forever while the
+	 * conclusion had already been announced and heard.
+	 *
+	 * @return void
+	 */
+	public function testItRewritesADecodedRouteSnapshotAsAString(): void {
+		$steps = [['order' => 1, 'actor' => 'alice'], ['order' => 2, 'actor' => 'carol']];
+		$this->voorstel = [
+			'id' => 'v-1',
+			'status' => 'in_parafering',
+			'currentStep' => 1,
+			'author' => 'steller',
+			'subject' => 'Voorstel',
+			// As OpenRegister returns it: decoded, despite the string declaration.
+			'routeSnapshot' => $steps,
+		];
+
+		$service = $this->service();
+		$service->recordConclusion(
+			proposalId: 'v-1',
+			outcome: 'approved',
+			actor: 'carol',
+			actions: [['step' => 2, 'actor' => 'carol', 'action' => 'approved']],
+		);
+
+		$patch = $this->voorstelPatch();
+		$this->assertIsString(
+			$patch['routeSnapshot'],
+			'The voorstel schema declares routeSnapshot a string; writing the decoded array back is refused by OpenRegister.'
+		);
+		$this->assertSame($steps, json_decode($patch['routeSnapshot'], true), 'The frozen route record must survive the round trip.');
+		$this->assertSame('geaccordeerd', $patch['status']);
+		$this->assertSame(0, $patch['currentStep']);
 	}
 
 	/**

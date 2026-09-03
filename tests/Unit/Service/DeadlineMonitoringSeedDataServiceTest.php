@@ -61,15 +61,35 @@ class DeadlineMonitoringSeedDataServiceTest extends TestCase {
 	}
 
 	/**
+	 * How many definitions the shipped seed file actually declares.
+	 *
+	 * READ, NOT HARDCODED. These assertions used to say `3`, so adding the
+	 * definitions that bind the SHIPPED case types — the fix for a fresh
+	 * install arming no timer at all — reddened three tests that were only
+	 * ever restating the file's current length.
+	 *
+	 * @return int The shipped row count.
+	 */
+	private function shippedDefinitionCount(): int {
+		$seed = json_decode(
+			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/termijnbewaking_seed_data.json'),
+			true
+		);
+		self::assertIsArray($seed, 'The shipped termijnbewaking seed must parse.');
+
+		return count($seed['termijnDefinities'] ?? []);
+	}
+
+	/**
 	 * @return void
 	 */
-	public function testSeedCreatesThreeDefinitions(): void {
+	public function testSeedCreatesEveryShippedDefinition(): void {
 		$result = $this->service->seed();
 
 		self::assertSame(true, $result['success']);
-		self::assertSame(3, $result['definities']);
+		self::assertSame($this->shippedDefinitionCount(), $result['definities']);
 		self::assertSame(0, $result['skipped']);
-		self::assertCount(3, $this->objects->store['deadlineDefinition']);
+		self::assertCount($this->shippedDefinitionCount(), $this->objects->store['deadlineDefinition']);
 	}
 
 	/**
@@ -81,8 +101,8 @@ class DeadlineMonitoringSeedDataServiceTest extends TestCase {
 
 		self::assertSame(true, $second['success']);
 		self::assertSame(0, $second['definities']);
-		self::assertSame(3, $second['skipped']);
-		self::assertCount(3, $this->objects->store['deadlineDefinition']);
+		self::assertSame($this->shippedDefinitionCount(), $second['skipped']);
+		self::assertCount($this->shippedDefinitionCount(), $this->objects->store['deadlineDefinition']);
 	}
 
 	/**
@@ -128,7 +148,7 @@ class DeadlineMonitoringSeedDataServiceTest extends TestCase {
 
 		self::assertSame(0, $result['definities']);
 		self::assertSame(0, $result['skipped']);
-		self::assertSame(3, $result['failed']);
+		self::assertSame($this->shippedDefinitionCount(), $result['failed']);
 	}
 
 	/**

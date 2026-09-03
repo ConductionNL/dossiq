@@ -44,6 +44,7 @@ namespace OCA\Dossiq\Service\Parafeer;
 
 use OCA\Dossiq\Event\ParafeerTransitionEvent;
 use OCA\Dossiq\Service\ParaferingNotificationService;
+use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
 use OCA\Dossiq\Service\Support\ObjectArrayNormalizer;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -108,6 +109,17 @@ class ParaferingConclusionService {
 	private const TERMINAL_STATUSES = ['geaccordeerd', 'teruggestuurd'];
 
 	/**
+	 * The voorstel schema's slug in dossiq's register.
+	 *
+	 * The saves address the schema by its configured identifier, which is a
+	 * numeric id on a live install; the slug is what
+	 * {@see JsonEncodedStringProperties} keys its map by.
+	 *
+	 * @var string
+	 */
+	private const SCHEMA_SLUG = 'proposal';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ParafeerVoorstelRepository    $repository          Schema resolution + voorstel loads.
@@ -115,6 +127,7 @@ class ParaferingConclusionService {
 	 * @param IRootFolder                   $rootFolder          For the accordering signature annotation.
 	 * @param IEventDispatcher              $eventDispatcher     Raises the audit transition events.
 	 * @param ObjectArrayNormalizer         $normalizer          Collapses OpenRegister's array-or-entity shape.
+	 * @param JsonEncodedStringProperties   $jsonProperties      Restores the declared string shape of JSON-encoded properties.
 	 * @param LoggerInterface               $logger              Logger.
 	 */
 	public function __construct(
@@ -123,6 +136,7 @@ class ParaferingConclusionService {
 		private readonly IRootFolder $rootFolder,
 		private readonly IEventDispatcher $eventDispatcher,
 		private readonly ObjectArrayNormalizer $normalizer,
+		private readonly JsonEncodedStringProperties $jsonProperties,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -369,8 +383,19 @@ class ParaferingConclusionService {
 			];
 		}
 
+		// 🔴 NOT `array_merge()`. `$proposal` came back from OpenRegister with
+		// `routeSnapshot` DECODED (the read path decodes a string-declared
+		// property whose text parses as JSON), and the update does not replace
+		// it — so a bare merge carries an array into a property the schema
+		// declares as a string and the save is refused. The conclusion is then
+		// heard, this listener dies, and the voorstel is stranded on
+		// `in_parafering` forever. See JsonEncodedStringProperties.
 		$objectService->saveObject(
-			object: array_merge($proposal, $updateData),
+			object: $this->jsonProperties->mergeForWrite(
+				stored: $proposal,
+				updates: $updateData,
+				schemaSlug: self::SCHEMA_SLUG,
+			),
 			register: $register,
 			schema: $proposalSchema
 		);
