@@ -511,9 +511,15 @@ test.describe('New case dialog', () => {
 
 		// Scoped to that widget, so this cannot pass on the words appearing
 		// somewhere else on a busy page.
+		//
+		// Matched in either locale, as the sibling case-detail specs do. The
+		// field label is the schema property's `title` put through the injected
+		// `cnTranslate`, and dossiq ships `Parent case` -> `Hoofdzaak`; nothing
+		// forces the language of the E2E instance, so an exact English string
+		// would pass or fail on the locale rather than on the feature.
 		await expect(
 			coreWidget,
 			'parent case should be editable on the case, though not on the create form',
-		).toContainText('Parent case', { timeout: 15000 })
+		).toContainText(/Parent case|Hoofdzaak/, { timeout: 15000 })
 	})
 })
