@@ -1146,6 +1146,7 @@
             "title": "Core case data",
             "icon": "FileDocument",
             "content": {
+              "title": "Core case data",
               "columns": 2,
               "include": [
                 "title",
@@ -1681,6 +1682,7 @@
             "title": "Objection",
             "icon": "Gavel",
             "content": {
+              "title": "Objection",
               "columns": 2,
               "include": [
                 "case",
@@ -1741,6 +1743,7 @@
             "title": "Statutory clock & suspension",
             "icon": "Timeline",
             "content": {
+              "title": "Statutory clock & suspension",
               "columns": 2,
               "include": [
                 "adjournedOn",
@@ -1935,6 +1938,7 @@
             "title": "Disposition & reasoning",
             "icon": "ScaleBalance",
             "content": {
+              "title": "Disposition & reasoning",
               "columns": 2,
               "include": [
                 "dispositionType",
@@ -1959,6 +1963,7 @@
             "title": "Publication & documents",
             "icon": "FileSign",
             "content": {
+              "title": "Publication & documents",
               "columns": 2,
               "include": [
                 "replacementDecision",
@@ -2086,9 +2091,10 @@
           {
             "id": "tasknew-data",
             "type": "data",
-            "title": "Nieuwe taak",
+            "title": "New task",
             "icon": "ClipboardCheckOutline",
             "content": {
+              "title": "New task",
               "columns": 2
             }
           }
@@ -2127,6 +2133,7 @@
             "title": "Task",
             "icon": "ClipboardCheckOutline",
             "content": {
+              "title": "Task",
               "columns": 2
             }
           },
@@ -2364,6 +2371,7 @@
             "title": "Advice request",
             "icon": "MessageTextOutline",
             "content": {
+              "title": "Advice request",
               "columns": 2
             }
           },
@@ -2764,6 +2772,7 @@
             "title": "Kaartlaag",
             "icon": "MapMarker",
             "content": {
+              "title": "Kaartlaag",
               "columns": 2
             }
           }
@@ -2839,6 +2848,7 @@
             "title": "Tenant",
             "icon": "OfficeBuilding",
             "content": {
+              "title": "Tenant",
               "columns": 2
             }
           }
@@ -2898,6 +2908,7 @@
             "title": "Parafeerroute",
             "icon": "FileSign",
             "content": {
+              "title": "Parafeerroute",
               "columns": 2
             }
           }
@@ -2980,6 +2991,7 @@
             "title": "Transfer",
             "icon": "SourceBranch",
             "content": {
+              "title": "Transfer",
               "columns": 2
             }
           }
@@ -3124,6 +3136,7 @@
             "title": "Definition",
             "icon": "Sitemap",
             "content": {
+              "title": "Definition",
               "columns": 2,
               "include": [
                 "title",
@@ -3143,6 +3156,7 @@
             "title": "State machine",
             "icon": "SourceBranch",
             "content": {
+              "title": "State machine",
               "columns": 2,
               "include": [
                 "steps",
@@ -3215,6 +3229,7 @@
             "title": "Status record",
             "icon": "Timeline",
             "content": {
+              "title": "Status record",
               "columns": 2
             }
           },
@@ -3321,6 +3336,7 @@
             "title": "Recommendation",
             "icon": "Lightbulb",
             "content": {
+              "title": "Recommendation",
               "columns": 2,
               "include": [
                 "case",
@@ -3345,6 +3361,7 @@
             "title": "Override & final",
             "icon": "ShieldCheckOutline",
             "content": {
+              "title": "Override & final",
               "columns": 2,
               "include": [
                 "finalIntervention",
@@ -3469,6 +3486,7 @@
             "title": "Committee",
             "icon": "AccountGroup",
             "content": {
+              "title": "Committee",
               "columns": 2,
               "include": [
                 "name",
@@ -3525,6 +3543,7 @@
             "title": "Roster & term",
             "icon": "Account",
             "content": {
+              "title": "Roster & term",
               "columns": 2,
               "include": [
                 "chair",
@@ -3663,6 +3682,7 @@
             "title": "Assignment",
             "icon": "ClipboardList",
             "content": {
+              "title": "Assignment",
               "columns": 2,
               "include": [
                 "bezwaar",
@@ -3688,6 +3708,7 @@
             "title": "Advice & outcome",
             "icon": "MessageTextOutline",
             "content": {
+              "title": "Advice & outcome",
               "columns": 2,
               "include": [
                 "advice",
@@ -3784,6 +3805,7 @@
             "title": "Appeal",
             "icon": "Gavel",
             "content": {
+              "title": "Appeal",
               "columns": 2,
               "include": [
                 "case",
@@ -3801,6 +3823,7 @@
             "title": "Filing & judgment",
             "icon": "ScaleBalance",
             "content": {
+              "title": "Filing & judgment",
               "columns": 2,
               "include": [
                 "appellantFilingDate",
