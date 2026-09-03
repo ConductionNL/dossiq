@@ -126,14 +126,22 @@ if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowResumeState', false) =
         }
 
         /**
-         * What the run should persist, given whether it suspended.
+         * What the run should persist, given whether it can still advance.
          *
-         * @param boolean $suspended Whether the run suspended.
+         * The parameter is `$live`, not `$suspended`, and the difference is
+         * semantic rather than cosmetic: a run that is queued or running is
+         * ALSO not terminal, and must keep its slots. Renamed in
+         * openregister#3358; a named-argument call site cannot work against
+         * both spellings, which is what StubApiDriftTest caught.
+         *
+         * @param boolean $live Whether the run can still advance (any
+         *                      non-terminal status — suspended, queued,
+         *                      running).
          *
          * @return array<string, array<string, mixed>>|null The slots, or null.
          */
-        public function storableWhen(bool $suspended): ?array {
-            if ($suspended === false || $this->byNode === []) {
+        public function storableWhen(bool $live): ?array {
+            if ($live === false || $this->byNode === []) {
                 return null;
             }
 
