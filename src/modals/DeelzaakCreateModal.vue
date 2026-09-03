@@ -256,6 +256,19 @@ export default {
 			}
 		},
 
+		/**
+		 * Load the status types of the SELECTED sub-case type.
+		 *
+		 * Filters on a bare `caseType` field name: the `_filters[caseType]`
+		 * form this used is inert, so the picker offered every case type's
+		 * statuses rather than the chosen one's.
+		 *
+		 * @param {object|null} caseType The selected sub-case type.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-creation-from-parent-case
+		 */
 		async onCaseTypeSelected(caseType) {
 			this.form.caseType = caseType?.id || null
 			this.errors.caseType = ''

@@ -139,6 +139,16 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Load the tasks belonging to THIS case.
+		 *
+		 * Filters on a bare `case` field name: the `_filters[case]` form this
+		 * used is inert, so the tab was reading every case's tasks.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/task-management/spec.md#requirement-task-list-must-be-reached-via-mijn-werk-not-a-sibling-top-level-menu
+		 */
 		async reload() {
 			if (!this.resolvedCaseId) {
 				this.loading = false
