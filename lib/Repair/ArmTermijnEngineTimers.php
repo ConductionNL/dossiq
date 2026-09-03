@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Repair;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
@@ -49,6 +50,7 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
  */
 class ArmTermijnEngineTimers implements IRepairStep {
+	use RunsUnderSystemIdentity;
 	use SearchesObjects;
 
 	/**
@@ -100,15 +102,34 @@ class ArmTermijnEngineTimers implements IRepairStep {
 			return;
 		}
 
-		$rows = $this->openInstances();
-		if ($rows === null) {
-			$output->warning('Termijn instances not readable (schemas unconfigured?). Skipping timer migration.');
-			return;
-		}
-
+		// NO SESSION, SO OPENREGISTER SEES 'Anonymous'. The listing below is a
+		// READ, and a read is fail-closed too on any schema without an explicit
+		// `public` grant — so an unelevated run reported "schemas unconfigured"
+		// for what was actually an RBAC refusal, and blamed configuration for
+		// it. The writes inside migrateInstance() are refused outright. Both
+		// halves therefore run under the same system identity every other
+		// writing step uses.
+		$objectService = $this->settingsService->getObjectService();
+		$rows = null;
 		$counts = ['armed' => 0, 'suspended' => 0, 'skipped' => 0, 'failed' => 0];
-		foreach ($rows as $row) {
-			$this->migrateInstance(row: $row, counts: $counts);
+
+		$this->withSystemIdentity(
+			objectService: $objectService,
+			work: function () use (&$rows, &$counts): void {
+				$rows = $this->openInstances();
+				if ($rows === null) {
+					return;
+				}
+
+				foreach ($rows as $row) {
+					$this->migrateInstance(row: $row, counts: $counts);
+				}
+			}
+		);
+
+		if ($rows === null) {
+			$output->warning('Termijn instances not readable (schemas unconfigured, or the read was refused). Skipping timer migration.');
+			return;
 		}
 
 		$this->logger->info('Dossiq termijn timer migration complete', $counts);

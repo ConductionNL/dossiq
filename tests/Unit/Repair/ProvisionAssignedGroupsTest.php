@@ -89,6 +89,53 @@ class ProvisionAssignedGroupsTest extends TestCase {
 	}
 
 	/**
+	 * dossiq names no group id from before the fleet rename.
+	 *
+	 * A fresh install still ends up with `decidesk-administrators` alongside
+	 * `decidiq-administrators`. It is not dossiq's: the gid appears nowhere in
+	 * this repository, and the surviving one is named in decidiq's own
+	 * `lib/Settings/decidesk_register.json` register authorization block. This
+	 * assertion is what makes that a finding rather than an assumption — if a
+	 * pre-rename gid is ever introduced here, it fails, and the leftover stops
+	 * being somebody else's problem.
+	 *
+	 * `OCA\Decidesk\Event\*` is deliberately not covered: those are
+	 * back-compat listener registrations for an app whose namespace moved, and
+	 * removing them would silently unhook the seam.
+	 *
+	 * @return void
+	 */
+	public function testDossiqNamesNoPreRenameGroupId(): void {
+		$root = dirname(__DIR__, 3);
+		$hits = [];
+
+		foreach (['lib', 'src', 'appinfo'] as $directory) {
+			$iterator = new \RecursiveIteratorIterator(
+				new \RecursiveDirectoryIterator($root . '/' . $directory, \FilesystemIterator::SKIP_DOTS)
+			);
+
+			foreach ($iterator as $file) {
+				if ($file->isFile() === false) {
+					continue;
+				}
+
+				$source = (string)file_get_contents($file->getPathname());
+				foreach (['decidesk-administrators', 'procest-administrators', 'docudesk-administrators'] as $gid) {
+					if (str_contains($source, $gid) === true) {
+						$hits[] = $file->getPathname() . ' => ' . $gid;
+					}
+				}
+			}
+		}
+
+		self::assertSame(
+			[],
+			$hits,
+			sprintf('dossiq names a group id from before the fleet rename: %s', implode(', ', $hits))
+		);
+	}//end testDossiqNamesNoPreRenameGroupId()
+
+	/**
 	 * Every literal assignee in the shipped flows is a provisioned group.
 	 *
 	 * Sweeps every `dossiq.askPerson` node in the shipped register files: an

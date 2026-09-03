@@ -50,25 +50,44 @@ namespace OCA\OpenRegister\Db;
  */
 class Verwerkingsactiviteit {
 	/**
-	 * Article 6 GDPR legal-basis vocabulary (mirrors OR).
+	 * Article 6 GDPR legal-basis vocabulary, copied from OpenRegister.
+	 *
+	 * THIS CONSTANT USED TO BE DUTCH, AND THAT IS WHY NOTHING CAUGHT THE BUG.
+	 * openregister#2555 internationalised the Verwerkingsactiviteit entity: it
+	 * renamed the columns AND this vocabulary, and
+	 * `VerwerkingsactiviteitMapper::validate()` refuses anything outside it.
+	 * The stub kept the pre-#2555 Dutch spellings, and
+	 * `testShippedCatalogueSatisfiesOrValidation()` asserted the shipped
+	 * catalogue against the stub — so the test agreed with the catalogue,
+	 * agreed with nothing real, and passed on every run while all seven rows
+	 * were refused on every fresh install with `Invalid legalBasis
+	 * "publieke_taak"; expected ... public_task, legal_obligation ...`.
+	 *
+	 * Source of truth: openregister `lib/Db/Verwerkingsactiviteit.php`,
+	 * `LEGAL_BASIS_VOCABULARY`. Keep the name identical to OR's so a drift is
+	 * a rename here rather than a silent divergence.
 	 *
 	 * @var array<int, string>
 	 */
-	public const RECHTSGROND_VOCABULARY = [
-		'toestemming',
-		'overeenkomst',
-		'wettelijke_verplichting',
-		'vitaal_belang',
-		'publieke_taak',
-		'gerechtvaardigd_belang',
+	public const LEGAL_BASIS_VOCABULARY = [
+		'consent',
+		'contract',
+		'legal_obligation',
+		'vital_interests',
+		'public_task',
+		'legitimate_interest',
 	];
 
 	/**
-	 * Lifecycle status vocabulary (mirrors OR).
+	 * Lifecycle status vocabulary, copied from OpenRegister.
+	 *
+	 * `concept`, not `draft`: the real entity defaults `status` to 'concept'
+	 * and `validate()` refuses 'draft' outright, so the stub's old value named
+	 * a state no row can hold.
 	 *
 	 * @var array<int, string>
 	 */
-	public const STATUS_VOCABULARY = ['draft', 'published', 'archived'];
+	public const STATUS_VOCABULARY = ['concept', 'published', 'archived'];
 
 	/**
 	 * Declared properties, mirroring the real OR entity's English columns.

@@ -216,6 +216,11 @@ trait SearchesObjects {
 	 *
 	 * @return mixed Whatever the callable returns.
 	 *
+	 * @phpstan-impure This RUNS the caller's closure, so anything it touches —
+	 *      instance counters included — has changed by the time this returns.
+	 *      Without the tag PHPStan carries the pre-call state across, and
+	 *      reported a counter incremented inside the closure as "always 0".
+	 *
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	protected function runAsSystemIfAvailable(object $objectService, callable $operation): mixed {
