@@ -381,7 +381,7 @@ class StufController extends Controller {
 	 */
 	private function messageFilters(): array {
 		$filters = [];
-		foreach (['endpointId', 'berichtSoort', 'status'] as $key) {
+		foreach (['endpointId', 'messageKind', 'status'] as $key) {
 			$value = (string)$this->request->getParam(key: $key, default: '');
 			if ($value !== '') {
 				$filters[$key] = $value;
@@ -418,7 +418,7 @@ class StufController extends Controller {
 			newStatus: 'bevestigd',
 			extras: [
 				'responseEnvelopeXml' => $rawXml,
-				'caseIdentification' => ($caseId ?? ($outbound['zaakIdentificatie'] ?? '')),
+				'caseIdentification' => ($caseId ?? ($outbound['caseIdentification'] ?? '')),
 			]
 		);
 	}//end confirmOutbound()
