@@ -282,12 +282,64 @@ final class KpiAggregationServiceTest extends TestCase {
 	}
 
 	/**
+	 * A row that is neither an array nor a readable entity folds to nothing
+	 * rather than crashing the whole payload.
+	 *
+	 * OpenRegister has returned scalars and bare objects from findAll at
+	 * different times; a KPI service is not the place to discover that.
+	 *
+	 * @return void
+	 */
+	public function testUnreadableRowsAreSkippedRatherThanFatal(): void {
+		$kpis = $this->service(objectService: $this->objectService(unreadableRows: true))->computeKpis('admin');
+
+		$this->assertSame([], $kpis['statusBreakdown'], 'nothing readable means nothing to group.');
+		$this->assertNull($kpis['avgProcessingDays']);
+		$this->assertSame(3, $kpis['completedCount'], 'the rows are still counted, they just carry no fields.');
+	}
+
+	/**
+	 * A case with no status is left out of the breakdown rather than grouped
+	 * under an empty label.
+	 *
+	 * @return void
+	 */
+	public function testRowsWithNoValueAreLeftOutOfTheBreakdown(): void {
+		$kpis = $this->service(objectService: $this->objectService(openRows: [
+			['status' => 'ontvangen', 'caseType' => 'omgevingsvergunning'],
+			['status' => '', 'caseType' => ''],
+			['caseType' => 'subsidieaanvraag'],
+		]))->computeKpis('admin');
+
+		$this->assertSame(
+			[['status' => 'ontvangen', 'count' => 1]],
+			$kpis['statusBreakdown'],
+			'an empty or missing status is not a group.'
+		);
+	}
+
+	/**
+	 * OpenRegister installed but unresolvable is reported as no data, not as a
+	 * container error the operator cannot act on.
+	 *
+	 * @return void
+	 */
+	public function testAnUnresolvableObjectServiceIsHandled(): void {
+		$kpis = $this->service(containerThrows: true)->computeKpis('admin');
+
+		$this->assertSame(0, $kpis['openCount']);
+		$this->assertSame([], $kpis['statusBreakdown']);
+		$this->assertNull($kpis['avgProcessingDays']);
+	}
+
+	/**
 	 * Build the service against a fake ObjectService.
 	 *
 	 * @param object|null $objectService A prepared fake, or null to build one.
 	 * @param array|null $closedCases Override the cases closed this month.
 	 * @param boolean $configured Whether the register ids are set.
 	 * @param boolean $openRegisterInstalled Whether OpenRegister is present.
+	 * @param boolean $containerThrows Whether the container fails to resolve it.
 	 *
 	 * @return KpiAggregationService The service under test.
 	 */
@@ -296,6 +348,7 @@ final class KpiAggregationServiceTest extends TestCase {
 		?array $closedCases = null,
 		bool $configured = true,
 		bool $openRegisterInstalled = true,
+		bool $containerThrows = false,
 	): KpiAggregationService {
 		$objectService = ($objectService ?? $this->objectService(closedCases: $closedCases));
 
@@ -319,7 +372,11 @@ final class KpiAggregationServiceTest extends TestCase {
 		$appManager->method('isInstalled')->willReturn($openRegisterInstalled);
 
 		$container = $this->createMock(ContainerInterface::class);
-		$container->method('get')->willReturn($objectService);
+		if ($containerThrows === true) {
+			$container->method('get')->willThrowException(new \RuntimeException('not resolvable'));
+		} else {
+			$container->method('get')->willReturn($objectService);
+		}
 
 		return new KpiAggregationService($appConfig, $container, $appManager, new NullLogger());
 	}
@@ -333,6 +390,8 @@ final class KpiAggregationServiceTest extends TestCase {
 	 * @param boolean $countThrows Make every count() raise, as the old SQL did.
 	 * @param boolean $findAllThrows Make every findAll() raise.
 	 * @param boolean $asEntities Return rows as entities rather than arrays.
+	 * @param boolean $unreadableRows Return rows with no readable accessor.
+	 * @param array|null $openRows Override the open cases.
 	 *
 	 * @return object The fake.
 	 */
@@ -341,6 +400,8 @@ final class KpiAggregationServiceTest extends TestCase {
 		bool $countThrows = false,
 		bool $findAllThrows = false,
 		bool $asEntities = false,
+		bool $unreadableRows = false,
+		?array $openRows = null,
 	): object {
 		$closed = ($closedCases ?? [
 			['startDate' => '2026-09-01', 'endDate' => '2026-09-11', 'deadline' => '2026-09-12'],
@@ -348,13 +409,13 @@ final class KpiAggregationServiceTest extends TestCase {
 			['startDate' => '2026-09-01', 'endDate' => '2026-09-07', 'deadline' => '2026-09-05'],
 		]);
 
-		$open = [
+		$open = ($openRows ?? [
 			['status' => 'ontvangen', 'caseType' => 'omgevingsvergunning'],
 			['status' => 'in-behandeling', 'caseType' => 'omgevingsvergunning'],
 			['status' => 'in-behandeling', 'caseType' => 'subsidieaanvraag'],
-		];
+		]);
 
-		return new class($closed, $open, $this->today, $countThrows, $findAllThrows, $asEntities) {
+		return new class($closed, $open, $this->today, $countThrows, $findAllThrows, $asEntities, $unreadableRows) {
 			/**
 			 * How many times findAll ran, so a test can prove the ordering it claims.
 			 *
@@ -388,6 +449,7 @@ final class KpiAggregationServiceTest extends TestCase {
 				private bool $countThrows = false,
 				private bool $findAllThrows = false,
 				private bool $asEntities = false,
+				private bool $unreadableRows = false,
 			) {
 			}
 
@@ -471,6 +533,15 @@ final class KpiAggregationServiceTest extends TestCase {
 				$rows = $this->open;
 				if (isset($f['endDate']) === true) {
 					$rows = $this->closed;
+				}
+
+				if ($this->unreadableRows === true) {
+					// A scalar and an object exposing neither accessor: both must
+					// fold to nothing rather than fatal.
+					return ['results' => array_map(
+						static fn (int $i): mixed => (($i % 2) === 0) ? 'not-a-row' : new \stdClass(),
+						range(1, count($rows))
+					)];
 				}
 
 				if ($this->asEntities === true) {
