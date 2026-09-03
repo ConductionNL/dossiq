@@ -285,18 +285,23 @@ class SetupController extends Controller {
 		}
 
 		// Recorded only after the import actually returned. Marking it first
-		// would let a failed install present as a finished step.
+		// would let a failed install present as a finished step, and an import
+		// that stored nothing now throws above rather than returning zeroes.
 		$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, 'installed');
 
-		// 🔴 THE COUNTS, ALWAYS. "Demo data installed" with no numbers cannot be
-		// told apart from an import that wrote nothing.
+		// 🔴 THE COUNTS, ALWAYS, AND BOTH OF THEM. "Demo data installed" with no
+		// numbers cannot be told apart from an import that wrote nothing — and
+		// one number cannot be told apart from a number read out of the file it
+		// was asked to import. The landing is stated against the ask.
 		return new DataResponse(
 			[
 				'success' => true,
 				'message' => sprintf(
-					'Demo data installed: %d objects across %d schemas.',
+					'Demo data installed: %d of %d objects stored across %d schemas (%d refused).',
 					$imported['objects'],
-					$imported['schemas']
+					$imported['requested'],
+					$imported['schemas'],
+					$imported['refused']
 				),
 				'detail'  => $imported,
 			]
