@@ -9,7 +9,7 @@
       "processingDeadline": "P56D",
       "suspensionAllowed": true,
       "extensionAllowed": true,
-      "extensionDuration": "P42D",
+      "extensionPeriod": "P42D",
       "confidentiality": "openbaar",
       "origin": "aanvragen",
       "statusTypes": [
@@ -195,44 +195,68 @@
   "inspectionChecklists": [
     {
       "slug": "bouwtoezicht-fase-1-fundering",
+      "seedKey": "bouwtoezicht-fase-1-fundering",
       "name": "Bouwtoezicht fase 1 - Fundering",
       "caseTypeSlug": "toezichtzaak-bouw",
       "version": 1,
       "status": "active",
-      "items": [
-        {"order": 1, "label": "Fundering conform tekening", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer of de fundering overeenkomt met de goedgekeurde bouwtekening"},
-        {"order": 2, "label": "Wapening aanwezig en correct", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer diameter, hart-op-hart afstand en dekking van de wapening"},
-        {"order": 3, "label": "Waterkering conform bestek", "type": "yes_no_na", "required": true, "photoRequired": true, "helpText": "Controleer waterkeringsmaatregelen en maak foto bij afwijking"},
-        {"order": 4, "label": "Maatvoering gecontroleerd", "type": "getal", "required": true, "photoRequired": false, "helpText": "Meet de afwijking in mm ten opzichte van de tekening"}
+      "active": true,
+      "sections": [
+        {
+          "order": 1,
+          "name": "Bouwtoezicht fase 1 - Fundering",
+          "items": [
+            {"order": 1, "label": "Fundering conform tekening", "responseType": "yes_no_na", "required": true, "photoRequired": "nooit", "helpText": "Controleer of de fundering overeenkomt met de goedgekeurde bouwtekening"},
+            {"order": 2, "label": "Wapening aanwezig en correct", "responseType": "yes_no_na", "required": true, "photoRequired": "nooit", "helpText": "Controleer diameter, hart-op-hart afstand en dekking van de wapening"},
+            {"order": 3, "label": "Waterkering conform bestek", "responseType": "yes_no_na", "required": true, "photoRequired": "if_no", "helpText": "Controleer waterkeringsmaatregelen en maak foto bij afwijking"},
+            {"order": 4, "label": "Maatvoering gecontroleerd", "responseType": "getal", "required": true, "photoRequired": "nooit", "helpText": "Meet de afwijking in mm ten opzichte van de tekening"}
+          ]
+        }
       ]
     },
     {
       "slug": "bouwtoezicht-fase-2-ruwbouw",
+      "seedKey": "bouwtoezicht-fase-2-ruwbouw",
       "name": "Bouwtoezicht fase 2 - Ruwbouw",
       "caseTypeSlug": "toezichtzaak-bouw",
       "version": 1,
       "status": "active",
-      "items": [
-        {"order": 1, "label": "Metselwerk conform tekening", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer metselwerk op conformiteit met de bouwtekening"},
-        {"order": 2, "label": "Kozijnen correct geplaatst", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer plaatsing, waterdichtheid en isolatie van kozijnen"},
-        {"order": 3, "label": "Dakconstructie conform bestek", "type": "yes_no_na", "required": true, "photoRequired": true, "helpText": "Controleer dakconstructie, gordingen en spanten"},
-        {"order": 4, "label": "Leidingen correct aangelegd", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer water-, gas- en elektriciteitsleidingen"},
-        {"order": 5, "label": "Brandwering aangebracht", "type": "yes_no_na", "required": true, "photoRequired": true, "helpText": "Controleer brandwerende doorvoeringen en scheidingen"}
+      "active": true,
+      "sections": [
+        {
+          "order": 1,
+          "name": "Bouwtoezicht fase 2 - Ruwbouw",
+          "items": [
+            {"order": 1, "label": "Metselwerk conform tekening", "responseType": "yes_no_na", "required": true, "photoRequired": "nooit", "helpText": "Controleer metselwerk op conformiteit met de bouwtekening"},
+            {"order": 2, "label": "Kozijnen correct geplaatst", "responseType": "yes_no_na", "required": true, "photoRequired": "nooit", "helpText": "Controleer plaatsing, waterdichtheid en isolatie van kozijnen"},
+            {"order": 3, "label": "Dakconstructie conform bestek", "responseType": "yes_no_na", "required": true, "photoRequired": "if_no", "helpText": "Controleer dakconstructie, gordingen en spanten"},
+            {"order": 4, "label": "Leidingen correct aangelegd", "responseType": "yes_no_na", "required": true, "photoRequired": "nooit", "helpText": "Controleer water-, gas- en elektriciteitsleidingen"},
+            {"order": 5, "label": "Brandwering aangebracht", "responseType": "yes_no_na", "required": true, "photoRequired": "if_no", "helpText": "Controleer brandwerende doorvoeringen en scheidingen"}
+          ]
+        }
       ]
     },
     {
       "slug": "bouwtoezicht-fase-3-oplevering",
+      "seedKey": "bouwtoezicht-fase-3-oplevering",
       "name": "Bouwtoezicht fase 3 - Oplevering",
       "caseTypeSlug": "toezichtzaak-bouw",
       "version": 1,
       "status": "active",
-      "items": [
-        {"order": 1, "label": "Afwerking conform bestek", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer afwerking vloeren, wanden en plafonds"},
-        {"order": 2, "label": "Installaties werkend", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Test verwarming, ventilatie, elektra en sanitair"},
-        {"order": 3, "label": "Brandveiligheid gewaarborgd", "type": "yes_no_na", "required": true, "photoRequired": true, "helpText": "Controleer rookmelders, vluchtroutes, noodverlichting"},
-        {"order": 4, "label": "Toegankelijkheid conform Bouwbesluit", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer drempels, deurbreedtes, toilet toegankelijkheid"},
-        {"order": 5, "label": "Energielabel bepaald", "type": "text", "required": true, "photoRequired": false, "helpText": "Noteer het energielabel (A++++ t/m G)"},
-        {"order": 6, "label": "As-built tekeningen ontvangen", "type": "yes_no_na", "required": true, "photoRequired": false, "helpText": "Controleer of as-built tekeningen zijn aangeleverd"}
+      "active": true,
+      "sections": [
+        {
+          "order": 1,
+          "name": "Bouwtoezicht fase 3 - Oplevering",
+          "items": [
+            {"order": 1, "label": "Afwerking conform bestek", "responseType": "yes_no_na", "required": true, "photoRequired": "nooit", "helpText": "Controleer afwerking vloeren, wanden en plafonds"},
+            {"order": 2, "label": "Installaties werkend", "responseType": "yes_no_na", "required": true, "photoRequired": "nooit", "helpText": "Test verwarming, ventilatie, elektra en sanitair"},
+            {"order": 3, "label": "Brandveiligheid gewaarborgd", "responseType": "yes_no_na", "required": true, "photoRequired": "if_no", "helpText": "Controleer rookmelders, vluchtroutes, noodverlichting"},
+            {"order": 4, "label": "Toegankelijkheid conform Bouwbesluit", "responseType": "yes_no_na", "required": true, "photoRequired": "nooit", "helpText": "Controleer drempels, deurbreedtes, toilet toegankelijkheid"},
+            {"order": 5, "label": "Energielabel bepaald", "responseType": "text", "required": true, "photoRequired": "nooit", "helpText": "Noteer het energielabel (A++++ t/m G)"},
+            {"order": 6, "label": "As-built tekeningen ontvangen", "responseType": "yes_no_na", "required": true, "photoRequired": "nooit", "helpText": "Controleer of as-built tekeningen zijn aangeleverd"}
+          ]
+        }
       ]
     }
   ],

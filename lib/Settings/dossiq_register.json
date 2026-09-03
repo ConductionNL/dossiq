@@ -359,7 +359,7 @@
             "roleType": {
                 "slug": "roleType",
                 "icon": "BadgeAccountOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:Role",
                 "x-zgw-equivalent": "RolType",
                 "title": "Role Type",
@@ -388,6 +388,21 @@
                         "$ref": "caseType",
                         "description": "Reference to the parent case type",
                         "title": "Case Type"
+                    },
+                    "genericRole": {
+                        "type": "string",
+                        "enum": [
+                            "initiator",
+                            "co_initiator",
+                            "handler",
+                            "advisor",
+                            "decision_maker",
+                            "coordinator",
+                            "stakeholder",
+                            "contact"
+                        ],
+                        "description": "The generic role this case-type role plays, so routing rules and reports can speak about \"the handler\" without knowing every case type's own naming. Maps to the ZGW RolType field omschrijvingGeneriek. Set from the Roles tab in case-type settings, and shipped by the bezwaar and besluitvorming seed data.",
+                        "title": "Generic Role"
                     },
                     "ncGroupId": {
                         "type": "string",
@@ -692,7 +707,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.12.0",
+                "version": "1.13.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
