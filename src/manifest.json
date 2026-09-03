@@ -459,10 +459,10 @@
             "id": "kpi-open-cases",
             "type": "stat",
             "title": "Open Cases",
-            "_note": "openspec/specs/dashboard/spec.md DASH-001a: this card counts every case whose status is not final, and is deliberately NOT scoped to the dashboard date range. It used to be titled \"New cases\" and counted startDate inside the picker window, which answers a different question and left the dashboard with no headline for open workload at all. The spec\u2019s \"+3 today\" sub-label is not expressible here: CnStatWidget interpolates a caption only in endpointSource mode, so a second count needs a Dossiq KPI endpoint.",
+            "_note": "openspec/specs/dashboard/spec.md DASH-001a: this card counts every case whose status is not final, and is deliberately NOT scoped to the dashboard date range. It used to be titled \"New cases\" and counted startDate inside the picker window, which answers a different question and left the dashboard with no headline for open workload at all. The spec's \"+3 today\" sub-label is not expressible here: CnStatWidget interpolates a caption only in endpointSource mode, so a second count needs a Dossiq KPI endpoint.",
             "content": {
               "label": "Open Cases",
-              "caption": "not yet closed",
+              "caption": "+{newToday} today",
               "route": {
                 "name": "Cases"
               },
@@ -471,14 +471,10 @@
                 "style": "decimal",
                 "decimals": 0
               },
-              "source": {
-                "register": "dossiq",
-                "schema": "case",
-                "metric": "count",
-                "filter": {
-                  "isFinalStatus": false
-                }
-              }
+              "endpointSource": {
+                "url": "/apps/dossiq/api/dashboard/kpis"
+              },
+              "valueField": "openCount"
             }
           },
           {
@@ -500,26 +496,19 @@
                 "style": "decimal",
                 "decimals": 0
               },
-              "source": {
-                "register": "dossiq",
-                "schema": "case",
-                "metric": "count",
-                "filter": {
-                  "isFinalStatus": false,
-                  "deadline": {
-                    "lt": "@today"
-                  }
-                }
-              }
+              "endpointSource": {
+                "url": "/apps/dossiq/api/dashboard/kpis"
+              },
+              "valueField": "overdueCount"
             }
           },
           {
             "id": "kpi-completed",
             "type": "stat",
-            "title": "Completed",
+            "title": "Completed This Month",
             "content": {
-              "label": "Completed",
-              "caption": "closed this year",
+              "label": "Completed This Month",
+              "caption": "avg {avgProcessingDays} days",
               "route": {
                 "name": "Cases",
                 "query": {
@@ -532,17 +521,10 @@
                 "style": "decimal",
                 "decimals": 0
               },
-              "source": {
-                "register": "dossiq",
-                "schema": "case",
-                "metric": "count",
-                "filter": {
-                  "endDate": {
-                    "gte": "@workspace.dateFrom?",
-                    "lte": "@workspace.dateTo?"
-                  }
-                }
-              }
+              "endpointSource": {
+                "url": "/apps/dossiq/api/dashboard/kpis"
+              },
+              "valueField": "completedCount"
             }
           },
           {
@@ -551,7 +533,7 @@
             "title": "My Tasks",
             "content": {
               "label": "My Tasks",
-              "caption": "open and assigned to me",
+              "caption": "{tasksDueToday} due today",
               "route": {
                 "name": "Tasks",
                 "query": {
@@ -563,15 +545,33 @@
                 "style": "decimal",
                 "decimals": 0
               },
-              "source": {
-                "register": "dossiq",
-                "schema": "task",
-                "metric": "count",
-                "filter": {
-                  "assignee": "@me",
-                  "isTerminalStatus": false
-                }
-              }
+              "endpointSource": {
+                "url": "/apps/dossiq/api/dashboard/kpis"
+              },
+              "valueField": "taskCount"
+            }
+          },
+          {
+            "id": "kpi-sla-compliance",
+            "type": "stat",
+            "title": "SLA Compliance",
+            "_note": "openspec/specs/dashboard/spec.md DASH-001e. Reads the share of this month's closed cases whose endDate met their deadline, computed server-side by KpiAggregationService. Clicking opens the doorlooptijd dashboard, as the scenario requires.",
+            "content": {
+              "label": "SLA Compliance",
+              "caption": "met their deadline",
+              "icon": "ChartLine",
+              "route": {
+                "name": "Doorlooptijd"
+              },
+              "format": {
+                "style": "decimal",
+                "decimals": 0,
+                "suffix": "%"
+              },
+              "endpointSource": {
+                "url": "/apps/dossiq/api/dashboard/kpis"
+              },
+              "valueField": "slaCompliance"
             }
           },
           {
@@ -906,7 +906,7 @@
             "gridWidth": 3,
             "gridHeight": 2,
             "showTitle": false,
-            "dateChip": true
+            "dateChip": false
           },
           {
             "id": "2",
@@ -916,27 +916,27 @@
             "gridWidth": 3,
             "gridHeight": 2,
             "showTitle": false,
-            "dateChip": true
+            "dateChip": false
           },
           {
             "id": "3",
             "widgetId": "kpi-completed",
             "gridX": 6,
             "gridY": 0,
-            "gridWidth": 3,
+            "gridWidth": 2,
             "gridHeight": 2,
             "showTitle": false,
-            "dateChip": true
+            "dateChip": false
           },
           {
             "id": "4",
             "widgetId": "kpi-my-tasks",
-            "gridX": 9,
+            "gridX": 8,
             "gridY": 0,
-            "gridWidth": 3,
+            "gridWidth": 2,
             "gridHeight": 2,
             "showTitle": false,
-            "dateChip": true
+            "dateChip": false
           },
           {
             "id": "5",
@@ -1009,6 +1009,16 @@
             "gridWidth": 4,
             "gridHeight": 4,
             "showTitle": true
+          },
+          {
+            "id": "13",
+            "widgetId": "kpi-sla-compliance",
+            "gridX": 10,
+            "gridY": 0,
+            "gridWidth": 2,
+            "gridHeight": 2,
+            "showTitle": false,
+            "dateChip": false
           }
         ],
         "documentationUrl": "https://procest.conduction.nl"
