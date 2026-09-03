@@ -1156,7 +1156,8 @@
                 "priority",
                 "confidentiality",
                 "deadline",
-                "startDate"
+                "startDate",
+                "parentCase"
               ],
               "overrides": {
                 "status": {

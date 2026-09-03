@@ -27,6 +27,7 @@ import {
 	listObjects,
 	objectId,
 	RUN_PREFIX,
+	seedCase,
 } from './helpers/fixtures.ts'
 
 const DASHBOARD_URL = '/apps/dossiq/'
@@ -434,5 +435,28 @@ test.describe('New case dialog', () => {
 		// case. Real dossiq data carries names like auditorsStatementThreshold,
 		// which used to reach the form verbatim.
 		await expect(dialog.getByText(IDENTIFIER_LABEL, { exact: true })).toBeVisible()
+	})
+	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-007-a-field-kept-off-the-create-form-stays-reachable-on-the-case
+	test('keeps parent case off the create form and on the case itself', async ({
+		page,
+	}) => {
+		// Not asked when filing: a case is not created as somebody's sub-case.
+		const dialog = await openDialog(page)
+		await expect(dialog.locator('[data-cn-field="parentCase"]')).toHaveCount(0)
+		await dialog.getByRole('button', { name: 'Cancel' }).click()
+
+		// Asked later, because a case becomes one. This half is the reason the
+		// test exists: excluding a property from the create form and forgetting
+		// to leave it anywhere else is invisible from the create form alone,
+		// and that is exactly what had happened.
+		const seeded = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Moederzaak`,
+			caseType: caseTypeId,
+		})
+		await page.goto(`/apps/dossiq/cases/${objectId(seeded)}`)
+		await expect(page.getByText('Core case data')).toBeVisible({ timeout: 20000 })
+		await expect(
+			page.locator('[data-cn-field="parentCase"]').first(),
+		).toBeVisible({ timeout: 15000 })
 	})
 })

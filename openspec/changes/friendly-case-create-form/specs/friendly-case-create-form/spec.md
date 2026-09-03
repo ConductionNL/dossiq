@@ -106,3 +106,16 @@ Two columns SHALL be opt-in per action, so that no other form in the fleet is re
 - **GIVEN** a handler opens the New case dialog
 - **THEN** the single-line fields SHALL occupy two distinct columns
 - **AND** the description textarea SHALL span the full width
+
+### Requirement: REQ-FCF-007 a field kept off the create form stays reachable on the case
+
+A property the New case action does not ask for SHALL remain editable on the case detail page unless it is platform plumbing.
+
+`parentCase` SHALL NOT appear on the New case form, because a case is not filed as somebody's sub-case, and SHALL appear on the case detail page, because a case becomes one later. `decisions` SHALL appear on neither: they are decidiq objects reached through the Besluitvorming widget, and a raw reference list is not an edit surface for them.
+
+#### Scenario: Parent case is an edit-time field
+
+- **GIVEN** a handler opens the New case dialog
+- **THEN** there SHALL be no parent case field
+- **WHEN** they open an existing case
+- **THEN** the core case data SHALL offer a parent case field
