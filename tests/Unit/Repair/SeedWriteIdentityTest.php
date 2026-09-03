@@ -130,9 +130,7 @@ class SeedWriteIdentityTest extends TestCase {
 		'RenameDutchDeadlineColumns' => 'renames magic-table columns in SQL',
 		'RenameDutchDirectionValues' => 'rewrites column values in SQL',
 		'RenameDutchValues' => 'rewrites column values in SQL',
-		'MigrateParafeerroutesToDecidiq' => 'dispatches to the decision app over the delegation seam',
 		'MigrateCommitteesToDecidiq' => 'dispatches to the decision app over the delegation seam',
-		'RaiseInFlightParaferingenInDecidiq' => 'dispatches to the decision app; refuses to run without an identity',
 		'SeedVerwerkingsactiviteiten' => 'writes through OpenRegister VerwerkingsactiviteitMapper (a QBMapper, no object RBAC)',
 	];
 

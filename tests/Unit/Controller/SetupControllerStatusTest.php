@@ -468,7 +468,17 @@ class SetupControllerStatusTest extends TestCase {
 	public function testInstallingTheDemoDataReportsTheCountsAndRecordsTheDecision(): void {
 		$built = $this->build(
 			config: $this->provisioned(),
-			demoResult: ['objects' => 412, 'registers' => 1, 'schemas' => 46]
+			// The full shape DemoDataService::install() returns. A narrower
+			// double let the controller read two undefined keys and the
+			// message render them as empty, which is exactly the "installed
+			// with no numbers" state this test exists to forbid.
+			demoResult: [
+				'objects' => 412,
+				'requested' => 420,
+				'refused' => 8,
+				'registers' => 1,
+				'schemas' => 46,
+			]
 		);
 
 		$response = $built['controller']->runAction(actionId: 'install-demo-data');
@@ -476,7 +486,9 @@ class SetupControllerStatusTest extends TestCase {
 
 		$this->assertTrue($data['success']);
 		$this->assertStringContainsString('412', $data['message']);
+		$this->assertStringContainsString('420', $data['message']);
 		$this->assertStringContainsString('46', $data['message']);
+		$this->assertStringContainsString('8 refused', $data['message']);
 		$this->assertSame(412, $data['detail']['objects']);
 		$this->assertSame('installed', $built['written']['demo_data_decided'] ?? null);
 

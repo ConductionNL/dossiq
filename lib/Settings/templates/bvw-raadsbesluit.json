@@ -71,14 +71,8 @@
             ],
             "transitions": [
                 { "fromStatusName": "Voorstel opstellen", "toStatusName": "Ambtelijk advies", "label": "Naar advies" },
-                {
-                    "fromStatusName": "Ambtelijk advies", "toStatusName": "Parafering", "label": "Start parafering",
-                    "automaticActions": [{ "type": "besluitvormingActivate" }]
-                },
-                {
-                    "fromStatusName": "Parafering", "toStatusName": "Gereed voor agendering", "label": "Parafering compleet",
-                    "guards": [{ "type": "voorstelStatus", "allowedStatuses": ["geaccordeerd", "aangeboden", "besloten", "archived"] }]
-                },
+                { "fromStatusName": "Ambtelijk advies", "toStatusName": "Parafering", "label": "Start parafering" },
+                { "fromStatusName": "Parafering", "toStatusName": "Gereed voor agendering", "label": "Parafering compleet" },
                 { "fromStatusName": "Gereed voor agendering", "toStatusName": "Geagendeerd", "label": "Agenderen" },
                 { "fromStatusName": "Geagendeerd", "toStatusName": "Vergadering", "label": "Naar vergadering" },
                 {
@@ -101,18 +95,6 @@
                         { "type": "setField", "field": "archiveStatus", "value": "gearchiveerd" }
                     ]
                 }
-            ]
-        },
-        "parafeerroute": {
-            "name": "Raadsvoorstel - 4 stappen",
-            "proposalType": "raadsvoorstel",
-            "isDefault": true,
-            "description": "Parafeerketen voor raadsvoorstellen met griffier als eindstap",
-            "steps": [
-                { "order": 1, "type": "parafering", "actor": "Beleidsadviseur", "actorType": "role", "mandatory": true },
-                { "order": 2, "type": "parafering", "actor": "Afdelingshoofd", "actorType": "role", "mandatory": true },
-                { "order": 3, "type": "parafering", "actor": "Gemeentesecretaris", "actorType": "role", "mandatory": true },
-                { "order": 4, "type": "parafering", "actor": "Griffier", "actorType": "role", "mandatory": true }
             ]
         }
     }

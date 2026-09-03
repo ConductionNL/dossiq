@@ -100,7 +100,7 @@ async function readNavLinks(
  * The click path, by contrast, was the single largest cause of CI failure.
  * The nav renders its leaves inside COLLAPSED groups ("Work queue",
  * "Reports", "Personal settings"), so `My work`, `Workflow board`,
- * `Processing time`, `Proposals`, `Objections` and `Appeals` are all
+ * `Processing time`, `Objections` and `Appeals` are all
  * `display:none` on load. Playwright's `.click()` waits for actionability,
  * and this suite sets no `actionTimeout`, so each such click blocked for the
  * ENTIRE 60s test budget and then failed with a bare timeout that named an

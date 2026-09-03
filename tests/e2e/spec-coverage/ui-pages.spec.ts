@@ -15,7 +15,7 @@
  * (2026-08-04), a direct deep link renders its view correctly — the older
  * claim that it "resets the Vue history-mode router to Dashboard" is not true
  * of this build. Routing by sidebar label was actively harmful: several of
- * these pages have no nav entry at all in this build ("Advice", "Voorstellen"),
+ * these pages have no nav entry at all in this build ("Advice"),
  * and the ones that do sit inside COLLAPSED groups, so the click blocked on
  * actionability until the whole 60s test budget was gone.
  */
@@ -87,26 +87,6 @@ test.describe('Cases index page render', () => {
 		await expect(
 			page.getByRole('button', { name: 'Actions' }).first(),
 		).toBeVisible()
-		await expect(page.locator('body')).not.toContainText('Internal Server Error')
-	})
-})
-
-test.describe('Voorstellen page render', () => {
-	// @e2e openspec/specs/case-management/spec.md#voorstellen-page-renders-heading-and-create-control
-	test('voorstellen page renders heading and create control', async ({ page }) => {
-		// The nav renders no "Voorstellen" entry (the Decision-making group's
-		// leaves are absent from this build's sidebar) — navigate by route.
-		await navToRoute(page, '/voorstellen')
-		// The page renders either the custom "B&W Voorstellen" view (heading +
-		// "Nieuw voorstel") or the generic index shell (an "Add Proposal" CTA)
-		// depending on the deployed build — accept either rendered shell, never
-		// an error. Wrap the union in .first() so a build that renders BOTH a
-		// heading and a button doesn't trip strict mode.
-		const customHeading = page.getByRole('heading', { name: /Voorstellen/ })
-		const addBtn = page.getByRole('button', { name: /Nieuw voorstel|^Add / })
-		await expect(customHeading.or(addBtn).first()).toBeVisible({
-			timeout: 15000,
-		})
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 })

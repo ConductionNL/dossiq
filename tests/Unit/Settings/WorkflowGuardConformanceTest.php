@@ -25,7 +25,6 @@ use OCA\Dossiq\Service\Transitions\RequiredDocumentGuard;
 use OCA\Dossiq\Service\Transitions\RequiredFieldGuard;
 use OCA\Dossiq\Service\Transitions\RoleGuard;
 use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
-use OCA\Dossiq\Service\Transitions\VoorstelStatusGuard;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserManager;
@@ -63,7 +62,6 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Service\Transitions\RequiredDocumentGuard
  * @covers \OCA\Dossiq\Service\Transitions\RoleGuard
  * @covers \OCA\Dossiq\Service\Transitions\ChecklistGuard
- * @covers \OCA\Dossiq\Service\Transitions\VoorstelStatusGuard
  *
  * @uses \OCA\Dossiq\Service\Transitions\GuardResult
  * @uses \OCA\Dossiq\Service\Transitions\MandaatGuard
@@ -76,13 +74,6 @@ class WorkflowGuardConformanceTest extends TestCase {
 	 * @var array<int, array<string, mixed>>
 	 */
 	private array $tasks = [];
-
-	/**
-	 * Fixture: the voorstel rows the mocked proposal store answers with.
-	 *
-	 * @var array<int, array<string, mixed>>
-	 */
-	private array $voorstellen = [];
 
 	/**
 	 * Fixture: the group memberships the mocked group manager reports.
@@ -208,7 +199,6 @@ class WorkflowGuardConformanceTest extends TestCase {
 			static fn (string $key): string => match ($key) {
 				'register' => 'dossiq',
 				'task_schema' => 'task',
-				'voorstel_schema' => 'proposal',
 				default => 'other',
 			}
 		);
@@ -227,7 +217,6 @@ class WorkflowGuardConformanceTest extends TestCase {
 			new RequiredDocumentGuard(),
 			new RoleGuard($groupManager, $userManager, new NullLogger()),
 			new MandaatGuard($this->createMock(MandaatValidationService::class)),
-			new VoorstelStatusGuard($settings, new NullLogger()),
 			new NullLogger(),
 		);
 	}
@@ -242,7 +231,6 @@ class WorkflowGuardConformanceTest extends TestCase {
 	public function rowsFor(string $schema): array {
 		return match ($schema) {
 			'task' => $this->tasks,
-			'proposal' => $this->voorstellen,
 			default => [],
 		};
 	}
@@ -542,31 +530,6 @@ class WorkflowGuardConformanceTest extends TestCase {
 		}
 
 		$this->tasks = [];
-	}
-
-	/**
-	 * Each shipped voorstelStatus guard passes on a concluded chain and fails otherwise.
-	 *
-	 * @return void
-	 */
-	public function testVoorstelStatusGuardsPassAndFail(): void {
-		$guards = $this->guardsOfType(type: 'voorstelStatus');
-
-		foreach ($guards as $entry) {
-			$allowed = (array)$entry['guard']['allowedStatuses'];
-
-			$this->voorstellen = [['status' => (string)$allowed[0]]];
-			$concluded = $this->evaluateShipped(guard: $entry['guard'], case: ['id' => 'case-1']);
-			$this->assertTrue($concluded['passed'], $entry['path'] . ' must pass on a concluded parafering chain');
-
-			$this->voorstellen = [['status' => 'in_parafering']];
-			$running = $this->evaluateShipped(guard: $entry['guard'], case: ['id' => 'case-1']);
-			$this->assertFalse($running['passed'], $entry['path'] . ' must fail while parafering is still running');
-
-			$this->voorstellen = [];
-			$absent = $this->evaluateShipped(guard: $entry['guard'], case: ['id' => 'case-1']);
-			$this->assertFalse($absent['passed'], $entry['path'] . ' must fail closed when no voorstel exists');
-		}
 	}
 
 	/**

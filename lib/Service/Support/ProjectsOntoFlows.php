@@ -22,15 +22,23 @@ use Throwable;
 /**
  * The machinery every "project this onto an OpenRegister flow" migration needs.
  *
- * Dossiq now has three of them (automatic actions, workflow definitions,
+ * Dossiq had three of them (automatic actions, workflow definitions,
  * endorsement routes) and they were converging on the same 120 lines: resolve
  * FlowService without hard-depending on it, index the already-projected flows
  * by provenance marker, write one without letting a single failure abort the
  * rest. Copying that a third time is how the copies drift.
  *
+ * Measured 2026-09-03: ONE class uses this trait, WorkflowTemplateFlowMigrator.
+ * The endorsement-route migrator went with the parafering runtime
+ * (proposals-are-cases). AutomaticActionFlowMigrator still carries its own
+ * copy of the machinery and never adopted this, which is the drift the trait
+ * was extracted to stop. Adopting it there is the open work; inlining the
+ * trait back into its one consumer would remove the seam that makes adopting
+ * it cheap.
+ *
  * The consuming class supplies MARKER_PREFIX, a logger and a container.
  *
- * @spec openspec/changes/approval-routes-are-flows/specs/approval-routes-are-flows/spec.md
+ * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
  */
 trait ProjectsOntoFlows {
 

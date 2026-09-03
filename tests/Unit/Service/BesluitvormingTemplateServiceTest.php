@@ -182,7 +182,6 @@ class BesluitvormingTemplateServiceTest extends TestCase {
 		$this->assertSame(3, $result['documentTypes']);
 		$this->assertSame(3, $result['resultTypes']);
 		$this->assertSame(1, $result['workflowTemplate']);
-		$this->assertSame(1, $result['parafeerroute']);
 	}//end testActivateSeedsCollegeBesluitBundle()
 
 	/**
