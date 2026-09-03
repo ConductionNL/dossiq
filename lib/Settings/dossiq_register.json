@@ -1010,13 +1010,6 @@
                             }
                         }
                     },
-                    "x-openregister-lifecycle": {
-                        "field": "status",
-                        "initial": {
-                            "from": "caseType",
-                            "field": "initialStatus"
-                        }
-                    },
                     "x-openregister-flows": [
                         {
                             "name": "Case behandeling",
@@ -1403,7 +1396,7 @@
                         "x-relation-filter": {
                             "caseType": "@object.caseType"
                         },
-                        "description": "Reference to the current status type. Initialised declaratively to the case type's initial status by OpenRegister (x-openregister-lifecycle.initial); user-editable thereafter because OR's transition engine only supports STATIC from/to state values and cannot express dossiq's per-caseType statusType graph yet — revert to readOnly + lifecycle transitions once OR supports FK-based status graphs. x-relation-filter scopes the picker to the case's own type's statuses.",
+                        "description": "Reference to the current status type. Initialised declaratively to the case type's initial status by the x-openregister-prefill block on `caseType` (status <- initialStatus), which is what actually writes it. The schema also carried an x-openregister-lifecycle block claiming to do this; it was invalid and ignored (OR's static mode requires field+initial+transitions over an ENUM-anchored field, and `status` is a $ref uuid), logged 8x per install, and is removed. Transitions are owned by StatusTransitionService: dossiq#1678 ruled that OR's lifecycle engine cannot express a per-caseType dynamic statusType graph, and declaring OR's graph mode here would install a second engine over the same field. x-relation-filter scopes the picker to the case's own type's statuses.",
                         "title": "Status",
                         "facetable": true,
                         "order": 4
@@ -9737,7 +9730,28 @@
                     "supplierInvoice",
                     "supplierMessage",
                     "supplierKpi",
-                    "emailTemplate"
+                    "emailTemplate",
+                    "adviceRequest",
+                    "adviceResponse",
+                    "advisoryBody",
+                    "aiAuditEntry",
+                    "automaticAction",
+                    "bacAdviceRequest",
+                    "beroep",
+                    "bezwaarDecision",
+                    "bezwaaradviescommissie",
+                    "caseFederatedActivity",
+                    "caseFederatedShare",
+                    "caseShare",
+                    "casetransfer",
+                    "checklistItem",
+                    "consultation",
+                    "inspectionChecklist",
+                    "inspectionResult",
+                    "lhsMatrixCell",
+                    "objectionProceeding",
+                    "partnerOrganization",
+                    "wmsLayer"
                 ],
                 "tablePrefix": "",
                 "folder": "Open Registers/Procest"

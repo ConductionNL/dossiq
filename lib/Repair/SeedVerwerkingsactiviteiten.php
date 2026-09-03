@@ -121,6 +121,7 @@ class SeedVerwerkingsactiviteiten implements IRepairStep {
 
 		$created = 0;
 		$updated = 0;
+		$refused = [];
 		foreach ($activities as $definition) {
 			$code = (string)($definition['code'] ?? '');
 			if ($code === '') {
@@ -145,12 +146,32 @@ class SeedVerwerkingsactiviteiten implements IRepairStep {
 				$mapper->update(entity: $existing);
 				$updated++;
 			} catch (\Throwable $e) {
+				$refused[] = $code;
 				$this->logger->error(
 					'Dossiq: failed to seed verwerkingsactiviteit',
 					['code' => $code, 'exception' => $e->getMessage()]
 				);
 			}//end try
 		}//end foreach
+
+		// A SEED THAT SEEDED NOTHING MUST NOT PRODUCE SUCCESS-SHAPED OUTPUT.
+		// Every row was refused on the Dutch legal-basis spellings and the step
+		// still printed "0 created (draft), 0 refreshed" — which reads as an
+		// idempotent re-run rather than an empty verwerkingsregister. The
+		// refusals are counted and named, so an operator sees that the AVG art.
+		// 30 catalogue is absent.
+		if ($refused !== []) {
+			$output->warning(
+				sprintf(
+					'Verwerkingsactiviteiten catalogue: %d created (draft), %d refreshed, %d REFUSED (%s). See the log for each refusal.',
+					$created,
+					$updated,
+					count($refused),
+					implode(', ', $refused)
+				)
+			);
+			return;
+		}
 
 		$output->info(sprintf('Verwerkingsactiviteiten catalogue seeded: %d created (draft), %d refreshed.', $created, $updated));
 
