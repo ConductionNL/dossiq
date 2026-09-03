@@ -337,6 +337,7 @@ class VoorstelBesluitControllerContractRequestStub implements IRequest {
  * Wire-contract tests for VoorstelBesluitController::registerBesluit().
  *
  * @covers \OCA\Dossiq\Controller\VoorstelBesluitController
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class VoorstelBesluitControllerContractTest extends TestCase {
 
