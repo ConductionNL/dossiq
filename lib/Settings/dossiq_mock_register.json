@@ -2805,7 +2805,7 @@
               "zgw-api"
             ],
             "default": "manual",
-            "description": "The channel through which this case was intaken (REQ-INTAKE-08b, REQ-INTAKE-11a)",
+            "description": "The channel through which this case was intaken",
             "title": "Intake channel",
             "facetable": true
           },
@@ -2850,7 +2850,7 @@
           },
           "casePlanState": {
             "type": "string",
-            "description": "CMMN runtime plan-item state (JSON-encoded object: planItemStates, milestones, caseFile, eventLog), written exclusively by CaseModelEngine. Present only when caseType.handlingModel = 'cmmn'; absent/empty for BPMN-handled cases. Single OR write path per case — see openspec/specs/cmmn-adaptive-case/spec.md REQ-CMMN-006.",
+            "description": "CMMN runtime plan-item state, holding planItemStates, milestones, caseFile and eventLog. Only the case model engine writes it. It is present when the case type's handlingModel is 'cmmn', and empty for cases handled by BPMN.",
             "visible": false,
             "title": "Case Plan State"
           },
@@ -3848,7 +3848,7 @@
             ],
             "default": "bpmn",
             "title": "Handling Model",
-            "description": "Which process-handling engine drives cases of this type. 'bpmn' (default) = the structured workflowTemplate/StatusTransitionService engine, unchanged. 'cmmn' = the adaptive CaseModelEngine (caseModel definition, case.casePlanState runtime). A caseType is driven by exactly one of the two — see openspec/specs/cmmn-adaptive-case/spec.md REQ-CMMN-008."
+            "description": "Which process-handling engine drives cases of this type. 'bpmn' (default) uses the structured workflow template. 'cmmn' uses the adaptive case model. A case type is driven by exactly one of the two."
           },
           "confidentiality": {
             "type": "string",
@@ -3974,7 +3974,7 @@
           },
           "defaultAssignee": {
             "type": "string",
-            "description": "Nextcloud user UID or group ID for automatic assignment of cases of this type (REQ-INTAKE-03a)",
+            "description": "Nextcloud user UID or group ID for automatic assignment of cases of this type",
             "title": "Default assignee"
           },
           "workflowDefinition": {
@@ -3995,7 +3995,7 @@
               "$ref": "wmsLayer"
             },
             "default": [],
-            "description": "Subscribed wmsLayer UUIDs visible on this case type's maps (wms-wfs-layers REQ-WMS-4). Empty array = only isDefault layers visible.",
+            "description": "Subscribed wmsLayer UUIDs visible on this case type's maps. An empty array shows only the default layers.",
             "title": "Layer IDs"
           },
           "iv3TaskField": {
@@ -7383,7 +7383,7 @@
         "version": "1.1.0",
         "x-schema-org": "schema:Action",
         "title": "Inspection Checklist Run",
-        "description": "Per-inspection runtime instance of an inspectionChecklistTemplate (REQ-IC-2). Once submitted (status=ingediend) the run is append-only: edits are rejected by REQ-IC-8 enforcement.",
+        "description": "Per-inspection runtime instance of an inspectionChecklistTemplate. Once it is submitted (status=ingediend) the run is append-only, and further edits are rejected.",
         "type": "object",
         "configuration": {
           "linkedTypes": [
@@ -7420,7 +7420,7 @@
           "templateVersion": {
             "type": "integer",
             "minimum": 1,
-            "description": "Template version captured at run start (REQ-IC-8)",
+            "description": "Template version captured at run start",
             "title": "Template Version"
           },
           "templateSnapshot": {
@@ -7582,7 +7582,7 @@
               "non_conform",
               "partly_conform"
             ],
-            "description": "Aggregate result — derived on submit by ChecklistService::aggregateResult (REQ-IC-6); user-supplied values are ignored",
+            "description": "Aggregate result — derived on submit by ChecklistService::aggregateResult; user-supplied values are ignored",
             "title": "Overall Result"
           },
           "syncState": {
@@ -7593,7 +7593,7 @@
               "synced"
             ],
             "default": "local",
-            "description": "Offline-sync state for the whole run (REQ-IC-5)",
+            "description": "Offline-sync state for the whole run",
             "title": "Sync State"
           },
           "followUpType": {
@@ -7605,7 +7605,7 @@
               "none"
             ],
             "default": "none",
-            "description": "Highest-priority follow-up type dispatched on submit (REQ-IC-7)",
+            "description": "Highest-priority follow-up type dispatched on submit",
             "title": "Follow Up Type"
           }
         }
@@ -7616,7 +7616,7 @@
         "version": "1.0.0",
         "x-schema-org": "schema:HowTo",
         "title": "Inspection Checklist Template",
-        "description": "Long-lived configuration template for an inspection checklist (REQ-IC-1). Owns sections, items, response-type rules, and follow-up action defaults. Versioned per REQ-IC-8 — published edits create a new version and retire the prior one.",
+        "description": "Long-lived configuration template for an inspection checklist. Owns sections, items, response-type rules and follow-up action defaults. Publishing an edit creates a new version and retires the previous one.",
         "type": "object",
         "required": [
           "name",
@@ -7721,7 +7721,7 @@
                           "photo",
                           "meting"
                         ],
-                        "description": "Input type — drives validation in REQ-IC-3",
+                        "description": "Input type, which decides how the answer is validated.",
                         "title": "Response Type"
                       },
                       "required": {
@@ -7738,7 +7738,7 @@
                           "altijd"
                         ],
                         "default": "nooit",
-                        "description": "Photo requirement gate (REQ-IC-3)",
+                        "description": "Photo requirement gate",
                         "title": "Photo Required"
                       },
                       "numericRange": {
@@ -7773,7 +7773,7 @@
                       },
                       "failureAction": {
                         "type": "object",
-                        "description": "Conditional follow-up dispatched on failure (REQ-IC-7)",
+                        "description": "Conditional follow-up dispatched on failure",
                         "properties": {
                           "type": {
                             "type": "string",
@@ -14667,7 +14667,7 @@
         "icon": "LayersOutline",
         "version": "1.0.0",
         "title": "WMS/WFS Layer",
-        "description": "Tenant-configurable OGC WMS/WFS overlay layer for case maps. Subscribed per case type via caseType.layerIds. All outbound traffic routed through the GIS proxy (wms-wfs-layers REQ-WMS-3).",
+        "description": "Tenant-configurable OGC WMS/WFS overlay layer for case maps. A case type subscribes to it through caseType.layerIds. All outbound traffic runs through the GIS proxy.",
         "type": "object",
         "required": [
           "title",
@@ -14694,7 +14694,7 @@
           "url": {
             "type": "string",
             "format": "uri",
-            "description": "Service base URL — MUST match an entry in the GIS proxy allowlist (REQ-WMS-3)",
+            "description": "Service base URL — MUST match an entry in the GIS proxy allowlist",
             "title": "URL"
           },
           "layerName": {
@@ -14724,7 +14724,7 @@
           "queryable": {
             "type": "boolean",
             "default": false,
-            "description": "If true, the map binds GetFeatureInfo (WMS) or feature popup (WFS) on click (REQ-WMS-7)",
+            "description": "If true, the map binds GetFeatureInfo (WMS) or feature popup (WFS) on click",
             "title": "Queryable"
           },
           "format": {
@@ -14742,7 +14742,7 @@
             "type": "number",
             "default": 50,
             "minimum": 1,
-            "description": "Maximum visible extent in km before WFS requests are suppressed and 'Zoom in voor details' is shown (REQ-WMS-8)",
+            "description": "Maximum visible extent in km before WFS requests are suppressed and 'Zoom in voor details' is shown",
             "title": "Extent Cutoff (km)"
           },
           "isDefault": {
