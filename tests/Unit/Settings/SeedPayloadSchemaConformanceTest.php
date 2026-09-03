@@ -40,6 +40,8 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Repair\VthSeedDataRepairStep
  * @covers \OCA\Dossiq\Service\Besluitvorming\TemplateBundleSeeder
  * @covers \OCA\Dossiq\Service\SeedDataService
+ *
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class SeedPayloadSchemaConformanceTest extends TestCase {
 
