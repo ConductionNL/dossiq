@@ -23630,6 +23630,669 @@
         "sequenceNumber": 3,
         "direction": "outbound",
         "statustype": "00000000-0000-4000-8000-000000000002"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "checklistResult",
+          "slug": "checklistresult-checklistresult-1-1"
+        },
+        "inspectionRef": "Voorbeeld Inspectionref 1",
+        "checklistTemplateRef": "Voorbeeld Checklisttemplateref 1",
+        "items": [
+          {
+            "questionId": "Voorbeeld Questionid 1",
+            "answer": "Voorbeeld Answer 1",
+            "evidenceRefs": [
+              "Voorbeeld Evidencerefs 1"
+            ],
+            "notes": "Voorbeeld Notes 1",
+            "answeredAt": "2026-03-01T09:00:00+00:00",
+            "gpsAtAnswer": {
+              "lat": 1.0,
+              "lon": 1.0,
+              "accuracy": 1.0,
+              "source": "sensor"
+            }
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "checklistResult",
+          "slug": "checklistresult-checklistresult-2-2"
+        },
+        "inspectionRef": "Voorbeeld Inspectionref 2",
+        "checklistTemplateRef": "Voorbeeld Checklisttemplateref 2",
+        "items": [
+          {
+            "questionId": "Voorbeeld Questionid 2",
+            "answer": "Voorbeeld Answer 2",
+            "evidenceRefs": [
+              "Voorbeeld Evidencerefs 2"
+            ],
+            "notes": "Voorbeeld Notes 2",
+            "answeredAt": "2026-03-02T09:00:00+00:00",
+            "gpsAtAnswer": {
+              "lat": 2.0,
+              "lon": 2.0,
+              "accuracy": 2.0,
+              "source": "sensorless"
+            }
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "checklistResult",
+          "slug": "checklistresult-checklistresult-3-3"
+        },
+        "inspectionRef": "Voorbeeld Inspectionref 3",
+        "checklistTemplateRef": "Voorbeeld Checklisttemplateref 3",
+        "items": [
+          {
+            "questionId": "Voorbeeld Questionid 3",
+            "answer": "Voorbeeld Answer 3",
+            "evidenceRefs": [
+              "Voorbeeld Evidencerefs 3"
+            ],
+            "notes": "Voorbeeld Notes 3",
+            "answeredAt": "2026-03-03T09:00:00+00:00",
+            "gpsAtAnswer": {
+              "lat": 3.0,
+              "lon": 3.0,
+              "accuracy": 3.0,
+              "source": "sensor"
+            }
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "conflictRecord",
+          "slug": "conflictrecord-conflictrecord-1-1"
+        },
+        "syncQueueRef": "Voorbeeld Syncqueueref 1",
+        "conflictType": "concurrent_edit",
+        "serverVersion": {},
+        "clientVersion": {},
+        "resolution": "client_wins",
+        "resolvedBy": "Voorbeeld Resolvedby 1",
+        "resolvedAt": "2026-03-01T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "conflictRecord",
+          "slug": "conflictrecord-conflictrecord-2-2"
+        },
+        "syncQueueRef": "Voorbeeld Syncqueueref 2",
+        "conflictType": "deleted_remote",
+        "serverVersion": {},
+        "clientVersion": {},
+        "resolution": "server_wins",
+        "resolvedBy": "Voorbeeld Resolvedby 2",
+        "resolvedAt": "2026-03-02T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "conflictRecord",
+          "slug": "conflictrecord-conflictrecord-3-3"
+        },
+        "syncQueueRef": "Voorbeeld Syncqueueref 3",
+        "conflictType": "permission_lost",
+        "serverVersion": {},
+        "clientVersion": {},
+        "resolution": "manual_merge",
+        "resolvedBy": "Voorbeeld Resolvedby 3",
+        "resolvedAt": "2026-03-03T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "fieldEvidence",
+          "slug": "fieldevidence-fieldevidence-1-1"
+        },
+        "inspectionRef": "Voorbeeld Inspectionref 1",
+        "type": "photo",
+        "localBlobRef": "Voorbeeld Localblobref 1",
+        "cloudUrl": "Voorbeeld Cloudurl 1",
+        "gpsLocation": {
+          "lat": 1.0,
+          "lon": 1.0,
+          "accuracy": 1.0,
+          "timestamp": "2026-03-01T09:00:00+00:00"
+        },
+        "capturedAt": "2026-03-01T09:00:00+00:00",
+        "transcription": "Voorbeeld Transcription 1",
+        "transcriptionStatus": "pending",
+        "tags": [
+          "Voorbeeld Tags 1"
+        ],
+        "sensitivityLevel": "public"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "fieldEvidence",
+          "slug": "fieldevidence-fieldevidence-2-2"
+        },
+        "inspectionRef": "Voorbeeld Inspectionref 2",
+        "type": "voice_memo",
+        "localBlobRef": "Voorbeeld Localblobref 2",
+        "cloudUrl": "Voorbeeld Cloudurl 2",
+        "gpsLocation": {
+          "lat": 2.0,
+          "lon": 2.0,
+          "accuracy": 2.0,
+          "timestamp": "2026-03-02T09:00:00+00:00"
+        },
+        "capturedAt": "2026-03-02T09:00:00+00:00",
+        "transcription": "Voorbeeld Transcription 2",
+        "transcriptionStatus": "syncing",
+        "tags": [
+          "Voorbeeld Tags 2"
+        ],
+        "sensitivityLevel": "internal"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "fieldEvidence",
+          "slug": "fieldevidence-fieldevidence-3-3"
+        },
+        "inspectionRef": "Voorbeeld Inspectionref 3",
+        "type": "document",
+        "localBlobRef": "Voorbeeld Localblobref 3",
+        "cloudUrl": "Voorbeeld Cloudurl 3",
+        "gpsLocation": {
+          "lat": 3.0,
+          "lon": 3.0,
+          "accuracy": 3.0,
+          "timestamp": "2026-03-03T09:00:00+00:00"
+        },
+        "capturedAt": "2026-03-03T09:00:00+00:00",
+        "transcription": "Voorbeeld Transcription 3",
+        "transcriptionStatus": "synced",
+        "tags": [
+          "Voorbeeld Tags 3"
+        ],
+        "sensitivityLevel": "confidential"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "fieldInspection",
+          "slug": "fieldinspection-fieldinspection-1-1"
+        },
+        "caseRef": "Voorbeeld Caseref 1",
+        "inspectorRef": "Voorbeeld Inspectorref 1",
+        "status": "planned",
+        "checklistTemplateRef": "Voorbeeld Checklisttemplateref 1",
+        "scheduledAt": "2026-03-01T09:00:00+00:00",
+        "startedAt": "2026-03-01T09:00:00+00:00",
+        "completedAt": "2026-03-01T09:00:00+00:00",
+        "gpsLocation": {
+          "lat": 1.0,
+          "lon": 1.0,
+          "accuracy": 1.0,
+          "timestamp": "2026-03-01T09:00:00+00:00"
+        },
+        "offlineCreatedAt": "2026-03-01T09:00:00+00:00",
+        "syncedAt": "2026-03-01T09:00:00+00:00",
+        "deviceId": "Voorbeeld Deviceid 1"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "fieldInspection",
+          "slug": "fieldinspection-fieldinspection-2-2"
+        },
+        "caseRef": "Voorbeeld Caseref 2",
+        "inspectorRef": "Voorbeeld Inspectorref 2",
+        "status": "in_progress",
+        "checklistTemplateRef": "Voorbeeld Checklisttemplateref 2",
+        "scheduledAt": "2026-03-02T09:00:00+00:00",
+        "startedAt": "2026-03-02T09:00:00+00:00",
+        "completedAt": "2026-03-02T09:00:00+00:00",
+        "gpsLocation": {
+          "lat": 2.0,
+          "lon": 2.0,
+          "accuracy": 2.0,
+          "timestamp": "2026-03-02T09:00:00+00:00"
+        },
+        "offlineCreatedAt": "2026-03-02T09:00:00+00:00",
+        "syncedAt": "2026-03-02T09:00:00+00:00",
+        "deviceId": "Voorbeeld Deviceid 2"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "fieldInspection",
+          "slug": "fieldinspection-fieldinspection-3-3"
+        },
+        "caseRef": "Voorbeeld Caseref 3",
+        "inspectorRef": "Voorbeeld Inspectorref 3",
+        "status": "synced",
+        "checklistTemplateRef": "Voorbeeld Checklisttemplateref 3",
+        "scheduledAt": "2026-03-03T09:00:00+00:00",
+        "startedAt": "2026-03-03T09:00:00+00:00",
+        "completedAt": "2026-03-03T09:00:00+00:00",
+        "gpsLocation": {
+          "lat": 3.0,
+          "lon": 3.0,
+          "accuracy": 3.0,
+          "timestamp": "2026-03-03T09:00:00+00:00"
+        },
+        "offlineCreatedAt": "2026-03-03T09:00:00+00:00",
+        "syncedAt": "2026-03-03T09:00:00+00:00",
+        "deviceId": "Voorbeeld Deviceid 3"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "samenwerkverzoek",
+          "slug": "samenwerkverzoek-samenwerkverzoek-1-1"
+        },
+        "initiatorCompetentAuthority": "Voorbeeld Initiatorcompetentauthority 1",
+        "requestedCompetentAuthority": "Voorbeeld Requestedcompetentauthority 1",
+        "permitApplicationRef": "Voorbeeld Permitapplicationref 1",
+        "status": "requested",
+        "rationale": "Voorbeeld Rationale 1",
+        "advies": "Voorbeeld Advies 1",
+        "requestedOn": "2026-03-01T09:00:00+00:00",
+        "respondedOn": "2026-03-01T09:00:00+00:00",
+        "caseId": "00000000-0000-4000-8000-000000000000"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "samenwerkverzoek",
+          "slug": "samenwerkverzoek-samenwerkverzoek-2-2"
+        },
+        "initiatorCompetentAuthority": "Voorbeeld Initiatorcompetentauthority 2",
+        "requestedCompetentAuthority": "Voorbeeld Requestedcompetentauthority 2",
+        "permitApplicationRef": "Voorbeeld Permitapplicationref 2",
+        "status": "accepted",
+        "rationale": "Voorbeeld Rationale 2",
+        "advies": "Voorbeeld Advies 2",
+        "requestedOn": "2026-03-02T09:00:00+00:00",
+        "respondedOn": "2026-03-02T09:00:00+00:00",
+        "caseId": "00000000-0000-4000-8000-000000000001"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "samenwerkverzoek",
+          "slug": "samenwerkverzoek-samenwerkverzoek-3-3"
+        },
+        "initiatorCompetentAuthority": "Voorbeeld Initiatorcompetentauthority 3",
+        "requestedCompetentAuthority": "Voorbeeld Requestedcompetentauthority 3",
+        "permitApplicationRef": "Voorbeeld Permitapplicationref 3",
+        "status": "refused",
+        "rationale": "Voorbeeld Rationale 3",
+        "advies": "Voorbeeld Advies 3",
+        "requestedOn": "2026-03-03T09:00:00+00:00",
+        "respondedOn": "2026-03-03T09:00:00+00:00",
+        "caseId": "00000000-0000-4000-8000-000000000002"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "stufEndpoint",
+          "slug": "stufendpoint-voorbeeld-name-1-1"
+        },
+        "id": "Voorbeeld Id 1",
+        "name": "Voorbeeld Name 1",
+        "municipalityCode": "Voorbeeld Munici",
+        "recipientApplication": "Voorbeeld Recipientapplication 1",
+        "recipientOrganisation": "Voorbeeld Recipientorganisation 1",
+        "recipientUser": "Voorbeeld Recipientuser 1",
+        "senderApplication": "Voorbeeld Senderapplication 1",
+        "senderOrganisation": "Voorbeeld Senderorganisation 1",
+        "endpointUrl": "https://example.invalid/resource/0",
+        "soapVersion": "1.1",
+        "stufVersion": "0310",
+        "sectorModel": "ZKN",
+        "authentication": {
+          "type": "wsse-usernametoken",
+          "username": "Voorbeeld Username 1",
+          "passwordVaultRef": "Voorbeeld Passwordvaultref 1"
+        },
+        "tlsClientCertRef": "Voorbeeld Tlsclientcertref 1",
+        "caseIdentificationStrategy": "vooraf",
+        "zaaktypeMappings": {},
+        "freeMessagesTemplates": [
+          {
+            "name": "Voorbeeld Name 1",
+            "verplichteVelden": [
+              "Voorbeeld Verplichtevelden 1"
+            ]
+          }
+        ],
+        "actief": true,
+        "aangemaakt": "2026-03-01T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "stufEndpoint",
+          "slug": "stufendpoint-voorbeeld-name-2-2"
+        },
+        "id": "Voorbeeld Id 2",
+        "name": "Voorbeeld Name 2",
+        "municipalityCode": "Voorbeeld Munici",
+        "recipientApplication": "Voorbeeld Recipientapplication 2",
+        "recipientOrganisation": "Voorbeeld Recipientorganisation 2",
+        "recipientUser": "Voorbeeld Recipientuser 2",
+        "senderApplication": "Voorbeeld Senderapplication 2",
+        "senderOrganisation": "Voorbeeld Senderorganisation 2",
+        "endpointUrl": "https://example.invalid/resource/1",
+        "soapVersion": "1.2",
+        "stufVersion": "0310",
+        "sectorModel": "ZKN",
+        "authentication": {
+          "type": "wsse-usernametoken",
+          "username": "Voorbeeld Username 2",
+          "passwordVaultRef": "Voorbeeld Passwordvaultref 2"
+        },
+        "tlsClientCertRef": "Voorbeeld Tlsclientcertref 2",
+        "caseIdentificationStrategy": "achteraf",
+        "zaaktypeMappings": {},
+        "freeMessagesTemplates": [
+          {
+            "name": "Voorbeeld Name 2",
+            "verplichteVelden": [
+              "Voorbeeld Verplichtevelden 2"
+            ]
+          }
+        ],
+        "actief": true,
+        "aangemaakt": "2026-03-02T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "stufEndpoint",
+          "slug": "stufendpoint-voorbeeld-name-3-3"
+        },
+        "id": "Voorbeeld Id 3",
+        "name": "Voorbeeld Name 3",
+        "municipalityCode": "Voorbeeld Munici",
+        "recipientApplication": "Voorbeeld Recipientapplication 3",
+        "recipientOrganisation": "Voorbeeld Recipientorganisation 3",
+        "recipientUser": "Voorbeeld Recipientuser 3",
+        "senderApplication": "Voorbeeld Senderapplication 3",
+        "senderOrganisation": "Voorbeeld Senderorganisation 3",
+        "endpointUrl": "https://example.invalid/resource/2",
+        "soapVersion": "1.1",
+        "stufVersion": "0310",
+        "sectorModel": "ZKN",
+        "authentication": {
+          "type": "wsse-usernametoken",
+          "username": "Voorbeeld Username 3",
+          "passwordVaultRef": "Voorbeeld Passwordvaultref 3"
+        },
+        "tlsClientCertRef": "Voorbeeld Tlsclientcertref 3",
+        "caseIdentificationStrategy": "vooraf",
+        "zaaktypeMappings": {},
+        "freeMessagesTemplates": [
+          {
+            "name": "Voorbeeld Name 3",
+            "verplichteVelden": [
+              "Voorbeeld Verplichtevelden 3"
+            ]
+          }
+        ],
+        "actief": true,
+        "aangemaakt": "2026-03-03T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "stufMessage",
+          "slug": "stufmessage-stufmessage-1-1"
+        },
+        "id": "Voorbeeld Id 1",
+        "endpointId": "Voorbeeld Endpointid 1",
+        "direction": "outbound",
+        "messageKind": "Lk01",
+        "envelopeXml": "Voorbeeld Envelopexml 1",
+        "sentOn": "2026-03-01T09:00:00+00:00",
+        "entiteittype": "Voorbeeld Entiteittype 1",
+        "role": "Voorbeeld Role 1",
+        "referenceNumber": "Voorbeeld Referencenumber 1",
+        "crossRefnummer": "Voorbeeld Crossrefnummer 1",
+        "caseIdentification": "Voorbeeld Caseidentification 1",
+        "responseEnvelopeXml": "Voorbeeld Responseenvelopexml 1",
+        "httpStatus": 1,
+        "durationMs": 1,
+        "fout": {
+          "code": "Voorbeeld Code 1",
+          "omschrijving": "Voorbeeld Omschrijving 1",
+          "details": "Voorbeeld Details 1",
+          "kind": "transient"
+        },
+        "receivedOn": "2026-03-01T09:00:00+00:00",
+        "relatedCaseId": "Voorbeeld Relatedcaseid 1",
+        "sourceEntity": "case",
+        "sourceId": "Voorbeeld Sourceid 1",
+        "status": "verzonden",
+        "retries": [
+          {
+            "attempt": 1,
+            "timestamp": "2026-03-01T09:00:00+00:00",
+            "httpStatus": 1,
+            "durationMs": 1,
+            "fout": {}
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "stufMessage",
+          "slug": "stufmessage-stufmessage-2-2"
+        },
+        "id": "Voorbeeld Id 2",
+        "endpointId": "Voorbeeld Endpointid 2",
+        "direction": "inbound",
+        "messageKind": "Lk02",
+        "envelopeXml": "Voorbeeld Envelopexml 2",
+        "sentOn": "2026-03-02T09:00:00+00:00",
+        "entiteittype": "Voorbeeld Entiteittype 2",
+        "role": "Voorbeeld Role 2",
+        "referenceNumber": "Voorbeeld Referencenumber 2",
+        "crossRefnummer": "Voorbeeld Crossrefnummer 2",
+        "caseIdentification": "Voorbeeld Caseidentification 2",
+        "responseEnvelopeXml": "Voorbeeld Responseenvelopexml 2",
+        "httpStatus": 2,
+        "durationMs": 2,
+        "fout": {
+          "code": "Voorbeeld Code 2",
+          "omschrijving": "Voorbeeld Omschrijving 2",
+          "details": "Voorbeeld Details 2",
+          "kind": "permanent"
+        },
+        "receivedOn": "2026-03-02T09:00:00+00:00",
+        "relatedCaseId": "Voorbeeld Relatedcaseid 2",
+        "sourceEntity": "contact",
+        "sourceId": "Voorbeeld Sourceid 2",
+        "status": "bevestigd",
+        "retries": [
+          {
+            "attempt": 2,
+            "timestamp": "2026-03-02T09:00:00+00:00",
+            "httpStatus": 2,
+            "durationMs": 2,
+            "fout": {}
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "stufMessage",
+          "slug": "stufmessage-stufmessage-3-3"
+        },
+        "id": "Voorbeeld Id 3",
+        "endpointId": "Voorbeeld Endpointid 3",
+        "direction": "outbound",
+        "messageKind": "Lk03",
+        "envelopeXml": "Voorbeeld Envelopexml 3",
+        "sentOn": "2026-03-03T09:00:00+00:00",
+        "entiteittype": "Voorbeeld Entiteittype 3",
+        "role": "Voorbeeld Role 3",
+        "referenceNumber": "Voorbeeld Referencenumber 3",
+        "crossRefnummer": "Voorbeeld Crossrefnummer 3",
+        "caseIdentification": "Voorbeeld Caseidentification 3",
+        "responseEnvelopeXml": "Voorbeeld Responseenvelopexml 3",
+        "httpStatus": 3,
+        "durationMs": 3,
+        "fout": {
+          "code": "Voorbeeld Code 3",
+          "omschrijving": "Voorbeeld Omschrijving 3",
+          "details": "Voorbeeld Details 3",
+          "kind": "transient"
+        },
+        "receivedOn": "2026-03-03T09:00:00+00:00",
+        "relatedCaseId": "Voorbeeld Relatedcaseid 3",
+        "sourceEntity": "case",
+        "sourceId": "Voorbeeld Sourceid 3",
+        "status": "fout",
+        "retries": [
+          {
+            "attempt": 3,
+            "timestamp": "2026-03-03T09:00:00+00:00",
+            "httpStatus": 3,
+            "durationMs": 3,
+            "fout": {}
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "syncQueue",
+          "slug": "syncqueue-syncqueue-1-1"
+        },
+        "deviceId": "Voorbeeld Deviceid 1",
+        "operationType": "create",
+        "targetEntity": "Voorbeeld Targetentity 1",
+        "status": "pending",
+        "targetId": "Voorbeeld Targetid 1",
+        "payload": {},
+        "queuedAt": "2026-03-01T09:00:00+00:00",
+        "attemptCount": 0,
+        "lastAttemptAt": "2026-03-01T09:00:00+00:00",
+        "lastError": "Voorbeeld Lasterror 1"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "syncQueue",
+          "slug": "syncqueue-syncqueue-2-2"
+        },
+        "deviceId": "Voorbeeld Deviceid 2",
+        "operationType": "update",
+        "targetEntity": "Voorbeeld Targetentity 2",
+        "status": "syncing",
+        "targetId": "Voorbeeld Targetid 2",
+        "payload": {},
+        "queuedAt": "2026-03-02T09:00:00+00:00",
+        "attemptCount": 0,
+        "lastAttemptAt": "2026-03-02T09:00:00+00:00",
+        "lastError": "Voorbeeld Lasterror 2"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "syncQueue",
+          "slug": "syncqueue-syncqueue-3-3"
+        },
+        "deviceId": "Voorbeeld Deviceid 3",
+        "operationType": "upload",
+        "targetEntity": "Voorbeeld Targetentity 3",
+        "status": "synced",
+        "targetId": "Voorbeeld Targetid 3",
+        "payload": {},
+        "queuedAt": "2026-03-03T09:00:00+00:00",
+        "attemptCount": 0,
+        "lastAttemptAt": "2026-03-03T09:00:00+00:00",
+        "lastError": "Voorbeeld Lasterror 3"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "zaaksysteemMapping",
+          "slug": "zaaksysteemmapping-zaaksysteemmapping-1-1"
+        },
+        "id": "Voorbeeld Id 1",
+        "sourceEntity": "case",
+        "sourceId": "Voorbeeld Sourceid 1",
+        "externalEntity": "ZAK",
+        "externalIdentification": "Voorbeeld Externalidentification 1",
+        "endpointId": "Voorbeeld Endpointid 1",
+        "caseId": "Voorbeeld Caseid 1",
+        "lastSynchronisation": "2026-03-01T09:00:00+00:00",
+        "synchronisationStatus": "in_sync",
+        "openstaandeWijzigingen": [
+          {
+            "veld": "Voorbeeld Veld 1",
+            "value": "Voorbeeld Value 1",
+            "geplandOp": "2026-03-01T09:00:00+00:00"
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "zaaksysteemMapping",
+          "slug": "zaaksysteemmapping-zaaksysteemmapping-2-2"
+        },
+        "id": "Voorbeeld Id 2",
+        "sourceEntity": "contact",
+        "sourceId": "Voorbeeld Sourceid 2",
+        "externalEntity": "NPS",
+        "externalIdentification": "Voorbeeld Externalidentification 2",
+        "endpointId": "Voorbeeld Endpointid 2",
+        "caseId": "Voorbeeld Caseid 2",
+        "lastSynchronisation": "2026-03-02T09:00:00+00:00",
+        "synchronisationStatus": "fout",
+        "openstaandeWijzigingen": [
+          {
+            "veld": "Voorbeeld Veld 2",
+            "value": "Voorbeeld Value 2",
+            "geplandOp": "2026-03-02T09:00:00+00:00"
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "zaaksysteemMapping",
+          "slug": "zaaksysteemmapping-zaaksysteemmapping-3-3"
+        },
+        "id": "Voorbeeld Id 3",
+        "sourceEntity": "case",
+        "sourceId": "Voorbeeld Sourceid 3",
+        "externalEntity": "NNP",
+        "externalIdentification": "Voorbeeld Externalidentification 3",
+        "endpointId": "Voorbeeld Endpointid 3",
+        "caseId": "Voorbeeld Caseid 3",
+        "lastSynchronisation": "2026-03-03T09:00:00+00:00",
+        "synchronisationStatus": "geannuleerd",
+        "openstaandeWijzigingen": [
+          {
+            "veld": "Voorbeeld Veld 3",
+            "value": "Voorbeeld Value 3",
+            "geplandOp": "2026-03-03T09:00:00+00:00"
+          }
+        ]
       }
     ]
   }
