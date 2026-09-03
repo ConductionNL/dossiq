@@ -237,6 +237,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\RenameDutchSchemaSlugs</step>
             <step>OCA\Dossiq\Repair\InitializeSettings</step>
+            <!--
+                The shipped register data assigns flow steps to Nextcloud
+                groups (task-behandelaar -> "behandelaars"). Provision them
+                before anything imports or runs that data: the completion
+                gate fails closed on a group that does not exist.
+            -->
+            <step>OCA\Dossiq\Repair\ProvisionAssignedGroups</step>
             <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
             <step>OCA\Dossiq\Repair\MigrateWorkflowDefinitions</step>

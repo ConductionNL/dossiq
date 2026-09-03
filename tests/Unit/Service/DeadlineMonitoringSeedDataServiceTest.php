@@ -99,6 +99,39 @@ class DeadlineMonitoringSeedDataServiceTest extends TestCase {
 	}
 
 	/**
+	 * A refused row is COUNTED, so the caller can refuse a success-shaped
+	 * report. This is the "0 definities (0 overgeslagen)" defect: every row
+	 * failed under Anonymous RBAC and the summary still looked like success.
+	 *
+	 * @return void
+	 */
+	public function testRefusedRowsAreCountedAsFailed(): void {
+		$objects = new RefusingTermijnObjectService();
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static function (string $key): string {
+				return match ($key) {
+					'register' => 'dossiq',
+					'termijn_definitie_schema' => 'deadlineDefinition',
+					default => '',
+				};
+			},
+		);
+
+		$service = new DeadlineMonitoringSeedDataService(
+			$settings,
+			$this->createMock(LoggerInterface::class),
+		);
+
+		$result = $service->seed();
+
+		self::assertSame(0, $result['definities']);
+		self::assertSame(0, $result['skipped']);
+		self::assertSame(3, $result['failed']);
+	}
+
+	/**
 	 * @return void
 	 */
 	public function testWmoSeedHas42DayDuration(): void {
@@ -178,5 +211,28 @@ class FakeTermijnObjectService {
 	public function searchObjects(array $query = []): array {
 		$schema = (string)(($query['@self'] ?? [])['schema'] ?? '');
 		return $this->findObjects('', $schema);
+	}
+}
+
+/**
+ * Fake that refuses every write, the way OpenRegister RBAC refuses Anonymous.
+ */
+class RefusingTermijnObjectService extends FakeTermijnObjectService {
+	/**
+	 * @param array<string, mixed> $object Object.
+	 * @param array|null $extend Relations to expand (ignored).
+	 * @param string|int|null $register Register id.
+	 * @param string|int|null $schema Schema id.
+	 * @param string|null $uuid UUID to update, null to create.
+	 * @return array<string, mixed>
+	 */
+	public function saveObject(
+		array $object,
+		?array $extend = [],
+		string|int|null $register = null,
+		string|int|null $schema = null,
+		?string $uuid = null,
+	): array {
+		throw new \RuntimeException("User 'Anonymous' does not have permission to 'create'");
 	}
 }

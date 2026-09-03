@@ -94,23 +94,11 @@ class TemplateBundleSeeder {
 			'parafeerroute' => 0,
 		];
 
-		$childData = [
-			'statusTypes' => (array)($caseTypeData['statusTypes'] ?? []),
-			'roleTypes' => (array)($caseTypeData['roleTypes'] ?? []),
-			'propertyDefinitions' => (array)($caseTypeData['propertyDefinitions'] ?? []),
-			'documentTypes' => (array)($caseTypeData['documentTypes'] ?? []),
-			'resultTypes' => (array)($caseTypeData['resultTypes'] ?? []),
-		];
-		$workflowData = ($caseTypeData['workflowTemplate'] ?? null);
-
-		unset(
-			$caseTypeData['statusTypes'],
-			$caseTypeData['roleTypes'],
-			$caseTypeData['propertyDefinitions'],
-			$caseTypeData['documentTypes'],
-			$caseTypeData['resultTypes'],
-			$caseTypeData['workflowTemplate'],
-		);
+		$split = $this->splitBundle(caseTypeData: $caseTypeData);
+		$caseTypeData = $split['caseTypeData'];
+		$childData = $split['childData'];
+		$workflowData = $split['workflowData'];
+		$initialStatusName = $split['initialStatusName'];
 
 		$caseType = $this->createObject(
 			objectService: $objectService,
@@ -132,6 +120,17 @@ class TemplateBundleSeeder {
 			childData: $childData,
 			caseTypeId: $caseTypeId,
 			counts: $counts,
+		);
+
+		$this->linkInitialStatus(
+			objectService: $objectService,
+			register: $register,
+			schema: $schemas['caseType'],
+			caseTypeId: $caseTypeId,
+			caseTypeData: $caseTypeData,
+			initialStatusName: $initialStatusName,
+			statusNameMap: $nameMaps['statusTypes'],
+			slug: $slug,
 		);
 
 		$this->seedWorkflowTemplate(
@@ -247,6 +246,112 @@ class TemplateBundleSeeder {
 
 		return $nameMaps;
 	}//end seedCaseTypeChildren()
+
+	/**
+	 * Split a bundle's caseType payload from the collections seeded after it.
+	 *
+	 * The child collections and the workflow are nested inside the caseType in
+	 * the bundle file, but are separate OpenRegister objects that can only be
+	 * created once the caseType they link to exists. `initialStatusName` is
+	 * pulled out for the same reason in reverse: the caseType names its
+	 * initial status, but the statusType it names does not exist yet, so the
+	 * link is written back after the children are seeded.
+	 *
+	 * @param array<string, mixed> $caseTypeData The bundle's caseType payload.
+	 *
+	 * @return array{caseTypeData: array<string, mixed>, childData: array<string, array<int, mixed>>,
+	 *               workflowData: mixed, initialStatusName: string} The split payload.
+	 *
+	 * @spec openspec/specs/besluitvorming-workflow/spec.md
+	 */
+	private function splitBundle(array $caseTypeData): array {
+		$childData = [
+			'statusTypes' => (array)($caseTypeData['statusTypes'] ?? []),
+			'roleTypes' => (array)($caseTypeData['roleTypes'] ?? []),
+			'propertyDefinitions' => (array)($caseTypeData['propertyDefinitions'] ?? []),
+			'documentTypes' => (array)($caseTypeData['documentTypes'] ?? []),
+			'resultTypes' => (array)($caseTypeData['resultTypes'] ?? []),
+		];
+		$workflowData = ($caseTypeData['workflowTemplate'] ?? null);
+		$initialStatusName = trim((string)($caseTypeData['initialStatusName'] ?? ''));
+
+		unset(
+			$caseTypeData['statusTypes'],
+			$caseTypeData['roleTypes'],
+			$caseTypeData['propertyDefinitions'],
+			$caseTypeData['documentTypes'],
+			$caseTypeData['resultTypes'],
+			$caseTypeData['workflowTemplate'],
+			$caseTypeData['initialStatusName'],
+		);
+
+		return [
+			'caseTypeData' => $caseTypeData,
+			'childData' => $childData,
+			'workflowData' => $workflowData,
+			'initialStatusName' => $initialStatusName,
+		];
+	}//end splitBundle()
+
+	/**
+	 * Write the caseType's initialStatus link once the statusTypes exist.
+	 *
+	 * The bundle can only name the initial status (the statusTypes are created
+	 * AFTER the caseType they belong to), so this update resolves the name via
+	 * the freshly-seeded name map and writes the id back. A bundle that names
+	 * no initial status, or names one that did not seed, is logged loudly: the
+	 * cost is a case born statusless through the API.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param string $register The register slug.
+	 * @param string $schema The caseType schema id.
+	 * @param string $caseTypeId The freshly-created caseType id.
+	 * @param array<string, mixed> $caseTypeData The caseType payload as created.
+	 * @param string $initialStatusName The status name the bundle declared.
+	 * @param array<string, string> $statusNameMap Map of statusType name => id.
+	 * @param string $slug The template slug (for logging).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/besluitvorming-workflow/spec.md
+	 */
+	private function linkInitialStatus(
+		object $objectService,
+		string $register,
+		string $schema,
+		string $caseTypeId,
+		array $caseTypeData,
+		string $initialStatusName,
+		array $statusNameMap,
+		string $slug,
+	): void {
+		if ($caseTypeId === '' || $schema === '') {
+			return;
+		}
+
+		$statusId = ($statusNameMap[$initialStatusName] ?? '');
+		if ($initialStatusName === '' || $statusId === '') {
+			$this->logger->warning(
+				'Dossiq: besluitvorming template names no resolvable initial status; API-created cases of this type are born statusless',
+				['slug' => $slug, 'initialStatusName' => $initialStatusName],
+			);
+			return;
+		}
+
+		try {
+			$objectService->saveObject(
+				register: $register,
+				schema: $schema,
+				object: array_merge($caseTypeData, ['initialStatus' => $statusId]),
+				uuid: $caseTypeId,
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: could not write the caseType initialStatus link',
+				['slug' => $slug, 'exception' => $e->getMessage()],
+			);
+		}
+	}//end linkInitialStatus()
 
 	/**
 	 * Seed the workflow template, resolving its name references first.

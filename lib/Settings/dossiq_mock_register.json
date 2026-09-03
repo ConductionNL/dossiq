@@ -8946,7 +8946,7 @@
                 "to_amount": {
                   "type": "number",
                   "title": "Up To Amount",
-                  "description": "Upper bedrag limit; null means unlimited"
+                  "description": "Upper bedrag limit; omit the property for unlimited"
                 },
                 "caseTypes": {
                   "type": "array",
