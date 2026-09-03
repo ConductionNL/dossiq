@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "dossiq demo data",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Demo data covering every schema this app supplies, offered as the first step of the app's setup walkthrough. Generated from the schemas themselves, so every object satisfies the schema that will validate it."
   },
   "x-openregister": {
@@ -3802,7 +3802,6 @@
             "description": "Auto-generated identifier",
             "title": "Identifier"
           },
-
           "purpose": {
             "type": "string",
             "description": "The purpose or goal of this case type",
@@ -4129,7 +4128,6 @@
           }
         }
       },
-
       "checklistItem": {
         "slug": "checklistItem",
         "icon": "CheckboxOutline",
@@ -5537,7 +5535,6 @@
             "x-translatable": true,
             "title": "Description"
           },
-
           "caseType": {
             "type": "string",
             "format": "uuid",
@@ -5885,7 +5882,6 @@
             "x-translatable": true,
             "title": "Description"
           },
-
           "caseType": {
             "type": "string",
             "format": "uuid",
@@ -23634,24 +23630,125 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "checklistResult",
-          "slug": "checklistresult-checklistresult-1-1"
+          "schema": "fieldInspection",
+          "slug": "inspectie-zonnehof-fundering"
         },
-        "inspectionRef": "Voorbeeld Inspectionref 1",
-        "checklistTemplateRef": "Voorbeeld Checklisttemplateref 1",
+        "caseRef": "2026-0431 Nieuwbouw 24 appartementen Zonnehof 12",
+        "inspectorRef": "a.bakker",
+        "checklistTemplateRef": "bouwtoezicht-fase-1-fundering",
+        "scheduledAt": "2026-05-18T08:30:00+02:00",
+        "startedAt": "2026-05-18T08:41:00+02:00",
+        "completedAt": "2026-05-18T09:52:00+02:00",
+        "gpsLocation": {
+          "lat": 52.1553,
+          "lon": 5.3828,
+          "accuracy": 6.5,
+          "timestamp": "2026-05-18T08:41:00+02:00"
+        },
+        "status": "synced",
+        "offlineCreatedAt": "2026-05-18T08:41:00+02:00",
+        "syncedAt": "2026-05-18T13:07:00+02:00",
+        "deviceId": "tablet-toezicht-04"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "fieldInspection",
+          "slug": "inspectie-zonnehof-ruwbouw"
+        },
+        "caseRef": "2026-0431 Nieuwbouw 24 appartementen Zonnehof 12",
+        "inspectorRef": "a.bakker",
+        "checklistTemplateRef": "bouwtoezicht-fase-2-ruwbouw",
+        "scheduledAt": "2026-06-02T09:00:00+02:00",
+        "startedAt": "2026-06-02T09:12:00+02:00",
+        "gpsLocation": {
+          "lat": 52.1553,
+          "lon": 5.3828,
+          "accuracy": 11.0,
+          "timestamp": "2026-06-02T09:12:00+02:00"
+        },
+        "status": "conflict",
+        "offlineCreatedAt": "2026-06-02T09:12:00+02:00",
+        "deviceId": "tablet-toezicht-04"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "fieldInspection",
+          "slug": "inspectie-amsterdamseweg-fundering"
+        },
+        "caseRef": "2026-0448 Uitbreiding bedrijfshal Amsterdamseweg 41",
+        "inspectorRef": "m.visser",
+        "checklistTemplateRef": "bouwtoezicht-fase-1-fundering",
+        "scheduledAt": "2026-06-03T13:30:00+02:00",
+        "startedAt": "2026-06-03T13:36:00+02:00",
+        "gpsLocation": {
+          "lat": 52.1729,
+          "lon": 5.3599,
+          "accuracy": 4.2,
+          "timestamp": "2026-06-03T13:36:00+02:00"
+        },
+        "status": "in_progress",
+        "offlineCreatedAt": "2026-06-03T13:36:00+02:00",
+        "deviceId": "tablet-toezicht-07"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "checklistResult",
+          "slug": "checklist-zonnehof-fundering"
+        },
+        "inspectionRef": "inspectie-zonnehof-fundering",
+        "checklistTemplateRef": "bouwtoezicht-fase-1-fundering",
         "items": [
           {
-            "questionId": "Voorbeeld Questionid 1",
-            "answer": "Voorbeeld Answer 1",
-            "evidenceRefs": [
-              "Voorbeeld Evidencerefs 1"
-            ],
-            "notes": "Voorbeeld Notes 1",
-            "answeredAt": "2026-03-01T09:00:00+00:00",
+            "questionId": "bouwtoezicht-fase-1-fundering-1",
+            "answer": "ja",
+            "notes": "Fundering ligt op de maten van tekening BT-0431-03.",
+            "answeredAt": "2026-05-18T08:47:00+02:00",
             "gpsAtAnswer": {
-              "lat": 1.0,
-              "lon": 1.0,
-              "accuracy": 1.0,
+              "lat": 52.1553,
+              "lon": 5.3828,
+              "accuracy": 6.5,
+              "source": "sensor"
+            }
+          },
+          {
+            "questionId": "bouwtoezicht-fase-1-fundering-2",
+            "answer": "ja",
+            "notes": "Wapening 12 mm, hart op hart 150 mm, dekking gemeten op 35 mm.",
+            "answeredAt": "2026-05-18T09:05:00+02:00",
+            "gpsAtAnswer": {
+              "lat": 52.1553,
+              "lon": 5.3828,
+              "accuracy": 6.5,
+              "source": "sensor"
+            }
+          },
+          {
+            "questionId": "bouwtoezicht-fase-1-fundering-3",
+            "answer": "nee",
+            "evidenceRefs": [
+              "bewijs-zonnehof-waterkering"
+            ],
+            "notes": "Waterkering ontbreekt aan de noordzijde. Foto gemaakt, herstel afgesproken met de uitvoerder.",
+            "answeredAt": "2026-05-18T09:26:00+02:00",
+            "gpsAtAnswer": {
+              "lat": 52.1553,
+              "lon": 5.3828,
+              "accuracy": 8.1,
+              "source": "sensor"
+            }
+          },
+          {
+            "questionId": "bouwtoezicht-fase-1-fundering-4",
+            "answer": "8",
+            "notes": "Afwijking 8 mm ten opzichte van de tekening. Binnen de tolerantie.",
+            "answeredAt": "2026-05-18T09:44:00+02:00",
+            "gpsAtAnswer": {
+              "lat": 52.1553,
+              "lon": 5.3828,
+              "accuracy": 8.1,
               "source": "sensor"
             }
           }
@@ -23661,23 +23758,46 @@
         "@self": {
           "register": "dossiq",
           "schema": "checklistResult",
-          "slug": "checklistresult-checklistresult-2-2"
+          "slug": "checklist-zonnehof-ruwbouw"
         },
-        "inspectionRef": "Voorbeeld Inspectionref 2",
-        "checklistTemplateRef": "Voorbeeld Checklisttemplateref 2",
+        "inspectionRef": "inspectie-zonnehof-ruwbouw",
+        "checklistTemplateRef": "bouwtoezicht-fase-2-ruwbouw",
         "items": [
           {
-            "questionId": "Voorbeeld Questionid 2",
-            "answer": "Voorbeeld Answer 2",
-            "evidenceRefs": [
-              "Voorbeeld Evidencerefs 2"
-            ],
-            "notes": "Voorbeeld Notes 2",
-            "answeredAt": "2026-03-02T09:00:00+00:00",
+            "questionId": "bouwtoezicht-fase-2-ruwbouw-1",
+            "answer": "ja",
+            "answeredAt": "2026-06-02T09:19:00+02:00",
             "gpsAtAnswer": {
-              "lat": 2.0,
-              "lon": 2.0,
-              "accuracy": 2.0,
+              "lat": 52.1553,
+              "lon": 5.3828,
+              "accuracy": 11.0,
+              "source": "sensor"
+            }
+          },
+          {
+            "questionId": "bouwtoezicht-fase-2-ruwbouw-2",
+            "answer": "ja",
+            "notes": "Kozijnen op de tweede verdieping nog niet geplaatst. Volgende ronde opnieuw bekijken.",
+            "answeredAt": "2026-06-02T09:34:00+02:00",
+            "gpsAtAnswer": {
+              "lat": 52.1553,
+              "lon": 5.3828,
+              "accuracy": 11.0,
+              "source": "sensor"
+            }
+          },
+          {
+            "questionId": "bouwtoezicht-fase-2-ruwbouw-3",
+            "answer": "nee",
+            "evidenceRefs": [
+              "bewijs-zonnehof-spantvoet"
+            ],
+            "notes": "Spantvoet aan de zuidzijde wijkt af van het bestek. Ingesproken memo bij dit antwoord.",
+            "answeredAt": "2026-06-02T10:02:00+02:00",
+            "gpsAtAnswer": {
+              "lat": 52.1553,
+              "lon": 5.3828,
+              "accuracy": 14.0,
               "source": "sensorless"
             }
           }
@@ -23687,23 +23807,31 @@
         "@self": {
           "register": "dossiq",
           "schema": "checklistResult",
-          "slug": "checklistresult-checklistresult-3-3"
+          "slug": "checklist-amsterdamseweg-fundering"
         },
-        "inspectionRef": "Voorbeeld Inspectionref 3",
-        "checklistTemplateRef": "Voorbeeld Checklisttemplateref 3",
+        "inspectionRef": "inspectie-amsterdamseweg-fundering",
+        "checklistTemplateRef": "bouwtoezicht-fase-1-fundering",
         "items": [
           {
-            "questionId": "Voorbeeld Questionid 3",
-            "answer": "Voorbeeld Answer 3",
-            "evidenceRefs": [
-              "Voorbeeld Evidencerefs 3"
-            ],
-            "notes": "Voorbeeld Notes 3",
-            "answeredAt": "2026-03-03T09:00:00+00:00",
+            "questionId": "bouwtoezicht-fase-1-fundering-1",
+            "answer": "ja",
+            "answeredAt": "2026-06-03T13:41:00+02:00",
             "gpsAtAnswer": {
-              "lat": 3.0,
-              "lon": 3.0,
-              "accuracy": 3.0,
+              "lat": 52.1729,
+              "lon": 5.3599,
+              "accuracy": 4.2,
+              "source": "sensor"
+            }
+          },
+          {
+            "questionId": "bouwtoezicht-fase-1-fundering-2",
+            "answer": "nvt",
+            "notes": "Wapening zit al onder de vloer. Beoordeeld op de keuringsrapporten van de leverancier.",
+            "answeredAt": "2026-06-03T13:58:00+02:00",
+            "gpsAtAnswer": {
+              "lat": 52.1729,
+              "lon": 5.3599,
+              "accuracy": 4.2,
               "source": "sensor"
             }
           }
@@ -23712,90 +23840,25 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "conflictRecord",
-          "slug": "conflictrecord-conflictrecord-1-1"
-        },
-        "syncQueueRef": "Voorbeeld Syncqueueref 1",
-        "conflictType": "concurrent_edit",
-        "serverVersion": {},
-        "clientVersion": {},
-        "resolution": "client_wins",
-        "resolvedBy": "Voorbeeld Resolvedby 1",
-        "resolvedAt": "2026-03-01T09:00:00+00:00"
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "conflictRecord",
-          "slug": "conflictrecord-conflictrecord-2-2"
-        },
-        "syncQueueRef": "Voorbeeld Syncqueueref 2",
-        "conflictType": "deleted_remote",
-        "serverVersion": {},
-        "clientVersion": {},
-        "resolution": "server_wins",
-        "resolvedBy": "Voorbeeld Resolvedby 2",
-        "resolvedAt": "2026-03-02T09:00:00+00:00"
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "conflictRecord",
-          "slug": "conflictrecord-conflictrecord-3-3"
-        },
-        "syncQueueRef": "Voorbeeld Syncqueueref 3",
-        "conflictType": "permission_lost",
-        "serverVersion": {},
-        "clientVersion": {},
-        "resolution": "manual_merge",
-        "resolvedBy": "Voorbeeld Resolvedby 3",
-        "resolvedAt": "2026-03-03T09:00:00+00:00"
-      },
-      {
-        "@self": {
-          "register": "dossiq",
           "schema": "fieldEvidence",
-          "slug": "fieldevidence-fieldevidence-1-1"
+          "slug": "bewijs-zonnehof-waterkering"
         },
-        "inspectionRef": "Voorbeeld Inspectionref 1",
+        "inspectionRef": "inspectie-zonnehof-fundering",
         "type": "photo",
-        "localBlobRef": "Voorbeeld Localblobref 1",
-        "cloudUrl": "Voorbeeld Cloudurl 1",
+        "localBlobRef": "idb://evidence/tablet-toezicht-04/8f21c4",
+        "cloudUrl": "https://cloud.example.invalid/dossiq/2026-0431/waterkering-noordzijde.jpg",
         "gpsLocation": {
-          "lat": 1.0,
-          "lon": 1.0,
-          "accuracy": 1.0,
-          "timestamp": "2026-03-01T09:00:00+00:00"
+          "lat": 52.1553,
+          "lon": 5.3828,
+          "accuracy": 8.1,
+          "timestamp": "2026-05-18T09:26:00+02:00"
         },
-        "capturedAt": "2026-03-01T09:00:00+00:00",
-        "transcription": "Voorbeeld Transcription 1",
-        "transcriptionStatus": "pending",
+        "capturedAt": "2026-05-18T09:26:00+02:00",
+        "transcriptionStatus": "not_applicable",
         "tags": [
-          "Voorbeeld Tags 1"
-        ],
-        "sensitivityLevel": "public"
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "fieldEvidence",
-          "slug": "fieldevidence-fieldevidence-2-2"
-        },
-        "inspectionRef": "Voorbeeld Inspectionref 2",
-        "type": "voice_memo",
-        "localBlobRef": "Voorbeeld Localblobref 2",
-        "cloudUrl": "Voorbeeld Cloudurl 2",
-        "gpsLocation": {
-          "lat": 2.0,
-          "lon": 2.0,
-          "accuracy": 2.0,
-          "timestamp": "2026-03-02T09:00:00+00:00"
-        },
-        "capturedAt": "2026-03-02T09:00:00+00:00",
-        "transcription": "Voorbeeld Transcription 2",
-        "transcriptionStatus": "syncing",
-        "tags": [
-          "Voorbeeld Tags 2"
+          "waterkering",
+          "afwijking",
+          "fase-1"
         ],
         "sensitivityLevel": "internal"
       },
@@ -23803,496 +23866,474 @@
         "@self": {
           "register": "dossiq",
           "schema": "fieldEvidence",
-          "slug": "fieldevidence-fieldevidence-3-3"
+          "slug": "bewijs-zonnehof-spantvoet"
         },
-        "inspectionRef": "Voorbeeld Inspectionref 3",
-        "type": "document",
-        "localBlobRef": "Voorbeeld Localblobref 3",
-        "cloudUrl": "Voorbeeld Cloudurl 3",
+        "inspectionRef": "inspectie-zonnehof-ruwbouw",
+        "type": "voice_memo",
+        "localBlobRef": "idb://evidence/tablet-toezicht-04/c703ab",
+        "capturedAt": "2026-06-02T10:02:00+02:00",
         "gpsLocation": {
-          "lat": 3.0,
-          "lon": 3.0,
-          "accuracy": 3.0,
-          "timestamp": "2026-03-03T09:00:00+00:00"
+          "lat": 52.1553,
+          "lon": 5.3828,
+          "accuracy": 14.0,
+          "timestamp": "2026-06-02T10:02:00+02:00"
         },
-        "capturedAt": "2026-03-03T09:00:00+00:00",
-        "transcription": "Voorbeeld Transcription 3",
+        "transcription": "Spantvoet zuidzijde staat 40 millimeter uit het hart. Uitvoerder haalt de berekening op bij de constructeur.",
         "transcriptionStatus": "synced",
         "tags": [
-          "Voorbeeld Tags 3"
+          "dakconstructie",
+          "afwijking"
+        ],
+        "sensitivityLevel": "internal"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "fieldEvidence",
+          "slug": "bewijs-amsterdamseweg-schets"
+        },
+        "inspectionRef": "inspectie-amsterdamseweg-fundering",
+        "type": "sketch",
+        "localBlobRef": "idb://evidence/tablet-toezicht-07/41ba09",
+        "capturedAt": "2026-06-03T14:05:00+02:00",
+        "gpsLocation": {
+          "lat": 52.1729,
+          "lon": 5.3599,
+          "accuracy": 4.2,
+          "timestamp": "2026-06-03T14:05:00+02:00"
+        },
+        "transcriptionStatus": "not_applicable",
+        "tags": [
+          "schets",
+          "erfgrens"
         ],
         "sensitivityLevel": "confidential"
       },
       {
         "@self": {
           "register": "dossiq",
-          "schema": "fieldInspection",
-          "slug": "fieldinspection-fieldinspection-1-1"
+          "schema": "syncQueue",
+          "slug": "sync-op-amsterdamseweg-checklist"
         },
-        "caseRef": "Voorbeeld Caseref 1",
-        "inspectorRef": "Voorbeeld Inspectorref 1",
-        "status": "planned",
-        "checklistTemplateRef": "Voorbeeld Checklisttemplateref 1",
-        "scheduledAt": "2026-03-01T09:00:00+00:00",
-        "startedAt": "2026-03-01T09:00:00+00:00",
-        "completedAt": "2026-03-01T09:00:00+00:00",
-        "gpsLocation": {
-          "lat": 1.0,
-          "lon": 1.0,
-          "accuracy": 1.0,
-          "timestamp": "2026-03-01T09:00:00+00:00"
+        "deviceId": "tablet-toezicht-07",
+        "operationType": "create",
+        "targetEntity": "checklistResult",
+        "targetId": "checklist-amsterdamseweg-fundering",
+        "payload": {
+          "inspectionRef": "inspectie-amsterdamseweg-fundering",
+          "checklistTemplateRef": "bouwtoezicht-fase-1-fundering"
         },
-        "offlineCreatedAt": "2026-03-01T09:00:00+00:00",
-        "syncedAt": "2026-03-01T09:00:00+00:00",
-        "deviceId": "Voorbeeld Deviceid 1"
+        "queuedAt": "2026-06-03T14:12:00+02:00",
+        "attemptCount": 0,
+        "status": "pending"
       },
       {
         "@self": {
           "register": "dossiq",
-          "schema": "fieldInspection",
-          "slug": "fieldinspection-fieldinspection-2-2"
+          "schema": "syncQueue",
+          "slug": "sync-op-amsterdamseweg-schets"
         },
-        "caseRef": "Voorbeeld Caseref 2",
-        "inspectorRef": "Voorbeeld Inspectorref 2",
-        "status": "in_progress",
-        "checklistTemplateRef": "Voorbeeld Checklisttemplateref 2",
-        "scheduledAt": "2026-03-02T09:00:00+00:00",
-        "startedAt": "2026-03-02T09:00:00+00:00",
-        "completedAt": "2026-03-02T09:00:00+00:00",
-        "gpsLocation": {
-          "lat": 2.0,
-          "lon": 2.0,
-          "accuracy": 2.0,
-          "timestamp": "2026-03-02T09:00:00+00:00"
+        "deviceId": "tablet-toezicht-07",
+        "operationType": "upload",
+        "targetEntity": "fieldEvidence",
+        "targetId": "bewijs-amsterdamseweg-schets",
+        "payload": {
+          "localBlobRef": "idb://evidence/tablet-toezicht-07/41ba09"
         },
-        "offlineCreatedAt": "2026-03-02T09:00:00+00:00",
-        "syncedAt": "2026-03-02T09:00:00+00:00",
-        "deviceId": "Voorbeeld Deviceid 2"
+        "queuedAt": "2026-06-03T14:13:00+02:00",
+        "attemptCount": 1,
+        "lastAttemptAt": "2026-06-03T15:40:00+02:00",
+        "status": "syncing"
       },
       {
         "@self": {
           "register": "dossiq",
-          "schema": "fieldInspection",
-          "slug": "fieldinspection-fieldinspection-3-3"
+          "schema": "syncQueue",
+          "slug": "sync-op-zonnehof-ruwbouw"
         },
-        "caseRef": "Voorbeeld Caseref 3",
-        "inspectorRef": "Voorbeeld Inspectorref 3",
-        "status": "synced",
-        "checklistTemplateRef": "Voorbeeld Checklisttemplateref 3",
-        "scheduledAt": "2026-03-03T09:00:00+00:00",
-        "startedAt": "2026-03-03T09:00:00+00:00",
-        "completedAt": "2026-03-03T09:00:00+00:00",
-        "gpsLocation": {
-          "lat": 3.0,
-          "lon": 3.0,
-          "accuracy": 3.0,
-          "timestamp": "2026-03-03T09:00:00+00:00"
+        "deviceId": "tablet-toezicht-04",
+        "operationType": "update",
+        "targetEntity": "checklistResult",
+        "targetId": "checklist-zonnehof-ruwbouw",
+        "payload": {
+          "items": [
+            {
+              "questionId": "bouwtoezicht-fase-2-ruwbouw-3",
+              "answer": "nee"
+            }
+          ]
         },
-        "offlineCreatedAt": "2026-03-03T09:00:00+00:00",
-        "syncedAt": "2026-03-03T09:00:00+00:00",
-        "deviceId": "Voorbeeld Deviceid 3"
+        "queuedAt": "2026-06-02T10:04:00+02:00",
+        "attemptCount": 2,
+        "lastAttemptAt": "2026-06-02T16:21:00+02:00",
+        "lastError": "409 Conflict: de serverversie is nieuwer dan de versie op dit toestel.",
+        "status": "conflict"
       },
       {
         "@self": {
           "register": "dossiq",
-          "schema": "samenwerkverzoek",
-          "slug": "samenwerkverzoek-samenwerkverzoek-1-1"
+          "schema": "conflictRecord",
+          "slug": "conflict-zonnehof-ruwbouw"
         },
-        "initiatorCompetentAuthority": "Voorbeeld Initiatorcompetentauthority 1",
-        "requestedCompetentAuthority": "Voorbeeld Requestedcompetentauthority 1",
-        "permitApplicationRef": "Voorbeeld Permitapplicationref 1",
-        "status": "requested",
-        "rationale": "Voorbeeld Rationale 1",
-        "advies": "Voorbeeld Advies 1",
-        "requestedOn": "2026-03-01T09:00:00+00:00",
-        "respondedOn": "2026-03-01T09:00:00+00:00",
-        "caseId": "00000000-0000-4000-8000-000000000000"
+        "syncQueueRef": "sync-op-zonnehof-ruwbouw",
+        "conflictType": "concurrent_edit",
+        "serverVersion": {
+          "questionId": "bouwtoezicht-fase-2-ruwbouw-3",
+          "answer": "ja",
+          "notes": "Spantvoet gecontroleerd, akkoord.",
+          "answeredAt": "2026-06-02T11:15:00+02:00",
+          "answeredBy": "p.de.vries"
+        },
+        "clientVersion": {
+          "questionId": "bouwtoezicht-fase-2-ruwbouw-3",
+          "answer": "nee",
+          "notes": "Spantvoet aan de zuidzijde wijkt af van het bestek.",
+          "answeredAt": "2026-06-02T10:02:00+02:00",
+          "answeredBy": "a.bakker"
+        }
       },
       {
         "@self": {
           "register": "dossiq",
-          "schema": "samenwerkverzoek",
-          "slug": "samenwerkverzoek-samenwerkverzoek-2-2"
+          "schema": "conflictRecord",
+          "slug": "conflict-zonnehof-foto-verwijderd"
         },
-        "initiatorCompetentAuthority": "Voorbeeld Initiatorcompetentauthority 2",
-        "requestedCompetentAuthority": "Voorbeeld Requestedcompetentauthority 2",
-        "permitApplicationRef": "Voorbeeld Permitapplicationref 2",
-        "status": "accepted",
-        "rationale": "Voorbeeld Rationale 2",
-        "advies": "Voorbeeld Advies 2",
-        "requestedOn": "2026-03-02T09:00:00+00:00",
-        "respondedOn": "2026-03-02T09:00:00+00:00",
-        "caseId": "00000000-0000-4000-8000-000000000001"
+        "syncQueueRef": "sync-op-zonnehof-fundering-foto",
+        "conflictType": "deleted_remote",
+        "serverVersion": {},
+        "clientVersion": {
+          "inspectionRef": "inspectie-zonnehof-fundering",
+          "type": "photo",
+          "capturedAt": "2026-05-18T09:26:00+02:00"
+        },
+        "resolution": "client_wins",
+        "resolvedBy": "a.bakker",
+        "resolvedAt": "2026-05-18T13:05:00+02:00"
       },
       {
         "@self": {
           "register": "dossiq",
-          "schema": "samenwerkverzoek",
-          "slug": "samenwerkverzoek-samenwerkverzoek-3-3"
+          "schema": "conflictRecord",
+          "slug": "conflict-amsterdamseweg-rechten"
         },
-        "initiatorCompetentAuthority": "Voorbeeld Initiatorcompetentauthority 3",
-        "requestedCompetentAuthority": "Voorbeeld Requestedcompetentauthority 3",
-        "permitApplicationRef": "Voorbeeld Permitapplicationref 3",
-        "status": "refused",
-        "rationale": "Voorbeeld Rationale 3",
-        "advies": "Voorbeeld Advies 3",
-        "requestedOn": "2026-03-03T09:00:00+00:00",
-        "respondedOn": "2026-03-03T09:00:00+00:00",
-        "caseId": "00000000-0000-4000-8000-000000000002"
+        "syncQueueRef": "sync-op-amsterdamseweg-eerdere-ronde",
+        "conflictType": "permission_lost",
+        "serverVersion": {
+          "caseRef": "2026-0448 Uitbreiding bedrijfshal Amsterdamseweg 41",
+          "inspectorRef": "j.bakker"
+        },
+        "clientVersion": {
+          "caseRef": "2026-0448 Uitbreiding bedrijfshal Amsterdamseweg 41",
+          "inspectorRef": "m.visser"
+        },
+        "resolution": "server_wins",
+        "resolvedBy": "t.leidinggevende",
+        "resolvedAt": "2026-06-01T10:20:00+02:00"
       },
       {
         "@self": {
           "register": "dossiq",
           "schema": "stufEndpoint",
-          "slug": "stufendpoint-voorbeeld-name-1-1"
+          "slug": "stuf-ep-amersfoort-key2zaken"
         },
-        "id": "Voorbeeld Id 1",
-        "name": "Voorbeeld Name 1",
-        "municipalityCode": "Voorbeeld Munici",
-        "recipientApplication": "Voorbeeld Recipientapplication 1",
-        "recipientOrganisation": "Voorbeeld Recipientorganisation 1",
-        "recipientUser": "Voorbeeld Recipientuser 1",
-        "senderApplication": "Voorbeeld Senderapplication 1",
-        "senderOrganisation": "Voorbeeld Senderorganisation 1",
-        "endpointUrl": "https://example.invalid/resource/0",
+        "id": "stuf-ep-amersfoort-key2zaken",
+        "name": "Key2Zaken productie",
+        "municipalityCode": "0307",
+        "recipientApplication": "Key2Zaken",
+        "recipientOrganisation": "Gemeente Amersfoort",
+        "recipientUser": "svc-stuf-zkn",
+        "senderApplication": "Dossiq",
+        "senderOrganisation": "Gemeente Amersfoort",
+        "endpointUrl": "https://key2zaken.amersfoort.example.invalid/soap/zkn0310",
         "soapVersion": "1.1",
         "stufVersion": "0310",
         "sectorModel": "ZKN",
         "authentication": {
           "type": "wsse-usernametoken",
-          "username": "Voorbeeld Username 1",
-          "passwordVaultRef": "Voorbeeld Passwordvaultref 1"
+          "username": "dossiq-koppelvlak",
+          "passwordVaultRef": "vault://stuf/amersfoort/key2zaken"
         },
-        "tlsClientCertRef": "Voorbeeld Tlsclientcertref 1",
-        "caseIdentificationStrategy": "vooraf",
-        "zaaktypeMappings": {},
+        "tlsClientCertRef": "vault://tls/amersfoort/dossiq-client-pem",
+        "caseIdentificationStrategy": "achteraf",
+        "zaaktypeMappings": {
+          "omgevingsvergunning-bouwactiviteit": "Omgevingsvergunning bouwactiviteit",
+          "sloopmelding": "Sloopmelding",
+          "toezichtzaak-bouw": "Toezicht bouw"
+        },
         "freeMessagesTemplates": [
           {
-            "name": "Voorbeeld Name 1",
+            "name": "Verzoek om aanvullende gegevens",
             "verplichteVelden": [
-              "Voorbeeld Verplichtevelden 1"
+              "zaakidentificatie",
+              "termijn",
+              "toelichting"
             ]
           }
         ],
         "actief": true,
-        "aangemaakt": "2026-03-01T09:00:00+00:00"
+        "aangemaakt": "2024-11-04T09:00:00+01:00"
       },
       {
         "@self": {
           "register": "dossiq",
           "schema": "stufEndpoint",
-          "slug": "stufendpoint-voorbeeld-name-2-2"
+          "slug": "stuf-ep-amersfoort-mozard"
         },
-        "id": "Voorbeeld Id 2",
-        "name": "Voorbeeld Name 2",
-        "municipalityCode": "Voorbeeld Munici",
-        "recipientApplication": "Voorbeeld Recipientapplication 2",
-        "recipientOrganisation": "Voorbeeld Recipientorganisation 2",
-        "recipientUser": "Voorbeeld Recipientuser 2",
-        "senderApplication": "Voorbeeld Senderapplication 2",
-        "senderOrganisation": "Voorbeeld Senderorganisation 2",
-        "endpointUrl": "https://example.invalid/resource/1",
+        "id": "stuf-ep-amersfoort-mozard",
+        "name": "Mozard acceptatie",
+        "municipalityCode": "0307",
+        "recipientApplication": "Mozard",
+        "recipientOrganisation": "Gemeente Amersfoort",
+        "recipientUser": "koppelvlak-zkn",
+        "senderApplication": "Dossiq",
+        "senderOrganisation": "Gemeente Amersfoort",
+        "endpointUrl": "https://mozard-acc.amersfoort.example.invalid/stuf/zkn",
         "soapVersion": "1.2",
         "stufVersion": "0310",
         "sectorModel": "ZKN",
         "authentication": {
           "type": "wsse-usernametoken",
-          "username": "Voorbeeld Username 2",
-          "passwordVaultRef": "Voorbeeld Passwordvaultref 2"
+          "username": "dossiq-acc",
+          "passwordVaultRef": "vault://stuf/amersfoort/mozard-acc"
         },
-        "tlsClientCertRef": "Voorbeeld Tlsclientcertref 2",
-        "caseIdentificationStrategy": "achteraf",
-        "zaaktypeMappings": {},
-        "freeMessagesTemplates": [
-          {
-            "name": "Voorbeeld Name 2",
-            "verplichteVelden": [
-              "Voorbeeld Verplichtevelden 2"
-            ]
-          }
-        ],
+        "caseIdentificationStrategy": "vooraf",
+        "zaaktypeMappings": {
+          "omgevingsvergunning-bouwactiviteit": "OMG-BOUW",
+          "handhavingszaak": "HAND-01"
+        },
         "actief": true,
-        "aangemaakt": "2026-03-02T09:00:00+00:00"
+        "aangemaakt": "2026-02-17T11:30:00+01:00"
       },
       {
         "@self": {
           "register": "dossiq",
           "schema": "stufEndpoint",
-          "slug": "stufendpoint-voorbeeld-name-3-3"
+          "slug": "stuf-ep-amersfoort-decos-join"
         },
-        "id": "Voorbeeld Id 3",
-        "name": "Voorbeeld Name 3",
-        "municipalityCode": "Voorbeeld Munici",
-        "recipientApplication": "Voorbeeld Recipientapplication 3",
-        "recipientOrganisation": "Voorbeeld Recipientorganisation 3",
-        "recipientUser": "Voorbeeld Recipientuser 3",
-        "senderApplication": "Voorbeeld Senderapplication 3",
-        "senderOrganisation": "Voorbeeld Senderorganisation 3",
-        "endpointUrl": "https://example.invalid/resource/2",
+        "id": "stuf-ep-amersfoort-decos-join",
+        "name": "Decos JOIN, uitgefaseerd",
+        "municipalityCode": "0307",
+        "recipientApplication": "Decos JOIN",
+        "recipientOrganisation": "Gemeente Amersfoort",
+        "recipientUser": "join-zkn",
+        "senderApplication": "Dossiq",
+        "senderOrganisation": "Gemeente Amersfoort",
+        "endpointUrl": "https://join.amersfoort.example.invalid/stuf/zkn0310",
         "soapVersion": "1.1",
         "stufVersion": "0310",
         "sectorModel": "ZKN",
         "authentication": {
           "type": "wsse-usernametoken",
-          "username": "Voorbeeld Username 3",
-          "passwordVaultRef": "Voorbeeld Passwordvaultref 3"
+          "username": "dossiq-join",
+          "passwordVaultRef": "vault://stuf/amersfoort/join"
         },
-        "tlsClientCertRef": "Voorbeeld Tlsclientcertref 3",
-        "caseIdentificationStrategy": "vooraf",
-        "zaaktypeMappings": {},
-        "freeMessagesTemplates": [
-          {
-            "name": "Voorbeeld Name 3",
-            "verplichteVelden": [
-              "Voorbeeld Verplichtevelden 3"
-            ]
-          }
-        ],
-        "actief": true,
-        "aangemaakt": "2026-03-03T09:00:00+00:00"
+        "caseIdentificationStrategy": "achteraf",
+        "actief": false,
+        "aangemaakt": "2023-06-12T08:15:00+02:00"
       },
       {
         "@self": {
           "register": "dossiq",
           "schema": "stufMessage",
-          "slug": "stufmessage-stufmessage-1-1"
+          "slug": "stuf-msg-2026-05-18-08-30-00-a7c3"
         },
-        "id": "Voorbeeld Id 1",
-        "endpointId": "Voorbeeld Endpointid 1",
+        "id": "stuf-msg-2026-05-18-08-30-00-a7c3",
+        "endpointId": "stuf-ep-amersfoort-key2zaken",
         "direction": "outbound",
         "messageKind": "Lk01",
-        "envelopeXml": "Voorbeeld Envelopexml 1",
-        "sentOn": "2026-03-01T09:00:00+00:00",
-        "entiteittype": "Voorbeeld Entiteittype 1",
-        "role": "Voorbeeld Role 1",
-        "referenceNumber": "Voorbeeld Referencenumber 1",
-        "crossRefnummer": "Voorbeeld Crossrefnummer 1",
-        "caseIdentification": "Voorbeeld Caseidentification 1",
-        "responseEnvelopeXml": "Voorbeeld Responseenvelopexml 1",
-        "httpStatus": 1,
-        "durationMs": 1,
+        "entiteittype": "ZAK",
+        "role": "creeerZaak",
+        "referenceNumber": "01JZ8Q4M2K7V0R3B5N6T9W1XKD",
+        "caseIdentification": "0307-2026-0431",
+        "envelopeXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:zkn=\"http://www.egem.nl/StUF/sector/zkn/0310\" xmlns:stuf=\"http://www.egem.nl/StUF/StUF0301\"><soapenv:Body><zkn:zakLk01><zkn:stuurgegevens><stuf:berichtcode>Lk01</stuf:berichtcode><stuf:zender><stuf:applicatie>Dossiq</stuf:applicatie><stuf:organisatie>Gemeente Amersfoort</stuf:organisatie></stuf:zender><stuf:ontvanger><stuf:applicatie>Key2Zaken</stuf:applicatie><stuf:organisatie>Gemeente Amersfoort</stuf:organisatie></stuf:ontvanger><stuf:referentienummer>01JZ8Q4M2K7V0R3B5N6T9W1XKD</stuf:referentienummer><stuf:tijdstipBericht>20260518083000</stuf:tijdstipBericht><stuf:entiteittype>ZAK</stuf:entiteittype></zkn:stuurgegevens><zkn:object stuf:entiteittype=\"ZAK\" stuf:verwerkingssoort=\"T\"><zkn:identificatie>0307-2026-0431</zkn:identificatie><zkn:omschrijving>Nieuwbouw 24 appartementen Zonnehof 12</zkn:omschrijving><zkn:startdatum>20260518</zkn:startdatum><zkn:isVan><zkn:gerelateerde><zkn:omschrijving>Toezicht bouw</zkn:omschrijving></zkn:gerelateerde></zkn:isVan></zkn:object></zkn:zakLk01></soapenv:Body></soapenv:Envelope>",
+        "httpStatus": 200,
+        "durationMs": 412,
+        "sentOn": "2026-05-18T08:30:00+02:00",
+        "receivedOn": "2026-05-18T08:30:01+02:00",
+        "relatedCaseId": "0307-2026-0431",
+        "sourceEntity": "case",
+        "sourceId": "2026-0431",
+        "status": "bevestigd"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "stufMessage",
+          "slug": "stuf-msg-2026-05-18-08-30-04-b1f8"
+        },
+        "id": "stuf-msg-2026-05-18-08-30-04-b1f8",
+        "endpointId": "stuf-ep-amersfoort-key2zaken",
+        "direction": "inbound",
+        "messageKind": "Bv01",
+        "entiteittype": "ZAK",
+        "role": "creeerZaak",
+        "referenceNumber": "01JZ8Q4T6D9H2M4P7R0S3V5YKF",
+        "crossRefnummer": "01JZ8Q4M2K7V0R3B5N6T9W1XKD",
+        "caseIdentification": "0307-2026-0431",
+        "envelopeXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:stuf=\"http://www.egem.nl/StUF/StUF0301\"><soapenv:Body><stuf:Bv01Bericht><stuf:stuurgegevens><stuf:berichtcode>Bv01</stuf:berichtcode><stuf:zender><stuf:applicatie>Key2Zaken</stuf:applicatie></stuf:zender><stuf:ontvanger><stuf:applicatie>Dossiq</stuf:applicatie></stuf:ontvanger><stuf:referentienummer>01JZ8Q4T6D9H2M4P7R0S3V5YKF</stuf:referentienummer><stuf:crossRefnummer>01JZ8Q4M2K7V0R3B5N6T9W1XKD</stuf:crossRefnummer><stuf:tijdstipBericht>20260518083004</stuf:tijdstipBericht></stuf:stuurgegevens></stuf:Bv01Bericht></soapenv:Body></soapenv:Envelope>",
+        "httpStatus": 200,
+        "durationMs": 38,
+        "sentOn": "2026-05-18T08:30:04+02:00",
+        "receivedOn": "2026-05-18T08:30:04+02:00",
+        "relatedCaseId": "0307-2026-0431",
+        "sourceEntity": "case",
+        "sourceId": "2026-0431",
+        "status": "bevestigd"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "stufMessage",
+          "slug": "stuf-msg-2026-06-02-10-45-00-c9d2"
+        },
+        "id": "stuf-msg-2026-06-02-10-45-00-c9d2",
+        "endpointId": "stuf-ep-amersfoort-mozard",
+        "direction": "outbound",
+        "messageKind": "Lk02",
+        "entiteittype": "ZAK",
+        "role": "actualiseerZaak",
+        "referenceNumber": "01JZDX7A1C4F6J8L0N2Q5T7WMB",
+        "caseIdentification": "0307-2026-0448",
+        "envelopeXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:zkn=\"http://www.egem.nl/StUF/sector/zkn/0310\" xmlns:stuf=\"http://www.egem.nl/StUF/StUF0301\"><soapenv:Body><zkn:zakLk02><zkn:stuurgegevens><stuf:berichtcode>Lk02</stuf:berichtcode><stuf:zender><stuf:applicatie>Dossiq</stuf:applicatie></stuf:zender><stuf:ontvanger><stuf:applicatie>Mozard</stuf:applicatie></stuf:ontvanger><stuf:referentienummer>01JZDX7A1C4F6J8L0N2Q5T7WMB</stuf:referentienummer><stuf:tijdstipBericht>20260602104500</stuf:tijdstipBericht><stuf:entiteittype>ZAK</stuf:entiteittype></zkn:stuurgegevens><zkn:object stuf:entiteittype=\"ZAK\" stuf:verwerkingssoort=\"W\"><zkn:identificatie>0307-2026-0448</zkn:identificatie><zkn:einddatumGepland>20260714</zkn:einddatumGepland></zkn:object></zkn:zakLk02></soapenv:Body></soapenv:Envelope>",
+        "responseEnvelopeXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:stuf=\"http://www.egem.nl/StUF/StUF0301\"><soapenv:Body><soapenv:Fault><faultcode>soapenv:Server</faultcode><faultstring>StUF Fo02</faultstring><detail><stuf:Fo02Bericht><stuf:body><stuf:code>StUF058</stuf:code><stuf:omschrijving>Zaak niet gevonden</stuf:omschrijving><stuf:details>identificatie 0307-2026-0448 onbekend in Mozard</stuf:details></stuf:body></stuf:Fo02Bericht></detail></soapenv:Fault></soapenv:Body></soapenv:Envelope>",
+        "httpStatus": 500,
+        "durationMs": 2140,
         "fout": {
-          "code": "Voorbeeld Code 1",
-          "omschrijving": "Voorbeeld Omschrijving 1",
-          "details": "Voorbeeld Details 1",
+          "code": "StUF058",
+          "omschrijving": "Zaak niet gevonden",
+          "details": "identificatie 0307-2026-0448 onbekend in Mozard",
           "kind": "transient"
         },
-        "receivedOn": "2026-03-01T09:00:00+00:00",
-        "relatedCaseId": "Voorbeeld Relatedcaseid 1",
+        "sentOn": "2026-06-02T10:45:00+02:00",
+        "receivedOn": "2026-06-02T10:45:02+02:00",
+        "relatedCaseId": "0307-2026-0448",
         "sourceEntity": "case",
-        "sourceId": "Voorbeeld Sourceid 1",
-        "status": "verzonden",
+        "sourceId": "2026-0448",
+        "status": "wacht_op_retry",
         "retries": [
           {
             "attempt": 1,
-            "timestamp": "2026-03-01T09:00:00+00:00",
-            "httpStatus": 1,
-            "durationMs": 1,
-            "fout": {}
-          }
-        ]
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "stufMessage",
-          "slug": "stufmessage-stufmessage-2-2"
-        },
-        "id": "Voorbeeld Id 2",
-        "endpointId": "Voorbeeld Endpointid 2",
-        "direction": "inbound",
-        "messageKind": "Lk02",
-        "envelopeXml": "Voorbeeld Envelopexml 2",
-        "sentOn": "2026-03-02T09:00:00+00:00",
-        "entiteittype": "Voorbeeld Entiteittype 2",
-        "role": "Voorbeeld Role 2",
-        "referenceNumber": "Voorbeeld Referencenumber 2",
-        "crossRefnummer": "Voorbeeld Crossrefnummer 2",
-        "caseIdentification": "Voorbeeld Caseidentification 2",
-        "responseEnvelopeXml": "Voorbeeld Responseenvelopexml 2",
-        "httpStatus": 2,
-        "durationMs": 2,
-        "fout": {
-          "code": "Voorbeeld Code 2",
-          "omschrijving": "Voorbeeld Omschrijving 2",
-          "details": "Voorbeeld Details 2",
-          "kind": "permanent"
-        },
-        "receivedOn": "2026-03-02T09:00:00+00:00",
-        "relatedCaseId": "Voorbeeld Relatedcaseid 2",
-        "sourceEntity": "contact",
-        "sourceId": "Voorbeeld Sourceid 2",
-        "status": "bevestigd",
-        "retries": [
+            "timestamp": "2026-06-02T10:50:00+02:00",
+            "httpStatus": 500,
+            "durationMs": 1980,
+            "fout": {
+              "code": "StUF058",
+              "omschrijving": "Zaak niet gevonden"
+            }
+          },
           {
             "attempt": 2,
-            "timestamp": "2026-03-02T09:00:00+00:00",
-            "httpStatus": 2,
-            "durationMs": 2,
-            "fout": {}
+            "timestamp": "2026-06-02T11:05:00+02:00",
+            "httpStatus": 504,
+            "durationMs": 30000,
+            "fout": {
+              "code": "HTTP504",
+              "omschrijving": "Gateway timeout"
+            }
           }
         ]
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "stufMessage",
-          "slug": "stufmessage-stufmessage-3-3"
-        },
-        "id": "Voorbeeld Id 3",
-        "endpointId": "Voorbeeld Endpointid 3",
-        "direction": "outbound",
-        "messageKind": "Lk03",
-        "envelopeXml": "Voorbeeld Envelopexml 3",
-        "sentOn": "2026-03-03T09:00:00+00:00",
-        "entiteittype": "Voorbeeld Entiteittype 3",
-        "role": "Voorbeeld Role 3",
-        "referenceNumber": "Voorbeeld Referencenumber 3",
-        "crossRefnummer": "Voorbeeld Crossrefnummer 3",
-        "caseIdentification": "Voorbeeld Caseidentification 3",
-        "responseEnvelopeXml": "Voorbeeld Responseenvelopexml 3",
-        "httpStatus": 3,
-        "durationMs": 3,
-        "fout": {
-          "code": "Voorbeeld Code 3",
-          "omschrijving": "Voorbeeld Omschrijving 3",
-          "details": "Voorbeeld Details 3",
-          "kind": "transient"
-        },
-        "receivedOn": "2026-03-03T09:00:00+00:00",
-        "relatedCaseId": "Voorbeeld Relatedcaseid 3",
-        "sourceEntity": "case",
-        "sourceId": "Voorbeeld Sourceid 3",
-        "status": "fout",
-        "retries": [
-          {
-            "attempt": 3,
-            "timestamp": "2026-03-03T09:00:00+00:00",
-            "httpStatus": 3,
-            "durationMs": 3,
-            "fout": {}
-          }
-        ]
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "syncQueue",
-          "slug": "syncqueue-syncqueue-1-1"
-        },
-        "deviceId": "Voorbeeld Deviceid 1",
-        "operationType": "create",
-        "targetEntity": "Voorbeeld Targetentity 1",
-        "status": "pending",
-        "targetId": "Voorbeeld Targetid 1",
-        "payload": {},
-        "queuedAt": "2026-03-01T09:00:00+00:00",
-        "attemptCount": 0,
-        "lastAttemptAt": "2026-03-01T09:00:00+00:00",
-        "lastError": "Voorbeeld Lasterror 1"
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "syncQueue",
-          "slug": "syncqueue-syncqueue-2-2"
-        },
-        "deviceId": "Voorbeeld Deviceid 2",
-        "operationType": "update",
-        "targetEntity": "Voorbeeld Targetentity 2",
-        "status": "syncing",
-        "targetId": "Voorbeeld Targetid 2",
-        "payload": {},
-        "queuedAt": "2026-03-02T09:00:00+00:00",
-        "attemptCount": 0,
-        "lastAttemptAt": "2026-03-02T09:00:00+00:00",
-        "lastError": "Voorbeeld Lasterror 2"
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "syncQueue",
-          "slug": "syncqueue-syncqueue-3-3"
-        },
-        "deviceId": "Voorbeeld Deviceid 3",
-        "operationType": "upload",
-        "targetEntity": "Voorbeeld Targetentity 3",
-        "status": "synced",
-        "targetId": "Voorbeeld Targetid 3",
-        "payload": {},
-        "queuedAt": "2026-03-03T09:00:00+00:00",
-        "attemptCount": 0,
-        "lastAttemptAt": "2026-03-03T09:00:00+00:00",
-        "lastError": "Voorbeeld Lasterror 3"
       },
       {
         "@self": {
           "register": "dossiq",
           "schema": "zaaksysteemMapping",
-          "slug": "zaaksysteemmapping-zaaksysteemmapping-1-1"
+          "slug": "map-zaak-2026-0431-key2zaken"
         },
-        "id": "Voorbeeld Id 1",
+        "id": "map-zaak-2026-0431-key2zaken",
         "sourceEntity": "case",
-        "sourceId": "Voorbeeld Sourceid 1",
+        "sourceId": "2026-0431",
+        "caseId": "2026-0431",
         "externalEntity": "ZAK",
-        "externalIdentification": "Voorbeeld Externalidentification 1",
-        "endpointId": "Voorbeeld Endpointid 1",
-        "caseId": "Voorbeeld Caseid 1",
-        "lastSynchronisation": "2026-03-01T09:00:00+00:00",
-        "synchronisationStatus": "in_sync",
-        "openstaandeWijzigingen": [
-          {
-            "veld": "Voorbeeld Veld 1",
-            "value": "Voorbeeld Value 1",
-            "geplandOp": "2026-03-01T09:00:00+00:00"
-          }
-        ]
+        "externalIdentification": "0307-2026-0431",
+        "endpointId": "stuf-ep-amersfoort-key2zaken",
+        "lastSynchronisation": "2026-05-18T08:30:04+02:00",
+        "synchronisationStatus": "in_sync"
       },
       {
         "@self": {
           "register": "dossiq",
           "schema": "zaaksysteemMapping",
-          "slug": "zaaksysteemmapping-zaaksysteemmapping-2-2"
+          "slug": "map-zaak-2026-0448-mozard"
         },
-        "id": "Voorbeeld Id 2",
-        "sourceEntity": "contact",
-        "sourceId": "Voorbeeld Sourceid 2",
-        "externalEntity": "NPS",
-        "externalIdentification": "Voorbeeld Externalidentification 2",
-        "endpointId": "Voorbeeld Endpointid 2",
-        "caseId": "Voorbeeld Caseid 2",
-        "lastSynchronisation": "2026-03-02T09:00:00+00:00",
-        "synchronisationStatus": "fout",
-        "openstaandeWijzigingen": [
-          {
-            "veld": "Voorbeeld Veld 2",
-            "value": "Voorbeeld Value 2",
-            "geplandOp": "2026-03-02T09:00:00+00:00"
-          }
-        ]
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "zaaksysteemMapping",
-          "slug": "zaaksysteemmapping-zaaksysteemmapping-3-3"
-        },
-        "id": "Voorbeeld Id 3",
+        "id": "map-zaak-2026-0448-mozard",
         "sourceEntity": "case",
-        "sourceId": "Voorbeeld Sourceid 3",
-        "externalEntity": "NNP",
-        "externalIdentification": "Voorbeeld Externalidentification 3",
-        "endpointId": "Voorbeeld Endpointid 3",
-        "caseId": "Voorbeeld Caseid 3",
-        "lastSynchronisation": "2026-03-03T09:00:00+00:00",
-        "synchronisationStatus": "geannuleerd",
+        "sourceId": "2026-0448",
+        "caseId": "2026-0448",
+        "externalEntity": "ZAK",
+        "externalIdentification": "0307-2026-0448",
+        "endpointId": "stuf-ep-amersfoort-mozard",
+        "lastSynchronisation": "2026-05-29T16:12:00+02:00",
+        "synchronisationStatus": "wacht",
         "openstaandeWijzigingen": [
           {
-            "veld": "Voorbeeld Veld 3",
-            "value": "Voorbeeld Value 3",
-            "geplandOp": "2026-03-03T09:00:00+00:00"
+            "veld": "einddatumGepland",
+            "value": "2026-07-14",
+            "geplandOp": "2026-06-02T11:20:00+02:00"
+          },
+          {
+            "veld": "toelichting",
+            "value": "Termijn verlengd na het advies van de constructeur.",
+            "geplandOp": "2026-06-02T11:20:00+02:00"
           }
         ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "zaaksysteemMapping",
+          "slug": "map-contact-aannemer-veldhuis"
+        },
+        "id": "map-contact-aannemer-veldhuis",
+        "sourceEntity": "contact",
+        "sourceId": "contact-aannemer-veldhuis",
+        "externalEntity": "NNP",
+        "externalIdentification": "0307-NNP-004412",
+        "endpointId": "stuf-ep-amersfoort-key2zaken",
+        "lastSynchronisation": "2026-04-22T09:41:00+02:00",
+        "synchronisationStatus": "fout"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "samenwerkverzoek",
+          "slug": "samenwerkverzoek-demo-001"
+        },
+        "initiatorCompetentAuthority": "Gemeente Amsterdam",
+        "requestedCompetentAuthority": "Waterschap Amstel, Gooi en Vecht",
+        "permitApplicationRef": "nl.dso.aanvraag.2026-AMS-001",
+        "rationale": "Aanvraag betreft activiteiten nabij waterkering, afstemming waterschap vereist.",
+        "status": "accepted",
+        "advies": "Waterschap heeft geen bezwaar mits geluidsnormen worden nageleefd.",
+        "requestedOn": "2026-03-20T09:00:00+01:00",
+        "respondedOn": "2026-03-28T14:30:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "samenwerkverzoek",
+          "slug": "samenwerkverzoek-demo-002"
+        },
+        "initiatorCompetentAuthority": "Gemeente Rotterdam",
+        "requestedCompetentAuthority": "Provincie Zuid-Holland",
+        "permitApplicationRef": "nl.dso.aanvraag.2026-RTD-007",
+        "rationale": "Grootschalig bouwproject raakt provinciaal belang omgevingsvisie.",
+        "status": "requested",
+        "requestedOn": "2026-04-10T10:15:00+02:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "samenwerkverzoek",
+          "slug": "samenwerkverzoek-demo-003"
+        },
+        "initiatorCompetentAuthority": "Gemeente Utrecht",
+        "requestedCompetentAuthority": "Rijkswaterstaat",
+        "permitApplicationRef": "nl.dso.aanvraag.2026-UTR-014",
+        "rationale": "Activiteit vindt plaats binnen rijkszone langs snelweg A12.",
+        "status": "refused",
+        "advies": "Rijkswaterstaat kan niet meewerken wegens veiligheidszone.",
+        "requestedOn": "2026-02-15T08:00:00+01:00",
+        "respondedOn": "2026-02-22T16:45:00+01:00"
       }
     ]
   }
