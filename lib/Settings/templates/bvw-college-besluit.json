@@ -76,25 +76,25 @@
                 },
                 {
                     "fromStatusName": "Parafering", "toStatusName": "Gereed voor agendering", "label": "Parafering compleet",
-                    "guards": [{ "type": "requiredField", "config": { "field": "paraferingCompleet" } }]
+                    "guards": [{ "type": "voorstelStatus", "allowedStatuses": ["geaccordeerd", "aangeboden", "besloten", "archived"] }]
                 },
                 { "fromStatusName": "Gereed voor agendering", "toStatusName": "Geagendeerd", "label": "Agenderen" },
                 { "fromStatusName": "Geagendeerd", "toStatusName": "Vergadering", "label": "Naar vergadering" },
                 {
                     "fromStatusName": "Vergadering", "toStatusName": "Besluit genomen", "label": "Besluit vastleggen",
-                    "guards": [{ "type": "requiredField", "config": { "field": "stemuitslag" } }]
+                    "guards": [{ "type": "requiredField", "field": "stemuitslag" }]
                 },
                 {
                     "fromStatusName": "Besluit genomen", "toStatusName": "Bekendmaking", "label": "Bekendmaken",
-                    "guards": [{ "type": "requiredDocument", "config": { "documentType": "Besluitdocument" } }],
+                    "guards": [{ "type": "requiredDocument", "documentType": "Besluitdocument" }],
                     "automaticActions": [{ "type": "besluitvormingPublish" }]
                 },
                 {
                     "fromStatusName": "Bekendmaking", "toStatusName": "Gearchiveerd", "label": "Archiveren",
                     "guards": [
-                        { "type": "requiredDocument", "config": { "documentType": "Collegeadvies" } },
-                        { "type": "requiredDocument", "config": { "documentType": "Besluitdocument" } },
-                        { "type": "requiredDocument", "config": { "documentType": "Bekendmakingsbewijs" } }
+                        { "type": "requiredDocument", "documentType": "Collegeadvies" },
+                        { "type": "requiredDocument", "documentType": "Besluitdocument" },
+                        { "type": "requiredDocument", "documentType": "Bekendmakingsbewijs" }
                     ],
                     "automaticActions": [
                         { "type": "setField", "field": "archiveStatus", "value": "gearchiveerd" }
