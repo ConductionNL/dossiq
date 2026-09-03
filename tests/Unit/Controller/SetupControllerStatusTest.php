@@ -64,14 +64,24 @@ class SetupControllerStatusTest extends TestCase {
 	/**
 	 * Build a controller and hand back its collaborators.
 	 *
-	 * @param array<string,string> $config             App-config values.
-	 * @param bool                 $openRegisterOnline Whether OpenRegister is available.
-	 * @param array<string,mixed>|null $seedResult     What the seeder returns, when it is asked.
+	 * @param array<string,string>     $config             App-config values.
+	 * @param bool                     $openRegisterOnline Whether OpenRegister is available.
+	 * @param array<string,mixed>|null $seedResult         What the seeder returns, when it is asked.
+	 * @param array<string,mixed>|\Throwable|null $demoResult What the demo import returns, or throws.
+	 * @param array<string,mixed>|null $requestParams      Request params, for the config-fields step.
 	 *
-	 * @return array{controller: SetupController, written: array<string,string>} The controller and a
-	 *   live view of every app-config value it wrote.
+	 * @return array{controller: SetupController, written: array<string,string>, settings: SettingsService} The
+	 *   controller, a live view of every app-config value it wrote, and its settings collaborator.
+	 *
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) — one harness, one controller, five collaborators
 	 */
-	private function build(array $config, bool $openRegisterOnline = true, ?array $seedResult = null): array {
+	private function build(
+		array $config,
+		bool $openRegisterOnline = true,
+		?array $seedResult = null,
+		array|\Throwable|null $demoResult = null,
+		?array $requestParams = null,
+	): array {
 		$written = [];
 
 		$appConfig = $this->createMock(IAppConfig::class);
@@ -94,23 +104,35 @@ class SetupControllerStatusTest extends TestCase {
 
 		$seeder = $this->createMock(SeedDataService::class);
 		// ADR-111 added the generated demo dataset as its own service and its
-		// own setup step; these tests exercise the bezwaar/beroep seeder, so a
-		// bare mock is enough to satisfy the constructor.
+		// own setup step. Since the bezwaar/beroep `seed` step was retired,
+		// the demo import IS the app's demo-data affordance, so it is driven
+		// here rather than left as a bare constructor argument.
 		$demo = $this->createMock(DemoDataService::class);
 		if ($seedResult !== null) {
 			$seeder->method('seedBezwaarBeroepData')->willReturn($seedResult);
 		}
 
+		if ($demoResult instanceof \Throwable) {
+			$demo->method('install')->willThrowException($demoResult);
+		} elseif ($demoResult !== null) {
+			$demo->method('install')->willReturn($demoResult);
+		}
+
+		$request = $this->createMock(IRequest::class);
+		if ($requestParams !== null) {
+			$request->method('getParams')->willReturn($requestParams);
+		}
+
 		$controller = new SetupController(
 			appName: 'dossiq',
-			request: $this->createMock(IRequest::class),
+			request: $request,
 			appConfig: $appConfig,
 			demoDataService: $demo,
 			settingsService: $settings,
 			seedDataService: $seeder,
 		);
 
-		return ['controller' => $controller, 'written' => &$written];
+		return ['controller' => $controller, 'written' => &$written, 'settings' => $settings];
 
 	}//end build()
 
@@ -367,5 +389,169 @@ class SetupControllerStatusTest extends TestCase {
 		$this->assertSame('1', $built['written']['setup_seed_done'] ?? null);
 
 	}//end testASeedThatOnlySkippedStillRecordsTheStepAsDone()
+
+	/**
+	 * A refused seed is reported with the seeder's own message.
+	 *
+	 * The `success: false` branch, distinct from the zero-counter one above:
+	 * "the register is not configured" and "there was nothing to write" are
+	 * different problems and must not arrive as the same sentence.
+	 *
+	 * @return void
+	 */
+	public function testARefusedSeedReportsTheSeedersOwnMessage(): void {
+		$built = $this->build(
+			config: $this->provisioned(),
+			seedResult: ['success' => false, 'message' => 'Register or schemas not configured']
+		);
+
+		$response = $built['controller']->runAction(actionId: 'seed');
+
+		$this->assertSame(422, $response->getStatus());
+		$this->assertSame('Register or schemas not configured', $response->getData()['message']);
+		$this->assertArrayNotHasKey('setup_seed_done', $built['written']);
+
+	}//end testARefusedSeedReportsTheSeedersOwnMessage()
+
+	/**
+	 * An unknown action id answers 404 rather than doing nothing quietly.
+	 *
+	 * The step that names it is dead either way, but a 404 says so on screen
+	 * where a silent 200 would let the wizard record it as finished.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownActionIsRefused(): void {
+		$built = $this->build(config: $this->provisioned());
+
+		$response = $built['controller']->runAction(actionId: 'no-such-action');
+
+		$this->assertSame(404, $response->getStatus());
+		$this->assertFalse($response->getData()['success']);
+		$this->assertStringContainsString('no-such-action', $response->getData()['message']);
+		$this->assertSame([], $built['written']);
+
+	}//end testAnUnknownActionIsRefused()
+
+	/**
+	 * Initialising the register forces the import.
+	 *
+	 * `force: true` is the whole point of the step. OpenRegister's importer
+	 * version-gates a non-forced import and skips silently when the version
+	 * has not moved, so an operator who clicks the button on an instance whose
+	 * configuration is stale would be told it succeeded while nothing changed.
+	 *
+	 * @return void
+	 */
+	public function testInitialisingTheRegisterForcesTheImport(): void {
+		$built = $this->build(config: $this->provisioned());
+		$built['settings']->expects($this->once())
+			->method('loadConfiguration')
+			->with(true);
+
+		$response = $built['controller']->runAction(actionId: 'init-register');
+
+		$this->assertTrue($response->getData()['success']);
+
+	}//end testInitialisingTheRegisterForcesTheImport()
+
+	/**
+	 * Installing the demo data reports the COUNTS, and records the decision.
+	 *
+	 * "Demo data installed" with no numbers cannot be told apart from an
+	 * import that wrote nothing, which is the failure this whole step exists
+	 * to make visible. With the bezwaar `seed` step retired, this is the app's
+	 * only demo-data affordance, so it is the one that has to be right.
+	 *
+	 * @return void
+	 */
+	public function testInstallingTheDemoDataReportsTheCountsAndRecordsTheDecision(): void {
+		$built = $this->build(
+			config: $this->provisioned(),
+			demoResult: ['objects' => 412, 'registers' => 1, 'schemas' => 46]
+		);
+
+		$response = $built['controller']->runAction(actionId: 'install-demo-data');
+		$data = $response->getData();
+
+		$this->assertTrue($data['success']);
+		$this->assertStringContainsString('412', $data['message']);
+		$this->assertStringContainsString('46', $data['message']);
+		$this->assertSame(412, $data['detail']['objects']);
+		$this->assertSame('installed', $built['written']['demo_data_decided'] ?? null);
+
+	}//end testInstallingTheDemoDataReportsTheCountsAndRecordsTheDecision()
+
+	/**
+	 * A failed demo import does not record the step as decided.
+	 *
+	 * Marking the decision first would let a failed install present as a
+	 * finished step, and the operator would never be offered it again.
+	 *
+	 * @return void
+	 */
+	public function testAFailedDemoImportIsNotRecordedAsDecided(): void {
+		$built = $this->build(
+			config: $this->provisioned(),
+			demoResult: new \RuntimeException('No demo dataset ships with this app')
+		);
+
+		$response = $built['controller']->runAction(actionId: 'install-demo-data');
+
+		$this->assertFalse($response->getData()['success']);
+		$this->assertStringContainsString('No demo dataset', $response->getData()['message']);
+		$this->assertArrayNotHasKey('demo_data_decided', $built['written']);
+
+	}//end testAFailedDemoImportIsNotRecordedAsDecided()
+
+	/**
+	 * Declining the demo data is a decision the wizard can record.
+	 *
+	 * A step that reports itself undone until demo objects exist can never be
+	 * completed by an operator who does not want them, which is every
+	 * production install.
+	 *
+	 * @return void
+	 */
+	public function testDecliningTheDemoDataFinishesTheStep(): void {
+		$built = $this->build(config: $this->provisioned());
+
+		$response = $built['controller']->runAction(actionId: 'skip-demo-data');
+
+		$this->assertTrue($response->getData()['success']);
+		$this->assertSame('skipped', $built['written']['demo_data_decided'] ?? null);
+
+		$done = $this->controller($this->provisioned() + ['demo_data_decided' => 'skipped'])
+			->status()->getData();
+		$this->assertTrue($done['steps']['demo-data']['done'], 'a recorded decline finishes the step');
+
+	}//end testDecliningTheDemoDataFinishesTheStep()
+
+	/**
+	 * A config-fields step stores its values, encoding what is not a scalar.
+	 *
+	 * `_route` is the router's own parameter rather than a field someone
+	 * filled in, so storing it would write a junk app-config key on every save.
+	 *
+	 * @return void
+	 */
+	public function testAConfigStepStoresItsFieldsAndSkipsTheRouteParameter(): void {
+		$built = $this->build(
+			config: [],
+			requestParams: [
+				'_route' => 'dossiq.setup.saveConfig',
+				'dwangsom_callback_secret' => 's3cret',
+				'retry_delays' => [1, 5, 15],
+			]
+		);
+
+		$response = $built['controller']->saveConfig();
+
+		$this->assertTrue($response->getData()['success']);
+		$this->assertSame('s3cret', $built['written']['dwangsom_callback_secret'] ?? null);
+		$this->assertSame('[1,5,15]', $built['written']['retry_delays'] ?? null);
+		$this->assertArrayNotHasKey('_route', $built['written']);
+
+	}//end testAConfigStepStoresItsFieldsAndSkipsTheRouteParameter()
 
 }//end class
