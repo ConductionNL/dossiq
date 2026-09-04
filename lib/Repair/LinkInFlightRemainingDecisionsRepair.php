@@ -55,12 +55,25 @@ use Throwable;
 class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 
 	/**
-	 * Each surface's schema SLUG, keyed by the config key holding its id.
+	 * Each surface's schema SLUG, keyed by the config key that provisions it.
 	 *
-	 * The config value is the schema IDENTIFIER — a numeric id on a live
-	 * install — which is what the register calls address. The slug is a
-	 * separate fact, and it is the key {@see JsonEncodedStringProperties}
-	 * needs to restore the declared string shape of a JSON-encoded property.
+	 * 🔴 THE SLUG IS WHAT THE CALLS TAKE, NOT THE CONFIG VALUE. The config
+	 * value is the schema IDENTIFIER, a numeric id on a live install, and this
+	 * step used to pass it to `searchObjectsAsArrays()` alongside the register
+	 * SLUG. That mixture picks the slug branch, because the branch is chosen
+	 * on "is either side non-numeric": the bridge then asked OpenRegister for
+	 * a schema whose slug is `4711`, which resolves to nothing, and every
+	 * surface came back as `Could not list objects for schema <number>`. Four
+	 * warnings per run and not one object examined, on a step whose whole job
+	 * is to examine them.
+	 *
+	 * Both sides are slugs now, which is the shape the sibling
+	 * {@see LinkInFlightContractDecisionsRepair} has always used. The config
+	 * key stays as the provisioning guard: an unconfigured surface is skipped
+	 * silently, which is different from a configured one that cannot be read.
+	 *
+	 * The slug is also the key {@see JsonEncodedStringProperties} needs to
+	 * restore the declared string shape of a JSON-encoded property.
 	 *
 	 * @var array<string, string>
 	 */
@@ -226,7 +239,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 	 *
 	 * @param object $objectService The OpenRegister object service.
 	 * @param IOutput $output The migration output interface.
-	 * @param string $configKey Config key holding the surface schema slug.
+	 * @param string $configKey Config key that provisions the surface's schema.
 	 * @param callable $raise Callback raising the decidesk Decision.
 	 *
 	 * @return array{linked: int, skipped: int, errors: int} Per-surface counters.
@@ -243,8 +256,15 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 			'errors' => 0,
 		];
 
-		$schema = $this->settingsService->getConfigValue(key: $configKey);
-		if ($schema === '') {
+		// The config key is the PROVISIONING guard, not the identifier the
+		// calls take: an empty value means this surface's schema was never
+		// configured, which is a silent skip rather than a failure to read.
+		if ($this->settingsService->getConfigValue(key: $configKey) === '') {
+			return $counts;
+		}
+
+		$schemaSlug = (self::SURFACE_SCHEMA_SLUGS[$configKey] ?? '');
+		if ($schemaSlug === '') {
 			return $counts;
 		}
 
@@ -253,18 +273,19 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 			// previous named-argument call (register:/schema:/limit:) threw
 			// "Unknown named parameter" on every run. Use the shared
 			// slug-aware search bridge, which also normalises the rows to
-			// the associative arrays this loop expects.
+			// the associative arrays this loop expects. BOTH identifiers are
+			// slugs: see SURFACE_SCHEMA_SLUGS for what mixing them cost.
 			$objects = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: TenantSaasService::REGISTER,
-				schema: $schema,
+				schema: $schemaSlug,
 				filters: ['_limit' => 500],
 			);
 		} catch (Throwable $e) {
-			$output->warning('Could not list objects for schema ' . $schema . ': ' . $e->getMessage());
+			$output->warning('Could not list objects for schema ' . $schemaSlug . ': ' . $e->getMessage());
 			$this->logger->warning(
 				'LinkInFlightRemainingDecisionsRepair: list failed',
-				['schema' => $schema, 'error' => $e->getMessage()]
+				['schema' => $schemaSlug, 'error' => $e->getMessage()]
 			);
 			return $counts;
 		}//end try
@@ -273,8 +294,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 			$outcome = $this->linkObject(
 				objectService: $objectService,
 				output: $output,
-				schema: $schema,
-				schemaSlug: (self::SURFACE_SCHEMA_SLUGS[$configKey] ?? ''),
+				schemaSlug: $schemaSlug,
 				raise: $raise,
 				obj: $obj,
 			);
@@ -291,7 +311,6 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 	 *
 	 * @param object $objectService The OpenRegister object service.
 	 * @param IOutput $output The migration output interface.
-	 * @param string $schema The surface schema identifier the register calls address.
 	 * @param string $schemaSlug The surface schema's slug in dossiq's register.
 	 * @param callable $raise Callback raising the decidesk Decision.
 	 * @param array<string, mixed> $obj The object row to link.
@@ -302,7 +321,6 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 	private function linkObject(
 		object $objectService,
 		IOutput $output,
-		string $schema,
 		string $schemaSlug,
 		callable $raise,
 		array $obj,
@@ -337,17 +355,17 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 					schemaSlug: $schemaSlug,
 				),
 				register: TenantSaasService::REGISTER,
-				schema: $schema,
+				schema: $schemaSlug,
 				uuid: $objUuid,
 			);
-			$output->info('Linked ' . $schema . ' ' . $objUuid . ' → decidesk Decision ' . $newRef);
+			$output->info('Linked ' . $schemaSlug . ' ' . $objUuid . ' → decidesk Decision ' . $newRef);
 			return 'linked';
 		} catch (RuntimeException $e) {
 			// Decidesk leaf unavailable — warn + skip; never fail the migration.
-			$output->warning('Could not link ' . $schema . ' ' . $objUuid . ': ' . $e->getMessage() . ' — skipping.');
+			$output->warning('Could not link ' . $schemaSlug . ' ' . $objUuid . ': ' . $e->getMessage() . ' — skipping.');
 			$this->logger->warning(
 				'LinkInFlightRemainingDecisionsRepair: could not link object',
-				['schema' => $schema, 'uuid' => $objUuid, 'error' => $e->getMessage()]
+				['schema' => $schemaSlug, 'uuid' => $objUuid, 'error' => $e->getMessage()]
 			);
 			return 'errors';
 		}//end try

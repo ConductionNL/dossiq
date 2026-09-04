@@ -43,7 +43,13 @@ Three separate questions, three separate answers:
 
 ## How to tell they are not adopted
 
-The install says so. Every install and upgrade ends with a warning naming each flow that still needs you, and the command above.
+Run `occ maintenance:repair`. It ends with a warning naming each flow that still needs you, and the command above. `occ upgrade` and the web updater print the same warning.
+
+`occ app:enable dossiq` prints nothing, and that surprises people. Nextcloud does run the repair steps on that path. Only `maintenance:repair` and `upgrade` subscribe to what those steps report, so on the docker path the terminal stays quiet. The log still records it:
+
+```
+Dossiq: shipped flows await adoption {"pending":2,"total":2,"command":"occ dossiq:flows:adopt --user <admin> --enable"}
+```
 
 On a running instance the flow list shows the owner and the toggle. In the log, an unadopted flow leaves this line every time a case is created:
 

@@ -97,9 +97,31 @@ class VthSeedLookup {
 	}//end runElevated()
 
 	/**
-	 * Resolve a caseType by its slug — uses the `identifier` field on the
-	 * caseType schema (the canonical slug-like field across dossiq seed
-	 * data). Returns the empty string when not found.
+	 * Resolve a caseType by the slug the template catalogue names.
+	 *
+	 * Three probes, because the seeds that create these rows do not agree on
+	 * where the slug lives:
+	 *
+	 *   `identifier`  an object PROPERTY, written by the bezwaar/beroep seed.
+	 *   `slug`        an object PROPERTY, written where a seed declares one.
+	 *   `@self.slug`  the object's METADATA slug, which is the only one
+	 *                 `VthSeedDataRepairStep` writes.
+	 *
+	 * 🔴 THE THIRD PROBE IS WHY THIS EVER FOUND ANYTHING. The VTH case types
+	 * arrive with `identifier` empty and no `slug` property at all: their
+	 * slug is metadata, and a metadata field is not reachable from a
+	 * top-level filter. Both probes therefore missed every row that WAS
+	 * there, and the step reported "caseType not found ... run
+	 * base-register-seed-data first" for a seed that had just run. Measured
+	 * on a clean rig on 2026-09-04: six VTH case types present, zero
+	 * resolved, five of six templates skipped.
+	 *
+	 * That message is also why the ordering defect underneath it stayed
+	 * hidden for so long. It names a plausible cause, so it reads as an
+	 * ordering problem and not as a lookup that cannot see its own data. Both
+	 * were real, and fixing only the order leaves the count at zero.
+	 *
+	 * Returns the empty string when not found.
 	 *
 	 * @param string $slug The caseType slug / identifier
 	 *
@@ -108,12 +130,16 @@ class VthSeedLookup {
 	 * @spec openspec/specs/vth-workflow-templates/spec.md
 	 */
 	public function resolveCaseTypeId(string $slug): string {
-		// Try `identifier` first (used by bezwaar/beroep seeds), then
-		// `slug` (used by VTH seeds via base-register-seed-data).
-		foreach (['identifier', 'slug'] as $field) {
+		$probes = [
+			'identifier' => ['identifier' => $slug, '_limit' => 5],
+			'slug' => ['slug' => $slug, '_limit' => 5],
+			'@self.slug' => ['@self' => ['slug' => $slug], '_limit' => 5],
+		];
+
+		foreach ($probes as $field => $filters) {
 			$rows = $this->query(
 				schemaKey: 'case_type_schema',
-				filters: [$field => $slug, '_limit' => 5],
+				filters: $filters,
 				failureMessage: 'Dossiq: VTH workflow template — caseType lookup failed',
 				failureContext: ['field' => $field, 'slug' => $slug],
 			);

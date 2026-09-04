@@ -419,14 +419,34 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 		}
 
 		// Build the name → UUID map for statusTypes belonging to this caseType.
+		// 🔴 NOTHING ON THIS INSTANCE WRITES THESE, AND THE COMMENT THAT SAID
+		// OTHERWISE IS IN VthSeedDataRepairStep::seedCaseTypes(). It strips a
+		// case type's statusTypes before saving it, on the stated grounds that
+		// this step owns them. This step only READS them. So a VTH case type
+		// arrives with none, every template is skipped here, and the run
+		// reports "0 seeded" with no error anywhere. Measured on a clean rig on
+		// 2026-09-04: six VTH case types, 46 statusTypes on the instance and
+		// not one of them attached to a VTH case type.
+		//
+		// Fixing that means deciding which step writes them and giving it an
+		// idempotency key, which is a change to what an install provisions
+		// rather than a repair. Filed rather than guessed. What this branch can
+		// do is say which thing is missing, in the output as well as the log,
+		// so the next reader is not left with a silent zero.
 		$statusMap = $this->lookup->buildStatusMap(caseTypeId: $caseTypeId);
 		if ($statusMap === []) {
+			$output->warning(
+				'VTH catalog: case type "' . ($data['caseTypeSlug'] ?? '') . '" has no status types, so '
+				. 'template "' . $slug . '" cannot be built. Nothing seeds them yet: see '
+				. 'VthSeedDataRepairStep::seedCaseTypes().'
+			);
 			$this->logger->warning(
 				'Dossiq: VTH workflow template — no statusTypes found for caseType',
 				[
 					'app' => Application::APP_ID,
 					'slug' => $slug,
 					'caseType' => $caseTypeId,
+					'caseTypeSlug' => ($data['caseTypeSlug'] ?? ''),
 				]
 			);
 			return null;
@@ -459,9 +479,16 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 
 		$caseTypeId = $this->lookup->resolveCaseTypeId(slug: $caseTypeSlug);
 		if ($caseTypeId === '') {
-			// Expected precondition on every boot until base-register-seed-data
-			// has run (or while the anonymous repair context cannot read the
-			// caseType) — debug, not warning, so it does not spam the log.
+			// 🔴 THE OLD MESSAGE NAMED A STEP THAT DOES NOT EXIST, AND THAT IS
+			// WHY THIS TOOK SO LONG TO FIND. It read "run base-register-seed-data
+			// first", which is not a repair step, not an occ command and not a
+			// thing an operator can run. It was also the ONLY diagnosis on
+			// offer, so two real defects hid behind it: the step was registered
+			// ahead of VthSeedDataRepairStep, which provisions the case types
+			// it resolves, and the lookup could not read a case type whose slug
+			// is metadata rather than a property. Both are fixed. What is left
+			// is a genuine gap in the catalogue, so the message says that
+			// instead of inventing a command.
 			$this->logger->debug(
 				'Dossiq: VTH workflow template — caseType not found, skipping',
 				[
@@ -471,8 +498,8 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 				]
 			);
 			$output->info(
-				'VTH catalog: caseType "' . $caseTypeSlug . '" not found for template "'
-				. $slug . '" — skipping (run base-register-seed-data first).'
+				'VTH catalog: no case type "' . $caseTypeSlug . '" on this instance, so template "'
+				. $slug . '" is skipped. Create that case type and re-run `occ maintenance:repair`.'
 			);
 		}
 

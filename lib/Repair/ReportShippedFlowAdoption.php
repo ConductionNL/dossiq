@@ -44,6 +44,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Flow\ShippedFlowAdoption;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -135,9 +136,23 @@ class ReportShippedFlowAdoption implements IRepairStep {
 			. 'deliberate act, because its runs then execute as that user).'
 		);
 
+		// 🔴 THE LOG LINE CARRIES THE COMMAND, BECAUSE ON ONE PATH IT IS THE
+		// ONLY WITNESS. Everything above goes to `IOutput`, and `IOutput` for a
+		// repair step is a set of dispatched events. Only `occ
+		// maintenance:repair`, `occ upgrade` and the web updater subscribe to
+		// them; `occ app:enable dossiq` runs the very same steps and listens to
+		// nothing, so a docker install prints not one of these warnings.
+		// Reporting "two flows need you" into a log with no way to act on it
+		// leaves the reader exactly where they started, so the fix goes in the
+		// line itself. docs/admin/flows.md says which path shows what.
 		$this->logger->warning(
 			'Dossiq: shipped flows await adoption',
-			['pending' => count($pending), 'total' => count($census['flows'])]
+			[
+				'app' => Application::APP_ID,
+				'pending' => count($pending),
+				'total' => count($census['flows']),
+				'command' => 'occ dossiq:flows:adopt --user <admin> --enable',
+			]
 		);
 	}//end run()
 
