@@ -237,10 +237,22 @@ class VthSeedDataRepairStep implements IRepairStep {
 
 			try {
 				// Only persist top-level case-type fields here; sub-objects
-				// (status/role/document/property) are owned by
-				// SeedVthWorkflowTemplates which creates the canonical
-				// workflow shape. This keeps the two repair steps from
-				// double-writing the same children.
+				// (status/role/document/property) are stripped.
+				//
+				// 🔴 THE COMMENT HERE USED TO SAY SeedVthWorkflowTemplates OWNS
+				// THEM. IT DOES NOT. That step only READS statusTypes, through
+				// VthSeedLookup::buildStatusMap(), and skips the whole template
+				// when it finds none. So nothing on the instance writes a VTH
+				// case type's statusTypes, every VTH template is skipped, and
+				// the run reports "0 seeded" as a success. Measured on a clean
+				// rig on 2026-09-04: six VTH case types, zero statusTypes
+				// attached to any of them.
+				//
+				// Deciding which step writes them, and on what idempotency key,
+				// changes what an install provisions. That is a change, not a
+				// repair, so it is filed rather than guessed at here. The
+				// comment is corrected so the next reader does not spend the
+				// afternoon looking for an owner that was never there.
 				$row = $this->stripChildren(caseType: $caseType);
 				$objectService->saveObject(
 					register: $register,
