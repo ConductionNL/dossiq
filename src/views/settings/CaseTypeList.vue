@@ -85,7 +85,7 @@
 import { CnIndexPage } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
-import { NcLoadingIcon } from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import ContentDuplicateIcon from 'vue-material-design-icons/ContentDuplicate.vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
 import StarIcon from 'vue-material-design-icons/Star.vue'
@@ -99,6 +99,7 @@ export default {
 		StarIcon,
 		DeleteIcon,
 		ContentDuplicateIcon,
+		NcButton,
 		NcLoadingIcon,
 		CnIndexPage,
 	},

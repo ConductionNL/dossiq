@@ -297,11 +297,12 @@ class SetupController extends Controller {
 			[
 				'success' => true,
 				'message' => sprintf(
-					'Demo data installed: %d of %d objects stored across %d schemas (%d refused).',
+					'Demo data installed: %d of %d objects stored across %d schemas (%d refused, %d already present).',
 					$imported['objects'],
 					$imported['requested'],
 					$imported['schemas'],
-					$imported['refused']
+					$imported['refused'],
+					$imported['unchanged']
 				),
 				'detail'  => $imported,
 			]
