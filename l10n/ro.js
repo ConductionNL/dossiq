@@ -356,7 +356,7 @@ OC.L10N.register(
         "{days} days overdue": "{days} zile întârziere",
         "{days} days remaining": "{days} zile rămase",
         "{field} is required": "{field} este obligatoriu",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (fără sfârșit)",
+        "{from} – (no end)": "{from} – (fără sfârșit)",
         "{hours} hours ago": "acum {hours} ore",
         "{min} min ago": "acum {min} min",
         "{n} days": "{n} zile",

@@ -200,9 +200,9 @@ export default {
 					month: 'short',
 					year: 'numeric',
 				})
-				return `${from} \u2014 ${until}`
+				return `${from} – ${until}`
 			}
-			return t('dossiq', '{from} \u2014 (no end)', { from })
+			return t('dossiq', '{from} – (no end)', { from })
 		},
 
 		/**

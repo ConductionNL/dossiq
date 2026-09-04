@@ -1935,7 +1935,7 @@
         "{days} days remaining": "{days} dager gjenstår",
         "{field} is required": "{field} er påkrevd",
         "{filled} of {total} properties filled": "{filled} av {total} egenskaper fylt ut",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (ingen slutt)",
+        "{from} – (no end)": "{from} – (ingen slutt)",
         "{hours} hours ago": "{hours} timer siden",
         "{min} min ago": "{min} min siden",
         "{n} conflicts": "{n} konflikter",

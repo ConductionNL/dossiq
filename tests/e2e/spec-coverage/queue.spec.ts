@@ -46,17 +46,24 @@ test.describe('Queue', () => {
 		// The seeded instance carries assigned cases and closed cases, so a queue
 		// returning the same count as All cases means the base filter never
 		// reached the query.
-		await page.goto('/index.php/apps/dossiq/cases')
-		await expect(page.locator('[data-testid="cn-page"]')).toBeVisible({
-			timeout: 60_000,
-		})
-		const allRows = await page.locator('table tbody tr').count()
+		//
+		// Count only once a row is ON the page. `cn-page` becomes visible while
+		// the table is still fetching, so counting on that signal alone read 0
+		// rows from a page that was about to render 9 — and `4 < 0` is false, so
+		// the assertion failed against a perfectly correct queue.
+		const countRows = async (path: string): Promise<number> => {
+			await page.goto(path)
+			await expect(page.locator('[data-testid="cn-page"]')).toBeVisible({
+				timeout: 60_000,
+			})
+			await expect(page.locator('table tbody tr').first()).toBeVisible({
+				timeout: 60_000,
+			})
+			return await page.locator('table tbody tr').count()
+		}
 
-		await page.goto('/index.php/apps/dossiq/queue')
-		await expect(page.locator('[data-testid="cn-page"]')).toBeVisible({
-			timeout: 60_000,
-		})
-		const queueRows = await page.locator('table tbody tr').count()
+		const allRows = await countRows('/index.php/apps/dossiq/cases')
+		const queueRows = await countRows('/index.php/apps/dossiq/queue')
 
 		expect(
 			queueRows,

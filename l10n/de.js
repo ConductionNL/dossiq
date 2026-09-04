@@ -356,7 +356,7 @@ OC.L10N.register(
         "{days} days overdue": "{days} Tage überfällig",
         "{days} days remaining": "noch {days} Tage",
         "{field} is required": "{field} ist erforderlich",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (kein Ende)",
+        "{from} – (no end)": "{from} – (kein Ende)",
         "{hours} hours ago": "vor {hours} Stunden",
         "{min} min ago": "vor {min} Min.",
         "{n} days": "{n} Tage",

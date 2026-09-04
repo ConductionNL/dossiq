@@ -1967,7 +1967,7 @@ OC.L10N.register(
         "{days} days remaining": "{days} gün kaldı",
         "{field} is required": "{field} gereklidir",
         "{filled} of {total} properties filled": "{total} özelliğin {filled} tanesi dolduruldu",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (bitiş yok)",
+        "{from} – (no end)": "{from} – (bitiş yok)",
         "{hours} hours ago": "{hours} saat önce",
         "{min} min ago": "{min} dakika önce",
         "{n} conflicts": "{n} çakışma",

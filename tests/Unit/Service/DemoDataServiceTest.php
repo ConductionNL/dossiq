@@ -126,7 +126,7 @@ class DemoDataServiceTest extends TestCase {
 			 * @return array<string, mixed>
 			 */
 			public function importFromApp(string $appId, array $data, string $version, bool $force): array {
-				$this->seen = ['appId' => $appId, 'version' => $version, 'force' => $force];
+				$this->seen = ['appId' => $appId, 'version' => $version, 'force' => $force, 'data' => $data];
 				return [
 					'registers' => ['dossiq'],
 					'schemas'   => ['Thing'],
@@ -293,8 +293,95 @@ class DemoDataServiceTest extends TestCase {
 	}
 
 	/**
+	 * 🔴 THE IMPORTER MUST NEVER SEE A REGISTER OR A SCHEMA DEFINITION.
+	 *
+	 * This is the whole of the fix, and it is invisible from the outside: the
+	 * old call handed over the complete mock descriptor, and the descriptor
+	 * ships the register and the 139 schemas its objects were generated from.
+	 * With `force: true` that is destructive twice over. Schemas are matched by
+	 * the pair (application, slug), so under `dossiq.demo` they forked into a
+	 * second, unreachable set; and a register is matched by SLUG alone, so the
+	 * demo's register entry overwrote the live row's title with "Dossiq
+	 * (demo)".
+	 *
+	 * Handing them over under the app's OWN id is not the fix either: the mock
+	 * file is a snapshot, and forcing its older `case` (v1.9.0, 50 properties)
+	 * over the shipped one (v1.13.0, 56) would downgrade a live schema.
+	 * Installing demo data must only ever add object rows.
+	 */
+	public function testTheImporterNeverSeesARegisterOrASchemaDefinition(): void {
+		$this->shipDescriptor(objects: 5);
+		$spy = $this->importerSpy(landed: 5);
+		$this->container->method('get')->willReturn($spy);
+
+		$this->service->install();
+
+		$payload = $spy->seen['data'];
+		$this->assertArrayNotHasKey(
+			'registers',
+			$payload['components'],
+			'a demo set that defines a register can rename the live one'
+		);
+		$this->assertArrayNotHasKey(
+			'schemas',
+			$payload['components'],
+			'a demo set that defines schemas forks or downgrades the app\'s own'
+		);
+		$this->assertArrayNotHasKey('registers', $payload, 'the top-level spelling seeds too');
+		$this->assertArrayNotHasKey('schemas', $payload, 'the top-level spelling seeds too');
+		$this->assertCount(
+			5,
+			$payload['components']['objects'],
+			'the objects are the only thing a demo set may carry'
+		);
+	}
+
+	/**
+	 * The counts the caller reports must come from what the importer said, and
+	 * a narrowed payload defines neither a register nor a schema. Zero here is
+	 * the fix working, so it is asserted rather than left to be read as a
+	 * regression later.
+	 */
+	public function testANarrowedPayloadDefinesNoRegistersAndNoSchemas(): void {
+		$this->shipDescriptor(objects: 3);
+		$honest = new class {
+			/**
+			 * @param string               $appId   Config identity.
+			 * @param array<string, mixed> $data    Descriptor.
+			 * @param string               $version App version.
+			 * @param boolean              $force   Whether the version gate is bypassed.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function importFromApp(string $appId, array $data, string $version, bool $force): array {
+				// Answers from the payload, the way the real importer does:
+				// it can only define what it was given.
+				return [
+					'registers' => array_keys(($data['components']['registers'] ?? [])),
+					'schemas' => array_keys(($data['components']['schemas'] ?? [])),
+					'objects' => array_fill(0, count(($data['components']['objects'] ?? [])), 'entity'),
+					'skipped' => ['objects' => 0],
+				];
+			}
+		};
+		$this->container->method('get')->willReturn($honest);
+
+		$result = $this->service->install();
+
+		$this->assertSame(3, $result['objects']);
+		$this->assertSame(0, $result['registers'], 'a demo set defines no register');
+		$this->assertSame(0, $result['schemas'], 'a demo set defines no schema');
+	}
+
+	/**
 	 * Its own configuration identity, so the demo import and the real
 	 * configuration import cannot mask one another's version gate.
+	 *
+	 * 🔴 KEPT DELIBERATELY, AND IT WAS NEVER THE BUG. The bug was that the same
+	 * string also named the SCHEMA OWNER during the definitional pass. With no
+	 * definitions in the payload this id owns nothing, so it goes back to
+	 * meaning what its name says: the Configuration row and the
+	 * `imported_config_<app>_version` / `_hash` pair.
 	 */
 	public function testItImportsUnderItsOwnConfigurationIdentity(): void {
 		$this->shipDescriptor();

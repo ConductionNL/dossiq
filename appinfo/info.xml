@@ -226,6 +226,30 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\MigrateRegisterApplicationId</step>
             <!--
+                AHEAD OF THE IMPORT, BECAUSE THE IMPORT CANNOT WORK AROUND A
+                FORKED SLUG. `DemoDataService` used to hand the whole mock
+                descriptor to OpenRegister under the configuration id
+                `dossiq.demo`, and a schema is matched by the PAIR
+                (application, slug): every slug missed, and the not-found
+                branch is the CREATE branch. One click built 139 duplicate
+                schemas with 393 demo objects bound to them, invisible to an
+                app that reads its schemas under `dossiq`, and overwrote the
+                register's own title with "Dossiq (demo)".
+
+                The import is fixed at source, so this cannot happen again;
+                this step is for the instances where it already did. It only
+                removes a schema it can prove is the fork (see the class
+                docblock for the three conditions), names everything it
+                spares, and routes deletion through OpenRegister's audited
+                cascade.
+
+                POST-MIGRATION ONLY, for the same reason as RetireOriRegister:
+                a fresh install never ran the defective import. The fork can
+                only exist on an instance where dossiq was already enabled and
+                somebody clicked "install demo data".
+            -->
+            <step>OCA\Dossiq\Repair\RepairDemoDataSchemaFork</step>
+            <!--
                 MUST stay first among the SCHEMA steps. OpenRegister's import matches a schema to an
                 existing row by SLUG, so a renamed slug in the register JSON
                 renames nothing: the import finds no match, creates a SECOND
@@ -273,8 +297,24 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\MigrateSubsidieRegelingToCaseType</step>
             <step>OCA\Dossiq\Repair\SeedLhsMatrix</step>
             <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
-            <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
+            <!--
+                VthSeedDataRepairStep SEEDS THE CASE TYPES SeedVthWorkflowTemplates
+                RESOLVES, SO IT HAS TO GO FIRST. It shipped the other way round,
+                and on a fresh install the lookup could not succeed even once:
+                five of the six templates name a caseType slug
+                (omgevingsvergunning-bouwactiviteit, toezichtzaak-bouw,
+                handhavingszaak twice, klacht-toezicht) that does not exist yet
+                when the template step runs. The install reported it as
+                "0 seeded, 5 skipped ... not found for template ... (run
+                base-register-seed-data first)" and carried on green, so the VTH
+                catalogue was simply absent on every new instance.
+
+                The tell was in the message the step prints about itself: a step
+                that tells you to run something else first is a step that is
+                registered in the wrong place.
+            -->
             <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
+            <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
             <step>OCA\Dossiq\Repair\FoldCasePropertiesOntoCase</step>
             <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
@@ -437,6 +477,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               BackfillInformatieobjectMetadata  backfill over existing documents
               BackfillAdviceRequestObjection    backfill over existing bacAdviceRequests
               LinkInFlight*DecisionsRepair      link IN-FLIGHT decisions; none exist yet
+              RepairDemoDataSchemaFork          retires a fork only an already-enabled app could have made
 
             THE LIST ABOVE IS NOT PROSE. RepairStepRegistrationTest parses this file,
             sweeps every post-migration step, and fails on any step that is neither
@@ -523,8 +564,10 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\SeedBesluitvormingTemplates</step>
             <step>OCA\Dossiq\Repair\SeedLhsMatrix</step>
             <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
-            <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
+            <!-- SEEDS THE CASE TYPES THE TEMPLATE STEP RESOLVES; see the
+                 post-migration block for what the wrong order cost. -->
             <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
+            <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
             <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <step>OCA\Dossiq\Repair\SeedKccWerkplekData</step>

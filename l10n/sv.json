@@ -355,7 +355,7 @@
         "{days} days overdue": "{days} dagar försenad",
         "{days} days remaining": "{days} dagar kvar",
         "{field} is required": "{field} krävs",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (inget slut)",
+        "{from} – (no end)": "{from} – (inget slut)",
         "{hours} hours ago": "{hours} timmar sedan",
         "{min} min ago": "{min} min sedan",
         "{n} days": "{n} dagar",

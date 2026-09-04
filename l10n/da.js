@@ -356,7 +356,7 @@ OC.L10N.register(
         "{days} days overdue": "{days} dage forsinket",
         "{days} days remaining": "{days} dage tilbage",
         "{field} is required": "{field} er påkrævet",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (ingen slutning)",
+        "{from} – (no end)": "{from} – (ingen slutning)",
         "{hours} hours ago": "for {hours} timer siden",
         "{min} min ago": "for {min} min. siden",
         "{n} days": "{n} dage",

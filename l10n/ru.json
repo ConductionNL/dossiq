@@ -1935,7 +1935,7 @@
         "{days} days remaining": "осталось {days} дней",
         "{field} is required": "{field} обязательно",
         "{filled} of {total} properties filled": "{filled} из {total} свойств заполнено",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (без окончания)",
+        "{from} – (no end)": "{from} – (без окончания)",
         "{hours} hours ago": "{hours} часов назад",
         "{min} min ago": "{min} мин назад",
         "{n} conflicts": "{n} конфликтов",

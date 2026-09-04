@@ -1935,7 +1935,7 @@
         "{days} days remaining": "{days} lá fágtha",
         "{field} is required": "Tá {field} riachtanach",
         "{filled} of {total} properties filled": "{filled} as {total} airí líonta",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (gan deireadh)",
+        "{from} – (no end)": "{from} – (gan deireadh)",
         "{hours} hours ago": "{hours} uair an chloig ó shin",
         "{min} min ago": "{min} nóim ó shin",
         "{n} conflicts": "{n} coinbhleacht",

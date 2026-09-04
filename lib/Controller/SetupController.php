@@ -293,14 +293,21 @@ class SetupController extends Controller {
 		// numbers cannot be told apart from an import that wrote nothing — and
 		// one number cannot be told apart from a number read out of the file it
 		// was asked to import. The landing is stated against the ask.
+		//
+		// 🔴 THE SCHEMA COUNT IS GONE, BECAUSE IT WAS COUNTING THE DAMAGE.
+		// `schemas` is how many schemas the import DEFINED, and this message
+		// read it as "how many schemas the objects landed in". Those were the
+		// same number only while the demo import was forking a schema set of
+		// its own: "across 139 schemas" was the fork, reported as a feature.
+		// A demo set defines no schemas now, so the honest sentence is about
+		// objects. The full counts stay in `detail`.
 		return new DataResponse(
 			[
 				'success' => true,
 				'message' => sprintf(
-					'Demo data installed: %d of %d objects stored across %d schemas (%d refused, %d already present).',
+					'Demo data installed: %d of %d objects stored, %d refused, %d already present.',
 					$imported['objects'],
 					$imported['requested'],
-					$imported['schemas'],
 					$imported['refused'],
 					$imported['unchanged']
 				),

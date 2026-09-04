@@ -82,6 +82,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'BackfillAdviceRequestObjection' => 'backfill over existing bacAdviceRequests',
 		'LinkInFlightContractDecisionsRepair' => 'links in-flight contract decisions; none exist yet',
 		'LinkInFlightRemainingDecisionsRepair' => 'links in-flight decisions; none exist yet',
+		'RepairDemoDataSchemaFork' => 'retires a schema fork only an already-enabled app could have made',
 	];
 
 	/**
@@ -157,6 +158,58 @@ class RepairStepRegistrationTest extends TestCase {
 			. implode("\n - ", $unregistered)
 		);
 	}//end testEveryPostMigrationStepIsEitherInstalledOrExplicitlyExempt()
+
+	/**
+	 * A step must not run before the step that provisions what it reads.
+	 *
+	 * 🔴 THE ORDER IS NOT DOCUMENTATION, IT IS THE CONTRACT. `info.xml` runs
+	 * the steps in the order they are written, and a step registered ahead of
+	 * its own precondition cannot succeed even once. Both blocks shipped
+	 * `SeedVthWorkflowTemplates` ahead of `VthSeedDataRepairStep`, which
+	 * provisions the case types five of the six templates resolve. Every
+	 * fresh install therefore reported "0 seeded, 5 skipped", in an
+	 * info-level line, and carried on green: the VTH catalogue was absent on
+	 * every new instance and nothing ever failed.
+	 *
+	 * The pair is asserted rather than the whole order, because only the pairs
+	 * with a real data dependency are worth freezing. Add a pair here when you
+	 * find a step whose own output tells the operator to run something else
+	 * first, which is the tell that found this one.
+	 *
+	 * @return void
+	 */
+	public function testAStepNeverRunsBeforeWhatItDependsOn(): void {
+		$dependencies = [
+			// consumer => provider
+			'SeedVthWorkflowTemplates' => 'VthSeedDataRepairStep',
+		];
+
+		foreach ($this->blocks() as $block => $steps) {
+			$order = array_map([$this, 'shortName'], $steps);
+
+			foreach ($dependencies as $consumer => $provider) {
+				$consumerAt = array_search($consumer, $order, true);
+				$providerAt = array_search($provider, $order, true);
+
+				if ($consumerAt === false || $providerAt === false) {
+					continue;
+				}
+
+				self::assertLessThan(
+					$consumerAt,
+					$providerAt,
+					sprintf(
+						'In the <%s> block, %s runs before %s, which provisions the data it reads. '
+						. 'That step can never succeed on a fresh install, and it reports the failure '
+						. 'as a skip rather than an error.',
+						$block,
+						$consumer,
+						$provider
+					)
+				);
+			}
+		}
+	}//end testAStepNeverRunsBeforeWhatItDependsOn()
 
 	/**
 	 * The exemption table may not outlive the steps it excuses.

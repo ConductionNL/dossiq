@@ -1967,7 +1967,7 @@ OC.L10N.register(
         "{days} days remaining": "{days} dies restants",
         "{field} is required": "{field} és obligatori",
         "{filled} of {total} properties filled": "{filled} de {total} propietats emplenades",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (sense fi)",
+        "{from} – (no end)": "{from} – (sense fi)",
         "{hours} hours ago": "fa {hours} hores",
         "{min} min ago": "fa {min} min",
         "{n} conflicts": "{n} conflictes",

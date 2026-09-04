@@ -1967,7 +1967,7 @@ OC.L10N.register(
         "{days} days remaining": "{days} dagar eftir",
         "{field} is required": "{field} er nauðsynlegt",
         "{filled} of {total} properties filled": "{filled} af {total} eiginleikum útfylltir",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (engin lok)",
+        "{from} – (no end)": "{from} – (engin lok)",
         "{hours} hours ago": "fyrir {hours} klukkustundum",
         "{min} min ago": "fyrir {min} mín",
         "{n} conflicts": "{n} árekstrar",
