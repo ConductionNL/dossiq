@@ -189,24 +189,7 @@ class DemoDataService {
 			force: true
 		);
 
-		// The LANDING. An importer reply with no `objects` key has said nothing
-		// about objects, and nothing is zero — never "as many as we asked for".
-		$skipped   = (array)($result['skipped'] ?? []);
-		$unchanged = (array)($result['unchanged'] ?? []);
-		$imported  = [
-			'objects'   => count((array)($result['objects'] ?? [])),
-			'requested' => $requested,
-			'refused'   => (int)($skipped['objects'] ?? 0),
-			// Already present at the same version, so correctly left alone.
-			// REPORTED BY THE IMPORTER, not inferred here: deriving it as
-			// `requested - stored - refused` looks equivalent and is not, because
-			// it silently reclassifies an object the importer dropped WITHOUT
-			// saying so as "already present", which is the exact failure this
-			// guard exists to catch.
-			'unchanged' => (int)($unchanged['objects'] ?? 0),
-			'registers' => count((array)($result['registers'] ?? [])),
-			'schemas'   => count((array)($result['schemas'] ?? [])),
-		];
+		$imported = $this->readLanding(result: $result, requested: $requested);
 
 		// 🔴 AN IMPORT THAT STORED NOTHING IS NOT A SUCCESS, and this is the
 		// only place that can tell. Same shape as the seed steps of #1767 and
@@ -236,6 +219,56 @@ class DemoDataService {
 			);
 		}
 
+		$this->reportLanding(imported: $imported, requested: $requested);
+
+		return $imported;
+	}//end install()
+
+	/**
+	 * Read what the importer actually did, as counts.
+	 *
+	 * An importer reply with no `objects` key has said nothing about objects,
+	 * and nothing is zero, never "as many as we asked for".
+	 *
+	 * `unchanged` is REPORTED BY THE IMPORTER (openregister#3410), not inferred
+	 * here. Deriving it as `requested - stored - refused` looks equivalent and
+	 * is not: it silently reclassifies an object the importer dropped WITHOUT
+	 * saying so as "already present", which is the exact failure install()'s
+	 * guard exists to catch.
+	 *
+	 * @param array<string, mixed> $result    The importer's reply.
+	 * @param integer              $requested How many objects the descriptor carries.
+	 *
+	 * @return array{objects: integer, requested: integer, refused: integer, unchanged: integer,
+	 *     registers: integer, schemas: integer} The landing, next to the ask.
+	 *
+	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 */
+	private function readLanding(array $result, int $requested): array {
+		$skipped   = (array)($result['skipped'] ?? []);
+		$unchanged = (array)($result['unchanged'] ?? []);
+
+		return [
+			'objects'   => count((array)($result['objects'] ?? [])),
+			'requested' => $requested,
+			'refused'   => (int)($skipped['objects'] ?? 0),
+			'unchanged' => (int)($unchanged['objects'] ?? 0),
+			'registers' => count((array)($result['registers'] ?? [])),
+			'schemas'   => count((array)($result['schemas'] ?? [])),
+		];
+	}//end readLanding()
+
+	/**
+	 * Record what landed, and say so louder when some of it did not.
+	 *
+	 * @param array<string, mixed> $imported  The landing from {@see self::readLanding()}.
+	 * @param integer              $requested How many objects the descriptor carries.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 */
+	private function reportLanding(array $imported, int $requested): void {
 		$this->logger->info(
 			'[DemoDataService] imported demo data: '
 			. $imported['objects'] . ' of ' . $requested . ' object(s) stored, '
@@ -245,20 +278,20 @@ class DemoDataService {
 			['app' => Application::APP_ID]
 		);
 
-		if ($imported['objects'] < $requested) {
-			// Partial. Louder than info on purpose: some of what the app ships
-			// did not survive the import, and the message above is the only
-			// place the difference is visible.
-			$this->logger->warning(
-				'[DemoDataService] the demo import lost ' . ($requested - $imported['objects'])
-				. ' of ' . $requested . ' object(s) — ' . $imported['refused'] . ' refused, the rest were '
-				. 'left unchanged because an object of the same version already exists.',
-				['app' => Application::APP_ID]
-			);
+		if ($imported['objects'] >= $requested) {
+			return;
 		}
 
-		return $imported;
-	}//end install()
+		// Partial. Louder than info on purpose: some of what the app ships did
+		// not survive the import, and the message above is the only place the
+		// difference is visible.
+		$this->logger->warning(
+			'[DemoDataService] the demo import lost ' . ($requested - $imported['objects'])
+			. ' of ' . $requested . ' object(s) — ' . $imported['refused'] . ' refused, the rest were '
+			. 'left unchanged because an object of the same version already exists.',
+			['app' => Application::APP_ID]
+		);
+	}//end reportLanding()
 
 	/**
 	 * Strip the definitional blocks, leaving the objects.
