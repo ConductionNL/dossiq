@@ -270,7 +270,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\ProvisionAssignedGroups</step>
             <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
-            <step>OCA\Dossiq\Repair\MigrateWorkflowDefinitions</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition</step>
             <step>OCA\Dossiq\Repair\SeedBesluitvormingTemplates</step>
             <!--
@@ -316,6 +315,29 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
             <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
+            <!--
+                AFTER EVERY STEP THAT CREATES A CASE TYPE, AND IT USED TO RUN
+                BEFORE THEM ALL. This step projects the implicit lifecycle of a
+                case type that has no workflow yet into a published "basis"
+                template, so what it can project is decided entirely by which
+                case types exist when it runs. It sat between
+                SeedBezwaarBeroepData and SeedBesluitvormingTemplates, ahead of
+                the besluitvorming, VTH and case-flow seeds, and reported its
+                own emptiness as success.
+
+                Measured on a clean rig on 2026-09-04: 6 templates after a fresh
+                install, 15 after the first `occ maintenance:repair`, stable at
+                15 after the second. Nine templates that belong on a new
+                instance arrived one pass late, and only because an
+                administrator happened to run repair.
+
+                It is registered in <install> for the same reason. The old
+                exemption called it a one-way migration of existing rows, which
+                it is not: it creates a baseline for every case type the seeds
+                above just created, and a fresh install is exactly where they
+                are all new.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateWorkflowDefinitions</step>
             <step>OCA\Dossiq\Repair\FoldCasePropertiesOntoCase</step>
             <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <!--
@@ -460,7 +482,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
             Only baseline-CREATING steps are listed. Deliberately EXCLUDED, because
             each operates on data a fresh install does not have:
-              MigrateWorkflowDefinitions        one-way migration
               RenameDutchDeadlineColumns        rename over existing rows
               RenameDutchDirectionValues        rewrite over existing rows
               RenameDutchColumns                rename over existing rows
@@ -569,6 +590,10 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
             <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
+            <!-- LAST OF THE SEEDS, because it projects a basis workflow onto
+                 every case type the steps above just created. See the
+                 post-migration block for what its old position cost. -->
+            <step>OCA\Dossiq\Repair\MigrateWorkflowDefinitions</step>
             <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <step>OCA\Dossiq\Repair\SeedKccWerkplekData</step>
             <step>OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten</step>

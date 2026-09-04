@@ -64,7 +64,6 @@ class RepairStepRegistrationTest extends TestCase {
 	 * @var array<string, string>
 	 */
 	private const INSTALL_EXEMPT = [
-		'MigrateWorkflowDefinitions' => 'one-way migration of existing workflow definitions',
 		'RenameDutchDeadlineColumns' => 'renames columns over existing rows',
 		'RenameDutchDirectionValues' => 'rewrites values in existing rows',
 		'RenameDutchColumns' => 'renames columns over existing rows',
@@ -171,42 +170,60 @@ class RepairStepRegistrationTest extends TestCase {
 	 * info-level line, and carried on green: the VTH catalogue was absent on
 	 * every new instance and nothing ever failed.
 	 *
-	 * The pair is asserted rather than the whole order, because only the pairs
+	 * The pairs are asserted rather than the whole order, because only the pairs
 	 * with a real data dependency are worth freezing. Add a pair here when you
 	 * find a step whose own output tells the operator to run something else
-	 * first, which is the tell that found this one.
+	 * first, which is the tell that found the first one.
+	 *
+	 * 🔴 MigrateWorkflowDefinitions IS THE SECOND ONE, AND ITS TELL WAS A
+	 * COUNT RATHER THAN A MESSAGE. It projects a basis workflow onto every case
+	 * type that has none, so it can only project the case types that already
+	 * exist. It ran between SeedBezwaarBeroepData and SeedBesluitvormingTemplates,
+	 * ahead of the besluitvorming, VTH and case-flow seeds, and said "migrated 0"
+	 * as success. Measured on a clean rig on 2026-09-04: 6 templates after a
+	 * fresh install and 15 after a repair pass nobody was told to run.
 	 *
 	 * @return void
 	 */
 	public function testAStepNeverRunsBeforeWhatItDependsOn(): void {
 		$dependencies = [
-			// consumer => provider
-			'SeedVthWorkflowTemplates' => 'VthSeedDataRepairStep',
+			// consumer => providers.
+			'SeedVthWorkflowTemplates' => ['VthSeedDataRepairStep'],
+			'SeedBezwaarWorkflowDefinition' => ['SeedBezwaarBeroepData'],
+			'MigrateWorkflowDefinitions' => [
+				'SeedBezwaarBeroepData',
+				'SeedBesluitvormingTemplates',
+				'VthSeedDataRepairStep',
+				'SeedVthWorkflowTemplates',
+				'CaseFlowSeedDataRepairStep',
+			],
 		];
 
 		foreach ($this->blocks() as $block => $steps) {
 			$order = array_map([$this, 'shortName'], $steps);
 
-			foreach ($dependencies as $consumer => $provider) {
-				$consumerAt = array_search($consumer, $order, true);
-				$providerAt = array_search($provider, $order, true);
+			foreach ($dependencies as $consumer => $providers) {
+				foreach ($providers as $provider) {
+					$consumerAt = array_search($consumer, $order, true);
+					$providerAt = array_search($provider, $order, true);
 
-				if ($consumerAt === false || $providerAt === false) {
-					continue;
+					if ($consumerAt === false || $providerAt === false) {
+						continue;
+					}
+
+					self::assertLessThan(
+						$consumerAt,
+						$providerAt,
+						sprintf(
+							'In the <%s> block, %s runs before %s, which provisions the data it reads. '
+							. 'That step can never succeed on a fresh install, and it reports the failure '
+							. 'as a skip rather than an error.',
+							$block,
+							$consumer,
+							$provider
+						)
+					);
 				}
-
-				self::assertLessThan(
-					$consumerAt,
-					$providerAt,
-					sprintf(
-						'In the <%s> block, %s runs before %s, which provisions the data it reads. '
-						. 'That step can never succeed on a fresh install, and it reports the failure '
-						. 'as a skip rather than an error.',
-						$block,
-						$consumer,
-						$provider
-					)
-				);
 			}
 		}
 	}//end testAStepNeverRunsBeforeWhatItDependsOn()

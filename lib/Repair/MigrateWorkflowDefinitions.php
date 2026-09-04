@@ -256,6 +256,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 				caseTypeSchema: $caseTypeSchema,
 				caseSchema: $caseSchema,
 				caseTypeId: $caseTypeId,
+				caseType: $row,
 				templateId: $newId,
 			);
 		}
@@ -264,13 +265,20 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 	}//end migrateCaseType()
 
 	/**
-	 * Pin a caseType — and its open cases — to a freshly created template.
+	 * Pin a caseType, and its open cases, to a freshly created template.
+	 *
+	 * 🔑 THE PIN CARRIES THE WHOLE CASE TYPE. OpenRegister validates and stores
+	 * the payload as the complete object, and `caseType` requires a title, so
+	 * a one-key update is refused and this step's own catch swallows it. The
+	 * row is already in hand from the listing above, so the pin is laid over
+	 * it.
 	 *
 	 * @param object $objectService Resolved OR ObjectService
 	 * @param string $register The register id
 	 * @param string $caseTypeSchema The caseType schema id
 	 * @param string $caseSchema The case schema id (may be empty)
 	 * @param string $caseTypeId The caseType UUID
+	 * @param array<string, mixed> $caseType The caseType row as read
 	 * @param string $templateId The new template UUID
 	 *
 	 * @return void
@@ -281,11 +289,12 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		string $caseTypeSchema,
 		string $caseSchema,
 		string $caseTypeId,
+		array $caseType,
 		string $templateId,
 	): void {
 		try {
 			$objectService->saveObject(
-				object: ['workflowDefinition' => $templateId],
+				object: $this->withPin(row: $caseType, pin: ['workflowDefinition' => $templateId]),
 				register: $register,
 				schema: $caseTypeSchema,
 				uuid: $caseTypeId,
@@ -500,10 +509,13 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 
 			try {
 				$objectService->saveObject(
-					object: [
-						'workflowTemplate' => $templateId,
-						'workflowVersion' => 1,
-					],
+					object: $this->withPin(
+						row: $case,
+						pin: [
+							'workflowTemplate' => $templateId,
+							'workflowVersion' => 1,
+						]
+					),
 					register: $register,
 					schema: $caseSchema,
 					uuid: (string)$caseId,
@@ -516,6 +528,23 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			}
 		}//end foreach
 	}//end pinOpenCases()
+
+	/**
+	 * Lay a pin over the row it belongs to, so the update carries a whole object.
+	 *
+	 * `@self` is OpenRegister's own envelope and `id` is the uuid, which travels
+	 * as the `uuid` argument; neither belongs in the payload.
+	 *
+	 * @param array<string, mixed> $row The row as read.
+	 * @param array<string, mixed> $pin The properties to set.
+	 *
+	 * @return array<string, mixed> The full object to store.
+	 */
+	private function withPin(array $row, array $pin): array {
+		unset($row['@self'], $row['id']);
+
+		return array_merge($row, $pin);
+	}//end withPin()
 
 	/**
 	 * Coerce an OpenRegister result row to an associative array.
