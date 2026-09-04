@@ -61,29 +61,47 @@ use PHPUnit\Framework\TestCase;
 class ShippedObjectPropertyTypeTest extends TestCase {
 
 	/**
-	 * The effective register configuration: monolith plus ADR-037 fragments.
+	 * Every configuration whose objects an install imports, by name.
 	 *
-	 * @var array<string, mixed>
+	 * Two of them, because the demo objects arrive by two routes and the same
+	 * mistake fits both: the effective register configuration (the monolith
+	 * plus its ADR-037 fragments), and the ADR-111 mock descriptor
+	 * DemoDataService imports on request. The mock ships a generated copy of
+	 * the same schemas, so a shape fixed in one and not the other is a fix
+	 * that only half landed.
+	 *
+	 * @var array<string, array<string, mixed>>
 	 */
-	private array $merged;
+	private array $configurations;
 
 	/**
-	 * Load the monolith and merge the real register.d fragments.
+	 * The key of the effective register configuration in {@see $configurations}.
+	 *
+	 * @var string
+	 */
+	private const EFFECTIVE = 'dossiq_register.json + register.d';
+
+	/**
+	 * Load both shipped configurations.
 	 *
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$base = json_decode(
-			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'),
-			true
-		);
+		$settings = __DIR__ . '/../../../lib/Settings';
 
+		$base = json_decode((string)file_get_contents($settings . '/dossiq_register.json'), true);
 		[$merged] = (new RegisterFragmentMerger())->merge(
 			base: $base,
-			fragmentDir: __DIR__ . '/../../../lib/Settings/register.d'
+			fragmentDir: $settings . '/register.d'
 		);
 
-		$this->merged = $merged;
+		$this->configurations = [
+			self::EFFECTIVE => (array)$merged,
+			'dossiq_mock_register.json' => (array)json_decode(
+				(string)file_get_contents($settings . '/dossiq_mock_register.json'),
+				true
+			),
+		];
 	}//end setUp()
 
 	/**
@@ -95,16 +113,18 @@ class ShippedObjectPropertyTypeTest extends TestCase {
 		$offenders = [];
 		$propertiesSeen = 0;
 
-		foreach ($this->schemas() as $schemaName => $schema) {
-			foreach ((array)($schema['properties'] ?? []) as $propertyName => $definition) {
-				if (is_array($definition) === false) {
-					continue;
-				}
+		foreach ($this->configurations as $where => $configuration) {
+			foreach ($this->schemasOf(configuration: $configuration) as $schemaName => $schema) {
+				foreach ((array)($schema['properties'] ?? []) as $propertyName => $definition) {
+					if (is_array($definition) === false) {
+						continue;
+					}
 
-				$propertiesSeen++;
-				if (array_key_exists('type', $definition) === false) {
-					$offenders[] = $schemaName . '.' . (string)$propertyName
-						. ' declares no type: ' . (string)json_encode($definition);
+					$propertiesSeen++;
+					if (array_key_exists('type', $definition) === false) {
+						$offenders[] = $where . ' ' . $schemaName . '.' . (string)$propertyName
+							. ' declares no type: ' . (string)json_encode($definition);
+					}
 				}
 			}
 		}
@@ -130,12 +150,14 @@ class ShippedObjectPropertyTypeTest extends TestCase {
 	public function testNoPropertyReferencesASchemaByJsonPointer(): void {
 		$offenders = [];
 
-		foreach ($this->schemas() as $schemaName => $schema) {
-			$this->collectJsonPointerRefs(
-				node: $schema,
-				path: (string)$schemaName,
-				offenders: $offenders
-			);
+		foreach ($this->configurations as $where => $configuration) {
+			foreach ($this->schemasOf(configuration: $configuration) as $schemaName => $schema) {
+				$this->collectJsonPointerRefs(
+					node: $schema,
+					path: $where . ' ' . (string)$schemaName,
+					offenders: $offenders
+				);
+			}
 		}
 
 		$this->assertSame(
@@ -155,33 +177,44 @@ class ShippedObjectPropertyTypeTest extends TestCase {
 	public function testEveryShippedObjectMatchesItsDeclaredTypes(): void {
 		$offenders = [];
 		$objectsSeen = 0;
-		$schemas = $this->schemas();
 
-		foreach ((array)($this->merged['components']['objects'] ?? []) as $object) {
-			if (is_array($object) === false) {
-				continue;
-			}
+		// An object is validated against the schema the INSTALL will use, which
+		// is the effective register's. The mock descriptor carries its own
+		// snapshot of the schemas and DemoDataService strips it before import
+		// (see DemoDataService::objectsOnly), so the snapshot is a fallback
+		// here, never the authority.
+		$effective = $this->schemasOf(configuration: $this->configurations[self::EFFECTIVE]);
 
-			$schemaName = (string)($object['@self']['schema'] ?? '');
-			$slug = (string)($object['@self']['slug'] ?? '(no slug)');
-			if (isset($schemas[$schemaName]) === false) {
-				$offenders[] = $slug . ' names schema "' . $schemaName . '", which is not shipped';
-				continue;
-			}
-
-			$objectsSeen++;
-			$properties = (array)($schemas[$schemaName]['properties'] ?? []);
-			foreach ($object as $key => $value) {
-				if ($key === '@self' || isset($properties[$key]) === false) {
+		foreach ($this->configurations as $where => $configuration) {
+			$snapshot = $this->schemasOf(configuration: $configuration);
+			foreach ((array)($configuration['components']['objects'] ?? []) as $object) {
+				if (is_array($object) === false) {
 					continue;
 				}
 
-				$this->collectValueMismatches(
-					definition: (array)$properties[$key],
-					value: $value,
-					path: $schemaName . '/' . $slug . '.' . (string)$key,
-					offenders: $offenders
-				);
+				$schemaName = (string)($object['@self']['schema'] ?? '');
+				$slug = (string)($object['@self']['slug'] ?? '(no slug)');
+				$schema = ($effective[$schemaName] ?? ($snapshot[$schemaName] ?? null));
+				if (is_array($schema) === false) {
+					$offenders[] = $where . ' ' . $slug . ' names schema "' . $schemaName
+						. '", which this app ships nowhere';
+					continue;
+				}
+
+				$objectsSeen++;
+				$properties = (array)($schema['properties'] ?? []);
+				foreach ($object as $key => $value) {
+					if ($key === '@self' || isset($properties[$key]) === false) {
+						continue;
+					}
+
+					$this->collectValueMismatches(
+						definition: (array)$properties[$key],
+						value: $value,
+						path: $where . ' ' . $schemaName . '/' . $slug . '.' . (string)$key,
+						offenders: $offenders
+					);
+				}
 			}
 		}
 
@@ -199,13 +232,15 @@ class ShippedObjectPropertyTypeTest extends TestCase {
 	}//end testEveryShippedObjectMatchesItsDeclaredTypes()
 
 	/**
-	 * The effective schema map.
+	 * One configuration's schema map.
+	 *
+	 * @param array<string, mixed> $configuration The decoded configuration.
 	 *
 	 * @return array<string, array<string, mixed>> Schemas by name.
 	 */
-	private function schemas(): array {
-		return (array)($this->merged['components']['schemas'] ?? []);
-	}//end schemas()
+	private function schemasOf(array $configuration): array {
+		return (array)($configuration['components']['schemas'] ?? []);
+	}//end schemasOf()
 
 	/**
 	 * Collect every `$ref` written as a JSON Pointer, at any depth.
