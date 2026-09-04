@@ -315,6 +315,12 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 			$findings[] = $pointer . '/' . $name . ': schema "' . $schemaSlug . '" does not declare it';
 		}//end foreach
 
+		$this->checkChildCollections(
+			payload: $payload,
+			pointer: $pointer,
+			findings: $findings
+		);
+
 		$this->checkNested(
 			payload: $payload,
 			properties: ($schema['properties'] ?? []),
@@ -332,6 +338,54 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 		);
 
 	}//end checkPayload()
+
+	/**
+	 * Check the child collections a payload carries against THEIR schemas.
+	 *
+	 * 🔴 WITHOUT THIS THE SWEEP ONLY SAW THE TOP LEVEL. `checkPayload()` skips
+	 * a `COLLECTION_SCHEMA` key because the parent save never sees it, and the
+	 * walker only reaches a collection that sits at the top of a seed file. In
+	 * `vth_seed_data.json` the collections are nested INSIDE each case-type
+	 * record, so nothing checked them: 26 propertyDefinitions shipped `type`
+	 * and `enum`, which the schema spells `propertyType` and `enumValues`, and
+	 * the sweep that exists to catch exactly that was green. It only stayed
+	 * harmless because nothing wrote those rows at all.
+	 *
+	 * `checkNested()` cannot cover this: it walks the properties the schema
+	 * DECLARES, and a child collection is by definition not one of them.
+	 *
+	 * @param array<string, mixed> $payload The payload, which may carry collections.
+	 * @param string $pointer Human-readable path to the payload.
+	 * @param array<int, string> $findings Accumulated findings, appended in place.
+	 *
+	 * @return void
+	 */
+	private function checkChildCollections(
+		array $payload,
+		string $pointer,
+		array &$findings,
+	): void {
+		foreach ($payload as $key => $value) {
+			$name = (string)$key;
+			if (isset(self::COLLECTION_SCHEMA[$name]) === false || is_array($value) === false) {
+				continue;
+			}
+
+			foreach ($value as $index => $record) {
+				if ($this->isPayload(node: $record) === false) {
+					continue;
+				}
+
+				$this->checkPayload(
+					payload: $record,
+					schemaSlug: self::COLLECTION_SCHEMA[$name],
+					pointer: $pointer . '/' . $name . '[' . $index . ']',
+					findings: $findings
+				);
+			}
+		}//end foreach
+
+	}//end checkChildCollections()
 
 	/**
 	 * Check the objects nested inside a payload against their sub-schemas.

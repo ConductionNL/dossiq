@@ -39,13 +39,13 @@
         {"name": "Bekendmakingstekst", "description": "Tekst voor publicatie van het besluit"}
       ],
       "propertyDefinitions": [
-        {"name": "bouwkosten", "type": "number", "description": "Geschatte bouwkosten (EUR)"},
-        {"name": "oppervlakte", "type": "number", "description": "Bouwoppervlakte in m2"},
-        {"name": "aantalBouwlagen", "type": "integer", "description": "Aantal bouwlagen"},
-        {"name": "bagObject", "type": "string", "description": "BAG object referentie"},
-        {"name": "activiteiten", "type": "array", "description": "Activiteiten uit DSO verzoek"},
-        {"name": "procedureType", "type": "string", "description": "Procedure type: regulier of uitgebreid", "enum": ["regulier", "uitgebreid"]},
-        {"name": "dsoVerzoekId", "type": "string", "description": "DSO verzoek identificatie"}
+        {"name": "bouwkosten", "propertyType": "number", "description": "Geschatte bouwkosten (EUR)"},
+        {"name": "oppervlakte", "propertyType": "number", "description": "Bouwoppervlakte in m2"},
+        {"name": "aantalBouwlagen", "propertyType": "number", "description": "Aantal bouwlagen"},
+        {"name": "bagObject", "propertyType": "string", "description": "BAG object referentie"},
+        {"name": "activiteiten", "propertyType": "json", "description": "Activiteiten uit DSO verzoek"},
+        {"name": "procedureType", "propertyType": "enum", "description": "Procedure type: regulier of uitgebreid", "enumValues": ["regulier", "uitgebreid"]},
+        {"name": "dsoVerzoekId", "propertyType": "string", "description": "DSO verzoek identificatie"}
       ]
     },
     {
@@ -71,8 +71,8 @@
         {"name": "Asbestinventarisatie", "description": "Rapport asbestinventarisatie"}
       ],
       "propertyDefinitions": [
-        {"name": "asbestInventarisatie", "type": "boolean", "description": "Of asbestinventarisatie is uitgevoerd"},
-        {"name": "sloopOppervlakte", "type": "number", "description": "Oppervlakte te slopen in m2"}
+        {"name": "asbestInventarisatie", "propertyType": "boolean", "description": "Of asbestinventarisatie is uitgevoerd"},
+        {"name": "sloopOppervlakte", "propertyType": "number", "description": "Oppervlakte te slopen in m2"}
       ]
     },
     {
@@ -101,9 +101,9 @@
         {"name": "Foto's", "description": "Foto's gemaakt tijdens inspectie"}
       ],
       "propertyDefinitions": [
-        {"name": "bouwvergunningZaak", "type": "string", "description": "Referentie naar de bouwvergunningzaak"},
-        {"name": "inspectieFases", "type": "array", "description": "Lijst van inspectiefases (fundering, ruwbouw, oplevering)"},
-        {"name": "laatsteInspectieResultaat", "type": "string", "description": "Resultaat van de laatste inspectie", "enum": ["conform", "niet_conform", "deels_conform"]}
+        {"name": "bouwvergunningZaak", "propertyType": "string", "description": "Referentie naar de bouwvergunningzaak"},
+        {"name": "inspectieFases", "propertyType": "json", "description": "Lijst van inspectiefases (fundering, ruwbouw, oplevering)"},
+        {"name": "laatsteInspectieResultaat", "propertyType": "enum", "description": "Resultaat van de laatste inspectie", "enumValues": ["conform", "niet_conform", "deels_conform"]}
       ]
     },
     {
@@ -125,9 +125,9 @@
         {"name": "Inrichtinghouder", "description": "Houder van de milieuvergunning"}
       ],
       "propertyDefinitions": [
-        {"name": "inspectieType", "type": "string", "description": "Type inspectie", "enum": ["periodiek", "incidenteel"]},
-        {"name": "risicoCategorie", "type": "string", "description": "Risicocategorie van de inrichting", "enum": ["hoog", "midden", "laag"]},
-        {"name": "voorgaandeInspecties", "type": "integer", "description": "Aantal eerdere inspecties"}
+        {"name": "inspectieType", "propertyType": "enum", "description": "Type inspectie", "enumValues": ["periodiek", "incidenteel"]},
+        {"name": "risicoCategorie", "propertyType": "enum", "description": "Risicocategorie van de inrichting", "enumValues": ["hoog", "midden", "laag"]},
+        {"name": "voorgaandeInspecties", "propertyType": "number", "description": "Aantal eerdere inspecties"}
       ]
     },
     {
@@ -159,14 +159,14 @@
         {"name": "Hercontrolerapport", "description": "Rapport van de hercontrole"}
       ],
       "propertyDefinitions": [
-        {"name": "overtredingstype", "type": "string", "description": "Type overtreding"},
-        {"name": "ernst", "type": "string", "description": "Ernst van de overtreding (LHS)", "enum": ["gering", "aanzienlijk", "ernstig"]},
-        {"name": "gedrag", "type": "string", "description": "Gedrag van de overtreder (LHS)", "enum": ["goedwillend", "onverschillig", "calculerend", "crimineel"]},
-        {"name": "intervention", "type": "string", "description": "Gekozen interventie (uit LHS matrix)"},
-        {"name": "penaltyPaymentAmount", "type": "number", "description": "Dwangsom per overtreding (EUR)"},
-        {"name": "penaltyPaymentMaximum", "type": "number", "description": "Maximale dwangsom (EUR)"},
-        {"name": "compliancePeriod", "type": "integer", "description": "Begunstigingstermijn in dagen"},
-        {"name": "bronInspectie", "type": "string", "description": "Referentie naar de toezichtzaak"}
+        {"name": "overtredingstype", "propertyType": "string", "description": "Type overtreding"},
+        {"name": "ernst", "propertyType": "enum", "description": "Ernst van de overtreding (LHS)", "enumValues": ["gering", "aanzienlijk", "ernstig"]},
+        {"name": "gedrag", "propertyType": "enum", "description": "Gedrag van de overtreder (LHS)", "enumValues": ["goedwillend", "onverschillig", "calculerend", "crimineel"]},
+        {"name": "intervention", "propertyType": "string", "description": "Gekozen interventie (uit LHS matrix)"},
+        {"name": "penaltyPaymentAmount", "propertyType": "number", "description": "Dwangsom per overtreding (EUR)"},
+        {"name": "penaltyPaymentMaximum", "propertyType": "number", "description": "Maximale dwangsom (EUR)"},
+        {"name": "compliancePeriod", "propertyType": "number", "description": "Begunstigingstermijn in dagen"},
+        {"name": "bronInspectie", "propertyType": "string", "description": "Referentie naar de toezichtzaak"}
       ]
     },
     {
@@ -186,9 +186,9 @@
         {"name": "Overtreder", "description": "De overtreder/schuldenaar"}
       ],
       "propertyDefinitions": [
-        {"name": "bronHandhavingszaak", "type": "string", "description": "Referentie naar de handhavingszaak"},
-        {"name": "verbeurdBedrag", "type": "number", "description": "Verbeurd bedrag (EUR)"},
-        {"name": "verbeuringsDatum", "type": "string", "description": "Datum van verbeuring"}
+        {"name": "bronHandhavingszaak", "propertyType": "string", "description": "Referentie naar de handhavingszaak"},
+        {"name": "verbeurdBedrag", "propertyType": "number", "description": "Verbeurd bedrag (EUR)"},
+        {"name": "verbeuringsDatum", "propertyType": "date", "description": "Datum van verbeuring"}
       ]
     }
   ],

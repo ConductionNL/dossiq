@@ -419,26 +419,24 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 		}
 
 		// Build the name → UUID map for statusTypes belonging to this caseType.
-		// 🔴 NOTHING ON THIS INSTANCE WRITES THESE, AND THE COMMENT THAT SAID
-		// OTHERWISE IS IN VthSeedDataRepairStep::seedCaseTypes(). It strips a
-		// case type's statusTypes before saving it, on the stated grounds that
-		// this step owns them. This step only READS them. So a VTH case type
-		// arrives with none, every template is skipped here, and the run
-		// reports "0 seeded" with no error anywhere. Measured on a clean rig on
-		// 2026-09-04: six VTH case types, 46 statusTypes on the instance and
-		// not one of them attached to a VTH case type.
+		// 🔑 THIS STEP READS THEM; IT HAS NEVER WRITTEN THEM. For a long time
+		// nothing did: VthSeedDataRepairStep stripped a case type's statusTypes
+		// before saving it, on the stated grounds that THIS step owned them, so
+		// a VTH case type arrived with none, every template was skipped here,
+		// and the run reported "0 seeded" with no error anywhere. Measured on a
+		// clean rig on 2026-09-04: six VTH case types, 46 statusTypes on the
+		// instance and not one of them attached to a VTH case type.
 		//
-		// Fixing that means deciding which step writes them and giving it an
-		// idempotency key, which is a change to what an install provisions
-		// rather than a repair. Filed rather than guessed. What this branch can
-		// do is say which thing is missing, in the output as well as the log,
-		// so the next reader is not left with a silent zero.
+		// VthCaseTypeChildSeeder now writes them, and info.xml runs
+		// VthSeedDataRepairStep before this step in both blocks. An empty map
+		// here therefore means a case type genuinely carries no statuses, which
+		// the message says rather than guessing at an owner.
 		$statusMap = $this->lookup->buildStatusMap(caseTypeId: $caseTypeId);
 		if ($statusMap === []) {
 			$output->warning(
 				'VTH catalog: case type "' . ($data['caseTypeSlug'] ?? '') . '" has no status types, so '
-				. 'template "' . $slug . '" cannot be built. Nothing seeds them yet: see '
-				. 'VthSeedDataRepairStep::seedCaseTypes().'
+				. 'template "' . $slug . '" cannot be built. VthSeedDataRepairStep seeds them and runs '
+				. 'first, so check its output above for why they are missing.'
 			);
 			$this->logger->warning(
 				'Dossiq: VTH workflow template — no statusTypes found for caseType',
