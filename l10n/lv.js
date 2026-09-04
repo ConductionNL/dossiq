@@ -356,7 +356,7 @@ OC.L10N.register(
         "{days} days overdue": "{days} dienas nokavētas",
         "{days} days remaining": "atlikušas {days} dienas",
         "{field} is required": "{field} ir obligāts",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (bez beigām)",
+        "{from} – (no end)": "{from} – (bez beigām)",
         "{hours} hours ago": "pirms {hours} stundām",
         "{min} min ago": "pirms {min} min",
         "{n} days": "{n} dienas",

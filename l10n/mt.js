@@ -356,7 +356,7 @@ OC.L10N.register(
         "{days} days overdue": "{days} jiem b'dewmien",
         "{days} days remaining": "{days} jiem fadal",
         "{field} is required": "{field} huwa meħtieġ",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (ebda tmiem)",
+        "{from} – (no end)": "{from} – (ebda tmiem)",
         "{hours} hours ago": "{hours} sigħat ilu",
         "{min} min ago": "{min} min ilu",
         "{n} days": "{n} jiem",

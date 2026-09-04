@@ -1967,7 +1967,7 @@ OC.L10N.register(
         "{days} days remaining": "{days} Deeg iwwreg",
         "{field} is required": "{field} ass erfuerderlech",
         "{filled} of {total} properties filled": "{filled} vun {total} Eegeschafte gefëllt",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (kee Enn)",
+        "{from} – (no end)": "{from} – (kee Enn)",
         "{hours} hours ago": "viru {hours} Stonnen",
         "{min} min ago": "viru {min} Min",
         "{n} conflicts": "{n} Konflikter",

@@ -355,7 +355,7 @@
         "{days} days overdue": "{days} дни просрочие",
         "{days} days remaining": "остават {days} дни",
         "{field} is required": "{field} е задължително",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (без край)",
+        "{from} – (no end)": "{from} – (без край)",
         "{hours} hours ago": "преди {hours} часа",
         "{min} min ago": "преди {min} мин",
         "{n} days": "{n} дни",

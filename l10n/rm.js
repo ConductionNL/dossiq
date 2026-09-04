@@ -1936,7 +1936,7 @@ OC.L10N.register(
         "{days} days remaining": "{days} dis restants",
         "{field} is required": "{field} è obligatoric",
         "{filled} of {total} properties filled": "{filled} da {total} proprietads emplenidas",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (nagina fin)",
+        "{from} – (no end)": "{from} – (nagina fin)",
         "{hours} hours ago": "avant {hours} uras",
         "{min} min ago": "avant {min} min",
         "{n} conflicts": "{n} conflicts",

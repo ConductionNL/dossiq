@@ -356,7 +356,7 @@ OC.L10N.register(
         "{days} days overdue": "{days} päivää myöhässä",
         "{days} days remaining": "{days} päivää jäljellä",
         "{field} is required": "{field} on pakollinen",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (ei loppua)",
+        "{from} – (no end)": "{from} – (ei loppua)",
         "{hours} hours ago": "{hours} tuntia sitten",
         "{min} min ago": "{min} min sitten",
         "{n} days": "{n} päivää",

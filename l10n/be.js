@@ -1967,7 +1967,7 @@ OC.L10N.register(
         "{days} days remaining": "засталося {days} дзён",
         "{field} is required": "{field} абавязкова",
         "{filled} of {total} properties filled": "{filled} з {total} уласцівасцей запоўнена",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (без канца)",
+        "{from} – (no end)": "{from} – (без канца)",
         "{hours} hours ago": "{hours} гадзін таму",
         "{min} min ago": "{min} хв таму",
         "{n} conflicts": "{n} канфліктаў",

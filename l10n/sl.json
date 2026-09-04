@@ -355,7 +355,7 @@
         "{days} days overdue": "{days} dni prepozno",
         "{days} days remaining": "preostalo dni: {days}",
         "{field} is required": "{field} je obvezno",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (brez konca)",
+        "{from} – (no end)": "{from} – (brez konca)",
         "{hours} hours ago": "pred {hours} urami",
         "{min} min ago": "pred {min} min",
         "{n} days": "{n} dni",

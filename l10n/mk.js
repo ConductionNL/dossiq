@@ -1936,7 +1936,7 @@ OC.L10N.register(
         "{days} days remaining": "{days} дена преостанати",
         "{field} is required": "{field} е задолжително",
         "{filled} of {total} properties filled": "{filled} од {total} својства пополнети",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (без крај)",
+        "{from} – (no end)": "{from} – (без крај)",
         "{hours} hours ago": "пред {hours} часа",
         "{min} min ago": "пред {min} мин",
         "{n} conflicts": "{n} конфликти",
