@@ -601,7 +601,10 @@ export async function cleanupRunObjects(
 	token: string,
 	schemas: string[] = [...FIXTURE_SCHEMAS],
 ): Promise<void> {
-	const survivors = await sweepPrefix(api, token, RUN_PREFIX, schemas)
+	const survivors = [
+		...(await sweepPrefix(api, token, RUN_PREFIX, schemas)),
+		...(await sweepTrash(api, token, RUN_PREFIX)),
+	]
 	if (survivors.length > 0) {
 		throw new Error(
 			'e2e teardown left objects behind, so the next run on this instance '
@@ -633,7 +636,48 @@ export async function sweepFixtureResidue(
 	api: APIRequestContext,
 	token: string,
 ): Promise<string[]> {
-	return sweepPrefix(api, token, FIXTURE_PREFIX, [...FIXTURE_SCHEMAS])
+	return [
+		...(await sweepPrefix(api, token, FIXTURE_PREFIX, [...FIXTURE_SCHEMAS])),
+		...(await sweepTrash(api, token, FIXTURE_PREFIX)),
+	]
+}
+
+/**
+ * Purge every TRASHED row whose body carries `prefix`.
+ *
+ * The live sweep cannot reach these: a spec that deletes its own object during
+ * a test soft-deletes it, so by teardown the row is gone from the object API
+ * and `sweepPrefix` never enumerates it, while it sits in the trash for good.
+ * After two full runs on one rig that surface held 8 prefixed rows with
+ * nothing to remove them.
+ *
+ * @param api    Authenticated request context.
+ * @param token  CSRF request-token.
+ * @param prefix Run prefix or family prefix.
+ * @return Trash ids that survived the sweep.
+ */
+async function sweepTrash(
+	api: APIRequestContext,
+	token: string,
+	prefix: string,
+): Promise<string[]> {
+	const matching = async (): Promise<string[]> => {
+		const res = await api.get(`${TRASH_BASE}?limit=500`).catch(() => null)
+		if (res === null || res.ok() === false) return []
+		const rows = unwrapList(await res.json().catch(() => ({})))
+		return rows
+			.filter((row: any) => JSON.stringify(row).includes(prefix))
+			.map((row: any) => objectId(row))
+			.filter((id: string) => id !== '')
+	}
+
+	for (const id of await matching()) {
+		await api
+			.delete(`${TRASH_BASE}/${id}`, { headers: writeHeaders(token) })
+			.catch(() => undefined)
+	}
+
+	return (await matching()).map((id) => `deleted/${id}`)
 }
 
 /**
