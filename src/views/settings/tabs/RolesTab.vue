@@ -233,7 +233,7 @@ export default {
 
 	methods: {
 		/**
-		 * @param value
+		 * @param {string|number|boolean|object} value The new value.
 		 * @spec openspec/specs/role-based-step-routing/spec.md
 		 */
 		genericRoleLabel(value) {
@@ -284,7 +284,7 @@ export default {
 		},
 
 		/**
-		 * @param rt
+		 * @param {object} rt The type being edited in this tab.
 		 * @spec openspec/specs/role-based-step-routing/spec.md
 		 */
 		startEdit(rt) {
@@ -326,7 +326,7 @@ export default {
 		},
 
 		/**
-		 * @param rt
+		 * @param {object} rt The type being edited in this tab.
 		 * @spec openspec/specs/role-based-step-routing/spec.md
 		 */
 		async deleteRoleType(rt) {

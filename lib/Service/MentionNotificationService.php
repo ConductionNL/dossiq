@@ -36,6 +36,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Service for sending Nextcloud notifications for note `@mention`s.
+ *
+ * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
  */
 class MentionNotificationService {
 	/**

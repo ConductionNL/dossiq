@@ -91,6 +91,8 @@ class TussenrapportageService {
 	 * @param int $termWeken The regeling assessment term.
 	 *
 	 * @return DateTimeImmutable The assessment deadline.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function computeBeoordelingstermijn(DateTimeImmutable $periodEnd, int $termWeken): DateTimeImmutable {
 		$termWeken = max(1, $termWeken);
@@ -106,6 +108,8 @@ class TussenrapportageService {
 	 * @param int $year The calendar year.
 	 *
 	 * @return array<int, array{start: string, eind: string}> The reporting periods.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function periodsForFrequentie(string $frequency, int $year): array {
 		if ($frequency === 'annually') {

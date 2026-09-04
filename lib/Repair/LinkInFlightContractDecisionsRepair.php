@@ -92,6 +92,8 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 	 * Get the name of this repair step.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/specs/contract-decision-delegation/spec.md
 	 */
 	public function getName(): string {
 		return 'Link in-flight Dossiq contract/besluitvorming cases to decidesk Decisions';

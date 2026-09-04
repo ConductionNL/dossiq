@@ -83,6 +83,7 @@ test.describe('Case lifecycle — state machine', () => {
 
 	/**
 	 * Open the Workflow Board via the sidebar and wait for its columns to load.
+	 *
 	 * @param page The page.
 	 */
 	async function openBoard(page: Page): Promise<void> {

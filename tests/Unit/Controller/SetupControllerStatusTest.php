@@ -476,6 +476,7 @@ class SetupControllerStatusTest extends TestCase {
 				'objects' => 412,
 				'requested' => 420,
 				'refused' => 8,
+				'unchanged' => 0,
 				'registers' => 0,
 				'schemas' => 0,
 			]
@@ -488,6 +489,7 @@ class SetupControllerStatusTest extends TestCase {
 		$this->assertStringContainsString('412', $data['message']);
 		$this->assertStringContainsString('420', $data['message']);
 		$this->assertStringContainsString('8 refused', $data['message']);
+		$this->assertStringContainsString('0 already present', $data['message']);
 		$this->assertSame(412, $data['detail']['objects']);
 		$this->assertSame('installed', $built['written']['demo_data_decided'] ?? null);
 

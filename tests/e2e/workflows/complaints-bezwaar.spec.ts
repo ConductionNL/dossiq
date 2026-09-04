@@ -81,6 +81,7 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 
 	/**
 	 * Seed a bezwaar linked to the shared parent case.
+	 *
 	 * @param awb    The AWB reference (unique, RUN_PREFIX-tagged).
 	 * @param status The initial workflow status.
 	 */
@@ -95,6 +96,7 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 
 	/**
 	 * Open the case list and wait for its rows to load.
+	 *
 	 * @param page The page.
 	 */
 	async function openBezwaren(page: Page): Promise<void> {

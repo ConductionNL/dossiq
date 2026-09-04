@@ -40,6 +40,8 @@ use RuntimeException;
  * Reads go through {@see MilestoneRepository} and the stalled-case report is
  * owned by {@see StalledCaseDetector}; what stays here is milestone mutation
  * (mark/reverse) and per-case progress.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class MilestoneService {
 

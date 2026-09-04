@@ -38,6 +38,8 @@ use RuntimeException;
  * Advisory bodies are departments (internal) or organizations (external) that
  * can be consulted during case processing. This service exposes CRUD, weighted
  * specialization search, and secure-token issuance for external notification.
+ *
+ * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-03
  */
 class AdvisoryBodyService {
 	use SearchesObjects;

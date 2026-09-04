@@ -36,6 +36,8 @@ namespace OCA\Dossiq\Service\Actions;
  * `webhook_timeout`, `unknown_action_ref`). Handlers MUST NEVER include
  * `$e->getMessage()` or raw exception text here — log the exception via
  * `LoggerInterface::error()` instead.
+ *
+ * @spec openspec/specs/automatic-actions/spec.md
  */
 final class ActionResult {
 	/**

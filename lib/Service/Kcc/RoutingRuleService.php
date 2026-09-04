@@ -38,6 +38,8 @@ use OCP\AppFramework\OCS\OCSBadRequestException;
  * Persists routing rules / agents and drives the routing engine.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
  */
 class RoutingRuleService {
 	/**
@@ -61,6 +63,8 @@ class RoutingRuleService {
 	 * List all routing rules.
 	 *
 	 * @return array<int, array<string, mixed>> The routing rules.
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	public function listRules(): array {
 		[$objectService, $register, $schema] = $this->resolve(schemaKey: 'routing_rule_schema');
@@ -76,6 +80,8 @@ class RoutingRuleService {
 	 * @return array<string, mixed> The saved rule.
 	 *
 	 * @throws OCSBadRequestException When validation fails.
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	public function createRule(array $data): array {
 		$payload = $this->validateRule(data: $data);
@@ -92,6 +98,8 @@ class RoutingRuleService {
 	 * @return array<string, mixed> The saved rule.
 	 *
 	 * @throws OCSBadRequestException When validation fails or not found.
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	public function updateRule(string $id, array $data): array {
 		$payload = $this->validateRule(data: $data);
@@ -165,6 +173,8 @@ class RoutingRuleService {
 	 * List all KCC agents.
 	 *
 	 * @return array<int, array<string, mixed>> The agents.
+	 *
+	 * @spec openspec/changes/kcc-routing-onto-or-decision-tables/specs/kcc-routing/spec.md#requirement-routing-rules-evaluate-through-the-shared-decision-table-engine
 	 */
 	public function listAgents(): array {
 		[$objectService, $register, $schema] = $this->resolve(schemaKey: 'kcc_agent_schema');

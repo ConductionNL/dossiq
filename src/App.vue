@@ -175,9 +175,6 @@ export default {
 		 *
 		 * @param {string} key Translation key.
 		 * @return {string} Translated string (or the key on miss).
-		 */
-		/**
-		 * @param key
 		 * @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md
 		 */
 		translateForApp(key) {

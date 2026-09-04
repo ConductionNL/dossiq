@@ -32,6 +32,8 @@ namespace OCA\Dossiq\Repair;
 
 /**
  * Pure predicates for the Dutch-to-English value migration.
+ *
+ * @spec exclude Predicate of the Dutch-to-English vocabulary migration.
  */
 class RenameDutchValueDecisions {
 

@@ -150,9 +150,11 @@ class DemoDataService {
 	 * the app already owns. A non-zero count here means the payload carried a
 	 * definitional block that {@see self::objectsOnly()} failed to strip.
 	 *
-	 * @return array{objects: integer, requested: integer, refused: integer, registers: integer, schemas: integer} What was asked for and what landed.
+	 * @return array{objects: integer, requested: integer, refused: integer, unchanged: integer,
+	 *     registers: integer, schemas: integer} What was asked for and what landed.
 	 *
-	 * @throws RuntimeException When the descriptor is missing or unreadable, OpenRegister is absent, or the import stored nothing.
+	 * @throws RuntimeException When the descriptor is missing or unreadable, OpenRegister is
+	 *     absent, or nothing was stored and nothing was already present.
 	 *
 	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
 	 */
@@ -189,11 +191,19 @@ class DemoDataService {
 
 		// The LANDING. An importer reply with no `objects` key has said nothing
 		// about objects, and nothing is zero — never "as many as we asked for".
-		$skipped  = (array)($result['skipped'] ?? []);
-		$imported = [
+		$skipped   = (array)($result['skipped'] ?? []);
+		$unchanged = (array)($result['unchanged'] ?? []);
+		$imported  = [
 			'objects'   => count((array)($result['objects'] ?? [])),
 			'requested' => $requested,
 			'refused'   => (int)($skipped['objects'] ?? 0),
+			// Already present at the same version, so correctly left alone.
+			// REPORTED BY THE IMPORTER, not inferred here: deriving it as
+			// `requested - stored - refused` looks equivalent and is not, because
+			// it silently reclassifies an object the importer dropped WITHOUT
+			// saying so as "already present", which is the exact failure this
+			// guard exists to catch.
+			'unchanged' => (int)($unchanged['objects'] ?? 0),
 			'registers' => count((array)($result['registers'] ?? [])),
 			'schemas'   => count((array)($result['schemas'] ?? [])),
 		];
@@ -204,16 +214,25 @@ class DemoDataService {
 		// recorded themselves as done. A descriptor that ships no objects at
 		// all is a different condition and stays a success: registers and
 		// schemas are a legitimate thing to ship on their own.
-		if ($requested > 0 && $imported['objects'] === 0) {
+		// STORING NOTHING IS NOT THE SAME AS FAILING. This read `objects === 0`
+		// alone, which refuses an import whose objects are already there, and
+		// that is the normal case on a second run. The step's own body promises
+		// it is "safe to run more than once", and an idempotent import
+		// necessarily stores zero the second time. Measured on CI, dossiq
+		// development, every run since 2026-09-03: 444 requested, 0 stored,
+		// reported as a hard failure on an install with nothing left to do.
+		//
+		// So the question is whether anything SURVIVED, not whether anything
+		// moved.
+		if ($requested > 0 && $imported['objects'] === 0 && $imported['unchanged'] === 0) {
 			throw new RuntimeException(
 				'The demo import stored 0 of ' . $requested . ' object(s) ('
-				. $imported['refused'] . ' refused by OpenRegister). Nothing was written, so this is not '
-				. 'an install. The demo set carries objects only and binds them to the register and schemas '
-				. 'this app already owns, so check first that the register import has run: `occ '
-				. 'maintenance:repair` provisions it. A schema slug that resolves to more than one row is '
-				. 'refused as ambiguous, which is what an instance still carrying the old `dossiq.demo` '
-				. 'schema fork looks like. Note also that an object whose version has not moved is left '
-				. 'alone: re-importing an already-imported demo set lands nothing.'
+				. $imported['refused'] . ' refused by OpenRegister) and none was already present. '
+				. 'Nothing was written, so this is not an install. The demo set carries objects only '
+				. 'and binds them to the register and schemas this app already owns, so check first '
+				. 'that the register import has run: `occ maintenance:repair` provisions it. A schema '
+				. 'slug that resolves to more than one row is refused as ambiguous, which is what an '
+				. 'instance still carrying the old `dossiq.demo` schema fork looks like.'
 			);
 		}
 

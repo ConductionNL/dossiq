@@ -36,6 +36,8 @@ use RuntimeException;
 
 /**
  * Mandate escalation lifecycle.
+ *
+ * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
  */
 class MandaatEscalatieService {
 	use SearchesObjects;

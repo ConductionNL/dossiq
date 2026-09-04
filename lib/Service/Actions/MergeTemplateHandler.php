@@ -36,6 +36,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Handler for `mergeTemplate` automatic actions.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class MergeTemplateHandler implements ActionHandlerInterface {
 	use HandlesTemplates;

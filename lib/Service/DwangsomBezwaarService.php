@@ -38,6 +38,8 @@ use RuntimeException;
 
 /**
  * Bezwaar lifecycle for a DwangsomBerekening.
+ *
+ * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
  */
 class DwangsomBezwaarService {
 	use SearchesObjects;

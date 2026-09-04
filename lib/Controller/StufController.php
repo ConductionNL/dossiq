@@ -65,6 +65,8 @@ use Psr\Log\LoggerInterface;
  * @psalm-suppress UnusedClass
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class StufController extends Controller {
 	/**

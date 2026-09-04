@@ -47,6 +47,7 @@ const API_BASE = '/index.php/apps/openregister/api/objects'
  * Read a CSRF request-token from a freshly-loaded dossiq page. The
  * OpenRegister write endpoints (POST/PUT/DELETE) are CSRF-protected, so
  * mutating calls must carry a `requesttoken` header. GET is not protected.
+ *
  * @param api  The authenticated request context (storageState).
  */
 export async function getRequestToken(api: APIRequestContext): Promise<string> {
@@ -61,6 +62,7 @@ export async function getRequestToken(api: APIRequestContext): Promise<string> {
 
 /**
  * Standard headers for a CSRF-protected write call.
+ *
  * @param token CSRF request-token.
  */
 function writeHeaders(token: string): Record<string, string> {
@@ -73,6 +75,7 @@ function writeHeaders(token: string): Record<string, string> {
 
 /**
  * Pull the object array out of OpenRegister's list/response envelopes.
+ *
  * @param body The parsed response body.
  */
 function unwrapList(body: any): any[] {
@@ -84,6 +87,7 @@ function unwrapList(body: any): any[] {
 
 /**
  * Pull a single object out of a create/show envelope.
+ *
  * @param body The parsed response body.
  */
 function unwrapObject(body: any): any {
@@ -96,6 +100,7 @@ function unwrapObject(body: any): any {
 
 /**
  * The OpenRegister id of an object (uuid preferred, numeric id fallback).
+ *
  * @param obj The object whose id to read.
  */
 export function objectId(obj: any): string {
@@ -104,6 +109,7 @@ export function objectId(obj: any): string {
 
 /**
  * Create one object of `schema` in the dossiq register.
+ *
  * @param api    Authenticated request context.
  * @param token  CSRF request-token.
  * @param schema Schema slug (e.g. "case", "caseType", "statusType").
@@ -129,6 +135,7 @@ export async function createObject(
 /**
  * List objects of `schema`, optionally filtered. Filters are passed as
  * query params (OpenRegister treats unknown params as field filters).
+ *
  * @param api    Authenticated request context.
  * @param schema Schema slug.
  * @param params Extra query params (filters / _limit).
@@ -146,6 +153,7 @@ export async function listObjects(
 
 /**
  * Fetch a single object by id.
+ *
  * @param api    Authenticated request context.
  * @param schema Schema slug.
  * @param id     Object id/uuid.
@@ -163,6 +171,7 @@ export async function showObject(
 /**
  * Delete a single object by id (idempotent — a 404 is tolerated so cleanup
  * never fails a suite when an earlier step already removed the row).
+ *
  * @param api    Authenticated request context.
  * @param token  CSRF request-token.
  * @param schema Schema slug.
@@ -185,6 +194,7 @@ export async function deleteObject(
  * swallowing it. Used to assert a rejection — e.g. an archival schema
  * (x-openregister-archival) returns 403 ArchivalImmutableException on a
  * user-driven delete.
+ *
  * @param api    Authenticated request context.
  * @param token  CSRF request-token.
  * @param schema Schema slug.
@@ -208,6 +218,7 @@ export async function tryDeleteObject(
  * requires `caseType`; a real caseType (with its statusTypes) is needed for
  * the transition engine. If none exists we seed a throwaway one tagged with
  * RUN_PREFIX so cleanup removes it.
+ *
  * @param api   Authenticated request context.
  * @param token CSRF request-token.
  */
@@ -236,6 +247,7 @@ export async function ensureCaseType(
 
 /**
  * Seed a case with the given title and fields. Returns the created object.
+ *
  * @param api    Authenticated request context.
  * @param token  CSRF request-token.
  * @param fields Case fields (must satisfy required title + caseType).
@@ -282,6 +294,7 @@ export interface StateMachine {
  * an arbitrary value), so a transition attempt while `description` is empty is
  * blocked by the engine (409) — which is what the guard-enforcement assertion
  * checks. Setting `description` then lets the same transition pass.
+ *
  * @param api   Authenticated request context.
  * @param token CSRF request-token.
  */
@@ -358,6 +371,7 @@ const DOSSIQ_API = '/index.php/apps/dossiq/api'
 
 /**
  * GET the engine's available transitions for a case.
+ *
  * @param api    Authenticated request context.
  * @param token  CSRF request-token.
  * @param caseId The case id/uuid.
@@ -375,6 +389,7 @@ export async function getAvailableTransitions(
 
 /**
  * POST a guarded transition. Returns {status, body} — caller asserts.
+ *
  * @param api          Authenticated request context.
  * @param token        CSRF request-token.
  * @param caseId       The case id/uuid.
@@ -397,6 +412,7 @@ export async function executeTransition(
 
 /**
  * GET the replayed transition history of a case.
+ *
  * @param api    Authenticated request context.
  * @param token  CSRF request-token.
  * @param caseId The case id/uuid.
@@ -414,6 +430,7 @@ export async function getTransitionHistory(
 
 /**
  * PUT a partial update onto an existing object (merges over the full body).
+ *
  * @param api    Authenticated request context.
  * @param token  CSRF request-token.
  * @param schema Schema slug.
@@ -442,6 +459,7 @@ export async function updateObject(
 /**
  * Find every object of `schema` whose stringified body contains RUN_PREFIX
  * and delete it. Used by afterAll to guarantee no seeded data is left behind.
+ *
  * @param api     Authenticated request context.
  * @param token   CSRF request-token.
  * @param schemas Schema slugs to sweep (order matters: children before parents).

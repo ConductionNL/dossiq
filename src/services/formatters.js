@@ -121,7 +121,7 @@ export default {
 	 * store; on the first render for an uncounted case it queues a batched
 	 * /api/deelzaken/counts fetch and re-renders once the count lands.
 	 *
-	 * @param {*} value Unused (the column key is the case UUID via `row`).
+	 * @param {unknown} value Unused (the column key is the case UUID via `row`).
 	 * @param {object} row The case object.
 	 * @return {string} Badge label, or '' when the case has no sub-cases.
 	 * @spec openspec/changes/deelzaak-support/tasks.md#T10

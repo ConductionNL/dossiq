@@ -129,6 +129,8 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 	 * Get the name of this repair step.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-006-in-flight-remaining-decision-cases-are-migrated-without-data-loss
 	 */
 	public function getName(): string {
 		return 'Link in-flight Dossiq bezwaar/advies/consultatie objects to decidesk Decisions';

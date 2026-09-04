@@ -29,6 +29,7 @@ const BASE = '/index.php/apps/openconnector/api/pdok'
 
 /**
  * Build an axios-style success response.
+ *
  * @param {*} data The response payload.
  * @return {{data: *}} An axios-shaped response.
  */
@@ -38,6 +39,7 @@ function ok(data) {
 
 /**
  * Build an axios-style HTTP error with a response status + body.
+ *
  * @param {number} status HTTP status to attach to error.response.
  * @param {object} [data] Response body (e.g. { message_key }).
  * @return {Error} An axios-shaped rejection error.

@@ -75,6 +75,8 @@ class BeschikkingService {
 	 * @param DateTimeImmutable $publication The publication date.
 	 *
 	 * @return DateTimeImmutable The bezwaartermijn end.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function computeBezwaartermijn(DateTimeImmutable $publication): DateTimeImmutable {
 		return $publication->add(new DateInterval('P' . (self::BEZWAARTERMIJN_WEKEN * 7) . 'D'));
@@ -88,6 +90,8 @@ class BeschikkingService {
 	 * @return void
 	 *
 	 * @throws OCSBadRequestException When validation fails.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function assertDraftValid(array $payload): void {
 		$granted = (float)($payload['grantedAmount'] ?? 0);

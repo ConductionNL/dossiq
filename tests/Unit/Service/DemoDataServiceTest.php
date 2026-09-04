@@ -100,16 +100,21 @@ class DemoDataServiceTest extends TestCase {
 	 *
 	 * @return object The fake.
 	 */
-	private function importerSpy(int $landed = 2, int $refused = 0): object {
-		return new class($landed, $refused) {
+	private function importerSpy(int $landed = 2, int $refused = 0, int $unchanged = 0): object {
+		return new class($landed, $refused, $unchanged) {
 			/** @var array<string, mixed> */
 			public array $seen = [];
 
 			/**
-			 * @param integer $landed  Objects created or updated.
-			 * @param integer $refused Objects refused.
+			 * @param integer $landed    Objects created or updated.
+			 * @param integer $refused   Objects refused.
+			 * @param integer $unchanged Objects already present at the same version.
 			 */
-			public function __construct(private readonly int $landed, private readonly int $refused) {
+			public function __construct(
+				private readonly int $landed,
+				private readonly int $refused,
+				private readonly int $unchanged,
+			) {
 			}
 
 			/**
@@ -127,6 +132,7 @@ class DemoDataServiceTest extends TestCase {
 					'schemas'   => ['Thing'],
 					'objects'   => array_fill(0, $this->landed, 'entity'),
 					'skipped'   => ['registers' => 0, 'schemas' => 0, 'objects' => $this->refused],
+					'unchanged' => ['objects' => $this->unchanged],
 				];
 			}
 		};
@@ -185,6 +191,34 @@ class DemoDataServiceTest extends TestCase {
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessageMatches('/0 of 4/');
 		$this->service->install();
+	}
+
+	/**
+	 * A RE-INSTALL STORES NOTHING AND IS STILL A SUCCESS.
+	 *
+	 * The setup step's own body tells the operator it is "safe to run more than
+	 * once", and an idempotent import necessarily stores zero the second time.
+	 * Reading `objects === 0` as failure broke that promise: measured on CI,
+	 * dossiq development, every run since 2026-09-03 reported a hard failure on
+	 * an install of 444 objects that had nothing left to do.
+	 *
+	 * `unchanged` is the importer's own count, added in openregister for this,
+	 * NOT `requested - stored - refused`. The subtraction looks equivalent and
+	 * is not: it reclassifies an object the importer dropped without saying so
+	 * as "already present", which is the failure the guard above exists to catch.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 */
+	public function testAnImportThatOnlyFoundExistingObjectsIsStillASuccess(): void {
+		$this->shipDescriptor(objects: 4);
+		$this->container->method('get')->willReturn($this->importerSpy(landed: 0, unchanged: 4));
+
+		$result = $this->service->install();
+
+		$this->assertSame(0, $result['objects'], 'nothing needed storing');
+		$this->assertSame(4, $result['unchanged'], 'and the reason is that all four were already there');
 	}
 
 	/**

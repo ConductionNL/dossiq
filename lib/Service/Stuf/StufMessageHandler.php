@@ -33,6 +33,8 @@ use DateTimeZone;
 
 /**
  * Persists and updates StufMessage audit rows.
+ *
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
  */
 class StufMessageHandler {
 

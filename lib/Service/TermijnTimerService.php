@@ -41,6 +41,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Arms, suspends, resumes, extends and cancels engine timers for AWB terms.
+ *
+ * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
  */
 class TermijnTimerService {
 	/**

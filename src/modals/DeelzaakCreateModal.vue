@@ -121,12 +121,12 @@
 		</div>
 
 		<template #actions>
-			<NcButton type="tertiary" @click="$emit('close')">
+			<NcButton variant="tertiary" @click="$emit('close')">
 				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 			<NcButton
 				v-if="availableCaseTypes.length > 0"
-				type="primary"
+				variant="primary"
 				:disabled="saving || !selectedCaseType"
 				@click="submit">
 				<template v-if="saving" #icon>
@@ -139,6 +139,7 @@
 </template>
 
 <script>
+import { getCurrentUser } from '@nextcloud/auth'
 import {
 	NcButton,
 	NcDialog,
@@ -348,7 +349,7 @@ export default {
 					(a, b) => (a.order || 0) - (b.order || 0),
 				)[0]
 				const currentUser =
-					(typeof OC !== 'undefined' && OC?.currentUser) || 'unknown'
+					(getCurrentUser() && getCurrentUser().uid) || 'unknown'
 
 				const caseData = {
 					title: this.form.title.trim(),

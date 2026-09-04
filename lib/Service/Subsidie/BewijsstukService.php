@@ -91,6 +91,8 @@ class BewijsstukService {
 	 * @param string $type The bewijsstuk type.
 	 *
 	 * @return bool True when the combination is on the whitelist.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function isTypeAllowed(string $linkedIn, string $type): bool {
 		$allowed = self::TYPE_WHITELIST[$linkedIn] ?? null;
@@ -109,6 +111,8 @@ class BewijsstukService {
 	 * @param int|null $override Regeling-configured retention, if any.
 	 *
 	 * @return int The retention years.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function bewaartermijnJaren(string $linkedIn, ?int $override = null): int {
 		if ($override !== null && $override > 0) {
@@ -125,6 +129,8 @@ class BewijsstukService {
 	 * @param int $jaren The retention years.
 	 *
 	 * @return DateTimeImmutable The retention end date.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function bewaartermijnEinde(DateTimeImmutable $from, int $jaren): DateTimeImmutable {
 		return $from->add(new DateInterval('P' . max(1, $jaren) . 'Y'));
@@ -136,6 +142,8 @@ class BewijsstukService {
 	 * @param string $contents The raw file contents.
 	 *
 	 * @return string The lowercase hex digest.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function computeHash(string $contents): string {
 		return hash('sha256', $contents);
@@ -148,6 +156,8 @@ class BewijsstukService {
 	 * @param string $expectedHash The recorded digest.
 	 *
 	 * @return bool True when the hash matches (constant-time compare).
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function verifyHash(string $contents, string $expectedHash): bool {
 		return hash_equals($expectedHash, $this->computeHash(contents: $contents));
@@ -208,6 +218,8 @@ class BewijsstukService {
 	 * @return void
 	 *
 	 * @throws OCSBadRequestException When the document is immutable.
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-007-bewijsstukken-management-with-bewaartermijn
 	 */
 	public function assertMutable(array $bewijsstuk): void {
 		if (($bewijsstuk['immutable'] ?? false) === true) {

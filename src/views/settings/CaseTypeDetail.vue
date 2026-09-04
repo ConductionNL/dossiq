@@ -220,6 +220,8 @@ export default {
 		},
 	},
 
+	emits: ['back', 'duplicated', 'saved'],
+
 	data() {
 		return {
 			form: { ...EMPTY_FORM },
@@ -297,8 +299,8 @@ export default {
 		},
 
 		/**
-		 * @param field
-		 * @param value
+		 * @param {object} field The field.
+		 * @param {string|number|boolean|object} value The new value.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
 		 */
 		onFieldUpdate(field, value) {
