@@ -77,13 +77,23 @@ class ProvisionAssignedGroups implements IRepairStep {
 	 * Every group the shipped register data assigns steps to.
 	 *
 	 * This list is the provisioning counterpart of the literals in
-	 * lib/Settings/dossiq_register.json; ProvisionAssignedGroupsTest sweeps
-	 * the shipped flows and fails when a group is assigned there that this
-	 * list does not provision, so the two cannot drift apart silently.
+	 * lib/Settings/dossiq_register.json and lib/Settings/register.d/*.json;
+	 * ProvisionAssignedGroupsTest sweeps the shipped flows and fails when a
+	 * group is assigned there that this list does not provision, so the two
+	 * cannot drift apart silently. The sweep reads `assigneeFallback` as well
+	 * as `assignee`: a fallback nobody is a member of fails exactly as loudly
+	 * as a primary nobody is a member of, and it fails on the case the primary
+	 * was already unable to serve.
+	 *
+	 * `bezwaarcommissie` is the bezwaaradviescommissie's own group, kept
+	 * separate from `behandelaars` on purpose: Awb art. 7:13 requires the
+	 * advisory committee to be independent of the officials who handled the
+	 * case, so routing its two steps to the handlers would be worse than the
+	 * unassigned steps it replaces.
 	 *
 	 * @var array<int, string>
 	 */
-	public const ASSIGNED_GROUPS = ['behandelaars'];
+	public const ASSIGNED_GROUPS = ['behandelaars', 'bezwaarcommissie'];
 
 	/**
 	 * Constructor.
@@ -200,7 +210,7 @@ class ProvisionAssignedGroups implements IRepairStep {
 
 		$output->info(
 			'Dossiq: seeded group "' . $groupId . '" with ' . count($added) . ' administrator(s): '
-			. implode(', ', $added) . '. Replace them with the real behandelaars in Users & groups.'
+			. implode(', ', $added) . '. Replace them with the real members in Users & groups.'
 		);
 		$this->logger->info(
 			'Dossiq: seeded assigned group with administrators',

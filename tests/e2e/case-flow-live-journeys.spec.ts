@@ -372,12 +372,12 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 		await shoot(page, '01-incomplete-case-filed.png')
 	})
 
-	test('Then one worker pass gives the applicant a task and the case says "Wacht op aanvulling"', async ({
+	test('Then one worker pass gives the handler a supplement task and the case says "Wacht op aanvulling"', async ({
 		page,
 	}) => {
 		workerPass()
 
-		// What the applicant reads, captured BEFORE the assertions so a
+		// What the applicant reads on the case, captured BEFORE the assertions so a
 		// failing run still leaves the evidence of what a person saw.
 		await openCase(page, incompleteCase, 'Carport Molenweg 5')
 		await shoot(page, '02-applicant-waiting-case.png')
@@ -385,19 +385,19 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 		const run = await getJson(api, `${OR}/flow-runs/${incompleteRun}`)
 		expect(
 			run.status,
-			`After the worker pass the run must be suspended on the applicant. ${await describeRun(api, incompleteRun)}`,
+			`After the worker pass the run must be suspended on the supplement ask. ${await describeRun(api, incompleteRun)}`,
 		).toBe('suspended')
 
 		const tasks = await tasksForCase(api, incompleteCase)
 		expect(
 			tasks,
-			'The incomplete case must have exactly one task for the applicant.',
+			'The incomplete case must have exactly one supplement task.',
 		).toHaveLength(1)
 		const task = tasks[0]
 		applicantTask = String(task.id)
-		expect(String(task.title)).toBe('Vul uw aanvraag aan')
+		expect(String(task.title)).toBe('Vraag de indiener om aanvulling')
 		expect(String(task.flowRun ?? '')).toBe(incompleteRun)
-		expect(String(task.flowNode ?? '')).toBe('ask-indiener')
+		expect(String(task.flowNode ?? '')).toBe('ask-aanvulling')
 		// The flow names `{{ case.assignee }}`; the task must carry the PERSON,
 		// not the placeholder, or nobody is allowed to answer it.
 		expect(String(task.assignee ?? '')).toBe(ADMIN_USER)
@@ -414,15 +414,18 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 		await page.goto(`/index.php/apps/dossiq/tasks/${applicantTask}`, {
 			waitUntil: 'domcontentloaded',
 		})
-		await expect(page.locator('body')).toContainText('Vul uw aanvraag aan', {
-			timeout: 20_000,
-		})
+		await expect(page.locator('body')).toContainText(
+			'Vraag de indiener om aanvulling',
+			{
+				timeout: 20_000,
+			},
+		)
 		// The task says WHICH case is waiting on it.
 		await expect(page.locator('body')).toContainText('Carport Molenweg 5')
 		await shoot(page, '03-applicant-task.png')
 	})
 
-	test('When the applicant supplies what was missing and completes the task, the case moves to "In behandeling"', async ({
+	test('When the missing detail is supplied and the task completed, the case moves to "In behandeling"', async ({
 		page,
 	}) => {
 		await updateObject(api, 'case', incompleteCase, {
@@ -443,7 +446,7 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 		)
 		expect(
 			status,
-			`Completing the applicant task must resume the run at the step that asked and re-check completeness. ${await describeRun(api, incompleteRun)}`,
+			`Completing the supplement task must resume the run at the step that asked and re-check completeness. ${await describeRun(api, incompleteRun)}`,
 		).toBe('In behandeling')
 		await expect(page.locator('body')).toContainText('In behandeling')
 
@@ -479,7 +482,9 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 
 		const tasks = await tasksForCase(api, completeCase)
 		expect(
-			tasks.filter((t) => String(t.title) === 'Vul uw aanvraag aan'),
+			tasks.filter(
+				(t) => String(t.title) === 'Vraag de indiener om aanvulling',
+			),
 			'A complete case must never be asked for more.',
 		).toHaveLength(0)
 

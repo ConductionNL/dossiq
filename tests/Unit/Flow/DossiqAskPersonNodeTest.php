@@ -271,9 +271,10 @@ class DossiqAskPersonNodeTest extends TestCase {
 	}//end testATemplatedAssigneeIsRenderedAgainstTheCase()
 
 	/**
-	 * An assignee template that resolves to nothing refuses LOUDLY. A quiet
-	 * empty assignee would create a task ANYONE can answer, because
-	 * OpenRegister's resume guard treats silence as "no restriction".
+	 * An assignee template that resolves to nothing refuses LOUDLY when the
+	 * step declares nowhere else to send the ask. A quiet empty assignee would
+	 * create a task ANYONE can answer, because OpenRegister's resume guard
+	 * treats silence as "no restriction".
 	 */
 	public function testAnAssigneeTemplateThatResolvesToNothingRefuses(): void {
 		$resume = self::resumeSlot('ask-indiener');
@@ -288,6 +289,97 @@ class DossiqAskPersonNodeTest extends TestCase {
 			self::assertSame([], $this->written, 'No task may be created for an assignee that resolved to nobody.');
 		}
 	}//end testAnAssigneeTemplateThatResolvesToNothingRefuses()
+
+	/**
+	 * 🔴 A CASE WITH NO ASSIGNEE GETS THE DECLARED FALLBACK, NOT A DEAD RUN.
+	 *
+	 * `assignee` is not in the case schema's `required`, so a case filed from
+	 * the New case dialog with only a title and a case type has none. The
+	 * supplement ask then threw
+	 * `could not resolve the assignee "{{ case.assignee }}"`, the run FAILED,
+	 * and the case sat in "Wacht op aanvulling" with no task for anybody and
+	 * nothing waiting on it. Reproduced twice on independent clean installs;
+	 * the e2e never saw it because every case it files names an assignee.
+	 *
+	 * The shipped flow now declares `behandelaars` as the fallback, so
+	 * unclaimed work reaches the handlers' queue instead of killing the case.
+	 *
+	 * @return void
+	 */
+	public function testTheDeclaredFallbackTakesTheAskWhenTheCaseNamesNobody(): void {
+		$resume = self::resumeSlot('ask-aanvulling');
+		$config = array_merge(
+			$this->config(),
+			['assignee' => '{{ case.assignee }}', 'assigneeFallback' => 'behandelaars']
+		);
+
+		try {
+			// The case names no assignee: exactly the New case dialog's shape.
+			$this->node()->execute($this->items(), $config, $this->context($resume));
+		} catch (FlowSuspension $e) {
+			// expected: the task is outstanding
+		}
+
+		self::assertCount(1, $this->written, 'The ask must still produce exactly one task.');
+		self::assertSame('behandelaars', $this->written[0]['assignee'], 'The task must carry the fallback group.');
+		self::assertSame(
+			'behandelaars',
+			$resume->get('assignee'),
+			'So must the resume slot, or the guard refuses every member of that group.'
+		);
+	}//end testTheDeclaredFallbackTakesTheAskWhenTheCaseNamesNobody()
+
+	/**
+	 * The fallback is a SECOND choice, never the first one.
+	 *
+	 * A case that does name a handler must reach that handler. A fallback that
+	 * won over a resolvable assignee would quietly move every ask onto a group
+	 * and lose the one person who owns the case.
+	 *
+	 * @return void
+	 */
+	public function testAResolvableAssigneeWinsOverTheFallback(): void {
+		$resume = self::resumeSlot('ask-aanvulling');
+		$items = [['json' => ['id' => 'case-1', 'title' => 'Dakkapel', 'assignee' => 'alice']]];
+		$config = array_merge(
+			$this->config(),
+			['assignee' => '{{ case.assignee }}', 'assigneeFallback' => 'behandelaars']
+		);
+
+		try {
+			$this->node()->execute($items, $config, $this->context($resume));
+		} catch (FlowSuspension $e) {
+			// expected: the task is outstanding
+		}
+
+		self::assertCount(1, $this->written);
+		self::assertSame('alice', $this->written[0]['assignee'], 'The case names a handler, so the handler is asked.');
+	}//end testAResolvableAssigneeWinsOverTheFallback()
+
+	/**
+	 * A fallback that resolves to nobody either still fails CLOSED.
+	 *
+	 * The fallback exists to give the ask a defined destination, not to make
+	 * "nobody" acceptable. If neither names a principal the step must refuse:
+	 * an unassigned task is answerable by any authenticated user.
+	 *
+	 * @return void
+	 */
+	public function testAFallbackThatResolvesToNothingStillRefuses(): void {
+		$resume = self::resumeSlot('ask-aanvulling');
+		$config = array_merge(
+			$this->config(),
+			['assignee' => '{{ case.assignee }}', 'assigneeFallback' => '{{ case.caseTypeOwner }}']
+		);
+
+		$this->expectException(RuntimeException::class);
+
+		try {
+			$this->node()->execute($this->items(), $config, $this->context($resume));
+		} finally {
+			self::assertSame([], $this->written, 'No task may be created when neither value names a principal.');
+		}
+	}//end testAFallbackThatResolvesToNothingStillRefuses()
 
 	/**
 	 * 🔑 The task names the run AND the node — both are needed to resume.

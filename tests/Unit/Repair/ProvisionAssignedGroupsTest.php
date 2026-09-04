@@ -59,8 +59,16 @@ class ProvisionAssignedGroupsTest extends TestCase {
 		$adminGroup = $this->createMock(IGroup::class);
 		$adminGroup->method('getUsers')->willReturn([$administrator]);
 
+		// ONCE PER GROUP, NOT ONCE. This used to say `once()` while the step
+		// provisioned one group, and adding a second turned every symptom into
+		// somebody else's: PHPUnit throws its "called more than expected" from
+		// inside addUser(), seedWithAdministrators() catches Throwable, and the
+		// run then reported the second group as created-but-empty. The failure
+		// named a warning nobody had written.
 		$created = $this->createMock(IGroup::class);
-		$created->expects($this->once())->method('addUser')->with($administrator);
+		$created->expects($this->exactly(count(ProvisionAssignedGroups::ASSIGNED_GROUPS)))
+			->method('addUser')
+			->with($administrator);
 
 		$groupManager = $this->createMock(IGroupManager::class);
 		$groupManager->method('groupExists')->willReturn(false);
@@ -246,9 +254,18 @@ class ProvisionAssignedGroupsTest extends TestCase {
 		$type = ($node['type'] ?? '');
 		if ($type === 'dossiq.askPerson') {
 			$config = (array)($node['config'] ?? []);
-			$assignee = trim((string)($config['assignee'] ?? ''));
-			if ($assignee !== '' && str_contains($assignee, '{{') === false) {
-				$found[] = ['file' => $file, 'assignee' => $assignee];
+
+			// BOTH KEYS, NOT JUST THE PRIMARY. `assigneeFallback` is where the
+			// ask goes when `{{ case.assignee }}` names nobody, which is the
+			// exact case the primary could not serve. A fallback group nobody
+			// is a member of fails the completion gate the same way a missing
+			// primary group does, and it fails on the run that had already
+			// found no other principal to ask.
+			foreach (['assignee', 'assigneeFallback'] as $key) {
+				$assignee = trim((string)($config[$key] ?? ''));
+				if ($assignee !== '' && str_contains($assignee, '{{') === false) {
+					$found[] = ['file' => $file, 'assignee' => $assignee];
+				}
 			}
 		}
 

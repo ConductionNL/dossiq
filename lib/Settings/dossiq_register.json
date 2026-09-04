@@ -1109,12 +1109,14 @@
                                     }
                                 },
                                 {
-                                    "id": "ask-indiener",
+                                    "id": "ask-aanvulling",
                                     "type": "dossiq.askPerson",
+                                    "_note": "THIS STEP ADDRESSES THE BEHANDELAAR, NOT THE INDIENER, AND IT USED TO BE NAMED AND WORDED AS THOUGH IT DID THE OPPOSITE. An indiener has no Nextcloud identity in this app at all: the case carries them as `initiatorSourceId` (a BSN, a KvK number or a contact URI) or as the pseudonymous `portalSubject`, while a task's `assignee` is a Nextcloud uid or group id and the completion gate resolves it as one. So the ask cannot go to the applicant. It goes to the handler, who asks the applicant and records the supplement on the case, which is also the only way `description` gets filled and the loop back to `check-complete` ever takes the `compleet` exit.\n\nAND IT MUST NAME SOMEBODY WHEN THE CASE NAMES NOBODY. `assignee` is not in the case schema's `required`, so a case filed from the New case dialog with only a title and a case type has none, `{{ case.assignee }}` resolved to nothing, and the run DIED here: reproduced twice on clean installs. `assigneeFallback` is the declared second choice, the same `behandelaars` group `task-behandelaar` already uses and ProvisionAssignedGroups already creates. Unassigned work goes to the group's queue rather than killing the case.",
                                     "config": {
-                                        "question": "Vul uw aanvraag aan",
-                                        "details": "Uw aanvraag is nog niet compleet. Vul de ontbrekende gegevens aan zodat wij verder kunnen.",
+                                        "question": "Vraag de indiener om aanvulling",
+                                        "details": "Deze aanvraag is niet compleet. Vraag de indiener om de ontbrekende gegevens en vul ze aan in de zaak.",
                                         "assignee": "{{ case.assignee }}",
+                                        "assigneeFallback": "behandelaars",
                                         "dueInDays": "14",
                                         "signalKey": "aanvulling"
                                     }
@@ -1251,11 +1253,11 @@
                                 {
                                     "id": "e-count",
                                     "from": "count-round",
-                                    "to": "ask-indiener"
+                                    "to": "ask-aanvulling"
                                 },
                                 {
                                     "id": "e-heraanbieding",
-                                    "from": "ask-indiener",
+                                    "from": "ask-aanvulling",
                                     "to": "check-complete"
                                 },
                                 {
@@ -1778,7 +1780,7 @@
                     "aanvulling": {
                         "type": "object",
                         "title": "Supplement answer",
-                        "description": "The signal payload of the applicant's supplement task (ask-indiener, signalKey aanvulling). The flow stamps it onto the case when the task completes. Declared because the store strips what the schema does not declare: an undeclared signal field is silently gone the moment any writer saves the case.",
+                        "description": "The signal payload of the supplement task (ask-aanvulling, signalKey aanvulling) the handler completes once the applicant has supplied what was missing. The flow stamps it onto the case when the task completes. Declared because the store strips what the schema does not declare: an undeclared signal field is silently gone the moment any writer saves the case.",
                         "visible": false
                     },
                     "voorbereiding": {

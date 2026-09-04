@@ -429,33 +429,135 @@ class CaseFlowDeclarationTest extends TestCase {
 	}//end flowDeclarationsIn()
 
 	/**
-	 * Each human step names an assignee.
+	 * Every shipped ask names somebody, in EVERY shipped flow.
 	 *
 	 * An unassigned step is answerable by ANYONE — OpenRegister's resume guard
 	 * treats silence as "no restriction", deliberately, because webhook and
 	 * child-run signals record no assignee. In a case flow that would mean any
-	 * authenticated user could advance somebody's application.
+	 * authenticated user could advance somebody's application, which is why
+	 * DossiqAskPersonNode::validateConfig refuses one outright.
+	 *
+	 * 🔴 THIS USED TO READ ONLY THE CASE FLOW, AND THE OTHER SHIPPED FLOW WAS
+	 * BROKEN THE WHOLE TIME. `register.d/72-committees-to-decidiq.json` ships a
+	 * bezwaar-advice flow whose two `dossiq.askPerson` nodes declared no
+	 * assignee at all: validateConfig therefore threw on the first execute and
+	 * every advice request ever created failed its run at the first human step.
+	 * Reading `$this->flow` alone could not see it. The sweep now walks every
+	 * declaration file, the same way testNoShippedFlowPutsAConditionOnAnEdge
+	 * does, so a second flow cannot be exempt from the first flow's rules.
 	 */
 	public function testEveryAskNamesWhoIsBeingAsked(): void {
-		$asks = array_values(
-			array_filter($this->flow['nodes'], static fn (array $n): bool => ($n['type'] ?? '') === 'dossiq.askPerson')
+		$asksSeen = 0;
+
+		foreach ($this->shippedFlows() as $entry) {
+			['file' => $file, 'flow' => $flow] = $entry;
+
+			foreach ((array)($flow['nodes'] ?? []) as $node) {
+				if (($node['type'] ?? '') !== 'dossiq.askPerson') {
+					continue;
+				}
+
+				$asksSeen++;
+				$where = sprintf('%s, flow "%s", node "%s"', $file, (string)($flow['name'] ?? '?'), (string)($node['id'] ?? '?'));
+
+				$this->assertNotSame(
+					'',
+					trim((string)($node['config']['assignee'] ?? '')),
+					sprintf('%s names nobody. validateConfig refuses that, so the run dies at this step.', $where)
+				);
+				$this->assertNotSame(
+					'',
+					trim((string)($node['config']['question'] ?? '')),
+					sprintf('%s asks nothing.', $where)
+				);
+			}
+		}
+
+		$this->assertGreaterThan(0, $asksSeen, 'The sweep found no shipped asks at all: the query, not the data, is broken.');
+	}//end testEveryAskNamesWhoIsBeingAsked()
+
+	/**
+	 * A templated assignee carries a literal fallback.
+	 *
+	 * 🔴 THE ONE THING A TEMPLATE CAN ALWAYS DO IS RESOLVE TO NOBODY, AND THAT
+	 * KILLED RUNS ON A FRESH RIG. The case flow's supplement ask named
+	 * `{{ case.assignee }}`, `assignee` is not in the case schema's `required`,
+	 * and a case filed from the New case dialog with only a title and a case
+	 * type therefore has none. The step threw
+	 * `could not resolve the assignee "{{ case.assignee }}"`, the run failed,
+	 * and the case sat in "Wacht op aanvulling" with no task for anybody.
+	 * Reproduced twice on independent clean installs.
+	 *
+	 * So a declaration that MIGHT render to nobody must say where the ask goes
+	 * when it does. The fallback must be a literal: a second template can fail
+	 * the same way the first one did, on the same missing field, and would only
+	 * move the failure one line down. ProvisionAssignedGroupsTest separately
+	 * requires that literal to be a group the install actually creates.
+	 */
+	public function testEveryTemplatedAssigneeDeclaresALiteralFallback(): void {
+		$checked = 0;
+
+		foreach ($this->shippedFlows() as $entry) {
+			['file' => $file, 'flow' => $flow] = $entry;
+
+			foreach ((array)($flow['nodes'] ?? []) as $node) {
+				if (($node['type'] ?? '') !== 'dossiq.askPerson') {
+					continue;
+				}
+
+				$assignee = trim((string)($node['config']['assignee'] ?? ''));
+				if (str_contains($assignee, '{{') === false) {
+					continue;
+				}
+
+				$checked++;
+				$where = sprintf('%s, flow "%s", node "%s"', $file, (string)($flow['name'] ?? '?'), (string)($node['id'] ?? '?'));
+				$fallback = trim((string)($node['config']['assigneeFallback'] ?? ''));
+
+				$this->assertNotSame(
+					'',
+					$fallback,
+					sprintf(
+						'%s names the template "%s" and no assigneeFallback. When it resolves to nobody the '
+						. 'step throws and the run dies, which is what a case filed with no assignee did.',
+						$where,
+						$assignee
+					)
+				);
+				$this->assertStringNotContainsString(
+					'{{',
+					$fallback,
+					sprintf('%s falls back to another template, which can fail exactly as the first one did.', $where)
+				);
+			}
+		}
+
+		$this->assertGreaterThan(0, $checked, 'No shipped ask templates its assignee: the query, not the data, is broken.');
+	}//end testEveryTemplatedAssigneeDeclaresALiteralFallback()
+
+	/**
+	 * Every flow declared in every shipped register file.
+	 *
+	 * @return array<int, array{file: string, flow: array<string, mixed>}> The declarations.
+	 */
+	private function shippedFlows(): array {
+		$files = array_merge(
+			[__DIR__ . '/../../../lib/Settings/dossiq_register.json'],
+			(glob(__DIR__ . '/../../../lib/Settings/register.d/*.json') ?: [])
 		);
 
-		$this->assertNotEmpty($asks);
+		$found = [];
+		foreach ($files as $file) {
+			$document = json_decode((string)file_get_contents($file), true);
+			$this->assertIsArray($document, basename((string)$file) . ' must be valid JSON.');
 
-		foreach ($asks as $ask) {
-			$this->assertNotSame(
-				'',
-				trim((string)($ask['config']['assignee'] ?? '')),
-				sprintf('Ask node "%s" names nobody, so anyone could answer it.', $ask['id'])
-			);
-			$this->assertNotSame(
-				'',
-				trim((string)($ask['config']['question'] ?? '')),
-				sprintf('Ask node "%s" asks nothing.', $ask['id'])
-			);
+			foreach ($this->flowDeclarationsIn($document) as $flow) {
+				$found[] = ['file' => basename((string)$file), 'flow' => $flow];
+			}
 		}
-	}//end testEveryAskNamesWhoIsBeingAsked()
+
+		return $found;
+	}//end shippedFlows()
 
 	/**
 	 * The case cannot reach its final status without its decision document.

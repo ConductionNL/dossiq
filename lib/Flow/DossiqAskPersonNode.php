@@ -536,11 +536,26 @@ class DossiqAskPersonNode implements IFlowNode {
      * what orphaned every applicant task live: FlowRunAssignee compared real
      * uids against the un-rendered placeholder and refused all of them.
      *
-     * 🔴 AN EMPTY RENDERING REFUSES LOUDLY. A template that resolves to
-     * nothing would create an UNASSIGNED task, and OpenRegister's resume guard
-     * deliberately lets anyone answer a step that names no assignee — so a
-     * quiet fallback here would open the case's progress to any authenticated
-     * user. Failing the step is the safe direction.
+     * 🔴 AN EMPTY RENDERING NEVER FALLS BACK TO NOBODY. A template that
+     * resolves to nothing would create an UNASSIGNED task, and OpenRegister's
+     * resume guard deliberately lets anyone answer a step that names no
+     * assignee — so a quiet empty here would open the case's progress to any
+     * authenticated user.
+     *
+     * 🔴 BUT REFUSING WAS NOT A DEFINED BEHAVIOUR EITHER, AND IT KILLED RUNS.
+     * `{{ case.assignee }}` is the shipped spelling, and `assignee` is NOT in
+     * the case schema's `required`: a case filed from the New case dialog with
+     * only a title and a case type has none. The step then threw, the run
+     * failed, and the case sat in `Wacht op aanvulling` with nothing waiting
+     * on it and no task for anybody. Reproduced twice on clean installs.
+     *
+     * So a declaration may name an `assigneeFallback`: the principal the ask
+     * goes to when the primary resolves to nobody. That is a DECLARED second
+     * choice, not a silent one. It is written in the flow, CaseFlowDeclaration
+     * Test requires it of every templated assignee, and ProvisionAssignedGroups
+     * Test requires the group it names to be provisioned. A declaration with no
+     * fallback still refuses, and a fallback that itself resolves to nothing
+     * refuses too: failing closed stays the last word.
      *
      * The case is offered under both its own keys and a `case.` prefix,
      * because the declarations write `{{ case.assignee }}` — the same spelling
@@ -551,7 +566,69 @@ class DossiqAskPersonNode implements IFlowNode {
      *
      * @return string The rendered assignee.
      *
-     * @throws RuntimeException When the assignee renders empty or unresolved.
+     * @throws RuntimeException When neither the assignee nor its declared
+     *                          fallback resolves to a principal.
+     *
+     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     */
+    private function renderedAssignee(array $config, array $items): string {
+        $case  = [];
+        $first = ($items[0] ?? null);
+        if (is_array($first) === true) {
+            $case = (array) ($first['json'] ?? []);
+        }
+
+        $json = array_merge($case, ['case' => $case]);
+
+        $primary  = trim((string) ($config['assignee'] ?? ''));
+        $resolved = $this->renderPrincipal(raw: $primary, json: $json);
+        if ($resolved !== '') {
+            return $resolved;
+        }
+
+        $fallback = trim((string) ($config['assigneeFallback'] ?? ''));
+        if ($fallback !== '') {
+            $resolved = $this->renderPrincipal(raw: $fallback, json: $json);
+            if ($resolved !== '') {
+                $this->logger->info(
+                    'Dossiq askPerson: "' . $primary . '" named nobody on this case, so the ask goes to its '
+                        . 'declared fallback "' . $resolved . '"',
+                    ['case' => (string) ($case['id'] ?? ($case['uuid'] ?? ''))]
+                );
+
+                return $resolved;
+            }
+        }
+
+        $why = 'the step declares no assigneeFallback to send the ask to instead';
+        if ($fallback !== '') {
+            $why = sprintf('its fallback "%s" resolved to nobody either', $fallback);
+        }
+
+        throw new RuntimeException(
+            sprintf(
+                'dossiq.askPerson could not resolve the assignee "%s" against the case, and %s',
+                $primary,
+                $why
+            )
+        );
+
+    }//end renderedAssignee()
+
+
+    /**
+     * Render one authored principal against the case, or return nothing.
+     *
+     * "Nothing" covers all three ways an authored value fails to name
+     * somebody: an empty rendering, one the engine could not resolve, and one
+     * that came back as a structure rather than a name. The caller decides
+     * what to do about it, because the answer differs between the primary
+     * assignee and its fallback.
+     *
+     * @param string $raw  The authored value, template or literal.
+     * @param array  $json The case, under its own keys and a `case.` prefix.
+     *
+     * @return string The rendered principal, or '' when it names nobody.
      *
      * @SuppressWarnings(PHPMD.StaticAccess) FlowValueTemplate is the engine's
      *     canonical rendering API and is published as a static, final class —
@@ -559,32 +636,20 @@ class DossiqAskPersonNode implements IFlowNode {
      *
      * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
      */
-    private function renderedAssignee(array $config, array $items): string {
-        $raw = trim((string) ($config['assignee'] ?? ''));
-
-        $case  = [];
-        $first = ($items[0] ?? null);
-        if (is_array($first) === true) {
-            $case = (array) ($first['json'] ?? []);
+    private function renderPrincipal(string $raw, array $json): string {
+        if ($raw === '') {
+            return '';
         }
 
-        $rendered = FlowValueTemplate::renderTracked(value: $raw, json: array_merge($case, ['case' => $case]));
-
-        $value = $rendered['value'];
-        if (is_array($value) === true || trim((string) $value) === '' || $rendered['unresolved'] !== []) {
-            $detail = '';
-            if ($rendered['unresolved'] !== []) {
-                $detail = ' (unresolved: ' . implode(', ', $rendered['unresolved']) . ')';
-            }
-
-            throw new RuntimeException(
-                sprintf('dossiq.askPerson could not resolve the assignee "%s" against the case%s', $raw, $detail)
-            );
+        $rendered = FlowValueTemplate::renderTracked(value: $raw, json: $json);
+        $value    = $rendered['value'];
+        if (is_array($value) === true || $rendered['unresolved'] !== []) {
+            return '';
         }
 
         return trim((string) $value);
 
-    }//end renderedAssignee()
+    }//end renderPrincipal()
 
 
     /**
