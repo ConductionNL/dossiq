@@ -356,7 +356,7 @@ OC.L10N.register(
         "{days} days overdue": "{days} ditë me vonesë",
         "{days} days remaining": "{days} ditë të mbetura",
         "{field} is required": "{field} është i detyrueshëm",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (pa fund)",
+        "{from} – (no end)": "{from} – (pa fund)",
         "{hours} hours ago": "{hours} orë më parë",
         "{min} min ago": "{min} min më parë",
         "{n} days": "{n} ditë",

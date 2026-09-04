@@ -1936,7 +1936,7 @@ OC.L10N.register(
         "{days} days remaining": "залишилось {days} днів",
         "{field} is required": "{field} є обов'язковим",
         "{filled} of {total} properties filled": "заповнено {filled} з {total} властивостей",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (без завершення)",
+        "{from} – (no end)": "{from} – (без завершення)",
         "{hours} hours ago": "{hours} годин тому",
         "{min} min ago": "{min} хв тому",
         "{n} conflicts": "{n} конфліктів",

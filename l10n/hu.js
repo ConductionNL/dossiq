@@ -356,7 +356,7 @@ OC.L10N.register(
         "{days} days overdue": "{days} nap késésben",
         "{days} days remaining": "{days} nap van hátra",
         "{field} is required": "A(z) {field} megadása kötelező",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (nincs vége)",
+        "{from} – (no end)": "{from} – (nincs vége)",
         "{hours} hours ago": "{hours} órája",
         "{min} min ago": "{min} perce",
         "{n} days": "{n} nap",

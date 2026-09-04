@@ -356,7 +356,7 @@ OC.L10N.register(
         "{days} days overdue": "{days} dní po termíne",
         "{days} days remaining": "zostáva {days} dní",
         "{field} is required": "{field} je povinný",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (bez konca)",
+        "{from} – (no end)": "{from} – (bez konca)",
         "{hours} hours ago": "pred {hours} hodinami",
         "{min} min ago": "pred {min} min",
         "{n} days": "{n} dní",

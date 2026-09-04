@@ -356,7 +356,7 @@ OC.L10N.register(
         "{days} days overdue": "{days} ημέρες καθυστέρηση",
         "{days} days remaining": "απομένουν {days} ημέρες",
         "{field} is required": "Το {field} είναι υποχρεωτικό",
-        "{from} \\u2014 (no end)": "{from} \\u2014 (χωρίς λήξη)",
+        "{from} – (no end)": "{from} – (χωρίς λήξη)",
         "{hours} hours ago": "πριν από {hours} ώρες",
         "{min} min ago": "πριν από {min} λεπτά",
         "{n} days": "{n} ημέρες",
