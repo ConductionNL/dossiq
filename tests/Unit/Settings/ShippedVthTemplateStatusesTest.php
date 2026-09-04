@@ -213,6 +213,60 @@ class ShippedVthTemplateStatusesTest extends TestCase {
 	}
 
 	/**
+	 * Two catalogue entries on one case type must both say so.
+	 *
+	 * 🔴 THE SECOND PUBLISH RETIRES THE FIRST, AND THAT IS THE MODEL WORKING.
+	 * One published definition per case type is what `lifecycleStatus`
+	 * declares, so `handhavingszaak` carrying both `handhavingstraject` and
+	 * `spoedig-herstel` means whichever the glob reaches last deprecates the
+	 * other. Nothing is broken and nothing errors, which is why it went
+	 * unnoticed: a workflow simply stops backing new cases.
+	 *
+	 * The model has no variant mechanism to express it with, and choosing
+	 * between a second case type and a new engine feature is a product
+	 * decision. Until it is taken, the pairing is recorded on both entries, so
+	 * a third template arriving on an occupied case type cannot be silent.
+	 *
+	 * @return void
+	 */
+	public function testEntriesSharingACaseTypeRecordThatTheyDo(): void {
+		$byCaseType = [];
+		foreach ($this->catalogue() as $slug => $entry) {
+			if ((bool)($entry['crossLink'] ?? false) === true) {
+				continue;
+			}
+
+			$byCaseType[(string)($entry['caseTypeSlug'] ?? '')][$slug] = $entry;
+		}
+
+		$unrecorded = [];
+		foreach ($byCaseType as $caseTypeSlug => $entries) {
+			if (count($entries) < 2) {
+				continue;
+			}
+
+			foreach ($entries as $slug => $entry) {
+				$note = (string)($entry['_sharesItsCaseTypeWith'] ?? '');
+				$siblings = array_values(array_diff(array_keys($entries), [$slug]));
+				foreach ($siblings as $sibling) {
+					if (str_contains($note, $sibling) === false) {
+						$unrecorded[] = $slug . ' shares case type "' . $caseTypeSlug
+							. '" with ' . $sibling . ', and does not name it in _sharesItsCaseTypeWith';
+					}
+				}
+			}
+		}
+
+		self::assertSame(
+			[],
+			$unrecorded,
+			"Publishing the second template for a case type deprecates the first, silently.\n"
+			. "Record the pairing on every entry that shares a case type, naming the other:\n - "
+			. implode("\n - ", $unrecorded)
+		);
+	}
+
+	/**
 	 * Every status name one catalogue entry refers to.
 	 *
 	 * The wildcard `*` is a legal fromStatus meaning "from any status", so it

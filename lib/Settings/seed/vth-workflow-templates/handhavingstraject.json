@@ -5,6 +5,7 @@
   "description": "Workflow voor een handhavingstraject conform de Landelijke Handhavingsstrategie (LHS). Volgt de Awb-procedure 5:24 met redelijke termijn voor herstel.",
   "version": 1,
   "caseTypeSlug": "handhavingszaak",
+  "_sharesItsCaseTypeWith": "This case type also carries \"spoedig-herstel\", the Awb 5:31 route. One published definition per case type is the workflow-definition model, so whichever of the two the seeder reaches last deprecates the other. Both routes are real and neither is wrong. See the Notes under the Handhavingszaak requirement in openspec/specs/vth-workflow-templates/spec.md.",
   "statutoryFramework": "Awb 5:24 + LHS",
   "steps": [
     {
