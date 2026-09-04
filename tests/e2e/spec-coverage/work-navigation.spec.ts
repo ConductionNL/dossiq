@@ -4,9 +4,10 @@
  *
  * The work navigation group.
  *
- * "Work queue" is now "My work", and it gathers the four surfaces a handler
- * actually works from: the cases assigned to them, every case, their tasks, and
- * the workflow board. "Cases" is no longer a separate top-level entry — it
+ * "Work queue" is now "My work", and it gathers the five surfaces a handler
+ * actually works from: the queue of cases nobody has picked up, the cases
+ * assigned to them, every case, their tasks, and the workflow board. "Cases" is
+ * no longer a separate top-level entry — it
  * lives in the group as "All cases". It was briefly "All issues"; dossiq talks
  * about cases everywhere else, and one surface calling them issues was the only
  * place the vocabulary broke.
@@ -29,7 +30,7 @@ test.describe('Work navigation', () => {
 	test.setTimeout(300_000)
 
 	// @e2e openspec/specs/my-work/spec.md
-	test('the work group is named after the work, and holds all four surfaces', async ({
+	test('the work group is named after the work, and holds all five surfaces', async ({
 		page,
 	}) => {
 		await page.goto('/apps/dossiq/')
@@ -39,6 +40,7 @@ test.describe('Work navigation', () => {
 
 		for (const label of [
 			/^\s*(My work|Mijn werk)\s*$/i,
+			/^\s*(Queue|Werkvoorraad)\s*$/i,
 			/^\s*(Assigned to me|Aan mij toegewezen)\s*$/i,
 			/^\s*(All cases|Alle zaken)\s*$/i,
 			/^\s*(Tasks|Taken)\s*$/i,
