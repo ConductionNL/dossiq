@@ -286,6 +286,19 @@
                         "default": false,
                         "description": "Whether this is a terminal/final status",
                         "title": "Is Final"
+                    },
+                    "role": {
+                        "type": "string",
+                        "enum": [
+                            "intake",
+                            "pending-info",
+                            "in-progress",
+                            "review",
+                            "closed",
+                            "stranded"
+                        ],
+                        "description": "What this status MEANS in a process, independent of what it is called. A shipped flow moves a case by role, so it works on a case type that calls its working phase Beoordeling or Onderzoek rather than In behandeling. Leave it empty for a status no flow needs to address.",
+                        "title": "Role"
                     }
                 }
             },
@@ -1050,7 +1063,8 @@
                                     "id": "status-ontvangen",
                                     "type": "dossiq.setStatus",
                                     "config": {
-                                        "status": "Ontvangen"
+                                        "status": "Ontvangen",
+                                        "role": "intake"
                                     }
                                 },
                                 {
@@ -1105,7 +1119,9 @@
                                     "id": "status-wacht",
                                     "type": "dossiq.setStatus",
                                     "config": {
-                                        "status": "Wacht op aanvulling"
+                                        "status": "Wacht op aanvulling",
+                                        "role": "pending-info",
+                                        "required": false
                                     }
                                 },
                                 {
@@ -1125,7 +1141,9 @@
                                     "id": "status-gestrand",
                                     "type": "dossiq.setStatus",
                                     "config": {
-                                        "status": "Gestrand"
+                                        "status": "Gestrand",
+                                        "role": "stranded",
+                                        "required": false
                                     }
                                 },
                                 {
@@ -1137,7 +1155,8 @@
                                     "id": "status-behandeling",
                                     "type": "dossiq.setStatus",
                                     "config": {
-                                        "status": "In behandeling"
+                                        "status": "In behandeling",
+                                        "role": "in-progress"
                                     }
                                 },
                                 {
@@ -1173,7 +1192,9 @@
                                     "id": "status-commissie",
                                     "type": "dossiq.setStatus",
                                     "config": {
-                                        "status": "Bij commissie"
+                                        "status": "Bij commissie",
+                                        "role": "review",
+                                        "required": false
                                     }
                                 },
                                 {
@@ -1204,7 +1225,8 @@
                                     "id": "status-afgehandeld",
                                     "type": "dossiq.setStatus",
                                     "config": {
-                                        "status": "Afgehandeld"
+                                        "status": "Afgehandeld",
+                                        "role": "closed"
                                     }
                                 },
                                 {
@@ -9449,7 +9471,8 @@
                 "caseType": "@ref:omgevingsvergunning",
                 "description": "Aanvraag is ontvangen en geregistreerd",
                 "order": 1,
-                "isFinal": false
+                "isFinal": false,
+                "role": "intake"
             },
             {
                 "@self": {
@@ -9461,7 +9484,8 @@
                 "caseType": "@ref:omgevingsvergunning",
                 "description": "Aanvraag wordt inhoudelijk getoetst",
                 "order": 2,
-                "isFinal": false
+                "isFinal": false,
+                "role": "in-progress"
             },
             {
                 "@self": {
@@ -9473,7 +9497,8 @@
                 "caseType": "@ref:omgevingsvergunning",
                 "description": "Besluit wordt voorbereid en genomen",
                 "order": 3,
-                "isFinal": false
+                "isFinal": false,
+                "role": "review"
             },
             {
                 "@self": {
@@ -9485,7 +9510,8 @@
                 "caseType": "@ref:omgevingsvergunning",
                 "description": "Zaak is afgehandeld en gearchiveerd",
                 "order": 4,
-                "isFinal": true
+                "isFinal": true,
+                "role": "closed"
             },
             {
                 "@self": {
@@ -9497,7 +9523,8 @@
                 "caseType": "@ref:subsidieaanvraag",
                 "description": "Subsidieaanvraag is ontvangen",
                 "order": 1,
-                "isFinal": false
+                "isFinal": false,
+                "role": "intake"
             },
             {
                 "@self": {
@@ -9509,7 +9536,8 @@
                 "caseType": "@ref:subsidieaanvraag",
                 "description": "Aanvraag wordt getoetst aan subsidiekader",
                 "order": 2,
-                "isFinal": false
+                "isFinal": false,
+                "role": "in-progress"
             },
             {
                 "@self": {
@@ -9521,7 +9549,8 @@
                 "caseType": "@ref:subsidieaanvraag",
                 "description": "Subsidiebesluit wordt voorbereid en genomen",
                 "order": 3,
-                "isFinal": false
+                "isFinal": false,
+                "role": "review"
             },
             {
                 "@self": {
@@ -9533,7 +9562,8 @@
                 "caseType": "@ref:subsidieaanvraag",
                 "description": "Subsidie is verleend, geweigerd of ingetrokken",
                 "order": 4,
-                "isFinal": true
+                "isFinal": true,
+                "role": "closed"
             },
             {
                 "@self": {
@@ -9545,7 +9575,8 @@
                 "caseType": "@ref:klacht-behandeling",
                 "description": "Klacht is ontvangen en geregistreerd",
                 "order": 1,
-                "isFinal": false
+                "isFinal": false,
+                "role": "intake"
             },
             {
                 "@self": {
@@ -9557,7 +9588,8 @@
                 "caseType": "@ref:klacht-behandeling",
                 "description": "Klacht wordt onderzocht (hoor en wederhoor)",
                 "order": 2,
-                "isFinal": false
+                "isFinal": false,
+                "role": "in-progress"
             },
             {
                 "@self": {
@@ -9569,7 +9601,8 @@
                 "caseType": "@ref:klacht-behandeling",
                 "description": "Klacht is afgehandeld met formeel antwoord",
                 "order": 3,
-                "isFinal": true
+                "isFinal": true,
+                "role": "closed"
             },
             {
                 "@self": {
@@ -9581,7 +9614,8 @@
                 "caseType": "@ref:melding-openbare-ruimte",
                 "description": "Melding is ontvangen en doorgezet",
                 "order": 1,
-                "isFinal": false
+                "isFinal": false,
+                "role": "intake"
             },
             {
                 "@self": {
@@ -9593,7 +9627,8 @@
                 "caseType": "@ref:melding-openbare-ruimte",
                 "description": "Melding wordt afgehandeld door beheerdienst",
                 "order": 2,
-                "isFinal": false
+                "isFinal": false,
+                "role": "in-progress"
             },
             {
                 "@self": {
@@ -9605,7 +9640,8 @@
                 "caseType": "@ref:melding-openbare-ruimte",
                 "description": "Melding is opgelost en afgesloten",
                 "order": 3,
-                "isFinal": true
+                "isFinal": true,
+                "role": "closed"
             },
             {
                 "@self": {
