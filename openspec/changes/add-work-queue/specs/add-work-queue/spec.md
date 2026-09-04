@@ -8,10 +8,11 @@ dossiq SHALL provide a Queue page at `/queue`, an index over the `case` schema
 filtered to cases with no `assignee` and `isFinalStatus` false. It SHALL sit first in
 the My work group, above Assigned to me.
 
-The base filter SHALL be `assignee: "IS NULL"` and `isFinalStatus: false`. The
-`assignee_isnull=true` spelling SHALL NOT be used: OpenRegister's
-`SearchQueryHandler::cleanQuery` compares the value with `=== true`, so a query string
-degrades it to `IS NOT NULL` and the page renders empty with no error.
+The base filter SHALL be `assignee: "IS NULL"` and `isFinalStatus: false`.
+`assignee: "IS NULL"` is the literal sentinel every OpenRegister condition builder
+matches by value, and it SHALL be preferred over the `assignee_isnull=true` suffix,
+which was unimplemented when this page shipped and works only on instances carrying
+openregister `isnull-filter-operator`.
 
 #### Scenario: The queue holds unassigned open cases
 

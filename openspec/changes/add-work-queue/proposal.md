@@ -46,12 +46,17 @@ additive: one page, one menu entry, one relocation.
 
 The base filter is `{"assignee": "IS NULL", "isFinalStatus": false}`.
 
-`assignee: "IS NULL"` is the literal sentinel `MariaDbSearchHandler::applyNullCheck`
-matches. The documented `assignee_isnull=true` spelling does **not** work over HTTP:
-`SearchQueryHandler::cleanQuery` tests the value with `=== true`, and a query string
-can only ever deliver the string `"true"`, so the operator silently degrades to
-`IS NOT NULL` and the page renders empty. Verified against a live instance: 17
-unassigned cases with the sentinel, 20 assigned, 2 unassigned and open.
+`assignee: "IS NULL"` is the literal sentinel every OpenRegister condition builder
+matches by value. Verified against a live instance: 17 unassigned cases with the
+sentinel, 20 assigned, 2 unassigned and open.
+
+The suffix spelling `assignee_isnull=true` was dead when this page shipped, and the
+reason is deeper than it first looked: the only code mentioning the operator had no
+production callers, and `isnull` was absent from
+`MagicSearchHandler::COMPARISON_OPERATORS`, so the filter contributed no condition at
+all rather than an inverted one. Fixed in openregister `isnull-filter-operator`. The
+sentinel is kept here because it also works on instances that do not yet carry that
+change, and the two are two spellings of one predicate.
 
 `isFinalStatus` is a real boolean on every case row (measured: 37 of 37 carry it, none
 absent), so plain equality reaches it and no derived predicate is needed.
