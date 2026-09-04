@@ -101,8 +101,6 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 	 *
 	 * - `statusTypes` … `resultTypes`, `workflowTemplate`, `initialStatusName`:
 	 *   `TemplateBundleSeeder::splitBundle()`, lib/Service/Besluitvorming/TemplateBundleSeeder.php.
-	 * - `parafeerroute`: `BesluitvormingTemplateService::activate()`,
-	 *   lib/Service/BesluitvormingTemplateService.php.
 	 * - `caseTypeSlug`: `VthSeedDataRepairStep::seedInspectionChecklists()`
 	 *   resolves it to the `caseType` uuid and drops the slug.
 	 *
@@ -111,7 +109,6 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 	private const SEEDER_CONSUMED_KEYS = [
 		'workflowTemplate',
 		'initialStatusName',
-		'parafeerroute',
 		'caseTypeSlug',
 	];
 

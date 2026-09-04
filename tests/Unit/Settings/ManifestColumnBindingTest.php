@@ -239,35 +239,4 @@ class ManifestColumnBindingTest extends TestCase {
 			. implode("\n", $offenders)
 		);
 	}
-
-	/**
-	 * The Voorstellen Subject column names the property that holds the subject.
-	 *
-	 * The specific regression the sweep above generalises. Pinned by name so a
-	 * future rename cannot re-break it and pass by being merely self-consistent
-	 * with an equally wrong schema.
-	 *
-	 * @return void
-	 */
-	public function testTheVoorstellenSubjectColumnBindsToTheProposalSubject(): void {
-		$manifest = json_decode((string)file_get_contents(self::ROOT . '/src/manifest.json'), true);
-
-		$page = null;
-		foreach ((array)($manifest['pages'] ?? []) as $candidate) {
-			if ((string)(((array)$candidate)['id'] ?? '') === 'Voorstellen') {
-				$page = (array)$candidate;
-				break;
-			}
-		}
-
-		$this->assertNotNull($page, 'The Voorstellen page is gone, so this test is asserting nothing');
-
-		$keys = [];
-		foreach ((array)(((array)$page['config'])['columns'] ?? []) as $column) {
-			$keys[] = is_array($column) === true ? (string)($column['key'] ?? '') : (string)$column;
-		}
-
-		$this->assertContains('subject', $keys, 'The subject column must bind to the proposal `subject` property');
-		$this->assertNotContains('onderwerp', $keys, '`onderwerp` was renamed to `subject` and no longer exists');
-	}
 }

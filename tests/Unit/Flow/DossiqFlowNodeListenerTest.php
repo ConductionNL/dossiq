@@ -36,7 +36,6 @@ use OCA\Dossiq\Flow\DossiqRequestDecisionNode;
 use OCA\Dossiq\Flow\DossiqTxSetFieldNode;
 use OCA\Dossiq\Flow\DossiqTxSetStatusNode;
 use OCA\Dossiq\Flow\DossiqTxNotifyNode;
-use OCA\Dossiq\Flow\DossiqTxBesluitvormingActivateNode;
 use OCA\Dossiq\Flow\DossiqTxBesluitvormingPublishNode;
 use OCA\Dossiq\Flow\DossiqTxEvaluateDecisionNode;
 use OCP\EventDispatcher\Event;
@@ -73,7 +72,6 @@ class DossiqFlowNodeListenerTest extends TestCase {
         DossiqRequestDecisionNode::class => 'dossiq.requestDecision',
         DossiqEnsureCommitteeNode::class => 'dossiq.ensureCommittee',
         DossiqTxNotifyNode::class => 'dossiq.notify',
-        DossiqTxBesluitvormingActivateNode::class => 'dossiq.besluitvormingActivate',
         DossiqTxBesluitvormingPublishNode::class => 'dossiq.besluitvormingPublish',
         DossiqTxEvaluateDecisionNode::class => 'dossiq.evaluateDecision',
         DossiqSendEmailNode::class => 'dossiq.action.sendEmail',
@@ -199,8 +197,8 @@ class DossiqFlowNodeListenerTest extends TestCase {
 
         // Derived from the fixture, not written as a literal. The sibling test
         // above already says why: a count in a test goes stale the first time
-        // somebody adds a node, and this one did — it was 17 against a
-        // catalogue that had grown to 18.
+        // somebody adds or retires a node, and this one did — it was 17
+        // against a catalogue that had grown to 18.
         $this->assertCount((count(self::EXPECTED_IDS) - 1), $ids);
         $this->assertNotContains('dossiq.setField', $ids);
         $this->assertContains('dossiq.sendEmail', $ids);

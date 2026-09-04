@@ -266,13 +266,6 @@
       "order": 60
     },
     {
-      "id": "Voorstellen",
-      "label": "Proposals",
-      "icon": "CommentOutline",
-      "route": "Voorstellen",
-      "order": 70
-    },
-    {
       "id": "SettingsGroup",
       "label": "Settings",
       "icon": "CogOutline",
@@ -1212,7 +1205,7 @@
       "config": {
         "register": "dossiq",
         "schema": "case",
-        "_note": "CASE archetype (unified zaak) — the flagship record and the ADR-062 reference page (the cell is the budget: every widget fills its gridHeight exactly, no inner scrollbars, no reserved voids). The lead row pairs the field-scoped 'Core case data' widget (include: identity/ownership fields) with a right column of KPI stats-block (open tasks / documents / decisions / sub-cases, replacing the deprecated header summaryAggregates) over the Related panel. Row two pairs the 'Process' data widget (include: status/procedure/workflow fields) with Initiator, Contacts and Notes sized to their small content. FK-scoped child collections (task.case, caseDocument.case, decision.case, voorstel.case, location.case) fit their rows to their cells with View-all/+N-more footers. Files and Calendar leaves close the page. lifecycleActions drive status transitions; audit history stays the single sidebar tab.",
+        "_note": "CASE archetype (unified zaak) — the flagship record and the ADR-062 reference page (the cell is the budget: every widget fills its gridHeight exactly, no inner scrollbars, no reserved voids). The lead row pairs the field-scoped 'Core case data' widget (include: identity/ownership fields) with a right column of KPI stats-block (open tasks / documents / decisions / sub-cases, replacing the deprecated header summaryAggregates) over the Related panel. Row two pairs the 'Process' data widget (include: status/procedure/workflow fields) with Initiator, Contacts and Notes sized to their small content. FK-scoped child collections (task.case, caseDocument.case, decision.case, location.case) fit their rows to their cells with View-all/+N-more footers. Files and Calendar leaves close the page. lifecycleActions drive status transitions; audit history stays the single sidebar tab.",
         "documentationUrl": "https://procest.conduction.nl",
         "widgets": [
           {
@@ -2279,153 +2272,6 @@
       }
     },
     {
-      "id": "Voorstellen",
-      "route": "/voorstellen",
-      "type": "index",
-      "title": "Voorstellen",
-      "config": {
-        "register": "dossiq",
-        "schema": "proposal",
-        "allowSavedViews": true,
-        "quickFilters": [
-          {
-            "label": "Alle",
-            "filter": {},
-            "default": true
-          },
-          {
-            "label": "Concept",
-            "filter": {
-              "status": "draft"
-            }
-          },
-          {
-            "label": "In behandeling",
-            "filter": {
-              "status": [
-                "in_parafering",
-                "ter_accordering",
-                "geaccordeerd",
-                "aangeboden",
-                "teruggestuurd"
-              ]
-            }
-          },
-          {
-            "label": "Afgerond",
-            "filter": {
-              "status": [
-                "besloten",
-                "gearchiveerd"
-              ]
-            }
-          }
-        ],
-        "columns": [
-          {
-            "key": "subject",
-            "label": "Onderwerp"
-          },
-          {
-            "key": "type",
-            "label": "Type",
-            "formatter": "proposalType"
-          },
-          {
-            "key": "status",
-            "label": "Status",
-            "formatter": "voorstelStatus",
-            "widget": "badge"
-          },
-          {
-            "key": "currentStep",
-            "label": "Stap",
-            "formatter": "voorstelStepProgress",
-            "sortable": false
-          },
-          {
-            "key": "routeSnapshot",
-            "label": "Wacht op",
-            "formatter": "voorstelWaitingActor",
-            "sortable": false
-          },
-          {
-            "key": "@self.updated",
-            "label": "Dagen in stap",
-            "formatter": "voorstelDaysInStep",
-            "align": "right"
-          },
-          {
-            "key": "author",
-            "label": "Steller"
-          }
-        ],
-        "showViewAction": false,
-        "actions": [
-          {
-            "id": "view",
-            "label": "View",
-            "icon": "EyeOutline",
-            "handler": "navigate",
-            "route": "VoorstelDetail",
-            "type": "handler"
-          },
-          {
-            "id": "reminder",
-            "label": "Herinnering sturen",
-            "icon": "BellRing",
-            "handler": "voorstelReminder",
-            "type": "handler"
-          }
-        ],
-        "sidebar": {
-          "enabled": true,
-          "showMetadata": true
-        },
-        "documentationUrl": "https://procest.conduction.nl"
-      }
-    },
-    {
-      "id": "VoorstelDetail",
-      "route": "/voorstellen/:id",
-      "type": "detail",
-      "title": "Voorstel",
-      "config": {
-        "register": "dossiq",
-        "schema": "proposal",
-        "_note": "WORKFLOW-RECORD archetype (parafering/besluitvorming proposal). Intentionally kept as a bespoke full-page slot (VoorstelDetailView) rather than a widget grid: a voorstel is driven by its parafeerroute — currentStep, routeSnapshot (per-step actor/status) and the accord/return lifecycle need a live step-progress rail and inline accord/terugsturen actions that the generic data/object-list grid cannot express. The view renders the proposal document + bijlagen, the linked case and decision, and the routing timeline. The status lifecycle (concept → in_parafering → … → besloten) is driven inside the view. Audit history stays a sidebar tab; metadata remains available for provenance.",
-        "lifecycleActions": {
-          "field": "status"
-        },
-        "sidebar": {
-          "enabled": true,
-          "showMetadata": true,
-          "tabs": [
-            {
-              "id": "audit",
-              "label": "History",
-              "icon": "History",
-              "widgets": [
-                {
-                  "type": "audit"
-                }
-              ]
-            },
-            {
-              "id": "version-history",
-              "label": "Version history",
-              "icon": "FileCompare",
-              "component": "VersionHistoryLeafTab"
-            }
-          ]
-        },
-        "documentationUrl": "https://procest.conduction.nl"
-      },
-      "slots": {
-        "default": "VoorstelDetailView"
-      }
-    },
-    {
       "id": "AdviceDetail",
       "route": "/advice/:id",
       "type": "detail",
@@ -2938,63 +2784,6 @@
         "lifecycleActions": {
           "field": "status"
         },
-        "sidebar": {
-          "enabled": true,
-          "showMetadata": true,
-          "tabs": [
-            {
-              "id": "audit",
-              "label": "History",
-              "icon": "History",
-              "widgets": [
-                {
-                  "type": "audit"
-                }
-              ]
-            },
-            {
-              "id": "version-history",
-              "label": "Version history",
-              "icon": "FileCompare",
-              "component": "VersionHistoryLeafTab"
-            }
-          ]
-        }
-      }
-    },
-    {
-      "id": "ParafeerrouteDetail",
-      "route": "/settings/parafeerroutes/:id",
-      "type": "detail",
-      "title": "Parafeerroute",
-      "config": {
-        "register": "dossiq",
-        "schema": "parafeerroute",
-        "_note": "CONFIG/TECHNICAL archetype (initialling/approval route template consumed by voorstel records). No comms, no status lifecycle, no child schemas. The single Data widget carries the binding + defaults (name, caseType, voorstelType, isDefault, description) and the ordered steps[] (actor/actorType/mandatory/label per stage) — the routing definition. No object-lists, no content leaves, no lifecycleActions. Audit history (template edits) is a sidebar tab.",
-        "documentationUrl": "https://procest.conduction.nl",
-        "widgets": [
-          {
-            "id": "parafeerroute-data",
-            "type": "data",
-            "title": "Parafeerroute",
-            "icon": "FileSign",
-            "content": {
-              "title": "Parafeerroute",
-              "columns": 2
-            }
-          }
-        ],
-        "layout": [
-          {
-            "id": "1",
-            "widgetId": "parafeerroute-data",
-            "gridX": 0,
-            "gridY": 0,
-            "gridWidth": 12,
-            "gridHeight": 4,
-            "showTitle": false
-          }
-        ],
         "sidebar": {
           "enabled": true,
           "showMetadata": true,
@@ -4296,12 +4085,6 @@
       "schemaSlug": "objectionProceeding",
       "urlTemplate": "/apps/dossiq/bezwaren/{uuid}",
       "displayName": "Bezwaar"
-    },
-    {
-      "registerSlug": "dossiq",
-      "schemaSlug": "proposal",
-      "urlTemplate": "/apps/dossiq/voorstellen/{uuid}",
-      "displayName": "Voorstel"
     },
     {
       "registerSlug": "dossiq",

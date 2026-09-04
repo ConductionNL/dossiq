@@ -114,18 +114,18 @@ class JsonEncodedStringPropertiesTest extends TestCase {
 	 * @return void
 	 */
 	public function testMergeForWriteReencodesADecodedSnapshot(): void {
-		$steps = [['order' => 1, 'actor' => 'alice'], ['order' => 2, 'actor' => 'bob']];
+		$history = [['status' => 'intake', 'order' => 1], ['status' => 'behandeling', 'order' => 2]];
 
 		$payload = (new JsonEncodedStringProperties())->mergeForWrite(
-			stored: ['status' => 'in_parafering', 'currentStep' => 1, 'routeSnapshot' => $steps],
-			updates: ['status' => 'geaccordeerd', 'currentStep' => 0],
-			schemaSlug: 'proposal',
+			stored: ['status' => 'intake', 'extensionCount' => 1, 'statusHistory' => $history],
+			updates: ['status' => 'behandeling', 'extensionCount' => 0],
+			schemaSlug: 'case',
 		);
 
-		self::assertIsString($payload['routeSnapshot'], 'The schema declares routeSnapshot a string, so that is what the write must carry.');
-		self::assertSame($steps, json_decode($payload['routeSnapshot'], true), 'Re-encoding must not lose the snapshot.');
-		self::assertSame('geaccordeerd', $payload['status']);
-		self::assertSame(0, $payload['currentStep']);
+		self::assertIsString($payload['statusHistory'], 'The schema declares statusHistory a string, so that is what the write must carry.');
+		self::assertSame($history, json_decode($payload['statusHistory'], true), 'Re-encoding must not lose the history.');
+		self::assertSame('behandeling', $payload['status']);
+		self::assertSame(0, $payload['extensionCount']);
 	}//end testMergeForWriteReencodesADecodedSnapshot()
 
 	/**
@@ -135,13 +135,13 @@ class JsonEncodedStringPropertiesTest extends TestCase {
 	 */
 	public function testAnAlreadyEncodedValueIsUntouched(): void {
 		$payload = (new JsonEncodedStringProperties())->mergeForWrite(
-			stored: ['routeSnapshot' => '[{"order":1}]', 'statusHistory' => 'not json at all'],
+			stored: ['statusHistory' => '[{"order":1}]', 'geometry' => 'not json at all'],
 			updates: [],
-			schemaSlug: 'proposal',
+			schemaSlug: 'case',
 		);
 
-		self::assertSame('[{"order":1}]', $payload['routeSnapshot']);
-		self::assertSame('not json at all', $payload['statusHistory'], 'Malformed stored text is evidence, not something to rewrite.');
+		self::assertSame('[{"order":1}]', $payload['statusHistory']);
+		self::assertSame('not json at all', $payload['geometry'], 'Malformed stored text is evidence, not something to rewrite.');
 	}//end testAnAlreadyEncodedValueIsUntouched()
 
 	/**
@@ -151,12 +151,12 @@ class JsonEncodedStringPropertiesTest extends TestCase {
 	 */
 	public function testAnUnknownSchemaIsAPassThrough(): void {
 		$payload = (new JsonEncodedStringProperties())->mergeForWrite(
-			stored: ['routeSnapshot' => ['a']],
+			stored: ['statusHistory' => ['a']],
 			updates: ['x' => 1],
 			schemaSlug: 'somethingElse',
 		);
 
-		self::assertSame(['a'], $payload['routeSnapshot']);
+		self::assertSame(['a'], $payload['statusHistory']);
 		self::assertSame(1, $payload['x']);
 	}//end testAnUnknownSchemaIsAPassThrough()
 

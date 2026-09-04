@@ -225,38 +225,6 @@ test.describe('LHS override authorisation', () => {
 	})
 })
 
-test.describe('parafering activation', () => {
-	test('a voorstel whose case type has no route is refused, not parked', async ({
-		page,
-	}) => {
-		await page.goto(`${BASE_URL}/apps/dossiq/`)
-		await page.waitForLoadState('domcontentloaded')
-
-		const outcome = await page.evaluate(async () => {
-			const res = await fetch(
-				'/apps/dossiq/api/besluitvorming/parafering/activate',
-				{
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						requesttoken: (window as any).OC?.requestToken ?? '',
-					},
-					body: JSON.stringify({ proposalId: 'no-such-voorstel' }),
-				},
-			)
-			return { status: res.status, body: await res.text() }
-		})
-
-		// Whatever the route is called, activating a voorstel that cannot be
-		// routed must not answer 200. Before this change it did, leaving the
-		// voorstel in `in_parafering` with an empty snapshot and no way out.
-		expect(
-			outcome.status,
-			`activation of an unroutable voorstel must not succeed; got ${outcome.status}`,
-		).not.toBe(200)
-	})
-})
-
 test.describe('decision tables evaluated by OpenRegister', () => {
 	// dossiq deleted its own DMN engine and now injects
 	// `OCA\OpenRegister\Service\Dmn\DecisionTableEvaluator`. Unit tests cannot

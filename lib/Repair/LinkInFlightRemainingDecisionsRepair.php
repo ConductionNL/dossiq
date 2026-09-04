@@ -4,7 +4,7 @@
  * Dossiq Link In-Flight Remaining Decisions Repair
  *
  * Migration repair step for `dossiq-delegate-remaining-decisions-to-decidesk`:
- * for each open beslissing-op-bezwaar / advies / consultatie / voorstel object
+ * for each open beslissing-op-bezwaar / advies / consultatie object
  * that does NOT yet carry a `decisionRef`, link it forward to a decidesk
  * Decision (of the appropriate decisionType) so its outcome can complete in
  * decidesk. Objects that already carry a recorded `decisionRef`, a ZGW
@@ -47,7 +47,7 @@ use RuntimeException;
 use Throwable;
 
 /**
- * Links in-flight bezwaar-decision / advies / consultatie / voorstel objects
+ * Links in-flight bezwaar-decision / advies / consultatie objects
  * forward to decidesk Decisions without dropping any recorded data.
  *
  * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-006-in-flight-remaining-decision-cases-are-migrated-without-data-loss
@@ -60,8 +60,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 	 * The config value is the schema IDENTIFIER — a numeric id on a live
 	 * install — which is what the register calls address. The slug is a
 	 * separate fact, and it is the key {@see JsonEncodedStringProperties}
-	 * needs to know that a loaded `proposal` carries a `routeSnapshot` the
-	 * schema declares as a string.
+	 * needs to restore the declared string shape of a JSON-encoded property.
 	 *
 	 * @var array<string, string>
 	 */
@@ -69,7 +68,6 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 		'bezwaar_decision_schema' => 'bezwaarDecision',
 		'advies_aanvraag_schema' => 'adviesAanvraag',
 		'consultation_schema' => 'consultation',
-		'voorstel_schema' => 'proposal',
 	];
 
 	use SearchesObjects;
@@ -100,7 +98,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param BezwaarDecisionDelegationService $objectionDelegation Bezwaar decision delegation service.
-	 * @param AdviceDelegationService $adviceDelegation Advice/voorstel delegation service.
+	 * @param AdviceDelegationService $adviceDelegation Advice delegation service.
 	 * @param SettingsService $settingsService Settings / ObjectService resolver.
 	 * @param JsonEncodedStringProperties $jsonProperties Restores the declared string shape of JSON-encoded properties.
 	 * @param LoggerInterface $logger Logger.
@@ -120,7 +118,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 	 * @return string
 	 */
 	public function getName(): string {
-		return 'Link in-flight Dossiq bezwaar/advies/consultatie/voorstel objects to decidesk Decisions';
+		return 'Link in-flight Dossiq bezwaar/advies/consultatie objects to decidesk Decisions';
 	}//end getName()
 
 	/**
@@ -133,7 +131,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-006-in-flight-remaining-decision-cases-are-migrated-without-data-loss
 	 */
 	public function run(IOutput $output): void {
-		$output->info('Linking in-flight bezwaar/advies/consultatie/voorstel objects to decidesk Decisions...');
+		$output->info('Linking in-flight bezwaar/advies/consultatie objects to decidesk Decisions...');
 
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
@@ -217,16 +215,6 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 						'externalReference' => (string)($obj['parentCase'] ?? ''),
 						'subjectLabel' => (string)($obj['consultationNumber'] ?? 'Consultatie'),
 						'question' => (string)($obj['questionFormulation'] ?? ''),
-					],
-				);
-			},
-			'voorstel_schema' => function (array $obj): string {
-				return $this->adviceDelegation->raiseVoorstelBesluit(
-					proposalId: (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
-					payload: [
-						'externalReference' => (string)($obj['case'] ?? ''),
-						'subjectLabel' => (string)($obj['subject'] ?? ''),
-						'title' => (string)($obj['subject'] ?? ''),
 					],
 				);
 			},
@@ -339,9 +327,9 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 
 			// Persist the decisionRef so the outcome can complete in
 			// decidesk. Merge the existing object — no field is dropped.
-			// A loaded voorstel carries `routeSnapshot` DECODED while the
-			// schema still declares it a string, so a bare array_merge writes
-			// an array into it and OpenRegister refuses the save outright.
+			// A loaded object carries a JSON-encoded property DECODED while
+			// the schema still declares it a string, so a bare array_merge
+			// writes an array into it and OpenRegister refuses the save.
 			$objectService->saveObject(
 				object: $this->jsonProperties->mergeForWrite(
 					stored: $obj,

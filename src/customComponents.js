@@ -83,60 +83,9 @@ import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 // InspectieList/InspectieDetail views + their offline glue (offlineDb.js,
 // syncReplayService.js) are deleted; the leaf owns the planning list, checklist
 // completion, mutation queue and reconnect-replay.
-// VoorstellenView removed — the Voorstellen list page is now a declarative
-// `type:"index"` on the `voorstel` schema (formatter columns + status badge,
-// see src/manifest.json + src/services/formatters.js).
-import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
-
 // --- Features & Roadmap page — thin wrapper around the lib's
 //     CnFeaturesAndRoadmapView (the in-product roadmap surface powered by
 //     OpenRegister's github-issue-proxy). See ConductionNL/hydra#251. ---
-
-/**
- * Row-action handler for the Voorstellen index: POST a parafering-reminder
- * notification for the step the voorstel is currently waiting on. Registered
- * below as a "function" entry so the manifest action
- * `{ id: "reminder", handler: "voorstelReminder" }` can dispatch to it —
- * CnIndexPage calls a function-typed `customComponents[handler]` with
- * `{ actionId, item }` on row-action click. (Replaces the bespoke
- * `sendReminder()` that lived in the deleted VoorstelList.vue.)
- *
- * @param {object} ctx Dispatch context.
- * @param {string} ctx.actionId The action id (`"reminder"`).
- * @param {object} ctx.item The voorstel row.
- * @return {Promise<void>}
- */
-async function voorstelReminder({ actionId, item }) {
-	const steps = (() => {
-		const snap = item && item.routeSnapshot
-		if (!snap) return []
-		try {
-			return typeof snap === 'string' ? JSON.parse(snap) : snap
-		} catch {
-			return []
-		}
-	})()
-	const current = steps.find((s) => s.order === item.currentStep)
-	const actor = current ? current.label || current.actor || '-' : '-'
-	try {
-		await fetch('/apps/dossiq/api/notifications/parafering-reminder', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				requesttoken: window.OC?.requestToken,
-				'OCS-APIREQUEST': 'true',
-			},
-			body: JSON.stringify({
-				voorstelId: item.id,
-				actor,
-				subject: item.subject,
-			}),
-		})
-	} catch (error) {
-		// eslint-disable-next-line no-console
-		console.error('[dossiq] parafering reminder failed', error)
-	}
-}
 
 /**
  * Bulk-action handler for the Cases index: reassign the selected cases.
@@ -213,12 +162,6 @@ export default {
 	PmDwellChartWidget, // dwell time by status (CnChartWidget bar)
 	PmThroughputChartWidget, // weekly throughput (CnChartWidget line)
 	PmBottleneckTableWidget, // bottleneck ranking (ad-hoc row shape, no object-list leaf applies)
-
-	// --- Migration cost: deferred to a follow-up. ---
-	VoorstelDetailView, // parafeerroute multi-step approver flow
-
-	// --- Row-action handlers (function entries — dispatched by manifest `handler` id). ---
-	voorstelReminder, // Voorstellen index → POST a parafering reminder
 
 	// --- Anonymous-public routes (no auth, no main menu). ---
 	PublicAppointmentPage,

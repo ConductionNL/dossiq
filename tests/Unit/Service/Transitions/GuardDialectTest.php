@@ -31,7 +31,6 @@ use OCA\Dossiq\Service\Transitions\RequiredDocumentGuard;
 use OCA\Dossiq\Service\Transitions\RequiredFieldGuard;
 use OCA\Dossiq\Service\Transitions\RoleGuard;
 use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
-use OCA\Dossiq\Service\Transitions\VoorstelStatusGuard;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserManager;
@@ -60,7 +59,6 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Transitions\RequiredDocumentGuard
  * @uses \OCA\Dossiq\Service\Transitions\RequiredFieldGuard
  * @uses \OCA\Dossiq\Service\Transitions\RoleGuard
- * @uses \OCA\Dossiq\Service\Transitions\VoorstelStatusGuard
  */
 class GuardDialectTest extends TestCase {
 
@@ -194,7 +192,6 @@ class GuardDialectTest extends TestCase {
 			new RequiredDocumentGuard(),
 			new RoleGuard($this->createMock(IGroupManager::class), $userManager, new NullLogger()),
 			new MandaatGuard($this->createMock(MandaatValidationService::class)),
-			new VoorstelStatusGuard($settings, new NullLogger()),
 			$logger,
 		);
 	}//end buildRegistry()

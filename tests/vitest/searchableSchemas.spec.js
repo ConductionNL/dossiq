@@ -21,18 +21,12 @@ const REGISTER_PATH = path.resolve(
 )
 const MANIFEST_PATH = path.resolve(__dirname, '../../src/manifest.json')
 
-const EXPECTED_SEARCHABLE_SLUGS = [
-	'case',
-	'task',
-	'objectionProceeding',
-	'proposal',
-	'beroep',
-]
+const EXPECTED_SEARCHABLE_SLUGS = ['case', 'task', 'objectionProceeding', 'beroep']
 
 const loadJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'))
 
 describe('searchable schema opt-in (register JSON)', () => {
-	it('flags exactly case, task, bezwaar, voorstel, beroep as searchable', () => {
+	it('flags exactly case, task, bezwaar, beroep as searchable', () => {
 		const register = loadJson(REGISTER_PATH)
 		const schemas = register.components.schemas
 
@@ -70,7 +64,6 @@ describe('deep links cover all searchable schemas', () => {
 			// ROUTE and deliberately did not — a route resolves at request time,
 			// so breaking one fails silently.
 			objectionProceeding: '/apps/dossiq/bezwaren/{uuid}',
-			proposal: '/apps/dossiq/voorstellen/{uuid}',
 			beroep: '/apps/dossiq/beroepen/{uuid}',
 		}
 
@@ -78,7 +71,6 @@ describe('deep links cover all searchable schemas', () => {
 			case: '/cases/:id',
 			task: '/tasks/:id',
 			objectionProceeding: '/bezwaren/:id',
-			proposal: '/voorstellen/:id',
 			beroep: '/beroepen/:id',
 		}
 

@@ -9,7 +9,7 @@
  * schema actually declares, and a lifecycle assertion can read the edges that
  * actually ship.
  *
- * This exists because of the fake-agrees-with-caller class: a fake voorstel
+ * This exists because of the fake-agrees-with-caller class: a fake object
  * that hands back a `caseType` no schema declares keeps a dead read green for
  * months, and a writer whose status transition the shipped lifecycle refuses
  * looks fine to every test that never opened the register JSON. Building the

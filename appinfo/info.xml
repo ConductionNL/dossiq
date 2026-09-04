@@ -279,32 +279,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\FoldCasePropertiesOntoCase</step>
             <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <!--
-                Holds each local parafeerroute as an ApprovalRoute in the
-                decision app and notes the id back on the local row. Idempotent
-                twice over: it skips a route that already carries an id, and the
-                seam it dispatches to resolves on (sourceApp, externalReference)
-                before writing, so even a lost note costs one redundant dispatch
-                rather than a duplicate route. Skips cleanly when the decision
-                app is not installed — it is an optional runtime dependency and
-                an install without it keeps working on its local routes.
-            -->
-            <step>OCA\Dossiq\Repair\MigrateParafeerroutesToDecidiq</step>
-            <!--
-                Re-raises every voorstel still in parafering (in_parafering /
-                ter_accordering) in the decision app, so the engine that now
-                owns the runtime has a chain to finish. Runs AFTER
-                MigrateParafeerroutesToDecidiq: a subject can only travel a
-                route the decision app already holds. post-migration ONLY —
-                a fresh install has no in-flight voorstellen. Idempotent (the
-                decision app leaves a subject that already has stages alone),
-                and it FAILS rather than no-ops when it can establish no
-                system identity. The chain resumes from the start there: a
-                partial local history the retired runtime never sent cannot be
-                imported, which is the honest cost of moving the runtime after
-                voorstellen were already travelling.
-            -->
-            <step>OCA\Dossiq\Repair\RaiseInFlightParaferingenInDecidiq</step>
-            <!--
                 Raises each local bezwaaradviescommissie as a GovernanceBody in
                 the decision app and notes the id back on the local row.
                 Idempotent twice over: it skips a committee that already carries
@@ -456,9 +430,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               MigratePartnersToOrganisations    moves existing ketenpartner rows
               MigrateSubsidieRegelingToCaseType moves existing subsidieRegeling rows
               MigrateAiOversightToHermiq        replays existing audit history
-              MigrateParafeerroutesToDecidiq    holds existing local routes; none are seeded
               MigrateCommitteesToDecidiq        raises existing committees; none are seeded
-              RaiseInFlightParaferingenInDecidiq  re-raises IN-FLIGHT voorstellen; none exist yet
               ArmTermijnEngineTimers            arms existing TermijnInstances; none exist yet
               RetireOriRegister                 retires a register a fresh install never had
               FoldCasePropertiesOntoCase        backfill over existing cases

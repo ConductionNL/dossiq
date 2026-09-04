@@ -51,7 +51,6 @@ class GuardRegistry {
 	 * @param RequiredDocumentGuard $requiredDocument Built-in required-document evaluator
 	 * @param RoleGuard $roleGuard Built-in role evaluator
 	 * @param MandaatGuard $mandateGuard Mandaatregister authority evaluator
-	 * @param VoorstelStatusGuard $voorstelStatus Parafering-chain outcome evaluator
 	 * @param LoggerInterface $logger Logger for unknown guard types
 	 */
 	public function __construct(
@@ -60,7 +59,6 @@ class GuardRegistry {
 		RequiredDocumentGuard $requiredDocument,
 		RoleGuard $roleGuard,
 		MandaatGuard $mandateGuard,
-		VoorstelStatusGuard $voorstelStatus,
 		private readonly LoggerInterface $logger,
 	) {
 		$this->evaluators = [
@@ -69,7 +67,6 @@ class GuardRegistry {
 			'requiredDocument' => $requiredDocument,
 			'roleGuard' => $roleGuard,
 			'mandaatGuard' => $mandateGuard,
-			'voorstelStatus' => $voorstelStatus,
 		];
 	}//end __construct()
 
