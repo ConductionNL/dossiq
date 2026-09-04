@@ -19,10 +19,10 @@ import { request, test } from '@playwright/test'
 import { STORAGE_STATE } from '../helpers/auth.ts'
 import {
 	cleanupRunObjects,
-	deleteObject,
 	ensureCaseType,
 	getRequestToken,
 	objectId,
+	purgeObject,
 	seedCase,
 } from '../helpers/fixtures.ts'
 import { shootByNav, shootSurface } from './_visual-helpers.ts'
@@ -76,14 +76,12 @@ test.describe('Dossiq — case detail (deelzaak/email host) visual', () => {
 	let token: string
 	let caseId: string
 	let caseTypeId: string
-	let caseTypeSeeded = false
 
 	test.beforeAll(async ({ baseURL }) => {
 		api = await request.newContext({ baseURL, storageState: STORAGE_STATE })
 		token = await getRequestToken(api)
 		const ct = await ensureCaseType(api, token)
 		caseTypeId = ct.id
-		caseTypeSeeded = ct.seeded
 		const kase = await seedCase(api, token, {
 			title: 'VISUAL-BASELINE Case detail',
 			caseType: caseTypeId,
@@ -94,8 +92,11 @@ test.describe('Dossiq — case detail (deelzaak/email host) visual', () => {
 	})
 
 	test.afterAll(async () => {
-		await cleanupRunObjects(api, token, ['case'])
-		if (caseTypeSeeded) await deleteObject(api, token, 'caseType', caseTypeId)
+		// The baseline case is named for the SCREENSHOT, not for the run, so no
+		// prefix sweep finds it — purge it by the id we kept. The prefix sweep
+		// still runs for anything else the fixtures produced.
+		await purgeObject(api, token, 'case', caseId)
+		await cleanupRunObjects(api, token)
 		await api.dispose()
 	})
 

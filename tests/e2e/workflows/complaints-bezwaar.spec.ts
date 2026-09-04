@@ -74,7 +74,7 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 	})
 
 	test.afterAll(async () => {
-		await cleanupRunObjects(api, token, ['objectionProceeding', 'case'])
+		await cleanupRunObjects(api, token)
 		if (caseTypeSeeded) await deleteObject(api, token, 'caseType', caseTypeId)
 		await api.dispose()
 	})

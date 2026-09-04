@@ -86,7 +86,7 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 		// failures fail the suite (best-effort housekeeping).
 		test.setTimeout(120_000)
 		try {
-			await cleanupRunObjects(api, token, ['case'])
+			await cleanupRunObjects(api, token)
 			if (caseTypeSeeded)
 				await deleteObject(api, token, 'caseType', caseTypeId)
 		} catch {

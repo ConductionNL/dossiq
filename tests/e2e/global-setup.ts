@@ -20,6 +20,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { BASE_URL } from './base-url.ts'
 import { STORAGE_STATE } from './helpers/auth.ts'
+import { getRequestToken, sweepFixtureResidue } from './helpers/fixtures.ts'
 
 const APP_ROOT = path.resolve(__dirname, '..', '..')
 const BUNDLE_PATH = path.join(APP_ROOT, 'js', 'dossiq-main.js')
@@ -179,6 +180,48 @@ async function globalSetup(config: FullConfig): Promise<void> {
 
 	await context.storageState({ path: STORAGE_STATE })
 	await browser.close()
+
+	await clearFixtureResidue(baseURL)
+}
+
+/**
+ * Delete every object an earlier fixture run left on this instance.
+ *
+ * CI builds a throwaway Nextcloud per run, so this is a no-op there. A
+ * developer rig is the case it exists for: the suite seeds cases, caseTypes,
+ * statusTypes and workflowTemplates, and until now a run that was interrupted
+ * before its teardown — or one whose cases the archival schema refused to
+ * delete — left them behind. Eleven runs on one rig accumulated 68 cases, 33 of
+ * them fixture leftovers, and the sixth soft-deleted statusType they still
+ * pointed at is what made `spec-coverage/ui-pages.spec.ts:55` fail on a second
+ * run for a reason no change had introduced.
+ *
+ * Failure here is reported, not thrown: a residue sweep that cannot reach the
+ * API should not stop the suite from running and saying so itself.
+ *
+ * @param baseURL The resolved Nextcloud base URL.
+ */
+async function clearFixtureResidue(baseURL: string): Promise<void> {
+	const api = await request.newContext({
+		baseURL,
+		storageState: STORAGE_STATE,
+	})
+	try {
+		const token = await getRequestToken(api)
+		const survivors = await sweepFixtureResidue(api, token)
+		if (survivors.length > 0) {
+			console.warn(
+				'[playwright globalSetup] fixture residue that could NOT be removed: '
+					+ survivors.join(', '),
+			)
+		}
+	} catch (error) {
+		console.warn(
+			`[playwright globalSetup] fixture residue sweep skipped: ${String(error)}`,
+		)
+	} finally {
+		await api.dispose()
+	}
 }
 
 export default globalSetup

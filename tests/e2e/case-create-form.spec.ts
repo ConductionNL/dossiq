@@ -160,7 +160,10 @@ test.describe('New case dialog', () => {
 		// The instance CI seeds is thrown away after the run, so a leftover
 		// case type costs nothing. A dangling reference costs a red suite
 		// pointing at the wrong file.
-		await cleanupRunObjects(api, token, ['caseProperty', 'case'])
+		// No schema list: the default sweeps every schema the fixtures can
+		// create, child-first, so a spec that failed part-way still leaves
+		// nothing behind.
+		await cleanupRunObjects(api, token)
 		await api.dispose()
 	})
 

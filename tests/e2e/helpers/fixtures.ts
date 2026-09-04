@@ -35,13 +35,50 @@ import { expect } from '@playwright/test'
 export const REGISTER = 'dossiq'
 
 /**
+ * The family prefix every fixture run shares. `RUN_PREFIX` extends it with a
+ * per-process suffix, so `RUN_PREFIX` finds exactly this run's objects and
+ * `FIXTURE_PREFIX` finds every run's — including the residue of a run that
+ * crashed before its teardown fired. `sweepFixtureResidue` uses the family
+ * form; per-spec teardown uses the run form.
+ */
+export const FIXTURE_PREFIX = 'E2EZAAK-'
+
+/**
  * Unique-per-process prefix. Every seeded object embeds this in a visible
  * field so list/detail assertions and afterAll cleanup can target exactly
  * the rows this run created (never another run's or real demo data).
  */
-export const RUN_PREFIX = `E2EZAAK-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e4)}`
+export const RUN_PREFIX = `${FIXTURE_PREFIX}${Date.now().toString(36)}-${Math.floor(Math.random() * 1e4)}`
 
 const API_BASE = '/index.php/apps/openregister/api/objects'
+
+/**
+ * OpenRegister's trash endpoint. `DELETE /api/deleted/{uuid}` destroys the row
+ * outright through the object mapper, which is the ONLY removal path that
+ * reaches an archival schema — see `purgeObject`.
+ */
+const TRASH_BASE = '/index.php/apps/openregister/api/deleted'
+
+/**
+ * Every schema the dossiq e2e fixtures create, CHILD-FIRST.
+ *
+ * Order is the cleanup order: rows that reference a case come before `case`,
+ * and `case` comes before the caseType/statusType/workflowTemplate it points
+ * at. Deleting a parent first is what left the dangling references that
+ * reddened `spec-coverage/ui-pages.spec.ts` on a second run.
+ */
+export const FIXTURE_SCHEMAS = [
+	'statusRecord',
+	'caseProperty',
+	'task',
+	'consultation',
+	'objectionProceeding',
+	'case',
+	'workflowTemplate',
+	'statusType',
+	'caseType',
+	'propertyDefinition',
+] as const
 
 /**
  * Read a CSRF request-token from a freshly-loaded dossiq page. The
@@ -187,6 +224,101 @@ export async function deleteObject(
 	await api.delete(`${API_BASE}/${REGISTER}/${schema}/${id}`, {
 		headers: writeHeaders(token),
 	})
+}
+
+/**
+ * List EVERY object of `schema`, following the pagination cursor.
+ *
+ * `listObjects` caps at `_limit=200`. On a demo-sized instance the case table
+ * runs past that, and a teardown that only ever saw the first page reported
+ * success while leaving the rest behind. This walks `_page` until the server
+ * stops handing back rows.
+ *
+ * @param api    Authenticated request context.
+ * @param schema Schema slug.
+ */
+export async function listAllObjects(
+	api: APIRequestContext,
+	schema: string,
+): Promise<any[]> {
+	const all: any[] = []
+	const limit = 200
+	for (let page = 1; page <= 100; page++) {
+		const qs = new URLSearchParams({
+			_limit: String(limit),
+			_page: String(page),
+		}).toString()
+		const res = await api.get(`${API_BASE}/${REGISTER}/${schema}?${qs}`)
+		if (res.ok() === false) break
+		const rows = unwrapList(await res.json())
+		all.push(...rows)
+		if (rows.length < limit) break
+	}
+	return all
+}
+
+/**
+ * Remove an object PERMANENTLY, whatever its schema declares, and report
+ * whether it actually went.
+ *
+ * Two things make a plain DELETE insufficient, and both were measured on a
+ * persistent rig rather than reasoned about:
+ *
+ *  1. `case` is an ARCHIVAL schema (`x-openregister-archival`). A user-driven
+ *     `DELETE /api/objects/dossiq/case/{id}` is refused with
+ *     `403 SCHEMA_ARCHIVAL_IMMUTABLE`, and `deleteObject` never inspected the
+ *     response — so the old teardown reported success and removed NOTHING.
+ *     After 11 runs one rig held 68 cases, 33 of them fixture leftovers.
+ *  2. For the schemas that DO accept a delete, the delete is SOFT. The row
+ *     leaves the object API but stays in the trash, and anything still holding
+ *     its uuid gets a 404 on lookup. Six soft-deleted statusTypes plus ten
+ *     leftover cases pointing at them is exactly what reddened
+ *     `spec-coverage/ui-pages.spec.ts:55` ("dashboard mounts without console
+ *     errors") on a second full run.
+ *
+ * `DELETE /api/deleted/{uuid}` destroys the row through the object mapper, so
+ * it reaches both cases. Both calls are issued and neither status is trusted:
+ * the return value comes from re-reading the object.
+ *
+ * 📌 THE SECOND CALL WORKS ON A LIVE ROW TODAY, AND THAT IS AN OPENREGISTER
+ * DEFECT, NOT A CONTRACT. `DeletedController::destroy` means to accept only
+ * already-soft-deleted rows and guards with `getDeleted() === null`, but
+ * `ObjectEntity::$deleted` is declared `protected ?array $deleted = []`, so a
+ * live object answers `[]` and never `null`. The guard therefore never fires
+ * and the endpoint destroys archival records the object API refuses. Reported
+ * separately. When it is fixed this helper stops removing cases, and the
+ * `expect`-free verification below is what makes that LOUD: `cleanupRunObjects`
+ * throws naming every id that survived, rather than reporting a clean sweep of
+ * nothing, which is the exact failure mode this whole change exists to end.
+ *
+ * @param api    Authenticated request context.
+ * @param token  CSRF request-token.
+ * @param schema Schema slug.
+ * @param id     Object id/uuid.
+ * @return `true` when the object no longer resolves.
+ */
+export async function purgeObject(
+	api: APIRequestContext,
+	token: string,
+	schema: string,
+	id: string,
+): Promise<boolean> {
+	if (!id) return true
+
+	await api
+		.delete(`${API_BASE}/${REGISTER}/${schema}/${id}`, {
+			headers: writeHeaders(token),
+		})
+		.catch(() => undefined)
+	await api
+		.delete(`${TRASH_BASE}/${id}`, { headers: writeHeaders(token) })
+		.catch(() => undefined)
+
+	const check = await api
+		.get(`${API_BASE}/${REGISTER}/${schema}/${id}`)
+		.catch(() => null)
+	if (check === null) return false
+	return check.status() === 404
 }
 
 /**
@@ -467,19 +599,95 @@ export async function updateObject(
 export async function cleanupRunObjects(
 	api: APIRequestContext,
 	token: string,
-	schemas: string[],
+	schemas: string[] = [...FIXTURE_SCHEMAS],
 ): Promise<void> {
+	const survivors = await sweepPrefix(api, token, RUN_PREFIX, schemas)
+	if (survivors.length > 0) {
+		throw new Error(
+			'e2e teardown left objects behind, so the next run on this instance '
+				+ `starts dirty: ${survivors.join(', ')}`,
+		)
+	}
+}
+
+/**
+ * Remove the residue of EVERY fixture run on this instance.
+ *
+ * Called once from `global-setup.ts`, before any spec has run. Per-spec
+ * teardown can only sweep its own `RUN_PREFIX`; a run that was interrupted
+ * (Ctrl-C, a crashed worker, a `globalTimeout`) never reaches its teardown at
+ * all, and its objects then belong to no future run's prefix. Sweeping the
+ * family prefix up front is what makes a second suite run on one rig start
+ * from the same state as the first.
+ *
+ * Deliberately NOT an afterAll: the suite runs single-worker and owns its
+ * instance (see `base-url.ts`, which refuses a default target for exactly this
+ * reason), so a clean slate at the start is safe, where a family-wide sweep at
+ * the end could tear down a concurrently running sibling suite.
+ *
+ * @param api   Authenticated request context.
+ * @param token CSRF request-token.
+ * @return Ids that could not be removed (empty on a clean sweep).
+ */
+export async function sweepFixtureResidue(
+	api: APIRequestContext,
+	token: string,
+): Promise<string[]> {
+	return sweepPrefix(api, token, FIXTURE_PREFIX, [...FIXTURE_SCHEMAS])
+}
+
+/**
+ * Purge every object whose body carries `prefix`, plus the child rows the app
+ * itself created against those objects.
+ *
+ * The child sweep is the half a prefix match cannot do on its own: a
+ * `statusRecord` written by the transition engine carries the case's UUID and
+ * none of the fixture's text, so `JSON.stringify(row).includes(prefix)` never
+ * matches it. Those rows outlived every previous teardown.
+ *
+ * @param api     Authenticated request context.
+ * @param token   CSRF request-token.
+ * @param prefix  Run prefix or family prefix.
+ * @param schemas Schema slugs to sweep, child-first.
+ * @return Ids that still resolve after the sweep.
+ */
+async function sweepPrefix(
+	api: APIRequestContext,
+	token: string,
+	prefix: string,
+	schemas: string[],
+): Promise<string[]> {
+	const survivors: string[] = []
+
+	// Case ids first, so the child sweep below knows what to orphan-hunt for.
+	const caseIds = new Set<string>()
+	if (schemas.includes('case') === true) {
+		for (const row of await listAllObjects(api, 'case').catch(() => [])) {
+			if (JSON.stringify(row).includes(prefix)) caseIds.add(objectId(row))
+		}
+	}
+
 	for (const schema of schemas) {
 		let rows: any[]
 		try {
-			rows = await listObjects(api, schema)
+			rows = await listAllObjects(api, schema)
 		} catch {
 			continue
 		}
+
 		for (const row of rows) {
-			if (JSON.stringify(row).includes(RUN_PREFIX)) {
-				await deleteObject(api, token, schema, objectId(row))
-			}
+			const id = objectId(row)
+			if (id === '') continue
+			const matchesPrefix = JSON.stringify(row).includes(prefix)
+			const matchesCase =
+				caseIds.has(String(row.case ?? '')) === true
+				|| caseIds.has(String(row.parentCase ?? '')) === true
+			if (matchesPrefix === false && matchesCase === false) continue
+
+			const gone = await purgeObject(api, token, schema, id).catch(() => false)
+			if (gone === false) survivors.push(`${schema}/${id}`)
 		}
 	}
+
+	return survivors
 }
