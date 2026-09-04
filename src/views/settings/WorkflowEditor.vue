@@ -124,6 +124,8 @@ export default {
 		},
 	},
 
+	emits: ['dirty'],
+
 	data() {
 		return {
 			/** @type {Array} Status type objects for the case type */

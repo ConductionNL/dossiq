@@ -51,6 +51,8 @@ export default {
 		},
 	},
 
+	emits: ['input'],
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		daysInput() {

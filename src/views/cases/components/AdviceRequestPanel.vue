@@ -131,6 +131,8 @@ export default {
 		},
 	},
 
+	emits: ['create'],
+
 	data() {
 		return {
 			showForm: false,

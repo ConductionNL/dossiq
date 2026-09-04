@@ -147,15 +147,16 @@ export default {
 	},
 
 	emits: [
-		'select',
-		'drag-start',
-		'connection-start',
-		'connection-end',
-		'step-click',
 		'add-step',
+		'connection-end',
+		'connection-start',
+		'delete-status',
+		'drag-start',
 		'keyboard-connect',
 		'keyboard-disconnect',
-		'delete-status',
+		'select',
+		'step-click',
+		'step-reorder',
 	],
 
 	data() {

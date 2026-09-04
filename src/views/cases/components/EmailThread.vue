@@ -88,6 +88,8 @@ export default {
 		},
 	},
 
+	emits: ['compose'],
+
 	data() {
 		return {
 			expandedMessages: {},

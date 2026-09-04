@@ -220,6 +220,8 @@ export default {
 		},
 	},
 
+	emits: ['back', 'duplicated', 'saved'],
+
 	data() {
 		return {
 			form: { ...EMPTY_FORM },

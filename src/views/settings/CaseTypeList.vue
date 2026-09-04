@@ -103,6 +103,8 @@ export default {
 		CnIndexPage,
 	},
 
+	emits: ['create', 'select'],
+
 	data() {
 		return {
 			statusTypeCounts: {},
