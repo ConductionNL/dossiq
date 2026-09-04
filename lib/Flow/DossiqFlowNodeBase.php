@@ -121,6 +121,8 @@ abstract class DossiqFlowNodeBase implements IFlowNode {
      * The node icon.
      *
      * @return string The icon path.
+     *
+     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function getIcon(): string {
         return $this->urls->imagePath('dossiq', 'app-dark.svg');
@@ -217,6 +219,8 @@ abstract class DossiqFlowNodeBase implements IFlowNode {
      * @param integer $scope The Nextcloud workflow scope.
      *
      * @return boolean True when available in this scope.
+     *
+     * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function isAvailableForScope(int $scope): bool {
         return in_array($scope, [IManager::SCOPE_ADMIN, IManager::SCOPE_USER], true);

@@ -36,6 +36,8 @@ use RuntimeException;
 
 /**
  * AWB 4:14 verlenging engine on a TermijnInstance.
+ *
+ * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
  */
 class DeadlineExtensionService {
 	/**

@@ -61,6 +61,8 @@ class SeedSummary {
 	 * @param array<string, int> $result The per-case-type counts.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function addCaseTypeResult(array $result): void {
 		foreach (array_keys($this->created) as $kind) {
@@ -72,6 +74,8 @@ class SeedSummary {
 	 * Record one refused write.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function recordFailure(): void {
 		$this->failed++;
@@ -81,6 +85,8 @@ class SeedSummary {
 	 * Whether every write the run attempted landed.
 	 *
 	 * @return bool True when nothing was refused.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function isClean(): bool {
 		return $this->failed === 0;
@@ -93,6 +99,8 @@ class SeedSummary {
 	 * `caseTypes: 0` as "nothing left to do".
 	 *
 	 * @return array<string, mixed> The summary.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function toArray(): array {
 		$summary = ['success' => $this->isClean()] + $this->created + ['failed' => $this->failed];

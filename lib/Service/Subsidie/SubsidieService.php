@@ -107,6 +107,8 @@ class SubsidieService {
 	 * @param string $to Target status.
 	 *
 	 * @return bool True when the transition is allowed.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function isTransitionAllowed(string $from, string $to): bool {
 		$allowed = self::TRANSITIONS[$from] ?? null;
@@ -124,6 +126,8 @@ class SubsidieService {
 	 * @param DateTimeImmutable|null $now Clock injection for tests.
 	 *
 	 * @return string The formatted beschikkingnummer.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function generateBeschikkingnummer(int $sequence, ?DateTimeImmutable $now = null): string {
 		$now = ($now ?? new DateTimeImmutable());
@@ -139,6 +143,8 @@ class SubsidieService {
 	 * @param int $weken The regeling term in weeks.
 	 *
 	 * @return DateTimeImmutable The decision deadline.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function computeBeslistermijn(DateTimeImmutable $registration, int $weken): DateTimeImmutable {
 		$weken = max(1, $weken);
@@ -153,6 +159,8 @@ class SubsidieService {
 	 * @param float $grantedAmount The granted amount.
 	 *
 	 * @return bool True when the schedule reconciles to the granted amount.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function voorschotSchemaReconciles(array $advanceSchema, float $grantedAmount): bool {
 		$sum = 0.0;
@@ -174,6 +182,8 @@ class SubsidieService {
 	 * @param array<int, string> $approvedReports Approved tussenrapportage ids.
 	 *
 	 * @return bool True when the voorschot is releasable.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function isVoorschotReleasable(array $voorschot, array $approvedReports): bool {
 		$voorwaarde = trim((string)($voorschot['voorwaarde'] ?? ''));
@@ -197,6 +207,8 @@ class SubsidieService {
 	 * @param array<int, array<string, mixed>> $verplichtingen Condition rows.
 	 *
 	 * @return array<int, array<string, mixed>> The unmet conditions.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function unmetVerplichtingen(array $verplichtingen): array {
 		$unmet = [];
@@ -302,6 +314,8 @@ class SubsidieService {
 	 * @return array<int, array<string, mixed>> The aanvragen.
 	 *
 	 * @throws OCSBadRequestException When OpenRegister is unavailable/unconfigured.
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-002-awb-termijn-binding-for-each-phase
 	 */
 	public function listAanvragen(array $filters = []): array {
 		[$objectService, $register, $schema] = $this->resolve(schemaConfigKey: 'subsidie_aanvraag_schema');
@@ -322,6 +336,8 @@ class SubsidieService {
 	 * @param string $bsn The raw BSN.
 	 *
 	 * @return string The masked reference.
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-002-awb-termijn-binding-for-each-phase
 	 */
 	public function maskBsn(string $bsn): string {
 		$digits = preg_replace('/\D/', '', $bsn);

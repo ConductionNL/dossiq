@@ -40,6 +40,8 @@ use Throwable;
  * REST surface for ingebrekestelling registration.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
  */
 class NoticeOfDefaultController extends Controller {
 

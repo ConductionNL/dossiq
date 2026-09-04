@@ -38,6 +38,8 @@ use RuntimeException;
 
 /**
  * Payment-signal preparation + callback processing for dwangsom payouts.
+ *
+ * @spec openspec/changes/termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
  */
 class DwangsomUitbetalingService {
 	use SearchesObjects;

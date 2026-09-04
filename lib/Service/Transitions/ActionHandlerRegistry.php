@@ -96,6 +96,8 @@ class ActionHandlerRegistry {
 	 * @param string $type Action type
 	 *
 	 * @return ActionHandlerInterface|null
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function getHandler(string $type): ?ActionHandlerInterface {
 		return ($this->handlers[$type] ?? null);
@@ -105,6 +107,8 @@ class ActionHandlerRegistry {
 	 * Get all registered action types.
 	 *
 	 * @return array<int, string>
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function getRegisteredTypes(): array {
 		return array_keys($this->handlers);

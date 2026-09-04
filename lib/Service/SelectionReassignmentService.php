@@ -35,6 +35,8 @@ use Throwable;
  * separate operations that happen to share a write, and putting both on one
  * class took it past the complexity threshold. The shared write lives in
  * {@see WritesReassignments}, so the audit entry cannot drift between them.
+ *
+ * @spec openspec/changes/reassignment-is-a-bulk-action/specs/reassignment-bulk-action/spec.md
  */
 class SelectionReassignmentService {
 

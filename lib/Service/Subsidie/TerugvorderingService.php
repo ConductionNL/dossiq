@@ -81,6 +81,8 @@ class TerugvorderingService {
 	 * @param DateTimeImmutable $publication The publication date.
 	 *
 	 * @return DateTimeImmutable The bezwaartermijn end.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function computeBezwaartermijn(DateTimeImmutable $publication): DateTimeImmutable {
 		return $publication->add(new DateInterval('P' . (self::BEZWAARTERMIJN_WEKEN * 7) . 'D'));
@@ -92,6 +94,8 @@ class TerugvorderingService {
 	 * @param DateTimeImmutable $publication The publication date.
 	 *
 	 * @return DateTimeImmutable The betaaltermijn end.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function computeBetaaltermijn(DateTimeImmutable $publication): DateTimeImmutable {
 		return $publication->add(new DateInterval('P' . (self::BETAALTERMIJN_WEKEN * 7) . 'D'));
@@ -108,6 +112,8 @@ class TerugvorderingService {
 	 * @param float|null $yearFaction Annual rate fraction; defaults to the wettelijke rente.
 	 *
 	 * @return float The accrued rente in EUR.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function computeInvorderingsrente(
 		float $openstaandBedrag,
@@ -133,6 +139,8 @@ class TerugvorderingService {
 	 * @param float $paid The cumulative amount paid.
 	 *
 	 * @return string The resulting status.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
 	public function statusAfterPayment(float $amount, float $paid): string {
 		if ($paid <= 0.0) {

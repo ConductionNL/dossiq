@@ -61,6 +61,8 @@ namespace OCA\Dossiq\Service;
  * @psalm-suppress UnusedClass
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class ZgwZtcRulesService extends ZgwRulesBase {
 	/**

@@ -35,6 +35,8 @@ use RuntimeException;
 
 /**
  * AWB 4:5 / 4:15 pause + resume on a TermijnInstance.
+ *
+ * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
  */
 class DeadlinePauseService {
 	/**

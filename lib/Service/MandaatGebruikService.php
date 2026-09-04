@@ -35,6 +35,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Immutable audit log for mandate uses.
+ *
+ * @spec openspec/changes/mandaat-matrix-05-case-decision-integration/tasks.md
  */
 class MandaatGebruikService {
 	use SearchesObjects;

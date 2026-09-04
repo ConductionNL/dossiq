@@ -47,6 +47,8 @@ use Throwable;
 
 /**
  * Tenant-stamped audit-trail emitter.
+ *
+ * @spec openspec/specs/tenant-compliance/spec.md
  */
 class TenantAuditTrailService {
 	/**
@@ -225,6 +227,8 @@ class TenantAuditTrailService {
 	 * @param array<string, mixed> $bio Raw BIO context.
 	 *
 	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/tenant-compliance/spec.md
 	 */
 	public function sanitiseBio(array $bio): array {
 		$out = [];

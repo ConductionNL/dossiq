@@ -40,6 +40,8 @@ use RuntimeException;
 
 /**
  * AWB 4:17 ingebrekestelling registration + DwangsomBerekening creation.
+ *
+ * @spec openspec/changes/termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
  */
 class NoticeOfDefaultService {
 	use SearchesObjects;

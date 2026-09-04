@@ -39,6 +39,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Backfill workflowTemplate objects from implicit statusType ordering.
+ *
+ * @spec openspec/specs/workflow-definition-model/spec.md
  */
 class MigrateWorkflowDefinitions implements IRepairStep {
 
@@ -69,6 +71,8 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 	 * Get the name of this repair step.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/specs/workflow-definition-model/spec.md
 	 */
 	public function getName(): string {
 		return 'Backfill workflowTemplate definitions for existing caseTypes';

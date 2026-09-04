@@ -42,6 +42,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Daily-accruing dwangsom calculator.
+ *
+ * @spec openspec/changes/termijnbewaking-dwangsom-engine-06-dwangsom-calculation/tasks.md
  */
 class DwangsomCalculationService {
 	use SearchesObjects;

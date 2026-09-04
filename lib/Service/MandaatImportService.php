@@ -46,6 +46,8 @@ use RuntimeException;
  * The wire format is parsed by {@see MandaatCsvParser} and every register read
  * or write goes through {@see MandaatRepository}; what stays here is the import
  * decision — new vs changed vs removed — and the approval state machine.
+ *
+ * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
  */
 class MandaatImportService {
 	use SearchesObjects;

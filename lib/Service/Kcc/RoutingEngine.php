@@ -35,6 +35,8 @@ use DateTimeImmutable;
  * Deterministic routing-rule evaluation and agent ranking for the KCC.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
  */
 class RoutingEngine {
 	/**
@@ -56,6 +58,8 @@ class RoutingEngine {
 	 * @param \DateTimeImmutable|null $now Reference time (for time-of-day rules).
 	 *
 	 * @return array<string, mixed>|null The routing result, or null when unmatched.
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
 	 */
 	public function evaluate(array $rules, array $contactMoment, ?\DateTimeImmutable $now = null): ?array {
 		$now = ($now ?? new DateTimeImmutable());
@@ -98,6 +102,8 @@ class RoutingEngine {
 	 * @param \DateTimeImmutable $now Reference time.
 	 *
 	 * @return bool True when all conditions match.
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
 	 */
 	public function ruleMatches(array $rule, array $contactMoment, \DateTimeImmutable $now): bool {
 		$conditions = ($rule['matchConditions'] ?? []);
@@ -219,6 +225,8 @@ class RoutingEngine {
 	 * @param int $limit Maximum results.
 	 *
 	 * @return array<int, array<string, mixed>> Ranked agents with motivation.
+	 *
+	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
 	 */
 	public function rankAgents(array $agents, string $team, array $contactMoment, int $limit = 3): array {
 		$domain = strtolower((string)($contactMoment['assignedDomain'] ?? ''));

@@ -37,6 +37,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Maps dossiq Contact entities to zaaksysteem betrokkenen.
+ *
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-bidirectional-mapping
  */
 class ContactBetrokkeneMapper {
 	/**

@@ -36,6 +36,8 @@ use OCP\IUserSession;
 
 /**
  * Controller for milestone progress tracking.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class MilestoneController extends Controller {
 	/**

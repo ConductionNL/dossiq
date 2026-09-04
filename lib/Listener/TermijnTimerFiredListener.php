@@ -52,6 +52,8 @@ use Psr\Log\LoggerInterface;
  * Maps engine rung fires onto the AWB termijn domain actions.
  *
  * @template-implements IEventListener<Event>
+ *
+ * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
  */
 class TermijnTimerFiredListener implements IEventListener {
 	use SearchesObjects;
