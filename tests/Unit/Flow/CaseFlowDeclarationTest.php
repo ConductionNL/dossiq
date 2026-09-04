@@ -949,4 +949,188 @@ class CaseFlowDeclarationTest extends TestCase {
 			$this->assertSame('string', ($properties[$field]['type'] ?? null));
 		}
 	}//end testTheTaskSchemaDeclaresItsRunAndNodeFields()
+
+	/**
+	 * Every status step says what the status MEANS, not only what it is called.
+	 *
+	 * A literal name is not an identifier: `statusType.name` is declared
+	 * `x-translatable`, and every case type spells its working phase
+	 * differently and all of them are right.
+	 */
+	public function testEveryStatusStepNamesARole(): void {
+		$roles = ($this->statusTypeSchema()['properties']['role']['enum'] ?? []);
+		$this->assertNotEmpty($roles, 'statusType must declare the role vocabulary the flow addresses.');
+
+		foreach ($this->flow['nodes'] as $node) {
+			if (($node['type'] ?? '') !== 'dossiq.setStatus') {
+				continue;
+			}
+
+			$role = (string)($node['config']['role'] ?? '');
+			$this->assertNotSame(
+				'',
+				$role,
+				sprintf(
+					'Node "%s" moves the case by a literal name alone. A name is translatable and '
+					. 'case-type-specific; say which ROLE the status plays.',
+					$node['id']
+				)
+			);
+			$this->assertContains($role, $roles, sprintf('Node "%s" names a role nothing can carry.', $node['id']));
+		}
+	}//end testEveryStatusStepNamesARole()
+
+	/**
+	 * 🔴 THE TEST THAT WOULD HAVE CAUGHT THE DEFECT.
+	 *
+	 * The flow triggers on `object.created` for schema `case`, UNSCOPED by case
+	 * type — the trigger cannot be scoped, because `TriggerObjectNode` matches
+	 * an (event, register, schema) triple and a case type is a per-installation
+	 * uuid a shipped flow could never name. So EVERY case type this app ships
+	 * runs this flow, and every one of them has to be able to.
+	 *
+	 * They could not. Six literal names were the contract and exactly ONE case
+	 * type carried all six, so 8 of 18 demo runs died at `status-behandeling`.
+	 * The suite stayed green because `testEveryStatusTheFlowUsesIsSeededOnTheCaseType()`
+	 * above — and the e2e — both check only that one complete case type, which
+	 * is the blind spot rather than the coverage.
+	 *
+	 * So: every REQUIRED step must resolve on every shipped case type. A step
+	 * the flow declares `required: false` is exempt, because that is precisely
+	 * the claim it is making — a pothole report has no planning commission.
+	 */
+	public function testEveryShippedCaseTypeCanRunEveryRequiredStepOfTheFlow(): void {
+		$required = [];
+		$optional = [];
+		foreach ($this->flow['nodes'] as $node) {
+			if (($node['type'] ?? '') !== 'dossiq.setStatus') {
+				continue;
+			}
+
+			$role = (string)($node['config']['role'] ?? '');
+			if (($node['config']['required'] ?? true) === false) {
+				$optional[$node['id']] = $role;
+				continue;
+			}
+
+			$required[$node['id']] = $role;
+		}
+
+		$this->assertNotEmpty($required, 'The flow must have at least one status move it insists on.');
+		$this->assertNotEmpty($optional, 'A flow in which no phase is optional cannot serve more than one process.');
+
+		$caseTypes = $this->shippedCaseTypes();
+		$this->assertGreaterThan(
+			1,
+			count($caseTypes),
+			'Reading one case type is what hid this: the app ships many and the trigger scopes to none of them.'
+		);
+
+		foreach ($caseTypes as $label => $statuses) {
+			$roles = [];
+			$names = [];
+			foreach ($statuses as $status) {
+				$role = strtolower(trim((string)($status['role'] ?? '')));
+				if ($role !== '') {
+					$roles[$role] = true;
+				}
+
+				$names[strtolower(trim((string)($status['name'] ?? '')))] = true;
+			}
+
+			foreach ($required as $nodeId => $role) {
+				$this->assertTrue(
+					(isset($roles[$role]) === true),
+					sprintf(
+						'Case type "%s" models no status with role "%s", so the shipped flow dies at node "%s" '
+						. 'on every case of that type. Give the case type that role, or declare the step '
+						. '"required": false if the phase genuinely does not apply.',
+						$label,
+						$role,
+						$nodeId
+					)
+				);
+			}
+		}
+	}//end testEveryShippedCaseTypeCanRunEveryRequiredStepOfTheFlow()
+
+	/**
+	 * Every case type this app ships, from every seed that ships one.
+	 *
+	 * Collected from all three shapes rather than one, because "the case types"
+	 * living in one file is the assumption that made the blind spot: the four
+	 * the demo caseload actually uses are declared as flat `objects` entries
+	 * with a `@ref` back-link, while the VTH set and the flow's own demo type
+	 * nest their statuses under the case type.
+	 *
+	 * @return array<string, array<int, array<string, mixed>>> Statuses per case type label.
+	 */
+	private function shippedCaseTypes(): array {
+		$out = [];
+
+		$register = json_decode(
+			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'),
+			true
+		);
+
+		// The flat shape: caseType and statusType are sibling objects, joined by
+		// the status's `caseType: "@ref:<slug>"` back-reference.
+		$slugs = [];
+		foreach (($register['components']['objects'] ?? []) as $object) {
+			if ((($object['@self']['schema'] ?? '') === 'caseType')) {
+				$slugs[(string)($object['@self']['slug'] ?? '')] = [];
+			}
+		}
+
+		foreach (($register['components']['objects'] ?? []) as $object) {
+			if ((($object['@self']['schema'] ?? '') !== 'statusType')) {
+				continue;
+			}
+
+			$ref = ltrim((string)($object['caseType'] ?? ''), '@');
+			$slug = (string)preg_replace('/^ref:/', '', $ref);
+			if (isset($slugs[$slug]) === true) {
+				$slugs[$slug][] = $object;
+			}
+		}
+
+		foreach ($slugs as $slug => $statuses) {
+			// A case type with no statuses at all is a different defect and is
+			// not this test's to report: it cannot run ANY flow.
+			if ($statuses !== []) {
+				$out['dossiq_register.json:' . $slug] = $statuses;
+			}
+		}
+
+		// The nested shape.
+		foreach (['case_flow_seed_data.json', 'vth_seed_data.json'] as $file) {
+			$seed = json_decode(
+				(string)file_get_contents(__DIR__ . '/../../../lib/Settings/' . $file),
+				true
+			);
+
+			foreach (($seed['caseTypes'] ?? []) as $caseType) {
+				$statuses = ($caseType['statusTypes'] ?? []);
+				if ($statuses !== []) {
+					$out[$file . ':' . (string)($caseType['slug'] ?? '?')] = $statuses;
+				}
+			}
+		}
+
+		return $out;
+	}//end shippedCaseTypes()
+
+	/**
+	 * The statusType schema, as shipped.
+	 *
+	 * @return array<string, mixed> The schema.
+	 */
+	private function statusTypeSchema(): array {
+		$register = json_decode(
+			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'),
+			true
+		);
+
+		return (array)($register['components']['schemas']['statusType'] ?? []);
+	}//end statusTypeSchema()
 }//end class
