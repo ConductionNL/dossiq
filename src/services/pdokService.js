@@ -63,8 +63,8 @@ function recordWarning(messageKey, status) {
  * Other errors: rethrows so the caller can decide.
  *
  * @param {Error} error    The axios error.
- * @param {*}     fallback The result shape to return on degraded paths.
- * @return {*} The fallback or null based on degraded type.
+ * @param {unknown} fallback The result shape to return on degraded paths.
+ * @return {unknown} The fallback or null based on degraded type.
  * @throws {Error} For unhandled errors.
  */
 function handleNetworkError(error, fallback) {

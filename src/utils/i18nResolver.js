@@ -42,7 +42,7 @@ export function getUserLocale() {
  *   4. English ('en')
  *   5. First available language
  *
- * @param {*} value The field value (string or language-tagged object)
+ * @param {string|object} value The field value (string or language-tagged object)
  * @param {string} [locale] The preferred locale (defaults to user's locale)
  * @param {string} [fallbackLocale] The fallback locale (defaults to app default 'nl')
  * @return {{ text: string, lang: string|null, isFallback: boolean }}

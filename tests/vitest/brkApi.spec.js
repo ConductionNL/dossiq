@@ -22,6 +22,7 @@ const BASE = '/index.php/apps/dossiq/api/external/brk'
 
 /**
  * Build an axios-style success response.
+ *
  * @param {*} data The response payload.
  * @return {{data: *}} An axios-shaped response.
  */

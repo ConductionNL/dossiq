@@ -25,6 +25,7 @@
  * @param {string} fallback The base to use when the path does not contain the
  *   app mount at all (e.g. a test harness serving from `/`); pass
  *   `generateUrl('/apps/dossiq')`.
+ *
  * @return {string} The history base for `createWebHistory()`.
  *
  * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md

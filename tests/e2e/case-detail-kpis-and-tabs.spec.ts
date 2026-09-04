@@ -217,7 +217,6 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		// needs that gating in nextcloud-vue's CnDetailPage, not a change here.
 		const absent = failures.filter((f) => ABSENT_APPS.test(f.url))
 		if (absent.length > 0) {
-			// eslint-disable-next-line no-console
 			console.log(
 				`absent-app requests (expected on this instance): ${absent
 					.map((f) => `${f.status} ${f.url}`)

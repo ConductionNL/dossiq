@@ -27,6 +27,7 @@ const BASE = '/index.php/apps/dossiq/api/external/woz'
 
 /**
  * Build an axios-style success response.
+ *
  * @param {*} data The response payload.
  * @return {{data: *}} An axios-shaped response.
  */

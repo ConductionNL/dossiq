@@ -127,6 +127,7 @@ test.describe('Workflow Board keyboard status transition', () => {
 	 * instance that already holds cases, `.first()` would drive somebody
 	 * else's card and the test would be asserting about data it did not
 	 * create.
+	 *
 	 * @param page The page.
 	 * @return The `.case-card` element rendering the seeded case.
 	 */

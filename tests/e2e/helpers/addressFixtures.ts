@@ -66,6 +66,7 @@ export const ADDRESS_FIXTURES = [
 /**
  * Read a CSRF request-token from a freshly-loaded dossiq page. OpenRegister
  * write endpoints (POST/PUT/DELETE) are CSRF-protected; GET is not.
+ *
  * @param api Authenticated request context (storageState).
  */
 export async function getRequestToken(api: APIRequestContext): Promise<string> {
@@ -120,6 +121,7 @@ export async function addressesRegisterAvailable(
  * Seed both valid address fixtures into the OR addresses register. Returns the
  * created object ids (for cleanup). Asserts each create succeeds — call only
  * after `addressesRegisterAvailable()` returns true.
+ *
  * @param api   Authenticated request context.
  * @param token CSRF request-token.
  */
@@ -148,6 +150,7 @@ export async function seedAddressFixtures(
 
 /**
  * Delete every address whose body carries this run's prefix (idempotent).
+ *
  * @param api   Authenticated request context.
  * @param token CSRF request-token.
  */

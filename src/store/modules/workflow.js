@@ -313,6 +313,7 @@ export const useWorkflowStore = defineStore('workflow', {
 		 *  validation (see `validateWorkflow`) — defense in depth; the caller
 		 *  (`WorkflowTab.vue::publish()`) already validates via the editor's
 		 *  `validate()` before invoking this action.
+		 *
 		 * @return {Promise<object|null>} The published template or null
 		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-publish-uses-the-canonical-write-path
 		 */
@@ -939,6 +940,7 @@ export const useWorkflowStore = defineStore('workflow', {
 		 *  component (which loads them) has this list, so callers must pass
 		 *  it through; defaults to [] which yields no NO_FINAL_STATUS-style
 		 *  findings (nothing to validate against yet).
+		 *
 		 * @return {Array} Array of {type, code, message} issue objects
 		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-workflow-editor-validation
 		 */

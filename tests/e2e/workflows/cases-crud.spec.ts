@@ -73,6 +73,7 @@ test.describe('Cases — full CRUD with persistence', () => {
 	/**
 	 * Open the Cases index via the sidebar and wait for the data fetch to
 	 * resolve into a populated table.
+	 *
 	 * @param page The page.
 	 */
 	async function openCasesList(page: Page): Promise<void> {

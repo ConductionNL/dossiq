@@ -201,6 +201,7 @@ test.describe('New case dialog', () => {
 
 	/**
 	 * Open the dialog from the dashboard's New case button.
+	 *
 	 * @param page The Playwright page.
 	 */
 	async function openDialog(page) {

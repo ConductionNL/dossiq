@@ -237,7 +237,7 @@ export default {
 
 		/**
 		 * @param {object} root0 The destructured argument object.
-		 * @param root0.coordinates
+		 * @param {Array<number>} root0.coordinates The [lon, lat] pair the picker selected.
 		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
 		 */
 		onAddressSelect({ coordinates }) {

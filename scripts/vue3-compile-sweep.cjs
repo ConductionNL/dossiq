@@ -2,6 +2,7 @@
  * Vue 3 compile-readiness sweep (ADR-066, openspec vue-3-migration).
  *
  * Compiles every SFC template + script under src/ with @vue/compiler-sfc in
+ *
  * @vue/compat MODE 2, and reports which components fail to COMPILE on Vue 3.
  * This is the fastest signal for the migration: compile failures are hard
  * blockers, and this needs no bundle/install of the runtime deps.
@@ -31,9 +32,12 @@ const root = path.resolve(__dirname, '..', 'src')
 const compat = { compatConfig: { MODE: 2, COMPILER_FILTERS: true } }
 
 /**
+ * Collect every file path under a directory, recursively.
  *
- * @param dir
- * @param out
+ * @param {string} dir Directory to walk.
+ * @param {Array<string>} out Accumulator the paths are appended to.
+ *
+ * @return {Array<string>} The same accumulator, for convenience.
  */
 function walk(dir, out = []) {
 	for (const e of fs.readdirSync(dir, { withFileTypes: true })) {

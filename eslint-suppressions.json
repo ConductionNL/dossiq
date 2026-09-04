@@ -36,9 +36,6 @@
   "src/components/map/LocationPicker.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 3
-    },
-    "jsdoc/require-param-type": {
-      "count": 1
     }
   },
   "src/components/tabs/CaseDocumentsTab.vue": {
@@ -235,9 +232,6 @@
     }
   },
   "src/modals/DeelzaakCreateModal.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 2
-    },
     "no-console": {
       "count": 3
     }
@@ -458,14 +452,6 @@
       "count": 1
     }
   },
-  "src/views/cases/components/InspectionPanel.vue": {
-    "@nextcloud/l10n-enforce-ellipsis": {
-      "count": 1
-    },
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 2
-    }
-  },
   "src/views/cases/components/ShareTab.vue": {
     "@nextcloud/l10n-enforce-ellipsis": {
       "count": 2
@@ -544,9 +530,6 @@
       "count": 1
     },
     "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "jsdoc/require-param-type": {
       "count": 1
     }
   },
