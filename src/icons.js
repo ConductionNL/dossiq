@@ -168,6 +168,7 @@ import TagOutline from 'vue-material-design-icons/TagOutline.vue'
 import Timeline from 'vue-material-design-icons/Timeline.vue'
 import TimerOutline from 'vue-material-design-icons/TimerOutline.vue'
 import TimerSandFull from 'vue-material-design-icons/TimerSandFull.vue'
+import TrayFull from 'vue-material-design-icons/TrayFull.vue'
 import Tune from 'vue-material-design-icons/Tune.vue'
 import ViewColumnOutline from 'vue-material-design-icons/ViewColumnOutline.vue'
 import ViewDashboard from 'vue-material-design-icons/ViewDashboard.vue'
@@ -330,6 +331,7 @@ export default {
 	Timeline,
 	TimerOutline,
 	TimerSandFull,
+	TrayFull,
 	Tune,
 	ViewColumnOutline,
 	ViewDashboard,

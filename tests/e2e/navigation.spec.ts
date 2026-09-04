@@ -41,7 +41,7 @@ test.describe('Sidebar Navigation', () => {
 		// page stays routable — every other spec still reaches it with a
 		// direct GET — but it no longer has a navigation entry of its own,
 		// and asserting one is asserting the IA we retired.
-		for (const href of ['/my-work', '/workflow-board', '/cases']) {
+		for (const href of ['/queue', '/my-work', '/workflow-board', '/cases']) {
 			await expect(nav.locator(`a[href$="${href}"]`)).toHaveCount(1)
 		}
 

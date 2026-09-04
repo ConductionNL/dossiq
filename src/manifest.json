@@ -196,6 +196,13 @@
       "order": 10
     },
     {
+      "id": "Queue",
+      "label": "Queue",
+      "icon": "TrayFull",
+      "route": "Queue",
+      "order": 15
+    },
+    {
       "id": "MyWork",
       "label": "Assigned to me",
       "icon": "ClipboardAccountOutline",
@@ -1017,6 +1024,71 @@
             "dateChip": false
           }
         ],
+        "documentationUrl": "https://procest.conduction.nl"
+      }
+    },
+    {
+      "id": "Queue",
+      "route": "/queue",
+      "type": "index",
+      "title": "Queue",
+      "_note": "The one queue: every case that is open and that nobody has picked up. It is a FILTER over `case`, not a collection of its own, so this is a plain type:index rather than a bespoke view. `assignee: \"IS NULL\"` is the literal sentinel MariaDbSearchHandler::applyNullCheck matches; the documented `assignee_isnull=true` spelling does NOT survive a query string, because SearchQueryHandler::cleanQuery compares the value with `=== true` and degrades it to IS NOT NULL, which renders an empty page with no error. `isFinalStatus: false` keeps closed cases out; it is a real boolean on every case row, not a derived one, so plain equality reaches it. Assigning a case removes it from here and puts it on that person's Assigned to me; All cases shows it either way. The caseType folder sidebar is the same control the Cases index uses, so the queue narrows by case type without a second page. WHY THIS IS A PAGE AND NOT A `menu[].query` PRESET, which is what gate-68 (ADR-097 Decision 5) proposes for a second index over an already-indexed schema: a preset is only a link into the target page, where the query filters and the reader's own facet filters share one map, so a facet interaction can widen the queue back to every case. A base filter on the page itself cannot be cleared by the person reading it, and that is the property that makes the queue trustworthy. Assigned to me is a page for the same reason.",
+      "config": {
+        "register": "dossiq",
+        "schema": "case",
+        "filter": {
+          "assignee": "IS NULL",
+          "isFinalStatus": false
+        },
+        "allowSavedViews": true,
+        "excludeFields": [
+          "status"
+        ],
+        "viewModes": [
+          "table",
+          "cards"
+        ],
+        "showViewAction": false,
+        "actions": [
+          {
+            "id": "view",
+            "label": "View",
+            "icon": "EyeOutline",
+            "handler": "navigate",
+            "route": "CaseDetail",
+            "type": "handler"
+          }
+        ],
+        "columns": [
+          "identifier",
+          "title",
+          {
+            "key": "caseType",
+            "label": "Case type",
+            "formatter": "caseTypeName"
+          },
+          {
+            "key": "status",
+            "label": "Status",
+            "formatter": "statusTypeName"
+          },
+          "priority",
+          "deadline"
+        ],
+        "emptyText": "Nothing is waiting. Every open case has someone on it.",
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        },
+        "folderSidebar": {
+          "source": "register",
+          "register": "dossiq",
+          "schema": "caseType",
+          "idField": "@self.id",
+          "nameField": "title",
+          "filterField": "caseType",
+          "allLabel": "All types"
+        },
         "documentationUrl": "https://procest.conduction.nl"
       }
     },

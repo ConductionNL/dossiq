@@ -16,6 +16,7 @@
 		"BezwaarCommitteesMenu": "decidiq:GovernanceBodies"
 	},
 	"relocations": {
+		"Queue": "WorkGroup",
 		"MyWork": "WorkGroup",
 		"Cases": "WorkGroup",
 		"Tasks": "WorkGroup",
