@@ -154,17 +154,23 @@ class VthSeedLookup {
 	}//end resolveCaseTypeId()
 
 	/**
-	 * Check whether a workflowTemplate with the given title is already
-	 * present for the given caseType. Used for idempotency.
+	 * Find the workflowTemplate this catalogue entry already seeded, if any.
+	 *
+	 * 🔑 IT RETURNS THE ROW, NOT A YES OR NO. A boolean cannot tell a published
+	 * template from the draft a failed publish left behind, and both answered
+	 * "already present": three VTH templates sat at
+	 * `lifecycleStatus=draft, isActive=false` on every instance, and every
+	 * later repair run reported them as seeded and moved on. The caller
+	 * publishes the draft instead.
 	 *
 	 * @param string $caseTypeId The caseType UUID
 	 * @param string $title The template title
 	 *
-	 * @return bool True when an existing template matches
+	 * @return array<string, mixed>|null The existing template, or null when there is none
 	 *
 	 * @spec openspec/specs/vth-workflow-templates/spec.md
 	 */
-	public function isAlreadySeeded(string $caseTypeId, string $title): bool {
+	public function findSeeded(string $caseTypeId, string $title): ?array {
 		$rows = $this->query(
 			schemaKey: 'workflow_template_schema',
 			filters: [
@@ -172,12 +178,12 @@ class VthSeedLookup {
 				'title' => $title,
 				'_limit' => 1,
 			],
-			failureMessage: 'Dossiq: VTH workflow template — idempotency lookup failed',
+			failureMessage: 'Dossiq: VTH workflow template idempotency lookup failed',
 			failureContext: ['caseType' => $caseTypeId, 'title' => $title],
 		);
 
-		return $this->rowReader->firstId(rows: $rows) !== '';
-	}//end isAlreadySeeded()
+		return $this->rowReader->firstRow(rows: $rows);
+	}//end findSeeded()
 
 	/**
 	 * Build a status name → UUID map for the statusTypes belonging to a
