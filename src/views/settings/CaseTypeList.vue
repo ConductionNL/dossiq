@@ -157,7 +157,7 @@ export default {
 		},
 
 		/**
-		 * @param caseTypeId
+		 * @param {string} caseTypeId Identifier of the case type id.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
 		 */
 		async loadStatusTypeCount(caseTypeId) {
@@ -217,7 +217,7 @@ export default {
 		},
 
 		/**
-		 * @param row
+		 * @param {object} row The row.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
 		 */
 		selectCaseType(row) {

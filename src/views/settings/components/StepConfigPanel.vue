@@ -420,7 +420,7 @@ export default {
 
 	methods: {
 		/**
-		 * @param config
+		 * @param {object} config The config.
 		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		parseConfig(config) {
@@ -564,7 +564,7 @@ export default {
 		},
 
 		/**
-		 * @param actions
+		 * @param {Array} actions The actions.
 		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		parseActions(actions) {
@@ -616,7 +616,7 @@ export default {
 
 		/**
 		 * @param index
-		 * @param event
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		onCheckDragStart(index, event) {
@@ -625,8 +625,8 @@ export default {
 		},
 
 		/**
-		 * @param targetIndex
-		 * @param event
+		 * @param {number} targetIndex The target index.
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		onCheckDrop(targetIndex, event) {

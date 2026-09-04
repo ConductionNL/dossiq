@@ -299,7 +299,7 @@ export default {
 		},
 
 		/**
-		 * @param field
+		 * @param {object} field The field.
 		 * @param value
 		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
 		 */

@@ -347,7 +347,7 @@ export default {
 		caseId: {
 			immediate: true,
 			/**
-			 * @param newId
+			 * @param {string} newId Identifier of the new id.
 			 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
 			 */
 			handler(newId) {
@@ -360,7 +360,7 @@ export default {
 		caseTypeId: {
 			immediate: true,
 			/**
-			 * @param newId
+			 * @param {string} newId Identifier of the new id.
 			 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
 			 */
 			handler(newId) {
@@ -391,7 +391,7 @@ export default {
 		t,
 
 		/**
-		 * @param result
+		 * @param {object} result The result.
 		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
 		 */
 		resultLabel(result) {
@@ -404,7 +404,7 @@ export default {
 		},
 
 		/**
-		 * @param dateStr
+		 * @param {string} dateStr The date str, as a string.
 		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
 		 */
 		formatDate(dateStr) {
@@ -415,7 +415,7 @@ export default {
 		},
 
 		/**
-		 * @param reportId
+		 * @param {string} reportId Identifier of the report id.
 		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
 		 */
 		toggleReport(reportId) {

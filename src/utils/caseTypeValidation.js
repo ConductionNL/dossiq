@@ -140,7 +140,7 @@ export function validateForPublish(caseType, statusTypes) {
 
 /**
  *
- * @param field
+ * @param {object} field The field.
  */
 function getFieldLabel(field) {
 	const labels = {

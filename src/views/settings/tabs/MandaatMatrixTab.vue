@@ -213,7 +213,7 @@ export default {
 		},
 
 		/**
-		 * @param payload
+		 * @param {object} payload The payload.
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		async onMandaatSave(payload) {

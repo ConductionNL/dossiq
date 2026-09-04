@@ -57,7 +57,7 @@ let caseTypeSeeded = false
 
 /**
  * Call a dossiq deelzaken endpoint with the run's CSRF token.
- * @param path
+ * @param {string} path The path.
  */
 async function deelzaken(path: string): Promise<{ status: number; body: any }> {
 	const res = await api.get(`/index.php/apps/dossiq/api/deelzaken${path}`, {

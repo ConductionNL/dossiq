@@ -158,7 +158,7 @@ export default {
 
 	methods: {
 		/**
-		 * @param status
+		 * @param {string} status The status.
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		getStatusLabel(status) {
@@ -172,7 +172,7 @@ export default {
 		},
 
 		/**
-		 * @param response
+		 * @param {object} response The response.
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		getResponseLabel(response) {
@@ -187,7 +187,7 @@ export default {
 		},
 
 		/**
-		 * @param dateStr
+		 * @param {string} dateStr The date str, as a string.
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		formatDate(dateStr) {
@@ -198,7 +198,7 @@ export default {
 		},
 
 		/**
-		 * @param req
+		 * @param {object} req The req.
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		isOverdue(req) {

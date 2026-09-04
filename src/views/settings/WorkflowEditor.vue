@@ -284,7 +284,7 @@ export default {
 		},
 
 		/**
-		 * @param statusId
+		 * @param {string} statusId Identifier of the status id.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		getStepsForStatus(statusId) {
@@ -294,7 +294,7 @@ export default {
 		},
 
 		/**
-		 * @param statusId
+		 * @param {string} statusId Identifier of the status id.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		getNodeCenter(statusId) {
@@ -308,7 +308,7 @@ export default {
 
 		// --- Selection ---
 		/**
-		 * @param statusId
+		 * @param {string} statusId Identifier of the status id.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		selectNode(statusId) {
@@ -318,7 +318,7 @@ export default {
 		},
 
 		/**
-		 * @param transitionId
+		 * @param {string} transitionId Identifier of the transition id.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		selectTransition(transitionId) {
@@ -328,7 +328,7 @@ export default {
 		},
 
 		/**
-		 * @param transitionId
+		 * @param {string} transitionId Identifier of the transition id.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		editTransition(transitionId) {
@@ -336,7 +336,7 @@ export default {
 		},
 
 		/**
-		 * @param step
+		 * @param {object} step The step.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onStepClick(step) {
@@ -347,8 +347,8 @@ export default {
 
 		// --- Node drag ---
 		/**
-		 * @param statusId
-		 * @param event
+		 * @param {string} statusId Identifier of the status id.
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onNodeDragStart(statusId, event) {
@@ -360,7 +360,7 @@ export default {
 		},
 
 		/**
-		 * @param event
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onCanvasMouseMove(event) {
@@ -402,7 +402,7 @@ export default {
 		},
 
 		/**
-		 * @param event
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onCanvasMouseDown(event) {
@@ -423,7 +423,7 @@ export default {
 		},
 
 		/**
-		 * @param event
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onCanvasWheel(event) {
@@ -434,8 +434,8 @@ export default {
 
 		// --- Connection drawing ---
 		/**
-		 * @param statusId
-		 * @param event
+		 * @param {string} statusId Identifier of the status id.
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onConnectionStart(statusId, event) {
@@ -450,7 +450,7 @@ export default {
 		},
 
 		/**
-		 * @param statusId
+		 * @param {string} statusId Identifier of the status id.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onConnectionEnd(statusId) {
@@ -469,7 +469,7 @@ export default {
 
 		// --- Palette drag & drop ---
 		/**
-		 * @param type
+		 * @param {string} type The type.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onPaletteDragStart(type) {
@@ -477,7 +477,7 @@ export default {
 		},
 
 		/**
-		 * @param event
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async onCanvasDrop(event) {
@@ -645,7 +645,7 @@ export default {
 
 		// --- Step management ---
 		/**
-		 * @param statusId
+		 * @param {string} statusId Identifier of the status id.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onAddStep(statusId) {
@@ -678,7 +678,7 @@ export default {
 		},
 
 		/**
-		 * @param transitionId
+		 * @param {string} transitionId Identifier of the transition id.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onTransitionDelete(transitionId) {

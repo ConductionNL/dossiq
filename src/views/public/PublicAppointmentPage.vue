@@ -90,7 +90,7 @@ export default {
 		},
 
 		/**
-		 * @param status
+		 * @param {string} status The status.
 		 * @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md
 		 */
 		statusLabel(status) {

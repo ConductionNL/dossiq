@@ -99,7 +99,7 @@ export default {
 		},
 
 		/**
-		 * @param result
+		 * @param {object} result The result.
 		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
 		 */
 		async selectResult(result) {
@@ -136,7 +136,7 @@ export default {
 		},
 
 		/**
-		 * @param type
+		 * @param {string} type The type.
 		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
 		 */
 		getTypeIcon(type) {

@@ -335,7 +335,7 @@ export default {
 
 	methods: {
 		/**
-		 * @param guards
+		 * @param {Array} guards The guards.
 		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		parseGuards(guards) {
@@ -351,7 +351,7 @@ export default {
 		},
 
 		/**
-		 * @param actions
+		 * @param {Array} actions The actions.
 		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		parseActions(actions) {
@@ -377,7 +377,7 @@ export default {
 		},
 
 		/**
-		 * @param roleId
+		 * @param {string} roleId Identifier of the role id.
 		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		toggleRole(roleId) {

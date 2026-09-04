@@ -231,7 +231,7 @@ export default {
 
 	methods: {
 		/**
-		 * @param name
+		 * @param {string} name The name.
 		 * @spec openspec/specs/case-email-integration/spec.md
 		 */
 		varToken(name) {
@@ -320,7 +320,7 @@ export default {
 		},
 
 		/**
-		 * @param name
+		 * @param {string} name The name.
 		 * @spec openspec/specs/case-email-integration/spec.md
 		 */
 		insertVariable(name) {

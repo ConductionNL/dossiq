@@ -177,9 +177,9 @@ const DEFAULT_BINS = [
  * @return {{ bins: Array<{ label, count }>, slaTargetDays: number|null }}
  */
 /**
- * @param completedCases
- * @param caseTypes
- * @param bins
+ * @param {Array} completedCases The completed cases.
+ * @param {Array} caseTypes The case types.
+ * @param {Array} bins The bins.
  * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 export function computeProcessingTimeDistribution(completedCases, caseTypes, bins) {

@@ -205,7 +205,7 @@ export default {
 		},
 
 		/**
-		 * @param event
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onMouseDown(event) {
@@ -216,7 +216,7 @@ export default {
 		},
 
 		/**
-		 * @param event
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onConnectionStartFromPort(event) {
@@ -224,8 +224,8 @@ export default {
 		},
 
 		/**
-		 * @param step
-		 * @param event
+		 * @param {object} step The step.
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onStepDragStart(step, event) {
@@ -236,7 +236,7 @@ export default {
 
 		/**
 		 * @param targetStep
-		 * @param event
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onStepDrop(targetStep, event) {

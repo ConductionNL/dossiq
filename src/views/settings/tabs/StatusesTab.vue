@@ -496,7 +496,7 @@ export default {
 		// Drag and drop
 		/**
 		 * @param index
-		 * @param event
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		onDragStart(index, event) {
@@ -519,7 +519,7 @@ export default {
 		},
 
 		/**
-		 * @param targetIndex
+		 * @param {number} targetIndex The target index.
 		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		async onDrop(targetIndex) {

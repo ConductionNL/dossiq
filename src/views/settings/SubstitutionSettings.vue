@@ -146,7 +146,7 @@ export default {
 		},
 
 		/**
-		 * @param id
+		 * @param {string} id Identifier of the id.
 		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 		 */
 		async revoke(id) {

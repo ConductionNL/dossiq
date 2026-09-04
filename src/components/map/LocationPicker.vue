@@ -220,7 +220,7 @@ export default {
 		},
 
 		/**
-		 * @param latlng
+		 * @param {object} latlng The latlng.
 		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
 		 */
 		placeMarker(latlng) {
@@ -277,7 +277,7 @@ export default {
 		},
 
 		/**
-		 * @param sqm
+		 * @param {number} sqm The sqm.
 		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
 		 */
 		formatArea(sqm) {

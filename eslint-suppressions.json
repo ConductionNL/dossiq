@@ -33,7 +33,7 @@
       "count": 2
     },
     "jsdoc/require-param-type": {
-      "count": 3
+      "count": 1
     }
   },
   "src/components/map/LocationPicker.vue": {
@@ -41,7 +41,7 @@
       "count": 3
     },
     "jsdoc/require-param-type": {
-      "count": 5
+      "count": 3
     }
   },
   "src/components/tabs/CaseDocumentsTab.vue": {
@@ -86,7 +86,7 @@
       "count": 1
     },
     "jsdoc/require-param-type": {
-      "count": 3
+      "count": 1
     }
   },
   "src/dialogs/BerichtenboxComposeDialog.vue": {
@@ -145,7 +145,7 @@
       "count": 3
     },
     "jsdoc/require-param-type": {
-      "count": 2
+      "count": 1
     }
   },
   "src/dialogs/CreateFederatedShareDialog.vue": {
@@ -250,9 +250,6 @@
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
-    },
-    "jsdoc/require-param-type": {
-      "count": 1
     }
   },
   "src/modals/DeelzaakCreateModal.vue": {
@@ -265,9 +262,6 @@
   },
   "src/modals/DeelzaakDeleteWarningModal.vue": {
     "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    },
-    "jsdoc/require-param-type": {
       "count": 1
     },
     "no-console": {
@@ -297,9 +291,6 @@
       "count": 2
     },
     "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "jsdoc/require-param-type": {
       "count": 1
     }
   },
@@ -399,9 +390,6 @@
     "@nextcloud/no-deprecated-library-props": {
       "count": 4
     },
-    "jsdoc/require-param-type": {
-      "count": 2
-    },
     "no-console": {
       "count": 3
     }
@@ -421,9 +409,6 @@
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     },
-    "jsdoc/require-param-type": {
-      "count": 1
-    },
     "no-console": {
       "count": 2
     }
@@ -431,9 +416,6 @@
   "src/views/cases/components/AdviceRequestPanel.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 1
-    },
-    "jsdoc/require-param-type": {
-      "count": 4
     }
   },
   "src/views/cases/components/AdviesPanel.vue": {
@@ -444,7 +426,7 @@
       "count": 1
     },
     "jsdoc/require-param-type": {
-      "count": 11
+      "count": 2
     },
     "no-console": {
       "count": 3
@@ -495,9 +477,6 @@
   "src/views/cases/components/EmailThread.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 1
-    },
-    "jsdoc/require-param-type": {
-      "count": 3
     }
   },
   "src/views/cases/components/InspectionPanel.vue": {
@@ -508,7 +487,7 @@
       "count": 2
     },
     "jsdoc/require-param-type": {
-      "count": 6
+      "count": 1
     }
   },
   "src/views/cases/components/ShareTab.vue": {
@@ -544,7 +523,7 @@
       "count": 1
     },
     "jsdoc/require-param-type": {
-      "count": 4
+      "count": 2
     }
   },
   "src/views/dashboard/WooDeadlinePanel.vue": {
@@ -569,9 +548,6 @@
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 2
-    },
-    "jsdoc/require-param-type": {
-      "count": 2
     }
   },
   "src/views/public/PublicAppointmentPage.vue": {
@@ -582,7 +558,7 @@
       "count": 2
     },
     "jsdoc/require-param-type": {
-      "count": 2
+      "count": 1
     }
   },
   "src/views/public/PublicFederatedTransferPage.vue": {
@@ -604,11 +580,6 @@
       "count": 1
     }
   },
-  "src/views/settings/CaseTypeAdmin.vue": {
-    "jsdoc/require-param-type": {
-      "count": 2
-    }
-  },
   "src/views/settings/CaseTypeDetail.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 5
@@ -617,7 +588,7 @@
       "count": 1
     },
     "jsdoc/require-param-type": {
-      "count": 2
+      "count": 1
     }
   },
   "src/views/settings/CaseTypeList.vue": {
@@ -625,7 +596,7 @@
       "count": 3
     },
     "jsdoc/require-param-type": {
-      "count": 8
+      "count": 6
     }
   },
   "src/views/settings/EmailSettings.vue": {
@@ -681,9 +652,6 @@
     "@nextcloud/no-deprecated-library-props": {
       "count": 2
     },
-    "jsdoc/require-param-type": {
-      "count": 1
-    },
     "no-console": {
       "count": 2
     }
@@ -693,15 +661,12 @@
       "count": 1
     },
     "jsdoc/require-param-type": {
-      "count": 20
+      "count": 2
     }
   },
   "src/views/settings/ZgwMappingSettings.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 2
-    },
-    "jsdoc/require-param-type": {
-      "count": 3
     }
   },
   "src/views/settings/components/DurationPicker.vue": {
@@ -712,17 +677,11 @@
   "src/views/settings/components/MandaatImportPanel.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 2
-    },
-    "jsdoc/require-param-type": {
-      "count": 1
     }
   },
   "src/views/settings/components/MandaatMatrixTable.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 2
-    },
-    "jsdoc/require-param-type": {
-      "count": 1
     }
   },
   "src/views/settings/components/MandaatToewijzingenTable.vue": {
@@ -733,7 +692,7 @@
       "count": 2
     },
     "jsdoc/require-param-type": {
-      "count": 5
+      "count": 4
     }
   },
   "src/views/settings/components/OrganisatieRolManager.vue": {
@@ -744,7 +703,7 @@
       "count": 2
     },
     "jsdoc/require-param-type": {
-      "count": 3
+      "count": 2
     }
   },
   "src/views/settings/components/RolNode.vue": {
@@ -763,7 +722,7 @@
       "count": 1
     },
     "jsdoc/require-param-type": {
-      "count": 11
+      "count": 6
     }
   },
   "src/views/settings/components/TransitionConfigPanel.vue": {
@@ -771,12 +730,12 @@
       "count": 6
     },
     "jsdoc/require-param-type": {
-      "count": 6
+      "count": 3
     }
   },
   "src/views/settings/components/WorkflowNode.vue": {
     "jsdoc/require-param-type": {
-      "count": 6
+      "count": 1
     },
     "vue/custom-event-name-casing": {
       "count": 12
@@ -785,9 +744,6 @@
   "src/views/settings/components/WorkflowPalette.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 1
-    },
-    "jsdoc/require-param-type": {
-      "count": 2
     },
     "vue/custom-event-name-casing": {
       "count": 2
@@ -798,7 +754,7 @@
       "count": 2
     },
     "jsdoc/require-param-type": {
-      "count": 2
+      "count": 1
     }
   },
   "src/views/settings/tabs/ChecklistsTab.vue": {
@@ -836,9 +792,6 @@
   "src/views/settings/tabs/DocumentTypesTab.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 3
-    },
-    "jsdoc/require-param-type": {
-      "count": 2
     }
   },
   "src/views/settings/tabs/FinancialIntegrationTab.vue": {
@@ -867,7 +820,7 @@
       "count": 4
     },
     "jsdoc/require-param-type": {
-      "count": 3
+      "count": 2
     }
   },
   "src/views/settings/tabs/PropertiesTab.vue": {
@@ -896,7 +849,7 @@
       "count": 5
     },
     "jsdoc/require-param-type": {
-      "count": 6
+      "count": 4
     }
   },
   "src/views/settings/tabs/SubCaseTypesTab.vue": {
@@ -915,15 +868,12 @@
       "count": 1
     },
     "jsdoc/require-param-type": {
-      "count": 4
+      "count": 3
     }
   },
   "src/views/settings/tabs/WorkflowTab.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 7
-    },
-    "jsdoc/require-param-type": {
-      "count": 1
     },
     "no-console": {
       "count": 1

@@ -240,7 +240,7 @@ export default {
 		},
 
 		/**
-		 * @param idx
+		 * @param {number} idx The index.
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
 		 */
 		removeVoorwaarde(idx) {

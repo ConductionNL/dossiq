@@ -27,7 +27,7 @@ export {
 
 /**
  *
- * @param caseId
+ * @param {string} caseId Identifier of the case id.
  */
 function base(caseId) {
 	return generateUrl(

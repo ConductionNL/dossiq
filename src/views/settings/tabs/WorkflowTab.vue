@@ -362,7 +362,7 @@ export default {
 		},
 
 		/**
-		 * @param event
+		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async handleImport(event) {
