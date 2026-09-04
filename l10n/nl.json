@@ -3516,6 +3516,8 @@
         "When this change is due to be sent.": "Wanneer deze wijziging verstuurd moet worden.",
         "When this retry ran.": "Wanneer deze poging liep.",
         "Which layer the error came from.": "Uit welke laag de fout kwam.",
-        "Which retry this was, counting from one.": "De hoeveelste poging dit was, geteld vanaf één."
+        "Which retry this was, counting from one.": "De hoeveelste poging dit was, geteld vanaf één.",
+        "What this status MEANS in a process, independent of what it is called. A shipped flow moves a case by role, so it works on a case type that calls its working phase Beoordeling or Onderzoek rather than In behandeling. Leave it empty for a status no flow needs to address.": "Wat deze status in een proces BETEKENT, los van hoe hij heet. Een meegeleverde flow verzet een zaak op rol, zodat hij ook werkt op een zaaktype dat zijn werkfase Beoordeling of Onderzoek noemt in plaats van In behandeling. Laat leeg voor een status die geen enkele flow hoeft aan te spreken.",
+        "Verplicht value-type embedded in elke sociaal-domein zaak. Legt categorieën bijzondere persoonsgegevens (AVG art. 9), rechtvaardiging, bewaartermijn en toegangsbeperking vast. Zaak kan niet worden opgeslagen zonder dit blok.": "Verplicht value-type embedded in elke sociaal-domein zaak. Legt categorieën bijzondere persoonsgegevens (AVG art. 9), rechtvaardiging, bewaartermijn en toegangsbeperking vast. Zaak kan niet worden opgeslagen zonder dit blok."
     }
 }

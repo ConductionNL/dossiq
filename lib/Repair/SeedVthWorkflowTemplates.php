@@ -628,6 +628,15 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 			return;
 		}
 
+		// Read what is active BEFORE publishing: a publish deprecates the
+		// definition the case type already had, and this is the only moment
+		// that definition can still be named. See
+		// VthCatalogueReport::displacedTitle() for why two catalogue entries
+		// land on one case type, and the Notes under the Handhavingszaak
+		// requirement in openspec/specs/vth-workflow-templates/spec.md for what
+		// the model cannot yet express.
+		$displaced = $this->definitionService->getActiveDefinitionFor(caseTypeId: $caseTypeId);
+
 		// Publish, which flips the row to lifecycleStatus=published and
 		// isActive=true, and pins caseType.workflowDefinition when no previous
 		// definition was pinned (handled inside publish()).
@@ -645,10 +654,21 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 			return;
 		}
 
+		// The summary is the reporting channel for this step, deliberately: a
+		// count is not a report, and a second warning in the log is a second
+		// place to look. The line below names the deprecation where the
+		// administrator is already reading.
 		$this->outcome(
 			entry: $slug,
 			outcome: 'seeded',
-			reason: 'seeded and published as "' . $title . '" version ' . $version . '.',
+			reason: $this->report->seededReason(
+				title: $title,
+				version: $version,
+				displacedTitle: $this->report->displacedTitle(
+					displaced: $displaced,
+					publishedId: (string)$draft['id'],
+				),
+			),
 		);
 	}//end createAndPublishTemplate()
 }//end class

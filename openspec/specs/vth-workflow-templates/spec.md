@@ -96,6 +96,32 @@ The system SHALL provide a pre-built workflow template for Handhavingszaak that 
 - **THEN** the workflow SHALL support escalation transitions: last onder dwangsom -> verbeuring -> bestuursdwang
 - **THEN** each escalation step SHALL require a new handhavingsactie record with updated ernst/gedrag classification
 
+#### Notes: the spoedeisende variant the model cannot express
+
+The catalogue ships two templates against the one `handhavingszaak` case type:
+`handhavingstraject`, the ordinary enforcement route this requirement describes,
+and `spoedig-herstel`, the Awb 5:31 route where the authority acts first and
+issues the decision afterwards. The library scenario below lists only the first.
+
+One published definition per case type is the workflow-definition model, so
+whichever the seeder reaches last deprecates the other. That is the model
+working. It is not what the catalogue intends: both routes are real, a
+municipality runs them side by side, and which one a case follows is decided at
+constatering, not at configuration time.
+
+The model has no way to say that yet. `workflowTemplate.parentWorkflow` is the
+nearest thing, and it is Enterprise tier, unimplemented in PHP, and describes a
+hierarchy between case types (generic bezwaar to VTH bezwaar) rather than two
+routes through one. Giving `spoedig-herstel` its own case type is the other way
+out, and it is a product decision, not a modelling one: it changes what a
+municipality registers as a zaaktype, and the change that authored this
+catalogue assumed five VTH case types, with both enforcement templates on
+`Handhaving`.
+
+Until that decision is taken, both templates stay, the deprecation stands as
+correct behaviour, and `SeedVthWorkflowTemplates` names the definition each
+publish displaces so the retirement is visible on the install that causes it.
+
 ### Requirement: VTH workflow template library
 
 The system SHALL provide a browsable library of VTH workflow templates that administrators can preview and import into their case types.

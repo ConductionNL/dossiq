@@ -3516,7 +3516,9 @@
         "Which layer the error came from.": "Which layer the error came from.",
         "Which retry this was, counting from one.": "Which retry this was, counting from one.",
         "Queue": "Queue",
-        "Nothing is waiting. Every open case has someone on it.": "Nothing is waiting. Every open case has someone on it."
+        "Nothing is waiting. Every open case has someone on it.": "Nothing is waiting. Every open case has someone on it.",
+        "What this status MEANS in a process, independent of what it is called. A shipped flow moves a case by role, so it works on a case type that calls its working phase Beoordeling or Onderzoek rather than In behandeling. Leave it empty for a status no flow needs to address.": "What this status MEANS in a process, independent of what it is called. A shipped flow moves a case by role, so it works on a case type that calls its working phase Beoordeling or Onderzoek rather than In behandeling. Leave it empty for a status no flow needs to address.",
+        "Verplicht value-type embedded in elke sociaal-domein zaak. Legt categorieën bijzondere persoonsgegevens (AVG art. 9), rechtvaardiging, bewaartermijn en toegangsbeperking vast. Zaak kan niet worden opgeslagen zonder dit blok.": "Verplicht value-type embedded in elke sociaal-domein zaak. Legt categorieën bijzondere persoonsgegevens (AVG art. 9), rechtvaardiging, bewaartermijn en toegangsbeperking vast. Zaak kan niet worden opgeslagen zonder dit blok."
     },
     "plurals": ""
 }

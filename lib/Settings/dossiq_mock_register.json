@@ -6175,7 +6175,7 @@
               "enum": [
                 "medisch",
                 "gezinssituatie",
-                "financial",
+                "financieel",
                 "justitieel",
                 "etnisch",
                 "religieus",
@@ -8095,7 +8095,75 @@
             "description": "Historie van eerdere gezinsplannen (verlengingen)"
           },
           "gdprClassification": {
-            "$ref": "#/components/schemas/gdprClassification"
+            "title": "AVG Classificatie",
+            "description": "Verplicht value-type embedded in elke sociaal-domein zaak. Legt categorieën bijzondere persoonsgegevens (AVG art. 9), rechtvaardiging, bewaartermijn en toegangsbeperking vast. Zaak kan niet worden opgeslagen zonder dit blok.",
+            "type": "object",
+            "required": [
+              "categories",
+              "justification",
+              "retentionTermYears"
+            ],
+            "properties": {
+              "categories": {
+                "title": "Data Categories",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "medisch",
+                    "gezinssituatie",
+                    "financieel",
+                    "justitieel",
+                    "etnisch",
+                    "religieus",
+                    "politieke-overtuiging"
+                  ]
+                },
+                "description": "AVG art. 9 gegevenscategorieën die in deze zaak worden verwerkt"
+              },
+              "specialPersonalData": {
+                "title": "Special Personal Data",
+                "type": "boolean",
+                "description": "Auto-flag: true zodra een art. 9 categorie is geselecteerd"
+              },
+              "justification": {
+                "title": "Legal Basis",
+                "type": "string",
+                "description": "AVG art. 9.2 uitzonderingsgrond-code (bijv. artikel-9-2-h-avg voor gezondheidszorg/maatschappelijk werk)"
+              },
+              "justificationNotes": {
+                "title": "Legal Basis Explanation",
+                "type": "string",
+                "description": "Plain-Dutch toelichting voor de FG-audit"
+              },
+              "retentionTermYears": {
+                "title": "Retention Period Years",
+                "type": "integer",
+                "description": "Wettelijke bewaartermijn (WMO 15 / Jeugdwet 20 / Participatiewet 10 jaar, selectielijst gemeenten 2020)"
+              },
+              "destructionDate": {
+                "title": "Destruction Date",
+                "type": "string",
+                "format": "date",
+                "description": "Auto-berekend: sluitingsdatum + bewaarTermijnJaren"
+              },
+              "accessRestriction": {
+                "title": "Access Restriction",
+                "type": "string",
+                "description": "Toegangsbeperking, hardcoded in query-guards (bijv. alleen-behandelaar-en-wijkteam)"
+              },
+              "anonymisationAtParts": {
+                "title": "Anonymize When Sharing",
+                "type": "boolean",
+                "default": true,
+                "description": "Auto-anonimiseren bij export tenzij toestemming"
+              },
+              "exportRestriction": {
+                "title": "Export Restriction",
+                "type": "string",
+                "description": "Exportbeperking (bijv. geen-bulk-export)"
+              }
+            }
           }
         }
       },
@@ -10339,7 +10407,75 @@
             "description": "True bij vermogen boven vrijstelling (auto-afwijzing)"
           },
           "gdprClassification": {
-            "$ref": "#/components/schemas/gdprClassification"
+            "title": "AVG Classificatie",
+            "description": "Verplicht value-type embedded in elke sociaal-domein zaak. Legt categorieën bijzondere persoonsgegevens (AVG art. 9), rechtvaardiging, bewaartermijn en toegangsbeperking vast. Zaak kan niet worden opgeslagen zonder dit blok.",
+            "type": "object",
+            "required": [
+              "categories",
+              "justification",
+              "retentionTermYears"
+            ],
+            "properties": {
+              "categories": {
+                "title": "Data Categories",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "medisch",
+                    "gezinssituatie",
+                    "financieel",
+                    "justitieel",
+                    "etnisch",
+                    "religieus",
+                    "politieke-overtuiging"
+                  ]
+                },
+                "description": "AVG art. 9 gegevenscategorieën die in deze zaak worden verwerkt"
+              },
+              "specialPersonalData": {
+                "title": "Special Personal Data",
+                "type": "boolean",
+                "description": "Auto-flag: true zodra een art. 9 categorie is geselecteerd"
+              },
+              "justification": {
+                "title": "Legal Basis",
+                "type": "string",
+                "description": "AVG art. 9.2 uitzonderingsgrond-code (bijv. artikel-9-2-h-avg voor gezondheidszorg/maatschappelijk werk)"
+              },
+              "justificationNotes": {
+                "title": "Legal Basis Explanation",
+                "type": "string",
+                "description": "Plain-Dutch toelichting voor de FG-audit"
+              },
+              "retentionTermYears": {
+                "title": "Retention Period Years",
+                "type": "integer",
+                "description": "Wettelijke bewaartermijn (WMO 15 / Jeugdwet 20 / Participatiewet 10 jaar, selectielijst gemeenten 2020)"
+              },
+              "destructionDate": {
+                "title": "Destruction Date",
+                "type": "string",
+                "format": "date",
+                "description": "Auto-berekend: sluitingsdatum + bewaarTermijnJaren"
+              },
+              "accessRestriction": {
+                "title": "Access Restriction",
+                "type": "string",
+                "description": "Toegangsbeperking, hardcoded in query-guards (bijv. alleen-behandelaar-en-wijkteam)"
+              },
+              "anonymisationAtParts": {
+                "title": "Anonymize When Sharing",
+                "type": "boolean",
+                "default": true,
+                "description": "Auto-anonimiseren bij export tenzij toestemming"
+              },
+              "exportRestriction": {
+                "title": "Export Restriction",
+                "type": "string",
+                "description": "Exportbeperking (bijv. geen-bulk-export)"
+              }
+            }
           }
         }
       },
@@ -14164,7 +14300,75 @@
             "description": "Referentie naar de bijbehorende Indicatiestelling"
           },
           "gdprClassification": {
-            "$ref": "#/components/schemas/gdprClassification"
+            "title": "AVG Classificatie",
+            "description": "Verplicht value-type embedded in elke sociaal-domein zaak. Legt categorieën bijzondere persoonsgegevens (AVG art. 9), rechtvaardiging, bewaartermijn en toegangsbeperking vast. Zaak kan niet worden opgeslagen zonder dit blok.",
+            "type": "object",
+            "required": [
+              "categories",
+              "justification",
+              "retentionTermYears"
+            ],
+            "properties": {
+              "categories": {
+                "title": "Data Categories",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "medisch",
+                    "gezinssituatie",
+                    "financieel",
+                    "justitieel",
+                    "etnisch",
+                    "religieus",
+                    "politieke-overtuiging"
+                  ]
+                },
+                "description": "AVG art. 9 gegevenscategorieën die in deze zaak worden verwerkt"
+              },
+              "specialPersonalData": {
+                "title": "Special Personal Data",
+                "type": "boolean",
+                "description": "Auto-flag: true zodra een art. 9 categorie is geselecteerd"
+              },
+              "justification": {
+                "title": "Legal Basis",
+                "type": "string",
+                "description": "AVG art. 9.2 uitzonderingsgrond-code (bijv. artikel-9-2-h-avg voor gezondheidszorg/maatschappelijk werk)"
+              },
+              "justificationNotes": {
+                "title": "Legal Basis Explanation",
+                "type": "string",
+                "description": "Plain-Dutch toelichting voor de FG-audit"
+              },
+              "retentionTermYears": {
+                "title": "Retention Period Years",
+                "type": "integer",
+                "description": "Wettelijke bewaartermijn (WMO 15 / Jeugdwet 20 / Participatiewet 10 jaar, selectielijst gemeenten 2020)"
+              },
+              "destructionDate": {
+                "title": "Destruction Date",
+                "type": "string",
+                "format": "date",
+                "description": "Auto-berekend: sluitingsdatum + bewaarTermijnJaren"
+              },
+              "accessRestriction": {
+                "title": "Access Restriction",
+                "type": "string",
+                "description": "Toegangsbeperking, hardcoded in query-guards (bijv. alleen-behandelaar-en-wijkteam)"
+              },
+              "anonymisationAtParts": {
+                "title": "Anonymize When Sharing",
+                "type": "boolean",
+                "default": true,
+                "description": "Auto-anonimiseren bij export tenzij toestemming"
+              },
+              "exportRestriction": {
+                "title": "Export Restriction",
+                "type": "string",
+                "description": "Exportbeperking (bijv. geen-bulk-export)"
+              }
+            }
           }
         }
       },
@@ -17988,7 +18192,7 @@
           "id": "b7cf195d-fc2e-4125-aa61-2d9782707fad"
         },
         "categories": [
-          "financial"
+          "financieel"
         ],
         "justification": "Voorbeeld Justification 3",
         "retentionTermYears": 3,
@@ -19092,7 +19296,20 @@
         "caseType": "jeugdwet-melding",
         "jeugdigeBsn": "Voorbeeld Jeugdigebsn 1",
         "districtTeam": "Voorbeeld Districtteam 1",
-        "gdprClassification": "Voorbeeld Gdprclassification 1",
+        "gdprClassification": {
+          "categories": [
+            "gezinssituatie",
+            "medisch"
+          ],
+          "justification": "artikel-9-2-h-avg",
+          "retentionTermYears": 20,
+          "specialPersonalData": true,
+          "justificationNotes": "Voorbeeld Justificationnotes 1",
+          "destructionDate": "2026-03-01",
+          "accessRestriction": "alleen-behandelaar-en-wijkteam",
+          "anonymisationAtParts": true,
+          "exportRestriction": "geen-bulk-export"
+        },
         "caseNumber": "Voorbeeld Casenumber 1",
         "familyId": "Voorbeeld Familyid 1",
         "juvenileAge": 1,
@@ -19122,7 +19339,20 @@
         "caseType": "jeugdwet-melding",
         "jeugdigeBsn": "Voorbeeld Jeugdigebsn 2",
         "districtTeam": "Voorbeeld Districtteam 2",
-        "gdprClassification": "Voorbeeld Gdprclassification 2",
+        "gdprClassification": {
+          "categories": [
+            "gezinssituatie",
+            "medisch"
+          ],
+          "justification": "artikel-9-2-h-avg",
+          "retentionTermYears": 20,
+          "specialPersonalData": true,
+          "justificationNotes": "Voorbeeld Justificationnotes 2",
+          "destructionDate": "2026-03-02",
+          "accessRestriction": "alleen-behandelaar-en-wijkteam",
+          "anonymisationAtParts": true,
+          "exportRestriction": "geen-bulk-export"
+        },
         "caseNumber": "Voorbeeld Casenumber 2",
         "familyId": "Voorbeeld Familyid 2",
         "juvenileAge": 2,
@@ -19152,7 +19382,20 @@
         "caseType": "jeugdwet-melding",
         "jeugdigeBsn": "Voorbeeld Jeugdigebsn 3",
         "districtTeam": "Voorbeeld Districtteam 3",
-        "gdprClassification": "Voorbeeld Gdprclassification 3",
+        "gdprClassification": {
+          "categories": [
+            "gezinssituatie",
+            "medisch"
+          ],
+          "justification": "artikel-9-2-h-avg",
+          "retentionTermYears": 20,
+          "specialPersonalData": true,
+          "justificationNotes": "Voorbeeld Justificationnotes 3",
+          "destructionDate": "2026-03-03",
+          "accessRestriction": "alleen-behandelaar-en-wijkteam",
+          "anonymisationAtParts": true,
+          "exportRestriction": "geen-bulk-export"
+        },
         "caseNumber": "Voorbeeld Casenumber 3",
         "familyId": "Voorbeeld Familyid 3",
         "juvenileAge": 3,
@@ -20507,7 +20750,20 @@
         },
         "caseType": "bijstandsaanvraag",
         "bsn": "Voorbeeld Bsn 1",
-        "gdprClassification": "Voorbeeld Gdprclassification 1",
+        "gdprClassification": {
+          "categories": [
+            "financieel",
+            "gezinssituatie"
+          ],
+          "justification": "artikel-9-2-b-avg",
+          "retentionTermYears": 10,
+          "specialPersonalData": true,
+          "justificationNotes": "Voorbeeld Justificationnotes 1",
+          "destructionDate": "2026-03-01",
+          "accessRestriction": "alleen-behandelaar-en-wijkteam",
+          "anonymisationAtParts": true,
+          "exportRestriction": "geen-bulk-export"
+        },
         "caseNumber": "Voorbeeld Casenumber 1",
         "requestKind": "general-social-assistance",
         "requestDate": "2026-03-01",
@@ -20541,7 +20797,20 @@
         },
         "caseType": "bijstandsaanvraag",
         "bsn": "Voorbeeld Bsn 2",
-        "gdprClassification": "Voorbeeld Gdprclassification 2",
+        "gdprClassification": {
+          "categories": [
+            "financieel",
+            "gezinssituatie"
+          ],
+          "justification": "artikel-9-2-b-avg",
+          "retentionTermYears": 10,
+          "specialPersonalData": true,
+          "justificationNotes": "Voorbeeld Justificationnotes 2",
+          "destructionDate": "2026-03-02",
+          "accessRestriction": "alleen-behandelaar-en-wijkteam",
+          "anonymisationAtParts": true,
+          "exportRestriction": "geen-bulk-export"
+        },
         "caseNumber": "Voorbeeld Casenumber 2",
         "requestKind": "inburgering-related-social-assistance",
         "requestDate": "2026-03-02",
@@ -20575,7 +20844,20 @@
         },
         "caseType": "bijstandsaanvraag",
         "bsn": "Voorbeeld Bsn 3",
-        "gdprClassification": "Voorbeeld Gdprclassification 3",
+        "gdprClassification": {
+          "categories": [
+            "financieel",
+            "gezinssituatie"
+          ],
+          "justification": "artikel-9-2-b-avg",
+          "retentionTermYears": 10,
+          "specialPersonalData": true,
+          "justificationNotes": "Voorbeeld Justificationnotes 3",
+          "destructionDate": "2026-03-03",
+          "accessRestriction": "alleen-behandelaar-en-wijkteam",
+          "anonymisationAtParts": true,
+          "exportRestriction": "geen-bulk-export"
+        },
         "caseNumber": "Voorbeeld Casenumber 3",
         "requestKind": "social-assistance-werkloze-uitkeringontvangers",
         "requestDate": "2026-03-03",
@@ -23019,7 +23301,19 @@
         "caseType": "wmo-melding",
         "bsn": "Voorbeeld Bsn 1",
         "districtTeam": "Voorbeeld Districtteam 1",
-        "gdprClassification": "Voorbeeld Gdprclassification 1",
+        "gdprClassification": {
+          "categories": [
+            "medisch"
+          ],
+          "justification": "artikel-9-2-h-avg",
+          "retentionTermYears": 15,
+          "specialPersonalData": true,
+          "justificationNotes": "Voorbeeld Justificationnotes 1",
+          "destructionDate": "2026-03-01",
+          "accessRestriction": "alleen-behandelaar-en-wijkteam",
+          "anonymisationAtParts": true,
+          "exportRestriction": "geen-bulk-export"
+        },
         "caseNumber": "Voorbeeld Casenumber 1",
         "name": "Voorbeeld Name 1",
         "requestKind": "huishoudelijke-hulp",
@@ -23048,7 +23342,19 @@
         "caseType": "wmo-melding",
         "bsn": "Voorbeeld Bsn 2",
         "districtTeam": "Voorbeeld Districtteam 2",
-        "gdprClassification": "Voorbeeld Gdprclassification 2",
+        "gdprClassification": {
+          "categories": [
+            "medisch"
+          ],
+          "justification": "artikel-9-2-h-avg",
+          "retentionTermYears": 15,
+          "specialPersonalData": true,
+          "justificationNotes": "Voorbeeld Justificationnotes 2",
+          "destructionDate": "2026-03-02",
+          "accessRestriction": "alleen-behandelaar-en-wijkteam",
+          "anonymisationAtParts": true,
+          "exportRestriction": "geen-bulk-export"
+        },
         "caseNumber": "Voorbeeld Casenumber 2",
         "name": "Voorbeeld Name 2",
         "requestKind": "dagbesteding",
@@ -23077,7 +23383,19 @@
         "caseType": "wmo-melding",
         "bsn": "Voorbeeld Bsn 3",
         "districtTeam": "Voorbeeld Districtteam 3",
-        "gdprClassification": "Voorbeeld Gdprclassification 3",
+        "gdprClassification": {
+          "categories": [
+            "medisch"
+          ],
+          "justification": "artikel-9-2-h-avg",
+          "retentionTermYears": 15,
+          "specialPersonalData": true,
+          "justificationNotes": "Voorbeeld Justificationnotes 3",
+          "destructionDate": "2026-03-03",
+          "accessRestriction": "alleen-behandelaar-en-wijkteam",
+          "anonymisationAtParts": true,
+          "exportRestriction": "geen-bulk-export"
+        },
         "caseNumber": "Voorbeeld Casenumber 3",
         "name": "Voorbeeld Name 3",
         "requestKind": "begeleiding",

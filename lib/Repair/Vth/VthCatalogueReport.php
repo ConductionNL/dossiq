@@ -118,6 +118,58 @@ class VthCatalogueReport {
 	}//end write()
 
 	/**
+	 * The title of the definition a publish displaced, or an empty string.
+	 *
+	 * 🔴 PUBLISHING THE SECOND TEMPLATE FOR A CASE TYPE DEPRECATES THE FIRST,
+	 * AND NOTHING USED TO SAY SO. One published definition per case type is the
+	 * workflow-definition model working as designed, but the catalogue ships
+	 * two entries against `handhavingszaak`: `handhavingstraject` and
+	 * `spoedig-herstel`, the Awb 5:31 spoedeisende route. Whichever the glob
+	 * reaches last retires the other, and an administrator's only clue used to
+	 * be a workflow that had quietly stopped backing new cases.
+	 *
+	 * The caller reads the active definition BEFORE publishing and hands it
+	 * here, so the summary can name what went.
+	 *
+	 * @param array<string, mixed>|null $displaced The definition that was active before the publish.
+	 * @param string $publishedId The uuid that was just published.
+	 *
+	 * @return string The displaced title, or '' when this publish displaced nothing.
+	 *
+	 * @spec openspec/specs/vth-workflow-templates/spec.md
+	 */
+	public function displacedTitle(?array $displaced, string $publishedId): string {
+		$title = (string)(($displaced['title'] ?? ''));
+		if ($title === '' || (string)(($displaced['id'] ?? '')) === $publishedId) {
+			return '';
+		}
+
+		return $title;
+	}//end displacedTitle()
+
+	/**
+	 * The summary line for a template this run seeded and published.
+	 *
+	 * @param string $title The template's title.
+	 * @param int $version The version that was published.
+	 * @param string $displacedTitle The definition this publish deprecated, or ''.
+	 *
+	 * @return string The sentence the administrator reads.
+	 *
+	 * @spec openspec/specs/vth-workflow-templates/spec.md
+	 */
+	public function seededReason(string $title, int $version, string $displacedTitle): string {
+		$reason = 'seeded and published as "' . $title . '" version ' . $version . '.';
+		if ($displacedTitle === '') {
+			return $reason;
+		}
+
+		return $reason . ' This deprecated "' . $displacedTitle
+			. '", the definition that case type had: one published definition per case type is'
+			. ' the model, and this case type has two catalogue entries.';
+	}//end seededReason()
+
+	/**
 	 * Render a list of names as a readable, quoted enumeration.
 	 *
 	 * @param array<int, string> $values The names.
