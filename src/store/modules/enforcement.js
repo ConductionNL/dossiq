@@ -52,9 +52,6 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 *
 		 * @param {object} state Store state
 		 * @return {object|null} Active action
-		 */
-		/**
-		 * @param state
 		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		activeAction(state) {
@@ -66,9 +63,6 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 *
 		 * @param {object} state Store state
 		 * @return {number} Total verbeurd amount
-		 */
-		/**
-		 * @param state
 		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		totalVerbeurd(state) {
@@ -82,9 +76,6 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 *
 		 * @param {object} state Store state
 		 * @return {Array} Ernst levels
-		 */
-		/**
-		 * @param state
 		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		ernstLevels(state) {
@@ -96,9 +87,6 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 *
 		 * @param {object} state Store state
 		 * @return {Array} Gedrag levels
-		 */
-		/**
-		 * @param state
 		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		gedragLevels(state) {
@@ -113,9 +101,6 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 *
 		 * @param {string} caseId UUID of the case
 		 * @return {Promise<Array>} Actions
-		 */
-		/**
-		 * @param caseId
 		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		async fetchActions(caseId) {
@@ -147,10 +132,6 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 * @param {string} ernst  Severity level (gering/aanzienlijk/ernstig)
 		 * @param {string} gedrag Behavior type (goedwillend/onverschillig/calculerend/crimineel)
 		 * @return {string|null} Suggested intervention
-		 */
-		/**
-		 * @param ernst
-		 * @param gedrag
 		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		lookupLhs(ernst, gedrag) {
@@ -200,9 +181,6 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 *
 		 * @param {object} matrix The matrix to save
 		 * @return {Promise<boolean>} Success
-		 */
-		/**
-		 * @param matrix
 		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		async saveLhsMatrix(matrix) {
@@ -232,9 +210,6 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 *
 		 * @param {object} actionData The action data
 		 * @return {Promise<object|null>} Created action
-		 */
-		/**
-		 * @param actionData
 		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		async createAction(actionData) {
@@ -275,10 +250,6 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 * @param {string} actionId UUID of the action
 		 * @param {string} newStatus New status (verbeurd/geeffectueerd/ingetrokken)
 		 * @return {Promise<object|null>} Updated action
-		 */
-		/**
-		 * @param actionId
-		 * @param newStatus
 		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		async updateStatus(actionId, newStatus) {
@@ -314,10 +285,6 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 * @param {string} caseId    UUID of the case
 		 * @param {object} action    The enforcement action
 		 * @return {Promise<object|null>} Created task
-		 */
-		/**
-		 * @param caseId
-		 * @param action
 		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		async createBegunstigingTask(caseId, action) {

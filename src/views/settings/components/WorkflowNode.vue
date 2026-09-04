@@ -195,9 +195,6 @@ export default {
 		 *
 		 * @param {string} statusId UUID of the status
 		 * @return {string} The status name, or the id if not found
-		 */
-		/**
-		 * @param statusId
 		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-keyboard-operable-canvas
 		 */
 		targetName(statusId) {

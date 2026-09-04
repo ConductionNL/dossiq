@@ -1,9 +1,4 @@
 {
-  "src/App.vue": {
-    "jsdoc/require-param-type": {
-      "count": 1
-    }
-  },
   "src/components/InspectionChecklistEditor.vue": {
     "@nextcloud/l10n-enforce-ellipsis": {
       "count": 1
@@ -698,7 +693,7 @@
       "count": 1
     },
     "jsdoc/require-param-type": {
-      "count": 25
+      "count": 20
     }
   },
   "src/views/settings/ZgwMappingSettings.vue": {
@@ -781,7 +776,7 @@
   },
   "src/views/settings/components/WorkflowNode.vue": {
     "jsdoc/require-param-type": {
-      "count": 7
+      "count": 6
     },
     "vue/custom-event-name-casing": {
       "count": 12

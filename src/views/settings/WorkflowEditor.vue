@@ -539,10 +539,6 @@ export default {
 		 *
 		 * @param {string} fromStatusId Source status UUID
 		 * @param {string} toStatusId   Target status UUID
-		 */
-		/**
-		 * @param fromStatusId
-		 * @param toStatusId
 		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-keyboard-operable-canvas
 		 */
 		onConnectionKeyboard(fromStatusId, toStatusId) {
@@ -558,9 +554,6 @@ export default {
 		 * selected.
 		 *
 		 * @param {string} transitionId UUID of the transition to remove
-		 */
-		/**
-		 * @param transitionId
 		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-keyboard-operable-canvas
 		 */
 		onDisconnectionKeyboard(transitionId) {
@@ -579,9 +572,6 @@ export default {
 		 * the working copy via `workflowStore.removeStatusNode()`.
 		 *
 		 * @param {string} statusId UUID of the status to delete
-		 */
-		/**
-		 * @param statusId
 		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-drag-and-drop-workflow-canvas
 		 */
 		async onDeleteStatusNode(statusId) {
@@ -643,9 +633,6 @@ export default {
 		 * never called from any component.
 		 *
 		 * @param {string} stepId UUID of the step to delete
-		 */
-		/**
-		 * @param stepId
 		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-step-configuration-panel
 		 */
 		onStepDelete(stepId) {
