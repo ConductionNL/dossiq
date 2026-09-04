@@ -168,7 +168,7 @@ export default {
 		},
 
 		/**
-		 * @param mode
+		 * @param {string} mode The drawing mode the picker is in.
 		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
 		 */
 		setMode(mode) {
@@ -236,7 +236,7 @@ export default {
 		},
 
 		/**
-		 * @param root0
+		 * @param {object} root0 The destructured argument object.
 		 * @param root0.coordinates
 		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
 		 */

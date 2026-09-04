@@ -66,7 +66,7 @@ export default {
 
 	methods: {
 		/**
-		 * @param value
+		 * @param {string|number|boolean|object} value The new value.
 		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
 		 */
 		async onInput(value) {

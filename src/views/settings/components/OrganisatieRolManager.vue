@@ -137,7 +137,7 @@ export default {
 	methods: {
 		t,
 		/**
-		 * @param role
+		 * @param {object} role The role.
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		openEditor(role) {
@@ -152,7 +152,7 @@ export default {
 		},
 
 		/**
-		 * @param role
+		 * @param {object} role The role.
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		confirmDelete(role) {

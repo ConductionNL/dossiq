@@ -239,7 +239,7 @@ export default {
 		},
 
 		/**
-		 * @param group
+		 * @param {object} group The group.
 		 * @spec openspec/specs/case-email-integration/spec.md
 		 */
 		groupLabel(group) {
@@ -301,7 +301,7 @@ export default {
 		},
 
 		/**
-		 * @param tpl
+		 * @param {object} tpl The tpl.
 		 * @spec openspec/specs/case-email-integration/spec.md
 		 */
 		selectTemplate(tpl) {

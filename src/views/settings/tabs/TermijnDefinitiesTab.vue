@@ -178,7 +178,7 @@ export default {
 		},
 
 		/**
-		 * @param def
+		 * @param {object} def The definition being edited.
 		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
 		 */
 		isActive(def) {
@@ -189,7 +189,7 @@ export default {
 		},
 
 		/**
-		 * @param def
+		 * @param {object} def The definition being edited.
 		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
 		 */
 		formatDuur(def) {
@@ -204,7 +204,7 @@ export default {
 		},
 
 		/**
-		 * @param def
+		 * @param {object} def The definition being edited.
 		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
 		 */
 		openEdit(def) {

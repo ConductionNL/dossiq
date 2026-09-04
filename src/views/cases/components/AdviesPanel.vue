@@ -132,7 +132,7 @@ export default {
 		caseId: {
 			immediate: true,
 			/**
-			 * @param value
+			 * @param {string|number|boolean|object} value The new value.
 			 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 			 */
 			handler(value) {
@@ -274,7 +274,7 @@ export default {
 		},
 
 		/**
-		 * @param value
+		 * @param {string|number|boolean|object} value The new value.
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		formatDate(value) {

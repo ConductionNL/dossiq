@@ -399,7 +399,7 @@ export default {
 	watch: {
 		step: {
 			/**
-			 * @param newStep
+			 * @param {object} newStep The new step.
 			 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 			 */
 			handler(newStep) {
@@ -534,7 +534,7 @@ export default {
 		},
 
 		/**
-		 * @param index
+		 * @param {number} index Index of the row in the list.
 		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		removeRequiredField(index) {
@@ -548,7 +548,7 @@ export default {
 		},
 
 		/**
-		 * @param checklist
+		 * @param {object} checklist The checklist.
 		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		parseChecklist(checklist) {
@@ -606,7 +606,7 @@ export default {
 		},
 
 		/**
-		 * @param index
+		 * @param {number} index Index of the row in the list.
 		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		removeChecklistItem(index) {
@@ -615,7 +615,7 @@ export default {
 		},
 
 		/**
-		 * @param index
+		 * @param {number} index Index of the row in the list.
 		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
@@ -648,7 +648,7 @@ export default {
 		},
 
 		/**
-		 * @param index
+		 * @param {number} index Index of the row in the list.
 		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		removeAction(index) {

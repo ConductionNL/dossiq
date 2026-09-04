@@ -235,7 +235,7 @@ export default {
 		},
 
 		/**
-		 * @param targetStep
+		 * @param {object} targetStep The target step.
 		 * @param {Event} event The originating DOM event.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */

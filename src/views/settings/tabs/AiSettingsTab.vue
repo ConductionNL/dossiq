@@ -234,7 +234,7 @@ export default {
 		t,
 		/**
 		 * @param {string} key The key.
-		 * @param value
+		 * @param {string|number|boolean|object} value The new value.
 		 * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
 		 */
 		async updateSetting(key, value) {

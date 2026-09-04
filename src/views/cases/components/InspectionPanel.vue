@@ -371,7 +371,7 @@ export default {
 		},
 
 		/**
-		 * @param checklist
+		 * @param {object} checklist The checklist.
 		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
 		 */
 		selectedChecklist(checklist) {

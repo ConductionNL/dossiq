@@ -655,7 +655,7 @@ export default {
 		},
 
 		/**
-		 * @param updatedStep
+		 * @param {object} updatedStep The updated step.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onStepUpdate(updatedStep) {
@@ -666,7 +666,7 @@ export default {
 
 		// --- Transition management ---
 		/**
-		 * @param updatedTransition
+		 * @param {object} updatedTransition The updated transition.
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onTransitionUpdate(updatedTransition) {

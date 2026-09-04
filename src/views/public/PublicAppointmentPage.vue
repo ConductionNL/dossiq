@@ -78,7 +78,7 @@ export default {
 	methods: {
 		t,
 		/**
-		 * @param dt
+		 * @param {string} dt The date-time to format.
 		 * @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md
 		 */
 		formatDateTime(dt) {

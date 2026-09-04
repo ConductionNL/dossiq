@@ -319,7 +319,7 @@ export default {
 	watch: {
 		transition: {
 			/**
-			 * @param newVal
+			 * @param {string|number|boolean|object} newVal The new value.
 			 * @spec openspec/specs/status-transition-engine/spec.md
 			 */
 			handler(newVal) {
@@ -397,7 +397,7 @@ export default {
 		},
 
 		/**
-		 * @param index
+		 * @param {number} index Index of the row in the list.
 		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		removeGuard(index) {
@@ -412,7 +412,7 @@ export default {
 		},
 
 		/**
-		 * @param index
+		 * @param {number} index Index of the row in the list.
 		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		removeAction(index) {

@@ -177,7 +177,7 @@ export default {
 		},
 
 		/**
-		 * @param duration
+		 * @param {string} duration An ISO 8601 duration, for example P30D.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
 		 */
 		formatDeadline(duration) {
@@ -185,7 +185,7 @@ export default {
 		},
 
 		/**
-		 * @param ct
+		 * @param {object} ct The case type.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
 		 */
 		formatValidity(ct) {
@@ -205,7 +205,7 @@ export default {
 		},
 
 		/**
-		 * @param ct
+		 * @param {object} ct The case type.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
 		 */
 		validityClass(ct) {
@@ -225,7 +225,7 @@ export default {
 		},
 
 		/**
-		 * @param ct
+		 * @param {object} ct The case type.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
 		 */
 		async setDefault(ct) {
@@ -242,7 +242,7 @@ export default {
 		},
 
 		/**
-		 * @param ct
+		 * @param {object} ct The case type.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
 		 */
 		async confirmDelete(ct) {
@@ -340,7 +340,7 @@ export default {
 		/**
 		 * Deep-copy a case type into a new draft, then navigate to it.
 		 *
-		 * @param ct
+		 * @param {object} ct The case type.
 		 * @spec openspec/changes/zaaktype-copy/tasks.md#T09
 		 */
 		async duplicate(ct) {
