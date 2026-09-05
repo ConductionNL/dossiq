@@ -8610,8 +8610,8 @@
                     }
                 }
             },
-            "supplierInvoice": {
-                "slug": "supplierInvoice",
+            "caseSupplierInvoice": {
+                "slug": "caseSupplierInvoice",
                 "icon": "Receipt",
                 "version": "1.0.0",
                 "title": "Supplier Invoice",
@@ -9277,7 +9277,7 @@
                     "supplierUser",
                     "supplierTender",
                     "supplierContract",
-                    "supplierInvoice",
+                    "caseSupplierInvoice",
                     "supplierMessage",
                     "supplierKpi",
                     "emailTemplate",
@@ -10405,7 +10405,7 @@
             {
                 "@self": {
                     "register": "dossiq",
-                    "schema": "supplierInvoice",
+                    "schema": "caseSupplierInvoice",
                     "slug": "inv-acme-001"
                 },
                 "supplierRef": "@ref:supplier-acme-bouw-bv",
@@ -10419,7 +10419,7 @@
             {
                 "@self": {
                     "register": "dossiq",
-                    "schema": "supplierInvoice",
+                    "schema": "caseSupplierInvoice",
                     "slug": "inv-acme-002"
                 },
                 "supplierRef": "@ref:supplier-acme-bouw-bv",
@@ -10433,7 +10433,7 @@
             {
                 "@self": {
                     "register": "dossiq",
-                    "schema": "supplierInvoice",
+                    "schema": "caseSupplierInvoice",
                     "slug": "inv-orange-001"
                 },
                 "supplierRef": "@ref:supplier-orange-it-bv",
@@ -10448,7 +10448,7 @@
             {
                 "@self": {
                     "register": "dossiq",
-                    "schema": "supplierInvoice",
+                    "schema": "caseSupplierInvoice",
                     "slug": "inv-orange-disputed"
                 },
                 "supplierRef": "@ref:supplier-orange-it-bv",
@@ -10463,7 +10463,7 @@
             {
                 "@self": {
                     "register": "dossiq",
-                    "schema": "supplierInvoice",
+                    "schema": "caseSupplierInvoice",
                     "slug": "inv-blokker-overdue"
                 },
                 "supplierRef": "@ref:supplier-blokker-schoonmaak",
