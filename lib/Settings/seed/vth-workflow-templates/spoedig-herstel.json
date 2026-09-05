@@ -5,7 +5,8 @@
   "description": "Workflow voor spoedeisende bestuursdwang: het bestuursorgaan herstelt direct en neemt het besluit achteraf (Awb 5:31).",
   "version": 1,
   "caseTypeSlug": "handhavingszaak",
-  "_sharesItsCaseTypeWith": "This case type also carries \"handhavingstraject\", the ordinary enforcement route. One published definition per case type is the workflow-definition model, so whichever of the two the seeder reaches last deprecates the other. Both routes are real and neither is wrong. See the Notes under the Handhavingszaak requirement in openspec/specs/vth-workflow-templates/spec.md.",
+  "variant": "spoedeisend",
+  "_sharesItsCaseTypeWith": "This case type also carries \"handhavingstraject\", the ordinary enforcement route and the default one. They are two routes through one case type, not two versions of one workflow. This entry declares the variant \"spoedeisend\" and that one declares \"regulier\", so both stay published and active and neither deprecates the other. See openspec/specs/workflow-variants/spec.md.",
   "statutoryFramework": "Awb 5:31",
   "steps": [
     {

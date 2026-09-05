@@ -23,8 +23,9 @@ use PHPUnit\Framework\TestCase;
  * The summary an administrator reads after the VTH catalogue is seeded.
  *
  * The case under test is the one the catalogue actually hits: two entries on
- * one case type, so the second publish deprecates the first. The deprecation is
- * correct behaviour and used to be invisible.
+ * one case type. They used to deprecate each other, invisibly. They are now two
+ * ROUTES through that case type, so the second publish displaces nothing, and
+ * the line that used to explain the deprecation has to be gone.
  *
  * @covers \OCA\Dossiq\Repair\Vth\VthCatalogueReport
  */
@@ -89,7 +90,7 @@ class VthCatalogueReportTest extends TestCase {
 	}//end testTheDefinitionAPublishRetiresIsNamed()
 
 	/**
-	 * An ordinary seed reads as an ordinary seed.
+	 * An ordinary seed reads as an ordinary seed, and names its route.
 	 *
 	 * @return void
 	 */
@@ -97,28 +98,110 @@ class VthCatalogueReportTest extends TestCase {
 		$reason = $this->report->seededReason(
 			title: 'Toezichtbezoek',
 			version: 1,
-			displacedTitle: ''
+			variant: 'standaard',
+			displacedTitle: '',
+			isDefaultRoute: false
 		);
 
-		self::assertSame('seeded and published as "Toezichtbezoek" version 1.', $reason);
+		self::assertSame(
+			'seeded and published as "Toezichtbezoek" version 1, on the "standaard" route.',
+			$reason
+		);
 	}//end testTheSeededLineSaysOnlyWhatHappened()
 
 	/**
-	 * A seed that retires another definition says which one, and why.
+	 * 🔴 A SECOND ROUTE DISPLACES NOTHING, AND THE LINE MUST NOT SAY IT DOES.
+	 *
+	 * This test used to assert the opposite. `spoedig-herstel` publishing on
+	 * `handhavingszaak` deprecated `handhavingstraject`, and the line explained
+	 * that one published definition per case type was the model. Both templates
+	 * are now routes through that case type, so the second one retires nothing
+	 * and the sentence that explained the retirement is gone with it.
 	 *
 	 * @return void
 	 */
-	public function testTheSeededLineNamesWhatItDeprecated(): void {
+	public function testASecondRouteReportsNoDeprecation(): void {
 		$reason = $this->report->seededReason(
 			title: 'Spoedig herstel (Awb 5:31)',
 			version: 1,
-			displacedTitle: 'Handhavingstraject'
+			variant: 'spoedeisend',
+			displacedTitle: '',
+			isDefaultRoute: false
 		);
 
 		self::assertStringContainsString('"Spoedig herstel (Awb 5:31)" version 1', $reason);
-		self::assertStringContainsString('This deprecated "Handhavingstraject"', $reason);
-		self::assertStringContainsString('one published definition per case type', $reason);
-	}//end testTheSeededLineNamesWhatItDeprecated()
+		self::assertStringContainsString('on the "spoedeisend" route', $reason);
+		self::assertStringNotContainsString('deprecated', $reason);
+		self::assertStringNotContainsString('replaced', $reason);
+	}//end testASecondRouteReportsNoDeprecation()
+
+	/**
+	 * A new version of a route names the version it replaced.
+	 *
+	 * @return void
+	 */
+	public function testANewVersionOfARouteNamesWhatItReplaced(): void {
+		$reason = $this->report->seededReason(
+			title: 'Handhavingstraject',
+			version: 2,
+			variant: 'regulier',
+			displacedTitle: 'Handhavingstraject',
+			isDefaultRoute: true
+		);
+
+		self::assertStringContainsString('version 2, on the "regulier" route', $reason);
+		self::assertStringContainsString('New cases on this case type follow this route.', $reason);
+		self::assertStringContainsString(
+			'This replaced "Handhavingstraject", the previous published version of that route.',
+			$reason
+		);
+	}//end testANewVersionOfARouteNamesWhatItReplaced()
+
+	/**
+	 * A retired entry is named, with the way back, and is never republished.
+	 *
+	 * @return void
+	 */
+	public function testARetiredEntryIsNamedWithTheWayBack(): void {
+		$reason = $this->report->deprecatedReason(
+			title: 'Spoedig herstel (Awb 5:31)',
+			variant: 'spoedeisend'
+		);
+
+		self::assertStringContainsString('"Spoedig herstel (Awb 5:31)"', $reason);
+		self::assertStringContainsString('"spoedeisend" route', $reason);
+		self::assertStringContainsString('will not republish it', $reason);
+		self::assertStringContainsString('publish the copy', $reason);
+	}//end testARetiredEntryIsNamedWithTheWayBack()
+
+	/**
+	 * A retired entry gets its own bucket in the summary, and its own nudge.
+	 *
+	 * A count that folds a retired entry into "already present" is the shape of
+	 * report that hid `toezichtbezoek` for the life of the catalogue.
+	 *
+	 * @return void
+	 */
+	public function testTheSummaryCountsRetiredEntriesSeparately(): void {
+		$this->report->reset();
+		$this->report->record(entry: 'handhavingstraject', outcome: 'present', reason: 'present.');
+		$this->report->record(entry: 'spoedig-herstel', outcome: 'deprecated', reason: 'retired.');
+
+		$lines = [];
+		$output = $this->createMock(\OCP\Migration\IOutput::class);
+		$output->method('info')->willReturnCallback(
+			static function (string $line) use (&$lines): void {
+				$lines[] = $line;
+			}
+		);
+
+		$this->report->write(output: $output);
+
+		$joined = implode("\n", $lines);
+		self::assertStringContainsString('1 already present', $joined);
+		self::assertStringContainsString('1 present but retired', $joined);
+		self::assertStringContainsString('will not turn it back on', $joined);
+	}//end testTheSummaryCountsRetiredEntriesSeparately()
 
 	/**
 	 * The summary counts every entry and prints one line each.

@@ -213,23 +213,28 @@ class ShippedVthTemplateStatusesTest extends TestCase {
 	}
 
 	/**
-	 * Two catalogue entries on one case type must both say so.
+	 * Two catalogue entries on one case type must declare distinct routes, and
+	 * must still name each other.
 	 *
-	 * 🔴 THE SECOND PUBLISH RETIRES THE FIRST, AND THAT IS THE MODEL WORKING.
-	 * One published definition per case type is what `lifecycleStatus`
-	 * declares, so `handhavingszaak` carrying both `handhavingstraject` and
-	 * `spoedig-herstel` means whichever the glob reaches last deprecates the
-	 * other. Nothing is broken and nothing errors, which is why it went
-	 * unnoticed: a workflow simply stops backing new cases.
+	 * 🔴 THE SECOND PUBLISH USED TO RETIRE THE FIRST, SILENTLY. One published
+	 * definition per CASE TYPE was what `lifecycleStatus` declared, so
+	 * `handhavingszaak` carrying both `handhavingstraject` and `spoedig-herstel`
+	 * meant whichever the glob reached last deprecated the other. Nothing broke
+	 * and nothing errored: a workflow simply stopped backing new cases.
 	 *
-	 * The model has no variant mechanism to express it with, and choosing
-	 * between a second case type and a new engine feature is a product
-	 * decision. Until it is taken, the pairing is recorded on both entries, so
-	 * a third template arriving on an occupied case type cannot be silent.
+	 * The rule is now one published definition per (case type, ROUTE), so the
+	 * pairing is legal and both templates stay active. The hazard did not go
+	 * away, it changed shape: two entries on one case type with the SAME route
+	 * still deprecate each other, exactly as before.
+	 *
+	 * So this test is stricter than the one it replaces. An entry sharing a case
+	 * type must declare a variant, the variants must differ, and each entry must
+	 * still name its siblings. A third enforcement template can land, and it has
+	 * to say which route it is.
 	 *
 	 * @return void
 	 */
-	public function testEntriesSharingACaseTypeRecordThatTheyDo(): void {
+	public function testEntriesSharingACaseTypeDeclareDistinctRoutesAndSaySo(): void {
 		$byCaseType = [];
 		foreach ($this->catalogue() as $slug => $entry) {
 			if ((bool)($entry['crossLink'] ?? false) === true) {
@@ -239,32 +244,130 @@ class ShippedVthTemplateStatusesTest extends TestCase {
 			$byCaseType[(string)($entry['caseTypeSlug'] ?? '')][$slug] = $entry;
 		}
 
-		$unrecorded = [];
+		$problems = [];
 		foreach ($byCaseType as $caseTypeSlug => $entries) {
 			if (count($entries) < 2) {
 				continue;
 			}
 
-			foreach ($entries as $slug => $entry) {
-				$note = (string)($entry['_sharesItsCaseTypeWith'] ?? '');
-				$siblings = array_values(array_diff(array_keys($entries), [$slug]));
-				foreach ($siblings as $sibling) {
-					if (str_contains($note, $sibling) === false) {
-						$unrecorded[] = $slug . ' shares case type "' . $caseTypeSlug
-							. '" with ' . $sibling . ', and does not name it in _sharesItsCaseTypeWith';
-					}
+			$problems = array_merge(
+				$problems,
+				$this->routeProblemsIn(caseTypeSlug: $caseTypeSlug, entries: $entries),
+				$this->pairingProblemsIn(caseTypeSlug: $caseTypeSlug, entries: $entries)
+			);
+		}
+
+		self::assertSame(
+			[],
+			$problems,
+			"Two templates on one case type only coexist when they are different ROUTES.\n"
+			. "Give each a distinct `variant`, and name the siblings in `_sharesItsCaseTypeWith`:\n - "
+			. implode("\n - ", $problems)
+		);
+	}
+
+	/**
+	 * Every entry on a shared case type must name a route, and no two may share
+	 * one. Two entries on the same route deprecate each other on publish.
+	 *
+	 * @param string $caseTypeSlug The shared case type.
+	 * @param array<string, array<string, mixed>> $entries The entries on it, by slug.
+	 *
+	 * @return array<int, string> The problems found.
+	 */
+	private function routeProblemsIn(string $caseTypeSlug, array $entries): array {
+		$problems = [];
+		$seen = [];
+		foreach ($entries as $slug => $entry) {
+			$variant = trim((string)($entry['variant'] ?? ''));
+			if ($variant === '') {
+				$problems[] = $slug . ' shares case type "' . $caseTypeSlug
+					. '" and declares no variant, so publishing it would deprecate the other';
+				continue;
+			}
+
+			if (isset($seen[$variant]) === true) {
+				$problems[] = $slug . ' declares variant "' . $variant . '" on case type "'
+					. $caseTypeSlug . '", which ' . $seen[$variant] . ' already declares';
+				continue;
+			}
+
+			$seen[$variant] = $slug;
+		}
+
+		return $problems;
+	}
+
+	/**
+	 * Every entry on a shared case type must name its siblings in prose, so a
+	 * human reading one file learns the other exists.
+	 *
+	 * @param string $caseTypeSlug The shared case type.
+	 * @param array<string, array<string, mixed>> $entries The entries on it, by slug.
+	 *
+	 * @return array<int, string> The problems found.
+	 */
+	private function pairingProblemsIn(string $caseTypeSlug, array $entries): array {
+		$problems = [];
+		foreach ($entries as $slug => $entry) {
+			$note = (string)($entry['_sharesItsCaseTypeWith'] ?? '');
+			foreach (array_diff(array_keys($entries), [$slug]) as $sibling) {
+				if (str_contains($note, $sibling) === false) {
+					$problems[] = $slug . ' shares case type "' . $caseTypeSlug
+						. '" with ' . $sibling . ', and does not name it in _sharesItsCaseTypeWith';
 				}
+			}
+		}
+
+		return $problems;
+	}
+
+	/**
+	 * Exactly one entry on a shared case type is the default route.
+	 *
+	 * Without this, which route a new case takes is decided by `glob()` order.
+	 *
+	 * @return void
+	 */
+	public function testOneEntryOnASharedCaseTypeIsTheDefaultRoute(): void {
+		$byCaseType = [];
+		foreach ($this->catalogue() as $slug => $entry) {
+			if ((bool)($entry['crossLink'] ?? false) === true) {
+				continue;
+			}
+
+			$byCaseType[(string)($entry['caseTypeSlug'] ?? '')][$slug] = $entry;
+		}
+
+		$problems = [];
+		foreach ($byCaseType as $caseTypeSlug => $entries) {
+			if (count($entries) < 2) {
+				continue;
+			}
+
+			$defaults = [];
+			foreach ($entries as $slug => $entry) {
+				if ((bool)($entry['isDefaultVariant'] ?? false) === true) {
+					$defaults[] = $slug;
+				}
+			}
+
+			if (count($defaults) !== 1) {
+				$problems[] = 'case type "' . $caseTypeSlug . '" has ' . count($defaults)
+					. ' entries marked isDefaultVariant, and needs exactly one: '
+					. implode(', ', array_keys($entries));
 			}
 		}
 
 		self::assertSame(
 			[],
-			$unrecorded,
-			"Publishing the second template for a case type deprecates the first, silently.\n"
-			. "Record the pairing on every entry that shares a case type, naming the other:\n - "
-			. implode("\n - ", $unrecorded)
+			$problems,
+			"A case type carrying several routes needs one of them marked `isDefaultVariant`.\n - "
+			. implode("\n - ", $problems)
 		);
 	}
+
+
 
 	/**
 	 * Every status name one catalogue entry refers to.

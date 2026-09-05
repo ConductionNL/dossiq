@@ -160,31 +160,74 @@ class WorkflowDefinitionRepository {
 	 * @spec openspec/specs/workflow-definition-model/spec.md
 	 */
 	public function findById(string $id): ?array {
-		if ($id === '') {
+		return $this->findOne(
+			schemaKey: self::SCHEMA_DEFINITION,
+			uuid: $id,
+			failure: 'Dossiq: failed to load workflow definition'
+		);
+	}//end findById()
+
+	/**
+	 * Read one object of one schema by uuid, or null on any condition that makes
+	 * it unreadable.
+	 *
+	 * The three public readers below are the same eight lines with a different
+	 * schema and a different log line, and they were three copies of them until
+	 * a fourth was nearly added. One copy, three callers.
+	 *
+	 * @param string $schemaKey The schema configuration key.
+	 * @param string $uuid The object UUID.
+	 * @param string $failure The message logged when the read throws.
+	 *
+	 * @return array<string, mixed>|null The row, or null.
+	 */
+	private function findOne(string $schemaKey, string $uuid, string $failure): ?array {
+		if ($uuid === '') {
 			return null;
 		}
 
-		$context = $this->context(schemaKey: self::SCHEMA_DEFINITION);
+		$context = $this->context(schemaKey: $schemaKey);
 		if ($context === null) {
 			return null;
 		}
 
 		try {
 			$obj = $context['objectService']->find(
-				$id,
+				$uuid,
 				register: $context['register'],
 				schema: $context['schema']
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Dossiq: failed to load workflow definition',
+				$failure,
 				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return null;
 		}
 
 		return $this->normalize(row: $obj);
-	}//end findById()
+	}//end findOne()
+
+	/**
+	 * Load a case type row, used to resolve its default route.
+	 *
+	 * `caseType.workflowDefinition` is the one place a case type's default
+	 * route is recorded. Reading it needs the caseType schema, which this
+	 * repository already configures for the pin write.
+	 *
+	 * @param string $caseTypeId The caseType UUID.
+	 *
+	 * @return array<string, mixed>|null The case type, or null when unavailable.
+	 *
+	 * @spec openspec/specs/workflow-variants/spec.md
+	 */
+	public function findCaseType(string $caseTypeId): ?array {
+		return $this->findOne(
+			schemaKey: self::SCHEMA_CASE_TYPE,
+			uuid: $caseTypeId,
+			failure: 'Dossiq: failed to load case type for its default route'
+		);
+	}//end findCaseType()
 
 	/**
 	 * Fetch all versions of the definition for a caseType, sorted by version
@@ -446,26 +489,11 @@ class WorkflowDefinitionRepository {
 	 * @spec openspec/specs/workflow-definition-model/spec.md
 	 */
 	public function findCase(string $caseId): ?array {
-		$context = $this->context(schemaKey: self::SCHEMA_CASE);
-		if ($context === null) {
-			return null;
-		}
-
-		try {
-			$case = $context['objectService']->find(
-				$caseId,
-				register: $context['register'],
-				schema: $context['schema']
-			);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq: failed to load case for definition lookup',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
-			);
-			return null;
-		}
-
-		return $this->normalize(row: $case);
+		return $this->findOne(
+			schemaKey: self::SCHEMA_CASE,
+			uuid: $caseId,
+			failure: 'Dossiq: failed to load case for definition lookup'
+		);
 	}//end findCase()
 
 	/**
