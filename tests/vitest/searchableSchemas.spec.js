@@ -21,7 +21,12 @@ const REGISTER_PATH = path.resolve(
 )
 const MANIFEST_PATH = path.resolve(__dirname, '../../src/manifest.json')
 
-const EXPECTED_SEARCHABLE_SLUGS = ['case', 'caseTask', 'objectionProceeding', 'beroep']
+const EXPECTED_SEARCHABLE_SLUGS = [
+	'case',
+	'caseTask',
+	'objectionProceeding',
+	'beroep',
+]
 
 const loadJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'))
 
@@ -59,17 +64,20 @@ describe('deep links cover all searchable schemas', () => {
 
 		const expectedTemplates = {
 			case: '/apps/dossiq/cases/{uuid}',
-			task: '/apps/dossiq/tasks/{uuid}',
-			// The KEY is the schema slug and moved with it; the URL is a published
-			// ROUTE and deliberately did not — a route resolves at request time,
-			// so breaking one fails silently.
+			caseTask: '/apps/dossiq/tasks/{uuid}',
+			// The KEY is the schema slug and moves with it; the URL is a published
+			// ROUTE and deliberately does not — a route resolves at request time,
+			// so breaking one fails silently. That holds for `caseTask` above as
+			// much as for `objectionProceeding`: #1845 renamed the slug and left
+			// both of these maps, and the manifest's own `deepLinks` entry,
+			// keyed on `task`.
 			objectionProceeding: '/apps/dossiq/bezwaren/{uuid}',
 			beroep: '/apps/dossiq/beroepen/{uuid}',
 		}
 
 		const expectedRoutes = {
 			case: '/cases/:id',
-			task: '/tasks/:id',
+			caseTask: '/tasks/:id',
 			objectionProceeding: '/bezwaren/:id',
 			beroep: '/beroepen/:id',
 		}
