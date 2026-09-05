@@ -83,12 +83,14 @@ test.describe('Demo caseload surfaces', () => {
 		api = context.request
 		token = await getRequestToken(api)
 
-		// 🔴 HANG THE TASKS OFF AN EXISTING CASE RATHER THAN SEEDING ONE. The case
-		// schema declares `x-openregister-archival`, so OpenRegister REFUSES a
-		// user-driven delete: a case this spec creates can never be cleaned up
-		// again, and every run would leave one behind forever. Measured on the dev
-		// instance: 17 of its 37 cases were exactly that residue. Tasks carry no
-		// such rule and are removed in afterAll.
+		// HANG THE TASKS OFF AN EXISTING CASE RATHER THAN SEEDING ONE. The case
+		// schema declares `x-openregister-archival`, so OpenRegister refuses a
+		// user-driven delete, and for a long time that meant a case this spec
+		// created stayed forever: measured on the dev instance, 17 of its 37 cases
+		// were exactly that residue. Removing one is now possible — teardown goes
+		// through `occ openregister:objects:purge --force --apply` — but it is a
+		// deliberate administrative act, and this spec does not need to perform
+		// one. Tasks carry no such rule and are removed in afterAll.
 		const cases = await listObjects(api, 'case', { _limit: '1' })
 		if (cases.length > 0) {
 			caseId = objectId(cases[0])

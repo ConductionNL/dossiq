@@ -30,6 +30,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect } from '@playwright/test'
+import { occPurge, OccUnavailableError } from './occ.ts'
 
 /** OpenRegister register slug that owns every dossiq object. */
 export const REGISTER = 'dossiq'
@@ -53,9 +54,11 @@ export const RUN_PREFIX = `${FIXTURE_PREFIX}${Date.now().toString(36)}-${Math.fl
 const API_BASE = '/index.php/apps/openregister/api/objects'
 
 /**
- * OpenRegister's trash endpoint. `DELETE /api/deleted/{uuid}` destroys the row
- * outright through the object mapper, which is the ONLY removal path that
- * reaches an archival schema — see `purgeObject`.
+ * OpenRegister's trash endpoint. `DELETE /api/deleted/{uuid}` destroys a row
+ * that is genuinely in the trash and is NOT on an archival schema. It refuses
+ * anything else: `400` for a live object, `403 SCHEMA_ARCHIVAL_IMMUTABLE` for an
+ * archival record whether live or trashed. Archival rows go through
+ * `helpers/occ.ts#occPurge` instead — see `purgeObject`.
  */
 const TRASH_BASE = '/index.php/apps/openregister/api/deleted'
 
@@ -276,26 +279,33 @@ export async function listAllObjects(
  *     `spec-coverage/ui-pages.spec.ts:55` ("dashboard mounts without console
  *     errors") on a second full run.
  *
- * `DELETE /api/deleted/{uuid}` destroys the row through the object mapper, so
- * it reaches both cases. Both calls are issued and neither status is trusted:
- * the return value comes from re-reading the object.
+ * The HTTP pair handles case 2: the object delete soft-deletes the row and the
+ * trash delete then destroys it. That reaches every NON-archival schema here.
  *
- * 📌 THE SECOND CALL WORKS ON A LIVE ROW TODAY, AND THAT IS AN OPENREGISTER
- * DEFECT, NOT A CONTRACT. `DeletedController::destroy` means to accept only
- * already-soft-deleted rows and guards with `getDeleted() === null`, but
- * `ObjectEntity::$deleted` is declared `protected ?array $deleted = []`, so a
- * live object answers `[]` and never `null`. The guard therefore never fires
- * and the endpoint destroys archival records the object API refuses. Reported
- * separately. When it is fixed this helper stops removing cases, and the
- * `expect`-free verification below is what makes that LOUD: `cleanupRunObjects`
- * throws naming every id that survived, rather than reporting a clean sweep of
- * nothing, which is the exact failure mode this whole change exists to end.
+ * Case 1 has no HTTP answer at all, and that is the contract rather than a gap.
+ * OpenRegister refuses an archival record on every delete route it serves —
+ * `403 SCHEMA_ARCHIVAL_IMMUTABLE` from the object API, and the same from the
+ * trash endpoint whether the row is live or trashed. Destroying a legally
+ * retained record is an administrative act, so the only sanctioned way is a
+ * command that needs shell access to the server:
+ *
+ *     occ openregister:objects:purge <uuid> --force --apply
+ *
+ * `--force` is what says out loud that an archival record is being destroyed.
+ * `helpers/occ.ts` works out how to reach `occ` on this rig and fails loudly if
+ * it cannot, because a teardown that cannot remove a case does not leave one
+ * survivor — it poisons every later run on the instance.
+ *
+ * The CLI is used ONLY when the HTTP pair did not manage it, so an ordinary
+ * fixture row still costs no process spawn. NO status is trusted anywhere here,
+ * exit code included: the return value comes from re-reading the object.
  *
  * @param api    Authenticated request context.
  * @param token  CSRF request-token.
  * @param schema Schema slug.
  * @param id     Object id/uuid.
  * @return `true` when the object no longer resolves.
+ * @throws OccUnavailableError When the row needs the CLI purge and occ cannot be reached.
  */
 export async function purgeObject(
 	api: APIRequestContext,
@@ -304,6 +314,20 @@ export async function purgeObject(
 	id: string,
 ): Promise<boolean> {
 	if (!id) return true
+
+	/**
+	 * Whether the object still answers. An unreadable answer counts as "still
+	 * there": a teardown may only report a clean sweep it actually observed.
+	 */
+	const stillResolves = async (): Promise<boolean> => {
+		for (let attempt = 0; attempt < 2; attempt++) {
+			const check = await api
+				.get(`${API_BASE}/${REGISTER}/${schema}/${id}`)
+				.catch(() => null)
+			if (check !== null) return check.status() !== 404
+		}
+		return true
+	}
 
 	await api
 		.delete(`${API_BASE}/${REGISTER}/${schema}/${id}`, {
@@ -314,11 +338,11 @@ export async function purgeObject(
 		.delete(`${TRASH_BASE}/${id}`, { headers: writeHeaders(token) })
 		.catch(() => undefined)
 
-	const check = await api
-		.get(`${API_BASE}/${REGISTER}/${schema}/${id}`)
-		.catch(() => null)
-	if (check === null) return false
-	return check.status() === 404
+	if ((await stillResolves()) === false) return true
+
+	await occPurge([id])
+
+	return (await stillResolves()) === false
 }
 
 /**
@@ -651,6 +675,11 @@ export async function sweepFixtureResidue(
  * After two full runs on one rig that surface held 8 prefixed rows with
  * nothing to remove them.
  *
+ * The trash endpoint refuses an archival record even once it is trashed, so a
+ * row an older rig managed to soft-delete before openregister#3428 landed can
+ * only leave through the CLI purge. Survivors of the HTTP pass are handed to it
+ * in ONE batched invocation rather than one process per row.
+ *
  * @param api    Authenticated request context.
  * @param token  CSRF request-token.
  * @param prefix Run prefix or family prefix.
@@ -675,6 +704,11 @@ async function sweepTrash(
 		await api
 			.delete(`${TRASH_BASE}/${id}`, { headers: writeHeaders(token) })
 			.catch(() => undefined)
+	}
+
+	const refused = await matching()
+	if (refused.length > 0) {
+		await occPurge(refused)
 	}
 
 	return (await matching()).map((id) => `deleted/${id}`)
@@ -728,7 +762,15 @@ async function sweepPrefix(
 				|| caseIds.has(String(row.parentCase ?? '')) === true
 			if (matchesPrefix === false && matchesCase === false) continue
 
-			const gone = await purgeObject(api, token, schema, id).catch(() => false)
+			// An OccUnavailableError is NOT a survivor: it means no row can be
+			// removed at all, so it must abort here rather than be reported once
+			// per fixture as though each one had individually resisted.
+			const gone = await purgeObject(api, token, schema, id).catch(
+				(error: unknown) => {
+					if (error instanceof OccUnavailableError) throw error
+					return false
+				},
+			)
 			if (gone === false) survivors.push(`${schema}/${id}`)
 		}
 	}

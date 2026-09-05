@@ -102,8 +102,8 @@ test.describe('Workflow Board keyboard status transition', () => {
 		// ("dashboard mounts without dossiq console errors") on a second run —
 		// a test that was doing its job.
 		//
-		// `helpers/fixtures.ts#purgeObject` removes the case for real (the
-		// trash endpoint destroys the row where the object API refuses), so
+		// `helpers/fixtures.ts#purgeObject` removes the case for real, through
+		// the sanctioned `occ openregister:objects:purge --force --apply`, so
 		// there is no longer a surviving parent whose references have to be
 		// preserved, and no residue to carry into the next run.
 		await cleanupRunObjects(api, token)
