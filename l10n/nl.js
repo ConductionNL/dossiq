@@ -1,6 +1,14 @@
 OC.L10N.register(
     "dossiq",
     {
+        "Load example data?": "Voorbeeldgegevens laden?",
+        "Example data fills the lists, detail pages and dashboards so you can see the app working straight away. Pick \"None\" on a production install.": "Voorbeeldgegevens vullen de lijsten, detailpagina’s en dashboards, zodat je de app meteen ziet werken. Kies \"Geen\" op een productieomgeving.",
+        "Load the example data": "Laad de voorbeeldgegevens",
+        "Loads what you picked. The data is obviously sample data, it is safe to run more than once, and you can delete it afterwards.": "Laadt wat je koos. De gegevens zijn herkenbaar voorbeeldgegevens, je kunt dit meer dan een keer uitvoeren en je kunt ze daarna verwijderen.",
+        "None, I will set this up myself": "Geen, ik richt dit zelf in",
+        "Nothing is imported. You start with an empty app and add your own data.": "Er wordt niets geïmporteerd. Je begint met een lege app en voegt zelf gegevens toe.",
+        "Example data": "Voorbeeldgegevens",
+        "Sample values for every schema this app supplies, generated from the schemas themselves. It shows the lists, detail pages and dashboards working rather than telling a story. Safe to run more than once, and you can delete it afterwards.": "Voorbeeldwaarden voor elk schema dat deze app levert, gegenereerd uit de schema’s zelf. Het laat de lijsten, detailpagina’s en dashboards werkend zien in plaats van een verhaal te vertellen. Veilig om vaker uit te voeren, en je kunt het daarna verwijderen.",
         "Contacts": "Contacten",
         "Generic Role": "Generieke rol",
         "The generic role this case-type role plays, so routing rules and reports can speak about \"the handler\" without knowing every case type's own naming. Maps to the ZGW RolType field omschrijvingGeneriek. Set from the Roles tab in case-type settings, and shipped by the bezwaar and besluitvorming seed data.": "De generieke rol die deze zaaktyperol speelt, zodat routeringsregels en rapportages over \"de behandelaar\" kunnen spreken zonder de eigen benaming van elk zaaktype te kennen. Komt overeen met het ZGW-veld omschrijvingGeneriek op RolType. Wordt gezet op het tabblad Rollen in de zaaktype-instellingen, en meegeleverd door de bezwaar- en besluitvormingsseeds.",

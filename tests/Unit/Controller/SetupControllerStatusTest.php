@@ -121,6 +121,16 @@ class SetupControllerStatusTest extends TestCase {
 		$request = $this->createMock(IRequest::class);
 		if ($requestParams !== null) {
 			$request->method('getParams')->willReturn($requestParams);
+			// 🔴 BOTH READERS, OR THE VALIDATION IS INVISIBLE TO THE TEST.
+			// saveConfig() reads the dataset with getParam() and the rest of
+			// the body with getParams(); a fake that answers only the second
+			// makes every assertion about the first pass for the wrong reason.
+			$request->method('getParam')
+				->willReturnCallback(
+					static function (string $key, $default = null) use ($requestParams) {
+						return ($requestParams[$key] ?? $default);
+					}
+				);
 		}
 
 		$controller = new SetupController(
@@ -546,12 +556,77 @@ class SetupControllerStatusTest extends TestCase {
 
 		$this->assertTrue($response->getData()['success']);
 		$this->assertSame('skipped', $built['written']['demo_data_decided'] ?? null);
+		// 🔴 IT HAS TO ANSWER BOTH STEPS. The step split into a choice plus a
+		// run-action, and CnAppRoot opens the wizard while ANY optional step is
+		// outstanding — so writing only the decision flag would leave the
+		// choice open and the wizard covering every page.
+		$this->assertSame('none', $built['written']['demo_dataset'] ?? null, 'skipping IS choosing none');
 
-		$done = $this->controller($this->provisioned() + ['demo_data_decided' => 'skipped'])
-			->status()->getData();
-		$this->assertTrue($done['steps']['demo-data']['done'], 'a recorded decline finishes the step');
+		$done = $this->controller(
+			$this->provisioned() + ['demo_data_decided' => 'skipped', 'demo_dataset' => 'none']
+		)->status()->getData();
+		$this->assertTrue($done['steps']['demo-data']['done'], 'a recorded decline finishes the choice');
+		$this->assertTrue($done['steps']['load-demo-data']['done'], 'and leaves nothing to run');
 
 	}//end testDecliningTheDemoDataFinishesTheStep()
+
+	/**
+	 * The status document carries the datasets the choice step offers.
+	 *
+	 * 🔴 THIS RESPONSE *IS* THE OPTION LIST. The step declares
+	 * `optionsSource: datasets` and carries no options of its own, so a dataset
+	 * missing here is a dataset nobody can pick.
+	 *
+	 * @return void
+	 */
+	public function testStatusCarriesTheOptionListTheChoiceStepReads(): void {
+		// What the SERVICE offers is asserted in DemoDataServiceTest, against
+		// the real descriptor. What matters here is that the controller passes
+		// it through under the key the manifest names: `optionsSource:
+		// datasets` reads exactly this, and a step whose source is absent
+		// offers nothing at all.
+		$data = $this->controller($this->provisioned())->status()->getData();
+
+		$this->assertArrayHasKey('datasets', $data);
+		$this->assertIsArray($data['datasets']);
+
+	}//end testStatusCarriesTheOptionListTheChoiceStepReads()
+
+	/**
+	 * Running the load step with no dataset picked refuses rather than guessing.
+	 *
+	 * 🔴 NO SILENT DEFAULT. Importing because the operator clicked Run one step
+	 * early would plant example objects nobody asked for.
+	 *
+	 * @return void
+	 */
+	public function testLoadingWithoutAChoiceRefusesRatherThanGuessing(): void {
+		$built = $this->build(config: $this->provisioned());
+
+		$response = $built['controller']->runAction(actionId: 'load-demo-data');
+
+		$this->assertFalse($response->getData()['success']);
+		$this->assertStringContainsString('Pick a dataset', $response->getData()['message']);
+
+	}//end testLoadingWithoutAChoiceRefusesRatherThanGuessing()
+
+	/**
+	 * A dataset nobody ships is refused rather than stored.
+	 *
+	 * Storing it would leave the load step pointing at nothing, so the failure
+	 * would surface one step later with no clue why.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownDatasetIsRefusedRatherThanStored(): void {
+		$built = $this->build(config: $this->provisioned(), requestParams: ['demo_dataset' => 'atlantis']);
+
+		$response = $built['controller']->saveConfig();
+
+		$this->assertFalse($response->getData()['success']);
+		$this->assertSame([], $built['written']);
+
+	}//end testAnUnknownDatasetIsRefusedRatherThanStored()
 
 	/**
 	 * A config-fields step stores its values, encoding what is not a scalar.
