@@ -411,6 +411,10 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 `vertrouwelijkheidaanduiding` values (openbaar … zeer_geheim) are
                 statutory. Translating them would break the mapping the adapter
                 exists to perform.
+
+                That paragraph was true of the INTENT and false of the map for
+                seventeen values, until dossiq#1841 removed them and
+                RealignStatutoryVocabulary below put the rows back.
             -->
             <step>OCA\Dossiq\Repair\RenameDutchValues</step>
             <!--
@@ -431,6 +435,27 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 it, and it is idempotent: a repaired row no longer matches.
             -->
             <step>OCA\Dossiq\Repair\RealignLhsActorTypeVocabulary</step>
+            <!--
+                dossiq#1841, and the same shape as the step above it: the rename
+                reached a vocabulary that was never its to translate, and this
+                puts the stored rows back.
+
+                Seventeen entries anglicised the ZGW Vertrouwelijkheidaanduiding
+                (`confidentiality` on case, caseType, document and documentType;
+                `vertrouwelijkheidaanduiding` on informatieobject and
+                informatieobjecttype), the StUF message status and the
+                zaaksysteem synchronisation status. Every replacement was a value
+                the row's own schema REFUSES, so a case handler editing any demo
+                case was rejected on a field they had not touched, and
+                InformatieobjectAccessGuard — which fails closed on a level it
+                cannot rank — treated every `public` document as the most secret
+                one the app holds.
+
+                Schema-scoped, unlike the rename: reversing by column would put
+                `sent` -> `verzonden` on schemas where `sent` is correct.
+                Idempotent — a repaired row no longer matches the filter.
+            -->
+            <step>OCA\Dossiq\Repair\RealignStatutoryVocabulary</step>
             <!--
                 Hermiq owns the EU AI Act Art. 14 oversight record now, and
                 dossiq's own oversight page is retired. This replays the

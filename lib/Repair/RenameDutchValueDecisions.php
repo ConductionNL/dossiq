@@ -13,6 +13,35 @@
  * exists to perform. `LoadDefaultZgwMappings` keeps `openbaar`, `zaak` and the
  * rest exactly as ZGW spells them.
  *
+ * That note was written and then contradicted by the map below it, for four
+ * properties and seventeen values, until dossiq#1841. The rule only became
+ * enforceable once `ShippedEnumValueConformanceTest` asked the schemas rather
+ * than the docblock: a rewrite is wrong when the schema DECLARES the value it
+ * rewrites from and REFUSES the one it rewrites to. All seventeen were, and
+ * not one schema in the merged register declared any replacement, so nothing
+ * needed them:
+ *
+ * - `confidentiality` on case, caseType, document and documentType, and
+ *   `vertrouwelijkheidaanduiding` on informatieobject and informatieobjecttype.
+ *   Both spell the ZGW Vertrouwelijkheidaanduiding. `LoadDefaultZgwMappings`
+ *   declares an IDENTITY valueMapping for them in both directions, so the
+ *   internal value IS the wire value; `InformatieobjectAccessGuard::HIERARCHY`
+ *   and `ZgwAuthMiddleware::CONFIDENTIALITY_ORDER` both rank the Dutch eight.
+ *   The guard fails CLOSED on a value it cannot rank, so rewriting `openbaar`
+ *   to `public` reclassified the most public documents this app holds as the
+ *   most secret, and `isConfidentialityAllowed()` answered false for every ZGW
+ *   consumer.
+ * - `stufMessage.status`. `StufMessageHandler` writes `verzonden` and
+ *   `wacht_op_retry`, `StufAuditLog.vue` filters on the Dutch four, and the
+ *   schema declares them. Only this map disagreed.
+ * - `zaaksysteemMapping.synchronisationStatus`. `StufCaseMappingStore` and
+ *   `ContactBetrokkeneMapper` write `in_sync` against the same Dutch enum.
+ *
+ * The damage is not theoretical: this map rewrites STORED rows by column on
+ * every upgrade, so all 28 shipped cases and every caseType, document and
+ * informatieobject on an upgraded instance held a value their own schema
+ * refused. `RealignStatutoryVocabulary` moves them back.
+ *
  * @category Repair
  * @package  OCA\Dossiq\Repair
  *
@@ -50,7 +79,6 @@ class RenameDutchValueDecisions {
 	public const VALUE_MAP = [
 		'status' => [
 			'gepland' => 'planned',
-			'bevestigd' => 'confirmed',
 			'aangevraagd' => 'requested',
 			'ontvangen' => 'received',
 			'verlopen' => 'expired',
@@ -121,9 +149,6 @@ class RenameDutchValueDecisions {
 			'overschreden' => 'exceeded',
 			'gestopt-wegens-beschikking' => 'gestopt-wegens-decision',
 			'bezwaar-bevroren' => 'objection-bevroren',
-			'verzonden' => 'sent',
-			'fout' => 'error',
-			'wacht_op_retry' => 'awaiting_retry',
 			'geaccepteerd' => 'accepted',
 			'geweigerd' => 'refused',
 		],
@@ -207,13 +232,6 @@ class RenameDutchValueDecisions {
 			'in_behandeling' => 'in_handling',
 			'verleend' => 'granted',
 			'geweigerd' => 'refused',
-		],
-		'confidentiality' => [
-			'openbaar' => 'public',
-			'beperkt_openbaar' => 'restricted_public',
-			'intern' => 'internal',
-			'geheim' => 'secret',
-			'zeer_geheim' => 'top_secret',
 		],
 		'intakeChannel' => [
 			'overig' => 'other',
@@ -413,20 +431,8 @@ class RenameDutchValueDecisions {
 			'plafond_overschreden' => 'ceiling_exceeded',
 			'subdelegatie_niet_toegestaan' => 'subdelegatie_non_permitted',
 		],
-		'vertrouwelijkheidaanduiding' => [
-			'openbaar' => 'public',
-			'beperkt_openbaar' => 'restricted_public',
-			'intern' => 'internal',
-			'geheim' => 'secret',
-			'zeer_geheim' => 'top_secret',
-		],
 		'natureRelationshipDisplay' => [
 			'Hoort bij, omgekeerd' => 'Hoort at omgekeerd',
-		],
-		'synchronisationStatus' => [
-			'fout' => 'error',
-			'geannuleerd' => 'cancelled',
-			'wacht' => 'waiting',
 		],
 		'items' => [
 			'financieel' => 'financial',
