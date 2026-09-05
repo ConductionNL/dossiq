@@ -21,6 +21,7 @@ import * as path from 'path'
 import { BASE_URL } from './base-url.ts'
 import { STORAGE_STATE } from './helpers/auth.ts'
 import { getRequestToken, sweepFixtureResidue } from './helpers/fixtures.ts'
+import { assertOccReachable } from './helpers/occ.ts'
 
 const APP_ROOT = path.resolve(__dirname, '..', '..')
 const BUNDLE_PATH = path.join(APP_ROOT, 'js', 'dossiq-main.js')
@@ -66,6 +67,27 @@ async function ensureNextcloudReachable(baseURL: string): Promise<void> {
 	}
 }
 
+/**
+ * Confirm the suite can run `occ` on the instance under test, BEFORE any spec
+ * runs.
+ *
+ * The suite is otherwise pure HTTP, but `dossiq/case` declares
+ * `x-openregister-archival` and OpenRegister refuses an archival record on every
+ * HTTP delete route it serves (openregister#3428). The only sanctioned removal
+ * is `occ openregister:objects:purge --force --apply`, so a rig where occ is out
+ * of reach is a rig where teardown cannot remove a single case.
+ *
+ * Deliberately fatal, and deliberately here. Left to teardown it would surface
+ * as a survivor list half an hour in, after the run had already seeded the data
+ * it could not clear; this way it is one step failure naming exactly what to
+ * set. The probe also proves the deployed OpenRegister actually HAS the command,
+ * which is the other half of the same question.
+ */
+async function ensureOccReachable(): Promise<void> {
+	const invocation = await assertOccReachable()
+	console.log(`[playwright globalSetup] occ reachable via ${invocation}`)
+}
+
 async function globalSetup(config: FullConfig): Promise<void> {
 	// Whatever the active config resolved, else the single shared resolver.
 	// Deliberately no `?? 'http://localhost:8080'` tail: off CI that literal is
@@ -79,6 +101,7 @@ async function globalSetup(config: FullConfig): Promise<void> {
 
 	ensureBundleBuilt()
 	await ensureNextcloudReachable(baseURL)
+	await ensureOccReachable()
 	fs.mkdirSync(path.dirname(STORAGE_STATE), { recursive: true })
 
 	const browser = await chromium.launch()
