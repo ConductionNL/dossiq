@@ -12739,8 +12739,8 @@
           }
         }
       },
-      "supplierInvoice": {
-        "slug": "supplierInvoice",
+      "caseSupplierInvoice": {
+        "slug": "caseSupplierInvoice",
         "icon": "Receipt",
         "version": "1.0.0",
         "title": "Supplier Invoice",
@@ -22409,7 +22409,7 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "supplierInvoice",
+          "schema": "caseSupplierInvoice",
           "slug": "supplierinvoice-supplierinvoice-1-1",
           "id": "6e62f168-a64e-4f8e-9502-0b1364d55620"
         },
@@ -22428,7 +22428,7 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "supplierInvoice",
+          "schema": "caseSupplierInvoice",
           "slug": "supplierinvoice-supplierinvoice-2-2",
           "id": "38e5364b-afc9-4b93-84d7-8ca32703382f"
         },
@@ -22447,7 +22447,7 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "supplierInvoice",
+          "schema": "caseSupplierInvoice",
           "slug": "supplierinvoice-supplierinvoice-3-3",
           "id": "025093cd-0c14-4da2-956c-6155478bba76"
         },

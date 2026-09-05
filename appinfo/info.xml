@@ -260,6 +260,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 Ahead of the import trigger, InitializeSettings.
             -->
             <step>OCA\Dossiq\Repair\RenameDutchSchemaSlugs</step>
+            <!--
+                Before InitializeSettings, and separate from RenameDutchSchemaSlugs:
+                this ends a CROSS-APP collision rather than translating a word.
+                `supplierInvoice` was claimed by this app and by shillinq, which owns
+                the accounts-payable invoice.
+            -->
+            <step>OCA\Dossiq\Repair\RenameCollidingSchemaSlugs</step>
             <step>OCA\Dossiq\Repair\InitializeSettings</step>
             <!--
                 The shipped register data assigns flow steps to Nextcloud
@@ -592,6 +599,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 ahead of InitializeSettings for the reason given there.
             -->
             <step>OCA\Dossiq\Repair\RenameDutchSchemaSlugs</step>
+            <!--
+                Same as the post-migration block: enabling the app is a fresh
+                install as far as Nextcloud is concerned, so an instance that
+                already holds a `supplierInvoice` schema reaches the import
+                through here. It must stay ahead of InitializeSettings.
+            -->
+            <step>OCA\Dossiq\Repair\RenameCollidingSchemaSlugs</step>
             <step>OCA\Dossiq\Repair\InitializeSettings</step>
             <!--
                 BASELINE-CREATING, AND ONLY A FRESH INSTALL NEEDS IT MOST.
