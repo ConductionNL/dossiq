@@ -94,11 +94,21 @@ test.describe('app chrome (ADR-114)', () => {
 	test('the report pages behind the cards are still routable', async ({
 		page,
 	}) => {
+		test.slow()
+
 		// Process mining had NO menu entry before it was carded — it was a
 		// standalone route reachable only if you already knew the URL. Carding
 		// it gave it an entry point; this proves the route still answers.
 		for (const path of ['/process-mining', '/termijn-dashboard']) {
-			await page.goto(`${APP_BASE}${path}`)
+			// 🔴 `domcontentloaded`, NOT the default `load`. Nextcloud's
+			// notification poll keeps the network busy, so waiting for the load
+			// event waits for something that does not settle — the loop dies
+			// partway through and names whichever route it was on, which reads
+			// as a broken route. The SPA mounts after DOM ready, and the
+			// assertions below are what prove the mount.
+			await page.goto(`${APP_BASE}${path}`, {
+				waitUntil: 'domcontentloaded',
+			})
 			await expect(page).toHaveURL(new RegExp(`${path}(\\?|$)`), {
 				timeout: 15_000,
 			})
