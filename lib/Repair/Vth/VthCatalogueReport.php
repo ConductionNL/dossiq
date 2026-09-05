@@ -69,7 +69,7 @@ class VthCatalogueReport {
 	 * Record one entry's result.
 	 *
 	 * @param string $entry The catalogue entry, by slug or file name.
-	 * @param string $outcome One of seeded|published|present|skipped|crossLink|failed.
+	 * @param string $outcome One of seeded|published|present|deprecated|skipped|crossLink|failed.
 	 * @param string $reason What happened to it, in one sentence.
 	 *
 	 * @return void
@@ -92,7 +92,15 @@ class VthCatalogueReport {
 	 * @spec openspec/specs/vth-workflow-templates/spec.md
 	 */
 	public function write(IOutput $output): void {
-		$counts = ['seeded' => 0, 'published' => 0, 'present' => 0, 'skipped' => 0, 'crossLink' => 0, 'failed' => 0];
+		$counts = [
+			'seeded' => 0,
+			'published' => 0,
+			'present' => 0,
+			'deprecated' => 0,
+			'skipped' => 0,
+			'crossLink' => 0,
+			'failed' => 0,
+		];
 		foreach ($this->outcomes as $outcome) {
 			$counts[$outcome['outcome']] = ($counts[$outcome['outcome']] ?? 0) + 1;
 		}
@@ -101,6 +109,7 @@ class VthCatalogueReport {
 			'VTH workflow templates: ' . $counts['seeded'] . ' seeded, '
 			. $counts['published'] . ' published from an earlier draft, '
 			. $counts['present'] . ' already present, '
+			. $counts['deprecated'] . ' present but retired, '
 			. $counts['skipped'] . ' skipped, '
 			. $counts['crossLink'] . ' cross-link, '
 			. $counts['failed'] . ' failed. ' . count($this->outcomes) . ' catalogue entries in total.'
@@ -115,23 +124,29 @@ class VthCatalogueReport {
 				'Fix what the skipped and failed lines above name, then run `occ maintenance:repair` again.'
 			);
 		}
+
+		if ($counts['deprecated'] > 0) {
+			$output->info(
+				'A retired entry above stays retired. Somebody turned it off, and this step will not turn it back on.'
+			);
+		}
 	}//end write()
 
 	/**
 	 * The title of the definition a publish displaced, or an empty string.
 	 *
-	 * 🔴 PUBLISHING THE SECOND TEMPLATE FOR A CASE TYPE DEPRECATES THE FIRST,
-	 * AND NOTHING USED TO SAY SO. One published definition per case type is the
-	 * workflow-definition model working as designed, but the catalogue ships
-	 * two entries against `handhavingszaak`: `handhavingstraject` and
-	 * `spoedig-herstel`, the Awb 5:31 spoedeisende route. Whichever the glob
-	 * reaches last retires the other, and an administrator's only clue used to
-	 * be a workflow that had quietly stopped backing new cases.
+	 * 🔴 THIS USED TO REPORT A DEPRECATION THAT SHOULD NEVER HAVE HAPPENED.
+	 * The catalogue ships two entries against `handhavingszaak`, and under one
+	 * published definition per CASE TYPE whichever the glob reached last retired
+	 * the other. They are now two ROUTES through that case type, each with its
+	 * own active definition, so a second route displaces nothing.
 	 *
-	 * The caller reads the active definition BEFORE publishing and hands it
-	 * here, so the summary can name what went.
+	 * What is left for this method to report is the real case: publishing a new
+	 * version of a route that already had one. The caller reads that route's
+	 * active definition BEFORE publishing and hands it here, so the summary can
+	 * name what it replaced.
 	 *
-	 * @param array<string, mixed>|null $displaced The definition that was active before the publish.
+	 * @param array<string, mixed>|null $displaced The definition that was active on the same route before the publish.
 	 * @param string $publishedId The uuid that was just published.
 	 *
 	 * @return string The displaced title, or '' when this publish displaced nothing.
@@ -152,22 +167,58 @@ class VthCatalogueReport {
 	 *
 	 * @param string $title The template's title.
 	 * @param int $version The version that was published.
-	 * @param string $displacedTitle The definition this publish deprecated, or ''.
+	 * @param string $variant The route it landed on.
+	 * @param string $displacedTitle The previous version of that route, or ''.
+	 * @param bool $isDefaultRoute Whether new cases on this case type follow it.
 	 *
 	 * @return string The sentence the administrator reads.
 	 *
 	 * @spec openspec/specs/vth-workflow-templates/spec.md
 	 */
-	public function seededReason(string $title, int $version, string $displacedTitle): string {
-		$reason = 'seeded and published as "' . $title . '" version ' . $version . '.';
-		if ($displacedTitle === '') {
-			return $reason;
+	public function seededReason(
+		string $title,
+		int $version,
+		string $variant,
+		string $displacedTitle,
+		bool $isDefaultRoute,
+	): string {
+		$reason = 'seeded and published as "' . $title . '" version ' . $version
+			. ', on the "' . $variant . '" route.';
+
+		if ($isDefaultRoute === true) {
+			$reason .= ' New cases on this case type follow this route.';
 		}
 
-		return $reason . ' This deprecated "' . $displacedTitle
-			. '", the definition that case type had: one published definition per case type is'
-			. ' the model, and this case type has two catalogue entries.';
+		if ($displacedTitle !== '') {
+			$reason .= ' This replaced "' . $displacedTitle . '", the previous published version of that route.';
+		}
+
+		return $reason;
 	}//end seededReason()
+
+	/**
+	 * The summary line for a catalogue entry that is present but retired.
+	 *
+	 * 🔑 THE SEEDER DOES NOT UNDO A DEPRECATION, AND SAYS SO HERE. A row reads
+	 * `deprecated` whether the old one-per-case-type rule retired it or an
+	 * administrator did, and the stored data cannot tell those apart.
+	 * Republishing on sight would bring back a route somebody turned off, on an
+	 * upgrade they did not ask for it on. So this names the way back instead,
+	 * and leaves the decision with the person entitled to take it.
+	 *
+	 * @param string $title The template's title.
+	 * @param string $variant The route it is on.
+	 *
+	 * @return string The sentence the administrator reads.
+	 *
+	 * @spec openspec/specs/vth-workflow-templates/spec.md
+	 */
+	public function deprecatedReason(string $title, string $variant): string {
+		return 'is present as "' . $title . '" on the "' . $variant
+			. '" route, and it is retired. This step will not republish it, because it cannot tell'
+			. ' a retirement somebody chose from one an older rule caused. To bring the route back,'
+			. ' clone this definition on the case type\'s workflow tab and publish the copy.';
+	}//end deprecatedReason()
 
 	/**
 	 * Render a list of names as a readable, quoted enumeration.

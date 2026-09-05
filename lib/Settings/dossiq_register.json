@@ -219,7 +219,7 @@
                         "x-relation-filter": {
                             "caseType": "@objectId"
                         },
-                        "description": "UUID reference to the pinned active workflowTemplate for this case type. When unset, new cases fall through to the latest published workflowTemplate for this caseType. New cases are bound to the version that is published+isActive at the moment of case creation (see case.workflowTemplate + case.workflowVersion).",
+                        "description": "The default route through this case type: the workflow a case follows when it is not given one of its own. A case type may carry several routes, and this names the one new cases take. When unset, a case falls through to the case type's only active workflow. A case keeps the workflow it was bound to, even after a newer version is published (see case.workflowTemplate and case.workflowVersion).",
                         "title": "Workflow Definition"
                     },
                     "layerIds": {
@@ -3141,11 +3141,11 @@
             "workflowTemplate": {
                 "slug": "workflowTemplate",
                 "icon": "SitemapOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:HowTo",
                 "x-cmmn-equivalent": "CasePlanModel",
                 "title": "Workflow Template",
-                "description": "A workflow definition for a case type: defines process steps, status transitions, guards, and automatic actions. V1.1: each step entry MAY carry an additive `config` sub-object ({sla, requiredFields, autoActions, escalationRule}); absent config preserves v1 behaviour (see process-step-configuration spec).",
+                "description": "A workflow definition for a case type: defines process steps, status transitions, guards, and automatic actions. V1.1: each step entry MAY carry an additive `config` sub-object ({sla, requiredFields, autoActions, escalationRule}); absent config preserves v1 behaviour (see process-step-configuration spec). V1.2 additive: `variant` names which route through the case type this workflow describes, so one case type can carry several routes with one active workflow each; absent variant is the route `standaard`, which is every workflow that predates the property (see workflow-variants spec).",
                 "type": "object",
                 "required": [
                     "title",
@@ -3214,6 +3214,14 @@
                         "type": "string",
                         "description": "JSON-encoded map of status UUID to {x, y} canvas positions for the visual editor",
                         "title": "Node Positions"
+                    },
+                    "variant": {
+                        "type": "string",
+                        "maxLength": 64,
+                        "default": "standaard",
+                        "description": "Which route through the case type this workflow describes. A case type may carry several routes, and one workflow per route can be active at a time. Leave this alone when the case type has one route. Example: a handhavingszaak runs the ordinary route under Awb 5:24 and the spoedeisende route under Awb 5:31.",
+                        "title": "Variant",
+                        "x-notes": "Normalised on read: an absent or empty value is the route 'standaard'. A route is a sibling, not a child. This property is unrelated to parentWorkflow, which describes an unimplemented Enterprise-tier hierarchy BETWEEN case types. See openspec/specs/workflow-variants/spec.md."
                     },
                     "parentWorkflow": {
                         "type": "string",

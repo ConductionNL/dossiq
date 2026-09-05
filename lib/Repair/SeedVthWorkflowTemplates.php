@@ -21,7 +21,11 @@
  * catalogue.
  *
  * A template this step created but could not publish is published on the next
- * run: an existing DRAFT is a repair, an existing published row is a no-op.
+ * run: an existing DRAFT is a repair, an existing published row is a no-op, and
+ * an existing DEPRECATED row is reported and left alone. Two catalogue entries
+ * may share a case type when they declare different routes (see
+ * openspec/specs/workflow-variants/spec.md); publishing one of them leaves the
+ * others backing new cases.
  *
  * This class is orchestration only. The OpenRegister reads live in
  * {@see \OCA\Dossiq\Repair\Vth\VthSeedLookup} and the steps/transitions
@@ -49,6 +53,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Repair\Vth\VthCatalogueFiles;
 use OCA\Dossiq\Repair\Vth\VthCatalogueReport;
 use OCA\Dossiq\Repair\Vth\VthSeedLookup;
 use OCA\Dossiq\Repair\Vth\VthWorkflowGraphResolver;
@@ -66,11 +71,6 @@ use Psr\Log\LoggerInterface;
 class SeedVthWorkflowTemplates implements IRepairStep {
 
 	/**
-	 * Catalog directory relative to lib/.
-	 */
-	private const CATALOG_DIR = __DIR__ . '/../Settings/seed/vth-workflow-templates';
-
-	/**
 	 * Memoised template slug → caseType UUID map, built once per run.
 	 *
 	 * A `spawnCase` action names its target by TEMPLATE slug, while the engine's
@@ -86,6 +86,7 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 	 *
 	 * @param SettingsService $settingsService Settings service for OR access
 	 * @param WorkflowDefinitionService $definitionService Workflow lifecycle service
+	 * @param VthCatalogueFiles $files The bundled catalogue on disk
 	 * @param VthSeedLookup $lookup OpenRegister lookups for the seed
 	 * @param VthWorkflowGraphResolver $graphResolver Steps/transitions resolver
 	 * @param VthCatalogueReport $report Per-entry outcomes and the summary they print
@@ -96,6 +97,7 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly WorkflowDefinitionService $definitionService,
+		private readonly VthCatalogueFiles $files,
 		private readonly VthSeedLookup $lookup,
 		private readonly VthWorkflowGraphResolver $graphResolver,
 		private readonly VthCatalogueReport $report,
@@ -162,16 +164,15 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 			return [];
 		}
 
-		if (is_dir(self::CATALOG_DIR) === false) {
+		if ($this->files->exists() === false) {
 			$output->warning(
-				'VTH workflow templates catalog directory not found at '
-				. self::CATALOG_DIR
+				'VTH workflow templates catalog directory not found at ' . $this->files->directory()
 			);
 			return [];
 		}
 
-		$files = glob(self::CATALOG_DIR . '/*.json');
-		if ($files === false || $files === []) {
+		$files = $this->files->paths();
+		if ($files === []) {
 			$output->warning('No VTH workflow template catalog files found.');
 			return [];
 		}
@@ -196,14 +197,9 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 			return $this->spawnTargets;
 		}
 
-		$files = glob(self::CATALOG_DIR . '/*.json');
-		if ($files === false) {
-			$files = [];
-		}
-
 		$map = [];
-		foreach ($files as $file) {
-			$data = $this->loadCatalogEntry(file: $file);
+		foreach ($this->files->paths() as $file) {
+			$data = $this->files->load(file: $file);
 			if ($data === null) {
 				continue;
 			}
@@ -262,7 +258,7 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 	 * Record one entry's result for the summary.
 	 *
 	 * @param string $entry The catalogue entry, by slug or file name.
-	 * @param string $outcome One of seeded|published|present|skipped|crossLink|failed.
+	 * @param string $outcome One of seeded|published|present|deprecated|skipped|crossLink|failed.
 	 * @param string $reason What happened to it, in one sentence.
 	 *
 	 * @return void
@@ -279,7 +275,7 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 	 * @return void
 	 */
 	private function processCatalogFile(string $file): void {
-		$data = $this->loadCatalogEntry(file: $file);
+		$data = $this->files->load(file: $file);
 		if ($data === null) {
 			$this->outcome(
 				entry: basename($file),
@@ -310,6 +306,11 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 		$context = $this->resolveTemplateContext(data: $data, slug: $slug, title: $title);
 		if (isset($context['present']) === true) {
 			$this->outcome(entry: $slug, outcome: 'present', reason: (string)$context['present']);
+			return;
+		}
+
+		if (isset($context['deprecated']) === true) {
+			$this->outcome(entry: $slug, outcome: 'deprecated', reason: (string)$context['deprecated']);
 			return;
 		}
 
@@ -408,56 +409,15 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 	}//end reportCrossLink()
 
 	/**
-	 * Read and validate one catalog file, returning its decoded entry.
-	 *
-	 * Returns null on any condition that makes the file unusable (unreadable,
-	 * invalid JSON, or missing slug/title) — the caller reports those as failed.
-	 *
-	 * @param string $file Absolute path to the JSON catalog file
-	 *
-	 * @return array<string, mixed>|null The decoded catalog entry, or null when unusable
-	 */
-	private function loadCatalogEntry(string $file): ?array {
-		$raw = file_get_contents($file);
-		if ($raw === false) {
-			$this->logger->error(
-				'Dossiq: VTH workflow template — unable to read catalog file',
-				['app' => Application::APP_ID, 'file' => basename($file)]
-			);
-			return null;
-		}
-
-		$data = json_decode($raw, true);
-		if (json_last_error() !== JSON_ERROR_NONE || is_array($data) === false) {
-			$this->logger->error(
-				'Dossiq: VTH workflow template — invalid JSON in catalog file',
-				['app' => Application::APP_ID, 'file' => basename($file)]
-			);
-			return null;
-		}
-
-		$slug = (string)($data['slug'] ?? '');
-		$title = (string)($data['title'] ?? '');
-		if ($slug === '' || $title === '') {
-			$this->logger->warning(
-				'Dossiq: VTH workflow template — missing slug or title',
-				['app' => Application::APP_ID, 'file' => basename($file)]
-			);
-			return null;
-		}
-
-		return $data;
-	}//end loadCatalogEntry()
-
-	/**
 	 * Resolve the caseType UUID and statusType map a template needs, applying
 	 * the idempotency check.
 	 *
-	 * Answers one of four things:
-	 *   `present`    this entry is already seeded, and in which lifecycle state.
-	 *   `skip`       the reason this entry cannot be seeded, for the summary.
-	 *   `republish`  the uuid of a draft an earlier run failed to publish.
-	 *   otherwise    {caseTypeId, statusMap} to build the template from.
+	 * Answers one of five things:
+	 *   `present`     this entry is already seeded and published, nothing to do.
+	 *   `deprecated`  this entry is present and retired, which is reported and never undone.
+	 *   `skip`        the reason this entry cannot be seeded, for the summary.
+	 *   `republish`   the uuid of a draft an earlier run failed to publish.
+	 *   otherwise     {caseTypeId, statusMap} to build the template from.
 	 *
 	 * @param array<string, mixed> $data The decoded catalog entry
 	 * @param string $slug The template slug
@@ -494,14 +454,29 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 				]
 			);
 
-			if ((string)($existing['lifecycleStatus'] ?? '') === WorkflowDefinitionService::STATUS_DRAFT) {
+			$lifecycleStatus = (string)($existing['lifecycleStatus'] ?? '');
+			if ($lifecycleStatus === WorkflowDefinitionService::STATUS_DRAFT) {
 				return ['republish' => (string)($existing['id'] ?? ($existing['uuid'] ?? ''))];
 			}
 
-			return [
-				'present' => 'already present as ' . (string)($existing['lifecycleStatus'] ?? 'unknown')
-					. ', nothing to do.',
-			];
+			// A retired entry is reported, never republished. See
+			// VthCatalogueReport::deprecatedReason() for why the seeder must not
+			// decide this on the administrator's behalf.
+			if ($lifecycleStatus === WorkflowDefinitionService::STATUS_DEPRECATED) {
+				return [
+					'deprecated' => $this->report->deprecatedReason(
+						title: $title,
+						variant: $this->files->variantOf(data: $data),
+					),
+				];
+			}
+
+			$named = $lifecycleStatus;
+			if ($named === '') {
+				$named = 'unknown';
+			}
+
+			return ['present' => 'already present as ' . $named . ', nothing to do.'];
 		}
 
 		// Build the name → UUID map for statusTypes belonging to this caseType.
@@ -602,6 +577,7 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 		array $graph,
 	): void {
 		$version = (int)($data['version'] ?? 1);
+		$variant = $this->files->variantOf(data: $data);
 
 		// Create draft via the lifecycle service.
 		$draft = $this->definitionService->createDraft(
@@ -609,6 +585,7 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 				'title' => $title,
 				'description' => (string)($data['description'] ?? ''),
 				'caseType' => $caseTypeId,
+				'variant' => $variant,
 				'version' => $version,
 				'steps' => $graph['steps'],
 				'transitions' => $graph['transitions'],
@@ -628,14 +605,15 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 			return;
 		}
 
-		// Read what is active BEFORE publishing: a publish deprecates the
-		// definition the case type already had, and this is the only moment
-		// that definition can still be named. See
-		// VthCatalogueReport::displacedTitle() for why two catalogue entries
-		// land on one case type, and the Notes under the Handhavingszaak
-		// requirement in openspec/specs/vth-workflow-templates/spec.md for what
-		// the model cannot yet express.
-		$displaced = $this->definitionService->getActiveDefinitionFor(caseTypeId: $caseTypeId);
+		// Read what is active ON THIS ROUTE before publishing: a publish
+		// deprecates the previous version of its own route, and this is the only
+		// moment that version can still be named. Asking without the route would
+		// name the OTHER route's definition, which this publish leaves alone.
+		// See openspec/specs/workflow-variants/spec.md.
+		$displaced = $this->definitionService->getActiveDefinitionFor(
+			caseTypeId: $caseTypeId,
+			variant: $variant,
+		);
 
 		// Publish, which flips the row to lifecycleStatus=published and
 		// isActive=true, and pins caseType.workflowDefinition when no previous
@@ -654,20 +632,30 @@ class SeedVthWorkflowTemplates implements IRepairStep {
 			return;
 		}
 
+		// The catalogue says which route is the default, so the answer does not
+		// depend on the order glob() handed out the files. Ordering dependencies
+		// in this step are exactly what #1819 was about.
+		$isDefaultRoute = (bool)($data['isDefaultVariant'] ?? false);
+		if ($isDefaultRoute === true) {
+			$this->definitionService->setDefaultDefinition(id: (string)$draft['id']);
+		}
+
 		// The summary is the reporting channel for this step, deliberately: a
 		// count is not a report, and a second warning in the log is a second
-		// place to look. The line below names the deprecation where the
-		// administrator is already reading.
+		// place to look. The line below names the route where the administrator
+		// is already reading.
 		$this->outcome(
 			entry: $slug,
 			outcome: 'seeded',
 			reason: $this->report->seededReason(
 				title: $title,
 				version: $version,
+				variant: $variant,
 				displacedTitle: $this->report->displacedTitle(
 					displaced: $displaced,
 					publishedId: (string)$draft['id'],
 				),
+				isDefaultRoute: $isDefaultRoute,
 			),
 		);
 	}//end createAndPublishTemplate()
