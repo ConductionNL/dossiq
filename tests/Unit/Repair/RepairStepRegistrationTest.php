@@ -69,6 +69,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'RenameDutchColumns' => 'renames columns over existing rows',
 		'RenameDutchValues' => 'rewrites values in existing rows',
 		'RealignLhsActorTypeVocabulary' => 'repairs rows an earlier rename touched',
+		'RealignStatutoryVocabulary' => 'repairs rows an earlier rename touched; a fresh install never acquires them',
 		'MigrateArchivalToOpenRegister' => 'one-way migration of existing archival rows',
 		'MigratePartnersToOrganisations' => 'moves existing ketenpartner rows onto Organisation',
 		'MigrateSubsidieRegelingToCaseType' => 'moves existing subsidieRegeling rows onto case types',

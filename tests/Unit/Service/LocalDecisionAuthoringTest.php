@@ -91,6 +91,7 @@ class LocalDecisionAuthoringTest extends TestCase {
 		'lib/Listener/BezwaarDecisionListener.php' => 'Fail-closed guard: reverts a bezwaar status when no published decision exists; probes decision records, never authors one.',
 		'lib/Controller/BrcController.php' => 'ZGW Besluiten API (BRC): external registry writes besluit RECORDS the API mandates; record store compliance, not deliberation.',
 		'lib/Repair/LinkInFlightRemainingDecisionsRepair.php' => 'One-time idempotent migration linking in-flight records to their decidiq decisions.',
+		'lib/Service/BesluitMigrationService.php' => 'Operator-invoked, idempotent MOVE of besluit records this app already holds onto decidiq\'s Decision (dossiq#1837): it names the decision slug to read the source rows and writes each one back through decidiq, deliberating nothing.',
 		'lib/Repair/LoadDefaultZgwMappings.php' => 'Seeds ZGW mapping configuration naming the decision schema; writes mappings, not decisions.',
 		'lib/Service/Bezwaar/BeroepService.php' => 'Derives beroep deadlines FROM the contested appealDecision; reads the record, writes the beroep.',
 		'lib/Service/Bezwaar/BezwaarCreationHook.php' => 'Resolves the decision schema for a lookup while creating the objection case; writes the objection, not a decision.',

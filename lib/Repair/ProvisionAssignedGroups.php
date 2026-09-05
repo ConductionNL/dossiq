@@ -91,9 +91,40 @@ class ProvisionAssignedGroups implements IRepairStep {
 	 * case, so routing its two steps to the handlers would be worse than the
 	 * unassigned steps it replaces.
 	 *
+	 * 🔴 THE SECOND BLOCK IS GATES, NOT ASSIGNMENTS, and it was missing.
+	 * `AccessControlGroupsAreProvisionedTest` sweeps the group ids the CODE
+	 * gates access on, and measured 2026-09-05 that seven of the nine were
+	 * created by nothing at all. `IGroupManager::isInGroup()` cannot tell a
+	 * missing group from an empty one — both answer false, with no log line —
+	 * so each of those was a permanent silent denial for every non-admin, and
+	 * the feature behind it read as broken rather than restricted: process
+	 * mining, the AI audit export, the KCC citizen lookup, and the free-form
+	 * status transition.
+	 *
+	 * `procest-admin` keeps the pre-rename spelling deliberately; see the
+	 * FROZEN note on `TransitionAuthorizer::ADMIN_GROUP_ID`. Provisioning it is
+	 * not renaming it.
+	 *
+	 * Creating a group here never disturbs one an organisation already has:
+	 * `run()` skips any id that exists and seeds only the ones it just made, so
+	 * an instance with its own `beheerders` keeps that group and its members
+	 * untouched.
+	 *
 	 * @var array<int, string>
 	 */
-	public const ASSIGNED_GROUPS = ['behandelaars', 'bezwaarcommissie'];
+	public const ASSIGNED_GROUPS = [
+		// Assigned work by the shipped flows.
+		'behandelaars',
+		'bezwaarcommissie',
+		// Gated on by the access checks in lib/.
+		'procest-admin',
+		'beheerders',
+		'auditors',
+		'secretariaat',
+		'controllers',
+		'kcc',
+		'klantcontact',
+	];
 
 	/**
 	 * Constructor.
