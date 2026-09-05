@@ -108,6 +108,14 @@ class SetupControllerStatusTest extends TestCase {
 		// the demo import IS the app's demo-data affordance, so it is driven
 		// here rather than left as a bare constructor argument.
 		$demo = $this->createMock(DemoDataService::class);
+		// The offered list, so a test about VALIDATING a pick is not silently
+		// asserting that an empty list rejects everything.
+		$demo->method('listChoices')->willReturn(
+			[
+				['id' => 'none', 'label' => 'None', 'description' => 'Nothing.', 'objectCount' => 0, 'icon' => 'CloseCircleOutline'],
+				['id' => 'demo', 'label' => 'Example data', 'description' => 'Sample values.', 'objectCount' => 6, 'icon' => 'DatabaseOutline'],
+			]
+		);
 		if ($seedResult !== null) {
 			$seeder->method('seedBezwaarBeroepData')->willReturn($seedResult);
 		}
@@ -121,6 +129,16 @@ class SetupControllerStatusTest extends TestCase {
 		$request = $this->createMock(IRequest::class);
 		if ($requestParams !== null) {
 			$request->method('getParams')->willReturn($requestParams);
+			// 🔴 BOTH READERS, OR THE VALIDATION IS INVISIBLE TO THE TEST.
+			// saveConfig() reads the dataset with getParam() and the rest of
+			// the body with getParams(); a fake that answers only the second
+			// makes every assertion about the first pass for the wrong reason.
+			$request->method('getParam')
+				->willReturnCallback(
+					static function (string $key, $default = null) use ($requestParams) {
+						return ($requestParams[$key] ?? $default);
+					}
+				);
 		}
 
 		$controller = new SetupController(
@@ -546,12 +564,174 @@ class SetupControllerStatusTest extends TestCase {
 
 		$this->assertTrue($response->getData()['success']);
 		$this->assertSame('skipped', $built['written']['demo_data_decided'] ?? null);
+		// 🔴 IT HAS TO ANSWER BOTH STEPS. The step split into a choice plus a
+		// run-action, and CnAppRoot opens the wizard while ANY optional step is
+		// outstanding — so writing only the decision flag would leave the
+		// choice open and the wizard covering every page.
+		$this->assertSame('none', $built['written']['demo_dataset'] ?? null, 'skipping IS choosing none');
 
-		$done = $this->controller($this->provisioned() + ['demo_data_decided' => 'skipped'])
-			->status()->getData();
-		$this->assertTrue($done['steps']['demo-data']['done'], 'a recorded decline finishes the step');
+		$done = $this->controller(
+			$this->provisioned() + ['demo_data_decided' => 'skipped', 'demo_dataset' => 'none']
+		)->status()->getData();
+		$this->assertTrue($done['steps']['demo-data']['done'], 'a recorded decline finishes the choice');
+		$this->assertTrue($done['steps']['load-demo-data']['done'], 'and leaves nothing to run');
 
 	}//end testDecliningTheDemoDataFinishesTheStep()
+
+	/**
+	 * The status document carries the datasets the choice step offers.
+	 *
+	 * 🔴 THIS RESPONSE *IS* THE OPTION LIST. The step declares
+	 * `optionsSource: datasets` and carries no options of its own, so a dataset
+	 * missing here is a dataset nobody can pick.
+	 *
+	 * @return void
+	 */
+	public function testStatusCarriesTheOptionListTheChoiceStepReads(): void {
+		// What the SERVICE offers is asserted in DemoDataServiceTest, against
+		// the real descriptor. What matters here is that the controller passes
+		// it through under the key the manifest names: `optionsSource:
+		// datasets` reads exactly this, and a step whose source is absent
+		// offers nothing at all.
+		$data = $this->controller($this->provisioned())->status()->getData();
+
+		$this->assertArrayHasKey('datasets', $data);
+		$this->assertIsArray($data['datasets']);
+
+	}//end testStatusCarriesTheOptionListTheChoiceStepReads()
+
+	/**
+	 * Running the load step with no dataset picked refuses rather than guessing.
+	 *
+	 * 🔴 NO SILENT DEFAULT. Importing because the operator clicked Run one step
+	 * early would plant example objects nobody asked for.
+	 *
+	 * @return void
+	 */
+	public function testLoadingWithoutAChoiceRefusesRatherThanGuessing(): void {
+		$built = $this->build(config: $this->provisioned());
+
+		$response = $built['controller']->runAction(actionId: 'load-demo-data');
+
+		$this->assertFalse($response->getData()['success']);
+		$this->assertStringContainsString('Pick a dataset', $response->getData()['message']);
+
+	}//end testLoadingWithoutAChoiceRefusesRatherThanGuessing()
+
+	/**
+	 * A dataset nobody ships is refused rather than stored.
+	 *
+	 * Storing it would leave the load step pointing at nothing, so the failure
+	 * would surface one step later with no clue why.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownDatasetIsRefusedRatherThanStored(): void {
+		$built = $this->build(config: $this->provisioned(), requestParams: ['demo_dataset' => 'atlantis']);
+
+		$response = $built['controller']->saveConfig();
+
+		$this->assertFalse($response->getData()['success']);
+		$this->assertSame([], $built['written']);
+
+	}//end testAnUnknownDatasetIsRefusedRatherThanStored()
+
+	/**
+	 * A known dataset is stored, and the rest of the body still goes through.
+	 *
+	 * @return void
+	 */
+	public function testAKnownDatasetIsStoredAlongsideTheOtherFields(): void {
+		$built = $this->build(
+			config: $this->provisioned(),
+			requestParams: ['demo_dataset' => 'demo', 'some_field' => 'kept']
+		);
+
+		$response = $built['controller']->saveConfig();
+
+		$this->assertTrue($response->getData()['success']);
+		$this->assertSame('demo', $built['written']['demo_dataset'] ?? null);
+		$this->assertSame('kept', $built['written']['some_field'] ?? null);
+
+	}//end testAKnownDatasetIsStoredAlongsideTheOtherFields()
+
+	/**
+	 * A list is accepted, because the wizard contract allows one.
+	 *
+	 * The step is not `multiple`, but the same endpoint serves steps that are,
+	 * so an array must not reach `(string)` and become "Array".
+	 *
+	 * @return void
+	 */
+	public function testAListIsAcceptedBecauseTheWizardContractAllowsOne(): void {
+		$built = $this->build(
+			config: $this->provisioned(),
+			requestParams: ['demo_dataset' => ['demo']]
+		);
+
+		$this->assertTrue($built['controller']->saveConfig()->getData()['success']);
+
+	}//end testAListIsAcceptedBecauseTheWizardContractAllowsOne()
+
+	/**
+	 * A value that is not a scalar is refused rather than cast.
+	 *
+	 * The body is whatever the browser posted. A nested array would otherwise
+	 * reach `(string)` and raise a fatal.
+	 *
+	 * @return void
+	 */
+	public function testAValueThatIsNotAScalarIsRefused(): void {
+		$built = $this->build(
+			config: $this->provisioned(),
+			requestParams: ['demo_dataset' => [['demo']]]
+		);
+
+		$this->assertFalse($built['controller']->saveConfig()->getData()['success']);
+		$this->assertSame([], $built['written']);
+
+	}//end testAValueThatIsNotAScalarIsRefused()
+
+	/**
+	 * Choosing none and then running imports nothing, rather than refusing.
+	 *
+	 * 🔴 REFUSING WOULD LEAVE THE STEP OPEN. The load step still runs after
+	 * "None"; it has to record the decision and import nothing.
+	 *
+	 * @return void
+	 */
+	public function testChoosingNoneAndThenRunningImportsNothing(): void {
+		$built = $this->build(config: $this->provisioned() + ['demo_dataset' => 'none']);
+
+		$data = $built['controller']->runAction(actionId: 'load-demo-data')->getData();
+
+		$this->assertTrue($data['success']);
+		$this->assertStringContainsString('No example data', $data['message']);
+		$this->assertSame('skipped', $built['written']['demo_data_decided'] ?? null);
+
+	}//end testChoosingNoneAndThenRunningImportsNothing()
+
+	/**
+	 * The legacy action still imports the shipped dataset.
+	 *
+	 * `install-demo-data` was the id before the step asked WHICH dataset. A
+	 * runbook or script that still posts it must keep working, and it names the
+	 * shipped set by naming itself.
+	 *
+	 * @return void
+	 */
+	public function testTheLegacyActionStillImportsTheShippedDataset(): void {
+		$built = $this->build(
+			config: $this->provisioned(),
+			demoResult: ['objects' => 4, 'requested' => 4, 'refused' => 0, 'unchanged' => 0]
+		);
+
+		$data = $built['controller']->runAction(actionId: 'install-demo-data')->getData();
+
+		$this->assertTrue($data['success']);
+		$this->assertStringContainsString('4', $data['message']);
+
+	}//end testTheLegacyActionStillImportsTheShippedDataset()
 
 	/**
 	 * A config-fields step stores its values, encoding what is not a scalar.

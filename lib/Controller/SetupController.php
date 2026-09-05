@@ -67,6 +67,19 @@ class SetupController extends Controller {
 	private const DEMO_DATA_DECIDED_KEY = 'demo_data_decided';
 
 	/**
+	 * App-config key holding the dataset the operator picked.
+	 *
+	 * The wizard's `choice` step writes it through `POST /api/setup/config`, and
+	 * the `run-action` step that follows reads it back. Two steps rather than
+	 * one because `CnSetupWizard::runAction()` posts to
+	 * `/api/setup/action/{action}` with no body: an action cannot carry the
+	 * answer, so the answer has to be stored before the action runs.
+	 *
+	 * @var string
+	 */
+	private const DATASET_KEY = 'demo_dataset';
+
+	/**
 	 * Construct the setup controller.
 	 *
 	 * @param string $appName The app id.
@@ -111,6 +124,7 @@ class SetupController extends Controller {
 		// data has finished the step; re-offering it every visit would make
 		// "no thanks" impossible to express.
 		$demoDecided = $this->config(key: self::DEMO_DATA_DECIDED_KEY) !== '';
+		$pickedDataset = $this->config(key: self::DATASET_KEY);
 		$completed = $registerDone;
 
 		// Dwangsom callback signing secret. Only meaningful once the payout
@@ -127,8 +141,17 @@ class SetupController extends Controller {
 		$response = [
 			'version' => self::SETUP_VERSION,
 			'completed' => $completed,
+			// The choice step reads its options from here: it declares
+			// `optionsSource: datasets` and no options of its own, so a dataset
+			// missing from this list is a dataset nobody can pick.
+			'datasets' => $this->demoDataService->listChoices(),
 			'steps' => [
-				'demo-data' => ['done' => $demoDecided],
+				'demo-data' => ['done' => ($pickedDataset !== '')],
+				// "None" is an ANSWER, so the load step is finished the moment
+				// it is chosen: there is nothing left for the operator to run.
+				'load-demo-data' => [
+					'done' => ($demoDecided === true || $pickedDataset === DemoDataService::NONE_DATASET),
+				],
 				'register-check' => ['done' => $registerDone],
 				// Reported unconditionally so the wizard can tell "configured"
 				// from "never mentioned" — an unreported step is UNKNOWN to
@@ -163,6 +186,32 @@ class SetupController extends Controller {
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function saveConfig(): DataResponse {
+		// 🔴 THE DATASET IS VALIDATED BEFORE IT IS STORED. Everything else here
+		// is written as posted, because the `config-fields` step declares its
+		// own keys and this endpoint cannot know them. The dataset is
+		// different: the load step reads it back and hands it to the importer,
+		// so an unknown value would surface one step later as a failed import
+		// with no clue why.
+		$dataset = $this->request->getParam(self::DATASET_KEY);
+		if ($dataset !== null) {
+			$submitted = $dataset;
+			if (is_array($dataset) === true) {
+				$submitted = ($dataset[0] ?? null);
+			}
+
+			$named = 'that';
+			if (is_scalar($submitted) === true) {
+				$named = (string)$submitted;
+			}
+
+			$known = array_column($this->demoDataService->listChoices(), 'id');
+			if (is_scalar($submitted) === false || in_array($named, $known, true) === false) {
+				return new DataResponse(
+					['success' => false, 'message' => 'No dataset is called "' . $named . '".']
+				);
+			}
+		}
+
 		foreach ($this->request->getParams() as $key => $value) {
 			if (in_array($key, ['_route'], true) === true) {
 				continue;
@@ -194,8 +243,11 @@ class SetupController extends Controller {
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function runAction(string $actionId): DataResponse {
-		if ($actionId === 'install-demo-data') {
-			return $this->installDemoData();
+		// `install-demo-data` is the id the step used before it asked WHICH
+		// dataset, and it still means "import the one this app ships". Kept so
+		// an older manifest, a runbook or a script that posts it keeps working.
+		if ($actionId === 'load-demo-data' || $actionId === 'install-demo-data') {
+			return $this->loadDataset(actionId: $actionId);
 		}
 
 		if ($actionId === 'skip-demo-data') {
@@ -271,13 +323,37 @@ class SetupController extends Controller {
 	}//end runAction()
 
 	/**
-	 * Install the shipped demo dataset (ADR-111 rule 4).
+	 * Import the dataset the operator picked in the previous step (ADR-111 rule 4).
+	 *
+	 * @param string $actionId The action that asked, which decides whether an
+	 *                         unanswered choice is refused or means the shipped set.
 	 *
 	 * @return DataResponse The outcome, carrying the counts.
 	 *
 	 * @spec exclude Demo-data install action (ADR-111 rule 4); no per-app openspec change yet.
 	 */
-	private function installDemoData(): DataResponse {
+	private function loadDataset(string $actionId): DataResponse {
+		$picked = $this->config(key: self::DATASET_KEY);
+
+		// The legacy id carries no answer, so it means the shipped dataset. A
+		// caller that posts it has said which one by posting it.
+		if ($actionId === 'install-demo-data' && $picked === '') {
+			$picked = DemoDataService::DEMO_DATASET;
+		}
+
+		// 🔴 NO SILENT DEFAULT. Importing here because the operator clicked Run
+		// one step early would plant example objects nobody asked for, which is
+		// the failure this whole step exists to avoid.
+		if ($picked === '') {
+			return new DataResponse(['success' => false, 'message' => 'Pick a dataset first.']);
+		}
+
+		if ($picked === DemoDataService::NONE_DATASET) {
+			$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, 'skipped');
+
+			return new DataResponse(['success' => true, 'message' => 'No example data was loaded.']);
+		}
+
 		try {
 			$imported = $this->demoDataService->install();
 		} catch (\Throwable $e) {
@@ -314,7 +390,7 @@ class SetupController extends Controller {
 				'detail'  => $imported,
 			]
 		);
-	}//end installDemoData()
+	}//end loadDataset()
 
 	/**
 	 * Record that the operator declined the demo dataset.
@@ -328,9 +404,13 @@ class SetupController extends Controller {
 	 * @spec exclude Demo-data skip action (ADR-111 rule 4); no per-app openspec change yet.
 	 */
 	private function skipDemoData(): DataResponse {
+		// 🔴 IT ANSWERS *BOTH* STEPS. The wizard now has a choice step and a
+		// run-action step; closing only the second leaves the first outstanding,
+		// and CnAppRoot opens the wizard while ANY optional step is outstanding.
+		$this->appConfig->setValueString('dossiq', self::DATASET_KEY, DemoDataService::NONE_DATASET);
 		$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, 'skipped');
 
-		return new DataResponse(['success' => true, 'message' => 'Demo data skipped.']);
+		return new DataResponse(['success' => true, 'message' => 'No example data was loaded.']);
 	}//end skipDemoData()
 
 	/**

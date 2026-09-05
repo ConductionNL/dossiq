@@ -37,6 +37,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\WorkflowDefinitionService
  * @covers \OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard
+ * @uses \OCA\Dossiq\Service\Workflow\WorkflowJsonProperty
  */
 class WorkflowVariantLifecycleTest extends TestCase {
 
