@@ -92,7 +92,7 @@ class DemoCaseloadReport {
 		$tasks = $this->gateway->findMany(
 			objectService: $objectService,
 			registerId: $ids['register'],
-			schemaId: $ids['task'],
+			schemaId: $ids['caseTask'],
 			filters: []
 		);
 

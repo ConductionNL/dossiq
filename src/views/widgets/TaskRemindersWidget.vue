@@ -149,7 +149,7 @@ export default {
 				const currentUser = getCurrentUser()?.uid || ''
 				// Bare field names, not `_filters[x]`: that form is inert and this
 				// widget was reading every user's tasks. See MyTasksWidget.
-				const tasks = await this.objectStore.fetchCollection('task', {
+				const tasks = await this.objectStore.fetchCollection('caseTask', {
 					assignee: currentUser,
 					isTerminalStatus: false,
 					_limit: 100,

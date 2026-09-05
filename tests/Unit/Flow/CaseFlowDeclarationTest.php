@@ -679,7 +679,7 @@ class CaseFlowDeclarationTest extends TestCase {
 			true
 		);
 
-		$calc = ($register['components']['schemas']['task']['x-openregister-calculations']['blocksCase'] ?? null);
+		$calc = ($register['components']['schemas']['caseTask']['x-openregister-calculations']['blocksCase'] ?? null);
 		$this->assertIsArray($calc, 'The task must declare when it is blocking a case.');
 		$this->assertTrue(($calc['materialise'] ?? false), 'It must be materialised, or it cannot be filtered server-side.');
 
@@ -934,7 +934,7 @@ class CaseFlowDeclarationTest extends TestCase {
 		$path = __DIR__ . '/../../../lib/Settings/dossiq_register.json';
 		$register = json_decode((string)file_get_contents($path), true);
 
-		$properties = ($register['components']['schemas']['task']['properties'] ?? []);
+		$properties = ($register['components']['schemas']['caseTask']['properties'] ?? []);
 
 		foreach (['flowRun', 'flowNode'] as $field) {
 			$this->assertArrayHasKey(

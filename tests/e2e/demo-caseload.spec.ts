@@ -108,7 +108,7 @@ test.describe('Demo caseload surfaces', () => {
 			)
 		}
 
-		const open = await createObject(api, token, 'task', {
+		const open = await createObject(api, token, 'caseTask', {
 			title: OPEN_TASK,
 			case: caseId,
 			assignee: 'admin',
@@ -117,7 +117,7 @@ test.describe('Demo caseload surfaces', () => {
 		})
 		openTaskId = objectId(open)
 
-		await createObject(api, token, 'task', {
+		await createObject(api, token, 'caseTask', {
 			title: DONE_TASK,
 			case: caseId,
 			assignee: 'admin',
@@ -131,7 +131,7 @@ test.describe('Demo caseload surfaces', () => {
 	})
 
 	test('a completed task reads as terminal, so open-work filters exclude it', async () => {
-		const tasks = await listObjects(api, 'task')
+		const tasks = await listObjects(api, 'caseTask')
 
 		const open = tasks.find((t) => t.title === OPEN_TASK)
 		const done = tasks.find((t) => t.title === DONE_TASK)
@@ -152,7 +152,7 @@ test.describe('Demo caseload surfaces', () => {
 	})
 
 	test('daysUntilDue is returned when calculations are extended', async () => {
-		const tasks = await listObjects(api, 'task', { _extend: 'calculations' })
+		const tasks = await listObjects(api, 'caseTask', { _extend: 'calculations' })
 		const open = tasks.find((t) => t.title === OPEN_TASK)
 
 		expect(open, `seeded task "${OPEN_TASK}" is missing`).toBeTruthy()

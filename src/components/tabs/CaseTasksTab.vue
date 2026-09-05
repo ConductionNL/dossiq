@@ -156,7 +156,7 @@ export default {
 			}
 			this.loading = true
 			try {
-				const results = await this.objectStore.fetchCollection('task', {
+				const results = await this.objectStore.fetchCollection('caseTask', {
 					case: this.resolvedCaseId,
 					_limit: 50,
 				})

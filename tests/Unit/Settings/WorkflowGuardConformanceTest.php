@@ -198,7 +198,7 @@ class WorkflowGuardConformanceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key): string => match ($key) {
 				'register' => 'dossiq',
-				'task_schema' => 'task',
+				'task_schema' => 'caseTask',
 				default => 'other',
 			}
 		);
@@ -230,7 +230,7 @@ class WorkflowGuardConformanceTest extends TestCase {
 	 */
 	public function rowsFor(string $schema): array {
 		return match ($schema) {
-			'task' => $this->tasks,
+			'caseTask' => $this->tasks,
 			default => [],
 		};
 	}

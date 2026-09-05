@@ -336,7 +336,7 @@ class StoreControllerTest extends TestCase {
 				'slug' => 'mixed-item',
 				'components' => [
 					['schema' => 'caseType', 'object' => ['title' => 'Handhaving']],
-					['schema' => 'task', 'object' => ['title' => 'Injected task']],
+					['schema' => 'caseTask', 'object' => ['title' => 'Injected task']],
 				],
 			]
 		);

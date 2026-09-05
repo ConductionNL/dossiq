@@ -48,7 +48,7 @@ class SchemaSlugMap {
 	public const SLUG_TO_CONFIG_KEY = [
 		'catalog' => 'catalogus_schema',
 		'case' => 'case_schema',
-		'task' => 'task_schema',
+		'caseTask' => 'task_schema',
 		'status' => 'status_schema',
 		'statusRecord' => 'status_record_schema',
 		'role' => 'role_schema',

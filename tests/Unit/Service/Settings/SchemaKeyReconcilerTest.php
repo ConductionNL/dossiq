@@ -90,8 +90,8 @@ final class SchemaKeyReconcilerTest extends TestCase {
 			registerSchemaIds: [165, 166, 172, 173],
 			// The unscoped lookup answers with the FOREIGN row, exactly as the
 			// live instance did. If the fix regresses, this is what gets written.
-			globalBySlug: ['task' => self::TASK_ROWS['foreign-internetaak']],
-			scopedBySlug: ['task' => self::TASK_ROWS['dossiq']],
+			globalBySlug: ['caseTask' => self::TASK_ROWS['foreign-internetaak']],
+			scopedBySlug: ['caseTask' => self::TASK_ROWS['dossiq']],
 		);
 
 		$reconciler->reconcile();
@@ -141,8 +141,8 @@ final class SchemaKeyReconcilerTest extends TestCase {
 		$reconciler = $this->reconciler(
 			appConfig: $appConfig,
 			registerSchemaIds: [],
-			globalBySlug: ['task' => self::TASK_ROWS['foreign-internetaak']],
-			scopedBySlug: ['task' => self::TASK_ROWS['dossiq']],
+			globalBySlug: ['caseTask' => self::TASK_ROWS['foreign-internetaak']],
+			scopedBySlug: ['caseTask' => self::TASK_ROWS['dossiq']],
 		);
 
 		$reconciler->reconcile();
@@ -168,7 +168,7 @@ final class SchemaKeyReconcilerTest extends TestCase {
 			appConfig: $appConfig,
 			registerSchemaIds: [173],
 			globalBySlug: [],
-			scopedBySlug: ['task' => self::TASK_ROWS['dossiq']],
+			scopedBySlug: ['caseTask' => self::TASK_ROWS['dossiq']],
 		);
 
 		$reconciler->reconcile();

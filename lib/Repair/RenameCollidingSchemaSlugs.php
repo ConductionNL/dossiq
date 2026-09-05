@@ -69,6 +69,10 @@ class RenameCollidingSchemaSlugs implements IRepairStep {
 	 */
 	private const RENAMES = [
 		'supplierInvoice' => ['to' => 'caseSupplierInvoice', 'with' => 'shillinq'],
+		// The case task. `task` was claimed by three apps and they share only
+		// `description`, `priority` and `status`. planninq's project task is the
+		// largest and keeps the bare slug; pipelinq took crmTask.
+		'task' => ['to' => 'caseTask', 'with' => 'planninq, pipelinq'],
 	];
 
 	/**

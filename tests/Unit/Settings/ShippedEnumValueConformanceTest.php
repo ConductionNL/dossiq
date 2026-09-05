@@ -65,7 +65,7 @@ final class ShippedEnumValueConformanceTest extends TestCase {
 	 */
 	private const COLLECTION_SCHEMA = [
 		'cases' => 'case',
-		'tasks' => 'task',
+		'tasks' => 'caseTask',
 		'caseTypes' => 'caseType',
 		'statusTypes' => 'statusType',
 		'roleTypes' => 'roleType',

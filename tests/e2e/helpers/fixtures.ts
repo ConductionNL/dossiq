@@ -73,7 +73,7 @@ const TRASH_BASE = '/index.php/apps/openregister/api/deleted'
 export const FIXTURE_SCHEMAS = [
 	'statusRecord',
 	'caseProperty',
-	'task',
+	'caseTask',
 	'consultation',
 	'objectionProceeding',
 	'case',

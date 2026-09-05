@@ -19,7 +19,7 @@ export async function initializeStores() {
 		}
 		if (config.register && config.task_schema) {
 			objectStore.registerObjectType(
-				'task',
+				'caseTask',
 				config.task_schema,
 				config.register,
 			)

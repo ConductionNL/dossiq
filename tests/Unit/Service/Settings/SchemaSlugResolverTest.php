@@ -52,11 +52,11 @@ final class SchemaSlugResolverTest extends TestCase {
 		$resolver = $this->resolver(
 			registerId: '23',
 			registerSchemaIds: [165, 166, 172, 173],
-			globalBySlug: ['task' => 52],
-			scopedBySlug: ['task' => 173],
+			globalBySlug: ['caseTask' => 52],
+			scopedBySlug: ['caseTask' => 173],
 		);
 
-		$schema = $resolver->resolve($this->schemaMapper, 'task');
+		$schema = $resolver->resolve($this->schemaMapper, 'caseTask');
 
 		$this->assertNotNull($schema, 'The slug must resolve.');
 		$this->assertSame(
@@ -112,11 +112,11 @@ final class SchemaSlugResolverTest extends TestCase {
 		$resolver = $this->resolver(
 			registerId: '',
 			registerSchemaIds: [],
-			globalBySlug: ['task' => 52],
-			scopedBySlug: ['task' => 173],
+			globalBySlug: ['caseTask' => 52],
+			scopedBySlug: ['caseTask' => 173],
 		);
 
-		$schema = $resolver->resolve($this->schemaMapper, 'task');
+		$schema = $resolver->resolve($this->schemaMapper, 'caseTask');
 
 		$this->assertNotNull($schema);
 		$this->assertSame(52, $schema->getId());
