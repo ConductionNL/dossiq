@@ -47,6 +47,7 @@ interface RoutingObjectServiceStub {
  * Which workflow a case runs on.
  *
  * @covers \OCA\Dossiq\Service\WorkflowTemplateLoader
+ * @uses \OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard
  */
 class WorkflowTemplateLoaderVariantTest extends TestCase {
 

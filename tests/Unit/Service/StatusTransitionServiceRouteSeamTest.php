@@ -56,6 +56,8 @@ interface RouteSeamObjectServiceStub {
  * The engine resolves the workflow through the case.
  *
  * @covers \OCA\Dossiq\Service\StatusTransitionService
+ * @uses \OCA\Dossiq\Service\Transitions\CaseStatusStore
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionAuthorizer
  */
 class StatusTransitionServiceRouteSeamTest extends TestCase {
 
