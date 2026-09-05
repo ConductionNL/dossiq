@@ -15,12 +15,37 @@
  * the group is expanded.
  */
 
-import { expect, test } from '@playwright/test'
+import type { APIRequestContext } from '@playwright/test'
+
+import { expect, request, test } from '@playwright/test'
+import { STORAGE_STATE } from '../helpers/auth.ts'
+import {
+	cleanupRunObjects,
+	ensureCaseType,
+	getRequestToken,
+	RUN_PREFIX,
+	seedCase,
+} from '../helpers/fixtures.ts'
+
+let api: APIRequestContext
+let token: string
+let caseTypeId: string
 
 test.describe('Queue', () => {
 	// Same budget as the other dossiq shell specs: a large manifest plus an
 	// OpenRegister round trip on load.
 	test.setTimeout(300_000)
+
+	test.beforeAll(async ({ baseURL }) => {
+		api = await request.newContext({ baseURL, storageState: STORAGE_STATE })
+		token = await getRequestToken(api)
+		caseTypeId = (await ensureCaseType(api, token)).id
+	})
+
+	test.afterAll(async () => {
+		await cleanupRunObjects(api, token)
+		await api.dispose()
+	})
 
 	// @e2e openspec/changes/add-work-queue/specs/add-work-queue/spec.md#the-queue-holds-unassigned-open-cases
 	test('the queue page renders for a deep link', async ({ page }) => {
@@ -40,35 +65,58 @@ test.describe('Queue', () => {
 	})
 
 	// @e2e openspec/changes/add-work-queue/specs/add-work-queue/spec.md#the-queue-holds-unassigned-open-cases
-	test('the queue holds strictly fewer rows than the case index', async ({
+	test('an assigned case is on the case index and NOT in the queue', async ({
 		page,
 	}) => {
-		// The seeded instance carries assigned cases and closed cases, so a queue
-		// returning the same count as All cases means the base filter never
-		// reached the query.
+		// ⚠️ THIS USED TO COUNT `table tbody tr` ON BOTH PAGES, and that number is
+		// wrong twice over. The index pages at 20 rows, so on any instance past 20
+		// cases both pages render exactly 20 and `20 < 20` is false — measured on a
+		// demo-sized rig as "Showing 20 of 52" against "Showing 20 of 50", a
+		// correct queue that the test called broken.
 		//
-		// Count only once a row is ON the page. `cn-page` becomes visible while
-		// the table is still fetching, so counting on that signal alone read 0
-		// rows from a page that was about to render 9 — and `4 < 0` is false, so
-		// the assertion failed against a perfectly correct queue.
-		const countRows = async (path: string): Promise<number> => {
-			await page.goto(path)
+		// Reading the totals the pages REPORT fixes the arithmetic but not the
+		// test: a tally cannot say WHICH case the filter should have dropped, and
+		// it only means anything while the instance happens to hold an assigned or
+		// closed case. On a rig whose every case was open and unassigned the two
+		// totals were equal and the comparison failed against a working queue.
+		//
+		// So the discriminator is seeded here rather than assumed: one case with an
+		// assignee, which the queue's base filter (`assignee: "IS NULL"`) must
+		// exclude and the case index must keep. Both pages are queried by that
+		// case's own title, so neither answer depends on how many other cases the
+		// instance holds.
+		const title = `${RUN_PREFIX} Assigned case`
+		await seedCase(api, token, {
+			title,
+			caseType: caseTypeId,
+			assignee: 'admin',
+		})
+
+		const rowsMatching = async (path: string): Promise<number> => {
+			await page.goto(`${path}?title=${encodeURIComponent(title)}`)
 			await expect(page.locator('[data-testid="cn-page"]')).toBeVisible({
 				timeout: 60_000,
 			})
-			await expect(page.locator('table tbody tr').first()).toBeVisible({
-				timeout: 60_000,
-			})
+			// Settle on the page's own "loaded" marker rather than a bare row
+			// count: `cn-page` becomes visible while the table is still fetching, so
+			// counting on that signal alone reads 0 from a page about to render.
+			await expect(
+				page.locator('.cn-index-page__empty, table tbody tr').first(),
+			).toBeVisible({ timeout: 60_000 })
 			return await page.locator('table tbody tr').count()
 		}
 
-		const allRows = await countRows('/index.php/apps/dossiq/cases')
-		const queueRows = await countRows('/index.php/apps/dossiq/queue')
+		expect(
+			await rowsMatching('/index.php/apps/dossiq/cases'),
+			`the case index must hold the assigned case "${title}"`,
+		).toBe(1)
 
 		expect(
-			queueRows,
-			'the queue is a filtered slice of the case index, never the whole of it',
-		).toBeLessThan(allRows)
+			await rowsMatching('/index.php/apps/dossiq/queue'),
+			`the queue must NOT hold "${title}": it has an assignee, and the base `
+				+ 'filter (assignee IS NULL, isFinalStatus false) is what keeps '
+				+ 'picked-up work out of the queue',
+		).toBe(0)
 	})
 
 	// @e2e openspec/changes/add-work-queue/specs/add-work-queue/spec.md#an-empty-queue-says-so

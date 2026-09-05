@@ -62,13 +62,6 @@ const OPEN_TASK = `${RUN_PREFIX} Open task`
 const DONE_TASK = `${RUN_PREFIX} Completed task`
 
 /**
- * Schemas this run tears down. Tasks only: a case cannot be deleted (see the
- * archival note in beforeAll), so listing `case` here would be a cleanup that
- * quietly fails every run.
- */
-const SEEDED_SCHEMAS = ['task']
-
-/**
  * Days from today, as the ISO date-time the task schema stores.
  *
  * @param days Offset in days, negative for the past.
@@ -132,7 +125,7 @@ test.describe('Demo caseload surfaces', () => {
 	})
 
 	test.afterAll(async () => {
-		await cleanupRunObjects(api, token, SEEDED_SCHEMAS)
+		await cleanupRunObjects(api, token)
 	})
 
 	test('a completed task reads as terminal, so open-work filters exclude it', async () => {

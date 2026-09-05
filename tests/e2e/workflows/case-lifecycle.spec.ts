@@ -43,7 +43,6 @@ import { expect, request, test } from '@playwright/test'
 import { STORAGE_STATE } from '../helpers/auth.ts'
 import {
 	cleanupRunObjects,
-	deleteObject,
 	executeTransition,
 	getAvailableTransitions,
 	getRequestToken,
@@ -72,12 +71,15 @@ test.describe('Case lifecycle — state machine', () => {
 	})
 
 	test.afterAll(async () => {
-		// Child-first cleanup: cases + statusRecords this run produced, then the
-		// seeded machine (template, statusTypes, caseType).
-		await cleanupRunObjects(api, token, ['statusRecord', 'case'])
-		for (const [schema, id] of [...sm.created].reverse()) {
-			await deleteObject(api, token, schema, id)
-		}
+		// Child-first cleanup across every fixture schema: the statusRecords the
+		// transition engine wrote against this run's cases, then the cases, then
+		// the seeded machine (template, statusTypes, caseType).
+		//
+		// This used to delete `sm.created` while its own cases survived — the
+		// `case` schema is archival and refused the delete — which left the
+		// cases pointing at statusTypes that no longer resolved. `purgeObject`
+		// removes the cases for real, so the machine can go with them.
+		await cleanupRunObjects(api, token)
 		await api.dispose()
 	})
 

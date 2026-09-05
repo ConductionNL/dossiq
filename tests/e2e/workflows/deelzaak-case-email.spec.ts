@@ -86,7 +86,7 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 		// failures fail the suite (best-effort housekeeping).
 		test.setTimeout(120_000)
 		try {
-			await cleanupRunObjects(api, token, ['case'])
+			await cleanupRunObjects(api, token)
 			if (caseTypeSeeded)
 				await deleteObject(api, token, 'caseType', caseTypeId)
 		} catch {
@@ -271,6 +271,18 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 		// a toolbar "Open sidebar" toggle reveals it. Open it before asserting the
 		// hosted tab strip mounts (it is not rendered while the aside is closed).
 		const openSidebar = page.getByRole('button', { name: 'Open sidebar' })
+		// ⚠️ `isVisible()` IS AN INSTANT PROBE, NOT A WAIT. Under full-suite load
+		// the detail toolbar had not painted when this line ran, the `if` read
+		// false, the toggle was never clicked, and the assertion below then failed
+		// on an aside that was present but collapsed ("Received: hidden"). Wait
+		// for whichever arrives first: the toggle, or an already-open sidebar on a
+		// build that ships it expanded.
+		await Promise.race([
+			openSidebar.waitFor({ state: 'visible', timeout: 15_000 }),
+			page
+				.locator('aside.app-sidebar')
+				.waitFor({ state: 'visible', timeout: 15_000 }),
+		]).catch(() => undefined)
 		if (await openSidebar.isVisible().catch(() => false)) {
 			await openSidebar.click()
 		}
