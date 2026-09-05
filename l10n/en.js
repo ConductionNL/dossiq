@@ -1,6 +1,14 @@
 OC.L10N.register(
     "dossiq",
     {
+        "Load example data?": "Load example data?",
+        "Example data fills the lists, detail pages and dashboards so you can see the app working straight away. Pick \"None\" on a production install.": "Example data fills the lists, detail pages and dashboards so you can see the app working straight away. Pick \"None\" on a production install.",
+        "Load the example data": "Load the example data",
+        "Loads what you picked. The data is obviously sample data, it is safe to run more than once, and you can delete it afterwards.": "Loads what you picked. The data is obviously sample data, it is safe to run more than once, and you can delete it afterwards.",
+        "None, I will set this up myself": "None, I will set this up myself",
+        "Nothing is imported. You start with an empty app and add your own data.": "Nothing is imported. You start with an empty app and add your own data.",
+        "Example data": "Example data",
+        "Sample values for every schema this app supplies, generated from the schemas themselves. It shows the lists, detail pages and dashboards working rather than telling a story. Safe to run more than once, and you can delete it afterwards.": "Sample values for every schema this app supplies, generated from the schemas themselves. It shows the lists, detail pages and dashboards working rather than telling a story. Safe to run more than once, and you can delete it afterwards.",
         "Contacts": "Contacts",
         "Generic Role": "Generic Role",
         "The generic role this case-type role plays, so routing rules and reports can speak about \"the handler\" without knowing every case type's own naming. Maps to the ZGW RolType field omschrijvingGeneriek. Set from the Roles tab in case-type settings, and shipped by the bezwaar and besluitvorming seed data.": "The generic role this case-type role plays, so routing rules and reports can speak about \"the handler\" without knowing every case type's own naming. Maps to the ZGW RolType field omschrijvingGeneriek. Set from the Roles tab in case-type settings, and shipped by the bezwaar and besluitvorming seed data.",

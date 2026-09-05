@@ -48,6 +48,7 @@ interface WorkflowTemplateObjectServiceStub {
  * Regression tests for WorkflowTemplateLoader::getActiveTemplate().
  *
  * @covers \OCA\Dossiq\Service\WorkflowTemplateLoader
+ * @uses \OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard
  */
 class WorkflowTemplateLoaderRegressionTest extends TestCase {
 
