@@ -71,8 +71,8 @@ import type { APIRequestContext } from '@playwright/test'
 import { expect, request, test } from '@playwright/test'
 import { STORAGE_STATE } from '../helpers/auth.ts'
 import {
+	cleanupRunObjects,
 	createObject,
-	deleteObject,
 	getRequestToken,
 	objectId,
 	RUN_PREFIX,
@@ -102,8 +102,6 @@ const TOKEN_TOO_SHORT = 'short'
 let api: APIRequestContext
 let anon: APIRequestContext
 let token: string
-let consultationAId = ''
-let consultationBId = ''
 
 /**
  * Seed one consultation carrying a known secure token.
@@ -140,12 +138,12 @@ test.describe('External consultation response — public token surface', () => {
 		api = await request.newContext({ baseURL, storageState: STORAGE_STATE })
 		anon = await request.newContext({ baseURL })
 		token = await getRequestToken(api)
-		consultationAId = await seedConsultation(
+		await seedConsultation(
 			'CONSULTATION-A',
 			TOKEN_A,
 			'11111111-1111-4111-8111-111111111111',
 		)
-		consultationBId = await seedConsultation(
+		await seedConsultation(
 			'CONSULTATION-B',
 			TOKEN_B,
 			'22222222-2222-4222-8222-222222222222',
@@ -153,8 +151,11 @@ test.describe('External consultation response — public token surface', () => {
 	})
 
 	test.afterAll(async () => {
-		await deleteObject(api, token, 'consultation', consultationAId)
-		await deleteObject(api, token, 'consultation', consultationBId)
+		// `deleteObject` only SOFT-deletes, and this file sorts last, so the two
+		// consultations it removed were the residue every run ended with: gone
+		// from the object API, still in OpenRegister's trash, and no later
+		// teardown to sweep them. Measured as 2 trashed rows after a full run.
+		await cleanupRunObjects(api, token)
 		await api.dispose()
 		await anon.dispose()
 	})
