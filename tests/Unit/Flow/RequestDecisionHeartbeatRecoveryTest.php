@@ -56,6 +56,14 @@ use OCA\Decidiq\Event\DecisionRequestedEvent;
 use OCA\Decidiq\Event\DecisionStateRequestedEvent;
 use OCA\Dossiq\Flow\DossiqRequestDecisionNode;
 use OCA\Dossiq\Service\ContractDecisionDelegationService;
+// A step that kills its run leaves the run FAILED, not STOPPED. These three
+// assertions said `stopped` until openregister#3425 ("a run killed by a failing
+// step is failed, not stopped") drew the distinction deliberately: `stopped` is
+// an operator halting a run, `failed` is the run dying of its own step. The
+// three cases below are all the second kind — a withdrawn decision, a vanished
+// one, and a read the run's identity is not permitted — and none of them is
+// something another heartbeat fixes, which is what the messages say and what
+// both statuses have in common. Only the name changed.
 use OCA\OpenRegister\Db\FlowClaim;
 use OCA\OpenRegister\Db\FlowClaimMapper;
 use OCA\OpenRegister\Db\FlowDefinition;
@@ -878,7 +886,7 @@ class RequestDecisionHeartbeatRecoveryTest extends TestCase {
 
 		$run = $this->service->execute($run, $this->chainFlow(), new RequestDecisionSubject());
 
-		self::assertSame(FlowRun::STATUS_STOPPED, $run->getStatus(), 'A withdrawn decision is neither an answer nor something to wait for.');
+		self::assertSame(FlowRun::STATUS_FAILED, $run->getStatus(), 'A withdrawn decision is neither an answer nor something to wait for.');
 		$failure = $this->stepFailure($run, 'decide-register-b');
 		self::assertStringContainsString($ref, $failure);
 		self::assertStringContainsString('withdrawn', $failure);
@@ -900,7 +908,7 @@ class RequestDecisionHeartbeatRecoveryTest extends TestCase {
 
 		$run = $this->service->execute($run, $this->chainFlow(), new RequestDecisionSubject());
 
-		self::assertSame(FlowRun::STATUS_STOPPED, $run->getStatus());
+		self::assertSame(FlowRun::STATUS_FAILED, $run->getStatus());
 		self::assertStringContainsString('no longer exists', $this->stepFailure($run, 'decide-register-b'));
 	}//end testAVanishedDecisionFailsTheStep()
 
@@ -955,7 +963,7 @@ class RequestDecisionHeartbeatRecoveryTest extends TestCase {
 
 		$run = $this->service->execute($run, $this->chainFlow(), new RequestDecisionSubject());
 
-		self::assertSame(FlowRun::STATUS_STOPPED, $run->getStatus(), 'No number of heartbeats fixes an authorization mistake.');
+		self::assertSame(FlowRun::STATUS_FAILED, $run->getStatus(), 'No number of heartbeats fixes an authorization mistake.');
 		self::assertStringContainsString('refused', $this->stepFailure($run, 'decide-register-b'));
 	}//end testAReadRefusedForTheRunsIdentityFailsTheStep()
 
