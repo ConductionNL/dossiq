@@ -723,7 +723,7 @@
             "content": {
               "source": {
                 "register": "dossiq",
-                "schema": "task",
+                "schema": "caseTask",
                 "filter": {
                   "assignee": "@me",
                   "isTerminalStatus": false
@@ -817,7 +817,7 @@
             "content": {
               "source": {
                 "register": "dossiq",
-                "schema": "task",
+                "schema": "caseTask",
                 "filter": {
                   "assignee": "@me",
                   "isTerminalStatus": false,
@@ -1329,7 +1329,7 @@
             "icon": "ClipboardCheckOutline",
             "content": {
               "register": "dossiq",
-              "schema": "task",
+              "schema": "caseTask",
               "filter": {
                 "case": "@objectId"
               },
@@ -2124,7 +2124,7 @@
       "title": "Tasks",
       "config": {
         "register": "dossiq",
-        "schema": "task",
+        "schema": "caseTask",
         "allowSavedViews": true,
         "showViewAction": false,
         "actions": [
@@ -2158,7 +2158,7 @@
       "title": "New task",
       "config": {
         "register": "dossiq",
-        "schema": "task",
+        "schema": "caseTask",
         "_note": "CREATE-FORM archetype — the task creation form (route /tasks/new, usually pre-seeded with ?caseId=). A not-yet-persisted task has no id, so no children, history, aggregates or content leaves apply: it is just the Data form. No audit sidebar tab either — there is no object to have a history. All richness lives on TaskDetail once the task exists.",
         "documentationUrl": "https://procest.conduction.nl",
         "widgets": [
@@ -2197,7 +2197,7 @@
       "title": "Task",
       "config": {
         "register": "dossiq",
-        "schema": "task",
+        "schema": "caseTask",
         "_note": "ACTION-ITEM archetype — a work item on a case (task.case) with assignee/dueDate/priority/status and an inline checklist[]. The schema declares NO comms linkedTypes and has NO child schemas pointing at it, so it stays deliberately lean: the Data widget carries the who/when/status and the checklist, and lifecycleActions drive the status machine (available → active → completed / terminated). No files/notes/contacts/calendar leaves — a task carries none of that content; those live on the parent case. Audit history (status transitions) is a sidebar tab.",
         "documentationUrl": "https://procest.conduction.nl",
         "widgets": [
@@ -4053,7 +4053,7 @@
         "source": {
           "kind": "objectCount",
           "register": "dossiq",
-          "schema": "task",
+          "schema": "caseTask",
           "groupBy": [
             "status"
           ]
@@ -4067,7 +4067,7 @@
         "source": {
           "kind": "objectCount",
           "register": "dossiq",
-          "schema": "task",
+          "schema": "caseTask",
           "filter": {
             "deadline": {
               "lt": "now"

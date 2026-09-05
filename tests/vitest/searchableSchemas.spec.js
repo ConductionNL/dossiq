@@ -21,7 +21,7 @@ const REGISTER_PATH = path.resolve(
 )
 const MANIFEST_PATH = path.resolve(__dirname, '../../src/manifest.json')
 
-const EXPECTED_SEARCHABLE_SLUGS = ['case', 'task', 'objectionProceeding', 'beroep']
+const EXPECTED_SEARCHABLE_SLUGS = ['case', 'caseTask', 'objectionProceeding', 'beroep']
 
 const loadJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'))
 

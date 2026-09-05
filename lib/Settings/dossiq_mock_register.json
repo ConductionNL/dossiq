@@ -13112,8 +13112,8 @@
           }
         }
       },
-      "task": {
-        "slug": "task",
+      "caseTask": {
+        "slug": "caseTask",
         "x-openregister-notifications": {
           "taskAssigned": {
             "trigger": {
@@ -22676,7 +22676,7 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "task",
+          "schema": "caseTask",
           "slug": "task-voorbeeld-title-1-1",
           "id": "fab148e2-e14d-45ca-a0c2-58073d5e59b3"
         },
@@ -22695,7 +22695,7 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "task",
+          "schema": "caseTask",
           "slug": "task-voorbeeld-title-2-2",
           "id": "10d3503b-1077-45db-8516-ae4719f1a40f"
         },
@@ -22714,7 +22714,7 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "task",
+          "schema": "caseTask",
           "slug": "task-voorbeeld-title-3-3",
           "id": "0d4e9a65-535b-4ef8-bd93-453713b8fa78"
         },

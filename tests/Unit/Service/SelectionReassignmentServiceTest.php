@@ -231,7 +231,7 @@ class SelectionReassignmentServiceTest extends TestCase {
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
 		$this->settingsService->method('getConfigValue')->willReturnCallback(
 			static function (string $key, string $default = ''): string {
-				$map = ['register' => 'dossiq', 'case_schema' => 'case', 'task_schema' => 'task'];
+				$map = ['register' => 'dossiq', 'case_schema' => 'case', 'task_schema' => 'caseTask'];
 
 				return ($map[$key] ?? $default);
 			}

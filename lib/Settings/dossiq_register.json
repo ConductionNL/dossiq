@@ -1848,8 +1848,8 @@
                 },
                 "searchable": true
             },
-            "task": {
-                "slug": "task",
+            "caseTask": {
+                "slug": "caseTask",
                 "x-openregister-notifications": {
                     "taskAssigned": {
                         "trigger": {
@@ -9230,7 +9230,7 @@
                     "documentType",
                     "decisionType",
                     "case",
-                    "task",
+                    "caseTask",
                     "role",
                     "result",
                     "statusRecord",

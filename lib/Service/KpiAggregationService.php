@@ -192,7 +192,7 @@ class KpiAggregationService {
 	 * @return int The count.
 	 */
 	private function countTasks(array $ids, array $filters): int {
-		return $this->countObjects(ids: $ids, schema: $ids['task'], filters: $filters);
+		return $this->countObjects(ids: $ids, schema: $ids['caseTask'], filters: $filters);
 	}//end countTasks()
 
 	/**
@@ -450,13 +450,13 @@ class KpiAggregationService {
 	/**
 	 * The register and schema ids these metrics read.
 	 *
-	 * @return array{register: string, case: string, task: string}|null The ids, or null when unconfigured.
+	 * @return array{register: string, case: string, caseTask: string}|null The ids, or null when unconfigured.
 	 */
 	private function ids(): ?array {
 		$ids = [
 			'register' => $this->appConfig->getValueString(Application::APP_ID, 'register', ''),
 			'case' => $this->appConfig->getValueString(Application::APP_ID, 'case_schema', ''),
-			'task' => $this->appConfig->getValueString(Application::APP_ID, 'task_schema', ''),
+			'caseTask' => $this->appConfig->getValueString(Application::APP_ID, 'task_schema', ''),
 		];
 
 		if (in_array('', $ids, true) === true) {

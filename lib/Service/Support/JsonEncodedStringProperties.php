@@ -86,7 +86,7 @@ class JsonEncodedStringProperties {
 		'notificationChannel' => ['filters'],
 		'objection' => ['attachments'],
 		'resultType' => ['sourceDateArchiveProcedure'],
-		'task' => ['checklist'],
+		'caseTask' => ['checklist'],
 		'workflowTemplate' => ['nodePositions', 'steps', 'transitions'],
 	];
 
