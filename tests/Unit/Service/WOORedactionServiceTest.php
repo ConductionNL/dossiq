@@ -30,7 +30,16 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for WOORedactionService.
  *
+ * The resolver is REAL here, not a double: the service asks it whether filinq
+ * is installed under either of its names, and stubbing that would test the
+ * stub rather than the lookup. Declared with @uses because the config sets
+ * beStrictAboutCoverageMetadata, which makes an undeclared execution a RISKY
+ * test, and failOnRisky turns that into a failed job. It bites only when
+ * coverage is enabled, so a --no-coverage run cannot show it.
+ *
  * @covers \OCA\Dossiq\Service\WOORedactionService
+ *
+ * @uses \OCA\Dossiq\Support\FleetAppId
  */
 class WOORedactionServiceTest extends TestCase {
 
