@@ -6,6 +6,7 @@ import {
 	CnPageRenderer,
 	defaultPageTypes,
 	fieldInspectionIntegration,
+	registerBuiltinDashboardWidgets,
 	registerIcons,
 	registerIntegration,
 	registerTranslations,
@@ -52,6 +53,17 @@ import './assets/app.css'
 
 // Register library-side icon set + lib translations once at bootstrap.
 registerIcons(appIcons)
+
+// The built-in dashboard widget catalog (`stat`, `delta`, `gauge`, `countdown`,
+// `object-table`, ...) registers itself when its module runs, and nothing in
+// this bundle runs it: nc-vue's barrel is tree-shaken out (its `sideEffects`
+// list only names CSS) and the one remaining importer is the LAZY detail-page
+// chunk. On a fresh load of the dashboard the five `stat` tiles therefore
+// rendered "Widget not available" while `chart` (a template branch) and
+// `object-table` (a BUILT_IN_WIDGETS fallback) worked, and every tile came back
+// once any detail page had been visited. Register the catalog explicitly, the
+// way doriath and hermiq do, before the first page renders.
+registerBuiltinDashboardWidgets()
 try {
 	registerTranslations()
 } catch (e) {

@@ -35,6 +35,29 @@ test.describe('Dashboard', () => {
 			page.getByRole('button', { name: 'Refresh dashboard' }),
 		).toBeVisible()
 	})
+
+	// @e2e openspec/specs/dashboard/spec.md#kpi-tiles-render-on-a-fresh-load
+	test('the KPI tiles render numbers on a fresh load, not the widget fallback', async ({
+		page,
+	}) => {
+		// A HARD load, deliberately: the catalog that renders `stat` tiles
+		// used to be registered only by the lazy detail-page chunk, so the
+		// dashboard was fine after visiting a case and broken as the first
+		// page of a session. Client-side navigation cannot tell the two apart.
+		await page.goto('/index.php/apps/dossiq/')
+		await dismissSupportDialog(page)
+		const tiles = page.locator('.cn-stat-widget')
+		await expect(tiles.first()).toBeVisible({ timeout: 30_000 })
+		await expect(tiles).toHaveCount(5)
+		await expect(page.getByText('Widget not available')).toHaveCount(0)
+		// Each tile carries a resolved number, not a dash or an empty value.
+		for (const tile of await tiles.all()) {
+			await expect(tile.locator('.cn-kpi-card__value')).toHaveText(/\d/, {
+				timeout: 15_000,
+			})
+		}
+	})
+
 })
 
 test.describe('Cases page', () => {
