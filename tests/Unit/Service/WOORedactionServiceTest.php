@@ -30,7 +30,15 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for WOORedactionService.
  *
+ * ⚠️ `@uses FleetAppId` IS LOAD-BEARING, not decoration. The service resolves
+ * the document app through `FleetAppId::isEnabledForUser()` since #1863, so
+ * these tests execute it — and PHPUnit reports code executed but not declared
+ * as RISKY. The suite runs with `failOnRisky`, so two risky tests turn 3052
+ * passing ones into a red run that says `OK, but there were issues!` and exits
+ * 1. Reading the summary line rather than the exit code hides it completely.
+ *
  * @covers \OCA\Dossiq\Service\WOORedactionService
+ * @uses \OCA\Dossiq\Support\FleetAppId
  */
 class WOORedactionServiceTest extends TestCase {
 
