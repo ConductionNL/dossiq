@@ -137,6 +137,49 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			},
 		)
 
+		// The headline is painted with a FOREGROUND token. CnCountdownWidget
+		// writes `var(--color-error)` inline, which on Nextcloud 34 is the pale
+		// FILL colour (#FFE7E7): "26 days overdue" was pink on white. dossiq
+		// repoints the token on the widget root to its `-text` variant, so
+		// whichever band the seeded deadline lands in, the computed colour must
+		// match that band's `-text` token and never the raw fill token.
+		const countdown = page.locator('.cn-countdown-widget')
+		const paint = await countdown.evaluate((el) => {
+			const value = el.querySelector('.cn-countdown-widget__value')
+			const root = getComputedStyle(document.documentElement)
+			const resolve = (token: string) => {
+				const probe = document.createElement('span')
+				probe.style.color = root.getPropertyValue(token).trim()
+				document.body.appendChild(probe)
+				const color = getComputedStyle(probe).color
+				probe.remove()
+				return color
+			}
+			const variant = (
+				[...el.classList].find((c) => /^cn-countdown-widget--/.test(c)) || ''
+			).replace('cn-countdown-widget--', '')
+			return {
+				variant,
+				color: value ? getComputedStyle(value).color : '',
+				fill: resolve(`--color-${variant}`),
+				text: resolve(`--color-${variant}-text`),
+			}
+		})
+		if (['error', 'warning', 'success'].includes(paint.variant)) {
+			expect(paint.color, `${paint.variant} band paints the -text token`).toBe(
+				paint.text,
+			)
+			expect(
+				paint.color,
+				`${paint.variant} band must not paint the fill`,
+			).not.toBe(paint.fill)
+		} else {
+			expect(
+				paint.variant,
+				'a countdown on a case with a deadline has a band',
+			).toBe('default')
+		}
+
 		// The case type field holds a uuid. Showing the uuid would be a pass for
 		// "renders something" and a failure for the feature.
 		const caseTypeCard = kpis.filter({ hasText: /Case type|Zaaktype/ })
