@@ -143,6 +143,23 @@ test.describe('app chrome (ADR-114)', () => {
 		}
 	})
 
+	test('Features & roadmap lists the shipped features', async ({ page }) => {
+		// The page reads its list from initial state (ADR-018); dossiq handed
+		// it nothing, so the tab was empty while docs/features.json held 23.
+		await page.goto(`${APP_BASE}/features-roadmap`, {
+			waitUntil: 'domcontentloaded',
+		})
+		await expect(page.locator('.cn-features-and-roadmap-view')).toBeVisible({
+			timeout: 30_000,
+		})
+		await expect(page.locator('.cn-features-tab__card').first()).toBeVisible({
+			timeout: 15_000,
+		})
+		expect(await page.locator('.cn-features-tab__card').count()).toBeGreaterThan(
+			5,
+		)
+	})
+
 	test('the settings foldout carries Personal settings, Admin settings and Flows', async ({
 		page,
 	}) => {
