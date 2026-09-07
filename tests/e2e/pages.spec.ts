@@ -58,6 +58,28 @@ test.describe('Dashboard', () => {
 		}
 	})
 
+	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-004c-overdue-panel-with-view-all-link
+	test("the Overdue table's View all keeps the overdue filter", async ({
+		page,
+	}) => {
+		await page.goto('/index.php/apps/dossiq/')
+		await dismissSupportDialog(page)
+		const table = page
+			.locator('.cn-widget-wrapper')
+			.filter({
+				has: page.getByRole('heading', { name: /^(Overdue|Verlopen)$/ }),
+			})
+		await expect(table).toBeVisible({ timeout: 30_000 })
+		// The link only renders when the table has more rows than it shows;
+		// the seed guarantees that, but say so rather than skip silently.
+		const viewAll = table.getByRole('link', { name: /View all|Alles bekijken/ })
+		await expect(viewAll).toBeVisible({ timeout: 15_000 })
+		await viewAll.click()
+		await expect(page).toHaveURL(/\/cases\?/, { timeout: 15_000 })
+		const query = new URL(page.url()).searchParams
+		expect(query.get('deadline[lt]')).toBe('@today')
+		expect(query.get('isFinalStatus')).toBe('false')
+	})
 })
 
 test.describe('Cases page', () => {

@@ -658,7 +658,10 @@
 							],
 							"rowRoute": "CaseDetail",
 							"viewAllRoute": {
-								"name": "Cases"
+								"name": "Cases",
+								"query": {
+									"isFinalStatus": "false"
+								}
 							},
 							"viewAllLabel": "View all",
 							"hideHeader": true,
@@ -702,7 +705,11 @@
 							],
 							"rowRoute": "CaseDetail",
 							"viewAllRoute": {
-								"name": "Cases"
+								"name": "Cases",
+								"query": {
+									"isFinalStatus": "false",
+									"deadline[lt]": "@today"
+								}
 							},
 							"viewAllLabel": "View all",
 							"hideHeader": true,
@@ -746,7 +753,11 @@
 							],
 							"rowRoute": "TaskDetail",
 							"viewAllRoute": {
-								"name": "Tasks"
+								"name": "Tasks",
+								"query": {
+									"assignee": "@me",
+									"isTerminalStatus": "false"
+								}
 							},
 							"viewAllLabel": "View all",
 							"hideHeader": true,
@@ -792,7 +803,11 @@
 							],
 							"rowRoute": "CaseDetail",
 							"viewAllRoute": {
-								"name": "Cases"
+								"name": "Cases",
+								"query": {
+									"isFinalStatus": "false",
+									"deadline[lte]": "@today+3d"
+								}
 							},
 							"viewAllLabel": "View all",
 							"hideHeader": true,
@@ -839,7 +854,12 @@
 							],
 							"rowRoute": "TaskDetail",
 							"viewAllRoute": {
-								"name": "Tasks"
+								"name": "Tasks",
+								"query": {
+									"assignee": "@me",
+									"isTerminalStatus": "false",
+									"dueDate[lte]": "@today+3d"
+								}
 							},
 							"viewAllLabel": "View all",
 							"hideHeader": true,
@@ -880,7 +900,11 @@
 							],
 							"rowRoute": "CaseDetail",
 							"viewAllRoute": {
-								"name": "Cases"
+								"name": "Cases",
+								"query": {
+									"isFinalStatus": "false",
+									"_order": "[{\"key\":\"@self.updated\",\"order\":\"asc\"}]"
+								}
 							},
 							"viewAllLabel": "View all",
 							"hideHeader": true,
