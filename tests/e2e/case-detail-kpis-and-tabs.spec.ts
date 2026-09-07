@@ -394,4 +394,34 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			`statuses: ${responses.join(',')}`,
 		).toBe(true)
 	})
+
+	// @e2e openspec/specs/ncvue-w2-leaves-adoption/spec.md
+	test('the sidebar Notes tab renders the notes leaf, not an unknown element', async ({
+		page,
+	}) => {
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		// NcAppSidebar renders its own toggle while closed; open it when so.
+		const toggle = page.locator('.app-sidebar__toggle')
+		if (await toggle.isVisible()) await toggle.click()
+		const sidebar = page.locator('.app-sidebar')
+		await expect(sidebar).toBeVisible({ timeout: 15_000 })
+
+		await sidebar.getByRole('tab', { name: /Notes|Notities/ }).click()
+		const panel = sidebar.locator('[data-testid="cn-object-sidebar-tab-notes"]')
+		await expect(panel).toBeVisible({ timeout: 15_000 })
+
+		// The tab used to write its resolved leaf as a TAG, which Vue emits as
+		// a literal unknown element with nothing inside. Assert the element is
+		// absent AND that real content mounted, so an empty panel cannot pass.
+		await expect(panel.locator('cnnotestabcomponent')).toHaveCount(0)
+		await expect
+			.poll(() => panel.evaluate((el) => el.querySelectorAll('*').length), {
+				timeout: 15_000,
+			})
+			.toBeGreaterThan(1)
+	})
 })
