@@ -37,6 +37,10 @@ if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowRunAssignee', false) =
          */
         public function __construct(
             private readonly ?IGroupManager $groupManager = null,
+            // Resolves a TYPED performer reference to whoever it currently
+            // means. Absent, a typed assignment refuses — the same fail-closed
+            // direction as the absent group manager beside it.
+            private mixed $principals = null,
         ) {
         }
 
