@@ -2133,51 +2133,20 @@
 						"type": "handler"
 					}
 				],
-				"columns": ["title", "case", "assignee", "status", "dueDate"],
+				"_columnsNote": "`case` is a $ref to the case and CnIndexPage renders a plain key raw, so the column showed truncated uuids. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded object's title; the server cannot sort on a nested field, so the column is not sortable.",
+				"extend": ["case"],
+				"columns": [
+					"title",
+					{ "key": "case.title", "label": "Case", "sortable": false },
+					"assignee",
+					"status",
+					"dueDate"
+				],
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true
 				},
 				"documentationUrl": "https://procest.conduction.nl"
-			}
-		},
-		{
-			"id": "TaskNew",
-			"route": "/tasks/new",
-			"type": "detail",
-			"title": "New task",
-			"config": {
-				"register": "dossiq",
-				"schema": "caseTask",
-				"_note": "CREATE-FORM archetype — the task creation form (route /tasks/new, usually pre-seeded with ?caseId=). A not-yet-persisted task has no id, so no children, history, aggregates or content leaves apply: it is just the Data form. No audit sidebar tab either — there is no object to have a history. All richness lives on TaskDetail once the task exists.",
-				"documentationUrl": "https://procest.conduction.nl",
-				"widgets": [
-					{
-						"id": "tasknew-data",
-						"type": "data",
-						"title": "New task",
-						"icon": "ClipboardCheckOutline",
-						"content": {
-							"title": "New task",
-							"columns": 2
-						}
-					}
-				],
-				"layout": [
-					{
-						"id": "1",
-						"widgetId": "tasknew-data",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 6,
-						"showTitle": false
-					}
-				],
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": false
-				}
 			}
 		},
 		{

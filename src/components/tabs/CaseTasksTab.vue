@@ -6,7 +6,7 @@
 
  Lists tasks where task.case === the parent case id (ported from the
  pre-manifest CaseDetail.vue task card). Clicking a task opens the
- TaskDetail page; "New task" opens TaskNew pre-linked to this case.
+ TaskDetail page; "New task" opens the Tasks index create dialog scoped to this case.
  Receives `objectId` from CnObjectSidebar's sharedTabProps, with a
  route fallback for standalone use.
 -->
@@ -169,10 +169,21 @@ export default {
 			}
 		},
 
+		/**
+		 * Open the task create dialog on the Tasks index, scoped to this case.
+		 *
+		 * The `TaskNew` page this used to push was a `type: detail` page at
+		 * `/tasks/new`: CnDetailPage fetched the object "new" and rendered an
+		 * empty page. The Tasks index owns the create dialog (`?action=create`
+		 * opens it) and `case` keeps the list behind it scoped to this case.
+		 *
+		 * @return {void}
+		 * @spec openspec/specs/task-management/spec.md#requirement-task-list-must-be-reached-via-mijn-werk-not-a-sibling-top-level-menu
+		 */
 		onNewTask() {
 			this.$router.push({
-				name: 'TaskNew',
-				query: { caseId: this.resolvedCaseId },
+				name: 'Tasks',
+				query: { action: 'create', case: this.resolvedCaseId },
 			})
 		},
 

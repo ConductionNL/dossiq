@@ -64,11 +64,9 @@ test.describe('Dashboard', () => {
 	}) => {
 		await page.goto('/index.php/apps/dossiq/')
 		await dismissSupportDialog(page)
-		const table = page
-			.locator('.cn-widget-wrapper')
-			.filter({
-				has: page.getByRole('heading', { name: /^(Overdue|Verlopen)$/ }),
-			})
+		const table = page.locator('.cn-widget-wrapper').filter({
+			has: page.getByRole('heading', { name: /^(Overdue|Verlopen)$/ }),
+		})
 		await expect(table).toBeVisible({ timeout: 30_000 })
 		// The link only renders when the table has more rows than it shows;
 		// the seed guarantees that, but say so rather than skip silently.
@@ -167,6 +165,30 @@ test.describe('Tasks page', () => {
 		// the field is in the DOM but hidden; assert it is wired up rather
 		// than requiring the sidebar to be open.
 		await expect(page.getByPlaceholder('Type to search')).toBeAttached()
+	})
+
+	// @e2e openspec/specs/task-management/spec.md#view-the-global-task-list
+	test('the Case column shows the case title, not its uuid', async ({ page }) => {
+		await navToRoute(page, '/tasks')
+		await page.getByRole('button', { name: 'Table' }).click()
+		const table = page.locator('table').first()
+		await expect(table).toBeVisible({ timeout: 15000 })
+		const header = table.getByRole('columnheader', { name: /^(Case|Zaak)$/ })
+		await expect(header).toBeVisible()
+		const index = await header.evaluate((th) =>
+			Array.from(th.parentElement!.children).indexOf(th),
+		)
+		const cells = table.locator(`tbody tr td:nth-child(${index + 1})`)
+		await expect(cells.first()).toBeVisible({ timeout: 15000 })
+		// A uuid, truncated or not, is what the column used to show. The
+		// expanded case carries a title; a task without a case shows nothing.
+		for (const text of await cells.allInnerTexts()) {
+			expect(text.trim()).not.toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}/i)
+		}
+		expect(
+			(await cells.allInnerTexts()).some((t) => t.trim() !== ''),
+			'at least one task on the seed is linked to a case',
+		).toBe(true)
 	})
 })
 
