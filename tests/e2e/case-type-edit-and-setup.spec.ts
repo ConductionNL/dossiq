@@ -264,6 +264,34 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 	})
 
 	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	test('a completed wizard does not keep the optional secret step outstanding', async ({
+		page,
+	}) => {
+		// The dwangsom callback secret is optional and lives under admin
+		// settings. While the step reported "not done" for as long as the
+		// secret was empty, CnAppRoot reopened the wizard at that step on every
+		// fresh browser profile, because dismissal is only a localStorage key.
+		// status() records completion as a side effect of the first read, so
+		// the SECOND read is the one that sees a completed wizard.
+		await page.goto('/index.php/apps/dossiq')
+		const first = await readSetupStatus(page)
+		expect(first).not.toBeNull()
+		const second = await readSetupStatus(page)
+		expect(second).not.toBeNull()
+
+		if (second.completed === true) {
+			expect(
+				second.steps['dwangsom-secret'].done,
+				'once the required steps are complete the optional secret step is settled',
+			).toBe(true)
+		} else {
+			// Without a provisioned register the wizard is gating anyway and
+			// the optional step is not what reopens it.
+			expect(second.steps['register-check'].done).toBe(false)
+		}
+	})
+
+	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
 	test('the wizard opens exactly when an optional step is outstanding', async ({
 		page,
 	}) => {
