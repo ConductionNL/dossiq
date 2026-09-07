@@ -68,6 +68,12 @@ class WOORedactionService {
 	 * @return bool True if Docudesk is available
 	 *
 	 * @spec openspec/changes/woo-case-type/tasks.md#task-8
+	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver
+	 * over the app-id RENAME MAP: it answers what an app is called on THIS
+	 * instance, where the same app may still carry its old id. Injecting it
+	 * would add a constructor dependency to say the same thing, and the
+	 * lookup is duck-typed by design — an id nothing answers to must return
+	 * null rather than fail, which is what makes a cross-app call optional.
 	 */
 	public function isDocuDeskInstalled(): bool {
 		return FleetAppId::isEnabledForUser($this->appManager, self::DOCUMENT_APP);

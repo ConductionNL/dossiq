@@ -30,7 +30,22 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for WOORedactionService.
  *
+ * ⚠️ THE `uses` ANNOTATION BELOW IS LOAD-BEARING, not decoration, and its name
+ * must never be written with an at-sign anywhere in this prose. PHPUnit parses
+ * annotations ANYWHERE in a docblock, so even a backtick-quoted mention
+ * becomes a second, malformed annotation and EVERY test in the class errors as
+ * invalid. That is how this comment shipped twice: once naming the tag, and
+ * once again inside the warning about naming the tag.
+ *
+ * Why the annotation is needed: the service resolves the document app through
+ * `FleetAppId::isEnabledForUser()` since #1863, so these tests execute that
+ * class. PHPUnit reports code executed but not declared as RISKY, the suite
+ * runs with `failOnRisky`, and two risky tests turn 3052 passing ones into a
+ * red run that prints `OK, but there were issues!` and exits 1. Reading the
+ * summary line rather than the exit code hides it completely.
+ *
  * @covers \OCA\Dossiq\Service\WOORedactionService
+ * @uses \OCA\Dossiq\Support\FleetAppId
  */
 class WOORedactionServiceTest extends TestCase {
 

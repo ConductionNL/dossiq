@@ -414,6 +414,12 @@ class PdokLocatieserverService {
 	 * @return string Raw response body.
 	 *
 	 * @throws \RuntimeException On upstream failure (code carries HTTP status).
+	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver
+	 * over the app-id RENAME MAP: it answers what an app is called on THIS
+	 * instance, where the same app may still carry its old id. Injecting it
+	 * would add a constructor dependency to say the same thing, and the
+	 * lookup is duck-typed by design — an id nothing answers to must return
+	 * null rather than fail, which is what makes a cross-app call optional.
 	 */
 	private function callViaOpenConnector(string $sourceSlug, string $path, array $params): string {
 		try {
