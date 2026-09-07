@@ -126,7 +126,7 @@ export const useAdviceStore = defineStore('advice', {
 
 				// Create task for the adviseur if internal
 				if (requestData.type === 'intern' && requestData.advisor) {
-					await objectStore.saveObject('task', {
+					await objectStore.saveObject('caseTask', {
 						case: requestData.case,
 						title: `Advies uitbrengen: ${requestData.subject || 'Adviesaanvraag'}`,
 						description: requestData.questions || '',
@@ -205,7 +205,7 @@ export const useAdviceStore = defineStore('advice', {
 				})
 
 				// Create task for behandelaar
-				await objectStore.saveObject('task', {
+				await objectStore.saveObject('caseTask', {
 					case: request.case,
 					title: `Advies verlopen: ${request.subject || request.advisor}`,
 					description: `Advies van ${request.advisor} is verlopen. Beoordeel of procedure kan doorgaan zonder dit advies.`,

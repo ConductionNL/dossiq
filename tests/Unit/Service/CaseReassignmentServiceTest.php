@@ -81,7 +81,7 @@ class CaseReassignmentServiceTest extends TestCase {
 				$map = [
 					'register' => 'dossiq',
 					'case_schema' => 'case',
-					'task_schema' => 'task',
+					'task_schema' => 'caseTask',
 					'status_type_schema' => 'statusType',
 				];
 				return ($map[$key] ?? $default);
@@ -120,7 +120,7 @@ class CaseReassignmentServiceTest extends TestCase {
 						['id' => 'c2', 'title' => 'Closed', 'assignee' => 'jan', 'status' => 'st-final', 'caseType' => 'vth'],
 					];
 				}
-				if ($schema === 'task') {
+				if ($schema === 'caseTask') {
 					return [
 						['id' => 't1', 'title' => 'Open task', 'assignee' => 'jan', 'status' => 'active', 'case' => 'c1'],
 						['id' => 't2', 'title' => 'Done task', 'assignee' => 'jan', 'status' => 'completed', 'case' => 'c1'],
@@ -155,7 +155,7 @@ class CaseReassignmentServiceTest extends TestCase {
 						['id' => 'c2', 'assignee' => 'jan', 'status' => 'open', 'caseType' => 'objectionProceeding'],
 					];
 				}
-				if ($schema === 'task') {
+				if ($schema === 'caseTask') {
 					return [
 						['id' => 't1', 'assignee' => 'jan', 'status' => 'active', 'case' => 'c1'],
 						['id' => 't2', 'assignee' => 'jan', 'status' => 'active', 'case' => 'c2'],
@@ -200,7 +200,7 @@ class CaseReassignmentServiceTest extends TestCase {
 				if ($schema === 'case') {
 					return [['id' => 'c1', 'title' => 'Case 1', 'assignee' => 'jan', 'status' => 'open', 'caseType' => 'vth', 'activity' => '[]']];
 				}
-				if ($schema === 'task') {
+				if ($schema === 'caseTask') {
 					return [['id' => 't1', 'title' => 'Task 1', 'assignee' => 'jan', 'status' => 'active', 'case' => 'c1']];
 				}
 				return [];
@@ -257,7 +257,7 @@ class CaseReassignmentServiceTest extends TestCase {
 						['id' => 'c2', 'assignee' => 'jan', 'status' => 'open', 'caseType' => 'vth', 'activity' => '[]'],
 					];
 				}
-				if ($schema === 'task') {
+				if ($schema === 'caseTask') {
 					return [];
 				}
 				return [];

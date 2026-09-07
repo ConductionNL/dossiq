@@ -65,7 +65,7 @@ class DemoCaseloadGateway {
 	/**
 	 * The register and schema ids the demo caseload reads and writes.
 	 *
-	 * @return array{register: string, case: string, task: string, caseType: string, statusType: string} The ids.
+	 * @return array{register: string, case: string, caseTask: string, caseType: string, statusType: string} The ids.
 	 *
 	 * @throws RuntimeException When the app is not configured against a register yet.
 	 *
@@ -75,7 +75,7 @@ class DemoCaseloadGateway {
 		$ids = [
 			'register' => $this->config(key: 'register'),
 			'case' => $this->config(key: 'case_schema'),
-			'task' => $this->config(key: 'task_schema'),
+			'caseTask' => $this->config(key: 'task_schema'),
 			'caseType' => $this->config(key: 'case_type_schema'),
 			'statusType' => $this->config(key: 'status_type_schema'),
 		];

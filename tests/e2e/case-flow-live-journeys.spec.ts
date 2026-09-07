@@ -174,9 +174,9 @@ async function updateObject(
 async function completeTask(api: APIRequestContext, taskId: string): Promise<void> {
 	const current = await getJson(api, `${OR}/objects/dossiq/task/${taskId}`)
 	if (String(current.status ?? '') === 'available') {
-		await updateObject(api, 'task', taskId, { status: 'active' })
+		await updateObject(api, 'caseTask', taskId, { status: 'active' })
 	}
-	await updateObject(api, 'task', taskId, { status: 'completed' })
+	await updateObject(api, 'caseTask', taskId, { status: 'completed' })
 }
 
 async function runsForCase(api: APIRequestContext, caseId: string): Promise<Json[]> {

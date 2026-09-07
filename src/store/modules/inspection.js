@@ -298,7 +298,7 @@ export const useInspectionStore = defineStore('inspection', {
 		async createFollowUpTask(caseId, failedCount, reportId) {
 			try {
 				const objectStore = useObjectStore()
-				return await objectStore.saveObject('task', {
+				return await objectStore.saveObject('caseTask', {
 					case: caseId,
 					title: `Opvolging vereist: ${failedCount} afwijkingen geconstateerd`,
 					description: `Inspectierapport bevat ${failedCount} niet-conforme punten. Beoordeel de afwijkingen en plan opvolging.`,

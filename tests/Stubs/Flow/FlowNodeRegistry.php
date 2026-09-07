@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace OCA\OpenRegister\Service\Flow;
 
 use OCP\EventDispatcher\IEventDispatcher;
+use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
 use UnexpectedValueException;
 
@@ -50,12 +51,19 @@ class FlowNodeRegistry {
 	 * this stub is registered into directly, so it holds them and uses
 	 * neither dependency.
 	 *
-	 * @param IEventDispatcher $dispatcher Dispatches the contribution event.
-	 * @param LoggerInterface  $logger     The logger.
+	 * @param IEventDispatcher    $dispatcher Dispatches the contribution event.
+	 * @param LoggerInterface     $logger     The logger.
+	 * @param IURLGenerator|null  $urls       URL generator. Optional on the real
+	 *                                        class and unused here, but present
+	 *                                        so the signatures match: a stub that
+	 *                                        is one argument short is exactly the
+	 *                                        drift StubApiDriftTest exists to
+	 *                                        catch.
 	 */
 	public function __construct(
 		private readonly IEventDispatcher $dispatcher,
 		private readonly LoggerInterface $logger,
+		private readonly ?IURLGenerator $urls = null,
 	) {
 	}//end __construct()
 

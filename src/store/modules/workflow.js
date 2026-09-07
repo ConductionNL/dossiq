@@ -781,7 +781,7 @@ export const useWorkflowStore = defineStore('workflow', {
 		 */
 		async dispatchCreateTaskAction(action, caseData) {
 			const objectStore = useObjectStore()
-			await objectStore.saveObject('task', {
+			await objectStore.saveObject('caseTask', {
 				title: action.title || t('dossiq', 'New task'),
 				description: action.description || '',
 				case: caseData.id,

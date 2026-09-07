@@ -290,7 +290,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 		async createBegunstigingTask(caseId, action) {
 			try {
 				const objectStore = useObjectStore()
-				return await objectStore.saveObject('task', {
+				return await objectStore.saveObject('caseTask', {
 					case: caseId,
 					title: 'Hercontrole uitvoeren',
 					description: `Begunstigingstermijn van ${action.compliance_period} dagen is verlopen. Voer hercontrole uit voor ${action.intervention}.`,

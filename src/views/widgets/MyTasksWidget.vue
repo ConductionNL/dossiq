@@ -132,7 +132,7 @@ export default {
 				// 32 tasks while `assignee=rbac-editor` returned the 2 that match. So
 				// this widget was fetching EVERY user's tasks and filtering only by
 				// status, which is not what a widget called "My Tasks" may show.
-				const results = await this.objectStore.fetchCollection('task', {
+				const results = await this.objectStore.fetchCollection('caseTask', {
 					assignee: currentUser,
 					isTerminalStatus: false,
 					_limit: 7,

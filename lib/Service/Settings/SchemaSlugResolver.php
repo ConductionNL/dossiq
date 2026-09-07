@@ -99,7 +99,7 @@ class SchemaSlugResolver {
 	 * and dropping the fallback would blank all three.
 	 *
 	 * @param object $schemaMapper The OpenRegister SchemaMapper.
-	 * @param string $slug The schema slug, e.g. 'task'.
+	 * @param string $slug The schema slug, e.g. 'caseTask'.
 	 *
 	 * @return object|null The live schema, or null when the slug does not resolve.
 	 *

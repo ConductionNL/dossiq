@@ -53,7 +53,7 @@ final class KpiAggregationServiceTest extends TestCase {
 	 *
 	 * @var array<string, string>
 	 */
-	private const IDS = ['register' => '23', 'case' => '172', 'task' => '173'];
+	private const IDS = ['register' => '23', 'case' => '172', 'caseTask' => '173'];
 
 	/**
 	 * Today, as the service formats it.
@@ -379,7 +379,7 @@ final class KpiAggregationServiceTest extends TestCase {
 				return match ($key) {
 					'register' => self::IDS['register'],
 					'case_schema' => self::IDS['case'],
-					'task_schema' => self::IDS['task'],
+					'task_schema' => self::IDS['caseTask'],
 					default => $default,
 				};
 			}

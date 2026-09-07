@@ -128,7 +128,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objectService);
 		$settings->method('getConfigValue')->willReturnCallback(
-			static fn (string $key): string => ($key === 'register' ? 'dossiq' : 'task')
+			static fn (string $key): string => ($key === 'register' ? 'dossiq' : 'caseTask')
 		);
 
 		$l10n = $this->createMock(IL10N::class);
@@ -575,7 +575,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objectService);
 		$settings->method('getConfigValue')->willReturnCallback(
-			static fn (string $key): string => ($key === 'register' ? 'dossiq' : 'task')
+			static fn (string $key): string => ($key === 'register' ? 'dossiq' : 'caseTask')
 		);
 
 		$l10n = $this->createMock(IL10N::class);

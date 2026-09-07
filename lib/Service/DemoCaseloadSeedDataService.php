@@ -257,7 +257,7 @@ class DemoCaseloadSeedDataService {
 			$id = $this->gateway->create(
 				objectService: $objectService,
 				registerId: $ids['register'],
-				schemaId: $ids['task'],
+				schemaId: $ids['caseTask'],
 				data: $this->taskPayload(taskSeed: $taskSeed, caseId: $caseId, now: $now)
 			);
 
