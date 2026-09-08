@@ -114,6 +114,8 @@ function badgeFor(row, labels) {
  *   `properties`, `statusesEmpty`, `resultsEmpty`, `propertiesEmpty`,
  *   `inherited`, `inheritedFrom`, `shared` and `sharedTitle`.
  * @return {Array<object>} The sections.
+ *
+ * @spec openspec/specs/case-types/spec.md
  */
 export function blueprintSections(blueprint, labels = {}) {
 	const text = { ...DEFAULT_LABELS, ...labels }
@@ -146,6 +148,8 @@ export function blueprintSections(blueprint, labels = {}) {
  *
  * @param {object|null} blueprint The /blueprint answer.
  * @return {string} The parent's title, or '' when the type stands alone.
+ *
+ * @spec openspec/specs/case-types/spec.md
  */
 export function parentTitleOf(blueprint) {
 	const parents = Array.isArray(blueprint?.parents) ? blueprint.parents : []

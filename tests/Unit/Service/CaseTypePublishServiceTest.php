@@ -256,6 +256,53 @@ class CaseTypePublishServiceTest extends TestCase {
 	}//end testAChildValidatesOnItsParentsStatuses()
 
 	/**
+	 * 🔴 A CYCLE IS REFUSED AT PUBLISH, AND THE FINDING NAMES IT.
+	 *
+	 * Publishing is the only write dossiq owns: a case type is saved straight
+	 * to OpenRegister's object API by the page, with no dossiq code in
+	 * between, so "refused on save" can only be met here.
+	 */
+	public function testALoopingParentChainIsRefusedAtPublish(): void {
+		$service = $this->service(
+			[
+				'a' => ['id' => 'a', 'title' => 'Bezwaar', 'parentCaseType' => 'b', 'initialStatus' => 's1'],
+				'b' => ['id' => 'b', 'title' => 'Bezwaar (verkort)', 'parentCaseType' => 'a'],
+			],
+			[
+				'status_type_schema' => [
+					['id' => 's1', 'name' => 'Ontvangen', 'caseType' => 'a'],
+					['id' => 's2', 'name' => 'Klaar', 'isFinal' => true, 'caseType' => 'a'],
+				],
+			]
+		);
+
+		$findings = $service->validate(caseTypeId: 'a');
+
+		self::assertCount(1, $findings);
+		self::assertStringContainsString('Bezwaar (verkort)', $findings[0]);
+	}//end testALoopingParentChainIsRefusedAtPublish()
+
+	/**
+	 * An ordinary parent is not a cycle, and publishes.
+	 */
+	public function testAnOrdinaryParentIsNotRefused(): void {
+		$service = $this->service(
+			[
+				'parent' => ['id' => 'parent', 'title' => 'Bezwaar', 'initialStatus' => 's1'],
+				'child' => ['id' => 'child', 'title' => 'Kort', 'parentCaseType' => 'parent'],
+			],
+			[
+				'status_type_schema' => [
+					['id' => 's1', 'name' => 'Ontvangen', 'caseType' => 'parent'],
+					['id' => 's2', 'name' => 'Klaar', 'isFinal' => true, 'caseType' => 'parent'],
+				],
+			]
+		);
+
+		self::assertSame([], $service->validate(caseTypeId: 'child'));
+	}//end testAnOrdinaryParentIsNotRefused()
+
+	/**
 	 * An unreadable case type says so rather than listing four findings.
 	 */
 	public function testAnUnreadableTypeAnswersOneFinding(): void {

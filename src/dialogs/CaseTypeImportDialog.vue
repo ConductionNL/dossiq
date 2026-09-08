@@ -104,6 +104,8 @@ export default {
 		 * The three strategies the import endpoint accepts.
 		 *
 		 * @return {Array<object>} `{ id, label }` options.
+		 *
+		 * @spec openspec/specs/workflow-import-export/spec.md
 		 */
 		strategies() {
 			return importStrategies({
@@ -122,6 +124,8 @@ export default {
 		 * literal inside a `t()` call for this app.
 		 *
 		 * @return {object} The messages.
+		 *
+		 * @spec openspec/specs/workflow-import-export/spec.md
 		 */
 		refusalMessages() {
 			return {
@@ -148,6 +152,8 @@ export default {
 		 *
 		 * @param {Event} event The change event.
 		 * @return {void}
+		 *
+		 * @spec openspec/specs/workflow-import-export/spec.md
 		 */
 		onPick(event) {
 			this.file = event?.target?.files?.[0] ?? null
@@ -158,6 +164,8 @@ export default {
 		 * Upload the bundle.
 		 *
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/workflow-import-export/spec.md
 		 */
 		async confirm() {
 			if (!this.file) return

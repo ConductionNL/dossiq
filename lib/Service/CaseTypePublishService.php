@@ -104,8 +104,46 @@ class CaseTypePublishService {
 			$findings[] = 'Give the case type a title.';
 		}
 
+		$cycle = $this->cycleFinding(caseTypeId: $caseTypeId, caseType: $caseType);
+		if ($cycle !== '') {
+			$findings[] = $cycle;
+		}
+
 		return $findings;
 	}//end validate()
+
+	/**
+	 * The finding a looping parent chain produces, if it loops.
+	 *
+	 * 🔴 THIS IS THE ONLY PLACE DOSSIQ CAN REFUSE A CYCLE. The spec words the
+	 * refusal as "on save", and dossiq does not own the save: a case type is
+	 * written straight to OpenRegister's object API by the page, and no dossiq
+	 * code runs in between. Publishing is the one write dossiq does own, so it
+	 * is where a type whose chain returns to itself is stopped. `chainFor()`
+	 * degrades safely on a chain already stored that way — it stops rather
+	 * than looping — so a mis-saved type stays readable while it is unpublished.
+	 *
+	 * @param string               $caseTypeId The type being published.
+	 * @param array<string, mixed> $caseType   Its effective row.
+	 *
+	 * @return string The finding, or '' when the chain is sound.
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	private function cycleFinding(string $caseTypeId, array $caseType): string {
+		$parent = $this->store->referenceId(value: ($caseType['parentCaseType'] ?? ''));
+		if ($parent === '') {
+			return '';
+		}
+
+		try {
+			$this->caseTypeResolver->assertNoCycle(caseTypeId: $caseTypeId, parentCaseTypeId: $parent);
+		} catch (Throwable $e) {
+			return $e->getMessage();
+		}
+
+		return '';
+	}//end cycleFinding()
 
 	/**
 	 * Publish a draft case type.

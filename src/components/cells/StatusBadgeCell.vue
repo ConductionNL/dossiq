@@ -71,6 +71,8 @@ export default {
 		 * The status type this cell's value refers to.
 		 *
 		 * @return {object|null} The row, or null while it is unresolved.
+		 *
+		 * @spec openspec/specs/case-types/spec.md
 		 */
 		statusType() {
 			const uuid = String(this.value ?? '')
@@ -95,6 +97,8 @@ export default {
 		 * The colour name the badge is drawn in.
 		 *
 		 * @return {string} A name from the palette; grey while unresolved.
+		 *
+		 * @spec openspec/specs/case-types/spec.md
 		 */
 		colour() {
 			return normaliseStatusColour(this.statusType?.colour)

@@ -31,10 +31,7 @@ use OCA\Dossiq\Controller\CaseTypeController;
 use OCA\Dossiq\Service\CaseTypePublishService;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCP\AppFramework\Http;
-use OCP\IGroupManager;
 use OCP\IRequest;
-use OCP\IUser;
-use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -46,8 +43,6 @@ class CaseTypeControllerTest extends TestCase {
 	 *
 	 * @param CaseTypeResolver|null       $resolver The blueprint resolver.
 	 * @param CaseTypePublishService|null $publish  The publish service.
-	 * @param string|null                 $uid      The signed-in user, null for anonymous.
-	 * @param boolean                     $isAdmin  Whether that user is an admin.
 	 * @param string                      $note     The change note on the request.
 	 *
 	 * @return CaseTypeController The controller.
@@ -55,32 +50,16 @@ class CaseTypeControllerTest extends TestCase {
 	private function controller(
 		?CaseTypeResolver $resolver = null,
 		?CaseTypePublishService $publish = null,
-		?string $uid = 'admin',
-		bool $isAdmin = true,
 		string $note = '',
 	): CaseTypeController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturn($note);
-
-		$session = $this->createMock(IUserSession::class);
-		$groups = $this->createMock(IGroupManager::class);
-
-		if ($uid === null) {
-			$session->method('getUser')->willReturn(null);
-		} else {
-			$user = $this->createMock(IUser::class);
-			$user->method('getUID')->willReturn($uid);
-			$session->method('getUser')->willReturn($user);
-			$groups->method('isAdmin')->willReturn($isAdmin);
-		}
 
 		return new CaseTypeController(
 			'dossiq',
 			$request,
 			($resolver ?? $this->createMock(CaseTypeResolver::class)),
 			($publish ?? $this->createMock(CaseTypePublishService::class)),
-			$session,
-			$groups,
 			new NullLogger()
 		);
 	}//end controller()
@@ -136,47 +115,60 @@ class CaseTypeControllerTest extends TestCase {
 	/**
 	 * Reading a blueprint needs no admin: the case page does it.
 	 */
-	public function testAnOrdinaryUserMayReadABlueprint(): void {
-		$response = $this->controller(
-			resolver: $this->resolverAnswering(['caseType' => ['id' => 'ct']]),
-			isAdmin: false
-		)->blueprint(id: 'ct');
-
-		self::assertSame(Http::STATUS_OK, $response->getStatus());
-	}//end testAnOrdinaryUserMayReadABlueprint()
+	public function testReadingABlueprintNeedsNoAdmin(): void {
+		self::assertSame(
+			['OCP\\AppFramework\\Http\\Attribute\\NoAdminRequired'],
+			$this->authAttributesOf(method: 'blueprint')
+		);
+	}//end testReadingABlueprintNeedsNoAdmin()
 
 	/**
-	 * 🔴 PUBLISHING REFUSES A NON-ADMIN, DESPITE #[NoAdminRequired].
-	 */
-	public function testANonAdminCannotPublish(): void {
-		$publish = $this->createMock(CaseTypePublishService::class);
-		$publish->expects(self::never())->method('publish');
-
-		$response = $this->controller(publish: $publish, isAdmin: false)->publish(id: 'ct');
-
-		self::assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
-	}//end testANonAdminCannotPublish()
-
-	/**
-	 * An anonymous caller is told to sign in, not that it is forbidden.
-	 */
-	public function testAnAnonymousCallerIsUnauthorised(): void {
-		$response = $this->controller(uid: null)->publish(id: 'ct');
-
-		self::assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
-	}//end testAnAnonymousCallerIsUnauthorised()
-
-	/**
-	 * The validate endpoint carries the same guard as the publish itself.
+	 * 🔴 THE AUTHORITY IS THE ATTRIBUTE, NOT A GUARD IN THE BODY.
 	 *
-	 * Otherwise it becomes a way for any authenticated user to enumerate what
-	 * is wrong with every case type in the install.
+	 * These were `#[NoAdminRequired]` plus a `requireAdmin()` in the body, and
+	 * hydra gate-9 (semantic-auth) refused the pair: an attribute saying "any
+	 * authenticated user may reach this" over a body that admits only admins
+	 * is exactly the mismatch that gate exists for, and it reads to a reviewer
+	 * as an endpoint anyone may call. `AuthorizedAdminSetting` says what is
+	 * true, and Nextcloud's middleware enforces it before the method runs.
+	 *
+	 * Asserted on the ATTRIBUTE rather than on a 403, because there is no
+	 * longer a body to answer 403 from: the check happens before the method.
 	 */
-	public function testValidateCarriesTheSameGuard(): void {
-		$response = $this->controller(isAdmin: false)->validatePublish(id: 'ct');
+	public function testPublishingIsAdminOnlyByAttribute(): void {
+		foreach (['publish', 'validatePublish'] as $method) {
+			$attributes = $this->authAttributesOf(method: $method);
 
-		self::assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
-	}//end testValidateCarriesTheSameGuard()
+			self::assertContains(
+				'OCP\\AppFramework\\Http\\Attribute\\AuthorizedAdminSetting',
+				$attributes,
+				$method
+			);
+			self::assertNotContains(
+				'OCP\\AppFramework\\Http\\Attribute\\NoAdminRequired',
+				$attributes,
+				$method
+			);
+		}
+	}//end testPublishingIsAdminOnlyByAttribute()
+
+	/**
+	 * The auth attributes one controller method declares.
+	 *
+	 * @param string $method The method name.
+	 *
+	 * @return array<int, string> The attribute class names.
+	 */
+	private function authAttributesOf(string $method): array {
+		$reflection = new \ReflectionMethod(CaseTypeController::class, $method);
+
+		$names = [];
+		foreach ($reflection->getAttributes() as $attribute) {
+			$names[] = $attribute->getName();
+		}
+
+		return $names;
+	}//end authAttributesOf()
 
 	/**
 	 * A refused publish answers 422 WITH the findings, so the dialog can list them.

@@ -63,6 +63,8 @@ const FALLBACK = {
  *
  * @param {unknown} colour The candidate colour name.
  * @return {boolean} True when the name is in the palette.
+ *
+ * @spec openspec/specs/case-types/spec.md
  */
 export function isStatusColour(colour) {
 	return typeof colour === 'string' && STATUS_COLOURS.includes(colour)
@@ -94,6 +96,8 @@ export function statusColourToken(colour) {
  *
  * @param {unknown} colour The stored `statusType.colour`.
  * @return {boolean} True for the -light variants.
+ *
+ * @spec openspec/specs/case-types/spec.md
  */
 export function isLightStatusColour(colour) {
 	return normaliseStatusColour(colour).endsWith('-light')
@@ -132,6 +136,8 @@ export function statusColourStyle(colour) {
  * @param {unknown} current The colour the column already took, if any.
  * @param {unknown} candidate The colour of another status with the same name.
  * @return {string|null} The column's colour, or null while none is configured.
+ *
+ * @spec openspec/specs/case-types/spec.md
  */
 export function mergeColumnColour(current, candidate) {
 	if (isStatusColour(current)) return current

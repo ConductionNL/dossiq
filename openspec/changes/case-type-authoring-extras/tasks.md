@@ -258,5 +258,30 @@ implementation task; the criteria under a task are plain bullets.
   - Two scenarios stay `@e2e exclude` as the deltas wrote them: the import
     needs an OS file dialog, and a verwerkingsactiviteit code cannot be
     refused until OpenRegister exposes the register (task 4.3).
-- [ ] 6.2 Run `composer check:strict`, `npm run check:manifest`, the hydra
+- [x] 6.2 Run `composer check:strict`, `npm run check:manifest`, the hydra
   gates and the unit suite locally; read the exit codes, not the summaries.
+  - `composer check:strict` was run as its SEPARATE legs (it exceeds a 300s
+    budget as one command), and phpmd per directory (printing nothing is its
+    OOM signature, so a whole-`lib/` pass that says nothing proves nothing).
+  - FOUR REAL DEFECTS THE GATES FOUND, none of which any other check saw:
+    - gate-14 route-reachability: `appinfo/routes.php` still carried
+      `caseDefinition#blueprint` and `caseDefinition#publish` from the first
+      attempt, after the controller they pointed at was reverted. A route
+      whose target method does not exist is a 500 at dispatch time.
+    - gate-9 semantic-auth: `#[NoAdminRequired]` over a body that admits only
+      admins, which is what this task's own text asked for. The gate is
+      right and the task was wrong: the pair reads to a reviewer as an
+      endpoint anyone may call. Both methods now carry
+      `#[AuthorizedAdminSetting(AdminSettings::class)]` and the body guard is
+      gone, so the check happens before the method runs.
+    - gate-6 orphan-auth: `assertNoCycle()` was defined and never called --
+      950 lines of the same shape as the orphaned-read-capability finding.
+      Wired into `CaseTypePublishService::validate()`, which is the only
+      write dossiq owns: a case type is saved straight to OpenRegister's
+      object API by the page, so "refused on save" can be met nowhere else.
+    - gate-16 spec-coverage: 34 changed frontend methods with no `@spec`.
+  - `ManifestColumnBindingTest` caught a fifth: the Versions list bound its
+    Updated column to `updated`, which `workflowTemplate` does not declare --
+    a column that renders a dash in every row and says nothing. It is
+    `@self.updated`, OpenRegister's metadata envelope, as `WorkflowDefinitions`
+    already spells it.

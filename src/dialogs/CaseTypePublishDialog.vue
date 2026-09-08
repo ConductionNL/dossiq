@@ -136,6 +136,8 @@ export default {
 		 * literal inside a `t()` call for this app.
 		 *
 		 * @return {object} The messages.
+		 *
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		refusalMessages() {
 			return {
@@ -153,6 +155,8 @@ export default {
 		 * The case type this dialog acts on.
 		 *
 		 * @return {string} The id.
+		 *
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		id() {
 			return this.caseTypeId || String(this.$route?.params?.id ?? '')
@@ -162,6 +166,8 @@ export default {
 		 * Whether the Publish button does anything yet.
 		 *
 		 * @return {boolean} True when there is a note and no finding.
+		 *
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		canPublish() {
 			return this.findings.length === 0 && this.changeNote.trim() !== ''
@@ -209,6 +215,8 @@ export default {
 		 * Publish, or show what the server refused on.
 		 *
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		async publish() {
 			try {

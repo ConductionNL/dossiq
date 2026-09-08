@@ -104,6 +104,8 @@ export default {
 		 * The case type this page is bound to.
 		 *
 		 * @return {string} The route's id.
+		 *
+		 * @spec openspec/specs/case-types/spec.md
 		 */
 		caseTypeId() {
 			return String(this.$route?.params?.id ?? '')
@@ -139,6 +141,8 @@ export default {
 		 * The parent this type inherits from, when it has one.
 		 *
 		 * @return {string} The parent's title, or '' when it stands alone.
+		 *
+		 * @spec openspec/specs/case-types/spec.md
 		 */
 		parentTitle() {
 			return parentTitleOf(this.blueprint)
@@ -149,6 +153,8 @@ export default {
 	 * Read the blueprint once the widget is on the page.
 	 *
 	 * @return {Promise<void>}
+	 *
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	async mounted() {
 		// Saving a status or an attribute anywhere on the page bumps the page
@@ -169,6 +175,8 @@ export default {
 		 * Read the effective blueprint from the server.
 		 *
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/case-types/spec.md
 		 */
 		async load() {
 			if (!this.caseTypeId) {

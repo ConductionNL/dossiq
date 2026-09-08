@@ -37,13 +37,13 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\CaseTypePublishService;
 use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\IGroupManager;
 use OCP\IRequest;
-use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -62,8 +62,6 @@ class CaseTypeController extends Controller {
 	 * @param IRequest               $request        The request.
 	 * @param CaseTypeResolver       $resolver       The effective blueprint of a case type.
 	 * @param CaseTypePublishService $publishService Validates and publishes a draft.
-	 * @param IUserSession           $userSession    The current session, for the publish guard.
-	 * @param IGroupManager          $groupManager   Group membership, for the publish guard.
 	 * @param LoggerInterface        $logger         The logger.
 	 */
 	public function __construct(
@@ -71,8 +69,6 @@ class CaseTypeController extends Controller {
 		IRequest $request,
 		private readonly CaseTypeResolver $resolver,
 		private readonly CaseTypePublishService $publishService,
-		private readonly IUserSession $userSession,
-		private readonly IGroupManager $groupManager,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -87,9 +83,10 @@ class CaseTypeController extends Controller {
 	 * and the page renders what it is given, with `origin` on every row saying
 	 * where it came from.
 	 *
-	 * NoAdminRequired: this READS a case type, which the case page, the
-	 * stepper and the new-case form all do as ordinary users. Nothing here
-	 * writes, and OpenRegister applies its own read authority underneath.
+	 * `#[NoAdminRequired]` and no body guard, and the two go together: this
+	 * READS a case type, which the case page, the stepper and the new-case
+	 * form all do as ordinary users. Nothing here writes, and OpenRegister
+	 * applies its own read authority underneath.
 	 *
 	 * @param string $id The case type id.
 	 *
@@ -119,6 +116,15 @@ class CaseTypeController extends Controller {
 	 * published and its workflow template a draft, and nothing afterwards says
 	 * which half ran.
 	 *
+	 * 🔴 THE AUTHORITY IS THE ATTRIBUTE, NOT A GUARD IN THE BODY. This was
+	 * written as `#[NoAdminRequired]` plus a `requireAdmin()` in the body, and
+	 * hydra gate-9 (semantic-auth) refused it: an attribute saying "any
+	 * authenticated user may reach this" over a body that admits only admins
+	 * is exactly the mismatch that gate exists for, and it reads to a reviewer
+	 * as an endpoint anyone may call. `AuthorizedAdminSetting` says what is
+	 * true, and Nextcloud's own middleware enforces it before the method runs
+	 * — which is one fewer place for the check to be forgotten.
+	 *
 	 * @param string $id The case type id.
 	 *
 	 * @return JSONResponse The outcome.
@@ -127,13 +133,8 @@ class CaseTypeController extends Controller {
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
-	#[NoAdminRequired]
+	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function publish(string $id): JSONResponse {
-		$blocked = $this->requireAdmin();
-		if ($blocked !== null) {
-			return $blocked;
-		}
-
 		try {
 			$result = $this->publishService->publish(
 				caseTypeId: $id,
@@ -158,6 +159,10 @@ class CaseTypeController extends Controller {
 	 * who is about to be refused should be told so before being made to write
 	 * the note.
 	 *
+	 * Admin-only, like the publish itself: otherwise it is a way for any
+	 * authenticated user to enumerate what is wrong with every case type in
+	 * the install.
+	 *
 	 * @param string $id The case type id.
 	 *
 	 * @return JSONResponse `{findings: string[]}`.
@@ -166,41 +171,9 @@ class CaseTypeController extends Controller {
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
-	#[NoAdminRequired]
+	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function validatePublish(string $id): JSONResponse {
-		$blocked = $this->requireAdmin();
-		if ($blocked !== null) {
-			return $blocked;
-		}
-
 		return new JSONResponse(['findings' => $this->publishService->validate(caseTypeId: $id)]);
 	}//end validatePublish()
 
-	/**
-	 * Require an authenticated admin.
-	 *
-	 * The route carries `#[NoAdminRequired]` so an ordinary session reaches the
-	 * method at all, and the authority is checked HERE, where it can answer 403
-	 * with a reason a dialog can show rather than the blank rejection the
-	 * middleware gives.
-	 *
-	 * @return JSONResponse|null Null when authorised, a response when blocked.
-	 *
-	 * @spec openspec/specs/zaaktype-versioning/spec.md
-	 */
-	private function requireAdmin(): ?JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not signed in'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->groupManager->isAdmin($user->getUID()) === false) {
-			return new JSONResponse(
-				['error' => 'Publishing a case type needs administrator rights'],
-				Http::STATUS_FORBIDDEN
-			);
-		}
-
-		return null;
-	}//end requireAdmin()
 }//end class

@@ -98,6 +98,8 @@ export default {
 		 * literal inside a `t()` call for this app.
 		 *
 		 * @return {object} The messages.
+		 *
+		 * @spec openspec/specs/workflow-import-export/spec.md
 		 */
 		refusalMessages() {
 			return {
@@ -115,6 +117,8 @@ export default {
 		 * The case type this dialog copies.
 		 *
 		 * @return {string} The id.
+		 *
+		 * @spec openspec/specs/workflow-import-export/spec.md
 		 */
 		id() {
 			return this.caseTypeId || String(this.$route?.params?.id ?? '')
@@ -128,6 +132,8 @@ export default {
 		 * Make the copy and go to it.
 		 *
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/workflow-import-export/spec.md
 		 */
 		async confirm() {
 			this.busy = true

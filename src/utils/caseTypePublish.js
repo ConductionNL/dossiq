@@ -73,6 +73,8 @@ export function publishRefusalMessage(error, messages = {}) {
  *
  * @param {object} error An axios error, or anything at all.
  * @return {Array<string>} The findings, empty when there are none.
+ *
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 export function findingsFrom(error) {
 	const findings = error?.response?.data?.findings
@@ -111,6 +113,8 @@ export function importStrategies(labels = {}) {
  *
  * @param {object} data The copy endpoint's answer.
  * @return {string} The new id, or '' when the answer carries none.
+ *
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 export function copiedCaseTypeId(data) {
 	return String(data?.id ?? data?.['@self']?.id ?? '')
