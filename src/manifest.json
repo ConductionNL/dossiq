@@ -1633,21 +1633,41 @@
 						"type": "tabs",
 						"title": "Case panels",
 						"icon": "ViewDashboard",
-						"_note": "Six panels describing one case used to be six cards stacked down the page, each with its own header and Actions menu, only one of them ever being read. The strip takes over the title and the card, the children render bare, and the Actions menu is hoisted into the bar where it rebinds to whichever tab is open. The six children stay in `widgets` and are DELIBERATELY absent from `layout`: the tabs widget renders them, so a layout entry would render each one twice.",
+						"_note": "Panels describing one case used to be cards stacked down the page, each with its own header and Actions menu, only one of them ever being read. The strip takes over the title and the card, the children render bare, and the Actions menu is hoisted into the bar where it rebinds to whichever tab is open. Every child stays in `widgets` and is DELIBERATELY absent from `layout`: the tabs widget renders them, so a layout entry would render each one twice. Placement row A33 fixes the ORDER: Data, Documents, Parties, Tasks, Communication are the work a handler does, and they come first; Files, Notes, Mail and Related cases sit behind them until their folding changes land (Files into Documents, Notes and Mail into Communication); Sub-cases, Locations, Appointments and Decisions are the conditional four and come last. A tab whose sibling change has not landed is ABSENT rather than present and empty, which is why the strip carries no Timeline entry: the timeline is the sidebar History tab (change case-timeline), not a body panel. Hiding the conditional four on their row count needs `visibleIf` on a tab entry, which CnTabsWidget 2.41.0 does not read, so until it lands they simply stay last (case-header task 4.2). `case-core` moved IN from the layout grid: the case data is one of the panels describing the case, and reading it cost a scroll past the panels that answer the same question.",
 						"content": {
 							"ariaLabel": "Case details",
 							"tabs": [
 								{
-									"widgetId": "case-notes",
-									"label": "Notes"
+									"widgetId": "case-core",
+									"label": "Data"
 								},
 								{
 									"widgetId": "case-documents",
 									"label": "Documents"
 								},
 								{
+									"widgetId": "case-roles",
+									"label": "Parties"
+								},
+								{
+									"widgetId": "case-tasks",
+									"label": "Tasks"
+								},
+								{
+									"widgetId": "case-communication",
+									"label": "Communication"
+								},
+								{
 									"widgetId": "case-files",
 									"label": "Files"
+								},
+								{
+									"widgetId": "case-notes",
+									"label": "Notes"
+								},
+								{
+									"widgetId": "case-email",
+									"label": "Mail"
 								},
 								{
 									"widgetId": "case-related",
@@ -1658,16 +1678,8 @@
 									"label": "Sub-cases"
 								},
 								{
-									"widgetId": "case-tasks",
-									"label": "Tasks"
-								},
-								{
-									"widgetId": "case-email",
-									"label": "Mail"
-								},
-								{
-									"widgetId": "case-communication",
-									"label": "Communication"
+									"widgetId": "case-locaties",
+									"label": "Locations"
 								},
 								{
 									"widgetId": "case-calendar",
@@ -1676,14 +1688,6 @@
 								{
 									"widgetId": "case-decidesk-decisions",
 									"label": "Decisions"
-								},
-								{
-									"widgetId": "case-roles",
-									"label": "Parties"
-								},
-								{
-									"widgetId": "case-locaties",
-									"label": "Locations"
 								}
 							]
 						}
@@ -1718,21 +1722,12 @@
 						"showTitle": false
 					},
 					{
-						"id": "4",
-						"widgetId": "case-core",
-						"gridX": 0,
-						"gridY": 4,
-						"gridWidth": 8,
-						"gridHeight": 6,
-						"showTitle": false
-					},
-					{
 						"id": "5",
 						"widgetId": "case-panels",
 						"gridX": 0,
-						"gridY": 10,
+						"gridY": 4,
 						"gridWidth": 8,
-						"gridHeight": 8,
+						"gridHeight": 14,
 						"showTitle": false
 					},
 					{

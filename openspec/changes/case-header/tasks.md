@@ -63,7 +63,7 @@ criteria under a task are plain bullets. Depends on `documents-on-the-case`
 
 ## 4. The tab order
 
-- [ ] 4.1 `src/manifest.json` page `CaseDetail` `case-panels.content.tabs`:
+- [x] 4.1 `src/manifest.json` page `CaseDetail` `case-panels.content.tabs`:
   order Data (`case-core`, moved into the strip and out of `layout`),
   Documents (`case-documents`), Parties (`case-roles`), Tasks
   (`case-tasks`), Communication (`case-communication`), Timeline

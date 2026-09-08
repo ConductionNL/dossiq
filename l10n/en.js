@@ -580,6 +580,7 @@ OC.L10N.register(
         "Cases": "Cases",
         "Case number": "Case number",
         "Case identity": "Case identity",
+        "Data": "Data",
         "Case breadcrumb": "Case breadcrumb",
         "cases · avg {days} days": "cases · avg {days} days",
         "Cases analysed": "Cases analysed",

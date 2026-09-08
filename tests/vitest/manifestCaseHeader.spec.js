@@ -163,3 +163,85 @@ describe('CaseDetail — the breadcrumb back to Cases (task 3.1)', () => {
 		)
 	})
 })
+
+describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
+	/** @return {Array<object>} The tab entries, in declaration order. */
+	function tabs() {
+		return widget('case-panels').content.tabs
+	}
+
+	it('leads with the work a handler does, in order', () => {
+		// Timeline is deliberately absent: the timeline is the sidebar History
+		// tab (change case-timeline), and a body panel over the same log would
+		// be the duplication that change exists to retire.
+		const lead = [
+			'case-core',
+			'case-documents',
+			'case-roles',
+			'case-tasks',
+			'case-communication',
+		]
+		expect(
+			tabs()
+				.slice(0, lead.length)
+				.map((tab) => tab.widgetId),
+		).toEqual(lead)
+	})
+
+	it('puts the four conditional tabs last', () => {
+		const conditional = [
+			'case-sub-cases',
+			'case-locaties',
+			'case-calendar',
+			'case-decidesk-decisions',
+		]
+		expect(
+			tabs()
+				.slice(-4)
+				.map((tab) => tab.widgetId)
+				.sort(),
+		).toEqual([...conditional].sort())
+	})
+
+	it('names a declared widget in every tab', () => {
+		const declared = new Set(caseDetail().config.widgets.map((w) => w.id))
+		for (const tab of tabs()) {
+			expect(declared, `tab ${tab.widgetId}`).toContain(tab.widgetId)
+		}
+	})
+
+	it('places no tab child on the layout grid', () => {
+		// A tab child that also has a layout cell renders TWICE: once in the
+		// grid and once in its panel.
+		const placed = new Set(caseDetail().config.layout.map((c) => c.widgetId))
+		for (const tab of tabs()) {
+			expect(
+				placed,
+				`${tab.widgetId} is both a tab and a grid cell`,
+			).not.toContain(tab.widgetId)
+		}
+	})
+
+	it('declares no tab whose widget type resolves to nothing', () => {
+		// A `type: "custom"` widget resolves through the page's `widget-<id>`
+		// slot, which CnDetailPage renders for LAYOUT items only. As a tab
+		// child it renders nothing and logs nothing: CnTabsWidget dispatches
+		// through CnDetailWidgetHost, which resolves by widget TYPE.
+		for (const tab of tabs()) {
+			expect(widget(tab.widgetId).type, `tab ${tab.widgetId}`).not.toBe(
+				'custom',
+			)
+		}
+	})
+
+	it('grew case-panels to take the Data tab it absorbed', () => {
+		const panels = cells('case-panels')[0]
+		expect(cells('case-core')).toHaveLength(0)
+		expect(panels.gridHeight).toBeGreaterThanOrEqual(14)
+		// The left column runs to the bottom of the right one, so the page has
+		// no reserved void under the strip (ADR-062: the cell is the budget).
+		const bottom = (cell) => cell.gridY + cell.gridHeight
+		const right = caseDetail().config.layout.filter((c) => c.gridX >= 8)
+		expect(bottom(panels)).toBe(Math.max(...right.map(bottom)))
+	})
+})
