@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use RuntimeException;
@@ -47,12 +48,15 @@ class CaseResultWriter {
 	 * @param SettingsService  $settingsService  Bridge to OpenRegister + config.
 	 * @param CaseTypeResolver $caseTypeResolver The effective blueprint, so a child type
 	 *                                          closes with its parent's result types.
+	 * @param ArchivalNominationDeriver $archivalDeriver The zrc-021 derivation, shared
+	 *                                          with the ZGW API closing path.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseTypeResolver $caseTypeResolver,
+		private readonly ArchivalNominationDeriver $archivalDeriver,
 	) {
 	}//end __construct()
 
@@ -113,6 +117,38 @@ class CaseResultWriter {
 
 		return $resultId;
 	}//end resolveClosingResult()
+
+	/**
+	 * The archival future a closing case takes from its result type.
+	 *
+	 * Delegates to {@see ArchivalNominationDeriver}, which is also what the ZGW
+	 * API path calls. That is the whole point of the method existing: the two
+	 * closing routes used to disagree, because zrc-021 lived on `ZrcController`
+	 * and the in-app route had no archival logic at all. A case closed at the
+	 * desk was left with no nomination and no destruction date, and nothing in
+	 * the record afterwards said which route it had gone through.
+	 *
+	 * Returns only the keys it could establish, so the caller merges. Nothing
+	 * here destroys or schedules a destruction: retention and destruction are
+	 * OpenRegister's, declared as `x-openregister-archival` on the case schema
+	 * (ADR-022). This records what the case is nominated FOR, which is the
+	 * field a ZGW consumer reads off the zaak.
+	 *
+	 * @param array<string, mixed> $case The case payload about to be saved.
+	 * @param string $resultTypeId The resultType the handler picked.
+	 * @param string $endDate The case's end date (Y-m-d).
+	 *
+	 * @return array<string, string|null> `archiveNomination` and/or `archiveActionDate`.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	public function archivalFuture(array $case, string $resultTypeId, string $endDate): array {
+		return $this->archivalDeriver->derive(
+			case: $case,
+			resultTypeId: $resultTypeId,
+			endDate: $endDate,
+		);
+	}//end archivalFuture()
 
 	/**
 	 * List the result type UUIDs a case type offers.
