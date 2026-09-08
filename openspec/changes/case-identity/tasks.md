@@ -64,8 +64,12 @@ criteria under a task are plain bullets.
   - `TagMultiple` is now in `src/icons.js`. An icon named in a manifest and
     missing from the registry renders NOTHING rather than a fallback glyph,
     and hydra gate-60 fails on it.
-- [ ] 2.3 `l10n/en.json` and `l10n/nl.json`: Tags, Terms and archive,
+- [x] 2.3 `l10n/en.json` and `l10n/nl.json`: Tags, Terms and archive,
   Statutory lead time, Legal basis.
+  - Sentence case throughout, per the Conduction voice. The archive and
+    payment titles already on the schema are Title Case and become visible
+    for the first time under 3.2, so they are corrected there rather than
+    shipped as new user-facing copy that breaks the voice on arrival.
 
 ## 3. Terms and archive
 

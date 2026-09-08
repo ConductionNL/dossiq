@@ -3587,7 +3587,9 @@ OC.L10N.register(
         "No due date": "No due date",
         "Task {title} finished": "Task {title} finished",
         "Tags": "Tags",
-        "Free words that group this case across case types (e.g. spoed, wijk-noord)": "Free words that group this case across case types (e.g. spoed, wijk-noord)"
+        "Free words that group this case across case types (e.g. spoed, wijk-noord)": "Free words that group this case across case types (e.g. spoed, wijk-noord)",
+        "Terms and archive": "Terms and archive",
+        "Statutory lead time": "Statutory lead time"
     },
     "nplurals=2; plural=(n != 1);"
 )

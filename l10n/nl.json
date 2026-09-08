@@ -3586,6 +3586,9 @@
         "No due date": "Geen einddatum",
         "Task {title} finished": "Taak {title} afgerond",
         "Tags": "Labels",
-        "Free words that group this case across case types (e.g. spoed, wijk-noord)": "Vrije woorden die deze zaak over zaaktypen heen groeperen (bijvoorbeeld spoed, wijk-noord)"
+        "Free words that group this case across case types (e.g. spoed, wijk-noord)": "Vrije woorden die deze zaak over zaaktypen heen groeperen (bijvoorbeeld spoed, wijk-noord)",
+        "Terms and archive": "Termijnen en archief",
+        "Statutory lead time": "Wettelijke behandeltermijn",
+        "Legal basis": "Wettelijke grondslag"
     }
 }
