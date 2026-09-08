@@ -5,12 +5,18 @@ criteria under a task are plain bullets.
 
 ## 1. The case number
 
-- [ ] 1.1 `lib/Settings/dossiq_register.json`, schema `case`: add the
+- [x] 1.1 `lib/Settings/dossiq_register.json`, schema `case`: add the
   `x-openregister-calculations` entry for `identifier` per design D1 and set
   `readOnly: true`; do not add a `format`.
   - `@spec openspec/specs/case-management/spec.md`
   - verify on a live instance that a case posted without `identifier` gets
     `YYYY-0001` and the next one `YYYY-0002`
+  - The declaration was already on `development` when this change was applied:
+    `readOnly: true`, no `format`, and the exact D1 expression. Nothing about
+    it was tested, so it could have been undone by any later edit to a
+    10,500-line file without a word. `tests/Unit/Settings/CaseIdentitySchemaTest.php`
+    now reads the shipped register and asserts the expression, so the
+    declaration this whole change rests on cannot quietly disappear.
 - [ ] 1.2 `src/manifest.json`: `identifier` out of `new-case`'s form on page
   `Dashboard` and read-only in `case-core` on page `CaseDetail`.
 - [ ] 1.3 [blocked: openregister a `sequence()` function in
