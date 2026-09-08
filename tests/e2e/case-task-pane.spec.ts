@@ -196,7 +196,13 @@ test.describe('Case detail — the task pane', () => {
 		await context.close()
 		token = await getRequestToken(api)
 
-		const whoami = await api.get('/ocs/v2.php/cloud/user?format=json')
+		// `OCS-APIRequest` is not optional: without it Nextcloud's CSRF guard
+		// answers a plain OCS GET with 412, which reads as "no session" rather
+		// than as a missing header. case-parties.spec.ts sends the same header
+		// against the same endpoint.
+		const whoami = await api.get('/ocs/v2.php/cloud/user?format=json', {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
 		expect(whoami.ok(), `whoami -> ${whoami.status()}`).toBeTruthy()
 		currentUser = String((await whoami.json())?.ocs?.data?.id ?? '')
 		expect(currentUser, 'the session must resolve to a user id').not.toBe('')

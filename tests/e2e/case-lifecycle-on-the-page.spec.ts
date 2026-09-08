@@ -21,6 +21,11 @@
  * every locator is a `data-testid` or a role, and the only text asserted is
  * text this fixture itself seeded (which carries RUN_PREFIX and is therefore
  * the same in either locale).
+ *
+ * WHERE A `data-testid` ON AN NcTextArea LANDS: on the `<textarea>` itself,
+ * not on a wrapper. The component sets `inheritAttrs: false` and merges
+ * `$attrs` onto the control, so `getByTestId(id)` IS the field and reaching
+ * for a `textarea` under it searches inside an element that has no children.
  */
 
 import { expect, test } from '@playwright/test'
@@ -216,6 +221,32 @@ test.describe('Case lifecycle on the case page', () => {
 		})
 	}
 
+	/**
+	 * Pick one result type out of the open NcSelect.
+	 *
+	 * NOT `getByRole('option', { name })`. NcSelect renders every option through
+	 * nc-vue's NcEllipsisedOption, which cuts the label at `length - 10` so the
+	 * tail survives an ellipsis, and puts the halves in two spans. The cut
+	 * ignores word boundaries: a 30-character `<prefix> Verleend` becomes
+	 * `<prefix minus its last char>` plus `3 Verleend`. Those spans are flex
+	 * items, so their computed display is `block`, and the accessible-name
+	 * algorithm joins block children with a space, so the name Playwright
+	 * computes is `E2EZAAK-... 807 3 Verleend`, which no regex over the real
+	 * label can match. `hasText` reads the option's text whole and is immune
+	 * to the split; it is the idiom case-create-form.spec.ts and
+	 * case-requester.spec.ts already use against the same component.
+	 *
+	 * @param page  The Playwright page.
+	 * @param label The result type's name, without the run prefix.
+	 */
+	const pickResult = async (page: any, label: string) => {
+		const option = page
+			.getByRole('option')
+			.filter({ hasText: `${RUN_PREFIX} ${label}` })
+		await expect(option).toHaveCount(1, { timeout: 15_000 })
+		await option.click()
+	}
+
 	// @e2e openspec/specs/status-transition-engine/spec.md#display-available-transitions-on-case-detail
 	test('the header row lists only the transitions this user may take', async ({
 		page,
@@ -259,10 +290,7 @@ test.describe('Case lifecycle on the case page', () => {
 
 		const dialog = page.getByTestId('case-transition-dialog')
 		await expect(dialog).toBeVisible({ timeout: 15_000 })
-		await dialog
-			.getByTestId('case-transition-comment')
-			.locator('textarea')
-			.fill('E2E move')
+		await dialog.getByTestId('case-transition-comment').fill('E2E move')
 		await page.getByTestId('case-transition-confirm').click()
 		await expect(dialog).toHaveCount(0, { timeout: 20_000 })
 
@@ -328,9 +356,7 @@ test.describe('Case lifecycle on the case page', () => {
 		const select = page.getByTestId('case-transition-result')
 		await expect(select).toBeVisible({ timeout: 15_000 })
 		await select.click()
-		await page
-			.getByRole('option', { name: new RegExp(`${RUN_PREFIX} Verleend`) })
-			.click()
+		await pickResult(page, 'Verleend')
 		await page.getByTestId('case-transition-confirm').click()
 		await expect(dialog).toHaveCount(0, { timeout: 25_000 })
 
@@ -373,10 +399,7 @@ test.describe('Case lifecycle on the case page', () => {
 		await expect(dialog).toBeVisible({ timeout: 15_000 })
 		// The reason is required: the button says so by staying disabled.
 		await expect(page.getByTestId('case-lifecycle-confirm')).toBeDisabled()
-		await dialog
-			.getByTestId('case-lifecycle-reason')
-			.locator('textarea')
-			.fill('Awb 4:5 e2e')
+		await dialog.getByTestId('case-lifecycle-reason').fill('Awb 4:5 e2e')
 		await page.getByTestId('case-lifecycle-confirm').click()
 		await expect(dialog).toHaveCount(0, { timeout: 25_000 })
 
@@ -389,10 +412,7 @@ test.describe('Case lifecycle on the case page', () => {
 		await resume.click()
 		const resumeDialog = page.getByTestId('case-lifecycle-dialog')
 		await expect(resumeDialog).toBeVisible({ timeout: 15_000 })
-		await resumeDialog
-			.getByTestId('case-lifecycle-reason')
-			.locator('textarea')
-			.fill('Hervat e2e')
+		await resumeDialog.getByTestId('case-lifecycle-reason').fill('Hervat e2e')
 		await page.getByTestId('case-lifecycle-confirm').click()
 		await expect(resumeDialog).toHaveCount(0, { timeout: 25_000 })
 
@@ -419,10 +439,7 @@ test.describe('Case lifecycle on the case page', () => {
 		await page.getByTestId('cn-action-case-extend').click()
 		const dialog = page.getByTestId('case-lifecycle-dialog')
 		await expect(dialog).toBeVisible({ timeout: 15_000 })
-		await dialog
-			.getByTestId('case-lifecycle-reason')
-			.locator('textarea')
-			.fill('Awb 4:14 e2e')
+		await dialog.getByTestId('case-lifecycle-reason').fill('Awb 4:14 e2e')
 		await page.getByTestId('case-lifecycle-confirm').click()
 		await expect(dialog).toHaveCount(0, { timeout: 25_000 })
 
@@ -471,10 +488,7 @@ test.describe('Case lifecycle on the case page', () => {
 
 		const dialog = page.getByTestId('case-lifecycle-dialog')
 		await expect(dialog).toBeVisible({ timeout: 15_000 })
-		await dialog
-			.getByTestId('case-lifecycle-reason')
-			.locator('textarea')
-			.fill('Heropend e2e')
+		await dialog.getByTestId('case-lifecycle-reason').fill('Heropend e2e')
 		await page.getByTestId('case-lifecycle-confirm').click()
 		await expect(dialog).toHaveCount(0, { timeout: 25_000 })
 
@@ -528,9 +542,7 @@ test.describe('Case lifecycle on the case page', () => {
 		const dialog = page.getByTestId('case-transition-dialog')
 		await expect(dialog).toBeVisible({ timeout: 15_000 })
 		await page.getByTestId('case-transition-result').click()
-		await page
-			.getByRole('option', { name: new RegExp(`${RUN_PREFIX} Verleend`) })
-			.click()
+		await pickResult(page, 'Verleend')
 		await page.getByTestId('case-transition-confirm').click()
 		await expect(dialog).toHaveCount(0, { timeout: 25_000 })
 
