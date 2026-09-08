@@ -1824,6 +1824,7 @@
 						}
 					]
 				},
+				"_linkObjectNote": "`case` is REQUIRED on the caseObject schema and is deliberately absent from `link-object`'s `includeFields`: an `open-form` action saves straight to the object API, so a required property the form does not ask has to arrive through `props` or the save is refused with a validation error the handler cannot act on. `@objectId` is the open case, the same shape `add-party` and `log-contact` use. Until nextcloud-vue passes `props` into the create form as initial data (triage #6) the field is not prefilled on screen; the value is still written, which is what the e2e asserts.",
 				"headerActions": [
 					{
 						"id": "add-party",
@@ -1846,6 +1847,29 @@
 							}
 						},
 						"successMessage": "Party added to the case.",
+						"props": {
+							"case": "@objectId"
+						}
+					},
+					{
+						"id": "link-object",
+						"type": "open-form",
+						"label": "Link object",
+						"icon": "CubeOutline",
+						"register": "dossiq",
+						"schema": "caseObject",
+						"includeFields": [
+							"objectType",
+							"objectIdentification",
+							"objectUrl",
+							"description"
+						],
+						"fieldOverrides": {
+							"description": {
+								"widget": "textarea"
+							}
+						},
+						"successMessage": "Object linked to this case.",
 						"props": {
 							"case": "@objectId"
 						}

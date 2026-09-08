@@ -28,7 +28,7 @@ criteria under a task are plain bullets.
 
 ## 3. Link object
 
-- [ ] 3.1 `src/manifest.json` page `CaseDetail`: header action `link-object`
+- [x] 3.1 `src/manifest.json` page `CaseDetail`: header action `link-object`
   per design D2 with `props: {case: "@objectId"}` and `includeFields`
   `objectType`, `objectIdentification`, `objectUrl`, `description`.
   - `@spec openspec/specs/case-management/spec.md`
@@ -37,9 +37,11 @@ criteria under a task are plain bullets.
   #6, Tier D05)] Interim: 3.1 passes the case in `props`; the e2e asserts
   the saved object's `case`, not the prefilled field. When the change lands,
   drop the interim note and enable the prefill scenario.
-- [ ] 3.3 `l10n/en.json` and `l10n/nl.json`: Objects, Link object, Object
-  type, Identification, Link, "No objects linked to this case yet", "Object
-  linked to this case.", View case, All objects.
+- [x] 3.3 `l10n/en.json` and `l10n/nl.json`: Objects, Link object, Object
+  type, Identification, "No objects linked to this case yet", "Object
+  linked to this case.", All objects. Link and View case were already in
+  both catalogues. `l10n/en.js` and `l10n/nl.js` are rebuilt with
+  `npm run l10n:build`, or `check:l10n-js` calls the catalogue stale.
 
 ## 4. The Objects index
 

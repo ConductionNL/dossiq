@@ -47,6 +47,10 @@ const caseWidget = (id) =>
 /** The tab children of the `case-panels` strip. @return {Array<object>} The tabs. */
 const panelTabs = () => caseWidget('case-panels').content.tabs
 
+/** One header action of the CaseDetail page. @param {string} id The action id. @return {object|undefined} The action. */
+const headerAction = (id) =>
+	caseDetail().config.headerActions.find((entry) => entry.id === id)
+
 /** The column keys of a widget's object list. @param {object} w The widget. @return {Array<string>} The keys. */
 const columnKeys = (w) => w.content.columns.map((column) => column.key)
 
@@ -159,5 +163,55 @@ describe('the Objects tab on the case page', () => {
 	it('names an icon that src/icons.js registers', () => {
 		// hydra gate-60: an unregistered name renders NO icon, silently.
 		expect(iconsSource).toMatch(/\bCubeOutline\b/)
+	})
+})
+
+describe('the Link object action', () => {
+	it('opens a form over caseObject from the case header', () => {
+		const action = headerAction('link-object')
+		expect(action).toBeDefined()
+		expect(action.type).toBe('open-form')
+		expect(action.register).toBe('dossiq')
+		expect(action.schema).toBe('caseObject')
+	})
+
+	it('asks for the object type, identification, link and description', () => {
+		expect(headerAction('link-object').includeFields).toEqual([
+			'objectType',
+			'objectIdentification',
+			'objectUrl',
+			'description',
+		])
+	})
+
+	it('seeds every required property the form does not ask', () => {
+		// An `open-form` action saves straight to the object API. A required
+		// property that is neither asked nor seeded is refused on save, with a
+		// validation error on a field the form never showed.
+		const action = headerAction('link-object')
+		const asked = new Set(action.includeFields)
+		const seeded = new Set(Object.keys(action.props || {}))
+		for (const required of caseObject().required) {
+			expect(
+				asked.has(required) || seeded.has(required),
+				`caseObject.${required} is required but neither asked nor seeded`,
+			).toBe(true)
+		}
+	})
+
+	it('carries the open case through props', () => {
+		expect(headerAction('link-object').props).toEqual({ case: '@objectId' })
+	})
+
+	it('confirms the save in words a handler reads', () => {
+		expect(headerAction('link-object').successMessage).toBe(
+			'Object linked to this case.',
+		)
+	})
+
+	it('names an icon that src/icons.js registers', () => {
+		expect(iconsSource).toMatch(
+			new RegExp(`\\b${headerAction('link-object').icon}\\b`),
+		)
 	})
 })

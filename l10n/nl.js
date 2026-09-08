@@ -3612,7 +3612,14 @@ OC.L10N.register(
         "New deadline": "Nieuwe deadline",
         "Reason (applied to every case)": "Reden (geldt voor elke zaak)",
         "Resume {count} cases": "{count} zaken hervatten",
-        "Suspend {count} cases": "{count} zaken opschorten"
+        "Suspend {count} cases": "{count} zaken opschorten",
+        "Objects": "Objecten",
+        "Link object": "Object koppelen",
+        "Object type": "Objecttype",
+        "Identification": "Identificatie",
+        "No objects linked to this case yet": "Nog geen objecten aan deze zaak gekoppeld",
+        "Object linked to this case.": "Object aan deze zaak gekoppeld.",
+        "All objects": "Alle objecten"
     },
     "nplurals=2; plural=(n != 1);"
 )

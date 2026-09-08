@@ -3612,7 +3612,14 @@ OC.L10N.register(
         "New deadline": "New deadline",
         "Reason (applied to every case)": "Reason (applied to every case)",
         "Resume {count} cases": "Resume {count} cases",
-        "Suspend {count} cases": "Suspend {count} cases"
+        "Suspend {count} cases": "Suspend {count} cases",
+        "Objects": "Objects",
+        "Link object": "Link object",
+        "Object type": "Object type",
+        "Identification": "Identification",
+        "No objects linked to this case yet": "No objects linked to this case yet",
+        "Object linked to this case.": "Object linked to this case.",
+        "All objects": "All objects"
     },
     "nplurals=2; plural=(n != 1);"
 )
