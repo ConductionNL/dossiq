@@ -45,8 +45,18 @@ const manifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
  * tripwire for unrelated work while saying nothing about the task pane. The
  * ratchet ADR-100 actually sets is on CUSTOM pages, and that stays exact; the
  * assertion below states the rest of the intent directly instead.
+ *
+ * Moved 10 -> 11 on 2026-09-08 by `FeaturesRoadmap`, which is the only page
+ * since the pane to spend a unit of the ratchet. It did not have a choice:
+ * the library's CnFeaturesAndRoadmapView declares zero slots (checked against
+ * the installed @conduction/nextcloud-vue 2.41.0 dist, not the docs), so
+ * `type: "roadmap"` cannot carry the capability comparison. The unit comes
+ * back the day the library grows a slot or a comparison tab and the page
+ * returns to `type: "roadmap"`; the manifest `_note` on that page says so
+ * too. Anything else that moves this number is a change that owes an
+ * explanation here.
  */
-const CUSTOM_PAGE_COUNT_BEFORE = 10
+const CUSTOM_PAGE_COUNT_BEFORE = 11
 
 /**
  * One page as the manifest declares it.

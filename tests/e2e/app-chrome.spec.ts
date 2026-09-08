@@ -22,6 +22,7 @@
  */
 
 import { expect, test } from '@playwright/test'
+import { dismissSupportDialog } from './helpers/nav.ts'
 
 const APP_BASE = '/index.php/apps/dossiq'
 
@@ -158,6 +159,58 @@ test.describe('app chrome (ADR-114)', () => {
 		expect(await page.locator('.cn-features-tab__card').count()).toBeGreaterThan(
 			5,
 		)
+	})
+
+	// @e2e openspec/specs/features-roadmap/spec.md#areas-summarise-before-they-expand
+	// @e2e openspec/specs/features-roadmap/spec.md#a-reader-can-date-the-claim
+	// @e2e openspec/specs/features-roadmap/spec.md#the-panel-advises-the-reader-to-test-for-themselves
+	test('FeaturesRoadmapView compares dossiq and states the comparison limits', async ({
+		page,
+	}) => {
+		// The comparison lives on the same page as the feature list, in the
+		// second section of FeaturesRoadmapView. The features section is the
+		// landing one, so this test has to switch before it can assert.
+		await page.goto(`${APP_BASE}/features-roadmap`, {
+			waitUntil: 'domcontentloaded',
+		})
+		await expect(page.locator('.features-roadmap__sections')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		// This is the only test in this file that CLICKS, and the click is
+		// exactly what CnAppRoot's support dialog and the first-time-setup
+		// wizard swallow: their modal mask covers the app and the click lands
+		// on the mask instead, which reports as a timeout rather than as a
+		// mask. A fresh browser profile has no dismissal recorded, so the
+		// wizard does open. global-setup.ts does not settle either one.
+		await dismissSupportDialog(page)
+
+		await page.getByRole('button', { name: 'How dossiq compares' }).click()
+
+		const comparison = page.locator('.features-roadmap__comparison')
+		await expect(comparison).toBeVisible({ timeout: 15_000 })
+
+		// The three limits are the point of the section, not decoration: a
+		// score with no scope, no date and no caveat is the thing we refuse to
+		// publish. Each is asserted by the claim it makes, not by its wording
+		// alone, so a rewrite that DROPS one fails here.
+		await expect(comparison).toContainText('open source software we could')
+		await expect(comparison).toContainText('already out of date')
+		// The year of the reading date, interpolated into that same sentence.
+		// Asserting the year rather than the formatted date keeps this off
+		// Intl's month spelling while still failing if the date goes missing.
+		await expect(comparison).toContainText('2026')
+		await expect(comparison).toContainText('is not proof')
+		// The advice to go and test. This is the caveat that tells the reader
+		// what to DO, and it was missing from the first cut of this panel: the
+		// other three only tell them what to discount, which reads as hedging
+		// on its own.
+		await expect(comparison).toContainText('run your own evaluation')
+
+		// Thirteen areas, collapsed. The rows live behind the disclosure so
+		// the landing view is readable; if a change flattens 206 rows onto the
+		// page, this count is what notices.
+		await expect(comparison.locator('.features-roadmap__area')).toHaveCount(13)
 	})
 
 	test('the settings foldout carries Personal settings, Admin settings and Flows', async ({
