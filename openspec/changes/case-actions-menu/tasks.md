@@ -97,9 +97,15 @@ criteria under a task are plain bullets.
 
 ## 4. Verification
 
-- [ ] 4.1 Add `tests/e2e/case-actions-menu.spec.ts` covering every scenario
+- [x] 4.1 Add `tests/e2e/case-actions-menu.spec.ts` covering every scenario
   of the two delta specs that names it (copy with and without documents, the
   Start list, a run appearing in `case-flow-runs`, a planned row on Related
   cases).
+  - Two scenarios were re-annotated `@e2e exclude` rather than written as
+    tests that cannot fail. "A reader cannot copy": Playwright signs in as
+    admin and cannot take a lesser role, and PHPUnit asserts the guard runs
+    before the service. "A run appears on the case": running a flow needs an
+    ADOPTED, published and enabled flow, and a fresh install deliberately has
+    none, so arranging one would make it a test of the adoption path.
 - [ ] 4.2 Run `composer check:strict`, `npm run check:manifest`, the hydra
   gates and the unit suite locally; read the exit codes, not the summaries.
