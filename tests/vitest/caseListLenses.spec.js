@@ -151,20 +151,28 @@ describe('Tasks index lenses', () => {
 })
 
 /**
- * The dashboard's Overdue widgets, both of which link to the Cases page.
+ * The dashboard widgets that link to the Cases page with a deadline filter.
  *
- * @return {Array<object>} The stat tile and the object-table.
+ * `dashboard-tiles` merged `overdue-cases` and `deadline-alerts` into one
+ * `deadlines` table whose window is WIDER than the Overdue chip: everything
+ * already past its deadline AND everything due within three days. So the two
+ * are held to different standards, on purpose. `kpi-overdue` counts open
+ * overdue cases and nothing else, so its link must reproduce the Overdue
+ * chip exactly; `deadlines` must reproduce its OWN filter, which is what
+ * makes its count and its View all agree.
+ *
+ * @return {object} The Dashboard page's widgets, by id.
  */
-function overdueWidgets() {
-	const widgets = page('Dashboard').config.widgets
-	return [
-		widgets.find((widget) => widget.id === 'kpi-overdue'),
-		widgets.find((widget) => widget.id === 'overdue-cases'),
-	]
+function dashboardWidgets() {
+	const byId = {}
+	for (const widget of page('Dashboard').config.widgets) {
+		byId[widget.id] = widget
+	}
+	return byId
 }
 
 /**
- * One widget's route query, whichever key it carries it under.
+ * One widget's route query, whichever key it carries the route under.
  *
  * @param {object} widget The dashboard widget.
  * @return {object} The route query.
@@ -174,33 +182,64 @@ function routeQuery(widget) {
 	return route.query
 }
 
-describe('the Overdue tiles and the Overdue chip agree', () => {
-	it('both Overdue widgets link to the Cases page', () => {
-		for (const widget of overdueWidgets()) {
-			const route = widget.content.route || widget.content.viewAllRoute
-			expect(route.name, widget.id).toBe('Cases')
-		}
+/**
+ * A filter map with every value stringified, because a route query is a URL
+ * and every value in one is a string — an invariant
+ * `dashboardViewAllRoutes.spec.js` holds for the whole dashboard.
+ *
+ * @param {object} filter The filter map.
+ * @return {object} The same map with string values.
+ */
+function asQuery(filter) {
+	return Object.fromEntries(
+		Object.entries(filter).map(([key, value]) => [key, String(value)]),
+	)
+}
+
+describe('the deadline widgets and the Overdue chip', () => {
+	it('the Overdue stat tile carries exactly the Overdue chip filter', () => {
+		const tile = dashboardWidgets()['kpi-overdue']
+
+		expect(tile.content.route.name).toBe('Cases')
+		expect(routeQuery(tile)).toEqual(asQuery(chip('Cases', 'Overdue').filter))
 	})
 
-	it('both carry exactly the Overdue chip filter as their query', () => {
-		// Stringified, because a route query is a URL and every value in one
-		// is a string — `dashboardViewAllRoutes.spec.js` holds that invariant
-		// for the whole dashboard. The equality that matters is the SET of
-		// conditions: a tile that counts open overdue cases and a View all
-		// that lands on every overdue case, closed ones included, is the
-		// dropped filter this change exists to fix (triage item 4).
-		const chipFilter = Object.fromEntries(
-			Object.entries(chip('Cases', 'Overdue').filter).map(([key, value]) => [
-				key,
-				String(value),
-			]),
-		)
+	it('the Deadlines table carries its own, wider window', () => {
+		// Not the chip's filter: this table also lists what is due within
+		// three days, so landing on overdue-only would show fewer cases than
+		// the table just listed. What must hold is that the filter survives
+		// the trip at all (triage item 4) and reaches the page as a flat
+		// bracket key rather than a JSON-stringified object.
+		const table = dashboardWidgets().deadlines
+		const query = routeQuery(table)
 
-		for (const widget of overdueWidgets()) {
-			expect(routeQuery(widget), widget.id).toEqual(chipFilter)
-		}
+		expect(table.content.viewAllRoute.name).toBe('Cases')
+		expect(query).toEqual(asQuery(flattenFilter(table.content.source.filter)))
+		expect(query.isFinalStatus).toBe('false')
+		expect(Object.keys(query)).toContain('deadline[lte]')
 	})
 })
+
+/**
+ * Flatten an object-table `source.filter` to OpenRegister's bracket grammar,
+ * the same shaping `dashboardViewAllRoutes.spec.js` does.
+ *
+ * @param {object} filter The widget's source filter.
+ * @return {object} Bracket-grammar pairs.
+ */
+function flattenFilter(filter) {
+	const out = {}
+	for (const [key, value] of Object.entries(filter || {})) {
+		if (value && typeof value === 'object' && !Array.isArray(value)) {
+			for (const [op, inner] of Object.entries(value)) {
+				out[`${key}[${op}]`] = String(inner)
+			}
+		} else {
+			out[key] = String(value)
+		}
+	}
+	return out
+}
 
 describe('the Deadline column', () => {
 	/**

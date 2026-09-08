@@ -676,58 +676,10 @@
 						}
 					},
 					{
-						"id": "overdue-cases",
+						"id": "my-work",
 						"type": "object-table",
-						"title": "Overdue",
-						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "case",
-								"filter": {
-									"isFinalStatus": false,
-									"deadline": {
-										"lt": "@today"
-									}
-								},
-								"extend": ["calculations"],
-								"order": {
-									"deadline": "asc"
-								},
-								"limit": 7
-							},
-							"columns": [
-								{
-									"key": "title",
-									"cellClass": "cn-cell--strong"
-								},
-								{
-									"key": "daysOverdue",
-									"formatter": "conditionalPhrase",
-									"formatterOptions": {
-										"positive": "{n} days overdue"
-									},
-									"cellClass": "cn-cell--muted cn-cell--end"
-								}
-							],
-							"rowRoute": "CaseDetail",
-							"_viewAllNote": "one-case-list A22, triage item 4. This query is LITERALLY the Cases page's Overdue chip filter, key for key, and the manifest vitest deep-equals the two: the tile counts one set of cases and View all has to land on the same set. The values stay STRINGS because a route query is a URL, an invariant `dashboardViewAllRoutes.spec.js` holds for every tile, so the equality is asserted over the stringified chip filter rather than by putting a boolean in a URL. CnIndexPage merges a route query into the fetch UNDER the page's own filter, so the filter arrives and the list is right. What it does NOT do is activate the matching chip: `resolveInitialQuickFilterIndex` reads only `default`, so the reader lands on All with the query applied and no chip showing why. Naming a chip from the query needs a nextcloud-vue change (see the change's tasks 2.3).",
-							"viewAllRoute": {
-								"name": "Cases",
-								"query": {
-									"isFinalStatus": "false",
-									"deadline[lt]": "@today"
-								}
-							},
-							"viewAllLabel": "View all",
-							"hideHeader": true,
-							"borderless": true,
-							"emptyText": "No open cases"
-						}
-					},
-					{
-						"id": "my-tasks",
-						"type": "object-table",
-						"title": "My Tasks",
+						"title": "My work",
+						"_note": "openspec/changes/dashboard-tiles design D1. Replaces `my-tasks` and `task-reminders`, which read the same schema with the same filter and differed only in a due-date window, so seven of ten rows appeared on the page twice. `extend` carries `case` as well as `calculations`: a $ref column renders the stored uuid unless the referenced object is extended AND the column reads `<property>.<labelField>`, which is why the case column is keyed `case.title`. `rowActions` Pick up and Complete stay blocked on nextcloud-vue (the 2.40.0 object-table vocabulary has no such key); the row keeps `rowRoute` to TaskDetail, where the lifecycle buttons already render.",
 						"content": {
 							"source": {
 								"register": "dossiq",
@@ -736,19 +688,26 @@
 									"assignee": "@me",
 									"isTerminalStatus": false
 								},
-								"extend": ["calculations"],
+								"extend": ["case", "calculations"],
 								"order": {
 									"dueDate": "asc"
 								},
-								"limit": 7
+								"limit": 10
 							},
 							"columns": [
 								{
 									"key": "title",
+									"label": "Task",
 									"cellClass": "cn-cell--strong"
 								},
 								{
+									"key": "case.title",
+									"label": "Case",
+									"cellClass": "cn-cell--muted"
+								},
+								{
 									"key": "daysUntilDue",
+									"label": "Days left",
 									"formatter": "conditionalPhrase",
 									"formatterOptions": {
 										"negative": "{n} days overdue",
@@ -759,6 +718,16 @@
 								}
 							],
 							"rowRoute": "TaskDetail",
+							"rowClass": [
+								{
+									"when": {
+										"field": "daysUntilDue",
+										"op": "lt",
+										"value": 0
+									},
+									"class": "cn-row--danger"
+								}
+							],
 							"viewAllRoute": {
 								"name": "Tasks",
 								"query": {
@@ -767,15 +736,16 @@
 								}
 							},
 							"viewAllLabel": "View all",
-							"hideHeader": true,
+							"hideHeader": false,
 							"borderless": true,
-							"emptyText": "No tasks found"
+							"emptyText": "You have no open tasks"
 						}
 					},
 					{
-						"id": "deadline-alerts",
+						"id": "deadlines",
 						"type": "object-table",
-						"title": "Deadline Alerts",
+						"title": "Deadlines",
+						"_note": "openspec/changes/dashboard-tiles design D1. Replaces `overdue-cases` and `deadline-alerts`, which read `case` with the same `isFinalStatus: false` filter and differed only in the deadline window, so seven of nine rows appeared twice. One window now covers both: everything already past its deadline and everything due within three days, ordered by deadline. The red row is `rowClass`, not the `cn-cell--danger` the design sketched: a column's `cellClass` is one static string, so it cannot carry a per-branch colour, and the spec asks for the ROW to read in the error colour anyway.",
 						"content": {
 							"source": {
 								"register": "dossiq",
@@ -795,10 +765,12 @@
 							"columns": [
 								{
 									"key": "title",
+									"label": "Case",
 									"cellClass": "cn-cell--strong"
 								},
 								{
 									"key": "daysUntilDeadline",
+									"label": "Days left",
 									"formatter": "conditionalPhrase",
 									"formatterOptions": {
 										"negative": "{n} days overdue",
@@ -809,6 +781,17 @@
 								}
 							],
 							"rowRoute": "CaseDetail",
+							"rowClass": [
+								{
+									"when": {
+										"field": "daysUntilDeadline",
+										"op": "lt",
+										"value": 0
+									},
+									"class": "cn-row--danger"
+								}
+							],
+							"_viewAllNote": "one-case-list A22, triage item 4. The query is this table's OWN filter in the flat bracket grammar, key for key, and `dashboardViewAllRoutes.spec.js` holds that invariant for every tile: a table that counts one set of cases and a View all that lands on another is the dropped filter this fixes. The nested `{ deadline: { lte } }` form belongs in a `source.filter`, which the widget reads, and NOT in a route query, which `buildQueryString` would JSON-stringify into a literal object string that matches nothing. Note the WINDOW: this table is overdue AND due within three days, wider than the Cases page's Overdue chip, so it deliberately does not carry that chip's filter. `kpi-overdue` is the widget whose count the Overdue chip reproduces exactly, and that equality is asserted. CnIndexPage merges the query into the fetch under the page's own filter, so the filter arrives and the list is right; what it does NOT do is activate a matching chip, because `resolveInitialQuickFilterIndex` reads only `default`. The reader lands on All with the query applied and no chip showing why, and naming a chip from a query needs a nextcloud-vue change.",
 							"viewAllRoute": {
 								"name": "Cases",
 								"query": {
@@ -817,61 +800,9 @@
 								}
 							},
 							"viewAllLabel": "View all",
-							"hideHeader": true,
+							"hideHeader": false,
 							"borderless": true,
-							"emptyText": "No deadline alerts"
-						}
-					},
-					{
-						"id": "task-reminders",
-						"type": "object-table",
-						"title": "Task Due Reminders",
-						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "caseTask",
-								"filter": {
-									"assignee": "@me",
-									"isTerminalStatus": false,
-									"dueDate": {
-										"lte": "@today+3d"
-									}
-								},
-								"extend": ["calculations"],
-								"order": {
-									"dueDate": "asc"
-								},
-								"limit": 10
-							},
-							"columns": [
-								{
-									"key": "title",
-									"cellClass": "cn-cell--strong"
-								},
-								{
-									"key": "daysUntilDue",
-									"formatter": "conditionalPhrase",
-									"formatterOptions": {
-										"negative": "{n} days overdue",
-										"zero": "Due today",
-										"positive": "{n} days remaining"
-									},
-									"cellClass": "cn-cell--muted cn-cell--end"
-								}
-							],
-							"rowRoute": "TaskDetail",
-							"viewAllRoute": {
-								"name": "Tasks",
-								"query": {
-									"assignee": "@me",
-									"isTerminalStatus": "false",
-									"dueDate[lte]": "@today+3d"
-								}
-							},
-							"viewAllLabel": "View all",
-							"hideHeader": true,
-							"borderless": true,
-							"emptyText": "No task reminders"
+							"emptyText": "No deadlines in the next three days"
 						}
 					},
 					{
@@ -981,7 +912,7 @@
 					},
 					{
 						"id": "7",
-						"widgetId": "open-cases",
+						"widgetId": "my-work",
 						"gridX": 0,
 						"gridY": 6,
 						"gridWidth": 4,
@@ -990,7 +921,7 @@
 					},
 					{
 						"id": "8",
-						"widgetId": "overdue-cases",
+						"widgetId": "deadlines",
 						"gridX": 4,
 						"gridY": 6,
 						"gridWidth": 4,
@@ -999,7 +930,7 @@
 					},
 					{
 						"id": "9",
-						"widgetId": "my-tasks",
+						"widgetId": "open-cases",
 						"gridX": 8,
 						"gridY": 6,
 						"gridWidth": 4,
@@ -1008,26 +939,8 @@
 					},
 					{
 						"id": "10",
-						"widgetId": "deadline-alerts",
-						"gridX": 0,
-						"gridY": 10,
-						"gridWidth": 4,
-						"gridHeight": 4,
-						"showTitle": true
-					},
-					{
-						"id": "11",
-						"widgetId": "task-reminders",
-						"gridX": 4,
-						"gridY": 10,
-						"gridWidth": 4,
-						"gridHeight": 4,
-						"showTitle": true
-					},
-					{
-						"id": "12",
 						"widgetId": "stalled-cases",
-						"gridX": 8,
+						"gridX": 0,
 						"gridY": 10,
 						"gridWidth": 4,
 						"gridHeight": 4,
@@ -1408,9 +1321,10 @@
 					},
 					{
 						"id": "case-tasks",
-						"type": "object-list",
+						"type": "case-task-pane",
 						"title": "Tasks",
 						"icon": "ClipboardCheckOutline",
+						"_note": "task-on-the-case A06: the Tasks tab shows the first OPEN task of this case with the lifecycle buttons OpenRegister answers for it, confirms a completion with a toast and puts the next open task in its place, so a handler finishes a task without leaving the case. The id, the title, the icon, the tab entry and every content key are unchanged, and no page is added or retyped, so the ADR-100 page ratchet does not move. TYPE is the interim. [blocked: nextcloud-vue 2.41.1 CnObjectListWidget has no rowActions and no lifecycle column] so a button cannot be put inside a row from configuration; verified against the installed 2.40.0 dist and the published 2.41.1 tarball. TARGET: back to type object-list with a lifecycle column (asked for in https://github.com/ConductionNL/nextcloud-vue/issues/1033), at which point src/components/tasks/CaseTaskPane.vue and its registry entry are deleted. The type names the registry key rather than \"custom\" because this widget is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per GRID item only, and CnTabsWidget resolves a tab child through cnRegistry[widget.type], rendering nothing at all when no key answers. content.columns, content.rowRoute and content.emptyText are kept as written: they are what the widget goes back to reading the day the library grows the column.",
 						"content": {
 							"register": "dossiq",
 							"schema": "caseTask",
@@ -2451,6 +2365,13 @@
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
 					{
+						"id": "task-case-link",
+						"type": "custom",
+						"title": "Case",
+						"icon": "FolderOutline",
+						"_note": "task-on-the-case REQ-TASK-015: names the case this task is on, by its title, and links to it. Resolved via page slots (widget-task-case-link -> TaskCaseLink). It renders for EVERY task with a case, which is what separates it from task-waiting-case below: that one renders only for a task holding a flow run, and saying a case is waiting on an ordinary to-do would not be true. A task without a case renders nothing, and showTitle stays false so there is no empty titled box either. Not a data widget over the case field: case is a $ref and the platform renders a $ref as its uuid, which reads as broken data rather than as a way back."
+					},
+					{
 						"id": "task-data",
 						"type": "data",
 						"title": "Task",
@@ -2470,10 +2391,19 @@
 				],
 				"layout": [
 					{
+						"id": "3",
+						"widgetId": "task-case-link",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 1,
+						"showTitle": false
+					},
+					{
 						"id": "1",
 						"widgetId": "task-data",
 						"gridX": 0,
-						"gridY": 0,
+						"gridY": 1,
 						"gridWidth": 12,
 						"gridHeight": 6,
 						"showTitle": false
@@ -2482,7 +2412,7 @@
 						"id": "2",
 						"widgetId": "task-waiting-case",
 						"gridX": 0,
-						"gridY": 6,
+						"gridY": 7,
 						"gridWidth": 12,
 						"gridHeight": 2,
 						"showTitle": false
@@ -2515,6 +2445,7 @@
 				}
 			},
 			"slots": {
+				"widget-task-case-link": "TaskCaseLink",
 				"widget-task-waiting-case": "TaskWaitingCaseSection"
 			}
 		},

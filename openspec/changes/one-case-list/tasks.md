@@ -76,13 +76,17 @@ no menu entry changes.
     Recorded in the `case-management` delta, whose scenario now carries an
     `@e2e exclude` reason.
   - `@spec openspec/changes/one-case-list/specs/case-management/spec.md`
-- [x] 2.3 BOTH dashboard Overdue widgets now carry the Overdue chip's filter:
-  the `overdue-cases` object-table's `viewAllRoute.query` and the
-  `kpi-overdue` stat tile's `route.query`, which counted OPEN overdue cases
-  and linked to EVERY overdue case, closed ones included. Values stay
-  strings, because a route query is a URL and `dashboardViewAllRoutes.spec.js`
-  holds that invariant for the whole dashboard; the equality is asserted over
-  the stringified chip filter.
+- [x] 2.3 The `kpi-overdue` stat tile carries the Overdue chip's filter. It
+  counted OPEN overdue cases and linked to EVERY overdue case, closed ones
+  included. Values stay strings, because a route query is a URL and
+  `dashboardViewAllRoutes.spec.js` holds that invariant for the whole
+  dashboard; the equality is asserted over the stringified chip filter.
+  - Revised on the merge with `dashboard-tiles`, which merged `overdue-cases`
+    and `deadline-alerts` into one `deadlines` table. That table's window is
+    WIDER than the Overdue chip (past due AND due within three days), so it
+    deliberately does NOT carry the chip's filter: landing on overdue-only
+    would show fewer cases than the table just listed. What it must carry is
+    its OWN filter, in the flat bracket grammar, and that is asserted.
   - The task's last clause is not true of the library and is not implemented:
     `CnIndexPage` does NOT activate the chip whose filter equals the query.
     `resolveInitialQuickFilterIndex` reads only the `default` flag, so a

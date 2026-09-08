@@ -3581,7 +3581,23 @@ OC.L10N.register(
         "Name of the person or company who asked for this case, denormalised when you pick them so the list and the card can render it without a second read. Stays hidden as a form field: the picker writes it, you do not type it.": "Naam van de persoon of het bedrijf dat deze zaak heeft aangevraagd, gedenormaliseerd op het moment dat je hem kiest, zodat de lijst en de kaart hem tonen zonder tweede uitvraag. Blijft verborgen als formulierveld: de kiezer schrijft hem, jij typt hem niet.",
         "The person or company who asked for this case. Pick them when you file the case, or when you edit it. A case that arrives through the ns#Case semantic handoff writes the same field, so there is one write path. Holds the UUID of the row that provides ns#Requester (ADR-048); initiatorType, initiatorSourceId and initiatorDisplayName are its display projection.": "De persoon of het bedrijf dat deze zaak heeft aangevraagd. Kies hem als je de zaak indient, of als je hem bewerkt. Een zaak die binnenkomt via de ns#Case semantische overdracht schrijft hetzelfde veld, dus er is één schrijfpad. Bevat de UUID van de rij die ns#Requester levert (ADR-048); initiatorType, initiatorSourceId en initiatorDisplayName zijn de weergaveprojectie.",
         "Protected": "Beschermd",
-        "Reveal": "Toon"
+        "Reveal": "Toon",
+        "No open tasks on this case": "Geen open taken op deze zaak",
+        "Other open tasks": "Andere open taken",
+        "No due date": "Geen einddatum",
+        "Task {title} finished": "Taak {title} afgerond",
+        "Deadlines": "Deadlines",
+        "Days left": "Dagen over",
+        "You have no open tasks": "Je hebt geen open taken",
+        "No deadlines in the next three days": "Geen deadlines in de komende drie dagen",
+        "Unclaimed": "Niet toegewezen",
+        "1 day left": "Nog 1 dag",
+        "{days} days left": "Nog {days} dagen",
+        "Extend the term of {count} cases": "Termijn van {count} zaken verlengen",
+        "New deadline": "Nieuwe deadline",
+        "Reason (applied to every case)": "Reden (geldt voor elke zaak)",
+        "Resume {count} cases": "{count} zaken hervatten",
+        "Suspend {count} cases": "{count} zaken opschorten"
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -12,7 +12,7 @@
             "brpPerson": {
                 "slug": "brpPerson",
                 "icon": "AccountOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:Person",
                 "x-zgw-equivalent": "Rol betrokkene natuurlijk_persoon",
                 "title": "BRP person (test register set)",
@@ -129,7 +129,7 @@
             "kvkCompany": {
                 "slug": "kvkCompany",
                 "icon": "Domain",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:Organization",
                 "x-zgw-equivalent": "Rol betrokkene niet_natuurlijk_persoon",
                 "title": "KvK company (test register set)",
