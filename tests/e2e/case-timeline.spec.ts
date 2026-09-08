@@ -105,6 +105,15 @@ test.describe('Case timeline — one history, in the sidebar', () => {
 		// The first row is the update this spec made, by admin. Asserting only
 		// that SOME row says update would pass on a list in any order, and
 		// newest-first is half of what row A05 asks for.
+		//
+		// ⚠️ This needs openregister#3540. `CnAuditTrailTab` asks for
+		// `_sort[created]=DESC` and the mapper drops it: the loop that builds
+		// the ORDER BY assigns its `ASC` default over the value it is about to
+		// test, so every trail comes back oldest-first however it was asked
+		// for. Measured on a running instance, same object with and without
+		// the parameter, identical ascending output both times. Nothing here
+		// can pass until that lands, and nothing here should change to
+		// accommodate it: bottom-up is the wrong order for a reader.
 		await expect(rows.first()).toContainText(/update/i)
 		await expect(rows.first()).toContainText('admin')
 
@@ -146,7 +155,15 @@ test.describe('Case timeline — one history, in the sidebar', () => {
 		// be waiting on a request. Assert that out loud: the baseline reported
 		// both filters stuck on Loading, and this is the assertion that would
 		// fail if they were.
-		await expect(actionSelect).not.toContainText(/Loading|Laden/i)
+		//
+		// Read the SPINNER, not the container's text. vue-select renders
+		// `<div class="vs__spinner">Loading...</div>` into every select and
+		// hides it with `display: none` until it is loading, and Playwright's
+		// `toContainText` reads `textContent`, which includes hidden nodes. So
+		// `not.toContainText(/Loading/)` failed on a filter that had rendered
+		// its four options and was waiting on nothing — measured on a running
+		// instance: `display: none`, height 0, text " Loading... ".
+		await expect(actionSelect.locator('.vs__spinner')).toBeHidden()
 
 		await option.click()
 
