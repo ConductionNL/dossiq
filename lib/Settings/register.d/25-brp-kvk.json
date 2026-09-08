@@ -15,6 +15,10 @@
                 "version": "1.0.0",
                 "x-schema-org": "schema:Person",
                 "x-zgw-equivalent": "Rol betrokkene natuurlijk_persoon",
+                "implements": [
+                    "https://openregister.app/ns#Requester"
+                ],
+                "logReads": true,
                 "title": "BRP person (test register set)",
                 "description": "Simplified BRP person register set following Haal Centraal BRP Personen bevragen field naming. NOT a registry connection: seeded exclusively with official fictitious personas from the BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock), which double as the BRP contract-lane fixtures. Live BRP adapters are owned by external-integrations-test-environments.",
                 "type": "object",
@@ -92,6 +96,12 @@
                             }
                         }
                     },
+                    "indicatieGeheim": {
+                        "type": "boolean",
+                        "default": false,
+                        "title": "Geheimhouding persoonsgegevens",
+                        "description": "The person asked for their data to be protected, mapped from Haal Centraal geheimhoudingPersoonsgegevens (any value other than 0 is true). Surfaces on the case as a Protected marker and masks the BSN until a handler reveals it. Optional and additive: a row without it is an unprotected person."
+                    },
                     "displayName": {
                         "type": "string",
                         "title": "Display name",
@@ -114,6 +124,9 @@
                 "version": "1.0.0",
                 "x-schema-org": "schema:Organization",
                 "x-zgw-equivalent": "Rol betrokkene niet_natuurlijk_persoon",
+                "implements": [
+                    "https://openregister.app/ns#Requester"
+                ],
                 "title": "KvK company (test register set)",
                 "description": "Simplified KvK company register set following KvK Zoeken API field naming. NOT a registry connection: seeded exclusively with the KvK-published fictitious test companies (developers.kvk.nl test environment), which double as the KvK contract-lane fixtures. Live KvK adapters are owned by external-integrations-test-environments.",
                 "type": "object",
@@ -256,8 +269,9 @@
                 "name": { "givenNames": "Jan", "namePrefix": "de", "surname": "Cuykelaer" },
                 "birth": { "date": "1977-12-10" },
                 "residence": { "street": "Thorbeckelaan", "houseNumber": 731, "postcode": "2564CJ", "city": "'s-Gravenhage" },
+                "indicatieGeheim": true,
                 "displayName": "Jan de Cuykelaer",
-                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock): geen echte persoon."
+                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock): geen echte persoon. Deze persona draagt geheimhoudingPersoonsgegevens 1 in de mock-testdata, en is daarom de beschermde persoon in deze seed."
             },
             {
                 "@self": { "register": "dossiq", "schema": "brpPerson", "slug": "brp-999999655" },

@@ -9,7 +9,10 @@
  * seeds (personen-mock personas, 11-proef valid; KvK-published fictitious
  * companies incl the four pinned numbers), provenance descriptions on
  * every row, and the additive initiator projection fields on the case
- * schema (union-merge guard: required arrays untouched).
+ * schema (union-merge guard: required arrays untouched). Also covers the
+ * requester provider declaration (`implements` on both party schemas, with
+ * `case.requester` still a semantic reference) and the secrecy indication
+ * (`indicatieGeheim` + `logReads` on brpPerson, one flagged seed persona).
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Settings
@@ -32,6 +35,17 @@ use PHPUnit\Framework\TestCase;
  */
 class BrpKvkRegisterSetsTest extends TestCase {
 	private const PINNED_KVK = ['69599084', '68750110', '69599068', '55344526'];
+
+	/**
+	 * The canonical semantic type a requester provider implements (ADR-048).
+	 */
+	private const REQUESTER_URI = 'https://openregister.app/ns#Requester';
+
+	/**
+	 * The seeded persona that carries `geheimhoudingPersoonsgegevens` in the
+	 * personen-mock test-data.json — the one row the seed may flag.
+	 */
+	private const PROTECTED_BSN = '999990792';
 
 	/**
 	 * @var array<string,mixed>
@@ -156,6 +170,111 @@ class BrpKvkRegisterSetsTest extends TestCase {
 	}//end testSeedCompaniesIncludePinnedFixtures()
 
 	/**
+	 * Both party schemas declare themselves providers of the canonical
+	 * ns#Requester semantic type, and `case.requester` keeps its
+	 * `referenceSemanticType` rather than becoming a `$ref` to one of them
+	 * (REQ-IS-4) — the semantic handoff writes through that reference.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/initiator-selection/spec.md
+	 */
+	public function testPartySchemasImplementRequester(): void {
+		$schemas = $this->fragment['components']['schemas'];
+
+		foreach (['brpPerson', 'kvkCompany'] as $slug) {
+			$this->assertContains(
+				self::REQUESTER_URI,
+				($schemas[$slug]['implements'] ?? []),
+				"{$slug} must declare itself a provider of ns#Requester"
+			);
+		}
+
+		$requester = $this->caseSchema()['properties']['requester'];
+		$this->assertSame(
+			self::REQUESTER_URI,
+			($requester['referenceSemanticType'] ?? ''),
+			'case.requester must keep its semantic reference'
+		);
+		$this->assertArrayNotHasKey(
+			'$ref',
+			$requester,
+			'case.requester must not be bound to one schema (the handoff writes through the semantic type)'
+		);
+
+	}//end testPartySchemasImplementRequester()
+
+	/**
+	 * brpPerson carries the optional secrecy indication defaulting to
+	 * false, and logs every read so a BSN reveal is recorded by
+	 * OpenRegister rather than by dossiq (REQ-BRP-003).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/brp-register/spec.md
+	 */
+	public function testBrpPersonCarriesIndicatieGeheim(): void {
+		$person = $this->fragment['components']['schemas']['brpPerson'];
+
+		$this->assertArrayHasKey('indicatieGeheim', $person['properties']);
+		$flag = $person['properties']['indicatieGeheim'];
+		$this->assertSame('boolean', $flag['type']);
+		$this->assertFalse($flag['default'], 'the indication defaults to false');
+		$this->assertNotEmpty($flag['title'] ?? '', 'ADR-011 title');
+		$this->assertNotEmpty($flag['description'] ?? '', 'ADR-011 description');
+		$this->assertNotContains(
+			'indicatieGeheim',
+			$person['required'],
+			'the property is additive: rows without it stay valid'
+		);
+
+		$this->assertTrue(
+			($person['logReads'] ?? false),
+			'brpPerson must log reads so the reveal is a platform-logged read'
+		);
+
+	}//end testBrpPersonCarriesIndicatieGeheim()
+
+	/**
+	 * Exactly one of the ten seeded personas is protected, and its BSN is
+	 * the personen-mock persona that carries
+	 * `geheimhoudingPersoonsgegevens` — taken from the fixture, never
+	 * invented (REQ-BRP-003).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/brp-register/spec.md
+	 */
+	public function testExactlyOneSeedPersonaIsProtected(): void {
+		$persons = $this->seedRows(schema: 'brpPerson');
+
+		$protected = array_values(array_filter(
+			$persons,
+			static fn (array $row): bool => ($row['indicatieGeheim'] ?? false) === true
+		));
+
+		$this->assertCount(1, $protected, 'exactly one seeded persona is protected');
+		$this->assertSame(self::PROTECTED_BSN, $protected[0]['citizenServiceNumber']);
+		$this->assertStringContainsString(
+			'geheimhoudingPersoonsgegevens',
+			$protected[0]['description'],
+			'the row must name the mock field it was taken from'
+		);
+
+		// Every other row is silent on the flag, so "unprotected" is the
+		// absence of the property rather than an explicit false — which is
+		// what makes the property additive for rows written before it.
+		foreach ($persons as $person) {
+			if ($person['citizenServiceNumber'] === self::PROTECTED_BSN) {
+				continue;
+			}
+
+			$this->assertArrayNotHasKey('indicatieGeheim', $person);
+		}
+
+	}//end testExactlyOneSeedPersonaIsProtected()
+
+	/**
 	 * The case schema carries the three optional initiator projection
 	 * fields with ADR-011 titles, initiatorType is the fixed enum, and
 	 * none of them landed in the required array (additive guarantee).
@@ -163,11 +282,7 @@ class BrpKvkRegisterSetsTest extends TestCase {
 	 * @return void
 	 */
 	public function testCaseSchemaInitiatorFieldsAreAdditive(): void {
-		$register = json_decode(
-			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'),
-			true
-		);
-		$case = $register['components']['schemas']['case'];
+		$case = $this->caseSchema();
 
 		foreach (['initiatorType', 'initiatorSourceId', 'initiatorDisplayName'] as $field) {
 			$this->assertArrayHasKey($field, $case['properties'], "case.{$field} must exist");
@@ -208,6 +323,21 @@ class BrpKvkRegisterSetsTest extends TestCase {
 		$this->assertNotEmpty($required, 'case.required must be intact in the monolith');
 
 	}//end testMergedRegisterSurvivesFragmentUnion()
+
+	/**
+	 * The `case` schema from the register monolith.
+	 *
+	 * @return array<string,mixed>
+	 */
+	private function caseSchema(): array {
+		$register = json_decode(
+			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'),
+			true
+		);
+
+		return $register['components']['schemas']['case'];
+
+	}//end caseSchema()
 
 	/**
 	 * Seed rows for a schema.

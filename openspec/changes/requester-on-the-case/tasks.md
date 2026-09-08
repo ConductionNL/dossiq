@@ -5,7 +5,7 @@ criteria under a task are plain bullets.
 
 ## 1. The register sets provide the requester
 
-- [ ] 1.1 `lib/Settings/register.d/25-brp-kvk.json`: add
+- [x] 1.1 `lib/Settings/register.d/25-brp-kvk.json`: add
   `implements: ["https://openregister.app/ns#Requester"]` to `brpPerson` and
   `kvkCompany`; add property `indicatieGeheim` (boolean, default false) and
   `logReads: true` to `brpPerson`; flag one seeded persona that carries
