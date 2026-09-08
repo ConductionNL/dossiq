@@ -544,10 +544,13 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 					headers: {
 						Accept: 'application/json',
 						requesttoken:
-							document.head?.dataset?.requesttoken ??
-							(window as unknown as { OC?: { requestToken?: string } }).OC
-								?.requestToken ??
-							'',
+							document.head?.dataset?.requesttoken
+							?? (
+								window as unknown as {
+									OC?: { requestToken?: string }
+								}
+							).OC?.requestToken
+							?? '',
 					},
 				},
 			).catch(() => null)

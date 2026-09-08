@@ -81,5 +81,11 @@ criteria under a task are plain bullets.
   `tests/e2e/helpers/fixtures.ts`; clean up with `cleanupRunObjects`.
 - [x] 4.2 Update `tests/e2e/case-detail-kpis-and-tabs.spec.ts`: the tab
   strip holds Parties and no Contacts.
-- [ ] 4.3 Run `composer check:strict`, `npm run check:manifest`, the hydra
+- [x] 4.3 Run `composer check:strict`, `npm run check:manifest`, the hydra
   gates and the unit suite locally; read the exit codes, not the summaries.
+  - exit 0 each: `npm run lint`, `npx vitest run` (428 tests),
+    `npm run check:manifest`, `node tests/l10n/check-l10n.js`,
+    `npm run check:schema-l10n`, `npm run format`, `composer check:strict`
+    (3073 tests, 56 skipped) and the hydra gates (81 of 81 applicable green;
+    gates 18 and 19 carry repo-wide advisory warnings that predate this
+    branch). Playwright was NOT run here: this working copy has no instance.
