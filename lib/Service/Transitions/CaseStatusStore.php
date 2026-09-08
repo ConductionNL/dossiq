@@ -51,13 +51,15 @@ class CaseStatusStore {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Bridge to OpenRegister + config.
-	 * @param LoggerInterface $logger The logger.
+	 * @param SettingsService  $settingsService  Bridge to OpenRegister + config.
+	 * @param StatusTypeLookup $statusTypeLookup Reads a statusType, by id or by name.
+	 * @param LoggerInterface  $logger           The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly StatusTypeLookup $statusTypeLookup,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -271,28 +273,7 @@ class CaseStatusStore {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function lookupStatusName(string $statusTypeId): string {
-		if ($statusTypeId === '') {
-			return '';
-		}
-
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return '';
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$statusTypeSchema = $this->settingsService->getConfigValue(key: 'status_type_schema');
-		if ($register === '' || $statusTypeSchema === '') {
-			return '';
-		}
-
-		try {
-			$statusType = $this->toArray(value: $objectService->find($statusTypeId, register: $register, schema: $statusTypeSchema));
-		} catch (\Throwable $e) {
-			return '';
-		}
-
-		return (string)($statusType['name'] ?? ($statusType['title'] ?? ''));
+		return $this->statusTypeLookup->nameFor(statusTypeId: $statusTypeId);
 	}//end lookupStatusName()
 
 	/**
@@ -308,89 +289,27 @@ class CaseStatusStore {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function assertStatusBelongsToCaseType(string $caseTypeId, string $statusTypeId): void {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('storage_unavailable');
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$caseTypeSchema = $this->settingsService->getConfigValue(key: 'case_type_schema');
-		$unconfigured = in_array('', [$register, $caseTypeSchema, $caseTypeId, $statusTypeId], true);
+		$unconfigured = in_array('', [$caseTypeId, $statusTypeId], true);
 		if ($unconfigured === true) {
 			throw new RuntimeException('case_type_not_configured');
 		}
 
-		try {
-			$caseType = $this->toArray(value: $objectService->find($caseTypeId, register: $register, schema: $caseTypeSchema));
-		} catch (\Throwable $e) {
-			throw new RuntimeException('case_type_not_found');
-		}
-
-		$statuses = $caseType['statusTypes'] ?? ($caseType['statusses'] ?? []);
-		if (is_array($statuses) === false) {
-			$statuses = [];
-		}
-
-		foreach ($statuses as $entry) {
-			$id = (string)$entry;
-			if (is_array($entry) === true) {
-				$id = (string)($entry['id'] ?? ($entry['uuid'] ?? ''));
-			}
-
-			if ($id === $statusTypeId) {
-				return;
-			}
-		}
-
-		// 🔴 THE LINK LIVES ON THE CHILD. `caseType` declares no `statusTypes`
-		// property at all — every `statusType` carries a `caseType`
-		// back-reference instead — so the list read above is empty on every
-		// real case type, and this method refused EVERY free-form move with
-		// `status_type_not_in_case_type`. The list is still read first, because
-		// a case type that does carry one (a test fixture, an imported bundle)
-		// is then answered without a second round trip.
-		if ($this->statusBelongsByBackReference(statusTypeId: $statusTypeId, caseTypeId: $caseTypeId) === true) {
-			return;
-		}
-
-		throw new RuntimeException('status_type_not_in_case_type');
-	}//end assertStatusBelongsToCaseType()
-
-	/**
-	 * Whether the statusType names this case type as its parent.
-	 *
-	 * @param string $statusTypeId StatusType UUID.
-	 * @param string $caseTypeId   CaseType UUID.
-	 *
-	 * @return bool True when the statusType belongs to the case type.
-	 *
-	 * @spec openspec/specs/status-transition-engine/spec.md
-	 */
-	private function statusBelongsByBackReference(string $statusTypeId, string $caseTypeId): bool {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null || $caseTypeId === '') {
-			return false;
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$statusTypeSchema = $this->settingsService->getConfigValue(key: 'status_type_schema');
-		if ($register === '' || $statusTypeSchema === '') {
-			return false;
-		}
-
-		try {
-			$statusType = $this->toArray(value: $objectService->find($statusTypeId, register: $register, schema: $statusTypeSchema));
-		} catch (\Throwable $e) {
-			return false;
-		}
-
-		$parent = ($statusType['caseType'] ?? '');
+		// 🔴 THE LINK LIVES ON THE CHILD. This asked the CASE TYPE for a
+		// `statusTypes` list, a property the schema does not declare — every
+		// `statusType` carries a `caseType` back-reference instead. The list was
+		// therefore empty on every real case type, the membership loop matched
+		// nothing, and an admin's free-form move was refused with
+		// `status_type_not_in_case_type` whatever it was asked to do. Reading
+		// the back-reference asks the question the schema can answer.
+		$parent = ($this->statusTypeLookup->rowFor(statusTypeId: $statusTypeId)['caseType'] ?? '');
 		if (is_array($parent) === true) {
 			$parent = ($parent['id'] ?? ($parent['uuid'] ?? ''));
 		}
 
-		return ((string)$parent === $caseTypeId);
-	}//end statusBelongsByBackReference()
+		if ((string)$parent !== $caseTypeId) {
+			throw new RuntimeException('status_type_not_in_case_type');
+		}
+	}//end assertStatusBelongsToCaseType()
 
 	/**
 	 * Coerce ObjectService results to an array.

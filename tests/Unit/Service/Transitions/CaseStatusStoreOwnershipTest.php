@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
+use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -95,25 +96,6 @@ class CaseStatusStoreOwnershipTest extends TestCase {
 	}//end testAStatusOfAnotherCaseTypeIsRefused()
 
 	/**
-	 * A case type that DOES carry a list is answered from it.
-	 *
-	 * @return void
-	 */
-	public function testAListOnTheCaseTypeIsStillHonoured(): void {
-		$store = $this->store(
-			[
-				'ct-1' => ['id' => 'ct-1', 'statusTypes' => ['st-1']],
-				// No back-reference: the list is the only thing that can answer.
-				'st-1' => ['id' => 'st-1'],
-			]
-		);
-
-		$store->assertStatusBelongsToCaseType(caseTypeId: 'ct-1', statusTypeId: 'st-1');
-
-		self::assertTrue(true);
-	}//end testAListOnTheCaseTypeIsStillHonoured()
-
-	/**
 	 * An unreadable status type refuses rather than passing.
 	 *
 	 * @return void
@@ -167,6 +149,6 @@ class CaseStatusStoreOwnershipTest extends TestCase {
 			][$key] ?? '')
 		);
 
-		return new CaseStatusStore($settings, new NullLogger());
+		return new CaseStatusStore($settings, new StatusTypeLookup($settings), new NullLogger());
 	}//end store()
 }//end class

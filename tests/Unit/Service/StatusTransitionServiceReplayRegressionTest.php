@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
+use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
 use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
 use OCA\Dossiq\Service\Transitions\StatusChecklist;
@@ -89,7 +90,7 @@ class StatusTransitionServiceReplayRegressionTest extends TestCase {
 			$this->createMock(WorkflowTemplateLoader::class),
 			$this->createMock(GuardRegistry::class),
 			$this->createMock(SideEffectDispatcher::class),
-			new CaseStatusStore($this->settingsService, $this->logger),
+			new CaseStatusStore($this->settingsService, new StatusTypeLookup($this->settingsService), $this->logger),
 			new TransitionAuthorizer($this->createMock(IGroupManager::class), $this->logger),
 			new TransitionSpecReader(),
 			$this->createMock(IUserSession::class),

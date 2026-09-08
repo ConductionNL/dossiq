@@ -163,14 +163,9 @@ async function completeTask(taskId: string): Promise<void> {
  * @param onCase       The case.
  * @param workflowStep The statusType that asked for them.
  */
-async function tasksOf(
-	onCase: string,
-	workflowStep: string,
-): Promise<any[]> {
+async function tasksOf(onCase: string, workflowStep: string): Promise<any[]> {
 	const rows = await listObjects(api, 'caseTask', { case: onCase })
-	return rows.filter(
-		(row) => String(row.workflowStepId ?? '') === workflowStep,
-	)
+	return rows.filter((row) => String(row.workflowStepId ?? '') === workflowStep)
 }
 
 /**
@@ -469,12 +464,7 @@ test.describe('A status brings its checklist with it', () => {
 			page.getByTestId(`case-transition-${T.guardStart}`),
 		).toBeEnabled({ timeout: 20_000 })
 
-		const moved = await executeTransition(
-			api,
-			token,
-			cases.freed,
-			T.guardStart,
-		)
+		const moved = await executeTransition(api, token, cases.freed, T.guardStart)
 		expect(moved.status, JSON.stringify(moved.body)).toBe(200)
 		expect(String((await showObject(api, 'case', cases.freed)).status)).toBe(
 			guarded.progress,

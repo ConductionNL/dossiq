@@ -54,5 +54,5 @@ criteria under a task are plain bullets.
   transition and on a free-form move, one set after a round trip, the
   disabled button with its reason, completing the task freeing the case,
   and an optional item not holding it. Assert on ids, not English labels.
-- [ ] 4.2 Run `composer check:strict`, `npm run check:manifest`, the hydra
+- [x] 4.2 Run `composer check:strict`, `npm run check:manifest`, the hydra
   gates and the unit suite locally; read the exit codes, not the summaries.

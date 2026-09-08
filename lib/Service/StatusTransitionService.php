@@ -57,6 +57,14 @@ use RuntimeException;
 /**
  * The status-transition engine.
  *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — the collaborators ARE the
+ *      decomposition: persistence, the group gate, the template dialects, the
+ *      closing result and the status checklist each live in their own class,
+ *      and folding any of them back in to satisfy the count would put the
+ *      concern back where it was split from.
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList) — same reason, counted at the
+ *      constructor: every parameter is one of those collaborators, injected.
+ *
  * @spec openspec/changes/status-transition-engine/tasks.md#T10
  */
 class StatusTransitionService {

@@ -30,6 +30,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
+use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
 use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
 use OCA\Dossiq\Service\Transitions\StatusChecklist;
@@ -116,7 +117,7 @@ class StatusTransitionServiceRouteSeamTest extends TestCase {
 		$this->templateLoader = $this->createMock(WorkflowTemplateLoader::class);
 
 		// Answers BY ID, not with one row for every read: the free-form path
-		// asks the case type whether it owns the target status, and a stub that
+		// asks the target STATUS which case type it belongs to, and a stub that
 		// hands back the case for that question refuses every move.
 		$objectService = $this->createMock(RouteSeamObjectServiceStub::class);
 		$objectService->method('find')->willReturnCallback(
@@ -127,11 +128,15 @@ class StatusTransitionServiceRouteSeamTest extends TestCase {
 					'status' => 'st-constatering',
 					'workflowTemplate' => 'spoed-1',
 				],
-				'ct-handhaving' => [
-					'id' => 'ct-handhaving',
-					'statusTypes' => ['st-constatering', 'st-behandeling'],
+				'ct-handhaving' => ['id' => 'ct-handhaving'],
+				// The status names its case type, which is the link the schema
+				// actually declares — see CaseStatusStoreOwnershipTest.
+				'st-behandeling' => [
+					'id' => 'st-behandeling',
+					'name' => 'In behandeling',
+					'isFinal' => false,
+					'caseType' => 'ct-handhaving',
 				],
-				'st-behandeling' => ['id' => 'st-behandeling', 'name' => 'In behandeling', 'isFinal' => false],
 				default => [],
 			}
 		);
@@ -161,7 +166,7 @@ class StatusTransitionServiceRouteSeamTest extends TestCase {
 			$this->templateLoader,
 			$this->guardRegistry,
 			$this->dispatcher,
-			new CaseStatusStore($this->settingsService, $logger),
+			new CaseStatusStore($this->settingsService, new StatusTypeLookup($this->settingsService), $logger),
 			new TransitionAuthorizer($this->groupManager, $logger),
 			new TransitionSpecReader(),
 			$this->createMock(IUserSession::class),
