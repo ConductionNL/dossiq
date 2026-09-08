@@ -69,17 +69,44 @@ function iconIsRegistered(name) {
 /**
  * Whether the registry declares a key of a given kind.
  *
+ * Plain string search, never a regex built from the key. Escaping a caller's
+ * string into a pattern is the incomplete-sanitisation shape CodeQL flags, and
+ * it buys nothing here: the entry is a fixed two-line shape in a file this
+ * test reads whole, so slicing forward from the key and looking for the `kind`
+ * line answers the same question with no pattern at all.
+ *
  * @param {string} key The registry key.
  * @param {string} kind The expected kind.
  * @return {boolean} True when the entry is declared with that kind.
  */
 function registryDeclares(key, kind) {
-	const quoted = /^[A-Za-z_$][\w$]*$/.test(key) ? key : `'${key}'`
-	const entry = new RegExp(
-		`\\n\\t${quoted.replace(/\$/g, '\\$')}: \\{[^}]*kind: '${kind}'`,
-	)
-	return entry.test(registrySource)
+	const isBareIdentifier = /^[A-Za-z_$][\w$]*$/.test(key)
+	const declaration = `\n\t${isBareIdentifier ? key : `'${key}'`}: {`
+	const at = registrySource.indexOf(declaration)
+	if (at === -1) {
+		return false
+	}
+	// The entry's own body only: stop at the closing brace so a NEIGHBOURING
+	// entry's kind can never answer for this one.
+	const body = registrySource.slice(at + declaration.length)
+	const end = body.indexOf('\n\t},')
+	return (end === -1 ? body : body.slice(0, end)).includes(`kind: '${kind}'`)
 }
+
+describe('registryDeclares', () => {
+	// The helper decides seven assertions below, so it is asserted to be
+	// capable of saying no. A predicate that answers true for everything is a
+	// predicate that guards nothing.
+	it('says no to a key the registry does not carry', () => {
+		expect(registryDeclares('NoSuchDialog', 'modal')).toBe(false)
+		expect(registryDeclares('no-such-widget', 'widget')).toBe(false)
+	})
+
+	it('says no when the kind is wrong', () => {
+		expect(registryDeclares('CaseCopyDialog', 'widget')).toBe(false)
+		expect(registryDeclares('case-related-planned', 'modal')).toBe(false)
+	})
+})
 
 describe('Copy case', () => {
 	it('is a header action on the case page', () => {
