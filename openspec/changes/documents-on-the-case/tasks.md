@@ -5,7 +5,7 @@ criteria under a task are plain bullets.
 
 ## 1. Schema properties
 
-- [ ] 1.1 `lib/Settings/register.d/70-document-zaakdossier.json` schema
+- [x] 1.1 `lib/Settings/register.d/70-document-zaakdossier.json` schema
   `informatieobject`: property `keywords` (`array` of `string`, `maxLength`
   64, title Keywords, `facetable: true`, `x-widget: tags`, optional) and
   property `direction` (`string`, enum `incoming`, `outgoing`, `internal`,
@@ -16,7 +16,7 @@ criteria under a task are plain bullets.
     both properties present and optional, `keywords` items are strings,
     `direction` enum and default, no `trefwoorden` key anywhere in the file
   - `@spec openspec/specs/document-zaakdossier/spec.md`
-- [ ] 1.2 `l10n/nl.json`: Keywords as Trefwoorden, Direction as Richting,
+- [x] 1.2 `l10n/nl.json`: Keywords as Trefwoorden, Direction as Richting,
   Incoming, Outgoing and Internal as Inkomend, Uitgaand and Intern.
   - `npm run check:l10n` exits 0 (or the fleet's Dutch-key check)
 

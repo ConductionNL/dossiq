@@ -14,7 +14,7 @@
       "informatieobject": {
         "slug": "informatieobject",
         "icon": "FileDocumentOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "Informatieobject",
         "description": "ZGW DRC document with full metadata, stored as a Nextcloud file plus a register object. schema.org DigitalDocument.",
         "x-schema-org": "DigitalDocument",
@@ -51,6 +51,22 @@
             "enum": ["draft", "final", "archived"]
           },
           "informatieobjecttype": {"type": "string", "title": "Information Object Type Reference", "facetable": true, "maxLength": 255, "description": "Reference to an informatieobjecttype from the catalog"},
+          "keywords": {
+            "type": "array",
+            "title": "Keywords",
+            "facetable": true,
+            "x-widget": "tags",
+            "description": "Free-text keywords you tag a document with, so you can find it back. A type is one per document and carries a confidentiality default; a keyword is many per document and carries nothing. The property name is English (decisions D13); the Dutch label lives in nl.json only.",
+            "items": {"type": "string", "maxLength": 64}
+          },
+          "direction": {
+            "type": "string",
+            "title": "Direction",
+            "facetable": true,
+            "default": "internal",
+            "description": "Whether the document came in, went out or stayed internal. Maps one to one onto zaaksysteem Richting and gzac richting.",
+            "enum": ["incoming", "outgoing", "internal"]
+          },
           "creatiedatum":         {"type": "string", "title": "Creation Date", "format": "date", "description": "Creation date (ISO 8601)"},
           "bronorganisatie":      {"type": "string", "title": "Source Organization", "maxLength": 64, "description": "RSIN of the source organization"},
           "taal":                 {"type": "string", "title": "Language", "maxLength": 3, "default": "nld", "description": "ISO 639-2/B language code"},
