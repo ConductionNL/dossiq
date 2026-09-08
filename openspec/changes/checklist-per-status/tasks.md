@@ -23,7 +23,7 @@ criteria under a task are plain bullets.
   - `tests/Unit/Service/Transitions/StatusChecklistTest.php` (new): two
     items yield two actions; an existing task by title skips its item; an
     absent or empty list yields nothing
-- [ ] 2.2 `lib/Service/Transitions/CreateTaskHandler.php`: write
+- [x] 2.2 `lib/Service/Transitions/CreateTaskHandler.php`: write
   `workflowStepId` from `actionConfig` when present.
   - extend `tests/Unit/Service/Transitions/CreateTaskHandlerTest.php` (new,
     the handler has none) with the saved object carrying the field
