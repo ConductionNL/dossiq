@@ -148,10 +148,24 @@ export default defineConfig({
 	// workers the same arithmetic gives ~24 min, which leaves real margin rather
 	// than just clearing the bar.
 	//
-	// THREE AND NOT FOUR. A `SQLSTATE[53200] out of shared memory /
-	// max_locks_per_transaction` was observed once under four concurrent workers.
-	// Four would give ~18 min; the extra six minutes buys distance from a failure
-	// mode that gets blamed on the tests rather than on postgres.
+	// FOUR, AND THAT NUMBER IS MEASURED RATHER THAN REASONED. This started at
+	// three, to keep distance from a `SQLSTATE[53200] out of shared memory /
+	// max_locks_per_transaction` that had been seen ONCE under four. Both counts
+	// were then run against the same tree:
+	//
+	//     workers   reached a verdict   passed   never ran   postgres locks
+	//        1            144             108       227          -
+	//        3            282             205        89          0
+	//        4            309             230        60          0
+	//
+	// Four reached more and the lock error did not reappear. One sighting against
+	// a clean run is a weak argument, so the measurement wins over the caution.
+	// Raise it further only the same way: behind a run, not behind arithmetic.
+	//
+	// ⚠️ FOUR WORKERS DOES NOT MAKE THE SUITE FIT, and nothing here should be read
+	// as claiming it does. It still truncates with ~60 tests unreached. The rest
+	// of the gap is the 44 failures, which cost ~32 of the 38 minutes because each
+	// is retried; that closes as they are fixed, not by adding workers.
 	//
 	// One locally, deliberately. A developer runs this against the SHARED dev
 	// instance, where three workers seeding and tearing down at once is both
@@ -162,7 +176,7 @@ export default defineConfig({
 	// `exp/e2e-four-workers`; it is worth keeping whatever that run concludes,
 	// because the next person to question this number should not have to edit a
 	// config to answer it.
-	workers: Number(process.env.E2E_WORKERS ?? (process.env.CI ? 3 : 1)),
+	workers: Number(process.env.E2E_WORKERS ?? (process.env.CI ? 4 : 1)),
 	retries: process.env.CI ? 1 : 0,
 	// Stop on our own clock, ahead of the shared job's `timeout-minutes: 45`.
 	//
