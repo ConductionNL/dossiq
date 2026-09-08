@@ -25,6 +25,7 @@
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
+const panels = require('./helpers/casePanels.js')
 
 const ROOT = path.resolve(__dirname, '../..')
 const REGISTRY_PATH = path.join(ROOT, 'src/registry.js')
@@ -76,6 +77,11 @@ function page(id) {
  * @return {object|undefined} The widget entry.
  */
 function widget(pageId, widgetId) {
+	// CaseDetail goes through the shared helper: since the strip came down
+	// from fourteen tabs to six, ten of its panels are SECTIONS of a tab, so a
+	// top-level `find` returns undefined for them and every assertion reads as
+	// "the widget was deleted".
+	if (pageId === 'CaseDetail') return panels.caseWidget(widgetId)
 	return page(pageId).config.widgets.find((entry) => entry.id === widgetId)
 }
 
@@ -147,12 +153,18 @@ describe('the case-tasks widget after the retype', () => {
 		expect(typeof pane.content.emptyText).toBe('string')
 	})
 
-	it('stays a child of the tabs strip and out of the layout', () => {
+	it('stays inside the tabs strip and out of the layout', () => {
 		const detail = page('CaseDetail')
-		const strip = widget('CaseDetail', 'case-panels')
-		expect(strip.content.tabs.some((tab) => tab.widgetId === 'case-tasks')).toBe(
-			true,
-		)
+
+		// It leads the Work tab, with the appointments under it. Plan item 3.18
+		// asked for the pane to move OUT of the strip into the right column
+		// instead; it did not, because that column already carries four cards
+		// and a fifth moves the complexity rather than removing it.
+		const where = panels.caseTabOf('case-tasks')
+		expect(where, 'case-tasks is not reachable from the strip').toBeTruthy()
+		expect(where.tab).toBe('Work')
+		expect(where.label).toBe('Tasks')
+
 		// A tab child in `layout` renders twice: once in the grid and once in
 		// its panel. That is why the retype does not move it.
 		expect(

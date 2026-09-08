@@ -74,10 +74,15 @@ async function openFirstCaseOrSkip(page) {
  * under the sidebar's name.
  *
  * That collision is gone, and so is the sidebar strip. Measured on 2026-09-02
- * against the deployed build: CaseDetail renders NINE tabs (Notes, Files,
+ * against the deployed build: CaseDetail rendered NINE tabs (Notes, Files,
  * Related cases, Sub-cases, Mail, Appointments, Decisions, Contacts,
- * Locations), `aside.app-sidebar` contains ZERO of them, and exactly ONE is
+ * Locations), `aside.app-sidebar` contained ZERO of them, and exactly ONE was
  * named "Related cases". The case-detail rewrite moved every tab into the body.
+ *
+ * The strip is SIX tabs now, and the one this file wants is `Related`, which
+ * holds the related-cases list and the sub-cases list as sections. So the tab
+ * name here is not the panel name any more, and the assertions below scope to
+ * the section rather than to the panel.
  *
  * So the sidebar scoping now matches nothing. It did not fail loudly: it fed a
  * `test.skip` that blamed a stale deployment, and all three tests in this file
@@ -87,9 +92,7 @@ async function openFirstCaseOrSkip(page) {
  * @return A locator for the Related cases tab.
  */
 function relatedCasesTab(page: Page) {
-	return page
-		.getByRole('tab', { name: /Related cases|Gerelateerde zaken/i })
-		.first()
+	return page.getByRole('tab', { name: 'Related', exact: true }).first()
 }
 
 test.describe('Related cases section (related-case-linking)', () => {
@@ -132,7 +135,13 @@ test.describe('Related cases section (related-case-linking)', () => {
 		// asynchronously and showed "Loading …" for about 6s when measured on
 		// 2026-09-03, so asserting visibility alone would pass against the
 		// spinner and prove nothing about the listing.
-		const panel = page.getByRole('tabpanel').first()
+		// The related-cases SECTION, not the panel. The Related tab carries the
+		// sub-cases list under this one since the strip came down to six tabs,
+		// and `not.toContainText(/Loading/i)` over the whole panel would be
+		// satisfied by whichever half resolved first.
+		const panel = page.locator(
+			'.cn-tabs-widget [role="tabpanel"]:not([hidden]) [data-testid="case-section-case-related"]',
+		)
 		await expect(panel).toBeVisible({ timeout: 20000 })
 		await expect(panel).not.toContainText(/Loading/i, { timeout: 30000 })
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')

@@ -329,11 +329,15 @@ test.describe('The case Actions menu', () => {
 		await page.reload()
 		const strip = page.locator('.cn-tabs-widget')
 		await expect(strip).toBeVisible({ timeout: 30_000 })
-		await strip
-			.getByRole('tab', { name: /Related cases|Gerelateerde zaken/ })
-			.click()
+		await strip.getByRole('tab', { name: 'Related', exact: true }).click()
 
-		const panel = strip.locator('[role="tabpanel"]:not([hidden])')
+		// The related-cases SECTION. The Related tab also holds the sub-cases
+		// list, and the planned follow-up is a row of the FORMER: asserting on
+		// the whole panel would not tell a planned row from a sub-case that
+		// happened to share the title.
+		const panel = strip.locator(
+			'[role="tabpanel"]:not([hidden]) [data-testid="case-section-case-related"]',
+		)
 		await expect(panel).toContainText(plannedTitle, { timeout: 30_000 })
 		await expect(panel).toContainText(due, { timeout: 30_000 })
 

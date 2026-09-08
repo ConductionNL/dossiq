@@ -35,21 +35,27 @@ import {
 } from './helpers/fixtures.ts'
 import { dismissSupportDialog } from './helpers/nav.ts'
 
-/** The tab order placement row A33 asks for, leading the strip. */
+/**
+ * The tab order placement row A33 asks for, which is now the WHOLE strip.
+ *
+ * These are exact strings rather than locale alternatives because a tab label
+ * is not translated: `CnTabsWidget` reads `content.tabs[].label` out of the
+ * manifest verbatim, with no `t()` on the path.
+ *
+ * Row A33 asked for six tabs and the strip carried fourteen. The five "work
+ * tabs" and the "conditional four" that used to be tracked separately here are
+ * one list now: there is nothing left after the work tabs to close the strip
+ * with. Sub-cases, Locations, Appointments and Decisions are not gone from the
+ * page. Decisions moved to the sidebar tab that already carried it; the other
+ * three became sections of Related, Objects and locations, and Work.
+ */
 const WORK_TABS = [
-	/Data|Gegevens/,
-	/Documents|Documenten/,
-	/Parties|Betrokkenen/,
-	/Tasks|Taken/,
-	/Communication|Communicatie/,
-]
-
-/** The four conditional tabs, which close the strip until `visibleIf` lands. */
-const CONDITIONAL_TABS = [
-	/Sub-cases|Deelzaken/,
-	/Locations|Locaties/,
-	/Appointments|Afspraken/,
-	/Decisions|Besluiten|Besluitvorming/,
+	'Data',
+	'Documents',
+	'People',
+	'Work',
+	'Related',
+	'Objects and locations',
 ]
 
 test.describe('Case header — identity, breadcrumb and tab order', () => {
@@ -249,7 +255,7 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 	})
 
 	// @e2e openspec/changes/case-header/specs/case-dashboard-view/spec.md#the-five-work-tabs-come-first-in-order
-	test('the work tabs lead the strip and the conditional four close it', async ({
+	test('the work tabs ARE the strip, in order, with nothing after them', async ({
 		page,
 	}) => {
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
@@ -257,30 +263,15 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 
 		const strip = page.locator('.cn-tabs-widget')
 		await expect(strip).toBeVisible({ timeout: 30_000 })
-		const labels = await strip.getByRole('tab').allInnerTexts()
-
-		for (const [index, pattern] of WORK_TABS.entries()) {
-			expect(labels[index], `tabs: ${labels.join(' | ')}`).toMatch(pattern)
-		}
-
-		// The conditional tabs close the strip. Asserted as "after every work
-		// tab" rather than "the last four", because `custom-objects-on-the-case`
-		// added an Objects tab of the same kind after REQ-CDV-16 was written,
-		// and a slice of a fixed length would fail on a correct strip.
-		const lastWork = Math.max(
-			...WORK_TABS.map((pattern) => labels.findIndex((l) => pattern.test(l))),
+		const labels = (await strip.getByRole('tab').allInnerTexts()).map((l) =>
+			l.trim(),
 		)
-		for (const pattern of CONDITIONAL_TABS) {
-			const at = labels.findIndex((label) => pattern.test(label))
-			expect(
-				at,
-				`${pattern} is absent: ${labels.join(' | ')}`,
-			).toBeGreaterThan(-1)
-			expect(
-				at,
-				`${pattern} sits among the work tabs: ${labels.join(' | ')}`,
-			).toBeGreaterThan(lastWork)
-		}
+
+		// An exact list, not a prefix. The old shape of this test asserted the
+		// work tabs came FIRST and the conditional four came after them, which
+		// said nothing at all about the eight tabs that could sit between them,
+		// and eight is roughly what accumulated.
+		expect(labels).toEqual(WORK_TABS)
 	})
 
 	// @e2e openspec/changes/case-header/specs/case-dashboard-view/spec.md#the-work-tabs-fit-a-laptop-screen
