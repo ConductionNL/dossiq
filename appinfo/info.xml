@@ -150,6 +150,11 @@ Vrij en open source onder de EUPL-1.2-licentie.
         <job>OCA\Dossiq\BackgroundJob\SentimentAnalysisJob</job>
         <job>OCA\Dossiq\BackgroundJob\SpecialistBeschikbaarheidRefreshJob</job>
         <job>OCA\Dossiq\BackgroundJob\BottleneckDetectionJob</job>
+        <!-- Single-shot is enforced here, not in the cron expression: five
+             cron fields cannot say "once", so a planned follow-up is
+             switched off after it has fired rather than left to come round
+             again next year. -->
+        <job>OCA\Dossiq\BackgroundJob\PlannedFollowUpSweepJob</job>
     </background-jobs>
 
     <repair-steps>

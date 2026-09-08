@@ -1231,7 +1231,7 @@
 				],
 				"_breadcrumbsNote": "Placement row A01: the way back to the list without the menu. This is the page-level declaration the host will read once CnDetailPage grows a `breadcrumbs` key; 2.41.0 has none, and the page schema is open on `config`, so the key validates and renders nothing on its own. The `case-header` widget renders the trail through CnBreadcrumbs from a copy of this array on its own `props`, and a unit test asserts the two are identical, so the day the host reads this key the widget can be emptied without the trail moving. The last crumb carries a `field` and no `route`: CnBreadcrumbs renders the final crumb unlinked with `aria-current=\"page\"` regardless, so a target on it would be dead config.",
 				"_subtitleNote": "Placement row A01: the case page did not say which case you are on. `identifier` is the case number, and it reads under the title. The line the row asks for is identifier, case type and assignee together, which needs a templated `subtitle` on CnDetailPage; 2.41.0 has `subtitleField` only, so the number alone is the interim and case-header task 1.2 tracks the rest.",
-				"_note": "CASE archetype (unified zaak) — the flagship record and the ADR-062 reference page (the cell is the budget: every widget fills its gridHeight exactly, no inner scrollbars, no reserved voids). The lead row pairs the field-scoped 'Core case data' widget (include: identity/ownership fields) with a right column of KPI stats-block (open tasks / documents / decisions / sub-cases, replacing the deprecated header summaryAggregates) over the Related panel. Row two pairs the 'Process' data widget (include: status/procedure/workflow fields) with Initiator, Contacts and Notes sized to their small content. FK-scoped child collections (task.case, caseDocument.case, decision.case, location.case) fit their rows to their cells with View-all/+N-more footers. Files and Calendar leaves close the page. The case's own state leads the page: a full-width transition strip (case-transitions) over the KPI row, whose third cell is now the stepper (case-steps) rather than the milestone percentage. `lifecycleActions` is GONE -- it declared `{field: status}` and rendered nothing, because OpenRegister answers no actions for a $ref status field. Suspend, Resume, Extend term and Reopen are `open-modal` header actions onto one reason dialog (CaseLifecycleActionDialog), which reads /lifecycle before it posts. Only Reopen gates exactly as the spec words it, because `isFinalStatus` is on the case record: an action's local `visibleWhen` dot-paths into the loaded record, `suspensionAllowed` and `extensionAllowed` live on the case TYPE, and OpenRegister's object list IGNORES an `id` filter (it answers with the whole table), so a `source` predicate on the type would compare a different case type's flag and be wrong without saying so. Suspension is derived from the case's `activity` journal rather than a flag, so no field can gate Resume either -- the transitions widget puts Resume in front of the handler when /lifecycle says the case is actually suspended. Audit history IS the single sidebar history tab: the `version-history` tab is gone from this page (change case-timeline, row A05), and the body strip carries no Timeline entry, so one log lives in one place.",
+				"_note": "CASE archetype (unified zaak) — the flagship record and the ADR-062 reference page (the cell is the budget: every widget fills its gridHeight exactly, no inner scrollbars, no reserved voids). The lead row pairs the field-scoped 'Core case data' widget (include: identity/ownership fields) with a right column of KPI stats-block (open tasks / documents / decisions / sub-cases, replacing the deprecated header summaryAggregates) over the Related panel. Row two pairs the 'Process' data widget (include: status/procedure/workflow fields) with Initiator, Contacts and Notes sized to their small content. FK-scoped child collections (task.case, caseDocument.case, decision.case, location.case) fit their rows to their cells with View-all/+N-more footers. Files and Calendar leaves close the page. The case's own state leads the page: a full-width transition strip (case-transitions) over the KPI row, whose third cell is now the stepper (case-steps) rather than the milestone percentage. `lifecycleActions` is GONE -- it declared `{field: status}` and rendered nothing, because OpenRegister answers no actions for a $ref status field. Suspend, Resume, Extend term and Reopen are `open-modal` header actions onto one reason dialog (CaseLifecycleActionDialog), which reads /lifecycle before it posts. Only Reopen gates exactly as the spec words it, because `isFinalStatus` is on the case record: an action's local `visibleWhen` dot-paths into the loaded record, `suspensionAllowed` and `extensionAllowed` live on the case TYPE, and OpenRegister's object list IGNORES an `id` filter (it answers with the whole table), so a `source` predicate on the type would compare a different case type's flag and be wrong without saying so. Suspension is derived from the case's `activity` journal rather than a flag, so no field can gate Resume either -- the transitions widget puts Resume in front of the handler when /lifecycle says the case is actually suspended. Audit history IS the single sidebar history tab: the `version-history` tab is gone from this page (change case-timeline, row A05), and the body strip carries no Timeline entry, so one log lives in one place. Copy case, Start and Plan follow-up (case-actions-menu, rows A24 to A26) are three more `open-modal` header actions, and NOT the `handler` type the design named: a handler action resolves `action.handler` against `effectiveManifest.actions`, which is a JSON map in this file and so cannot hold a function, and dossiq declares no such key, so the entry would warn to the console and do nothing when clicked. The id is `copy-case` and not `copy` because `copy` is one of the five reserved ids CnActionsBar drops at render time to avoid shadowing its built-in. None of the three passes props: open-modal forwards props verbatim without resolving tokens, so `@objectId` would arrive as that literal string, and each dialog reads the route instead. Start gates on `hasStartableFlows`, a materialised boolean on the CASE, exactly as `case-reopen` gates on `isFinalStatus` and for the same reason: a local visibleWhen dot-paths into the loaded case record, `startableFlows` lives on the case TYPE, and OpenRegister ignores an `id` filter so a `source` predicate on the type would compare a different case type's list and be wrong without saying so. An `endpoint` predicate cannot help either, because the URL is fetched verbatim with no token resolution and so cannot name this case.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
 					{
@@ -1328,9 +1328,10 @@
 					},
 					{
 						"id": "case-related",
-						"type": "related",
+						"type": "case-related-planned",
 						"title": "Case type, parent & related cases",
-						"icon": "LinkVariant"
+						"icon": "LinkVariant",
+						"_note": "The Related cases tab, plus the follow-ups that do not exist yet (case-actions-menu row A26). A planned follow-up is a SCHEDULED FLOW, not a case, and the `related` widget reads related OBJECTS, so it cannot list one; CasePlannedWidget wraps the library widget and hands it the planned rows as an extraSections group, leaving the built-in related content exactly as it was. The id, the title, the icon and the tab entry are all unchanged. TYPE is the registry key and NOT `custom`, because this is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per LAYOUT grid item only, a tab child is deliberately absent from layout, and CnTabsWidget resolves a tab child through cnRegistry[widget.type] and renders NOTHING at all when no key answers. Retyped back to `related` and this file deleted the day OpenRegister\u0027s related widget can include scheduled flows by subject (tasks 3.3)."
 					},
 					{
 						"id": "initiator",
@@ -2048,6 +2049,32 @@
 							"op": "eq",
 							"value": true
 						}
+					},
+					{
+						"id": "copy-case",
+						"type": "open-modal",
+						"label": "Copy case",
+						"icon": "ContentCopy",
+						"target": "CaseCopyDialog"
+					},
+					{
+						"id": "start-flow",
+						"type": "open-modal",
+						"label": "Start",
+						"icon": "Sitemap",
+						"target": "CaseStartFlowDialog",
+						"visibleWhen": {
+							"field": "hasStartableFlows",
+							"op": "eq",
+							"value": true
+						}
+					},
+					{
+						"id": "plan-follow-up",
+						"type": "open-modal",
+						"label": "Plan follow-up",
+						"icon": "CalendarClock",
+						"target": "CasePlanFollowUpDialog"
 					}
 				]
 			},
