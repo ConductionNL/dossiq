@@ -48,6 +48,12 @@ import BesluitvormingLeafTab from './components/tabs/BesluitvormingLeafTab.vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
+// The inline task pane on the case page (task-on-the-case A06).
+// @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
+// The way back from a task to its case (task-on-the-case).
+// @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+import TaskCaseLink from './components/tasks/TaskCaseLink.vue'
 // Generate document — the CaseDetail header action's template picker.
 // @spec openspec/specs/beschikking-generatie/spec.md
 import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
@@ -270,6 +276,43 @@ const registry = {
 		kind: 'widget',
 		component: DossierTab,
 		_note: 'CaseDetail Documents tab: the zaakinformatieobject rows of this case with title, type, status, direction, date and author, a drop zone that writes an informatieobject plus its join through the metadata dialog, and the version panel per row. Registered as a widget TYPE and not as a `type: "custom"` widget on purpose: a custom widget resolves through the page\'s `widget-<id>` slot, which CnDetailPage renders only for layout grid items, so inside a tab panel it renders nothing and reports nothing. CnTabsWidget dispatches its children through CnDetailWidgetHost, which resolves a renderer by widget TYPE against this registry (REQ-MVR-005), and binds `objectId` from the route so the tab knows its case on the first frame.',
+	},
+
+	// --- The inline task pane on the case page (task-on-the-case A06). ---
+	//
+	// KEYED BY THE WIDGET'S `type`, NOT BY A COMPONENT NAME, because
+	// `case-tasks` is a child of the `case-panels` tabs widget. The change
+	// design called for `type: "custom"` behind the page slot
+	// `widget-case-tasks`, the way TaskDetail resolves `widget-task-waiting-case`
+	// below. That path exists only for a widget in the page's `layout`:
+	// CnDetailPage renders one `widget-<id>` slot per GRID item, and a tab child
+	// is deliberately absent from `layout` (a layout entry renders it twice).
+	// CnTabsWidget renders its children through CnDetailWidgetHost, which picks a
+	// renderer from `cnRegistry[widget.type]` and, failing that, renders NOTHING
+	// and logs nothing. So the registry key is the type the manifest names, which
+	// is the injection CnAppRoot provides and the shape the library documents for
+	// an app's own widget types.
+	// @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+	'case-task-pane': {
+		// @custom-widget-ratchet exclude blocked: nextcloud-vue 2.41.1 CnObjectListWidget has no rowActions and no lifecycle column, so a lifecycle button cannot be put inside a row from the manifest; the widget returns to type object-list and this entry is deleted the moment the library ships one (https://github.com/ConductionNL/nextcloud-vue/issues/1033)
+		kind: 'widget',
+		component: CaseTaskPane,
+		_note: 'CaseDetail Tasks tab: the first open task of the case with the lifecycle buttons OpenRegister answers for it, a toast on completion and the next open task in its place. No built-in fits: CnObjectListWidget accepts register/schema/filter/sort/limit/columns/rowRoute/prompt/emptyText/viewAllRoute/viewAllQuery and nothing else, has no rowActions and no per-row slot, and a config key it does not declare is dropped in silence. Interim by construction, and the e2e asserts on the tab and the button labels rather than on this component so it survives the swap back.',
+	},
+
+	// --- The way back from a task to its case (task-on-the-case). ---
+	//
+	// Keyed by COMPONENT NAME, unlike `case-task-pane` above, because
+	// `task-case-link` sits in TaskDetail's `layout`: CnDetailPage renders a
+	// `widget-<id>` slot for every grid item, and `page.slots` maps that slot
+	// name to this key. The pane could not use that path because it is a tab
+	// child, which has no grid item and therefore no slot.
+	// @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+	TaskCaseLink: {
+		// @custom-widget-ratchet exclude a cross-object link rendered by TITLE: `case` is a $ref and no built-in resolves a reference to its label, so a data or object-list widget shows the case uuid and reads as broken data (placement A35, the same gap the parties Role column carries); it also has to render NOTHING for a task with no case, which no built-in widget can do
+		kind: 'widget',
+		component: TaskCaseLink,
+		_note: 'TaskDetail section above the Data widget: names the case this task is on, by title, and links to it. Renders for EVERY task with a case, unlike TaskWaitingCaseSection, which renders only for a task holding a flow run and would say something untrue about an ordinary to-do. A task without a case renders nothing, and its layout entry carries showTitle:false so there is no empty box either.',
 	},
 
 	// --- Case assistant via Hermiq (case-assistant-via-hermiq). ---

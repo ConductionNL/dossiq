@@ -44,11 +44,17 @@ export function waitingCaseIdFrom(task) {
 /**
  * Read a case reference in either of the shapes the store returns.
  *
+ * Exported since task-on-the-case: TaskCaseLink asks the same question of
+ * the same field for a different reason (which case is this task ON, rather
+ * than which run is waiting on me), and a second reader of `$ref` shapes is
+ * exactly the copy that drifts.
+ *
  * @param {string|object|null|undefined} ref The task's case reference.
  * @return {string|null} The case id, or null when unreadable.
  * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+ * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
  */
-function caseIdFrom(ref) {
+export function caseIdFrom(ref) {
 	if (typeof ref === 'string') {
 		const id = ref.trim()
 		return id === '' ? null : id
