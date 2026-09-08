@@ -318,6 +318,19 @@ export function trackDossiqErrors(page: Page): string[] {
  * `role="tabpanel"` too and hide with `aria-hidden` rather than `hidden`, so an
  * unscoped query matches a hidden sidebar panel as readily as this one.
  *
+ * ⚠️ And scoped to `.cn-tabs__content`'s DIRECT children, because a panel can
+ * contain another `role="tabpanel"`. `Related cases` does: the related-objects
+ * widget renders its own `<section role="tabpanel">` inside the strip's panel,
+ * so a descendant query matches two elements and every assertion on it fails
+ * as a strict mode violation rather than as anything about the tab. Measured
+ * on a running instance: the open panel is `.cn-tab`, its parent is
+ * `.cn-tabs__content`, and the strip is that parent's parent.
+ *
+ * Six other specs carry their own copy of the descendant query and pass, since
+ * their tabs hold no nested panel. They should adopt this rather than grow a
+ * seventh: `case-communication`, `case-objects`, `case-documents`,
+ * `case-parties`, `case-task-pane` and `checklist-per-status`.
+ *
  * @param page The Playwright page, already on a case detail route.
  * @param tab  The tab to open, by its accessible name.
  *
@@ -328,7 +341,9 @@ export async function openCasePanel(page: Page, tab: RegExp): Promise<Locator> {
 	await expect(strip).toBeVisible({ timeout: 30_000 })
 	await strip.getByRole('tab', { name: tab }).click()
 
-	const panel = strip.locator('[role="tabpanel"]:not([hidden])')
+	const panel = strip.locator(
+		'.cn-tabs__content > [role="tabpanel"]:not([hidden])',
+	)
 	await expect(panel).toBeVisible({ timeout: 20_000 })
 	return panel
 }
