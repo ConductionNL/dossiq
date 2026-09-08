@@ -484,9 +484,13 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		const strip = page.locator('.cn-tabs-widget')
 		await expect(strip).toBeVisible({ timeout: 30_000 })
 
+		// The strip's OWN panels. A panel can contain another `role="tabpanel"`
+		// — the related-objects widget renders a `<section>` with that role
+		// inside its panel — and a descendant query counts that as a second
+		// mounted panel.
 		const mounted = () =>
 			strip
-				.locator('[role="tabpanel"]')
+				.locator('.cn-tabs__content > [role="tabpanel"]')
 				.evaluateAll(
 					(panels) => panels.filter((p) => p.children.length > 0).length,
 				)
@@ -496,9 +500,12 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		await strip.getByRole('tab', { name: /Sub-cases|Deelzaken/ }).click()
 		await expect.poll(mounted, { timeout: 15_000 }).toBe(2)
 
-		// Switching back must not tear the first panel down, or every switch
-		// refetches.
-		await strip.getByRole('tab', { name: /Notes|Notities/ }).click()
+		// Switching BACK must not tear the first panel down, or every switch
+		// refetches. Back to the tab that was open on load, which is what this
+		// asserts: opening a THIRD tab would leave three panels mounted, since
+		// staying mounted is the property under test, and the count would be
+		// right while the scenario said nothing.
+		await strip.getByRole('tab', { name: /^(Data|Gegevens)$/ }).click()
 		await expect.poll(mounted, { timeout: 15_000 }).toBe(2)
 	})
 
