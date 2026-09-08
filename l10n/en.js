@@ -3539,6 +3539,7 @@ OC.L10N.register(
         "Delegate until": "Delegate until",
         "No parties on this case yet": "No parties on this case yet",
         "Parties": "Parties",
+        "Mine": "Mine",
         "Add party": "Add party",
         "Party added to the case.": "Party added to the case.",
         "The team handling this case. Assignment, not permission: a case can carry a team, a personal assignee, or both.": "The team handling this case. Assignment, not permission: a case can carry a team, a personal assignee, or both.",

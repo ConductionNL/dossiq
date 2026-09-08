@@ -1165,6 +1165,21 @@
 						"type": "handler"
 					}
 				],
+				"_teamColumnNote": "`assignedGroup` is a $ref to an organisatieRol and CnIndexPage renders a plain key raw, so the column would show a uuid. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded row's `roleName`, the same shape the Tasks index uses for `case.title`; the server cannot sort on a nested field, so the column is not sortable. The Team FACET in the sidebar comes from `facetable: true` on the property itself and is the interim for the blocked Team chip.",
+				"extend": ["assignedGroup"],
+				"quickFilters": [
+					{
+						"label": "All",
+						"filter": {},
+						"default": true
+					},
+					{
+						"label": "Mine",
+						"filter": {
+							"assignee": "@me"
+						}
+					}
+				],
 				"columns": [
 					"identifier",
 					"title",
@@ -1179,6 +1194,11 @@
 						"formatter": "statusTypeName"
 					},
 					"assignee",
+					{
+						"key": "assignedGroup.roleName",
+						"label": "Team",
+						"sortable": false
+					},
 					"deadline",
 					{
 						"key": "id",
@@ -2260,11 +2280,16 @@
 					}
 				],
 				"_columnsNote": "`case` is a $ref to the case and CnIndexPage renders a plain key raw, so the column showed truncated uuids. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded object's title; the server cannot sort on a nested field, so the column is not sortable.",
-				"extend": ["case"],
+				"extend": ["case", "assigneeGroup"],
+				"quickFilters": [
+					{ "label": "All", "filter": {}, "default": true },
+					{ "label": "Mine", "filter": { "assignee": "@me" } }
+				],
 				"columns": [
 					"title",
 					{ "key": "case.title", "label": "Case", "sortable": false },
 					"assignee",
+					{ "key": "assigneeGroup.roleName", "label": "Team", "sortable": false },
 					"status",
 					"dueDate"
 				],

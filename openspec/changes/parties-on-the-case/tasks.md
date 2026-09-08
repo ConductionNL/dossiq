@@ -55,9 +55,15 @@ criteria under a task are plain bullets.
   `assignedGroup` on two demo cases.
   - unit test in `tests/Unit/Settings/MandaatMatrixSeedTest.php`: the two
     rows exist with `roleName` and `department`
-- [ ] 3.3 `src/manifest.json` pages `Cases` and `Tasks`: a Team column
+- [x] 3.3 `src/manifest.json` pages `Cases` and `Tasks`: a Team column
   (`assignedGroup` and `assigneeGroup`) after `assignee`; `quickFilters`
   with Mine (`assignee: @me`).
+  - the column key is `<property>.roleName` with the property in `extend`:
+    a bare $ref column renders a uuid in every row, the way the Tasks index
+    already learned with `case.title`
+  - an All chip marked `default` ships beside Mine. CnIndexPage activates the
+    first chip (or the one marked default) on mount, so Mine alone would open
+    both indexes filtered to the signed-in handler's own work
   - `npm run check:manifest` exits 0
 - [ ] 3.4 [blocked: nextcloud-vue a `quickFilters` value that resolves to the
   signed-in user's `organisatieRol` ids from `medewerkerRolToewijzing`] Add

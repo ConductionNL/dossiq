@@ -213,3 +213,61 @@ describe('the Add party action', () => {
 		).toBeUndefined()
 	})
 })
+
+describe('the Team column and the Mine chip', () => {
+	const INDEXES = [
+		['Cases', 'case', 'assignedGroup'],
+		['Tasks', 'caseTask', 'assigneeGroup'],
+	]
+
+	it.each(INDEXES)(
+		'%s shows a Team column reading the expanded team name',
+		(id, slug, property) => {
+			const config = page(id).config
+			const keys = config.columns.map((column) =>
+				typeof column === 'string' ? column : column.key,
+			)
+
+			// The nested key, not the bare property: `assignedGroup` is a $ref
+			// and CnIndexPage renders a plain key raw, so a bare column would
+			// show a uuid in every row and look like data rather than an error.
+			expect(keys).toContain(`${property}.roleName`)
+			expect(
+				config.extend,
+				'a nested column key only resolves when OpenRegister expands the reference on the fetch',
+			).toContain(property)
+			// Beside the personal assignee, never instead of it.
+			expect(keys).toContain('assignee')
+			expect(keys.indexOf(`${property}.roleName`)).toBeGreaterThan(
+				keys.indexOf('assignee'),
+			)
+		},
+	)
+
+	it.each(INDEXES)(
+		'%s can be narrowed to a team by facet',
+		(id, slug, property) => {
+			// The Team quick-filter chip is blocked on the platform resolving the
+			// signed-in handler's organisatieRol rows, so the sidebar facet is the
+			// only way to pick a team. A facet is opt-in per property.
+			expect(page(id).config.sidebar.enabled).toBe(true)
+			expect(schema(slug).properties[property].facetable).toBe(true)
+		},
+	)
+
+	it.each(INDEXES)('%s opens on everything and offers Mine', (id) => {
+		const chips = page(id).config.quickFilters
+
+		expect(chips).toBeTruthy()
+		const mine = chips.find((chip) => chip.label === 'Mine')
+		expect(mine).toBeTruthy()
+		expect(mine.filter).toEqual({ assignee: '@me' })
+
+		// The chip bar activates its first tab, or the one marked `default`,
+		// on mount. Without an all-rows chip marked default, the index would
+		// silently open showing only the signed-in handler's own work —
+		// a filter nobody asked for and no empty state explains.
+		const initial = chips.find((chip) => chip.default === true) || chips[0]
+		expect(initial.filter, 'the index must open unfiltered').toEqual({})
+	})
+})

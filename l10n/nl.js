@@ -3539,6 +3539,7 @@ OC.L10N.register(
         "Delegate until": "Gemachtigd tot",
         "No parties on this case yet": "Nog geen betrokkenen bij deze zaak",
         "Parties": "Betrokkenen",
+        "Mine": "Van mij",
         "Add party": "Betrokkene toevoegen",
         "Party added to the case.": "Betrokkene toegevoegd aan de zaak.",
         "The team handling this case. Assignment, not permission: a case can carry a team, a personal assignee, or both.": "Het team dat deze zaak behandelt. Toewijzing, geen rechten: een zaak kan een team hebben, een behandelaar, of allebei.",
