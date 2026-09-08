@@ -292,6 +292,72 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 	})
 
 	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	test('a completed wizard stays closed on a fresh browser profile', async ({
+		page,
+	}) => {
+		// The reopen defect, end to end: the wizard came back at step 5 (the
+		// optional dwangsom secret) on every new browser profile, because the
+		// server kept reporting that step outstanding and CnAppRoot's
+		// dismissal is only a localStorage key. A fresh profile is simulated
+		// by clearing that key and reloading, which is what every Playwright
+		// context and every new device does for real.
+		await page.goto('/index.php/apps/dossiq')
+		// status() writes the completion marker on its first read; the second
+		// read is the one that answers for a completed wizard.
+		await readSetupStatus(page)
+		const status = await readSetupStatus(page)
+		expect(status).not.toBeNull()
+		test.skip(
+			status.completed !== true,
+			'required steps outstanding on this instance: the wizard gates, which is not the reopen defect',
+		)
+
+		await page.evaluate(() => {
+			try {
+				for (let v = 0; v <= 20; v++) {
+					window.localStorage.removeItem(
+						`cn-setup-wizard-dismissed:dossiq:${v}`,
+					)
+				}
+			} catch {
+				/* blocked storage */
+			}
+		})
+		await page.reload()
+		await expect(page.locator('[data-testid="cn-app-root"]')).toBeAttached({
+			timeout: 30000,
+		})
+		await expect(page.locator('main')).toBeAttached()
+
+		// The server side of the fix: the optional secret step is settled.
+		expect(
+			status.steps['dwangsom-secret'].done,
+			'a completed wizard has settled the optional secret step',
+		).toBe(true)
+
+		// The client side: nothing reopens the wizard AT that step. Another
+		// optional step (demo data on a bare instance) may legitimately still
+		// open it, so the assertion is on the step it shows, not on the
+		// dialog alone. `dwangsom-secret` is the only `config-fields` step in
+		// the manifest, so its panel identifies the step without any label.
+		const wizard = page.locator('[data-testid-modal="cn-wizard-dialog"]')
+		const outstanding = Object.entries(status.steps)
+			.filter(([, s]) => (s as { done: boolean }).done === false)
+			.map(([id]) => id)
+		if (outstanding.length === 0) {
+			await expect(wizard).toHaveCount(0, { timeout: 10000 })
+		} else {
+			test.info().annotations.push({
+				type: 'optional-steps-outstanding',
+				description: outstanding.join(', '),
+			})
+			await expect(
+				wizard.locator('[data-step-type="config-fields"]'),
+			).toHaveCount(0, { timeout: 10000 })
+		}
+	})
+
+	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
 	test('the wizard opens exactly when an optional step is outstanding', async ({
 		page,
 	}) => {

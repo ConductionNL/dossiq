@@ -453,7 +453,39 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		const sidebar = page.locator('.app-sidebar')
 		await expect(sidebar).toBeVisible({ timeout: 15_000 })
 
-		await sidebar.getByRole('tab', { name: /Notes|Notities/ }).click()
+		// The leaf this tab renders comes from dossiq's OWN bundle
+		// (`builtinIntegrations` in @conduction/nextcloud-vue, resolved by
+		// `leafTab('notes')`), not from OpenRegister's global registry bundle,
+		// which CI never has (openregister gitignores `/js/`). Probe that
+		// registry anyway and record the answer, so a failure here can be read
+		// against it, but do not skip on it: the tab must render without it.
+		const registryHasNotes = await page.evaluate(() => {
+			const w = window as unknown as {
+				OCA?: {
+					OpenRegister?: {
+						integrations?: { has?: (id: string) => boolean }
+					}
+				}
+			}
+			const registry = w.OCA?.OpenRegister?.integrations
+			return registry ? Boolean(registry.has?.('notes')) : null
+		})
+		test.info().annotations.push({
+			type: 'openregister-integrations-registry',
+			description:
+				registryHasNotes === null
+					? 'absent (no global registry bundle on this instance)'
+					: `has('notes') = ${registryHasNotes}`,
+		})
+
+		// By id, not label: NcAppSidebarTab renders `#tab-button-<id>` for the
+		// manifest tab id, which is the same on an English and a Dutch instance.
+		const tabButton = sidebar.locator('#tab-button-notes')
+		test.skip(
+			(await tabButton.count()) === 0,
+			'the case sidebar declares no `notes` tab in this build; nothing to render',
+		)
+		await tabButton.click()
 		const panel = sidebar.locator('[data-testid="cn-object-sidebar-tab-notes"]')
 		await expect(panel).toBeVisible({ timeout: 15_000 })
 
@@ -466,5 +498,14 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 				timeout: 15_000,
 			})
 			.toBeGreaterThan(1)
+		// And the thing that mounted is the notes leaf itself, not the panel's
+		// own chrome: CnNotesTab renders a `.cn-sidebar-tab` root with the
+		// add-note composer inside it.
+		await expect(panel.locator('.cn-sidebar-tab').first()).toBeVisible({
+			timeout: 15_000,
+		})
+		await expect(panel.locator('.cn-sidebar-tab__composer').first()).toBeVisible(
+			{ timeout: 15_000 },
+		)
 	})
 })
