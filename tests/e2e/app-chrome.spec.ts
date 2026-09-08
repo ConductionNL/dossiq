@@ -22,6 +22,7 @@
  */
 
 import { expect, test } from '@playwright/test'
+import { dismissSupportDialog } from './helpers/nav.ts'
 
 const APP_BASE = '/index.php/apps/dossiq'
 
@@ -175,6 +176,14 @@ test.describe('app chrome (ADR-114)', () => {
 		await expect(page.locator('.features-roadmap__sections')).toBeVisible({
 			timeout: 30_000,
 		})
+
+		// This is the only test in this file that CLICKS, and the click is
+		// exactly what CnAppRoot's support dialog and the first-time-setup
+		// wizard swallow: their modal mask covers the app and the click lands
+		// on the mask instead, which reports as a timeout rather than as a
+		// mask. A fresh browser profile has no dismissal recorded, so the
+		// wizard does open. global-setup.ts does not settle either one.
+		await dismissSupportDialog(page)
 
 		await page.getByRole('button', { name: 'How dossiq compares' }).click()
 
