@@ -103,37 +103,23 @@ export default defineConfig({
 	timeout: 60_000,
 	expect: { timeout: 15_000 },
 	fullyParallel: false,
-	// One worker, but NO LONGER for the reason this comment used to give.
+	// FOUR WORKERS ON CI, ONE LOCALLY.
 	//
-	// It said `helpers/fixtures.ts#ensureCaseType` adopts
-	// `listObjects('caseType')[0]` — whatever caseType happens to exist — so
-	// worker B could adopt worker A's throwaway and have it deleted out from
-	// under it mid-test. That defect was real, it was in SEVEN sites rather than
-	// the one named here, and it is now fixed at the source:
-	// `adoptableCaseTypes()` excludes fixture-owned rows, so a worker can only
-	// adopt a caseType no teardown will remove.
-	//
-	// ⚠️ DO NOT read that as "parallel is now safe". Raising this is UNVERIFIED.
-	// Nobody has yet observed the suite complete with more than one worker, and
-	// the specific risks that remain are known and unmeasured:
-	//
-	//   - `spec-coverage/demo-data-setup-step.spec.ts` installs demo data
-	//     instance-wide, against ~131 empty-state assertions elsewhere.
-	//   - One observed `SQLSTATE[53200] out of shared memory /
-	//     max_locks_per_transaction` from postgres under four concurrent
-	//     workers. Seen ONCE, so a flagged risk rather than a measured property.
-	//
-	// The suite currently truncates at `globalTimeout` and reaches roughly a
-	// third of its tests, which is a stable and understood problem. Parallel
-	// flake would be a worse one, because flake is the failure mode that teaches
-	// people to ignore red. Raise this only behind a run that completes.
-	// THREE WORKERS ON CI, ONE LOCALLY.
+	// The comment here used to argue for one worker, on the grounds that
+	// `helpers/fixtures.ts#ensureCaseType` adopts `listObjects('caseType')[0]`,
+	// so worker B could adopt worker A's throwaway and have it deleted out from
+	// under it mid-test. That defect was real, it was in seven sites rather than
+	// the one named, and it is fixed at the source: `adoptableCaseTypes()`
+	// excludes fixture-owned rows, so a worker can only adopt a caseType no
+	// teardown will remove.
 	//
 	// `fullyParallel` stays FALSE, so this parallelises at FILE granularity:
 	// different spec files run on different workers, and the tests inside one
 	// file still run in order on a single worker. That is the conservative half
 	// of parallelism and it is the half this suite needs, because several files
-	// build shared state in `beforeAll` and read it across their tests.
+	// build shared state in `beforeAll` and read it across their tests. The
+	// files that mutate instance state are listed in `INSTANCE_MUTATING` above
+	// and run in their own serial project after the parallel one.
 	//
 	// WHY IT HAS TO CHANGE. Measured off the log timestamps of run 34244366521,
 	// not estimated:
@@ -144,12 +130,10 @@ export default defineConfig({
 	//     all 371 tests at the remaining rate          71 min SERIAL
 	//
 	// So fixing every red test still leaves the suite at roughly twice the 38
-	// minute budget. Parallelism is the only lever that closes that gap. At three
-	// workers the same arithmetic gives ~24 min, which leaves real margin rather
-	// than just clearing the bar.
+	// minute budget. Parallelism is the only lever that closes that gap.
 	//
-	// FOUR, AND THAT NUMBER IS MEASURED RATHER THAN REASONED. This started at
-	// three, to keep distance from a `SQLSTATE[53200] out of shared memory /
+	// FOUR IS MEASURED RATHER THAN REASONED. This started at three, to keep
+	// distance from a `SQLSTATE[53200] out of shared memory /
 	// max_locks_per_transaction` that had been seen ONCE under four. Both counts
 	// were then run against the same tree:
 	//
@@ -164,18 +148,15 @@ export default defineConfig({
 	//
 	// ⚠️ FOUR WORKERS DOES NOT MAKE THE SUITE FIT, and nothing here should be read
 	// as claiming it does. It still truncates with ~60 tests unreached. The rest
-	// of the gap is the 44 failures, which cost ~32 of the 38 minutes because each
+	// of the gap is the failures, which cost ~32 of the 38 minutes because each
 	// is retried; that closes as they are fixed, not by adding workers.
 	//
 	// One locally, deliberately. A developer runs this against the SHARED dev
-	// instance, where three workers seeding and tearing down at once is both
+	// instance, where four workers seeding and tearing down at once is both
 	// slower and ruder than one.
 	//
 	// `E2E_WORKERS` overrides both, so the count can be re-measured without a
-	// code change. That idea is from the parallel four-worker experiment on
-	// `exp/e2e-four-workers`; it is worth keeping whatever that run concludes,
-	// because the next person to question this number should not have to edit a
-	// config to answer it.
+	// code change.
 	workers: Number(process.env.E2E_WORKERS ?? (process.env.CI ? 4 : 1)),
 	retries: process.env.CI ? 1 : 0,
 	// Stop on our own clock, ahead of the shared job's `timeout-minutes: 45`.
