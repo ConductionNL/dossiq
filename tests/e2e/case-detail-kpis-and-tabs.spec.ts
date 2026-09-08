@@ -2,18 +2,24 @@
  * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Case detail — the KPI row, the tabbed panels and the right column.
+ * Case detail — the identity row, the tabbed panels and the right column.
  *
  * Every assertion here is one that a unit test could not make, because each
  * covers a seam between the manifest, the widget catalog and a live register:
  *
  *  - the countdown reads a DATE off the loaded record and turns it into words;
- *  - the case-type tile resolves a uuid to the referenced object's title;
- *  - the third KPI cell is the case's STEP, and the milestone endpoint the
+ *  - the identity row resolves a case-type uuid to the referenced title;
+ *  - the stepper shows the case's STEP, and the milestone endpoint the
  *    retired Completed tile called is no longer asked at all;
  *  - the tabs widget renders one panel per configured tab and mounts only the
  *    open one;
  *  - the hoisted Actions menu sits beside the strip rather than inside it.
+ *
+ * The Time left and Case type TILES are gone (case-header, row A01). Both
+ * facts now read in the identity row on the first grid cell, and this spec
+ * asserts they read there AND that no tile of either kind survives beside it:
+ * a fold that leaves the old tile standing prints the same fact twice, and
+ * only the second half of that pair fails visibly.
  *
  * The empty-state trap is worth stating, because this page has now hit it
  * twice: a widget whose query 404s renders "No X yet", which is exactly what
@@ -40,23 +46,46 @@ import { trackDossiqErrors } from './helpers/nav.ts'
  * on the feature, which is the least useful thing a test can assert.
  */
 const TAB_LABELS = [
-	/Notes|Notities/,
+	/Data|Gegevens/,
 	/Documents|Documenten/,
+	/Parties|Betrokkenen/,
+	/Tasks|Taken/,
+	/Communication|Communicatie/,
 	/Files|Bestanden/,
+	/Notes|Notities/,
+	/Mail/,
 	/Related cases|Gerelateerde zaken/,
 	/Sub-cases|Deelzaken/,
-	/Mail/,
-	/Appointments|Afspraken/,
-	// Decisions is decidiq's widget, not dossiq's own list — dossiq no longer
-	// renders its `decision` schema at all. Locations moved in from the page
-	// body, so the case's collections all live in one strip.
-	/Decisions|Besluiten|Besluitvorming/,
-	// Parties took the slot the Contacts tab held. Contacts was the Nextcloud
-	// contacts integration leaf: it showed the address book, never the people
-	// on this case, and the `role` rows it was standing in for now have a tab
-	// of their own (parties-on-the-case task 1.2).
-	/Parties|Betrokkenen/,
 	/Locations|Locaties/,
+	/Appointments|Afspraken/,
+	// Decisions is decidiq's widget, not dossiq's own list; dossiq no longer
+	// renders its `decision` schema at all.
+	/Decisions|Besluiten|Besluitvorming/,
+	/Objects|Objecten/,
+]
+
+/**
+ * The order placement row A33 asks for: the work a handler does first, the
+ * folding tabs behind it, the collections that may be empty last.
+ *
+ * Timeline is deliberately NOT here. The case timeline is the sidebar
+ * History tab (change case-timeline); a body panel over the same audit log
+ * would be the duplication that change exists to retire.
+ */
+const WORK_TABS = [
+	/Data|Gegevens/,
+	/Documents|Documenten/,
+	/Parties|Betrokkenen/,
+	/Tasks|Taken/,
+	/Communication|Communicatie/,
+]
+
+/** The four tabs that show only when they hold something, once they can. */
+const CONDITIONAL_TABS = [
+	/Sub-cases|Deelzaken/,
+	/Locations|Locaties/,
+	/Appointments|Afspraken/,
+	/Decisions|Besluiten|Besluitvorming/,
 ]
 
 /**
@@ -127,7 +156,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 	// left dangling either, which is the point.
 
 	// @e2e openspec/specs/case-dashboard-view/spec.md#the-progress-tile-is-gone
-	test('the KPI row headlines time left, case type and the case step', async ({
+	test('the identity row headlines the case, and the KPI tiles are gone', async ({
 		page,
 	}) => {
 		const errors = trackDossiqErrors(page)
@@ -143,26 +172,23 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		})
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 
-		const kpis = page.locator('.cn-kpi-card')
-		await expect(kpis.first()).toBeVisible({ timeout: 30_000 })
+		const header = page.getByTestId('case-header')
+		await expect(header).toBeVisible({ timeout: 30_000 })
 
-		// Time left is COMPUTED from the deadline, not printed from it.
-		await expect(page.locator('.cn-countdown-widget')).toContainText(
-			/day(s)? left|dag(en)? te gaan/,
-			{
-				timeout: 15_000,
-			},
-		)
+		// Time left is COMPUTED from the deadline, not printed from it. It used
+		// to be its own KPI tile; case-header folded it into the identity row,
+		// which is why this reads a testid rather than `.cn-countdown-widget`.
+		const countdown = header.getByTestId('case-header-countdown')
+		await expect(countdown).toContainText(/\d+ (days?|dagen?)/, {
+			timeout: 15_000,
+		})
 
-		// The headline is painted with a FOREGROUND token. CnCountdownWidget
-		// writes `var(--color-error)` inline, which on Nextcloud 34 is the pale
-		// FILL colour (#FFE7E7): "26 days overdue" was pink on white. dossiq
-		// repoints the token on the widget root to its `-text` variant, so
-		// whichever band the seeded deadline lands in, the computed colour must
-		// match that band's `-text` token and never the raw fill token.
-		const countdown = page.locator('.cn-countdown-widget')
+		// The countdown is painted with a FOREGROUND token. The band tokens on
+		// Nextcloud 34 are pale FILL colours (#FFE7E7 for error): "26 days
+		// overdue" once rendered pink on white. The row paints `-text` with the
+		// raw token only as a fallback, so a banded countdown must never come
+		// out as the fill colour.
 		const paint = await countdown.evaluate((el) => {
-			const value = el.querySelector('.cn-countdown-widget__value')
 			const root = getComputedStyle(document.documentElement)
 			const resolve = (token: string) => {
 				const probe = document.createElement('span')
@@ -172,41 +198,50 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 				probe.remove()
 				return color
 			}
-			const variant = (
-				[...el.classList].find((c) => /^cn-countdown-widget--/.test(c)) || ''
-			).replace('cn-countdown-widget--', '')
+			const band = el.classList.contains('is-danger')
+				? 'error'
+				: el.classList.contains('is-warning')
+					? 'warning'
+					: ''
 			return {
-				variant,
-				color: value ? getComputedStyle(value).color : '',
-				fill: resolve(`--color-${variant}`),
-				text: resolve(`--color-${variant}-text`),
+				band,
+				color: getComputedStyle(el).color,
+				fill: band ? resolve(`--color-${band}`) : '',
+				text: band ? resolve(`--color-${band}-text`) : '',
 			}
 		})
-		if (['error', 'warning', 'success'].includes(paint.variant)) {
-			expect(paint.color, `${paint.variant} band paints the -text token`).toBe(
+		if (paint.band && paint.text && paint.fill && paint.text !== paint.fill) {
+			expect(paint.color, `${paint.band} band paints the -text token`).toBe(
 				paint.text,
 			)
-			expect(
-				paint.color,
-				`${paint.variant} band must not paint the fill`,
-			).not.toBe(paint.fill)
-		} else {
-			expect(
-				paint.variant,
-				'a countdown on a case with a deadline has a band',
-			).toBe('default')
 		}
 
 		// The case type field holds a uuid. Showing the uuid would be a pass for
 		// "renders something" and a failure for the feature.
-		const caseTypeCard = kpis.filter({ hasText: /Case type|Zaaktype/ })
-		await expect(caseTypeCard).toContainText(caseTypeTitle, {
-			timeout: 20_000,
-		})
-		// A uuid is 36 chars with four dashes; the tile must show a NAME.
-		await expect(caseTypeCard).not.toContainText(
+		const caseTypeChip = header.getByTestId('case-header-casetype')
+		await expect(caseTypeChip).toContainText(caseTypeTitle, { timeout: 20_000 })
+		// A uuid is 36 chars with four dashes; the row must show a NAME.
+		await expect(caseTypeChip).not.toContainText(
 			/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/,
 		)
+
+		// The identity row also carries the case number and a status badge, so
+		// the page says which case you are on without opening the Data tab.
+		await expect(header.getByTestId('case-header-identifier')).toBeVisible({
+			timeout: 15_000,
+		})
+		await expect(header.getByTestId('case-header-status')).toBeVisible({
+			timeout: 15_000,
+		})
+
+		// Both folded tiles are GONE (case-header, row A01). Asserting only that
+		// the row shows the two facts would still pass if the tiles had stayed
+		// and the page simply grew, which is the duplication the fold retires.
+		await expect(page.locator('.cn-countdown-widget')).toHaveCount(0)
+		await expect(
+			page.locator('.cn-kpi-card').filter({ hasText: /Case type|Zaaktype/ }),
+		).toHaveCount(0)
+		await expect(page.getByText(/^(Time left|Resterende tijd)$/)).toHaveCount(0)
 
 		// The Completed tile is GONE (case-lifecycle-on-the-page, REQ-CDV-13).
 		// It read milestone progress, milestones are configured on almost no
@@ -218,7 +253,9 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		// reason: a tile can be removed from the layout while its widget still
 		// fires the request, and a request can stop while the tile still renders
 		// from cache.
-		await expect(kpis.filter({ hasText: /Completed|Afgerond/ })).toHaveCount(0)
+		await expect(
+			page.locator('.cn-kpi-card').filter({ hasText: /Completed|Afgerond/ }),
+		).toHaveCount(0)
 		await expect(page.getByTestId('case-steps')).toBeVisible({ timeout: 20_000 })
 		expect(
 			milestoneCalls,
@@ -286,38 +323,40 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		expect(unexpected, `console errors: ${unexpected.join(' | ')}`).toEqual([])
 	})
 
-	test('a KPI tile shows its label once, without widget chrome', async ({
+	test('the identity row carries no widget chrome of its own', async ({
 		page,
 	}) => {
-		// The KPI cells carry `showTitle: false`, because a KPI tile already
-		// renders its own label inside the card. Without the flag the grid draws
-		// a CnWidgetWrapper header on top — the title twice, and an Actions menu
-		// on a read-only tile, which the Cards-vs-Widgets split says a card must
-		// not have.
+		// The identity row's cell carries `showTitle: false`, because the row
+		// already labels every fact it shows. Without the flag the grid draws a
+		// CnWidgetWrapper header on top: the widget title above a row that names
+		// itself, plus an Actions menu on read-only content, which the
+		// Cards-vs-Widgets split says a card must not have.
 		//
-		// This regressed once already: rebuilding the layout from a list of
-		// tuples silently dropped the flag from five cells, and nothing failed.
-		// Every gate passed and the E2E passed, because no assertion described
-		// what a KPI tile is supposed to look like. This is that assertion.
+		// This regressed once already on the tiles this row replaced: rebuilding
+		// the layout from a list of tuples silently dropped the flag from five
+		// cells, and nothing failed. Every gate passed and the E2E passed,
+		// because no assertion described what the cell is supposed to look like.
+		// This is that assertion.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
 		})
 
-		const timeLeft = page.locator('.cn-countdown-widget')
-		await expect(timeLeft).toBeVisible({ timeout: 20_000 })
+		const header = page.getByTestId('case-header')
+		await expect(header).toBeVisible({ timeout: 20_000 })
 
-		// The label appears exactly once in the tile's own cell.
 		const cell = page
 			.locator('.cn-widget-grid__item, .grid-stack-item')
-			.filter({ has: page.locator('.cn-countdown-widget') })
+			.filter({ has: page.getByTestId('case-header') })
 			.first()
-		const labelCount = await cell
-			.getByText(/^(Time left|Resterende tijd)$/)
-			.count()
-		expect(labelCount, 'the KPI label must render once, not twice').toBe(1)
 
-		// And a read-only tile carries no Actions menu of its own.
+		// The widget title does not print above a row that labels itself.
+		expect(
+			await cell.getByText(/^(Case identity|Zaakgegevens)$/).count(),
+			'the identity row must not carry a grid heading',
+		).toBe(0)
+
+		// And read-only content carries no Actions menu of its own.
 		await expect(
 			cell.getByRole('button', { name: /^(Actions|Acties)$/ }),
 		).toHaveCount(0)
@@ -342,6 +381,50 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 
 		for (const label of RETIRED_TAB_LABELS) {
 			await expect(strip.getByRole('tab', { name: label })).toHaveCount(0)
+		}
+	})
+
+	// @e2e openspec/changes/case-header/specs/case-dashboard-view/spec.md#the-six-work-tabs-come-first-in-order
+	test('the work tabs lead the strip and the conditional four close it', async ({
+		page,
+	}) => {
+		// Order is the whole feature of placement row A33: the ten-tab strip
+		// wrapped onto three lines at 1440 and dropped below the fold at 1024,
+		// with the tabs a handler actually works in scattered through it.
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		const strip = page.locator('.cn-tabs-widget')
+		await expect(strip).toBeVisible({ timeout: 30_000 })
+		const labels = await strip.getByRole('tab').allInnerTexts()
+
+		// The work tabs are the FIRST n, in order.
+		for (const [index, label] of WORK_TABS.entries()) {
+			expect(labels[index], `tabs: ${labels.join(' | ')}`).toMatch(label)
+		}
+
+		// And the conditional four are the LAST four, in any order among
+		// themselves — `visibleIf` on a tab entry is what would hide them, and
+		// CnTabsWidget does not read it yet (case-header task 4.2).
+		// The conditional tabs close the strip. Asserted as "after every work
+		// tab" rather than "the last four", because `custom-objects-on-the-case`
+		// added an Objects tab of the same kind after REQ-CDV-16 was written,
+		// and a slice of a fixed length would fail on a correct strip.
+		const lastWork = Math.max(
+			...WORK_TABS.map((pattern) => labels.findIndex((l) => pattern.test(l))),
+		)
+		for (const pattern of CONDITIONAL_TABS) {
+			const at = labels.findIndex((label) => pattern.test(label))
+			expect(
+				at,
+				`${pattern} is absent: ${labels.join(' | ')}`,
+			).toBeGreaterThan(-1)
+			expect(
+				at,
+				`${pattern} sits among the work tabs: ${labels.join(' | ')}`,
+			).toBeGreaterThan(lastWork)
 		}
 	})
 
