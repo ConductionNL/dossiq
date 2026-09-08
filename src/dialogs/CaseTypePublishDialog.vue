@@ -190,6 +190,8 @@ export default {
 		 * Read the validation findings.
 		 *
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		async loadFindings() {
 			this.loading = true

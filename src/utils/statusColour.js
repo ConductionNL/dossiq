@@ -75,6 +75,8 @@ export function isStatusColour(colour) {
  *
  * @param {unknown} colour The stored `statusType.colour`.
  * @return {string} A name from STATUS_COLOURS; grey when there is none.
+ *
+ * @spec openspec/specs/case-types/spec.md
  */
 export function normaliseStatusColour(colour) {
 	return isStatusColour(colour) ? colour : DEFAULT_STATUS_COLOUR
@@ -85,6 +87,8 @@ export function normaliseStatusColour(colour) {
  *
  * @param {unknown} colour The stored `statusType.colour`.
  * @return {string} A `var(--nl-color-…, #hex)` expression.
+ *
+ * @spec openspec/specs/case-types/spec.md
  */
 export function statusColourToken(colour) {
 	const name = normaliseStatusColour(colour)
@@ -112,6 +116,8 @@ export function isLightStatusColour(colour) {
  *
  * @param {unknown} colour The stored `statusType.colour`.
  * @return {{backgroundColor: string, color: string}} The style object.
+ *
+ * @spec openspec/specs/case-types/spec.md
  */
 export function statusColourStyle(colour) {
 	return {

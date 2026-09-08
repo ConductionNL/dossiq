@@ -115,6 +115,8 @@ export default {
 		 * The three lists, each row carrying its origin badge.
 		 *
 		 * @return {Array<object>} The sections.
+		 *
+		 * @spec openspec/specs/case-types/spec.md
 		 */
 		sections() {
 			// The labels are translated HERE, in literal t() calls, and handed

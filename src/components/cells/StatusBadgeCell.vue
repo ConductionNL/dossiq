@@ -108,6 +108,8 @@ export default {
 		 * The badge's inline colours.
 		 *
 		 * @return {object} A style object.
+		 *
+		 * @spec openspec/specs/case-types/spec.md
 		 */
 		style() {
 			return statusColourStyle(this.colour)
@@ -118,6 +120,8 @@ export default {
 		 *
 		 * @return {string} The status name, the pre-formatted label, or the
 		 *   raw value while the collection is still loading.
+		 *
+		 * @spec openspec/specs/case-types/spec.md
 		 */
 		label() {
 			return (

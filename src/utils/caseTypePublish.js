@@ -43,6 +43,8 @@ const DEFAULT_STRATEGY_LABELS = {
  * @param {object} messages The already-translated sentences: `signIn`,
  *   `forbidden`, `missing` and `generic`.
  * @return {string} A sentence to show the person.
+ *
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 export function publishRefusalMessage(error, messages = {}) {
 	const text = { ...DEFAULT_MESSAGES, ...messages }
@@ -93,6 +95,8 @@ export function findingsFrom(error) {
  *
  * @param {object} labels The already-translated labels, by strategy id.
  * @return {Array<{id: string, label: string}>} The options, in order.
+ *
+ * @spec openspec/specs/workflow-import-export/spec.md
  */
 export function importStrategies(labels = {}) {
 	const text = { ...DEFAULT_STRATEGY_LABELS, ...labels }

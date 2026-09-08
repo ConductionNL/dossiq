@@ -131,6 +131,8 @@ export default {
 		 * marked aria-hidden — the column already says its status in words.
 		 *
 		 * @return {object} A style object.
+		 *
+		 * @spec openspec/specs/case-types/spec.md
 		 */
 		colourStyle() {
 			return { backgroundColor: statusColourToken(this.colour) }
