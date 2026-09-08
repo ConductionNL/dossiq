@@ -96,9 +96,25 @@ export default defineConfig({
 	// `adoptableCaseTypes()` excludes fixture-owned rows, so a worker can only
 	// adopt a caseType no teardown will remove.
 	//
-	// ⚠️ DO NOT read that as "parallel is now safe". Raising this is UNVERIFIED.
-	// Nobody has yet observed the suite complete with more than one worker, and
-	// the specific risks that remain are known and unmeasured:
+	// WHY FOUR, AND WHAT THIS PR IS FOR.
+	//
+	// At one worker the suite does not fit. Measured on `development` run
+	// 34244366521: 111 of 371 tests attempted in 38 minutes before
+	// `globalTimeout` stopped it, which extrapolates to ~127 minutes against a
+	// `timeout-minutes: 45` cap. Fixing red tests does not close that — the four
+	// E2E fixes that landed on 2026-09-08 bought 17 more tests attempted while
+	// the suite grew by 28 over the same period.
+	//
+	// 🔴 THIS VALUE IS THE EXPERIMENT, NOT A CONCLUSION. No run has yet been
+	// observed completing with more than one worker. Two local attempts were
+	// abandoned under machine load of 25 and 56, reaching 37/360 and 84/371 —
+	// they measured the box, not the change. CI is where this gets decided,
+	// because the runner is quiet and E2E runs on pull requests.
+	//
+	// THE NUMBER TO READ IS `did not run`, and it is printed LAST. `passed` and
+	// `failed` describe a prefix of the suite until that number is zero.
+	//
+	// Two risks are known and unmeasured. If this run reddens, look here first:
 	//
 	//   - `spec-coverage/demo-data-setup-step.spec.ts` installs demo data
 	//     instance-wide, against ~131 empty-state assertions elsewhere.
@@ -106,11 +122,12 @@ export default defineConfig({
 	//     max_locks_per_transaction` from postgres under four concurrent
 	//     workers. Seen ONCE, so a flagged risk rather than a measured property.
 	//
-	// The suite currently truncates at `globalTimeout` and reaches roughly a
-	// third of its tests, which is a stable and understood problem. Parallel
-	// flake would be a worse one, because flake is the failure mode that teaches
-	// people to ignore red. Raise this only behind a run that completes.
-	workers: 1,
+	// If parallel flake appears, REVERT rather than tune. The suite truncating
+	// is a stable, understood problem; flake is the failure mode that teaches
+	// people to ignore red, which is worse.
+	//
+	// `E2E_WORKERS` overrides it for local measurement.
+	workers: Number(process.env.E2E_WORKERS ?? 4),
 	retries: process.env.CI ? 1 : 0,
 	// Stop on our own clock, ahead of the shared job's `timeout-minutes: 45`.
 	//
