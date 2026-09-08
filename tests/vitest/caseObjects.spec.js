@@ -24,10 +24,12 @@ const ROOT = path.resolve(__dirname, '../..')
 const REGISTER_PATH = path.join(ROOT, 'lib', 'Settings', 'dossiq_register.json')
 const MANIFEST_PATH = path.join(ROOT, 'src', 'manifest.json')
 const ICONS_PATH = path.join(ROOT, 'src', 'icons.js')
+const FORMATTERS_PATH = path.join(ROOT, 'src', 'services', 'formatters.js')
 
 const register = JSON.parse(fs.readFileSync(REGISTER_PATH, 'utf8'))
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
 const iconsSource = fs.readFileSync(ICONS_PATH, 'utf8')
+const formattersSource = fs.readFileSync(FORMATTERS_PATH, 'utf8')
 
 /** The `caseObject` schema as the register declares it. @return {object} The schema. */
 const caseObject = () => register.components.schemas.caseObject
@@ -213,5 +215,99 @@ describe('the Link object action', () => {
 		expect(iconsSource).toMatch(
 			new RegExp(`\\b${headerAction('link-object').icon}\\b`),
 		)
+	})
+})
+
+describe('the Objects index', () => {
+	/** The CaseObjects page. @return {object} The page. */
+	const page = () => manifest.pages.find((entry) => entry.id === 'CaseObjects')
+
+	/** The Case column of that page. @return {object} The column. */
+	const caseColumn = () =>
+		page().config.columns.find((column) => column.key === 'case')
+
+	it('reads the caseObject schema of the dossiq register', () => {
+		expect(page()).toBeDefined()
+		expect(page().type).toBe('index')
+		expect(page().route).toBe('/case-objects')
+		expect(page().config.register).toBe('dossiq')
+		expect(page().config.schema).toBe('caseObject')
+	})
+
+	it('groups the sidebar on the object type', () => {
+		expect(page().config.folderSidebar.field).toBe('objectType')
+		expect(page().config.folderSidebar.allLabel).toBe('All objects')
+	})
+
+	it('names a folder source CnFolderSidebar accepts', () => {
+		// The validator takes `custom`, `field` or `files`. The design's
+		// `facet` renders no sidebar and warns only in the console; the facet
+		// FILTER comes from `facetable` on the schema property instead.
+		expect(['custom', 'field', 'files']).toContain(
+			page().config.folderSidebar.source,
+		)
+	})
+
+	it('groups on a property the schema marks facetable', () => {
+		const field = page().config.folderSidebar.field
+		expect(caseObject().properties[field].facetable).toBe(true)
+	})
+
+	it('shows the object type, identification, description and case', () => {
+		expect(page().config.columns.map((column) => column.key)).toEqual([
+			'objectType',
+			'objectIdentification',
+			'description',
+			'case',
+		])
+	})
+
+	it('renders the case by label, through a formatter the app registers', () => {
+		expect(caseColumn().formatter).toBe('caseTitle')
+		expect(formattersSource).toMatch(/\bcaseTitle:/)
+	})
+
+	it('leaves the case reference unexpanded, or View case pushes an object', () => {
+		// `extend` would replace `row.case` with the expanded case object and
+		// the row-token lookup below is FLAT, so the action would hand
+		// vue-router an object and open nothing, without an error.
+		expect(page().config.extend).toBeUndefined()
+	})
+
+	it('opens the row\'s case, not the row', () => {
+		const actions = page().config.actions
+		expect(actions).toHaveLength(1)
+		expect(actions[0].id).toBe('view-case')
+		expect(actions[0].handler).toBe('navigate')
+		expect(actions[0].route).toBe('CaseDetail')
+		expect(actions[0].params).toEqual({ id: '{case}' })
+		// A case object has no page of its own, so the built-in View is off.
+		expect(page().config.showViewAction).toBe(false)
+	})
+
+	it('navigates to a route the manifest declares', () => {
+		const target = manifest.pages.find(
+			(entry) => entry.id === page().config.actions[0].route,
+		)
+		expect(target).toBeDefined()
+		expect(target.route).toBe('/cases/:id')
+	})
+
+	it('sits in the menu as Objects, after All cases and before Tasks', () => {
+		const entry = manifest.menu.find((item) => item.route === 'CaseObjects')
+		expect(entry).toBeDefined()
+		expect(entry.label).toBe('Objects')
+		const orderOf = (route) =>
+			manifest.menu.find((item) => item.route === route).order
+		expect(entry.order).toBeGreaterThan(orderOf('Cases'))
+		expect(entry.order).toBeLessThan(orderOf('Tasks'))
+	})
+
+	it('names an icon that src/icons.js registers', () => {
+		const entry = manifest.menu.find((item) => item.route === 'CaseObjects')
+		expect(iconsSource).toMatch(new RegExp(`\\b${entry.icon}\\b`))
+		for (const action of page().config.actions) {
+			expect(iconsSource).toMatch(new RegExp(`\\b${action.icon}\\b`))
+		}
 	})
 })

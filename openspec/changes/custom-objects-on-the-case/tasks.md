@@ -45,19 +45,26 @@ criteria under a task are plain bullets.
 
 ## 4. The Objects index
 
-- [ ] 4.1 `src/manifest.json`: page `CaseObjects` per design D3 with the
-  facet folder sidebar on `objectType`, the four columns and the View case
-  row action navigating to `CaseDetail` on the row's `case`; menu entry
-  Objects in the Cases group after All cases.
+- [x] 4.1 `src/manifest.json`: page `CaseObjects` per design D3 with the
+  folder sidebar on `objectType`, the four columns and the View case row
+  action navigating to `CaseDetail` on the row's `case`; menu entry Objects
+  after All cases. The sidebar is `source: "field"`, not the design's
+  `source: "facet"`: CnFolderSidebar takes `custom`, `field` or `files` and
+  rejects anything else in a prop validator, so `facet` renders no sidebar
+  and says so only in the console.
   - `@spec openspec/specs/case-management/spec.md`
   - `npm run check:manifest` exits 0
-  - `tests/unit/manifest.spec.ts` (extend): `CaseObjects` reads schema
-    `caseObject` and its sidebar facet is `objectType`
-- [ ] 4.2 `src/formatters` (or wherever `caseTypeName` is registered):
-  `caseTitle` resolving a case id to its title, used by the `case` column.
-  Skip when the index already renders `$ref` columns by label (triage #8).
-  - `tests/unit/formatters.spec.ts` (new if absent): an id resolves to the
-    title; an unknown id falls back to the id
+  - `tests/vitest/caseObjects.spec.js`: `CaseObjects` reads schema
+    `caseObject`, its sidebar groups on `objectType`, and that property is
+    `facetable`
+- [x] 4.2 `src/services/formatters.js`, beside `caseTypeName`: `caseTitle`
+  resolving a case id to its title, used by the `case` column. NOT skipped:
+  the sibling Tasks index renders its `$ref` column by label through
+  `extend`, and `extend` replaces `row.case` with the expanded object, which
+  would leave the View case action pushing an object instead of a uuid and
+  opening nothing. The formatter renders the label and leaves the row alone.
+  - `tests/vitest/formatters.spec.js` (new): an id resolves to the title; an
+    unknown id falls back to the id; a missing reference shows a dash
 
 ## 5. Seed and verification
 
