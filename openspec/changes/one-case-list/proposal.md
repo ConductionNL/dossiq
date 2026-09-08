@@ -70,8 +70,8 @@ delta.
 ## Capabilities
 
 - `my-work`: ADDED Lenses on the Cases index [V1].
-- `case-management`: ADDED REQ-CM-24 (open work by default, Closed on request),
-  REQ-CM-25 (Deadline before in the sidebar).
+- `case-management`: ADDED REQ-CM-31 (open work by default, Closed on request),
+  REQ-CM-32 (Deadline before in the sidebar).
 - `task-management`: ADDED REQ-TASK-016 (lenses on the Tasks index).
 - `case-bulk-status-transition`: ADDED Bulk actions on the case index.
 - `signalering-widgets`: ADDED Countdown Deadline Column [V1].

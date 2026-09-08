@@ -243,7 +243,7 @@ implementation task; the criteria under a task are plain bullets.
 - [x] 6.1 Add `tests/e2e/case-type-authoring-extras.spec.ts` covering every
   scenario of the deltas that names it. 13 tests: every `@e2e`-tagged
   scenario across the five deltas, plus the status badge on the case page,
-  which is the other half of REQ-CT-01 and the surface a handler actually
+  which is the other half of REQ-CT-19 and the surface a handler actually
   reads a colour on.
   - The colour is asserted as the `data-colour` NAME, not as a painted pixel.
     The badge resolves `var(--nl-color-orange, #e17000)` and which of the two
