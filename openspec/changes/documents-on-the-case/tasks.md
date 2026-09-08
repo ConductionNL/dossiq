@@ -88,7 +88,7 @@ criteria under a task are plain bullets.
 
 ## 4. Seed
 
-- [ ] 4.1 `lib/Settings/register.d/46-demo-cases-english.json` (or the
+- [x] 4.1 `lib/Settings/register.d/46-demo-cases-english.json` (or the
   dossier seed beside it): two `informatieobject` rows on one demo case
   with different types, one tagged `bezwaar`, directions incoming and
   outgoing, linked through `zaakinformatieobject`; one library template
