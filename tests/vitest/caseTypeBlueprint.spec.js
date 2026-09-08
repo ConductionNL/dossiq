@@ -97,20 +97,31 @@ describe('blueprintSections', () => {
 		expect(section(sections, 'statuses').rows[0].badge).toBe('')
 	})
 
-	it('runs every label through the translate function it is given', () => {
+	it('uses the labels it is handed, already translated', () => {
+		// The labels arrive translated rather than as keys through a callback:
+		// a string that lives in the helper and passes through a translate
+		// function is invisible to the l10n extractor, so it would never reach
+		// a translator and would render in English with every check green.
 		const sections = blueprintSections(
 			{ statusTypes: [{ id: 's1', name: 'Ontvangen', origin: 'inherited' }] },
-			(key) => `nl:${key}`,
+			{ statuses: 'Statussen', inherited: 'Geerfd' },
 		)
 
-		expect(section(sections, 'statuses').label).toBe('nl:Statuses')
-		expect(section(sections, 'statuses').rows[0].badge).toBe('nl:Inherited')
+		expect(section(sections, 'statuses').label).toBe('Statussen')
+		expect(section(sections, 'statuses').rows[0].badge).toBe('Geerfd')
+	})
+
+	it('falls back to a word rather than to undefined', () => {
+		const sections = blueprintSections({ statusTypes: [] }, { results: 'X' })
+
+		expect(section(sections, 'statuses').label).toBe('Statuses')
+		expect(section(sections, 'statuses').emptyText).not.toContain('undefined')
 	})
 
 	it('never translates a row NAME, which is data', () => {
 		const sections = blueprintSections(
 			{ statusTypes: [{ id: 's1', name: 'Ontvangen' }] },
-			(key) => `nl:${key}`,
+			{ statuses: 'Statussen' },
 		)
 
 		expect(section(sections, 'statuses').rows[0].name).toBe('Ontvangen')

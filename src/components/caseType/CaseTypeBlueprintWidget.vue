@@ -115,7 +115,24 @@ export default {
 		 * @return {Array<object>} The sections.
 		 */
 		sections() {
-			return blueprintSections(this.blueprint, (key) => t('dossiq', key))
+			// The labels are translated HERE, in literal t() calls, and handed
+			// over. A string that lives in the helper and passes through a
+			// translate callback is invisible to `tests/l10n/check-l10n.js`,
+			// which extracts by finding a literal inside a t() call: it would
+			// never reach l10n/en.json, never reach a translator, and render in
+			// English to a Dutch reader with every check green.
+			return blueprintSections(this.blueprint, {
+				statuses: t('dossiq', 'Statuses'),
+				results: t('dossiq', 'Results'),
+				properties: t('dossiq', 'Attributes'),
+				statusesEmpty: t('dossiq', 'This case type has no statuses yet'),
+				resultsEmpty: t('dossiq', 'This case type has no results yet'),
+				propertiesEmpty: t('dossiq', 'This case type has no attributes yet'),
+				inherited: t('dossiq', 'Inherited'),
+				inheritedFrom: t('dossiq', 'Inherited from'),
+				shared: t('dossiq', 'Shared'),
+				sharedTitle: t('dossiq', 'Shared across every case type'),
+			})
 		},
 
 		/**

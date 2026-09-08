@@ -106,7 +106,33 @@ export default {
 		 * @return {Array<object>} `{ id, label }` options.
 		 */
 		strategies() {
-			return importStrategies((key) => t('dossiq', key))
+			return importStrategies({
+				skip: t('dossiq', 'Keep what is already here'),
+				merge: t('dossiq', 'Merge the bundle into it'),
+				overwrite: t('dossiq', 'Replace it with the bundle'),
+			})
+		},
+
+		/**
+		 * The sentences a refusal can carry, already translated.
+		 *
+		 * Built here, in literal t() calls, and handed to the helper: a string
+		 * that lives in the helper and passes through a translate callback is
+		 * invisible to `tests/l10n/check-l10n.js`, which extracts by finding a
+		 * literal inside a `t()` call for this app.
+		 *
+		 * @return {object} The messages.
+		 */
+		refusalMessages() {
+			return {
+				signIn: t('dossiq', 'Sign in again and retry.'),
+				forbidden: t('dossiq', 'Your account may not do this.'),
+				missing: t('dossiq', 'This case type no longer exists.'),
+				generic: t(
+					'dossiq',
+					'That did not work. Try again, or ask an administrator.',
+				),
+			}
 		},
 	},
 
@@ -155,7 +181,7 @@ export default {
 				this.error =
 					e?.response?.data?.error && e?.response?.status === 422
 						? String(e.response.data.error)
-						: publishRefusalMessage(e, t)
+						: publishRefusalMessage(e, this.refusalMessages)
 			} finally {
 				this.busy = false
 			}

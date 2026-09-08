@@ -10,38 +10,58 @@
 // would send an ordinary user hunting for a problem in their own data that
 // only an administrator can solve.
 //
-// Pure, so the mapping is testable without a server, a mount or a dialog.
+// Pure, so the mapping is testable without a server, a mount or a dialog. The
+// SENTENCES arrive already translated rather than through a translate callback:
+// `tests/l10n/check-l10n.js` extracts a translatable string by finding a
+// literal inside a `t()` call for this app, and a literal in this file handed
+// to a callback named anything else is invisible to it — it would never reach
+// l10n/en.json, never reach a translator, and render in English to a Dutch
+// reader with every check green.
 //
 // @spec openspec/specs/zaaktype-versioning/spec.md
 // @spec openspec/specs/workflow-import-export/spec.md
+
+/** The English fallbacks, so a missing message renders a sentence. */
+const DEFAULT_MESSAGES = {
+	signIn: 'Sign in again and retry.',
+	forbidden: 'Your account may not do this.',
+	missing: 'This case type no longer exists.',
+	generic: 'That did not work. Try again, or ask an administrator.',
+}
+
+/** The English fallbacks for the import strategies. */
+const DEFAULT_STRATEGY_LABELS = {
+	skip: 'Keep what is already here',
+	merge: 'Merge the bundle into it',
+	overwrite: 'Replace it with the bundle',
+}
 
 /**
  * The message for a refused publish, import or duplicate.
  *
  * @param {object} error An axios error, or anything at all.
- * @param {(app: string, text: string) => string} translate The host's t().
+ * @param {object} messages The already-translated sentences: `signIn`,
+ *   `forbidden`, `missing` and `generic`.
  * @return {string} A sentence to show the person.
  */
-export function publishRefusalMessage(error, translate = (app, text) => text) {
+export function publishRefusalMessage(error, messages = {}) {
+	const text = { ...DEFAULT_MESSAGES, ...messages }
 	const status = Number(error?.response?.status ?? 0)
 
 	if (status === 401) {
-		return translate('dossiq', 'Sign in again and retry.')
+		return text.signIn
 	}
 
 	if (status === 403) {
-		return translate('dossiq', 'Your account may not do this.')
+		return text.forbidden
 	}
 
 	if (status === 404) {
-		return translate('dossiq', 'This case type no longer exists.')
+		return text.missing
 	}
 
 	// Never the server's own message: it carries paths and driver text.
-	return translate(
-		'dossiq',
-		'That did not work. Try again, or ask an administrator.',
-	)
+	return text.generic
 }
 
 /**
@@ -69,14 +89,16 @@ export function findingsFrom(error) {
  * three that cannot lose work, and a person importing a colleague's bundle
  * rarely means to overwrite what this instance already has on the first try.
  *
- * @param {(key: string) => string} translate The host's t(), bound to the app.
+ * @param {object} labels The already-translated labels, by strategy id.
  * @return {Array<{id: string, label: string}>} The options, in order.
  */
-export function importStrategies(translate = (key) => key) {
+export function importStrategies(labels = {}) {
+	const text = { ...DEFAULT_STRATEGY_LABELS, ...labels }
+
 	return [
-		{ id: 'skip', label: translate('Keep what is already here') },
-		{ id: 'merge', label: translate('Merge the bundle into it') },
-		{ id: 'overwrite', label: translate('Replace it with the bundle') },
+		{ id: 'skip', label: text.skip },
+		{ id: 'merge', label: text.merge },
+		{ id: 'overwrite', label: text.overwrite },
 	]
 }
 

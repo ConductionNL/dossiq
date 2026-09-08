@@ -128,6 +128,28 @@ export default {
 
 	computed: {
 		/**
+		 * The sentences a refusal can carry, already translated.
+		 *
+		 * Built here, in literal t() calls, and handed to the helper: a string
+		 * that lives in the helper and passes through a translate callback is
+		 * invisible to `tests/l10n/check-l10n.js`, which extracts by finding a
+		 * literal inside a `t()` call for this app.
+		 *
+		 * @return {object} The messages.
+		 */
+		refusalMessages() {
+			return {
+				signIn: t('dossiq', 'Sign in again and retry.'),
+				forbidden: t('dossiq', 'Your account may not do this.'),
+				missing: t('dossiq', 'This case type no longer exists.'),
+				generic: t(
+					'dossiq',
+					'That did not work. Try again, or ask an administrator.',
+				),
+			}
+		},
+
+		/**
 		 * The case type this dialog acts on.
 		 *
 		 * @return {string} The id.
@@ -177,7 +199,7 @@ export default {
 				// A validation that cannot run is not a validation that passed:
 				// the dialog says so and offers no Publish button.
 				this.findings = []
-				this.error = publishRefusalMessage(e, t)
+				this.error = publishRefusalMessage(e, this.refusalMessages)
 			} finally {
 				this.loading = false
 			}
@@ -208,7 +230,7 @@ export default {
 					this.findings = findings
 					return
 				}
-				this.error = publishRefusalMessage(e, t)
+				this.error = publishRefusalMessage(e, this.refusalMessages)
 			}
 		},
 	},

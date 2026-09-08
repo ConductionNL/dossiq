@@ -223,9 +223,20 @@ implementation task; the criteria under a task are plain bullets.
     arrive as that literal string. A vitest asserts no modal action carries
     one.
   - Publish is gated on `isDraft`, so a published type does not offer it.
-- [ ] 5.3 `l10n/en.json` and `l10n/nl.json`: Colour, Hidden in lists,
+- [x] 5.3 `l10n/en.json` and `l10n/nl.json`: Colour, Hidden in lists,
   Parent case type, Inherited, Category, Shared attributes, Personal data,
   Export, Import, Duplicate, Publish, Change note, Versions.
+  - 🔴 TWO HELPERS HAD TO CHANGE SHAPE FIRST. `caseTypeBlueprint.js` and
+    `caseTypePublish.js` held their strings as literals and took a translate
+    CALLBACK. `tests/l10n/check-l10n.js` extracts a translatable string by
+    finding a literal inside a `t()` call for this app, so none of those ten
+    labels and four refusal sentences was extractable: every one would have
+    reached l10n/en.json never, a translator never, and a Dutch reader in
+    English, with the l10n check green throughout. Both now take
+    already-translated text and the callers build it in literal `t()` calls.
+  - A docblock that SPELLS a t() call is extracted as a key. "..." landed in
+    en.json from five comments explaining this very rule; the comments are
+    reworded and the key removed.
 
 ## 6. Verification
 

@@ -17,27 +17,40 @@
 // @spec openspec/specs/case-types/spec.md
 // @spec openspec/specs/property-definition-management/spec.md
 
-/** The blueprint key, section id and heading of each list, in reading order. */
+/**
+ * The blueprint key, section id and label keys of each list, in reading order.
+ *
+ * The LABELS are not here. They arrive as an already-translated `labels`
+ * object, because `tests/l10n/check-l10n.js` extracts a translatable string by
+ * finding a literal inside a `t()` call for this app: a string that lives in
+ * this file and is handed to a translate callback is invisible to it, so it
+ * would never reach l10n/en.json, never reach a translator, and render in
+ * English to a Dutch reader with every check green.
+ */
 const SECTIONS = [
-	{
-		key: 'statusTypes',
-		id: 'statuses',
-		label: 'Statuses',
-		emptyText: 'This case type has no statuses yet',
-	},
-	{
-		key: 'resultTypes',
-		id: 'results',
-		label: 'Results',
-		emptyText: 'This case type has no results yet',
-	},
-	{
-		key: 'propertyDefinitions',
-		id: 'properties',
-		label: 'Attributes',
-		emptyText: 'This case type has no attributes yet',
-	},
+	{ key: 'statusTypes', id: 'statuses' },
+	{ key: 'resultTypes', id: 'results' },
+	{ key: 'propertyDefinitions', id: 'properties' },
 ]
+
+/**
+ * The English fallbacks, for a caller that hands over no labels.
+ *
+ * They exist so a missing label renders a word rather than `undefined`, which
+ * is what a reader would otherwise see where a heading belongs.
+ */
+const DEFAULT_LABELS = {
+	statuses: 'Statuses',
+	results: 'Results',
+	properties: 'Attributes',
+	statusesEmpty: 'This case type has no statuses yet',
+	resultsEmpty: 'This case type has no results yet',
+	propertiesEmpty: 'This case type has no attributes yet',
+	inherited: 'Inherited',
+	inheritedFrom: 'Inherited from',
+	shared: 'Shared',
+	sharedTitle: 'Shared across every case type',
+}
 
 /**
  * The row's display name.
@@ -67,27 +80,24 @@ function idOf(row) {
  * inherited one.
  *
  * @param {object} row A blueprint row.
- * @param {(key: string) => string} translate The host app's t().
+ * @param {object} labels The already-translated labels.
  * @return {{badge: string, badgeTitle: string}} The badge and its title.
  */
-function badgeFor(row, translate) {
+function badgeFor(row, labels) {
 	const origin = String(row?.origin ?? 'own')
 
 	if (origin === 'inherited') {
 		const parent = String(row?.originCaseTypeTitle ?? '')
 		return {
-			badge: translate('Inherited'),
+			badge: labels.inherited,
 			badgeTitle: parent
-				? `${translate('Inherited from')} ${parent}`
-				: translate('Inherited'),
+				? `${labels.inheritedFrom} ${parent}`
+				: labels.inherited,
 		}
 	}
 
 	if (origin === 'shared') {
-		return {
-			badge: translate('Shared'),
-			badgeTitle: translate('Shared across every case type'),
-		}
+		return { badge: labels.shared, badgeTitle: labels.sharedTitle }
 	}
 
 	return { badge: '', badgeTitle: '' }
@@ -100,10 +110,14 @@ function badgeFor(row, translate) {
  * badge, which tells a reader nothing and looks like a rendering fault.
  *
  * @param {object|null} blueprint The /blueprint answer.
- * @param {(key: string) => string} translate The host app's t().
+ * @param {object} labels The already-translated labels: `statuses`, `results`,
+ *   `properties`, `statusesEmpty`, `resultsEmpty`, `propertiesEmpty`,
+ *   `inherited`, `inheritedFrom`, `shared` and `sharedTitle`.
  * @return {Array<object>} The sections.
  */
-export function blueprintSections(blueprint, translate = (key) => key) {
+export function blueprintSections(blueprint, labels = {}) {
+	const text = { ...DEFAULT_LABELS, ...labels }
+
 	return SECTIONS.map((section) => {
 		const raw = Array.isArray(blueprint?.[section.key])
 			? blueprint[section.key]
@@ -115,13 +129,13 @@ export function blueprintSections(blueprint, translate = (key) => key) {
 				key: idOf(row) || `${section.id}-${index}`,
 				name: nameOf(row),
 				origin: String(row?.origin ?? 'own'),
-				...badgeFor(row, translate),
+				...badgeFor(row, text),
 			}))
 
 		return {
 			id: section.id,
-			label: translate(section.label),
-			emptyText: translate(section.emptyText),
+			label: text[section.id],
+			emptyText: text[`${section.id}Empty`],
 			rows,
 		}
 	})

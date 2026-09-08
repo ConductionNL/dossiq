@@ -62,12 +62,22 @@ describe('publishRefusalMessage', () => {
 		expect(publishRefusalMessage('boom')).toBeTruthy()
 	})
 
-	it('runs its sentence through the translate function it is given', () => {
+	it('uses the sentences it is handed, already translated', () => {
+		// They arrive translated rather than as keys through a callback: a
+		// literal that lives in the helper and passes through a translate
+		// function is invisible to the l10n extractor, so it would never reach
+		// a translator and would render in English with every check green.
 		const message = publishRefusalMessage(
 			{ response: { status: 403 } },
-			(app, text) => `${app}:${text}`,
+			{ forbidden: 'Uw account mag dit niet.' },
 		)
-		expect(message.startsWith('dossiq:')).toBe(true)
+		expect(message).toBe('Uw account mag dit niet.')
+	})
+
+	it('falls back to a sentence rather than to undefined', () => {
+		expect(publishRefusalMessage({ response: { status: 404 } }, {})).toMatch(
+			/no longer exists/,
+		)
 	})
 })
 
@@ -104,10 +114,16 @@ describe('importStrategies', () => {
 		expect(importStrategies()[0].id).toBe('skip')
 	})
 
-	it('translates the labels but never the ids', () => {
-		const [first] = importStrategies((key) => `nl:${key}`)
+	it('uses the labels it is handed, but never their ids', () => {
+		const [first] = importStrategies({ skip: 'Laat staan wat er al is' })
 		expect(first.id).toBe('skip')
-		expect(first.label.startsWith('nl:')).toBe(true)
+		expect(first.label).toBe('Laat staan wat er al is')
+	})
+
+	it('falls back to a label rather than to undefined', () => {
+		for (const option of importStrategies()) {
+			expect(option.label).toBeTruthy()
+		}
 	})
 })
 
