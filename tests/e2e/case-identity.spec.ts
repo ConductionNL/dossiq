@@ -152,6 +152,12 @@ test.describe('Case identity', () => {
 			identifier: `${RUN_PREFIX.toLowerCase()}-identity-type`,
 			description: 'Throwaway case type for the case-identity spec.',
 			processingDeadline: PROCESSING_DEADLINE,
+			// PUBLISHED, NOT DRAFT. `case.caseType` carries
+			// `x-relation-filter: {isDraft: false}` and the caseType schema
+			// defaults `isDraft` to TRUE, so a type seeded without this is a
+			// draft and never appears in the New case picker. The failure reads
+			// as a missing option, not as a draft.
+			isDraft: false,
 		})
 		caseTypeId = objectId(caseType)
 
@@ -378,10 +384,25 @@ test.describe('Case identity', () => {
 		// And the filter is reachable without hand-writing a URL: `tags` is
 		// `facetable`, so the index sidebar builds a Tags control from the
 		// schema.
+		// 🔴 BY THE FILTER'S OWN CLASS, NOT BY TEXT. Three separate elements in
+		// this sidebar say exactly "Tags", and a bare getByText is a strict
+		// mode violation that reports "resolved to 3 elements" rather than
+		// anything about the filter:
+		//
+		//   .cn-index-sidebar__filter-label   the filter label, what is meant
+		//   label.select__label               that filter's own NcSelect label
+		//   .checkbox-content__text           the Columns picker checkbox
+		//
+		// All three are correct, and they arrived together the moment `tags`
+		// became facetable and gained a column. The assertion has to say which
+		// one it means. `CnIndexSidebar.vue` renders the first as
+		// `<span class="cn-index-sidebar__filter-label">{{ filter.label }}</span>`.
 		const sidebar = await openSidebar(page)
-		await expect(sidebar.getByText(/^(Tags|Labels)$/)).toBeVisible({
-			timeout: 15_000,
-		})
+		await expect(
+			sidebar
+				.locator('.cn-index-sidebar__filter-label')
+				.filter({ hasText: /^(Tags|Labels)$/ }),
+		).toBeVisible({ timeout: 15_000 })
 	})
 
 	// @e2e openspec/changes/case-identity/specs/case-management/spec.md

@@ -98,6 +98,12 @@ test.describe('New case dialog', () => {
 			identifier: `${RUN_PREFIX.toLowerCase()}-subsidie`,
 			description: 'Throwaway case type for the New case dialog spec.',
 			defaultAssignee: DEFAULT_ASSIGNEE,
+			// PUBLISHED, NOT DRAFT. `case.caseType` carries
+			// `x-relation-filter: {isDraft: false}` and the caseType schema
+			// defaults `isDraft` to TRUE, so a type seeded without this is a
+			// draft and never appears in the New case picker. The failure reads
+			// as a missing option, not as a draft.
+			isDraft: false,
 		})
 		caseTypeId = objectId(caseType)
 
