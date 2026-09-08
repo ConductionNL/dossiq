@@ -271,3 +271,25 @@ describe('the Team column and the Mine chip', () => {
 		expect(initial.filter, 'the index must open unfiltered').toEqual({})
 	})
 })
+
+describe('the team on the detail forms', () => {
+	it('the case core widget offers the team beside the assignee', () => {
+		// `case-core` names the fields it renders, so a property the schema
+		// gained is invisible on the case page until it is listed here — no
+		// error, no gap, just a field nobody can set.
+		const include = widget('case-core').content.include
+
+		expect(include).toContain('assignedGroup')
+		expect(include.indexOf('assignedGroup')).toBe(
+			include.indexOf('assignee') + 1,
+		)
+	})
+
+	it('the task widget renders the whole schema, so the team comes for free', () => {
+		const taskData = page('TaskDetail').config.widgets.find(
+			(entry) => entry.id === 'task-data',
+		)
+
+		expect(taskData.content.include).toBeUndefined()
+	})
+})

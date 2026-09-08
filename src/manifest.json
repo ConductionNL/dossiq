@@ -1249,6 +1249,7 @@
 								"caseType",
 								"status",
 								"assignee",
+								"assignedGroup",
 								"requester",
 								"priority",
 								"confidentiality",
