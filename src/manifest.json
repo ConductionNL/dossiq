@@ -1218,6 +1218,19 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "case",
+				"subtitleField": "identifier",
+				"breadcrumbs": [
+					{
+						"label": "Cases",
+						"route": "Cases",
+						"icon": "FolderAccountOutline"
+					},
+					{
+						"field": "title"
+					}
+				],
+				"_breadcrumbsNote": "Placement row A01: the way back to the list without the menu. This is the page-level declaration the host will read once CnDetailPage grows a `breadcrumbs` key; 2.41.0 has none, and the page schema is open on `config`, so the key validates and renders nothing on its own. The `case-header` widget renders the trail through CnBreadcrumbs from a copy of this array on its own `props`, and a unit test asserts the two are identical, so the day the host reads this key the widget can be emptied without the trail moving. The last crumb carries a `field` and no `route`: CnBreadcrumbs renders the final crumb unlinked with `aria-current=\"page\"` regardless, so a target on it would be dead config.",
+				"_subtitleNote": "Placement row A01: the case page did not say which case you are on. `identifier` is the case number, and it reads under the title. The line the row asks for is identifier, case type and assignee together, which needs a templated `subtitle` on CnDetailPage; 2.41.0 has `subtitleField` only, so the number alone is the interim and case-header task 1.2 tracks the rest.",
 				"_note": "CASE archetype (unified zaak) — the flagship record and the ADR-062 reference page (the cell is the budget: every widget fills its gridHeight exactly, no inner scrollbars, no reserved voids). The lead row pairs the field-scoped 'Core case data' widget (include: identity/ownership fields) with a right column of KPI stats-block (open tasks / documents / decisions / sub-cases, replacing the deprecated header summaryAggregates) over the Related panel. Row two pairs the 'Process' data widget (include: status/procedure/workflow fields) with Initiator, Contacts and Notes sized to their small content. FK-scoped child collections (task.case, caseDocument.case, decision.case, location.case) fit their rows to their cells with View-all/+N-more footers. Files and Calendar leaves close the page. The case's own state leads the page: a full-width transition strip (case-transitions) over the KPI row, whose third cell is now the stepper (case-steps) rather than the milestone percentage. `lifecycleActions` is GONE -- it declared `{field: status}` and rendered nothing, because OpenRegister answers no actions for a $ref status field. Suspend, Resume, Extend term and Reopen are `open-modal` header actions onto one reason dialog (CaseLifecycleActionDialog), which reads /lifecycle before it posts. Only Reopen gates exactly as the spec words it, because `isFinalStatus` is on the case record: an action's local `visibleWhen` dot-paths into the loaded record, `suspensionAllowed` and `extensionAllowed` live on the case TYPE, and OpenRegister's object list IGNORES an `id` filter (it answers with the whole table), so a `source` predicate on the type would compare a different case type's flag and be wrong without saying so. Suspension is derived from the case's `activity` journal rather than a flag, so no field can gate Resume either -- the transitions widget puts Resume in front of the handler when /lifecycle says the case is actually suspended. Audit history stays the single sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
@@ -1579,38 +1592,25 @@
 						"_note": "The transitions this user may take from the case's current status, the confirm dialog that asks for a comment and, on a closing move, a result, plus the suspended marker and the Resume button (page slot widget-case-transitions -> CaseTransitionsWidget). It replaces the page's `lifecycleActions: {field: status}` block, which rendered NOTHING: CnLifecycleActions asks OpenRegister's /available-actions, and `case.status` is a $ref to a per-caseType statusType row, for which OR answers an empty action list. Its graph mode derives moves from sibling ORDER alone and so cannot express the workflow template's named, role-filtered, guarded transitions, cannot say which guard refused, and cannot ask for the result a closing case needs -- all three of which this page requires. When the platform can serve them (case-status-onto-engine-lifecycle), this widget is deleted and lifecycleActions declared again."
 					},
 					{
-						"id": "case-kpi-time-left",
-						"type": "countdown",
-						"title": "Time left",
-						"icon": "ClockAlertOutline",
-						"_note": "Counts down to the case deadline. Reads `deadline` off the record the page has already loaded, so it costs no request. The thresholds follow the handling rhythm rather than round numbers: at two weeks a handler still has room to act, at five days they do not. An overdue case reads as an alert whether or not thresholds are set.",
-						"content": {
-							"label": "Time left",
-							"field": "deadline",
-							"icon": "ClockAlertOutline",
+						"id": "case-header",
+						"type": "custom",
+						"title": "Case identity",
+						"icon": "BadgeAccountOutline",
+						"_note": "Placement row A01: the case identity, on the first row of the page, under the title (page slot widget-case-header -> CaseHeaderRow). It carries the breadcrumb back to Cases, the case number, the case type, the status badge, the assignee and the deadline countdown. It is a `custom` widget rather than the built-in `header` one because that built-in is a DASHBOARD BANNER (title, subtitle, call to action): it can bind neither a $ref status nor a countdown. It folds in two tiles that are now gone from this page: `case-kpi-time-left` (its `warn 14, danger 5` thresholds live on in the countdown) and `case-kpi-casetype` (its uuid-to-title resolve lives on in the type chip). Leaving them beside the row would print the same two facts twice. The breadcrumb and the identity line are rendered HERE rather than declared on the page because CnDetailPage 2.41.0 reads neither `breadcrumbs` nor `subtitleField` (its own `subtitle` prop is the SIDEBAR header's); both keys are declared on the page config all the same, as the shape the host will read, and a unit test pins the widget's props to them so the two cannot drift. The widget takes no `objectId` prop: CnDetailPage hands a `widget-<id>` slot the whole widget definition plus the LOADED object (`item`, `widget`, `objectId`, `object`, `objectData`, `objectType`, `register`, `schema`), so the row reads the case the page already has rather than fetching it again, and reads its own manifest `props` off `widget.props`.",
+						"props": {
+							"breadcrumbs": [
+								{
+									"label": "Cases",
+									"route": "Cases",
+									"icon": "FolderAccountOutline"
+								},
+								{
+									"field": "title"
+								}
+							],
 							"thresholds": {
 								"warn": 14,
 								"danger": 5
-							},
-							"showDate": true
-						}
-					},
-					{
-						"id": "case-kpi-casetype",
-						"type": "stat",
-						"title": "Case type",
-						"icon": "FileTreeOutline",
-						"_note": "`case.caseType` holds a uuid, which is not something to show a person, so `resolve` looks the case type's title up through the shared object store (cached per schema, deduplicated in flight). An id that cannot be resolved keeps showing the raw value rather than blanking: a blank KPI says nothing at all.",
-						"content": {
-							"label": "Case type",
-							"icon": "FileTreeOutline",
-							"objectField": {
-								"field": "caseType",
-								"resolve": {
-									"register": "dossiq",
-									"schema": "caseType",
-									"labelField": "title"
-								}
 							}
 						}
 					},
@@ -1682,21 +1682,41 @@
 						"type": "tabs",
 						"title": "Case panels",
 						"icon": "ViewDashboard",
-						"_note": "Six panels describing one case used to be six cards stacked down the page, each with its own header and Actions menu, only one of them ever being read. The strip takes over the title and the card, the children render bare, and the Actions menu is hoisted into the bar where it rebinds to whichever tab is open. The six children stay in `widgets` and are DELIBERATELY absent from `layout`: the tabs widget renders them, so a layout entry would render each one twice.",
+						"_note": "Panels describing one case used to be cards stacked down the page, each with its own header and Actions menu, only one of them ever being read. The strip takes over the title and the card, the children render bare, and the Actions menu is hoisted into the bar where it rebinds to whichever tab is open. Every child stays in `widgets` and is DELIBERATELY absent from `layout`: the tabs widget renders them, so a layout entry would render each one twice. Placement row A33 fixes the ORDER: Data, Documents, Parties, Tasks, Communication are the work a handler does, and they come first; Files, Notes, Mail and Related cases sit behind them until their folding changes land (Files into Documents, Notes and Mail into Communication); Sub-cases, Locations, Appointments, Decisions and Objects are the collections that may be empty, and they close the strip. REQ-CDV-16 names four of those five, because `custom-objects-on-the-case` landed after it was written; Objects is the same kind of tab and joins the same group, keeping the four in the relative order the requirement states. A tab whose sibling change has not landed is ABSENT rather than present and empty, which is why the strip carries no Timeline entry: the timeline is the sidebar History tab (change case-timeline), not a body panel. Hiding the conditional four on their row count needs `visibleIf` on a tab entry, which CnTabsWidget 2.41.0 does not read, so until it lands they simply stay last (case-header task 4.2). `case-core` moved IN from the layout grid: the case data is one of the panels describing the case, and reading it cost a scroll past the panels that answer the same question.",
 						"content": {
 							"ariaLabel": "Case details",
 							"tabs": [
 								{
-									"widgetId": "case-notes",
-									"label": "Notes"
+									"widgetId": "case-core",
+									"label": "Data"
 								},
 								{
 									"widgetId": "case-documents",
 									"label": "Documents"
 								},
 								{
+									"widgetId": "case-roles",
+									"label": "Parties"
+								},
+								{
+									"widgetId": "case-tasks",
+									"label": "Tasks"
+								},
+								{
+									"widgetId": "case-communication",
+									"label": "Communication"
+								},
+								{
 									"widgetId": "case-files",
 									"label": "Files"
+								},
+								{
+									"widgetId": "case-notes",
+									"label": "Notes"
+								},
+								{
+									"widgetId": "case-email",
+									"label": "Mail"
 								},
 								{
 									"widgetId": "case-related",
@@ -1707,16 +1727,8 @@
 									"label": "Sub-cases"
 								},
 								{
-									"widgetId": "case-tasks",
-									"label": "Tasks"
-								},
-								{
-									"widgetId": "case-email",
-									"label": "Mail"
-								},
-								{
-									"widgetId": "case-communication",
-									"label": "Communication"
+									"widgetId": "case-locaties",
+									"label": "Locations"
 								},
 								{
 									"widgetId": "case-calendar",
@@ -1725,14 +1737,6 @@
 								{
 									"widgetId": "case-decidesk-decisions",
 									"label": "Decisions"
-								},
-								{
-									"widgetId": "case-roles",
-									"label": "Parties"
-								},
-								{
-									"widgetId": "case-locaties",
-									"label": "Locations"
 								},
 								{
 									"widgetId": "case-objects",
@@ -1744,8 +1748,8 @@
 				],
 				"layout": [
 					{
-						"id": "10",
-						"widgetId": "case-transitions",
+						"id": "1",
+						"widgetId": "case-header",
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
@@ -1753,20 +1757,11 @@
 						"showTitle": false
 					},
 					{
-						"id": "1",
-						"widgetId": "case-kpi-time-left",
+						"id": "10",
+						"widgetId": "case-transitions",
 						"gridX": 0,
 						"gridY": 2,
-						"gridWidth": 4,
-						"gridHeight": 2,
-						"showTitle": false
-					},
-					{
-						"id": "2",
-						"widgetId": "case-kpi-casetype",
-						"gridX": 4,
-						"gridY": 2,
-						"gridWidth": 4,
+						"gridWidth": 8,
 						"gridHeight": 2,
 						"showTitle": false
 					},
@@ -1780,21 +1775,12 @@
 						"showTitle": false
 					},
 					{
-						"id": "4",
-						"widgetId": "case-core",
-						"gridX": 0,
-						"gridY": 4,
-						"gridWidth": 8,
-						"gridHeight": 6,
-						"showTitle": false
-					},
-					{
 						"id": "5",
 						"widgetId": "case-panels",
 						"gridX": 0,
-						"gridY": 10,
+						"gridY": 4,
 						"gridWidth": 8,
-						"gridHeight": 8,
+						"gridHeight": 14,
 						"showTitle": false
 					},
 					{
@@ -2071,6 +2057,7 @@
 				]
 			},
 			"slots": {
+				"widget-case-header": "CaseHeaderRow",
 				"widget-case-transitions": "CaseTransitionsWidget",
 				"widget-case-steps": "CaseStepsWidget",
 				"widget-initiator": "InitiatorSection"
