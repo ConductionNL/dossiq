@@ -51,6 +51,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Transitions\CaseStatusStore
  * @uses \OCA\Dossiq\Service\Transitions\TransitionAuthorizer
  * @uses \OCA\Dossiq\Service\Transitions\TransitionSpecReader
+ * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
  */
 final class CmmnBpmnCoexistenceRegressionTest extends TestCase {
 
