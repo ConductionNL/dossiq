@@ -168,6 +168,25 @@ export async function initializeStores() {
 				config.register,
 			)
 		}
+		// The two party register sets behind the requester (brp-kvk register
+		// sets). They were the only types the app READ without registering:
+		// `_getTypeConfig` THROWS on an unregistered type, the picker caught
+		// it in its search try/catch, and every person and company search
+		// answered "no matching records in the seeded register set" — which
+		// is exactly what an empty register looks like. Slug fallback like
+		// caseDocument above; both are seeded by the 25-brp-kvk fragment.
+		if (config.register) {
+			objectStore.registerObjectType(
+				'brpPerson',
+				config.brp_person_schema || 'brpPerson',
+				config.register,
+			)
+			objectStore.registerObjectType(
+				'kvkCompany',
+				config.kvk_company_schema || 'kvkCompany',
+				config.register,
+			)
+		}
 	}
 
 	return { settingsStore, objectStore }

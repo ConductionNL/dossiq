@@ -3565,7 +3565,14 @@ OC.L10N.register(
         "Only a closed case can be reopened.": "Only a closed case can be reopened.",
         "This case type has no first status to reopen into.": "This case type has no first status to reopen into.",
         "Give a reason first.": "Give a reason first.",
-        "The case could not be changed.": "The case could not be changed."
+        "The case could not be changed.": "The case could not be changed.",
+        "Geheimhouding persoonsgegevens": "Geheimhouding persoonsgegevens",
+        "The person asked for their data to be protected, mapped from Haal Centraal geheimhoudingPersoonsgegevens (any value other than 0 is true). Surfaces on the case as a Protected marker and masks the BSN until a handler reveals it. Optional and additive: a row without it is an unprotected person.": "The person asked for their data to be protected, mapped from Haal Centraal geheimhoudingPersoonsgegevens (any value other than 0 is true). Surfaces on the case as a Protected marker and masks the BSN until a handler reveals it. Optional and additive: a row without it is an unprotected person.",
+        "Requester": "Requester",
+        "Name of the person or company who asked for this case, denormalised when you pick them so the list and the card can render it without a second read. Stays hidden as a form field: the picker writes it, you do not type it.": "Name of the person or company who asked for this case, denormalised when you pick them so the list and the card can render it without a second read. Stays hidden as a form field: the picker writes it, you do not type it.",
+        "The person or company who asked for this case. Pick them when you file the case, or when you edit it. A case that arrives through the ns#Case semantic handoff writes the same field, so there is one write path. Holds the UUID of the row that provides ns#Requester (ADR-048); initiatorType, initiatorSourceId and initiatorDisplayName are its display projection.": "The person or company who asked for this case. Pick them when you file the case, or when you edit it. A case that arrives through the ns#Case semantic handoff writes the same field, so there is one write path. Holds the UUID of the row that provides ns#Requester (ADR-048); initiatorType, initiatorSourceId and initiatorDisplayName are its display projection.",
+        "Protected": "Protected",
+        "Reveal": "Reveal"
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -223,7 +223,8 @@ const registry = {
 	InitiatorPicker: {
 		kind: 'form-field',
 		component: InitiatorPicker,
-		_note: 'Cross-source initiator picker (Person=brpPerson / Company=kvkCompany register sets via the object store, Contact=core contactsmenu with graceful empty state). Also used inline by InitiatorPickerModal in the StartCaseWidget create flow.',
+		appliesTo: ['case.requester'],
+		_note: 'Cross-source initiator picker (Person=brpPerson / Company=kvkCompany register sets via the object store, Contact=core contactsmenu with graceful empty state). Bound to case.requester through fieldOverrides on the Dashboard new-case action and the CaseDetail case-core overrides. Also used inline by InitiatorPickerModal in the StartCaseWidget create flow. NOTE: a form-field entry is validated by CnAppRoot but not yet MOUNTED into CnFormDialog by @conduction/nextcloud-vue 2.41.0 — the manifest binding is the declaration, and until the library mounts it the resolved ns#Requester provider renders the field as its own object picker.',
 	},
 	// @spec openspec/specs/initiator-display/spec.md
 	InitiatorSection: {
