@@ -483,39 +483,6 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	})
 
 	// @e2e openspec/changes/one-case-list/specs/signalering-widgets/spec.md
-	test('the Deadlines table View all carries its filter to the list', async ({
-		page,
-	}) => {
-		await visit(page, APP_URL)
-
-		// `dashboard-tiles` merged the Overdue tile and the Deadline alerts
-		// tile into one `deadlines` table whose window is WIDER than the
-		// Overdue chip: past due AND due within three days. So this asserts
-		// the table's own filter surviving the trip, which is the defect
-		// triage item 4 named, not that it lands on the Overdue chip.
-		// Addressed by widget id, the way `pages.spec.ts` does: the id does
-		// not move when the title does.
-		const table = page.locator('[aria-label="deadlines"]')
-		await expect(table).toBeVisible({ timeout: 30_000 })
-		const viewAll = table.getByText(/View all|Alles bekijken/, { exact: true })
-		await expect(viewAll).toBeVisible({ timeout: 15_000 })
-		await viewAll.click()
-
-		await casesTable(page)
-		await expect(page).toHaveURL(/\/cases\?/, { timeout: 15_000 })
-		const query = new URL(page.url()).searchParams
-		expect(query.get('deadline[lte]')).toBe('@today+3d')
-		expect(query.get('isFinalStatus')).toBe('false')
-
-		// The chip does NOT light up: CnIndexPage activates only the chip
-		// marked `default`, so the reader lands on All with the query
-		// applied, and naming a chip from a query is a nextcloud-vue change.
-		await listSettled(page, 'mine-overdue')
-		await expect(row(page, 'closed-overdue')).toHaveCount(0)
-		await expect(row(page, 'mine-far')).toHaveCount(0)
-	})
-
-	// @e2e openspec/changes/one-case-list/specs/signalering-widgets/spec.md
 	test('the Overdue stat tile links to exactly the Overdue chip filter', async ({
 		page,
 	}) => {

@@ -18,12 +18,13 @@
  * language of the e2e instance, so no assertion here turns on English chrome:
  * the only text asserted is text this fixture seeded.
  *
- * WHAT THE SEED CANNOT CONTROL. `deadlines` shows ten rows ordered by deadline
- * ascending, and the demo caseload already carries more than ten overdue
- * cases. A case seeded to fall due in two days therefore sits below the cut by
- * construction. The near-deadline scenario asserts it in the table when there
- * is room and through the table's own View all when there is not, because that
- * link carries the table's filter and is the promise the tile makes.
+ * WHAT THE SEED HAS TO CONTROL. `deadlines` shows ten rows ordered by deadline
+ * ascending, and this spec used to reason about them on the assumption that the
+ * demo caseload already carried more than ten overdue cases. It does not.
+ * `ci-seed.sh` skips the demo dataset deliberately, so the window held two rows
+ * and the tile was never truncated. That is why the near-deadline scenario
+ * still branches on whether there is room, and why the fixture now seeds the
+ * rows that fill the window itself. See `DEADLINE_FILLERS`.
  *
  * WHAT THE SEED CAN CONTROL, ONCE IT OWNS THE USER. `my-work` had the same
  * problem and does not have to keep it, because unlike `deadlines` it is
@@ -56,6 +57,49 @@ const KPI_TILE_COUNT = 5
 
 /** The row limit both merged tables declare. */
 const ROW_LIMIT = 10
+
+/**
+ * How many extra cases this spec puts inside the Deadlines window, so the tile
+ * is TRUNCATED and therefore offers its "View all" footer.
+ *
+ * 🔴 THE FOOTER IS CONDITIONAL, AND THE CONDITION IS ABOUT ROWS, NOT ABOUT THE
+ * ROUTE. Read from source rather than guessed, because the failure it produces
+ * says only "element(s) not found" and reads as a broken locator:
+ *
+ *   - the manifest tile sets `source.limit: 10`;
+ *   - `CnWidgetObjectTable` fetches `source.limit + 1`, so ELEVEN rows, and
+ *     hands CnDataTable `limit: 10`;
+ *   - `CnDataTable` renders the footer only when `totalRowCount >
+ *     effectiveRows.length`, where the total is the rows it HOLDS and the
+ *     effective rows are the first `limit` of them.
+ *
+ * So the footer exists only when the fetch comes back with eleven rows, which
+ * needs eleven open cases whose deadline is on or before today plus three days.
+ * Hiding the control when nothing is hidden is correct, so the fixture is what
+ * has to change.
+ *
+ * The instance does not supply them. `ci-seed.sh` deliberately SKIPS the demo
+ * dataset (installing it would push demo rows into every list the suite
+ * asserts on), so a comment further down claiming the demo caseload carries
+ * more than ten overdue cases was describing a caseload that is not there: a
+ * failing run's snapshot showed this tile holding TWO rows and the Overdue KPI
+ * reading "1 action needed".
+ *
+ * ⚠️ EVERY FILLER SITS AT THE WINDOW'S FAR EDGE, deadline exactly today+3, and
+ * that placement is the point rather than an accident. The tile orders by
+ * deadline ascending, so fillers sort AFTER every case this spec names and
+ * cannot displace `OVERDUE_CASE` or `SOON_CASE` from the rows that render.
+ * Move them earlier and the scenarios above start failing on the fixture.
+ */
+const DEADLINE_FILLERS = 9
+
+/**
+ * The case type this spec owns resolves its deadline as `startDate` plus this
+ * many days, so a start date is how a deadline gets aimed. Named because the
+ * fillers compute a start date backwards from the window edge, and a literal
+ * there would silently drift the moment the case type changed.
+ */
+const PROCESSING_DAYS = 7
 
 /**
  * The account the My work scenarios run as.
@@ -106,6 +150,9 @@ let finalStatusId = ''
 const OVERDUE_CASE = `${RUN_PREFIX} deadline passed`
 const SOON_CASE = `${RUN_PREFIX} deadline in two days`
 const CLOSED_CASE = `${RUN_PREFIX} closed but past due`
+const FAR_CASE = `${RUN_PREFIX} deadline far out`
+/** One filler title per row, so a failure names the row it could not find. */
+const FILLER_CASE = (n: number) => `${RUN_PREFIX} deadline filler ${n}`
 const TASK_SOON = `${RUN_PREFIX} task due tomorrow`
 const TASK_MID = `${RUN_PREFIX} task due next week`
 const TASK_LATE = `${RUN_PREFIX} task due next month`
@@ -224,7 +271,7 @@ test.describe('Dashboard tiles', () => {
 			title: `${RUN_PREFIX} Deadlines`,
 			identifier: `${RUN_PREFIX.toLowerCase()}-deadlines`,
 			description: 'Throwaway caseType for the dashboard-tiles e2e layer.',
-			processingDeadline: 'P7D',
+			processingDeadline: `P${PROCESSING_DAYS}D`,
 			isDraft: false,
 		})
 		caseTypeId = objectId(caseType)
@@ -263,6 +310,27 @@ test.describe('Dashboard tiles', () => {
 			status: finalStatusId,
 			startDate: isoDay(-40),
 		})
+
+		// Open, and far outside the Deadlines window: the case that proves the
+		// View all landed on a FILTERED list rather than on all open cases.
+		await seedCase(api, token, {
+			title: FAR_CASE,
+			caseType: caseTypeId,
+			status: objectId(open),
+			startDate: isoDay(30),
+		})
+
+		// The fillers that truncate the tile. See `DEADLINE_FILLERS` for why
+		// the footer cannot appear without them, and why the deadline is
+		// exactly today+3 rather than anywhere else inside the window.
+		for (let n = 1; n <= DEADLINE_FILLERS; n++) {
+			await seedCase(api, token, {
+				title: FILLER_CASE(n),
+				caseType: caseTypeId,
+				status: objectId(open),
+				startDate: isoDay(3 - PROCESSING_DAYS),
+			})
+		}
 
 		const onCase = objectId(overdue)
 		for (const [title, due] of [
@@ -479,12 +547,22 @@ test.describe('Dashboard tiles', () => {
 
 	// @e2e openspec/specs/dashboard/spec.md#scenario-view-all-from-the-deadlines-table
 	// @e2e dashboard::view-all-keeps-the-tiles-filter
+	// @e2e openspec/changes/one-case-list/specs/signalering-widgets/spec.md
 	test('View all on Deadlines opens the Cases list already filtered', async ({
 		page,
 	}) => {
 		await openDashboard(page)
 		const table = widget(page, 'deadlines')
 		await expect(table).toBeVisible({ timeout: 30_000 })
+
+		// The footer only exists because this spec seeded the window full.
+		// Say so here, so a fixture that stopped truncating the tile fails
+		// naming the row count rather than naming a missing control.
+		await expect(
+			rows(table),
+			'the Deadlines tile must be truncated, or it offers no View all',
+		).toHaveCount(ROW_LIMIT)
+
 		// CnDataTable renders View all as an anchor with no href, so it carries
 		// no link role; match it by its text in either language.
 		const viewAll = table.getByText(/View all|Alles bekijken/, { exact: true })
@@ -495,6 +573,36 @@ test.describe('Dashboard tiles', () => {
 		const query = new URL(page.url()).searchParams
 		expect(query.get('deadline[lte]')).toBe('@today+3d')
 		expect(query.get('isFinalStatus')).toBe('false')
+
+		// The query arriving is not the same as the LIST honouring it, and it
+		// is the list the reader sees. `case-list-lenses` used to assert this
+		// separately, on a dashboard whose tile could not offer the control in
+		// the first place; it belongs here, where the fixture owns the window.
+		//
+		// Absence is what catches a dropped filter, so the list is required to
+		// have rendered a row FIRST: two `toHaveCount(0)` against an empty
+		// table would pass while proving nothing. The rows are deliberately not
+		// counted exactly, because other specs seed into this instance in
+		// parallel and the list is paginated.
+		//
+		// The chip does NOT light up, and that is expected rather than a
+		// defect: CnIndexPage activates only the quick filter marked `default`,
+		// so the reader lands on All with the query applied. Naming a chip from
+		// a query is a nextcloud-vue change.
+		const list = page.getByRole('table')
+		await expect(list).toBeVisible({ timeout: 30_000 })
+		await expect(
+			list.locator('[data-testid="cn-object-row"]').first(),
+			'the filtered list must have rendered before absence proves anything',
+		).toBeVisible({ timeout: 30_000 })
+		await expect(
+			list.getByText(CLOSED_CASE, { exact: true }),
+			'a closed case is excluded by isFinalStatus',
+		).toHaveCount(0)
+		await expect(
+			list.getByText(FAR_CASE, { exact: true }),
+			'an open case due long after the window is excluded by the deadline filter',
+		).toHaveCount(0)
 	})
 
 	// @e2e openspec/specs/dashboard/spec.md#scenario-draft-case-types-are-absent
