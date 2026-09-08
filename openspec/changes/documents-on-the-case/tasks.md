@@ -109,5 +109,5 @@ criteria under a task are plain bullets.
   `cleanupRunObjects`.
 - [x] 5.2 Update `tests/e2e/case-detail-kpis-and-tabs.spec.ts`: the tab
   strip holds Documents before Files.
-- [ ] 5.3 Run `composer check:strict`, `npm run check:manifest`, the hydra
+- [x] 5.3 Run `composer check:strict`, `npm run check:manifest`, the hydra
   gates and the unit suite locally; read the exit codes, not the summaries.
