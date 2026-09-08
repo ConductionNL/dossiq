@@ -3632,6 +3632,10 @@
         "This case could not be read.": "Deze zaak kon niet worden gelezen.",
         "The case store is not available right now.": "De zaakopslag is nu niet beschikbaar.",
         "The copy could not be created.": "De kopie kon niet worden aangemaakt.",
-        "This did not work. Try again.": "Dit lukte niet. Probeer het opnieuw."
+        "This did not work. Try again.": "Dit lukte niet. Probeer het opnieuw.",
+        "Startable flows": "Te starten processen",
+        "The flows a handler may start by hand on a case of this type. A type that lists none does not offer Start.": "De processen die een behandelaar zelf kan starten op een zaak van dit zaaktype. Een zaaktype zonder processen biedt Starten niet aan.",
+        "Has startable flows": "Heeft te starten processen",
+        "Whether this case's type lists a flow a handler may start.": "Of het zaaktype van deze zaak een proces heeft dat een behandelaar kan starten."
     }
 }

@@ -27,9 +27,25 @@ criteria under a task are plain bullets.
 
 ## 2. Start a flow
 
-- [ ] 2.1 `lib/Settings/dossiq_register.json`: property `startableFlows` on
+- [x] 2.1 `lib/Settings/dossiq_register.json`: property `startableFlows` on
   `caseType` (array of `$ref` to `flow`); seed the shipped sub-case and letter
   flows on the demo types.
+  - DONE as an array of plain strings, NOT `$ref`. A `$ref` addresses a schema
+    in a register; a flow is a row in `oc_openregister_flows` read through
+    `FlowService`, and there is no `flow` schema for a `$ref` to name.
+  - The case gained `hasStartableFlows`, a materialised boolean over
+    `@ref.caseType.startableFlows`, because the Start entry has to be HIDDEN on
+    a type that lists none and an action's local `visibleWhen` can only see the
+    case record. Both schema versions were bumped: OpenRegister fast-skips a
+    schema whose version did not move.
+  - NOT DONE, and it cannot be: dossiq ships no sub-case flow and no letter
+    flow. It ships exactly two flows, `Case behandeling` on `case` and one on
+    `bacAdviceRequest`, and `dossiq.createSubCase` is a flow NODE, not a flow.
+    A flow uuid is minted per install, so a seed file cannot name one either.
+    An administrator or the e2e fixture sets `startableFlows` on a case type;
+    resolving dossiq's own shipped flows onto the demo types at install time is
+    a repair step, and a repair step runs at `occ upgrade` and nowhere else, so
+    it is not shipped unverified here.
 - [ ] 2.2 Add `src/components/case/CaseStartFlowDialog.vue`: lists the flows
   from `startable-flows`, posts the chosen one to OpenRegister's run endpoint
   with the case as subject, closes on success. Header action `start-flow`

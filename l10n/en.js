@@ -3633,7 +3633,11 @@ OC.L10N.register(
         "This case could not be read.": "This case could not be read.",
         "The case store is not available right now.": "The case store is not available right now.",
         "The copy could not be created.": "The copy could not be created.",
-        "This did not work. Try again.": "This did not work. Try again."
+        "This did not work. Try again.": "This did not work. Try again.",
+        "Startable flows": "Startable flows",
+        "The flows a handler may start by hand on a case of this type. A type that lists none does not offer Start.": "The flows a handler may start by hand on a case of this type. A type that lists none does not offer Start.",
+        "Has startable flows": "Has startable flows",
+        "Whether this case's type lists a flow a handler may start.": "Whether this case's type lists a flow a handler may start."
     },
     "nplurals=2; plural=(n != 1);"
 )
