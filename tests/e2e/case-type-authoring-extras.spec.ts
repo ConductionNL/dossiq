@@ -575,9 +575,13 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		})
 		await expect(page.getByTestId('case-type-publish-findings')).toHaveCount(0)
 
+		// The test id lands ON the textarea, not on a wrapper around it:
+		// `NcTextArea` sets `inheritAttrs: false` and binds `$attrs` to the
+		// control, so `getByTestId(...).locator('textarea')` looks for a child
+		// of an element that has none, and times out as if the dialog never
+		// opened.
 		await page
 			.getByTestId('case-type-change-note')
-			.locator('textarea')
 			.fill(`${RUN_PREFIX} Eerste versie`)
 		await page.getByTestId('case-type-publish-confirm').click()
 

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import {
+	dateTokenPattern,
 	dismissSupportDialog,
 	loadAllAdminSections,
 	navTo,
@@ -80,7 +81,7 @@ test.describe('Dashboard', () => {
 		await viewAll.click()
 		await expect(page).toHaveURL(/\/cases\?/, { timeout: 15_000 })
 		const query = new URL(page.url()).searchParams
-		expect(query.get('deadline[lte]')).toBe('@today+3d')
+		expect(query.get('deadline[lte]')).toMatch(dateTokenPattern('@today+3d'))
 		expect(query.get('isFinalStatus')).toBe('false')
 	})
 })

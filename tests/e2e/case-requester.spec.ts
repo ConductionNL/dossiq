@@ -341,7 +341,11 @@ test.describe('The requester on the case', () => {
 	// @e2e openspec/specs/initiator-selection/spec.md
 	test('the edit form carries the requester field, enabled', async ({ page }) => {
 		await page.goto(`${DASHBOARD_URL}cases/${noRequesterCaseId}`)
-		await expect(page.locator('.cn-kpi-card').first()).toBeVisible({
+		// The tab strip, not a KPI card: `.cn-kpi-card` was the dashboard's
+		// tile class and never appeared on this page, so the wait could only
+		// ever time out. The strip is on every case page and mounts last of
+		// the widgets, which is what makes it a load signal.
+		await expect(page.locator('.cn-tabs-widget')).toBeVisible({
 			timeout: 30_000,
 		})
 
@@ -429,9 +433,14 @@ test.describe('The requester on the case', () => {
 			card.locator('[data-testid="initiator-address"]'),
 			'the address is resolved from the brpPerson row',
 		).toContainText('Mandelaplein', { timeout: 20_000 })
+		// The number links to the person's page in this app, not to
+		// OpenRegister's object viewer. That moved with `contacts-domain`
+		// (#1947): the register row showed every field of the register set,
+		// none of the person's cases, and a way out of the app the reader did
+		// not ask for.
 		await expect(
 			card.locator('[data-testid="initiator-source-link"]'),
-		).toHaveAttribute('href', new RegExp(`brpPerson/${plainPersonId}`))
+		).toHaveAttribute('href', new RegExp(`/contacts/${plainPersonId}$`))
 	})
 
 	// @e2e openspec/specs/initiator-display/spec.md
@@ -449,15 +458,21 @@ test.describe('The requester on the case', () => {
 		await expect(
 			card.locator('[data-testid="initiator-source-link"]'),
 		).toHaveText(COMPANY.kvk)
+		// An organisation has a page of its own for the same reason a person
+		// does; the route segment is what differs.
 		await expect(
 			card.locator('[data-testid="initiator-source-link"]'),
-		).toHaveAttribute('href', new RegExp(`kvkCompany/${companyId}`))
+		).toHaveAttribute('href', new RegExp(`/organisations/${companyId}$`))
 	})
 
 	// @e2e openspec/specs/initiator-display/spec.md
 	test('a case without a requester shows no card', async ({ page }) => {
 		await page.goto(`${DASHBOARD_URL}cases/${noRequesterCaseId}`)
-		await expect(page.locator('.cn-kpi-card').first()).toBeVisible({
+		// The tab strip, not a KPI card: `.cn-kpi-card` was the dashboard's
+		// tile class and never appeared on this page, so the wait could only
+		// ever time out. The strip is on every case page and mounts last of
+		// the widgets, which is what makes it a load signal.
+		await expect(page.locator('.cn-tabs-widget')).toBeVisible({
 			timeout: 30_000,
 		})
 

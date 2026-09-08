@@ -15,7 +15,9 @@
  * click the sidebar nav entry (client-side) to reach the target view.
  */
 
-import type { Page } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
+
+import { expect } from '@playwright/test'
 
 /**
  * The app's sidebar navigation container.
@@ -296,4 +298,67 @@ export function trackDossiqErrors(page: Page): string[] {
 		}
 	})
 	return errors
+}
+
+/**
+ * Open one panel of the case page's tab strip, and return the open panel.
+ *
+ * 🔴 `[aria-label="<widget id>"]` DOES NOT REACH A PANEL. `CnDetailPage` sets
+ * that label from the manifest id only on the widgets it lays out itself, and
+ * `case-panels` renders its children instead of the grid. So a widget that
+ * moved into the strip keeps its id in the manifest and loses the attribute in
+ * the DOM, and a locator naming it matches nothing while the panel renders
+ * perfectly. `case-core` made that move: it is the strip's first tab, `Data`.
+ *
+ * The panels are also LAZY. A panel does not mount, and therefore does not
+ * query, until its tab has been opened once, so the click is part of reaching
+ * the content rather than a convenience.
+ *
+ * Scoped to the strip on purpose: the app sidebar's own panels carry
+ * `role="tabpanel"` too and hide with `aria-hidden` rather than `hidden`, so an
+ * unscoped query matches a hidden sidebar panel as readily as this one.
+ *
+ * @param page The Playwright page, already on a case detail route.
+ * @param tab  The tab to open, by its accessible name.
+ *
+ * @return The open panel inside the strip.
+ */
+export async function openCasePanel(page: Page, tab: RegExp): Promise<Locator> {
+	const strip = page.locator('.cn-tabs-widget')
+	await expect(strip).toBeVisible({ timeout: 30_000 })
+	await strip.getByRole('tab', { name: tab }).click()
+
+	const panel = strip.locator('[role="tabpanel"]:not([hidden])')
+	await expect(panel).toBeVisible({ timeout: 20_000 })
+	return panel
+}
+
+/**
+ * What a route query may carry for a manifest date token.
+ *
+ * A widget's `viewAllRoute` or a tile's `route` declares its window as a token
+ * — `@today`, `@today+3d` — and the host resolves that token to a date before
+ * it navigates. Both forms name the same day, so a test that pins the literal
+ * fails on an implementation that resolved it and vice versa, while neither
+ * outcome says anything about the filter the reader lands on.
+ *
+ * The KEY is what these assertions are about: a table that counts one set of
+ * cases and a View all that lands on another is the dropped filter they exist
+ * to catch. So match either spelling of the value, and keep the key exact.
+ *
+ * @param token The token as the manifest writes it, e.g. `@today+3d`.
+ *
+ * @return A pattern matching the token itself or the date it resolves to.
+ */
+export function dateTokenPattern(token: string): RegExp {
+	const offset = /^@today(?:\+(\d+)d)?$/.exec(token)
+	if (offset === null) {
+		throw new Error(`dateTokenPattern: ${token} is not a @today token.`)
+	}
+
+	const day = new Date()
+	day.setDate(day.getDate() + Number(offset[1] ?? 0))
+	const resolved = day.toISOString().slice(0, 10)
+
+	return new RegExp(`^(${token.replace('+', '\\+')}|${resolved})$`)
 }

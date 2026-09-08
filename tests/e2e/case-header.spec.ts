@@ -195,8 +195,15 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 
 		// Unknown, not nothing: an absent badge and an unset status look
 		// identical, and only one of the two is a data problem.
+		//
+		// The surrounding whitespace is matched rather than assumed away.
+		// `toHaveText` normalises whitespace for a STRING and compares a
+		// REGEXP against the raw text, and the badge renders a leading space
+		// from its icon slot, so `/^Unknown$/` fails on a badge that reads
+		// correctly. Anchored either side all the same, so this still tells
+		// Unknown from a badge carrying some other status.
 		await expect(page.getByTestId('case-header-status')).toHaveText(
-			/^(Unknown|Onbekend)$/,
+			/^\s*(Unknown|Onbekend)\s*$/,
 			{ timeout: 20_000 },
 		)
 		// And no countdown at all. "0 days left" would be a claim this case

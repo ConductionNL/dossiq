@@ -144,7 +144,10 @@ test.describe('Contacts', () => {
 			direction: 'inbound',
 			identificationMethod: 'digid',
 			kccEmployeeId: 'admin',
-			nature: 'vraag',
+			// One of the six the schema declares. `vraag` was not among them,
+			// so the seed answered 400 and every scenario in the file failed
+			// on a missing fixture rather than on the surface it tests.
+			nature: 'informatieverzoek',
 			startTime: new Date().toISOString(),
 			summary: `${RUN_PREFIX} asked about the dormer window`,
 		})

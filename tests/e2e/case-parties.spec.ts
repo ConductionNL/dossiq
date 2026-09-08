@@ -40,7 +40,7 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
-import { dismissSupportDialog } from './helpers/nav.ts'
+import { dismissSupportDialog, openCasePanel } from './helpers/nav.ts'
 
 /** The fields the Add party form asks a handler to fill. */
 const FORM_FIELDS = [
@@ -545,8 +545,10 @@ test.describe('Case detail — the Parties tab', () => {
 		}) => {
 			await page.goto(`/apps/${REGISTER}/cases/${teamCaseId}`)
 			await dismissSupportDialog(page)
-			const core = page.locator('[aria-label="case-core"]')
-			await expect(core).toBeVisible({ timeout: 30_000 })
+			// `case-core` is the strip's `Data` tab, not a laid-out widget, so
+			// it carries no `aria-label` — the same trap `openPartiesTab`
+			// above documents for `case-roles`.
+			const core = await openCasePanel(page, /^(Data|Gegevens)$/)
 
 			// `Team` is the same word in both languages (it is in
 			// tests/l10n/language-neutral-keys.json), so this is safe to assert

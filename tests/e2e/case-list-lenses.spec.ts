@@ -46,7 +46,7 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
-import { dismissSupportDialog } from './helpers/nav.ts'
+import { dateTokenPattern, dismissSupportDialog } from './helpers/nav.ts'
 
 const APP_URL = `/apps/${REGISTER}/`
 const CASES_URL = `${APP_URL}cases`
@@ -504,7 +504,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await casesTable(page)
 		await expect(page).toHaveURL(/\/cases\?/, { timeout: 15_000 })
 		const query = new URL(page.url()).searchParams
-		expect(query.get('deadline[lte]')).toBe('@today+3d')
+		expect(query.get('deadline[lte]')).toMatch(dateTokenPattern('@today+3d'))
 		expect(query.get('isFinalStatus')).toBe('false')
 
 		// The chip does NOT light up: CnIndexPage activates only the chip
@@ -531,7 +531,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await casesTable(page)
 		await expect(page).toHaveURL(/\/cases\?/, { timeout: 15_000 })
 		const query = new URL(page.url()).searchParams
-		expect(query.get('deadline[lt]')).toBe('@today')
+		expect(query.get('deadline[lt]')).toMatch(dateTokenPattern('@today'))
 		expect(query.get('isFinalStatus')).toBe('false')
 
 		await listSettled(page, 'mine-overdue')
