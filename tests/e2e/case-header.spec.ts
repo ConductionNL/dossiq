@@ -248,7 +248,7 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 		await expect(page.locator('.cn-index-page')).toBeVisible({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/changes/case-header/specs/case-dashboard-view/spec.md#the-six-work-tabs-come-first-in-order
+	// @e2e openspec/changes/case-header/specs/case-dashboard-view/spec.md#the-five-work-tabs-come-first-in-order
 	test('the work tabs lead the strip and the conditional four close it', async ({
 		page,
 	}) => {
