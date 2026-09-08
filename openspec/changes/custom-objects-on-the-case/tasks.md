@@ -77,5 +77,13 @@ criteria under a task are plain bullets.
   refused save without an object type, the index finding one building on
   two cases, View case opening the case, and the sidebar grouping. Assert on
   ids and saved objects, not English labels.
-- [ ] 5.3 Run `composer check:strict`, `npm run check:manifest`, the hydra
-  gates and the unit suite locally; read the exit codes, not the summaries.
+- [x] 5.3 Ran the checks locally and read the EXIT CODES, not the summaries.
+  `composer check:strict` exceeds a 300s command budget as one command, so
+  its legs ran individually: lint 0, phpcs 0, psalm 0, phpstan 0, phpunit 0
+  (3163 tests, 56 skipped), phpmd swept PER DIRECTORY (21 dirs, all rc=0
+  with no output) because phpmd printing nothing on all of `lib/` is its
+  OOM signature rather than a pass. Frontend: `npm run lint` 0, `vitest`
+  0 (693 tests), `check:manifest` 0, `check-l10n` 0, `check:l10n-js` 0,
+  `check:schema-l10n` 0, `npm run format` 0. Hydra gates with
+  `HYDRA_GATE_BASE_REF=origin/development`: 0, all 81 applicable gates
+  green (9 not applicable). Playwright was NOT run.
