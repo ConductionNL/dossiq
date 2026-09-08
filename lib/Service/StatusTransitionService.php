@@ -47,6 +47,7 @@ use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
 use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
+use OCA\Dossiq\Service\Transitions\StatusChecklist;
 use OCA\Dossiq\Service\Transitions\TransitionAuthorizer;
 use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCP\IUserSession;
@@ -82,6 +83,7 @@ class StatusTransitionService {
 	 * @param IUserSession $userSession Current session
 	 * @param LoggerInterface $logger Logger
 	 * @param CaseResultWriter $resultWriter Closing-result reader/writer
+	 * @param StatusChecklist $statusChecklist The checklist a status brings with it
 	 */
 	public function __construct(
 		private readonly WorkflowTemplateLoader $templateLoader,
@@ -93,6 +95,7 @@ class StatusTransitionService {
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly CaseResultWriter $resultWriter,
+		private readonly StatusChecklist $statusChecklist,
 	) {
 	}//end __construct()
 
@@ -326,7 +329,14 @@ class StatusTransitionService {
 			'statusRecordUuid' => $statusRecordId,
 		];
 
-		$actions = $this->specReader->extractActions(transition: $transition);
+		// The status the case just entered brings its own work. The checklist
+		// actions go FIRST, so the tasks a phase asks for exist before whatever
+		// the transition itself does with them — a notification that lists the
+		// case's open tasks is otherwise sent one dispatch too early.
+		$actions = array_merge(
+			$this->statusChecklist->actionsFor(statusTypeId: $toStatus, case: $case),
+			$this->specReader->extractActions(transition: $transition),
+		);
 		$dispatched = $this->sideEffectDispatcher->dispatch(actions: $actions, case: $case, transitionContext: $context);
 
 		// Update the statusRecord with the actual dispatched-action results.
@@ -511,7 +521,7 @@ class StatusTransitionService {
 	 * @param string|null $comment Optional free-form comment
 	 * @param string|null $userId Optional explicit user UID; defaults to IUserSession
 	 *
-	 * @return array{status: string, statusRecord: array<string, mixed>}
+	 * @return array{status: string, statusRecord: array<string, mixed>, dispatchedActions: array<int, array<string, mixed>>}
 	 *
 	 * @throws RuntimeException When the caller is not in the admin group or the target is invalid
 	 *
@@ -545,7 +555,24 @@ class StatusTransitionService {
 			noWorkflowTemplate: true,
 		);
 
-		return ['status' => 'ok', 'statusRecord' => $record];
+		// A status brings its checklist however the case arrived. This path
+		// dispatched nothing at all before, because it has no transition to
+		// read actions off — but the work belongs to the phase, not to the road
+		// into it, so an admin's move brings the tasks too. Only the checklist
+		// actions run here: there is no transition whose actions could.
+		$dispatched = $this->sideEffectDispatcher->dispatch(
+			actions: $this->statusChecklist->actionsFor(statusTypeId: $toStatusId, case: $case),
+			case: $case,
+			transitionContext: [
+				'fromStatus' => $currentId,
+				'toStatus' => $toStatusId,
+				'transitionLabel' => 'Free-form transition',
+				'userId' => $userId,
+				'statusRecordUuid' => (string)($record['id'] ?? ''),
+			],
+		);
+
+		return ['status' => 'ok', 'statusRecord' => $record, 'dispatchedActions' => $dispatched];
 	}//end executeFreeForm()
 
 	/**

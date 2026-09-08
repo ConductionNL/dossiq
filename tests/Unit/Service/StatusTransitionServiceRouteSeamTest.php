@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
 use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
+use OCA\Dossiq\Service\Transitions\StatusChecklist;
 use OCA\Dossiq\Service\Transitions\TransitionAuthorizer;
 use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCA\Dossiq\Service\WorkflowTemplateLoader;
@@ -51,6 +52,8 @@ interface RouteSeamObjectServiceStub {
 	public function find(string $id, mixed $register = null, mixed $schema = null): mixed;
 
 	public function searchObjects(array $query): array;
+
+	public function saveObject(array $object, mixed $register = null, mixed $schema = null): mixed;
 }//end interface
 
 /**
@@ -80,6 +83,23 @@ class StatusTransitionServiceRouteSeamTest extends TestCase {
 	private StatusTransitionService $service;
 
 	/**
+	 * @var SideEffectDispatcher&MockObject
+	 */
+	private SideEffectDispatcher $dispatcher;
+
+	/**
+	 * @var StatusChecklist&MockObject
+	 */
+	private StatusChecklist $statusChecklist;
+
+	/**
+	 * The group manager the admin gate reads.
+	 *
+	 * @var IGroupManager&MockObject
+	 */
+	private IGroupManager $groupManager;
+
+	/**
 	 * Wire the engine onto a loader we can watch, and a store that answers with
 	 * one case.
 	 *
@@ -90,16 +110,30 @@ class StatusTransitionServiceRouteSeamTest extends TestCase {
 		$logger = $this->createMock(LoggerInterface::class);
 		$this->templateLoader = $this->createMock(WorkflowTemplateLoader::class);
 
+		// Answers BY ID, not with one row for every read: the free-form path
+		// asks the case type whether it owns the target status, and a stub that
+		// hands back the case for that question refuses every move.
 		$objectService = $this->createMock(RouteSeamObjectServiceStub::class);
-		$objectService->method('find')->willReturn(
-			[
-				'id' => 'case-1',
-				'caseType' => 'ct-handhaving',
-				'status' => 'st-constatering',
-				'workflowTemplate' => 'spoed-1',
-			]
+		$objectService->method('find')->willReturnCallback(
+			static fn (string $id): array => match ($id) {
+				'case-1' => [
+					'id' => 'case-1',
+					'caseType' => 'ct-handhaving',
+					'status' => 'st-constatering',
+					'workflowTemplate' => 'spoed-1',
+				],
+				'ct-handhaving' => [
+					'id' => 'ct-handhaving',
+					'statusTypes' => ['st-constatering', 'st-behandeling'],
+				],
+				'st-behandeling' => ['id' => 'st-behandeling', 'name' => 'In behandeling', 'isFinal' => false],
+				default => [],
+			}
 		);
 		$objectService->method('searchObjects')->willReturn([]);
+		$objectService->method('saveObject')->willReturnCallback(
+			static fn (array $object): array => array_merge(['id' => 'saved-1'], $object)
+		);
 
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
 		$this->settingsService->method('getConfigValue')->willReturnCallback(
@@ -107,20 +141,27 @@ class StatusTransitionServiceRouteSeamTest extends TestCase {
 				'register' => '7',
 				'case_schema' => '11',
 				'status_type_schema' => '12',
+				'status_record_schema' => '13',
+				'case_type_schema' => '14',
 				default => '',
 			}
 		);
 
+		$this->dispatcher = $this->createMock(SideEffectDispatcher::class);
+		$this->statusChecklist = $this->createMock(StatusChecklist::class);
+		$this->groupManager = $this->createMock(IGroupManager::class);
+
 		$this->service = new StatusTransitionService(
 			$this->templateLoader,
 			$this->createMock(GuardRegistry::class),
-			$this->createMock(SideEffectDispatcher::class),
+			$this->dispatcher,
 			new CaseStatusStore($this->settingsService, $logger),
-			new TransitionAuthorizer($this->createMock(IGroupManager::class), $logger),
+			new TransitionAuthorizer($this->groupManager, $logger),
 			new TransitionSpecReader(),
 			$this->createMock(IUserSession::class),
 			$logger,
 			new CaseResultWriter($this->settingsService),
+			$this->statusChecklist,
 		);
 	}//end setUp()
 
@@ -168,4 +209,89 @@ class StatusTransitionServiceRouteSeamTest extends TestCase {
 
 		$this->service->execute(caseId: 'case-1', transitionId: 'spoed-t1', comment: null, userId: 'alice');
 	}//end testExecuteResolvesTheTransitionThroughTheCase()
+
+	/**
+	 * A guarded move dispatches the target status's checklist FIRST.
+	 *
+	 * The order is the assertion, not decoration: the transition's own actions
+	 * may read the tasks the phase asks for, and a notify that runs before the
+	 * tasks exist reports an empty list.
+	 *
+	 * @return void
+	 */
+	public function testExecuteDispatchesTheChecklistBeforeTheTransitionsOwnActions(): void {
+		$this->templateLoader->method('getTransitionForCase')->willReturn(
+			[
+				'id' => 'spoed-t1',
+				'label' => 'Start behandeling',
+				'fromStatus' => 'st-constatering',
+				'toStatus' => 'st-behandeling',
+				'guards' => [],
+				'automaticActions' => [['type' => 'notify', 'message' => 'moved']],
+			]
+		);
+
+		$this->statusChecklist->expects($this->once())
+			->method('actionsFor')
+			->with('st-behandeling', $this->callback(static fn (array $case): bool => ($case['id'] ?? '') === 'case-1'))
+			->willReturn(
+				[['type' => 'createTask', 'title' => 'Assemble the case file', 'workflowStepId' => 'st-behandeling']]
+			);
+
+		$dispatched = [];
+		$this->dispatcher->method('dispatch')->willReturnCallback(
+			function (array $actions) use (&$dispatched): array {
+				$dispatched = $actions;
+				return [];
+			}
+		);
+
+		$this->service->execute(caseId: 'case-1', transitionId: 'spoed-t1', comment: null, userId: 'alice');
+
+		self::assertSame(
+			['createTask', 'notify'],
+			array_map(static fn (array $action): string => (string)$action['type'], $dispatched)
+		);
+		self::assertSame('Assemble the case file', $dispatched[0]['title']);
+		self::assertSame('st-behandeling', $dispatched[0]['workflowStepId']);
+	}//end testExecuteDispatchesTheChecklistBeforeTheTransitionsOwnActions()
+
+	/**
+	 * An admin's free-form move brings the checklist too.
+	 *
+	 * This path dispatched NOTHING before: it has no transition to read actions
+	 * off. The work belongs to the phase, so a case an admin drops into a
+	 * status arrives with the same tasks as one that walked in.
+	 *
+	 * @return void
+	 */
+	public function testFreeFormDispatchesTheChecklistOfTheStatusItMovesTo(): void {
+		$this->groupManager->method('isInGroup')->willReturn(true);
+
+		$this->statusChecklist->expects($this->once())
+			->method('actionsFor')
+			->with('st-behandeling', $this->callback(static fn (array $case): bool => ($case['id'] ?? '') === 'case-1'))
+			->willReturn(
+				[['type' => 'createTask', 'title' => 'Assemble the case file', 'workflowStepId' => 'st-behandeling']]
+			);
+
+		$dispatched = [];
+		$this->dispatcher->method('dispatch')->willReturnCallback(
+			function (array $actions) use (&$dispatched): array {
+				$dispatched = $actions;
+				return [['type' => 'createTask', 'succeeded' => true]];
+			}
+		);
+
+		$result = $this->service->executeFreeForm(
+			caseId: 'case-1',
+			toStatusId: 'st-behandeling',
+			comment: null,
+			userId: 'alice',
+		);
+
+		self::assertCount(1, $dispatched);
+		self::assertSame('createTask', $dispatched[0]['type']);
+		self::assertSame([['type' => 'createTask', 'succeeded' => true]], $result['dispatchedActions']);
+	}//end testFreeFormDispatchesTheChecklistOfTheStatusItMovesTo()
 }//end class

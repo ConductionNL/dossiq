@@ -27,7 +27,7 @@ criteria under a task are plain bullets.
   `workflowStepId` from `actionConfig` when present.
   - extend `tests/Unit/Service/Transitions/CreateTaskHandlerTest.php` (new,
     the handler has none) with the saved object carrying the field
-- [ ] 2.3 `lib/Service/StatusTransitionService.php`: `execute` prepends the
+- [x] 2.3 `lib/Service/StatusTransitionService.php`: `execute` prepends the
   checklist actions to the transition's actions before
   `sideEffectDispatcher->dispatch`; `executeFreeForm` dispatches the checklist
   actions after its status write and returns them as `dispatchedActions`.
