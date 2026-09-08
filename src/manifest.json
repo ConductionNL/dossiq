@@ -4273,6 +4273,45 @@
 						}
 					},
 					{
+						"id": "case-type-versions",
+						"type": "object-list",
+						"title": "Versions",
+						"icon": "History",
+						"_note": "The type's workflowTemplate rows: what was published, when, and what the change note said. A DECLARED object-list and not the blueprint widget, because a workflowTemplate belongs to exactly one case type -- there is no inheritance to merge here, so `caseType = @objectId` is the whole question. `description` is the column the change note is written into by the publish action.",
+						"content": {
+							"register": "dossiq",
+							"schema": "workflowTemplate",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"sort": {
+								"field": "version",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "version",
+									"label": "Version"
+								},
+								{
+									"key": "lifecycleStatus",
+									"label": "Lifecycle status"
+								},
+								{
+									"key": "description",
+									"label": "Change note"
+								},
+								{
+									"key": "updated",
+									"label": "Updated"
+								}
+							],
+							"rowRoute": "WorkflowDefinitionDetail",
+							"emptyText": "This case type has no published versions yet"
+						}
+					},
+					{
 						"id": "case-type-blueprint",
 						"type": "custom",
 						"title": "Statuses, results and attributes",
@@ -4316,6 +4355,58 @@
 						"gridWidth": 4,
 						"gridHeight": 4,
 						"showTitle": true
+					},
+					{
+						"id": "5",
+						"widgetId": "case-type-versions",
+						"gridX": 0,
+						"gridY": 10,
+						"gridWidth": 12,
+						"gridHeight": 4,
+						"showTitle": true
+					}
+				],
+				"_headerActionsNote": "There is no `run-action` header-action type. The manifest schema enumerates handler, open-modal, open-page, navigate, object-op, export, open-form, refresh, api-call, agent and toggle, and CnActionButtons resolves exactly those; the design's `run-action` would have been refused by `npm run check:manifest` and, had it slipped through, rendered a button that dispatches nothing. Export is an `api-call` with `download: true`, which is the shape that asks for the response as a blob and hands it to the browser -- the endpoint already answers a DataDownloadResponse. The other three are dialogs, each for a reason a declarative action cannot meet: Import takes a FILE (a confirm gate has no fields and an api-call sends JSON), Publish must show the validation findings BEFORE asking for a change note, and Duplicate must land on the copy rather than refresh the page you are already on. Every icon here is registered in src/icons.js (gate-60); a name that is not renders no icon at all. The three dialogs read the case type off the ROUTE and not off their props: `open-modal` forwards props verbatim, so a `@objectId` token would arrive as that literal string.",
+				"headerActions": [
+					{
+						"id": "case-type-export",
+						"type": "api-call",
+						"label": "Export",
+						"icon": "TrayArrowDown",
+						"url": "/apps/dossiq/api/case-definitions/export",
+						"method": "POST",
+						"payload": {
+							"caseTypeId": "@objectId"
+						},
+						"download": true,
+						"filename": "case-type.zip",
+						"errorMessage": "The case type could not be exported."
+					},
+					{
+						"id": "case-type-import",
+						"type": "open-modal",
+						"label": "Import",
+						"icon": "TrayArrowUp",
+						"target": "CaseTypeImportDialog"
+					},
+					{
+						"id": "case-type-duplicate",
+						"type": "open-modal",
+						"label": "Duplicate",
+						"icon": "ContentDuplicate",
+						"target": "CaseTypeDuplicateDialog"
+					},
+					{
+						"id": "case-type-publish",
+						"type": "open-modal",
+						"label": "Publish",
+						"icon": "Publish",
+						"target": "CaseTypePublishDialog",
+						"visibleWhen": {
+							"field": "isDraft",
+							"op": "eq",
+							"value": true
+						}
 					}
 				],
 				"sidebar": {

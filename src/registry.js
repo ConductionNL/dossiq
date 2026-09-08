@@ -61,6 +61,13 @@ import TaskCaseLink from './components/tasks/TaskCaseLink.vue'
 // @spec openspec/specs/beschikking-generatie/spec.md
 import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
 import CaseLifecycleActionDialog from './dialogs/CaseLifecycleActionDialog.vue'
+// The three case-type gestures a declarative action cannot carry: a file, a
+// change note, and a route to the copy (case-type-authoring-extras D5).
+// @spec openspec/specs/workflow-import-export/spec.md
+// @spec openspec/specs/zaaktype-versioning/spec.md
+import CaseTypeDuplicateDialog from './dialogs/CaseTypeDuplicateDialog.vue'
+import CaseTypeImportDialog from './dialogs/CaseTypeImportDialog.vue'
+import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
 // VTH-specific case detail panels
 import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
@@ -233,6 +240,24 @@ const registry = {
 		kind: 'widget',
 		component: CaseTypeBlueprintWidget,
 		_note: 'CaseTypeDetail: what the type actually offers, over /api/case-types/{id}/blueprint, with an Inherited badge on every row that came from the parent and a Shared badge on every attribute that belongs to no type. In the LAYOUT rather than inside a tab strip on purpose: a type:"custom" widget named as a tab CHILD resolves by registry type, finds nothing and renders an empty panel without logging anything.',
+	},
+	// @spec openspec/specs/zaaktype-versioning/spec.md
+	CaseTypePublishDialog: {
+		kind: 'modal',
+		component: CaseTypePublishDialog,
+		_note: 'CaseTypeDetail Publish: reads /publish/validate FIRST and shows the findings instead of a note field when there are any, so a person about to be refused is told before being made to write a note they would lose. A declarative api-call cannot express that order.',
+	},
+	// @spec openspec/specs/workflow-import-export/spec.md
+	CaseTypeImportDialog: {
+		kind: 'modal',
+		component: CaseTypeImportDialog,
+		_note: "CaseTypeDetail Import: the import takes a FILE, and neither a header action's confirm gate (a plain dialog with no fields) nor an api-call (a JSON body) can carry a multipart upload. Declared declaratively it would be a button that cannot do the one thing it is for.",
+	},
+	// @spec openspec/specs/workflow-import-export/spec.md
+	CaseTypeDuplicateDialog: {
+		kind: 'modal',
+		component: CaseTypeDuplicateDialog,
+		_note: 'CaseTypeDetail Duplicate: posts the copy, reads the new id out of the answer and ROUTES there. An api-call refreshes the page you are already on, so a person who asked for a copy would be left looking at the original with no clue where the copy went.',
 	},
 	// @spec openspec/specs/status-transition-engine/spec.md
 	CaseLifecycleActionDialog: {

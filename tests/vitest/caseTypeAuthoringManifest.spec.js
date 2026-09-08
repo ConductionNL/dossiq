@@ -335,6 +335,122 @@ describe('the personal data block', () => {
 	})
 })
 
+describe('the four header actions', () => {
+	/**
+	 * One header action of the case type page.
+	 *
+	 * @param {string} id The action id.
+	 * @return {object|undefined} The action.
+	 */
+	const action = (id) =>
+		page('CaseTypeDetail').config.headerActions.find((entry) => entry.id === id)
+
+	it('offers Export, Import, Duplicate and Publish', () => {
+		expect(
+			page('CaseTypeDetail').config.headerActions.map((a) => a.label),
+		).toEqual(['Export', 'Import', 'Duplicate', 'Publish'])
+	})
+
+	it('declares no action of a type the library cannot dispatch', () => {
+		// `run-action` is not a header-action type. The manifest schema
+		// enumerates these eleven and CnActionButtons resolves exactly them;
+		// anything else is a button that dispatches nothing.
+		const dispatchable = [
+			'handler',
+			'open-modal',
+			'open-page',
+			'navigate',
+			'object-op',
+			'export',
+			'open-form',
+			'refresh',
+			'api-call',
+			'agent',
+			'toggle',
+		]
+		for (const entry of page('CaseTypeDetail').config.headerActions) {
+			expect(dispatchable, entry.id).toContain(entry.type)
+		}
+	})
+
+	it('asks Export for the response as a download', () => {
+		// Without `download: true` the blob is fetched and thrown away, and
+		// the button reports success having saved nothing.
+		expect(action('case-type-export').type).toBe('api-call')
+		expect(action('case-type-export').download).toBe(true)
+		expect(action('case-type-export').payload.caseTypeId).toBe('@objectId')
+	})
+
+	it('routes the three that need a field or a destination to a modal', () => {
+		for (const id of [
+			'case-type-import',
+			'case-type-duplicate',
+			'case-type-publish',
+		]) {
+			expect(action(id).type).toBe('open-modal')
+			expect(registrySource).toContain(`${action(id).target}: {`)
+		}
+	})
+
+	it('registers every modal target as kind modal', () => {
+		// dispatchAction refuses an open-modal target whose kind is not
+		// `modal`, and logs a warning nobody reads.
+		for (const target of [
+			'CaseTypeImportDialog',
+			'CaseTypeDuplicateDialog',
+			'CaseTypePublishDialog',
+		]) {
+			const entry = registrySource.slice(
+				registrySource.indexOf(`${target}: {`),
+			)
+			expect(entry.slice(0, 120), target).toContain("kind: 'modal'")
+		}
+	})
+
+	it('passes no @objectId token to a modal, which forwards props verbatim', () => {
+		// `open-modal` does NOT resolve tokens in `props`: a `@objectId` there
+		// arrives as that literal string, and the dialog acts on a case type
+		// called "@objectId". The dialogs read the route instead.
+		for (const entry of page('CaseTypeDetail').config.headerActions) {
+			if (entry.type !== 'open-modal') continue
+			const props = JSON.stringify(entry.props || {})
+			expect(props, entry.id).not.toContain('@objectId')
+		}
+	})
+
+	it('offers Publish only while the type is still a draft', () => {
+		expect(action('case-type-publish').visibleWhen).toEqual({
+			field: 'isDraft',
+			op: 'eq',
+			value: true,
+		})
+	})
+})
+
+describe('the Versions list', () => {
+	it('lists the type’s own workflow templates, newest version first', () => {
+		const widget = page('CaseTypeDetail').config.widgets.find(
+			(entry) => entry.id === 'case-type-versions',
+		)
+		expect(widget.type).toBe('object-list')
+		expect(widget.content.schema).toBe('workflowTemplate')
+		expect(widget.content.filter).toEqual({ caseType: '@objectId' })
+		expect(widget.content.sort).toEqual({ field: 'version', dir: 'desc' })
+	})
+
+	it('shows the version, its lifecycle status and the change note', () => {
+		const widget = page('CaseTypeDetail').config.widgets.find(
+			(entry) => entry.id === 'case-type-versions',
+		)
+		expect(widget.content.columns.map((c) => c.key)).toEqual([
+			'version',
+			'lifecycleStatus',
+			'description',
+			'updated',
+		])
+	})
+})
+
 describe('every icon this change names is registered', () => {
 	it('registers each icon the touched pages name', () => {
 		// gate-60: an icon that is not in src/icons.js renders NO icon at all.

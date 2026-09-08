@@ -201,10 +201,28 @@ implementation task; the criteria under a task are plain bullets.
     without publishing, because a person about to be refused should be told
     before being made to write the change note.
   - `@spec openspec/specs/zaaktype-versioning/spec.md`
-- [ ] 5.2 `src/manifest.json` page `CaseTypeDetail`: the four header
+- [x] 5.2 `src/manifest.json` page `CaseTypeDetail`: the four header
   actions and the widget `case-type-versions` per design D5.
-  - verify `run-action` handles a download; else `export` becomes a
-    `handler` opening the URL, and record it here
+  - RECORDED, because the question the task asks has a different answer than
+    it expects: **there is no `run-action` header-action type at all.** The
+    manifest schema enumerates handler, open-modal, open-page, navigate,
+    object-op, export, open-form, refresh, api-call, agent and toggle, and
+    `CnActionButtons` resolves exactly those. All four actions as designed
+    would have been refused by `npm run check:manifest`, and had they passed
+    they would have rendered four buttons that dispatch nothing.
+  - Export is an `api-call` with `download: true`, which asks for the
+    response as a blob and hands it to the browser -- the endpoint already
+    answers a `DataDownloadResponse`, so no `handler` fallback is needed.
+  - The other three are dialogs, each for a reason a declarative action
+    cannot meet: Import takes a FILE (a confirm gate has no fields and an
+    api-call sends JSON), Publish must show the findings BEFORE asking for a
+    change note, and Duplicate must LAND on the copy rather than refresh the
+    page you are already on.
+  - The dialogs read the case type off the ROUTE, not off their props:
+    `open-modal` forwards props verbatim, so a `@objectId` token would
+    arrive as that literal string. A vitest asserts no modal action carries
+    one.
+  - Publish is gated on `isDraft`, so a published type does not offer it.
 - [ ] 5.3 `l10n/en.json` and `l10n/nl.json`: Colour, Hidden in lists,
   Parent case type, Inherited, Category, Shared attributes, Personal data,
   Export, Import, Duplicate, Publish, Change note, Versions.
