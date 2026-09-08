@@ -3774,7 +3774,8 @@
         "The adapter class named in %1$s cannot be used: %2$s is missing or does not implement the seam. A mock adapter is running in its place.": "The adapter class named in %1$s cannot be used: %2$s is missing or does not implement the seam. A mock adapter is running in its place.",
         "The adapter class named in %1$s could not be built. A mock adapter is running in its place.": "The adapter class named in %1$s could not be built. A mock adapter is running in its place.",
         "A mock adapter answers here. No message reaches Mijn Overheid. Set berichtenbox_adapter to a real adapter class.": "A mock adapter answers here. No message reaches Mijn Overheid. Set berichtenbox_adapter to a real adapter class.",
-        "A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to a real adapter class.": "A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to a real adapter class."
+        "A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to a real adapter class.": "A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to a real adapter class.",
+        "We corrected {count} of our own ratings on {date}, because we had shipped the capability since the reading. We do not correct the other three columns that way. The competitor ratings are as we read them on the date above.": "We corrected {count} of our own ratings on {date}, because we had shipped the capability since the reading. We do not correct the other three columns that way. The competitor ratings are as we read them on the date above."
     },
     "plurals": ""
 }

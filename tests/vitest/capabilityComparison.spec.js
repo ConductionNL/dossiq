@@ -13,6 +13,7 @@
 import { describe, expect, it } from 'vitest'
 import data from '../../src/data/capabilityComparison.json'
 import {
+	behindEveryRival,
 	formatComparedOn,
 	groupByArea,
 	labelFor,
@@ -26,11 +27,37 @@ import {
 // purpose: if a row is edited, one of these fails and names the system whose
 // score moved.
 const AUDIT_TOTALS = {
-	dossiq: { yes: 80, partial: 85, no: 41 },
+	dossiq: { yes: 84, partial: 87, no: 35 },
 	opencase: { yes: 62, partial: 46, no: 98 },
 	gzac: { yes: 86, partial: 55, no: 65 },
 	zaaksysteem: { yes: 136, partial: 40, no: 30 },
 }
+
+// Our own column moved on 2026-09-08: six rows the audit read as `no` on
+// 2026-09-07 had been built by the next day. 80/85/41 became 84/87/35, and the
+// other three columns did not move, because re-rating someone else's product
+// without re-reading it is the dishonesty this page exists to avoid. Every
+// move is listed in the data file's `_rerated`, which the guard below pins to
+// the ratings themselves so a note cannot outlive the score it explains.
+const RERATED_IDS = ['1.8', '2.8', '2.9', '4.9', '5.5', '11.23']
+
+// The rows where all three rivals have the capability and we do not. Pinned
+// rather than asserted empty, because it is NOT empty and a plan that said so
+// was wrong: most of these seven are stale in the same way the six above were,
+// and they belong to the partial column, which phase 3 owns and this change
+// does not touch. The list shrinks as phase 3 re-rates, and this test is what
+// makes each of those moves visible instead of a page quietly claiming a clean
+// sheet. 2.4, a one-click claim on a case, is the one row here that is
+// certainly still true.
+const BEHIND_EVERY_RIVAL = [
+	'2.1',
+	'2.4',
+	'4.16',
+	'4.22',
+	'9.1',
+	'11.10',
+	'12.7',
+]
 
 // Two labels are identical in English and Dutch because the Dutch IS the
 // English: `StUF (BG, ZKN, DCR)` is a Dutch standard's own name, and `Intake`
@@ -102,6 +129,74 @@ describe('capabilityComparison data', () => {
 
 	it('records when the comparison was made', () => {
 		expect(data.comparedOn).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+	})
+
+	it('records when our own column was last corrected', () => {
+		expect(data.reratedOn).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+		expect(data.reratedOn >= data.comparedOn).toBe(true)
+	})
+
+	it('explains every correction, and corrects only our own column', () => {
+		expect(data._rerated.map((r) => r.id).sort()).toEqual(
+			[...RERATED_IDS].sort(),
+		)
+		for (const entry of data._rerated) {
+			expect(entry.from, entry.id).not.toBe(entry.to)
+			expect(RATINGS, entry.id).toContain(entry.to)
+			expect(entry.on, entry.id).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+			expect(entry.reason.length, entry.id).toBeGreaterThan(20)
+		}
+	})
+
+	it('keeps every correction note pinned to the rating it explains', () => {
+		// The failure this catches: a row is edited again later and the note
+		// beside it goes on describing the previous value. A note that
+		// disagrees with its own row is worse than no note.
+		const byId = new Map(data.capabilities.map((c) => [c.id, c]))
+		const drifted = data._rerated.filter(
+			(entry) => byId.get(entry.id)?.dossiq !== entry.to,
+		)
+		expect(drifted.map((entry) => entry.id)).toEqual([])
+	})
+})
+
+describe('behindEveryRival', () => {
+	it('names the rows where all three rivals have it and we do not', () => {
+		expect(behindEveryRival(data).map((row) => row.id)).toEqual(
+			BEHIND_EVERY_RIVAL,
+		)
+	})
+
+	it('counts a partial on our side as behind', () => {
+		const shaped = {
+			systems: data.systems,
+			capabilities: [
+				{
+					id: 'x',
+					dossiq: 'partial',
+					opencase: 'yes',
+					gzac: 'yes',
+					zaaksysteem: 'yes',
+				},
+			],
+		}
+		expect(behindEveryRival(shaped).map((row) => row.id)).toEqual(['x'])
+	})
+
+	it('does not count a row one rival merely half has', () => {
+		const shaped = {
+			systems: data.systems,
+			capabilities: [
+				{
+					id: 'x',
+					dossiq: 'no',
+					opencase: 'yes',
+					gzac: 'partial',
+					zaaksysteem: 'yes',
+				},
+			],
+		}
+		expect(behindEveryRival(shaped)).toEqual([])
 	})
 })
 
