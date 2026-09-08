@@ -190,12 +190,30 @@ no menu entry changes.
 
 ## 4. Copy and locale
 
-- [ ] 4.1 `l10n/nl.json`: Mine "Van mij", Unclaimed "Niet toegewezen", All
-  "Alle", Closed "Gesloten", Overdue "Verlopen", "Deadline before"
-  "Deadline voor", "{n} days left" "{n} dagen over", "{n} days overdue"
-  "{n} dagen verlopen", "Extend term" "Termijn verlengen", "Suspend"
-  "Opschorten", "Resume" "Hervatten", "Reason" "Reden", "New deadline"
-  "Nieuwe deadline". Sentence case, no em-dashes (writing skill, gate 96).
+- [x] 4.1 `l10n/en.json` AND `l10n/nl.json` (both, not just Dutch: the
+  checker enforces key-set parity in each direction, and a key missing from
+  en.json is a string with no English source for a translator to pick up).
+  Nine keys were already there with translations that read well and are
+  reused rather than respelled, which keeps the other 34 locales' work.
+  - Added: "Unclaimed" / "Niet toegewezen", "1 day left" / "Nog 1 dag",
+    "{days} days left" / "Nog {days} dagen", "New deadline" / "Nieuwe
+    deadline", "Reason (applied to every case)" / "Reden (geldt voor elke
+    zaak)", "Suspend {count} cases" / "{count} zaken opschorten", "Resume
+    {count} cases" / "{count} zaken hervatten", "Extend the term of {count}
+    cases" / "Termijn van {count} zaken verlengen".
+  - Already present and reused: "All" / "Alle", "Mine" / "Van mij", "Closed" /
+    "Gesloten", "Overdue" / "Verlopen", "Transition" / "Overgang", "Suspend" /
+    "Opschorten", "Resume" / "Hervatten", "Extend term" / "Termijn verlengen",
+    "Reason" / "Reden", "Deadline" / "Termijn", "1 day overdue" / "1 dag te
+    laat", "{days} days overdue" / "{days} dagen te laat".
+  - "Deadline before" is not here: the sidebar filter it labels is blocked
+    (2.2), and a catalogue key for a control nobody can see is a string a
+    translator spends time on for nothing.
+  - The countdown says "1 day left", not "1 days left": two keys per
+    direction rather than a plural form, because no catalogue in this app
+    carries a plural array and introducing one for this would be the only
+    such entry in 3,589 keys.
+  - Sentence case, no em-dashes (writing skill, gate 96).
 
 ## 5. Verification
 
