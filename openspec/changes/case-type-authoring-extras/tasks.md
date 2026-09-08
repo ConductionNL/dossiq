@@ -39,8 +39,16 @@ implementation task; the criteria under a task are plain bullets.
     (see 1.1), and it goes on the `All` chip alone: `All` is the chip marked
     `default`, and `Unclaimed` must stay literally equal to Queue's base
     filter, which a manifest vitest asserts.
-- [ ] 1.3 `lib/Settings/register.d/*status*.json`: seed colours per role and
+- [x] 1.3 `lib/Settings/register.d/*status*.json`: seed colours per role and
   `hiddenInLists: true` on final statuses per design.
+  - There is no `*status*.json`: the seeded `statusType` rows live in
+    `lib/Settings/dossiq_register.json` (14 rows, each with a `role`) and
+    `lib/Settings/register.d/46-demo-cases-english.json` (17 rows, none with
+    a role, coloured by name instead). Both carry the colours now.
+  - The e2e fixture's own Afgehandeld status (`tests/e2e/helpers/fixtures.ts`)
+    deliberately keeps `hiddenInLists` unset, so `case-list-lenses`'s "All
+    shows ... the closed one" stays true: closed is not the same claim as
+    hidden, and the spec words the filter as hidden.
 
 ## 2. A parent type
 

@@ -9601,7 +9601,8 @@
                 "description": "Aanvraag is ontvangen en geregistreerd",
                 "order": 1,
                 "isFinal": false,
-                "role": "intake"
+                "role": "intake",
+                "colour": "blue"
             },
             {
                 "@self": {
@@ -9614,7 +9615,8 @@
                 "description": "Aanvraag wordt inhoudelijk getoetst",
                 "order": 2,
                 "isFinal": false,
-                "role": "in-progress"
+                "role": "in-progress",
+                "colour": "orange"
             },
             {
                 "@self": {
@@ -9627,7 +9629,8 @@
                 "description": "Besluit wordt voorbereid en genomen",
                 "order": 3,
                 "isFinal": false,
-                "role": "review"
+                "role": "review",
+                "colour": "purple"
             },
             {
                 "@self": {
@@ -9640,7 +9643,9 @@
                 "description": "Zaak is afgehandeld en gearchiveerd",
                 "order": 4,
                 "isFinal": true,
-                "role": "closed"
+                "role": "closed",
+                "colour": "green",
+                "hiddenInLists": true
             },
             {
                 "@self": {
@@ -9653,7 +9658,8 @@
                 "description": "Subsidieaanvraag is ontvangen",
                 "order": 1,
                 "isFinal": false,
-                "role": "intake"
+                "role": "intake",
+                "colour": "blue"
             },
             {
                 "@self": {
@@ -9666,7 +9672,8 @@
                 "description": "Aanvraag wordt getoetst aan subsidiekader",
                 "order": 2,
                 "isFinal": false,
-                "role": "in-progress"
+                "role": "in-progress",
+                "colour": "orange"
             },
             {
                 "@self": {
@@ -9679,7 +9686,8 @@
                 "description": "Subsidiebesluit wordt voorbereid en genomen",
                 "order": 3,
                 "isFinal": false,
-                "role": "review"
+                "role": "review",
+                "colour": "purple"
             },
             {
                 "@self": {
@@ -9692,7 +9700,9 @@
                 "description": "Subsidie is verleend, geweigerd of ingetrokken",
                 "order": 4,
                 "isFinal": true,
-                "role": "closed"
+                "role": "closed",
+                "colour": "green",
+                "hiddenInLists": true
             },
             {
                 "@self": {
@@ -9705,7 +9715,8 @@
                 "description": "Klacht is ontvangen en geregistreerd",
                 "order": 1,
                 "isFinal": false,
-                "role": "intake"
+                "role": "intake",
+                "colour": "blue"
             },
             {
                 "@self": {
@@ -9718,7 +9729,8 @@
                 "description": "Klacht wordt onderzocht (hoor en wederhoor)",
                 "order": 2,
                 "isFinal": false,
-                "role": "in-progress"
+                "role": "in-progress",
+                "colour": "orange"
             },
             {
                 "@self": {
@@ -9731,7 +9743,9 @@
                 "description": "Klacht is afgehandeld met formeel antwoord",
                 "order": 3,
                 "isFinal": true,
-                "role": "closed"
+                "role": "closed",
+                "colour": "green",
+                "hiddenInLists": true
             },
             {
                 "@self": {
@@ -9744,7 +9758,8 @@
                 "description": "Melding is ontvangen en doorgezet",
                 "order": 1,
                 "isFinal": false,
-                "role": "intake"
+                "role": "intake",
+                "colour": "blue"
             },
             {
                 "@self": {
@@ -9757,7 +9772,8 @@
                 "description": "Melding wordt afgehandeld door beheerdienst",
                 "order": 2,
                 "isFinal": false,
-                "role": "in-progress"
+                "role": "in-progress",
+                "colour": "orange"
             },
             {
                 "@self": {
@@ -9770,7 +9786,9 @@
                 "description": "Melding is opgelost en afgesloten",
                 "order": 3,
                 "isFinal": true,
-                "role": "closed"
+                "role": "closed",
+                "colour": "green",
+                "hiddenInLists": true
             },
             {
                 "@self": {
