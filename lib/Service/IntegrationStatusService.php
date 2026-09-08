@@ -62,12 +62,21 @@ class IntegrationStatusService {
 		'brp',
 		'kvk',
 		'pdok',
+		'berichtenbox',
+		'templates',
 	];
 
 	/**
-	 * The four states a card may show. A caller handing anything else is
+	 * The five states a card may show. A caller handing anything else is
 	 * refused rather than silently written, because a status nothing can read
 	 * is worse on the page than no status at all.
+	 *
+	 * `simulated` is the one that says the quiet part. A seam that resolves to
+	 * a mock adapter WORKS: the compose dialog opens, the send succeeds, a
+	 * message id comes back. It is `configured` in every way a reader can see
+	 * and in none that matter, which is exactly the claim this page exists to
+	 * stop the app from making. `unavailable` would be wrong for it, because
+	 * the seam is available; it just is not real.
 	 *
 	 * @var array<int, string>
 	 */
@@ -75,6 +84,7 @@ class IntegrationStatusService {
 		'configured',
 		'unconfigured',
 		'unavailable',
+		'simulated',
 		'error',
 	];
 
@@ -94,6 +104,26 @@ class IntegrationStatusService {
 		'kcc' => ['identification_method'],
 		'dmn' => ['decision_table_schema'],
 		'financial' => ['dwangsom_callback_secret'],
+		'berichtenbox' => ['berichtenbox_adapter'],
+		'templates' => ['beschikking_template_adapter'],
+	];
+
+	/**
+	 * What an UNFILLED section means, for the connections where it does not
+	 * mean "not checked yet".
+	 *
+	 * Every other row starts life not knowing anything about itself, and
+	 * `unconfigured` says so. The two adapter seams are different: an empty
+	 * `berichtenbox_adapter` is not an absence of knowledge, it is a mock
+	 * adapter running, which the app knows for certain because it is the app
+	 * that binds it. Writing `unconfigured` there would understate a working
+	 * channel that sends nothing.
+	 *
+	 * @var array<string, array{0: string, 1: string}>
+	 */
+	public const SAVE_UNFILLED_STATE = [
+		'berichtenbox' => ['simulated', 'A mock adapter answers here. No message reaches Mijn Overheid. Set berichtenbox_adapter to a real adapter class.'],
+		'templates' => ['simulated', 'A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to a real adapter class.'],
 	];
 
 	/**
@@ -220,8 +250,7 @@ class IntegrationStatusService {
 				continue;
 			}
 
-			$status = 'unconfigured';
-			$message = 'Not checked yet';
+			[$status, $message] = (self::SAVE_UNFILLED_STATE[$key] ?? ['unconfigured', 'Not checked yet']);
 			if ($this->allFilled(keys: $requiredKeys) === true) {
 				$status = 'configured';
 				$message = 'Saved in the admin settings';
