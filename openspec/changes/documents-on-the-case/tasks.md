@@ -22,7 +22,7 @@ criteria under a task are plain bullets.
 
 ## 2. The Documents tab
 
-- [ ] 2.1 `src/manifest.json` page `CaseDetail`: add widget `case-documents`
+- [x] 2.1 `src/manifest.json` page `CaseDetail`: add widget `case-documents`
   as `type: custom`, `component: DossierTab`, `props.objectId: @objectId`,
   title Documents, icon `FileDocumentMultipleOutline`; add it to
   `case-panels.content.tabs` as Documents before Files; keep it out of
