@@ -72,14 +72,14 @@ criteria under a task are plain bullets.
 
 ## 4. Verification
 
-- [ ] 4.1 Add `tests/e2e/case-parties.spec.ts` covering every scenario of
+- [x] 4.1 Add `tests/e2e/case-parties.spec.ts` covering every scenario of
   the two delta specs that names it: the Parties tab with seeded roles, the
   empty tab, the delegate columns, Add party with the case prefilled and the
   role type restricted, the saved role in the tab, the Team field on the case
   and task forms, the Team column and facet on both indexes, the Mine chip.
   Seed through `seedCase`, `ensureCaseType` and `createObject` from
   `tests/e2e/helpers/fixtures.ts`; clean up with `cleanupRunObjects`.
-- [ ] 4.2 Update `tests/e2e/case-detail-kpis-and-tabs.spec.ts`: the tab
+- [x] 4.2 Update `tests/e2e/case-detail-kpis-and-tabs.spec.ts`: the tab
   strip holds Parties and no Contacts.
 - [ ] 4.3 Run `composer check:strict`, `npm run check:manifest`, the hydra
   gates and the unit suite locally; read the exit codes, not the summaries.
