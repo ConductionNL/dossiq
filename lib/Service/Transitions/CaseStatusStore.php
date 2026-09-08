@@ -342,8 +342,55 @@ class CaseStatusStore {
 			}
 		}
 
+		// 🔴 THE LINK LIVES ON THE CHILD. `caseType` declares no `statusTypes`
+		// property at all — every `statusType` carries a `caseType`
+		// back-reference instead — so the list read above is empty on every
+		// real case type, and this method refused EVERY free-form move with
+		// `status_type_not_in_case_type`. The list is still read first, because
+		// a case type that does carry one (a test fixture, an imported bundle)
+		// is then answered without a second round trip.
+		if ($this->statusBelongsByBackReference(statusTypeId: $statusTypeId, caseTypeId: $caseTypeId) === true) {
+			return;
+		}
+
 		throw new RuntimeException('status_type_not_in_case_type');
 	}//end assertStatusBelongsToCaseType()
+
+	/**
+	 * Whether the statusType names this case type as its parent.
+	 *
+	 * @param string $statusTypeId StatusType UUID.
+	 * @param string $caseTypeId   CaseType UUID.
+	 *
+	 * @return bool True when the statusType belongs to the case type.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function statusBelongsByBackReference(string $statusTypeId, string $caseTypeId): bool {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null || $caseTypeId === '') {
+			return false;
+		}
+
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$statusTypeSchema = $this->settingsService->getConfigValue(key: 'status_type_schema');
+		if ($register === '' || $statusTypeSchema === '') {
+			return false;
+		}
+
+		try {
+			$statusType = $this->toArray(value: $objectService->find($statusTypeId, register: $register, schema: $statusTypeSchema));
+		} catch (\Throwable $e) {
+			return false;
+		}
+
+		$parent = ($statusType['caseType'] ?? '');
+		if (is_array($parent) === true) {
+			$parent = ($parent['id'] ?? ($parent['uuid'] ?? ''));
+		}
+
+		return ((string)$parent === $caseTypeId);
+	}//end statusBelongsByBackReference()
 
 	/**
 	 * Coerce ObjectService results to an array.
