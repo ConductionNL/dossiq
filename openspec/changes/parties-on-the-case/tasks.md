@@ -5,7 +5,7 @@ criteria under a task are plain bullets.
 
 ## 1. The Parties tab
 
-- [ ] 1.1 `src/manifest.json` page `CaseDetail`: add widget `case-roles`
+- [x] 1.1 `src/manifest.json` page `CaseDetail`: add widget `case-roles`
   (`type: object-list`, `register: dossiq`, `schema: role`, `filter.case:
   @objectId`, sort `roleType` asc, limit 50, columns `roleType`,
   `participant`, `delegate`, `delegateUntil`, `emptyText`); add it to

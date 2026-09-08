@@ -1365,6 +1365,44 @@
 						}
 					},
 					{
+						"id": "case-roles",
+						"type": "object-list",
+						"title": "Parties",
+						"icon": "AccountKeyOutline",
+						"_note": "parties-on-the-case D1: everyone involved in THIS case, read straight off the `role` schema. `RolesTab.vue` is an admin surface over every role row in the register, so it can never answer the case page's question; this widget is the same object-list shape `case-tasks` and `case-sub-cases` already use, filtered on `case: @objectId`. `roleType` is a $ref and CnIndexPage renders a $ref column raw, so that cell shows a uuid until nextcloud-vue renders label fields for reference columns (triage #8, Tier D06); `participant` carries the readable identity in the meantime. `delegate` and `delegateUntil` are shown as the plain window they are — whether a delegate is active NOW is the substitution resolver's answer, not this list's. Absent from `layout` like every other tab child: the tabs widget renders it, so a layout entry would render it twice.",
+						"content": {
+							"register": "dossiq",
+							"schema": "role",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "roleType",
+								"dir": "asc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "roleType",
+									"label": "Role"
+								},
+								{
+									"key": "participant",
+									"label": "Participant"
+								},
+								{
+									"key": "delegate",
+									"label": "Delegate"
+								},
+								{
+									"key": "delegateUntil",
+									"label": "Delegate until"
+								}
+							],
+							"emptyText": "No parties on this case yet"
+						}
+					},
+					{
 						"id": "case-locaties",
 						"type": "object-list",
 						"title": "Locations",
@@ -1599,6 +1637,10 @@
 								{
 									"widgetId": "case-decidesk-decisions",
 									"label": "Decisions"
+								},
+								{
+									"widgetId": "case-roles",
+									"label": "Parties"
 								},
 								{
 									"widgetId": "case-contacts",
