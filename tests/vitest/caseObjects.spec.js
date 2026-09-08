@@ -43,15 +43,17 @@ const caseDetail = () => manifest.pages.find((page) => page.id === 'CaseDetail')
  * @param {string} id The manifest widget id.
  * @return {object|undefined} The widget entry.
  */
-const caseWidget = (id) =>
-	caseDetail().config.widgets.find((entry) => entry.id === id)
+function caseWidget(id) {
+	return caseDetail().config.widgets.find((entry) => entry.id === id)
+}
 
 /** The tab children of the `case-panels` strip. @return {Array<object>} The tabs. */
 const panelTabs = () => caseWidget('case-panels').content.tabs
 
 /** One header action of the CaseDetail page. @param {string} id The action id. @return {object|undefined} The action. */
-const headerAction = (id) =>
-	caseDetail().config.headerActions.find((entry) => entry.id === id)
+function headerAction(id) {
+	return caseDetail().config.headerActions.find((entry) => entry.id === id)
+}
 
 /** The column keys of a widget's object list. @param {object} w The widget. @return {Array<string>} The keys. */
 const columnKeys = (w) => w.content.columns.map((column) => column.key)
@@ -93,9 +95,10 @@ describe('the caseObject schema', () => {
 		]) {
 			const property = caseObject().properties[key]
 			expect(property, `caseObject.${key} must exist`).toBeDefined()
-			expect(property.visible, `caseObject.${key} must not be hidden`).not.toBe(
-				false,
-			)
+			expect(
+				property.visible,
+				`caseObject.${key} must not be hidden`,
+			).not.toBe(false)
 			expect(
 				property.readOnly,
 				`caseObject.${key} must not be read-only`,
@@ -274,7 +277,7 @@ describe('the Objects index', () => {
 		expect(page().config.extend).toBeUndefined()
 	})
 
-	it('opens the row\'s case, not the row', () => {
+	it("opens the row's case, not the row", () => {
 		const actions = page().config.actions
 		expect(actions).toHaveLength(1)
 		expect(actions[0].id).toBe('view-case')
