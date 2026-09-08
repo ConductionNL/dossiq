@@ -1240,7 +1240,7 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "case",
-				"_note": "CASE archetype (unified zaak) — the flagship record and the ADR-062 reference page (the cell is the budget: every widget fills its gridHeight exactly, no inner scrollbars, no reserved voids). The lead row pairs the field-scoped 'Core case data' widget (include: identity/ownership fields) with a right column of KPI stats-block (open tasks / documents / decisions / sub-cases, replacing the deprecated header summaryAggregates) over the Related panel. Row two pairs the 'Process' data widget (include: status/procedure/workflow fields) with Initiator, Contacts and Notes sized to their small content. FK-scoped child collections (task.case, caseDocument.case, decision.case, location.case) fit their rows to their cells with View-all/+N-more footers. Files and Calendar leaves close the page. lifecycleActions drive status transitions; audit history stays the single sidebar tab.",
+				"_note": "CASE archetype (unified zaak) — the flagship record and the ADR-062 reference page (the cell is the budget: every widget fills its gridHeight exactly, no inner scrollbars, no reserved voids). The lead row pairs the field-scoped 'Core case data' widget (include: identity/ownership fields) with a right column of KPI stats-block (open tasks / documents / decisions / sub-cases, replacing the deprecated header summaryAggregates) over the Related panel. Row two pairs the 'Process' data widget (include: status/procedure/workflow fields) with Initiator, Contacts and Notes sized to their small content. FK-scoped child collections (task.case, caseDocument.case, decision.case, location.case) fit their rows to their cells with View-all/+N-more footers. Files and Calendar leaves close the page. The case's own state leads the page: a full-width transition strip (case-transitions) over the KPI row, whose third cell is now the stepper (case-steps) rather than the milestone percentage. `lifecycleActions` is GONE -- it declared `{field: status}` and rendered nothing, because OpenRegister answers no actions for a $ref status field. Suspend, Resume, Extend term and Reopen are `open-modal` header actions onto one reason dialog (CaseLifecycleActionDialog), which reads /lifecycle before it posts. Only Reopen gates exactly as the spec words it, because `isFinalStatus` is on the case record: an action's local `visibleWhen` dot-paths into the loaded record, `suspensionAllowed` and `extensionAllowed` live on the case TYPE, and OpenRegister's object list IGNORES an `id` filter (it answers with the whole table), so a `source` predicate on the type would compare a different case type's flag and be wrong without saying so. Suspension is derived from the case's `activity` journal rather than a flag, so no field can gate Resume either -- the transitions widget puts Resume in front of the handler when /lifecycle says the case is actually suspended. Audit history stays the single sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
 					{
@@ -1521,6 +1521,13 @@
 						}
 					},
 					{
+						"id": "case-transitions",
+						"type": "custom",
+						"title": "Case status",
+						"icon": "SwapHorizontal",
+						"_note": "The transitions this user may take from the case's current status, the confirm dialog that asks for a comment and, on a closing move, a result, plus the suspended marker and the Resume button (page slot widget-case-transitions -> CaseTransitionsWidget). It replaces the page's `lifecycleActions: {field: status}` block, which rendered NOTHING: CnLifecycleActions asks OpenRegister's /available-actions, and `case.status` is a $ref to a per-caseType statusType row, for which OR answers an empty action list. Its graph mode derives moves from sibling ORDER alone and so cannot express the workflow template's named, role-filtered, guarded transitions, cannot say which guard refused, and cannot ask for the result a closing case needs -- all three of which this page requires. When the platform can serve them (case-status-onto-engine-lifecycle), this widget is deleted and lifecycleActions declared again."
+					},
+					{
 						"id": "case-kpi-time-left",
 						"type": "countdown",
 						"title": "Time left",
@@ -1557,23 +1564,11 @@
 						}
 					},
 					{
-						"id": "case-kpi-progress",
-						"type": "stat",
-						"title": "Completed",
-						"icon": "PercentOutline",
-						"_note": "Milestone progress, from MilestoneService::getCaseProgress through the routed milestone#progress endpoint. That service and its route already existed with NO frontend consumer: the percentage was computed on every call and shown nowhere. Reads 0% for a case type with no milestones configured, which is honest, because nothing has been declared to reach. The endpoint resolves the case's type SERVER-SIDE: the two-segment form needed `@object.caseType`, which is empty on the first render because the record has not loaded, so every page load fired a 404 before the corrected request followed.",
-						"content": {
-							"label": "Completed",
-							"icon": "PercentOutline",
-							"format": {
-								"style": "percent",
-								"decimals": 0
-							},
-							"endpointSource": {
-								"url": "/apps/dossiq/api/cases/@objectId/milestones/progress"
-							},
-							"valueField": "percentage"
-						}
+						"id": "case-steps",
+						"type": "custom",
+						"title": "Steps",
+						"icon": "Timeline",
+						"_note": "Which step the case is in, over its case type's statusType rows in `order` (page slot widget-case-steps -> CaseStepsWidget). It takes the cell the milestone progress tile had, and that tile is gone: milestones are configured on almost no case type, so `Completed` read 0% on every demo case and told a handler nothing, while every case has a status because a case cannot exist without one. The milestone endpoint stays for its other readers; this page simply stops calling it. A `stepper` widget type over a reference field's ordered sibling rows would make this a config declaration (tasks 3.3); until nextcloud-vue ships one, the custom widget is the interim. Many statuses in a four-column cell scroll sideways rather than clipping, which is the honest failure mode for a case type with a long process."
 					},
 					{
 						"id": "case-email",
@@ -1680,10 +1675,19 @@
 				],
 				"layout": [
 					{
+						"id": "10",
+						"widgetId": "case-transitions",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 2,
+						"showTitle": false
+					},
+					{
 						"id": "1",
 						"widgetId": "case-kpi-time-left",
 						"gridX": 0,
-						"gridY": 0,
+						"gridY": 2,
 						"gridWidth": 4,
 						"gridHeight": 2,
 						"showTitle": false
@@ -1692,16 +1696,16 @@
 						"id": "2",
 						"widgetId": "case-kpi-casetype",
 						"gridX": 4,
-						"gridY": 0,
+						"gridY": 2,
 						"gridWidth": 4,
 						"gridHeight": 2,
 						"showTitle": false
 					},
 					{
 						"id": "3",
-						"widgetId": "case-kpi-progress",
+						"widgetId": "case-steps",
 						"gridX": 8,
-						"gridY": 0,
+						"gridY": 2,
 						"gridWidth": 4,
 						"gridHeight": 2,
 						"showTitle": false
@@ -1710,7 +1714,7 @@
 						"id": "4",
 						"widgetId": "case-core",
 						"gridX": 0,
-						"gridY": 2,
+						"gridY": 4,
 						"gridWidth": 8,
 						"gridHeight": 6,
 						"showTitle": false
@@ -1719,7 +1723,7 @@
 						"id": "5",
 						"widgetId": "case-panels",
 						"gridX": 0,
-						"gridY": 8,
+						"gridY": 10,
 						"gridWidth": 8,
 						"gridHeight": 8,
 						"showTitle": false
@@ -1728,7 +1732,7 @@
 						"id": "9",
 						"widgetId": "initiator",
 						"gridX": 8,
-						"gridY": 2,
+						"gridY": 4,
 						"gridWidth": 4,
 						"gridHeight": 3,
 						"showTitle": true
@@ -1737,7 +1741,7 @@
 						"id": "6",
 						"widgetId": "case-kpis-hours",
 						"gridX": 8,
-						"gridY": 5,
+						"gridY": 7,
 						"gridWidth": 4,
 						"gridHeight": 2,
 						"showTitle": false
@@ -1746,14 +1750,11 @@
 						"id": "7",
 						"widgetId": "case-flow-runs",
 						"gridX": 8,
-						"gridY": 7,
+						"gridY": 9,
 						"gridWidth": 4,
 						"gridHeight": 4
 					}
 				],
-				"lifecycleActions": {
-					"field": "status"
-				},
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true,
@@ -1869,10 +1870,72 @@
 						"visibleWhen": {
 							"appInstalled": "humaniq"
 						}
+					},
+					{
+						"id": "case-suspend",
+						"type": "open-modal",
+						"label": "Suspend",
+						"icon": "PauseCircleOutline",
+						"target": "CaseLifecycleActionDialog",
+						"props": {
+							"action": "suspend"
+						},
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "neq",
+							"value": true
+						}
+					},
+					{
+						"id": "case-resume",
+						"type": "open-modal",
+						"label": "Resume",
+						"icon": "PlayCircleOutline",
+						"target": "CaseLifecycleActionDialog",
+						"props": {
+							"action": "resume"
+						},
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "neq",
+							"value": true
+						}
+					},
+					{
+						"id": "case-extend",
+						"type": "open-modal",
+						"label": "Extend term",
+						"icon": "CalendarPlus",
+						"target": "CaseLifecycleActionDialog",
+						"props": {
+							"action": "extend"
+						},
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "neq",
+							"value": true
+						}
+					},
+					{
+						"id": "case-reopen",
+						"type": "open-modal",
+						"label": "Reopen",
+						"icon": "LockOpenVariantOutline",
+						"target": "CaseLifecycleActionDialog",
+						"props": {
+							"action": "reopen"
+						},
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "eq",
+							"value": true
+						}
 					}
 				]
 			},
 			"slots": {
+				"widget-case-transitions": "CaseTransitionsWidget",
+				"widget-case-steps": "CaseStepsWidget",
 				"widget-initiator": "InitiatorSection"
 			}
 		},

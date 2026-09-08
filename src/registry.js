@@ -23,6 +23,12 @@
 //   a pass-through.
 
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
+// The case's own state on the case page: the transition strip, the stepper
+// over the case type's statuses, and the reason dialog the Actions menu opens.
+// @spec openspec/specs/status-transition-engine/spec.md
+// @spec openspec/specs/case-dashboard-view/spec.md
+import CaseStepsWidget from './components/case/CaseStepsWidget.vue'
+import CaseTransitionsWidget from './components/case/CaseTransitionsWidget.vue'
 // Case-list CSV/Excel export via the OR export leaf — actions-slot component
 // on the Cases page (manifest `pages[].actionsComponent`). Builds the OR
 // export-leaf URL client-side; no dossiq-side serialization (ADR-022).
@@ -48,6 +54,7 @@ import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
 // The way back from a task to its case (task-on-the-case).
 // @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
 import TaskCaseLink from './components/tasks/TaskCaseLink.vue'
+import CaseLifecycleActionDialog from './dialogs/CaseLifecycleActionDialog.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
 // VTH-specific case detail panels
 import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
@@ -193,6 +200,28 @@ const registry = {
 		kind: 'page',
 		component: SubstitutionAdminView,
 		_note: 'Coordinator substitution admin + bulk reassignment + capacity action list. Coordinator-gated server-side.',
+	},
+
+	// --- The case's lifecycle on the case page (case-lifecycle-on-the-page). ---
+	// @spec openspec/specs/status-transition-engine/spec.md
+	CaseTransitionsWidget: {
+		// @custom-widget-ratchet exclude the transitions a case allows come from dossiq's own engine (workflow template, role filter, guard verdicts) and no declarative widget reads them: CnLifecycleActions asks OpenRegister, which answers nothing for a $ref status field
+		kind: 'widget',
+		component: CaseTransitionsWidget,
+		_note: 'CaseDetail header strip: the transitions this user may take from the current status, the confirm dialog that asks for a comment and, on a closing move, a result, plus the suspended marker and the Resume button a suspended case needs in front of the handler. Deleted when OpenRegister can express a per-caseType graph over a reference field (tasks 4.4).',
+	},
+	// @spec openspec/specs/case-dashboard-view/spec.md
+	CaseStepsWidget: {
+		// @custom-widget-ratchet exclude a stepper over a reference field's ordered sibling rows; the manifest vocabulary has no such widget type (tasks 3.3 asks for one)
+		kind: 'widget',
+		component: CaseStepsWidget,
+		_note: "CaseDetail: which step the case is in, over its case type's statusType rows in `order`. Replaces the milestone progress tile, which read 0% on every case because milestones are configured on almost none.",
+	},
+	// @spec openspec/specs/status-transition-engine/spec.md
+	CaseLifecycleActionDialog: {
+		kind: 'modal',
+		component: CaseLifecycleActionDialog,
+		_note: 'One reason dialog for Suspend, Resume, Extend term and Reopen; the manifest header actions open it with `props.action`. It reads /lifecycle first, so a gesture the case type forbids says so before the POST rather than after it.',
 	},
 
 	// --- Initiator selection + display (brp-kvk-register-sets). ---

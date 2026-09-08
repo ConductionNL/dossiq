@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
 use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
@@ -105,6 +106,7 @@ final class CmmnBpmnCoexistenceRegressionTest extends TestCase {
 			new TransitionSpecReader(),
 			$this->createMock(IUserSession::class),
 			$logger,
+			new CaseResultWriter($settings),
 		);
 
 		$result = $service->getAvailableTransitions(caseId: 'case-1');
