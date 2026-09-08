@@ -151,11 +151,31 @@ describe('the Objects tab on the case page', () => {
 		expect(caseWidget('case-objects').content.rowRoute).toBeUndefined()
 	})
 
-	it('joins the case-panels strip as Objects, after Locations', () => {
+	it('joins the case-panels strip as Objects, with the other collections', () => {
+		// It used to be pinned immediately after Locations, which was where it
+		// was appended rather than a claim about what it is. Placement row A33
+		// reordered the strip: the work a handler does leads it, and the
+		// collections that may be empty close it. Objects is one of those, so
+		// what is asserted now is the group it belongs to, and that it is last.
 		const labels = panelTabs().map((tab) => tab.label)
 		expect(labels).toContain('Objects')
-		expect(labels.indexOf('Objects')).toBe(labels.indexOf('Locations') + 1)
 		expect(panelTabs().at(-1).widgetId).toBe('case-objects')
+
+		const collections = ['Sub-cases', 'Locations', 'Appointments', 'Decisions']
+		for (const label of collections) {
+			expect(labels.indexOf('Objects')).toBeGreaterThan(labels.indexOf(label))
+		}
+		// And behind every work tab, which is the half that fails if a later
+		// change quietly promotes it into the lead band.
+		for (const label of [
+			'Data',
+			'Documents',
+			'Parties',
+			'Tasks',
+			'Communication',
+		]) {
+			expect(labels.indexOf('Objects')).toBeGreaterThan(labels.indexOf(label))
+		}
 	})
 
 	it('stays out of layout, or the strip would render it twice', () => {
