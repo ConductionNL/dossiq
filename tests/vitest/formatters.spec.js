@@ -77,3 +77,51 @@ describe('the caseTitle formatter', () => {
 		expect(formatters.caseTitle('case-3')).toBe('case-3')
 	})
 })
+
+/**
+ * The two formatters the Integrations page reads its Status and Settings
+ * columns with.
+ *
+ * Both have a fallback that decides whether the page tells the truth. A status
+ * outside the four the schema declares must render ITSELF rather than an empty
+ * cell — an unnamed status is still a status the admin has to see, and a blank
+ * cell reads as "nothing is wrong". The settings label must render the EMPTY
+ * string when there is no destination, because that is what makes CnCellRenderer
+ * fall through from an anchor to plain text and stop offering a link into a
+ * section that does not exist.
+ *
+ * @spec openspec/specs/admin-settings/spec.md
+ */
+describe('the integration status formatter', () => {
+	it('names each of the four states', () => {
+		expect(formatters.integrationStatus('configured')).toBe('Configured')
+		expect(formatters.integrationStatus('unconfigured')).toBe('Not configured')
+		expect(formatters.integrationStatus('unavailable')).toBe('Not available')
+		expect(formatters.integrationStatus('error')).toBe('Error')
+	})
+
+	it('renders an unknown value as itself, not as an empty cell', () => {
+		expect(formatters.integrationStatus('degraded')).toBe('degraded')
+	})
+
+	it('renders a missing value as empty rather than as the word undefined', () => {
+		expect(formatters.integrationStatus(undefined)).toBe('')
+		expect(formatters.integrationStatus(null)).toBe('')
+	})
+})
+
+describe('the integration settings-link formatter', () => {
+	it('labels a link when there is somewhere to go', () => {
+		expect(
+			formatters.integrationSettingsLabel(
+				'/settings/admin/dossiq#section-stuf',
+			),
+		).toBe('Open settings')
+	})
+
+	it('offers nothing when the connection has no settings section', () => {
+		expect(formatters.integrationSettingsLabel('')).toBe('')
+		expect(formatters.integrationSettingsLabel(undefined)).toBe('')
+		expect(formatters.integrationSettingsLabel(null)).toBe('')
+	})
+})

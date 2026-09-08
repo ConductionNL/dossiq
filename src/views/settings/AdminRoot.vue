@@ -10,6 +10,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-zgw"
 			:name="t('dossiq', 'ZGW API Mapping')"
 			:description="
 				t(
@@ -82,6 +83,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-store"
 			:name="t('dossiq', 'Store registry')"
 			:description="
 				t(
@@ -106,6 +108,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-mailbox"
 			:name="t('dossiq', 'Case Email — Shared Mailbox')"
 			:description="
 				t(
@@ -118,6 +121,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-kcc"
 			:name="t('dossiq', 'KCC-werkplek Integration')"
 			:description="
 				t(
@@ -130,6 +134,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-dmn"
 			:name="t('dossiq', 'Decision Tables (DMN)')"
 			:description="
 				t(
@@ -142,6 +147,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-financial"
 			:name="t('dossiq', 'Financial Integration — Dwangsom Callback')"
 			:description="
 				t(
@@ -154,6 +160,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-stuf"
 			:name="t('dossiq', 'StUF-ZKN Endpoints')"
 			:description="
 				t(

@@ -14673,6 +14673,90 @@
             "title": "Status Type Reference"
           }
         }
+      },
+      "dossiqIntegration": {
+        "slug": "dossiqIntegration",
+        "icon": "PowerPlugOutline",
+        "version": "1.0.0",
+        "title": "Integration",
+        "description": "One connection between Dossiq and a system outside it: what it is called, whether it works, and where an admin configures it. The rows are seeded by the app; an admin reads them and does not write them by hand.",
+        "type": "object",
+        "required": [
+          "key",
+          "title",
+          "status"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key",
+            "description": "Machine identifier for the connection. A probe and a save handler both find their row by this key.",
+            "enum": [
+              "zgw",
+              "stuf",
+              "kcc",
+              "dmn",
+              "mailbox",
+              "store",
+              "financial",
+              "brp",
+              "kvk",
+              "pdok"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "The name of the connection as an admin knows it."
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "What Dossiq uses the connection for."
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "What the app can back about this connection right now.",
+            "default": "unconfigured",
+            "enum": [
+              "configured",
+              "unconfigured",
+              "unavailable",
+              "error"
+            ],
+            "x-enum-labels": {
+              "configured": "Configured",
+              "unconfigured": "Not configured",
+              "unavailable": "Not available",
+              "error": "Error"
+            },
+            "facetable": true
+          },
+          "statusMessage": {
+            "type": "string",
+            "title": "Status message",
+            "description": "What the last probe or save reported, in the words the reader needs."
+          },
+          "checkedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last checked",
+            "description": "When the status was last written by a probe or a save."
+          },
+          "settingsUrl": {
+            "type": "string",
+            "title": "Settings",
+            "description": "Where the connection is configured. Empty when there is nothing to configure yet.",
+            "x-notes": "A same-origin path plus an anchor into the Nextcloud admin page, e.g. /settings/admin/dossiq#section-stuf. NOT format: uri, which rejects a relative path."
+          },
+          "order": {
+            "type": "integer",
+            "title": "Order",
+            "description": "Where the connection sits in the list.",
+            "default": 0
+          }
+        }
       }
     },
     "objects": [
@@ -24350,6 +24434,54 @@
         "advies": "Rijkswaterstaat kan niet meewerken wegens veiligheidszone.",
         "requestedOn": "2026-02-15T08:00:00+01:00",
         "respondedOn": "2026-02-22T16:45:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "dossiqIntegration",
+          "slug": "dossiqintegration-dossiqintegration-1-1",
+          "id": "9d1e7a01-4c2b-4f18-9a5e-2b7c8d3f1001"
+        },
+        "key": "zgw",
+        "title": "ZGW APIs",
+        "description": "Demo connection 1.",
+        "status": "unconfigured",
+        "statusMessage": "Not checked yet",
+        "checkedAt": "2026-09-01T09:01:00+00:00",
+        "settingsUrl": "/settings/admin/dossiq#section-zgw",
+        "order": 10
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "dossiqIntegration",
+          "slug": "dossiqintegration-dossiqintegration-2-2",
+          "id": "9d1e7a02-4c2b-4f18-9a5e-2b7c8d3f1002"
+        },
+        "key": "stuf",
+        "title": "StUF-ZKN",
+        "description": "Demo connection 2.",
+        "status": "error",
+        "statusMessage": "Circuit open on Gemeente Zuid",
+        "checkedAt": "2026-09-02T09:02:00+00:00",
+        "settingsUrl": "/settings/admin/dossiq#section-stuf",
+        "order": 20
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "dossiqIntegration",
+          "slug": "dossiqintegration-dossiqintegration-3-3",
+          "id": "9d1e7a03-4c2b-4f18-9a5e-2b7c8d3f1003"
+        },
+        "key": "brp",
+        "title": "BRP",
+        "description": "Demo connection 3.",
+        "status": "unavailable",
+        "statusMessage": "Specified, not built yet",
+        "checkedAt": "2026-09-03T09:03:00+00:00",
+        "settingsUrl": "",
+        "order": 80
       }
     ]
   }

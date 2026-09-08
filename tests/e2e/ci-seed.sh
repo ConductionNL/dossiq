@@ -299,6 +299,26 @@ if ! php occ dossiq:workflows:migrate-to-flows --user="${USER_NAME}"; then
 fi
 echo "[ci-seed] workflow definitions projected onto flows (disabled)."
 
+# ── 2c. A user who is NOT an admin ───────────────────────────────────────────
+# `integrations-page.spec.ts` asserts that the Integrations entry and its rows
+# are invisible to an ordinary user. Asserted from the admin session that is
+# not a test at all: the admin sees everything, so the spec would pass on an
+# app with no permission checks whatsoever. The suite therefore needs a second,
+# unprivileged account, and it has to exist before the spec runs rather than be
+# created by it — a spec that provisions its own user cannot tell "the guard
+# works" from "the user was never created".
+#
+# Idempotent: `user:add` on an existing uid exits non-zero, and that is not a
+# seeding failure, so the exit status is read and reported rather than trusted.
+if OC_PASS="${E2E_USER_PASS:-e2e-user-pass}" php occ user:add \
+	--password-from-env \
+	--display-name="E2E Ordinary User" \
+	"${E2E_USER_NAME:-e2euser}" >/dev/null 2>&1; then
+	echo "[ci-seed] created the non-admin user ${E2E_USER_NAME:-e2euser}."
+else
+	echo "[ci-seed] non-admin user ${E2E_USER_NAME:-e2euser} already exists (or could not be created); continuing."
+fi
+
 # ── 3. Warm the SPA so the first spec doesn't pay the cold start ─────────────
 # The shared workflow serves Nextcloud with `php -S 0.0.0.0:8080`. It sets
 # PHP_CLI_SERVER_WORKERS=8, but the first hit still pays a cold opcache and the

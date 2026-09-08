@@ -32,7 +32,7 @@ duplicated.
 - **AND** the file SHALL exist once in storage
 
 #### Scenario: A reader cannot copy
-@e2e tests/e2e/case-actions-menu.spec.ts
+@e2e exclude Playwright signs in as admin and cannot take a lesser role; PHPUnit covers the refusal in CaseActionsControllerTest, which asserts the guard is asked before the service and that no case is created
 
 - **GIVEN** a user who may read the case but not write cases
 - **WHEN** they post to the copy endpoint

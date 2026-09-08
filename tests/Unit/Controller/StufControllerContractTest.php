@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
+use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Controller\StufController;
 use OCA\Dossiq\Service\Stuf\StufEnvelopeInspector;
 use OCA\Dossiq\Service\Stuf\StufServices;
@@ -95,6 +96,7 @@ class StufControllerContractTest extends TestCase {
 			inspector: $this->createMock(StufEnvelopeInspector::class),
 			l10n: $this->createMock(IL10N::class),
 			logger: $this->createMock(LoggerInterface::class),
+			integrationStatus: $this->createMock(IntegrationStatusService::class),
 		);
 	}//end setUp()
 

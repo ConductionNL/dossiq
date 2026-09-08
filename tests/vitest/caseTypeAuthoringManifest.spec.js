@@ -135,14 +135,15 @@ describe('the case mirrors the hidden flag so the list can filter on it', () => 
 	})
 
 	it('moves the case schema version too', () => {
-		// AT LEAST 1.18.0, not exactly. A property on an unbumped version never
-		// reaches an existing install, which is what this guards. Pinning the
-		// exact number instead makes every LATER schema change fail here, on a
-		// test that has nothing to say about it: 1.19.0 added a coalesce guard
-		// to the identifier calculation and reddened this line.
-		const [major, minor] = schema('case').version.split('.').map(Number)
-		expect(major).toBeGreaterThanOrEqual(1)
-		expect(major > 1 || minor >= 18).toBe(true)
+		// AT LEAST, not exactly. OpenRegister fast-skips a schema whose version
+		// did not move, so what this guards is that the version went UP when
+		// `statusHiddenInLists` landed. Pinning the literal made it fail on the
+		// next change that legitimately bumps the same schema, which turns a
+		// real guard into a merge conflict nobody learns anything from.
+		const [major, minor] = schema('case')
+			.version.split('.')
+			.map((part) => Number(part))
+		expect(major > 1 || (major === 1 && minor >= 18)).toBe(true)
 	})
 })
 

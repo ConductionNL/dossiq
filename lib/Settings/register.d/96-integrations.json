@@ -1,0 +1,151 @@
+{
+    "_meta": {
+        "spdx-license": "EUPL-1.2",
+        "spdx-copyright": "2026 Conduction B.V.",
+        "description": "The ten connections Dossiq has to systems outside it, seeded for the Integrations page (pluggable-integration-registry). The status a row carries is the status the app can back on a fresh instance: eight are unconfigured because nothing has been saved or probed yet, and BRP and KvK are unavailable because they are specified and not built. NO ROW IS SEEDED configured — only a save or a probe may write that, which is what makes the page worth reading. The order follows row A34 of the round-2 placement matrix. settingsUrl points at the anchor its section carries in AdminRoot.vue. THREE rows carry none: BRP and KvK because they are not built, and PDOK because it has no admin section at all — its pdok_* app-config keys are read by the map components and written by nothing an admin can open. The change's design counted eight anchors; AdminRoot.vue has seven sections to anchor, and inventing a link into a section that does not exist is the one thing this page is here to stop."
+    },
+    "components": {
+        "objects": [
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "dossiqIntegration",
+                    "slug": "integration-zgw"
+                },
+                "key": "zgw",
+                "title": "ZGW APIs",
+                "description": "Zaken, Documenten, Catalogi, Besluiten, Notificaties and Objecten. Dossiq maps its register onto them as a provider.",
+                "status": "unconfigured",
+                "statusMessage": "Not checked yet",
+                "settingsUrl": "/settings/admin/dossiq#section-zgw",
+                "order": 10
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "dossiqIntegration",
+                    "slug": "integration-stuf"
+                },
+                "key": "stuf",
+                "title": "StUF-ZKN",
+                "description": "Outbound StUF-ZKN messages to a municipal broker, per endpoint.",
+                "status": "unconfigured",
+                "statusMessage": "Not checked yet",
+                "settingsUrl": "/settings/admin/dossiq#section-stuf",
+                "order": 20
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "dossiqIntegration",
+                    "slug": "integration-kcc"
+                },
+                "key": "kcc",
+                "title": "KCC desk",
+                "description": "The customer-contact workplace: identification, sentiment and the case context a caller needs.",
+                "status": "unconfigured",
+                "statusMessage": "Not checked yet",
+                "settingsUrl": "/settings/admin/dossiq#section-kcc",
+                "order": 30
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "dossiqIntegration",
+                    "slug": "integration-dmn"
+                },
+                "key": "dmn",
+                "title": "Decision tables",
+                "description": "DMN decision tables a workflow transition can evaluate.",
+                "status": "unconfigured",
+                "statusMessage": "Not checked yet",
+                "settingsUrl": "/settings/admin/dossiq#section-dmn",
+                "order": 40
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "dossiqIntegration",
+                    "slug": "integration-mailbox"
+                },
+                "key": "mailbox",
+                "title": "Shared mailbox",
+                "description": "The IMAP mailbox case email is read from and linked to a case.",
+                "status": "unconfigured",
+                "statusMessage": "Not checked yet",
+                "settingsUrl": "/settings/admin/dossiq#section-mailbox",
+                "order": 50
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "dossiqIntegration",
+                    "slug": "integration-store"
+                },
+                "key": "store",
+                "title": "Store",
+                "description": "The registry Dossiq installs case types and templates from.",
+                "status": "unconfigured",
+                "statusMessage": "Not checked yet",
+                "settingsUrl": "/settings/admin/dossiq#section-store",
+                "order": 60
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "dossiqIntegration",
+                    "slug": "integration-financial"
+                },
+                "key": "financial",
+                "title": "Financial system",
+                "description": "The payout signal for a dwangsom, and the callback that confirms it.",
+                "status": "unconfigured",
+                "statusMessage": "Not checked yet",
+                "settingsUrl": "/settings/admin/dossiq#section-financial",
+                "order": 70
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "dossiqIntegration",
+                    "slug": "integration-brp"
+                },
+                "key": "brp",
+                "title": "BRP",
+                "description": "Looking a person up in the municipal population register.",
+                "status": "unavailable",
+                "statusMessage": "Specified, not built yet",
+                "settingsUrl": "",
+                "order": 80
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "dossiqIntegration",
+                    "slug": "integration-kvk"
+                },
+                "key": "kvk",
+                "title": "KvK",
+                "description": "Looking a company up in the chamber-of-commerce register.",
+                "status": "unavailable",
+                "statusMessage": "Specified, not built yet",
+                "settingsUrl": "",
+                "order": 90
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "dossiqIntegration",
+                    "slug": "integration-pdok"
+                },
+                "key": "pdok",
+                "title": "PDOK",
+                "description": "Address, parcel and geo lookup for a case location.",
+                "status": "unconfigured",
+                "statusMessage": "Not checked yet",
+                "settingsUrl": "",
+                "order": 100
+            }
+        ]
+    }
+}
