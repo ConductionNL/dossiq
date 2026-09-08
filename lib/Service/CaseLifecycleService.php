@@ -301,7 +301,7 @@ class CaseLifecycleService {
 
 		$case['status'] = $initial;
 		$case['endDate'] = '';
-		// zrc-008: reopening withdraws the archival claim as well as the end
+		// Zrc-008: reopening withdraws the archival claim as well as the end
 		// date. A case that is open again is not nominated for anything and has
 		// no destruction date; leaving either standing would hand an archivist a
 		// due date for a case still being worked, which is the shape of mistake

@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Archival;
 
+use OCA\Dossiq\Service\Archival\ArchivalBaseDateResolver;
 use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
@@ -98,6 +99,8 @@ class FakeObjectService {
  *
  * @covers \OCA\Dossiq\Service\Archival\ArchivalNominationDeriver
  *
+ * @uses \OCA\Dossiq\Service\Archival\ArchivalBaseDateResolver
+ * @uses \OCA\Dossiq\Service\Archival\ReadsConfiguredRows
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class ArchivalNominationDeriverTest extends TestCase {
@@ -142,6 +145,7 @@ class ArchivalNominationDeriverTest extends TestCase {
 
 		$this->deriver = new ArchivalNominationDeriver(
 			settingsService: $settings,
+			baseDates: new ArchivalBaseDateResolver(settingsService: $settings),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 	}//end setUp()

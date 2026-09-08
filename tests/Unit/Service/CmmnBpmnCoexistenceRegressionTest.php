@@ -33,6 +33,8 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Archival\ArchivalBaseDateResolver;
+use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
@@ -114,7 +116,7 @@ final class CmmnBpmnCoexistenceRegressionTest extends TestCase {
 			new TransitionSpecReader(),
 			$this->createMock(IUserSession::class),
 			$logger,
-			new CaseResultWriter($settings, new CaseTypeResolver(new CaseTypeStore($settings))),
+			new CaseResultWriter($settings, new CaseTypeResolver(new CaseTypeStore($settings)), new ArchivalNominationDeriver($settings, new ArchivalBaseDateResolver($settings), $logger)),
 			$this->createMock(StatusChecklist::class),
 		);
 

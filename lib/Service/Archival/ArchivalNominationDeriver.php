@@ -13,7 +13,7 @@
  * 🔴 THIS CLASS EXISTS SO THERE IS EXACTLY ONE OF IT. The rule used to live in
  * `ZrcController` as four private methods, reachable only from the ZGW API. A
  * case closed in the app therefore ended up in a different archival state from
- * the same case closed over the API — not a missing feature but a records
+ * the same case closed over the API, not a missing feature but a records
  * management defect, because which of the two a case went through is invisible
  * afterwards. The fix is one implementation both paths call, not a second
  * implementation that agrees today.
@@ -46,7 +46,6 @@ namespace OCA\Dossiq\Service\Archival;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -57,14 +56,14 @@ use Throwable;
  */
 class ArchivalNominationDeriver {
 
-	use SearchesObjects;
+	use ReadsConfiguredRows;
 
 	/**
 	 * The two values `case.archiveNomination` accepts.
 	 *
 	 * The resultType's own `archivalAction` carries a third, `bewaren`, which
-	 * the case schema does not declare. Writing it through unmapped — which is
-	 * what the ZGW path did — stores a value no reader of the zaak can
+	 * the case schema does not declare. Writing it through unmapped, which is
+	 * what the ZGW path did, stores a value no reader of the zaak can
 	 * interpret and that OpenRegister may reject on the enum. `bewaren` and
 	 * `blijvend_bewaren` mean the same thing to an archivist, so it maps.
 	 *
@@ -80,15 +79,26 @@ class ArchivalNominationDeriver {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister plus config.
+	 * @param ArchivalBaseDateResolver $baseDates Which date the term counts from.
 	 * @param LoggerInterface $logger Records what could not be derived.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly ArchivalBaseDateResolver $baseDates,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
+
+	/**
+	 * The settings bridge, for {@see ReadsConfiguredRows}.
+	 *
+	 * @return SettingsService The bridge to OpenRegister plus app config.
+	 */
+	protected function settings(): SettingsService {
+		return $this->settingsService;
+	}//end settings()
 
 	/**
 	 * The archival fields a closing case takes from its resultaattype.
@@ -131,14 +141,14 @@ class ArchivalNominationDeriver {
 		}
 
 		$brondatum = $this->sourceDateProcedure(resultType: $resultType);
-		$baseDate = $this->resolveBaseDate(
+		$baseDate = $this->baseDates->resolve(
 			method: (string)($brondatum['derivationMethod'] ?? ($brondatum['afleidingswijze'] ?? '')),
 			endDate: $endDate,
 			case: $case,
 			brondatum: $brondatum,
 		);
 
-		// zrc-021: a nomination with no derivable base date carries an EMPTY
+		// Zrc-021: a nomination with no derivable base date carries an EMPTY
 		// action date rather than none, so the pair is never half-written.
 		if ($baseDate === null) {
 			$derived['archiveActionDate'] = null;
@@ -176,26 +186,14 @@ class ArchivalNominationDeriver {
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function resultTypeForCase(string $caseId): ?string {
-		$context = $this->resolveContext(schemaKey: 'result_schema');
-		if ($context === null || $caseId === '') {
+		if ($caseId === '') {
 			return null;
 		}
 
-		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $context['objectService'],
-				register: $context['register'],
-				schema: $context['schema'],
-				filters: ['case' => $caseId, '_limit' => 1],
-			);
-		} catch (Throwable $e) {
-			return null;
-		}
-
+		$rows = $this->findRows(schemaKey: 'result_schema', filters: ['case' => $caseId, '_limit' => 1]);
 		$row = ($rows[0] ?? []);
-		$id = (string)($row['resultType'] ?? ($row['resultaattype'] ?? ''));
 
-		return $this->uuidIn(value: $id);
+		return $this->uuidIn(value: (string)($row['resultType'] ?? ($row['resultaattype'] ?? '')));
 	}//end resultTypeForCase()
 
 	/**
@@ -238,133 +236,6 @@ class ArchivalNominationDeriver {
 	}//end sourceDateProcedure()
 
 	/**
-	 * The base date a derivation method starts from.
-	 *
-	 * @param string $method The afleidingswijze.
-	 * @param string $endDate The case end date.
-	 * @param array<string, mixed> $case The case payload.
-	 * @param array<string, mixed> $brondatum The brondatumArchiefprocedure.
-	 *
-	 * @return string|null The base date, or null when it cannot be resolved.
-	 */
-	private function resolveBaseDate(string $method, string $endDate, array $case, array $brondatum): ?string {
-		switch ($method) {
-			case 'afgehandeld':
-			case 'handled':
-			case 'termijn':
-				return $endDate;
-			case 'hoofdzaak':
-				return ($this->parentCaseEndDate(case: $case) ?? $endDate);
-			case 'eigenschap':
-				$attribute = (string)($brondatum['objectAttribute'] ?? ($brondatum['datumkenmerk'] ?? ''));
-				if ($attribute === '') {
-					return $endDate;
-				}
-
-				return ($this->attributeDate(case: $case, attribute: $attribute) ?? $endDate);
-			case 'ingangsdatum_besluit':
-				return ($this->decisionDate(case: $case, fields: ['effectiveDate', 'ingangsdatum']) ?? $endDate);
-			case 'vervaldatum_besluit':
-				return ($this->decisionDate(case: $case, fields: ['expiryDate', 'vervaldatum']) ?? $endDate);
-			default:
-				// `ander_datumkenmerk` and anything unrecognised: the date comes
-				// from outside the case and cannot be derived here.
-				return null;
-		}//end switch
-	}//end resolveBaseDate()
-
-	/**
-	 * The parent case's end date, for afleidingswijze `hoofdzaak`.
-	 *
-	 * @param array<string, mixed> $case The case payload.
-	 *
-	 * @return string|null The parent's end date, or null when there is none.
-	 */
-	private function parentCaseEndDate(array $case): ?string {
-		$parentId = $this->uuidIn(
-			value: (string)($case['parentCase'] ?? ($case['mainCase'] ?? ($case['hoofdzaak'] ?? '')))
-		);
-		if ($parentId === null) {
-			return null;
-		}
-
-		$parent = $this->findRow(schemaKey: 'case_schema', id: $parentId);
-		$endDate = (string)($parent['endDate'] ?? '');
-		if ($endDate === '') {
-			return null;
-		}
-
-		return substr($endDate, 0, 10);
-	}//end parentCaseEndDate()
-
-	/**
-	 * A named case property's date value, for afleidingswijze `eigenschap`.
-	 *
-	 * @param array<string, mixed> $case The case payload.
-	 * @param string $attribute The property name the resultType points at.
-	 *
-	 * @return string|null The date, or null when the property is absent or not a date.
-	 */
-	private function attributeDate(array $case, string $attribute): ?string {
-		$context = $this->resolveContext(schemaKey: 'case_property_schema');
-		$caseId = $this->caseId(case: $case);
-		if ($context === null || $caseId === null) {
-			return null;
-		}
-
-		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $context['objectService'],
-				register: $context['register'],
-				schema: $context['schema'],
-				filters: ['case' => $caseId, 'name' => $attribute, '_limit' => 1],
-			);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		return $this->asDate(value: (string)(($rows[0] ?? [])['value'] ?? ''));
-	}//end attributeDate()
-
-	/**
-	 * The earliest date a case's decisions carry in one of the named fields.
-	 *
-	 * @param array<string, mixed> $case The case payload.
-	 * @param array<int, string> $fields The decision fields to read, in order.
-	 *
-	 * @return string|null The date, or null when no decision carries one.
-	 */
-	private function decisionDate(array $case, array $fields): ?string {
-		$context = $this->resolveContext(schemaKey: 'decision_schema');
-		$caseId = $this->caseId(case: $case);
-		if ($context === null || $caseId === null) {
-			return null;
-		}
-
-		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $context['objectService'],
-				register: $context['register'],
-				schema: $context['schema'],
-				filters: ['case' => $caseId, '_limit' => 100],
-			);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		foreach ($rows as $row) {
-			foreach ($fields as $field) {
-				$date = $this->asDate(value: (string)($row[$field] ?? ''));
-				if ($date !== null) {
-					return $date;
-				}
-			}
-		}
-
-		return null;
-	}//end decisionDate()
-
-	/**
 	 * The base date plus the resultType's archival period.
 	 *
 	 * A period that is absent or not an ISO 8601 duration leaves the base date
@@ -392,110 +263,4 @@ class ArchivalNominationDeriver {
 			return $baseDate;
 		}
 	}//end addPeriod()
-
-	/**
-	 * A value that parses as a date, as Y-m-d.
-	 *
-	 * @param string $value The raw value.
-	 *
-	 * @return string|null The date, or null when the value is not one.
-	 */
-	private function asDate(string $value): ?string {
-		if ($value === '' || strtotime($value) === false) {
-			return null;
-		}
-
-		return substr($value, 0, 10);
-	}//end asDate()
-
-	/**
-	 * The case's own UUID.
-	 *
-	 * @param array<string, mixed> $case The case payload.
-	 *
-	 * @return string|null The UUID, or null when the payload carries none.
-	 */
-	private function caseId(array $case): ?string {
-		$id = (string)($case['id'] ?? ($case['@self']['id'] ?? ''));
-		if ($id === '') {
-			return null;
-		}
-
-		return $id;
-	}//end caseId()
-
-	/**
-	 * The UUID inside a value that may be a bare id or a ZGW URL.
-	 *
-	 * @param string $value The raw reference.
-	 *
-	 * @return string|null The UUID, or null when the value holds none.
-	 */
-	private function uuidIn(string $value): ?string {
-		$pattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
-		if (preg_match($pattern, $value, $matches) !== 1) {
-			return null;
-		}
-
-		return $matches[1];
-	}//end uuidIn()
-
-	/**
-	 * Read one row of a configured schema by id.
-	 *
-	 * @param string $schemaKey The app-config key naming the schema.
-	 * @param string $id The row's UUID.
-	 *
-	 * @return array<string, mixed> The row, empty when unresolvable.
-	 */
-	private function findRow(string $schemaKey, string $id): array {
-		$context = $this->resolveContext(schemaKey: $schemaKey);
-		if ($context === null || $id === '') {
-			return [];
-		}
-
-		try {
-			$row = $this->findObjectAsArray(
-				objectService: $context['objectService'],
-				register: $context['register'],
-				schema: $context['schema'],
-				id: $id,
-			);
-		} catch (Throwable $e) {
-			return [];
-		}
-
-		if (is_array($row) === false) {
-			return [];
-		}
-
-		return $row;
-	}//end findRow()
-
-	/**
-	 * The object service plus the register/schema pair a read needs.
-	 *
-	 * The schema ids come from the same app-config keys the ZGW mappings are
-	 * seeded from (`LoadDefaultZgwMappings` reads `case_schema`,
-	 * `result_type_schema` and the rest), so both paths read the same rows.
-	 *
-	 * @param string $schemaKey The app-config key naming the schema.
-	 *
-	 * @return array{objectService: mixed, register: string, schema: string}|null
-	 *         The context, or null when OpenRegister or the schema is unconfigured.
-	 */
-	private function resolveContext(string $schemaKey): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(key: $schemaKey);
-		if ($register === '' || $schema === '') {
-			return null;
-		}
-
-		return ['objectService' => $objectService, 'register' => $register, 'schema' => $schema];
-	}//end resolveContext()
 }//end class
