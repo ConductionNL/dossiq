@@ -108,12 +108,25 @@ test.describe('Contacts', () => {
 		// REUSE a seeded case type: the `case` schema is archival, so a case
 		// cannot be deleted by a user, and a case type created here and removed
 		// in teardown would leave a case pointing at a type that is gone.
+		//
+		// A PUBLISHED one, not simply the first. `case.caseType` carries
+		// `x-relation-filter: {isDraft: false}` since #1918, and the caseType
+		// schema DEFAULTS `isDraft` to true — so a draft type is filtered out
+		// of the relation and the case this spec seeds would carry no usable
+		// case type. The cases list on the contact page would then be empty and
+		// read as "this person has no cases", which is the one failure this
+		// spec exists to tell apart from a broken filter. #1944 fixed the
+		// fixtures that CREATE a case type; six other specs still take
+		// `caseTypes[0]` blind, and this is the same hazard in the one file
+		// this change owns.
 		const caseTypes = await listObjects(api, 'caseType')
+		const published = caseTypes.filter((t) => t.isDraft === false)
 		expect(
-			caseTypes.length,
-			'the instance must ship at least one case type',
+			published.length,
+			`the instance must ship at least one PUBLISHED case type `
+				+ `(saw ${caseTypes.length} type(s), all draft)`,
 		).toBeGreaterThan(0)
-		caseTypeId = objectId(caseTypes[0])
+		caseTypeId = objectId(published[0])
 
 		personId = await seedPerson(PERSON_NAME, '999990627')
 		emptyPersonId = await seedPerson(EMPTY_NAME, '999993653')
