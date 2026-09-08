@@ -5,11 +5,15 @@ criteria under a task are plain bullets.
 
 ## 1. The facet on the object type
 
-- [ ] 1.1 `lib/Settings/dossiq_register.json`, schema `caseObject`:
-  `x-openregister-facet: true` on `objectType` per design D4 and bump
+- [x] 1.1 `lib/Settings/dossiq_register.json`, schema `caseObject`:
+  `facetable: true` on `objectType` (design D4 spells it
+  `x-openregister-facet`, which nothing reads: the index sidebar builds its
+  filters from the schema property's `facetable` flag alone) and bump
   `version` to 1.1.0.
   - `@spec openspec/specs/case-management/spec.md`
-  - `tests/schemas` round-trips the annotation
+  - `tests/vitest/caseObjects.spec.js` round-trips the annotation and the
+    version (the repo has no schema round-trip suite under `tests/schemas`,
+    which holds only the manifest JSON schema)
 
 ## 2. The Objects tab
 

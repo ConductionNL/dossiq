@@ -1,0 +1,77 @@
+/**
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * The things a case is about: the `caseObject` schema, the Objects tab on
+ * `CaseDetail`, the Link object action and the `CaseObjects` index.
+ *
+ * All four are declarations no build step compares. A widget named as a tab
+ * child resolves by registry TYPE, so a `type` the library does not know
+ * renders nothing and logs nothing; a property that is not `facetable` gives
+ * the sidebar nothing to group on; and a schema property added without a
+ * version bump is fast-skipped by the OpenRegister importer, so the column
+ * exists in git and nowhere else. This spec asserts the four declarations
+ * against each other rather than trusting them.
+ *
+ * @spec openspec/specs/case-management/spec.md
+ */
+
+import fs from 'fs'
+import path from 'path'
+import { describe, expect, it } from 'vitest'
+
+const ROOT = path.resolve(__dirname, '../..')
+const REGISTER_PATH = path.join(ROOT, 'lib', 'Settings', 'dossiq_register.json')
+
+const register = JSON.parse(fs.readFileSync(REGISTER_PATH, 'utf8'))
+
+/** The `caseObject` schema as the register declares it. @return {object} The schema. */
+const caseObject = () => register.components.schemas.caseObject
+
+describe('the caseObject schema', () => {
+	it('makes objectType a facet so the index sidebar can group on it', () => {
+		// `facetable` is the ONLY spelling anything reads: the index sidebar
+		// builds its filters from this flag on the schema property. The change's
+		// design named `x-openregister-facet`, which no code in OpenRegister or
+		// nextcloud-vue looks at, so it would have shipped a sidebar with no
+		// object-type group and a green gate run.
+		expect(caseObject().properties.objectType.facetable).toBe(true)
+	})
+
+	it('bumps the schema version so the importer does not fast-skip it', () => {
+		// OpenRegister compares the incoming schema's `version` with the stored
+		// one and skips the whole schema when they are equal. A property added
+		// at the old version is inert on every existing instance.
+		expect(caseObject().version).toBe('1.1.0')
+	})
+
+	it('still requires the case and the object type', () => {
+		expect(caseObject().required).toEqual(
+			expect.arrayContaining(['case', 'objectType']),
+		)
+	})
+
+	it('keeps every field the Objects surfaces read visible and writable', () => {
+		// `visible: false` makes a property unreadable on every surface and
+		// `readOnly` makes the form builder drop the field before any override
+		// is read — either would render an empty grid or a form that cannot
+		// save. Asserted rather than assumed, because both fail silently.
+		for (const key of [
+			'case',
+			'objectType',
+			'objectIdentification',
+			'objectUrl',
+			'description',
+		]) {
+			const property = caseObject().properties[key]
+			expect(property, `caseObject.${key} must exist`).toBeDefined()
+			expect(property.visible, `caseObject.${key} must not be hidden`).not.toBe(
+				false,
+			)
+			expect(
+				property.readOnly,
+				`caseObject.${key} must not be read-only`,
+			).not.toBe(true)
+		}
+	})
+})
