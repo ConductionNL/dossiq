@@ -221,9 +221,14 @@ export default {
 	},
 
 	watch: {
-		/** @spec openspec/specs/initiator-selection/spec.md */
 		value: {
 			immediate: true,
+			/**
+			 * Resolve a newly-bound requester for display.
+			 *
+			 * @return {void}
+			 * @spec openspec/specs/initiator-selection/spec.md
+			 */
 			handler() {
 				this.resolveValue()
 			},

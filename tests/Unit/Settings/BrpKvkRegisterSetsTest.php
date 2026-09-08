@@ -183,10 +183,21 @@ class BrpKvkRegisterSetsTest extends TestCase {
 		$schemas = $this->fragment['components']['schemas'];
 
 		foreach (['brpPerson', 'kvkCompany'] as $slug) {
+			// UNDER `configuration`, which is where the importer reads it and
+			// where `case` already declares ns#Case. At the schema's top level
+			// the key parses, imports and is never read: the discovery endpoint
+			// would answer "no provider" and the field would stay disabled with
+			// nothing reporting why. Asserted at the exact path for that reason,
+			// and the top level is asserted EMPTY so the wrong one cannot pass.
 			$this->assertContains(
 				self::REQUESTER_URI,
-				($schemas[$slug]['implements'] ?? []),
-				"{$slug} must declare itself a provider of ns#Requester"
+				($schemas[$slug]['configuration']['implements'] ?? []),
+				"{$slug} must declare ns#Requester under configuration.implements"
+			);
+			$this->assertArrayNotHasKey(
+				'implements',
+				$schemas[$slug],
+				"{$slug}: a schema-level `implements` is never read"
 			);
 		}
 
@@ -228,9 +239,25 @@ class BrpKvkRegisterSetsTest extends TestCase {
 			'the property is additive: rows without it stay valid'
 		);
 
+		// Same placement argument as `implements`: the flag lives under
+		// configuration.x-openregister-processing, the shape `case` and
+		// `contactmoment` already use. A top-level `logReads` is inert, and an
+		// inert one means a BSN reveal is never logged while the card claims
+		// the platform is logging it.
+		$processing = ($person['configuration']['x-openregister-processing'] ?? []);
 		$this->assertTrue(
-			($person['logReads'] ?? false),
+			($processing['logReads'] ?? false),
 			'brpPerson must log reads so the reveal is a platform-logged read'
+		);
+		$this->assertArrayNotHasKey(
+			'logReads',
+			$person,
+			'a schema-level `logReads` is never read'
+		);
+		$this->assertSame(
+			'citizenServiceNumber',
+			($processing['subjectIdFields']['burger'] ?? ''),
+			'the logged read must name the person it is about'
 		);
 
 	}//end testBrpPersonCarriesIndicatieGeheim()

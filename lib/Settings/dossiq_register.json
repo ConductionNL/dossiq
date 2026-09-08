@@ -1766,6 +1766,7 @@
                         "type": "string",
                         "format": "uuid",
                         "referenceSemanticType": "https://openregister.app/ns#Requester",
+                        "x-relation-schema-field": "initiatorType",
                         "title": "Requester",
                         "description": "The person or company who asked for this case. Pick them when you file the case, or when you edit it. A case that arrives through the ns#Case semantic handoff writes the same field, so there is one write path. Holds the UUID of the row that provides ns#Requester (ADR-048); initiatorType, initiatorSourceId and initiatorDisplayName are its display projection."
                     },

@@ -15,10 +15,6 @@
                 "version": "1.0.0",
                 "x-schema-org": "schema:Person",
                 "x-zgw-equivalent": "Rol betrokkene natuurlijk_persoon",
-                "implements": [
-                    "https://openregister.app/ns#Requester"
-                ],
-                "logReads": true,
                 "title": "BRP person (test register set)",
                 "description": "Simplified BRP person register set following Haal Centraal BRP Personen bevragen field naming. NOT a registry connection: seeded exclusively with official fictitious personas from the BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock), which double as the BRP contract-lane fixtures. Live BRP adapters are owned by external-integrations-test-environments.",
                 "type": "object",
@@ -115,7 +111,19 @@
                 },
                 "configuration": {
                     "objectNameField": "displayName",
-                    "objectDescriptionField": "description"
+                    "objectDescriptionField": "description",
+                    "implements": [
+                        "https://openregister.app/ns#Requester"
+                    ],
+                    "x-openregister-processing": {
+                        "logReads": true,
+                        "attribution": {
+                            "default": "zaakafhandeling"
+                        },
+                        "subjectIdFields": {
+                            "burger": "citizenServiceNumber"
+                        }
+                    }
                 }
             },
             "kvkCompany": {
@@ -124,9 +132,6 @@
                 "version": "1.0.0",
                 "x-schema-org": "schema:Organization",
                 "x-zgw-equivalent": "Rol betrokkene niet_natuurlijk_persoon",
-                "implements": [
-                    "https://openregister.app/ns#Requester"
-                ],
                 "title": "KvK company (test register set)",
                 "description": "Simplified KvK company register set following KvK Zoeken API field naming. NOT a registry connection: seeded exclusively with the KvK-published fictitious test companies (developers.kvk.nl test environment), which double as the KvK contract-lane fixtures. Live KvK adapters are owned by external-integrations-test-environments.",
                 "type": "object",
@@ -186,7 +191,10 @@
                 },
                 "configuration": {
                     "objectNameField": "tradeName",
-                    "objectDescriptionField": "description"
+                    "objectDescriptionField": "description",
+                    "implements": [
+                        "https://openregister.app/ns#Requester"
+                    ]
                 }
             }
         },
