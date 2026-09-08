@@ -118,4 +118,63 @@ class StatusChecklistSchemaTest extends TestCase {
 		self::assertSame('Check the objection is on time', $stored['checklist'][0]['title']);
 		self::assertTrue($stored['checklist'][0]['required']);
 	}//end testAnAuthoredChecklistSurvivesTheStore()
+
+	/**
+	 * The shipped demo authors a checklist, so a fresh install shows one.
+	 *
+	 * A property nothing seeds is a property nobody sees. The demo's intake
+	 * status carries one required item and one optional one, which is what
+	 * makes the arriving tasks and the held-back button visible without an
+	 * admin authoring anything first.
+	 *
+	 * @return void
+	 */
+	public function testTheDemoIntakeStatusShipsARequiredAndAnOptionalItem(): void {
+		$status = $this->seededStatus(slug: 'bp-received');
+
+		self::assertSame(
+			[
+				['title' => 'Check the objection is on time', 'required' => true],
+				['title' => 'Confirm receipt to the objector', 'required' => false],
+			],
+			$status['checklist']
+		);
+	}//end testTheDemoIntakeStatusShipsARequiredAndAnOptionalItem()
+
+	/**
+	 * The demo's working phase carries one required item of its own.
+	 *
+	 * @return void
+	 */
+	public function testTheDemoWorkingStatusShipsOneRequiredItem(): void {
+		$checklist = $this->seededStatus(slug: 'bp-inprogress')['checklist'];
+
+		self::assertCount(1, $checklist);
+		self::assertTrue($checklist[0]['required']);
+	}//end testTheDemoWorkingStatusShipsOneRequiredItem()
+
+	/**
+	 * One seeded statusType object out of the merged configuration.
+	 *
+	 * @param string $slug The object's `@self.slug`.
+	 *
+	 * @return array<string, mixed> The seeded object.
+	 */
+	private function seededStatus(string $slug): array {
+		foreach ((array)(ShippedRegisterSchema::merged()['components']['objects'] ?? []) as $object) {
+			if (is_array($object) === false) {
+				continue;
+			}
+
+			if ((string)($object['@self']['schema'] ?? '') !== 'statusType') {
+				continue;
+			}
+
+			if ((string)($object['@self']['slug'] ?? '') === $slug) {
+				return $object;
+			}
+		}
+
+		self::fail('The shipped seed data declares no statusType ' . $slug);
+	}//end seededStatus()
 }//end class

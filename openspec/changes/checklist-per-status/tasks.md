@@ -10,7 +10,7 @@ criteria under a task are plain bullets.
   with a description that says the tasks are created on entry.
   - `@spec openspec/specs/status-transition-engine/spec.md`
   - `tests/schemas` round-trips the new property
-- [ ] 1.2 `lib/Settings/register.d/` bezwaar case type: the Intake and In
+- [x] 1.2 `lib/Settings/register.d/` bezwaar case type: the Intake and In
   behandeling items per design Seed Data.
 
 ## 2. Tasks on entry
