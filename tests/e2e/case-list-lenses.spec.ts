@@ -166,11 +166,19 @@ function row(page: Page, key: string): Locator {
 }
 
 /**
+ * The case type `seedStateMachine` creates for this run, by title.
+ *
+ * The index sidebar offers one filter button per case type, so this run's own
+ * type is a control that narrows the list to exactly the rows it seeded.
+ */
+const RUN_CASE_TYPE = `${RUN_PREFIX} Vergunning`
+
+/**
  * Narrow the Cases index to the rows this run seeded.
  *
  * 🔴 WITHOUT THIS THE LENS TESTS LOOK AT PAGE 1 OF 4. The index paginates at
- * 20 and the shared instance holds far more: the failing run's page snapshot
- * reads "Showing 20 of 62", "Page 1 of 4", ordered by identifier ascending, so
+ * 20 and the shared instance holds far more: a failing run's page snapshot
+ * read "Showing 20 of 62", "Page 1 of 4", ordered by identifier ascending, so
  * rows 2026-0001 upward. A case seeded seconds ago gets a HIGH number and
  * lands on the last page, and the assertion reads as "the lens does not show
  * my row" when the lens is fine and the row is three pages away.
@@ -179,21 +187,32 @@ function row(page: Page, key: string): Locator {
  * failed. Mine narrows to the signed-in user, which cuts 62 down to this run's
  * handful, and they fit on one page.
  *
- * The search facet is the right instrument rather than a bigger page size,
- * because it composes with the lens instead of racing the instance's growth.
- * CnIndexPage spreads a quick filter's own filter BEFORE the user's
- * activeFilters, so user facets narrow WITHIN the active tab, and changing
- * tabs re-fetches at page 1 with the facet still applied.
+ * ⚠️ THE FIRST ATTEMPT AT THIS USED A SEARCH BOX THAT DOES NOT EXIST HERE, and
+ * it is worth saying why so nobody reaches for it again. `CnActionsBar` renders
+ * an `<input type="search">` only behind its `showSearch` PROP, and this page
+ * does not set it; the "Search and columns" button beside it opens something
+ * else. `getByRole('searchbox')` therefore matched nothing and every one of
+ * these tests failed inside the helper rather than on its own assertion.
+ *
+ * The case-type facet is a control the page really renders, one button per
+ * type in the sidebar list, and this run seeds its own type. It composes with
+ * the lens by design: CnIndexPage spreads a quick filter's own filter BEFORE
+ * the user's `activeFilters`, so user facets narrow WITHIN the active tab, and
+ * changing tabs re-fetches at page 1 with the facet still applied. Both
+ * `/cases` and `/queue` declare a sidebar, so it works on either.
  *
  * @param page The page.
  */
 async function narrowToThisRun(page: Page): Promise<void> {
-	await page.getByRole('button', { name: /Search and columns/i }).click()
-	const search = page.getByRole('searchbox').first()
-	await expect(search).toBeVisible({ timeout: 15_000 })
-	await search.fill(RUN_PREFIX)
+	const facet = page.getByRole('button', { name: RUN_CASE_TYPE, exact: true })
+	await expect(
+		facet,
+		`the sidebar should offer a case-type filter named ${RUN_CASE_TYPE}`,
+	).toBeVisible({ timeout: 30_000 })
+	await facet.click()
+
 	// The list must have answered before a lens is touched, or the first
-	// assertion races the fetch this typing started.
+	// assertion races the fetch this click started.
 	await expect(
 		page.getByRole('row').filter({ hasText: RUN_PREFIX }).first(),
 	).toBeVisible({ timeout: 30_000 })
