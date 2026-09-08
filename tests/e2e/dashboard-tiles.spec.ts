@@ -24,11 +24,18 @@
  * construction. The near-deadline scenario asserts it in the table when there
  * is room and through the table's own View all when there is not, because that
  * link carries the table's filter and is the promise the tile makes.
+ *
+ * WHAT THE SEED CAN CONTROL, ONCE IT OWNS THE USER. `my-work` had the same
+ * problem and does not have to keep it, because unlike `deadlines` it is
+ * scoped to the current user: its filter is `assignee: @me`. So the My work
+ * scenarios run as a dedicated account this spec provisions, whose only open
+ * tasks are the three seeded below. See `WORK_USER`.
  */
 
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { captureStorageState, ensureUser, storageStatePath } from './helpers/auth.ts'
 import {
 	cleanupRunObjects,
 	createObject,
@@ -50,9 +57,45 @@ const KPI_TILE_COUNT = 5
 /** The row limit both merged tables declare. */
 const ROW_LIMIT = 10
 
+/**
+ * The account the My work scenarios run as.
+ *
+ * `my-work` is defined ENTIRELY by `@me`: its source filter is
+ * `assignee: @me, isTerminalStatus: false`, ordered by `dueDate` ascending and
+ * capped at ten rows. Run as the admin, that is a race this fixture cannot
+ * win. The app's demo caseload assigns every task to `admin` as a literal, and
+ * on a rig that has loaded it there are eighteen open ones, fifteen of them due
+ * before tomorrow. A task seeded to fall due TOMORROW is therefore the
+ * sixteenth row of a ten-row table and cannot appear, however correct the
+ * widget is — a dashboard that shows your ten most urgent tasks is behaving
+ * exactly as specified.
+ *
+ * Seeding earlier due dates would only win that same race against today's demo
+ * data and lose it against a rig with a longer backlog, and it would cost the
+ * assertion these scenarios exist for: the days-left column is asserted to read
+ * `1 days remaining`, which a back-dated task does not render.
+ *
+ * A dedicated account removes the race rather than winning it. `@me` resolves
+ * to somebody whose only open tasks are the three seeded below, so the table's
+ * whole contents belong to this fixture and its row count can be asserted
+ * exactly. The account is provisioned over the OCS provisioning API, holds no
+ * admin rights, and needs no group and no grant — OpenRegister answers a plain
+ * account's reads of the dossiq register, which is what makes this cheap.
+ *
+ * It is deliberately left in place afterwards: provisioning is idempotent, and
+ * deleting an account whose session a browser context still holds is a flake
+ * this suite does not need to invent.
+ */
+const WORK_USER = process.env.DOSSIQ_E2E_WORK_USER ?? 'e2e-dashboard'
+
+/** Its password. Must satisfy the instance's password policy. */
+const WORK_PASSWORD = process.env.DOSSIQ_E2E_WORK_PASSWORD ?? 'e2eDash!2026'
+
+/** Where its captured session is written, under the gitignored `.auth/`. */
+const WORK_STATE = storageStatePath(WORK_USER)
+
 let api: APIRequestContext
 let token = ''
-let currentUser = ''
 
 /** The case type this spec owns: a seven-day deadline it can aim. */
 let caseTypeId = ''
@@ -121,6 +164,16 @@ test.describe('Dashboard tiles', () => {
 	test.setTimeout(180_000)
 
 	test.beforeAll(async ({ browser, playwright, baseURL }) => {
+		// The `test.setTimeout` above governs TESTS, not hooks: a hook gets the
+		// config's flat 60s. This seed now also provisions an account and logs
+		// it in through the web form, on top of the case type, two status types,
+		// three cases, three tasks and two picker case types it already wrote,
+		// and 60s is not enough for that on a loaded rig — it failed as a bare
+		// `"beforeAll" hook timeout`, which names the hook rather than anything
+		// inside it. Raised here, in the hook, exactly as `cleanupRunObjects`
+		// raises the teardown's, so no TEST budget is loosened with it.
+		test.setTimeout(180_000)
+
 		const context = await browser.newContext()
 		api = await playwright.request.newContext({
 			baseURL,
@@ -129,16 +182,39 @@ test.describe('Dashboard tiles', () => {
 		await context.close()
 		token = await getRequestToken(api)
 
+		// The account the My work scenarios run as, and its session. See
+		// `WORK_USER` for why they cannot run as the admin.
+		await ensureUser(api, token, WORK_USER, WORK_PASSWORD)
+		await captureStorageState(browser, {
+			baseURL: String(baseURL),
+			user: WORK_USER,
+			password: WORK_PASSWORD,
+			statePath: WORK_STATE,
+		})
+
+		// Prove the captured session really is that account, before a single
+		// task is seeded against it. A capture that silently fell back to the
+		// admin would put the seeded tasks back behind the demo caseload, and
+		// the two My work scenarios would then fail naming a widget rather than
+		// a session.
+		//
 		// The OCS endpoints are CSRF-guarded, so the `OCS-APIRequest` header is
 		// what marks this as an API call. Without it Nextcloud answers a plain
 		// OCS GET with 412, which reads as "no session" rather than as a
 		// missing header.
-		const whoami = await api.get('/ocs/v2.php/cloud/user?format=json', {
+		const workApi = await playwright.request.newContext({
+			baseURL,
+			storageState: WORK_STATE,
+		})
+		const whoami = await workApi.get('/ocs/v2.php/cloud/user?format=json', {
 			headers: { 'OCS-APIRequest': 'true' },
 		})
 		expect(whoami.ok(), `whoami -> ${whoami.status()}`).toBeTruthy()
-		currentUser = String((await whoami.json())?.ocs?.data?.id ?? '')
-		expect(currentUser, 'the session must resolve to a user id').not.toBe('')
+		expect(
+			String((await whoami.json())?.ocs?.data?.id ?? ''),
+			'the captured session must resolve to the dedicated account',
+		).toBe(WORK_USER)
+		await workApi.dispose()
 
 		// `deadline` is READ-ONLY on the case: OpenRegister computes it as
 		// startDate + the case type's processingDeadline. So the deadline is
@@ -194,10 +270,13 @@ test.describe('Dashboard tiles', () => {
 			[TASK_MID, isoDay(7)],
 			[TASK_LATE, isoDay(30)],
 		]) {
+			// Assigned to the dedicated account, not to whoever seeded them: it
+			// is `assignee` that `my-work`'s `@me` filter compares against, and
+			// the whole point of that account is that nothing else is on it.
 			await createObject(api, token, 'caseTask', {
 				title,
 				case: onCase,
-				assignee: currentUser,
+				assignee: WORK_USER,
 				status: 'available',
 				dueDate: `${due}T09:00:00+00:00`,
 			})
@@ -246,54 +325,79 @@ test.describe('Dashboard tiles', () => {
 		}
 	})
 
-	// @e2e openspec/specs/dashboard/spec.md#scenario-your-tasks-appear-once-with-days-left
-	// @e2e dashboard::one-work-table-with-days-left-and-row-actions
-	test('My work lists each of your open tasks once, with days left', async ({
-		page,
-	}) => {
-		await openDashboard(page)
-		const table = widget(page, 'my-work')
-		await expect(table).toBeVisible({ timeout: 30_000 })
-		await expect(rows(table).first()).toBeVisible({ timeout: 30_000 })
+	/**
+	 * The My work scenarios, on the account whose only open tasks are the
+	 * seeded three.
+	 *
+	 * `test.use` here rather than on the file: the four scenarios outside this
+	 * block read `deadlines` and the New case picker, which are instance-wide
+	 * and want the ordinary admin session and the caseload that comes with it.
+	 * Only `my-work` is scoped by `@me`, so only `my-work` needs its own
+	 * account. The outer `beforeAll` is unaffected and still seeds as the
+	 * admin.
+	 */
+	test.describe('on the account that owns them', () => {
+		test.use({ storageState: WORK_STATE })
 
-		// ONCE each. This is the whole point of the merge: the two tiles this
-		// table replaces showed seven of these ten rows twice between them.
-		for (const title of [TASK_SOON, TASK_MID, TASK_LATE]) {
+		// @e2e openspec/specs/dashboard/spec.md#scenario-your-tasks-appear-once-with-days-left
+		// @e2e dashboard::one-work-table-with-days-left-and-row-actions
+		test('My work lists each of your open tasks once, with days left', async ({
+			page,
+		}) => {
+			await openDashboard(page)
+			const table = widget(page, 'my-work')
+			await expect(table).toBeVisible({ timeout: 30_000 })
+			await expect(rows(table).first()).toBeVisible({ timeout: 30_000 })
+
+			// ONCE each. This is the whole point of the merge: the two tiles this
+			// table replaces showed seven of these ten rows twice between them.
+			for (const title of [TASK_SOON, TASK_MID, TASK_LATE]) {
+				await expect(
+					rows(table).filter({ hasText: title }),
+					`${title} on My work`,
+				).toHaveCount(1)
+			}
+
+			// And nothing else, which is the stronger form of the same claim and
+			// is only assertable because this account's queue is the fixture's.
+			// A table that double-counted would read six rows here, and a row
+			// that is neither of the three is residue an earlier run left on this
+			// account — a finding, not noise.
 			await expect(
-				rows(table).filter({ hasText: title }),
-				`${title} on My work`,
-			).toHaveCount(1)
-		}
+				rows(table),
+				'My work holds the three seeded tasks and nothing else',
+			).toHaveCount(3)
 
-		// The task due tomorrow reads its distance, not its date. Which phrase
-		// depends on the clock: the seed is 09:00 UTC tomorrow, so a run late
-		// in the day on a machine ahead of UTC can legitimately read "today".
-		const soon = rows(table).filter({ hasText: TASK_SOON })
-		await expect(soon).toContainText(/1 days remaining|Due today/)
+			// The task due tomorrow reads its distance, not its date. Which phrase
+			// depends on the clock: the seed is 09:00 UTC tomorrow, so a run late
+			// in the day on a machine ahead of UTC can legitimately read "today".
+			const soon = rows(table).filter({ hasText: TASK_SOON })
+			await expect(soon).toContainText(/1 days remaining|Due today/)
 
-		// The case is named, not its uuid. `case.title` only resolves because
-		// the widget extends `case`; without the extend this cell renders a
-		// 36-character uuid, which is what this pattern refuses.
-		await expect(soon).not.toContainText(
-			/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/,
-		)
-		await expect(soon).toContainText(OVERDUE_CASE)
-	})
+			// The case is named, not its uuid. `case.title` only resolves because
+			// the widget extends `case`; without the extend this cell renders a
+			// 36-character uuid, which is what this pattern refuses.
+			await expect(soon).not.toContainText(
+				/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/,
+			)
+			await expect(soon).toContainText(OVERDUE_CASE)
+		})
 
-	// @e2e openspec/specs/dashboard/spec.md#scenario-you-complete-a-task-from-the-row
-	// @e2e dashboard::one-work-table-with-days-left-and-row-actions
-	test('a My work row opens the task, which is where Pick up and Complete are', async ({
-		page,
-	}) => {
-		// Row actions are blocked on nextcloud-vue: the object-table vocabulary
-		// has no `rowActions` key, so the declared interim is the row route.
-		// This test holds the interim, so the day the key lands and the route
-		// is dropped, it says so.
-		await openDashboard(page)
-		const table = widget(page, 'my-work')
-		await expect(table).toBeVisible({ timeout: 30_000 })
-		await rows(table).filter({ hasText: TASK_SOON }).first().click()
-		await expect(page).toHaveURL(/\/tasks\/[^/]+$/, { timeout: 15_000 })
+		// @e2e openspec/specs/dashboard/spec.md#scenario-you-complete-a-task-from-the-row
+		// @e2e dashboard::one-work-table-with-days-left-and-row-actions
+		test('a My work row opens the task, which is where Pick up and Complete are', async ({
+			page,
+		}) => {
+			// Row actions are blocked on nextcloud-vue: the object-table vocabulary
+			// has no `rowActions` key, so the declared interim is the row route.
+			// This test holds the interim, so the day the key lands and the route
+			// is dropped, it says so.
+			await openDashboard(page)
+			const table = widget(page, 'my-work')
+			await expect(table).toBeVisible({ timeout: 30_000 })
+			await rows(table).filter({ hasText: TASK_SOON }).first().click()
+			await expect(page).toHaveURL(/\/tasks\/[^/]+$/, { timeout: 15_000 })
+		})
 	})
 
 	// @e2e openspec/specs/signalering-widgets/spec.md#scenario-overdue-and-near-deadline-cases-share-one-table
