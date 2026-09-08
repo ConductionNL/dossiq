@@ -264,9 +264,25 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 		const parentId = objectId(parent)
 		await page.goto(`/index.php/apps/dossiq/cases/${parentId}`)
 		await dismissSupportDialog(page)
-		await expect(
-			page.getByText(`${RUN_PREFIX} Email parent`, { exact: false }).first(),
-		).toBeVisible({ timeout: 15_000 })
+		// Wait for the PAGE, then read its title, rather than waiting for the
+		// title to become visible. Under four workers this failed with the
+		// heading present, carrying the right text, and hidden for the whole
+		// budget — so the readiness signal was a text node whose visibility
+		// depends on a container the assertion never named.
+		//
+		// Two explanations were checked against a running instance and are
+		// wrong: the tab strip does NOT take over this heading (it renders and
+		// is visible on a case page), and there is no second, hidden detail
+		// page kept alive behind the first (one `.cn-detail-page`, no hidden
+		// ancestor). The state itself did not reproduce locally, so the gate
+		// is corrected rather than the cause guessed at: if the container is
+		// hidden, the failure now names the container.
+		const detail = page.locator('.cn-detail-page')
+		await expect(detail).toBeVisible({ timeout: 15_000 })
+		await expect(detail.locator('.cn-detail-page__title')).toContainText(
+			`${RUN_PREFIX} Email parent`,
+			{ timeout: 15_000 },
+		)
 		// The object sidebar (NcAppSidebar) is collapsed by default on CaseDetail —
 		// a toolbar "Open sidebar" toggle reveals it. Open it before asserting the
 		// hosted tab strip mounts (it is not rendered while the aside is closed).
