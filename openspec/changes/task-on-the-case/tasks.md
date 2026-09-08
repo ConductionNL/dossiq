@@ -110,7 +110,7 @@ criteria under a task are plain bullets.
 
 ## 3. End to end
 
-- [ ] 3.1 `tests/e2e/case-task-pane.spec.ts`: seeds one case and two open
+- [x] 3.1 `tests/e2e/case-task-pane.spec.ts`: seeds one case and two open
   tasks (first active, second available with a later due date) through the
   OpenRegister objects API with `page.request` and the harvested token;
   asserts by widget id `case-tasks` and by button label; covers: the open
@@ -120,7 +120,18 @@ criteria under a task are plain bullets.
   task page names its case and following the link opens the case page.
   Labels asserted are the schema descriptions, which are English on CI.
   - the spec must appear in `tests/e2e/playwright.config.ts`'s project, the
-    config CI reads
+    config CI reads. Confirmed by `npx playwright test --config
+    tests/e2e/playwright.config.ts --list`: all four tests are collected
+    under `[chromium]`, out of 252 in 54 files.
+  - FOUR cases are seeded, not one. Two of these tests complete a task, so a
+    shared case would make the tests order-dependent, and an order dependency
+    is the failure that only reproduces on the second run.
+  - the two active tasks are driven through OpenRegister's `transition` route
+    rather than seeded with `status: "active"`, and the resulting status is
+    read back. That both seeds the state and proves the lifecycle is live
+    before any browser opens.
+  - `caseTask`, `case` and `caseType` are already in `tests/e2e/ci-seed.sh`'s
+    required-schema list, so the seed needs no change.
 - [ ] 3.2 Run `npm run lint`, `npm run test:unit` and the e2e spec locally;
   read the exit codes, not the summary lines; say in the PR which checks
   ran locally only.
