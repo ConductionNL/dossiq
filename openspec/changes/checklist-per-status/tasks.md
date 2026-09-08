@@ -15,7 +15,7 @@ criteria under a task are plain bullets.
 
 ## 2. Tasks on entry
 
-- [ ] 2.1 `lib/Service/Transitions/StatusChecklist.php` (new):
+- [x] 2.1 `lib/Service/Transitions/StatusChecklist.php` (new):
   `actionsFor(string $statusTypeId, array $case): array` per design D2 and
   D3, reading the status through `StatusTypeLookup` and the case's tasks
   through `SearchesObjects` filtered on `workflowStepId`.
