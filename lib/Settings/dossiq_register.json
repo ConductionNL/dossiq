@@ -720,7 +720,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.15.0",
+                "version": "1.17.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -887,6 +887,14 @@
                                         "prop": "@ref.caseType.processingDeadline"
                                     }
                                 }
+                            }
+                        },
+                        "statutoryTerm": {
+                            "type": "string",
+                            "materialise": true,
+                            "description": "The case type's processing deadline, copied onto the case so a data widget can read it. A data widget builds its fields from the schema's own properties, so an include path like caseType.processingDeadline matches no property and renders nothing at all; the same is true of a stat caption, which interpolates only an endpoint payload. Materialised for the reason deadline is: cross-object @ref lookups resolve in OpenRegister's save-time listener and nowhere else. A case type whose deadline changes later needs occ openregister:rematerialise-calculations, exactly as deadline does.",
+                            "expression": {
+                                "prop": "@ref.caseType.processingDeadline"
                             }
                         },
                         "identifier": {
@@ -1361,6 +1369,15 @@
                         "description": "Auto-generated case identifier (e.g. 2026-0042). Filled declaratively by OpenRegister (x-openregister-calculations.identifier).",
                         "title": "Identifier"
                     },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Free words that group this case across case types (e.g. spoed, wijk-noord)",
+                        "title": "Tags",
+                        "facetable": true
+                    },
                     "caseType": {
                         "type": "string",
                         "format": "uuid",
@@ -1623,6 +1640,18 @@
                         "visible": false,
                         "title": "Source Organisation"
                     },
+                    "legalBasis": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "description": "The statutory article this case is handled under (e.g. Awb 4:13)",
+                        "title": "Legal basis"
+                    },
+                    "statutoryTerm": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm.",
+                        "title": "Statutory lead time"
+                    },
                     "archiveNomination": {
                         "type": "string",
                         "enum": [
@@ -1630,15 +1659,13 @@
                             "vernietigen"
                         ],
                         "description": "Whether the case should be permanently archived or destroyed",
-                        "visible": false,
-                        "title": "Archive Nomination"
+                        "title": "Archive nomination"
                     },
                     "archiveActionDate": {
                         "type": "string",
                         "format": "date",
                         "description": "Date when the archive action should be executed",
-                        "visible": false,
-                        "title": "Archive Action Date"
+                        "title": "Archive action date"
                     },
                     "archiveStatus": {
                         "type": "string",
@@ -1649,8 +1676,7 @@
                             "overgedragen"
                         ],
                         "description": "Current archive status of the case",
-                        "visible": false,
-                        "title": "Archive Status"
+                        "title": "Archive status"
                     },
                     "paymentIndication": {
                         "type": "string",
@@ -1661,15 +1687,13 @@
                             "geheel"
                         ],
                         "description": "Payment status indicator",
-                        "visible": false,
-                        "title": "Payment Indication"
+                        "title": "Payment indication"
                     },
                     "lastPaymentDate": {
                         "type": "string",
                         "format": "date",
                         "description": "Date of the last payment",
-                        "visible": false,
-                        "title": "Last Payment Date"
+                        "title": "Last payment date"
                     },
                     "communicationChannel": {
                         "type": "string",
