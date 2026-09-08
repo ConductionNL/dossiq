@@ -3739,7 +3739,19 @@ OC.L10N.register(
         "Organisation": "Organisation",
         "Residence": "Residence",
         "Start time": "Start time",
-        "The person or organisation this moment is about, as a row in the brpPerson or kvkCompany register set. Same shape and same semantic type as case.requester, so one picker serves both.": "The person or organisation this moment is about, as a row in the brpPerson or kvkCompany register set. Same shape and same semantic type as case.requester, so one picker serves both."
+        "The person or organisation this moment is about, as a row in the brpPerson or kvkCompany register set. Same shape and same semantic type as case.requester, so one picker serves both.": "The person or organisation this moment is about, as a row in the brpPerson or kvkCompany register set. Same shape and same semantic type as case.requester, so one picker serves both.",
+        "Simulated": "Simulated",
+        "Berichtenbox": "Berichtenbox",
+        "Document templates": "Document templates",
+        "Messages to a citizen's Mijn Overheid Berichtenbox.": "Messages to a citizen's Mijn Overheid Berichtenbox.",
+        "Rendering a besluit or a letter from a template, which Filinq does.": "Rendering a besluit or a letter from a template, which Filinq does.",
+        "No Berichtenbox adapter is configured, so messages are simulated. Nothing reaches Mijn Overheid. Name a real adapter class in the berichtenbox_adapter setting to send for real.": "No Berichtenbox adapter is configured, so messages are simulated. Nothing reaches Mijn Overheid. Name a real adapter class in the berichtenbox_adapter setting to send for real.",
+        "Filinq is not installed, so every beschikking is rendered by a mock. Install filinq, then name its adapter class in the beschikking_template_adapter setting.": "Filinq is not installed, so every beschikking is rendered by a mock. Install filinq, then name its adapter class in the beschikking_template_adapter setting.",
+        "Filinq is installed but no template adapter is configured, so every beschikking is rendered by a mock. Name filinq's adapter class in the beschikking_template_adapter setting.": "Filinq is installed but no template adapter is configured, so every beschikking is rendered by a mock. Name filinq's adapter class in the beschikking_template_adapter setting.",
+        "The adapter class named in %1$s cannot be used: %2$s is missing or does not implement the seam. A mock adapter is running in its place.": "The adapter class named in %1$s cannot be used: %2$s is missing or does not implement the seam. A mock adapter is running in its place.",
+        "The adapter class named in %1$s could not be built. A mock adapter is running in its place.": "The adapter class named in %1$s could not be built. A mock adapter is running in its place.",
+        "A mock adapter answers here. No message reaches Mijn Overheid. Set berichtenbox_adapter to a real adapter class.": "A mock adapter answers here. No message reaches Mijn Overheid. Set berichtenbox_adapter to a real adapter class.",
+        "A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to a real adapter class.": "A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to a real adapter class."
     },
     "nplurals=2; plural=(n != 1);"
 )
