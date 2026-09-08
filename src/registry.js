@@ -42,6 +42,9 @@ import BesluitvormingLeafTab from './components/tabs/BesluitvormingLeafTab.vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
+// The inline task pane on the case page (task-on-the-case A06).
+// @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
 // VTH-specific case detail panels
 import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
@@ -211,6 +214,28 @@ const registry = {
 		kind: 'widget',
 		component: TaskWaitingCaseSection,
 		_note: 'TaskDetail section: names the case a suspended flow run is holding on this task and links to it. Renders NOTHING for a task without a flowRun, so pre-existing tasks are unchanged. The case half (run + stage on CaseDetail) is deliberately absent: it waits on the fleet-generic subject-scoped runs widget (openregister flow-runs-subject-scope).',
+	},
+
+	// --- The inline task pane on the case page (task-on-the-case A06). ---
+	//
+	// KEYED BY THE WIDGET'S `type`, NOT BY A COMPONENT NAME, because
+	// `case-tasks` is a child of the `case-panels` tabs widget. The change
+	// design called for `type: "custom"` behind the page slot
+	// `widget-case-tasks`, the way TaskDetail resolves `widget-task-waiting-case`
+	// below. That path exists only for a widget in the page's `layout`:
+	// CnDetailPage renders one `widget-<id>` slot per GRID item, and a tab child
+	// is deliberately absent from `layout` (a layout entry renders it twice).
+	// CnTabsWidget renders its children through CnDetailWidgetHost, which picks a
+	// renderer from `cnRegistry[widget.type]` and, failing that, renders NOTHING
+	// and logs nothing. So the registry key is the type the manifest names, which
+	// is the injection CnAppRoot provides and the shape the library documents for
+	// an app's own widget types.
+	// @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+	'case-task-pane': {
+		// @custom-widget-ratchet exclude blocked: nextcloud-vue 2.41.1 CnObjectListWidget has no rowActions and no lifecycle column, so a lifecycle button cannot be put inside a row from the manifest; the widget returns to type object-list and this entry is deleted the moment the library ships one (ConductionNL/nextcloud-vue issue linked from the manifest _note)
+		kind: 'widget',
+		component: CaseTaskPane,
+		_note: 'CaseDetail Tasks tab: the first open task of the case with the lifecycle buttons OpenRegister answers for it, a toast on completion and the next open task in its place. No built-in fits: CnObjectListWidget accepts register/schema/filter/sort/limit/columns/rowRoute/prompt/emptyText/viewAllRoute/viewAllQuery and nothing else, has no rowActions and no per-row slot, and a config key it does not declare is dropped in silence. Interim by construction, and the e2e asserts on the tab and the button labels rather than on this component so it survives the swap back.',
 	},
 
 	// --- Case assistant via Hermiq (case-assistant-via-hermiq). ---

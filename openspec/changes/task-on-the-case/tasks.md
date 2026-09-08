@@ -32,12 +32,23 @@ criteria under a task are plain bullets.
     published 2.41.1 tarball. The pane watches the child's `error` through a
     ref and forwards it to `showError`.
   - `@spec openspec/changes/task-on-the-case/specs/task-management/spec.md`
-- [ ] 1.2 `src/registry.js`: register `CaseTaskPane` (kind `widget`) for the
-  page slot `widget-case-tasks` with a `@custom-widget-ratchet exclude` note
-  reading `blocked: nextcloud-vue 2.40.0 CnObjectListWidget has no
-  rowActions and no lifecycle column`, and the `@spec` line above it.
-  - unit test in `tests/unit/manifest-case-task-pane.spec.js`: the slot
-    resolves to the component
+- [x] 1.2 `src/registry.js`: register `CaseTaskPane` (kind `widget`) with a
+  `@custom-widget-ratchet exclude` note reading `blocked: nextcloud-vue
+  2.41.1 CnObjectListWidget has no rowActions and no lifecycle column`, and
+  the `@spec` line above it.
+  - registered under the WIDGET TYPE key `case-task-pane`, NOT under the page
+    slot `widget-case-tasks` this task named. `case-tasks` is a child of the
+    `case-panels` tabs widget and is deliberately absent from `layout` (a
+    layout entry would render it twice). CnDetailPage renders a
+    `widget-<id>` slot per GRID item only, so the slot would never be
+    rendered; CnTabsWidget renders its children through CnDetailWidgetHost,
+    which resolves `cnRegistry[widget.type]` and otherwise renders NOTHING
+    and logs nothing. Both halves read out of the installed dist.
+  - unit test in `tests/vitest/manifestCaseTaskPane.spec.js`: the widget type
+    resolves to the component, the entry carries a `_note` and a
+    reason-bearing exclusion, and the import points at a file that exists.
+    `src/registry.js` is read as text, not imported: it pulls in ~40 SFCs and
+    a probe import did not settle inside the 5s test budget.
 - [ ] 1.3 `src/manifest.json`: widget `case-tasks` on `CaseDetail` changes
   `type` from `object-list` to `custom`; `id`, `title`, `icon`, grid cell
   and `content` (register, schema, filter, sort, limit, columns, rowRoute,
