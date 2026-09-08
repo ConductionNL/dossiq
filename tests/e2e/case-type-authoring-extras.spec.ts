@@ -376,8 +376,16 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		// gets is computed by OpenRegister at save time from the case TYPE's
 		// processingDeadline, so what is being asserted is the stored value,
 		// and reading it off a rendered countdown would assert the renderer.
+		// The request token, like every other call to a dossiq route. These
+		// two blueprint reads were the only ones in the suite sent bare, and
+		// Nextcloud answers 412 "CSRF check failed" to a bare request on ANY
+		// dossiq API route, GET included — `available-transitions`,
+		// `transition-history` and `dashboard/kpis` all do the same. So this
+		// was never about the blueprint: it is what an app route does when the
+		// caller does not identify itself.
 		const res = await api.get(
 			`/index.php/apps/${REGISTER}/api/case-types/${child.caseType}/blueprint`,
+			{ headers: { requesttoken: token, 'OCS-APIRequest': 'true' } },
 		)
 		expect(
 			res.ok(),
@@ -402,8 +410,15 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 
 		const res = await api.get(
 			`/index.php/apps/${REGISTER}/api/case-types/${parent.caseType}/blueprint`,
+			{ headers: { requesttoken: token, 'OCS-APIRequest': 'true' } },
 		)
-		expect(res.ok()).toBeTruthy()
+		// With the status and the body in the message, because a bare
+		// `toBeTruthy()` here reported only "expected true, got false" and
+		// said nothing about the 412 that caused it.
+		expect(
+			res.ok(),
+			`blueprint -> ${res.status()} ${await res.text()}`,
+		).toBeTruthy()
 
 		const blueprint = await res.json()
 		// Three levels at most, and never the same type twice.
