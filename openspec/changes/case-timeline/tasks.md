@@ -81,7 +81,7 @@ tab order it amends (task 4.1).
 
 ## 5. Verification
 
-- [ ] 5.1 `tests/e2e/case-timeline.spec.ts`: seeds one case with
+- [x] 5.1 `tests/e2e/case-timeline.spec.ts`: seeds one case with
   identifier 2026-0015, updates its description through the API as admin,
   opens the page, opens the sidebar, asserts by tab id that `audit` is
   present and `version-history` is not, that the first History row reads
@@ -91,8 +91,8 @@ tab order it amends (task 4.1).
   instance may run in Dutch.
   - the spec must appear in `tests/e2e/playwright.config.ts`'s project,
     the config CI reads
-- [ ] 5.2 Run `npm run lint`, `npm run check:manifest`, `npm run test:unit`
+- [x] 5.2 Run `npm run lint`, `npm run check:manifest`, `npm run test:unit`
   and the e2e spec locally; read `$?` on each, not the summary line.
-- [ ] 5.3 `docs/case-detail.md` (or the page's docs entry): one paragraph
+- [x] 5.3 `docs/case-detail.md` (or the page's docs entry): one paragraph
   on the History tab, what it shows and what waits on the activity leaf;
   load the `writing` skill first.
