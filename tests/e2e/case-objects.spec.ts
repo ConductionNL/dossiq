@@ -31,6 +31,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { openCasePanel } from './helpers/case-panels.ts'
 import {
 	adoptableCaseTypes,
 	cleanupRunObjects,
@@ -119,20 +120,16 @@ async function openObjectsTab(page: Page, id: string) {
 	await dismissSupportDialog(page)
 	await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
 
-	const strip = page.locator('.cn-tabs-widget')
-	await expect(strip).toBeVisible({ timeout: 30_000 })
-	await strip.getByRole('tab', { name: /^(Objects|Objecten)$/ }).click()
-
-	// The open panel INSIDE the tabs widget, not a widget id: CnDetailPage
-	// sets `aria-label` to the manifest widget id only on the top-level
-	// widgets it lays out, so a widget rendered as a tab child carries no such
-	// label and `[aria-label="case-objects"]` matches nothing. Scope to the
-	// strip as well: the sidebar's own panels also carry `role="tabpanel"` and
-	// hide with `aria-hidden` rather than `hidden`, so an unscoped query is
-	// ambiguous.
-	const widget = strip.locator('[role="tabpanel"]:not([hidden])')
-	await expect(widget).toBeVisible({ timeout: 20_000 })
-	return widget
+	// The SECTION, not the whole open panel. Now that the strip holds six tabs
+	// instead of fourteen, a tab carries two collections, so an assertion made
+	// against the panel root can be satisfied by the wrong half of it. The
+	// tab-to-section mapping lives in helpers/case-panels.ts, so the next fold
+	// moves one table rather than every spec that opens a panel.
+	//
+	// It is a testid and not a widget id because CnDetailPage sets `aria-label`
+	// to the manifest widget id only on the top-level widgets it lays out, so a
+	// widget rendered inside a tab carries no such label.
+	return await openCasePanel(page, 'objects')
 }
 
 /**
@@ -319,10 +316,12 @@ test.describe('Case objects', () => {
 		).toBe(true)
 
 		// The tab is present rather than hidden, and the way out of the empty
-		// state is on the page rather than behind it.
+		// state is on the page rather than behind it. The tab is named for both
+		// collections it holds since the strip came down to six.
 		await expect(
 			page.locator('.cn-tabs-widget').getByRole('tab', {
-				name: /^(Objects|Objecten)$/,
+				name: 'Objects and locations',
+				exact: true,
 			}),
 		).toBeVisible({ timeout: 15_000 })
 		await expect(

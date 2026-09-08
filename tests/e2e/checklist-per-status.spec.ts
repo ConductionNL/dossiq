@@ -202,7 +202,9 @@ async function openTasksTab(page: Page, id: string) {
 
 	const strip = page.locator('.cn-tabs-widget')
 	await expect(strip).toBeVisible({ timeout: 30_000 })
-	await strip.getByRole('tab', { name: /^(Tasks|Taken)$/ }).click()
+	// Tasks is the first SECTION of the Work tab since the strip came down
+	// from fourteen tabs to six; Appointments is the second.
+	await strip.getByRole('tab', { name: 'Work', exact: true }).click()
 
 	const panel = strip.locator('[role="tabpanel"]:not([hidden])')
 	await expect(panel.locator('[data-testid="case-task-pane"]')).toBeVisible({

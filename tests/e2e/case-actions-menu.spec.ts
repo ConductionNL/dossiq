@@ -344,12 +344,15 @@ test.describe('The case Actions menu', () => {
 		await page.reload()
 		const strip = page.locator('.cn-tabs-widget')
 		await expect(strip).toBeVisible({ timeout: 30_000 })
-		await strip
-			.getByRole('tab', { name: /Related cases|Gerelateerde zaken/ })
-			.click()
+		await strip.getByRole('tab', { name: 'Related', exact: true }).click()
 
+		// The related-cases SECTION, inside the open panel. The Related tab also
+		// holds the sub-cases list, and the planned follow-up is a row of the
+		// FORMER: asserting on the whole panel would not tell a planned row
+		// from a sub-case that happened to share the title. The
+		// `.cn-tabs__content >` scoping is development's and is kept.
 		const panel = strip.locator(
-			'.cn-tabs__content > [role="tabpanel"]:not([hidden])',
+			'.cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="case-section-case-related"]',
 		)
 		await expect(panel).toContainText(plannedTitle, { timeout: 30_000 })
 		await expect(panel).toContainText(due, { timeout: 30_000 })
