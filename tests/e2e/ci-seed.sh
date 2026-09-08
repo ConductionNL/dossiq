@@ -198,7 +198,8 @@ required = {
     # components.schemas.<key>.slug — every one of these is exercised by
     # tests/e2e/helpers/fixtures.ts (createObject / seedCase / seedStateMachine
     # / ensureCaseType / cleanupRunObjects).
-    'schemas': ['case', 'caseType', 'statusType', 'workflowTemplate', 'caseTask', 'complaint'],
+    'schemas': ['case', 'caseType', 'statusType', 'workflowTemplate', 'caseTask', 'complaint',
+                'role', 'roleType', 'organisatieRol'],
 }[kind]
 with open(path) as fh:
     raw = fh.read()
@@ -238,8 +239,9 @@ print(f'[ci-seed] {kind} present ({len(slugs)}): {sorted(s for s in slugs if s)}
 if missing:
     print(f'::error::Dossiq {kind} missing after import: {missing}')
     print('::error::tests/e2e/helpers/fixtures.ts cannot seed a case, caseType, '
-          'statusType, workflowTemplate, task or complaint without them, and every '
-          'UI spec then asserts against an empty list.')
+          'statusType, workflowTemplate, task, complaint, role, roleType or '
+          'organisatieRol without them, and every UI spec then asserts against '
+          'an empty list.')
     sys.exit(1)
 print(f'[ci-seed] {kind} OK ({len(required)} required slugs present)')
 PY

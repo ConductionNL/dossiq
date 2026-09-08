@@ -1170,6 +1170,21 @@
 						"type": "handler"
 					}
 				],
+				"_teamColumnNote": "`assignedGroup` is a $ref to an organisatieRol and CnIndexPage renders a plain key raw, so the column would show a uuid. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded row's `roleName`, the same shape the Tasks index uses for `case.title`; the server cannot sort on a nested field, so the column is not sortable. The Team FACET in the sidebar comes from `facetable: true` on the property itself and is the interim for the blocked Team chip.",
+				"extend": ["assignedGroup"],
+				"quickFilters": [
+					{
+						"label": "All",
+						"filter": {},
+						"default": true
+					},
+					{
+						"label": "Mine",
+						"filter": {
+							"assignee": "@me"
+						}
+					}
+				],
 				"columns": [
 					"identifier",
 					"title",
@@ -1188,6 +1203,11 @@
 						"formatter": "statusTypeName"
 					},
 					"assignee",
+					{
+						"key": "assignedGroup.roleName",
+						"label": "Team",
+						"sortable": false
+					},
 					"deadline",
 					{
 						"key": "id",
@@ -1238,6 +1258,7 @@
 								"caseType",
 								"status",
 								"assignee",
+								"assignedGroup",
 								"requester",
 								"priority",
 								"confidentiality",
@@ -1378,6 +1399,44 @@
 						}
 					},
 					{
+						"id": "case-roles",
+						"type": "object-list",
+						"title": "Parties",
+						"icon": "AccountKeyOutline",
+						"_note": "parties-on-the-case D1: everyone involved in THIS case, read straight off the `role` schema. `RolesTab.vue` is an admin surface over every role row in the register, so it can never answer the case page's question; this widget is the same object-list shape `case-tasks` and `case-sub-cases` already use, filtered on `case: @objectId`. `roleType` is a $ref and CnIndexPage renders a $ref column raw, so that cell shows a uuid until nextcloud-vue renders label fields for reference columns (triage #8, Tier D06); `participant` carries the readable identity in the meantime. `delegate` and `delegateUntil` are shown as the plain window they are — whether a delegate is active NOW is the substitution resolver's answer, not this list's. Absent from `layout` like every other tab child: the tabs widget renders it, so a layout entry would render it twice.",
+						"content": {
+							"register": "dossiq",
+							"schema": "role",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "roleType",
+								"dir": "asc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "roleType",
+									"label": "Role"
+								},
+								{
+									"key": "participant",
+									"label": "Participant"
+								},
+								{
+									"key": "delegate",
+									"label": "Delegate"
+								},
+								{
+									"key": "delegateUntil",
+									"label": "Delegate until"
+								}
+							],
+							"emptyText": "No parties on this case yet"
+						}
+					},
+					{
 						"id": "case-locaties",
 						"type": "object-list",
 						"title": "Locations",
@@ -1431,13 +1490,6 @@
 						"integrationId": "notes",
 						"title": "Notes",
 						"icon": "NoteTextOutline"
-					},
-					{
-						"id": "case-contacts",
-						"type": "integration",
-						"integrationId": "contacts",
-						"title": "Connected contacts",
-						"icon": "AccountGroup"
 					},
 					{
 						"id": "case-calendar",
@@ -1614,8 +1666,8 @@
 									"label": "Decisions"
 								},
 								{
-									"widgetId": "case-contacts",
-									"label": "Contacts"
+									"widgetId": "case-roles",
+									"label": "Parties"
 								},
 								{
 									"widgetId": "case-locaties",
@@ -1748,6 +1800,31 @@
 					]
 				},
 				"headerActions": [
+					{
+						"id": "add-party",
+						"type": "open-form",
+						"label": "Add party",
+						"icon": "AccountPlusOutline",
+						"register": "dossiq",
+						"schema": "role",
+						"includeFields": [
+							"name",
+							"roleType",
+							"participant",
+							"delegate",
+							"delegateUntil",
+							"description"
+						],
+						"fieldOverrides": {
+							"description": {
+								"widget": "textarea"
+							}
+						},
+						"successMessage": "Party added to the case.",
+						"props": {
+							"case": "@objectId"
+						}
+					},
 					{
 						"id": "log-contact",
 						"type": "open-form",
@@ -2217,11 +2294,16 @@
 					}
 				],
 				"_columnsNote": "`case` is a $ref to the case and CnIndexPage renders a plain key raw, so the column showed truncated uuids. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded object's title; the server cannot sort on a nested field, so the column is not sortable.",
-				"extend": ["case"],
+				"extend": ["case", "assigneeGroup"],
+				"quickFilters": [
+					{ "label": "All", "filter": {}, "default": true },
+					{ "label": "Mine", "filter": { "assignee": "@me" } }
+				],
 				"columns": [
 					"title",
 					{ "key": "case.title", "label": "Case", "sortable": false },
 					"assignee",
+					{ "key": "assigneeGroup.roleName", "label": "Team", "sortable": false },
 					"status",
 					"dueDate"
 				],
