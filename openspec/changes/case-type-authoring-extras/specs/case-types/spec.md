@@ -1,6 +1,6 @@
 ## ADDED Requirements
 
-### Requirement: You give each status a colour and a list visibility (REQ-CT-01)
+### Requirement: You give each status a colour and a list visibility (REQ-CT-19)
 
 You give each status a colour and choose whether it shows in lists. The
 `statusType` schema SHALL carry `colour`, one of the NL Design System hue
@@ -26,7 +26,7 @@ leave cases in a hidden status out unless you ask for closed cases.
 - **THEN** none of the three SHALL be listed
 - **AND** the Closed chip SHALL list them
 
-### Requirement: You derive a case type from a parent (REQ-CT-02)
+### Requirement: You derive a case type from a parent (REQ-CT-20)
 
 You derive a case type from a parent and change only what differs. The
 `caseType` schema SHALL carry `parentCaseType`, a reference to another case

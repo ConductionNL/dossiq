@@ -268,7 +268,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		await api.dispose()
 	})
 
-	// ── REQ-CT-01: a status has a colour and a list visibility ─────────────
+	// ── REQ-CT-19: a status has a colour and a list visibility ─────────────
 
 	// @e2e openspec/changes/case-type-authoring-extras/specs/case-types/spec.md
 	// Scenario: A coloured status shows on the board
@@ -343,7 +343,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		)
 	})
 
-	// ── REQ-CT-02: a type derives from a parent ────────────────────────────
+	// ── REQ-CT-20: a type derives from a parent ────────────────────────────
 
 	// @e2e openspec/changes/case-type-authoring-extras/specs/case-types/spec.md
 	// Scenario: A child shows its parent's statuses
