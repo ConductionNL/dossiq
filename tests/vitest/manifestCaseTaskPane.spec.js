@@ -28,8 +28,42 @@ import { describe, expect, it } from 'vitest'
 
 const ROOT = path.resolve(__dirname, '../..')
 const REGISTRY_PATH = path.join(ROOT, 'src/registry.js')
+const MANIFEST_PATH = path.join(ROOT, 'src/manifest.json')
+const ICONS_PATH = path.join(ROOT, 'src/icons.js')
 
 const registrySource = () => fs.readFileSync(REGISTRY_PATH, 'utf8')
+const manifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
+
+/**
+ * The page count on `origin/development`, before this change. The pane adds
+ * no page and retypes none, so a difference here means the ADR-100 ratchet
+ * moved and the change did something it said it would not.
+ */
+const PAGE_COUNT_BEFORE = 43
+
+/** Pages of `type: "custom"` before this change. */
+const CUSTOM_PAGE_COUNT_BEFORE = 10
+
+/**
+ * One page as the manifest declares it.
+ *
+ * @param {string} id The manifest page id.
+ * @return {object} The page entry.
+ */
+function page(id) {
+	return manifest().pages.find((entry) => entry.id === id)
+}
+
+/**
+ * One widget of a detail page.
+ *
+ * @param {string} pageId The manifest page id.
+ * @param {string} widgetId The manifest widget id.
+ * @return {object|undefined} The widget entry.
+ */
+function widget(pageId, widgetId) {
+	return page(pageId).config.widgets.find((entry) => entry.id === widgetId)
+}
 
 /**
  * The registry entry body for a key, as it is written in the source.
@@ -73,5 +107,59 @@ describe('the CaseTaskPane registry binding', () => {
 		expect(
 			fs.existsSync(path.join(ROOT, 'src', match[1].replace(/^\.\//, ''))),
 		).toBe(true)
+	})
+})
+
+describe('the case-tasks widget after the retype', () => {
+	it('keeps its id, title, icon and every content key', () => {
+		const pane = widget('CaseDetail', 'case-tasks')
+		expect(pane).toBeDefined()
+		expect(pane.type).toBe('case-task-pane')
+		expect(pane.title).toBe('Tasks')
+		expect(pane.icon).toBe('ClipboardCheckOutline')
+		// The content is what the widget goes back to reading the day
+		// CnObjectListWidget grows a lifecycle column. Dropping a key here
+		// would make the swap back a second change rather than a revert.
+		expect(pane.content).toMatchObject({
+			register: 'dossiq',
+			schema: 'caseTask',
+			filter: { case: '@objectId' },
+			sort: { field: 'dueDate', dir: 'asc' },
+			rowRoute: 'TaskDetail',
+			viewAllRoute: 'Tasks',
+			viewAllQuery: { case: '@objectId' },
+		})
+		expect(Array.isArray(pane.content.columns)).toBe(true)
+		expect(typeof pane.content.emptyText).toBe('string')
+	})
+
+	it('stays a child of the tabs strip and out of the layout', () => {
+		const detail = page('CaseDetail')
+		const strip = widget('CaseDetail', 'case-panels')
+		expect(strip.content.tabs.some((tab) => tab.widgetId === 'case-tasks')).toBe(
+			true,
+		)
+		// A tab child in `layout` renders twice: once in the grid and once in
+		// its panel. That is why the retype does not move it.
+		expect(
+			detail.config.layout.some((item) => item.widgetId === 'case-tasks'),
+		).toBe(false)
+	})
+
+	it('adds no page and retypes none', () => {
+		const pages = manifest().pages
+		expect(pages).toHaveLength(PAGE_COUNT_BEFORE)
+		expect(pages.filter((entry) => entry.type === 'custom')).toHaveLength(
+			CUSTOM_PAGE_COUNT_BEFORE,
+		)
+	})
+
+	it('names an icon src/icons.js registers', () => {
+		// An unregistered icon renders NO icon rather than a fallback glyph,
+		// and hydra gate 60 fails on it.
+		const icons = fs.readFileSync(ICONS_PATH, 'utf8')
+		expect(icons).toContain(
+			"import ClipboardCheckOutline from 'vue-material-design-icons/ClipboardCheckOutline.vue'",
+		)
 	})
 })

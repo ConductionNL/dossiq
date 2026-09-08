@@ -49,16 +49,21 @@ criteria under a task are plain bullets.
     reason-bearing exclusion, and the import points at a file that exists.
     `src/registry.js` is read as text, not imported: it pulls in ~40 SFCs and
     a probe import did not settle inside the 5s test budget.
-- [ ] 1.3 `src/manifest.json`: widget `case-tasks` on `CaseDetail` changes
-  `type` from `object-list` to `custom`; `id`, `title`, `icon`, grid cell
-  and `content` (register, schema, filter, sort, limit, columns, rowRoute,
-  viewAllRoute, viewAllQuery, emptyText) stay; the `_note` names the block
-  and the target (back to `object-list` with a lifecycle column).
-  - unit test in `tests/unit/manifest-case-task-pane.spec.js`: widget id
-    unchanged, type `custom`, still on `CaseDetail`, page count equal to the
-    count before this change, no page of type `custom` added
-  - run the hydra gates locally and read the ADR-100 ratchet count; it
-    must not move
+- [x] 1.3 `src/manifest.json`: widget `case-tasks` on `CaseDetail` changes
+  `type` from `object-list` to `case-task-pane` (the registry key, see 1.2,
+  not the literal `custom`); `id`, `title`, `icon`, its entry in the
+  `case-panels` tab strip and every `content` key (register, schema, filter,
+  sort, limit, columns, rowRoute, viewAllRoute, viewAllQuery, emptyText)
+  stay; the `_note` names the block and the target (back to `object-list`
+  with a lifecycle column). It has no grid cell to keep: it is a tab child
+  and deliberately absent from `layout`.
+  - unit test in `tests/vitest/manifestCaseTaskPane.spec.js`: widget id,
+    title and icon unchanged, type resolves in the registry, still a tab of
+    `case-panels` and still out of `layout`, every content key preserved,
+    page count 43 as before, custom pages 10 as before, and the icon
+    registered in `src/icons.js` (gate 60)
+  - hydra gates run locally at the end of the change; the ADR-100 page
+    ratchet reads off the page counts above, which are unchanged
 - [x] 1.4 `l10n/nl.json`: "No open tasks on this case" as "Geen open taken
   op deze zaak"; the toast text "Task {title} finished" as "Taak {title}
   afgerond". Landed with 1.1 rather than after it: `check-l10n.js` fails the
