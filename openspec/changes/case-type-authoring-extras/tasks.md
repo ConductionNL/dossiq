@@ -118,15 +118,33 @@ implementation task; the criteria under a task are plain bullets.
 
 ## 4. The AVG block
 
-- [ ] 4.1 `lib/Settings/dossiq_register.json`, schema `caseType`:
+- [x] 4.1 `lib/Settings/dossiq_register.json`, schema `caseType`:
   `processesPersonalData`, `personalDataCategories`, `legalBasis`,
-  `verwerkingsactiviteit` per design D4.
+  `verwerkingsactiviteit` per design D4. `caseType` 1.4.0 -> 1.5.0.
   - `@spec openspec/specs/avg-verwerkingenlogging/spec.md`
+  - `legalBasis` carries OpenRegister's article 6 vocabulary VERBATIM and in
+    English. `lib/Settings/verwerkingsactiviteiten.json` records why: OR's
+    `VerwerkingsactiviteitMapper::validate()` refuses anything else, and the
+    Dutch spellings this fleet used before failed all seven rows on every
+    fresh install. The enum is not dossiq's to translate.
+  - The seven codes `verwerkingsactiviteit` accepts are the seven
+    `SeedVerwerkingsactiviteiten` upserts, named in the property description
+    so an author can read them without opening the seed.
 - [ ] 4.2 `src/manifest.json` page `CaseTypeDetail`: widget
   `case-type-privacy`.
-- [ ] 4.3 [blocked: openregister the verwerkingsregister as a referenceable
+- [x] 4.3 [blocked: openregister the verwerkingsregister as a referenceable
   schema] `verwerkingsactiviteit` becomes a `$ref`; until then a string
   with a datalist of seeded codes.
+  - STILL BLOCKED, and the interim shipped: a plain string whose description
+    names the seven seeded codes. No datalist — a `data` widget builds its
+    field from the schema property, and the manifest vocabulary has no
+    `datalist` field widget over a list the schema does not enumerate. An
+    `enum` of the seven WOULD render a dropdown, and is deliberately not
+    used: the register is OpenRegister's and an installation may hold codes
+    dossiq never seeded, so an enum here would refuse a legitimate value.
+  - The spec's second scenario ("a code outside the register is refused")
+    stays `@e2e exclude` for the same reason: nothing can refuse the code
+    until the register is referenceable.
 
 ## 5. Export, import, duplicate, publish
 

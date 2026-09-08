@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.4.0",
+                "version": "1.5.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -247,6 +247,55 @@
                         "default": [],
                         "description": "Subscribed wmsLayer UUIDs visible on this case type's maps. An empty array shows only the default layers.",
                         "title": "Layer IDs"
+                    },
+                    "processesPersonalData": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether cases of this type process personal data. Answer it on the type rather than per case: it is a property of the process, and a case handler is not the person who decides it.",
+                        "title": "Processes personal data",
+                        "facetable": true
+                    },
+                    "personalDataCategories": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "naw",
+                                "bsn",
+                                "contact",
+                                "financieel",
+                                "gezondheid",
+                                "strafrechtelijk",
+                                "biometrisch",
+                                "etniciteit",
+                                "religie",
+                                "politiek",
+                                "seksueel"
+                            ]
+                        },
+                        "description": "Which categories of personal data cases of this type process. The last seven are AVG article 9 special categories: naming one here is the record that says the extra safeguards apply.",
+                        "title": "Personal data categories"
+                    },
+                    "legalBasis": {
+                        "type": "string",
+                        "enum": [
+                            "consent",
+                            "contract",
+                            "legal_obligation",
+                            "vital_interests",
+                            "public_task",
+                            "legitimate_interest"
+                        ],
+                        "description": "The AVG article 6 basis on which cases of this type process personal data. OpenRegister's own vocabulary verbatim, in English: its Verwerkingsactiviteit mapper refuses anything else, and this value is what pairs a case type with the activity in the verwerkingsregister.",
+                        "title": "Legal basis",
+                        "facetable": true
+                    },
+                    "verwerkingsactiviteit": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "description": "The code of the activity in OpenRegister's verwerkingsregister that cases of this type are logged under, as SeedVerwerkingsactiviteiten upserts them (zaakafhandeling, behandelen-omgevingsvergunning, behandelen-bezwaarschrift, behandelen-woo-verzoek, behandelen-klacht, klantcontact-registratie, zaak-archivering). A string rather than a $ref until OpenRegister exposes the verwerkingsregister as a referenceable schema.",
+                        "title": "Processing activity",
+                        "facetable": true
                     },
                     "iv3TaskField": {
                         "type": "string",
