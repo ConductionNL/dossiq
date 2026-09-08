@@ -48,6 +48,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\StatusTransitionService
+ * @uses \OCA\Dossiq\Service\CaseTypeResolver
+ * @uses \OCA\Dossiq\Service\CaseTypeStore
  *
  * @uses \OCA\Dossiq\Service\Transitions\CaseResultWriter
  * @uses \OCA\Dossiq\Service\Transitions\CaseStatusStore

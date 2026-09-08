@@ -56,6 +56,8 @@ interface ReplayObjectServiceStub {
  * Regression tests for StatusTransitionService::replay().
  *
  * @covers \OCA\Dossiq\Service\StatusTransitionService
+ * @uses \OCA\Dossiq\Service\CaseTypeResolver
+ * @uses \OCA\Dossiq\Service\CaseTypeStore
  *
  * @uses \OCA\Dossiq\Service\Transitions\CaseResultWriter
  * @uses \OCA\Dossiq\Service\Transitions\CaseStatusStore
