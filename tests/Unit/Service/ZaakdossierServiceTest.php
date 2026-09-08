@@ -671,7 +671,23 @@ class ZaakdossierServiceTest extends TestCase {
 			array_filter($writes, static fn (array $w): bool => $w['uuid'] === 'inf-1')
 		);
 		$this->assertCount(1, $stamp, 'the upload must write the file id back');
-		$this->assertSame(['fileId' => 4711], $stamp[0]['object']);
+		$this->assertSame(4711, $stamp[0]['object']['fileId']);
+
+		// AND IT MUST STILL BE A WHOLE DOCUMENT. This assertion used to read
+		// `assertSame(['fileId' => 4711], ...)`, which pinned the defect
+		// instead of the behaviour: `saveObject()` REPLACES, so a one-key
+		// write threw the rest of the record away and OpenRegister refused it
+		// for the four properties its schema requires. The upload then
+		// reported failure per file behind a 201, and the Documents tab stayed
+		// empty with nothing said anywhere.
+		foreach (['title', 'fileName', 'vertrouwelijkheidaanduiding', 'informatieobjecttype'] as $required) {
+			$this->assertArrayHasKey(
+				$required,
+				$stamp[0]['object'],
+				sprintf('the file-id write must carry %s, or the schema refuses it', $required)
+			);
+			$this->assertNotSame('', (string)$stamp[0]['object'][$required]);
+		}
 
 	}//end testTheUploadStampsTheFileIdOntoTheDocument()
 
