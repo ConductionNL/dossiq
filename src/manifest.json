@@ -1222,6 +1222,7 @@
 						"type": "data",
 						"title": "Core case data",
 						"icon": "FileDocument",
+						"_note": "`identifier` carries `readOnly: true` in the schema because OpenRegister generates it, and fieldsFromSchema DROPS a readOnly property outright unless an override re-admits it. So the case number sat in this include list and rendered nowhere at all — the very field five of the seven demo cases were reported as missing. The `identifier` override re-admits the field with `readOnly: false` and then keeps it un-editable with `editable: false`, which is the state the requirement asks for: shown, never typed.",
 						"content": {
 							"title": "Core case data",
 							"columns": 2,
@@ -1244,9 +1245,43 @@
 								"status": {
 									"editable": false
 								},
+								"identifier": {
+									"readOnly": false,
+									"editable": false
+								},
 								"requester": {
 									"widget": "InitiatorPicker",
 									"label": "Requester"
+								}
+							}
+						}
+					},
+					{
+						"id": "case-terms",
+						"type": "data",
+						"title": "Terms and archive",
+						"icon": "Archive",
+						"_note": "The statutory block: what the law gives you for this case, and what happens to the file afterwards. Every field here already existed on the schema and every one of them carried `visible: false`, which drops a property from every schema-driven surface at once, so the fields were declared and unreadable rather than merely unplaced. `statutoryTerm` is the type's processing deadline copied onto the case: the design asked for `extend` plus the include path `caseType.processingDeadline`, but a data widget builds its fields from the schema's OWN properties, so a dotted include matches nothing and renders nothing, and the stat-caption fallback interpolates only an endpoint payload. `hideEmpty` stays off on purpose: a case with no archive action date must show the row empty, because an absent destruction date is itself the thing a records officer is looking for.",
+						"content": {
+							"title": "Terms and archive",
+							"columns": 2,
+							"include": [
+								"statutoryTerm",
+								"legalBasis",
+								"archiveNomination",
+								"archiveActionDate",
+								"archiveStatus",
+								"paymentIndication",
+								"lastPaymentDate"
+							],
+							"hideEmpty": false,
+							"overrides": {
+								"statutoryTerm": {
+									"readOnly": false,
+									"editable": false
+								},
+								"archiveActionDate": {
+									"editable": false
 								}
 							}
 						}
@@ -1783,6 +1818,15 @@
 						"gridY": 9,
 						"gridWidth": 4,
 						"gridHeight": 4
+					},
+					{
+						"id": "11",
+						"widgetId": "case-terms",
+						"gridX": 8,
+						"gridY": 13,
+						"gridWidth": 4,
+						"gridHeight": 5,
+						"showTitle": false
 					}
 				],
 				"sidebar": {
@@ -1828,6 +1872,29 @@
 							"label": "Besluitvorming",
 							"icon": "Gavel",
 							"component": "BesluitvormingLeafTab"
+						},
+						{
+							"id": "tags",
+							"label": "Tags",
+							"icon": "TagMultiple",
+							"_note": "A sidebar tab renders EITHER a registered `component` or `widgets[]` whose `type` is a CnObjectSidebar built-in (data, metadata, audit / audit-trail, object-table). A `type: \"custom\"` entry here resolves to nothing and renders an empty panel with a console warning nobody reads — the page-slot mechanism (`widget-<id>`) only applies to layout grid items. So this is the `data` built-in over the single `tags` field: it is handed the loaded case and the resolved schema by the host, and an array-of-strings property already resolves to the tags editor. The `widget` override says so out loud, so a later change to the type cannot silently turn the editor into a text box.",
+							"widgets": [
+								{
+									"type": "data",
+									"props": {
+										"title": "Tags",
+										"columns": 1,
+										"include": [
+											"tags"
+										],
+										"overrides": {
+											"tags": {
+												"widget": "tags"
+											}
+										}
+									}
+								}
+							]
 						}
 					]
 				},

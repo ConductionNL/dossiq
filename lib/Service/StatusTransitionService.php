@@ -47,6 +47,7 @@ use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
 use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
+use OCA\Dossiq\Service\Transitions\StatusChecklist;
 use OCA\Dossiq\Service\Transitions\TransitionAuthorizer;
 use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCP\IUserSession;
@@ -55,6 +56,14 @@ use RuntimeException;
 
 /**
  * The status-transition engine.
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — the collaborators ARE the
+ *      decomposition: persistence, the group gate, the template dialects, the
+ *      closing result and the status checklist each live in their own class,
+ *      and folding any of them back in to satisfy the count would put the
+ *      concern back where it was split from.
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList) — same reason, counted at the
+ *      constructor: every parameter is one of those collaborators, injected.
  *
  * @spec openspec/changes/status-transition-engine/tasks.md#T10
  */
@@ -82,6 +91,7 @@ class StatusTransitionService {
 	 * @param IUserSession $userSession Current session
 	 * @param LoggerInterface $logger Logger
 	 * @param CaseResultWriter $resultWriter Closing-result reader/writer
+	 * @param StatusChecklist $statusChecklist The checklist a status brings with it
 	 */
 	public function __construct(
 		private readonly WorkflowTemplateLoader $templateLoader,
@@ -93,6 +103,7 @@ class StatusTransitionService {
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly CaseResultWriter $resultWriter,
+		private readonly StatusChecklist $statusChecklist,
 	) {
 	}//end __construct()
 
@@ -144,8 +155,11 @@ class StatusTransitionService {
 				continue;
 			}
 
-			$guards = $this->specReader->extractGuards(transition: $transition);
-			$eval = $this->guardRegistry->evaluateAll(guards: $guards, case: $case, userId: $userId);
+			$eval = $this->guardRegistry->evaluateAll(
+				guards: $this->evaluateGuards(transition: $transition),
+				case: $case,
+				userId: $userId,
+			);
 
 			// Drop transitions whose role guard hides them silently.
 			if ($this->specReader->isRoleHidden(evalResults: $eval) === true) {
@@ -326,7 +340,14 @@ class StatusTransitionService {
 			'statusRecordUuid' => $statusRecordId,
 		];
 
-		$actions = $this->specReader->extractActions(transition: $transition);
+		// The status the case just entered brings its own work. The checklist
+		// actions go FIRST, so the tasks a phase asks for exist before whatever
+		// the transition itself does with them — a notification that lists the
+		// case's open tasks is otherwise sent one dispatch too early.
+		$actions = array_merge(
+			$this->statusChecklist->actionsFor(statusTypeId: $toStatus, case: $case),
+			$this->specReader->extractActions(transition: $transition),
+		);
 		$dispatched = $this->sideEffectDispatcher->dispatch(actions: $actions, case: $case, transitionContext: $context);
 
 		// Update the statusRecord with the actual dispatched-action results.
@@ -425,8 +446,11 @@ class StatusTransitionService {
 		}
 
 		// Defence in depth — re-evaluate guards on the server side.
-		$guards = $this->specReader->extractGuards(transition: $transition);
-		$eval = $this->guardRegistry->evaluateAll(guards: $guards, case: $case, userId: $userId);
+		$eval = $this->guardRegistry->evaluateAll(
+			guards: $this->evaluateGuards(transition: $transition),
+			case: $case,
+			userId: $userId,
+		);
 		$failed = array_values(array_filter($eval, static fn (array $guard): bool => $guard['passed'] === false));
 		// @phpstan-ignore greaterThan.alwaysFalse (PHPDoc type marks passed as bool, but runtime values may differ)
 		if (count($failed) > 0) {
@@ -511,7 +535,7 @@ class StatusTransitionService {
 	 * @param string|null $comment Optional free-form comment
 	 * @param string|null $userId Optional explicit user UID; defaults to IUserSession
 	 *
-	 * @return array{status: string, statusRecord: array<string, mixed>}
+	 * @return array{status: string, statusRecord: array<string, mixed>, dispatchedActions: array<int, array<string, mixed>>}
 	 *
 	 * @throws RuntimeException When the caller is not in the admin group or the target is invalid
 	 *
@@ -545,7 +569,24 @@ class StatusTransitionService {
 			noWorkflowTemplate: true,
 		);
 
-		return ['status' => 'ok', 'statusRecord' => $record];
+		// A status brings its checklist however the case arrived. This path
+		// dispatched nothing at all before, because it has no transition to
+		// read actions off — but the work belongs to the phase, not to the road
+		// into it, so an admin's move brings the tasks too. Only the checklist
+		// actions run here: there is no transition whose actions could.
+		$dispatched = $this->sideEffectDispatcher->dispatch(
+			actions: $this->statusChecklist->actionsFor(statusTypeId: $toStatusId, case: $case),
+			case: $case,
+			transitionContext: [
+				'fromStatus' => $currentId,
+				'toStatus' => $toStatusId,
+				'transitionLabel' => 'Free-form transition',
+				'userId' => $userId,
+				'statusRecordUuid' => (string)($record['id'] ?? ''),
+			],
+		);
+
+		return ['status' => 'ok', 'statusRecord' => $record, 'dispatchedActions' => $dispatched];
 	}//end executeFreeForm()
 
 	/**
@@ -591,6 +632,31 @@ class StatusTransitionService {
 	// ------------------------------------------------------------------
 	// Internal helpers
 	// ------------------------------------------------------------------
+
+	/**
+	 * The guards a transition is subject to: its own, plus the implicit one.
+	 *
+	 * The status checklist is appended to EVERY transition rather than left to
+	 * the template, because the list it enforces is authored on the status. A
+	 * guard a template has to remember is a guard the next case type forgets,
+	 * and a required item that only holds one road out of a phase holds
+	 * nothing at all.
+	 *
+	 * It goes LAST, so a role guard still hides a transition before the
+	 * checklist has anything to say about it.
+	 *
+	 * @param array<string, mixed> $transition The transition definition
+	 *
+	 * @return array<int, array<string, mixed>> The guards to evaluate
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function evaluateGuards(array $transition): array {
+		$guards = $this->specReader->extractGuards(transition: $transition);
+		$guards[] = ['type' => GuardRegistry::STATUS_CHECKLIST];
+
+		return $guards;
+	}//end evaluateGuards()
 
 	/**
 	 * Resolve a user UID either from the explicit parameter or IUserSession.
