@@ -1354,9 +1354,10 @@
 					},
 					{
 						"id": "case-tasks",
-						"type": "object-list",
+						"type": "case-task-pane",
 						"title": "Tasks",
 						"icon": "ClipboardCheckOutline",
+						"_note": "task-on-the-case A06: the Tasks tab shows the first OPEN task of this case with the lifecycle buttons OpenRegister answers for it, confirms a completion with a toast and puts the next open task in its place, so a handler finishes a task without leaving the case. The id, the title, the icon, the tab entry and every content key are unchanged, and no page is added or retyped, so the ADR-100 page ratchet does not move. TYPE is the interim. [blocked: nextcloud-vue 2.41.1 CnObjectListWidget has no rowActions and no lifecycle column] so a button cannot be put inside a row from configuration; verified against the installed 2.40.0 dist and the published 2.41.1 tarball. TARGET: back to type object-list with a lifecycle column (asked for in https://github.com/ConductionNL/nextcloud-vue/issues/1033), at which point src/components/tasks/CaseTaskPane.vue and its registry entry are deleted. The type names the registry key rather than \"custom\" because this widget is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per GRID item only, and CnTabsWidget resolves a tab child through cnRegistry[widget.type], rendering nothing at all when no key answers. content.columns, content.rowRoute and content.emptyText are kept as written: they are what the widget goes back to reading the day the library grows the column.",
 						"content": {
 							"register": "dossiq",
 							"schema": "caseTask",
@@ -2389,6 +2390,13 @@
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
 					{
+						"id": "task-case-link",
+						"type": "custom",
+						"title": "Case",
+						"icon": "FolderOutline",
+						"_note": "task-on-the-case REQ-TASK-015: names the case this task is on, by its title, and links to it. Resolved via page slots (widget-task-case-link -> TaskCaseLink). It renders for EVERY task with a case, which is what separates it from task-waiting-case below: that one renders only for a task holding a flow run, and saying a case is waiting on an ordinary to-do would not be true. A task without a case renders nothing, and showTitle stays false so there is no empty titled box either. Not a data widget over the case field: case is a $ref and the platform renders a $ref as its uuid, which reads as broken data rather than as a way back."
+					},
+					{
 						"id": "task-data",
 						"type": "data",
 						"title": "Task",
@@ -2408,10 +2416,19 @@
 				],
 				"layout": [
 					{
+						"id": "3",
+						"widgetId": "task-case-link",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 1,
+						"showTitle": false
+					},
+					{
 						"id": "1",
 						"widgetId": "task-data",
 						"gridX": 0,
-						"gridY": 0,
+						"gridY": 1,
 						"gridWidth": 12,
 						"gridHeight": 6,
 						"showTitle": false
@@ -2420,7 +2437,7 @@
 						"id": "2",
 						"widgetId": "task-waiting-case",
 						"gridX": 0,
-						"gridY": 6,
+						"gridY": 7,
 						"gridWidth": 12,
 						"gridHeight": 2,
 						"showTitle": false
@@ -2453,6 +2470,7 @@
 				}
 			},
 			"slots": {
+				"widget-task-case-link": "TaskCaseLink",
 				"widget-task-waiting-case": "TaskWaitingCaseSection"
 			}
 		},

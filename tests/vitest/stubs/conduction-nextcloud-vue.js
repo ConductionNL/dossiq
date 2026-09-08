@@ -18,6 +18,8 @@
  * dashboard-widget usage of this package).
  */
 
+import { h } from 'vue'
+
 /**
  * Stand-in for `createObjectStore(id, options)` — returns a Pinia
  * `useStore()`-shaped function. Never actually called in tests that reach
@@ -37,3 +39,38 @@ export function createObjectStore(_id, _options) {
 export const filesPlugin = () => ({})
 export const auditTrailsPlugin = () => ({})
 export const relationsPlugin = () => ({})
+
+/**
+ * Stand-in for `CnLifecycleActions`.
+ *
+ * The real component fetches `/apps/openregister/api/objects/{id}/
+ * available-actions`, renders one button per allowed transition, POSTs the
+ * chosen one and emits `transitioned` — none of which a unit test can or
+ * should reach. What a consumer needs to exercise is its OBSERVABLE surface,
+ * and that surface is exactly three things: the `objectId` it was handed, the
+ * `transitioned` event, and the `error` data it fills with the server's
+ * message on a refused transition (it emits nothing in that case, which is
+ * why a consumer has to watch the field). All three are reproduced here.
+ */
+export const CnLifecycleActions = {
+	name: 'CnLifecycleActions',
+	props: {
+		objectId: { type: [String, Number], default: '' },
+		object: { type: Object, default: null },
+		config: { type: Object, default: () => ({}) },
+	},
+	emits: ['transitioned', 'reload'],
+	data() {
+		return { error: '' }
+	},
+	render() {
+		// A render function rather than a `template`: the Vue build vitest
+		// resolves is runtime-only, so a string template would never compile.
+		return h('div', { 'data-testid': 'cn-lifecycle-actions' }, [
+			String(this.objectId),
+			this.error
+				? h('p', { 'data-testid': 'cn-lifecycle-actions-error' }, this.error)
+				: null,
+		])
+	},
+}
