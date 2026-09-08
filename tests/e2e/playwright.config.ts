@@ -77,6 +77,23 @@ const IGNORED = [
 	'**/visual/**',
 ]
 
+/**
+ * Specs that change state the whole instance shares, so they cannot run
+ * alongside the rest once there is more than one worker.
+ *
+ * `demo-data-setup-step` records a setup decision and can install the demo
+ * dataset; `integrations-page` POSTs to `/api/settings`; `case-type-edit-and-setup`
+ * drives the setup wizard; `demo-caseload` reads the demo dataset and is
+ * meaningless if another worker is mid-install. Each of these is either a
+ * writer of instance state or a reader that a writer can invalidate.
+ */
+const INSTANCE_MUTATING = [
+	'**/spec-coverage/demo-data-setup-step.spec.ts',
+	'**/integrations-page.spec.ts',
+	'**/case-type-edit-and-setup.spec.ts',
+	'**/demo-caseload.spec.ts',
+]
+
 export default defineConfig({
 	testDir: __dirname,
 	// See the header: also repeated on the project below, because a
@@ -110,7 +127,36 @@ export default defineConfig({
 	// third of its tests, which is a stable and understood problem. Parallel
 	// flake would be a worse one, because flake is the failure mode that teaches
 	// people to ignore red. Raise this only behind a run that completes.
-	workers: 1,
+	// THREE WORKERS ON CI, ONE LOCALLY.
+	//
+	// `fullyParallel` stays FALSE, so this parallelises at FILE granularity:
+	// different spec files run on different workers, and the tests inside one
+	// file still run in order on a single worker. That is the conservative half
+	// of parallelism and it is the half this suite needs, because several files
+	// build shared state in `beforeAll` and read it across their tests.
+	//
+	// WHY IT HAS TO CHANGE. Measured off the log timestamps of run 34244366521,
+	// not estimated:
+	//
+	//     111 tests produced a result in 37.6 min      20.3s each
+	//     the 25 failures cost 18.5 min of that        22.2s x2 for the retry
+	//     if every one became a ~5.1s pass             saves 16.4 min
+	//     all 371 tests at the remaining rate          71 min SERIAL
+	//
+	// So fixing every red test still leaves the suite at roughly twice the 38
+	// minute budget. Parallelism is the only lever that closes that gap. At three
+	// workers the same arithmetic gives ~24 min, which leaves real margin rather
+	// than just clearing the bar.
+	//
+	// THREE AND NOT FOUR. A `SQLSTATE[53200] out of shared memory /
+	// max_locks_per_transaction` was observed once under four concurrent workers.
+	// Four would give ~18 min; the extra six minutes buys distance from a failure
+	// mode that gets blamed on the tests rather than on postgres.
+	//
+	// One locally, deliberately. A developer runs this against the SHARED dev
+	// instance, where three workers seeding and tearing down at once is both
+	// slower and ruder than one.
+	workers: process.env.CI ? 3 : 1,
 	retries: process.env.CI ? 1 : 0,
 	// Stop on our own clock, ahead of the shared job's `timeout-minutes: 45`.
 	//
@@ -177,7 +223,38 @@ export default defineConfig({
 	projects: [
 		{
 			name: 'chromium',
+			// The parallel body of the suite: everything except the specs that
+			// change state the whole INSTANCE shares.
+			testIgnore: [...IGNORED, ...INSTANCE_MUTATING],
+			use: { ...devices['Desktop Chrome'] },
+		},
+		{
+			// 🔴 THE SPECS THAT MUTATE THE INSTANCE, RUN LAST AND ALONE-ISH.
+			//
+			// `dependencies` makes this project start only once `chromium` has
+			// finished, which is the ordering that matters. The hazard is
+			// asymmetric: a spec that installs demo data or writes app settings
+			// while ~131 empty-state assertions are running elsewhere makes
+			// those assertions fail, and it reads as a product defect rather
+			// than as a fixture racing them. The reverse order costs nothing.
+			//
+			// That asymmetry is why this list errs toward INCLUDING a spec.
+			// Serialising one that did not need it costs a few seconds at the
+			// end of the run; leaving one out costs a failure nobody can
+			// reproduce and no diff explains.
+			//
+			// ⚠️ THE PRICE, STATED RATHER THAN DISCOVERED. Playwright SKIPS a
+			// project whose dependency had failures. So while anything in
+			// `chromium` is red, these 31 tests report as "did not run" — and a
+			// test that never ran reads identically to one that passed in any
+			// summary counting failures. That is a real cost and it is the
+			// right trade only because a run with failures is red regardless:
+			// the verdict is not being hidden, the detail is. Read the tally,
+			// not the colour, until the parallel project is green.
+			name: 'chromium-instance-state',
 			testIgnore: IGNORED,
+			testMatch: INSTANCE_MUTATING,
+			dependencies: ['chromium'],
 			use: { ...devices['Desktop Chrome'] },
 		},
 	],
