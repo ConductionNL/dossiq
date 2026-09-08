@@ -27,32 +27,9 @@ import path from 'path'
 import { describe, expect, it } from 'vitest'
 
 const ROOT = path.resolve(__dirname, '../..')
-const MANIFEST_PATH = path.join(ROOT, 'src/manifest.json')
 const REGISTRY_PATH = path.join(ROOT, 'src/registry.js')
 
-const manifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
 const registrySource = () => fs.readFileSync(REGISTRY_PATH, 'utf8')
-
-/**
- * One page as the manifest declares it.
- *
- * @param {string} id The manifest page id.
- * @return {object} The page entry.
- */
-function page(id) {
-	return manifest().pages.find((entry) => entry.id === id)
-}
-
-/**
- * One widget of a detail page.
- *
- * @param {string} pageId The manifest page id.
- * @param {string} widgetId The manifest widget id.
- * @return {object|undefined} The widget entry.
- */
-function widget(pageId, widgetId) {
-	return page(pageId).config.widgets.find((entry) => entry.id === widgetId)
-}
 
 /**
  * The registry entry body for a key, as it is written in the source.
