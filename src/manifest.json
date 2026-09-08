@@ -1458,13 +1458,6 @@
 						"icon": "NoteTextOutline"
 					},
 					{
-						"id": "case-contacts",
-						"type": "integration",
-						"integrationId": "contacts",
-						"title": "Connected contacts",
-						"icon": "AccountGroup"
-					},
-					{
 						"id": "case-calendar",
 						"type": "integration",
 						"integrationId": "calendar",
@@ -1641,10 +1634,6 @@
 								{
 									"widgetId": "case-roles",
 									"label": "Parties"
-								},
-								{
-									"widgetId": "case-contacts",
-									"label": "Contacts"
 								},
 								{
 									"widgetId": "case-locaties",

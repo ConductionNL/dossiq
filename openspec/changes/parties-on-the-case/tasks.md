@@ -12,7 +12,7 @@ criteria under a task are plain bullets.
   `case-panels.content.tabs` as Parties before Contacts; keep it out of
   `layout`.
   - `@spec openspec/specs/roles-decisions/spec.md`
-- [ ] 1.2 `src/manifest.json` page `CaseDetail`: remove the `case-contacts`
+- [x] 1.2 `src/manifest.json` page `CaseDetail`: remove the `case-contacts`
   widget and its tab entry; grep `tests/e2e` for the Contacts label first and
   update `tests/e2e/case-detail-kpis-and-tabs.spec.ts`.
   - `npm run check:manifest` exits 0

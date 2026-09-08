@@ -45,12 +45,25 @@ const TAB_LABELS = [
 	/Mail/,
 	/Appointments|Afspraken/,
 	// Decisions is decidiq's widget, not dossiq's own list — dossiq no longer
-	// renders its `decision` schema at all. Contacts and Locations moved in
-	// from the page body, so the case's collections all live in one strip.
+	// renders its `decision` schema at all. Locations moved in from the page
+	// body, so the case's collections all live in one strip.
 	/Decisions|Besluiten|Besluitvorming/,
-	/Contacts|Contacten/,
+	// Parties took the slot the Contacts tab held. Contacts was the Nextcloud
+	// contacts integration leaf: it showed the address book, never the people
+	// on this case, and the `role` rows it was standing in for now have a tab
+	// of their own (parties-on-the-case task 1.2).
+	/Parties|Betrokkenen/,
 	/Locations|Locaties/,
 ]
+
+/**
+ * Tab labels the strip must NOT carry.
+ *
+ * A removed tab leaves no trace: the widget is simply gone from the manifest
+ * and the strip renders one panel fewer, which no assertion above would
+ * notice. This is the half that fails when the Contacts entry comes back.
+ */
+const RETIRED_TAB_LABELS = [/^(Contacts|Contacten|Connected contacts)$/]
 
 /**
  * The right column, top to bottom.
@@ -328,6 +341,10 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			await expect(strip.getByRole('tab', { name: label })).toBeVisible({
 				timeout: 15_000,
 			})
+		}
+
+		for (const label of RETIRED_TAB_LABELS) {
+			await expect(strip.getByRole('tab', { name: label })).toHaveCount(0)
 		}
 	})
 
