@@ -31,9 +31,13 @@ namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
 use OCA\Dossiq\AppInfo\Registrar\ConfiguredAdapter;
 use OCA\Dossiq\AppInfo\Registrar\SubstitutableAdapterRegistrar;
+use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
+use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
 use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
 use OCA\Dossiq\Service\BerichtenboxAdapter\MockAdapter;
 use OCA\Dossiq\Service\IntegrationStatusService;
+use OCP\App\IAppManager;
+use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\IAppConfig;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
@@ -92,7 +96,11 @@ class NotAnAdapter {
  *
  * @covers \OCA\Dossiq\AppInfo\Registrar\ConfiguredAdapter
  *
+ * @covers \OCA\Dossiq\AppInfo\Registrar\SubstitutableAdapterRegistrar
+ *
  * @uses \OCA\Dossiq\Service\BerichtenboxAdapter\MockAdapter
+ * @uses \OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter
+ * @uses \OCA\Dossiq\Support\FleetAppId
  */
 class AdapterHonestyTest extends TestCase {
 
@@ -110,8 +118,14 @@ class AdapterHonestyTest extends TestCase {
 	 *
 	 * @return ContainerInterface The wired container.
 	 */
-	private function container(string $named): ContainerInterface {
+	private function container(string $named, bool $filinq = false): ContainerInterface {
 		$this->logged = [];
+
+		$appManager = $this->createMock(IAppManager::class);
+		$appManager->method('isInstalled')->willReturnCallback(
+			static fn (string $id): bool => ($filinq === true && $id === 'filinq')
+		);
+		$appManager->method('isEnabledForUser')->willReturn($filinq);
 
 		$appConfig = $this->createMock(IAppConfig::class);
 		$appConfig->method('getValueString')->willReturn($named);
@@ -133,12 +147,14 @@ class AdapterHonestyTest extends TestCase {
 
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
-			static function (string $id) use ($appConfig, $l10n, $logger): object {
+			static function (string $id) use ($appConfig, $appManager, $l10n, $logger): object {
 				return match ($id) {
 					IAppConfig::class => $appConfig,
+					IAppManager::class => $appManager,
 					IL10N::class => $l10n,
 					LoggerInterface::class => $logger,
 					MockAdapter::class => new MockAdapter(logger: $logger),
+					MockTemplateEngineAdapter::class => new MockTemplateEngineAdapter(),
 					default => new $id(),
 				};
 			}
@@ -163,6 +179,69 @@ class AdapterHonestyTest extends TestCase {
 			fallbackReason: 'no adapter configured, messages are simulated',
 		);
 	}//end resolveBerichtenbox()
+
+	/**
+	 * Run the registrar and hand back the two factories it registered.
+	 *
+	 * 🔑 THROUGH THE REGISTRAR, NOT PAST IT. A registrar that binds the wrong
+	 * interface, or reads a config key nothing writes, is a silent no-op: the
+	 * app boots, the seam resolves to the mock forever, and no test that calls
+	 * ConfiguredAdapter directly would notice. That is the same class of
+	 * failure this whole change is about, so the wiring is exercised rather
+	 * than assumed.
+	 *
+	 * @return array<string, callable> The factories, keyed by interface.
+	 */
+	private function registeredFactories(): array {
+		$factories = [];
+		$context = $this->createMock(IRegistrationContext::class);
+		$context->method('registerService')->willReturnCallback(
+			function (string $name, callable $factory) use (&$factories): void {
+				$factories[$name] = $factory;
+			}
+		);
+
+		(new SubstitutableAdapterRegistrar())->register(context: $context);
+
+		return $factories;
+	}//end registeredFactories()
+
+	/**
+	 * Both seams are bound, to their own interface and nothing else.
+	 *
+	 * @return void
+	 */
+	public function testTheRegistrarBindsBothSeams(): void {
+		$factories = $this->registeredFactories();
+
+		$this->assertArrayHasKey(BerichtenboxAdapterInterface::class, $factories);
+		$this->assertArrayHasKey(TemplateEngineAdapterInterface::class, $factories);
+
+		$berichtenbox = $factories[BerichtenboxAdapterInterface::class]($this->container(named: ''));
+		$this->assertInstanceOf(MockAdapter::class, $berichtenbox);
+
+		$template = $factories[TemplateEngineAdapterInterface::class]($this->container(named: ''));
+		$this->assertInstanceOf(MockTemplateEngineAdapter::class, $template);
+	}//end testTheRegistrarBindsBothSeams()
+
+	/**
+	 * The template warning asks for the thing the reader is actually missing.
+	 *
+	 * One message covering both states would tell each reader half of what
+	 * they have to do: an instance without filinq needs to install it, an
+	 * instance with filinq needs to name its adapter.
+	 *
+	 * @return void
+	 */
+	public function testTheTemplateWarningNamesWhatIsActuallyMissing(): void {
+		$factory = $this->registeredFactories()[TemplateEngineAdapterInterface::class];
+
+		$factory($this->container(named: '', filinq: false));
+		$this->assertStringContainsString('not installed', $this->logged[0][1]);
+
+		$factory($this->container(named: '', filinq: true));
+		$this->assertStringContainsString('no template adapter is configured', $this->logged[0][1]);
+	}//end testTheTemplateWarningNamesWhatIsActuallyMissing()
 
 	/**
 	 * The substitution point that did not exist.
