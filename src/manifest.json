@@ -1494,6 +1494,44 @@
 						"_note": "The mail leaf as a body widget so it can be a tab. The sidebar CaseEmailTab stays: the sidebar is for reading alongside the case, the tab is for working in it."
 					},
 					{
+						"id": "case-communication",
+						"type": "object-list",
+						"title": "Communication",
+						"icon": "PhoneInTalk",
+						"_note": "Every call, visit and message logged on this case, newest first. The contactmoment schema was the KCC workplace's alone and no case page read it; `contactmoment.case` is the single case reference the object-list filter needs, because `relatedCases` is a list and a list cannot be a filter. Notes and Mail stay their own tabs until a tabs entry can render several widgets as stacked sections (design D4).",
+						"content": {
+							"register": "dossiq",
+							"schema": "contactmoment",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "startTime",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "startTime",
+									"label": "Date"
+								},
+								{
+									"key": "notificationChannel",
+									"label": "Channel"
+								},
+								{
+									"key": "direction",
+									"label": "Direction"
+								},
+								{
+									"key": "summary",
+									"label": "Summary"
+								}
+							],
+							"emptyText": "No contact logged on this case yet"
+						}
+					},
+					{
 						"id": "case-panels",
 						"type": "tabs",
 						"title": "Case panels",
@@ -1525,6 +1563,10 @@
 								{
 									"widgetId": "case-email",
 									"label": "Mail"
+								},
+								{
+									"widgetId": "case-communication",
+									"label": "Communication"
 								},
 								{
 									"widgetId": "case-calendar",
@@ -1669,6 +1711,30 @@
 					]
 				},
 				"headerActions": [
+					{
+						"id": "log-contact",
+						"type": "open-form",
+						"label": "Log contact",
+						"icon": "PhonePlusOutline",
+						"register": "dossiq",
+						"schema": "contactmoment",
+						"includeFields": [
+							"notificationChannel",
+							"direction",
+							"startTime",
+							"summary",
+							"callerIdentification"
+						],
+						"fieldOverrides": {
+							"summary": {
+								"widget": "textarea"
+							}
+						},
+						"successMessage": "Contact logged on this case.",
+						"props": {
+							"case": "@objectId"
+						}
+					},
 					{
 						"id": "log-hours",
 						"type": "open-form",

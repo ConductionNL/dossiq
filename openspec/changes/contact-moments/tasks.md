@@ -26,7 +26,7 @@ criteria under a task are plain bullets.
 
 ## 2. The Communication tab
 
-- [ ] 2.1 `src/manifest.json` page `CaseDetail`: widget `case-communication`
+- [x] 2.1 `src/manifest.json` page `CaseDetail`: widget `case-communication`
   per design D2 and its tab entry Communication in `case-panels`, without a
   `layout` cell.
   - `@spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md`
@@ -38,7 +38,7 @@ criteria under a task are plain bullets.
 
 ## 3. Log contact
 
-- [ ] 3.1 `src/manifest.json` page `CaseDetail`: header action `log-contact`
+- [x] 3.1 `src/manifest.json` page `CaseDetail`: header action `log-contact`
   per design D3 with `props: {case: "@objectId"}`.
   - `@spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md`
 - [ ] 3.2 [blocked: nextcloud-vue `CnObjectListWidget` and `CnDetailPage`
@@ -46,7 +46,7 @@ criteria under a task are plain bullets.
   #6, Tier D05)] Interim: 3.1 passes the case in `props`; the e2e asserts
   the saved object's `case`, not the prefilled field. When the change lands,
   drop the interim note and enable the prefill scenario.
-- [ ] 3.3 `l10n/en.json` and `l10n/nl.json`: Communication, Log contact,
+- [x] 3.3 `l10n/en.json` and `l10n/nl.json`: Communication, Log contact,
   Channel, Direction, Summary, "No contact logged on this case yet".
 
 ## 4. Seed and verification
