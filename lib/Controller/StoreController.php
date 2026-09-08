@@ -450,6 +450,13 @@ class StoreController extends Controller {
 			$this->appConfig->setValueString(Application::APP_ID, 'registry_token', trim($token));
 		}
 
+		// The Store card on the Integrations page reads what was just saved.
+		// The registry URL is the whole requirement: a registry with no address
+		// is a Store that resolves nothing, whatever else is filled in.
+		$this->registry->recordStoreStatus(
+			registryUrl: trim($this->appConfig->getValueString(Application::APP_ID, 'registry_url', ''))
+		);
+
 		return $this->getSettings();
 	}//end saveSettings()
 }//end class
