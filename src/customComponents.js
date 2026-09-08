@@ -50,6 +50,7 @@ import DtCaseTypeFilter from './views/doorlooptijd/widgets/DtCaseTypeFilter.vue'
 import DtChartsWidget from './views/doorlooptijd/widgets/DtChartsWidget.vue'
 import DtKpiWidget from './views/doorlooptijd/widgets/DtKpiWidget.vue'
 import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
+import FeaturesRoadmapView from './views/FeaturesRoadmapView.vue'
 import MyWorkView from './views/MyWorkCards.vue'
 import PmBottleneckTableWidget from './views/processMining/PmBottleneckTableWidget.vue'
 import PmCaseTypeFilter from './views/processMining/PmCaseTypeFilter.vue'
@@ -247,6 +248,10 @@ export default {
 	resumeSelection,
 	extendTermSelection,
 	MyWorkView, // current-user case index (assignee=uid) in card view — CnIndexPage wrapper
+	// Features & roadmap. Wraps the lib's CnFeaturesAndRoadmapPage (which has
+	// no slots, so `type: "roadmap"` could not carry a third surface) and adds
+	// the capability comparison. See the component header.
+	FeaturesRoadmapView,
 	StoreGallery, // remote store cards — index renderer cannot address a REMOTE object
 	// CaseMapView removed — see import comment above.
 
