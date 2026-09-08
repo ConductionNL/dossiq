@@ -115,6 +115,65 @@ class CaseIdentitySchemaTest extends TestCase {
 	}//end testTagsAreFreeWordsTheIndexCanFilterOn()
 
 	/**
+	 * The statutory fields are readable, which is not the same as declared.
+	 *
+	 * All five archive and payment properties were declared AND carried
+	 * `visible: false`, which drops a property from every schema-driven surface
+	 * at once — data widget, form dialog, index filters. The change is
+	 * therefore not "add a widget over existing fields": without this, the
+	 * widget renders an empty grid and the manifest still looks right.
+	 *
+	 * @return void
+	 */
+	public function testTheStatutoryFieldsAreVisible(): void {
+		$statutory = [
+			'legalBasis',
+			'statutoryTerm',
+			'archiveNomination',
+			'archiveActionDate',
+			'archiveStatus',
+			'paymentIndication',
+			'lastPaymentDate',
+		];
+
+		foreach ($statutory as $key) {
+			$property = $this->caseSchema['properties'][$key];
+			$this->assertArrayNotHasKey(
+				'visible',
+				$property,
+				$key . ' renders on no surface at all while it carries visible: false'
+			);
+			$this->assertNotSame(
+				'',
+				trim((string)($property['title'] ?? '')),
+				$key . ' needs a label a person can read'
+			);
+		}
+	}//end testTheStatutoryFieldsAreVisible()
+
+	/**
+	 * The statutory lead time is copied onto the case, not read through a path.
+	 *
+	 * The design asked for `extend: ["caseType"]` plus the include path
+	 * `caseType.processingDeadline`. A data widget builds its fields from
+	 * `Object.entries(schema.properties)`, so a dotted include matches no
+	 * property and the row simply never appears — the escape hatch task 3.2
+	 * names. Copying the type's duration onto the case with the same `@ref`
+	 * mechanism `deadline` already uses puts a real property behind the row.
+	 *
+	 * @return void
+	 */
+	public function testTheStatutoryLeadTimeIsCopiedFromTheCaseType(): void {
+		$calculation = $this->caseSchema['configuration']['x-openregister-calculations']['statutoryTerm'];
+
+		$this->assertTrue($calculation['materialise'], 'a cross-object @ref resolves at save time only');
+		$this->assertSame(
+			['prop' => '@ref.caseType.processingDeadline'],
+			$calculation['expression']
+		);
+	}//end testTheStatutoryLeadTimeIsCopiedFromTheCaseType()
+
+	/**
 	 * The schema version moves whenever the schema does.
 	 *
 	 * OpenRegister fast-skips a schema whose version has not changed, so a new

@@ -73,8 +73,21 @@ criteria under a task are plain bullets.
 
 ## 3. Terms and archive
 
-- [ ] 3.1 `lib/Settings/dossiq_register.json`, schema `case`: property
+- [x] 3.1 `lib/Settings/dossiq_register.json`, schema `case`: property
   `legalBasis` (string).
+  - And two things the design did not foresee, both of which would have left
+    the block empty while every gate passed.
+  - The five archive and payment properties carried `visible: false`, which
+    drops a property from every schema-driven surface at once. They are
+    declared, they were never readable, and a widget over them would have
+    rendered an empty grid.
+  - Their titles were Title Case (`Archive Nomination`). They become
+    user-facing here for the first time, so they are corrected to sentence
+    case rather than shipped against the voice.
+  - `statutoryTerm` is a new calculated property carrying the type's
+    processing deadline; see 3.2 for why the design's dotted include path
+    could not work.
+  - `case` goes 1.15.0 → 1.16.0.
 - [ ] 3.2 `src/manifest.json` page `CaseDetail`: widget `case-terms` per
   design D3, with `extend: ["caseType"]` and the include path
   `caseType.processingDeadline`; add its layout cell without a reserved void.

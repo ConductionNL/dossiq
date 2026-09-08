@@ -3589,7 +3589,14 @@ OC.L10N.register(
         "Tags": "Tags",
         "Free words that group this case across case types (e.g. spoed, wijk-noord)": "Free words that group this case across case types (e.g. spoed, wijk-noord)",
         "Terms and archive": "Terms and archive",
-        "Statutory lead time": "Statutory lead time"
+        "Statutory lead time": "Statutory lead time",
+        "Archive nomination": "Archive nomination",
+        "Archive action date": "Archive action date",
+        "Archive status": "Archive status",
+        "Payment indication": "Payment indication",
+        "Last payment date": "Last payment date",
+        "The statutory article this case is handled under (e.g. Awb 4:13)": "The statutory article this case is handled under (e.g. Awb 4:13)",
+        "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm.": "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm."
     },
     "nplurals=2; plural=(n != 1);"
 )
