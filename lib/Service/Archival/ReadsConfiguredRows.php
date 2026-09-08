@@ -47,6 +47,9 @@ trait ReadsConfiguredRows {
 	 * The settings bridge the using class holds.
 	 *
 	 * @return SettingsService The bridge to OpenRegister plus app config.
+	 *
+	 * @spec exclude infrastructure plumbing with no requirement of its own; it is
+	 *   exercised through the archival derivation that calls it
 	 */
 	abstract protected function settings(): SettingsService;
 
@@ -57,6 +60,9 @@ trait ReadsConfiguredRows {
 	 * @param string $id The row's UUID.
 	 *
 	 * @return array<string, mixed> The row, empty when unresolvable.
+	 *
+	 * @spec exclude infrastructure plumbing with no requirement of its own; it is
+	 *   exercised through the archival derivation that calls it
 	 */
 	protected function findRow(string $schemaKey, string $id): array {
 		$context = $this->resolveContext(schemaKey: $schemaKey);
@@ -89,6 +95,9 @@ trait ReadsConfiguredRows {
 	 * @param array<string, mixed> $filters The object-field filters plus pagination keys.
 	 *
 	 * @return array<int, array<string, mixed>> The matching rows.
+	 *
+	 * @spec exclude infrastructure plumbing with no requirement of its own; it is
+	 *   exercised through the archival derivation that calls it
 	 */
 	protected function findRows(string $schemaKey, array $filters): array {
 		$context = $this->resolveContext(schemaKey: $schemaKey);
@@ -115,6 +124,9 @@ trait ReadsConfiguredRows {
 	 *
 	 * @return array{objectService: mixed, register: string, schema: string}|null
 	 *         The context, or null when OpenRegister or the schema is unconfigured.
+	 *
+	 * @spec exclude infrastructure plumbing with no requirement of its own; it is
+	 *   exercised through the archival derivation that calls it
 	 */
 	protected function resolveContext(string $schemaKey): ?array {
 		$objectService = $this->settings()->getObjectService();
@@ -137,6 +149,9 @@ trait ReadsConfiguredRows {
 	 * @param array<string, mixed> $case The case payload.
 	 *
 	 * @return string|null The UUID, or null when the payload carries none.
+	 *
+	 * @spec exclude infrastructure plumbing with no requirement of its own; it is
+	 *   exercised through the archival derivation that calls it
 	 */
 	protected function caseId(array $case): ?string {
 		$id = (string)($case['id'] ?? ($case['@self']['id'] ?? ''));
@@ -153,6 +168,9 @@ trait ReadsConfiguredRows {
 	 * @param string $value The raw reference.
 	 *
 	 * @return string|null The UUID, or null when the value holds none.
+	 *
+	 * @spec exclude infrastructure plumbing with no requirement of its own; it is
+	 *   exercised through the archival derivation that calls it
 	 */
 	protected function uuidIn(string $value): ?string {
 		$pattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
@@ -169,6 +187,9 @@ trait ReadsConfiguredRows {
 	 * @param string $value The raw value.
 	 *
 	 * @return string|null The date, or null when the value is not one.
+	 *
+	 * @spec exclude infrastructure plumbing with no requirement of its own; it is
+	 *   exercised through the archival derivation that calls it
 	 */
 	protected function asDate(string $value): ?string {
 		if ($value === '' || strtotime($value) === false) {

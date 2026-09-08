@@ -95,6 +95,9 @@ class ArchivalNominationDeriver {
 	 * The settings bridge, for {@see ReadsConfiguredRows}.
 	 *
 	 * @return SettingsService The bridge to OpenRegister plus app config.
+	 *
+	 * @spec exclude infrastructure plumbing with no requirement of its own; it is
+	 *   exercised through the archival derivation that calls it
 	 */
 	protected function settings(): SettingsService {
 		return $this->settingsService;
