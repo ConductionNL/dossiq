@@ -55,10 +55,17 @@ use Psr\Log\NullLogger;
  * least entry 0, `StatusTransitionController::execute()` caught the throwable
  * and answered 500, and the UI showed a transition dialog that never closed.
  *
- * The @uses set matches GuardDialectTest's, because this test builds the same
- * registry with the same real evaluators: constructing one executes its
- * constructor, and phpunit.xml sets beStrictAboutCoverageMetadata with
- * failOnRisky, so an unlisted class exits 1 with zero failures reported.
+ * The coverage-metadata list below matches GuardDialectTest's, because this
+ * test builds the same registry with the same real evaluators: constructing
+ * one executes its constructor, and phpunit.xml sets
+ * beStrictAboutCoverageMetadata with failOnRisky, so an unlisted class exits 1
+ * with zero failures reported.
+ *
+ * Note the wording, which avoids writing a tag name in prose at all. An
+ * earlier draft opened this paragraph with the uses tag followed by the word
+ * "set", and PHPUnit parsed that as an annotation carrying the value "set",
+ * reporting it as invalid on all three tests. A docblock is parsed, not just
+ * read, and the parser does not care that the tag sits mid-sentence.
  *
  * @covers \OCA\Dossiq\Service\Transitions\GuardRegistry
  * @uses \OCA\Dossiq\Service\Transitions\ChecklistGuard
