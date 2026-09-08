@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 
-import axios from '@nextcloud/axios'
-import { flushPromises, mount } from '@vue/test-utils'
 /**
  * Generate document: the header action, and the dialog it opens.
  *
@@ -17,6 +15,8 @@ import { flushPromises, mount } from '@vue/test-utils'
  * @spec openspec/specs/beschikking-generatie/spec.md
  * @spec openspec/specs/template-library/spec.md
  */
+import axios from '@nextcloud/axios'
+import { flushPromises, mount } from '@vue/test-utils'
 import fs from 'fs'
 import path from 'path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
