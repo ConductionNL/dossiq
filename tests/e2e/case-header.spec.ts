@@ -32,7 +32,6 @@ import {
 	seedCase,
 	seedStateMachine,
 	showObject,
-	updateObject,
 } from './helpers/fixtures.ts'
 import { dismissSupportDialog } from './helpers/nav.ts'
 
@@ -82,17 +81,6 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 		statusName = String(inProgress.name ?? '')
 		const caseType = await showObject(api, 'caseType', machine.caseTypeId)
 		caseTypeTitle = String(caseType.title ?? caseType.name ?? '')
-
-		// A TERM ON THE CASE TYPE, or there is no deadline to count down to.
-		// `deadline` is `startDate + caseType.processingDeadline`, materialised
-		// by OpenRegister, and `seedStateMachine` declares no term at all — so
-		// the case below stored no deadline, the header rendered no countdown,
-		// and the scenario failed on an element that was correctly absent.
-		// Measured against a running register: with `P56D` and a start of
-		// 2024-01-15 the stored deadline is 2024-03-11, which is behind us.
-		await updateObject(api, token, 'caseType', machine.caseTypeId, {
-			processingDeadline: 'P56D',
-		})
 
 		caseTitle = `${RUN_PREFIX} Aanbouw Beethovenlaan 8`
 		const seeded = await seedCase(api, token, {
@@ -207,15 +195,8 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 
 		// Unknown, not nothing: an absent badge and an unset status look
 		// identical, and only one of the two is a data problem.
-		//
-		// The surrounding whitespace is matched rather than assumed away.
-		// `toHaveText` normalises whitespace for a STRING and compares a
-		// REGEXP against the raw text, and the badge renders a leading space
-		// from its icon slot, so `/^Unknown$/` fails on a badge that reads
-		// correctly. Anchored either side all the same, so this still tells
-		// Unknown from a badge carrying some other status.
 		await expect(page.getByTestId('case-header-status')).toHaveText(
-			/^\s*(Unknown|Onbekend)\s*$/,
+			/^(Unknown|Onbekend)$/,
 			{ timeout: 20_000 },
 		)
 		// And no countdown at all. "0 days left" would be a claim this case
