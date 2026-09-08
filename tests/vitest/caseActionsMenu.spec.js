@@ -112,6 +112,40 @@ describe('Copy case', () => {
 	})
 })
 
+describe('Start a flow', () => {
+	it('is a header action opening a modal the registry declares', () => {
+		const action = headerAction('start-flow')
+		expect(action.type).toBe('open-modal')
+		expect(action.target).toBe('CaseStartFlowDialog')
+		expect(registryDeclares('CaseStartFlowDialog', 'modal')).toBe(true)
+	})
+
+	it('names an icon that is registered', () => {
+		expect(iconIsRegistered(headerAction('start-flow').icon)).toBe(true)
+	})
+
+	it('is hidden on a case type that lists no startable flow', () => {
+		const gate = headerAction('start-flow').visibleWhen
+		expect(gate).toEqual({ field: 'hasStartableFlows', op: 'eq', value: true })
+	})
+
+	it('gates on a field of the CASE, which is all a local visibleWhen can see', () => {
+		const register = JSON.parse(
+			fs.readFileSync(
+				path.join(ROOT, 'lib', 'Settings', 'dossiq_register.json'),
+				'utf8',
+			),
+		)
+		const gate = headerAction('start-flow').visibleWhen
+		expect(register.components.schemas.case.properties[gate.field]).toBeTruthy()
+	})
+
+	it('has an endpoint behind it', () => {
+		expect(routes).toContain("'caseActions#startableFlows'")
+		expect(routes).toContain('/api/case/{caseId}/startable-flows')
+	})
+})
+
 describe('proposedCopyTitle', () => {
 	it('proposes "Copy of <title>"', () => {
 		expect(proposedCopyTitle('Dakkapel Kerkstraat 12')).toBe(

@@ -46,10 +46,17 @@ criteria under a task are plain bullets.
     resolving dossiq's own shipped flows onto the demo types at install time is
     a repair step, and a repair step runs at `occ upgrade` and nowhere else, so
     it is not shipped unverified here.
-- [ ] 2.2 Add `src/components/case/CaseStartFlowDialog.vue`: lists the flows
+- [x] 2.2 Add `src/dialogs/CaseStartFlowDialog.vue`: lists the flows
   from `startable-flows`, posts the chosen one to OpenRegister's run endpoint
   with the case as subject, closes on success. Header action `start-flow`
-  (type `handler`) on `CaseDetail`.
+  (type `open-modal`) on `CaseDetail`.
+  - The dialog lives in `src/dialogs/` and not `src/components/case/`, because
+    the modal-isolation rule puts an NcDialog-based component there.
+  - `open-modal`, not `handler`: a handler action resolves against
+    `effectiveManifest.actions`, a JSON map that cannot hold a function.
+  - The entry is hidden by the case's `hasStartableFlows`; the dialog still
+    says so when the list is empty, because the gate is a save-time value and
+    a case type edited since the last case save is not recomputed yet.
 - [ ] 2.3 [blocked: openregister a `userStartable` flag on the `flow` schema]
   Read the flag instead of `caseType.startableFlows`; 2.1 is the interim.
 

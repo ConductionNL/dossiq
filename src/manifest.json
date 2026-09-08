@@ -1997,6 +1997,18 @@
 						"label": "Copy case",
 						"icon": "ContentCopy",
 						"target": "CaseCopyDialog"
+					},
+					{
+						"id": "start-flow",
+						"type": "open-modal",
+						"label": "Start",
+						"icon": "Sitemap",
+						"target": "CaseStartFlowDialog",
+						"visibleWhen": {
+							"field": "hasStartableFlows",
+							"op": "eq",
+							"value": true
+						}
 					}
 				]
 			},

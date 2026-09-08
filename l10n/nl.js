@@ -3637,7 +3637,10 @@ OC.L10N.register(
         "Startable flows": "Te starten processen",
         "The flows a handler may start by hand on a case of this type. A type that lists none does not offer Start.": "De processen die een behandelaar zelf kan starten op een zaak van dit zaaktype. Een zaaktype zonder processen biedt Starten niet aan.",
         "Has startable flows": "Heeft te starten processen",
-        "Whether this case's type lists a flow a handler may start.": "Of het zaaktype van deze zaak een proces heeft dat een behandelaar kan starten."
+        "Whether this case's type lists a flow a handler may start.": "Of het zaaktype van deze zaak een proces heeft dat een behandelaar kan starten.",
+        "Run": "Uitvoeren",
+        "Start a sub-process": "Deelproces starten",
+        "This case type allows no sub-process to be started by hand.": "Dit zaaktype kent geen deelproces dat je zelf kunt starten."
     },
     "nplurals=2; plural=(n != 1);"
 )

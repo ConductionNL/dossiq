@@ -3636,7 +3636,10 @@
         "Startable flows": "Startable flows",
         "The flows a handler may start by hand on a case of this type. A type that lists none does not offer Start.": "The flows a handler may start by hand on a case of this type. A type that lists none does not offer Start.",
         "Has startable flows": "Has startable flows",
-        "Whether this case's type lists a flow a handler may start.": "Whether this case's type lists a flow a handler may start."
+        "Whether this case's type lists a flow a handler may start.": "Whether this case's type lists a flow a handler may start.",
+        "Run": "Run",
+        "Start a sub-process": "Start a sub-process",
+        "This case type allows no sub-process to be started by hand.": "This case type allows no sub-process to be started by hand."
     },
     "plurals": ""
 }

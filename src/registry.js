@@ -62,6 +62,7 @@ import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
 // @spec openspec/specs/case-management/spec.md
 import CaseCopyDialog from './dialogs/CaseCopyDialog.vue'
 import CaseLifecycleActionDialog from './dialogs/CaseLifecycleActionDialog.vue'
+import CaseStartFlowDialog from './dialogs/CaseStartFlowDialog.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
 // VTH-specific case detail panels
 import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
@@ -240,6 +241,14 @@ const registry = {
 		kind: 'modal',
 		component: CaseCopyDialog,
 		_note: "CaseDetail Actions menu: what the copy is called, and whether the source's documents come along. NOT CnCopyDialog, which the design named: the library's 2.41.0 copy dialog offers three naming PATTERNS over a fixed name and carries no slots at all, so there is nowhere to put the Include documents checkbox and no way to type a title that is not one of the three. It reads the case from the ROUTE, because an open-modal action forwards its props verbatim and `@objectId` would arrive as that literal string. Deleted the day nextcloud-vue ships a `copy` header-action type taking a field list and an endpoint (tasks 1.4).",
+	},
+
+	// --- Start a sub-process for the case (case-actions-menu, row A25). ---
+	// @spec openspec/specs/workflow-definition-engine/spec.md
+	CaseStartFlowDialog: {
+		kind: 'modal',
+		component: CaseStartFlowDialog,
+		_note: "CaseDetail Actions menu: the flows this case's TYPE lists in startableFlows, and Run. The run is posted straight to OpenRegister's /api/flows/{id}/run with the case as `{uuid, register, schema}` — the three keys FlowRunRow reads — so it lands in the Flow runs widget beside it and dossiq stores no copy of a run (ADR-022). The Start entry is hidden by the case's materialised `hasStartableFlows`; the dialog still says so when the list comes back empty, because the gate is a save-time value and a case type edited since the last case save has not been recomputed yet.",
 	},
 
 	// --- Initiator selection + display (brp-kvk-register-sets). ---
