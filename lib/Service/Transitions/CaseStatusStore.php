@@ -277,6 +277,32 @@ class CaseStatusStore {
 	}//end lookupStatusName()
 
 	/**
+	 * Look up the colour a status is drawn in.
+	 *
+	 * The case page's transition strip renders the current status as a badge,
+	 * and a badge with no colour says the same thing about every status. The
+	 * colour travels with the status name rather than being fetched a second
+	 * time by the browser: both come off the same row, and a second round trip
+	 * to colour a label the page already has is a request nobody needs.
+	 *
+	 * @param string $statusTypeId StatusType UUID.
+	 *
+	 * @return string The colour name, or the empty string when the status
+	 *                carries none. The frontend falls back to grey.
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	public function lookupStatusColour(string $statusTypeId): string {
+		$colour = ($this->statusTypeLookup->rowFor(statusTypeId: $statusTypeId)['colour'] ?? '');
+
+		if (is_string($colour) === false) {
+			return '';
+		}
+
+		return $colour;
+	}//end lookupStatusColour()
+
+	/**
 	 * Validate that a statusType belongs to the case's caseType.
 	 *
 	 * @param string $caseTypeId CaseType UUID.

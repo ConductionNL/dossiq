@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use RuntimeException;
 
@@ -43,12 +44,15 @@ class CaseResultWriter {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Bridge to OpenRegister + config.
+	 * @param SettingsService  $settingsService  Bridge to OpenRegister + config.
+	 * @param CaseTypeResolver $caseTypeResolver The effective blueprint, so a child type
+	 *                                          closes with its parent's result types.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly CaseTypeResolver $caseTypeResolver,
 	) {
 	}//end __construct()
 
@@ -113,43 +117,22 @@ class CaseResultWriter {
 	/**
 	 * List the result type UUIDs a case type offers.
 	 *
-	 * The relation sits on the CHILD (`resultType.caseType`), which is the
-	 * only shape OpenRegister's object list filters on.
+	 * 🔴 THROUGH THE RESOLVER. Asking the store for `resultType where caseType
+	 * = X` answers with the type's OWN rows, so a child type that derives its
+	 * results from a parent declared none — and a closing transition on a case
+	 * of that type wrote no result at all, silently, which is exactly the
+	 * unanswered result this class exists to prevent.
 	 *
 	 * @param string $caseTypeId CaseType UUID.
 	 *
 	 * @return array<int, string> The result type UUIDs, empty when none or unreadable.
 	 *
-	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	private function listResultTypeIds(string $caseTypeId): array {
-		$context = $this->resolveContext(schemaKey: 'result_type_schema');
-		if ($context === null || $caseTypeId === '') {
-			return [];
-		}
-
-		try {
-			$rows = $context['objectService']->searchObjects(
-				[
-					'@self' => [
-						'register' => (int)$context['register'],
-						'schema' => (int)$context['schema'],
-					],
-					'caseType' => $caseTypeId,
-				],
-			);
-		} catch (\Throwable $e) {
-			return [];
-		}
-
-		if (is_array($rows) === false) {
-			return [];
-		}
-
 		$ids = [];
-		foreach ($rows as $row) {
-			$data = $this->toArray(value: $row);
-			$id = (string)($data['id'] ?? ($data['@self']['id'] ?? ''));
+		foreach ($this->caseTypeResolver->resultTypesFor(caseTypeId: $caseTypeId) as $row) {
+			$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
 			if ($id !== '') {
 				$ids[] = $id;
 			}
