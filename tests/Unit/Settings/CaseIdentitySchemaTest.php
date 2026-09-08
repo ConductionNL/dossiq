@@ -85,16 +85,61 @@ class CaseIdentitySchemaTest extends TestCase {
 		$this->assertTrue($calculation['materialise'], 'the number is stored, not recomputed per read');
 		$this->assertSame(
 			[
-				'concat' => [
-					['year' => ['prop' => 'startDate']],
-					'-',
-					['sequence' => ['scope' => 'yearly', 'pad' => 4]],
+				'coalesce' => [
+					['prop' => 'identifier'],
+					[
+						'concat' => [
+							['year' => ['prop' => 'startDate']],
+							'-',
+							['sequence' => ['scope' => 'yearly', 'pad' => 4]],
+						],
+					],
 				],
 			],
 			$calculation['expression'],
-			'the number is the start year, a hyphen and a four-digit yearly sequence'
+			'a supplied number wins; otherwise the start year, a hyphen and a four-digit yearly sequence'
 		);
 	}//end testIdentifierIsAGeneratedYearlySequence()
+
+	/**
+	 * A number supplied on create survives, and does not consume a sequence.
+	 *
+	 * Measured against a live instance before this guard existed: posting a
+	 * case with `identifier: "BZW-2025-17"` and `startDate: "2025-11-01"`
+	 * stored `2025-0360`. The calculation is `materialise: true`, so it runs on
+	 * the create path and wrote over the value the caller gave.
+	 *
+	 * OpenRegister already protects the UPDATE path: `CalculationOnSaveListener`
+	 * skips any expression using `sequence` when no SequenceContext is active,
+	 * which is every update (openregister#3075). Create was the unguarded half.
+	 *
+	 * `coalesce` is the right guard because `CalculationEvaluator::coalesce()`
+	 * evaluates operands one at a time and returns at the first non-null, so
+	 * the `sequence` node is never reached when a number was supplied and no
+	 * running number is spent on it.
+	 *
+	 * @return void
+	 */
+	public function testASuppliedNumberIsKeptAheadOfTheSequence(): void {
+		$expression = $this->caseSchema['configuration']
+			['x-openregister-calculations']['identifier']['expression'];
+
+		$this->assertArrayHasKey(
+			'coalesce',
+			$expression,
+			'without coalesce the create path overwrites an imported number'
+		);
+		$this->assertSame(
+			['prop' => 'identifier'],
+			$expression['coalesce'][0],
+			'the supplied number must be the FIRST operand, or the sequence wins and is spent'
+		);
+		$this->assertArrayHasKey(
+			'concat',
+			$expression['coalesce'][1],
+			'the generated number stays the fallback'
+		);
+	}//end testASuppliedNumberIsKeptAheadOfTheSequence()
 
 	/**
 	 * Tags are free words, and the index can filter on them.
