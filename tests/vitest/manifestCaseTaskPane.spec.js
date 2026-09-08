@@ -181,3 +181,44 @@ describe('the TaskCaseLink registry binding', () => {
 		).toBe(true)
 	})
 })
+
+describe('the task-case-link widget on TaskDetail', () => {
+	it('is a custom widget resolved through the page slot', () => {
+		const link = widget('TaskDetail', 'task-case-link')
+		expect(link).toBeDefined()
+		expect(link.type).toBe('custom')
+		expect(page('TaskDetail').slots['widget-task-case-link']).toBe(
+			'TaskCaseLink',
+		)
+		// A `custom` widget with no slot entry renders nothing and says
+		// nothing, on this path exactly as on the tab path.
+		expect(page('TaskDetail').slots['widget-task-waiting-case']).toBe(
+			'TaskWaitingCaseSection',
+		)
+	})
+
+	it('sits above the Data widget and draws no title', () => {
+		const layout = page('TaskDetail').config.layout
+		const item = (id) => layout.find((entry) => entry.widgetId === id)
+		// A widget-<id> slot is rendered per GRID item, so a layout entry is
+		// not decoration here: without one the component never mounts.
+		expect(item('task-case-link')).toBeDefined()
+		expect(item('task-case-link').gridY).toBeLessThan(item('task-data').gridY)
+		// An empty titled box on every task with no case is the clutter the
+		// null render exists to avoid.
+		expect(item('task-case-link').showTitle).toBe(false)
+	})
+
+	it('does not disturb the flow waiting section', () => {
+		const waiting = widget('TaskDetail', 'task-waiting-case')
+		expect(waiting.type).toBe('custom')
+		expect(waiting.icon).toBe('CheckboxMarkedCircleOutline')
+	})
+
+	it('names an icon src/icons.js registers', () => {
+		const icons = fs.readFileSync(ICONS_PATH, 'utf8')
+		expect(icons).toContain(
+			"import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'",
+		)
+	})
+})

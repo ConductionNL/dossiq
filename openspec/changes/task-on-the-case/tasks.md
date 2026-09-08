@@ -97,11 +97,16 @@ criteria under a task are plain bullets.
   - unit test in `tests/vitest/manifestCaseTaskPane.spec.js`: the key
     carries a `_note` and a reason-bearing exclusion, and its import points
     at a file that exists
-- [ ] 2.3 `src/manifest.json`: `TaskDetail` gains widget `task-case-link`,
+- [x] 2.3 `src/manifest.json`: `TaskDetail` gains widget `task-case-link`,
   type `custom`, `showTitle: false`, placed above `task-data`;
-  `task-waiting-case` stays as it is.
-  - unit test in `tests/unit/manifest-case-task-pane.spec.js`: the widget
-    exists, precedes `task-data`, page count unchanged
+  `task-waiting-case` stays as it is. The widget also gets a LAYOUT entry and
+  a `slots` entry: a `widget-<id>` slot is rendered per grid item, so without
+  the layout row the slot is never rendered and the component never mounts.
+  - unit test in `tests/vitest/manifestCaseTaskPane.spec.js`: the widget
+    exists, is type `custom`, resolves through `slots.widget-task-case-link`,
+    has a layout entry above `task-data` with `showTitle: false`, leaves
+    `task-waiting-case` alone, names an icon `src/icons.js` registers, and
+    the page count is unchanged
 
 ## 3. End to end
 
