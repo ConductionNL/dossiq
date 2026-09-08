@@ -204,7 +204,22 @@ const RUN_CASE_TYPE = `${RUN_PREFIX} Vergunning`
  * @param page The page.
  */
 async function narrowToThisRun(page: Page): Promise<void> {
-	const facet = page.getByRole('button', { name: RUN_CASE_TYPE, exact: true })
+	// 🔴 THE FACET'S ACCESSIBLE NAME CARRIES ITS COUNT. A sidebar entry with
+	// matches renders as "<case type> <n>", so the accessible name of this
+	// run's type is `E2EZAAK-… Vergunning 1`, not `E2EZAAK-… Vergunning`, and
+	// `exact: true` on the bare title matched nothing. The failure reads "the
+	// sidebar should offer a case-type filter named …" while the button is
+	// right there in the snapshot, one character group longer.
+	//
+	// A type with NO matches renders without the count, which is why the
+	// suffix is optional here rather than required. Anchored at both ends and
+	// including the run prefix, so it still cannot match another run's type or
+	// the `… Bare` type this same fixture seeds alongside it.
+	const facet = page.getByRole('button', {
+		name: new RegExp(
+			`^${RUN_CASE_TYPE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s+\\d+)?$`,
+		),
+	})
 	await expect(
 		facet,
 		`the sidebar should offer a case-type filter named ${RUN_CASE_TYPE}`,
@@ -591,7 +606,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 			.first()
 			.click()
 		await dialog
-			.locator('[data-testid="bulk-reason"] textarea')
+			.locator('[data-testid="bulk-reason"]')
 			.fill('Quarterly clean-up')
 
 		const execute = dialog.locator('[data-testid="bulk-execute"]')
@@ -621,7 +636,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(dialog.locator('[data-testid="bulk-execute"]')).toBeDisabled()
 
 		await dialog
-			.locator('[data-testid="bulk-reason"] textarea')
+			.locator('[data-testid="bulk-reason"]')
 			.fill('Awaiting documents')
 		await expect(dialog.locator('[data-testid="bulk-execute"]')).toBeEnabled()
 	})
@@ -630,7 +645,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	test('Suspend then Resume, each with its reason', async ({ page }) => {
 		const suspend = await openBulkAction(page, ['suspend-me'], 'suspend')
 		await suspend
-			.locator('[data-testid="bulk-reason"] textarea')
+			.locator('[data-testid="bulk-reason"]')
 			.fill('Awaiting documents')
 		await suspend.locator('[data-testid="bulk-execute"]').click()
 		await expect(
@@ -655,7 +670,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 
 		const resume = await openBulkAction(page, ['suspend-me'], 'resume')
 		await resume
-			.locator('[data-testid="bulk-reason"] textarea')
+			.locator('[data-testid="bulk-reason"]')
 			.fill('Documents received')
 		await resume.locator('[data-testid="bulk-execute"]').click()
 		await expect(
@@ -681,9 +696,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		const dialog = await openBulkAction(page, ['extend-me'], 'extend-term')
 
 		await dialog.locator('[data-testid="bulk-new-deadline"]').fill(day(20))
-		await dialog
-			.locator('[data-testid="bulk-reason"] textarea')
-			.fill('Complex case')
+		await dialog.locator('[data-testid="bulk-reason"]').fill('Complex case')
 		await dialog.locator('[data-testid="bulk-execute"]').click()
 
 		await expect(
