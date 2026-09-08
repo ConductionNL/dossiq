@@ -42,6 +42,11 @@ const CELL_WIDGETS_PATH = path.join(ROOT, 'src', 'services', 'cellWidgets.js')
 
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
 const cellWidgetsSource = fs.readFileSync(CELL_WIDGETS_PATH, 'utf8')
+const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
+const customComponentsSource = fs.readFileSync(
+	path.join(ROOT, 'src', 'customComponents.js'),
+	'utf8',
+)
 
 /**
  * One page as the manifest declares it.
@@ -228,6 +233,53 @@ describe('the Deadline column', () => {
 			typeof column === 'string' ? column : column.key,
 		)
 		expect(keys.indexOf('deadline')).toBeGreaterThan(keys.indexOf('assignee'))
+	})
+})
+
+describe('bulk actions on the Cases index', () => {
+	/**
+	 * The Cases page's bulk actions.
+	 *
+	 * @return {Array<object>} The bulk-action entries, in order.
+	 */
+	const actions = () => page('Cases').config.bulkActions
+
+	it('offers reassign plus the four lifecycle gestures', () => {
+		expect(actions().map((action) => action.id)).toEqual([
+			'reassign',
+			'transition',
+			'suspend',
+			'resume',
+			'extend-term',
+		])
+	})
+
+	it('names a handler that customComponents.js defines AND exports', () => {
+		// Both halves matter and neither errors on its own: a handler name
+		// with no function is a bulk action that does nothing when clicked,
+		// and a function that is not in the default export is invisible to
+		// the manifest renderer, which resolves the name through that map.
+		for (const action of actions()) {
+			expect(customComponentsSource).toContain(`function ${action.handler}(`)
+			expect(customComponentsSource).toMatch(
+				new RegExp(`^\\t${action.handler},$`, 'm'),
+			)
+		}
+	})
+
+	it('names an icon that src/icons.js registers', () => {
+		// An unregistered icon name renders NO icon, not a fallback glyph
+		// (hydra gate-60), so a bulk action would appear as a bare label.
+		for (const action of actions()) {
+			expect(iconsSource).toMatch(new RegExp(`^\\t${action.icon},$`, 'm'))
+		}
+	})
+
+	it('gives every action a label the catalogue can translate', () => {
+		for (const action of actions()) {
+			expect(typeof action.label).toBe('string')
+			expect(action.label.length).toBeGreaterThan(0)
+		}
 	})
 })
 

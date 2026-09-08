@@ -1126,12 +1126,37 @@
 			"actionsComponent": "CaseListExportAction",
 			"_note": "`excludeFields: [status]` keeps the status picker OFF this page's form dialog, and the reason is not cosmetic. On CREATE the picker listed every case type's statuses. CnFormDialog loads a reference field's options once, at open time, and `status` carries `x-relation-filter: { caseType: \"@object.caseType\" }`: a token that resolves to nothing while the form is still empty, so the fetch goes out unfiltered and never goes out again. Half those options are named `Received` or `In progress`, belong to a different case type, and are therefore both indistinguishable and wrong. A case is born with its own case type's `initialStatus` through `x-openregister-prefill`, so there is no status a person should be picking here at all. On EDIT the token does resolve and the picker is correctly scoped, but a raw dropdown writes the field straight through: no statusRecord, no guard evaluation, none of the transition's `automaticActions`. A status is the OUTPUT of a transition, not a field. CaseDetail's `lifecycleActions.field: status` is where one changes.",
 			"config": {
+				"_bulkActionsNote": "one-case-list A21. Bulk work stopped at Reassign while `BulkTransitionDialog` and `BulkStatusTransitionService` already served the workflow board, so the four gestures a handler does most from a list were reachable only one case at a time. Each handler opens the SAME dialog in its own mode with a required reason: Suspend, Resume and Extend term are statutory acts (Awb 4:5 and 4:14) someone has to justify later, and doing twenty at once is exactly when the justification goes unwritten. The handlers are FUNCTIONS in src/customComponents.js, not the declarative `handler: \"open-modal\"` path: that path emits an `open-modal` event nothing in the library listens for, so declaring it would ship a bulk action that does nothing when clicked. Every icon here is registered in src/icons.js (hydra gate-60); a name that is not renders no icon at all rather than a fallback glyph.",
 				"bulkActions": [
 					{
 						"id": "reassign",
 						"label": "Reassign",
 						"icon": "AccountSwitchOutline",
 						"handler": "reassignSelection"
+					},
+					{
+						"id": "transition",
+						"label": "Transition",
+						"icon": "SwapHorizontal",
+						"handler": "transitionSelection"
+					},
+					{
+						"id": "suspend",
+						"label": "Suspend",
+						"icon": "PauseCircleOutline",
+						"handler": "suspendSelection"
+					},
+					{
+						"id": "resume",
+						"label": "Resume",
+						"icon": "PlayCircleOutline",
+						"handler": "resumeSelection"
+					},
+					{
+						"id": "extend-term",
+						"label": "Extend term",
+						"icon": "CalendarPlus",
+						"handler": "extendTermSelection"
 					}
 				],
 				"register": "dossiq",

@@ -3583,7 +3583,12 @@
         "Reveal": "Reveal",
         "Unclaimed": "Unclaimed",
         "1 day left": "1 day left",
-        "{days} days left": "{days} days left"
+        "{days} days left": "{days} days left",
+        "Extend the term of {count} cases": "Extend the term of {count} cases",
+        "New deadline": "New deadline",
+        "Reason (applied to every case)": "Reason (applied to every case)",
+        "Resume {count} cases": "Resume {count} cases",
+        "Suspend {count} cases": "Suspend {count} cases"
     },
     "plurals": ""
 }

@@ -97,44 +97,96 @@ no menu entry changes.
 
 ## 3. Bulk actions
 
-- [ ] 3.1 `src/dialogs/BulkTransitionDialog.vue`: add prop `mode`
+- [x] 3.1 `src/dialogs/BulkTransitionDialog.vue` takes prop `mode`
   (`transition` default, `suspend`, `resume`, `extend`) and a required
-  `reason` textarea (`NcTextArea`, label "Reason"); Execute disabled while
-  the reason is empty; `extend` mode shows a date input "New deadline"
-  (`NcDateTimePickerNative`) required before Execute; the title and the
-  summary phrasing follow the mode. Reason posts as `comment` on
-  `buildExecutePayload`; `suspend` and `resume` post `{ pause: { reason } }`
-  and `{ resume: true }`; `extend` posts `{ deadline, reason }`.
+  `reason` textarea; Execute stays disabled while the reason is empty, and
+  in `extend` until a "New deadline" date is set; the title names the
+  gesture. `suspend` also offers the days field the single-case dialog has,
+  because `DeadlinePauseService::registerPauze` needs a positive duration and
+  a silent default would be a term nobody chose.
+  - The reason now gates TRANSITION too, where it was an optional comment.
+    Reading back a batch of twenty cases that moved for no recorded reason is
+    what that allowed. This changes the workflow board's dialog as well, which
+    is the same component in its default mode.
+  - The date input is a plain `<input type="date">`, the pattern every other
+    dossiq dialog uses (`AddAssignmentDialog`, `ConsultationResponseForm`),
+    not `NcDateTimePickerNative`.
   - `@spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md`
-  - unit test in `tests/unit/dialogs/BulkTransitionDialog.spec.js`: Execute
-    disabled on empty reason in every mode, enabled with reason and (for
-    extend) a date, payload shape per mode, per-case summary on partial
-    failure
-- [ ] 3.2 `src/utils/bulkTransitionHelpers.js`: `buildExecutePayload`
-  accepts the mode payloads above; `summariseResults` unchanged.
-  - unit test in `tests/unit/utils/bulkTransitionHelpers.spec.js` extended
-    for the three new shapes
-- [ ] 3.3 `src/customComponents.js`: handlers `transitionSelection`,
-  `suspendSelection`, `resumeSelection`, `extendTermSelection` beside
-  `reassignSelection`, each mounting `BulkTransitionDialog` with
-  `{ caseIds: selectedIds, mode }` and refreshing the list on `completed`.
+  - unit test in `tests/vitest/bulkTransitionDialog.spec.js`: a full mount per
+    mode — previews on open without asking for a transition, Execute disabled
+    on an empty reason in every mode, extend also waiting for a date, the
+    payload per mode, the per-case summary on partial failure, and the
+    transition mode still loading its available transitions
+- [x] 3.2 `src/utils/bulkTransitionHelpers.js`: `buildLifecyclePreviewPayload`
+  and `buildLifecycleExecutePayload` beside the transition builders, plus
+  `isLifecycleGesture`; `summarizeResults` unchanged.
+  - Two new builders rather than more parameters on `buildExecutePayload`, as
+    the task proposed: a transition sends `{caseIds, transitionId, comment}`
+    and a lifecycle gesture sends `{caseIds, gesture, reason, days?,
+    newEndDate?}`, and one function returning either shape reads as a
+    function with no shape at all. `days` goes only with suspend and
+    `newEndDate` only with extend — a key the gesture cannot use is noise in
+    the audit trail.
+  - unit test in `tests/vitest/bulkTransitionHelpers.spec.js`, extended for
+    the three shapes, the trimming, and the empty reason sent rather than
+    dropped (the server has to be the one that refuses)
+- [x] 3.3 `src/customComponents.js`: `transitionSelection`,
+  `suspendSelection`, `resumeSelection` and `extendTermSelection` beside
+  `reassignSelection`, all four mounting `BulkTransitionDialog` through one
+  `openBulkDialog(mode, ids)` and signalling `dossiq:cases-changed` on
+  `completed` — the same signal reassign sends.
   - `@spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md`
-- [ ] 3.4 `src/manifest.json` page `Cases` `bulkActions`: add Transition
-  (`SwapHorizontal`, `transitionSelection`), Suspend (`PauseCircleOutline`,
-  `suspendSelection`), Resume (`PlayCircleOutline`, `resumeSelection`),
-  Extend term (`CalendarPlus`, `extendTermSelection`) after Reassign.
-  - unit test in `tests/unit/manifest-case-list-lenses.spec.js`: five bulk
-    actions, handlers exported from `src/customComponents.js`
-- [ ] 3.5 `lib/Controller/BulkTransitionController.php` (the endpoints the
-  board uses): accept the `pause`, `resume` and `deadline` payloads;
-  `pause` calls `DeadlinePauseService::registerPauze` with the reason,
-  `resume` calls `resumeAfterPauze`, `deadline` writes the case deadline
-  and a status record note with the reason; per-case results keep the
-  `{caseId: {status, reasons?}}` map.
+- [x] 3.4 `src/manifest.json` page `Cases` `bulkActions`: Transition
+  (`SwapHorizontal`), Suspend (`PauseCircleOutline`), Resume
+  (`PlayCircleOutline`) and Extend term (`CalendarPlus`) after Reassign. All
+  four icons were already registered in `src/icons.js`.
+  - unit test in `tests/vitest/caseListLenses.spec.js`: five bulk actions in
+    order, every handler both DEFINED and EXPORTED in `src/customComponents.js`
+    (a function missing from the default export is invisible to the renderer),
+    every icon registered
+- [x] 3.5 The bulk endpoints accept the three lifecycle gestures. The
+  controller is `lib/Controller/StatusTransitionController.php`, not a
+  `BulkTransitionController` — `statusTransition#bulkPreview` and
+  `#bulkExecute` are what `appinfo/routes.php` binds — and both now read a
+  `gesture` from the body: absent or unrecognised reads as `transition`, so
+  the workflow board's dialog, which sends none, stays on exactly the path it
+  was on. A lifecycle gesture with no reason is a 400 before anything is
+  written. Per-case results keep the `{caseId: {status, reasons?}}` map.
+  - The gestures loop `CaseLifecycleService::suspend/resume/extend` through
+    two new `BulkStatusTransitionService` methods, rather than calling
+    `DeadlinePauseService` directly as the task proposed. Those single-case
+    gestures already own the case type's `suspensionAllowed` /
+    `extensionAllowed` rules, the already-suspended and not-suspended checks,
+    the required reason, the journal entry on the case and the term-instance
+    write. Reaching past them to the pause service would have reimplemented
+    every one of those guards, or shipped without them.
+  - `CaseLifecycleService::extend` gained an optional `$newEndDate` so a
+    reader can name the date; it must be LATER than the current end, and
+    `extensionAllowed` still governs.
+  - **[blocked: `case.deadline` is a read-only materialised calculation]**
+    Extending a term does NOT move the Deadline column. `deadline` is
+    `readOnly` on the case schema and computed by OpenRegister as
+    `startDate + caseType.processingDeadline`
+    (`x-openregister-calculations.deadline`, `materialise: true`), so it is
+    recomputed on every save and would overwrite anything written to it. The
+    extension writes `plannedEndDate` and the term instance's
+    `endDateCurrent`, which is what the statutory clock, the daily scan and
+    the dwangsom engine read. Making the column follow an extension means
+    teaching the calculation to prefer `plannedEndDate`, which is a schema
+    change with a version bump and an `occ upgrade` — and this change is
+    `kind: config` and states "No schema change". The
+    `case-bulk-status-transition` scenario was rewritten to assert what the
+    gesture actually does.
   - `@spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md`
-  - PHPUnit in `tests/Unit/Controller/BulkTransitionControllerTest.php`:
-    pause and resume reach the service with the reason, a refused case is
-    reported per case, a missing reason is a 400
+  - PHPUnit in `tests/Unit/Service/BulkStatusTransitionServiceTest.php` (the
+    reason reaching each gesture, a refusal reported per case without
+    aborting the batch, an empty reason refused before any write, an unknown
+    gesture refused, the id cap), `tests/Unit/Controller/StatusTransitionControllerBulkTest.php`
+    (no gesture and an unknown gesture both previewing a transition, a
+    lifecycle gesture routed, the reason/days/date carried through, 400 on a
+    missing reason) and `tests/Unit/Service/CaseLifecycleServiceTest.php`
+    (an explicit date honoured, refused when not later or unreadable, and
+    never bypassing the case type's rule)
 
 ## 4. Copy and locale
 
