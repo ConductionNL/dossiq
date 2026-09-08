@@ -111,12 +111,44 @@ class GuardSnapshotDetailsTest extends TestCase {
 	/**
 	 * A guard that DOES report details keeps them untouched.
 	 *
-	 * The control. Nulling the empty case must not null the populated one, or
-	 * the reason a transition was refused would stop being recorded.
+	 * The control, through a REAL EVALUATOR. An unknown guard type answers
+	 * from the registry's own early branch and never reaches the line that
+	 * copies an evaluator's details onto the snapshot, so a control written
+	 * that way leaves the branch this fix adds unexecuted — which is exactly
+	 * what the coverage ratchet caught. `requiredField` reports
+	 * `['field' => …]` on both verdicts, so it exercises the copy either way.
 	 *
 	 * @return void
 	 */
 	public function testAGuardWithDetailsKeepsThem(): void {
+		$results = $this->registry()->evaluateAll(
+			guards: [
+				['type' => 'requiredField', 'field' => 'title'],
+				['type' => 'requiredField', 'field' => 'absent'],
+			],
+			case: ['title' => 'Present'],
+			userId: 'admin',
+		);
+
+		self::assertCount(2, $results);
+
+		self::assertTrue($results[0]['passed']);
+		self::assertSame(['field' => 'title'], $results[0]['details']);
+
+		self::assertFalse($results[1]['passed']);
+		self::assertSame(['field' => 'absent'], $results[1]['details']);
+	}//end testAGuardWithDetailsKeepsThem()
+
+	/**
+	 * An unknown guard type still records why it failed.
+	 *
+	 * A separate case rather than the control above, because it answers from
+	 * the registry's own branch and proves something different: a guard nobody
+	 * registered is refused with a reason rather than skipped.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownGuardTypeIsRefusedWithAReason(): void {
 		$results = $this->registry()->evaluateAll(
 			guards: [['type' => 'no_such_guard_type']],
 			case: [],
@@ -126,7 +158,7 @@ class GuardSnapshotDetailsTest extends TestCase {
 		self::assertCount(1, $results);
 		self::assertFalse($results[0]['passed']);
 		self::assertSame(['unknown' => true], $results[0]['details']);
-	}//end testAGuardWithDetailsKeepsThem()
+	}//end testAnUnknownGuardTypeIsRefusedWithAReason()
 
 	/**
 	 * Every snapshot entry is safe to persist, whatever the guard decided.
