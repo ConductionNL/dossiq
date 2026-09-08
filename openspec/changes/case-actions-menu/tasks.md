@@ -5,7 +5,7 @@ criteria under a task are plain bullets.
 
 ## 1. Copy a case
 
-- [ ] 1.1 Add `lib/Service/CaseCopyService.php` with `copy(string $caseId,
+- [x] 1.1 Add `lib/Service/CaseCopyService.php` with `copy(string $caseId,
   array $options): array` per design D1: fixed field list, initial status,
   `relatedCases` to the source, documents linked by reference when asked.
   - SPDX header; `@spec openspec/specs/case-management/spec.md`
