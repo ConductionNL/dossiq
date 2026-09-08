@@ -1,25 +1,38 @@
-# Case Dashboard View
+# Case dashboard view
 
-The case dashboard view shows the detail page for an individual case, accessible by clicking on a case from the My Work list or the Cases list.
+The case page is where a handler works one case. You reach it from the Cases
+list, from My work, or from any list that names a case.
 
-![Case Dashboard View](/screenshots/case-dashboard-view.png)
+![Case dashboard view](/screenshots/case-dashboard-view.png)
 
-## Overview
+## The identity row
 
-The case detail view is accessed via the URL pattern `/apps/dossiq/cases/{uuid}`. When navigating to a specific case (e.g., from the My Work list), the application loads the case detail page.
+The first row under the title says which case you are on: the case number,
+the case type, the current status as a badge, the handler it is assigned to,
+and how many days are left on the deadline. An overdue case reads in days
+overdue, in red. A case with no status yet reads Unknown rather than showing
+nothing, because an empty badge and an unset status look the same and only
+one of them needs fixing. A case with no deadline shows no countdown at all.
 
-## Current State
+Above that row sits a breadcrumb, Cases followed by this case. The first
+crumb takes you back to the list without going through the menu, and it
+carries the query the case page had, so a search or a filter on the URL
+survives the trip out and back. The last crumb is the page you are on, so it
+is not a link.
 
-The case detail view is under active development. The page loads at the correct route but the content area is currently blank, indicating that the case dashboard component is still being implemented.
+## The panels
 
-## Planned Features
+Under the status controls, one strip of tabs holds every panel about the
+case, in the order the work runs: Data, Documents, Parties, Tasks,
+Communication. Files, Notes, Mail and Related cases follow them until each
+folds into its neighbour. Sub-cases, Locations, Appointments and Decisions
+close the strip. Only the open tab loads, so opening a case does not fire a
+request for the five panels you did not ask for.
 
-Based on the spec, the case dashboard view will include:
+The history of the case is not one of these tabs. It lives in the sidebar,
+under History, so the log and the work do not compete for the same column.
 
-- **Case header** -- Title, identifier, status badge, and case type.
-- **Status timeline** -- Visual representation of the case lifecycle stages.
-- **Case details panel** -- Key properties such as dates, handler, initiator, and confidentiality level.
-- **Tasks section** -- List of tasks associated with the case.
-- **Documents section** -- Attached documents and correspondence.
-- **Audit trail** -- History of status changes and actions taken on the case.
-- **Actions** -- Buttons for common operations like changing status, adding tasks, or uploading documents.
+## Next
+
+Configure the statuses a case moves through in
+[Configure case types](../user-guide/admin/01-configure-case-types.md).

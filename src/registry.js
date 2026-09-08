@@ -27,6 +27,7 @@ import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicati
 // over the case type's statuses, and the reason dialog the Actions menu opens.
 // @spec openspec/specs/status-transition-engine/spec.md
 // @spec openspec/specs/case-dashboard-view/spec.md
+import CaseHeaderRow from './components/case/CaseHeaderRow.vue'
 import CaseStepsWidget from './components/case/CaseStepsWidget.vue'
 import CaseTransitionsWidget from './components/case/CaseTransitionsWidget.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
@@ -225,6 +226,13 @@ const registry = {
 		kind: 'widget',
 		component: CaseTransitionsWidget,
 		_note: 'CaseDetail header strip: the transitions this user may take from the current status, the confirm dialog that asks for a comment and, on a closing move, a result, plus the suspended marker and the Resume button a suspended case needs in front of the handler. Deleted when OpenRegister can express a per-caseType graph over a reference field (tasks 4.4).',
+	},
+	// @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
+	CaseHeaderRow: {
+		// @custom-widget-ratchet exclude the identity row binds a $ref status to a badge and a date field to a countdown in one cell, and the built-in `header` widget is a dashboard banner (title, subtitle, cta) that binds neither; a templated `subtitle` plus a `breadcrumbs` page key on CnDetailPage would make this a config declaration (case-header tasks 1.2 and 3.2)
+		kind: 'widget',
+		component: CaseHeaderRow,
+		_note: 'CaseDetail first row: the case number, the case type, the status badge, the assignee, the deadline countdown and the breadcrumb back to Cases. It folds in the retired `case-kpi-time-left` and `case-kpi-casetype` tiles, whose facts it now carries, and it renders the breadcrumb and the subtitle that CnDetailPage 2.41.0 declares no key for.',
 	},
 	// @spec openspec/specs/case-dashboard-view/spec.md
 	CaseStepsWidget: {
