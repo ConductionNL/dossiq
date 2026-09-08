@@ -19,7 +19,7 @@ import { execSync } from 'child_process'
 import * as fs from 'fs'
 import * as path from 'path'
 import { BASE_URL } from './base-url.ts'
-import { STORAGE_STATE } from './helpers/auth.ts'
+import { captureStorageState, STORAGE_STATE } from './helpers/auth.ts'
 import { getRequestToken, sweepFixtureResidue } from './helpers/fixtures.ts'
 import { assertOccReachable } from './helpers/occ.ts'
 
@@ -102,107 +102,25 @@ async function globalSetup(config: FullConfig): Promise<void> {
 	ensureBundleBuilt()
 	await ensureNextcloudReachable(baseURL)
 	await ensureOccReachable()
-	fs.mkdirSync(path.dirname(STORAGE_STATE), { recursive: true })
 
+	// The login itself, and the two overlay dismissals that go with it, live in
+	// `helpers/auth.ts#captureStorageState`. They were inline here until
+	// `dashboard-tiles.spec.ts` needed a SECOND session — its `my-work` widget
+	// filters on `assignee: @me`, so as the admin it can never be asserted
+	// against the demo caseload the admin also owns. Two copies of a login this
+	// full of load-bearing quirks would only stay in step until the first one
+	// was fixed alone.
 	const browser = await chromium.launch()
-	const context = await browser.newContext({ baseURL })
-	const page = await context.newPage()
-
-	// `domcontentloaded` (not the default `load`) so first-paint themed-asset
-	// compilation on a cold instance doesn't blow the 30s navigation budget;
-	// the form inputs we need are in the initial HTML. Retry once on a spike.
 	try {
-		await page.goto('/index.php/login', {
-			waitUntil: 'domcontentloaded',
-			timeout: 60_000,
+		await captureStorageState(browser, {
+			baseURL,
+			user,
+			password,
+			statePath: STORAGE_STATE,
 		})
-	} catch {
-		await page.goto('/index.php/login', {
-			waitUntil: 'domcontentloaded',
-			timeout: 60_000,
-		})
+	} finally {
+		await browser.close()
 	}
-	await page
-		.locator('input[name="user"]')
-		.waitFor({ state: 'visible', timeout: 30_000 })
-	await page.locator('input[name="user"]').fill(user)
-	await page.locator('input[name="password"]').fill(password)
-	// The themed NC submit button sometimes swallows a plain .click() (the
-	// click lands but no navigation is scheduled). Submit the form directly so
-	// the POST always fires; fall back to the button click if no form is found.
-	const submitted = await page.evaluate(() => {
-		const form =
-			document.querySelector('form[action*="login"]')
-			|| document.querySelector('form')
-		if (form && typeof (form as HTMLFormElement).requestSubmit === 'function') {
-			;(form as HTMLFormElement).requestSubmit()
-			return true
-		}
-		return false
-	})
-	if (submitted === false) {
-		await page
-			.locator('button[type="submit"], input[type="submit"]')
-			.first()
-			.click()
-	}
-	// Nextcloud bounces to /apps/dashboard/ on success.
-	try {
-		await page.waitForURL('**/apps/dashboard/**', { timeout: 30_000 })
-	} catch {
-		// Some NC versions redirect elsewhere; fall back to checking the URL.
-	}
-	const currentUrl = page.url()
-	if (/\/login(\?|$|\/)/.test(currentUrl)) {
-		throw new Error(
-			`Login appears to have failed — still on ${currentUrl}. `
-				+ 'Check ADMIN_USER / ADMIN_PASSWORD (defaults admin/admin).',
-		)
-	}
-
-	// Suppress the dossiq product walkthrough (ADR-043) for automated runs: on
-	// first visit it mounts a modal spotlight tour (`.cn-walkthrough`) whose full
-	// dim layer intercepts pointer events and blocks every sidebar click. Its
-	// "seen" marker is browser-local (`cn-walkthrough-seen:<appId>` in
-	// localStorage), so a fresh Playwright context always re-triggers it. Seed the
-	// marker into the persisted storageState with a high sentinel version — every
-	// tour step's `sinceVersion` sorts below it, so the tour composes to an empty
-	// step set (see useWalkthrough compareSemver gate) and never shows.
-	try {
-		await page.goto('/apps/dossiq/', {
-			waitUntil: 'domcontentloaded',
-			timeout: 60_000,
-		})
-		await page.evaluate(() => {
-			try {
-				window.localStorage.setItem('cn-walkthrough-seen:dossiq', '999.0.0')
-				// Same problem, different overlay: the NON-GATING first-time-setup
-				// wizard (ADR-042). It only started appearing once CnAppRoot learned
-				// to tell "the server reports this optional step as not done" from
-				// "the server never mentioned it" — before that it could not open at
-				// all, so no spec in this suite had ever had to account for it. Its
-				// modal-mask subtree intercepts every click on the app behind it, and
-				// `navigation.spec.ts` clicks the sidebar without dismissing anything,
-				// so leaving it armed turns one library fix into a suite-wide timeout.
-				//
-				// The dismissal key is per manifest `setup.version`; seed a generous
-				// range so a version bump does not silently re-arm it.
-				for (let v = 0; v <= 20; v++) {
-					window.localStorage.setItem(
-						`cn-setup-wizard-dismissed:dossiq:${v}`,
-						'1',
-					)
-				}
-			} catch {
-				// localStorage unavailable — tour dismissal falls back to helper clicks.
-			}
-		})
-	} catch {
-		// App origin unreachable here is non-fatal; specs still run, tours dismiss via helper.
-	}
-
-	await context.storageState({ path: STORAGE_STATE })
-	await browser.close()
 
 	await clearFixtureResidue(baseURL)
 }

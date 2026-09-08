@@ -166,6 +166,40 @@ function row(page: Page, key: string): Locator {
 }
 
 /**
+ * Narrow the Cases index to the rows this run seeded.
+ *
+ * 🔴 WITHOUT THIS THE LENS TESTS LOOK AT PAGE 1 OF 4. The index paginates at
+ * 20 and the shared instance holds far more: the failing run's page snapshot
+ * reads "Showing 20 of 62", "Page 1 of 4", ordered by identifier ascending, so
+ * rows 2026-0001 upward. A case seeded seconds ago gets a HIGH number and
+ * lands on the last page, and the assertion reads as "the lens does not show
+ * my row" when the lens is fine and the row is three pages away.
+ *
+ * That is also why the Mine lenses passed while All, Unclaimed and Other
+ * failed. Mine narrows to the signed-in user, which cuts 62 down to this run's
+ * handful, and they fit on one page.
+ *
+ * The search facet is the right instrument rather than a bigger page size,
+ * because it composes with the lens instead of racing the instance's growth.
+ * CnIndexPage spreads a quick filter's own filter BEFORE the user's
+ * activeFilters, so user facets narrow WITHIN the active tab, and changing
+ * tabs re-fetches at page 1 with the facet still applied.
+ *
+ * @param page The page.
+ */
+async function narrowToThisRun(page: Page): Promise<void> {
+	await page.getByRole('button', { name: /Search and columns/i }).click()
+	const search = page.getByRole('searchbox').first()
+	await expect(search).toBeVisible({ timeout: 15_000 })
+	await search.fill(RUN_PREFIX)
+	// The list must have answered before a lens is touched, or the first
+	// assertion races the fetch this typing started.
+	await expect(
+		page.getByRole('row').filter({ hasText: RUN_PREFIX }).first(),
+	).toBeVisible({ timeout: 30_000 })
+}
+
+/**
  * Wait for the list to have settled on a lens: the row that must be there is
  * there. Asserting an ABSENCE first would pass against a list that has not
  * fetched yet, which is the way a lens test silently stops testing anything.
@@ -283,6 +317,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	}) => {
 		await visit(page, CASES_URL)
 		await casesTable(page)
+		await narrowToThisRun(page)
 
 		// The landing lens is All, not Mine. A default that narrowed to the
 		// signed-in user would make an empty result read as an empty
@@ -302,6 +337,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	}) => {
 		await visit(page, CASES_URL)
 		await casesTable(page)
+		await narrowToThisRun(page)
 
 		await chip(page, CHIPS.unclaimed).click()
 		await listSettled(page, 'unclaimed-open')
@@ -312,6 +348,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		// vitest's deep-equal.
 		await visit(page, QUEUE_URL)
 		await casesTable(page)
+		await narrowToThisRun(page)
 		await listSettled(page, 'unclaimed-open')
 		await expect(row(page, 'mine-open')).toHaveCount(0)
 	})
@@ -322,6 +359,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	}) => {
 		await visit(page, CASES_URL)
 		await casesTable(page)
+		await narrowToThisRun(page)
 
 		await chip(page, CHIPS.all).click()
 		await listSettled(page, 'other-open')
@@ -336,6 +374,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	}) => {
 		await visit(page, CASES_URL)
 		await casesTable(page)
+		await narrowToThisRun(page)
 
 		await chip(page, CHIPS.unclaimed).click()
 		await listSettled(page, 'unclaimed-open')
