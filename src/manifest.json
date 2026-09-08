@@ -675,57 +675,10 @@
 						}
 					},
 					{
-						"id": "overdue-cases",
+						"id": "my-work",
 						"type": "object-table",
-						"title": "Overdue",
-						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "case",
-								"filter": {
-									"isFinalStatus": false,
-									"deadline": {
-										"lt": "@today"
-									}
-								},
-								"extend": ["calculations"],
-								"order": {
-									"deadline": "asc"
-								},
-								"limit": 7
-							},
-							"columns": [
-								{
-									"key": "title",
-									"cellClass": "cn-cell--strong"
-								},
-								{
-									"key": "daysOverdue",
-									"formatter": "conditionalPhrase",
-									"formatterOptions": {
-										"positive": "{n} days overdue"
-									},
-									"cellClass": "cn-cell--muted cn-cell--end"
-								}
-							],
-							"rowRoute": "CaseDetail",
-							"viewAllRoute": {
-								"name": "Cases",
-								"query": {
-									"isFinalStatus": "false",
-									"deadline[lt]": "@today"
-								}
-							},
-							"viewAllLabel": "View all",
-							"hideHeader": true,
-							"borderless": true,
-							"emptyText": "No open cases"
-						}
-					},
-					{
-						"id": "my-tasks",
-						"type": "object-table",
-						"title": "My Tasks",
+						"title": "My work",
+						"_note": "openspec/changes/dashboard-tiles design D1. Replaces `my-tasks` and `task-reminders`, which read the same schema with the same filter and differed only in a due-date window, so seven of ten rows appeared on the page twice. `extend` carries `case` as well as `calculations`: a $ref column renders the stored uuid unless the referenced object is extended AND the column reads `<property>.<labelField>`, which is why the case column is keyed `case.title`. `rowActions` Pick up and Complete stay blocked on nextcloud-vue (the 2.40.0 object-table vocabulary has no such key); the row keeps `rowRoute` to TaskDetail, where the lifecycle buttons already render.",
 						"content": {
 							"source": {
 								"register": "dossiq",
@@ -734,19 +687,26 @@
 									"assignee": "@me",
 									"isTerminalStatus": false
 								},
-								"extend": ["calculations"],
+								"extend": ["case", "calculations"],
 								"order": {
 									"dueDate": "asc"
 								},
-								"limit": 7
+								"limit": 10
 							},
 							"columns": [
 								{
 									"key": "title",
+									"label": "Task",
 									"cellClass": "cn-cell--strong"
 								},
 								{
+									"key": "case.title",
+									"label": "Case",
+									"cellClass": "cn-cell--muted"
+								},
+								{
 									"key": "daysUntilDue",
+									"label": "Days left",
 									"formatter": "conditionalPhrase",
 									"formatterOptions": {
 										"negative": "{n} days overdue",
@@ -757,6 +717,16 @@
 								}
 							],
 							"rowRoute": "TaskDetail",
+							"rowClass": [
+								{
+									"when": {
+										"field": "daysUntilDue",
+										"op": "lt",
+										"value": 0
+									},
+									"class": "cn-row--danger"
+								}
+							],
 							"viewAllRoute": {
 								"name": "Tasks",
 								"query": {
@@ -765,15 +735,16 @@
 								}
 							},
 							"viewAllLabel": "View all",
-							"hideHeader": true,
+							"hideHeader": false,
 							"borderless": true,
-							"emptyText": "No tasks found"
+							"emptyText": "You have no open tasks"
 						}
 					},
 					{
-						"id": "deadline-alerts",
+						"id": "deadlines",
 						"type": "object-table",
-						"title": "Deadline Alerts",
+						"title": "Deadlines",
+						"_note": "openspec/changes/dashboard-tiles design D1. Replaces `overdue-cases` and `deadline-alerts`, which read `case` with the same `isFinalStatus: false` filter and differed only in the deadline window, so seven of nine rows appeared twice. One window now covers both: everything already past its deadline and everything due within three days, ordered by deadline. The red row is `rowClass`, not the `cn-cell--danger` the design sketched: a column's `cellClass` is one static string, so it cannot carry a per-branch colour, and the spec asks for the ROW to read in the error colour anyway.",
 						"content": {
 							"source": {
 								"register": "dossiq",
@@ -793,10 +764,12 @@
 							"columns": [
 								{
 									"key": "title",
+									"label": "Case",
 									"cellClass": "cn-cell--strong"
 								},
 								{
 									"key": "daysUntilDeadline",
+									"label": "Days left",
 									"formatter": "conditionalPhrase",
 									"formatterOptions": {
 										"negative": "{n} days overdue",
@@ -807,6 +780,16 @@
 								}
 							],
 							"rowRoute": "CaseDetail",
+							"rowClass": [
+								{
+									"when": {
+										"field": "daysUntilDeadline",
+										"op": "lt",
+										"value": 0
+									},
+									"class": "cn-row--danger"
+								}
+							],
 							"viewAllRoute": {
 								"name": "Cases",
 								"query": {
@@ -815,61 +798,9 @@
 								}
 							},
 							"viewAllLabel": "View all",
-							"hideHeader": true,
+							"hideHeader": false,
 							"borderless": true,
-							"emptyText": "No deadline alerts"
-						}
-					},
-					{
-						"id": "task-reminders",
-						"type": "object-table",
-						"title": "Task Due Reminders",
-						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "caseTask",
-								"filter": {
-									"assignee": "@me",
-									"isTerminalStatus": false,
-									"dueDate": {
-										"lte": "@today+3d"
-									}
-								},
-								"extend": ["calculations"],
-								"order": {
-									"dueDate": "asc"
-								},
-								"limit": 10
-							},
-							"columns": [
-								{
-									"key": "title",
-									"cellClass": "cn-cell--strong"
-								},
-								{
-									"key": "daysUntilDue",
-									"formatter": "conditionalPhrase",
-									"formatterOptions": {
-										"negative": "{n} days overdue",
-										"zero": "Due today",
-										"positive": "{n} days remaining"
-									},
-									"cellClass": "cn-cell--muted cn-cell--end"
-								}
-							],
-							"rowRoute": "TaskDetail",
-							"viewAllRoute": {
-								"name": "Tasks",
-								"query": {
-									"assignee": "@me",
-									"isTerminalStatus": "false",
-									"dueDate[lte]": "@today+3d"
-								}
-							},
-							"viewAllLabel": "View all",
-							"hideHeader": true,
-							"borderless": true,
-							"emptyText": "No task reminders"
+							"emptyText": "No deadlines in the next three days"
 						}
 					},
 					{
@@ -979,7 +910,7 @@
 					},
 					{
 						"id": "7",
-						"widgetId": "open-cases",
+						"widgetId": "my-work",
 						"gridX": 0,
 						"gridY": 6,
 						"gridWidth": 4,
@@ -988,7 +919,7 @@
 					},
 					{
 						"id": "8",
-						"widgetId": "overdue-cases",
+						"widgetId": "deadlines",
 						"gridX": 4,
 						"gridY": 6,
 						"gridWidth": 4,
@@ -997,7 +928,7 @@
 					},
 					{
 						"id": "9",
-						"widgetId": "my-tasks",
+						"widgetId": "open-cases",
 						"gridX": 8,
 						"gridY": 6,
 						"gridWidth": 4,
@@ -1006,26 +937,8 @@
 					},
 					{
 						"id": "10",
-						"widgetId": "deadline-alerts",
-						"gridX": 0,
-						"gridY": 10,
-						"gridWidth": 4,
-						"gridHeight": 4,
-						"showTitle": true
-					},
-					{
-						"id": "11",
-						"widgetId": "task-reminders",
-						"gridX": 4,
-						"gridY": 10,
-						"gridWidth": 4,
-						"gridHeight": 4,
-						"showTitle": true
-					},
-					{
-						"id": "12",
 						"widgetId": "stalled-cases",
-						"gridX": 8,
+						"gridX": 0,
 						"gridY": 10,
 						"gridWidth": 4,
 						"gridHeight": 4,
@@ -1652,6 +1565,16 @@
 						}
 					},
 					{
+						"id": "case-documents",
+						"type": "dossier-tab",
+						"title": "Documents",
+						"icon": "FileDocumentMultipleOutline",
+						"_note": "The case file, on the case page. `zaakinformatieobject` rows for this case, rendered through DossierTab: title, type, status, direction, date and author, the drop zone that writes an informatieobject plus its join, and the version panel per row. Five of the six columns live on the REFERENCED informatieobject and CnObjectListWidget renders a `$ref` column as the raw reference, so the interim is a custom widget type rather than an `object-list` over `zaakinformatieobject` (change documents-on-the-case, task 2.2). The type is `dossier-tab` and NOT `custom`: a `type: \"custom\"` widget resolves through the page's `widget-<id>` slot, which CnDetailPage renders only for LAYOUT grid items, so inside a tab panel it renders nothing and says nothing — CnTabsWidget dispatches its children through CnDetailWidgetHost, which resolves a renderer by widget TYPE against the consumer registry (REQ-MVR-005). Deliberately absent from `layout`: the tabs widget renders it, and a layout entry would render it twice. The Files tab stays beside it for loose attachments and Nextcloud shares.",
+						"content": {
+							"emptyText": "No documents yet"
+						}
+					},
+					{
 						"id": "case-panels",
 						"type": "tabs",
 						"title": "Case panels",
@@ -1663,6 +1586,10 @@
 								{
 									"widgetId": "case-notes",
 									"label": "Notes"
+								},
+								{
+									"widgetId": "case-documents",
+									"label": "Documents"
 								},
 								{
 									"widgetId": "case-files",
@@ -1921,6 +1848,18 @@
 							"identificationMethod": "non_geidentificeerd",
 							"nature": "informatieverzoek"
 						}
+					},
+					{
+						"id": "generate-document",
+						"type": "open-modal",
+						"target": "BeschikkingComposerDialog",
+						"label": "Generate document",
+						"icon": "FileDocumentPlusOutline",
+						"props": {
+							"caseId": "@objectId",
+							"open": true
+						},
+						"successMessage": "Document added to the case."
 					},
 					{
 						"id": "log-hours",

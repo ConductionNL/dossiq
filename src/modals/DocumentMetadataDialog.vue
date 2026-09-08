@@ -32,6 +32,15 @@
 				required />
 
 			<NcSelect
+				v-model="selectedDirection"
+				data-testid="document-direction"
+				:inputLabel="t('dossiq', 'Direction')"
+				:options="directionOptions"
+				:reduce="(option) => option.id"
+				label="label"
+				:clearable="false" />
+
+			<NcSelect
 				v-model="selectedClassification"
 				:inputLabel="t('dossiq', 'Confidentiality')"
 				:options="classificationOptions"
@@ -44,6 +53,16 @@
 				v-model="title"
 				:label="t('dossiq', 'Title')"
 				:placeholder="t('dossiq', 'Document title')" />
+
+			<NcSelect
+				v-model="keywords"
+				data-testid="document-keywords"
+				:inputLabel="t('dossiq', 'Keywords')"
+				:placeholder="t('dossiq', 'Type a keyword and press enter')"
+				:options="[]"
+				:taggable="true"
+				:pushTags="true"
+				multiple />
 
 			<NcTextArea
 				v-model="description"
@@ -74,6 +93,7 @@ import {
 	NcTextArea,
 	NcTextField,
 } from '@nextcloud/vue'
+import { DEFAULT_DIRECTION, DOCUMENT_DIRECTIONS } from '../utils/dossierHelpers.js'
 
 /**
  * Upload metadata dialog. Collects the required informatieobjecttype and
@@ -131,6 +151,8 @@ export default {
 		return {
 			selectedType: '',
 			selectedClassification: '',
+			selectedDirection: DEFAULT_DIRECTION,
+			keywords: [],
 			title: '',
 			description: '',
 		}
@@ -175,6 +197,49 @@ export default {
 				{ id: 'geheim', label: this.t('dossiq', 'Secret') },
 				{ id: 'zeer_geheim', label: this.t('dossiq', 'Top secret') },
 			]
+		},
+
+		/**
+		 * The typed keywords as the schema wants them: plain strings, trimmed,
+		 * deduplicated, each at most 64 characters.
+		 *
+		 * A taggable NcSelect hands back whatever the person typed, and (when
+		 * an option is picked rather than typed) an option OBJECT rather than a
+		 * string. Sending either straight to a `array of string` property is a
+		 * 400 nobody sees until they press Upload.
+		 *
+		 * @return {string[]} The keywords to save.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		normalisedKeywords() {
+			const seen = []
+			this.keywords.forEach((entry) => {
+				const raw =
+					typeof entry === 'string' ? entry : ((entry || {}).label ?? '')
+				const keyword = String(raw).trim().slice(0, 64)
+				if (keyword !== '' && !seen.includes(keyword)) {
+					seen.push(keyword)
+				}
+			})
+			return seen
+		},
+
+		/**
+		 * Direction options, in the order the enum declares them.
+		 *
+		 * @return {Array} The direction options.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		directionOptions() {
+			const labels = {
+				incoming: this.t('dossiq', 'Incoming'),
+				outgoing: this.t('dossiq', 'Outgoing'),
+				internal: this.t('dossiq', 'Internal'),
+			}
+			return DOCUMENT_DIRECTIONS.map((direction) => ({
+				id: direction,
+				label: labels[direction],
+			}))
 		},
 
 		/**
@@ -228,6 +293,11 @@ export default {
 			this.$emit('submit', {
 				informatieobjecttype: this.selectedType,
 				vertrouwelijkheidaanduiding: this.selectedClassification,
+				// The schema default, spelled out rather than left to the
+				// server: an upload that names no direction is Internal, and a
+				// blank column would read as "nobody knows" instead.
+				direction: this.selectedDirection || DEFAULT_DIRECTION,
+				keywords: this.normalisedKeywords,
 				title: this.title,
 				description: this.description,
 			})

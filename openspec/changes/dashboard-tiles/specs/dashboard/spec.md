@@ -38,11 +38,19 @@ The five stat tiles SHALL render their values on the first load of the Dashboard
 ### Requirement: The case type list on New case is sorted and filtered (REQ-DASH-022)
 The New case form SHALL list case types ordered by title, without drafts and without types whose validity has ended. You pick from a list you can scan.
 
-#### Scenario: Drafts and expired types are absent
-- **GIVEN** a draft case type and a case type whose `validUntil` is yesterday
+**Build note (task 2.5).** Only the drafts clause is shipped. The other two need an upstream change and are recorded in design D5 and tasks 2.5a / 2.5b, so the one scenario below is split rather than left claiming coverage it does not have.
+
+#### Scenario: Draft case types are absent
+- **GIVEN** a draft case type and a published one
 - **WHEN** you open New case and expand the case type field
-- **THEN** neither appears, and the remaining types are in alphabetical order
+- **THEN** the draft does not appear and the published one does
 - @e2e covered by `tests/e2e/dashboard-tiles.spec.ts` (tasks.md 3.1)
+
+#### Scenario: Expired types are absent, and the rest are alphabetical
+- **GIVEN** a case type whose `validUntil` is yesterday and a case type with no `validUntil`
+- **WHEN** you open New case and expand the case type field
+- **THEN** the expired one is absent, the open-ended one is present, and the list reads alphabetically
+- @e2e exclude blocked upstream twice over. OpenRegister's filter grammar ANDs every operator on a property with no OR key, so "validUntil is null OR on or after today" cannot be expressed and the achievable `validUntil[gte]` would drop every open-ended type instead. Separately, nextcloud-vue's reference picker sends `_limit` and the relation filter only, never `_order`, so the list cannot be sorted from either the manifest or the schema. Shipping either as a manifest key would validate, ship and do nothing. See design D5, tasks 2.5a and 2.5b.
 
 #### Scenario: Recently used types come first
 - **GIVEN** you created a case of type Melding openbare ruimte last week

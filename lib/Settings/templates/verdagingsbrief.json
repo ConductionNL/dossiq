@@ -1,0 +1,9 @@
+{
+  "id": "verdagingsbrief",
+  "title": "Verdagingsbrief",
+  "description": "Extension letter: tells an applicant the decision deadline has moved, and why.",
+  "category": "document",
+  "version": "1.0.0",
+  "documentType": "Ontvangstbevestiging",
+  "body": "Geachte heer, mevrouw,\n\nUw aanvraag {{case.title}}, kenmerk {{case.identifier}}, is nog in behandeling.\n\nWij hebben meer tijd nodig om een zorgvuldig besluit te nemen. Wij verdagen de beslistermijn; de oorspronkelijke termijn liep tot {{case.deadline}}.\n\nMet vriendelijke groet,\n\nDe behandelaar"
+}

@@ -18,6 +18,7 @@
 				v-for="doc in sortedDocuments"
 				:key="doc.id"
 				:document="doc"
+				:typeLabel="groupLabel"
 				:selected="selectedIds.includes(doc.id)"
 				@toggleSelect="$emit('toggle-select', $event)"
 				@open="$emit('open', $event)"
@@ -131,7 +132,9 @@ export default {
 	font-weight: normal;
 }
 
+/* No indent: the rows share their column tracks with the header strip above
+   the groups, and an indent here would slide every value off its heading. */
 .dossier-group__body {
-	padding-left: 12px;
+	padding-left: 0;
 }
 </style>
