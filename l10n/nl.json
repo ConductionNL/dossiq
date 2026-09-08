@@ -3542,6 +3542,11 @@
         "Protected": "Beschermd",
         "Reveal": "Toon",
         "Incoming": "Inkomend",
-        "Outgoing": "Uitgaand"
+        "Outgoing": "Uitgaand",
+        "Author": "Auteur",
+        "Clear filter": "Filter wissen",
+        "Clear the keyword filter to see the whole dossier.": "Wis het trefwoordfilter om het hele dossier te zien.",
+        "Filter by keyword": "Filter op trefwoord",
+        "No documents match this keyword": "Geen documenten met dit trefwoord"
     }
 }

@@ -39,7 +39,7 @@ criteria under a task are plain bullets.
   `informatieobject.creatiedatum`, `informatieobject.auteur`, `emptyText`
   "No documents yet", the `DossierTab` drop handler as `dropZone` and a
   row action Versions opening `VersionHistoryPanel`. 2.1 is the interim.
-- [ ] 2.3 `src/views/cases/components/DossierTab.vue`: render the Direction
+- [x] 2.3 `src/views/cases/components/DossierTab.vue`: render the Direction
   and Keywords columns (chips), add the keyword filter (facet on
   `keywords`) beside the sort dropdown, and the empty state "No documents
   yet". Keep the drop overlay and the version panel as they are.
