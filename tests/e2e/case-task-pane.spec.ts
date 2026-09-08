@@ -73,6 +73,20 @@ const ACTIVATE_LABEL = /Pick up the task/
 /** The pane's own empty state, in either language the app ships. */
 const EMPTY_PANE = /No open tasks on this case|Geen open taken op deze zaak/
 
+/**
+ * The success toast, in either markup @nextcloud/dialogs may render.
+ *
+ * NOT `.toast-success`. That class belongs to the Toastify markup dialogs
+ * used before v7; the instance ships 7.5.0, which renders the toast from a
+ * CSS-modules stylesheet as a `role="status"` div classed
+ * `_toast_<hash> _toast_success_<hash>`. The old selector matched nothing, so
+ * a toast that WAS on screen read as a completion the app never made. The hash
+ * moves with every dialogs build, so match the module-local name as a
+ * substring and keep the pre-7 class beside it: whichever version is
+ * installed, one of the two hits, and neither can match an ERROR toast.
+ */
+const SUCCESS_TOAST = '.toast-success, [role="status"][class*="_toast_success_"]'
+
 const EARLIER_DUE = '2026-09-10T09:00:00+00:00'
 const LATER_DUE = '2026-09-24T09:00:00+00:00'
 
@@ -333,10 +347,9 @@ test.describe('Case detail — the task pane', () => {
 
 		// The confirmation names the task that was finished. Without it the
 		// press is indistinguishable from a press that did nothing.
-		await expect(page.locator('.toast-success')).toContainText(
-			completeFirstTitle,
-			{ timeout: 30_000 },
-		)
+		await expect(page.locator(SUCCESS_TOAST)).toContainText(completeFirstTitle, {
+			timeout: 30_000,
+		})
 
 		// Still on the case. A completion that navigated to the task page
 		// would satisfy every other assertion here and defeat the point.
@@ -374,7 +387,7 @@ test.describe('Case detail — the task pane', () => {
 		).toHaveText(lastTaskTitle, { timeout: 20_000 })
 
 		await panel.getByRole('button', { name: COMPLETE_LABEL }).click()
-		await expect(page.locator('.toast-success')).toContainText(lastTaskTitle, {
+		await expect(page.locator(SUCCESS_TOAST)).toContainText(lastTaskTitle, {
 			timeout: 30_000,
 		})
 

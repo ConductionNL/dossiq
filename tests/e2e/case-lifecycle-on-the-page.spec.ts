@@ -301,8 +301,13 @@ test.describe('Case lifecycle on the case page', () => {
 		expect(moved.status).toBe(statusProgress)
 
 		// The transition history holds the move, with the signed-in user as actor.
+		// `StatusTransitionController::history()` carries `@NoAdminRequired` and
+		// NOT `@NoCSRFRequired`, so the token harvested above is not decoration:
+		// without it Nextcloud's CSRF guard answers this GET with 412 before the
+		// controller runs, and the body still parses as JSON.
 		const history = await request.get(
 			`/index.php/apps/${REGISTER}/api/case/${cases.advance}/transition-history`,
+			{ headers: { requesttoken: token, 'OCS-APIRequest': 'true' } },
 		)
 		expect(history.status()).toBe(200)
 		const rows =
