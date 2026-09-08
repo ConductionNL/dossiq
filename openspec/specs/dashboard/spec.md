@@ -1,7 +1,8 @@
 ---
-status: done
+status: in-progress
 openspec_changes:
   - add-server-side-kpi-aggregation
+  - dashboard-tiles
 retrofit_extensions:
   - REQ-DASH-016
   - REQ-DASH-017
