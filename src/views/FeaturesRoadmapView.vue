@@ -28,24 +28,26 @@
 
 <template>
 	<div class="features-roadmap">
+		<!-- A toggle group, and deliberately NOT an ARIA tab widget. A real tab
+		     widget owes the keyboard the arrow-key roving focus the ARIA
+		     practices describe, and the tab role without it promises a
+		     screen-reader user a keyboard behaviour that is not there. Two plain
+		     buttons carrying aria-pressed keep native button semantics, which
+		     already work for everyone. -->
 		<div
 			class="features-roadmap__sections"
-			role="tablist"
+			role="group"
 			:aria-label="t('dossiq', 'Page sections')">
 			<NcButton
 				id="features-roadmap-tab-product"
-				role="tab"
-				:aria-selected="String(section === 'product')"
-				aria-controls="features-roadmap-panel-product"
+				:aria-pressed="String(section === 'product')"
 				:variant="section === 'product' ? 'primary' : 'tertiary'"
 				@click="section = 'product'">
 				{{ t('dossiq', 'What dossiq does') }}
 			</NcButton>
 			<NcButton
 				id="features-roadmap-tab-comparison"
-				role="tab"
-				:aria-selected="String(section === 'comparison')"
-				aria-controls="features-roadmap-panel-comparison"
+				:aria-pressed="String(section === 'comparison')"
 				:variant="section === 'comparison' ? 'primary' : 'tertiary'"
 				@click="section = 'comparison'">
 				{{ t('dossiq', 'How dossiq compares') }}
@@ -59,7 +61,7 @@
 		<div
 			v-show="section === 'product'"
 			id="features-roadmap-panel-product"
-			role="tabpanel"
+			role="region"
 			aria-labelledby="features-roadmap-tab-product">
 			<CnFeaturesAndRoadmapPage
 				:repo="repo"
@@ -72,7 +74,7 @@
 		<section
 			v-if="section === 'comparison'"
 			id="features-roadmap-panel-comparison"
-			role="tabpanel"
+			role="region"
 			aria-labelledby="features-roadmap-tab-comparison"
 			class="features-roadmap__comparison">
 			<h2>{{ t('dossiq', 'How dossiq compares') }}</h2>
@@ -287,27 +289,42 @@ export default {
 	},
 
 	computed: {
-		/** @return {string} The reader's locale, e.g. `nl`. */
+		/**
+		 * @return {string} The reader's locale, e.g. `nl`.
+		 * @spec openspec/specs/features-roadmap/spec.md#requirement-every-user-visible-string-must-exist-in-dutch
+		 */
 		locale() {
 			return getUserLocale()
 		},
 
-		/** @return {Array<object>} Areas with localised labels and tallies. */
+		/**
+		 * @return {Array<object>} Areas with localised labels and tallies.
+		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
+		 */
 		areas() {
 			return groupByArea(comparison, this.locale)
 		},
 
-		/** @return {object} Per-system tallies over all rows. */
+		/**
+		 * @return {object} Per-system tallies over all rows.
+		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
+		 */
 		totals() {
 			return overallTallies(comparison)
 		},
 
-		/** @return {number} How many capabilities the comparison covers. */
+		/**
+		 * @return {number} How many capabilities the comparison covers.
+		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
+		 */
 		total() {
 			return comparison.capabilities.length
 		},
 
-		/** @return {string} The opening claim, with the real row count in it. */
+		/**
+		 * @return {string} The opening claim, with the real row count in it.
+		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-must-state-its-own-limits
+		 */
 		leadText() {
 			return t(
 				'dossiq',
@@ -322,7 +339,10 @@ export default {
 			)
 		},
 
-		/** @return {string} The when-and-how-stale sentence. */
+		/**
+		 * @return {string} The when-and-how-stale sentence.
+		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-must-state-its-own-limits
+		 */
 		readingDateText() {
 			return t(
 				'dossiq',
@@ -343,6 +363,7 @@ export default {
 		 *
 		 * @param {string} rating One of `yes`, `partial`, `no`.
 		 * @return {string} Translated label.
+		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
 		 */
 		ratingLabel(rating) {
 			if (rating === 'yes') {
@@ -366,6 +387,7 @@ export default {
 		 *
 		 * @param {string} rating One of `yes`, `partial`, `no`.
 		 * @return {string} Translated explanation.
+		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
 		 */
 		ratingMeaning(rating) {
 			if (rating === 'yes') {
@@ -382,6 +404,7 @@ export default {
 		 *
 		 * @param {object} area Grouped area from `groupByArea`.
 		 * @return {string} Translated summary.
+		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
 		 */
 		areaSummary(area) {
 			const self = area.tallies.dossiq
@@ -402,6 +425,7 @@ export default {
 		 *
 		 * @param {object} area Grouped area from `groupByArea`.
 		 * @return {string} Translated caption.
+		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
 		 */
 		areaCaption(area) {
 			return t(

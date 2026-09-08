@@ -160,6 +160,38 @@ test.describe('app chrome (ADR-114)', () => {
 		)
 	})
 
+	test('the FeaturesRoadmap page compares dossiq and states the comparison limits', async ({
+		page,
+	}) => {
+		// The comparison lives on the same page as the feature list, in the
+		// second section of FeaturesRoadmapView. The features section is the
+		// landing one, so this test has to switch before it can assert.
+		await page.goto(`${APP_BASE}/features-roadmap`, {
+			waitUntil: 'domcontentloaded',
+		})
+		await expect(page.locator('.features-roadmap__sections')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		await page.getByRole('button', { name: 'How dossiq compares' }).click()
+
+		const comparison = page.locator('.features-roadmap__comparison')
+		await expect(comparison).toBeVisible({ timeout: 15_000 })
+
+		// The three limits are the point of the section, not decoration: a
+		// score with no scope, no date and no caveat is the thing we refuse to
+		// publish. Each is asserted by the claim it makes, not by its wording
+		// alone, so a rewrite that DROPS one fails here.
+		await expect(comparison).toContainText('open source software we could')
+		await expect(comparison).toContainText('already out of date')
+		await expect(comparison).toContainText('is not proof')
+
+		// Thirteen areas, collapsed. The rows live behind the disclosure so
+		// the landing view is readable; if a change flattens 206 rows onto the
+		// page, this count is what notices.
+		await expect(comparison.locator('.features-roadmap__area')).toHaveCount(13)
+	})
+
 	test('the settings foldout carries Personal settings, Admin settings and Flows', async ({
 		page,
 	}) => {

@@ -36,6 +36,7 @@ export const RATINGS = Object.freeze(['yes', 'partial', 'no'])
  * @param {{name: string, name_nl?: string}} entry Labelled entry from the data file.
  * @param {string} [locale] BCP 47 locale, e.g. `nl`, `nl_NL`, `en-GB`.
  * @return {string} The label to render.
+ * @spec openspec/specs/features-roadmap/spec.md#requirement-every-user-visible-string-must-exist-in-dutch
  */
 export function labelFor(entry, locale = 'en') {
 	if (!entry) {
@@ -56,6 +57,7 @@ export function labelFor(entry, locale = 'en') {
  * @param {Array<object>} capabilities Capability rows.
  * @param {string} systemKey Key of the system column, e.g. `dossiq`.
  * @return {{yes: number, partial: number, no: number, unknown: number, total: number}} The tally.
+ * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-data-must-match-the-audit-it-came-from
  */
 export function tally(capabilities, systemKey) {
 	const counts = { yes: 0, partial: 0, no: 0, unknown: 0, total: 0 }
@@ -79,6 +81,7 @@ export function tally(capabilities, systemKey) {
  * @param {object} data Parsed `capabilityComparison.json`.
  * @param {string} [locale] BCP 47 locale used to pick labels.
  * @return {Array<object>} One entry per area, each with its rows and tallies.
+ * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
  */
 export function groupByArea(data, locale = 'en') {
 	const systems = (data?.systems ?? []).map((s) => s.key)
@@ -105,6 +108,7 @@ export function groupByArea(data, locale = 'en') {
  *
  * @param {object} data Parsed `capabilityComparison.json`.
  * @return {Record<string, {yes: number, partial: number, no: number, unknown: number, total: number}>} Tally per system key.
+ * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
  */
 export function overallTallies(data) {
 	const out = {}
@@ -125,6 +129,7 @@ export function overallTallies(data) {
  * @param {string} iso ISO 8601 date, e.g. `2026-09-07`.
  * @param {string} [locale] BCP 47 locale.
  * @return {string} A human-readable date.
+ * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-must-state-its-own-limits
  */
 export function formatComparedOn(iso, locale = 'en') {
 	if (typeof iso !== 'string' || iso.trim() === '') {
