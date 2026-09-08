@@ -3550,7 +3550,11 @@ OC.L10N.register(
         "Name of the person or company who asked for this case, denormalised when you pick them so the list and the card can render it without a second read. Stays hidden as a form field: the picker writes it, you do not type it.": "Name of the person or company who asked for this case, denormalised when you pick them so the list and the card can render it without a second read. Stays hidden as a form field: the picker writes it, you do not type it.",
         "The person or company who asked for this case. Pick them when you file the case, or when you edit it. A case that arrives through the ns#Case semantic handoff writes the same field, so there is one write path. Holds the UUID of the row that provides ns#Requester (ADR-048); initiatorType, initiatorSourceId and initiatorDisplayName are its display projection.": "The person or company who asked for this case. Pick them when you file the case, or when you edit it. A case that arrives through the ns#Case semantic handoff writes the same field, so there is one write path. Holds the UUID of the row that provides ns#Requester (ADR-048); initiatorType, initiatorSourceId and initiatorDisplayName are its display projection.",
         "Protected": "Protected",
-        "Reveal": "Reveal"
+        "Reveal": "Reveal",
+        "No open tasks on this case": "No open tasks on this case",
+        "Other open tasks": "Other open tasks",
+        "No due date": "No due date",
+        "Task {title} finished": "Task {title} finished"
     },
     "nplurals=2; plural=(n != 1);"
 )

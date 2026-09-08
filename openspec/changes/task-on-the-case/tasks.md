@@ -5,7 +5,7 @@ criteria under a task are plain bullets.
 
 ## 1. The task pane
 
-- [ ] 1.1 `src/components/tasks/CaseTaskPane.vue`: props `objectId`,
+- [x] 1.1 `src/components/tasks/CaseTaskPane.vue`: props `objectId`,
   `content`; fetches open `caseTask` rows (`case = objectId`,
   `isTerminalStatus = false`, sort `dueDate asc`, `limit` from content)
   through `useObjectStore`; renders the first row with title, assignee, due
@@ -16,10 +16,21 @@ criteria under a task are plain bullets.
   server message and keeps the task; lists the remaining open tasks as links
   to `TaskDetail`; keeps View all through `viewAllRoute` and `viewAllQuery`;
   shows "No open tasks on this case" when empty. No em-dashes, sentence case.
-  - unit test in `tests/unit/components/CaseTaskPane.spec.js`: first row
-    and its buttons, final transition toasts and advances to the second
-    task, activate keeps the task, a rejected transition keeps the task and
-    shows the error, empty text when no rows
+  - unit test in `tests/vitest/caseTaskPane.spec.js` (NOT
+    `tests/unit/components/`: `vitest.config.js` collects `tests/vitest/**`
+    and explicitly EXCLUDES `tests/unit/**`, so a spec at the path this task
+    named would never have run): first row and its buttons, final transition
+    toasts and advances to the second task, activate keeps the task, a
+    rejected transition keeps the task and shows the error, empty text when
+    no rows. The pure decisions (open-task query, final-status set, route
+    tokens) sit in `src/utils/caseTaskPaneHelpers.js` with their own
+    node-environment spec, the split `flowTaskHelpers.js` already uses.
+  - the refusal path is a WATCHER, not an event handler: `CnLifecycleActions`
+    declares `emits: ['transitioned', 'reload']` and emits NOTHING when the
+    server refuses a transition, putting the message in its own `error` data
+    and rendering it inline. Verified in the installed 2.40.0 dist and in the
+    published 2.41.1 tarball. The pane watches the child's `error` through a
+    ref and forwards it to `showError`.
   - `@spec openspec/changes/task-on-the-case/specs/task-management/spec.md`
 - [ ] 1.2 `src/registry.js`: register `CaseTaskPane` (kind `widget`) for the
   page slot `widget-case-tasks` with a `@custom-widget-ratchet exclude` note
@@ -37,9 +48,13 @@ criteria under a task are plain bullets.
     count before this change, no page of type `custom` added
   - run the hydra gates locally and read the ADR-100 ratchet count; it
     must not move
-- [ ] 1.4 `l10n/nl.json`: "No open tasks on this case" as "Geen open taken
+- [x] 1.4 `l10n/nl.json`: "No open tasks on this case" as "Geen open taken
   op deze zaak"; the toast text "Task {title} finished" as "Taak {title}
-  afgerond".
+  afgerond". Landed with 1.1 rather than after it: `check-l10n.js` fails the
+  moment a `t()` call has no `en.json` key, so splitting them would leave the
+  branch red between two commits. Two further strings the pane needs came
+  with them ("Other open tasks", "No due date"), and all four went into
+  `en.js`/`nl.js` beside the JSON, which is what the app loads at runtime.
 
 ## 2. The way back
 
