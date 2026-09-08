@@ -61,9 +61,21 @@ use OCP\App\IAppManager;
 /**
  * The probe and save side of pluggable-integration-registry.
  *
+ * StufServices is an immutable BUNDLE of eight collaborators with public
+ * readonly promoted properties, so it cannot be a mock here the way it is in
+ * StufControllerContractTest: `endpoints()` reads `$this->stuf->register` and
+ * `->circuitBreaker`, and a mock leaves a readonly promoted property
+ * uninitialised, which throws before the assertion. It is therefore built for
+ * real, and declared below so PHPUnit does not count it as untested code a
+ * test executed. Without that line six PHPUnit cells go red while the summary
+ * still prints OK: the exit code is 1 under failOnRisky, and the word OK is
+ * on the line above it.
+ *
  * @covers \OCA\Dossiq\Controller\EmailTemplateController
  * @covers \OCA\Dossiq\Controller\SettingsController
  * @covers \OCA\Dossiq\Controller\StufController
+ *
+ * @uses \OCA\Dossiq\Service\Stuf\StufServices
  */
 class IntegrationProbesRecordTest extends TestCase {
 
