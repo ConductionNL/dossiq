@@ -490,6 +490,253 @@ class CaseTypeCopyServiceTest extends TestCase {
 	}//end testCopyReturnsNullWhenSourceMissing()
 
 	/**
+	 * Nothing is attempted when OpenRegister is not there.
+	 *
+	 * Both gestures share one path, so both have to refuse: writing half a case
+	 * type and answering an id nothing stands behind is worse than answering
+	 * nothing, because the page navigates to whatever comes back.
+	 *
+	 * @return void
+	 */
+	public function testBothGesturesRefuseWithoutAnObjectService(): void {
+		$this->settingsService->method('getObjectService')->willReturn(null);
+
+		$service = new CaseTypeCopyService(
+			settingsService: $this->settingsService,
+			store: new CaseTypeStore($this->settingsService),
+			payloads: new DerivedCaseTypePayload(),
+			logger: $this->logger
+		);
+
+		$this->assertNull($service->copy('ct-1'));
+		$this->assertNull($service->newVersion('ct-1'));
+		$this->assertFalse($service->deleteDraft('ct-1')['ok']);
+	}//end testBothGesturesRefuseWithoutAnObjectService()
+
+	/**
+	 * A store that refuses the write answers null, not a half-made type.
+	 *
+	 * @return void
+	 */
+	public function testAFailedWriteAnswersNull(): void {
+		$store = $this->seedStore();
+		$objectService = new class($store) {
+			/**
+			 * @param array<string, array{__schema: string, data: array<string, mixed>}> $store Store reference.
+			 */
+			public function __construct(
+				private array &$store,
+			) {
+			}//end __construct()
+
+			/**
+			 * @param string $id Object id.
+			 * @param mixed $register Register (ignored).
+			 * @param mixed $schema Schema (ignored).
+			 *
+			 * @return array<string, mixed>|null
+			 */
+			public function find(string $id, $register = null, $schema = null): ?array {
+				$entry = ($this->store[$id] ?? null);
+				if ($entry === null) {
+					return null;
+				}
+
+				return $entry['data'];
+			}//end find()
+
+			/**
+			 * @param array<string, mixed> $object Object payload.
+			 * @param mixed $register Register (ignored).
+			 * @param mixed $schema Schema (ignored).
+			 *
+			 * @return object
+			 */
+			public function saveObject(array $object, $register = null, $schema = null): object {
+				throw new \RuntimeException('unwritable');
+			}//end saveObject()
+		};
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+
+		$service = new CaseTypeCopyService(
+			settingsService: $this->settingsService,
+			store: new CaseTypeStore($this->settingsService),
+			payloads: new DerivedCaseTypePayload(),
+			logger: $this->logger
+		);
+
+		$this->assertNull($service->copy('ct-1'));
+		$this->assertNull($service->newVersion('ct-1'));
+	}//end testAFailedWriteAnswersNull()
+
+	/**
+	 * A child schema that fails to copy does not abort the rest.
+	 *
+	 * The case type is already written by then, and losing every remaining
+	 * child over one bad row would leave a type that looks complete and is not.
+	 *
+	 * @return void
+	 */
+	public function testAChildThatFailsToCopyDoesNotAbortTheRest(): void {
+		$store = $this->seedStore();
+		$objectService = new class($store) {
+			/**
+			 * @param array<string, array{__schema: string, data: array<string, mixed>}> $store Store reference.
+			 */
+			public function __construct(
+				private array &$store,
+			) {
+			}//end __construct()
+
+			/**
+			 * @param string $id Object id.
+			 * @param mixed $register Register (ignored).
+			 * @param mixed $schema Schema (ignored).
+			 *
+			 * @return array<string, mixed>|null
+			 */
+			public function find(string $id, $register = null, $schema = null): ?array {
+				$entry = ($this->store[$id] ?? null);
+				if ($entry === null) {
+					return null;
+				}
+
+				return $entry['data'];
+			}//end find()
+
+			/**
+			 * @param array<string, mixed> $config Config with filters.
+			 *
+			 * @return array<int, array<string, mixed>>
+			 */
+			public function findAll(array $config = []): array {
+				$filters = ($config['filters'] ?? []);
+				$schema = ($filters['schema'] ?? null);
+				if ($schema === 'roleType') {
+					throw new \RuntimeException('unreadable');
+				}
+
+				$results = [];
+				foreach ($this->store as $entry) {
+					if ($entry['__schema'] !== $schema) {
+						continue;
+					}
+
+					if (($entry['data']['caseType'] ?? null) === ($filters['caseType'] ?? null)) {
+						$results[] = $entry['data'];
+					}
+				}
+
+				return $results;
+			}//end findAll()
+
+			/**
+			 * @param array<string, mixed> $object Object payload.
+			 * @param mixed $register Register (ignored).
+			 * @param mixed $schema Schema slug.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function saveObject(array $object, $register = null, $schema = null): array {
+				if (($schema === 'documentType') === true) {
+					throw new \RuntimeException('unwritable child');
+				}
+
+				$id = ($object['id'] ?? null);
+				if ($id === null) {
+					$id = 'generated-' . (count($this->store) + 1);
+					$object['id'] = $id;
+				}
+
+				$this->store[$id] = ['__schema' => (string)$schema, 'data' => $object];
+
+				return $object;
+			}//end saveObject()
+		};
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+
+		$service = new CaseTypeCopyService(
+			settingsService: $this->settingsService,
+			store: new CaseTypeStore($this->settingsService),
+			payloads: new DerivedCaseTypePayload(),
+			logger: $this->logger
+		);
+
+		$next = $service->newVersion('ct-1');
+
+		$this->assertNotNull($next);
+		$newId = $next['id'];
+
+		// The statuses still copied, and the initial status still repointed:
+		// an unreadable role schema and an unwritable document type are not
+		// reasons to lose the lifecycle.
+		$copiedStatuses = array_filter(
+			$store,
+			static fn (array $entry): bool => $entry['__schema'] === 'statusType' && ($entry['data']['caseType'] ?? null) === $newId
+		);
+		$this->assertCount(2, $copiedStatuses);
+		$this->assertNotSame('st-1', $store[$newId]['data']['initialStatus']);
+	}//end testAChildThatFailsToCopyDoesNotAbortTheRest()
+
+	/**
+	 * A case type whose initial status is somebody else's is left alone.
+	 *
+	 * There is nothing to repoint it to, and inventing one would file cases
+	 * into a status the author never chose.
+	 *
+	 * @return void
+	 */
+	public function testAnInitialStatusOutsideTheTypeIsNotRepointed(): void {
+		$store = $this->seedStore();
+		$store['ct-1']['data']['initialStatus'] = 'st-99';
+		$objectService = $this->makeObjectService(store: $store);
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+
+		$service = new CaseTypeCopyService(
+			settingsService: $this->settingsService,
+			store: new CaseTypeStore($this->settingsService),
+			payloads: new DerivedCaseTypePayload(),
+			logger: $this->logger
+		);
+
+		$next = $service->newVersion('ct-1');
+
+		$this->assertNotNull($next);
+		$this->assertSame('st-99', $store[$next['id']]['data']['initialStatus']);
+	}//end testAnInitialStatusOutsideTheTypeIsNotRepointed()
+
+	/**
+	 * A reference stored as an expanded object still repoints.
+	 *
+	 * OpenRegister answers a `$ref` as a bare id on one read and as the
+	 * expanded object on another; reading only the string shape would leave the
+	 * copy pointing at the source's status with no error anywhere.
+	 *
+	 * @return void
+	 */
+	public function testAnExpandedInitialStatusReferenceStillRepoints(): void {
+		$store = $this->seedStore();
+		$store['ct-1']['data']['initialStatus'] = ['id' => 'st-1', 'name' => 'Received'];
+		$objectService = $this->makeObjectService(store: $store);
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+
+		$service = new CaseTypeCopyService(
+			settingsService: $this->settingsService,
+			store: new CaseTypeStore($this->settingsService),
+			payloads: new DerivedCaseTypePayload(),
+			logger: $this->logger
+		);
+
+		$next = $service->newVersion('ct-1');
+
+		$this->assertNotNull($next);
+		$initial = $store[$next['id']]['data']['initialStatus'];
+		$this->assertIsString($initial);
+		$this->assertNotSame('st-1', $initial);
+		$this->assertSame($next['id'], $store[$initial]['data']['caseType']);
+	}//end testAnExpandedInitialStatusReferenceStillRepoints()
+
+	/**
 	 * deleteDraft() deletes a draft case type.
 	 *
 	 * @return void

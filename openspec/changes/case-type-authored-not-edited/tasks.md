@@ -60,3 +60,11 @@ Tier: MVP and V1. Kind: code.
   code.
 - [x] 4.4 Every new guard mutation-checked: the assertion was watched to fail
   with the behaviour removed, then restored.
+- [x] 4.5 Every path this change adds is covered, including the refusals:
+  the new route's three outcomes, both payload builders directly, and the
+  copy service's missing-store, failed-write, failed-child and
+  unrepointable-initial-status branches.
+  - this box exists because CI measured what local PHPUnit cannot: the box
+    has no pcov and no xdebug, so `phpunit` prints OK either way and the
+    coverage ratchet is the only instrument. It failed the first run at
+    62.30% to 59.76% on the changed files, which is what these tests answer.
