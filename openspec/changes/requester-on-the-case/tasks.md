@@ -17,7 +17,7 @@ criteria under a task are plain bullets.
 - [x] 1.2 `lib/Settings/dossiq_register.json` and
   `lib/Settings/dossiq_mock_register.json`: reword the `case.requester`
   description so it no longer says the field is set only by an integration.
-- [ ] 1.3 `lib/Service/External/Brp/HaalCentraalBrpAdapter.php` and
+- [x] 1.3 `lib/Service/External/Brp/HaalCentraalBrpAdapter.php` and
   `LogBrpHaalCentraalAdapter.php`: map `geheimhoudingPersoonsgegevens` to
   `indicatieGeheim`.
   - unit test in `tests/Unit/Service/External/Brp/HaalCentraalBrpAdapterTest.php`
