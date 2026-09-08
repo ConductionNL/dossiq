@@ -138,7 +138,12 @@ criteria under a task are plain bullets.
 
 ## 4. Follow-up
 
-- [ ] 4.1 Open an issue on ConductionNL/nextcloud-vue: `CnObjectListWidget`
+- [x] 4.1 Open an issue on ConductionNL/nextcloud-vue: `CnObjectListWidget`
   needs a `rowActions` or lifecycle column so `case-tasks` can return to
   `object-list`; link it from the `_note` in 1.3 and from the ratchet note
-  in 1.2.
+  in 1.2. Filed as ConductionNL/nextcloud-vue#1033 and linked from both. It
+  carries two further asks the implementation turned up: `CnLifecycleActions`
+  emits nothing on a refused transition, so a consumer has to watch the
+  child's internal `error` through a ref; and `CnDetailPage` renders a
+  `widget-<id>` slot per grid item only, so a `type: "custom"` tab child
+  resolves to nothing and renders nothing with no console output.
