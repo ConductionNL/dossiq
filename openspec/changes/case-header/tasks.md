@@ -20,7 +20,7 @@ criteria under a task are plain bullets. Depends on `documents-on-the-case`
 
 ## 2. The header row
 
-- [ ] 2.1 `src/manifest.json` page `CaseDetail`: add widget `case-header`
+- [x] 2.1 `src/manifest.json` page `CaseDetail`: add widget `case-header`
   (`type: custom`, `component: CaseHeaderRow`, `props.objectId: @objectId`)
   and put it on layout row 0 at `gridX 0, gridWidth 8, gridHeight 2,
   showTitle false`; remove `case-kpi-time-left` from `widgets` and `layout`;
@@ -31,7 +31,7 @@ criteria under a task are plain bullets. Depends on `documents-on-the-case`
   - unit test in `tests/vitest/manifestCaseHeader.spec.js`: `case-header`
     is on row 0, no widget id `case-kpi-time-left` remains anywhere on the
     page, every layout `widgetId` resolves to a widget
-- [ ] 2.2 `src/components/CaseHeaderRow.vue`: reads the case from the page
+- [x] 2.2 `src/components/CaseHeaderRow.vue`: reads the case from the page
   object store by `objectId`, resolves `status` to its status type title
   through the shared object store (register `dossiq`, schema `statusType`,
   `labelField: title`), renders `CnStatusBadge` (variant `success` for a

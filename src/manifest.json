@@ -1532,38 +1532,25 @@
 						"_note": "The transitions this user may take from the case's current status, the confirm dialog that asks for a comment and, on a closing move, a result, plus the suspended marker and the Resume button (page slot widget-case-transitions -> CaseTransitionsWidget). It replaces the page's `lifecycleActions: {field: status}` block, which rendered NOTHING: CnLifecycleActions asks OpenRegister's /available-actions, and `case.status` is a $ref to a per-caseType statusType row, for which OR answers an empty action list. Its graph mode derives moves from sibling ORDER alone and so cannot express the workflow template's named, role-filtered, guarded transitions, cannot say which guard refused, and cannot ask for the result a closing case needs -- all three of which this page requires. When the platform can serve them (case-status-onto-engine-lifecycle), this widget is deleted and lifecycleActions declared again."
 					},
 					{
-						"id": "case-kpi-time-left",
-						"type": "countdown",
-						"title": "Time left",
-						"icon": "ClockAlertOutline",
-						"_note": "Counts down to the case deadline. Reads `deadline` off the record the page has already loaded, so it costs no request. The thresholds follow the handling rhythm rather than round numbers: at two weeks a handler still has room to act, at five days they do not. An overdue case reads as an alert whether or not thresholds are set.",
-						"content": {
-							"label": "Time left",
-							"field": "deadline",
-							"icon": "ClockAlertOutline",
+						"id": "case-header",
+						"type": "custom",
+						"title": "Case identity",
+						"icon": "BadgeAccountOutline",
+						"_note": "Placement row A01: the case identity, on the first row of the page, under the title (page slot widget-case-header -> CaseHeaderRow). It carries the breadcrumb back to Cases, the case number, the case type, the status badge, the assignee and the deadline countdown. It is a `custom` widget rather than the built-in `header` one because that built-in is a DASHBOARD BANNER (title, subtitle, call to action): it can bind neither a $ref status nor a countdown. It folds in two tiles that are now gone from this page: `case-kpi-time-left` (its `warn 14, danger 5` thresholds live on in the countdown) and `case-kpi-casetype` (its uuid-to-title resolve lives on in the type chip). Leaving them beside the row would print the same two facts twice. The breadcrumb and the identity line are rendered HERE rather than declared on the page because CnDetailPage 2.41.0 reads neither `breadcrumbs` nor `subtitleField` (its own `subtitle` prop is the SIDEBAR header's); both keys are declared on the page config all the same, as the shape the host will read, and a unit test pins the widget's props to them so the two cannot drift. The widget takes no `objectId` prop: CnDetailPage hands a `widget-<id>` slot the whole widget definition plus the LOADED object (`item`, `widget`, `objectId`, `object`, `objectData`, `objectType`, `register`, `schema`), so the row reads the case the page already has rather than fetching it again, and reads its own manifest `props` off `widget.props`.",
+						"props": {
+							"breadcrumbs": [
+								{
+									"label": "Cases",
+									"route": "Cases",
+									"icon": "FolderAccountOutline"
+								},
+								{
+									"field": "title"
+								}
+							],
 							"thresholds": {
 								"warn": 14,
 								"danger": 5
-							},
-							"showDate": true
-						}
-					},
-					{
-						"id": "case-kpi-casetype",
-						"type": "stat",
-						"title": "Case type",
-						"icon": "FileTreeOutline",
-						"_note": "`case.caseType` holds a uuid, which is not something to show a person, so `resolve` looks the case type's title up through the shared object store (cached per schema, deduplicated in flight). An id that cannot be resolved keeps showing the raw value rather than blanking: a blank KPI says nothing at all.",
-						"content": {
-							"label": "Case type",
-							"icon": "FileTreeOutline",
-							"objectField": {
-								"field": "caseType",
-								"resolve": {
-									"register": "dossiq",
-									"schema": "caseType",
-									"labelField": "title"
-								}
 							}
 						}
 					},
@@ -1693,8 +1680,8 @@
 				],
 				"layout": [
 					{
-						"id": "10",
-						"widgetId": "case-transitions",
+						"id": "1",
+						"widgetId": "case-header",
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
@@ -1702,20 +1689,11 @@
 						"showTitle": false
 					},
 					{
-						"id": "1",
-						"widgetId": "case-kpi-time-left",
+						"id": "10",
+						"widgetId": "case-transitions",
 						"gridX": 0,
 						"gridY": 2,
-						"gridWidth": 4,
-						"gridHeight": 2,
-						"showTitle": false
-					},
-					{
-						"id": "2",
-						"widgetId": "case-kpi-casetype",
-						"gridX": 4,
-						"gridY": 2,
-						"gridWidth": 4,
+						"gridWidth": 8,
 						"gridHeight": 2,
 						"showTitle": false
 					},
@@ -1996,6 +1974,7 @@
 				]
 			},
 			"slots": {
+				"widget-case-header": "CaseHeaderRow",
 				"widget-case-transitions": "CaseTransitionsWidget",
 				"widget-case-steps": "CaseStepsWidget",
 				"widget-initiator": "InitiatorSection"
