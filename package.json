@@ -80,7 +80,7 @@
     "@playwright/test": "^1.49.0",
     "@typescript-eslint/parser": "^8.69.0",
     "@vitejs/plugin-vue": "^6.0.0",
-    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/coverage-v8": "^5.0.0",
     "@vue/compiler-sfc": "^3.5.13",
     "@vue/test-utils": "^2.4.6",
     "axe-core": "^4.13.0",
