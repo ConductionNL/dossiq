@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.2.0",
+                "version": "1.3.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -185,6 +185,14 @@
                         "type": "string",
                         "description": "Responsible person or department",
                         "title": "Responsible"
+                    },
+                    "parentCaseType": {
+                        "type": "string",
+                        "format": "uuid",
+                        "$ref": "caseType",
+                        "description": "The case type this one derives from. A child inherits the parent's statuses, results, properties and deadlines, and declares only what differs: a row the child gives the same name replaces the parent's. Leave it empty for a type that stands on its own. A chain that returns to itself is refused on save, and the chain is at most three deep.",
+                        "title": "Parent case type",
+                        "facetable": true
                     },
                     "relatedCaseTypes": {
                         "type": "string",

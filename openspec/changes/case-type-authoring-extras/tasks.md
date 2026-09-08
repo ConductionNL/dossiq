@@ -52,8 +52,8 @@ implementation task; the criteria under a task are plain bullets.
 
 ## 2. A parent type
 
-- [ ] 2.1 `lib/Settings/dossiq_register.json`, schema `caseType`: property
-  `parentCaseType` (`$ref` caseType).
+- [x] 2.1 `lib/Settings/dossiq_register.json`, schema `caseType`: property
+  `parentCaseType` (`$ref` caseType). `caseType` 1.2.0 -> 1.3.0.
 - [ ] 2.2 `lib/Service/CaseTypeResolver.php` (new) per design D2, with a
   cycle refusal and unit tests in `tests/Unit/Service/CaseTypeResolverTest.php`.
   - `@spec openspec/specs/case-types/spec.md`
