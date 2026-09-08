@@ -54,8 +54,19 @@ implementation task; the criteria under a task are plain bullets.
 
 - [x] 2.1 `lib/Settings/dossiq_register.json`, schema `caseType`: property
   `parentCaseType` (`$ref` caseType). `caseType` 1.2.0 -> 1.3.0.
-- [ ] 2.2 `lib/Service/CaseTypeResolver.php` (new) per design D2, with a
+- [x] 2.2 `lib/Service/CaseTypeResolver.php` (new) per design D2, with a
   cycle refusal and unit tests in `tests/Unit/Service/CaseTypeResolverTest.php`.
+  - It arrived as ONE class and phpmd refused it: overall complexity 73
+    against a threshold of 50. Split the way `CaseStatusStore` was split out
+    of `StatusTransitionService` — `lib/Service/CaseTypeStore.php` owns every
+    OpenRegister read (and writes nothing), the resolver owns the merge, the
+    chain and the cycle refusal.
+  - The merge key is the row's NAME, lower-cased and trimmed. It cannot be
+    the id: ids are minted per install, so a child has no way to name the
+    parent row it means to override.
+  - Only `null`, `''` and `[]` count as "the child said nothing". An explicit
+    `false` is an answer, and inheriting it would turn every child of a type
+    that allows suspension into one that allows it too.
   - `@spec openspec/specs/case-types/spec.md`
 - [ ] 2.3 Move every reader of `statusType`, `resultType` and
   `propertyDefinition` by `caseType` to the resolver; list them first with
