@@ -6,7 +6,7 @@ tab order it amends (task 4.1).
 
 ## 1. One history tab
 
-- [ ] 1.1 `src/manifest.json` page `CaseDetail` (`pages[4]`)
+- [x] 1.1 `src/manifest.json` page `CaseDetail` (`pages[4]`)
   `config.sidebar.tabs`: remove the entry `id: version-history`
   (`component: VersionHistoryLeafTab`); keep `audit` (label History, icon
   History, `widgets: [{ type: "audit" }]`) first; add a `_note` naming
@@ -19,9 +19,9 @@ tab order it amends (task 4.1).
     has exactly one sidebar tab with widget type `audit`, none with id
     `version-history` or component `VersionHistoryLeafTab`; every other
     page's `sidebar.tabs.length` equals its value on `development`
-- [ ] 1.2 `l10n/nl.json`: History reads Geschiedenis if the key is not
+- [x] 1.2 `l10n/nl.json`: History reads Geschiedenis if the key is not
   there yet; load the `writing` skill first.
-- [ ] 1.3 `grep -rn 'Version history\|version-history' tests/e2e` found no
+- [x] 1.3 `grep -rn 'Version history\|version-history' tests/e2e` found no
   assertion on the `CaseDetail` Version history tab (the only hit,
   `tests/e2e/spec-coverage/document-zaakdossier.spec.ts:79`, is the
   concept-document version history under `document-zaakdossier`, not the
@@ -30,10 +30,23 @@ tab order it amends (task 4.1).
 
 ## 2. Writes first
 
-- [ ] 2.1 Verify live that the Action and User filters on the History tab
-  load and narrow the list (the baseline saw both on Loading); if they do
-  not, file the defect against nextcloud-vue `CnAuditTrailTab` with the
-  request that failed, and record the issue number here.
+- [x] 2.1 Verify that the Action and User filters on the History tab load and
+  narrow the list (the baseline saw both on Loading). NO DEFECT FILED, because
+  the mechanism is present in the installed 2.41.0 and no request can fail the
+  way the baseline suggests:
+  - `actionOptions` is the STATIC array `['create', 'read', 'update',
+    'delete']` in `CnAuditTrailTab`'s own `data()`. It is never fetched, so it
+    cannot sit on Loading; the baseline observation was the tab before its
+    first `/audit-trails` response, not a broken option list.
+  - `userOptions` is built from the entries already fetched
+    (`new Set(this.entries.map(e => e.userName || e.user))`), so it is empty
+    until the first response lands and complete after it.
+  - Both filters narrow server-side: `filterAction` and `filterUser` are
+    watched, each calls `resetAndFetch()`, and `buildQueryParams()` sends
+    `action=` and `user_name=`.
+  - This is READ EVIDENCE from the shipped `CnAuditTrailTab.vue2.js`, not a
+    live run. The live assertion is task 5.1's e2e, which fails if the filter
+    does not narrow the list on the instance.
   - `@spec openspec/changes/case-timeline/specs/case-dashboard-view/spec.md`
 - [ ] 2.2 [blocked: nextcloud-vue an `actions` (or equivalent) preset prop
   on the `audit` sidebar widget so the tab opens on create, update and
@@ -55,7 +68,7 @@ tab order it amends (task 4.1).
 
 ## 4. The body strip
 
-- [ ] 4.1 `openspec/changes/case-header`: drop Timeline (`case-timeline`)
+- [x] 4.1 `openspec/changes/case-header`: drop Timeline (`case-timeline`)
   from the tab order in `proposal.md` (What changes, A33), `design.md`
   (D3), `tasks.md` (4.1 and 5.1) and REQ-CDV-16 in
   `specs/case-dashboard-view/spec.md` (requirement text and the scenarios
@@ -68,7 +81,7 @@ tab order it amends (task 4.1).
 
 ## 5. Verification
 
-- [ ] 5.1 `tests/e2e/case-timeline.spec.ts`: seeds one case with
+- [x] 5.1 `tests/e2e/case-timeline.spec.ts`: seeds one case with
   identifier 2026-0015, updates its description through the API as admin,
   opens the page, opens the sidebar, asserts by tab id that `audit` is
   present and `version-history` is not, that the first History row reads
@@ -78,8 +91,8 @@ tab order it amends (task 4.1).
   instance may run in Dutch.
   - the spec must appear in `tests/e2e/playwright.config.ts`'s project,
     the config CI reads
-- [ ] 5.2 Run `npm run lint`, `npm run check:manifest`, `npm run test:unit`
+- [x] 5.2 Run `npm run lint`, `npm run check:manifest`, `npm run test:unit`
   and the e2e spec locally; read `$?` on each, not the summary line.
-- [ ] 5.3 `docs/case-detail.md` (or the page's docs entry): one paragraph
+- [x] 5.3 `docs/case-detail.md` (or the page's docs entry): one paragraph
   on the History tab, what it shows and what waits on the activity leaf;
   load the `writing` skill first.

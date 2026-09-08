@@ -30,4 +30,7 @@ The tab order is pure config. Hiding an empty tab needs `visibleIf` on a
 tab entry; until it lands the four conditional tabs sit last, which keeps
 the six work tabs on one line at 1024 either way. Tab ids follow the
 sibling changes so the order needs no rename when they land:
-`case-documents`, `case-roles`, `case-communication`, `case-timeline`.
+`case-documents`, `case-roles`, `case-communication`. No `case-timeline`
+entry: `case-timeline` (row A05) keeps the case's one history in the
+sidebar History tab, so the body strip carries no second view of it. Amended
+by `case-timeline` task 4.1, both changes being unarchived in this batch.
