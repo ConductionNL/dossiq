@@ -78,7 +78,7 @@ rendering is data-dependent.
 - THEN the card MUST display:
   - The case title
   - A truncated description (when present)
-  - The identifier (e.g. "ZAAK-2026-0118")
+  - The identifier (e.g. "2026-0118")
   - The **case-type name** (not its raw UUID) resolved from the caseType map
   - The **status name** (not its raw UUID) resolved from the statusType map
   - The deadline date when set
@@ -98,7 +98,7 @@ Opening a case from My Work MUST navigate to that case's detail view.
 @e2e exclude Requires an assigned case to click; data-dependent navigation.
 
 #### Scenario: Open a case
-- GIVEN case ZAAK-2026-0118 appears in My Work
+- GIVEN case 2026-0118 appears in My Work
 - WHEN the user clicks the card (or the table row)
 - THEN the system MUST navigate to the `CaseDetail` route for that case id
 

@@ -114,8 +114,24 @@ criteria under a task are plain bullets.
 
 ## 4. Seed and verification
 
-- [ ] 4.1 `lib/Settings/register.d/46-demo-cases-english.json`: identifiers
+- [x] 4.1 `lib/Settings/register.d/46-demo-cases-english.json`: identifiers
   in `YYYY-NNNN`, tags and a legal basis on the demo cases per design.
+  - The demo cases were never missing their numbers. All ten carried one, in
+    the `ZAAK-YYYY-NNNN` shape; the dashboard showed "-" because `identifier`
+    is `readOnly` and the data widget dropped it (see 1.2). All ten are now
+    `YYYY-NNNN`.
+  - Two cases carry `wijk-noord` and six carry no tags, so the filter
+    scenario asserts something. One carries `archiveNomination` with NO
+    `archiveActionDate`, which is what the empty-row scenario needs.
+  - `statutoryTerm` is seeded to match each case's own case type, so a page
+    read before the first re-save says the same thing as one read after it.
+  - `openspec/specs/my-work/spec.md` quoted `ZAAK-2026-0118` twice as an
+    example identifier and now quotes `2026-0118`.
+  - HAZARD, recorded rather than fixed: OpenRegister's `sequence` is a
+    counter, not a max-of-existing. On a fresh install it starts at 0001 while
+    these seeded rows already occupy numbers in the hundreds, so a generated
+    number can eventually collide with a seeded one. The dossiq backfill of
+    1.3 cannot collide (it is max + 1); the register's own sequence can.
 - [ ] 4.2 Add `tests/e2e/case-identity.spec.ts` covering every scenario of
   the delta spec that names it (a number on a new case from the form and
   from the API, a kept number on an existing case, tags on the sidebar and

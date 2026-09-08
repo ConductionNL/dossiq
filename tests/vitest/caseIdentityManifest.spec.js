@@ -169,3 +169,52 @@ describe('CaseDetail: terms and archive', () => {
 		}
 	})
 })
+
+describe('the English demo seed', () => {
+	const seed = JSON.parse(
+		fs.readFileSync(
+			path.join(ROOT, 'lib', 'Settings', 'register.d', '46-demo-cases-english.json'),
+			'utf8',
+		),
+	)
+	const demoCases = seed.components.objects.filter(
+		(entry) => entry['@self'].schema === 'case',
+	)
+	const caseTypes = Object.fromEntries(
+		seed.components.objects
+			.filter((entry) => entry['@self'].schema === 'caseType')
+			.map((entry) => [entry['@self'].slug, entry]),
+	)
+
+	it('numbers every demo case the way the register will number the next one', () => {
+		expect(demoCases.length).toBeGreaterThan(0)
+		for (const demo of demoCases) {
+			expect(demo.identifier, demo['@self'].slug).toMatch(/^\d{4}-\d{4}$/)
+			// The year half is the start year, as `year(startDate)` gives it.
+			expect(demo.identifier.slice(0, 4)).toBe(demo.startDate.slice(0, 4))
+		}
+	})
+
+	it('leaves exactly two cases carrying wijk-noord, so filtering means something', () => {
+		const tagged = demoCases.filter((demo) => (demo.tags ?? []).includes('wijk-noord'))
+		expect(tagged).toHaveLength(2)
+		expect(demoCases.filter((demo) => !demo.tags).length).toBeGreaterThan(2)
+	})
+
+	it('seeds a lead time that agrees with the case type it came from', () => {
+		// `statutoryTerm` is materialised from `@ref.caseType.processingDeadline`
+		// on save. Seeding a value that disagreed with the type would make the
+		// page tell the truth only until the next save.
+		for (const demo of demoCases.filter((entry) => entry.statutoryTerm)) {
+			expect(demo.statutoryTerm, demo['@self'].slug).toBe(
+				caseTypes[demo.caseType].processingDeadline,
+			)
+		}
+	})
+
+	it('leaves an archive action date empty on a case that shows the block', () => {
+		const withNomination = demoCases.filter((demo) => demo.archiveNomination)
+		expect(withNomination.length).toBeGreaterThan(0)
+		expect(withNomination.some((demo) => demo.archiveActionDate === undefined)).toBe(true)
+	})
+})
