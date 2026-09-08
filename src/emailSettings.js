@@ -15,7 +15,7 @@ const app = createApp({
 				appName: 'Dossiq',
 				appVersion,
 				isUpToDate: true,
-				title: t('dossiq', 'Case email — shared mailbox'),
+				title: t('dossiq', 'Case email: the shared mailbox'),
 				description: t(
 					'dossiq',
 					'Shared functional mailbox ingest and template settings',

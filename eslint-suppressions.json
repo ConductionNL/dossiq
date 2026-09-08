@@ -543,17 +543,6 @@
       "count": 3
     }
   },
-  "src/views/settings/EmailSettings.vue": {
-    "@nextcloud/l10n-enforce-ellipsis": {
-      "count": 1
-    },
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "src/views/settings/KccIntegrationSettings.vue": {
     "@nextcloud/l10n-enforce-ellipsis": {
       "count": 1

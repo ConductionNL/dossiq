@@ -49,6 +49,16 @@ class StatusChecklist {
 	use SearchesObjects;
 
 	/**
+	 * Who a checklist task goes to.
+	 *
+	 * The status checklist has no per-item assignee to author, and a checklist
+	 * task belongs to the case, so it goes to the case's handler. Written as
+	 * the same template the shipped flow declarations use, so one resolver
+	 * answers for both and there is one spelling to learn.
+	 */
+	private const CHECKLIST_ASSIGNEE = '{{ case.assignee }}';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService  $settingsService  Bridge to OpenRegister + config.
@@ -120,7 +130,15 @@ class StatusChecklist {
 	 * @param string               $statusTypeId The statusType UUID being entered.
 	 * @param array<string, mixed> $case         The case entering it.
 	 *
-	 * @return array<int, array{type: string, title: string, workflowStepId: string}> The actions.
+	 * Every action also names its assignee, in the same spelling the shipped
+	 * flow declarations use. It is written out rather than left implicit
+	 * because a checklist action that named nobody produced a task with an
+	 * empty `assignee`, and the task schema addresses its `taskAssigned`
+	 * notification to that field: the work appeared and nobody was told. What
+	 * the spelling resolves to is `AssigneeResolver`'s answer, not this
+	 * class's, so the checklist and the flow ask one question.
+	 *
+	 * @return array<int, array{type: string, title: string, workflowStepId: string, assignee: string}> The actions.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
@@ -145,6 +163,7 @@ class StatusChecklist {
 				'type' => 'createTask',
 				'title' => $item['title'],
 				'workflowStepId' => $statusTypeId,
+				'assignee' => self::CHECKLIST_ASSIGNEE,
 			];
 		}
 
