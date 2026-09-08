@@ -23,6 +23,27 @@ const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(
 	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
 )
+const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
+const register = JSON.parse(
+	fs.readFileSync(
+		path.join(ROOT, 'lib', 'Settings', 'dossiq_register.json'),
+		'utf8',
+	),
+)
+const caseSchema = register.components.schemas.case
+
+/** Every sidebar tab of the CaseDetail page. @return {Array} The tabs. */
+const sidebarTabs = () => caseDetail().config.sidebar.tabs
+
+/**
+ * Whether an icon name is registered, and so will actually render.
+ *
+ * @param {string} name The PascalCase icon name.
+ * @return {boolean} True when both the import and the export are present.
+ */
+const iconIsRegistered = (name) =>
+	iconsSource.includes(`import ${name} from 'vue-material-design-icons/${name}.vue'`)
+	&& new RegExp(`^\\t${name},$`, 'm').test(iconsSource)
 
 /** The CaseDetail page as the manifest declares it. @return {object} The page. */
 const caseDetail = () => manifest.pages.find((page) => page.id === 'CaseDetail')
@@ -58,5 +79,38 @@ describe('CaseDetail: the case number', () => {
 		)
 		expect(newCase.includeFields).not.toContain('identifier')
 		expect(Object.keys(newCase.props ?? {})).not.toContain('identifier')
+	})
+})
+
+describe('CaseDetail: tags', () => {
+	it('puts the tags in a sidebar tab, rendered by a registry type', () => {
+		const tab = sidebarTabs().find((entry) => entry.id === 'tags')
+		expect(tab).toBeTruthy()
+		expect(tab.label).toBe('Tags')
+
+		// CnObjectSidebar resolves a tab widget by TYPE against its built-ins
+		// (data, metadata, audit, audit-trail, object-table) and then against
+		// the app's custom registry. `custom` is in neither: it resolves to
+		// null, warns to the console and renders an empty panel.
+		expect(tab.widgets).toHaveLength(1)
+		expect(tab.widgets[0].type).toBe('data')
+		expect(tab.widgets[0].props.include).toEqual(['tags'])
+		expect(tab.widgets[0].props.overrides.tags.widget).toBe('tags')
+	})
+
+	it('registers the tab icon, which otherwise renders nothing at all', () => {
+		const tab = sidebarTabs().find((entry) => entry.id === 'tags')
+		expect(iconIsRegistered(tab.icon)).toBe(true)
+	})
+
+	it('offers a Tags filter on the Cases index', () => {
+		// The filter is not a manifest entry: `filtersFromSchema` builds the
+		// index sidebar from the schema's `facetable` properties. So the
+		// assertion belongs on the schema, and on the page having a sidebar to
+		// put it in.
+		expect(caseSchema.properties.tags.facetable).toBe(true)
+
+		const cases = manifest.pages.find((page) => page.id === 'Cases')
+		expect(cases.config.sidebar.enabled).toBe(true)
 	})
 })

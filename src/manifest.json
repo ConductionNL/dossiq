@@ -1803,6 +1803,29 @@
 							"label": "Besluitvorming",
 							"icon": "Gavel",
 							"component": "BesluitvormingLeafTab"
+						},
+						{
+							"id": "tags",
+							"label": "Tags",
+							"icon": "TagMultiple",
+							"_note": "A sidebar tab renders EITHER a registered `component` or `widgets[]` whose `type` is a CnObjectSidebar built-in (data, metadata, audit / audit-trail, object-table). A `type: \"custom\"` entry here resolves to nothing and renders an empty panel with a console warning nobody reads — the page-slot mechanism (`widget-<id>`) only applies to layout grid items. So this is the `data` built-in over the single `tags` field: it is handed the loaded case and the resolved schema by the host, and an array-of-strings property already resolves to the tags editor. The `widget` override says so out loud, so a later change to the type cannot silently turn the editor into a text box.",
+							"widgets": [
+								{
+									"type": "data",
+									"props": {
+										"title": "Tags",
+										"columns": 1,
+										"include": [
+											"tags"
+										],
+										"overrides": {
+											"tags": {
+												"widget": "tags"
+											}
+										}
+									}
+								}
+							]
 						}
 					]
 				},

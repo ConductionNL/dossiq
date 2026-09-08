@@ -169,6 +169,7 @@ import Sync from 'vue-material-design-icons/Sync.vue'
 import TableColumn from 'vue-material-design-icons/TableColumn.vue'
 import TableLarge from 'vue-material-design-icons/TableLarge.vue'
 import TableSettings from 'vue-material-design-icons/TableSettings.vue'
+import TagMultiple from 'vue-material-design-icons/TagMultiple.vue'
 import TagOutline from 'vue-material-design-icons/TagOutline.vue'
 import Timeline from 'vue-material-design-icons/Timeline.vue'
 import TimerOutline from 'vue-material-design-icons/TimerOutline.vue'
@@ -337,6 +338,7 @@ export default {
 	TableColumn,
 	TableLarge,
 	TableSettings,
+	TagMultiple,
 	TagOutline,
 	Timeline,
 	TimerOutline,

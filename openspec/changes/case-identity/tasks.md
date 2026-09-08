@@ -54,9 +54,16 @@ criteria under a task are plain bullets.
   - `case` goes 1.14.0 → 1.15.0. OpenRegister fast-skips a schema whose
     version has not moved, so on an install that already holds `case` the new
     property would never land.
-- [ ] 2.2 `src/manifest.json` page `CaseDetail`: sidebar tab `tags` with a
+- [x] 2.2 `src/manifest.json` page `CaseDetail`: sidebar tab `tags` with a
   `data` widget over `tags` using the tags form widget; page `Cases`: a Tags
   filter in the sidebar.
+  - The Cases filter needed no manifest entry at all: `filtersFromSchema`
+    builds the index sidebar from the schema's `facetable` properties, so
+    2.1 supplied it. The guard for it therefore sits on the schema, not on
+    the page.
+  - `TagMultiple` is now in `src/icons.js`. An icon named in a manifest and
+    missing from the registry renders NOTHING rather than a fallback glyph,
+    and hydra gate-60 fails on it.
 - [ ] 2.3 `l10n/en.json` and `l10n/nl.json`: Tags, Terms and archive,
   Statutory lead time, Legal basis.
 
