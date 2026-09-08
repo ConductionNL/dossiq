@@ -2,8 +2,8 @@
 
 ## 1. Defects first (triage #3, #4)
 
-- [ ] 1.1 `src/main.js`: import `registerBuiltinDashboardWidgets` from `@conduction/nextcloud-vue` and call it before `createApp`; verify by loading `/apps/dossiq/` in a fresh context and seeing five numbers instead of "Widget not available". [MVP]
-- [ ] 1.2 `src/manifest.json` page `Dashboard`: add `viewAllRoute.query` to `open-cases` and `stalled-cases` equal to each table's `source.filter`; verify View all opens `/cases` with the query in the URL. [MVP]
+- [x] 1.1 `src/main.js`: import `registerBuiltinDashboardWidgets` from `@conduction/nextcloud-vue` and call it before `createApp`; verify by loading `/apps/dossiq/` in a fresh context and seeing five numbers instead of "Widget not available". [MVP] — landed on `development` ahead of this branch (#1871). `src/main.js` calls it before `createApp`, `tests/vitest/dashboardWidgetCatalogBootstrap.spec.js` pins it, and `tests/e2e/pages.spec.ts` asserts five numbers on a hard load. Verified: `npx vitest run tests/vitest/dashboardWidgetCatalogBootstrap.spec.js` exit 0.
+- [x] 1.2 `src/manifest.json` page `Dashboard`: add `viewAllRoute.query` to `open-cases` and `stalled-cases` equal to each table's `source.filter`; verify View all opens `/cases` with the query in the URL. [MVP] — landed on `development` ahead of this branch (#1871). `tests/vitest/dashboardViewAllRoutes.spec.js` flattens every table's `source.filter` and requires each pair in its `viewAllRoute.query`, so the two tables this change adds are held to the same rule. Verified: `npx vitest run tests/vitest/dashboardViewAllRoutes.spec.js` exit 0.
 
 ## 2. Merge the tiles
 
