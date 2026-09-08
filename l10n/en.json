@@ -3639,7 +3639,14 @@
         "Whether this case's type lists a flow a handler may start.": "Whether this case's type lists a flow a handler may start.",
         "Run": "Run",
         "Start a sub-process": "Start a sub-process",
-        "This case type allows no sub-process to be started by hand.": "This case type allows no sub-process to be started by hand."
+        "This case type allows no sub-process to be started by hand.": "This case type allows no sub-process to be started by hand.",
+        "Plan a follow-up case": "Plan a follow-up case",
+        "Plan follow-up": "Plan follow-up",
+        "The case is created on the date you pick, related to this one. Until then it shows on the Related cases tab as planned.": "The case is created on the date you pick, related to this one. Until then it shows on the Related cases tab as planned.",
+        "Title of the follow-up": "Title of the follow-up",
+        "Pick a date for the follow-up.": "Pick a date for the follow-up.",
+        "The follow-up could not be planned.": "The follow-up could not be planned.",
+        "planned for {date}": "planned for {date}"
     },
     "plurals": ""
 }

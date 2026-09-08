@@ -62,10 +62,21 @@ criteria under a task are plain bullets.
 
 ## 3. Plan a follow-up
 
-- [ ] 3.1 Add `src/components/case/CasePlanFollowUpDialog.vue` (case type,
+- [x] 3.1 Add `src/dialogs/CasePlanFollowUpDialog.vue` (case type,
   date, title) and the `plan` controller method writing one flow with a
   `TriggerScheduleNode` (`runAs` set, once) and a `DossiqTxCreateSubCaseNode`.
   - unit test asserts `runAs` is set and the trigger is single-shot
+  - THE ENGINE HAS NO ONE-SHOT TRIGGER, and five cron fields cannot say
+    "once". The cron pins minute, hour, day and month, which names one minute
+    of one day of one month, and that minute comes round again next year. So
+    single-shot is kept by `PlannedFollowUpSweepJob`, which switches the flow
+    off once it has fired, and the unit test asserts the pinning rather than a
+    promise the expression cannot make.
+  - The flow is written disabled, published, then enabled: a run is refused
+    unless a published, sound version exists, so a flow enabled before it is
+    published would be armed and unrunnable.
+  - The earliest date is tomorrow. A follow-up planned for today would fire in
+    a few hours or not until next year depending on the clock.
 - [ ] 3.2 Add `src/components/case/CasePlannedWidget.vue` as `custom` widget
   `case-planned` under the Related cases tab, listing unfired planned flows
   for this case; header action `plan-follow-up` on `CaseDetail`.

@@ -62,6 +62,7 @@ import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
 // @spec openspec/specs/case-management/spec.md
 import CaseCopyDialog from './dialogs/CaseCopyDialog.vue'
 import CaseLifecycleActionDialog from './dialogs/CaseLifecycleActionDialog.vue'
+import CasePlanFollowUpDialog from './dialogs/CasePlanFollowUpDialog.vue'
 import CaseStartFlowDialog from './dialogs/CaseStartFlowDialog.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
 // VTH-specific case detail panels
@@ -249,6 +250,14 @@ const registry = {
 		kind: 'modal',
 		component: CaseStartFlowDialog,
 		_note: "CaseDetail Actions menu: the flows this case's TYPE lists in startableFlows, and Run. The run is posted straight to OpenRegister's /api/flows/{id}/run with the case as `{uuid, register, schema}` — the three keys FlowRunRow reads — so it lands in the Flow runs widget beside it and dossiq stores no copy of a run (ADR-022). The Start entry is hidden by the case's materialised `hasStartableFlows`; the dialog still says so when the list comes back empty, because the gate is a save-time value and a case type edited since the last case save has not been recomputed yet.",
+	},
+
+	// --- Plan a follow-up case (case-actions-menu, row A26). ---
+	// @spec openspec/specs/workflow-definition-engine/spec.md
+	CasePlanFollowUpDialog: {
+		kind: 'modal',
+		component: CasePlanFollowUpDialog,
+		_note: 'CaseDetail Actions menu and the Related cases tab: a case type, a date and a title, posted to /plan, which writes ONE scheduled flow creating the case on that date. The earliest date is tomorrow, because a schedule fires on a cron minute and a follow-up planned for today would fire in a few hours or not at all depending on the clock. Single-shot is kept by PlannedFollowUpSweepJob, not by the cron: five cron fields cannot say "once".',
 	},
 
 	// --- Initiator selection + display (brp-kvk-register-sets). ---

@@ -3640,7 +3640,14 @@ OC.L10N.register(
         "Whether this case's type lists a flow a handler may start.": "Of het zaaktype van deze zaak een proces heeft dat een behandelaar kan starten.",
         "Run": "Uitvoeren",
         "Start a sub-process": "Deelproces starten",
-        "This case type allows no sub-process to be started by hand.": "Dit zaaktype kent geen deelproces dat je zelf kunt starten."
+        "This case type allows no sub-process to be started by hand.": "Dit zaaktype kent geen deelproces dat je zelf kunt starten.",
+        "Plan a follow-up case": "Vervolgzaak plannen",
+        "Plan follow-up": "Vervolgzaak plannen",
+        "The case is created on the date you pick, related to this one. Until then it shows on the Related cases tab as planned.": "De zaak wordt aangemaakt op de datum die je kiest, gerelateerd aan deze zaak. Tot die tijd staat hij als gepland op het tabblad Gerelateerde zaken.",
+        "Title of the follow-up": "Titel van de vervolgzaak",
+        "Pick a date for the follow-up.": "Kies een datum voor de vervolgzaak.",
+        "The follow-up could not be planned.": "De vervolgzaak kon niet worden gepland.",
+        "planned for {date}": "gepland voor {date}"
     },
     "nplurals=2; plural=(n != 1);"
 )

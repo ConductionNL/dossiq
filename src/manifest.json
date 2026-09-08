@@ -2009,6 +2009,13 @@
 							"op": "eq",
 							"value": true
 						}
+					},
+					{
+						"id": "plan-follow-up",
+						"type": "open-modal",
+						"label": "Plan follow-up",
+						"icon": "CalendarClock",
+						"target": "CasePlanFollowUpDialog"
 					}
 				]
 			},

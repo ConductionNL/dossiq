@@ -146,6 +146,31 @@ describe('Start a flow', () => {
 	})
 })
 
+describe('Plan a follow-up', () => {
+	it('is a header action opening a modal the registry declares', () => {
+		const action = headerAction('plan-follow-up')
+		expect(action.type).toBe('open-modal')
+		expect(action.target).toBe('CasePlanFollowUpDialog')
+		expect(registryDeclares('CasePlanFollowUpDialog', 'modal')).toBe(true)
+	})
+
+	it('names an icon that is registered', () => {
+		expect(iconIsRegistered(headerAction('plan-follow-up').icon)).toBe(true)
+	})
+
+	it('has an endpoint behind it, and a read for the planned rows', () => {
+		expect(routes).toContain("'caseActions#plan'")
+		expect(routes).toContain('/api/case/{caseId}/plan')
+		expect(routes).toContain("'caseActions#planned'")
+		expect(routes).toContain('/api/case/{caseId}/planned')
+	})
+
+	it('is swept single-shot by a registered background job', () => {
+		const info = fs.readFileSync(path.join(ROOT, 'appinfo', 'info.xml'), 'utf8')
+		expect(info).toContain('OCA\\Dossiq\\BackgroundJob\\PlannedFollowUpSweepJob')
+	})
+})
+
 describe('proposedCopyTitle', () => {
 	it('proposes "Copy of <title>"', () => {
 		expect(proposedCopyTitle('Dakkapel Kerkstraat 12')).toBe(
