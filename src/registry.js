@@ -45,6 +45,9 @@ import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 // The inline task pane on the case page (task-on-the-case A06).
 // @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
 import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
+// The way back from a task to its case (task-on-the-case).
+// @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+import TaskCaseLink from './components/tasks/TaskCaseLink.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
 // VTH-specific case detail panels
 import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
@@ -236,6 +239,21 @@ const registry = {
 		kind: 'widget',
 		component: CaseTaskPane,
 		_note: 'CaseDetail Tasks tab: the first open task of the case with the lifecycle buttons OpenRegister answers for it, a toast on completion and the next open task in its place. No built-in fits: CnObjectListWidget accepts register/schema/filter/sort/limit/columns/rowRoute/prompt/emptyText/viewAllRoute/viewAllQuery and nothing else, has no rowActions and no per-row slot, and a config key it does not declare is dropped in silence. Interim by construction, and the e2e asserts on the tab and the button labels rather than on this component so it survives the swap back.',
+	},
+
+	// --- The way back from a task to its case (task-on-the-case). ---
+	//
+	// Keyed by COMPONENT NAME, unlike `case-task-pane` above, because
+	// `task-case-link` sits in TaskDetail's `layout`: CnDetailPage renders a
+	// `widget-<id>` slot for every grid item, and `page.slots` maps that slot
+	// name to this key. The pane could not use that path because it is a tab
+	// child, which has no grid item and therefore no slot.
+	// @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+	TaskCaseLink: {
+		// @custom-widget-ratchet exclude a cross-object link rendered by TITLE: `case` is a $ref and no built-in resolves a reference to its label, so a data or object-list widget shows the case uuid and reads as broken data (placement A35, the same gap the parties Role column carries); it also has to render NOTHING for a task with no case, which no built-in widget can do
+		kind: 'widget',
+		component: TaskCaseLink,
+		_note: 'TaskDetail section above the Data widget: names the case this task is on, by title, and links to it. Renders for EVERY task with a case, unlike TaskWaitingCaseSection, which renders only for a task holding a flow run and would say something untrue about an ordinary to-do. A task without a case renders nothing, and its layout entry carries showTitle:false so there is no empty box either.',
 	},
 
 	// --- Case assistant via Hermiq (case-assistant-via-hermiq). ---

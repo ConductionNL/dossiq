@@ -163,3 +163,21 @@ describe('the case-tasks widget after the retype', () => {
 		)
 	})
 })
+
+describe('the TaskCaseLink registry binding', () => {
+	it('is keyed by component name, for the page slot on TaskDetail', () => {
+		const entry = registryEntry('TaskCaseLink')
+		expect(entry).toContain("kind: 'widget'")
+		expect(entry).toContain('component: TaskCaseLink')
+		expect(entry).toContain('_note:')
+		expect(entry).toMatch(/@custom-widget-ratchet exclude \S+ \S+/)
+	})
+
+	it('imports the component from a file that exists', () => {
+		const match = registrySource().match(/^import TaskCaseLink from '(.+)'$/m)
+		expect(match, 'TaskCaseLink must be imported').not.toBeNull()
+		expect(
+			fs.existsSync(path.join(ROOT, 'src', match[1].replace(/^\.\//, ''))),
+		).toBe(true)
+	})
+})

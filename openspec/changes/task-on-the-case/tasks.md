@@ -88,9 +88,15 @@ criteria under a task are plain bullets.
     unreadable title still links, an empty `case` renders no element at all,
     and an unreadable task renders none either
   - `@spec openspec/changes/task-on-the-case/specs/task-management/spec.md`
-- [ ] 2.2 `src/registry.js`: register `TaskCaseLink` for the page slot
+- [x] 2.2 `src/registry.js`: register `TaskCaseLink` for the page slot
   `widget-task-case-link` with a ratchet note (a cross-object link by
-  title; no built-in resolves a `$ref` to a label, placement A35).
+  title; no built-in resolves a `$ref` to a label, placement A35). Keyed by
+  COMPONENT NAME here, unlike `case-task-pane`: `task-case-link` sits in
+  TaskDetail's `layout`, so CnDetailPage does render its `widget-<id>` slot
+  and `page.slots` maps it to this key.
+  - unit test in `tests/vitest/manifestCaseTaskPane.spec.js`: the key
+    carries a `_note` and a reason-bearing exclusion, and its import points
+    at a file that exists
 - [ ] 2.3 `src/manifest.json`: `TaskDetail` gains widget `task-case-link`,
   type `custom`, `showTitle: false`, placed above `task-data`;
   `task-waiting-case` stays as it is.
