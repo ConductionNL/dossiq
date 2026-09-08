@@ -641,6 +641,187 @@ The admin settings MUST handle error conditions gracefully, preserving user data
 - AND display a warning: "This case type was modified by another user. Reload to see the latest version."
 - OR the system MAY use last-write-wins if conflict detection is not implemented in MVP
 
+### Requirement: SettingsController SHALL expose `index`, `create`, and `load` JSON endpoints for the admin UI runtime
+
+@e2e exclude Backend PHP controller spec; covered by PHPUnit controller tests.
+
+`OCA\Dossiq\Controller\SettingsController` SHALL expose three action endpoints:
+- `index()` — `#[NoAdminRequired]`. SHALL return `{success: true, openRegisters: <bool>, isAdmin: <bool>, config: <SettingsService::getSettings()>}` so the admin Vue app can render itself for both admins and non-admins (read-only view).
+- `create()` — admin-only (no `#[NoAdminRequired]`). SHALL take the raw request params, delegate to `SettingsService::updateSettings($data)`, and return `{success: true, config: <updated>}`.
+- `load()` — admin-only. SHALL force a fresh re-import of the dossiq register from `dossiq_register.json` via `SettingsService::loadConfiguration(force: true)` and return the raw result envelope from that service.
+
+#### Scenario: index reports admin status correctly
+- **GIVEN** a logged-in user `alice` who is a member of the `admin` group
+- **WHEN** `GET /apps/dossiq/api/settings` (index) is invoked
+- **THEN** the response SHALL contain `"isAdmin": true`
+- **AND** SHALL contain `"openRegisters": true` if the `openregister` app is installed
+
+#### Scenario: index works for non-admins
+- **GIVEN** a logged-in user `bob` who is NOT in the `admin` group
+- **WHEN** `index()` is invoked
+- **THEN** the response SHALL contain `"isAdmin": false`
+- **AND** SHALL still return the current `config` so the Vue app renders in read-only mode
+
+#### Scenario: load forces a fresh register re-import
+- **WHEN** an admin invokes `load()`
+- **THEN** the controller SHALL call `SettingsService::loadConfiguration(force: true)`
+- **AND** SHALL return the result envelope unchanged (no `success: true` wrapper)
+
+### Requirement: SettingsService SHALL be the single resolver for OpenRegister wiring and SHALL persist all Dossiq config as IAppConfig key/value pairs
+
+@e2e exclude Backend PHP service spec; covered by PHPUnit service tests.
+
+`OCA\Dossiq\Service\SettingsService` SHALL provide the central OpenRegister resolver and IAppConfig persistence layer for Dossiq. The service SHALL expose:
+- `isOpenRegisterAvailable(): bool` — returns true iff the `openregister` app is installed AND the `OCA\OpenRegister\Service\ObjectService` class can be resolved from the DI container.
+- `getObjectService(): ?object` — returns the resolved `ObjectService`, or `null` (NOT throw) when OpenRegister is unavailable. Per ADR-022, every Dossiq data-access call SHALL obtain its `ObjectService` through this single resolver.
+- `loadConfiguration(bool $force = false): array` — idempotent register import. SHALL read `dossiq_register.json`, import it via the OpenRegister `ConfigurationService`, auto-configure every schema and register ID returned, and persist them via `setConfigValue()`. When `$force` is true, SHALL re-import unconditionally; otherwise SHALL skip when the persisted version matches the manifest version.
+- `getSettings(): array` / `updateSettings(array $data): array` — bulk read/write of the Dossiq config namespace.
+- `getConfigValue(string $key, string $default = ''): string` / `setConfigValue(string $key, string $value): void` — single-key accessors backed by `IAppConfig` under the `dossiq` app namespace.
+
+#### Scenario: getObjectService returns null when OpenRegister is uninstalled
+- **GIVEN** the `openregister` app is not installed
+- **WHEN** `getObjectService()` is called
+- **THEN** the method SHALL return `null` (NOT throw)
+- **AND** `isOpenRegisterAvailable()` SHALL return `false`
+
+#### Scenario: loadConfiguration is idempotent without --force
+- **GIVEN** the persisted `dossiq_register_version` equals the version in `dossiq_register.json`
+- **WHEN** `loadConfiguration()` is called with default `$force = false`
+- **THEN** the service SHALL skip the re-import and return the cached configuration envelope
+
+#### Scenario: loadConfiguration(force: true) re-imports unconditionally
+- **GIVEN** the persisted version equals the manifest version (no diff)
+- **WHEN** `loadConfiguration(force: true)` is called
+- **THEN** the service SHALL still call `ConfigurationService::importFromApp(...)`
+- **AND** SHALL refresh every persisted schema/register ID from the import result
+
+#### Scenario: config keys survive process restart
+- **WHEN** `setConfigValue('register', 'dossiq')` is called
+- **AND** a new request hits the process pool
+- **THEN** `getConfigValue('register')` SHALL return `'dossiq'`
+
+#### Notes
+- Both `getObjectService()` and `getConfigurationService()` look up services from the DI container at call time (NOT injection-time) — this is deliberate so Dossiq can boot even when `openregister` is not yet installed.
+- ADR-022 calls out that every register-aware service in Dossiq MUST go through `SettingsService::getObjectService()` rather than wiring its own ObjectService injection.
+
+### Requirement: An Integrations page under the gear (REQ-ADMIN-018)
+
+You see every external connection on one page. The app SHALL offer a page
+Integrations of type `settings` under the gear foldout, admin only, that
+lists one card per `dossiqIntegration` object in `order`, with the
+connection's title, its status, its status message and when it was last
+checked. The page SHALL carry no configuration fields of its own: each card
+SHALL offer an Open settings action that opens the section of the Nextcloud
+admin page that configures the connection. A user who is not an admin SHALL
+NOT see the menu entry and SHALL NOT reach the route.
+
+**Feature tier**: MVP
+
+#### Scenario: The page lists the ten connections
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** an admin on a fresh instance with the seed loaded
+- **WHEN** they open the gear and choose Integrations
+- **THEN** the page SHALL show ten cards in the seeded order, ZGW first and PDOK last
+- **AND** each card SHALL show a title and a status
+
+#### Scenario: Open settings lands on the section
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** the Integrations page
+- **WHEN** the admin chooses Open settings on the StUF card
+- **THEN** the browser SHALL be at `/settings/admin/dossiq#section-stuf`
+- **AND** the StUF-ZKN Endpoints section SHALL be in view
+
+#### Scenario: A regular user does not reach the page
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** a user who is not an admin
+- **WHEN** they open the gear
+- **THEN** Integrations SHALL NOT be listed
+- **AND** opening `/settings/integrations` directly SHALL NOT render the cards
+
+### Requirement: A card tells the truth about its connection (REQ-ADMIN-019)
+
+A status is a claim the app can back. A card SHALL show one of four states:
+Configured, Not configured, Not available and Error. A connection whose
+specification has no implementation SHALL be seeded Not available with the
+message "Specified, not built yet" and SHALL NOT offer Open settings for a
+section that does not exist. A seed SHALL NOT claim Configured: only a save
+or a probe may set it.
+
+**Feature tier**: MVP
+
+#### Scenario: BRP and KvK read Not available
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** the seeded Integrations page
+- **WHEN** the admin reads the BRP and KvK cards
+- **THEN** both SHALL show Not available with the message "Specified, not built yet"
+- **AND** neither SHALL offer Open settings
+
+#### Scenario: A fresh instance claims nothing
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** a fresh instance with the seed loaded and no section saved
+- **WHEN** the admin opens the Integrations page
+- **THEN** no card SHALL read Configured
+- **AND** every card that is not Not available SHALL read Not configured with the message "Not checked yet"
+
+### Requirement: A probe or a save updates the card (REQ-ADMIN-020)
+
+What the admin did last is what the card shows. When the StUF health check
+or the mailbox Test connection runs, the matching `dossiqIntegration`
+object SHALL be updated with the outcome as `status` (Configured on
+success, Error on failure), the outcome text as `statusMessage` and the
+time as `checkedAt`. When a section without a probe is saved, its object
+SHALL become Configured when the section's required fields are filled and
+Not configured when they are cleared. The page SHALL show the new state on
+its next load.
+
+**Feature tier**: MVP
+
+#### Scenario: A failed mailbox test shows Error
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** the mailbox section saved with an IMAP host that does not answer
+- **WHEN** the admin chooses Test connection and then opens the Integrations page
+- **THEN** the Mailbox card SHALL read Error
+- **AND** its message SHALL name the failure the test reported
+- **AND** its checked-at SHALL be within the last minute
+
+#### Scenario: Saving the KCC section marks it Configured
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** the KCC card reading Not configured
+- **WHEN** the admin fills the KCC section's required fields, saves, and opens the Integrations page
+- **THEN** the KCC card SHALL read Configured
+
+#### Scenario: A StUF endpoint's health reaches the card
+@e2e exclude The StUF health check needs a SOAP endpoint that answers; CI has none, so the write is covered by a unit test on IntegrationStatusService and the controller.
+
+- **GIVEN** a StUF endpoint whose health check answers healthy
+- **WHEN** the endpoint list is loaded
+- **THEN** the StUF card SHALL read Configured with the endpoint's name in its message
+
+### Requirement: The page shows which apps the connections need (REQ-ADMIN-021)
+
+A connection that needs another app should say so where the admin looks.
+The Integrations page SHALL show a Required apps section that lists the
+app's declared dependencies with whether each is installed, rendered by the
+shared dependency component, so a missing app is visible beside the
+connections that need it.
+
+**Feature tier**: MVP
+
+#### Scenario: A missing dependency is listed
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** an instance where one declared dependency is not installed
+- **WHEN** the admin opens the Integrations page
+- **THEN** the Required apps section SHALL list that app as not installed
+- **AND** SHALL NOT list the apps that are installed
+
 ## Non-Functional Requirements
 
 - **Performance**: Case type list MUST load within 1 second for up to 50 case types. Case type detail view (including all linked type definitions) MUST load within 2 seconds.
@@ -706,129 +887,3 @@ This spec is highly specific and implementation-ready. Requirements are well-str
 1. Should the admin settings enforce backend validation (server-side) or is frontend validation sufficient for MVP?
 2. How should the system handle case type versioning -- can a published case type be edited, or must it be unpublished first?
 3. Should delete of status types cascade to status records on existing cases?
-
-### Requirement: SettingsController SHALL expose `index`, `create`, and `load` JSON endpoints for the admin UI runtime
-
-@e2e exclude Backend PHP controller spec; covered by PHPUnit controller tests.
-
-`OCA\Dossiq\Controller\SettingsController` SHALL expose three action endpoints:
-- `index()` — `#[NoAdminRequired]`. SHALL return `{success: true, openRegisters: <bool>, isAdmin: <bool>, config: <SettingsService::getSettings()>}` so the admin Vue app can render itself for both admins and non-admins (read-only view).
-- `create()` — admin-only (no `#[NoAdminRequired]`). SHALL take the raw request params, delegate to `SettingsService::updateSettings($data)`, and return `{success: true, config: <updated>}`.
-- `load()` — admin-only. SHALL force a fresh re-import of the dossiq register from `dossiq_register.json` via `SettingsService::loadConfiguration(force: true)` and return the raw result envelope from that service.
-
-#### Scenario: index reports admin status correctly
-- **GIVEN** a logged-in user `alice` who is a member of the `admin` group
-- **WHEN** `GET /apps/dossiq/api/settings` (index) is invoked
-- **THEN** the response SHALL contain `"isAdmin": true`
-- **AND** SHALL contain `"openRegisters": true` if the `openregister` app is installed
-
-#### Scenario: index works for non-admins
-- **GIVEN** a logged-in user `bob` who is NOT in the `admin` group
-- **WHEN** `index()` is invoked
-- **THEN** the response SHALL contain `"isAdmin": false`
-- **AND** SHALL still return the current `config` so the Vue app renders in read-only mode
-
-#### Scenario: load forces a fresh register re-import
-- **WHEN** an admin invokes `load()`
-- **THEN** the controller SHALL call `SettingsService::loadConfiguration(force: true)`
-- **AND** SHALL return the result envelope unchanged (no `success: true` wrapper)
-
-### Requirement: SettingsService SHALL be the single resolver for OpenRegister wiring and SHALL persist all Dossiq config as IAppConfig key/value pairs
-
-@e2e exclude Backend PHP service spec; covered by PHPUnit service tests.
-
-`OCA\Dossiq\Service\SettingsService` SHALL provide the central OpenRegister resolver and IAppConfig persistence layer for Dossiq. The service SHALL expose:
-- `isOpenRegisterAvailable(): bool` — returns true iff the `openregister` app is installed AND the `OCA\OpenRegister\Service\ObjectService` class can be resolved from the DI container.
-- `getObjectService(): ?object` — returns the resolved `ObjectService`, or `null` (NOT throw) when OpenRegister is unavailable. Per ADR-022, every Dossiq data-access call SHALL obtain its `ObjectService` through this single resolver.
-- `loadConfiguration(bool $force = false): array` — idempotent register import. SHALL read `dossiq_register.json`, import it via the OpenRegister `ConfigurationService`, auto-configure every schema and register ID returned, and persist them via `setConfigValue()`. When `$force` is true, SHALL re-import unconditionally; otherwise SHALL skip when the persisted version matches the manifest version.
-- `getSettings(): array` / `updateSettings(array $data): array` — bulk read/write of the Dossiq config namespace.
-- `getConfigValue(string $key, string $default = ''): string` / `setConfigValue(string $key, string $value): void` — single-key accessors backed by `IAppConfig` under the `dossiq` app namespace.
-
-#### Scenario: getObjectService returns null when OpenRegister is uninstalled
-- **GIVEN** the `openregister` app is not installed
-- **WHEN** `getObjectService()` is called
-- **THEN** the method SHALL return `null` (NOT throw)
-- **AND** `isOpenRegisterAvailable()` SHALL return `false`
-
-#### Scenario: loadConfiguration is idempotent without --force
-- **GIVEN** the persisted `dossiq_register_version` equals the version in `dossiq_register.json`
-- **WHEN** `loadConfiguration()` is called with default `$force = false`
-- **THEN** the service SHALL skip the re-import and return the cached configuration envelope
-
-#### Scenario: loadConfiguration(force: true) re-imports unconditionally
-- **GIVEN** the persisted version equals the manifest version (no diff)
-- **WHEN** `loadConfiguration(force: true)` is called
-- **THEN** the service SHALL still call `ConfigurationService::importFromApp(...)`
-- **AND** SHALL refresh every persisted schema/register ID from the import result
-
-#### Scenario: config keys survive process restart
-- **WHEN** `setConfigValue('register', 'dossiq')` is called
-- **AND** a new request hits the process pool
-- **THEN** `getConfigValue('register')` SHALL return `'dossiq'`
-
-#### Notes
-- Both `getObjectService()` and `getConfigurationService()` look up services from the DI container at call time (NOT injection-time) — this is deliberate so Dossiq can boot even when `openregister` is not yet installed.
-- ADR-022 calls out that every register-aware service in Dossiq MUST go through `SettingsService::getObjectService()` rather than wiring its own ObjectService injection.
-
-### Requirement: SettingsController SHALL expose `index`, `create`, and `load` JSON endpoints for the admin UI runtime
-
-@e2e exclude Backend PHP controller spec; covered by PHPUnit controller tests.
-
-`OCA\Dossiq\Controller\SettingsController` SHALL expose three action endpoints:
-- `index()` — `#[NoAdminRequired]`. SHALL return `{success: true, openRegisters: <bool>, isAdmin: <bool>, config: <SettingsService::getSettings()>}` so the admin Vue app can render itself for both admins and non-admins (read-only view).
-- `create()` — admin-only (no `#[NoAdminRequired]`). SHALL take the raw request params, delegate to `SettingsService::updateSettings($data)`, and return `{success: true, config: <updated>}`.
-- `load()` — admin-only. SHALL force a fresh re-import of the dossiq register from `dossiq_register.json` via `SettingsService::loadConfiguration(force: true)` and return the raw result envelope from that service.
-
-#### Scenario: index reports admin status correctly
-- **GIVEN** a logged-in user `alice` who is a member of the `admin` group
-- **WHEN** `GET /apps/dossiq/api/settings` (index) is invoked
-- **THEN** the response SHALL contain `"isAdmin": true`
-- **AND** SHALL contain `"openRegisters": true` if the `openregister` app is installed
-
-#### Scenario: index works for non-admins
-- **GIVEN** a logged-in user `bob` who is NOT in the `admin` group
-- **WHEN** `index()` is invoked
-- **THEN** the response SHALL contain `"isAdmin": false`
-- **AND** SHALL still return the current `config` so the Vue app renders in read-only mode
-
-#### Scenario: load forces a fresh register re-import
-- **WHEN** an admin invokes `load()`
-- **THEN** the controller SHALL call `SettingsService::loadConfiguration(force: true)`
-- **AND** SHALL return the result envelope unchanged (no `success: true` wrapper)
-
-### Requirement: SettingsService SHALL be the single resolver for OpenRegister wiring and SHALL persist all Dossiq config as IAppConfig key/value pairs
-
-@e2e exclude Backend PHP service spec; covered by PHPUnit service tests.
-
-`OCA\Dossiq\Service\SettingsService` SHALL provide the central OpenRegister resolver and IAppConfig persistence layer for Dossiq. The service SHALL expose:
-- `isOpenRegisterAvailable(): bool` — returns true iff the `openregister` app is installed AND the `OCA\OpenRegister\Service\ObjectService` class can be resolved from the DI container.
-- `getObjectService(): ?object` — returns the resolved `ObjectService`, or `null` (NOT throw) when OpenRegister is unavailable. Per ADR-022, every Dossiq data-access call SHALL obtain its `ObjectService` through this single resolver.
-- `loadConfiguration(bool $force = false): array` — idempotent register import. SHALL read `dossiq_register.json`, import it via the OpenRegister `ConfigurationService`, auto-configure every schema and register ID returned, and persist them via `setConfigValue()`. When `$force` is true, SHALL re-import unconditionally; otherwise SHALL skip when the persisted version matches the manifest version.
-- `getSettings(): array` / `updateSettings(array $data): array` — bulk read/write of the Dossiq config namespace.
-- `getConfigValue(string $key, string $default = ''): string` / `setConfigValue(string $key, string $value): void` — single-key accessors backed by `IAppConfig` under the `dossiq` app namespace.
-
-#### Scenario: getObjectService returns null when OpenRegister is uninstalled
-- **GIVEN** the `openregister` app is not installed
-- **WHEN** `getObjectService()` is called
-- **THEN** the method SHALL return `null` (NOT throw)
-- **AND** `isOpenRegisterAvailable()` SHALL return `false`
-
-#### Scenario: loadConfiguration is idempotent without --force
-- **GIVEN** the persisted `dossiq_register_version` equals the version in `dossiq_register.json`
-- **WHEN** `loadConfiguration()` is called with default `$force = false`
-- **THEN** the service SHALL skip the re-import and return the cached configuration envelope
-
-#### Scenario: loadConfiguration(force: true) re-imports unconditionally
-- **GIVEN** the persisted version equals the manifest version (no diff)
-- **WHEN** `loadConfiguration(force: true)` is called
-- **THEN** the service SHALL still call `ConfigurationService::importFromApp(...)`
-- **AND** SHALL refresh every persisted schema/register ID from the import result
-
-#### Scenario: config keys survive process restart
-- **WHEN** `setConfigValue('register', 'dossiq')` is called
-- **AND** a new request hits the process pool
-- **THEN** `getConfigValue('register')` SHALL return `'dossiq'`
-
-#### Notes
-- Both `getObjectService()` and `getConfigurationService()` look up services from the DI container at call time (NOT injection-time) — this is deliberate so Dossiq can boot even when `openregister` is not yet installed.
-- ADR-022 calls out that every register-aware service in Dossiq MUST go through `SettingsService::getObjectService()` rather than wiring its own ObjectService injection.
