@@ -243,7 +243,7 @@
             "statusType": {
                 "slug": "statusType",
                 "icon": "ListStatus",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:ActionStatusType",
                 "x-zgw-equivalent": "StatusType",
                 "title": "Status Type",
@@ -299,6 +299,34 @@
                         ],
                         "description": "What this status MEANS in a process, independent of what it is called. A shipped flow moves a case by role, so it works on a case type that calls its working phase Beoordeling or Onderzoek rather than In behandeling. Leave it empty for a status no flow needs to address.",
                         "title": "Role"
+                    },
+                    "colour": {
+                        "type": "string",
+                        "enum": [
+                            "blue",
+                            "blue-light",
+                            "green",
+                            "green-light",
+                            "orange",
+                            "orange-light",
+                            "red",
+                            "red-light",
+                            "purple",
+                            "purple-light",
+                            "grey",
+                            "grey-light"
+                        ],
+                        "default": "grey",
+                        "description": "The hue this status is drawn in, on the status badge and as the Workflow board column header. A name from the NL Design System palette rather than a hex value, so a themed install repoints the token and every badge follows. Leave it empty and the status renders grey.",
+                        "title": "Colour",
+                        "facetable": true
+                    },
+                    "hiddenInLists": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether cases in this status stay out of the Cases index. A closed status fills the list with work nobody is doing; marking it hidden keeps it off every lens except Closed. The case carries the flag as the calculated statusHiddenInLists so the list filters it server-side.",
+                        "title": "Hidden in lists",
+                        "facetable": true
                     },
                     "checklist": {
                         "type": "array",
@@ -745,7 +773,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.17.0",
+                "version": "1.18.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -950,6 +978,19 @@
                                 "eq": [
                                     {
                                         "prop": "@ref.statusType.isFinal"
+                                    },
+                                    true
+                                ]
+                            }
+                        },
+                        "statusHiddenInLists": {
+                            "type": "boolean",
+                            "materialise": true,
+                            "description": "True when the linked statusType is marked hidden in lists (statusType.hiddenInLists). Materialised for the same reason isFinalStatus is: a cross-object @ref lookup resolves only in OpenRegister's save-time listener, and the Cases index has to narrow on it server-side. A client-side filter over server-paged rows drops what it never fetched. After editing a statusType's hiddenInLists flag, run occ openregister:rematerialise-calculations.",
+                            "expression": {
+                                "eq": [
+                                    {
+                                        "prop": "@ref.statusType.hiddenInLists"
                                     },
                                     true
                                 ]
@@ -1491,6 +1532,15 @@
                         "default": false,
                         "description": "Whether the case sits at a terminal status. Computed declaratively by OpenRegister from the linked statusType's isFinal flag (x-openregister-calculations.isFinalStatus); filter isFinalStatus=false for open cases.",
                         "title": "Is Final Status",
+                        "facetable": true,
+                        "visible": false
+                    },
+                    "statusHiddenInLists": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "default": false,
+                        "description": "Whether the case sits at a status marked hidden in lists. Computed declaratively by OpenRegister from the linked statusType's hiddenInLists flag (x-openregister-calculations.statusHiddenInLists); the Cases index filters statusHiddenInLists=false on every lens but Closed.",
+                        "title": "Status hidden in lists",
                         "facetable": true,
                         "visible": false
                     },

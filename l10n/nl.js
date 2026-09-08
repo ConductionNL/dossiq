@@ -608,6 +608,7 @@ OC.L10N.register(
         "Checklist complete": "Checklist compleet",
         "Checklist deleted": "Checklist verwijderd",
         "Checklist item": "Checklistitem",
+        "Checklist item not done: %s": "Checklistitem nog niet afgerond: %s",
         "Checklist items": "Checklistitems",
         "Checklist name": "Checklistnaam",
         "Checklist name is required": "Checklistnaam is verplicht",
@@ -3623,7 +3624,16 @@ OC.L10N.register(
         "Payment indication": "Betaalindicatie",
         "Last payment date": "Datum laatste betaling",
         "The statutory article this case is handled under (e.g. Awb 4:13)": "Het wetsartikel waaronder deze zaak wordt behandeld (bijvoorbeeld Awb 4:13)",
-        "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm.": "De behandeltermijn van het zaaktype van deze zaak, als ISO 8601-duur. Overgenomen uit caseType.processingDeadline door x-openregister-calculations.statutoryTerm."
+        "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm.": "De behandeltermijn van het zaaktype van deze zaak, als ISO 8601-duur. Overgenomen uit caseType.processingDeadline door x-openregister-calculations.statutoryTerm.",
+        "Colour": "Kleur",
+        "The hue this status is drawn in, on the status badge and as the Workflow board column header. A name from the NL Design System palette rather than a hex value, so a themed install repoints the token and every badge follows. Leave it empty and the status renders grey.": "De kleur waarin deze status wordt getekend, op de statusbadge en als kolomkop op het workflowbord. Een naam uit het NL Design System palet in plaats van een hexwaarde, zodat een gethematiseerde installatie de token verlegt en elke badge meebeweegt. Laat het leeg en de status wordt grijs getoond.",
+        "Hidden in lists": "Verborgen in lijsten",
+        "Whether cases in this status stay out of the Cases index. A closed status fills the list with work nobody is doing; marking it hidden keeps it off every lens except Closed. The case carries the flag as the calculated statusHiddenInLists so the list filters it server-side.": "Of zaken in deze status buiten het zakenoverzicht blijven. Een afgesloten status vult de lijst met werk waar niemand aan werkt; verborgen markeren houdt hem uit elke lens behalve Afgesloten. De zaak draagt de vlag als de berekende statusHiddenInLists, zodat de lijst er serverzijdig op filtert.",
+        "Status hidden in lists": "Status verborgen in lijsten",
+        "Whether the case sits at a status marked hidden in lists. Computed declaratively by OpenRegister from the linked statusType's hiddenInLists flag (x-openregister-calculations.statusHiddenInLists); the Cases index filters statusHiddenInLists=false on every lens but Closed.": "Of de zaak op een status staat die als verborgen in lijsten is gemarkeerd. Declaratief berekend door OpenRegister uit de hiddenInLists-vlag van het gekoppelde statusType (x-openregister-calculations.statusHiddenInLists); het zakenoverzicht filtert statusHiddenInLists=false op elke lens behalve Afgesloten.",
+        "What this status asks for. Every item becomes a task on the case the moment the case enters this status, created once per status however often the case comes back. An item marked required holds the case in this status until its task is completed, and the transition button says which item is still open.": "Wat deze status vraagt. Elk item wordt een taak op de zaak zodra de zaak deze status bereikt, eenmaal per status aangemaakt hoe vaak de zaak ook terugkomt. Een item dat verplicht is houdt de zaak in deze status tot de taak is afgerond, en de overgangsknop noemt welk item nog openstaat.",
+        "What has to be done. This is the title of the task that is created.": "Wat er moet gebeuren. Dit is de titel van de taak die wordt aangemaakt.",
+        "Whether the case may leave this status before this item's task is completed.": "Of de zaak deze status mag verlaten voordat de taak van dit item is afgerond."
     },
     "nplurals=2; plural=(n != 1);"
 )

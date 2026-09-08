@@ -5,9 +5,20 @@ implementation task; the criteria under a task are plain bullets.
 
 ## 1. Status colour and visibility
 
-- [ ] 1.1 `lib/Settings/dossiq_register.json`, schema `statusType`: add
+- [x] 1.1 `lib/Settings/dossiq_register.json`, schema `statusType`: add
   `colour` (enum, D1) and `hiddenInLists` (boolean, default false).
   - `@spec openspec/specs/case-types/spec.md`
+  - `statusType` 1.1.0 -> 1.2.0. OpenRegister fast-skips a schema whose
+    version did not move, so the properties would be inert without the bump.
+  - The list filter needed a THIRD property the design does not name.
+    `status` is a `$ref`, and a filter key `status.hiddenInLists` dot-paths
+    into a referenced object: OpenRegister answers no such filter and drops
+    it, which is a default filter that silently lists everything. The case
+    already carries `isFinalStatus`, a materialised
+    `x-openregister-calculations` entry over `@ref.statusType.isFinal`, so
+    `hiddenInLists` follows it exactly: `case.statusHiddenInLists`, `case`
+    1.17.0 -> 1.18.0. Same caveat as `isFinalStatus`: after editing a
+    statusType flag, run `occ openregister:rematerialise-calculations`.
 - [ ] 1.2 `src/manifest.json`: page `WorkflowBoard` column header and the
   status badge on `CaseDetail` read `colour`; page `Cases` gains the default
   filter `status.hiddenInLists: false`.

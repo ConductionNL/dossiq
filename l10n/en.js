@@ -608,6 +608,7 @@ OC.L10N.register(
         "Checklist complete": "Checklist complete",
         "Checklist deleted": "Checklist deleted",
         "Checklist item": "Checklist item",
+        "Checklist item not done: %s": "Checklist item not done: %s",
         "Checklist items": "Checklist items",
         "Checklist name": "Checklist name",
         "Checklist name is required": "Checklist name is required",
@@ -3623,7 +3624,16 @@ OC.L10N.register(
         "Payment indication": "Payment indication",
         "Last payment date": "Last payment date",
         "The statutory article this case is handled under (e.g. Awb 4:13)": "The statutory article this case is handled under (e.g. Awb 4:13)",
-        "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm.": "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm."
+        "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm.": "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm.",
+        "Colour": "Colour",
+        "The hue this status is drawn in, on the status badge and as the Workflow board column header. A name from the NL Design System palette rather than a hex value, so a themed install repoints the token and every badge follows. Leave it empty and the status renders grey.": "The hue this status is drawn in, on the status badge and as the Workflow board column header. A name from the NL Design System palette rather than a hex value, so a themed install repoints the token and every badge follows. Leave it empty and the status renders grey.",
+        "Hidden in lists": "Hidden in lists",
+        "Whether cases in this status stay out of the Cases index. A closed status fills the list with work nobody is doing; marking it hidden keeps it off every lens except Closed. The case carries the flag as the calculated statusHiddenInLists so the list filters it server-side.": "Whether cases in this status stay out of the Cases index. A closed status fills the list with work nobody is doing; marking it hidden keeps it off every lens except Closed. The case carries the flag as the calculated statusHiddenInLists so the list filters it server-side.",
+        "Status hidden in lists": "Status hidden in lists",
+        "Whether the case sits at a status marked hidden in lists. Computed declaratively by OpenRegister from the linked statusType's hiddenInLists flag (x-openregister-calculations.statusHiddenInLists); the Cases index filters statusHiddenInLists=false on every lens but Closed.": "Whether the case sits at a status marked hidden in lists. Computed declaratively by OpenRegister from the linked statusType's hiddenInLists flag (x-openregister-calculations.statusHiddenInLists); the Cases index filters statusHiddenInLists=false on every lens but Closed.",
+        "What this status asks for. Every item becomes a task on the case the moment the case enters this status, created once per status however often the case comes back. An item marked required holds the case in this status until its task is completed, and the transition button says which item is still open.": "What this status asks for. Every item becomes a task on the case the moment the case enters this status, created once per status however often the case comes back. An item marked required holds the case in this status until its task is completed, and the transition button says which item is still open.",
+        "What has to be done. This is the title of the task that is created.": "What has to be done. This is the title of the task that is created.",
+        "Whether the case may leave this status before this item's task is completed.": "Whether the case may leave this status before this item's task is completed."
     },
     "nplurals=2; plural=(n != 1);"
 )
