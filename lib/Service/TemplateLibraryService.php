@@ -171,6 +171,17 @@ class TemplateLibraryService {
 			throw new RuntimeException('Template not found: ' . $templateId);
 		}
 
+		// The library holds two kinds: zaaktype bundles, which describe a case
+		// type, and DOCUMENT templates, which carry a `body` a letter is
+		// rendered from and no case type at all. Activating the latter would
+		// save an EMPTY caseType object and report a uuid for it, so the
+		// refusal is here rather than in whatever calls this.
+		if (is_array(($template['caseType'] ?? null)) === false) {
+			throw new RuntimeException(
+				'Template is not a case type and cannot be activated: ' . $templateId
+			);
+		}
+
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');

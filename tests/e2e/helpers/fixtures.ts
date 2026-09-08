@@ -75,6 +75,11 @@ export const FIXTURE_SCHEMAS = [
 	'caseProperty',
 	'caseTask',
 	'contactmoment',
+	// The dossier, child-first: the join names both the case and the document,
+	// and the document names its type.
+	'zaakinformatieobject',
+	'informatieobject',
+	'informatieobjecttype',
 	'consultation',
 	'objectionProceeding',
 	// A role points at a case AND at a role type, so it goes before both.
