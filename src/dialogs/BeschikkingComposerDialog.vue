@@ -3,107 +3,97 @@
 <template>
 	<NcDialog
 		v-if="open"
-		:name="t('dossiq', 'Beschikking opstellen')"
-		size="large"
+		:name="t('dossiq', 'Generate document')"
+		size="normal"
 		:canClose="!submitting"
 		@closing="onClose">
-		<div class="beschikking-composer">
-			<div v-if="!composed" class="beschikking-composer__form">
-				<div class="beschikking-composer__field">
-					<NcSelect
-						v-model="templateId"
-						:options="templateOptions"
-						:inputLabel="t('dossiq', 'Sjabloon')"
-						label="label"
-						:reduce="(opt) => opt.value"
-						:placeholder="t('dossiq', 'Select a template')" />
-				</div>
-				<div class="beschikking-composer__field">
-					<NcTextField
-						:modelValue="geadresseerdeNaam"
-						:label="t('dossiq', 'Geadresseerde')"
-						@update:modelValue="(v) => (geadresseerdeNaam = v)" />
-				</div>
-				<div class="beschikking-composer__field">
-					<NcTextArea
-						:modelValue="rationale"
-						:label="t('dossiq', 'Motivering')"
-						@update:modelValue="(v) => (rationale = v)" />
-				</div>
+		<div class="generate-document">
+			<div v-if="!generated" class="generate-document__form">
+				<p class="generate-document__intro">
+					{{
+						t(
+							'dossiq',
+							'Pick a template. The letter is rendered with this case and filed on the Documents tab as a draft.',
+						)
+					}}
+				</p>
+				<NcLoadingIcon v-if="loadingTemplates" :size="32" />
+				<NcSelect
+					v-else
+					v-model="templateId"
+					data-testid="generate-document-template"
+					:options="templateOptions"
+					:inputLabel="t('dossiq', 'Template')"
+					label="label"
+					:reduce="(option) => option.value"
+					:placeholder="t('dossiq', 'Select a template')" />
 				<NcNoteCard v-if="error" type="error">
 					{{ error }}
 				</NcNoteCard>
 			</div>
 
-			<div v-else class="beschikking-composer__preview">
-				<NcNoteCard type="success">
-					{{ t('dossiq', 'The decision has been composed as a draft.') }}
-				</NcNoteCard>
-				<dl class="beschikking-composer__meta">
-					<dt>{{ t('dossiq', 'Kenmerk') }}</dt>
-					<dd>{{ composed.reference || '—' }}</dd>
-					<dt>{{ t('dossiq', 'Sjabloon') }}</dt>
-					<dd>{{ composed.templateId }}</dd>
-					<dt>{{ t('dossiq', 'Status') }}</dt>
-					<dd>{{ composed.currentStatus }}</dd>
-				</dl>
-				<NcNoteCard v-if="composed.motivering_required" type="warning">
-					{{
-						t(
-							'dossiq',
-							'The rationale is still missing and is required.',
-						)
-					}}
-				</NcNoteCard>
-				<NcNoteCard v-if="composed.geadresseerde_required" type="warning">
-					{{
-						t(
-							'dossiq',
-							'The addressee is still missing and is required.',
-						)
-					}}
-				</NcNoteCard>
-			</div>
+			<NcNoteCard v-else type="success">
+				{{ t('dossiq', 'Document added to the case.') }}
+			</NcNoteCard>
 		</div>
 
 		<template #actions>
 			<NcButton :disabled="submitting" @click="onClose">
-				{{ t('dossiq', 'Annuleren') }}
+				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 			<NcButton
-				v-if="!composed"
+				v-if="!generated"
 				type="primary"
-				:disabled="submitting"
-				@click="onCompose">
-				{{ t('dossiq', 'Opstellen') }}
+				data-testid="generate-document-confirm"
+				:disabled="submitting || !templateId"
+				@click="onGenerate">
+				{{ t('dossiq', 'Generate') }}
 			</NcButton>
-			<NcButton v-else type="primary" @click="onDone">
-				{{ t('dossiq', 'Klaar') }}
+			<NcButton v-else type="primary" @click="onClose">
+				{{ t('dossiq', 'Close') }}
 			</NcButton>
 		</template>
 	</NcDialog>
 </template>
 
 <script>
+import axios from '@nextcloud/axios'
+import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
 	NcDialog,
+	NcLoadingIcon,
 	NcNoteCard,
 	NcSelect,
-	NcTextArea,
-	NcTextField,
 } from '@nextcloud/vue'
-import { compose } from '../services/beschikkingApi.js'
 
+/**
+ * Generate document — the case page's Generate document header action.
+ *
+ * The action is `type: open-modal` and NOT `run-action`, because
+ * `actionsDispatcher.js` does not dispatch a `run-action` yet (design D4).
+ * That has one consequence worth stating: the dispatcher forwards
+ * `action.props` VERBATIM, resolving no `@`-tokens, so `caseId: "@objectId"`
+ * arrives as the literal string. The dialog therefore never trusts the prop
+ * on its own — it falls back to the route's own id, which is the same case in
+ * every path that opens this dialog.
+ *
+ * The templates come from `TemplateController#index`, the single library, and
+ * the chosen one is rendered and filed by `MergeTemplateHandler` with NO
+ * `targetField` — the same branch `DossiqMergeTemplateNode` will run once the
+ * library can dispatch the action directly.
+ *
+ * @spec openspec/specs/beschikking-generatie/spec.md
+ * @spec openspec/specs/template-library/spec.md
+ */
 export default {
 	name: 'BeschikkingComposerDialog',
 	components: {
 		NcButton,
 		NcDialog,
+		NcLoadingIcon,
 		NcNoteCard,
 		NcSelect,
-		NcTextArea,
-		NcTextField,
 	},
 
 	props: {
@@ -112,66 +102,130 @@ export default {
 			default: false,
 		},
 
+		// May arrive as the unresolved `@objectId` token; see resolvedCaseId.
 		caseId: {
 			type: String,
-			required: true,
-		},
-
-		templateOptions: {
-			type: Array,
-			default: () => [],
+			default: '',
 		},
 	},
 
-	emits: ['close', 'composed'],
+	emits: ['close', 'generated'],
 	data() {
 		return {
+			templates: [],
 			templateId: null,
-			geadresseerdeNaam: '',
-			rationale: '',
-			composed: null,
+			loadingTemplates: false,
+			generated: null,
 			submitting: false,
 			error: '',
 		}
 	},
 
+	computed: {
+		/**
+		 * The case this dialog files a document on.
+		 *
+		 * An `open-modal` action's `props` are forwarded verbatim, so a prop
+		 * still holding an `@` token is not a case id — the route is.
+		 *
+		 * @return {string} The case id, or empty string.
+		 * @spec openspec/specs/beschikking-generatie/spec.md
+		 */
+		resolvedCaseId() {
+			const fromProp = this.caseId || ''
+			if (fromProp !== '' && !fromProp.startsWith('@')) {
+				return fromProp
+			}
+			return (this.$route && this.$route.params && this.$route.params.id) || ''
+		},
+
+		/**
+		 * The library templates, by name, for the picker.
+		 *
+		 * @return {Array} The picker options.
+		 * @spec openspec/specs/template-library/spec.md
+		 */
+		templateOptions() {
+			return this.templates.map((template) => ({
+				value: template.id,
+				label: template.title || template.id,
+			}))
+		},
+	},
+
+	watch: {
+		open: {
+			immediate: true,
+			/**
+			 * Load the library the moment the dialog opens.
+			 *
+			 * @param {boolean} isOpen Whether the dialog is showing.
+			 * @spec openspec/specs/template-library/spec.md
+			 */
+			handler(isOpen) {
+				if (isOpen) {
+					this.fetchTemplates()
+				}
+			},
+		},
+	},
+
 	methods: {
 		/**
-		 * Compose a concept beschikking from the case data plus overrides.
+		 * Fetch the templates TemplateController#index returns.
 		 *
 		 * @return {Promise<void>}
-		 *
-		 * @spec openspec/specs/beschikking-generatie/spec.md#requirement-conceptbeschikking-vanuit-zaakgegevens-samenstellen-req-bes-001
+		 * @spec openspec/specs/template-library/spec.md
 		 */
-		async onCompose() {
+		async fetchTemplates() {
+			this.loadingTemplates = true
+			this.error = ''
+			try {
+				const { data } = await axios.get(
+					generateUrl('/apps/dossiq/api/templates'),
+				)
+				this.templates = data.results || []
+			} catch {
+				this.templates = []
+				this.error = this.t('dossiq', 'The template library is unavailable.')
+			} finally {
+				this.loadingTemplates = false
+			}
+		},
+
+		/**
+		 * Render the chosen template over the case and file the result.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/beschikking-generatie/spec.md
+		 */
+		async onGenerate() {
+			if (!this.templateId || this.resolvedCaseId === '') {
+				return
+			}
 			this.submitting = true
 			this.error = ''
 			try {
-				const overrides = {}
-				if (this.geadresseerdeNaam) {
-					overrides.addressee = { name: this.geadresseerdeNaam }
-				}
-				if (this.rationale) {
-					overrides.rationale = this.rationale
-				}
-				this.composed = await compose(
-					this.caseId,
-					this.templateId,
-					overrides,
+				const { data } = await axios.post(
+					generateUrl(
+						`/apps/dossiq/api/cases/${encodeURIComponent(this.resolvedCaseId)}/dossier/generate`,
+					),
+					{ templateId: this.templateId },
 				)
-				this.$emit('composed', this.composed)
-			} catch (e) {
-				this.error = t('dossiq', 'The decision could not be drafted.')
+				this.generated = data
+				this.$emit('generated', data)
+			} catch {
+				this.error = this.t('dossiq', 'The document could not be generated.')
 			} finally {
 				this.submitting = false
 			}
 		},
 
-		onDone() {
-			this.$emit('composed', this.composed)
-			this.onClose()
-		},
-
+		/**
+		 * Close the dialog.
+		 *
+		 * @spec openspec/specs/beschikking-generatie/spec.md
+		 */
 		onClose() {
 			this.$emit('close')
 		},
@@ -180,18 +234,14 @@ export default {
 </script>
 
 <style scoped>
-.beschikking-composer__field {
-	margin-block-end: 12px;
+.generate-document {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding-block-end: 12px;
 }
 
-.beschikking-composer__meta {
-	display: grid;
-	grid-template-columns: max-content 1fr;
-	gap: 4px 16px;
-	margin-block-start: 12px;
-}
-
-.beschikking-composer__meta dt {
-	font-weight: bold;
+.generate-document__intro {
+	color: var(--color-text-maxcontrast);
 }
 </style>

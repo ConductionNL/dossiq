@@ -71,7 +71,7 @@ criteria under a task are plain bullets.
   - `composer check:strict` exits 0; no new `StaticAccess` in phpmd
   - `@spec openspec/specs/beschikking-generatie/spec.md`
   - `@spec openspec/specs/template-library/spec.md`
-- [ ] 3.2 `src/manifest.json` page `CaseDetail`: header action
+- [x] 3.2 `src/manifest.json` page `CaseDetail`: header action
   `generate-document`, `type: open-modal`, `modal:
   BeschikkingComposerDialog`, `props.caseId: @objectId`, label Generate
   document, icon `FileDocumentPlusOutline`, `successMessage` "Document

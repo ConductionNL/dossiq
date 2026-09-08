@@ -3548,6 +3548,11 @@
         "Clear the keyword filter to see the whole dossier.": "Wis het trefwoordfilter om het hele dossier te zien.",
         "Filter by keyword": "Filter op trefwoord",
         "No documents match this keyword": "Geen documenten met dit trefwoord",
-        "Type a keyword and press enter": "Typ een trefwoord en druk op enter"
+        "Type a keyword and press enter": "Typ een trefwoord en druk op enter",
+        "Document added to the case.": "Document toegevoegd aan de zaak.",
+        "Generate document": "Document genereren",
+        "Pick a template. The letter is rendered with this case and filed on the Documents tab as a draft.": "Kies een sjabloon. De brief wordt met deze zaak samengesteld en als concept op het tabblad Documenten gezet.",
+        "The document could not be generated.": "Het document kon niet worden gegenereerd.",
+        "The template library is unavailable.": "De sjabloonbibliotheek is niet beschikbaar."
     }
 }

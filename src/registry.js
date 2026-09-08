@@ -42,6 +42,9 @@ import BesluitvormingLeafTab from './components/tabs/BesluitvormingLeafTab.vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
+// Generate document — the CaseDetail header action's template picker.
+// @spec openspec/specs/beschikking-generatie/spec.md
+import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
 // VTH-specific case detail panels
 import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
@@ -214,6 +217,14 @@ const registry = {
 		kind: 'widget',
 		component: TaskWaitingCaseSection,
 		_note: 'TaskDetail section: names the case a suspended flow run is holding on this task and links to it. Renders NOTHING for a task without a flowRun, so pre-existing tasks are unchanged. The case half (run + stage on CaseDetail) is deliberately absent: it waits on the fleet-generic subject-scoped runs widget (openregister flow-runs-subject-scope).',
+	},
+
+	// --- Generate document, the CaseDetail header action (documents-on-the-case). ---
+	// @spec openspec/specs/beschikking-generatie/spec.md
+	BeschikkingComposerDialog: {
+		kind: 'modal',
+		component: BeschikkingComposerDialog,
+		_note: "Picks a template from TemplateController#index and files the rendered letter on the case through MergeTemplateHandler with no targetField. Opened by the CaseDetail `generate-document` header action as `type: open-modal`, the interim for a `run-action` the library cannot dispatch yet (design D4). The action passes `open: true` because CnAppRoot mounts a registry modal with the action's props verbatim, and the dialog renders on `open`; `caseId` is passed for the same reason and IGNORED when it still holds the unresolved `@objectId` token, because open-modal resolves no tokens.",
 	},
 
 	// --- The case file as a tab on the case page (documents-on-the-case). ---

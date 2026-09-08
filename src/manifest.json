@@ -1791,6 +1791,18 @@
 						}
 					},
 					{
+						"id": "generate-document",
+						"type": "open-modal",
+						"target": "BeschikkingComposerDialog",
+						"label": "Generate document",
+						"icon": "FileDocumentPlusOutline",
+						"props": {
+							"caseId": "@objectId",
+							"open": true
+						},
+						"successMessage": "Document added to the case."
+					},
+					{
 						"id": "log-hours",
 						"type": "open-form",
 						"label": "Log hours",
