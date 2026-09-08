@@ -98,6 +98,7 @@ import FileDocumentEditOutline from 'vue-material-design-icons/FileDocumentEditO
 import FileDocumentMultiple from 'vue-material-design-icons/FileDocumentMultiple.vue'
 import FileDocumentMultipleOutline from 'vue-material-design-icons/FileDocumentMultipleOutline.vue'
 import FileDocumentOutline from 'vue-material-design-icons/FileDocumentOutline.vue'
+import FileDocumentPlusOutline from 'vue-material-design-icons/FileDocumentPlusOutline.vue'
 import FileEyeOutline from 'vue-material-design-icons/FileEyeOutline.vue'
 import FileSign from 'vue-material-design-icons/FileSign.vue'
 import FileTreeOutline from 'vue-material-design-icons/FileTreeOutline.vue'
@@ -266,6 +267,7 @@ export default {
 	FileDocumentMultiple,
 	FileDocumentMultipleOutline,
 	FileDocumentOutline,
+	FileDocumentPlusOutline,
 	FileEyeOutline,
 	FileSign,
 	FileTreeOutline,

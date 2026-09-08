@@ -1584,6 +1584,16 @@
 						}
 					},
 					{
+						"id": "case-documents",
+						"type": "dossier-tab",
+						"title": "Documents",
+						"icon": "FileDocumentMultipleOutline",
+						"_note": "The case file, on the case page. `zaakinformatieobject` rows for this case, rendered through DossierTab: title, type, status, direction, date and author, the drop zone that writes an informatieobject plus its join, and the version panel per row. Five of the six columns live on the REFERENCED informatieobject and CnObjectListWidget renders a `$ref` column as the raw reference, so the interim is a custom widget type rather than an `object-list` over `zaakinformatieobject` (change documents-on-the-case, task 2.2). The type is `dossier-tab` and NOT `custom`: a `type: \"custom\"` widget resolves through the page's `widget-<id>` slot, which CnDetailPage renders only for LAYOUT grid items, so inside a tab panel it renders nothing and says nothing — CnTabsWidget dispatches its children through CnDetailWidgetHost, which resolves a renderer by widget TYPE against the consumer registry (REQ-MVR-005). Deliberately absent from `layout`: the tabs widget renders it, and a layout entry would render it twice. The Files tab stays beside it for loose attachments and Nextcloud shares.",
+						"content": {
+							"emptyText": "No documents yet"
+						}
+					},
+					{
 						"id": "case-panels",
 						"type": "tabs",
 						"title": "Case panels",
@@ -1595,6 +1605,10 @@
 								{
 									"widgetId": "case-notes",
 									"label": "Notes"
+								},
+								{
+									"widgetId": "case-documents",
+									"label": "Documents"
 								},
 								{
 									"widgetId": "case-files",
@@ -1821,6 +1835,18 @@
 							"identificationMethod": "non_geidentificeerd",
 							"nature": "informatieverzoek"
 						}
+					},
+					{
+						"id": "generate-document",
+						"type": "open-modal",
+						"target": "BeschikkingComposerDialog",
+						"label": "Generate document",
+						"icon": "FileDocumentPlusOutline",
+						"props": {
+							"caseId": "@objectId",
+							"open": true
+						},
+						"successMessage": "Document added to the case."
 					},
 					{
 						"id": "log-hours",
