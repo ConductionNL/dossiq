@@ -3761,7 +3761,8 @@ OC.L10N.register(
         "We read the four systems on {date}. Open source moves fast, so some of these ratings are already out of date. Check that date before you rely on them.": "We lazen de vier systemen op {date}. Open source gaat snel, dus een deel van deze beoordelingen is nu al verouderd. Kijk naar die datum voordat je erop vertrouwt.",
         "What dossiq does": "Wat dossiq doet",
         "Before you use this table": "Voordat je deze tabel gebruikt",
-        "We strongly advise you to run your own evaluation. This table does not replace testing against your own requirements.": "We raden je sterk aan zelf een evaluatie te doen. Deze tabel vervangt geen test tegen je eigen eisen."
+        "We strongly advise you to run your own evaluation. This table does not replace testing against your own requirements.": "We raden je sterk aan zelf een evaluatie te doen. Deze tabel vervangt geen test tegen je eigen eisen.",
+        "The case number. Filled declaratively by OpenRegister (x-openregister-calculations.identifier) as YEAR-NNNN, e.g. 2026-0042, where the year comes from startDate and NNNN from a yearly sequence. A number supplied on create is KEPT: the expression coalesces the given value ahead of the sequence, so an imported or migrated case keeps the number it already had. The sequence is not consumed in that case, because coalesce stops at the first non-null operand.": "Het zaaknummer. Wordt declaratief gevuld door OpenRegister (x-openregister-calculations.identifier) als JAAR-NNNN, bijvoorbeeld 2026-0042, waarbij het jaar uit startDate komt en NNNN uit een jaarlijkse reeks. Een nummer dat bij het aanmaken wordt meegegeven BLIJFT staan: de expressie zet de meegegeven waarde vóór de reeks, zodat een geïmporteerde of gemigreerde zaak het nummer houdt dat hij al had. De reeks wordt in dat geval niet verbruikt, omdat coalesce stopt bij de eerste waarde die niet null is."
     },
     "nplurals=2; plural=(n != 1);"
 )
