@@ -49,15 +49,7 @@ const RERATED_IDS = ['1.8', '2.8', '2.9', '4.9', '5.5', '11.23']
 // makes each of those moves visible instead of a page quietly claiming a clean
 // sheet. 2.4, a one-click claim on a case, is the one row here that is
 // certainly still true.
-const BEHIND_EVERY_RIVAL = [
-	'2.1',
-	'2.4',
-	'4.16',
-	'4.22',
-	'9.1',
-	'11.10',
-	'12.7',
-]
+const BEHIND_EVERY_RIVAL = ['2.1', '2.4', '4.16', '4.22', '9.1', '11.10', '12.7']
 
 // Two labels are identical in English and Dutch because the Dutch IS the
 // English: `StUF (BG, ZKN, DCR)` is a Dutch standard's own name, and `Intake`
