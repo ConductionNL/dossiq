@@ -58,5 +58,5 @@ criteria under a task are plain bullets.
   tab listing two rows and not the other case's, newest first, the empty
   state, a logged call showing up, and the form without the KCC fields.
   Assert on ids and saved objects, not English labels.
-- [ ] 4.3 Run `composer check:strict`, `npm run check:manifest`, the hydra
+- [x] 4.3 Run `composer check:strict`, `npm run check:manifest`, the hydra
   gates and the unit suite locally; read the exit codes, not the summaries.
