@@ -100,8 +100,8 @@ criteria under a task are plain bullets. Depends on `documents-on-the-case`
   and testids, not labels, because the instance may run in Dutch.
   - the spec must appear in `tests/e2e/playwright.config.ts`'s project, the
     config CI reads
-- [ ] 5.2 Run `npm run lint`, `npm run check:manifest`, `npm run test:unit`
+- [x] 5.2 Run `npm run lint`, `npm run check:manifest`, `npm run test:unit`
   and the e2e spec locally; read `$?` on each, not the summary line.
-- [ ] 5.3 `docs/case-detail.md` (or the page's docs entry): one paragraph
+- [x] 5.3 `docs/case-detail.md` (or the page's docs entry): one paragraph
   on the header row, the breadcrumb and the tab order; load the `writing`
   skill first.
