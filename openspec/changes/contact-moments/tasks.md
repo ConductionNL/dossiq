@@ -51,7 +51,7 @@ criteria under a task are plain bullets.
 
 ## 4. Seed and verification
 
-- [ ] 4.1 `lib/Settings/register.d/46-demo-cases-english.json`: two contact
+- [x] 4.1 `lib/Settings/register.d/46-demo-cases-english.json`: two contact
   moments on one demo case per design Seed Data, with `case` set.
 - [ ] 4.2 Add `tests/e2e/case-communication.spec.ts` covering every scenario
   of the delta spec that names it: the saved contact carrying the case, the
