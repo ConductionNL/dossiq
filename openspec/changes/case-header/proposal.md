@@ -51,21 +51,26 @@ and Samenwerkingen conditional.
 - **A33, the tab order.** `case-panels.content.tabs` in the order Data,
   Documents (`case-documents`, from `documents-on-the-case`), Parties
   (`case-roles`, from `parties-on-the-case`), Tasks (`case-tasks`),
-  Communication (`case-communication`, from `contact-moments`), Timeline
-  (`case-timeline`, from `case-timeline`; the History sidebar tab until it
-  lands). Sub-cases, Locations, Appointments and Decisions follow, and show
+  Communication (`case-communication`, from `contact-moments`). There is
+  NO Timeline entry: the case timeline is the sidebar History tab, per
+  change `case-timeline` (row A05), and a body panel over the same audit
+  log beside that tab is the very duplication row A05 retires. Amended by
+  `case-timeline` task 4.1 while both changes sit unarchived in this batch.
+  Sub-cases, Locations, Appointments and Decisions follow, and show
   only when they hold something. That needs `visibleIf` on a tab entry,
   which `CnTabsWidget` 2.40.0 does not read: `[blocked: nextcloud-vue]`,
   interim: the four stay last in the strip. Files, Notes, Mail, Related
   cases and Contacts leave the strip once their sibling changes fold them
   (Files into Documents, Notes and Mail into Communication, Contacts into
-  Parties); until then they sit between Timeline and the conditional four.
+  Parties); until then they sit between Communication and the conditional
+  four.
 
 ## Not in this change
 
 The stepper (`case-lifecycle-on-the-page`, REQ-CDV-13), the Documents,
-Parties and Communication tabs themselves, the Timeline widget, and the
-state controls (A02). This change only orders what those deliver.
+Parties and Communication tabs themselves, the case timeline (which is
+`case-timeline`'s sidebar tab, not a body widget), and the state controls
+(A02). This change only orders what those deliver.
 
 ## Decisions
 
