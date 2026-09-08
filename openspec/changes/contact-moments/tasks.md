@@ -53,7 +53,7 @@ criteria under a task are plain bullets.
 
 - [x] 4.1 `lib/Settings/register.d/46-demo-cases-english.json`: two contact
   moments on one demo case per design Seed Data, with `case` set.
-- [ ] 4.2 Add `tests/e2e/case-communication.spec.ts` covering every scenario
+- [x] 4.2 Add `tests/e2e/case-communication.spec.ts` covering every scenario
   of the delta spec that names it: the saved contact carrying the case, the
   tab listing two rows and not the other case's, newest first, the empty
   state, a logged call showing up, and the form without the KCC fields.
