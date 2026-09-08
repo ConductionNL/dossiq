@@ -26,6 +26,7 @@
  *
  * @param {object} row An object row.
  * @return {string} The id, or the empty string.
+ * @spec openspec/specs/case-dashboard-view/spec.md
  */
 export function rowId(row) {
 	if (!row || typeof row !== 'object') {
@@ -44,12 +45,19 @@ export function rowId(row) {
  *
  * @param {Array<object>} rows The statusType rows of one case type.
  * @return {Array<{id: string, label: string, subtitle: string}>} The stages.
+ * @spec openspec/specs/case-dashboard-view/spec.md
  */
 export function toStages(rows) {
-	const list = Array.isArray(rows) ? rows.filter((r) => r && typeof r === 'object') : []
+	const list = Array.isArray(rows)
+		? rows.filter((r) => r && typeof r === 'object')
+		: []
 	const ordered = [...list].sort((a, b) => {
-		const left = Number.isFinite(Number(a.order)) ? Number(a.order) : Number.MAX_SAFE_INTEGER
-		const right = Number.isFinite(Number(b.order)) ? Number(b.order) : Number.MAX_SAFE_INTEGER
+		const left = Number.isFinite(Number(a.order))
+			? Number(a.order)
+			: Number.MAX_SAFE_INTEGER
+		const right = Number.isFinite(Number(b.order))
+			? Number(b.order)
+			: Number.MAX_SAFE_INTEGER
 		if (left !== right) {
 			return left - right
 		}
@@ -69,6 +77,7 @@ export function toStages(rows) {
  * @param {Array<object>} statusRows The case type's statusType rows.
  * @param {string} toStatus The target status id.
  * @return {boolean} True when that status carries isFinal.
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function isClosingTransition(statusRows, toStatus) {
 	if (!toStatus) {
@@ -80,7 +89,12 @@ export function isClosingTransition(statusRows, toStatus) {
 	if (!target) {
 		return false
 	}
-	return target.isFinal === true || target.isFinal === 1 || target.isFinal === '1' || target.isFinal === 'true'
+	return (
+		target.isFinal === true
+		|| target.isFinal === 1
+		|| target.isFinal === '1'
+		|| target.isFinal === 'true'
+	)
 }
 
 /**
@@ -97,6 +111,7 @@ export function isClosingTransition(statusRows, toStatus) {
  * @param {string} params.resultTypeId The picked result type, if any.
  * @param {boolean} params.busy Whether a request is already in flight.
  * @return {boolean} True when the transition may be confirmed.
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function canConfirmTransition({ closing, resultTypes, resultTypeId, busy }) {
 	if (busy === true) {
@@ -123,6 +138,7 @@ export function canConfirmTransition({ closing, resultTypes, resultTypeId, busy 
  * @param {string} [params.comment] The handler's comment.
  * @param {string} [params.resultTypeId] The result type for a closing move.
  * @return {object} The request body.
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function buildTransitionPayload({ transitionId, comment, resultTypeId }) {
 	const payload = { transitionId: String(transitionId ?? '') }
@@ -143,6 +159,7 @@ export function buildTransitionPayload({ transitionId, comment, resultTypeId }) 
  *
  * @param {object} state The `/lifecycle` response.
  * @return {Array<string>} The action ids to offer.
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function offeredLifecycleActions(state) {
 	if (!state || typeof state !== 'object') {
@@ -180,6 +197,7 @@ export function offeredLifecycleActions(state) {
  * @param {string} action One of suspend, resume, extend, reopen.
  * @param {object|null} state The `/lifecycle` response, or null when unread.
  * @return {string} The refusal code, or the empty string when allowed.
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function lifecycleRefusalCode(action, state) {
 	if (!state || typeof state !== 'object') {
@@ -190,7 +208,9 @@ export function lifecycleRefusalCode(action, state) {
 	}
 	switch (String(action)) {
 		case 'suspend':
-			return state.suspended === true ? 'already_suspended' : 'suspension_not_allowed'
+			return state.suspended === true
+				? 'already_suspended'
+				: 'suspension_not_allowed'
 		case 'resume':
 			return 'not_suspended'
 		case 'extend':
@@ -208,6 +228,7 @@ export function lifecycleRefusalCode(action, state) {
  * @param {object} body The refusal body ({error, code, failedGuards}).
  * @param {(key: string) => string} translate The bound t(), taking one string.
  * @return {string} What to show the handler.
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function refusalMessage(body, translate) {
 	const t = typeof translate === 'function' ? translate : (s) => s
@@ -218,7 +239,9 @@ export function refusalMessage(body, translate) {
 		// bare type name ("requiredDocument"), so the one sentence the handler
 		// needed was the one sentence that never rendered.
 		const named = guards
-			.map((guard) => String(guard?.failureMessage ?? guard?.message ?? guard?.type ?? ''))
+			.map((guard) =>
+				String(guard?.failureMessage ?? guard?.message ?? guard?.type ?? ''),
+			)
 			.filter(Boolean)
 		if (named.length > 0) {
 			return named.join(' ')

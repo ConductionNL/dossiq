@@ -25,7 +25,9 @@
 
 		<template v-else>
 			<div class="case-transitions__state">
-				<span class="case-transitions__status" data-testid="case-current-status">
+				<span
+					class="case-transitions__status"
+					data-testid="case-current-status">
 					{{ statusName }}
 				</span>
 				<span
@@ -147,6 +149,12 @@ export default {
 		},
 	},
 
+	/**
+	 * Read the case's transitions and lifecycle state once the strip is up.
+	 *
+	 * @return {Promise<void>}
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
 	async mounted() {
 		subscribe(PAGE_REFRESH, this.onPageRefresh)
 		await initializeStores()
@@ -191,7 +199,9 @@ export default {
 						`/apps/dossiq/api/case/${encodeURIComponent(this.caseId)}/available-transitions`,
 					),
 				)
-				this.transitions = Array.isArray(data?.transitions) ? data.transitions : []
+				this.transitions = Array.isArray(data?.transitions)
+					? data.transitions
+					: []
 				this.statusName = String(data?.current?.statusName ?? '')
 			} catch {
 				// A case whose engine cannot answer shows no buttons rather than
@@ -209,7 +219,9 @@ export default {
 		async loadLifecycleState() {
 			try {
 				const { data } = await axios.get(
-					generateUrl(`/apps/dossiq/api/case/${encodeURIComponent(this.caseId)}/lifecycle`),
+					generateUrl(
+						`/apps/dossiq/api/case/${encodeURIComponent(this.caseId)}/lifecycle`,
+					),
 				)
 				this.lifecycleState = data ?? null
 			} catch {
@@ -228,7 +240,8 @@ export default {
 			const store = useObjectStore()
 			let caseTypeId
 			try {
-				const caseObject = (await store.fetchObject('case', this.caseId)) || {}
+				const caseObject =
+					(await store.fetchObject('case', this.caseId)) || {}
 				caseTypeId = String(caseObject.caseType ?? '')
 			} catch {
 				caseTypeId = ''
@@ -246,18 +259,20 @@ export default {
 			// dialog asking for a result on a CLOSING transition rather than
 			// merely leaving it nothing to offer.
 			try {
-				this.statusTypes = (await store.fetchCollection('statusType', {
-					caseType: caseTypeId,
-					_limit: 100,
-				})) || []
+				this.statusTypes =
+					(await store.fetchCollection('statusType', {
+						caseType: caseTypeId,
+						_limit: 100,
+					})) || []
 			} catch {
 				this.statusTypes = []
 			}
 			try {
-				const results = (await store.fetchCollection('resultType', {
-					caseType: caseTypeId,
-					_limit: 100,
-				})) || []
+				const results =
+					(await store.fetchCollection('resultType', {
+						caseType: caseTypeId,
+						_limit: 100,
+					})) || []
 				this.resultTypes = results.map((row) => ({
 					id: rowId(row),
 					label: String(row.name ?? row.title ?? ''),

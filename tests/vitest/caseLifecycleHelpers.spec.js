@@ -38,7 +38,11 @@ describe('toStages', () => {
 	]
 
 	it('orders the stages by order, reading numeric strings as numbers', () => {
-		expect(toStages(rows).map((s) => s.id)).toEqual(['received', 'progress', 'done'])
+		expect(toStages(rows).map((s) => s.id)).toEqual([
+			'received',
+			'progress',
+			'done',
+		])
 	})
 
 	it('labels each stage with the status name', () => {
@@ -90,46 +94,79 @@ describe('isClosingTransition', () => {
 describe('canConfirmTransition', () => {
 	it('allows an ordinary transition', () => {
 		expect(
-			canConfirmTransition({ closing: false, resultTypes: [], resultTypeId: '', busy: false }),
+			canConfirmTransition({
+				closing: false,
+				resultTypes: [],
+				resultTypeId: '',
+				busy: false,
+			}),
 		).toBe(true)
 	})
 
 	it('blocks a closing transition until a result is picked', () => {
 		const resultTypes = [{ id: 'granted' }, { id: 'refused' }]
-		expect(canConfirmTransition({ closing: true, resultTypes, resultTypeId: '', busy: false })).toBe(
-			false,
-		)
 		expect(
-			canConfirmTransition({ closing: true, resultTypes, resultTypeId: 'granted', busy: false }),
+			canConfirmTransition({
+				closing: true,
+				resultTypes,
+				resultTypeId: '',
+				busy: false,
+			}),
+		).toBe(false)
+		expect(
+			canConfirmTransition({
+				closing: true,
+				resultTypes,
+				resultTypeId: 'granted',
+				busy: false,
+			}),
 		).toBe(true)
 	})
 
 	it('allows a closing transition on a case type that offers no results', () => {
 		expect(
-			canConfirmTransition({ closing: true, resultTypes: [], resultTypeId: '', busy: false }),
+			canConfirmTransition({
+				closing: true,
+				resultTypes: [],
+				resultTypeId: '',
+				busy: false,
+			}),
 		).toBe(true)
 	})
 
 	it('blocks while a request is in flight', () => {
 		expect(
-			canConfirmTransition({ closing: false, resultTypes: [], resultTypeId: '', busy: true }),
+			canConfirmTransition({
+				closing: false,
+				resultTypes: [],
+				resultTypeId: '',
+				busy: true,
+			}),
 		).toBe(false)
 	})
 })
 
 describe('buildTransitionPayload', () => {
 	it('carries only what was given', () => {
-		expect(buildTransitionPayload({ transitionId: 't1' })).toEqual({ transitionId: 't1' })
+		expect(buildTransitionPayload({ transitionId: 't1' })).toEqual({
+			transitionId: 't1',
+		})
 	})
 
 	it('carries the comment and the result type when they are given', () => {
 		expect(
-			buildTransitionPayload({ transitionId: 't2', comment: 'Klaar', resultTypeId: 'granted' }),
+			buildTransitionPayload({
+				transitionId: 't2',
+				comment: 'Klaar',
+				resultTypeId: 'granted',
+			}),
 		).toEqual({ transitionId: 't2', comment: 'Klaar', resultTypeId: 'granted' })
 	})
 
 	it('omits an empty result type rather than sending it as an empty answer', () => {
-		expect(buildTransitionPayload({ transitionId: 't2', resultTypeId: '' })).toEqual({
+		expect(
+			buildTransitionPayload({ transitionId: 't2', resultTypeId: '' }),
+		).toEqual({
 			transitionId: 't2',
 		})
 	})
@@ -138,15 +175,18 @@ describe('buildTransitionPayload', () => {
 describe('offeredLifecycleActions', () => {
 	it('offers what the case state allows, in menu order', () => {
 		expect(
-			offeredLifecycleActions({ canSuspend: true, canExtend: true, canReopen: false }),
+			offeredLifecycleActions({
+				canSuspend: true,
+				canExtend: true,
+				canReopen: false,
+			}),
 		).toEqual(['suspend', 'extend'])
 	})
 
 	it('offers Resume instead of Suspend on a suspended case', () => {
-		expect(offeredLifecycleActions({ canResume: true, canExtend: true })).toEqual([
-			'resume',
-			'extend',
-		])
+		expect(
+			offeredLifecycleActions({ canResume: true, canExtend: true }),
+		).toEqual(['resume', 'extend'])
 	})
 
 	it('offers nothing when the state could not be read', () => {
@@ -161,18 +201,24 @@ describe('lifecycleRefusalCode', () => {
 	})
 
 	it('names why the case type forbids the gesture', () => {
-		expect(lifecycleRefusalCode('suspend', { canSuspend: false, suspended: false })).toBe(
-			'suspension_not_allowed',
+		expect(
+			lifecycleRefusalCode('suspend', { canSuspend: false, suspended: false }),
+		).toBe('suspension_not_allowed')
+		expect(lifecycleRefusalCode('extend', { canExtend: false })).toBe(
+			'extension_not_allowed',
 		)
-		expect(lifecycleRefusalCode('extend', { canExtend: false })).toBe('extension_not_allowed')
-		expect(lifecycleRefusalCode('resume', { canResume: false })).toBe('not_suspended')
-		expect(lifecycleRefusalCode('reopen', { canReopen: false })).toBe('case_not_closed')
+		expect(lifecycleRefusalCode('resume', { canResume: false })).toBe(
+			'not_suspended',
+		)
+		expect(lifecycleRefusalCode('reopen', { canReopen: false })).toBe(
+			'case_not_closed',
+		)
 	})
 
 	it('tells an already-suspended case apart from one that may not be suspended', () => {
-		expect(lifecycleRefusalCode('suspend', { canSuspend: false, suspended: true })).toBe(
-			'already_suspended',
-		)
+		expect(
+			lifecycleRefusalCode('suspend', { canSuspend: false, suspended: true }),
+		).toBe('already_suspended')
 	})
 
 	it('refuses nothing when the state could not be read', () => {
@@ -191,16 +237,21 @@ describe('refusalMessage', () => {
 		const body = {
 			error: 'Transition is not available',
 			failedGuards: [
-				{ type: 'requiredDocument', passed: false, failureMessage: 'A decision document is required.', details: {} },
+				{
+					type: 'requiredDocument',
+					passed: false,
+					failureMessage: 'A decision document is required.',
+					details: {},
+				},
 			],
 		}
 		expect(refusalMessage(body, t)).toBe('A decision document is required.')
 	})
 
 	it('names a guard by type when it carries no message', () => {
-		expect(refusalMessage({ failedGuards: [{ type: 'requiredDocument' }] }, t)).toBe(
-			'requiredDocument',
-		)
+		expect(
+			refusalMessage({ failedGuards: [{ type: 'requiredDocument' }] }, t),
+		).toBe('requiredDocument')
 	})
 
 	it('joins several failed guards into one sentence', () => {
@@ -208,7 +259,10 @@ describe('refusalMessage', () => {
 			refusalMessage(
 				{
 					failedGuards: [
-						{ type: 'requiredField', failureMessage: 'Vul de omschrijving in.' },
+						{
+							type: 'requiredField',
+							failureMessage: 'Vul de omschrijving in.',
+						},
 						{ type: 'mandaat', failureMessage: 'Mandaat ontbreekt.' },
 					],
 				},
@@ -248,7 +302,10 @@ describe('refusalMessage', () => {
 			'reason_required',
 		]
 		for (const code of codes) {
-			const sentence = refusalMessage({ code, error: 'The case does not allow this' }, t)
+			const sentence = refusalMessage(
+				{ code, error: 'The case does not allow this' },
+				t,
+			)
 			expect(sentence, code).not.toBe('The case does not allow this')
 			expect(sentence.endsWith('.'), code).toBe(true)
 		}
@@ -262,6 +319,8 @@ describe('refusalMessage', () => {
 	})
 
 	it('survives a translate function that is not one', () => {
-		expect(refusalMessage({ code: 'reason_required' }, null)).toBe('Give a reason first.')
+		expect(refusalMessage({ code: 'reason_required' }, null)).toBe(
+			'Give a reason first.',
+		)
 	})
 })

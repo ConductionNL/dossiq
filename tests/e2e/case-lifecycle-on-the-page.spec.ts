@@ -71,7 +71,8 @@ test.describe('Case lifecycle on the case page', () => {
 		const caseType = await createObject(api, token, 'caseType', {
 			title: `${RUN_PREFIX} Lifecycle`,
 			identifier: `${RUN_PREFIX.toLowerCase()}-lifecycle`,
-			description: 'Throwaway caseType for the case-lifecycle-on-the-page e2e layer.',
+			description:
+				'Throwaway caseType for the case-lifecycle-on-the-page e2e layer.',
 			processingDeadline: 'P30D',
 			suspensionAllowed: true,
 			extensionAllowed: true,
@@ -139,7 +140,12 @@ test.describe('Case lifecycle on the case page', () => {
 					label: `${RUN_PREFIX} Goedkeuren`,
 					fromStatus: statusProgress,
 					toStatus: statusDone,
-					guards: [{ type: 'roleGuard', allowedRoles: [`${RUN_PREFIX}-afdelingshoofd`] }],
+					guards: [
+						{
+							type: 'roleGuard',
+							allowedRoles: [`${RUN_PREFIX}-afdelingshoofd`],
+						},
+					],
 				},
 				{
 					id: T.close,
@@ -155,7 +161,9 @@ test.describe('Case lifecycle on the case page', () => {
 					label: `${RUN_PREFIX} Besluit nemen`,
 					fromStatus: statusReceived,
 					toStatus: statusProgress,
-					guards: [{ type: 'requiredDocument', documentType: REQUIRED_DOC }],
+					guards: [
+						{ type: 'requiredDocument', documentType: REQUIRED_DOC },
+					],
 				},
 			]),
 		})
@@ -166,7 +174,9 @@ test.describe('Case lifecycle on the case page', () => {
 				caseType: caseTypeId,
 				status,
 				startDate: new Date().toISOString().slice(0, 10),
-				plannedEndDate: new Date(Date.now() + 30 * DAY).toISOString().slice(0, 10),
+				plannedEndDate: new Date(Date.now() + 30 * DAY)
+					.toISOString()
+					.slice(0, 10),
 			})
 			cases[key] = objectId(row)
 		}
@@ -198,19 +208,27 @@ test.describe('Case lifecycle on the case page', () => {
 	 */
 	const openCase = async (page: any, key: string) => {
 		await page.goto(`/apps/${REGISTER}/cases/${cases[key]}`)
-		await expect(page.getByTestId('case-transitions')).toBeVisible({ timeout: 30_000 })
-		await expect(page.getByTestId('case-current-status')).toBeVisible({ timeout: 30_000 })
+		await expect(page.getByTestId('case-transitions')).toBeVisible({
+			timeout: 30_000,
+		})
+		await expect(page.getByTestId('case-current-status')).toBeVisible({
+			timeout: 30_000,
+		})
 	}
 
 	// @e2e openspec/specs/status-transition-engine/spec.md#display-available-transitions-on-case-detail
-	test('the header row lists only the transitions this user may take', async ({ page }) => {
+	test('the header row lists only the transitions this user may take', async ({
+		page,
+	}) => {
 		const errors = trackDossiqErrors(page)
 		await openCase(page, 'roles')
 
 		// Any role may send the case back; only an Afdelingshoofd may approve.
-		await expect(page.getByTestId(`case-transition-${T.send_back}`)).toBeVisible({
-			timeout: 20_000,
-		})
+		await expect(page.getByTestId(`case-transition-${T.send_back}`)).toBeVisible(
+			{
+				timeout: 20_000,
+			},
+		)
 		await expect(page.getByTestId(`case-transition-${T.approve}`)).toHaveCount(0)
 		// A transition out of a DIFFERENT status is not on offer either.
 		await expect(page.getByTestId(`case-transition-${T.start}`)).toHaveCount(0)
@@ -218,21 +236,33 @@ test.describe('Case lifecycle on the case page', () => {
 	})
 
 	// @e2e openspec/specs/status-transition-engine/spec.md#no-transitions-available
-	test('a closed case offers no transitions and says it is closed', async ({ page }) => {
+	test('a closed case offers no transitions and says it is closed', async ({
+		page,
+	}) => {
 		await openCase(page, 'closed')
-		await expect(page.getByTestId('case-closed-marker')).toBeVisible({ timeout: 20_000 })
+		await expect(page.getByTestId('case-closed-marker')).toBeVisible({
+			timeout: 20_000,
+		})
 		await expect(page.getByTestId(`case-transition-${T.close}`)).toHaveCount(0)
-		await expect(page.getByTestId(`case-transition-${T.send_back}`)).toHaveCount(0)
+		await expect(page.getByTestId(`case-transition-${T.send_back}`)).toHaveCount(
+			0,
+		)
 	})
 
 	// @e2e openspec/specs/status-transition-engine/spec.md#a-handler-advances-a-case
-	test('a handler advances the case and the strip re-reads it', async ({ page, request }) => {
+	test('a handler advances the case and the strip re-reads it', async ({
+		page,
+		request,
+	}) => {
 		await openCase(page, 'advance')
 		await page.getByTestId(`case-transition-${T.start}`).click()
 
 		const dialog = page.getByTestId('case-transition-dialog')
 		await expect(dialog).toBeVisible({ timeout: 15_000 })
-		await dialog.getByTestId('case-transition-comment').locator('textarea').fill('E2E move')
+		await dialog
+			.getByTestId('case-transition-comment')
+			.locator('textarea')
+			.fill('E2E move')
 		await page.getByTestId('case-transition-confirm').click()
 		await expect(dialog).toHaveCount(0, { timeout: 20_000 })
 
@@ -247,13 +277,18 @@ test.describe('Case lifecycle on the case page', () => {
 			`/index.php/apps/${REGISTER}/api/case/${cases.advance}/transition-history`,
 		)
 		expect(history.status()).toBe(200)
-		const rows = (await history.json()).history ?? (await history.json()).transitions ?? []
+		const rows =
+			(await history.json()).history
+			?? (await history.json()).transitions
+			?? []
 		expect(JSON.stringify(rows)).toContain(statusProgress)
 
 		// And the strip now lists the NEW status's transitions without a reload.
-		await expect(page.getByTestId(`case-transition-${T.send_back}`)).toBeVisible({
-			timeout: 20_000,
-		})
+		await expect(page.getByTestId(`case-transition-${T.send_back}`)).toBeVisible(
+			{
+				timeout: 20_000,
+			},
+		)
 		await expect(page.getByTestId(`case-transition-${T.start}`)).toHaveCount(0)
 	})
 
@@ -281,7 +316,10 @@ test.describe('Case lifecycle on the case page', () => {
 	})
 
 	// @e2e openspec/specs/status-transition-engine/spec.md#a-final-transition-records-a-result
-	test('closing the case records the result that was picked', async ({ page, request }) => {
+	test('closing the case records the result that was picked', async ({
+		page,
+		request,
+	}) => {
 		await openCase(page, 'close')
 		await page.getByTestId(`case-transition-${T.close}`).click()
 
@@ -290,7 +328,9 @@ test.describe('Case lifecycle on the case page', () => {
 		const select = page.getByTestId('case-transition-result')
 		await expect(select).toBeVisible({ timeout: 15_000 })
 		await select.click()
-		await page.getByRole('option', { name: new RegExp(`${RUN_PREFIX} Verleend`) }).click()
+		await page
+			.getByRole('option', { name: new RegExp(`${RUN_PREFIX} Verleend`) })
+			.click()
 		await page.getByTestId('case-transition-confirm').click()
 		await expect(dialog).toHaveCount(0, { timeout: 25_000 })
 
@@ -303,12 +343,19 @@ test.describe('Case lifecycle on the case page', () => {
 	})
 
 	// @e2e openspec/specs/status-transition-engine/spec.md#no-result-no-close
-	test('the confirm button stays disabled until a result is picked', async ({ page, request }) => {
+	test('the confirm button stays disabled until a result is picked', async ({
+		page,
+		request,
+	}) => {
 		await openCase(page, 'noresult')
 		await page.getByTestId(`case-transition-${T.close}`).click()
 
-		await expect(page.getByTestId('case-transition-dialog')).toBeVisible({ timeout: 15_000 })
-		await expect(page.getByTestId('case-transition-result')).toBeVisible({ timeout: 15_000 })
+		await expect(page.getByTestId('case-transition-dialog')).toBeVisible({
+			timeout: 15_000,
+		})
+		await expect(page.getByTestId('case-transition-result')).toBeVisible({
+			timeout: 15_000,
+		})
 		await expect(page.getByTestId('case-transition-confirm')).toBeDisabled()
 
 		const still = await showObject(request, 'case', cases.noresult)
@@ -316,7 +363,9 @@ test.describe('Case lifecycle on the case page', () => {
 	})
 
 	// @e2e openspec/specs/status-transition-engine/spec.md#suspend-then-resume
-	test('suspend puts the marker and Resume in front of the handler', async ({ page }) => {
+	test('suspend puts the marker and Resume in front of the handler', async ({
+		page,
+	}) => {
 		await openCase(page, 'suspend')
 
 		await page.getByTestId('cn-action-case-suspend').click()
@@ -324,22 +373,32 @@ test.describe('Case lifecycle on the case page', () => {
 		await expect(dialog).toBeVisible({ timeout: 15_000 })
 		// The reason is required: the button says so by staying disabled.
 		await expect(page.getByTestId('case-lifecycle-confirm')).toBeDisabled()
-		await dialog.getByTestId('case-lifecycle-reason').locator('textarea').fill('Awb 4:5 e2e')
+		await dialog
+			.getByTestId('case-lifecycle-reason')
+			.locator('textarea')
+			.fill('Awb 4:5 e2e')
 		await page.getByTestId('case-lifecycle-confirm').click()
 		await expect(dialog).toHaveCount(0, { timeout: 25_000 })
 
-		await expect(page.getByTestId('case-suspended-marker')).toBeVisible({ timeout: 25_000 })
+		await expect(page.getByTestId('case-suspended-marker')).toBeVisible({
+			timeout: 25_000,
+		})
 		const resume = page.getByTestId('case-lifecycle-resume')
 		await expect(resume).toBeVisible()
 
 		await resume.click()
 		const resumeDialog = page.getByTestId('case-lifecycle-dialog')
 		await expect(resumeDialog).toBeVisible({ timeout: 15_000 })
-		await resumeDialog.getByTestId('case-lifecycle-reason').locator('textarea').fill('Hervat e2e')
+		await resumeDialog
+			.getByTestId('case-lifecycle-reason')
+			.locator('textarea')
+			.fill('Hervat e2e')
 		await page.getByTestId('case-lifecycle-confirm').click()
 		await expect(resumeDialog).toHaveCount(0, { timeout: 25_000 })
 
-		await expect(page.getByTestId('case-suspended-marker')).toHaveCount(0, { timeout: 25_000 })
+		await expect(page.getByTestId('case-suspended-marker')).toHaveCount(0, {
+			timeout: 25_000,
+		})
 	})
 
 	// @e2e openspec/specs/status-transition-engine/spec.md#extend-the-term
@@ -348,14 +407,22 @@ test.describe('Case lifecycle on the case page', () => {
 		request,
 	}) => {
 		const before = await showObject(request, 'case', cases.extend)
-		const beforeEnd = Date.parse(String(before.plannedEndDate ?? before.deadline ?? ''))
-		expect(Number.isFinite(beforeEnd), 'the seeded case has an end date to move').toBe(true)
+		const beforeEnd = Date.parse(
+			String(before.plannedEndDate ?? before.deadline ?? ''),
+		)
+		expect(
+			Number.isFinite(beforeEnd),
+			'the seeded case has an end date to move',
+		).toBe(true)
 
 		await openCase(page, 'extend')
 		await page.getByTestId('cn-action-case-extend').click()
 		const dialog = page.getByTestId('case-lifecycle-dialog')
 		await expect(dialog).toBeVisible({ timeout: 15_000 })
-		await dialog.getByTestId('case-lifecycle-reason').locator('textarea').fill('Awb 4:14 e2e')
+		await dialog
+			.getByTestId('case-lifecycle-reason')
+			.locator('textarea')
+			.fill('Awb 4:14 e2e')
 		await page.getByTestId('case-lifecycle-confirm').click()
 		await expect(dialog).toHaveCount(0, { timeout: 25_000 })
 
@@ -367,23 +434,35 @@ test.describe('Case lifecycle on the case page', () => {
 			.poll(
 				async () => {
 					const after = await showObject(request, 'case', cases.extend)
-					return Math.round((Date.parse(String(after.plannedEndDate)) - beforeEnd) / DAY)
+					return Math.round(
+						(Date.parse(String(after.plannedEndDate)) - beforeEnd) / DAY,
+					)
 				},
-				{ timeout: 25_000, message: 'the end date moves by the case type extensionPeriod' },
+				{
+					timeout: 25_000,
+					message: 'the end date moves by the case type extensionPeriod',
+				},
 			)
 			.toBe(14)
 
 		const after = await showObject(request, 'case', cases.extend)
-		expect(Number(after.extensionCount ?? 0)).toBe(Number(before.extensionCount ?? 0) + 1)
+		expect(Number(after.extensionCount ?? 0)).toBe(
+			Number(before.extensionCount ?? 0) + 1,
+		)
 	})
 
 	// @e2e openspec/specs/status-transition-engine/spec.md#reopen-a-closed-case
-	test('reopening a closed case returns it to the first status', async ({ page, request }) => {
+	test('reopening a closed case returns it to the first status', async ({
+		page,
+		request,
+	}) => {
 		// The Reopen action is gated on `case.isFinalStatus`, which OpenRegister
 		// MATERIALISES from the linked statusType's isFinal. Asserting it first
 		// says which half broke when the button does not appear.
 		const closed = await showObject(request, 'case', cases.closed)
-		expect(closed.isFinalStatus, 'OpenRegister materialises isFinalStatus').toBe(true)
+		expect(closed.isFinalStatus, 'OpenRegister materialises isFinalStatus').toBe(
+			true,
+		)
 
 		await openCase(page, 'closed')
 		const reopen = page.getByTestId('cn-action-case-reopen')
@@ -392,14 +471,20 @@ test.describe('Case lifecycle on the case page', () => {
 
 		const dialog = page.getByTestId('case-lifecycle-dialog')
 		await expect(dialog).toBeVisible({ timeout: 15_000 })
-		await dialog.getByTestId('case-lifecycle-reason').locator('textarea').fill('Heropend e2e')
+		await dialog
+			.getByTestId('case-lifecycle-reason')
+			.locator('textarea')
+			.fill('Heropend e2e')
 		await page.getByTestId('case-lifecycle-confirm').click()
 		await expect(dialog).toHaveCount(0, { timeout: 25_000 })
 
 		await expect
 			.poll(
 				async () => (await showObject(request, 'case', cases.closed)).status,
-				{ timeout: 25_000, message: 'the case returns to its type initial status' },
+				{
+					timeout: 25_000,
+					message: 'the case returns to its type initial status',
+				},
 			)
 			.toBe(statusReceived)
 		const reopened = await showObject(request, 'case', cases.closed)
@@ -415,9 +500,13 @@ test.describe('Case lifecycle on the case page', () => {
 		const stages = steps.locator('.cn-timeline-stages__stage')
 		await expect(stages).toHaveCount(3, { timeout: 25_000 })
 		// Ontvangen done, In behandeling active, Afgehandeld still to come.
-		await expect(stages.nth(0)).toHaveClass(/cn-timeline-stages__stage--completed/)
+		await expect(stages.nth(0)).toHaveClass(
+			/cn-timeline-stages__stage--completed/,
+		)
 		await expect(stages.nth(1)).toHaveClass(/cn-timeline-stages__stage--current/)
-		await expect(stages.nth(2)).toHaveClass(/cn-timeline-stages__stage--upcoming/)
+		await expect(stages.nth(2)).toHaveClass(
+			/cn-timeline-stages__stage--upcoming/,
+		)
 		// The active stage is the one a screen reader is told about.
 		await expect(steps.locator('[aria-current="step"]')).toHaveCount(1)
 	})
@@ -425,23 +514,35 @@ test.describe('Case lifecycle on the case page', () => {
 	// @e2e openspec/specs/case-dashboard-view/spec.md#the-stepper-follows-a-transition
 	test('the stepper follows a transition without a reload', async ({ page }) => {
 		await openCase(page, 'stepper')
-		const stages = page.getByTestId('case-steps').locator('.cn-timeline-stages__stage')
-		await expect(stages.nth(1)).toHaveClass(/cn-timeline-stages__stage--current/, {
-			timeout: 25_000,
-		})
+		const stages = page
+			.getByTestId('case-steps')
+			.locator('.cn-timeline-stages__stage')
+		await expect(stages.nth(1)).toHaveClass(
+			/cn-timeline-stages__stage--current/,
+			{
+				timeout: 25_000,
+			},
+		)
 
 		await page.getByTestId(`case-transition-${T.close}`).click()
 		const dialog = page.getByTestId('case-transition-dialog')
 		await expect(dialog).toBeVisible({ timeout: 15_000 })
 		await page.getByTestId('case-transition-result').click()
-		await page.getByRole('option', { name: new RegExp(`${RUN_PREFIX} Verleend`) }).click()
+		await page
+			.getByRole('option', { name: new RegExp(`${RUN_PREFIX} Verleend`) })
+			.click()
 		await page.getByTestId('case-transition-confirm').click()
 		await expect(dialog).toHaveCount(0, { timeout: 25_000 })
 
 		// No page.goto: the strip bumps cn:page:refresh and the stepper re-reads.
-		await expect(stages.nth(2)).toHaveClass(/cn-timeline-stages__stage--current/, {
-			timeout: 25_000,
-		})
-		await expect(stages.nth(1)).toHaveClass(/cn-timeline-stages__stage--completed/)
+		await expect(stages.nth(2)).toHaveClass(
+			/cn-timeline-stages__stage--current/,
+			{
+				timeout: 25_000,
+			},
+		)
+		await expect(stages.nth(1)).toHaveClass(
+			/cn-timeline-stages__stage--completed/,
+		)
 	})
 })

@@ -209,7 +209,7 @@ const registry = {
 		// @custom-widget-ratchet exclude a stepper over a reference field's ordered sibling rows; the manifest vocabulary has no such widget type (tasks 3.3 asks for one)
 		kind: 'widget',
 		component: CaseStepsWidget,
-		_note: 'CaseDetail: which step the case is in, over its case type\'s statusType rows in `order`. Replaces the milestone progress tile, which read 0% on every case because milestones are configured on almost none.',
+		_note: "CaseDetail: which step the case is in, over its case type's statusType rows in `order`. Replaces the milestone progress tile, which read 0% on every case because milestones are configured on almost none.",
 	},
 	// @spec openspec/specs/status-transition-engine/spec.md
 	CaseLifecycleActionDialog: {

@@ -161,7 +161,9 @@ export default {
 			this.error = ''
 			try {
 				await axios.post(
-					generateUrl(`/apps/dossiq/api/case/${encodeURIComponent(this.caseId)}/transition`),
+					generateUrl(
+						`/apps/dossiq/api/case/${encodeURIComponent(this.caseId)}/transition`,
+					),
 					buildTransitionPayload({
 						transitionId: this.transition?.id,
 						comment: this.comment,
@@ -173,7 +175,9 @@ export default {
 				emit(PAGE_REFRESH, {})
 				this.$emit('close')
 			} catch (error) {
-				this.error = refusalMessage(error?.response?.data ?? {}, (s) => t('dossiq', s))
+				this.error = refusalMessage(error?.response?.data ?? {}, (s) =>
+					t('dossiq', s),
+				)
 			} finally {
 				this.busy = false
 			}

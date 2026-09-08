@@ -25,7 +25,10 @@
   @spec openspec/specs/status-transition-engine/spec.md
 -->
 <template>
-	<NcDialog :name="title" data-testid="case-lifecycle-dialog" @closing="$emit('close')">
+	<NcDialog
+		:name="title"
+		data-testid="case-lifecycle-dialog"
+		@closing="$emit('close')">
 		<div class="case-lifecycle-dialog">
 			<p class="case-lifecycle-dialog__explainer">
 				{{ explainer }}
@@ -76,7 +79,10 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { lifecycleRefusalCode, refusalMessage } from '../utils/caseLifecycleHelpers.js'
+import {
+	lifecycleRefusalCode,
+	refusalMessage,
+} from '../utils/caseLifecycleHelpers.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
@@ -123,37 +129,56 @@ export default {
 		/** @spec openspec/specs/status-transition-engine/spec.md */
 		title() {
 			switch (this.action) {
-			case 'suspend':
-				return t('dossiq', 'Suspend this case')
-			case 'resume':
-				return t('dossiq', 'Resume this case')
-			case 'extend':
-				return t('dossiq', 'Extend the term')
-			default:
-				return t('dossiq', 'Reopen this case')
+				case 'suspend':
+					return t('dossiq', 'Suspend this case')
+				case 'resume':
+					return t('dossiq', 'Resume this case')
+				case 'extend':
+					return t('dossiq', 'Extend the term')
+				default:
+					return t('dossiq', 'Reopen this case')
 			}
 		},
 
 		/** @spec openspec/specs/status-transition-engine/spec.md */
 		explainer() {
 			switch (this.action) {
-			case 'suspend':
-				return t('dossiq', 'The processing term stops while the case is suspended (Awb 4:5).')
-			case 'resume':
-				return t('dossiq', 'The processing term starts running again.')
-			case 'extend':
-				return t('dossiq', 'The deadline moves by the period this case type states (Awb 4:14).')
-			default:
-				return t('dossiq', 'The case returns to the first status of its case type.')
+				case 'suspend':
+					return t(
+						'dossiq',
+						'The processing term stops while the case is suspended (Awb 4:5).',
+					)
+				case 'resume':
+					return t('dossiq', 'The processing term starts running again.')
+				case 'extend':
+					return t(
+						'dossiq',
+						'The deadline moves by the period this case type states (Awb 4:14).',
+					)
+				default:
+					return t(
+						'dossiq',
+						'The case returns to the first status of its case type.',
+					)
 			}
 		},
 
 		/** @spec openspec/specs/status-transition-engine/spec.md */
 		canConfirm() {
-			return this.busy === false && this.refused === false && this.reason.trim().length > 0
+			return (
+				this.busy === false
+				&& this.refused === false
+				&& this.reason.trim().length > 0
+			)
 		},
 	},
 
+	/**
+	 * Ask the case what it allows before the handler types anything.
+	 *
+	 * @return {Promise<void>}
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
 	async mounted() {
 		await this.checkAllowed()
 	},
@@ -174,7 +199,9 @@ export default {
 			let state
 			try {
 				const { data } = await axios.get(
-					generateUrl(`/apps/dossiq/api/case/${encodeURIComponent(this.targetCaseId)}/lifecycle`),
+					generateUrl(
+						`/apps/dossiq/api/case/${encodeURIComponent(this.targetCaseId)}/lifecycle`,
+					),
 				)
 				state = data ?? null
 			} catch {
@@ -219,7 +246,9 @@ export default {
 				emit(PAGE_REFRESH, {})
 				this.$emit('close')
 			} catch (error) {
-				this.error = refusalMessage(error?.response?.data ?? {}, (s) => t('dossiq', s))
+				this.error = refusalMessage(error?.response?.data ?? {}, (s) =>
+					t('dossiq', s),
+				)
 			} finally {
 				this.busy = false
 			}

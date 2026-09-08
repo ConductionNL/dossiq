@@ -65,6 +65,12 @@ export default {
 		},
 	},
 
+	/**
+	 * Read the case once the widget is on the page.
+	 *
+	 * @return {Promise<void>}
+	 * @spec openspec/specs/case-dashboard-view/spec.md
+	 */
 	async mounted() {
 		// A transition anywhere on the page moves this stepper: the widget that
 		// took it bumps the page refresh signal, and the stepper re-reads the
@@ -95,7 +101,8 @@ export default {
 			this.loading = true
 			try {
 				const store = useObjectStore()
-				const caseObject = (await store.fetchObject('case', this.caseId)) || {}
+				const caseObject =
+					(await store.fetchObject('case', this.caseId)) || {}
 				const caseTypeId = String(caseObject.caseType ?? '')
 				if (!caseTypeId) {
 					this.stages = []

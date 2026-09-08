@@ -50,7 +50,9 @@ const widget = (id) => caseDetail().config.widgets.find((entry) => entry.id === 
  * @param {string} id The manifest widget id.
  * @return {Array<object>} The layout entries.
  */
-const cells = (id) => caseDetail().config.layout.filter((cell) => cell.widgetId === id)
+function cells(id) {
+	return caseDetail().config.layout.filter((cell) => cell.widgetId === id)
+}
 
 /**
  * One header action of the CaseDetail page.
@@ -58,7 +60,9 @@ const cells = (id) => caseDetail().config.layout.filter((cell) => cell.widgetId 
  * @param {string} id The action id.
  * @return {object|undefined} The action entry.
  */
-const action = (id) => caseDetail().config.headerActions.find((entry) => entry.id === id)
+function action(id) {
+	return caseDetail().config.headerActions.find((entry) => entry.id === id)
+}
 
 describe('CaseDetail: the transition strip and the stepper', () => {
 	for (const [id, slot, component] of [
@@ -111,13 +115,16 @@ describe('CaseDetail: the transition strip and the stepper', () => {
 	it('fills its rows: every cell fits the twelve-column grid, none overlap', () => {
 		const grid = new Map()
 		for (const cell of caseDetail().config.layout) {
-			expect(cell.gridX + cell.gridWidth, cell.widgetId).toBeLessThanOrEqual(12)
+			expect(cell.gridX + cell.gridWidth, cell.widgetId).toBeLessThanOrEqual(
+				12,
+			)
 			for (let y = cell.gridY; y < cell.gridY + cell.gridHeight; y++) {
 				for (let x = cell.gridX; x < cell.gridX + cell.gridWidth; x++) {
 					const key = `${x},${y}`
-					expect(grid.has(key), `${cell.widgetId} overlaps ${grid.get(key)} at ${key}`).toBe(
-						false,
-					)
+					expect(
+						grid.has(key),
+						`${cell.widgetId} overlaps ${grid.get(key)} at ${key}`,
+					).toBe(false)
 					grid.set(key, cell.widgetId)
 				}
 			}
@@ -178,12 +185,15 @@ describe('CaseDetail: every icon it names is registered', () => {
 		for (const name of named) {
 			expect(name, 'every new widget and action names an icon').toBeTruthy()
 			expect(
-				iconsSource.includes(`import ${name} from 'vue-material-design-icons/${name}.vue'`),
+				iconsSource.includes(
+					`import ${name} from 'vue-material-design-icons/${name}.vue'`,
+				),
 				`${name} is imported in src/icons.js`,
 			).toBe(true)
-			expect(iconsSource.includes(`\n\t${name},`), `${name} is exported in src/icons.js`).toBe(
-				true,
-			)
+			expect(
+				iconsSource.includes(`\n\t${name},`),
+				`${name} is exported in src/icons.js`,
+			).toBe(true)
 		}
 	})
 })
