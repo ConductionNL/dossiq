@@ -18,9 +18,9 @@
 
 ## 3. Tests
 
-- [ ] 3.1 Add `tests/e2e/dashboard-tiles.spec.ts`: fresh-context KPI render, single My work table with days left, single Deadlines table with an overdue row in red and no closed case, View all carrying the filter, New case type list sorted without drafts; verify it passes locally against the demo caseload. [MVP]
-- [ ] 3.2 Grep `tests/e2e` for `my-tasks`, `task-reminders`, `deadline-alerts`, `overdue-cases` and move every selector to the new ids; verify `pages.spec.ts` and `smoke.spec.ts` still pass. [MVP]
-- [ ] 3.3 Record `dashboard-tiles` in `openspec/specs/dashboard/spec.md` and `openspec/specs/signalering-widgets/spec.md` under OpenSpec changes and set both to in-progress. [MVP]
+- [x] 3.1 Add `tests/e2e/dashboard-tiles.spec.ts`: fresh-context KPI render, single My work table with days left, single Deadlines table with an overdue row in red and no closed case, View all carrying the filter, New case type list sorted without drafts; verify it passes locally against the demo caseload. [MVP] — seven tests, one per scenario the deltas name, collected by `tests/e2e/playwright.config.ts` (the config CI reads). NOT RUN HERE: this branch has no target instance, so `--list` and `tsc --noEmit` are the only evidence, and the e2e verdict comes from the push to `development`. Widgets are addressed by `[aria-label="<widget id>"]`, which is what CnDashboardGrid puts on a grid item when a layout entry carries no title of its own. The deadline is aimed through `startDate` plus the case type's `processingDeadline`, because `deadline` and `isFinalStatus` are both computed and read-only.
+- [x] 3.2 Grep `tests/e2e` for `my-tasks`, `task-reminders`, `deadline-alerts`, `overdue-cases` and move every selector to the new ids; verify `pages.spec.ts` and `smoke.spec.ts` still pass. [MVP] — done. No e2e held the retired ids, but `pages.spec.ts` held the retired TITLE: it filtered a widget wrapper by an `Overdue` heading and asserted `deadline[lt]=@today`. Both moved to the `deadlines` widget and its `deadline[lte]=@today+3d`. Two prose references in `demo-caseload.spec.ts` renamed. `grep -rn` over `tests/e2e` for all four ids and both titles now returns nothing outside the new spec.
+- [x] 3.3 Record `dashboard-tiles` in `openspec/specs/dashboard/spec.md` and `openspec/specs/signalering-widgets/spec.md` under OpenSpec changes and set both to in-progress. [MVP] — done. `dashboard-tiles` added to `openspec_changes` in both, and `status` moved from `done` to `in-progress`.
 
 ## Acceptance criteria
 
