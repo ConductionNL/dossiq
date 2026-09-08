@@ -1446,6 +1446,44 @@
 						}
 					},
 					{
+						"id": "case-objects",
+						"type": "object-list",
+						"title": "Objects",
+						"icon": "CubeOutline",
+						"_note": "The things a case is about: a building, a vehicle, a tree. `type` is `object-list` and not `custom` on purpose \u2014 a tab child resolves by REGISTRY TYPE, so a `custom` widget named as a tab child renders nothing and logs nothing. Like its twelve siblings this widget is DELIBERATELY absent from `layout`: `case-panels` renders it, so a layout cell would render it twice. No `rowRoute`: a case object is a link row, not a record with a page of its own.",
+						"content": {
+							"register": "dossiq",
+							"schema": "caseObject",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "objectType",
+								"dir": "asc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "objectType",
+									"label": "Object type"
+								},
+								{
+									"key": "objectIdentification",
+									"label": "Identification"
+								},
+								{
+									"key": "description",
+									"label": "Description"
+								},
+								{
+									"key": "objectUrl",
+									"label": "Link"
+								}
+							],
+							"emptyText": "No objects linked to this case yet"
+						}
+					},
+					{
 						"id": "case-files",
 						"type": "integration",
 						"integrationId": "files",
@@ -1649,6 +1687,10 @@
 								{
 									"widgetId": "case-locaties",
 									"label": "Locations"
+								},
+								{
+									"widgetId": "case-objects",
+									"label": "Objects"
 								}
 							]
 						}

@@ -17,13 +17,14 @@ criteria under a task are plain bullets.
 
 ## 2. The Objects tab
 
-- [ ] 2.1 `src/manifest.json` page `CaseDetail`: widget `case-objects` per
+- [x] 2.1 `src/manifest.json` page `CaseDetail`: widget `case-objects` per
   design D1 and its tab entry Objects in `case-panels` after Locations,
   without a `layout` cell.
   - `@spec openspec/specs/case-management/spec.md`
   - `npm run check:manifest` exits 0
-  - `tests/unit/manifest.spec.ts` (extend): `case-objects` filters on
-    `case: "@objectId"` and is not in `layout`
+  - `tests/vitest/caseObjects.spec.js` (unit specs live in `tests/vitest/`,
+    not `tests/unit/`): `case-objects` filters on `case: "@objectId"`, is an
+    `object-list` and is not in `layout`
 
 ## 3. Link object
 

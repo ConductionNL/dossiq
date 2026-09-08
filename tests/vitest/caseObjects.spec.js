@@ -22,11 +22,33 @@ import { describe, expect, it } from 'vitest'
 
 const ROOT = path.resolve(__dirname, '../..')
 const REGISTER_PATH = path.join(ROOT, 'lib', 'Settings', 'dossiq_register.json')
+const MANIFEST_PATH = path.join(ROOT, 'src', 'manifest.json')
+const ICONS_PATH = path.join(ROOT, 'src', 'icons.js')
 
 const register = JSON.parse(fs.readFileSync(REGISTER_PATH, 'utf8'))
+const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
+const iconsSource = fs.readFileSync(ICONS_PATH, 'utf8')
 
 /** The `caseObject` schema as the register declares it. @return {object} The schema. */
 const caseObject = () => register.components.schemas.caseObject
+
+/** The CaseDetail page. @return {object} The page. */
+const caseDetail = () => manifest.pages.find((page) => page.id === 'CaseDetail')
+
+/**
+ * One widget of the CaseDetail page.
+ *
+ * @param {string} id The manifest widget id.
+ * @return {object|undefined} The widget entry.
+ */
+const caseWidget = (id) =>
+	caseDetail().config.widgets.find((entry) => entry.id === id)
+
+/** The tab children of the `case-panels` strip. @return {Array<object>} The tabs. */
+const panelTabs = () => caseWidget('case-panels').content.tabs
+
+/** The column keys of a widget's object list. @param {object} w The widget. @return {Array<string>} The keys. */
+const columnKeys = (w) => w.content.columns.map((column) => column.key)
 
 describe('the caseObject schema', () => {
 	it('makes objectType a facet so the index sidebar can group on it', () => {
@@ -73,5 +95,69 @@ describe('the caseObject schema', () => {
 				`caseObject.${key} must not be read-only`,
 			).not.toBe(true)
 		}
+	})
+})
+
+describe('the Objects tab on the case page', () => {
+	it('lists the case objects of the open case only', () => {
+		const w = caseWidget('case-objects')
+		expect(w).toBeDefined()
+		expect(w.content.register).toBe('dossiq')
+		expect(w.content.schema).toBe('caseObject')
+		expect(w.content.filter).toEqual({ case: '@objectId' })
+	})
+
+	it('is an object-list, because a tab child resolves by registry type', () => {
+		// A `type: "custom"` widget named as a tab child renders nothing and
+		// logs nothing: the strip looks its child up by TYPE, not by slot.
+		expect(caseWidget('case-objects').type).toBe('object-list')
+	})
+
+	it('shows the object type, identification, description and link', () => {
+		expect(columnKeys(caseWidget('case-objects'))).toEqual([
+			'objectType',
+			'objectIdentification',
+			'description',
+			'objectUrl',
+		])
+	})
+
+	it('names every column against a property the schema declares', () => {
+		for (const key of columnKeys(caseWidget('case-objects'))) {
+			expect(
+				caseObject().properties[key],
+				`caseObject has no property ${key}`,
+			).toBeDefined()
+		}
+	})
+
+	it('sorts on the object type and carries an empty state', () => {
+		const w = caseWidget('case-objects')
+		expect(w.content.sort).toEqual({ field: 'objectType', dir: 'asc' })
+		expect(w.content.limit).toBe(25)
+		expect(w.content.emptyText).toBe('No objects linked to this case yet')
+	})
+
+	it('opens no detail page: a case object is a link row', () => {
+		expect(caseWidget('case-objects').content.rowRoute).toBeUndefined()
+	})
+
+	it('joins the case-panels strip as Objects, after Locations', () => {
+		const labels = panelTabs().map((tab) => tab.label)
+		expect(labels).toContain('Objects')
+		expect(labels.indexOf('Objects')).toBe(labels.indexOf('Locations') + 1)
+		expect(panelTabs().at(-1).widgetId).toBe('case-objects')
+	})
+
+	it('stays out of layout, or the strip would render it twice', () => {
+		const cells = caseDetail().config.layout.filter(
+			(cell) => cell.widgetId === 'case-objects',
+		)
+		expect(cells).toHaveLength(0)
+	})
+
+	it('names an icon that src/icons.js registers', () => {
+		// hydra gate-60: an unregistered name renders NO icon, silently.
+		expect(iconsSource).toMatch(/\bCubeOutline\b/)
 	})
 })
