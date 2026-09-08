@@ -129,7 +129,13 @@ test.describe('Dashboard tiles', () => {
 		await context.close()
 		token = await getRequestToken(api)
 
-		const whoami = await api.get('/ocs/v2.php/cloud/user?format=json')
+		// The OCS endpoints are CSRF-guarded, so the `OCS-APIRequest` header is
+		// what marks this as an API call. Without it Nextcloud answers a plain
+		// OCS GET with 412, which reads as "no session" rather than as a
+		// missing header.
+		const whoami = await api.get('/ocs/v2.php/cloud/user?format=json', {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
 		expect(whoami.ok(), `whoami -> ${whoami.status()}`).toBeTruthy()
 		currentUser = String((await whoami.json())?.ocs?.data?.id ?? '')
 		expect(currentUser, 'the session must resolve to a user id').not.toBe('')
