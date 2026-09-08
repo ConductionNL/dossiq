@@ -6,7 +6,7 @@ tab order it amends (task 4.1).
 
 ## 1. One history tab
 
-- [ ] 1.1 `src/manifest.json` page `CaseDetail` (`pages[4]`)
+- [x] 1.1 `src/manifest.json` page `CaseDetail` (`pages[4]`)
   `config.sidebar.tabs`: remove the entry `id: version-history`
   (`component: VersionHistoryLeafTab`); keep `audit` (label History, icon
   History, `widgets: [{ type: "audit" }]`) first; add a `_note` naming
@@ -19,9 +19,9 @@ tab order it amends (task 4.1).
     has exactly one sidebar tab with widget type `audit`, none with id
     `version-history` or component `VersionHistoryLeafTab`; every other
     page's `sidebar.tabs.length` equals its value on `development`
-- [ ] 1.2 `l10n/nl.json`: History reads Geschiedenis if the key is not
+- [x] 1.2 `l10n/nl.json`: History reads Geschiedenis if the key is not
   there yet; load the `writing` skill first.
-- [ ] 1.3 `grep -rn 'Version history\|version-history' tests/e2e` found no
+- [x] 1.3 `grep -rn 'Version history\|version-history' tests/e2e` found no
   assertion on the `CaseDetail` Version history tab (the only hit,
   `tests/e2e/spec-coverage/document-zaakdossier.spec.ts:79`, is the
   concept-document version history under `document-zaakdossier`, not the
