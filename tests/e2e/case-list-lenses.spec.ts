@@ -6,7 +6,10 @@
  *
  * Covers the browser scenarios of five deltas: the chips on Cases and Tasks,
  * the countdown Deadline column, the Overdue tile's View all, and the four
- * bulk actions with their required reason.
+ * bulk actions with their required reason. `lists-that-answer` added the
+ * Closed, Overdue and Due this week chips on Tasks, the Due this week chip
+ * on Cases, and the priority column the task list was always specified to
+ * carry.
  *
  * THREE THINGS ABOUT THIS FILE CHANGE WHAT AN ASSERTION HERE CAN CLAIM.
  *
@@ -153,6 +156,7 @@ const CHIPS = {
 	unclaimed: /^(Unclaimed|Niet toegewezen)$/,
 	closed: /^(Closed|Gesloten)$/,
 	overdue: /^(Overdue|Verlopen)$/,
+	dueThisWeek: /^(Due this week|Deze week te doen)$/,
 }
 
 /**
@@ -305,12 +309,42 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		const overdue = await showObject(api, 'case', cases['mine-overdue'])
 		expect(String(overdue.deadline ?? '')).toBe(day(-2))
 
-		// Four tasks, for the Tasks index's three chips.
+		// The tasks the six chips on the Tasks index have to tell apart.
+		//
+		// The four dated ones carry a FULL ISO instant, not a bare date,
+		// because `caseTask.dueDate` is `format: date-time` while
+		// `case.deadline` is `format: date`, and the two windows are compared
+		// the same way. OpenRegister casts only numeric columns, so
+		// `dueDate[lt]=2026-09-08` is a string comparison, and
+		// `2026-09-08T09:00:00+00:00` sorts AFTER the bare `2026-09-08`. That
+		// is what makes a task due at nine this morning due TODAY rather than
+		// overdue, and `task-due-today` is here to hold that boundary rather
+		// than leave it to a reader to re-derive from the collation rules.
 		for (const [key, fields] of Object.entries({
 			'task-mine': { assignee: ME, status: 'active' },
 			'task-other': { assignee: OTHER, status: 'active' },
 			'task-unclaimed': { status: 'active' },
 			'task-done': { status: 'completed' },
+			'task-overdue': {
+				assignee: OTHER,
+				status: 'active',
+				dueDate: `${day(-2)}T09:00:00+00:00`,
+			},
+			'task-due-today': {
+				assignee: OTHER,
+				status: 'active',
+				dueDate: `${day(0)}T09:00:00+00:00`,
+			},
+			'task-this-week': {
+				assignee: OTHER,
+				status: 'active',
+				dueDate: `${day(2)}T09:00:00+00:00`,
+			},
+			'task-next-month': {
+				assignee: OTHER,
+				status: 'active',
+				dueDate: `${day(30)}T09:00:00+00:00`,
+			},
 		})) {
 			const created = await createObject(api, token, 'caseTask', {
 				title: `${RUN_PREFIX} ${key}`,
@@ -483,6 +517,26 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	})
 
 	// @e2e openspec/changes/one-case-list/specs/signalering-widgets/spec.md
+	// @e2e openspec/changes/lists-that-answer/specs/case-management/spec.md
+	test('Due this week shows the case due in three days and neither neighbour', async ({
+		page,
+	}) => {
+		await visit(page, CASES_URL)
+		await casesTable(page)
+		await narrowToThisRun(page)
+
+		await chip(page, CHIPS.dueThisWeek).click()
+		await listSettled(page, 'mine-open')
+		// The window is half-open on both sides, and each neighbour proves
+		// one of them: `mine-far` is due in thirty days, past `@today+7d`,
+		// and `mine-overdue` was due two days ago, before `@today`. Assert
+		// both, because a chip carrying only the far edge would list every
+		// overdue case as well and still read as a plausible list.
+		await expect(row(page, 'mine-far')).toHaveCount(0)
+		await expect(row(page, 'mine-overdue')).toHaveCount(0)
+	})
+
+	// @e2e openspec/changes/one-case-list/specs/signalering-widgets/spec.md
 	test('the Deadlines table View all carries its filter to the list', async ({
 		page,
 	}) => {
@@ -540,7 +594,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	})
 
 	// ---------------------------------------------------------------------
-	// task-management — the same three chips on Tasks
+	// task-management — the same six chips on Tasks
 	// ---------------------------------------------------------------------
 
 	// @e2e openspec/changes/one-case-list/specs/task-management/spec.md
@@ -577,6 +631,116 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(row(page, 'task-done').first()).toBeVisible({
 			timeout: 30_000,
 		})
+	})
+
+	// @e2e openspec/changes/lists-that-answer/specs/task-management/spec.md
+	test('Closed on Tasks shows the completed task and not the open one', async ({
+		page,
+	}) => {
+		await visit(page, TASKS_URL)
+		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
+
+		await chip(page, CHIPS.closed).click()
+		await listSettled(page, 'task-done')
+		await expect(row(page, 'task-mine')).toHaveCount(0)
+	})
+
+	// @e2e openspec/changes/lists-that-answer/specs/task-management/spec.md
+	test('Overdue on Tasks leaves out the task due later today', async ({
+		page,
+	}) => {
+		await visit(page, TASKS_URL)
+		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
+
+		await chip(page, CHIPS.overdue).click()
+		await listSettled(page, 'task-overdue')
+		// The boundary, and the reason this file seeds a task due at nine
+		// this morning at all: `dueDate` is an instant and `@today` is a
+		// date, so a string comparison puts today's instants AFTER the date.
+		// A task due later today is not late yet, and if the comparison ever
+		// changes shape this is the assertion that says so.
+		await expect(row(page, 'task-due-today')).toHaveCount(0)
+		await expect(row(page, 'task-next-month')).toHaveCount(0)
+	})
+
+	// @e2e openspec/changes/lists-that-answer/specs/task-management/spec.md
+	test('Due this week on Tasks holds both edges of the window', async ({
+		page,
+	}) => {
+		await visit(page, TASKS_URL)
+		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
+
+		await chip(page, CHIPS.dueThisWeek).click()
+		await listSettled(page, 'task-this-week')
+		// Today is inside the window and two days ago is not, which is the
+		// same boundary the Overdue test reads from the other side.
+		await expect(row(page, 'task-due-today').first()).toBeVisible({
+			timeout: 30_000,
+		})
+		await expect(row(page, 'task-overdue')).toHaveCount(0)
+		await expect(row(page, 'task-next-month')).toHaveCount(0)
+	})
+
+	// @e2e openspec/changes/lists-that-answer/specs/task-management/spec.md
+	test('the task row shows the priority REQ-TASK-004 has always asked for', async ({
+		page,
+	}) => {
+		await visit(page, TASKS_URL)
+		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
+
+		// `caseTask.priority` is `facetable`, so it was always reachable
+		// through the sidebar and never present in the row a handler reads.
+		// The column header is the whole claim.
+		await expect(
+			page.getByRole('columnheader', { name: /^(Priority|Prioriteit)$/ }),
+		).toBeVisible({ timeout: 30_000 })
+	})
+
+	// @e2e openspec/changes/lists-that-answer/specs/task-management/spec.md
+	test('the task due windows narrow the collection, edges included', async () => {
+		// The browser scenarios above prove the chips are wired to these
+		// windows; this proves the windows themselves, against the API and
+		// without pagination in the way. `_limit` is 200 and the filter is
+		// narrow, so what comes back is this run's tasks and whatever else
+		// genuinely falls in the window.
+		const week = await listObjects(api, 'caseTask', {
+			assignee: OTHER,
+			isTerminalStatus: 'false',
+			'dueDate[gte]': day(0),
+			'dueDate[lt]': day(7),
+		})
+		const weekTitles = week.map((t: any) => String(t.title ?? ''))
+		expect(
+			weekTitles.some((t) => t.includes(`${RUN_PREFIX} task-due-today`)),
+			'a task due later today is inside the week',
+		).toBe(true)
+		expect(
+			weekTitles.some((t) => t.includes(`${RUN_PREFIX} task-this-week`)),
+			'a task due in two days is inside the week',
+		).toBe(true)
+		expect(
+			weekTitles.some((t) => t.includes(`${RUN_PREFIX} task-overdue`)),
+			'a task due two days ago is not',
+		).toBe(false)
+		expect(
+			weekTitles.some((t) => t.includes(`${RUN_PREFIX} task-next-month`)),
+			'a task due in thirty days is not',
+		).toBe(false)
+
+		const late = await listObjects(api, 'caseTask', {
+			assignee: OTHER,
+			isTerminalStatus: 'false',
+			'dueDate[lt]': day(0),
+		})
+		const lateTitles = late.map((t: any) => String(t.title ?? ''))
+		expect(
+			lateTitles.some((t) => t.includes(`${RUN_PREFIX} task-overdue`)),
+			'a task due two days ago is overdue',
+		).toBe(true)
+		expect(
+			lateTitles.some((t) => t.includes(`${RUN_PREFIX} task-due-today`)),
+			'a task due later today is not overdue',
+		).toBe(false)
 	})
 
 	// ---------------------------------------------------------------------
