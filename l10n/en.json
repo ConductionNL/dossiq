@@ -3622,7 +3622,17 @@
         "Payment indication": "Payment indication",
         "Last payment date": "Last payment date",
         "The statutory article this case is handled under (e.g. Awb 4:13)": "The statutory article this case is handled under (e.g. Awb 4:13)",
-        "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm.": "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm."
+        "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm.": "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm.",
+        "Copy case": "Copy case",
+        "Copy this case": "Copy this case",
+        "Documents are linked to the copy, never duplicated. The file stays where it is.": "Documents are linked to the copy, never duplicated. The file stays where it is.",
+        "Include documents": "Include documents",
+        "The copy keeps the case type, the requester and the filled properties, and starts in the first status of its type. It gets its own case number.": "The copy keeps the case type, the requester and the filled properties, and starts in the first status of its type. It gets its own case number.",
+        "Title of the copy": "Title of the copy",
+        "This case could not be read.": "This case could not be read.",
+        "The case store is not available right now.": "The case store is not available right now.",
+        "The copy could not be created.": "The copy could not be created.",
+        "This did not work. Try again.": "This did not work. Try again."
     },
     "plurals": ""
 }

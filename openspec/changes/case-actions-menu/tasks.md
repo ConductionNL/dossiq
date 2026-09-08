@@ -18,7 +18,7 @@ criteria under a task are plain bullets.
   - `#[NoAdminRequired]` plus a per-case guard on every method, 403 on refusal
   - unit test `tests/Unit/Controller/CaseActionsControllerTest.php` covering
     the refused path first
-- [ ] 1.3 `src/manifest.json` page `CaseDetail`: header action `copy-case`
+- [x] 1.3 `src/manifest.json` page `CaseDetail`: header action `copy-case`
   (type `handler`); bind the handler in `src/customComponents.js` to open
   `CnCopyDialog` and navigate to the new case.
 - [ ] 1.4 [blocked: nextcloud-vue a `copy` header action type over

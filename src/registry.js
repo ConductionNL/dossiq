@@ -57,6 +57,10 @@ import TaskCaseLink from './components/tasks/TaskCaseLink.vue'
 // Generate document — the CaseDetail header action's template picker.
 // @spec openspec/specs/beschikking-generatie/spec.md
 import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
+// The Actions menu's non-lifecycle gestures: copy this case, start a flow
+// its type allows, and plan a follow-up case for a later date.
+// @spec openspec/specs/case-management/spec.md
+import CaseCopyDialog from './dialogs/CaseCopyDialog.vue'
 import CaseLifecycleActionDialog from './dialogs/CaseLifecycleActionDialog.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
 // VTH-specific case detail panels
@@ -228,6 +232,14 @@ const registry = {
 		kind: 'modal',
 		component: CaseLifecycleActionDialog,
 		_note: 'One reason dialog for Suspend, Resume, Extend term and Reopen; the manifest header actions open it with `props.action`. It reads /lifecycle first, so a gesture the case type forbids says so before the POST rather than after it.',
+	},
+
+	// --- Copy a case, from its own page (case-actions-menu, row A24). ---
+	// @spec openspec/specs/case-management/spec.md
+	CaseCopyDialog: {
+		kind: 'modal',
+		component: CaseCopyDialog,
+		_note: "CaseDetail Actions menu: what the copy is called, and whether the source's documents come along. NOT CnCopyDialog, which the design named: the library's 2.41.0 copy dialog offers three naming PATTERNS over a fixed name and carries no slots at all, so there is nowhere to put the Include documents checkbox and no way to type a title that is not one of the three. It reads the case from the ROUTE, because an open-modal action forwards its props verbatim and `@objectId` would arrive as that literal string. Deleted the day nextcloud-vue ships a `copy` header-action type taking a field list and an endpoint (tasks 1.4).",
 	},
 
 	// --- Initiator selection + display (brp-kvk-register-sets). ---
