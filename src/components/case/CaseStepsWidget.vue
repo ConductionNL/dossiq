@@ -24,7 +24,7 @@
 			v-else-if="stages.length > 0"
 			:stages="stages"
 			:currentStage="currentStage"
-			:aria-label="t('dossiq', 'Case progress')"
+			:ariaLabel="t('dossiq', 'Case progress')"
 			orientation="horizontal"
 			size="small" />
 
