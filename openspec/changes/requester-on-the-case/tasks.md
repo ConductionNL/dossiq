@@ -25,7 +25,7 @@ criteria under a task are plain bullets.
 
 ## 2. The picker on both forms
 
-- [ ] 2.1 `src/components/initiator/InitiatorPicker.vue`: emit
+- [x] 2.1 `src/components/initiator/InitiatorPicker.vue`: emit
   `{requester, initiatorType, initiatorSourceId, initiatorDisplayName}` on
   select, with `requester` the uuid of the chosen register row and empty for
   a contact; accept the form's `value` for `requester` and show the current

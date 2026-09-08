@@ -11,6 +11,13 @@
  * `external-integrations-test-environments`; this module queries the
  * register tier only.
  *
+ * Both key casings are read, deliberately. The seeded rows carry the
+ * schema's own camelCase names (`citizenServiceNumber`, `tradeName`) while
+ * these helpers were written against snake_case, and the mismatch never
+ * showed because the register search could not run at all: `brpPerson` and
+ * `kvkCompany` were not registered object types, so every search threw and
+ * was caught as "no matching records".
+ *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
@@ -31,7 +38,11 @@ export function personDisplayName(naam) {
 	if (!naam) {
 		return ''
 	}
-	return [naam.given_names, naam.name_prefix, naam.surname]
+	return [
+		naam.givenNames ?? naam.given_names,
+		naam.namePrefix ?? naam.name_prefix,
+		naam.surname,
+	]
 		.filter((part) => !!part && String(part).trim() !== '')
 		.join(' ')
 }
@@ -44,17 +55,16 @@ export function personDisplayName(naam) {
  * @spec openspec/specs/initiator-selection/spec.md
  */
 export function personResult(person) {
+	const bsn = person.citizenServiceNumber || person.citizen_service_number || ''
 	return {
 		type: 'person',
-		sourceId: person.citizen_service_number || '',
+		sourceId: bsn,
 		displayName: person.displayName || personDisplayName(person.name),
-		detail: [
-			person.birth?.date,
-			person.citizen_service_number && `BSN ${person.citizen_service_number}`,
-		]
+		detail: [person.birth?.date, bsn && `BSN ${bsn}`]
 			.filter(Boolean)
 			.join(' · '),
 		objectId: person.id || person['@self']?.id || null,
+		protected: person.indicatieGeheim === true,
 	}
 }
 
@@ -66,11 +76,12 @@ export function personResult(person) {
  * @spec openspec/specs/initiator-selection/spec.md
  */
 export function companyResult(company) {
+	const number = company.kvkNumber || company.kvk_number || ''
 	return {
 		type: 'company',
-		sourceId: company.kvkNumber || '',
-		displayName: company.trade_name || '',
-		detail: [company.legalForm, company.kvkNumber && `KVK ${company.kvkNumber}`]
+		sourceId: number,
+		displayName: company.tradeName || company.trade_name || '',
+		detail: [company.legalForm || company.legal_form, number && `KVK ${number}`]
 			.filter(Boolean)
 			.join(' · '),
 		objectId: company.id || company['@self']?.id || null,
@@ -118,6 +129,67 @@ export function initiatorProjection(result) {
 		initiatorSourceId: String(result.sourceId || ''),
 		initiatorDisplayName: result.displayName || '',
 	}
+}
+
+/**
+ * Map a picked initiator result onto the four fields the case carries for
+ * its requester: the canonical reference plus its display projection.
+ *
+ * `requester` is the uuid of the chosen `brpPerson` or `kvkCompany` row.
+ * A Nextcloud contact has no register row, so a contact selection fills the
+ * projection and leaves `requester` empty — the same shape a case that
+ * named a contact has today.
+ *
+ * One write path: the form writes all four fields in one save, and nothing
+ * else writes a second requester field.
+ *
+ * @param {object|null} result A unified initiator result (or null = none picked).
+ * @return {object} Partial case payload ({} when no initiator).
+ * @spec openspec/specs/initiator-selection/spec.md
+ */
+export function requesterPayload(result) {
+	const projection = initiatorProjection(result)
+	if (Object.keys(projection).length === 0) {
+		return {}
+	}
+	return {
+		requester: String(result.objectId || ''),
+		...projection,
+	}
+}
+
+/**
+ * Whether a unified result is the one a requester payload names.
+ *
+ * The payload is what the form holds, so the picker has to recognise its
+ * own choice coming back in. A bare uuid string is accepted too: that is
+ * what `case.requester` holds on a case whose projection was written by
+ * the semantic handoff rather than by the picker.
+ *
+ * @param {object|string|null} value The current requester payload, uuid, or null.
+ * @param {object} result A unified initiator result.
+ * @return {boolean} True when the result is the current choice.
+ * @spec openspec/specs/initiator-selection/spec.md
+ */
+export function isCurrentRequester(value, result) {
+	if (!value || !result) {
+		return false
+	}
+	if (typeof value === 'string') {
+		return !!result.objectId && value === result.objectId
+	}
+	if (value.initiatorType) {
+		return (
+			value.initiatorType === result.type
+			&& String(value.initiatorSourceId || '') === String(result.sourceId || '')
+		)
+	}
+	// A bare unified result (the shape the picker emitted before the
+	// payload carried the uuid).
+	return (
+		value.type === result.type
+		&& String(value.sourceId || '') === String(result.sourceId || '')
+	)
 }
 
 /**
