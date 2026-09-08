@@ -3585,7 +3585,11 @@ OC.L10N.register(
         "No open tasks on this case": "No open tasks on this case",
         "Other open tasks": "Other open tasks",
         "No due date": "No due date",
-        "Task {title} finished": "Task {title} finished"
+        "Task {title} finished": "Task {title} finished",
+        "Deadlines": "Deadlines",
+        "Days left": "Days left",
+        "You have no open tasks": "You have no open tasks",
+        "No deadlines in the next three days": "No deadlines in the next three days"
     },
     "nplurals=2; plural=(n != 1);"
 )
