@@ -333,8 +333,9 @@ describe('what this change does NOT move', () => {
 		// exact list is what makes that a fact rather than an intention. A
 		// LATER change may legitimately add an entry, and then this list grows
 		// by exactly that entry. `Objects` (custom-objects-on-the-case) is the
-		// first such addition; every entry this change was about is unmoved,
-		// in the same order.
+		// first such addition and `Integrations`
+		// (pluggable-integration-registry) the second; every entry this change
+		// was about is unmoved, in the same order.
 		expect(manifest.menu.map((entry) => entry.label)).toEqual([
 			'Dashboard',
 			'Queue',
@@ -358,6 +359,7 @@ describe('what this change does NOT move', () => {
 			'Objection advisory committees',
 			'Deadline monitoring',
 			'Substitutions & reassignment',
+			'Integrations',
 			'Features & roadmap',
 			'Processing activities (AVG)',
 			'AI oversight',

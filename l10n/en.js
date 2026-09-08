@@ -3634,7 +3634,27 @@ OC.L10N.register(
         "All objects": "All objects",
         "What has to be done. This is the title of the task that is created.": "What has to be done. This is the title of the task that is created.",
         "What this status asks for. Every item becomes a task on the case the moment the case enters this status, created once per status however often the case comes back. An item marked required holds the case in this status until its task is completed, and the transition button says which item is still open.": "What this status asks for. Every item becomes a task on the case the moment the case enters this status, created once per status however often the case comes back. An item marked required holds the case in this status until its task is completed, and the transition button says which item is still open.",
-        "Whether the case may leave this status before this item's task is completed.": "Whether the case may leave this status before this item's task is completed."
+        "Whether the case may leave this status before this item's task is completed.": "Whether the case may leave this status before this item's task is completed.",
+        "All connections": "All connections",
+        "Configured": "Configured",
+        "Connections": "Connections",
+        "Integration": "Integration",
+        "Integrations": "Integrations",
+        "Last checked": "Last checked",
+        "Machine identifier for the connection. A probe and a save handler both find their row by this key.": "Machine identifier for the connection. A probe and a save handler both find their row by this key.",
+        "Not available": "Not available",
+        "Not checked yet": "Not checked yet",
+        "Open settings": "Open settings",
+        "Specified, not built yet": "Specified, not built yet",
+        "Status message": "Status message",
+        "The name of the connection as an admin knows it.": "The name of the connection as an admin knows it.",
+        "What Dossiq uses the connection for.": "What Dossiq uses the connection for.",
+        "What the app can back about this connection right now.": "What the app can back about this connection right now.",
+        "What the last probe or save reported, in the words the reader needs.": "What the last probe or save reported, in the words the reader needs.",
+        "When the status was last written by a probe or a save.": "When the status was last written by a probe or a save.",
+        "Where the connection is configured. Empty when there is nothing to configure yet.": "Where the connection is configured. Empty when there is nothing to configure yet.",
+        "Where the connection sits in the list.": "Where the connection sits in the list.",
+        "Connection": "Connection"
     },
     "nplurals=2; plural=(n != 1);"
 )

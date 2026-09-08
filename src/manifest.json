@@ -358,6 +358,15 @@
 			"permission": "admin"
 		},
 		{
+			"id": "IntegrationsMenu",
+			"label": "Integrations",
+			"icon": "PowerPlugOutline",
+			"route": "Integrations",
+			"section": "settings",
+			"order": 99,
+			"permission": "admin"
+		},
+		{
 			"id": "FeaturesRoadmapMenu",
 			"label": "Features & roadmap",
 			"icon": "MapMarkerPath",
@@ -4372,6 +4381,64 @@
 			},
 			"sidebarComponent": "FlowDetailSidebar",
 			"_note": "The shared CnFlowDetail node/edge canvas over the same native flow store OpenRegister and hermiq use — not an app-owned editor. Controls live in the NcAppSidebar (sidebarComponent) so the canvas gets full width; canvas and sidebar share useFlowStore. Mirrors openregister/src/manifest.json:flowDetail."
+		},
+		{
+			"id": "Integrations",
+			"route": "/settings/integrations",
+			"type": "index",
+			"title": "Integrations",
+			"permission": "admin",
+			"config": {
+				"register": "dossiq",
+				"schema": "dossiqIntegration",
+				"showViewAction": false,
+				"defaultSort": {
+					"field": "order",
+					"direction": "asc"
+				},
+				"_typeNote": "The change's design (D2) asked for `type: \"settings\"`. The installed @conduction/nextcloud-vue dist cannot host this page there, and the reason is worth writing down rather than rediscovering. A `settings` section's `widgets[]` resolves ONLY against BUILTIN_SETTINGS_WIDGETS (`version-info`, `register-mapping`) and the `component` discriminator; `object-list` is a DASHBOARD widget (`registerDashboardWidget('object-list', …)`), so it would resolve to nothing, log one console warn and render an empty section. CnSettingsPage also takes no page-level `widgets[]` prop, so the uniform grid is not a way in either. Task 2.2 named this exact outcome and the interim it licenses: an `index` page over the config schema, never a `custom` page (the ADR-100 ratchet). The cost is REQ-ADMIN-021 — the Required apps section, which needs `CnLeafDependencySettings` through a `type: \"component\"` widget — and that requirement stays red until a settings section can host a list. Nothing here needs to change when it can: the columns and the seed are the page.",
+				"_openSettingsNote": "Open settings is a COLUMN with the built-in `link` widget, not a row action, because a row action cannot carry a per-row URL or a per-row visibility. `type: \"navigate\"` takes one literal `target` for the whole column and pushes it through vue-router, which cannot reach /settings/admin/dossiq at all; `handler` reaches the row but CnRowActions' `visible` predicate is a FUNCTION, which JSON cannot carry, and the action schema is additionalProperties:false so the key would be rejected anyway. The `link` widget substitutes `{settingsUrl}` from the row and, when that resolves to the empty string, `linkHref` is falsy and the cell falls through to plain text — which is exactly what REQ-ADMIN-019 asks for on the BRP and KvK rows: no Open settings offered.",
+				"columns": [
+					{
+						"key": "title",
+						"label": "Connection"
+					},
+					{
+						"key": "status",
+						"label": "Status",
+						"formatter": "integrationStatus"
+					},
+					{
+						"key": "statusMessage",
+						"label": "Status message",
+						"sortable": false
+					},
+					{
+						"key": "checkedAt",
+						"label": "Last checked"
+					},
+					{
+						"key": "settingsUrl",
+						"label": "Settings",
+						"sortable": false,
+						"formatter": "integrationSettingsLabel",
+						"widget": "link",
+						"widgetProps": {
+							"href": "{settingsUrl}"
+						}
+					}
+				],
+				"folderSidebar": {
+					"source": "field",
+					"field": "status",
+					"allLabel": "All connections"
+				},
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://procest.conduction.nl"
+			}
 		}
 	],
 	"observability": {
