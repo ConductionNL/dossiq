@@ -7,7 +7,7 @@ criteria under a task are plain bullets. Depends on `documents-on-the-case`
 
 ## 1. The subtitle
 
-- [ ] 1.1 `src/manifest.json` page `CaseDetail`: set `config.subtitleField`
+- [x] 1.1 `src/manifest.json` page `CaseDetail`: set `config.subtitleField`
   to `identifier`; a `_note` naming placement row A01 and the interim.
   - `@spec openspec/changes/case-header/specs/case-dashboard-view/spec.md`
   - `npm run check:manifest` exits 0
