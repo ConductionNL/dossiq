@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Listener\CaseNumberListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
 use OCA\Dossiq\Listener\TaskCompletionResumeListener;
@@ -92,6 +93,18 @@ class WorkflowListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
 			listener: DeadlineCaseCreatedListener::class
+		);
+
+		// The case number is DECLARED on the schema, as an OpenRegister
+		// calculation using the `sequence` operator. On an install whose
+		// OpenRegister ships that operator this listener writes nothing: it
+		// reads the number back off the created case and returns. On an older
+		// one the declaration evaluates to nothing at all — in the register, at
+		// evaluation time, where no gate here can see it — and every case is
+		// filed without a number. This is the backfill for exactly that case.
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: CaseNumberListener::class
 		);
 	}//end registerTermijnListeners()
 

@@ -25,9 +25,22 @@ criteria under a task are plain bullets.
     than read-only on it. The override is `readOnly: false` (re-admit the
     field) plus `editable: false` (keep it un-typeable); either half alone is
     wrong in a different direction.
-- [ ] 1.3 [blocked: openregister a `sequence()` function in
-  `x-openregister-calculations` scoped per year] Until it ships, 1.1 is
-  declared but inert and 1.2 waits; the field stays free text.
+- [x] 1.3 ~~[blocked: openregister a `sequence()` function in
+  `x-openregister-calculations` scoped per year]~~ UNBLOCKED, and then
+  belt-and-braces.
+  - OpenRegister ships the operator: `sequence` is in
+    `CalculationEvaluator`'s dispatch table and `SequenceService` reserves per
+    scope, so the D1 declaration evaluates and 1.2 no longer waits.
+  - It ships in the openregister on THIS rig. An install running an older one
+    evaluates the same declaration to nothing, in the register, at evaluation
+    time — no gate in dossiq can see that, and the symptom is exactly the one
+    this change exists to end: a case filed without a number.
+  - So `CaseNumberService` + `CaseNumberListener` backfill an EMPTY
+    `identifier` on create, in the same `YYYY-NNNN` shape off the same start
+    year. When the calculation ran, the field is filled and the service
+    writes nothing. The number is MAX + 1 of the year's identifiers, never
+    COUNT + 1: a count is one deletion away from handing a live case a number
+    another case already holds.
 
 ## 2. Tags
 
