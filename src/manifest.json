@@ -1172,6 +1172,7 @@
 				],
 				"_teamColumnNote": "`assignedGroup` is a $ref to an organisatieRol and CnIndexPage renders a plain key raw, so the column would show a uuid. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded row's `roleName`, the same shape the Tasks index uses for `case.title`; the server cannot sort on a nested field, so the column is not sortable. The Team FACET in the sidebar comes from `facetable: true` on the property itself and is the interim for the blocked Team chip.",
 				"extend": ["assignedGroup"],
+				"_quickFiltersNote": "one-case-list, D1 revised: the Queue page and the My Work page stay exactly as they are, and no menu entry changes. These chips only add the lenses to the list that already exists. Unclaimed carries the SAME two conditions as Queue's base filter (`assignee: \"IS NULL\"`, `isFinalStatus: false`), literally equal so the two lists cannot drift; the manifest vitest asserts that equality rather than trusting it. ALL IS THE DEFAULT, not Mine: `resolveInitialQuickFilterIndex` activates the chip marked `default` (and the FIRST chip when none is), so a Mine default would silently narrow every reader's first paint to their own cases and make an empty list look like an empty register. Ruben's revision to the change's own 'Mine is the default' decision; the same pattern parties-on-the-case established. Overdue spells its operator as the flat `deadline[lt]` key, not the nested `{ deadline: { lt } }` object: `buildQueryString` JSON-stringifies a nested object value, which reaches the API as the literal string `{\"lt\":\"@today\"}` and matches nothing. `@today` resolves client-side to `YYYY-MM-DD` at fetch time.",
 				"quickFilters": [
 					{
 						"label": "All",
@@ -1181,7 +1182,28 @@
 					{
 						"label": "Mine",
 						"filter": {
-							"assignee": "@me"
+							"assignee": "@me",
+							"isFinalStatus": false
+						}
+					},
+					{
+						"label": "Unclaimed",
+						"filter": {
+							"assignee": "IS NULL",
+							"isFinalStatus": false
+						}
+					},
+					{
+						"label": "Closed",
+						"filter": {
+							"isFinalStatus": true
+						}
+					},
+					{
+						"label": "Overdue",
+						"filter": {
+							"isFinalStatus": false,
+							"deadline[lt]": "@today"
 						}
 					}
 				],
@@ -2358,9 +2380,17 @@
 				],
 				"_columnsNote": "`case` is a $ref to the case and CnIndexPage renders a plain key raw, so the column showed truncated uuids. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded object's title; the server cannot sort on a nested field, so the column is not sortable.",
 				"extend": ["case", "assigneeGroup"],
+				"_quickFiltersNote": "one-case-list: the same three lenses the Cases index carries, in the same order and with the same labels, so a person who learned one list has learned the other. `isTerminalStatus` is the task-side twin of the case's `isFinalStatus` and is a stored boolean, so plain equality reaches it. All stays the default chip for the reason spelled out on Cases.",
 				"quickFilters": [
 					{ "label": "All", "filter": {}, "default": true },
-					{ "label": "Mine", "filter": { "assignee": "@me" } }
+					{
+						"label": "Mine",
+						"filter": { "assignee": "@me", "isTerminalStatus": false }
+					},
+					{
+						"label": "Unclaimed",
+						"filter": { "assignee": "IS NULL", "isTerminalStatus": false }
+					}
 				],
 				"columns": [
 					"title",

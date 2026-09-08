@@ -6,23 +6,31 @@ no menu entry changes.
 
 ## 1. Lenses
 
-- [ ] 1.1 `src/manifest.json` page `Cases`: add `config.quickFilters` with
-  Mine (`{ assignee: "@me", isFinalStatus: false }`, `default: true`),
-  Unclaimed (`{ assignee: "IS NULL", isFinalStatus: false }`), All (`{}`),
-  Closed (`{ isFinalStatus: true }`), Overdue (`{ deadline: "lt @today",
-  isFinalStatus: false }`), in that order; a `_note` naming D1 revised and
-  the Queue page's identical Unclaimed filter.
+- [x] 1.1 `src/manifest.json` page `Cases`: `config.quickFilters` holds All
+  (`{}`, `default: true`), Mine (`{ assignee: "@me", isFinalStatus: false }`),
+  Unclaimed (`{ assignee: "IS NULL", isFinalStatus: false }`), Closed
+  (`{ isFinalStatus: true }`), Overdue (`{ "deadline[lt]": "@today",
+  isFinalStatus: false }`), in that order; `_quickFiltersNote` names D1
+  revised, D-default revised and the Queue page's identical Unclaimed filter.
   - `@spec openspec/changes/one-case-list/specs/my-work/spec.md`
-  - unit test in `tests/unit/manifest-case-list-lenses.spec.js`: five chips
-    in order, Mine default, Unclaimed filter deep-equals `Queue.config.filter`,
+  - Two departures from the task as written, both recorded in the manifest
+    note. **All is the default, not Mine** (D-default revised; a Mine default
+    narrows the first paint before the reader chooses). **The Overdue operator
+    is the flat key `deadline[lt]`, not `{ deadline: "lt @today" }`**:
+    `buildQueryString` JSON-stringifies a nested object value, so the nested
+    form reaches the API as the literal `{"lt":"@today"}` and matches nothing,
+    silently. The flat form is what the Overdue dashboard tile already sends.
+  - unit test in `tests/vitest/caseListLenses.spec.js` (the suite lives under
+    `tests/vitest/`, not `tests/unit/`): five chips in order, All default and
+    nothing else default, Unclaimed filter deep-equals `Queue.config.filter`,
     Mine and Unclaimed carry `isFinalStatus: false`, Closed carries `true`,
-    `menu` and the page count unchanged
-- [ ] 1.2 `src/manifest.json` page `Tasks`: add `config.quickFilters` Mine
-  (`{ assignee: "@me", isTerminalStatus: false }`, default), Unclaimed
-  (`{ assignee: "IS NULL", isTerminalStatus: false }`), All (`{}`).
+    `menu` unchanged, Queue and MyWork still present
+- [x] 1.2 `src/manifest.json` page `Tasks`: `config.quickFilters` holds All
+  (`{}`, default), Mine (`{ assignee: "@me", isTerminalStatus: false }`),
+  Unclaimed (`{ assignee: "IS NULL", isTerminalStatus: false }`).
   - `@spec openspec/changes/one-case-list/specs/task-management/spec.md`
-  - unit test in `tests/unit/manifest-case-list-lenses.spec.js`: three
-    chips, Mine default, same label set as the first three on Cases
+  - unit test in `tests/vitest/caseListLenses.spec.js`: three chips, All
+    default, same label set as the first three on Cases
 
 ## 2. Columns and sidebar
 
