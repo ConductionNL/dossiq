@@ -5,7 +5,7 @@ criteria under a task are plain bullets.
 
 ## 1. The list on the status
 
-- [ ] 1.1 `lib/Settings/dossiq_register.json`, schema `statusType`: property
+- [x] 1.1 `lib/Settings/dossiq_register.json`, schema `statusType`: property
   `checklist` per design D1 (array of `{title, required}`), title Checklist,
   with a description that says the tasks are created on entry.
   - `@spec openspec/specs/status-transition-engine/spec.md`
