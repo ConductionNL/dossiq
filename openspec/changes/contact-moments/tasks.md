@@ -5,7 +5,7 @@ criteria under a task are plain bullets.
 
 ## 1. The case on the contact moment
 
-- [ ] 1.1 `lib/Settings/register.d/40-kcc-werkplek.json`, schema
+- [x] 1.1 `lib/Settings/register.d/40-kcc-werkplek.json`, schema
   `contactmoment`: property `case` per design D1 and bump `version` to
   1.2.0.
   - `@spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md`

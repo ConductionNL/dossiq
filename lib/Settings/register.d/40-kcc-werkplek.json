@@ -16,7 +16,7 @@
             "contactmoment": {
                 "slug": "contactmoment",
                 "icon": "PhoneInTalk",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "configuration": {
                     "x-openregister-processing": {
                         "logReads": true,
@@ -43,6 +43,7 @@
                     "identificationMethod": {"type": "string", "title": "Identification Method", "enum": ["digid", "bsn_verificatie", "identificatievragen", "non_geidentificeerd"], "description": "How the caller was identified"},
                     "identificationScore": {"type": "number", "title": "Identification Score", "description": "Identification confidence score (0.0-1.0)"},
                     "kccEmployeeId": {"type": "string", "title": "KCC Employee ID", "description": "Nextcloud UID of the handling KCC-medewerker"},
+                    "case": {"type": "string", "format": "uuid", "$ref": "case", "title": "Case", "facetable": true, "description": "The case this contact is about"},
                     "relatedCases": {"type": "array", "title": "Related Cases", "items": {"type": "string"}, "description": "Case ids this contact relates to"},
                     "newCaseIds": {"type": "array", "title": "New Case IDs", "items": {"type": "string"}, "description": "Case ids created during this contact"},
                     "nature": {"type": "string", "title": "Nature", "enum": ["informatieverzoek", "statusverzoek", "complaint", "report", "new_request", "doorverbinding"], "description": "Nature of the contact"},
