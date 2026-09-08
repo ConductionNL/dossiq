@@ -78,7 +78,7 @@ criteria under a task are plain bullets.
   `ensureCaseType` from `tests/e2e/helpers/fixtures.ts`.
 - [x] 5.2 Update `tests/e2e/case-create-form.spec.ts`: `CREATE_FIELDS` grows
   to ten with `requester`.
-- [ ] 5.3 Run `composer check:strict`, `npm run check:manifest`, the hydra
+- [x] 5.3 Run `composer check:strict`, `npm run check:manifest`, the hydra
   gates, vitest and the unit suite locally; read the exit codes, not the
   summaries.
 - [ ] 5.4 [blocked: openregister field-level read masking, so a protected
