@@ -1,6 +1,30 @@
 ---
 status: done
-status-note: Reverse-synced 2026-06-13 from archived implemented changes. Member 09 (contract backend) completed 2026-06-13 — the previously-deferred ContractController (GET /contracts/list, GET /contracts/{id}, POST /contracts/{id}/request-renewal; supplier-scoped, 403 on cross-supplier) and the nightly ScanExpiringContractsJob (TimedJob wrapping ContractRenewalService::scanAndFlagExpiring) are now genuinely built, routed, and unit-tested. 2026-07-07 (move-portals-to-portaliq, ADR-046, procest#162): the in-app supplier portal VIEWS (src/views/leverancier/*) + nav/routes/manifest fragment are RETIRED — the supplier surface is rendered by the shared Portaliq portal as the `supplier` audience of PortalContributionProvider. The backend supplier services + /api/leverancier-portaal/* endpoints and the OpenRegister schemas remain unchanged. 2026-07-08 (procest#loose-ends): SUPERSEDED for the in-app implementation — the now-consumerless backend was removed too. Deleted: SupplierPortalController / SupplierProfileController / ContractController + all /api/leverancier-portaal/* routes, SupplierAuthMiddleware, the supplier services (Scope/Session/Dashboard/KpiAggregation/Message/MasterDataMutation/Leverancier+Tender ViewModel/TenderVisibility/InvoicePaymentForecast/Auth/UserManagement), and the ContractRenewalService + ScanExpiringContractsJob renewal chain. The OpenRegister schemas (supplierTender/Contract/Invoice/Message) are UNCHANGED and are read directly by Portaliq (field-projected), which is now the sole supplier surface. This spec is retained for history; the live supplier experience is owned by Portaliq.
+status-note: >-
+  Reverse-synced 2026-06-13 from archived implemented changes. Member 09
+  (contract backend) completed 2026-06-13 — the previously-deferred
+  ContractController (GET /contracts/list, GET /contracts/{id}, POST
+  /contracts/{id}/request-renewal; supplier-scoped, 403 on cross-supplier) and
+  the nightly ScanExpiringContractsJob (TimedJob wrapping
+  ContractRenewalService::scanAndFlagExpiring) are now genuinely built,
+  routed, and unit-tested. 2026-07-07 (move-portals-to-portaliq, ADR-046,
+  procest#162): the in-app supplier portal VIEWS (src/views/leverancier/*) +
+  nav/routes/manifest fragment are RETIRED — the supplier surface is rendered
+  by the shared Portaliq portal as the `supplier` audience of
+  PortalContributionProvider. The backend supplier services +
+  /api/leverancier-portaal/* endpoints and the OpenRegister schemas remain
+  unchanged. 2026-07-08 (procest#loose-ends): SUPERSEDED for the in-app
+  implementation — the now-consumerless backend was removed too. Deleted:
+  SupplierPortalController / SupplierProfileController / ContractController +
+  all /api/leverancier-portaal/* routes, SupplierAuthMiddleware, the supplier
+  services
+  (Scope/Session/Dashboard/KpiAggregation/Message/MasterDataMutation/Leverancier+Tender
+  ViewModel/TenderVisibility/InvoicePaymentForecast/Auth/UserManagement), and
+  the ContractRenewalService + ScanExpiringContractsJob renewal chain. The
+  OpenRegister schemas (supplierTender/Contract/Invoice/Message) are UNCHANGED
+  and are read directly by Portaliq (field-projected), which is now the sole
+  supplier surface. This spec is retained for history; the live supplier
+  experience is owned by Portaliq.
 ---
 # supplier-portal Specification
 
@@ -512,7 +536,10 @@ The system SHALL flag contracts within 90 days of expiry and compute the days re
 
 #### Scenario: Contract within the threshold is flagged
 
-@e2e exclude Backend-only — driven by the nightly ScanExpiringContractsJob (TimedJob) with no UI surface; covered by ScanExpiringContractsJobTest + ContractRenewalServiceTest. Contract UI is chain member 10.
+@e2e exclude backend-only, with no UI surface in this app. The nightly job and
+the renewal service this reason used to name were deleted by 062d9dede when the
+consumerless supplier backend was removed. Portaliq is now the sole supplier
+surface and reads the OpenRegister Contract schema directly.
 
 - GIVEN the nightly expiry-scan job runs
 - WHEN a contract's `endDate` is within 90 days
@@ -527,7 +554,10 @@ account manager.
 
 #### Scenario: Renewal request opens a Dossiq case
 
-@e2e exclude Backend REST contract — exercised via the Newman leverancier-contract-api collection + ContractControllerTest (role gate, manual-only, window, cross-supplier 403); no UI surface in this chain member. Contract renewal UI is chain member 10.
+@e2e exclude backend REST contract with no UI surface in this app. The
+controller and the /api/leverancier-portaal/* routes this reason used to name
+were deleted by 062d9dede, the collection it named has never existed, and this
+app sets enable-newman false. Portaliq now renders the supplier experience.
 
 - GIVEN a contracts or admin user requests renewal of a manual-renewal contract within 90 days
 - WHEN the request endpoint is called
