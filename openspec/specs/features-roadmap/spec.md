@@ -66,8 +66,21 @@ The comparison section SHALL state, before any score:
    date because open source moves fast.
 3. That a rating is the team's own reading and is not proof that a product does
    or does not have a capability.
-4. What the reader should do instead of relying on the table: shortlist the
-   capabilities they need and test every system against that shortlist.
+4. A plain recommendation that the reader run their own evaluation, and that
+   this table does not replace testing against their own requirements. This one
+   is not optional and it is not a restatement of item 3: item 3 tells the
+   reader what to discount, and this tells them what to do about it. A panel
+   that discounts itself three times and never says "go and test" reads as
+   hedging.
+5. The first concrete step: shortlist the capabilities they need and test every
+   system against that shortlist.
+
+#### Scenario: The panel advises the reader to test for themselves
+
+- **GIVEN** a reader opens the comparison
+- **WHEN** they read the panel
+- **THEN** it MUST recommend that they run their own evaluation
+- **AND** it MUST say that the table does not replace testing against their own requirements
 
 #### Scenario: A reader can date the claim
 

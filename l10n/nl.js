@@ -3760,7 +3760,8 @@ OC.L10N.register(
         "We rated dossiq and three other case management systems on {count} capabilities: {systems}.": "We beoordeelden dossiq en drie andere zaaksystemen op {count} functies: {systems}.",
         "We read the four systems on {date}. Open source moves fast, so some of these ratings are already out of date. Check that date before you rely on them.": "We lazen de vier systemen op {date}. Open source gaat snel, dus een deel van deze beoordelingen is nu al verouderd. Kijk naar die datum voordat je erop vertrouwt.",
         "What dossiq does": "Wat dossiq doet",
-        "Before you use this table": "Voordat je deze tabel gebruikt"
+        "Before you use this table": "Voordat je deze tabel gebruikt",
+        "We strongly advise you to run your own evaluation. This table does not replace testing against your own requirements.": "We raden je sterk aan zelf een evaluatie te doen. Deze tabel vervangt geen test tegen je eigen eisen."
     },
     "nplurals=2; plural=(n != 1);"
 )

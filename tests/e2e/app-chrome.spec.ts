@@ -162,6 +162,7 @@ test.describe('app chrome (ADR-114)', () => {
 
 	// @e2e openspec/specs/features-roadmap/spec.md#areas-summarise-before-they-expand
 	// @e2e openspec/specs/features-roadmap/spec.md#a-reader-can-date-the-claim
+	// @e2e openspec/specs/features-roadmap/spec.md#the-panel-advises-the-reader-to-test-for-themselves
 	test('FeaturesRoadmapView compares dossiq and states the comparison limits', async ({
 		page,
 	}) => {
@@ -191,6 +192,11 @@ test.describe('app chrome (ADR-114)', () => {
 		// Intl's month spelling while still failing if the date goes missing.
 		await expect(comparison).toContainText('2026')
 		await expect(comparison).toContainText('is not proof')
+		// The advice to go and test. This is the caveat that tells the reader
+		// what to DO, and it was missing from the first cut of this panel: the
+		// other three only tell them what to discount, which reads as hedging
+		// on its own.
+		await expect(comparison).toContainText('run your own evaluation')
 
 		// Thirteen areas, collapsed. The rows live behind the disclosure so
 		// the landing view is readable; if a change flattens 206 rows onto the

@@ -107,6 +107,14 @@
 					{{
 						t(
 							'dossiq',
+							'We strongly advise you to run your own evaluation. This table does not replace testing against your own requirements.',
+						)
+					}}
+				</p>
+				<p>
+					{{
+						t(
+							'dossiq',
 							'Pick the capabilities your organisation needs. Then test all four systems against that shortlist yourself.',
 						)
 					}}
