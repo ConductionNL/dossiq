@@ -3604,7 +3604,15 @@ OC.L10N.register(
         "The document could not be generated.": "Het document kon niet worden gegenereerd.",
         "The template library is unavailable.": "De sjabloonbibliotheek is niet beschikbaar.",
         "Free-text keywords you tag a document with, so you can find it back. A type is one per document and carries a confidentiality default; a keyword is many per document and carries nothing. The property name is English (decisions D13); the Dutch label lives in nl.json only.": "Vrije trefwoorden waarmee je een document labelt, zodat je het terugvindt. Een type hoort er één bij een document en draagt een standaard vertrouwelijkheid; een trefwoord hoort er met meerdere bij en draagt niets. De eigenschapsnaam is Engels (besluit D13); het Nederlandse label staat alleen in nl.json.",
-        "Whether the document came in, went out or stayed internal. Maps one to one onto zaaksysteem Richting and gzac richting.": "Of het document is binnengekomen, uitgegaan of intern is gebleven. Sluit één op één aan op Richting van zaaksysteem en richting van gzac."
+        "Whether the document came in, went out or stayed internal. Maps one to one onto zaaksysteem Richting and gzac richting.": "Of het document is binnengekomen, uitgegaan of intern is gebleven. Sluit één op één aan op Richting van zaaksysteem en richting van gzac.",
+        "Unclaimed": "Niet toegewezen",
+        "1 day left": "Nog 1 dag",
+        "{days} days left": "Nog {days} dagen",
+        "Extend the term of {count} cases": "Termijn van {count} zaken verlengen",
+        "New deadline": "Nieuwe deadline",
+        "Reason (applied to every case)": "Reden (geldt voor elke zaak)",
+        "Resume {count} cases": "{count} zaken hervatten",
+        "Suspend {count} cases": "{count} zaken opschorten"
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -261,7 +261,11 @@ describe('the Team column and the Mine chip', () => {
 		expect(chips).toBeTruthy()
 		const mine = chips.find((chip) => chip.label === 'Mine')
 		expect(mine).toBeTruthy()
-		expect(mine.filter).toEqual({ assignee: '@me' })
+		// `one-case-list` added the open-work condition beside the assignee
+		// (`isFinalStatus` on Cases, `isTerminalStatus` on Tasks), so this
+		// asserts the scoping this change owns rather than the whole map —
+		// the full chip shapes are `tests/vitest/caseListLenses.spec.js`.
+		expect(mine.filter.assignee).toBe('@me')
 
 		// The chip bar activates its first tab, or the one marked `default`,
 		// on mount. Without an all-rows chip marked default, the index would

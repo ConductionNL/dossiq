@@ -104,6 +104,91 @@ export function buildExecutePayload(selection, transitionId, comment) {
 }
 
 /**
+ * The lifecycle gestures a bulk call may ask for, beside a transition.
+ *
+ * A transition is not one of them: it moves `case.status` and goes through
+ * the status engine, which is that field's only write path. These three move
+ * the statutory CLOCK instead (opschorting under Awb 4:5, hervatting,
+ * verlenging under Awb 4:14) and go through `CaseLifecycleService` — the
+ * same single-case gestures the case page's Actions menu calls.
+ */
+export const LIFECYCLE_GESTURES = ['suspend', 'resume', 'extend']
+
+/**
+ * Whether a dialog mode is one of the lifecycle gestures.
+ *
+ * @param {string} mode The dialog mode.
+ * @return {boolean} True for suspend / resume / extend.
+ *
+ * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+ */
+export function isLifecycleGesture(mode) {
+	return LIFECYCLE_GESTURES.includes(mode)
+}
+
+/**
+ * Build the request payload for a bulk LIFECYCLE preview.
+ *
+ * The endpoint is the same one a transition previews through
+ * (`/api/cases/bulk-transition/preview`); `gesture` is what tells it apart.
+ * One endpoint because the preview, the per-case result map and the
+ * partial-failure reporting are the parts worth keeping equal across all
+ * four bulk actions — which is also why one dialog serves them.
+ *
+ * @param {{columnId: string|null, caseIds: Array<string>}} selection Current selection state.
+ * @param {string} gesture One of suspend, resume, extend.
+ * @return {{caseIds: Array<string>, gesture: string}}
+ *
+ * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+ */
+export function buildLifecyclePreviewPayload(selection, gesture) {
+	const caseIds =
+		selection && Array.isArray(selection.caseIds) ? [...selection.caseIds] : []
+	return { caseIds, gesture: gesture || '' }
+}
+
+/**
+ * Build the request payload for a bulk LIFECYCLE execute.
+ *
+ * The reason is sent for every gesture, never only for suspend. Each of the
+ * three is a statutory act someone has to justify later, and the server
+ * refuses a batch without one — a bulk gesture is exactly when a
+ * justification goes unwritten, so it is required rather than optional here
+ * the way the transition `comment` is.
+ *
+ * `days` is sent only for suspend and `newEndDate` only for extend: a key
+ * the gesture has no use for is noise in the audit trail and a value the
+ * next reader has to explain away.
+ *
+ * @param {{columnId: string|null, caseIds: Array<string>}} selection Current selection state.
+ * @param {string} gesture One of suspend, resume, extend.
+ * @param {{reason?: string, days?: (number|string), newEndDate?: string}} [fields] The dialog's fields.
+ * @return {{caseIds: Array<string>, gesture: string, reason: string, days?: number, newEndDate?: string}}
+ *
+ * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+ */
+export function buildLifecycleExecutePayload(selection, gesture, fields) {
+	const caseIds =
+		selection && Array.isArray(selection.caseIds) ? [...selection.caseIds] : []
+	const given = fields || {}
+	const payload = {
+		caseIds,
+		gesture: gesture || '',
+		reason: (given.reason || '').trim(),
+	}
+
+	if (gesture === 'suspend') {
+		payload.days = Number(given.days) || 0
+	}
+
+	if (gesture === 'extend') {
+		payload.newEndDate = given.newEndDate || ''
+	}
+
+	return payload
+}
+
+/**
  * Summarise a bulk preview/execute `results` map (`{caseId: {status, reasons?}}`)
  * into per-status counts and the list of non-ready/non-succeeded entries
  * (blocked/failed/error) so a dialog can render "N ready, M blocked" plus the

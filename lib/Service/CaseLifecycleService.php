@@ -203,19 +203,29 @@ class CaseLifecycleService {
 	 * Extend the processing term (verlenging, Awb 4:14).
 	 *
 	 * The new end date is the current one plus the case type's
-	 * `extensionPeriod`, which the case type states as an ISO 8601 duration.
+	 * `extensionPeriod`, which the case type states as an ISO 8601 duration —
+	 * unless the caller names an explicit `$newEndDate`, which the bulk
+	 * Extend term action does. An explicit date still has to be LATER than
+	 * the current end: an "extension" that shortens the term is a mistake,
+	 * and refusing it per case is cheaper than explaining it afterwards.
+	 * `extensionAllowed` and the reason are required either way, so naming a
+	 * date buys the caller no authority the case type has not granted.
 	 *
 	 * @param string $caseId Case UUID
 	 * @param string $reason Why the term is extended
+	 * @param string $newEndDate Explicit new end date (Y-m-d); the case type's
+	 *                           period is used when this is empty
 	 *
 	 * @return array<string, mixed> The lifecycle state after the write
 	 *
 	 * @throws RuntimeException When the case type forbids extension, states no
-	 *                          period, or the reason is empty
+	 *                          period, the reason is empty, or the named date is
+	 *                          unreadable or not after the current end date
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
 	 */
-	public function extend(string $caseId, string $reason): array {
+	public function extend(string $caseId, string $reason, string $newEndDate = ''): array {
 		$case = $this->requireCase(caseId: $caseId);
 		$this->requireReason(reason: $reason);
 
@@ -224,13 +234,12 @@ class CaseLifecycleService {
 			throw new RuntimeException('extension_not_allowed');
 		}
 
-		$period = (string)$caseType['extensionPeriod'];
-		if ($period === '') {
-			throw new RuntimeException('extension_period_not_configured');
-		}
-
 		$current = (string)($case['plannedEndDate'] ?? ($case['deadline'] ?? ''));
-		$newEnd = $this->addPeriod(date: $current, period: $period);
+		$newEnd = $this->resolveNewEndDate(
+			current: $current,
+			named: $newEndDate,
+			period: (string)$caseType['extensionPeriod'],
+		);
 
 		$this->onTermInstance(
 			caseId: $caseId,
@@ -414,6 +423,68 @@ class CaseLifecycleService {
 
 		$apply($instanceId);
 	}//end onTermInstance()
+
+	/**
+	 * The new end date an extension lands on: the one the caller named, or
+	 * the current one plus the case type's statutory period.
+	 *
+	 * @param string $current The current end date (Y-m-d), possibly empty
+	 * @param string $named An explicit new end date, or '' for the period
+	 * @param string $period The case type's ISO 8601 extension period
+	 *
+	 * @return string The new end date as Y-m-d
+	 *
+	 * @throws RuntimeException When the named date is unreadable or not later,
+	 *                          or when no period is configured and none was named
+	 *
+	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+	 */
+	private function resolveNewEndDate(string $current, string $named, string $period): string {
+		if ($named !== '') {
+			return $this->requireLaterDate(current: $current, candidate: $named);
+		}
+
+		if ($period === '') {
+			throw new RuntimeException('extension_period_not_configured');
+		}
+
+		return $this->addPeriod(date: $current, period: $period);
+	}//end resolveNewEndDate()
+
+	/**
+	 * An explicit new end date, normalised, having checked it is later than
+	 * the current one.
+	 *
+	 * @param string $current The current end date (Y-m-d), possibly empty
+	 * @param string $candidate The date the caller named
+	 *
+	 * @return string The new end date as Y-m-d
+	 *
+	 * @throws RuntimeException When the date is unreadable or not later
+	 *
+	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+	 */
+	private function requireLaterDate(string $current, string $candidate): string {
+		try {
+			$next = new DateTimeImmutable($candidate);
+		} catch (\Throwable $e) {
+			throw new RuntimeException('new_end_date_unreadable');
+		}
+
+		if ($current !== '') {
+			try {
+				$now = new DateTimeImmutable($current);
+			} catch (\Throwable $e) {
+				$now = null;
+			}
+
+			if ($now !== null && $next <= $now) {
+				throw new RuntimeException('new_end_date_not_later');
+			}
+		}
+
+		return $next->format('Y-m-d');
+	}//end requireLaterDate()
 
 	/**
 	 * Add an ISO 8601 duration to a date.

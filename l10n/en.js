@@ -3604,7 +3604,15 @@ OC.L10N.register(
         "The document could not be generated.": "The document could not be generated.",
         "The template library is unavailable.": "The template library is unavailable.",
         "Free-text keywords you tag a document with, so you can find it back. A type is one per document and carries a confidentiality default; a keyword is many per document and carries nothing. The property name is English (decisions D13); the Dutch label lives in nl.json only.": "Free-text keywords you tag a document with, so you can find it back. A type is one per document and carries a confidentiality default; a keyword is many per document and carries nothing. The property name is English (decisions D13); the Dutch label lives in nl.json only.",
-        "Whether the document came in, went out or stayed internal. Maps one to one onto zaaksysteem Richting and gzac richting.": "Whether the document came in, went out or stayed internal. Maps one to one onto zaaksysteem Richting and gzac richting."
+        "Whether the document came in, went out or stayed internal. Maps one to one onto zaaksysteem Richting and gzac richting.": "Whether the document came in, went out or stayed internal. Maps one to one onto zaaksysteem Richting and gzac richting.",
+        "Unclaimed": "Unclaimed",
+        "1 day left": "1 day left",
+        "{days} days left": "{days} days left",
+        "Extend the term of {count} cases": "Extend the term of {count} cases",
+        "New deadline": "New deadline",
+        "Reason (applied to every case)": "Reason (applied to every case)",
+        "Resume {count} cases": "Resume {count} cases",
+        "Suspend {count} cases": "Suspend {count} cases"
     },
     "nplurals=2; plural=(n != 1);"
 )

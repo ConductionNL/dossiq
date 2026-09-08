@@ -23,6 +23,7 @@ import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // --- Detail-tab custom components (one per cross-schema relation). ---
 // Stubs for v1 — full implementations follow in `procest-case-relation-tabs`.
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
+import BulkTransitionDialog from './dialogs/BulkTransitionDialog.vue'
 import ReassignSelectionDialog from './dialogs/ReassignSelectionDialog.vue'
 // --- Case-email sidebar tab (leaf-first per ADR-022). ---
 // @spec openspec/changes/case-email-integration/tasks.md#T12
@@ -130,6 +131,107 @@ function reassignSelection({ selectedIds }) {
 	app.mount(host)
 }
 
+/**
+ * Mount `BulkTransitionDialog` for a selection, in one of its four modes.
+ *
+ * Mounted here rather than declared in the manifest for the same reason
+ * `reassignSelection` is: the library's declarative modal path emits
+ * `open-modal` and nothing consumes it, so a manifest-declared dialog would
+ * be a bulk action that does nothing when clicked.
+ *
+ * @param {string} mode One of transition, suspend, resume, extend.
+ * @param {Array<string>} selectedIds The selected case ids.
+ * @return {void}
+ *
+ * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+ */
+function openBulkDialog(mode, selectedIds) {
+	const ids = Array.isArray(selectedIds) ? selectedIds : []
+	if (ids.length === 0) {
+		return
+	}
+
+	const host = document.createElement('div')
+	document.body.appendChild(host)
+
+	let app = null
+
+	/**
+	 * Tear the mounted dialog down.
+	 *
+	 * @return {void}
+	 */
+	function close() {
+		app.unmount()
+		host.remove()
+	}
+
+	app = createApp(BulkTransitionDialog, {
+		caseIds: ids,
+		mode,
+		onClose: close,
+		onCompleted: () => {
+			close()
+			// Same signal `reassignSelection` sends: the rows the user just
+			// moved may no longer belong on the active lens, and leaving them
+			// on screen invites a second gesture on cases that already moved.
+			// The list's own refresh comes from its live-collection
+			// subscription; this event is the app-level notice beside it.
+			window.dispatchEvent(new CustomEvent('dossiq:cases-changed'))
+		},
+	})
+	app.mount(host)
+}
+
+/**
+ * Bulk-action handler: move the selected cases to another status.
+ *
+ * @param {{actionId: string, selectedIds: Array<string>, count: number}} scope The selection.
+ * @return {void}
+ *
+ * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+ */
+function transitionSelection({ selectedIds }) {
+	openBulkDialog('transition', selectedIds)
+}
+
+/**
+ * Bulk-action handler: suspend the selected cases (opschorting, Awb 4:5).
+ *
+ * @param {{actionId: string, selectedIds: Array<string>, count: number}} scope The selection.
+ * @return {void}
+ *
+ * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+ */
+function suspendSelection({ selectedIds }) {
+	openBulkDialog('suspend', selectedIds)
+}
+
+/**
+ * Bulk-action handler: resume the selected suspended cases (hervatting).
+ *
+ * @param {{actionId: string, selectedIds: Array<string>, count: number}} scope The selection.
+ * @return {void}
+ *
+ * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+ */
+function resumeSelection({ selectedIds }) {
+	openBulkDialog('resume', selectedIds)
+}
+
+/**
+ * Bulk-action handler: extend the term of the selected cases (verlenging,
+ * Awb 4:14).
+ *
+ * @param {{actionId: string, selectedIds: Array<string>, count: number}} scope The selection.
+ * @return {void}
+ *
+ * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+ */
+function extendTermSelection({ selectedIds }) {
+	openBulkDialog('extend', selectedIds)
+}
+
 export default {
 	// --- Genuine exceptions: no abstract analogue. ---
 	// The Cases page's `reassign` bulk action. A FUNCTION handler, not the
@@ -137,6 +239,13 @@ export default {
 	// `open-modal` event and nothing in the library listens for it yet, so
 	// declaring it would ship a bulk action that does nothing when clicked.
 	reassignSelection,
+	// The Cases page's four lifecycle bulk actions, all four opening the one
+	// BulkTransitionDialog in the matching mode. Function handlers for the
+	// same reason `reassignSelection` is one.
+	transitionSelection,
+	suspendSelection,
+	resumeSelection,
+	extendTermSelection,
 	MyWorkView, // current-user case index (assignee=uid) in card view — CnIndexPage wrapper
 	StoreGallery, // remote store cards — index renderer cannot address a REMOTE object
 	// CaseMapView removed — see import comment above.
