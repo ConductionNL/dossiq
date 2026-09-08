@@ -36,7 +36,12 @@
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
-import { captureStorageState, ensureUser, storageStatePath } from './helpers/auth.ts'
+import {
+	captureStorageState,
+	ensureUser,
+	STORAGE_STATE,
+	storageStatePath,
+} from './helpers/auth.ts'
 import {
 	cleanupRunObjects,
 	createObject,
@@ -151,6 +156,7 @@ const OVERDUE_CASE = `${RUN_PREFIX} deadline passed`
 const SOON_CASE = `${RUN_PREFIX} deadline in two days`
 const CLOSED_CASE = `${RUN_PREFIX} closed but past due`
 const FAR_CASE = `${RUN_PREFIX} deadline far out`
+const MET_CASE = `${RUN_PREFIX} closed on time this month`
 /** One filler title per row, so a failure names the row it could not find. */
 const FILLER_CASE = (n: number) => `${RUN_PREFIX} deadline filler ${n}`
 const TASK_SOON = `${RUN_PREFIX} task due tomorrow`
@@ -221,13 +227,45 @@ test.describe('Dashboard tiles', () => {
 		// raises the teardown's, so no TEST budget is loosened with it.
 		test.setTimeout(180_000)
 
-		const context = await browser.newContext()
+		// 🔴 THE ADMIN SESSION IS NAMED, NOT INHERITED. This used to build the
+		// seeding context from `browser.newContext()`, which merges the
+		// project's `use` and therefore resolves whatever the default storage
+		// state happens to be at that moment. On one worker of run
+		// 34262842972 it resolved to the NON-admin account this same hook
+		// provisions, and `ensureUser` came back with
+		//
+		//     HTTP 403, OCS 403 Logged in account must be at least a sub admin
+		//
+		// which names a permission rather than a session and reads as a broken
+		// provisioning API. The trace settles it: that request carried
+		// `nc_username=e2e-dashboard`. Every test after it in this file then
+		// reported "did not run", including all four Deadlines scenarios, so
+		// one ambiguous session cost the file.
+		//
+		// Naming the admin state file removes the ambiguity. It does not
+		// explain how the default came to resolve elsewhere, which is still
+		// open, and that is exactly why the assertion below exists.
 		api = await playwright.request.newContext({
 			baseURL,
-			storageState: await context.storageState(),
+			storageState: STORAGE_STATE,
 		})
-		await context.close()
 		token = await getRequestToken(api)
+
+		// Prove the seeding session is an admin BEFORE anything asks it to
+		// provision an account, the same way the WORK_USER session is proved
+		// below. `ensureUser` documents that it needs an admin context; this
+		// is where that requirement gets checked rather than assumed.
+		const seedWhoami = await api.get('/ocs/v2.php/cloud/user?format=json', {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
+		expect(
+			seedWhoami.ok(),
+			`the seeding session must answer whoami, got ${seedWhoami.status()}`,
+		).toBeTruthy()
+		expect(
+			String((await seedWhoami.json())?.ocs?.data?.id ?? ''),
+			'the seeding session must be the admin, or nothing below can provision',
+		).toBe(process.env.ADMIN_USER ?? 'admin')
 
 		// The account the My work scenarios run as, and its session. See
 		// `WORK_USER` for why they cannot run as the admin.
@@ -320,6 +358,27 @@ test.describe('Dashboard tiles', () => {
 			startDate: isoDay(30),
 		})
 
+		// 🔴 THE SLA TILE HAS NO DENOMINATOR WITHOUT THIS. `kpi-sla-compliance`
+		// reads "the share of THIS MONTH's closed cases whose endDate met their
+		// deadline", and a share over an empty set is not a number: the tile
+		// renders an em dash, correctly. Nothing else in this fixture closes a
+		// case this month with an endDate, so the tile had nothing to divide by
+		// and `every KPI tile shows a number` failed on "—" while the widget
+		// was behaving exactly as specified.
+		//
+		// Closed TODAY so the month is never in doubt: an endDate a few days
+		// back falls into the previous month whenever the suite runs in the
+		// first days of one, which is a fixture that passes for most of the
+		// month and fails silently at the turn. The deadline lands two days
+		// out, so this case MET it and the share is a real percentage.
+		await seedCase(api, token, {
+			title: MET_CASE,
+			caseType: caseTypeId,
+			status: finalStatusId,
+			startDate: isoDay(-5),
+			endDate: isoDay(0),
+		})
+
 		// The fillers that truncate the tile. See `DEADLINE_FILLERS` for why
 		// the footer cannot appear without them, and why the deadline is
 		// exactly today+3 rather than anywhere else inside the window.
@@ -386,10 +445,18 @@ test.describe('Dashboard tiles', () => {
 		await expect(tiles.first()).toBeVisible({ timeout: 30_000 })
 		await expect(tiles).toHaveCount(KPI_TILE_COUNT)
 		await expect(page.getByText('Widget not available')).toHaveCount(0)
+		// Name the tile in the failure. Addressed positionally, the message
+		// reads `.cn-stat-widget nth(4)` and says nothing about WHICH tile or
+		// why: the one that failed here was SLA Compliance rendering "—",
+		// which is correct for a share over an empty set and meant the fixture
+		// owed it a closed case rather than the widget owing a number. See
+		// `MET_CASE`.
 		for (const tile of await tiles.all()) {
-			await expect(tile.locator('.cn-kpi-card__value')).toHaveText(/\d/, {
-				timeout: 15_000,
-			})
+			const label = (await tile.textContent())?.trim().slice(0, 60) ?? '?'
+			await expect(
+				tile.locator('.cn-kpi-card__value'),
+				`the KPI tile "${label}" should show a number, not a placeholder`,
+			).toHaveText(/\d/, { timeout: 15_000 })
 		}
 	})
 
