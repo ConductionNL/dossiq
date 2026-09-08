@@ -81,6 +81,49 @@ trait HandlesTemplates {
 	}//end renderTemplate()
 
 	/**
+	 * The `{{path}}` placeholders a case cannot answer.
+	 *
+	 * {@see renderTemplate()} deliberately blanks an unknown path rather than
+	 * leaking template syntax into user-facing output, which is right for a
+	 * field written into a case and wrong for a document filed in the dossier:
+	 * a letter with a hole where the addressee should be is worse than no
+	 * letter. A caller that stores the render as a document asks this first
+	 * and refuses, so nothing is created.
+	 *
+	 * @param string $template Raw template string.
+	 * @param array $case The case object — the `case` root scope.
+	 *
+	 * @return string[] The unresolved paths, in the order they appear.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	protected function missingTemplateFields(string $template, array $case): array {
+		$matches = [];
+		preg_match_all('/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/', $template, $matches);
+
+		$context = ['case' => $case];
+		$missing = [];
+		foreach ($matches[1] as $path) {
+			$cursor = $context;
+			$resolved = true;
+			foreach (explode('.', $path) as $segment) {
+				if (is_array($cursor) === false || array_key_exists($segment, $cursor) === false) {
+					$resolved = false;
+					break;
+				}
+
+				$cursor = $cursor[$segment];
+			}
+
+			if ($resolved === false && in_array($path, $missing, true) === false) {
+				$missing[] = $path;
+			}
+		}
+
+		return $missing;
+	}//end missingTemplateFields()
+
+	/**
 	 * Resolve a recipient reference to an email address or user identifier.
 	 *
 	 * Two reference shapes are supported in V1:

@@ -56,7 +56,7 @@ criteria under a task are plain bullets.
 
 ## 3. Generate document
 
-- [ ] 3.1 `lib/Service/Actions/MergeTemplateHandler.php`: when
+- [x] 3.1 `lib/Service/Actions/MergeTemplateHandler.php`: when
   `targetField` is absent, create an `informatieobject` (title from the
   template name, `status: draft`, `direction: outgoing`, `auteur` the
   signed-in user, `informatieobjecttype` from the template's
