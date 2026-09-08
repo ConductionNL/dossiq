@@ -76,10 +76,16 @@ export async function initializeStores() {
 				config.register,
 			)
 		}
-		if (config.register && config.result_type_schema) {
+		// Same slug fallback, same reason as caseType/statusType above, plus one
+		// of its own: the case page asks for a case type's result types to know
+		// what to offer when a transition CLOSES the case. Left unregistered,
+		// that read throws and the closing dialog offers no result at all — a
+		// case type with results configured would close without one, which is
+		// exactly what REQ-STE-12 forbids.
+		if (config.register) {
 			objectStore.registerObjectType(
 				'resultType',
-				config.result_type_schema,
+				config.result_type_schema || 'resultType',
 				config.register,
 			)
 		}
