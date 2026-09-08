@@ -103,10 +103,26 @@ describe('the Parties widget', () => {
 		expect(properties, 'the sort field').toContain(roles.content.sort.field)
 	})
 
+	it('replaces the Contacts tab rather than sitting beside it', () => {
+		const detail = page('CaseDetail')
+		const tabs = detail.config.widgets.find(
+			(entry) => entry.id === 'case-panels',
+		).content.tabs
+
+		// `case-contacts` was the Nextcloud contacts integration leaf: it showed
+		// the address book, never the people on this case. It is what the
+		// Parties tab was standing in for, so it goes.
+		expect(tabs.map((tab) => tab.widgetId)).not.toContain('case-contacts')
+		expect(detail.config.widgets.map((entry) => entry.id)).not.toContain(
+			'case-contacts',
+		)
+	})
+
 	it('is a tab of the case panels and never a layout cell of its own', () => {
 		const detail = page('CaseDetail')
-		const tabs = detail.config.widgets.find((entry) => entry.id === 'case-panels')
-			.content.tabs
+		const tabs = detail.config.widgets.find(
+			(entry) => entry.id === 'case-panels',
+		).content.tabs
 
 		expect(tabs.map((tab) => tab.widgetId)).toContain('case-roles')
 		// A widget rendered by the tabs widget AND placed in `layout` renders
@@ -114,5 +130,86 @@ describe('the Parties widget', () => {
 		expect(
 			(detail.config.layout || []).map((cell) => cell.widgetId),
 		).not.toContain('case-roles')
+	})
+})
+
+describe('the Add party action', () => {
+	it('opens a role form from the case header', () => {
+		const addParty = action('add-party')
+
+		expect(addParty).toBeTruthy()
+		expect(addParty.type).toBe('open-form')
+		expect(addParty.register).toBe('dossiq')
+		expect(addParty.schema).toBe('role')
+		expect(addParty.icon).toBe('AccountPlusOutline')
+		expect(addParty.successMessage).toBeTruthy()
+	})
+
+	it('seeds the case it was opened from and never asks for it', () => {
+		const addParty = action('add-party')
+
+		expect(addParty.props).toEqual({ case: '@objectId' })
+		expect(addParty.includeFields).not.toContain('case')
+	})
+
+	it('asks the handler for the role, the participant and the delegation', () => {
+		expect(action('add-party').includeFields).toEqual([
+			'name',
+			'roleType',
+			'participant',
+			'delegate',
+			'delegateUntil',
+			'description',
+		])
+	})
+
+	it('seeds or asks every required property of the role schema', () => {
+		// An `open-form` action POSTs straight to
+		// /apps/openregister/api/objects — no dossiq service runs on that path,
+		// so a required property the form does not ask for has to arrive from
+		// `props`. Miss one and OpenRegister answers 400 with the required
+		// list, at runtime, on a button no CI run presses. `name` is why the
+		// form asks for a display name it could arguably derive: the schema
+		// requires it and nothing else would supply it.
+		const addParty = action('add-party')
+		const asked = new Set(addParty.includeFields)
+		const seeded = new Set(Object.keys(addParty.props))
+
+		const missing = schema('role').required.filter(
+			(key) => asked.has(key) === false && seeded.has(key) === false,
+		)
+		expect(
+			missing,
+			'a required property that is neither asked nor seeded makes every save from this button a 400',
+		).toEqual([])
+	})
+
+	it('asks for or seeds nothing the role schema does not declare', () => {
+		const addParty = action('add-party')
+		const properties = Object.keys(schema('role').properties)
+
+		for (const key of [
+			...addParty.includeFields,
+			...Object.keys(addParty.props),
+		]) {
+			expect(properties, `${key} is not a role property`).toContain(key)
+		}
+	})
+
+	it('does not pretend to scope the role type picker', () => {
+		// REQ-ROLE-002 wants the picker narrowed to the case type's own role
+		// types. That needs `roleType.caseType` reached through `role.case`,
+		// and CnFormDialog resolves an `x-relation-filter` only against the
+		// form's OWN flat fields (`@object.<field>`): `@object.case.caseType`
+		// resolves to nothing, and an unresolved entry is DROPPED rather than
+		// applied. Declaring it anyway would read as the restriction while
+		// listing every role type on the instance — the failure this asserts
+		// against is a filter that looks present and does nothing.
+		const roleType = schema('role').properties.roleType
+
+		expect(
+			roleType['x-relation-filter'],
+			'a relation filter here can only resolve against role fields; scoping to the case type needs a platform hop',
+		).toBeUndefined()
 	})
 })

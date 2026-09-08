@@ -1767,6 +1767,31 @@
 				},
 				"headerActions": [
 					{
+						"id": "add-party",
+						"type": "open-form",
+						"label": "Add party",
+						"icon": "AccountPlusOutline",
+						"register": "dossiq",
+						"schema": "role",
+						"includeFields": [
+							"name",
+							"roleType",
+							"participant",
+							"delegate",
+							"delegateUntil",
+							"description"
+						],
+						"fieldOverrides": {
+							"description": {
+								"widget": "textarea"
+							}
+						},
+						"successMessage": "Party added to the case.",
+						"props": {
+							"case": "@objectId"
+						}
+					},
+					{
 						"id": "log-contact",
 						"type": "open-form",
 						"label": "Log contact",

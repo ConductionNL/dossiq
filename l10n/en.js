@@ -3538,7 +3538,9 @@ OC.L10N.register(
         "Delegate": "Delegate",
         "Delegate until": "Delegate until",
         "No parties on this case yet": "No parties on this case yet",
-        "Parties": "Parties"
+        "Parties": "Parties",
+        "Add party": "Add party",
+        "Party added to the case.": "Party added to the case."
     },
     "nplurals=2; plural=(n != 1);"
 )

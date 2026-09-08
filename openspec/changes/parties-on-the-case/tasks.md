@@ -19,10 +19,19 @@ criteria under a task are plain bullets.
 
 ## 2. Add party
 
-- [ ] 2.1 `src/manifest.json` page `CaseDetail`: header action `add-party`
+- [x] 2.1 `src/manifest.json` page `CaseDetail`: header action `add-party`
   (`type: open-form`, `register: dossiq`, `schema: role`, `props.case:
   @objectId`, label Add party, icon `AccountPlusOutline`, `successMessage`).
-  - the form's `roleType` select lists only the case type's role types
+  - the form's `roleType` select lists only the case type's role types — NOT
+    met, and deliberately not faked: reaching `roleType.caseType` from the
+    role form means hopping through `role.case`, and CnFormDialog resolves an
+    `x-relation-filter` only against the form's own flat fields, dropping an
+    unresolved entry instead of applying it. A declared filter would read as
+    the restriction while listing every role type on the instance. Guarded by
+    a vitest that fails if one is added without the platform hop.
+  - the form asks for `name` as well: `role` requires it, and an `open-form`
+    action saves straight to the object API, so a required property that is
+    neither asked nor seeded 400s every save
   - `@spec openspec/specs/roles-decisions/spec.md`
 - [ ] 2.2 [blocked: nextcloud-vue `CnObjectListWidget` opening its create
   form with the list's filter as initial data (triage #6, Tier D05)] Move Add

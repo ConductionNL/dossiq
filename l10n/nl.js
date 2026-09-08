@@ -3538,7 +3538,9 @@ OC.L10N.register(
         "Delegate": "Gemachtigde",
         "Delegate until": "Gemachtigd tot",
         "No parties on this case yet": "Nog geen betrokkenen bij deze zaak",
-        "Parties": "Betrokkenen"
+        "Parties": "Betrokkenen",
+        "Add party": "Betrokkene toevoegen",
+        "Party added to the case.": "Betrokkene toegevoegd aan de zaak."
     },
     "nplurals=2; plural=(n != 1);"
 )
