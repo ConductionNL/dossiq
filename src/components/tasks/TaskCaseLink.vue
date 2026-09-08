@@ -125,6 +125,17 @@ export default {
 	watch: {
 		caseId: {
 			immediate: false,
+			/**
+			 * The task resolved to a different case, so its title has to be
+			 * read again. Without this the link would carry the new case's id
+			 * under the previous case's title, which is worse than no title.
+			 *
+			 * Non-immediate: `mounted()` does the first read, after the stores
+			 * have resolved.
+			 *
+			 * @return {void}
+			 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+			 */
 			handler() {
 				this.loadCaseTitle()
 			},

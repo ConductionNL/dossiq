@@ -231,6 +231,16 @@ export default {
 	watch: {
 		objectId: {
 			immediate: false,
+			/**
+			 * The surface re-bound this widget to another case.
+			 *
+			 * `mounted()` does the first load, so this stays non-immediate:
+			 * an immediate handler would fire before initializeStores() has
+			 * resolved and query a type the store has not registered.
+			 *
+			 * @return {void}
+			 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+			 */
 			handler() {
 				this.load()
 			},
