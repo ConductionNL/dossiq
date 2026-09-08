@@ -494,6 +494,7 @@
 							"route": {
 								"name": "Cases",
 								"query": {
+									"isFinalStatus": "false",
 									"deadline[lt]": "@today"
 								}
 							},
@@ -709,6 +710,7 @@
 								}
 							],
 							"rowRoute": "CaseDetail",
+							"_viewAllNote": "one-case-list A22, triage item 4. This query is LITERALLY the Cases page's Overdue chip filter, key for key, and the manifest vitest deep-equals the two: the tile counts one set of cases and View all has to land on the same set. The values stay STRINGS because a route query is a URL, an invariant `dashboardViewAllRoutes.spec.js` holds for every tile, so the equality is asserted over the stringified chip filter rather than by putting a boolean in a URL. CnIndexPage merges a route query into the fetch UNDER the page's own filter, so the filter arrives and the list is right. What it does NOT do is activate the matching chip: `resolveInitialQuickFilterIndex` reads only `default`, so the reader lands on All with the query applied and no chip showing why. Naming a chip from the query needs a nextcloud-vue change (see the change's tasks 2.3).",
 							"viewAllRoute": {
 								"name": "Cases",
 								"query": {
@@ -1230,7 +1232,12 @@
 						"label": "Team",
 						"sortable": false
 					},
-					"deadline",
+					{
+						"key": "deadline",
+						"label": "Deadline",
+						"widget": "deadlineCountdown",
+						"_note": "one-case-list A22. A raw ISO date makes every reader do the same subtraction once per row and get it wrong on the rows that matter. `deadlineCountdown` (src/services/cellWidgets.js) renders the days left and, past the deadline, the days overdue in the signalering red. A cell WIDGET rather than a `formatter` because a formatter returns a string and a string cannot carry the overdue state; nextcloud-vue 2.41 ships no built-in countdown cell, only `CnCountdownWidget` for a dashboard tile. The column stays sortable: CnDataTable sorts on the stored `deadline`, not on the rendered text."
+					},
 					{
 						"key": "id",
 						"label": "Sub-cases",

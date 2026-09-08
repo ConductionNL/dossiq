@@ -9,9 +9,18 @@ cell SHALL read as overdue in the signalering red the dashboard tiles use,
 with the count of days past. A case without a deadline SHALL show an empty
 cell, not zero. The `quickFilters` chip Overdue (`deadline lt @today`,
 `isFinalStatus = false`) SHALL show the same cases the Overdue dashboard
-tile counts, and the tile's View all SHALL lead to the Cases page with the
-Overdue chip active, so the filter no longer drops on the way (triage item
-4). The column SHALL sort on `deadline`, not on the rendered text.
+tile counts, and the tile's View all SHALL lead to the Cases page carrying
+that same filter, so it no longer drops on the way (triage item 4). The
+column SHALL sort on `deadline`, not on the rendered text.
+
+**The chip cannot be activated FROM the query** in `@conduction/nextcloud-vue`
+2.41: `resolveInitialQuickFilterIndex` reads only the `default` flag, so a
+reader arriving from the tile lands on the All chip with the tile's filter
+applied through the route query. The list is right and the filter is in the
+URL; what is missing is the chip lighting up to say which lens is on. The
+requirement therefore asks for the filter to survive the trip, which is the
+defect triage item 4 named, and naming a chip from a query is left to a
+nextcloud-vue change.
 
 #### Scenario: Days left on each row
 @e2e tests/e2e/case-list-lenses.spec.ts
@@ -40,5 +49,5 @@ Overdue chip active, so the filter no longer drops on the way (triage item
 
 - **GIVEN** the dashboard with the Overdue tile counting 1 case
 - **WHEN** you follow the tile's View all
-- **THEN** the Cases page SHALL open with the chip Overdue active
-- **AND** the list SHALL show 1 case
+- **THEN** the Cases page SHALL open carrying the tile's filter
+- **AND** the list SHALL show 1 case, the open overdue one

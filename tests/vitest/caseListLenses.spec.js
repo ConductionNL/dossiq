@@ -38,7 +38,10 @@ import { describe, expect, it } from 'vitest'
 const ROOT = path.resolve(__dirname, '../..')
 const MANIFEST_PATH = path.join(ROOT, 'src', 'manifest.json')
 
+const CELL_WIDGETS_PATH = path.join(ROOT, 'src', 'services', 'cellWidgets.js')
+
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
+const cellWidgetsSource = fs.readFileSync(CELL_WIDGETS_PATH, 'utf8')
 
 /**
  * One page as the manifest declares it.
@@ -139,6 +142,92 @@ describe('Tasks index lenses', () => {
 			assignee: 'IS NULL',
 			isTerminalStatus: false,
 		})
+	})
+})
+
+/**
+ * The dashboard's Overdue widgets, both of which link to the Cases page.
+ *
+ * @return {Array<object>} The stat tile and the object-table.
+ */
+function overdueWidgets() {
+	const widgets = page('Dashboard').config.widgets
+	return [
+		widgets.find((widget) => widget.id === 'kpi-overdue'),
+		widgets.find((widget) => widget.id === 'overdue-cases'),
+	]
+}
+
+/**
+ * One widget's route query, whichever key it carries it under.
+ *
+ * @param {object} widget The dashboard widget.
+ * @return {object} The route query.
+ */
+function routeQuery(widget) {
+	const route = widget.content.route || widget.content.viewAllRoute
+	return route.query
+}
+
+describe('the Overdue tiles and the Overdue chip agree', () => {
+	it('both Overdue widgets link to the Cases page', () => {
+		for (const widget of overdueWidgets()) {
+			const route = widget.content.route || widget.content.viewAllRoute
+			expect(route.name, widget.id).toBe('Cases')
+		}
+	})
+
+	it('both carry exactly the Overdue chip filter as their query', () => {
+		// Stringified, because a route query is a URL and every value in one
+		// is a string — `dashboardViewAllRoutes.spec.js` holds that invariant
+		// for the whole dashboard. The equality that matters is the SET of
+		// conditions: a tile that counts open overdue cases and a View all
+		// that lands on every overdue case, closed ones included, is the
+		// dropped filter this change exists to fix (triage item 4).
+		const chipFilter = Object.fromEntries(
+			Object.entries(chip('Cases', 'Overdue').filter).map(([key, value]) => [
+				key,
+				String(value),
+			]),
+		)
+
+		for (const widget of overdueWidgets()) {
+			expect(routeQuery(widget), widget.id).toEqual(chipFilter)
+		}
+	})
+})
+
+describe('the Deadline column', () => {
+	/**
+	 * The Deadline column entry of the Cases page.
+	 *
+	 * @return {object} The column entry.
+	 */
+	const deadlineColumn = () =>
+		page('Cases').config.columns.find(
+			(column) => typeof column === 'object' && column.key === 'deadline',
+		)
+
+	it('renders through the deadlineCountdown cell widget', () => {
+		expect(deadlineColumn().widget).toBe('deadlineCountdown')
+	})
+
+	it('names a widget id the cell registry resolves', () => {
+		// A `widget` id that resolves to nothing in `cnCellWidgets` does not
+		// error: CnCellRenderer falls through to the type-aware rendering and
+		// the column silently reverts to a plain date.
+		expect(cellWidgetsSource).toMatch(/^\tdeadlineCountdown: /m)
+	})
+
+	it('sorts on the stored deadline, not on the rendered text', () => {
+		expect(deadlineColumn().sortable).not.toBe(false)
+	})
+
+	it('keeps its place after the assignee column', () => {
+		const keys = page('Cases').config.columns.map((column) =>
+			typeof column === 'string' ? column : column.key,
+		)
+		expect(keys.indexOf('deadline')).toBeGreaterThan(keys.indexOf('assignee'))
 	})
 })
 

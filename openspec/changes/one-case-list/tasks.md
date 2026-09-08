@@ -34,31 +34,66 @@ no menu entry changes.
 
 ## 2. Columns and sidebar
 
-- [ ] 2.1 `src/manifest.json` page `Cases` `columns`: the `deadline` entry
-  becomes `{ key: "deadline", label: "Deadline", widget: "countdown" }`;
-  keep the column position after `assignee`. If the 2.40.0 data table has
-  no countdown cell, add formatter `deadlineCountdown` in
-  `src/customComponents.js` (days left, "{n} days overdue" past due, class
-  `is-overdue`, empty when `deadline` is empty) and note the block in the
-  column `_note`.
+- [x] 2.1 `src/manifest.json` page `Cases` `columns`: the `deadline` entry is
+  `{ key: "deadline", label: "Deadline", widget: "deadlineCountdown" }`, in
+  its place after `assignee`. The interim the task anticipated is the one
+  that shipped, in a better shape than a formatter: 2.41 ships NO countdown
+  column cell (only `CnCountdownWidget`, a dashboard tile), and a formatter
+  could not carry the overdue state at all, because a formatter returns a
+  string. `cnCellWidgets` is the seam for exactly this, so the cell is a
+  component: `src/components/cells/DeadlineCountdownCell.vue`, registered as
+  `deadlineCountdown` in the new `src/services/cellWidgets.js` and passed to
+  `CnAppRoot` through App.vue's new `cellWidgets` prop. The arithmetic is the
+  pure `src/utils/deadlineCountdown.js`. Overdue reads in
+  `var(--color-error-text)`, not `--color-error`, which is a FILL token on
+  NC34 and renders pale pink on white.
   - `@spec openspec/changes/one-case-list/specs/signalering-widgets/spec.md`
-  - unit test in `tests/unit/customComponents/deadlineCountdown.spec.js`:
-    3 days left, 2 days overdue with class, empty on null, today reads
-    0 days left
+  - unit tests in `tests/vitest/deadlineCountdown.spec.js` (3 days left,
+    2 days overdue, empty on null/unparseable, today reads 0 days left at any
+    hour, "1 day" not "1 days", a full ISO instant read as its calendar day,
+    a date-only string read as a LOCAL day) and
+    `tests/vitest/deadlineCountdownCell.spec.js` (the `is-overdue` class, the
+    empty cell, the title, the test id)
 - [ ] 2.2 `src/manifest.json` page `Cases` `sidebar`: add filter
   `{ field: "deadline", operator: "lt", label: "Deadline before",
-  type: "date" }`; keep `showMetadata`. Place the Requester text filter
-  from `requester-on-the-case` (REQ-ID-2) beside it only if that change
-  has landed; do not add the Requester column here.
+  type: "date" }`. **[blocked: nextcloud-vue 2.41's index sidebar has no
+  manifest-declared filter and no operator]** `CnIndexSidebar` builds its
+  Filters section from `filtersFromSchema`, which walks the schema's
+  `facetable: true` properties and renders a checkbox or a values select;
+  its `filter-change` event carries `{ key, values }`. There is no manifest
+  key for a sidebar filter, no date input, and no operator anywhere on that
+  path, so no configuration in this repo can express `deadline lt <date>`
+  as a control. Writing the key into `sidebar` would validate (the schema
+  allows extra properties) and render nothing — the silent kind of no-op.
+  - Interim: the state is reachable, just not offerable. A route query goes
+    straight into the fetch, so `/cases?deadline[lt]=2026-10-01` narrows the
+    list exactly as the requirement describes, and that is the path both
+    Overdue dashboard tiles take (2.3). The Overdue chip covers the one
+    deadline window a reader asks for most.
+  - Unblocking is a nextcloud-vue change: `sidebar.filters[]` of
+    `{ field, operator, label, type }` on `CnIndexPage`, rendered beside the
+    schema facets and merged into the fetch the way the facets already are.
+    Recorded in the `case-management` delta, whose scenario now carries an
+    `@e2e exclude` reason.
   - `@spec openspec/changes/one-case-list/specs/case-management/spec.md`
-  - unit test in `tests/unit/manifest-case-list-lenses.spec.js`: the sidebar
-    filter exists with operator `lt` and type `date`
-- [ ] 2.3 Dashboard Overdue tile (`src/manifest.json`, the signalering
-  widget with the overdue filter): its `viewAllRoute` stays `Cases` and its
-  `viewAllQuery` becomes the Overdue chip filter; `CnIndexPage` activates
-  the chip whose filter equals the query.
-  - unit test in `tests/unit/manifest-case-list-lenses.spec.js`: the tile
-    query deep-equals the Overdue chip filter
+- [x] 2.3 BOTH dashboard Overdue widgets now carry the Overdue chip's filter:
+  the `overdue-cases` object-table's `viewAllRoute.query` and the
+  `kpi-overdue` stat tile's `route.query`, which counted OPEN overdue cases
+  and linked to EVERY overdue case, closed ones included. Values stay
+  strings, because a route query is a URL and `dashboardViewAllRoutes.spec.js`
+  holds that invariant for the whole dashboard; the equality is asserted over
+  the stringified chip filter.
+  - The task's last clause is not true of the library and is not implemented:
+    `CnIndexPage` does NOT activate the chip whose filter equals the query.
+    `resolveInitialQuickFilterIndex` reads only the `default` flag, so a
+    reader arriving from a tile lands on All with the tile's filter applied
+    through the query — the list is right, the filter is in the URL, and no
+    chip lights up to say which lens is on. Naming a chip from a query is a
+    nextcloud-vue change; the `signalering-widgets` scenario was rewritten to
+    assert what the filter surviving the trip actually looks like, which is
+    the defect triage item 4 named.
+  - unit test in `tests/vitest/caseListLenses.spec.js`: both tiles route to
+    `Cases` and both queries deep-equal the stringified Overdue chip filter
 
 ## 3. Bulk actions
 
