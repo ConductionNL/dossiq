@@ -384,7 +384,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		}
 	})
 
-	// @e2e openspec/changes/case-header/specs/case-dashboard-view/spec.md#the-six-work-tabs-come-first-in-order
+	// @e2e openspec/changes/case-header/specs/case-dashboard-view/spec.md#the-five-work-tabs-come-first-in-order
 	test('the work tabs lead the strip and the conditional four close it', async ({
 		page,
 	}) => {
