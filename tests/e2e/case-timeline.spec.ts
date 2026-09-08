@@ -1,0 +1,171 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Dossiq Contributors
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * One history of the case, in the sidebar (placement row A05).
+ *
+ * The case used to carry its history twice: a History tab over
+ * OpenRegister's audit trail, and a Version history tab rendering the same
+ * rows as a field diff. The second one is gone from this page. What is left
+ * has to actually work, and the two things a unit test cannot ask are here:
+ *
+ *  - the tab set the SIDEBAR renders, which is a manifest declaration turned
+ *    into NcAppSidebarTab buttons by a library this repo does not own;
+ *  - whether the Action filter narrows the list, which needs a real audit
+ *    trail on a real object and a request that comes back.
+ *
+ * Tabs are addressed by ID, not by label: NcAppSidebarTab renders
+ * `#tab-button-<id>` for the manifest tab id, which reads the same on an
+ * English and a Dutch instance. A spec that asserted labels here would pass
+ * or fail on the instance's locale rather than on the feature.
+ */
+
+import { expect, test } from '@playwright/test'
+import {
+	getRequestToken,
+	objectId,
+	REGISTER,
+	RUN_PREFIX,
+	seedCase,
+	seedStateMachine,
+	updateObject,
+} from './helpers/fixtures.ts'
+import { dismissSupportDialog } from './helpers/nav.ts'
+
+/**
+ * Open the case page and its sidebar.
+ *
+ * @param page   The Playwright page.
+ * @param caseId The case to open.
+ * @return The sidebar locator, visible.
+ */
+async function openSidebar(page: any, caseId: string) {
+	await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+	await dismissSupportDialog(page)
+	await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
+
+	// NcAppSidebar renders its own toggle while closed; open it when so.
+	const toggle = page.locator('.app-sidebar__toggle')
+	if (await toggle.isVisible()) await toggle.click()
+	const sidebar = page.locator('.app-sidebar')
+	await expect(sidebar).toBeVisible({ timeout: 15_000 })
+	return sidebar
+}
+
+test.describe('Case timeline — one history, in the sidebar', () => {
+	test.setTimeout(180_000)
+
+	let caseId = ''
+
+	test.beforeAll(async ({ playwright, baseURL }) => {
+		const api = await playwright.request.newContext({ baseURL })
+		const token = await getRequestToken(api)
+
+		const machine = await seedStateMachine(api, token)
+		const seeded = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Zaak met geschiedenis`,
+			caseType: machine.caseTypeId,
+			status: machine.statusReceived,
+		})
+		caseId = objectId(seeded)
+
+		// One WRITE after the create, so the trail holds two rows in a known
+		// order and the newest is an update rather than the create itself.
+		await updateObject(api, token, 'case', caseId, {
+			description: `${RUN_PREFIX} description changed by the e2e layer`,
+		})
+
+		await api.dispose()
+	})
+
+	// No afterAll. The `case` schema is archival, so a user-driven DELETE is
+	// refused with 403 by design, and removing the case TYPE would leave the
+	// undeletable case pointing at nothing.
+
+	// @e2e openspec/changes/case-timeline/specs/case-dashboard-view/spec.md#one-history-tab-in-the-sidebar
+	test('the sidebar offers History and no version history', async ({ page }) => {
+		const sidebar = await openSidebar(page, caseId)
+
+		// Both halves. `audit` alone passes if the version-history tab is still
+		// there beside it, which is the state this change exists to end.
+		await expect(sidebar.locator('#tab-button-audit')).toBeVisible({
+			timeout: 15_000,
+		})
+		await expect(sidebar.locator('#tab-button-version-history')).toHaveCount(0)
+	})
+
+	// @e2e openspec/changes/case-timeline/specs/case-dashboard-view/spec.md#the-newest-write-reads-first-with-its-actor
+	test('the newest write reads first, with its actor', async ({ page }) => {
+		const sidebar = await openSidebar(page, caseId)
+		await sidebar.locator('#tab-button-audit').click()
+
+		const rows = sidebar.locator('.cn-audit-entry')
+		await expect(rows.first()).toBeVisible({ timeout: 20_000 })
+
+		// The first row is the update this spec made, by admin. Asserting only
+		// that SOME row says update would pass on a list in any order, and
+		// newest-first is half of what row A05 asks for.
+		await expect(rows.first()).toContainText(/update/i)
+		await expect(rows.first()).toContainText('admin')
+
+		// And the create sits below it, so the order is a claim about time
+		// rather than an accident of a one-row list.
+		await expect(rows).not.toHaveCount(1, { timeout: 20_000 })
+		await expect(rows.nth(1)).toContainText(/create|update/i)
+	})
+
+	// @e2e openspec/changes/case-timeline/specs/case-dashboard-view/spec.md#the-action-filter-narrows-to-updates
+	test('the Action filter narrows the list and never sits on Loading', async ({
+		page,
+	}) => {
+		const sidebar = await openSidebar(page, caseId)
+		await sidebar.locator('#tab-button-audit').click()
+
+		const rows = sidebar.locator('.cn-audit-entry')
+		await expect(rows.first()).toBeVisible({ timeout: 20_000 })
+		const before = await rows.count()
+
+		// The Action select is the FIRST of the tab's two, addressed by
+		// position rather than by its input label, which nextcloud-vue
+		// translates through its own catalogue and which therefore reads Dutch
+		// on a Dutch instance.
+		const actionSelect = sidebar.locator('.cn-audit-filters__select').first()
+		await expect(actionSelect).toBeVisible({ timeout: 15_000 })
+		await actionSelect.click()
+
+		// NcEllipsisedOption splits an option's label across elements, so match
+		// the option by its TEXT rather than by an accessible name that the
+		// split has already broken.
+		const option = page
+			.locator('[role="option"], .vs__dropdown-option')
+			.filter({ hasText: /^\s*update\s*$/i })
+			.first()
+		await expect(option).toBeVisible({ timeout: 15_000 })
+
+		// The options are a static list on the component, so the filter cannot
+		// be waiting on a request. Assert that out loud: the baseline reported
+		// both filters stuck on Loading, and this is the assertion that would
+		// fail if they were.
+		await expect(actionSelect).not.toContainText(/Loading|Laden/i)
+
+		await option.click()
+
+		// Every remaining row is an update, and there are fewer of them than
+		// before. The count alone would pass on a filter that dropped
+		// everything; the text alone would pass on a filter that did nothing to
+		// a trail that happened to hold updates only.
+		await expect
+			.poll(() => rows.count(), { timeout: 20_000 })
+			.toBeLessThan(before)
+		const texts = await rows.allInnerTexts()
+		expect(
+			texts.length,
+			`rows after filtering: ${texts.length}`,
+		).toBeGreaterThan(0)
+		for (const text of texts) {
+			expect(text, `a non-update row survived the filter: ${text}`).toMatch(
+				/update/i,
+			)
+		}
+	})
+})
