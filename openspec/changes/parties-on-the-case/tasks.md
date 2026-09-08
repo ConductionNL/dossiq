@@ -40,7 +40,7 @@ criteria under a task are plain bullets.
 
 ## 3. A team on the case and the task
 
-- [ ] 3.1 `lib/Settings/dossiq_register.json` and
+- [x] 3.1 `lib/Settings/dossiq_register.json` and
   `lib/Settings/dossiq_mock_register.json`: property `assignedGroup` on
   `case` and `assigneeGroup` on `caseTask`, both `string`, `format: uuid`,
   `$ref: organisatieRol`, title Team, `facetable: true`, optional. Bump the

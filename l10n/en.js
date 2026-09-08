@@ -3540,7 +3540,9 @@ OC.L10N.register(
         "No parties on this case yet": "No parties on this case yet",
         "Parties": "Parties",
         "Add party": "Add party",
-        "Party added to the case.": "Party added to the case."
+        "Party added to the case.": "Party added to the case.",
+        "The team handling this case. Assignment, not permission: a case can carry a team, a personal assignee, or both.": "The team handling this case. Assignment, not permission: a case can carry a team, a personal assignee, or both.",
+        "The team this task belongs to. Setting it never clears the personal assignee.": "The team this task belongs to. Setting it never clears the personal assignee."
     },
     "nplurals=2; plural=(n != 1);"
 )

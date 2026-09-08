@@ -3540,7 +3540,9 @@ OC.L10N.register(
         "No parties on this case yet": "Nog geen betrokkenen bij deze zaak",
         "Parties": "Betrokkenen",
         "Add party": "Betrokkene toevoegen",
-        "Party added to the case.": "Betrokkene toegevoegd aan de zaak."
+        "Party added to the case.": "Betrokkene toegevoegd aan de zaak.",
+        "The team handling this case. Assignment, not permission: a case can carry a team, a personal assignee, or both.": "Het team dat deze zaak behandelt. Toewijzing, geen rechten: een zaak kan een team hebben, een behandelaar, of allebei.",
+        "The team this task belongs to. Setting it never clears the personal assignee.": "Het team waar deze taak bij hoort. Dit wist de persoonlijke behandelaar nooit."
     },
     "nplurals=2; plural=(n != 1);"
 )
