@@ -3585,7 +3585,11 @@ OC.L10N.register(
         "No open tasks on this case": "Geen open taken op deze zaak",
         "Other open tasks": "Andere open taken",
         "No due date": "Geen einddatum",
-        "Task {title} finished": "Taak {title} afgerond"
+        "Task {title} finished": "Taak {title} afgerond",
+        "Deadlines": "Deadlines",
+        "Days left": "Dagen over",
+        "You have no open tasks": "Je hebt geen open taken",
+        "No deadlines in the next three days": "Geen deadlines in de komende drie dagen"
     },
     "nplurals=2; plural=(n != 1);"
 )

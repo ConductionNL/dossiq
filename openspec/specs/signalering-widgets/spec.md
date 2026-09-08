@@ -1,5 +1,7 @@
 ---
-status: done
+status: in-progress
+openspec_changes:
+  - dashboard-tiles
 retrofit_extensions:
   - REQ-001
   - REQ-002

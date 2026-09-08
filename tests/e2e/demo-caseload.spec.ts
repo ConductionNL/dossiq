@@ -10,7 +10,7 @@
  *    another app's `task` schema instead of ours, because both of Dossiq's
  *    schema reconcilers resolved the slug `task` instance-wide and three
  *    schemas carried it. So every completed task read isTerminalStatus =
- *    false. Nothing errored. The My Tasks widget, whose entire filter is
+ *    false. Nothing errored. The My work widget (My Tasks before `dashboard-tiles` merged it), whose entire filter is
  *    isTerminalStatus = false, simply kept showing completed work.
  *
  * 2. `daysUntilDue` must come back when asked for. Same root cause: the
@@ -55,7 +55,7 @@ import { navToRoute } from './helpers/nav.ts'
 /** The case every task in this spec hangs off. */
 const CASE_TITLE = `${RUN_PREFIX} Caseload case`
 
-/** An OPEN task, which must appear on the Tasks page and in My Tasks. */
+/** An OPEN task, which must appear on the Tasks page and in My work. */
 const OPEN_TASK = `${RUN_PREFIX} Open task`
 
 /** A COMPLETED task, which must appear nowhere that filters on open work. */

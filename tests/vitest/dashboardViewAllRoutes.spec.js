@@ -49,7 +49,11 @@ const tables = dashboard.config.widgets.filter(
 
 describe('dashboard object-table viewAllRoute', () => {
 	it('has tables to check', () => {
-		expect(tables.length).toBeGreaterThanOrEqual(6)
+		// Four since `dashboard-tiles` merged `my-tasks` + `task-reminders`
+		// into `my-work` and `overdue-cases` + `deadline-alerts` into
+		// `deadlines`. The floor guards against the list emptying out and
+		// this file passing over nothing at all.
+		expect(tables.length).toBeGreaterThanOrEqual(4)
 	})
 
 	for (const widget of tables) {
