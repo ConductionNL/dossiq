@@ -78,6 +78,7 @@ import CommentOutline from 'vue-material-design-icons/CommentOutline.vue'
 import CommentQuestionOutline from 'vue-material-design-icons/CommentQuestionOutline.vue'
 import CommentTextOutline from 'vue-material-design-icons/CommentTextOutline.vue'
 import Connection from 'vue-material-design-icons/Connection.vue'
+import ContentDuplicate from 'vue-material-design-icons/ContentDuplicate.vue'
 import Creation from 'vue-material-design-icons/Creation.vue'
 import CubeOutline from 'vue-material-design-icons/CubeOutline.vue'
 import Domain from 'vue-material-design-icons/Domain.vue'
@@ -149,6 +150,7 @@ import PhoneReturn from 'vue-material-design-icons/PhoneReturn.vue'
 import PlayCircleOutline from 'vue-material-design-icons/PlayCircleOutline.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import ProgressClock from 'vue-material-design-icons/ProgressClock.vue'
+import Publish from 'vue-material-design-icons/Publish.vue'
 import Receipt from 'vue-material-design-icons/Receipt.vue'
 import Refresh from 'vue-material-design-icons/Refresh.vue'
 import RobotOutline from 'vue-material-design-icons/RobotOutline.vue'
@@ -157,6 +159,7 @@ import ScaleBalance from 'vue-material-design-icons/ScaleBalance.vue'
 import ScriptText from 'vue-material-design-icons/ScriptText.vue'
 import Send from 'vue-material-design-icons/Send.vue'
 import ShareVariant from 'vue-material-design-icons/ShareVariant.vue'
+import ShieldAccountOutline from 'vue-material-design-icons/ShieldAccountOutline.vue'
 import ShieldCheckOutline from 'vue-material-design-icons/ShieldCheckOutline.vue'
 import ShieldKeyOutline from 'vue-material-design-icons/ShieldKeyOutline.vue'
 import ShieldLockOutline from 'vue-material-design-icons/ShieldLockOutline.vue'
@@ -176,6 +179,8 @@ import TagOutline from 'vue-material-design-icons/TagOutline.vue'
 import Timeline from 'vue-material-design-icons/Timeline.vue'
 import TimerOutline from 'vue-material-design-icons/TimerOutline.vue'
 import TimerSandFull from 'vue-material-design-icons/TimerSandFull.vue'
+import TrayArrowDown from 'vue-material-design-icons/TrayArrowDown.vue'
+import TrayArrowUp from 'vue-material-design-icons/TrayArrowUp.vue'
 import TrayFull from 'vue-material-design-icons/TrayFull.vue'
 import Tune from 'vue-material-design-icons/Tune.vue'
 import ViewColumnOutline from 'vue-material-design-icons/ViewColumnOutline.vue'
@@ -249,6 +254,7 @@ export default {
 	CommentQuestionOutline,
 	CommentTextOutline,
 	Connection,
+	ContentDuplicate,
 	Creation,
 	CubeOutline,
 	Domain,
@@ -320,6 +326,7 @@ export default {
 	PlayCircleOutline,
 	Plus,
 	ProgressClock,
+	Publish,
 	Receipt,
 	Refresh,
 	RobotOutline,
@@ -328,6 +335,7 @@ export default {
 	ScriptText,
 	Send,
 	ShareVariant,
+	ShieldAccountOutline,
 	ShieldCheckOutline,
 	ShieldKeyOutline,
 	ShieldLockOutline,
@@ -347,6 +355,8 @@ export default {
 	Timeline,
 	TimerOutline,
 	TimerSandFull,
+	TrayArrowDown,
+	TrayArrowUp,
 	TrayFull,
 	Tune,
 	ViewColumnOutline,

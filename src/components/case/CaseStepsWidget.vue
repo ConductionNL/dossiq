@@ -36,8 +36,10 @@
 
 <script>
 import { CnTimelineStages } from '@conduction/nextcloud-vue'
+import axios from '@nextcloud/axios'
 import { subscribe, unsubscribe } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
+import { generateUrl } from '@nextcloud/router'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
@@ -108,11 +110,19 @@ export default {
 					this.stages = []
 					return
 				}
-				const rows = await store.fetchCollection('statusType', {
-					caseType: caseTypeId,
-					_limit: 100,
-				})
-				this.stages = toStages(rows || [])
+				// 🔴 THE BLUEPRINT, NOT THE STORE. This asked for
+				// `statusType where caseType = X`, which is the case type's
+				// OWN rows: a type that derives its lifecycle from a parent
+				// has none, so the stepper said "This case type has no
+				// statuses yet" about a case type that plainly has four.
+				// /blueprint merges the chain server-side and marks each row
+				// with where it came from.
+				const { data } = await axios.get(
+					generateUrl(
+						`/apps/dossiq/api/case-types/${encodeURIComponent(caseTypeId)}/blueprint`,
+					),
+				)
+				this.stages = toStages(data?.statusTypes || [])
 				this.currentStage = String(caseObject.status ?? '') || null
 			} catch {
 				// An unreadable case type says "no statuses yet" rather than
