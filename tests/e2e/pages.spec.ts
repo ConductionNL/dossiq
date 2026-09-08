@@ -35,6 +35,51 @@ test.describe('Dashboard', () => {
 			page.getByRole('button', { name: 'Refresh dashboard' }),
 		).toBeVisible()
 	})
+
+	// @e2e openspec/specs/dashboard/spec.md#kpi-tiles-render-on-a-fresh-load
+	test('the KPI tiles render numbers on a fresh load, not the widget fallback', async ({
+		page,
+	}) => {
+		// A HARD load, deliberately: the catalog that renders `stat` tiles
+		// used to be registered only by the lazy detail-page chunk, so the
+		// dashboard was fine after visiting a case and broken as the first
+		// page of a session. Client-side navigation cannot tell the two apart.
+		await page.goto('/index.php/apps/dossiq/')
+		await dismissSupportDialog(page)
+		const tiles = page.locator('.cn-stat-widget')
+		await expect(tiles.first()).toBeVisible({ timeout: 30_000 })
+		await expect(tiles).toHaveCount(5)
+		await expect(page.getByText('Widget not available')).toHaveCount(0)
+		// Each tile carries a resolved number, not a dash or an empty value.
+		for (const tile of await tiles.all()) {
+			await expect(tile.locator('.cn-kpi-card__value')).toHaveText(/\d/, {
+				timeout: 15_000,
+			})
+		}
+	})
+
+	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-004c-overdue-panel-with-view-all-link
+	test("the Overdue table's View all keeps the overdue filter", async ({
+		page,
+	}) => {
+		await page.goto('/index.php/apps/dossiq/')
+		await dismissSupportDialog(page)
+		const table = page.locator('.cn-widget-wrapper').filter({
+			has: page.getByRole('heading', { name: /^(Overdue|Verlopen)$/ }),
+		})
+		await expect(table).toBeVisible({ timeout: 30_000 })
+		// The link only renders when the table has more rows than it shows;
+		// the seed guarantees that, but say so rather than skip silently.
+		// CnDataTable renders View all as an anchor without href, so it has no
+		// link role for getByRole; match the element by its text instead.
+		const viewAll = table.getByText(/View all|Alles bekijken/, { exact: true })
+		await expect(viewAll).toBeVisible({ timeout: 15_000 })
+		await viewAll.click()
+		await expect(page).toHaveURL(/\/cases\?/, { timeout: 15_000 })
+		const query = new URL(page.url()).searchParams
+		expect(query.get('deadline[lt]')).toBe('@today')
+		expect(query.get('isFinalStatus')).toBe('false')
+	})
 })
 
 test.describe('Cases page', () => {
@@ -122,6 +167,30 @@ test.describe('Tasks page', () => {
 		// the field is in the DOM but hidden; assert it is wired up rather
 		// than requiring the sidebar to be open.
 		await expect(page.getByPlaceholder('Type to search')).toBeAttached()
+	})
+
+	// @e2e openspec/specs/task-management/spec.md#view-the-global-task-list
+	test('the Case column shows the case title, not its uuid', async ({ page }) => {
+		await navToRoute(page, '/tasks')
+		await page.getByRole('button', { name: 'Table' }).click()
+		const table = page.locator('table').first()
+		await expect(table).toBeVisible({ timeout: 15000 })
+		const header = table.getByRole('columnheader', { name: /^(Case|Zaak)$/ })
+		await expect(header).toBeVisible()
+		const index = await header.evaluate((th) =>
+			Array.from(th.parentElement!.children).indexOf(th),
+		)
+		const cells = table.locator(`tbody tr td:nth-child(${index + 1})`)
+		await expect(cells.first()).toBeVisible({ timeout: 15000 })
+		// A uuid, truncated or not, is what the column used to show. The
+		// expanded case carries a title; a task without a case shows nothing.
+		for (const text of await cells.allInnerTexts()) {
+			expect(text.trim()).not.toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}/i)
+		}
+		expect(
+			(await cells.allInnerTexts()).some((t) => t.trim() !== ''),
+			'at least one task on the seed is linked to a case',
+		).toBe(true)
 	})
 })
 

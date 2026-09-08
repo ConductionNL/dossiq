@@ -43,6 +43,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\TemplateResponse;
+use OCP\AppFramework\Services\IInitialState;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -77,7 +78,7 @@ class DashboardControllerContractTest extends TestCase {
 		parent::setUp();
 
 		$this->request = $this->createMock(IRequest::class);
-		$this->controller = new DashboardController(request: $this->request);
+		$this->controller = new DashboardController(request: $this->request, initialState: $this->createMock(IInitialState::class));
 	}//end setUp()
 
 	/**
@@ -112,6 +113,42 @@ class DashboardControllerContractTest extends TestCase {
 		$this->assertSame(TemplateResponse::RENDER_AS_USER, $response->getRenderAs());
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 	}//end testPageRendersTheDossiqIndexTemplateAsAUser()
+
+	/**
+	 * The shell hands the Features & roadmap page its feature list.
+	 *
+	 * The page reads `features_roadmap_features` from initial state and
+	 * dossiq provided nothing, so the Features tab was empty while
+	 * `docs/features.json` held every shipped capability (ADR-018). Asserted
+	 * against the committed file rather than a literal, so the test follows
+	 * the list; non-empty is asserted separately so a lost file cannot pass.
+	 *
+	 * @return void
+	 */
+	public function testPageProvidesTheRoadmapFeaturesFromDocsFeaturesJson(): void {
+		$provided = [];
+		$initialState = $this->createMock(IInitialState::class);
+		$initialState->method('provideInitialState')
+			->willReturnCallback(
+				static function (string $key, mixed $data) use (&$provided): void {
+					$provided[$key] = $data;
+				}
+			);
+		$controller = new DashboardController(request: $this->request, initialState: $initialState);
+
+		$controller->page();
+
+		$expected = json_decode((string)file_get_contents(__DIR__.'/../../../docs/features.json'), true);
+		$this->assertIsArray($expected);
+		$this->assertNotEmpty($expected, 'docs/features.json must list the shipped features');
+		$this->assertArrayHasKey('features_roadmap_features', $provided);
+		$this->assertSame($expected, $provided['features_roadmap_features']);
+		foreach ($provided['features_roadmap_features'] as $feature) {
+			$this->assertArrayHasKey('slug', $feature);
+			$this->assertArrayHasKey('title', $feature);
+			$this->assertArrayHasKey('status', $feature);
+		}
+	}//end testPageProvidesTheRoadmapFeaturesFromDocsFeaturesJson()
 
 	/**
 	 * `catchAll` serves the SAME shell as `page` — a deep link must reach the

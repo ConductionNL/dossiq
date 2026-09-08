@@ -116,6 +116,50 @@ test.describe('app chrome (ADR-114)', () => {
 		}
 	})
 
+	// @e2e openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+	test('the deadline-monitoring report loads its KPIs from the dossiq route', async ({
+		page,
+	}) => {
+		// The store addressed /apps/procest/ after the rename, so the page
+		// mounted and every figure 404'd. Assert the REQUEST, because the
+		// empty state and the broken state look the same on screen.
+		const kpiResponses: Array<{ status: number; url: string }> = []
+		page.on('response', (r) => {
+			if (r.url().includes('/api/termijn/dashboard/kpi')) {
+				kpiResponses.push({ status: r.status(), url: r.url() })
+			}
+		})
+		await page.goto(`${APP_BASE}/termijn-dashboard`, {
+			waitUntil: 'domcontentloaded',
+		})
+		await expect
+			.poll(() => kpiResponses.length, { timeout: 30_000 })
+			.toBeGreaterThan(0)
+		for (const r of kpiResponses) {
+			expect(r.url, 'the request must address the dossiq app id').toContain(
+				'/apps/dossiq/',
+			)
+			expect(r.status, r.url).toBeLessThan(400)
+		}
+	})
+
+	test('Features & roadmap lists the shipped features', async ({ page }) => {
+		// The page reads its list from initial state (ADR-018); dossiq handed
+		// it nothing, so the tab was empty while docs/features.json held 23.
+		await page.goto(`${APP_BASE}/features-roadmap`, {
+			waitUntil: 'domcontentloaded',
+		})
+		await expect(page.locator('.cn-features-and-roadmap-view')).toBeVisible({
+			timeout: 30_000,
+		})
+		await expect(page.locator('.cn-features-tab__card').first()).toBeVisible({
+			timeout: 15_000,
+		})
+		expect(await page.locator('.cn-features-tab__card').count()).toBeGreaterThan(
+			5,
+		)
+	})
+
 	test('the settings foldout carries Personal settings, Admin settings and Flows', async ({
 		page,
 	}) => {

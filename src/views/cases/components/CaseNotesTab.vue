@@ -30,11 +30,13 @@
   @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
 -->
 <template>
-	<!-- CnNotesTabComponent is a COMPUTED component (leafTab('notes')),
-	     guarded by the v-if below. The rule resolves registered
-	     components only and cannot see a computed one. -->
-	<!-- eslint-disable-next-line vue/no-undef-components -->
-	<CnNotesTabComponent
+	<!-- `CnNotesTabComponent` is a component OBJECT held in data, not a
+	     registered component. A `<CnNotesTabComponent>` tag is resolved
+	     against the registered components only, so Vue emitted a literal
+	     unknown `<cnnotestabcomponent>` element and the tab stayed empty;
+	     `<component :is>` takes the object itself. -->
+	<component
+		:is="CnNotesTabComponent"
 		v-if="CnNotesTabComponent"
 		:objectId="objectId"
 		:register="register"

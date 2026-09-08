@@ -319,14 +319,15 @@ class SetupControllerStatusTest extends TestCase {
 	}//end testDwangsomSecretIsSettledWhenThePayoutIntegrationIsNotConfigured()
 
 	/**
-	 * The step and the legacy flag must never disagree.
+	 * Until the wizard has completed once, the step and the legacy flag agree.
 	 *
-	 * They are two representations of one fact, and two representations of one
-	 * fact drift. Deriving both from the same value is the fix; this pins it.
+	 * They were two representations of one fact and drifted; deriving both
+	 * from the secret keeps them together for as long as the wizard is still
+	 * the surface asking for it.
 	 *
 	 * @return void
 	 */
-	public function testTheStepAndTheLegacyFlagAlwaysAgree(): void {
+	public function testTheStepAndTheLegacyFlagAgreeBeforeTheWizardCompletes(): void {
 		foreach ([['secret' => ''], ['secret' => 's3cret']] as $case) {
 			$config = $this->provisioned() + [
 				'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
@@ -340,7 +341,51 @@ class SetupControllerStatusTest extends TestCase {
 			);
 		}
 
-	}//end testTheStepAndTheLegacyFlagAlwaysAgree()
+	}//end testTheStepAndTheLegacyFlagAgreeBeforeTheWizardCompletes()
+
+	/**
+	 * Once the wizard has completed, the optional secret step is settled.
+	 *
+	 * The step is optional and the secret lives under admin settings, but as
+	 * long as it reported "not done" CnAppRoot reopened the wizard at this
+	 * step on every fresh browser profile, because dismissal is only a
+	 * localStorage key. Completing the wizard is the answer to the question;
+	 * the go-live flag keeps saying, truthfully, that no secret is set.
+	 *
+	 * @return void
+	 */
+	public function testDwangsomSecretIsSettledOnceTheWizardHasCompleted(): void {
+		$config = $this->provisioned() + [
+			'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
+			'setup_completed_version'     => '1',
+		];
+		$data = $this->controller($config)->status()->getData();
+
+		$this->assertTrue($data['completed']);
+		$this->assertTrue($data['steps']['dwangsom-secret']['done'], 'a completed wizard has answered the optional step');
+		$this->assertFalse($data['dwangsom_callback_secret_configured'], 'the go-live warning still reports the missing secret');
+
+	}//end testDwangsomSecretIsSettledOnceTheWizardHasCompleted()
+
+	/**
+	 * The completion marker written by THIS call does not settle the step yet.
+	 *
+	 * status() records completion as a side effect. If the step read that
+	 * marker after it was written, the very visit that finishes the required
+	 * steps would skip the optional one without ever offering it; the step
+	 * must read the marker from before the call.
+	 *
+	 * @return void
+	 */
+	public function testTheMarkerWrittenByThisCallDoesNotSettleTheStepYet(): void {
+		$config = $this->provisioned() + ['dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling'];
+		$built  = $this->build(config: $config);
+		$data   = $built['controller']->status()->getData();
+
+		$this->assertSame('1', $built['written']['setup_completed_version'] ?? null, 'the call records completion');
+		$this->assertFalse($data['steps']['dwangsom-secret']['done'], 'and still offers the step this once');
+
+	}//end testTheMarkerWrittenByThisCallDoesNotSettleTheStepYet()
 	/**
 	 * A seeder that created nothing has not completed the step.
 	 *

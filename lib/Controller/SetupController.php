@@ -130,9 +130,23 @@ class SetupController extends Controller {
 		// Dwangsom callback signing secret. Only meaningful once the payout
 		// integration is configured at all: with no dwangsom schema there is
 		// no callback to sign, so the step is settled rather than outstanding.
+		//
+		// SETTLED, not "secret present". The step is optional, and the secret
+		// lives permanently under admin settings > Financial integration. While
+		// the step reported "not done" for as long as the secret was empty,
+		// CnAppRoot reopened the wizard at this step on every fresh browser
+		// profile (each Playwright context, every new device), because its
+		// dismissal is only a localStorage key. So the step is done once the
+		// wizard has been completed, which is what skipping it in the wizard
+		// means; a secret configured later settles it just the same. Read
+		// BEFORE the completion marker is written below, so the visit that
+		// finishes the wizard still offers the step once.
 		$dwangsomActive = $this->config(key: 'dwangsom_uitbetaling_schema') !== '';
+		$secretConfigured = $this->config(key: 'dwangsom_callback_secret') !== '';
+		$wizardDoneBefore = $this->config(key: 'setup_completed_version') === (string)self::SETUP_VERSION;
 		$dwangsomSecretDone = $dwangsomActive === false
-			|| $this->config(key: 'dwangsom_callback_secret') !== '';
+			|| $secretConfigured === true
+			|| $wizardDoneBefore === true;
 
 		if ($completed === true) {
 			$this->appConfig->setValueString('dossiq', 'setup_completed_version', (string)self::SETUP_VERSION);
@@ -168,10 +182,11 @@ class SetupController extends Controller {
 		// anywhere in the frontend — it was computed, serialised and dropped on
 		// the floor on every request, so the incident it exists to prevent was
 		// never actually being prevented. It is kept for any API consumer that
-		// reads it, but derived from the SAME value as the step above so the
-		// two can never disagree.
+		// reads it. It answers a different question from the step: the step
+		// says whether the wizard still has to ASK, this says whether a secret
+		// IS configured, and only the second one is the go-live warning.
 		if ($dwangsomActive === true) {
-			$response['dwangsom_callback_secret_configured'] = $dwangsomSecretDone;
+			$response['dwangsom_callback_secret_configured'] = $secretConfigured;
 		}
 
 		return new DataResponse($response);

@@ -137,6 +137,49 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			},
 		)
 
+		// The headline is painted with a FOREGROUND token. CnCountdownWidget
+		// writes `var(--color-error)` inline, which on Nextcloud 34 is the pale
+		// FILL colour (#FFE7E7): "26 days overdue" was pink on white. dossiq
+		// repoints the token on the widget root to its `-text` variant, so
+		// whichever band the seeded deadline lands in, the computed colour must
+		// match that band's `-text` token and never the raw fill token.
+		const countdown = page.locator('.cn-countdown-widget')
+		const paint = await countdown.evaluate((el) => {
+			const value = el.querySelector('.cn-countdown-widget__value')
+			const root = getComputedStyle(document.documentElement)
+			const resolve = (token: string) => {
+				const probe = document.createElement('span')
+				probe.style.color = root.getPropertyValue(token).trim()
+				document.body.appendChild(probe)
+				const color = getComputedStyle(probe).color
+				probe.remove()
+				return color
+			}
+			const variant = (
+				[...el.classList].find((c) => /^cn-countdown-widget--/.test(c)) || ''
+			).replace('cn-countdown-widget--', '')
+			return {
+				variant,
+				color: value ? getComputedStyle(value).color : '',
+				fill: resolve(`--color-${variant}`),
+				text: resolve(`--color-${variant}-text`),
+			}
+		})
+		if (['error', 'warning', 'success'].includes(paint.variant)) {
+			expect(paint.color, `${paint.variant} band paints the -text token`).toBe(
+				paint.text,
+			)
+			expect(
+				paint.color,
+				`${paint.variant} band must not paint the fill`,
+			).not.toBe(paint.fill)
+		} else {
+			expect(
+				paint.variant,
+				'a countdown on a case with a deadline has a band',
+			).toBe('default')
+		}
+
 		// The case type field holds a uuid. Showing the uuid would be a pass for
 		// "renders something" and a failure for the feature.
 		const caseTypeCard = kpis.filter({ hasText: /Case type|Zaaktype/ })
@@ -393,5 +436,76 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			responses.every((s) => s < 400),
 			`statuses: ${responses.join(',')}`,
 		).toBe(true)
+	})
+
+	// @e2e openspec/specs/ncvue-w2-leaves-adoption/spec.md
+	test('the sidebar Notes tab renders the notes leaf, not an unknown element', async ({
+		page,
+	}) => {
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		// NcAppSidebar renders its own toggle while closed; open it when so.
+		const toggle = page.locator('.app-sidebar__toggle')
+		if (await toggle.isVisible()) await toggle.click()
+		const sidebar = page.locator('.app-sidebar')
+		await expect(sidebar).toBeVisible({ timeout: 15_000 })
+
+		// The leaf this tab renders comes from dossiq's OWN bundle
+		// (`builtinIntegrations` in @conduction/nextcloud-vue, resolved by
+		// `leafTab('notes')`), not from OpenRegister's global registry bundle,
+		// which CI never has (openregister gitignores `/js/`). Probe that
+		// registry anyway and record the answer, so a failure here can be read
+		// against it, but do not skip on it: the tab must render without it.
+		const registryHasNotes = await page.evaluate(() => {
+			const w = window as unknown as {
+				OCA?: {
+					OpenRegister?: {
+						integrations?: { has?: (id: string) => boolean }
+					}
+				}
+			}
+			const registry = w.OCA?.OpenRegister?.integrations
+			return registry ? Boolean(registry.has?.('notes')) : null
+		})
+		test.info().annotations.push({
+			type: 'openregister-integrations-registry',
+			description:
+				registryHasNotes === null
+					? 'absent (no global registry bundle on this instance)'
+					: `has('notes') = ${registryHasNotes}`,
+		})
+
+		// By id, not label: NcAppSidebarTab renders `#tab-button-<id>` for the
+		// manifest tab id, which is the same on an English and a Dutch instance.
+		const tabButton = sidebar.locator('#tab-button-notes')
+		test.skip(
+			(await tabButton.count()) === 0,
+			'the case sidebar declares no `notes` tab in this build; nothing to render',
+		)
+		await tabButton.click()
+		const panel = sidebar.locator('[data-testid="cn-object-sidebar-tab-notes"]')
+		await expect(panel).toBeVisible({ timeout: 15_000 })
+
+		// The tab used to write its resolved leaf as a TAG, which Vue emits as
+		// a literal unknown element with nothing inside. Assert the element is
+		// absent AND that real content mounted, so an empty panel cannot pass.
+		await expect(panel.locator('cnnotestabcomponent')).toHaveCount(0)
+		await expect
+			.poll(() => panel.evaluate((el) => el.querySelectorAll('*').length), {
+				timeout: 15_000,
+			})
+			.toBeGreaterThan(1)
+		// And the thing that mounted is the notes leaf itself, not the panel's
+		// own chrome: CnNotesTab renders a `.cn-sidebar-tab` root with the
+		// add-note composer inside it.
+		await expect(panel.locator('.cn-sidebar-tab').first()).toBeVisible({
+			timeout: 15_000,
+		})
+		await expect(panel.locator('.cn-sidebar-tab__composer').first()).toBeVisible(
+			{ timeout: 15_000 },
+		)
 	})
 })
