@@ -65,14 +65,32 @@ class StatusTypeLookup {
 	 * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
 	 */
 	public function nameFor(string $statusTypeId): string {
-		if ($statusTypeId === '') {
-			return '';
-		}
-
-		$statusType = $this->read(schemaKey: 'status_type_schema', id: $statusTypeId);
+		$statusType = $this->rowFor(statusTypeId: $statusTypeId);
 
 		return (string)($statusType['name'] ?? ($statusType['title'] ?? ''));
 	}//end nameFor()
+
+	/**
+	 * The whole statusType row, for the callers that need more than its name.
+	 *
+	 * The checklist a status brings with it is read here rather than through a
+	 * second reader, for the reason this class exists at all: one place asks
+	 * the store what a status is, so a status that resolves for one caller
+	 * cannot silently answer nothing for another.
+	 *
+	 * @param string $statusTypeId StatusType UUID.
+	 *
+	 * @return array<string, mixed> The row, or an empty array when unresolvable.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function rowFor(string $statusTypeId): array {
+		if ($statusTypeId === '') {
+			return [];
+		}
+
+		return $this->read(schemaKey: 'status_type_schema', id: $statusTypeId);
+	}//end rowFor()
 
 	/**
 	 * A case type's statusType id, by name.

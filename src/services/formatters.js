@@ -107,6 +107,25 @@ export default {
 	caseTypeName: (value) => lookupRelatedName('caseType', value),
 
 	/**
+	 * Human label for a case object's `case` UUID reference.
+	 *
+	 * The Objects index answers "which cases are on this building", so the
+	 * case is the column a reader looks at. The reference is NOT resolved
+	 * with `extend` the way the Tasks index resolves its own `case` column:
+	 * `extend` replaces `row.case` with the expanded case object, and the
+	 * page's View case action resolves its `{case}` token with a flat row
+	 * lookup, so it would push an object where vue-router wants a uuid and
+	 * open nothing. The formatter leaves the uuid on the row and resolves
+	 * only what is rendered. An id the case collection does not hold falls
+	 * back to the id rather than to an empty cell.
+	 *
+	 * @param {string} value The case UUID.
+	 * @return {string}
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	caseTitle: (value) => lookupRelatedName('case', value),
+
+	/**
 	 * Human label for a case's `status` UUID reference (statusType).
 	 *
 	 * @param {string} value The statusType UUID.

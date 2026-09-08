@@ -145,6 +145,96 @@ class CreateTaskHandlerTest extends TestCase {
 	}//end testCreatesTaskWithCaseLinkAndAssigneeOnSuccess()
 
 	/**
+	 * A checklist action's status is written onto the task.
+	 *
+	 * `workflowStepId` is what says which status made this task, and it is
+	 * what the checklist reader filters on to know it has been here before. A
+	 * handler that dropped it would create the whole list again on every
+	 * re-entry, and the required-item guard would never find its task.
+	 *
+	 * @return void
+	 */
+	public function testWritesTheWorkflowStepIdTheActionNames(): void {
+		$recorded = null;
+		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new NullLogger());
+
+		$result = $handler->handle(
+			actionConfig: [
+				'type' => 'createTask',
+				'title' => 'Check the objection is on time',
+				'workflowStepId' => 'status-intake',
+			],
+			case: ['id' => 'case-9'],
+			transitionContext: [],
+		);
+
+		self::assertTrue($result->succeeded);
+		self::assertSame('status-intake', $recorded['object']['workflowStepId']);
+	}//end testWritesTheWorkflowStepIdTheActionNames()
+
+	/**
+	 * An action naming no status leaves the field off the task entirely.
+	 *
+	 * @return void
+	 */
+	public function testLeavesTheWorkflowStepIdOffWhenTheActionNamesNone(): void {
+		$recorded = null;
+		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new NullLogger());
+
+		$handler->handle(
+			actionConfig: ['type' => 'createTask', 'title' => 'Review docs', 'workflowStepId' => '  '],
+			case: ['id' => 'case-9'],
+			transitionContext: [],
+		);
+
+		self::assertArrayNotHasKey('workflowStepId', $recorded['object']);
+	}//end testLeavesTheWorkflowStepIdOffWhenTheActionNamesNone()
+
+	/**
+	 * A SettingsService whose object service records what it is asked to save.
+	 *
+	 * @param mixed $recorded Filled with `['object' =>, 'register' =>, 'schema' =>]`.
+	 *
+	 * @return SettingsService&\PHPUnit\Framework\MockObject\MockObject The settings double.
+	 */
+	private function recordingSettings(&$recorded): SettingsService {
+		$objectService = new class($recorded) {
+			/** @var mixed */
+			public $recorded;
+
+			/**
+			 * @param mixed $recorded The recording slot.
+			 */
+			public function __construct(&$recorded) {
+				$this->recorded = &$recorded;
+			}
+
+			/**
+			 * @param array<string, mixed> $object   The task to save.
+			 * @param string               $register The register.
+			 * @param string               $schema   The schema.
+			 *
+			 * @return array<string, mixed> The saved task.
+			 */
+			public function saveObject(array $object, string $register, string $schema): array {
+				$this->recorded = ['object' => $object, 'register' => $register, 'schema' => $schema];
+				return ['id' => 'task-uuid'];
+			}
+		};
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => ([
+				'register' => 'reg-1',
+				'task_schema' => 'task-schema',
+			][$key] ?? '')
+		);
+
+		return $settings;
+	}//end recordingSettings()
+
+	/**
 	 * @return void
 	 */
 	public function testCatchesExceptionFromObjectService(): void {

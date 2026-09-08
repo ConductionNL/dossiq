@@ -252,7 +252,7 @@
             "statusType": {
                 "slug": "statusType",
                 "icon": "ListStatus",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:ActionStatusType",
                 "x-zgw-equivalent": "StatusType",
                 "title": "Status Type",
@@ -308,6 +308,31 @@
                         ],
                         "description": "What this status MEANS in a process, independent of what it is called. A shipped flow moves a case by role, so it works on a case type that calls its working phase Beoordeling or Onderzoek rather than In behandeling. Leave it empty for a status no flow needs to address.",
                         "title": "Role"
+                    },
+                    "checklist": {
+                        "type": "array",
+                        "description": "What this status asks for. Every item becomes a task on the case the moment the case enters this status, created once per status however often the case comes back. An item marked required holds the case in this status until its task is completed, and the transition button says which item is still open.",
+                        "title": "Checklist",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "title"
+                            ],
+                            "properties": {
+                                "title": {
+                                    "type": "string",
+                                    "maxLength": 255,
+                                    "description": "What has to be done. This is the title of the task that is created.",
+                                    "title": "Title"
+                                },
+                                "required": {
+                                    "type": "boolean",
+                                    "default": false,
+                                    "description": "Whether the case may leave this status before this item's task is completed.",
+                                    "title": "Required"
+                                }
+                            }
+                        }
                     }
                 }
             },
@@ -2994,7 +3019,7 @@
             "caseObject": {
                 "slug": "caseObject",
                 "icon": "CubeOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-zgw-equivalent": "ZaakObject",
                 "title": "Case Object",
                 "description": "Links an external object to a case",
@@ -3021,7 +3046,8 @@
                     "objectType": {
                         "type": "string",
                         "description": "Type of the external object",
-                        "title": "Object Type"
+                        "title": "Object Type",
+                        "facetable": true
                     },
                     "objectIdentification": {
                         "type": "string",

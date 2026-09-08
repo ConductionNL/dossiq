@@ -275,3 +275,51 @@ export function refusalMessage(body, translate) {
 			return String(body?.error ?? t('The case could not be changed.'))
 	}
 }
+
+/**
+ * Why a transition on offer cannot be taken yet.
+ *
+ * The engine offers a transition whose guards failed rather than hiding it,
+ * because a button that is simply absent tells the handler nothing about what
+ * to do next. The reason belongs ON the button: `guardsPassed` says whether it
+ * can be pressed, `failedGuards` says why not, and the first failure is the
+ * one worth reading — a handler acts on one thing at a time.
+ *
+ * @param {object} transition One entry of the available-transitions answer.
+ * @return {string} The reason, or the empty string when it can be taken.
+ * @spec openspec/specs/status-transition-engine/spec.md
+ */
+export function transitionBlockReason(transition) {
+	if (!transition || typeof transition !== 'object') {
+		return ''
+	}
+	// Only an explicit false blocks: an answer that predates `guardsPassed`
+	// (or a caller that hands over a bare transition) must keep working.
+	if (transition.guardsPassed !== false) {
+		return ''
+	}
+	const guards = Array.isArray(transition.failedGuards)
+		? transition.failedGuards
+		: []
+	const named = guards
+		.map((guard) => String(guard?.failureMessage ?? guard?.type ?? '').trim())
+		.filter(Boolean)
+
+	return named.length > 0 ? named[0] : ''
+}
+
+/**
+ * Whether a transition on offer may be pressed.
+ *
+ * Kept apart from the reason because the two can disagree: a guard can fail
+ * with no message of its own, and a button that stayed enabled because nobody
+ * wrote a sentence would send the handler into a refusal instead of telling
+ * them beforehand.
+ *
+ * @param {object} transition One entry of the available-transitions answer.
+ * @return {boolean} True when a guard is holding the case.
+ * @spec openspec/specs/status-transition-engine/spec.md
+ */
+export function transitionIsBlocked(transition) {
+	return transition?.guardsPassed === false
+}
