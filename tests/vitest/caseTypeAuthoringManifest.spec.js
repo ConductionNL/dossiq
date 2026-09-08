@@ -239,6 +239,44 @@ describe('the CaseTypeDetail page', () => {
 	})
 })
 
+describe('the Case types index groups by category', () => {
+	it('derives its folders from the rows’ own category values', () => {
+		// `source: "facet"` does not exist. CnIndexPage resolves register,
+		// field, custom and files, and an unknown source falls through to
+		// `custom` — whose folder list is the absent `folders` array, so the
+		// pane renders empty and nothing says why.
+		const sidebar = page('CaseTypes').config.folderSidebar
+		expect(['register', 'field', 'custom', 'files']).toContain(sidebar.source)
+		expect(sidebar.field).toBe('category')
+		expect(sidebar.filterField).toBe('category')
+	})
+
+	it('makes the category filterable at all', () => {
+		// The filter behind the folder comes from `facetable: true` on the
+		// property and from nothing else.
+		expect(schema('caseType').properties.category.facetable).toBe(true)
+	})
+
+	it('names an All folder, so the index can be un-narrowed', () => {
+		expect(page('CaseTypes').config.folderSidebar.allLabel).toBeTruthy()
+	})
+
+	it('shows the category as a column too', () => {
+		expect(page('CaseTypes').config.columns).toContain('category')
+	})
+})
+
+describe('an attribute without a case type is shared', () => {
+	it('leaves caseType out of propertyDefinition’s required list', () => {
+		expect(schema('propertyDefinition').required).not.toContain('caseType')
+		expect(schema('propertyDefinition').required).toContain('name')
+	})
+
+	it('moves the propertyDefinition version, or the loosening is inert', () => {
+		expect(schema('propertyDefinition').version).toBe('1.2.0')
+	})
+})
+
 describe('every icon this change names is registered', () => {
 	it('registers each icon the touched pages name', () => {
 		// gate-60: an icon that is not in src/icons.js renders NO icon at all.

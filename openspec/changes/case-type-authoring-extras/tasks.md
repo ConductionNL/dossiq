@@ -126,9 +126,21 @@ implementation task; the criteria under a task are plain bullets.
     `filter: {caseType: "$value"}`. That filter cannot also say "or no case
     type", so a SHARED attribute reaches the Properties tab (which reads the
     resolver) but not the case form. Filed with the picker limitation in 2.3.
-- [ ] 3.2 `src/manifest.json` page `CaseTypes`: `folderSidebar` on
+- [x] 3.2 `src/manifest.json` page `CaseTypes`: `folderSidebar` on
   `category`; page `CaseTypeDetail`: the Properties tab lists own rows and
   shared rows per design D3.
+  - `source: "field"`, NOT the design's `source: "facet"`. CnIndexPage
+    resolves four sources -- register, field, custom and files -- and an
+    unknown one falls through to `custom`, whose folder list is the absent
+    `folders` array: a sidebar declared as a facet renders an empty pane and
+    says nothing. `field` derives the folders from the rows' own `category`
+    values, which is what a free word can offer.
+  - The shared attributes are on the `case-type-blueprint` widget's
+    Attributes section, badged Shared, rather than in a second object-list
+    under a heading. The design's `filter: {"$or": [{"caseType":
+    "@objectId"}, {"caseType": null}]}` is not a filter shape OpenRegister's
+    object list accepts, and an unrecognised key is DROPPED rather than
+    refused, so that list would have shown every attribute of every type.
 
 ## 4. The AVG block
 

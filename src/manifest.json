@@ -4168,6 +4168,7 @@
 				"schema": "caseType",
 				"columns": [
 					"title",
+					"category",
 					"identifier",
 					"handlingModel",
 					"processingDeadline",
@@ -4187,6 +4188,13 @@
 						"type": "handler"
 					}
 				],
+				"_folderSidebarNote": "`source: \"field\"` and not `source: \"facet\"`: CnIndexPage resolves exactly four sources -- register, field, custom and files -- and an unknown one falls through to `custom`, whose folder list is the (absent) `folders` array, so a sidebar declared as a facet renders an empty pane. `field` derives the folders from the distinct `category` values of the rows themselves, which is what a free-word category can offer. `facetable: true` on the property is what makes the value filterable at all; `x-openregister-facet` is read by nothing.",
+				"folderSidebar": {
+					"source": "field",
+					"field": "category",
+					"filterField": "category",
+					"allLabel": "All case types"
+				},
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true
