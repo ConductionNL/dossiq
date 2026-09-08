@@ -86,12 +86,30 @@ export default defineConfig({
 	timeout: 60_000,
 	expect: { timeout: 15_000 },
 	fullyParallel: false,
-	// One worker on purpose. `helpers/fixtures.ts#ensureCaseType` reuses
-	// `listObjects('caseType')[0]` — whatever caseType happens to exist — and
-	// `cleanupRunObjects` deletes by run prefix afterwards. With two workers,
-	// worker B can adopt worker A's throwaway caseType and then have it deleted
-	// out from under it mid-test. Serial execution removes that whole class of
-	// cross-worker flake.
+	// One worker, but NO LONGER for the reason this comment used to give.
+	//
+	// It said `helpers/fixtures.ts#ensureCaseType` adopts
+	// `listObjects('caseType')[0]` — whatever caseType happens to exist — so
+	// worker B could adopt worker A's throwaway and have it deleted out from
+	// under it mid-test. That defect was real, it was in SEVEN sites rather than
+	// the one named here, and it is now fixed at the source:
+	// `adoptableCaseTypes()` excludes fixture-owned rows, so a worker can only
+	// adopt a caseType no teardown will remove.
+	//
+	// ⚠️ DO NOT read that as "parallel is now safe". Raising this is UNVERIFIED.
+	// Nobody has yet observed the suite complete with more than one worker, and
+	// the specific risks that remain are known and unmeasured:
+	//
+	//   - `spec-coverage/demo-data-setup-step.spec.ts` installs demo data
+	//     instance-wide, against ~131 empty-state assertions elsewhere.
+	//   - One observed `SQLSTATE[53200] out of shared memory /
+	//     max_locks_per_transaction` from postgres under four concurrent
+	//     workers. Seen ONCE, so a flagged risk rather than a measured property.
+	//
+	// The suite currently truncates at `globalTimeout` and reaches roughly a
+	// third of its tests, which is a stable and understood problem. Parallel
+	// flake would be a worse one, because flake is the failure mode that teaches
+	// people to ignore red. Raise this only behind a run that completes.
 	workers: 1,
 	retries: process.env.CI ? 1 : 0,
 	// Stop on our own clock, ahead of the shared job's `timeout-minutes: 45`.
