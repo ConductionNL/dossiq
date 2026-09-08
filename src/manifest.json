@@ -1132,7 +1132,9 @@
 				"quickFilters": [
 					{
 						"label": "All",
-						"filter": {},
+						"filter": {
+							"statusHiddenInLists": false
+						},
 						"default": true
 					},
 					{
@@ -1178,7 +1180,9 @@
 					{
 						"key": "status",
 						"label": "Status",
-						"formatter": "statusTypeName"
+						"formatter": "statusTypeName",
+						"widget": "statusBadge",
+						"_note": "The Status column reads the status's own colour. `statusTypeName` alone resolves the $ref to a name and stops there, so five different statuses read as one grey column. A cell WIDGET rather than a second formatter, for the reason cellWidgets.js gives: a formatter returns a string and a string cannot carry a colour. The formatter stays as the fallback label the widget renders while the statusType collection is still loading."
 					},
 					"assignee",
 					{
@@ -4304,6 +4308,7 @@
 				"schema": "caseType",
 				"columns": [
 					"title",
+					"category",
 					"identifier",
 					"handlingModel",
 					"processingDeadline",
@@ -4323,6 +4328,13 @@
 						"type": "handler"
 					}
 				],
+				"_folderSidebarNote": "`source: \"field\"` and not `source: \"facet\"`: CnIndexPage resolves exactly four sources -- register, field, custom and files -- and an unknown one falls through to `custom`, whose folder list is the (absent) `folders` array, so a sidebar declared as a facet renders an empty pane. `field` derives the folders from the distinct `category` values of the rows themselves, which is what a free-word category can offer. `facetable: true` on the property is what makes the value filterable at all; `x-openregister-facet` is read by nothing.",
+				"folderSidebar": {
+					"source": "field",
+					"field": "category",
+					"filterField": "category",
+					"allLabel": "All case types"
+				},
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true
@@ -4339,13 +4351,215 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "caseType",
+				"widgets": [
+					{
+						"id": "case-type-core",
+						"type": "data",
+						"title": "Case type",
+						"icon": "FolderCogOutline",
+						"content": {
+							"title": "Case type",
+							"columns": 2,
+							"include": [
+								"title",
+								"identifier",
+								"description",
+								"category",
+								"parentCaseType",
+								"purpose",
+								"trigger",
+								"handlingModel",
+								"confidentiality",
+								"isDraft"
+							],
+							"hideEmpty": false
+						}
+					},
+					{
+						"id": "case-type-terms",
+						"type": "data",
+						"title": "Terms",
+						"icon": "CalendarTextOutline",
+						"content": {
+							"title": "Terms",
+							"columns": 2,
+							"include": [
+								"processingDeadline",
+								"suspensionAllowed",
+								"extensionAllowed",
+								"extensionPeriod",
+								"validFrom",
+								"validUntil"
+							],
+							"hideEmpty": false
+						}
+					},
+					{
+						"id": "case-type-privacy",
+						"type": "data",
+						"title": "Personal data",
+						"icon": "ShieldAccountOutline",
+						"_note": "The AVG facts belong to the case TYPE, not to a case: whether this process touches personal data, which categories, on what article 6 basis, and which activity in OpenRegister's verwerkingsregister the cases are logged under. `hideEmpty` stays off, because an unanswered basis is exactly what a data protection officer is looking for -- an empty row is the finding.",
+						"content": {
+							"title": "Personal data",
+							"columns": 2,
+							"include": [
+								"processesPersonalData",
+								"personalDataCategories",
+								"legalBasis",
+								"verwerkingsactiviteit"
+							],
+							"hideEmpty": false
+						}
+					},
+					{
+						"id": "case-type-versions",
+						"type": "object-list",
+						"title": "Versions",
+						"icon": "History",
+						"_note": "The type's workflowTemplate rows: what was published, when, and what the change note said. A DECLARED object-list and not the blueprint widget, because a workflowTemplate belongs to exactly one case type -- there is no inheritance to merge here, so `caseType = @objectId` is the whole question. `description` is the column the change note is written into by the publish action.",
+						"content": {
+							"register": "dossiq",
+							"schema": "workflowTemplate",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"sort": {
+								"field": "version",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "version",
+									"label": "Version"
+								},
+								{
+									"key": "lifecycleStatus",
+									"label": "Lifecycle status"
+								},
+								{
+									"key": "description",
+									"label": "Change note"
+								},
+								{
+									"key": "@self.updated",
+									"label": "Updated",
+									"_note": "`updated` is NOT a workflowTemplate property: the timestamp lives on OpenRegister's metadata envelope, and a column bound to a property the schema does not declare renders a dash in every row without saying so. `WorkflowDefinitions` spells it the same way. Caught by ManifestColumnBindingTest, which is exactly what that test exists for."
+								}
+							],
+							"rowRoute": "WorkflowDefinitionDetail",
+							"emptyText": "This case type has no published versions yet"
+						}
+					},
+					{
+						"id": "case-type-blueprint",
+						"type": "custom",
+						"title": "Statuses, results and attributes",
+						"icon": "FormatListBulletedType",
+						"_note": "The one widget on this page that a declared type cannot be. An object-list fetches OpenRegister itself, so the only question it can ask is `statusType where caseType = @objectId` -- the type's OWN rows. A type that derives its lifecycle from a parent has none of those, so three declared lists would render three empty tables about a case type that plainly has four statuses, and nothing would say so. The merge exists only in CaseTypeResolver, and /api/case-types/{id}/blueprint is how a page reads it. It sits in the LAYOUT and not inside a tab strip on purpose: a `type: \"custom\"` widget named as a tab CHILD resolves by registry TYPE, finds nothing, and renders an empty panel without logging anything."
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "case-type-core",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 8,
+						"gridHeight": 6,
+						"showTitle": false
+					},
+					{
+						"id": "2",
+						"widgetId": "case-type-blueprint",
+						"gridX": 8,
+						"gridY": 0,
+						"gridWidth": 4,
+						"gridHeight": 6,
+						"showTitle": true
+					},
+					{
+						"id": "3",
+						"widgetId": "case-type-terms",
+						"gridX": 0,
+						"gridY": 6,
+						"gridWidth": 8,
+						"gridHeight": 4,
+						"showTitle": false
+					},
+					{
+						"id": "4",
+						"widgetId": "case-type-privacy",
+						"gridX": 8,
+						"gridY": 6,
+						"gridWidth": 4,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "5",
+						"widgetId": "case-type-versions",
+						"gridX": 0,
+						"gridY": 10,
+						"gridWidth": 12,
+						"gridHeight": 4,
+						"showTitle": true
+					}
+				],
+				"_headerActionsNote": "There is no `run-action` header-action type. The manifest schema enumerates handler, open-modal, open-page, navigate, object-op, export, open-form, refresh, api-call, agent and toggle, and CnActionButtons resolves exactly those; the design's `run-action` would have been refused by `npm run check:manifest` and, had it slipped through, rendered a button that dispatches nothing. Export is an `api-call` with `download: true`, which is the shape that asks for the response as a blob and hands it to the browser -- the endpoint already answers a DataDownloadResponse. The other three are dialogs, each for a reason a declarative action cannot meet: Import takes a FILE (a confirm gate has no fields and an api-call sends JSON), Publish must show the validation findings BEFORE asking for a change note, and Duplicate must land on the copy rather than refresh the page you are already on. Every icon here is registered in src/icons.js (gate-60); a name that is not renders no icon at all. The three dialogs read the case type off the ROUTE and not off their props: `open-modal` forwards props verbatim, so a `@objectId` token would arrive as that literal string.",
+				"headerActions": [
+					{
+						"id": "case-type-export",
+						"type": "api-call",
+						"label": "Export",
+						"icon": "TrayArrowDown",
+						"url": "/apps/dossiq/api/case-definitions/export",
+						"method": "POST",
+						"payload": {
+							"caseTypeId": "@objectId"
+						},
+						"download": true,
+						"filename": "case-type.zip",
+						"errorMessage": "The case type could not be exported."
+					},
+					{
+						"id": "case-type-import",
+						"type": "open-modal",
+						"label": "Import",
+						"icon": "TrayArrowUp",
+						"target": "CaseTypeImportDialog"
+					},
+					{
+						"id": "case-type-duplicate",
+						"type": "open-modal",
+						"label": "Duplicate",
+						"icon": "ContentDuplicate",
+						"target": "CaseTypeDuplicateDialog"
+					},
+					{
+						"id": "case-type-publish",
+						"type": "open-modal",
+						"label": "Publish",
+						"icon": "Publish",
+						"target": "CaseTypePublishDialog",
+						"visibleWhen": {
+							"field": "isDraft",
+							"op": "eq",
+							"value": true
+						}
+					}
+				],
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true
 				},
 				"documentationUrl": "https://procest.conduction.nl"
 			},
-			"_note": "The case-type blueprint: identity and classification, the processing deadline and extension rules (AWB terms), the pinned workflowDefinition, sub-case types and decision types. Cases of this type are reached from the Cases index filtered by caseType rather than duplicated here."
+			"slots": {
+				"widget-case-type-blueprint": "CaseTypeBlueprintWidget"
+			},
+			"_note": "The case-type blueprint: identity and classification, the processing deadline and extension rules (AWB terms), the pinned workflowDefinition, sub-case types and decision types. Cases of this type are reached from the Cases index filtered by caseType rather than duplicated here. `case-type-authoring-extras` put the type's own content on the page: what it inherits from a parent, what it actually offers, the personal data it processes, and the four gestures that were API-only. NO TAB STRIP: `case-type-one-authoring-surface` owns that, and building one here would be the second strip the moment it lands. These are layout cells, and they become that strip's children when it arrives -- except `case-type-blueprint`, which cannot be a tab child while it is `type: \"custom\"`."
 		},
 		{
 			"id": "Store",

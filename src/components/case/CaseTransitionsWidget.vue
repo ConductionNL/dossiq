@@ -27,6 +27,8 @@
 			<div class="case-transitions__state">
 				<span
 					class="case-transitions__status"
+					:style="statusStyle"
+					:data-colour="statusColour"
 					data-testid="case-current-status">
 					{{ statusName }}
 				</span>
@@ -109,6 +111,7 @@ import {
 	transitionBlockReason,
 	transitionIsBlocked,
 } from '../../utils/caseLifecycleHelpers.js'
+import { statusColourStyle } from '../../utils/statusColour.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
@@ -127,6 +130,7 @@ export default {
 			loading: true,
 			transitions: [],
 			statusName: '',
+			statusColour: '',
 			statusTypes: [],
 			resultTypes: [],
 			lifecycleState: null,
@@ -139,6 +143,20 @@ export default {
 		/** @spec openspec/specs/status-transition-engine/spec.md */
 		caseId() {
 			return String(this.$route?.params?.id ?? '')
+		},
+
+		/**
+		 * The colours the current status is drawn in.
+		 *
+		 * The colour arrives with the status name on the same
+		 * /available-transitions answer, so the badge never renders the name
+		 * in one paint and the colour in a second.
+		 *
+		 * @return {object} A style object.
+		 * @spec openspec/specs/case-types/spec.md
+		 */
+		statusStyle() {
+			return statusColourStyle(this.statusColour)
 		},
 
 		/** @spec openspec/specs/status-transition-engine/spec.md */
@@ -242,6 +260,7 @@ export default {
 					? data.transitions
 					: []
 				this.statusName = String(data?.current?.statusName ?? '')
+				this.statusColour = String(data?.current?.statusColour ?? '')
 			} catch {
 				// A case whose engine cannot answer shows no buttons rather than
 				// a broken strip: the rest of the page is still readable.
@@ -391,6 +410,8 @@ export default {
 }
 
 .case-transitions__status {
+	border-radius: var(--border-radius-pill);
+	padding: 2px 10px;
 	font-weight: bold;
 }
 

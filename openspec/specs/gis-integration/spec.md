@@ -1,5 +1,18 @@
 ---
 status: done
+status-note: >-
+  2026-06 (migrate-cases-on-map-to-maps-overview-leaf, ADR-022, procest#112,
+  commit bac6f7073): the bespoke in-app geo stack is RETIRED. Removed:
+  GeoService, WfsService, WfsExportService, WmsWfsService, LocationService,
+  CaseGeoController and the /api/cases/geo and /wfs/cases endpoints, the
+  Leaflet components under src/components/map, caseGeoService,
+  coordinateService, gisProxyService and the gis store. The cases-on-map
+  surface now consumes OpenRegister's maps-overview endpoints through
+  src/services/casesOnMapApi.js and renders them with the shared CnMapWidget,
+  which owns clustering and the PDOK base layer. What remains in this app is
+  the marker shaping in src/services/mapFormatters.js, covered by
+  tests/vitest/casesOnMap.spec.js. This spec is retained for history; the geo
+  capability is owned by OpenRegister.
 ---
 
 # gis-integration Specification
@@ -38,7 +51,10 @@ canonical Feature on read.
 
 #### Scenario: Validate supported geometry types
 
-@e2e exclude Backend GeoService unit logic; covered by GeoServiceTest (PHPUnit), no UI surface.
+@e2e exclude the geometry validation this describes is no longer in this app.
+bac6f7073 (issue #112, ADR-022) removed the bespoke geo stack when cases-on-map
+moved onto OpenRegister's maps-overview surface, and the PHPUnit class this
+reason used to name was deleted with the code. Retained for history.
 
 - **GIVEN** a Point, Polygon or MultiPolygon GeoJSON geometry
 - **WHEN** it is validated by `GeoService::validateGeometry()`
@@ -47,7 +63,10 @@ canonical Feature on read.
 
 #### Scenario: Normalise JSON-encoded stored geometry
 
-@e2e exclude Backend (de)serialisation logic; covered by GeoServiceTest (PHPUnit), no UI surface.
+@e2e exclude the stored-geometry normalisation this describes was removed by
+bac6f7073 with the rest of the bespoke geo stack. OpenRegister now owns the
+canonical representation, and the PHPUnit class this reason used to name was
+deleted with the code.
 
 - **GIVEN** a geometry stored JSON-encoded on a case location
 - **WHEN** it is read via `GeoService::normaliseGeometry()`
@@ -62,7 +81,10 @@ requesting user may read (no IDOR).
 
 #### Scenario: Clustered, filtered case locations
 
-@e2e exclude Server-side clustering + bbox/zaaktype/status filtering; covered by GeoServiceTest + CaseGeoControllerTest (PHPUnit) and Newman.
+@e2e exclude GET /api/cases/geo no longer exists here. bac6f7073 replaced it
+with a call to OpenRegister's maps-overview points endpoint, which does the
+clustering and the filtering. Both PHPUnit classes this reason used to name
+were deleted with the endpoint, and this app runs no Newman suite.
 
 - **GIVEN** cases with locations across the Netherlands
 - **WHEN** the client requests `/api/cases/geo` with a zoom level and optional zaaktype/status/bounds filters
@@ -72,7 +94,10 @@ requesting user may read (no IDOR).
 
 #### Scenario: Per-object access guard excludes inaccessible cases
 
-@e2e exclude Authorization guard verified by CaseGeoControllerTest (PHPUnit) — asserts only readable case ids reach the response; no deterministic UI assertion.
+@e2e exclude the per-object access guard moved with the endpoint. OpenRegister's
+maps-overview points endpoint returns markers already scoped by RBAC, so the
+guard is enforced there and not here. The PHPUnit class this reason used to
+name was deleted by bac6f7073.
 
 - **GIVEN** two located cases where the user may read only one
 - **WHEN** the user requests `/api/cases/geo`
@@ -88,7 +113,9 @@ when OpenRegister is unavailable.
 
 #### Scenario: GetCapabilities advertises the case feature type
 
-@e2e exclude OGC XML rendering; covered by WfsServiceTest (PHPUnit) and Newman — no UI surface.
+@e2e exclude the WFS endpoint was removed by bac6f7073. This app no longer
+serves /wfs/cases, the PHPUnit class this reason used to name was deleted with
+it, and this app runs no Newman suite. Retained for history.
 
 - **GIVEN** an authenticated WFS client
 - **WHEN** it requests `GET /wfs/cases?service=WFS&request=GetCapabilities`
@@ -96,7 +123,9 @@ when OpenRegister is unavailable.
 
 #### Scenario: GetFeature returns GML members honouring BBOX
 
-@e2e exclude OGC GML rendering + bbox filtering; covered by WfsServiceTest (PHPUnit) and Newman — no UI surface.
+@e2e exclude GetFeature went with the rest of the WFS endpoint in bac6f7073.
+The PHPUnit class this reason used to name was deleted with it, and this app
+runs no Newman suite.
 
 - **GIVEN** located cases
 - **WHEN** a WFS client requests `GetFeature` with an optional BBOX
@@ -135,7 +164,10 @@ the backend or PDOK tiles are unavailable.
 
 #### Scenario: Map data shaping is pure and testable
 
-@e2e exclude Pure data-shaping helpers (toMapGeometries/buildGeoQuery/summariseGeo/toExportGeoJson); covered by caseGeoService.spec.js (vitest).
+@e2e exclude pure data-shaping helpers, covered by tests/vitest/casesOnMap.spec.js.
+After bac6f7073 the shaping is shapeMarkerFeatures in
+src/services/mapFormatters.js, and that vitest spec asserts the coordinate
+order, the status colour and icon, malformed rows and non-array input.
 
 - **GIVEN** a `/api/cases/geo` FeatureCollection
 - **WHEN** it is shaped for the map

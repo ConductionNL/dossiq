@@ -17,10 +17,16 @@
 // formatter first; add an entry here only when the cell has a state to show.
 
 import DeadlineCountdownCell from '../components/cells/DeadlineCountdownCell.vue'
+import StatusBadgeCell from '../components/cells/StatusBadgeCell.vue'
 
 export default {
 	// The Deadline column on the Cases index: days left, days overdue past
 	// the deadline, empty when the case has none.
 	// @spec openspec/changes/one-case-list/specs/signalering-widgets/spec.md
 	deadlineCountdown: DeadlineCountdownCell,
+
+	// The Status column on the Cases index: the status name in the colour its
+	// status type carries.
+	// @spec openspec/specs/case-types/spec.md
+	statusBadge: StatusBadgeCell,
 }
