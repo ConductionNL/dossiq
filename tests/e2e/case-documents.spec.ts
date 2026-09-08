@@ -33,6 +33,7 @@ import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
 import {
+	adoptableCaseTypes,
 	cleanupRunObjects,
 	createObject,
 	getRequestToken,
@@ -254,20 +255,12 @@ test.describe('Case detail — the Documents tab', () => {
 		// cannot be deleted by a user; creating a case type here and deleting
 		// it in teardown would leave every case pointing at a type that is
 		// gone, which reddens unrelated specs.
-		// A PUBLISHED type, not merely the first one. `case.caseType` carries
-		// `x-relation-filter: {isDraft: false}` and the caseType schema defaults
-		// `isDraft` to true, so a blind `[0]` adopts a draft whenever the
-		// listing happens to order one first. Measured on the dev instance:
-		// fifteen of twenty-three case types are drafts. The order that saved
-		// this spec is not a property anything guarantees.
-		const caseTypes = await listObjects(api, 'caseType')
-		const published = caseTypes.filter((type) => type.isDraft !== true)
+		const caseTypes = await adoptableCaseTypes(api)
 		expect(
-			published.length,
-			`the instance must ship a PUBLISHED case type (${caseTypes.length} exist, `
-				+ `${caseTypes.length - published.length} are drafts)`,
+			caseTypes.length,
+			'the instance must ship at least one PUBLISHED case type — adoptableCaseTypes() excludes drafts (isDraft !== false) and fixture-owned rows',
 		).toBeGreaterThan(0)
-		caseTypeId = objectId(published[0])
+		caseTypeId = objectId(caseTypes[0])
 
 		const seeded = await Promise.all([
 			seedCase(api, token, {
