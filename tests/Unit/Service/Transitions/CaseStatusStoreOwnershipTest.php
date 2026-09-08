@@ -40,6 +40,7 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\Transitions\CaseStatusStore
+ * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
  */
 class CaseStatusStoreOwnershipTest extends TestCase {
 	/**

@@ -229,6 +229,13 @@
 			"order": 30
 		},
 		{
+			"id": "CaseObjectsMenu",
+			"label": "Objects",
+			"icon": "CubeOutline",
+			"route": "CaseObjects",
+			"order": 31
+		},
+		{
 			"id": "Tasks",
 			"label": "Tasks",
 			"icon": "FormatListChecks",
@@ -1485,6 +1492,44 @@
 						}
 					},
 					{
+						"id": "case-objects",
+						"type": "object-list",
+						"title": "Objects",
+						"icon": "CubeOutline",
+						"_note": "The things a case is about: a building, a vehicle, a tree. `type` is `object-list` and not `custom` on purpose, because a tab child resolves by REGISTRY TYPE, so a `custom` widget named as a tab child renders nothing and logs nothing. Like its twelve siblings this widget is DELIBERATELY absent from `layout`: `case-panels` renders it, so a layout cell would render it twice. No `rowRoute`: a case object is a link row, not a record with a page of its own.",
+						"content": {
+							"register": "dossiq",
+							"schema": "caseObject",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "objectType",
+								"dir": "asc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "objectType",
+									"label": "Object type"
+								},
+								{
+									"key": "objectIdentification",
+									"label": "Identification"
+								},
+								{
+									"key": "description",
+									"label": "Description"
+								},
+								{
+									"key": "objectUrl",
+									"label": "Link"
+								}
+							],
+							"emptyText": "No objects linked to this case yet"
+						}
+					},
+					{
 						"id": "case-files",
 						"type": "integration",
 						"integrationId": "files",
@@ -1688,6 +1733,10 @@
 								{
 									"widgetId": "case-locaties",
 									"label": "Locations"
+								},
+								{
+									"widgetId": "case-objects",
+									"label": "Objects"
 								}
 							]
 						}
@@ -1853,6 +1902,7 @@
 						}
 					]
 				},
+				"_linkObjectNote": "`case` is REQUIRED on the caseObject schema and is deliberately absent from `link-object`'s `includeFields`: an `open-form` action saves straight to the object API, so a required property the form does not ask has to arrive through `props` or the save is refused with a validation error the handler cannot act on. `@objectId` is the open case, the same shape `add-party` and `log-contact` use. Until nextcloud-vue passes `props` into the create form as initial data (triage #6) the field is not prefilled on screen; the value is still written, which is what the e2e asserts.",
 				"headerActions": [
 					{
 						"id": "add-party",
@@ -1875,6 +1925,29 @@
 							}
 						},
 						"successMessage": "Party added to the case.",
+						"props": {
+							"case": "@objectId"
+						}
+					},
+					{
+						"id": "link-object",
+						"type": "open-form",
+						"label": "Link object",
+						"icon": "CubeOutline",
+						"register": "dossiq",
+						"schema": "caseObject",
+						"includeFields": [
+							"objectType",
+							"objectIdentification",
+							"objectUrl",
+							"description"
+						],
+						"fieldOverrides": {
+							"description": {
+								"widget": "textarea"
+							}
+						},
+						"successMessage": "Object linked to this case.",
 						"props": {
 							"case": "@objectId"
 						}
@@ -2443,6 +2516,64 @@
 					"status",
 					"dueDate"
 				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://procest.conduction.nl"
+			}
+		},
+		{
+			"id": "CaseObjects",
+			"route": "/case-objects",
+			"type": "index",
+			"title": "Objects",
+			"config": {
+				"register": "dossiq",
+				"schema": "caseObject",
+				"allowSavedViews": true,
+				"showViewAction": false,
+				"_caseColumnNote": "The `case` column reads the raw $ref through the `caseTitle` FORMATTER and NOT through `extend`, which is how the Tasks index renders the same reference. `extend` replaces `row.case` with the expanded case object, and the View case action below resolves its `{case}` token with a FLAT row lookup: it would hand vue-router an object instead of a uuid and open nothing, silently. The formatter leaves the uuid in place for the action and resolves the title for the reader, out of the case collection the object store already holds.",
+				"_viewCaseNote": "The row action opens the ROW'S CASE, not the row. `params` is merged OVER the default `{ id: row[rowKey] }`, and `{case}` runs the `{field}` row-token grammar against the flat row, so the case uuid wins over the case object's own uuid. A case object has no detail page of its own, which is why `showViewAction` is false and this is the only action.",
+				"actions": [
+					{
+						"id": "view-case",
+						"label": "View case",
+						"icon": "EyeOutline",
+						"handler": "navigate",
+						"route": "CaseDetail",
+						"params": {
+							"id": "{case}"
+						},
+						"type": "handler"
+					}
+				],
+				"columns": [
+					{
+						"key": "objectType",
+						"label": "Object type"
+					},
+					{
+						"key": "objectIdentification",
+						"label": "Identification"
+					},
+					{
+						"key": "description",
+						"label": "Description"
+					},
+					{
+						"key": "case",
+						"label": "Case",
+						"formatter": "caseTitle",
+						"sortable": false
+					}
+				],
+				"_folderSidebarNote": "`source: \"field\"` groups the loaded rows by the distinct values of `objectType` and filters on the same key when one is picked; `allLabel` brings every row back. The change's design wrote `source: \"facet\"`, which CnFolderSidebar's validator rejects (it takes `custom`, `field` or `files`): that would have rendered no sidebar and warned only in the console. The related facet FILTER in the metadata sidebar comes from `facetable: true` on `caseObject.objectType`; `x-openregister-facet`, which the design also named, is read by nothing.",
+				"folderSidebar": {
+					"source": "field",
+					"field": "objectType",
+					"allLabel": "All objects"
+				},
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true

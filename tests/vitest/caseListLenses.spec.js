@@ -335,12 +335,19 @@ describe('what this change does NOT move', () => {
 	})
 
 	it('changes no menu entry', () => {
+		// The list is exact ON PURPOSE: this change moved no menu entry, and an
+		// exact list is what makes that a fact rather than an intention. A
+		// LATER change may legitimately add an entry, and then this list grows
+		// by exactly that entry. `Objects` (custom-objects-on-the-case) is the
+		// first such addition; every entry this change was about is unmoved,
+		// in the same order.
 		expect(manifest.menu.map((entry) => entry.label)).toEqual([
 			'Dashboard',
 			'Queue',
 			'Assigned to me',
 			'My work',
 			'All cases',
+			'Objects',
 			'Tasks',
 			'Workflow board',
 			'Reports',

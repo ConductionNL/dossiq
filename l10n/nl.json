@@ -3676,6 +3676,13 @@
         "Updated": "Bijgewerkt",
         "Versions": "Versies",
         "When the instance already has a row": "Als deze omgeving de rij al heeft",
-        "Your account may not do this.": "Uw account mag dit niet."
+        "Your account may not do this.": "Uw account mag dit niet.",
+        "Objects": "Objecten",
+        "Link object": "Object koppelen",
+        "Object type": "Objecttype",
+        "Identification": "Identificatie",
+        "No objects linked to this case yet": "Nog geen objecten aan deze zaak gekoppeld",
+        "Object linked to this case.": "Object aan deze zaak gekoppeld.",
+        "All objects": "Alle objecten"
     }
 }

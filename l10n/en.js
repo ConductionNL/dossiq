@@ -3677,7 +3677,14 @@ OC.L10N.register(
         "This case type has no attributes yet": "This case type has no attributes yet",
         "This case type has no results yet": "This case type has no results yet",
         "This case type no longer exists.": "This case type no longer exists.",
-        "Your account may not do this.": "Your account may not do this."
+        "Your account may not do this.": "Your account may not do this.",
+        "Objects": "Objects",
+        "Link object": "Link object",
+        "Object type": "Object type",
+        "Identification": "Identification",
+        "No objects linked to this case yet": "No objects linked to this case yet",
+        "Object linked to this case.": "Object linked to this case.",
+        "All objects": "All objects"
     },
     "nplurals=2; plural=(n != 1);"
 )
