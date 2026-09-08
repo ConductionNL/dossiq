@@ -32,12 +32,12 @@ criteria under a task are plain bullets.
   choice. `src/modals/InitiatorPickerModal.vue` passes the same payload.
   - vitest in `src/components/initiator/InitiatorPicker.spec.js`
   - `@spec openspec/specs/initiator-selection/spec.md`
-- [ ] 2.2 `src/registry.js`: `appliesTo: ["case.requester"]` on
+- [x] 2.2 `src/registry.js`: `appliesTo: ["case.requester"]` on
   `InitiatorPicker`; no boot warning for a missing `appliesTo`.
-- [ ] 2.3 `src/manifest.json` page `Dashboard`, action `new-case`: add
+- [x] 2.3 `src/manifest.json` page `Dashboard`, action `new-case`: add
   `requester` to `includeFields` after `title`;
   `fieldOverrides.requester.widget = "InitiatorPicker"`.
-- [ ] 2.4 `src/manifest.json` page `CaseDetail`, widget `case-core`:
+- [x] 2.4 `src/manifest.json` page `CaseDetail`, widget `case-core`:
   `overrides.requester.widget = "InitiatorPicker"` so the edit form uses it.
   - `npm run check:manifest` exits 0
 
@@ -55,12 +55,12 @@ criteria under a task are plain bullets.
   `_reason: "bsn-reveal"` and then shows the full number.
   - vitest: masked by default, full after reveal, one object-store read with
     the reason
-- [ ] 3.3 `src/manifest.json` page `CaseDetail`: move widget `initiator` to
+- [x] 3.3 `src/manifest.json` page `CaseDetail`: move widget `initiator` to
   the first row beside `case-core`; keep the layout cell budget (ADR-062).
 
 ## 4. The list
 
-- [ ] 4.1 `src/manifest.json` page `Cases`: column
+- [x] 4.1 `src/manifest.json` page `Cases`: column
   `{"key": "initiatorDisplayName", "label": "Requester"}` after `title`, and a
   sidebar text filter on `initiatorDisplayName`.
 - [ ] 4.2 [blocked: nextcloud-vue a `$ref` column on `CnIndexPage` that
