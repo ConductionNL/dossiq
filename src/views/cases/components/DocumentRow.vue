@@ -20,21 +20,43 @@
 		<div class="dossier-document-row__main">
 			<span class="dossier-document-row__title">{{ document.title }}</span>
 			<span class="dossier-document-row__meta">
-				{{ formatDate(document.creatiedatum) }} ·
-				{{ document.auteur || t('dossiq', 'Unknown') }} ·
-				{{ formatSize(document.bestandsomvang) }}
+				{{ formatSize(document.bestandsomvang) }} ·
+				{{ confidentialityLabel }}
 			</span>
+			<ul v-if="keywords.length > 0" class="dossier-document-row__keywords">
+				<li
+					v-for="keyword in keywords"
+					:key="keyword"
+					class="dossier-document-row__keyword"
+					data-testid="dossier-keyword">
+					{{ keyword }}
+				</li>
+			</ul>
 		</div>
+
+		<span class="dossier-document-row__cell" data-testid="dossier-cell-type">
+			{{ typeLabel || t('dossiq', 'Unknown type') }}
+		</span>
 
 		<span
 			class="dossier-document-row__badge dossier-document-row__status"
-			:class="'dossier-document-row__status--' + document.status">
+			:class="'dossier-document-row__status--' + document.status"
+			data-testid="dossier-cell-status">
 			{{ statusLabel }}
 		</span>
 
 		<span
-			class="dossier-document-row__badge dossier-document-row__confidentiality">
-			{{ confidentialityLabel }}
+			class="dossier-document-row__cell"
+			data-testid="dossier-cell-direction">
+			{{ directionLabel }}
+		</span>
+
+		<span class="dossier-document-row__cell" data-testid="dossier-cell-date">
+			{{ formatDate(document.creatiedatum) }}
+		</span>
+
+		<span class="dossier-document-row__cell" data-testid="dossier-cell-author">
+			{{ document.auteur || t('dossiq', 'Unknown') }}
 		</span>
 
 		<NcActions :inline="0">
@@ -77,6 +99,8 @@ import OpenInNew from 'vue-material-design-icons/OpenInNew.vue'
 import ShareVariant from 'vue-material-design-icons/ShareVariant.vue'
 import {
 	canShare as canShareLevel,
+	DEFAULT_DIRECTION,
+	documentKeywords,
 	formatSize as formatBytes,
 } from '../../../utils/dossierHelpers.js'
 
@@ -109,6 +133,14 @@ export default {
 		selected: {
 			type: Boolean,
 			default: false,
+		},
+
+		// The document's type, resolved to its catalogue description by the
+		// tab. The row renders the label rather than the reference: an
+		// informatieobjecttype uuid in a Type column tells nobody anything.
+		typeLabel: {
+			type: String,
+			default: '',
 		},
 	},
 
@@ -148,6 +180,36 @@ export default {
 				archived: this.t('dossiq', 'Archived'),
 			}
 			return labels[this.document.status] || this.document.status
+		},
+
+		/**
+		 * Human-readable direction label.
+		 *
+		 * A document written before `direction` existed carries none, and the
+		 * schema default is what a write would have given it, so the column
+		 * reads Internal rather than blank.
+		 *
+		 * @return {string} The label.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		directionLabel() {
+			const labels = {
+				incoming: this.t('dossiq', 'Incoming'),
+				outgoing: this.t('dossiq', 'Outgoing'),
+				internal: this.t('dossiq', 'Internal'),
+			}
+			const direction = this.document.direction || DEFAULT_DIRECTION
+			return labels[direction] || direction
+		},
+
+		/**
+		 * The document's keywords, rendered as chips under its title.
+		 *
+		 * @return {string[]} The keywords, possibly empty.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		keywords() {
+			return documentKeywords(this.document)
 		},
 
 		/**
@@ -227,12 +289,39 @@ export default {
 </script>
 
 <style scoped>
+/* The six columns the case file is read by, plus the select, the thumbnail
+   and the actions menu. The header strip in DossierTab declares the same
+   track list, so the headings sit over the values they name. */
 .dossier-document-row {
-	display: flex;
+	display: grid;
+	grid-template-columns: var(--dossier-columns);
 	align-items: center;
 	gap: 12px;
 	padding: 8px 4px;
 	border-bottom: 1px solid var(--color-border);
+}
+
+.dossier-document-row__cell {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.dossier-document-row__keywords {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	list-style: none;
+	margin: 2px 0 0;
+	padding: 0;
+}
+
+.dossier-document-row__keyword {
+	padding: 0 8px;
+	border-radius: var(--border-radius-pill);
+	background-color: var(--color-primary-element-light);
+	color: var(--color-main-text);
+	font-size: 0.8em;
 }
 
 .dossier-document-row__thumb {

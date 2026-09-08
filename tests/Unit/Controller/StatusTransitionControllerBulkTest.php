@@ -273,4 +273,128 @@ final class StatusTransitionControllerBulkTest extends TestCase {
 		$this->assertInstanceOf(JSONResponse::class, $response);
 		$this->assertSame($serviceResult, $response->getData());
 	}//end testBulkExecuteHappyPathPassesThroughToServiceWithGuardFailReported()
+
+	/**
+	 * A body with no `gesture` still previews a TRANSITION. The workflow
+	 * board's dialog sends none, so this is the assertion that keeps the
+	 * existing caller on the path it was on when the three lifecycle
+	 * gestures joined the endpoint.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+	 */
+	public function testBulkPreviewWithoutAGestureStillPreviewsATransition(): void {
+		$this->request->method('getParams')->willReturn(
+			['caseIds' => ['case-1'], 'transitionId' => 'submit']
+		);
+
+		$this->bulkEngine->expects($this->once())->method('preview');
+		$this->bulkEngine->expects($this->never())->method('previewLifecycle');
+
+		$this->controller->bulkPreview();
+	}//end testBulkPreviewWithoutAGestureStillPreviewsATransition()
+
+	/**
+	 * A `gesture` the controller does not recognise reads as a transition
+	 * rather than reaching the lifecycle path with a name nothing handles.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownGestureFallsBackToATransition(): void {
+		$this->request->method('getParams')->willReturn(
+			['caseIds' => ['case-1'], 'transitionId' => 'submit', 'gesture' => 'delete']
+		);
+
+		$this->bulkEngine->expects($this->once())->method('preview');
+		$this->bulkEngine->expects($this->never())->method('previewLifecycle');
+
+		$this->controller->bulkPreview();
+	}//end testAnUnknownGestureFallsBackToATransition()
+
+	/**
+	 * bulkPreview() with a lifecycle gesture previews through the lifecycle
+	 * path and never touches the transition engine.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+	 */
+	public function testBulkPreviewRoutesALifecycleGesture(): void {
+		$this->request->method('getParams')->willReturn(
+			['caseIds' => ['case-1'], 'gesture' => 'suspend']
+		);
+
+		$serviceResult = [
+			'results' => ['case-1' => ['status' => 'ready', 'reasons' => []]],
+			'summary' => ['total' => 1, 'ready' => 1, 'blocked' => 0, 'error' => 0],
+		];
+
+		$this->bulkEngine->expects($this->never())->method('preview');
+		$this->bulkEngine->expects($this->once())
+			->method('previewLifecycle')
+			->with($this->equalTo(['case-1']), $this->equalTo('suspend'))
+			->willReturn($serviceResult);
+
+		$response = $this->controller->bulkPreview();
+
+		$this->assertSame($serviceResult, $response->getData());
+	}//end testBulkPreviewRoutesALifecycleGesture()
+
+	/**
+	 * bulkExecute() carries the reason, the days and the new end date into
+	 * the lifecycle path.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+	 */
+	public function testBulkExecuteCarriesTheReasonIntoTheLifecyclePath(): void {
+		$this->request->method('getParams')->willReturn(
+			[
+				'caseIds' => ['case-1'],
+				'gesture' => 'suspend',
+				'reason' => 'Awaiting documents',
+				'days' => 21,
+			]
+		);
+
+		$this->bulkEngine->expects($this->never())->method('execute');
+		$this->bulkEngine->expects($this->once())
+			->method('executeLifecycle')
+			->with(
+				$this->equalTo(['case-1']),
+				$this->equalTo('suspend'),
+				$this->equalTo('Awaiting documents'),
+				$this->equalTo(21),
+				$this->equalTo(''),
+			)
+			->willReturn(['results' => [], 'summary' => []]);
+
+		$this->controller->bulkExecute();
+	}//end testBulkExecuteCarriesTheReasonIntoTheLifecyclePath()
+
+	/**
+	 * A lifecycle gesture with no reason is a 400, and nothing is written.
+	 *
+	 * Suspending, resuming and extending are statutory acts someone has to
+	 * justify later, and doing twenty at once is exactly when the
+	 * justification goes unwritten. The endpoint refuses rather than
+	 * recording twenty blank ones.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+	 */
+	public function testBulkExecuteRefusesALifecycleGestureWithNoReason(): void {
+		$this->request->method('getParams')->willReturn(
+			['caseIds' => ['case-1'], 'gesture' => 'suspend', 'reason' => '   ']
+		);
+
+		$this->bulkEngine->expects($this->never())->method('executeLifecycle');
+
+		$response = $this->controller->bulkExecute();
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+	}//end testBulkExecuteRefusesALifecycleGestureWithNoReason()
 }//end class

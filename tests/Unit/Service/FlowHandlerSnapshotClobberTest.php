@@ -38,6 +38,7 @@ use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Service\Dmn\DecisionTableEvaluator;
 use OCP\IAppConfig;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
@@ -296,6 +297,7 @@ class FlowHandlerSnapshotClobberTest extends TestCase {
 			container: $container,
 			appConfig: $appConfig,
 			caseWriter: new CaseFieldWriter(),
+			userSession: $this->createMock(IUserSession::class),
 			logger: new NullLogger(),
 		);
 

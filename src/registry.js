@@ -54,6 +54,9 @@ import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
 // The way back from a task to its case (task-on-the-case).
 // @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
 import TaskCaseLink from './components/tasks/TaskCaseLink.vue'
+// Generate document — the CaseDetail header action's template picker.
+// @spec openspec/specs/beschikking-generatie/spec.md
+import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
 import CaseLifecycleActionDialog from './dialogs/CaseLifecycleActionDialog.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
 // VTH-specific case detail panels
@@ -71,6 +74,9 @@ import CaseNotesTab from './views/cases/components/CaseNotesTab.vue'
 // Federated case sharing/transfer/activity — federated-case-collaboration.
 // @spec openspec/specs/federated-case-collaboration/spec.md
 import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
+// The ZGW DRC case file, rendered as the CaseDetail Documents tab.
+// @spec openspec/specs/document-zaakdossier/spec.md
+import DossierTab from './views/cases/components/DossierTab.vue'
 // CMMN adaptive case-plan panel — sibling to the BPMN status-transition
 // engine, for caseTypes with handlingModel = 'cmmn' (cmmn-adaptive-case).
 // @spec openspec/specs/cmmn-adaptive-case/spec.md
@@ -246,6 +252,30 @@ const registry = {
 		kind: 'widget',
 		component: TaskWaitingCaseSection,
 		_note: 'TaskDetail section: names the case a suspended flow run is holding on this task and links to it. Renders NOTHING for a task without a flowRun, so pre-existing tasks are unchanged. The case half (run + stage on CaseDetail) is deliberately absent: it waits on the fleet-generic subject-scoped runs widget (openregister flow-runs-subject-scope).',
+	},
+
+	// --- Generate document, the CaseDetail header action (documents-on-the-case). ---
+	// @spec openspec/specs/beschikking-generatie/spec.md
+	BeschikkingComposerDialog: {
+		kind: 'modal',
+		component: BeschikkingComposerDialog,
+		_note: "Picks a template from TemplateController#index and files the rendered letter on the case through MergeTemplateHandler with no targetField. Opened by the CaseDetail `generate-document` header action as `type: open-modal`, the interim for a `run-action` the library cannot dispatch yet (design D4). The action passes `open: true` because CnAppRoot mounts a registry modal with the action's props verbatim, and the dialog renders on `open`; `caseId` is passed for the same reason and IGNORED when it still holds the unresolved `@objectId` token, because open-modal resolves no tokens.",
+	},
+
+	// --- The case file as a tab on the case page (documents-on-the-case). ---
+	// @spec openspec/specs/document-zaakdossier/spec.md
+	'dossier-tab': {
+		// @custom-widget-ratchet exclude the interim rendering of a list whose
+		// six columns live on a REFERENCED informatieobject: CnObjectListWidget
+		// renders a $ref column as the raw reference, so an object-list over
+		// zaakinformatieobject would show six uuids where the case file belongs
+		// (documents-on-the-case task 2.2, placement rows A35/A36). This entry
+		// is deleted the moment the library renders a $ref column by a label
+		// field, and the e2e asserts column headers rather than widget type so
+		// the swap does not rewrite a test.
+		kind: 'widget',
+		component: DossierTab,
+		_note: 'CaseDetail Documents tab: the zaakinformatieobject rows of this case with title, type, status, direction, date and author, a drop zone that writes an informatieobject plus its join through the metadata dialog, and the version panel per row. Registered as a widget TYPE and not as a `type: "custom"` widget on purpose: a custom widget resolves through the page\'s `widget-<id>` slot, which CnDetailPage renders only for layout grid items, so inside a tab panel it renders nothing and reports nothing. CnTabsWidget dispatches its children through CnDetailWidgetHost, which resolves a renderer by widget TYPE against this registry (REQ-MVR-005), and binds `objectId` from the route so the tab knows its case on the first frame.',
 	},
 
 	// --- The inline task pane on the case page (task-on-the-case A06). ---

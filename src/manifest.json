@@ -494,6 +494,7 @@
 							"route": {
 								"name": "Cases",
 								"query": {
+									"isFinalStatus": "false",
 									"deadline[lt]": "@today"
 								}
 							},
@@ -675,57 +676,10 @@
 						}
 					},
 					{
-						"id": "overdue-cases",
+						"id": "my-work",
 						"type": "object-table",
-						"title": "Overdue",
-						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "case",
-								"filter": {
-									"isFinalStatus": false,
-									"deadline": {
-										"lt": "@today"
-									}
-								},
-								"extend": ["calculations"],
-								"order": {
-									"deadline": "asc"
-								},
-								"limit": 7
-							},
-							"columns": [
-								{
-									"key": "title",
-									"cellClass": "cn-cell--strong"
-								},
-								{
-									"key": "daysOverdue",
-									"formatter": "conditionalPhrase",
-									"formatterOptions": {
-										"positive": "{n} days overdue"
-									},
-									"cellClass": "cn-cell--muted cn-cell--end"
-								}
-							],
-							"rowRoute": "CaseDetail",
-							"viewAllRoute": {
-								"name": "Cases",
-								"query": {
-									"isFinalStatus": "false",
-									"deadline[lt]": "@today"
-								}
-							},
-							"viewAllLabel": "View all",
-							"hideHeader": true,
-							"borderless": true,
-							"emptyText": "No open cases"
-						}
-					},
-					{
-						"id": "my-tasks",
-						"type": "object-table",
-						"title": "My Tasks",
+						"title": "My work",
+						"_note": "openspec/changes/dashboard-tiles design D1. Replaces `my-tasks` and `task-reminders`, which read the same schema with the same filter and differed only in a due-date window, so seven of ten rows appeared on the page twice. `extend` carries `case` as well as `calculations`: a $ref column renders the stored uuid unless the referenced object is extended AND the column reads `<property>.<labelField>`, which is why the case column is keyed `case.title`. `rowActions` Pick up and Complete stay blocked on nextcloud-vue (the 2.40.0 object-table vocabulary has no such key); the row keeps `rowRoute` to TaskDetail, where the lifecycle buttons already render.",
 						"content": {
 							"source": {
 								"register": "dossiq",
@@ -734,19 +688,26 @@
 									"assignee": "@me",
 									"isTerminalStatus": false
 								},
-								"extend": ["calculations"],
+								"extend": ["case", "calculations"],
 								"order": {
 									"dueDate": "asc"
 								},
-								"limit": 7
+								"limit": 10
 							},
 							"columns": [
 								{
 									"key": "title",
+									"label": "Task",
 									"cellClass": "cn-cell--strong"
 								},
 								{
+									"key": "case.title",
+									"label": "Case",
+									"cellClass": "cn-cell--muted"
+								},
+								{
 									"key": "daysUntilDue",
+									"label": "Days left",
 									"formatter": "conditionalPhrase",
 									"formatterOptions": {
 										"negative": "{n} days overdue",
@@ -757,6 +718,16 @@
 								}
 							],
 							"rowRoute": "TaskDetail",
+							"rowClass": [
+								{
+									"when": {
+										"field": "daysUntilDue",
+										"op": "lt",
+										"value": 0
+									},
+									"class": "cn-row--danger"
+								}
+							],
 							"viewAllRoute": {
 								"name": "Tasks",
 								"query": {
@@ -765,15 +736,16 @@
 								}
 							},
 							"viewAllLabel": "View all",
-							"hideHeader": true,
+							"hideHeader": false,
 							"borderless": true,
-							"emptyText": "No tasks found"
+							"emptyText": "You have no open tasks"
 						}
 					},
 					{
-						"id": "deadline-alerts",
+						"id": "deadlines",
 						"type": "object-table",
-						"title": "Deadline Alerts",
+						"title": "Deadlines",
+						"_note": "openspec/changes/dashboard-tiles design D1. Replaces `overdue-cases` and `deadline-alerts`, which read `case` with the same `isFinalStatus: false` filter and differed only in the deadline window, so seven of nine rows appeared twice. One window now covers both: everything already past its deadline and everything due within three days, ordered by deadline. The red row is `rowClass`, not the `cn-cell--danger` the design sketched: a column's `cellClass` is one static string, so it cannot carry a per-branch colour, and the spec asks for the ROW to read in the error colour anyway.",
 						"content": {
 							"source": {
 								"register": "dossiq",
@@ -793,10 +765,12 @@
 							"columns": [
 								{
 									"key": "title",
+									"label": "Case",
 									"cellClass": "cn-cell--strong"
 								},
 								{
 									"key": "daysUntilDeadline",
+									"label": "Days left",
 									"formatter": "conditionalPhrase",
 									"formatterOptions": {
 										"negative": "{n} days overdue",
@@ -807,6 +781,17 @@
 								}
 							],
 							"rowRoute": "CaseDetail",
+							"rowClass": [
+								{
+									"when": {
+										"field": "daysUntilDeadline",
+										"op": "lt",
+										"value": 0
+									},
+									"class": "cn-row--danger"
+								}
+							],
+							"_viewAllNote": "one-case-list A22, triage item 4. The query is this table's OWN filter in the flat bracket grammar, key for key, and `dashboardViewAllRoutes.spec.js` holds that invariant for every tile: a table that counts one set of cases and a View all that lands on another is the dropped filter this fixes. The nested `{ deadline: { lte } }` form belongs in a `source.filter`, which the widget reads, and NOT in a route query, which `buildQueryString` would JSON-stringify into a literal object string that matches nothing. Note the WINDOW: this table is overdue AND due within three days, wider than the Cases page's Overdue chip, so it deliberately does not carry that chip's filter. `kpi-overdue` is the widget whose count the Overdue chip reproduces exactly, and that equality is asserted. CnIndexPage merges the query into the fetch under the page's own filter, so the filter arrives and the list is right; what it does NOT do is activate a matching chip, because `resolveInitialQuickFilterIndex` reads only `default`. The reader lands on All with the query applied and no chip showing why, and naming a chip from a query needs a nextcloud-vue change.",
 							"viewAllRoute": {
 								"name": "Cases",
 								"query": {
@@ -815,61 +800,9 @@
 								}
 							},
 							"viewAllLabel": "View all",
-							"hideHeader": true,
+							"hideHeader": false,
 							"borderless": true,
-							"emptyText": "No deadline alerts"
-						}
-					},
-					{
-						"id": "task-reminders",
-						"type": "object-table",
-						"title": "Task Due Reminders",
-						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "caseTask",
-								"filter": {
-									"assignee": "@me",
-									"isTerminalStatus": false,
-									"dueDate": {
-										"lte": "@today+3d"
-									}
-								},
-								"extend": ["calculations"],
-								"order": {
-									"dueDate": "asc"
-								},
-								"limit": 10
-							},
-							"columns": [
-								{
-									"key": "title",
-									"cellClass": "cn-cell--strong"
-								},
-								{
-									"key": "daysUntilDue",
-									"formatter": "conditionalPhrase",
-									"formatterOptions": {
-										"negative": "{n} days overdue",
-										"zero": "Due today",
-										"positive": "{n} days remaining"
-									},
-									"cellClass": "cn-cell--muted cn-cell--end"
-								}
-							],
-							"rowRoute": "TaskDetail",
-							"viewAllRoute": {
-								"name": "Tasks",
-								"query": {
-									"assignee": "@me",
-									"isTerminalStatus": "false",
-									"dueDate[lte]": "@today+3d"
-								}
-							},
-							"viewAllLabel": "View all",
-							"hideHeader": true,
-							"borderless": true,
-							"emptyText": "No task reminders"
+							"emptyText": "No deadlines in the next three days"
 						}
 					},
 					{
@@ -979,7 +912,7 @@
 					},
 					{
 						"id": "7",
-						"widgetId": "open-cases",
+						"widgetId": "my-work",
 						"gridX": 0,
 						"gridY": 6,
 						"gridWidth": 4,
@@ -988,7 +921,7 @@
 					},
 					{
 						"id": "8",
-						"widgetId": "overdue-cases",
+						"widgetId": "deadlines",
 						"gridX": 4,
 						"gridY": 6,
 						"gridWidth": 4,
@@ -997,7 +930,7 @@
 					},
 					{
 						"id": "9",
-						"widgetId": "my-tasks",
+						"widgetId": "open-cases",
 						"gridX": 8,
 						"gridY": 6,
 						"gridWidth": 4,
@@ -1006,26 +939,8 @@
 					},
 					{
 						"id": "10",
-						"widgetId": "deadline-alerts",
-						"gridX": 0,
-						"gridY": 10,
-						"gridWidth": 4,
-						"gridHeight": 4,
-						"showTitle": true
-					},
-					{
-						"id": "11",
-						"widgetId": "task-reminders",
-						"gridX": 4,
-						"gridY": 10,
-						"gridWidth": 4,
-						"gridHeight": 4,
-						"showTitle": true
-					},
-					{
-						"id": "12",
 						"widgetId": "stalled-cases",
-						"gridX": 8,
+						"gridX": 0,
 						"gridY": 10,
 						"gridWidth": 4,
 						"gridHeight": 4,
@@ -1124,12 +1039,37 @@
 			"actionsComponent": "CaseListExportAction",
 			"_note": "`excludeFields: [status]` keeps the status picker OFF this page's form dialog, and the reason is not cosmetic. On CREATE the picker listed every case type's statuses. CnFormDialog loads a reference field's options once, at open time, and `status` carries `x-relation-filter: { caseType: \"@object.caseType\" }`: a token that resolves to nothing while the form is still empty, so the fetch goes out unfiltered and never goes out again. Half those options are named `Received` or `In progress`, belong to a different case type, and are therefore both indistinguishable and wrong. A case is born with its own case type's `initialStatus` through `x-openregister-prefill`, so there is no status a person should be picking here at all. On EDIT the token does resolve and the picker is correctly scoped, but a raw dropdown writes the field straight through: no statusRecord, no guard evaluation, none of the transition's `automaticActions`. A status is the OUTPUT of a transition, not a field. CaseDetail's `lifecycleActions.field: status` is where one changes.",
 			"config": {
+				"_bulkActionsNote": "one-case-list A21. Bulk work stopped at Reassign while `BulkTransitionDialog` and `BulkStatusTransitionService` already served the workflow board, so the four gestures a handler does most from a list were reachable only one case at a time. Each handler opens the SAME dialog in its own mode with a required reason: Suspend, Resume and Extend term are statutory acts (Awb 4:5 and 4:14) someone has to justify later, and doing twenty at once is exactly when the justification goes unwritten. The handlers are FUNCTIONS in src/customComponents.js, not the declarative `handler: \"open-modal\"` path: that path emits an `open-modal` event nothing in the library listens for, so declaring it would ship a bulk action that does nothing when clicked. Every icon here is registered in src/icons.js (hydra gate-60); a name that is not renders no icon at all rather than a fallback glyph.",
 				"bulkActions": [
 					{
 						"id": "reassign",
 						"label": "Reassign",
 						"icon": "AccountSwitchOutline",
 						"handler": "reassignSelection"
+					},
+					{
+						"id": "transition",
+						"label": "Transition",
+						"icon": "SwapHorizontal",
+						"handler": "transitionSelection"
+					},
+					{
+						"id": "suspend",
+						"label": "Suspend",
+						"icon": "PauseCircleOutline",
+						"handler": "suspendSelection"
+					},
+					{
+						"id": "resume",
+						"label": "Resume",
+						"icon": "PlayCircleOutline",
+						"handler": "resumeSelection"
+					},
+					{
+						"id": "extend-term",
+						"label": "Extend term",
+						"icon": "CalendarPlus",
+						"handler": "extendTermSelection"
 					}
 				],
 				"register": "dossiq",
@@ -1172,6 +1112,7 @@
 				],
 				"_teamColumnNote": "`assignedGroup` is a $ref to an organisatieRol and CnIndexPage renders a plain key raw, so the column would show a uuid. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded row's `roleName`, the same shape the Tasks index uses for `case.title`; the server cannot sort on a nested field, so the column is not sortable. The Team FACET in the sidebar comes from `facetable: true` on the property itself and is the interim for the blocked Team chip.",
 				"extend": ["assignedGroup"],
+				"_quickFiltersNote": "one-case-list, D1 revised: the Queue page and the My Work page stay exactly as they are, and no menu entry changes. These chips only add the lenses to the list that already exists. Unclaimed carries the SAME two conditions as Queue's base filter (`assignee: \"IS NULL\"`, `isFinalStatus: false`), literally equal so the two lists cannot drift; the manifest vitest asserts that equality rather than trusting it. ALL IS THE DEFAULT, not Mine: `resolveInitialQuickFilterIndex` activates the chip marked `default` (and the FIRST chip when none is), so a Mine default would silently narrow every reader's first paint to their own cases and make an empty list look like an empty register. Ruben's revision to the change's own 'Mine is the default' decision; the same pattern parties-on-the-case established. Overdue spells its operator as the flat `deadline[lt]` key, not the nested `{ deadline: { lt } }` object: `buildQueryString` JSON-stringifies a nested object value, which reaches the API as the literal string `{\"lt\":\"@today\"}` and matches nothing. `@today` resolves client-side to `YYYY-MM-DD` at fetch time.",
 				"quickFilters": [
 					{
 						"label": "All",
@@ -1181,7 +1122,28 @@
 					{
 						"label": "Mine",
 						"filter": {
-							"assignee": "@me"
+							"assignee": "@me",
+							"isFinalStatus": false
+						}
+					},
+					{
+						"label": "Unclaimed",
+						"filter": {
+							"assignee": "IS NULL",
+							"isFinalStatus": false
+						}
+					},
+					{
+						"label": "Closed",
+						"filter": {
+							"isFinalStatus": true
+						}
+					},
+					{
+						"label": "Overdue",
+						"filter": {
+							"isFinalStatus": false,
+							"deadline[lt]": "@today"
 						}
 					}
 				],
@@ -1208,7 +1170,12 @@
 						"label": "Team",
 						"sortable": false
 					},
-					"deadline",
+					{
+						"key": "deadline",
+						"label": "Deadline",
+						"widget": "deadlineCountdown",
+						"_note": "one-case-list A22. A raw ISO date makes every reader do the same subtraction once per row and get it wrong on the rows that matter. `deadlineCountdown` (src/services/cellWidgets.js) renders the days left and, past the deadline, the days overdue in the signalering red. A cell WIDGET rather than a `formatter` because a formatter returns a string and a string cannot carry the overdue state; nextcloud-vue 2.41 ships no built-in countdown cell, only `CnCountdownWidget` for a dashboard tile. The column stays sortable: CnDataTable sorts on the stored `deadline`, not on the rendered text."
+					},
 					{
 						"key": "id",
 						"label": "Sub-cases",
@@ -1617,6 +1584,16 @@
 						}
 					},
 					{
+						"id": "case-documents",
+						"type": "dossier-tab",
+						"title": "Documents",
+						"icon": "FileDocumentMultipleOutline",
+						"_note": "The case file, on the case page. `zaakinformatieobject` rows for this case, rendered through DossierTab: title, type, status, direction, date and author, the drop zone that writes an informatieobject plus its join, and the version panel per row. Five of the six columns live on the REFERENCED informatieobject and CnObjectListWidget renders a `$ref` column as the raw reference, so the interim is a custom widget type rather than an `object-list` over `zaakinformatieobject` (change documents-on-the-case, task 2.2). The type is `dossier-tab` and NOT `custom`: a `type: \"custom\"` widget resolves through the page's `widget-<id>` slot, which CnDetailPage renders only for LAYOUT grid items, so inside a tab panel it renders nothing and says nothing — CnTabsWidget dispatches its children through CnDetailWidgetHost, which resolves a renderer by widget TYPE against the consumer registry (REQ-MVR-005). Deliberately absent from `layout`: the tabs widget renders it, and a layout entry would render it twice. The Files tab stays beside it for loose attachments and Nextcloud shares.",
+						"content": {
+							"emptyText": "No documents yet"
+						}
+					},
+					{
 						"id": "case-panels",
 						"type": "tabs",
 						"title": "Case panels",
@@ -1628,6 +1605,10 @@
 								{
 									"widgetId": "case-notes",
 									"label": "Notes"
+								},
+								{
+									"widgetId": "case-documents",
+									"label": "Documents"
 								},
 								{
 									"widgetId": "case-files",
@@ -1854,6 +1835,18 @@
 							"identificationMethod": "non_geidentificeerd",
 							"nature": "informatieverzoek"
 						}
+					},
+					{
+						"id": "generate-document",
+						"type": "open-modal",
+						"target": "BeschikkingComposerDialog",
+						"label": "Generate document",
+						"icon": "FileDocumentPlusOutline",
+						"props": {
+							"caseId": "@objectId",
+							"open": true
+						},
+						"successMessage": "Document added to the case."
 					},
 					{
 						"id": "log-hours",
@@ -2359,9 +2352,17 @@
 				],
 				"_columnsNote": "`case` is a $ref to the case and CnIndexPage renders a plain key raw, so the column showed truncated uuids. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded object's title; the server cannot sort on a nested field, so the column is not sortable.",
 				"extend": ["case", "assigneeGroup"],
+				"_quickFiltersNote": "one-case-list: the same three lenses the Cases index carries, in the same order and with the same labels, so a person who learned one list has learned the other. `isTerminalStatus` is the task-side twin of the case's `isFinalStatus` and is a stored boolean, so plain equality reaches it. All stays the default chip for the reason spelled out on Cases.",
 				"quickFilters": [
 					{ "label": "All", "filter": {}, "default": true },
-					{ "label": "Mine", "filter": { "assignee": "@me" } }
+					{
+						"label": "Mine",
+						"filter": { "assignee": "@me", "isTerminalStatus": false }
+					},
+					{
+						"label": "Unclaimed",
+						"filter": { "assignee": "IS NULL", "isTerminalStatus": false }
+					}
 				],
 				"columns": [
 					"title",

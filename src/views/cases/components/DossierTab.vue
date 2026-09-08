@@ -19,6 +19,14 @@
 					:reduce="(option) => option.id"
 					label="label"
 					:clearable="false" />
+				<NcSelect
+					v-model="keywordFilter"
+					class="dossier-tab__keyword-filter"
+					data-testid="dossier-keyword-filter"
+					:inputLabel="t('dossiq', 'Filter by keyword')"
+					:options="availableKeywords"
+					:disabled="availableKeywords.length === 0"
+					multiple />
 				<NcButton type="primary" @click="triggerFilePicker">
 					<template #icon>
 						<Upload :size="20" />
@@ -66,9 +74,39 @@
 			</template>
 		</NcEmptyContent>
 
+		<NcEmptyContent
+			v-else-if="visibleGroups.length === 0"
+			:name="t('dossiq', 'No documents match this keyword')"
+			:description="
+				t('dossiq', 'Clear the keyword filter to see the whole dossier.')
+			">
+			<template #icon>
+				<FolderOpenOutline :size="20" />
+			</template>
+			<template #action>
+				<NcButton @click="clearKeywordFilter">
+					{{ t('dossiq', 'Clear filter') }}
+				</NcButton>
+			</template>
+		</NcEmptyContent>
+
 		<div v-else class="dossier-tab__groups">
+			<div class="dossier-tab__columns" data-testid="dossier-columns">
+				<span class="dossier-tab__column-spacer" />
+				<span class="dossier-tab__column-spacer" />
+				<span class="dossier-tab__column">{{ t('dossiq', 'Title') }}</span>
+				<span class="dossier-tab__column">{{ t('dossiq', 'Type') }}</span>
+				<span class="dossier-tab__column">{{ t('dossiq', 'Status') }}</span>
+				<span class="dossier-tab__column">{{
+					t('dossiq', 'Direction')
+				}}</span>
+				<span class="dossier-tab__column">{{ t('dossiq', 'Date') }}</span>
+				<span class="dossier-tab__column">{{ t('dossiq', 'Author') }}</span>
+				<span class="dossier-tab__column-spacer" />
+			</div>
+
 			<DossierGroup
-				v-for="group in groups"
+				v-for="group in visibleGroups"
 				:key="group.informatieobjecttype"
 				:groupLabel="typeLabel(group.informatieobjecttype)"
 				:documents="group.documents"
@@ -115,6 +153,10 @@ import DocumentMetadataDialog from '../../../modals/DocumentMetadataDialog.vue'
 import BulkActionsBar from './BulkActionsBar.vue'
 import DossierGroup from './DossierGroup.vue'
 import VersionHistoryPanel from './VersionHistoryPanel.vue'
+import {
+	collectKeywords,
+	filterGroupsByKeywords,
+} from '../../../utils/dossierHelpers.js'
 
 /**
  * Case dossier tab: lists informatieobjecten grouped by type with a count
@@ -159,6 +201,7 @@ export default {
 			selectedIds: [],
 			sortKey: 'creatiedatum',
 			sortDirection: 'desc',
+			keywordFilter: [],
 			dragActive: false,
 			pendingFiles: [],
 			showMetadataDialog: false,
@@ -209,6 +252,26 @@ export default {
 				{ id: 'title', label: this.t('dossiq', 'Title') },
 				{ id: 'status', label: this.t('dossiq', 'Status') },
 			]
+		},
+
+		/**
+		 * The keywords in use across this case's dossier — the filter's facet.
+		 *
+		 * @return {string[]} The keywords, sorted.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		availableKeywords() {
+			return collectKeywords(this.groups)
+		},
+
+		/**
+		 * The groups the list renders, narrowed by the chosen keywords.
+		 *
+		 * @return {Array} The narrowed groups.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		visibleGroups() {
+			return filterGroupsByKeywords(this.groups, this.keywordFilter)
 		},
 	},
 
@@ -417,6 +480,15 @@ export default {
 		},
 
 		/**
+		 * Clear the keyword filter, so the whole dossier comes back.
+		 *
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		clearKeywordFilter() {
+			this.keywordFilter = []
+		},
+
+		/**
 		 * Clear the current selection and bulk results.
 		 *
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T08
@@ -567,6 +639,30 @@ export default {
 .dossier-tab {
 	position: relative;
 	padding: 12px;
+
+	/* The one declaration of the case file's column tracks: select, thumbnail,
+	   Title, Type, Status, Direction, Date, Author, actions. The header strip
+	   below and every DocumentRow inherit it, so a column cannot move in one
+	   place and stay put in the other. */
+	--dossier-columns: 34px 32px minmax(0, 2fr) minmax(0, 1fr) 90px 90px 100px
+		minmax(0, 1fr) 44px;
+}
+
+.dossier-tab__columns {
+	display: grid;
+	grid-template-columns: var(--dossier-columns);
+	gap: 12px;
+	padding: 0 4px 4px;
+	border-bottom: 1px solid var(--color-border);
+	color: var(--color-text-maxcontrast);
+	font-weight: 600;
+	font-size: 0.85em;
+}
+
+.dossier-tab__column {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .dossier-tab__header {
@@ -586,6 +682,10 @@ export default {
 
 .dossier-tab__sort {
 	min-width: 180px;
+}
+
+.dossier-tab__keyword-filter {
+	min-width: 200px;
 }
 
 .dossier-tab__file-input {

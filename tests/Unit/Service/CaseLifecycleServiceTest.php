@@ -267,6 +267,89 @@ class CaseLifecycleServiceTest extends TestCase {
 	}//end testExtendAddsThePeriodAndCountsIt()
 
 	/**
+	 * An explicit new end date wins over the case type's period. This is what
+	 * the bulk Extend term action passes when a reader picks a date.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+	 */
+	public function testExtendHonoursAnExplicitNewEndDate(): void {
+		$state = $this->service->extend(
+			caseId: 'case-1',
+			reason: 'Complexe zaak',
+			newEndDate: '2026-12-01',
+		);
+
+		$this->assertSame('2026-12-01', $state['deadline']);
+		$this->assertSame(1, $state['extensionCount']);
+	}//end testExtendHonoursAnExplicitNewEndDate()
+
+	/**
+	 * A named date that is not LATER than the current end is refused: an
+	 * extension that shortens the term is a mistake, and refusing it is
+	 * cheaper than explaining it afterwards.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+	 */
+	public function testExtendRefusesADateThatIsNotLater(): void {
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('new_end_date_not_later');
+
+		$this->service->extend(caseId: 'case-1', reason: 'Terug in de tijd', newEndDate: '2026-08-01');
+	}//end testExtendRefusesADateThatIsNotLater()
+
+	/**
+	 * A named date nothing can read is refused rather than silently falling
+	 * back to the case type's period, which would extend the term by an
+	 * amount nobody asked for.
+	 *
+	 * @return void
+	 */
+	public function testExtendRefusesAnUnreadableDate(): void {
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('new_end_date_unreadable');
+
+		$this->service->extend(caseId: 'case-1', reason: 'Onleesbaar', newEndDate: 'volgende maand');
+	}//end testExtendRefusesAnUnreadableDate()
+
+	/**
+	 * The case type's rule still governs a named date: `extensionAllowed`
+	 * false refuses whatever date the caller picked.
+	 *
+	 * @return void
+	 */
+	public function testAnExplicitDateDoesNotBypassTheCaseTypeRule(): void {
+		$caseTypes = $this->createMock(CaseTypeReader::class);
+		$caseTypes->method('read')->willReturn(
+			[
+				'suspensionAllowed' => true,
+				'extensionAllowed' => false,
+				'extensionPeriod' => 'P14D',
+				'initialStatus' => 'st-received',
+				'title' => 'Melding',
+			]
+		);
+		$caseTypes->method('isFinalStatus')->willReturn(false);
+
+		$service = new CaseLifecycleService(
+			store: $this->store,
+			caseTypes: $caseTypes,
+			termService: $this->termService,
+			pauseService: $this->pauseService,
+			extensionService: $this->extensionService,
+			logger: $this->createMock(LoggerInterface::class),
+		);
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('extension_not_allowed');
+
+		$service->extend(caseId: 'case-1', reason: 'Toch maar', newEndDate: '2026-12-01');
+	}//end testAnExplicitDateDoesNotBypassTheCaseTypeRule()
+
+	/**
 	 * An open case cannot be reopened.
 	 *
 	 * @return void

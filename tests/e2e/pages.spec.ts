@@ -59,14 +59,17 @@ test.describe('Dashboard', () => {
 	})
 
 	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-004c-overdue-panel-with-view-all-link
-	test("the Overdue table's View all keeps the overdue filter", async ({
+	test("the Deadlines table's View all keeps the deadline filter", async ({
 		page,
 	}) => {
 		await page.goto('/index.php/apps/dossiq/')
 		await dismissSupportDialog(page)
-		const table = page.locator('.cn-widget-wrapper').filter({
-			has: page.getByRole('heading', { name: /^(Overdue|Verlopen)$/ }),
-		})
+		// `dashboard-tiles` merged the Overdue and Deadline alerts tiles into
+		// one `deadlines` table, so the panel this asserts is that one. It is
+		// addressed by widget id rather than by its heading: CnDashboardGrid
+		// puts the id on the grid item's aria-label when a layout entry has no
+		// title of its own, and the id does not move when the title does.
+		const table = page.locator('[aria-label="deadlines"]')
 		await expect(table).toBeVisible({ timeout: 30_000 })
 		// The link only renders when the table has more rows than it shows;
 		// the seed guarantees that, but say so rather than skip silently.
@@ -77,7 +80,7 @@ test.describe('Dashboard', () => {
 		await viewAll.click()
 		await expect(page).toHaveURL(/\/cases\?/, { timeout: 15_000 })
 		const query = new URL(page.url()).searchParams
-		expect(query.get('deadline[lt]')).toBe('@today')
+		expect(query.get('deadline[lte]')).toBe('@today+3d')
 		expect(query.get('isFinalStatus')).toBe('false')
 	})
 })
