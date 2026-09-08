@@ -48,6 +48,17 @@ use RuntimeException;
 class SettingsController extends Controller {
 
 	/**
+	 * The recorder that writes a save's meaning onto an integration card.
+	 *
+	 * A STRING and not a `::class` reference, deliberately: see
+	 * {@see self::recordIntegrationSaves()} for why, and the unit test that
+	 * stops it rotting.
+	 *
+	 * @var string
+	 */
+	private const INTEGRATION_STATUS_SERVICE = 'OCA\\Dossiq\\Service\\IntegrationStatusService';
+
+	/**
 	 * The OpenRegister object service.
 	 *
 	 * @var \OCA\OpenRegister\Contract\ObjectServiceInterface|null The OpenRegister object service.
@@ -173,6 +184,8 @@ class SettingsController extends Controller {
 		$data = $this->request->getParams();
 		$config = $this->settingsService->updateSettings($data);
 
+		$this->recordIntegrationSaves(saved: $data);
+
 		return new JSONResponse(
 			[
 				'success' => true,
@@ -180,6 +193,38 @@ class SettingsController extends Controller {
 			]
 		);
 	}//end update()
+
+	/**
+	 * Tell the Integrations page what this save means for each connection.
+	 *
+	 * Only the connections whose OWN config keys the payload carried are
+	 * rewritten, so saving the KCC form never restates the ZGW card. That
+	 * decision lives in {@see \OCA\Dossiq\Service\IntegrationStatusService},
+	 * which is resolved BY NAME rather than injected: this controller is at
+	 * PHPMD's `CouplingBetweenObjects` ceiling of 13, and one more constructor
+	 * collaborator fails `composer phpmd` for a dependency used on exactly one
+	 * line. `tests/Unit/Controller/IntegrationProbesRecordTest.php` asserts the
+	 * name resolves, so the string cannot rot into a silent no-op.
+	 *
+	 * The `has()` guard, rather than a `try`/`catch`, is the same constraint
+	 * again: a `catch (\Throwable)` is itself a type reference and pushes the
+	 * count back over. The recorder swallows its own failures, so the write is
+	 * a no-op when OpenRegister is absent — the admin asked to save settings,
+	 * and a page that cannot be updated must not turn that into a 500.
+	 *
+	 * @param array<string, mixed> $saved The payload the save carried.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function recordIntegrationSaves(array $saved): void {
+		if ($this->container->has(self::INTEGRATION_STATUS_SERVICE) === false) {
+			return;
+		}
+
+		$this->container->get(self::INTEGRATION_STATUS_SERVICE)->recordFromSave(saved: $saved);
+	}//end recordIntegrationSaves()
 
 	/**
 	 * Legacy alias for {@see update()}.

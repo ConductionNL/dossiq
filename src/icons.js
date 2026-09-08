@@ -152,6 +152,7 @@ import PhonePlusOutline from 'vue-material-design-icons/PhonePlusOutline.vue'
 import PhoneReturn from 'vue-material-design-icons/PhoneReturn.vue'
 import PlayCircleOutline from 'vue-material-design-icons/PlayCircleOutline.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
+import PowerPlugOutline from 'vue-material-design-icons/PowerPlugOutline.vue'
 import ProgressClock from 'vue-material-design-icons/ProgressClock.vue'
 import Publish from 'vue-material-design-icons/Publish.vue'
 import Receipt from 'vue-material-design-icons/Receipt.vue'
@@ -331,6 +332,7 @@ export default {
 	PhoneReturn,
 	PlayCircleOutline,
 	Plus,
+	PowerPlugOutline,
 	ProgressClock,
 	Publish,
 	Receipt,

@@ -78,12 +78,32 @@ class EmailTemplateService {
 	 *
 	 * @param EmailTemplateRepository $repository OpenRegister persistence for templates and cases.
 	 * @param LoggerInterface $logger Logger.
+	 * @param IntegrationStatusService $integrationStatus Records what a mailbox test found.
 	 */
 	public function __construct(
 		private readonly EmailTemplateRepository $repository,
 		private readonly LoggerInterface $logger,
+		private readonly IntegrationStatusService $integrationStatus,
 	) {
 	}//end __construct()
+
+	/**
+	 * Record what a shared-mailbox connection test found.
+	 *
+	 * Lives here rather than in the controller that runs the probe: that
+	 * controller sits at PHPMD's coupling ceiling, and this service is already
+	 * the one collaborator it has for everything mailbox-shaped.
+	 *
+	 * @param string $status One of the four integration states.
+	 * @param string $message What the test reported.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	public function recordMailboxStatus(string $status, string $message): void {
+		$this->integrationStatus->record(key: 'mailbox', status: $status, message: $message);
+	}//end recordMailboxStatus()
 
 	/**
 	 * Persist a new template (version 1).

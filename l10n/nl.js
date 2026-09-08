@@ -3713,7 +3713,27 @@ OC.L10N.register(
         "Pick a date for the follow-up.": "Kies een datum voor de vervolgzaak.",
         "The follow-up could not be planned.": "De vervolgzaak kon niet worden gepland.",
         "planned for {date}": "gepland voor {date}",
-        "Planned cases": "Geplande zaken"
+        "Planned cases": "Geplande zaken",
+        "All connections": "Alle verbindingen",
+        "Configured": "Ingericht",
+        "Connections": "Verbindingen",
+        "Integration": "Koppeling",
+        "Integrations": "Koppelingen",
+        "Last checked": "Laatst gecontroleerd",
+        "Machine identifier for the connection. A probe and a save handler both find their row by this key.": "Machineleesbare sleutel van de koppeling. Zowel een controle als een opslagactie vindt hiermee de juiste regel.",
+        "Not available": "Niet beschikbaar",
+        "Not checked yet": "Nog niet gecontroleerd",
+        "Open settings": "Instellingen openen",
+        "Specified, not built yet": "Gespecificeerd, nog niet gebouwd",
+        "Status message": "Statusbericht",
+        "The name of the connection as an admin knows it.": "De naam van de koppeling zoals een beheerder die kent.",
+        "What Dossiq uses the connection for.": "Waarvoor Dossiq de koppeling gebruikt.",
+        "What the app can back about this connection right now.": "Wat de app op dit moment over deze koppeling kan hardmaken.",
+        "What the last probe or save reported, in the words the reader needs.": "Wat de laatste controle of opslagactie meldde, in woorden die de lezer nodig heeft.",
+        "When the status was last written by a probe or a save.": "Wanneer de status voor het laatst door een controle of een opslagactie is geschreven.",
+        "Where the connection is configured. Empty when there is nothing to configure yet.": "Waar de koppeling wordt ingericht. Leeg zolang er nog niets in te richten valt.",
+        "Where the connection sits in the list.": "Waar de koppeling in de lijst staat.",
+        "Connection": "Verbinding"
     },
     "nplurals=2; plural=(n != 1);"
 )

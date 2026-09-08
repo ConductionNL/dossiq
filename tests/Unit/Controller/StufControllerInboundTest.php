@@ -33,6 +33,7 @@
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
+use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Controller\StufController;
 use OCA\Dossiq\Service\Stuf\StufEnvelopeInspector;
 use OCA\Dossiq\Service\Stuf\StufMessageHandler;
@@ -135,7 +136,7 @@ class StufControllerInboundTest extends TestCase {
 
 		unset($services);
 
-		return new class('dossiq', $this->createMock(IRequest::class), $instance, $this->createMock(StufSoapRequestDispatcher::class), $this->inspector, $this->createMock(IL10N::class), $this->createMock(LoggerInterface::class), $body, ) extends StufController {
+		return new class('dossiq', $this->createMock(IRequest::class), $instance, $this->createMock(StufSoapRequestDispatcher::class), $this->inspector, $this->createMock(IL10N::class), $this->createMock(LoggerInterface::class), $this->createMock(IntegrationStatusService::class), $body, ) extends StufController {
 			/**
 			 * @param string $appName App id.
 			 * @param IRequest $request Request.
@@ -144,6 +145,7 @@ class StufControllerInboundTest extends TestCase {
 			 * @param StufEnvelopeInspector $inspector Inspector.
 			 * @param IL10N $l10n Translations.
 			 * @param LoggerInterface $logger Logger.
+			 * @param IntegrationStatusService $integrationStatus Integration card recorder.
 			 * @param string $body Raw body to serve.
 			 */
 			public function __construct(
@@ -154,6 +156,7 @@ class StufControllerInboundTest extends TestCase {
 				StufEnvelopeInspector $inspector,
 				IL10N $l10n,
 				LoggerInterface $logger,
+				IntegrationStatusService $integrationStatus,
 				private readonly string $body,
 			) {
 				parent::__construct(
@@ -164,6 +167,7 @@ class StufControllerInboundTest extends TestCase {
 					inspector: $inspector,
 					l10n: $l10n,
 					logger: $logger,
+					integrationStatus: $integrationStatus,
 				);
 
 			}//end __construct()

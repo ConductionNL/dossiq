@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Support;
 
+use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ConfiguredRegistryService;
 use PHPUnit\Framework\TestCase;
@@ -186,6 +187,7 @@ class ConfiguredRegistryServiceTest extends TestCase {
 		return new ConfiguredRegistryService(
 			settingsService: $this->settingsService,
 			logger: $this->logger,
+			integrationStatus: $this->createMock(IntegrationStatusService::class),
 		);
 	}//end subject()
 
