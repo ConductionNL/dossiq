@@ -539,7 +539,16 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 			const res = await fetch(
 				'/index.php/apps/dossiq/api/preferences/walkthrough_completed_version',
 				{
-					headers: { Accept: 'application/json' },
+					// A CSRF-guarded GET answers 412 without the request token, and
+					// 412 is not ok, so the fallback would read as "no seen-version".
+					headers: {
+						Accept: 'application/json',
+						requesttoken:
+							document.head?.dataset?.requesttoken ??
+							(window as unknown as { OC?: { requestToken?: string } }).OC
+								?.requestToken ??
+							'',
+					},
 				},
 			).catch(() => null)
 			if (!res || !res.ok) return null

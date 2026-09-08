@@ -70,7 +70,9 @@ test.describe('Dashboard', () => {
 		await expect(table).toBeVisible({ timeout: 30_000 })
 		// The link only renders when the table has more rows than it shows;
 		// the seed guarantees that, but say so rather than skip silently.
-		const viewAll = table.getByRole('link', { name: /View all|Alles bekijken/ })
+		// CnDataTable renders View all as an anchor without href, so it has no
+		// link role for getByRole; match the element by its text instead.
+		const viewAll = table.getByText(/View all|Alles bekijken/, { exact: true })
 		await expect(viewAll).toBeVisible({ timeout: 15_000 })
 		await viewAll.click()
 		await expect(page).toHaveURL(/\/cases\?/, { timeout: 15_000 })
